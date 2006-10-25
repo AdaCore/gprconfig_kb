@@ -53,7 +53,7 @@
     </version>
     <languages>Ada</languages>
     <runtimes>
-       <directory group="2">../lib/gcc(-lib)?/$HOST/.*/rts-(.*)/adainclude</directory>
+       <directory group="2">../lib/gcc(-lib)?/$TARGET/.*/rts-(.*)/adainclude</directory>
     </runtimes>
     <extra_tool>create_ada_runtime_project</extra_tool>
     <target>
