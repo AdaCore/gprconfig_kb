@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<gprconfig>
+  <!--    GCC 3.x
+    These versions of GCC provide no specific switch to get the list of
+    supported languages, but we can parse the output of gcc -v.
+    We filter out some of the languages, since for instance Ada is handled
+    directly by GNAT, not through GCC (which doesn't necessarily have an
+    Ada runtime installed anyway.
+  -->
+  <compiler_description>
+    <name>GCC</name>
+    <executable>gcc</executable>
+    <version>
+      <external regexp="^gcc version (\S+)" group="1">gcc -v</external>
+    </version>
+    <languages>
+      <external regexp="--enable-languages=(\S+)" group="1">gcc -v</external>
+      <filter>c,c++,fortran</filter>
+    </languages>
+  </compiler_description>
+
+  <!--     GCC 2.8.1
+    There is no switch, in such versions, to find out the list of languages,
+    so we just assume there is only C.
+    C++ could be found by looking for the "g++" executable
+  -->
+  <compiler_description>
+    <name>GCC-28</name>
+    <executable>gcc</executable>
+    <version>
+      <external regexp="^gcc version (\S+)" group="1">gcc -v</external>
+      <must_match>2\.8\.</must_match>
+    </version>
+    <languages>C</languages>
+  </compiler_description>
+
+  <!--   GNAT
+    To find the list of supported runtimes, we check the contents of the
+    directory. To be compatible with older versions of GNAT (3.16 for instance),
+    we also accept lib/gcc-lib as the directory that contains the runtime files
+  -->
+  <compiler_description>
+    <name>GNAT</name>
+    <executable>gnatmake</executable>
+    <version>
+      <external regexp="GNATLS \S+ (\S+)" group="1">gnatls -v</external>
+    </version>
+    <languages>Ada</languages>
+    <runtimes>
+       <directory group="2">../lib/gcc(-lib)?/$HOST/.*/rts-(.*)/adainclude</directory>
+    </runtimes>
+    <extra_tool>create_ada_runtime_project</extra_tool>
+  </compiler_description>
+
+</gprconfig>
