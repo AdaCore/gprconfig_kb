@@ -1,0 +1,18 @@
+project GprConfig is
+   for Main use ("gprconfig-main.adb");
+
+   package Builder is
+      for Executable ("gprconfig-main.adb") use "gprconfig";
+      for Default_Switches ("Ada") use ("-m");
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("Ada") use ("-g", "-gnat05", "-gnatVa", "-gnaty");
+      for Default_Switches ("Ada") use Compiler'Default_Switches("Ada") & ("-gnatwaCJe");
+   end Compiler;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-E");
+   end Binder;
+
+end GprConfig;

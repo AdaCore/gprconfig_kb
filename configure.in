@@ -1,0 +1,9 @@
+AC_INIT(gprconfig.ads)
+AC_PREFIX_PROGRAM(gnatmake)
+AC_CANONICAL_SYSTEM
+HOST=$host
+PREFIX="$prefix"
+
+AC_SUBST(HOST)
+AC_SUBST(PREFIX)
+AC_OUTPUT(sdefault.ads)
