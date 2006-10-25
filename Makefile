@@ -10,7 +10,9 @@ distclean: clean
 
 gprconfig.pdf: gprconfig.texi
 	echo x | texi2dvi -p $<
-	
+	${RM} gprconfig.cp gprconfig.log gprconfig.ky gprconfig.toc
+	${RM} gprconfig.aux gprconfig.fn gprconfig.pg
+	${RM} gprconfig.tp gprconfig.cps gprconfig.vr
 
 test: all force
 	./gprconfig 
