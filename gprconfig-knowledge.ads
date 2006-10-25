@@ -94,7 +94,8 @@ package GprConfig.Knowledge is
 
    type Knowledge_Base is private;
 
-   procedure Parse_Knowledge_Base (Base : out Knowledge_Base);
+   procedure Parse_Knowledge_Base
+     (Base : out Knowledge_Base; Directory : String);
    --  Parse info from the knowledge base, and store it in memory.
    --  Only information relevant to the current host is parsed.
 

@@ -330,7 +330,9 @@ package body GprConfig.Knowledge is
    -- Parse_Knowledge_Base --
    --------------------------
 
-   procedure Parse_Knowledge_Base (Base : out Knowledge_Base) is
+   procedure Parse_Knowledge_Base
+     (Base : out Knowledge_Base; Directory : String)
+   is
       Search    : Search_Type;
       File      : Directory_Entry_Type;
       File_Node : Node_Ptr;
@@ -338,7 +340,7 @@ package body GprConfig.Knowledge is
    begin
       Start_Search
         (Search,
-         Directory => Sdefault.Database_Directory,
+         Directory => Directory,
          Pattern   => "*.xml",
          Filter    => (Ordinary_File => True, others => False));
 
@@ -381,8 +383,7 @@ package body GprConfig.Knowledge is
 
    exception
       when Ada.Directories.Name_Error =>
-         Put_Line (Standard_Error, "Directory not found: "
-                   & Sdefault.Database_Directory);
+         Put_Line (Standard_Error, "Directory not found: " & Directory);
    end Parse_Knowledge_Base;
 
    -----------------------------

@@ -1,6 +1,4 @@
 package Sdefault is
    pragma Warnings (Off);
    Hostname           : constant String := "@HOST@";
-   Database_Directory : constant String :=
-       "@PREFIX@/share/gprconfig/";
 end Sdefault;

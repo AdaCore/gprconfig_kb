@@ -3,3 +3,4 @@ all:
 
 clean:
 	gnat clean -q -Pgprconfig
+
