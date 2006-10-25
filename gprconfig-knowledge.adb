@@ -30,10 +30,6 @@ package body GprConfig.Knowledge is
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
 
-   function TU (Str : String) return Unbounded_String;
-   --  returns an unbounded string for Str (or Null_Unbounded_String if
-   --  Str is the empty string)
-
    procedure Parse_Compiler_Description
      (Append_To   : in out Compiler_Description_Maps.Map;
       File        : String;
@@ -55,8 +51,11 @@ package body GprConfig.Knowledge is
    procedure Find_Compilers_In_Dir
      (Append_To : in out Compiler_Lists.List;
       Base      : Knowledge_Base;
-      Directory : String);
-   --  Find all known compilers in a specific directory
+      Directory : String;
+      Name      : String := "");
+   --  Find all known compilers in a specific directory.
+   --  If Name is specified, then only compilers with that given name are
+   --  searched for.
 
    function Get_Unfiltered_External_Value
      (Value  : External_Value;
@@ -744,7 +743,8 @@ package body GprConfig.Knowledge is
    procedure Find_Compilers_In_Dir
      (Append_To : in out Compiler_Lists.List;
       Base      : Knowledge_Base;
-      Directory : String)
+      Directory : String;
+      Name      : String := "")
    is
       C      : Compiler_Description_Maps.Cursor;
    begin
@@ -754,33 +754,54 @@ package body GprConfig.Knowledge is
 
       C := First (Base.Compilers);
       while Has_Element (C) loop
-         declare
-            F : constant String := Normalize_Pathname
-              (Name           => To_String (Element (C).Executable),
-               Directory      => Directory,
-               Resolve_Links  => False,
-               Case_Sensitive => True);
-         begin
-            if Ada.Directories.Exists (F) then
-               For_Each_Language_Runtime
-                 (Append_To  => Append_To,
-                  Name       => Key (C),
-                  Path       => Directory,
-                  Directory  => Directory,
-                  Target     => Element (C).Target,
-                  Version    => Element (C).Version,
-                  Languages  => Element (C).Languages,
-                  Runtimes   => Element (C).Runtimes,
-                  Extra_Tool => Element (C).Extra_Tool);
-            end if;
-         exception
-            when Ignore_Compiler =>
-               null;  --  Nothing to do, the compiler has not been inserted
-         end;
+         if Name = "" or else Key (C) = Name then
+            declare
+               F : constant String := Normalize_Pathname
+                 (Name           => To_String (Element (C).Executable),
+                  Directory      => Directory,
+                  Resolve_Links  => False,
+                  Case_Sensitive => True);
+            begin
+               if Ada.Directories.Exists (F) then
+                  For_Each_Language_Runtime
+                    (Append_To  => Append_To,
+                     Name       => Key (C),
+                     Path       => Directory,
+                     Directory  => Directory,
+                     Target     => Element (C).Target,
+                     Version    => Element (C).Version,
+                     Languages  => Element (C).Languages,
+                     Runtimes   => Element (C).Runtimes,
+                     Extra_Tool => Element (C).Extra_Tool);
+               end if;
+            exception
+               when Ignore_Compiler =>
+                  null;  --  Nothing to do, the compiler has not been inserted
+            end;
+         end if;
 
          Next (C);
       end loop;
    end Find_Compilers_In_Dir;
+
+   -----------------------------
+   -- Find_Matching_Compilers --
+   -----------------------------
+
+   procedure Find_Matching_Compilers
+     (Name      : String;
+      Path      : String;
+      Base      : Knowledge_Base;
+      Compilers : out Compiler_Lists.List)
+   is
+   begin
+      Clear (Compilers);
+      Find_Compilers_In_Dir
+        (Append_To => Compilers,
+         Base      => Base,
+         Directory => Path,
+         Name      => Name);
+   end Find_Matching_Compilers;
 
    ----------------------------
    -- Find_Compilers_In_Path --
@@ -823,6 +844,27 @@ package body GprConfig.Knowledge is
       end if;
    end Find_Compilers_In_Path;
 
+   --------------------------
+   -- Known_Compiler_Names --
+   --------------------------
+
+   procedure Known_Compiler_Names
+     (Base : Knowledge_Base;
+      List : out Ada.Strings.Unbounded.Unbounded_String)
+   is
+      C : Compiler_Description_Maps.Cursor := First (Base.Compilers);
+   begin
+      List := Null_Unbounded_String;
+      while Has_Element (C) loop
+         if List /= Null_Unbounded_String then
+            Append (List, ",");
+         end if;
+         Append (List, Key (C));
+
+         Next (C);
+      end loop;
+   end Known_Compiler_Names;
+
    -----------
    -- Match --
    -----------
@@ -859,13 +901,16 @@ package body GprConfig.Knowledge is
            and then
              (Filter.Version = Null_Unbounded_String
               or else Match
-                (To_String (Filter.Version), To_String (Comp.Version)))
+                (Compile (To_String (Filter.Version), Case_Insensitive),
+                 To_String (Comp.Version)))
            and then (Filter.Runtime = Null_Unbounded_String
               or else Match
-                (To_String (Filter.Runtime), To_String (Comp.Runtime)))
+                (Compile (To_String (Filter.Runtime), Case_Insensitive),
+                 To_String (Comp.Runtime)))
            and then (Filter.Language = Null_Unbounded_String
               or else Match
-                (To_String (Filter.Language), To_String (Comp.Language)))
+                (Compile (To_String (Filter.Language), Case_Insensitive),
+                 To_String (Comp.Language)))
          then
             return True;
          end if;
@@ -1005,6 +1050,29 @@ package body GprConfig.Knowledge is
       end loop;
    end Merge_Config;
 
+   -------------------------
+   -- Is_Supported_Config --
+   -------------------------
+
+   function Is_Supported_Config
+     (Base     : Knowledge_Base;
+      Selected : Compiler_Lists.List) return Boolean
+   is
+      Config : Configuration_Lists.Cursor := First (Base.Configurations);
+   begin
+      while Has_Element (Config) loop
+         if Match (Element (Config).Compilers_Filters, Selected)
+           and then Match (Element (Config).Targets_Filters, Selected)
+         then
+            if not Element (Config).Supported then
+               return False;
+            end if;
+         end if;
+         Next (Config);
+      end loop;
+      return True;
+   end Is_Supported_Config;
+
    ----------------------------
    -- Generate_Configuration --
    ----------------------------
@@ -1047,5 +1115,14 @@ package body GprConfig.Knowledge is
       end loop;
       Close (Output);
    end Generate_Configuration;
+
+   ------------------------
+   -- Architecture_Equal --
+   ------------------------
+
+   function Architecture_Equal (Arch1, Arch2 : String) return Boolean is
+   begin
+      return Arch1 = Arch2;
+   end Architecture_Equal;
 
 end GprConfig.Knowledge;

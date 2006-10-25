@@ -16,8 +16,8 @@ gprconfig.pdf: gprconfig.texi
 
 test: all force
 	${RM} standard.gpr
-	./gprconfig 
-	cat standard.gpr
+	./gprconfig -o standard.gpr
+	@cat standard.gpr
 
 force:
 

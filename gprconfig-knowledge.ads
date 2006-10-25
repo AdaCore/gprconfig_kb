@@ -29,6 +29,7 @@ package GprConfig.Knowledge is
       Language   : Ada.Strings.Unbounded.Unbounded_String;
       Extra_Tool : Ada.Strings.Unbounded.Unbounded_String;
    end record;
+   No_Compiler : constant Compiler;
    --  Describes one of the compilers found on the PATH.
    --  Path is the directory that contains the compiler executable.
 
@@ -39,13 +40,51 @@ package GprConfig.Knowledge is
       Compilers : out Compiler_Lists.List);
    --  Return the list of compilers found on PATH
 
+   procedure Find_Matching_Compilers
+     (Name      : String;
+      Path      : String;
+      Base      : Knowledge_Base;
+      Compilers : out Compiler_Lists.List);
+   --  Given a compiler and its name, find out as much information as we can.
+   --  If the compiler is totally unknown, the returned list will be empty.
+
+   procedure Known_Compiler_Names
+     (Base : Knowledge_Base;
+      List : out Ada.Strings.Unbounded.Unbounded_String);
+   --  Set List to the comma-separated list of known compilers
+
    procedure Generate_Configuration
      (Base        : Knowledge_Base;
       Selected    : Compiler_Lists.List;
       Output_File : String);
    --  Generate the configuration file for the list of selected compilers
 
+   function Is_Supported_Config
+     (Base     : Knowledge_Base;
+      Selected : Compiler_Lists.List) return Boolean;
+   --  Whether we know how to link code compiled with all these selected
+   --  compilers
+
+   function Architecture_Equal (Arch1, Arch2 : String) return Boolean;
+   --  Compares two architectures.
+   --  ??? The comparison for now is the same as "=", but in the future we
+   --  should have a way in the .xml file to indicate that "i686-pc-linux-gnu"
+   --  is the same as "i686-suse-linux" for instance.
+
+   function TU (Str : String) return Ada.Strings.Unbounded.Unbounded_String;
+   --  returns an unbounded string for Str (or Null_Unbounded_String if
+   --  Str is the empty string)
+
 private
+   No_Compiler : constant Compiler :=
+     (Name       => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Target     => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Path       => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Version    => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Runtime    => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Language   => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Extra_Tool => Ada.Strings.Unbounded.Null_Unbounded_String);
+
    type External_Value_Type is (Value_Constant,
                                 Value_Shell,
                                 Value_Directory);

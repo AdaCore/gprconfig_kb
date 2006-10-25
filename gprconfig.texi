@@ -94,14 +94,105 @@ that one that should be used.
 @c ---------------------------------------------------------------------
 
 @noindent
+When you launch gprconfig, it will first search for all compilers it can
+find on your @code{PATH}. It is recommended, although not mandatory, that
+you put the compilers that you expect to use for your application before you
+launch @code{gprconfig}, since that simplifies the setup.
 
-- Select the compilers that your application is build with
-  Either among the compilers automatically found by gprconfig on your PATH,
-  or by manually entering information
+@code{gprconfig} will then display a list of all the compilers it has found,
+along with the language they can compile, the runtime they use (when
+applicable),@dots{}. It will then wait until you select one of the compilers.
 
-- Let gprconfig generate the configuration file
-  If the combination of compilers generate code that cannot be linked,
-  an error message is displayed and nothing is done.
+Selection is done by entering the letter that appears on the line for
+each compiler. If the compiler was already selected, it is deselected.
+
+The list of compilers is then displayed again, but some filtering has been
+performed: only compilers that target the same platform as the selected
+compiler are now displayed. @code{gprconfig} then checks whether it is
+possible to link sources compiled with the selected compiler and each of
+the remaing compiler; when linking is not possible, the compiler is not
+displayed.
+
+The goal of this filtering is to make it more obvious whether you have
+good chances of being able to link. There is however no guarantee that
+@code{gprconfig} will know for sure how to link any combination of the
+remaining compilers.
+
+In the list, if you select "o", @code{gprconfig} will let you enter
+information about a compiler that was not found automatically:
+@itemize @bullet
+@item Name
+
+In the knowledge base of @code{gprconfig}, each compiler is associated
+with a simple name. All the known names are listed next to the question.
+If your compile is one of the known ones, enter the name. You can also
+enter any other name, but then @code{gprconfig} will not be able to
+guess any of the remaining info.
+
+@item Path
+
+This is the directory that contains the executable of your compiler, not
+including the name of the compiler itself. For instance, for a GNAT
+compiler installed in @file{/usr/local/gnat/bin/gnatmake}, the path would be
+@file{/usr/local/gnat/bin}.
+
+@item Version
+
+The version of your compiler. If the Name you provided is one of the known
+compiler, @code{gprconfig} will try to guess it for you, so that you can
+simply press enter if the guess is valid.
+
+@item Language
+
+The language that you intend to use the compiler for. If you use the same
+compiler for multiple languages, you should enter only one of these at
+this point, and later on create a new compiler entry for the other
+languages. As for Version, @code{gprconfig} will try to guess it for you
+if it is one of the known compilers.
+
+@item Runtime
+
+The runtime you intend to use for this compiler. For most languages, this
+is not applicable, and you should simply press Enter. Once again,
+@code{gprconfig} will try to guess it if possible.
+
+@item Target
+
+The target architecture for which the compiler is compiling. @code{gprconfig}
+will try to guess it either from the compiler you pointed to, or will by
+default use the current system's architecture, assuming this is not a
+cross compiler.
+@end itemize
+
+You can select as many compilers as are used in your application. Once you
+are done selecting the compilers, select "s", and @code{gprmake} will
+generate the configuration file.
+
+@subsection Command line switches
+
+The following command line switches are supported by @code{gprconfig}.
+
+@itemize @bullet
+@item -o file
+
+The name of the output file. By default, @code{gprconfig} will search for
+@code{gprmake} on your PATH, and create a default configuration file for
+it. But you can alternatively choose to create a different configuration
+file and then use @code{gprmake}'s command line switches to choose among
+these.
+
+@item -db directory
+
+Indicates another directory that should be parsed for gprconfig's knowledge
+base. Most of the time this is only useful if you are creating your own
+XML description files.
+
+@item -db -
+
+Prevents @code{gprconfig} from reading its default knowledge base. You should
+point to another directory with @code{-db directory}, or gprconfig will not be
+able to generate any configuration file.
+@end itemize
 
 @c ----------------------------------------------------------------------
 @node Knowledge base
