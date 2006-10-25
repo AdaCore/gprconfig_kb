@@ -59,8 +59,9 @@ package body GprConfig.Knowledge is
    --  Find all known compilers in a specific directory
 
    function Get_Unfiltered_External_Value
-     (Value : External_Value;
-      Path  : String) return String;
+     (Value  : External_Value;
+      Path   : String;
+      Target : String) return String;
    --  Computes the value of Value, depending on its type. When an external
    --  command needs to be executed, Path is put first on the PATH environment
    --  variable.
@@ -98,7 +99,8 @@ package body GprConfig.Knowledge is
    --  the regexp is evaluated against the current directory, and the matching
    --  parenthesis group is appended to Append_To (comma-separated)
 
-   function Substitute_Special_Dirs (Directory : String) return String;
+   function Substitute_Special_Dirs
+     (Directory : String; Target : String) return String;
    --  Substitute the special "$..." names in Directory, as described in the
    --  <directory> tag
 
@@ -414,17 +416,33 @@ package body GprConfig.Knowledge is
    -- Substitute_Special_Dirs --
    -----------------------------
 
-   function Substitute_Special_Dirs (Directory : String) return String is
-      Pos : constant Natural := Index (Directory, "$HOST");
+   function Substitute_Special_Dirs
+     (Directory : String; Target : String) return String
+   is
+      Pos : Natural := Directory'First;
    begin
-      if Pos /= 0 then
-         return Directory (Directory'First .. Pos - 1)
-           & Sdefault.Hostname
-           & Substitute_Special_Dirs
-           (Directory (Pos + 5 .. Directory'Last));
-      else
-         return Directory;
-      end if;
+      while Pos <= Directory'Last loop
+         if Directory (Pos) = '$' then
+            if Pos + 4 <= Directory'Last
+              and then Directory (Pos .. Pos + 4) = "$HOST"
+            then
+               return Directory (Directory'First .. Pos - 1)
+                 & Sdefault.Hostname
+                 & Substitute_Special_Dirs
+                 (Directory (Pos + 5 .. Directory'Last), Target);
+
+            elsif Pos + 6 <= Directory'Last
+              and then Directory (Pos .. Pos + 6) = "$TARGET"
+            then
+               return Directory (Directory'First .. Pos - 1)
+                 & Target
+                 & Substitute_Special_Dirs
+                 (Directory (Pos + 7 .. Directory'Last), Target);
+            end if;
+         end if;
+         Pos := Pos + 1;
+      end loop;
+      return Directory;
    end Substitute_Special_Dirs;
 
    --------------------
@@ -521,8 +539,9 @@ package body GprConfig.Knowledge is
    -----------------------------------
 
    function Get_Unfiltered_External_Value
-     (Value : External_Value;
-      Path  : String) return String
+     (Value  : External_Value;
+      Path   : String;
+      Target : String) return String
    is
       Saved_Path : constant String := Ada.Environment_Variables.Value ("PATH");
       Status     : aliased Integer;
@@ -563,8 +582,8 @@ package body GprConfig.Knowledge is
 
          when Value_Directory =>
             declare
-               Search : constant String :=
-                 Substitute_Special_Dirs (To_String (Value.Directory));
+               Search : constant String := Substitute_Special_Dirs
+                 (To_String (Value.Directory), Target);
             begin
                Parse_All_Dirs
                  (Append_To     => Result,
@@ -645,14 +664,14 @@ package body GprConfig.Knowledge is
       Runtimes   : External_Value;
       Extra_Tool : Unbounded_String)
    is
-      Unfiltered_Version   : constant String := Get_Unfiltered_External_Value
-        (Version, Directory);
-      Unfiltered_Languages : constant String := Get_Unfiltered_External_Value
-        (Languages, Directory);
-      Unfiltered_Runtimes  : constant String := Get_Unfiltered_External_Value
-        (Runtimes, Directory);
       Unfiltered_Target    : constant String := Get_Unfiltered_External_Value
-        (Target, Directory);
+        (Target, Directory, "");
+      Unfiltered_Version   : constant String := Get_Unfiltered_External_Value
+        (Version, Directory, Unfiltered_Target);
+      Unfiltered_Languages : constant String := Get_Unfiltered_External_Value
+        (Languages, Directory, Unfiltered_Target);
+      Unfiltered_Runtimes  : constant String := Get_Unfiltered_External_Value
+        (Runtimes, Directory, Unfiltered_Target);
 
       Langs : String_Sets.Set;
       Runs  : String_Sets.Set;
