@@ -44,12 +44,15 @@ unmodified in any copy.
 
 @menu
 * Introduction::
+* Using gprconfig::
 * Knowledge base::
 @detailmenu
 
  --- The Detailed Node Listing ---
 
 Introduction
+
+Using gprconfig
 
 Knowledge base
 * Description of the knowledge base::
@@ -84,6 +87,21 @@ building the application both for the local hosts and for a cross target),
 @code{gprconfig} should be run again. An alternative here is to generate
 several configuration files, and select on the @code{gprmake} command line
 that one that should be used.
+
+@c ----------------------------------------------------------------------
+@node Using gprconfig
+@chapter Using gprconfig
+@c ---------------------------------------------------------------------
+
+@noindent
+
+- Select the compilers that your application is build with
+  Either among the compilers automatically found by gprconfig on your PATH,
+  or by manually entering information
+
+- Let gprconfig generate the configuration file
+  If the combination of compilers generate code that cannot be linked,
+  an error message is displayed and nothing is done.
 
 @c ----------------------------------------------------------------------
 @node Knowledge base
@@ -443,6 +461,12 @@ chunk itself. For instance, one would write:
   </config>
 </configuration>
 @end smallexample
+
+If @code{<config>} is an empty node (ie "<config/>" or "<config></config>")
+was used, then the combination of selected compilers will be reported as
+invalid, in the sense that we know that code compiled with these compilers
+cannot be linked together. As a result, @code{gprconfig} will not create
+the configuration file.
 
 The filters themselves are of course defined through XML tags, and can
 be any of:

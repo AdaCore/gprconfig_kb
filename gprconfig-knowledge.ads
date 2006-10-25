@@ -112,6 +112,9 @@ private
       Compilers_Filters : Compilers_Filter_Lists.List;
       Targets_Filters   : String_Sets.Set;  --  these are regexps
       Config            : Ada.Strings.Unbounded.Unbounded_String;
+
+      Supported         : Boolean;
+      --  Whether the combination of compilers is supported
    end record;
 
    package Configuration_Lists is new Ada.Containers.Doubly_Linked_Lists

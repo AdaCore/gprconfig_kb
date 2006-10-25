@@ -66,14 +66,15 @@ begin
        Target     => +"i686-pc-linux-gnu",
        Path       => Null_Unbounded_String,
        Extra_Tool => Null_Unbounded_String));
---     Append
---       (Selected,
---        (Name       => +"GCC",
---         Version    => +"3.4.1",
---         Language   => +"C",
---         Runtime    => Null_Unbounded_String,
---         Path       => Null_Unbounded_String,
---         Extra_Tool => Null_Unbounded_String));
+   Append
+     (Selected,
+      (Name       => +"GCC",
+       Version    => +"3.4.1",
+       Language   => +"C",
+       Target     => Null_Unbounded_String,
+       Runtime    => Null_Unbounded_String,
+       Path       => Null_Unbounded_String,
+       Extra_Tool => Null_Unbounded_String));
 
    Put_Line ("--------------- Generating output -----------");
    Generate_Configuration (Base, Selected, "standard.gpr");

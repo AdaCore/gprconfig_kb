@@ -15,6 +15,7 @@ gprconfig.pdf: gprconfig.texi
 	${RM} gprconfig.tp gprconfig.cps gprconfig.vr
 
 test: all force
+	${RM} standard.gpr
 	./gprconfig 
 	cat standard.gpr
 
