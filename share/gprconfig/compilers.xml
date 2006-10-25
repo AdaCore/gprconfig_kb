@@ -17,6 +17,9 @@
       <external regexp="--enable-languages=(\S+)" group="1">gcc -v</external>
       <filter>c,c++,fortran</filter>
     </languages>
+    <target>
+      <external>gcc -dumpmachine</external>
+    </target>
   </compiler_description>
 
   <!--     GCC 2.8.1
@@ -32,6 +35,9 @@
       <must_match>2\.8\.</must_match>
     </version>
     <languages>C</languages>
+    <target>
+      <external>gcc -dumpmachine</external>
+    </target>
   </compiler_description>
 
   <!--   GNAT
@@ -50,6 +56,9 @@
        <directory group="2">../lib/gcc(-lib)?/$HOST/.*/rts-(.*)/adainclude</directory>
     </runtimes>
     <extra_tool>create_ada_runtime_project</extra_tool>
+    <target>
+      <external>gcc -dumpmachine</external>
+    </target>
   </compiler_description>
 
 </gprconfig>

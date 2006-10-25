@@ -27,6 +27,8 @@
 --          <extra_tool>: An extra tool to execute if this compiler is
 --                        selected. One example is a tool to generate a user-
 --                        visible project file, like ada_runtime.gpr.
+--          <target>:     How to get the name of the target for the compiler.
+--                        This is an external_value.
 --
 --       <configuration>: Describes a chunk of a configuration file for gprmake
 --          This supports the following child tags:
@@ -37,6 +39,8 @@
 --                        (ie at least one of their <compiler> child matches).
 --          <hosts>:      Matches if any of its <host> child matches. There can
 --                        be a single <hosts> tag per configuration.
+--          <targets>:    Matches if any of its <target> child matches. There
+--                        can be a single <targets> tag per configuration.
 --          <config>:     The actual configuration file chunk to merge into
 --                        the output file when all filters match.
 --
@@ -77,16 +81,23 @@
 --           least for this specific XML file, but another XML file might
 --           describe it)
 --
---      <compiler name="name" version="..." runtime="..." language="..."/>
+--      <compiler name="name" version="..." runtime="..." language="..." />
 --           Matches if the compiler "name" (which must match one of the <name>
 --           tags from the <compiler_configuration>), with the given version,
 --           is in use. All attributes except "name" are optional.
+--           Attributes other than "name" are regular expressions. This allows
+--           you to test a intel/linux target with "i.86-.*-linux" for instance
 --
 --      <host name="name" />
---           Matches if the current host is "name"
+--           Matches if the current host is "name". Name is a regexp
+--
+--      <target name="name" />
+--           Matches if the current host is "name". Name is a regexp
 
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Hashed_Maps;
+with Ada.Containers.Indefinite_Hashed_Sets;
+with Ada.Strings.Hash;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;
 
@@ -101,6 +112,7 @@ package GprConfig.Knowledge is
 
    type Compiler is record
       Name       : Ada.Strings.Unbounded.Unbounded_String;
+      Target     : Ada.Strings.Unbounded.Unbounded_String;
       Path       : Ada.Strings.Unbounded.Unbounded_String;
       Version    : Ada.Strings.Unbounded.Unbounded_String;
       Runtime    : Ada.Strings.Unbounded.Unbounded_String;
@@ -154,25 +166,41 @@ private
       Version    : External_Value;
       Languages  : External_Value;
       Runtimes   : External_Value;
+      Target     : External_Value;
       Extra_Tool : Ada.Strings.Unbounded.Unbounded_String;
    end record;
    package Compiler_Description_Maps is new
      Ada.Containers.Indefinite_Hashed_Maps
        (String, Compiler_Description, Ada.Strings.Hash_Case_Insensitive, "=");
 
+   type Compiler_Filter is record
+      Name       : Ada.Strings.Unbounded.Unbounded_String;
+      Version    : Ada.Strings.Unbounded.Unbounded_String;
+      Runtime    : Ada.Strings.Unbounded.Unbounded_String;
+      Language   : Ada.Strings.Unbounded.Unbounded_String;
+   end record;
+   --  Representation for a <compiler> node (in <configuration>)
+
+   package Compiler_Filter_Lists is new Ada.Containers.Doubly_Linked_Lists
+     (Compiler_Filter);
+
    type Compilers_Filter is record
-      Compiler : Compiler_Lists.List;
+      Compiler : Compiler_Filter_Lists.List;
    end record;
    No_Compilers_Filter : constant Compilers_Filter :=
-     (Compiler => Compiler_Lists.Empty_List);
+     (Compiler => Compiler_Filter_Lists.Empty_List);
    --  a <compilers> filter, that matches if any of its <compiler> child
    --  matches.
 
    package Compilers_Filter_Lists is new Ada.Containers.Doubly_Linked_Lists
      (Compilers_Filter);
+   package String_Sets is new Ada.Containers.Indefinite_Hashed_Sets
+     (String, Ada.Strings.Hash, --  ??? On case-insensitive systems
+      "=");
 
    type Configuration is record
       Compilers_Filters : Compilers_Filter_Lists.List;
+      Targets_Filters   : String_Sets.Set;  --  these are regexps
       Config            : Ada.Strings.Unbounded.Unbounded_String;
    end record;
 

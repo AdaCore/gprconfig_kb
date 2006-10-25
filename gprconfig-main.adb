@@ -51,7 +51,8 @@ begin
                 & To_String (Element (Comp).Path)
                 & " - " & To_String (Element (Comp).Version)
                 & " - " & To_String (Element (Comp).Language)
-                & " - " & To_String (Element (Comp).Runtime));
+                & " - " & To_String (Element (Comp).Runtime)
+                & " - " & To_String (Element (Comp).Target));
       Next (Comp);
    end loop;
 
@@ -62,6 +63,7 @@ begin
        Version    => +"5.05w",
        Language   => +"Ada",
        Runtime    => +"native",
+       Target     => +"i686-pc-linux-gnu",
        Path       => Null_Unbounded_String,
        Extra_Tool => Null_Unbounded_String));
 --     Append

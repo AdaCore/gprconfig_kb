@@ -2,11 +2,9 @@
 --                   Copyright (C) 2006, AdaCore                            --
 ------------------------------------------------------------------------------
 
-with Ada.Containers.Indefinite_Hashed_Sets;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
-with Ada.Strings.Hash;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with Glib.XML;                  use Glib;
@@ -22,14 +20,12 @@ package body GprConfig.Knowledge is
    package XML_Int is new Glib.XML (Integer);
    use XML_Int;
 
-   package String_Sets is new Ada.Containers.Indefinite_Hashed_Sets
-     (String, Ada.Strings.Hash, --  ??? On case-insensitive systems
-      "=");
    package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
      (String, Unbounded_String, Ada.Strings.Hash_Case_Insensitive, "=");
 
    use Compiler_Lists, Compiler_Description_Maps, String_Sets;
    use Configuration_Lists, Compilers_Filter_Lists, String_Maps;
+   use Compiler_Filter_Lists;
 
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
@@ -82,6 +78,7 @@ package body GprConfig.Knowledge is
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
       Path       : String;
+      Target     : External_Value;
       Directory  : String;
       Version    : External_Value;
       Languages  : External_Value;
@@ -112,8 +109,11 @@ package body GprConfig.Knowledge is
      (Filter   : Compilers_Filter;
       Selected : Compiler_Lists.List) return Boolean;
    function Match
-     (Filter   : Compiler;
+     (Filter   : Compiler_Filter;
       Selected : Compiler_Lists.List) return Boolean;
+   function Match
+     (Target_Filter : String_Sets.Set;
+      Selected      : Compiler_Lists.List) return Boolean;
    --  Return True if Filter matches the list of selected configurations
 
    procedure Merge_Config
@@ -236,6 +236,11 @@ package body GprConfig.Knowledge is
               (Value => Compiler.Runtimes,
                File  => File,
                Node  => N);
+         elsif N.Tag.all = "target" then
+            Parse_External_Value
+              (Value => Compiler.Target,
+               File  => File,
+               Node  => N);
          elsif N.Tag.all = "extra_tool" then
             Compiler.Extra_Tool := To_Unbounded_String (N.Value.all);
          else
@@ -274,13 +279,11 @@ package body GprConfig.Knowledge is
                if N2.Tag.all = "compiler" then
                   Append
                     (Compilers.Compiler,
-                     Compiler'
+                     Compiler_Filter'
                        (Name     => TU (Get_Attribute (N2, "name", "")),
                         Version  => TU (Get_Attribute (N2, "version", "")),
                         Runtime  => TU (Get_Attribute (N2, "runtime", "")),
-                        Language => TU (Get_Attribute (N2, "language", "")),
-                        Path     => Null_Unbounded_String,
-                        Extra_Tool => Null_Unbounded_String));
+                        Language => TU (Get_Attribute (N2, "language", ""))));
                else
                   Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
                             & N2.Tag.all);
@@ -289,6 +292,25 @@ package body GprConfig.Knowledge is
             end loop;
             Append (Config.Compilers_Filters, Compilers);
 
+         elsif N.Tag.all = "targets" then
+            if not Is_Empty (Config.Targets_Filters) then
+               Put_Line (Standard_Error,
+                         "Can have a single <targets> filter in " & File);
+            else
+               N2 := N.Child;
+               while N2 /= null loop
+                  if N2.Tag.all = "target" then
+                     Include (Config.Targets_Filters,
+                              Get_Attribute (N2, "name", ""));
+                  else
+                     Put_Line
+                       (Standard_Error, "Unknown XML tag in " & File & ": "
+                        & N2.Tag.all);
+                  end if;
+                  N2 := N2.Next;
+               end loop;
+            end if;
+
          elsif N.Tag.all = "hosts" then
             --  Resolve this filter immediately. This saves memory, since we
             --  don't need to store it in memory if we know it won't apply.
@@ -296,7 +318,9 @@ package body GprConfig.Knowledge is
             Ignore_Config := True;
             while N2 /= null loop
                if N2.Tag.all = "host" then
-                  if Get_Attribute (N2, "name", "") = Sdefault.Hostname then
+                  if Match
+                    (Get_Attribute (N2, "name", ""), Sdefault.Hostname)
+                  then
                      Ignore_Config := False;
                      exit;
                   end if;
@@ -614,6 +638,7 @@ package body GprConfig.Knowledge is
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
       Path       : String;
+      Target     : External_Value;
       Directory  : String;
       Version    : External_Value;
       Languages  : External_Value;
@@ -626,6 +651,8 @@ package body GprConfig.Knowledge is
         (Languages, Directory);
       Unfiltered_Runtimes  : constant String := Get_Unfiltered_External_Value
         (Runtimes, Directory);
+      Unfiltered_Target    : constant String := Get_Unfiltered_External_Value
+        (Target, Directory);
 
       Langs : String_Sets.Set;
       Runs  : String_Sets.Set;
@@ -656,6 +683,7 @@ package body GprConfig.Knowledge is
                  (Append_To,
                   Compiler'
                     (Name       => To_Unbounded_String (Name),
+                     Target     => To_Unbounded_String (Unfiltered_Target),
                      Path       => To_Unbounded_String (Path),
                      Version    => To_Unbounded_String (Unfiltered_Version),
                      Language   => To_Unbounded_String (L),
@@ -670,6 +698,7 @@ package body GprConfig.Knowledge is
                      Compiler'
                        (Name       => To_Unbounded_String (Name),
                         Path       => To_Unbounded_String (Path),
+                        Target     => To_Unbounded_String (Unfiltered_Target),
                         Version    => To_Unbounded_String (Unfiltered_Version),
                         Language   => To_Unbounded_String (L),
                         Runtime    => To_Unbounded_String (Element (C2)),
@@ -713,6 +742,7 @@ package body GprConfig.Knowledge is
                   Name       => Key (C),
                   Path       => Directory,
                   Directory  => Directory,
+                  Target     => Element (C).Target,
                   Version    => Element (C).Version,
                   Languages  => Element (C).Languages,
                   Runtimes   => Element (C).Runtimes,
@@ -776,7 +806,7 @@ package body GprConfig.Knowledge is
      (Filter   : Compilers_Filter;
       Selected : Compiler_Lists.List) return Boolean
    is
-      C : Compiler_Lists.Cursor := First (Filter.Compiler);
+      C : Compiler_Filter_Lists.Cursor := First (Filter.Compiler);
    begin
       while Has_Element (C) loop
          if Match (Element (C), Selected) then
@@ -792,7 +822,7 @@ package body GprConfig.Knowledge is
    -----------
 
    function Match
-     (Filter   : Compiler;
+     (Filter   : Compiler_Filter;
       Selected : Compiler_Lists.List) return Boolean
    is
       C    : Compiler_Lists.Cursor := First (Selected);
@@ -801,12 +831,16 @@ package body GprConfig.Knowledge is
       while Has_Element (C) loop
          Comp := Element (C);
          if Filter.Name = Comp.Name
-           and then (Filter.Version = Null_Unbounded_String
-                     or else Filter.Version = Comp.Version)
+           and then
+             (Filter.Version = Null_Unbounded_String
+              or else Match
+                (To_String (Filter.Version), To_String (Comp.Version)))
            and then (Filter.Runtime = Null_Unbounded_String
-                     or else Filter.Runtime = Comp.Version)
+              or else Match
+                (To_String (Filter.Runtime), To_String (Comp.Runtime)))
            and then (Filter.Language = Null_Unbounded_String
-                     or else Filter.Language = Comp.Language)
+              or else Match
+                (To_String (Filter.Language), To_String (Comp.Language)))
          then
             return True;
          end if;
@@ -832,6 +866,38 @@ package body GprConfig.Knowledge is
          Next (C);
       end loop;
       return True;
+   end Match;
+
+   -----------
+   -- Match --
+   -----------
+
+   function Match
+     (Target_Filter : String_Sets.Set;
+      Selected      : Compiler_Lists.List) return Boolean
+   is
+      Target : String_Sets.Cursor := First (Target_Filter);
+      Comp   : Compiler_Lists.Cursor;
+   begin
+      if Is_Empty (Target_Filter) then
+         return True;
+
+      else
+         while Has_Element (Target) loop
+            Comp := First (Selected);
+            while Has_Element (Comp) loop
+               if Match
+                 (Element (Target), To_String (Element (Comp).Target))
+               then
+                  return True;
+               end if;
+               Next (Comp);
+            end loop;
+
+            Next (Target);
+         end loop;
+         return False;
+      end if;
    end Match;
 
    -----------------
@@ -929,7 +995,9 @@ package body GprConfig.Knowledge is
       C        : String_Maps.Cursor;
    begin
       while Has_Element (Config) loop
-         if Match (Element (Config).Compilers_Filters, Selected) then
+         if Match (Element (Config).Compilers_Filters, Selected)
+           and then Match (Element (Config).Targets_Filters, Selected)
+         then
             Merge_Config (Packages, To_String (Element (Config).Config));
          end if;
 
