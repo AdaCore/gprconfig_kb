@@ -130,6 +130,9 @@ package body GprConfig.Knowledge is
    procedure Skip_Spaces_Backward (Str : String; Index : in out Integer);
    --  Same as Skip_Spaces, but goes backward
 
+   Exec_Suffix : constant GNAT.Strings.String_Access :=
+      Get_Executable_Suffix;
+
    --------
    -- TU --
    --------
@@ -760,7 +763,7 @@ package body GprConfig.Knowledge is
                  (Name           => To_String (Element (C).Executable),
                   Directory      => Directory,
                   Resolve_Links  => False,
-                  Case_Sensitive => True);
+                  Case_Sensitive => True) & Exec_Suffix.all;
             begin
                if Ada.Directories.Exists (F) then
                   For_Each_Language_Runtime
@@ -775,6 +778,8 @@ package body GprConfig.Knowledge is
                      Extra_Tool => Element (C).Extra_Tool);
                end if;
             exception
+               when Ada.Directories.Name_Error =>
+                  null;
                when Ignore_Compiler =>
                   null;  --  Nothing to do, the compiler has not been inserted
             end;
