@@ -540,7 +540,10 @@ package body GprConfig.Knowledge is
       First : constant Integer := Path_To_Check'First;
       Last  : Integer;
    begin
-      if Path_To_Check'Length = 0 then
+      if Path_To_Check'Length = 0
+        or else Path_To_Check = "/"
+        or else Path_To_Check = "" & Directory_Separator
+      then
          declare
             Matched : Match_Array (0 .. Group);
          begin
@@ -578,7 +581,8 @@ package body GprConfig.Knowledge is
                  (Processed_Value => Processed_Value,
                   Current_Dir     =>
                     Current_Dir & Directory_Separator
-                      & Path_To_Check (First .. Last - 1),
+                    & Path_To_Check (First .. Last - 1)
+                    & Directory_Separator,
                   Path_To_Check   =>
                     Path_To_Check (Last + 1 .. Path_To_Check'Last),
                   Regexp          => Regexp,
@@ -605,7 +609,8 @@ package body GprConfig.Knowledge is
                   then
                      Parse_All_Dirs
                        (Processed_Value => Processed_Value,
-                        Current_Dir     => Full_Name (File),
+                        Current_Dir     =>
+                          Full_Name (File) & Directory_Separator,
                         Path_To_Check   =>
                           Path_To_Check (Last + 1 .. Path_To_Check'Last),
                         Regexp          => Regexp,
