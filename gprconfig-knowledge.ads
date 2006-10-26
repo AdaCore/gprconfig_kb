@@ -151,9 +151,11 @@ private
 
    type Compilers_Filter is record
       Compiler : Compiler_Filter_Lists.List;
+      Negate   : Boolean := False;
    end record;
    No_Compilers_Filter : constant Compilers_Filter :=
-     (Compiler => Compiler_Filter_Lists.Empty_List);
+     (Compiler => Compiler_Filter_Lists.Empty_List,
+      Negate   => False);
    --  a <compilers> filter, that matches if any of its <compiler> child
    --  matches.
 
@@ -163,6 +165,7 @@ private
    type Configuration is record
       Compilers_Filters : Compilers_Filter_Lists.List;
       Targets_Filters   : String_Lists.List;  --  these are regexps
+      Negate_Targets    : Boolean  := False;
       Config            : Ada.Strings.Unbounded.Unbounded_String;
 
       Supported         : Boolean;

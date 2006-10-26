@@ -132,6 +132,7 @@ package body GprConfig.Knowledge is
 
    function Match
      (Target_Filter : String_Lists.List;
+      Negate        : Boolean;
       Selected      : Compiler_Lists.List) return Boolean;
    --  Return True if Filter matches the list of selected configurations
 
@@ -296,6 +297,7 @@ package body GprConfig.Knowledge is
       N2        : Node_Ptr;
       Compilers : Compilers_Filter;
       Ignore_Config : Boolean := False;
+      Negate    : Boolean;
    begin
       Config.Supported := True;
 
@@ -318,6 +320,8 @@ package body GprConfig.Knowledge is
                end if;
                N2 := N2.Next;
             end loop;
+            Compilers.Negate := Boolean'Value
+              (Get_Attribute (N, "negate", "False"));
             Append (Config.Compilers_Filters, Compilers);
 
          elsif N.Tag.all = "targets" then
@@ -337,19 +341,24 @@ package body GprConfig.Knowledge is
                   end if;
                   N2 := N2.Next;
                end loop;
+               Config.Negate_Targets := Boolean'Value
+                 (Get_Attribute (N, "negate", "False"));
             end if;
 
          elsif N.Tag.all = "hosts" then
             --  Resolve this filter immediately. This saves memory, since we
             --  don't need to store it in memory if we know it won't apply.
             N2 := N.Child;
-            Ignore_Config := True;
+            Negate := Boolean'Value
+              (Get_Attribute (N, "negate", "False"));
+
+            Ignore_Config := not Negate;
             while N2 /= null loop
                if N2.Tag.all = "host" then
                   if Match
                     (Get_Attribute (N2, "name", ""), Sdefault.Hostname)
                   then
-                     Ignore_Config := False;
+                     Ignore_Config := Negate;
                      exit;
                   end if;
 
@@ -360,6 +369,7 @@ package body GprConfig.Knowledge is
 
                N2 := N2.Next;
             end loop;
+
             exit when Ignore_Config;
 
          elsif N.Tag.all = "config" then
@@ -1005,12 +1015,12 @@ package body GprConfig.Knowledge is
       while Has_Element (C) loop
          Match (Element (C), Selected, Matching_Compiler, M);
          if M then
-            Matched := True;
+            Matched := not Filter.Negate;
             return;
          end if;
          Next (C);
       end loop;
-      Matched := False;
+      Matched := Filter.Negate;
    end Match;
 
    -----------
@@ -1087,6 +1097,7 @@ package body GprConfig.Knowledge is
 
    function Match
      (Target_Filter : String_Lists.List;
+      Negate        : Boolean;
       Selected      : Compiler_Lists.List) return Boolean
    is
       Target : String_Lists.Cursor := First (Target_Filter);
@@ -1103,14 +1114,14 @@ package body GprConfig.Knowledge is
                  (Compile (Element (Target), Case_Insensitive),
                   To_String (Element (Comp).Target))
                then
-                  return True;
+                  return not Negate;
                end if;
                Next (Comp);
             end loop;
 
             Next (Target);
          end loop;
-         return False;
+         return Negate;
       end if;
    end Match;
 
@@ -1245,7 +1256,11 @@ package body GprConfig.Knowledge is
       while Has_Element (Config) loop
          Match (Element (Config).Compilers_Filters, Selected,
                 Matching_Compiler, M);
-         if M and then Match (Element (Config).Targets_Filters, Selected) then
+         if M and then Match
+           (Element (Config).Targets_Filters,
+            Element (Config).Negate_Targets,
+            Selected)
+         then
             if not Element (Config).Supported then
                return False;
             end if;
@@ -1277,7 +1292,9 @@ package body GprConfig.Knowledge is
                Selected_Compiler, M);
 
          if M
-           and then Match (Element (Config).Targets_Filters, Selected)
+           and then Match (Element (Config).Targets_Filters,
+                           Element (Config).Negate_Targets,
+                           Selected)
          then
             if not Element (Config).Supported then
                Put_Line

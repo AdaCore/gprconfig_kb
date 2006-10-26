@@ -612,7 +612,7 @@ The filters themselves are of course defined through XML tags, and can
 be any of:
 
 @itemize @bullet
-@item @code{<compilers>}
+@item @code{<compilers negate="false">}
 
 This filter contains a list of @code{<compiler>} children. The
 @code{<compilers>} filter matches if any of its children match.
@@ -635,6 +635,9 @@ g++ 3.4.1:
 </configuration>
 @end smallexample
 
+If the attribute "negate" is "true", then the meaning of this filter is
+inverted, and it will match if none of its children matches.
+
 The format of the @code{<compiler>} is the following:
 @smallexample
    <compiler name="name" version="..." runtime="..." language="..." />
@@ -651,7 +654,7 @@ For instance, to check a GNAT compiler in the 5.x family, use:
    <compiler name="GNAT" version="5.\d+" />
 @end smallexample
 
-@item @code{<hosts>}
+@item @code{<hosts negate="false">}
 
 This filter contains a list of @code{<host>} children. It matches when
 any of its children matches. You can specificy only one @code{<hosts>}
@@ -660,6 +663,9 @@ The format of @code{<host>} is a node with a single mandatory attribute
 @code{"name"}, which is a regexp matched against the architecture on
 which @code{gprconfig} is running. The name of the architecture was
 computed by @code{configure} when @code{gprconfig} was build.
+
+If the "negate" attribute is "true", then the meaning of this filter is
+inverted, and it will match when none of its children matches.
 
 For instance, to active a chunk only if the compiler is running on an
 intel linux machine, use:
@@ -670,12 +676,15 @@ intel linux machine, use:
    </hosts>
 @end smallexample
 
-@item @code{<targets>}
+@item @code{<targets negate="false">}
 
 This filter contains a list of @code{<target>} children. It behaves
 exactly like @code{<hosts>}, but matches against the architecture
 targeted by the selected compilers. For instance, to activate a chunk
 only when the code is targeted for linux, use:
+
+If the "negate" attribute is "true", then the meaning of this filter is
+inverted, and it will match when none of its children matches.
 
 @smallexample
    <targets>
