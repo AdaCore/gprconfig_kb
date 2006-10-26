@@ -644,8 +644,8 @@ The name attribute must be specified, and will match one of the @code{<name>}
 attribute used in the @code{<compiler_description>} children.
 All other attributes are regular expressions, that are matched against
 the corresponding selected compilers. When an attribute is not specified,
-it will always match. For instance, to check a GNAT compiler in the 5.x
-family, use:
+it will always match. Matching is done in a case-insensitive manner.
+For instance, to check a GNAT compiler in the 5.x family, use:
 
 @smallexample
    <compiler name="GNAT" version="5.\d+" />

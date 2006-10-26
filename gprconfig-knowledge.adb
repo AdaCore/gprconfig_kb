@@ -1100,7 +1100,8 @@ package body GprConfig.Knowledge is
             Comp := First (Selected);
             while Has_Element (Comp) loop
                if Match
-                 (Element (Target), To_String (Element (Comp).Target))
+                 (Element (Target), To_String (Element (Comp).Target,
+                  Case_Insensitive))
                then
                   return True;
                end if;
