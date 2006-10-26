@@ -5,7 +5,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++" language="C++" />
+       <compiler name="G++" language="C\+\+" />
      </compilers>
      <config>
    package Naming is
@@ -17,7 +17,6 @@
       for Language_Kind            ("C++") use "file_based";
       for Compiler_Driver          ("C++") use "g++";
       for Compiler_Minimum_Options ("C++") use ("-c", "-x", "c++");
-      for Compiler_PIC_Option      ("C++") use ("-fPIC");
       for Dependency_File_Kind     ("C++") use "Makefile";
       for Dependency_Option        ("C++") use ("-Wp,-MD,");
       for Include_Path             ("C++") use "CPATH";
@@ -25,22 +24,20 @@
      </config>
    </configuration>
 
-   <!--  This setting partly overwrites the one above. In the
-         generated configuration file, both appears, but since this
-         one comes later, its attributes are used -->
+   <!--  Additional switches on some platforms -->
 
    <configuration>
      <compilers>
-       <compiler name="G++" language="C++" /> 
+       <compiler name="G++" language="C\+\+" /> 
      </compilers>
-     <targets>
+     <targets negate="true">
        <target name=".*LynxOS.*" />
        <target name=".*pentium-mingw.*" />
        <target name=".*tru64.*" />
      </targets>
      <config>
    package Language_Processing is
-      for Compiler_PIC_Option      ("C++") use ();
+      for Compiler_PIC_Option      ("C++") use ("-fPIC");
    end Language_Processing;
      </config>
    </configuration>
