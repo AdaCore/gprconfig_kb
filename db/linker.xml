@@ -1,0 +1,45 @@
+<?xml version="1.0" ?>
+<gprconfig>
+
+  <!--  This configuration shows how to link a multi language
+        application with GNAT and either GCC or G++ -->
+  <configuration>
+    <compilers>
+       <compiler name="GNAT" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC" />
+       <compiler name="G++" />
+    </compilers>
+    <config>
+   package Language_Processing is
+      for Default_Language use "Ada";
+      for Archive_Builder  use ("ar", "cr");
+      for Archive_Indexer  use ("ranlib");
+      for Archive_Suffix   use ".a";
+      for Library_Support  use "none";
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <!--  Linking on AIX -->
+  <configuration>
+    <hosts>
+      <host name=".*aix.*" />
+    </hosts>
+    <compilers>
+       <compiler name="GNAT" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC" />
+       <compiler name="G++" />
+    </compilers>
+    <config>
+   package Language_Processing is
+     for Library_Support  use "static_only";
+   end Language_Processing;
+    </config>
+  </configuration>
+
+
+</gprconfig>
