@@ -464,7 +464,7 @@ regexp:
       available when computing the target of, or course, the version.
 @item "$PATH" is the current directory, ie the one containing the executable
       found through @code{<executable>}.
-@item "$RUNTIME", "$RUNTIME_DIR", "$LANGUAGE"
+@item "$RUNTIME", "$RUNTIME_DIR", "$LANGUAGE", "$OUTPUT_DIR"
       This string will always be substituted by the empty string when the
       value of the external value is computed. These are special strings
       used when substituting text in configuration chunks.
@@ -599,8 +599,11 @@ the configuration file.
 When the @code{<configuration>} node has a single @code{<compilers>}
 child, special substrings are substituted in the chunk. These are the same as
 described for External Values in a previous section, ie "$RUNTIME",
-"$PATH", "$RUNTIME_DIR", "$VERSION", "$LANGUAGE", "$HOST" and "$TARGET". Their
+"$PATH", "$RUNTIME_DIR", "$OUTPUT_DIR", "$VERSION", "$LANGUAGE", "$HOST"
+and "$TARGET". Their
 values are those of the first compiler in @code{<compilers>} that matched.
+"$OUTPUT_DIR" is the directory in which the generated configuration file will
+be created.
 
 The filters themselves are of course defined through XML tags, and can
 be any of:

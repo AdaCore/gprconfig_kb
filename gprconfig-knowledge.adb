@@ -106,7 +106,8 @@ package body GprConfig.Knowledge is
 
    function Substitute_Special_Dirs
      (Str         : String;
-      Comp        : Compiler) return String;
+      Comp        : Compiler;
+      Output_Dir  : String) return String;
    --  Substitute the special "$..." names in Directory, as described in the
    --  <directory> tag
 
@@ -137,7 +138,8 @@ package body GprConfig.Knowledge is
    procedure Merge_Config
      (Packages          : in out String_Maps.Map;
       Selected_Compiler : Compiler;
-      Config            : String);
+      Config            : String;
+      Output_Dir        : String);
    --  Merge the contents of Config into Packages, so that each attributes ends
    --  up in the right package, and the packages are not duplicated.
    --  Selected_Compiler is the compiler that made the chunk match the filters.
@@ -446,7 +448,8 @@ package body GprConfig.Knowledge is
 
    function Substitute_Special_Dirs
      (Str         : String;
-      Comp        : Compiler) return String
+      Comp        : Compiler;
+      Output_Dir  : String) return String
    is
       Pos    : Natural := Str'First;
       Last   : Natural := Str'First;
@@ -509,6 +512,14 @@ package body GprConfig.Knowledge is
                Append (Result, Comp.Path);
                Last := Pos + 5;
                Pos  := Pos + 4;
+
+            elsif Pos + 10 <= Str'Last
+              and then Str (Pos .. Pos + 10) = "$OUTPUT_DIR"
+            then
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Output_Dir);
+               Last := Pos + 11;
+               Pos  := Pos + 10;
 
             end if;
          end if;
@@ -636,14 +647,15 @@ package body GprConfig.Knowledge is
       case Value.Typ is
          when Value_Constant =>
             Result := To_Unbounded_String
-              (Substitute_Special_Dirs (To_String (Value.Value), Comp));
+              (Substitute_Special_Dirs
+                 (To_String (Value.Value), Comp, Output_Dir => ""));
 
          when Value_Shell =>
             Ada.Environment_Variables.Set
               ("PATH", To_String (Comp.Path) & Path_Separator & Saved_Path);
             declare
                Command : constant String := Substitute_Special_Dirs
-                 (To_String (Value.Command), Comp);
+                 (To_String (Value.Command), Comp, Output_Dir => "");
                Args   : Argument_List_Access := Argument_String_To_List
                  (Command);
                Output : constant String := Get_Command_Output
@@ -674,7 +686,7 @@ package body GprConfig.Knowledge is
          when Value_Directory =>
             declare
                Search : constant String := Substitute_Special_Dirs
-                 (To_String (Value.Directory), Comp);
+                 (To_String (Value.Directory), Comp, Output_Dir => "");
             begin
                Parse_All_Dirs
                  (Processed_Value => Processed_Value,
@@ -1130,7 +1142,8 @@ package body GprConfig.Knowledge is
    procedure Merge_Config
      (Packages          : in out String_Maps.Map;
       Selected_Compiler : Compiler;
-      Config            : String)
+      Config            : String;
+      Output_Dir        : String)
    is
       procedure Add_Package
         (Name : String; Chunk : String; Prefix : String := "      ");
@@ -1141,7 +1154,7 @@ package body GprConfig.Knowledge is
       is
          C : constant String_Maps.Cursor := Find (Packages, Name);
          Replaced : constant String := Substitute_Special_Dirs
-           (Chunk, Selected_Compiler);
+           (Chunk, Selected_Compiler, Output_Dir);
       begin
          if Replaced /= "" then
             if Has_Element (C) then
@@ -1275,7 +1288,8 @@ package body GprConfig.Knowledge is
             Merge_Config
               (Packages,
                Selected_Compiler,
-               To_String (Element (Config).Config));
+               To_String (Element (Config).Config),
+               Output_Dir => Containing_Directory (Output_File));
          end if;
 
          Next (Config);
@@ -1294,6 +1308,10 @@ package body GprConfig.Knowledge is
          Next (C);
       end loop;
       Close (Output);
+
+   exception
+      when Ada.Directories.Name_Error =>
+         Put_Line ("Could not create the file " & Output_File);
    end Generate_Configuration;
 
    ------------------------

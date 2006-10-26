@@ -55,7 +55,7 @@
     <runtimes>
        <directory group="2" >../lib/gcc(-lib)?/$TARGET/.*/rts-(.*)/adainclude/</directory>
     </runtimes>
-    <extra_tool>create_ada_runtime_project</extra_tool>
+    <extra_tool>create_ada_runtime_project $RUNTIME_DIR -o $OUTPUT_DIR/ada_runtime.gpr</extra_tool>
     <target>
       <external regexp="[^\r\n]+">gcc -dumpmachine</external>
     </target>
