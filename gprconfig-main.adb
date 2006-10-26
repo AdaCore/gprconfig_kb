@@ -470,6 +470,9 @@ procedure GprConfig.Main is
             if Elem.Target = Null_Unbounded_String then
                Elem.Target := Element (First (Completion)).Target;
             end if;
+            if Elem.Extra_Tool = Null_Unbounded_String then
+               Elem.Extra_Tool := Element (First (Completion)).Extra_Tool;
+            end if;
          end if;
       end Update_Comps;
 

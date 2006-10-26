@@ -1263,12 +1263,13 @@ package body GprConfig.Knowledge is
       Selected    : Compiler_Lists.List;
       Output_File : String)
    is
-      Output   : File_Type;
       Config   : Configuration_Lists.Cursor := First (Base.Configurations);
-      Packages : String_Maps.Map;
-      C        : String_Maps.Cursor;
+      Output            : File_Type;
+      Packages          : String_Maps.Map;
+      C                 : String_Maps.Cursor;
       Selected_Compiler : Compiler;
       M                 : Boolean;
+      Comp              : Compiler_Lists.Cursor;
    begin
       while Has_Element (Config) loop
          Match (Element (Config).Compilers_Filters, Selected,
@@ -1308,6 +1309,32 @@ package body GprConfig.Knowledge is
          Next (C);
       end loop;
       Close (Output);
+
+      --  Launch external tools
+      Comp := First (Selected);
+      while Has_Element (Comp) loop
+         if Element (Comp).Extra_Tool /= Null_Unbounded_String
+           and then Element (Comp).Extra_Tool /= ""
+         then
+            declare
+               Command : constant String := Substitute_Special_Dirs
+                 (Str        => To_String (Element (Comp).Extra_Tool),
+                  Comp       => Element (Comp),
+                  Output_Dir => Containing_Directory (Output_File));
+               Args : Argument_List_Access := Argument_String_To_List
+                 (Command);
+               Status  : Integer;
+               pragma Unreferenced (Status);
+            begin
+               Put_Line ("Executing " & Command);
+               Status := Spawn
+                 (Args (Args'First).all, Args (Args'First + 1 .. Args'Last));
+               GNAT.Strings.Free (Args);
+            end;
+         end if;
+
+         Next (Comp);
+      end loop;
 
    exception
       when Ada.Directories.Name_Error =>

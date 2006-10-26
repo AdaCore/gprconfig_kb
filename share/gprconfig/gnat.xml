@@ -19,7 +19,7 @@
       for Dot_Replacement use "-";
    end Naming;
 
-   GNAT_Runtime_Dir := "$RUNTIME_DIR/../../..";
+   GNAT_Runtime_Dir := "$RUNTIME_DIR../../..";
 
    package Language_Processing is
       for Language_Kind            ("Ada") use "unit_based";

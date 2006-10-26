@@ -393,7 +393,10 @@ See "External values" below for valid children.
 
 This node contains the name of an extra tool to run if the compiler is
 selected by the user. Typically, it can be used to generate a user-visible
-project file for the user, like @file{ada_runtime.gpr}.
+project file for the user, like @file{ada_runtime.gpr}. This attribute is
+the full command line used to launch the tool, where special substrings like
+"$OUTPUT_DIR",... will be automatically substituted (see External Values 
+below for the full list of such special substrings)
 
 @end itemize
 
