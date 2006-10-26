@@ -199,7 +199,6 @@ package body GprConfig.Knowledge is
          Tmp := Tmp.Next;
       end  loop;
 
-
    exception
       when Constraint_Error =>
       Put_Line (Standard_Error, "Invalid group number for " & Node.Tag.all
@@ -1005,14 +1004,55 @@ package body GprConfig.Knowledge is
      (Packages : in out String_Maps.Map;
       Config   : String)
    is
-      First : Integer := Index (Config, "package ");
+      procedure Add_Package
+        (Name : String; Chunk : String; Prefix : String := "      ");
+      --  Add the chunk in the appropriate package
+
+      procedure Add_Package
+        (Name : String; Chunk : String; Prefix : String := "      ")
+      is
+         C : constant String_Maps.Cursor := Find (Packages, Name);
+      begin
+         if Chunk /= "" then
+            if Has_Element (C) then
+               Replace_Element
+                 (Packages,
+                  C,
+                  Element (C) & ASCII.LF & Prefix
+                  & To_Unbounded_String (Chunk));
+            else
+               Insert
+                 (Packages,
+                  Name, Prefix & To_Unbounded_String (Chunk));
+            end if;
+         end if;
+      end Add_Package;
+
+      First : Integer := Config'First;
       Pkg_Name_First, Pkg_Name_Last : Integer;
       Pkg_Content_First : Integer;
       Last  : Integer;
-      C     : String_Maps.Cursor;
+
    begin
-      while First /= 0 loop
-         Pkg_Name_First := First + 8;
+      while First /= 0 and then First <= Config'Last loop
+         --  Do we have a toplevel attribute ?
+         Skip_Spaces (Config, First);
+         Pkg_Name_First := Index (Config (First .. Config'Last), "package ");
+         if Pkg_Name_First = 0 then
+            Pkg_Name_First := Config'Last + 1;
+         end if;
+
+         Last := Pkg_Name_First - 1;
+         Skip_Spaces_Backward (Config, Last);
+         Add_Package
+           (Name   => "",
+            Chunk  => Config (First .. Last),
+            Prefix => "   ");
+
+         exit when Pkg_Name_First > Config'Last;
+
+         --  Parse the current package
+         Pkg_Name_First := Pkg_Name_First + 8;  --  skip "package "
          Skip_Spaces (Config, Pkg_Name_First);
 
          Pkg_Name_Last := Pkg_Name_First + 1;
@@ -1031,27 +1071,18 @@ package body GprConfig.Knowledge is
          Last := Index (Config (Pkg_Content_First .. Config'Last),
                         "end " & Config (Pkg_Name_First .. Pkg_Name_Last - 1));
          if Last /= 0 then
-            Last := Last - 1;
-            Skip_Spaces_Backward (Config, Last);
+            First := Last - 1;
+            Skip_Spaces_Backward (Config, First);
+            Add_Package
+              (Name  => Config (Pkg_Name_First .. Pkg_Name_Last - 1),
+               Chunk => Config (Pkg_Content_First .. First));
 
-            C := Find (Packages, Config (Pkg_Name_First .. Pkg_Name_Last - 1));
-            if Has_Element (C) then
-               Replace_Element
-                 (Packages,
-                  C,
-                  Element (C) & ASCII.LF & "      " & To_Unbounded_String
-                    (Config (Pkg_Content_First .. Last)));
-
-            else
-               Insert
-                 (Packages,
-                  Config (Pkg_Name_First .. Pkg_Name_Last - 1),
-                  "      " &
-                  To_Unbounded_String (Config (Pkg_Content_First .. Last)));
-            end if;
+            while Last <= Config'Last and then Config (Last) /= ';' loop
+               Last := Last + 1;
+            end loop;
+            Last := Last + 1;
          end if;
-
-         First := Index (Config (First + 5 .. Config'Last), "package ");
+         First := Last;
       end loop;
    end Merge_Config;
 
@@ -1113,9 +1144,13 @@ package body GprConfig.Knowledge is
       Create (Output, Out_File, Output_File);
       C := First (Packages);
       while Has_Element (C) loop
-         Put_Line (Output, "   package " & Key (C) & " is");
+         if Key (C) /= "" then
+            Put_Line (Output, "   package " & Key (C) & " is");
+         end if;
          Put_Line (Output, To_String (Element (C)));
-         Put_Line (Output, "   end " & Key (C) & ";");
+         if Key (C) /= "" then
+            Put_Line (Output, "   end " & Key (C) & ";");
+         end if;
          Next (C);
       end loop;
       Close (Output);
