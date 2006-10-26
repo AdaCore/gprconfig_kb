@@ -23,9 +23,22 @@ package body GprConfig.Knowledge is
    package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
      (String, Unbounded_String, Ada.Strings.Hash_Case_Insensitive, "=");
 
+   type External_Value_Item is record
+      Value          : Unbounded_String;
+      Extracted_From : Unbounded_String;
+   end record;
+   --  Value is the actual value of the <external_value> node.
+   --  Extracted_From will either be set to Value itself, or when the node is
+   --  a <directory node> to the full directory, before the regexp match.
+   --  When the value comes from a <shell> node, Extracted_From is set to the
+   --  full output of the shell command.
+
+   package External_Value_Lists is new Ada.Containers.Doubly_Linked_Lists
+     (External_Value_Item);
+
    use Compiler_Lists, Compiler_Description_Maps, String_Sets;
    use Configuration_Lists, Compilers_Filter_Lists, String_Maps;
-   use Compiler_Filter_Lists;
+   use Compiler_Filter_Lists, External_Value_Lists;
 
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
@@ -57,14 +70,20 @@ package body GprConfig.Knowledge is
    --  If Name is specified, then only compilers with that given name are
    --  searched for.
 
-   function Get_Unfiltered_External_Value
-     (Value  : External_Value;
-      Path   : String;
-      Target : String) return String;
+   procedure Get_External_Value
+     (Value            : External_Value;
+      Comp             : Compiler;
+      Split_Into_Words : Boolean := True;
+      Processed_Value  : out External_Value_Lists.List);
    --  Computes the value of Value, depending on its type. When an external
    --  command needs to be executed, Path is put first on the PATH environment
    --  variable.
-   --  Raises Ignore_Compiler if the value doesn't match its required regexp.
+   --  Raises Ignore_Compiler if the value doesn't match its <must_have>
+   --  regexp.
+   --  The <filter> node is also taken into account.
+   --  If Split_Into_Words is true, then the value read from <shell> or as a
+   --  constant string is further assumed to be a comma-separated or space-
+   --  separated string, and split.
 
    procedure Get_Words
      (Words  : String;
@@ -77,18 +96,13 @@ package body GprConfig.Knowledge is
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
-      Path       : String;
-      Target     : External_Value;
       Directory  : String;
-      Version    : External_Value;
-      Languages  : External_Value;
-      Runtimes   : External_Value;
-      Extra_Tool : Unbounded_String);
+      Descr      : Compiler_Description);
    --  For each language/runtime parsed in Languages/Runtimes, create a new
    --  compiler in the list.
 
    procedure Parse_All_Dirs
-     (Append_To         : in out Unbounded_String;
+     (Processed_Value  : out External_Value_Lists.List;
       Current_Dir       : String;
       Path_To_Check     : String;
       Regexp            : Pattern_Matcher;
@@ -99,29 +113,44 @@ package body GprConfig.Knowledge is
    --  parenthesis group is appended to Append_To (comma-separated)
 
    function Substitute_Special_Dirs
-     (Directory : String; Target : String) return String;
+     (Str         : String;
+      Comp        : Compiler) return String;
    --  Substitute the special "$..." names in Directory, as described in the
    --  <directory> tag
 
-   function Match
-     (Filter   : Compilers_Filter_Lists.List;
-      Selected : Compiler_Lists.List) return Boolean;
-   function Match
-     (Filter   : Compilers_Filter;
-      Selected : Compiler_Lists.List) return Boolean;
-   function Match
-     (Filter   : Compiler_Filter;
-      Selected : Compiler_Lists.List) return Boolean;
+   procedure Match
+     (Filter            : Compilers_Filter_Lists.List;
+      Selected          : Compiler_Lists.List;
+      Matching_Compiler : out Compiler;
+      Matched           : out Boolean);
+   procedure Match
+     (Filter            : Compilers_Filter;
+      Selected          : Compiler_Lists.List;
+      Matching_Compiler : out Compiler;
+      Matched           : out Boolean);
+   procedure Match
+     (Filter            : Compiler_Filter;
+      Selected          : Compiler_Lists.List;
+      Matching_Compiler : out Compiler;
+      Matched           : out Boolean);
+   --  Check whether Filter matches (and set Matched to the result).
+   --  Matching_Compiler is set if there was a single <compilers> node, and is
+   --  to set the first compiler that matched in that node
+
    function Match
      (Target_Filter : String_Sets.Set;
       Selected      : Compiler_Lists.List) return Boolean;
    --  Return True if Filter matches the list of selected configurations
 
    procedure Merge_Config
-     (Packages : in out String_Maps.Map;
-      Config   : String);
+     (Packages          : in out String_Maps.Map;
+      Selected_Compiler : Compiler;
+      Config            : String);
    --  Merge the contents of Config into Packages, so that each attributes ends
    --  up in the right package, and the packages are not duplicated.
+   --  Selected_Compiler is the compiler that made the chunk match the filters.
+   --  If there were several <compilers> filter, No_Compiler should be passed
+   --  in argument.
 
    procedure Skip_Spaces (Str : String; Index : in out Integer);
    --  Move Index from its current position to the next non-whitespace
@@ -424,32 +453,77 @@ package body GprConfig.Knowledge is
    -----------------------------
 
    function Substitute_Special_Dirs
-     (Directory : String; Target : String) return String
+     (Str         : String;
+      Comp        : Compiler) return String
    is
-      Pos : Natural := Directory'First;
+      Pos    : Natural := Str'First;
+      Last   : Natural := Str'First;
+      Result : Unbounded_String;
    begin
-      while Pos <= Directory'Last loop
-         if Directory (Pos) = '$' then
-            if Pos + 4 <= Directory'Last
-              and then Directory (Pos .. Pos + 4) = "$HOST"
+      while Pos <= Str'Last loop
+         if Str (Pos) = '$' then
+            if Pos + 4 <= Str'Last
+              and then Str (Pos .. Pos + 4) = "$HOST"
             then
-               return Directory (Directory'First .. Pos - 1)
-                 & Sdefault.Hostname
-                 & Substitute_Special_Dirs
-                 (Directory (Pos + 5 .. Directory'Last), Target);
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Sdefault.Hostname);
+               Last := Pos + 5;
+               Pos  := Pos + 4;
 
-            elsif Pos + 6 <= Directory'Last
-              and then Directory (Pos .. Pos + 6) = "$TARGET"
+            elsif Pos + 6 <= Str'Last
+              and then Str (Pos .. Pos + 6) = "$TARGET"
             then
-               return Directory (Directory'First .. Pos - 1)
-                 & Target
-                 & Substitute_Special_Dirs
-                 (Directory (Pos + 7 .. Directory'Last), Target);
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Comp.Target);
+               Last := Pos + 7;
+               Pos  := Pos + 6;
+
+            elsif Pos + 11 <= Str'Last
+              and then Str (Pos .. Pos + 11) = "$RUNTIME_DIR"
+            then
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Comp.Runtime_Dir);
+               Last := Pos + 12;
+               Pos  := Pos + 11;
+
+            elsif Pos + 7 <= Str'Last
+              and then Str (Pos .. Pos + 7) = "$VERSION"
+            then
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Comp.Version);
+               Last := Pos + 8;
+               Pos  := Pos + 7;
+
+            elsif Pos + 8 <= Str'Last
+              and then Str (Pos .. Pos + 8) = "$LANGUAGE"
+            then
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Comp.Language);
+               Last := Pos + 9;
+               Pos  := Pos + 8;
+
+            elsif Pos + 7 <= Str'Last
+              and then Str (Pos .. Pos + 7) = "$RUNTIME"
+            then
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Comp.Runtime);
+               Last := Pos + 8;
+               Pos  := Pos + 7;
+
+            elsif Pos + 4 <= Str'Last
+              and then Str (Pos .. Pos + 4) = "$PATH"
+            then
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Comp.Path);
+               Last := Pos + 5;
+               Pos  := Pos + 4;
+
             end if;
          end if;
          Pos := Pos + 1;
       end loop;
-      return Directory;
+      Append (Result, Str (Last .. Str'Last));
+      return To_String (Result);
    end Substitute_Special_Dirs;
 
    --------------------
@@ -457,7 +531,7 @@ package body GprConfig.Knowledge is
    --------------------
 
    procedure Parse_All_Dirs
-     (Append_To         : in out Unbounded_String;
+     (Processed_Value  : out External_Value_Lists.List;
       Current_Dir       : String;
       Path_To_Check     : String;
       Regexp            : Pattern_Matcher;
@@ -473,10 +547,12 @@ package body GprConfig.Knowledge is
             --  We matched, so insert the relevant path
             Match (Regexp, Current_Dir, Matched);
             if Matched (Group) /= No_Match then
-               Append (Append_To, ",");
                Append
-                 (Append_To,
-                  Current_Dir (Matched (Group).First .. Matched (Group).Last));
+                 (Processed_Value,
+                  (Value => To_Unbounded_String
+                     (Current_Dir
+                        (Matched (Group).First .. Matched (Group).Last)),
+                   Extracted_From => To_Unbounded_String (Current_Dir)));
             end if;
          end;
 
@@ -499,14 +575,14 @@ package body GprConfig.Knowledge is
             then
                --  If there is such a subdir, keep checking
                Parse_All_Dirs
-                 (Append_To     => Append_To,
-                  Current_Dir   =>
+                 (Processed_Value => Processed_Value,
+                  Current_Dir     =>
                     Current_Dir & Directory_Separator
                       & Path_To_Check (First .. Last - 1),
-                  Path_To_Check =>
+                  Path_To_Check   =>
                     Path_To_Check (Last + 1 .. Path_To_Check'Last),
-                  Regexp        => Regexp,
-                  Group         => Group);
+                  Regexp          => Regexp,
+                  Group           => Group);
             end if;
 
          --  Else we have a regexp, check all files
@@ -528,12 +604,12 @@ package body GprConfig.Knowledge is
                     and then Match (File_Regexp, Simple_Name (File))
                   then
                      Parse_All_Dirs
-                       (Append_To     => Append_To,
-                        Current_Dir   => Full_Name (File),
-                        Path_To_Check =>
+                       (Processed_Value => Processed_Value,
+                        Current_Dir     => Full_Name (File),
+                        Path_To_Check   =>
                           Path_To_Check (Last + 1 .. Path_To_Check'Last),
-                        Regexp        => Regexp,
-                        Group         => Group);
+                        Regexp          => Regexp,
+                        Group           => Group);
                   end if;
                end loop;
             end;
@@ -541,29 +617,37 @@ package body GprConfig.Knowledge is
       end if;
    end Parse_All_Dirs;
 
-   -----------------------------------
-   -- Get_Unfiltered_External_Value --
-   -----------------------------------
+   ------------------------
+   -- Get_External_Value --
+   ------------------------
 
-   function Get_Unfiltered_External_Value
-     (Value  : External_Value;
-      Path   : String;
-      Target : String) return String
+   procedure Get_External_Value
+     (Value            : External_Value;
+      Comp             : Compiler;
+      Split_Into_Words : Boolean := True;
+      Processed_Value  : out External_Value_Lists.List)
    is
       Saved_Path : constant String := Ada.Environment_Variables.Value ("PATH");
       Status     : aliased Integer;
-      Result     : Unbounded_String;
+      Extracted_From : Unbounded_String;
+      Result         : Unbounded_String;
+      Split          : String_Sets.Set;
+      C              : String_Sets.Cursor;
    begin
+      Clear (Processed_Value);
       case Value.Typ is
          when Value_Constant =>
-            Result := Value.Value;
+            Result := To_Unbounded_String
+              (Substitute_Special_Dirs (To_String (Value.Value), Comp));
 
          when Value_Shell =>
             Ada.Environment_Variables.Set
-              ("PATH", Path & Path_Separator & Saved_Path);
+              ("PATH", To_String (Comp.Path) & Path_Separator & Saved_Path);
             declare
+               Command : constant String := Substitute_Special_Dirs
+                 (To_String (Value.Command), Comp);
                Args   : Argument_List_Access := Argument_String_To_List
-                 (To_String (Value.Command));
+                 (Command);
                Output : constant String := Get_Command_Output
                  (Command     => Args (Args'First).all,
                   Arguments   => Args (Args'First + 1 .. Args'Last),
@@ -579,25 +663,27 @@ package body GprConfig.Knowledge is
 
                Match (Regexp, Output, Matched);
                if Matched (Value.Group) /= No_Match then
+                  Extracted_From := To_Unbounded_String (Output);
                   Result := To_Unbounded_String
                     (Output (Matched (Value.Group).First ..
                              Matched (Value.Group).Last));
                else
-                  Result := Null_Unbounded_String;
+                  Extracted_From := Null_Unbounded_String;
+                  Result         := Null_Unbounded_String;
                end if;
             end;
 
          when Value_Directory =>
             declare
                Search : constant String := Substitute_Special_Dirs
-                 (To_String (Value.Directory), Target);
+                 (To_String (Value.Directory), Comp);
             begin
                Parse_All_Dirs
-                 (Append_To     => Result,
-                  Current_Dir   => Path,
-                  Path_To_Check => Search,
-                  Regexp        => Compile (Search),
-                  Group         => Value.Directory_Group);
+                 (Processed_Value => Processed_Value,
+                  Current_Dir     => To_String (Comp.Path),
+                  Path_To_Check   => Search,
+                  Regexp          => Compile (Search),
+                  Group           => Value.Directory_Group);
             end;
       end case;
 
@@ -608,8 +694,33 @@ package body GprConfig.Knowledge is
          raise Ignore_Compiler;
       end if;
 
-      return To_String (Result);
-   end Get_Unfiltered_External_Value;
+      case Value.Typ is
+         when Value_Directory =>
+            null;  --  already split
+
+         when Value_Shell | Value_Constant =>
+            if Split_Into_Words then
+               Get_Words (Words  => To_String (Result),
+                          Filter => Value.Filter,
+                          Map    => Split);
+               C := First (Split);
+               while Has_Element (C) loop
+                  Append
+                    (Processed_Value,
+                     External_Value_Item'
+                       (Value          => To_Unbounded_String (Element (C)),
+                        Extracted_From => Extracted_From));
+                  Next (C);
+               end loop;
+
+            else
+               Append
+                 (Processed_Value,
+                  External_Value_Item'
+                    (Value => Result, Extracted_From => Extracted_From));
+            end if;
+      end case;
+   end Get_External_Value;
 
    ---------------
    -- Get_Words --
@@ -663,72 +774,69 @@ package body GprConfig.Knowledge is
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
-      Path       : String;
-      Target     : External_Value;
       Directory  : String;
-      Version    : External_Value;
-      Languages  : External_Value;
-      Runtimes   : External_Value;
-      Extra_Tool : Unbounded_String)
+      Descr      : Compiler_Description)
    is
-      Unfiltered_Target    : constant String := Get_Unfiltered_External_Value
-        (Target, Directory, "");
-      Unfiltered_Version   : constant String := Get_Unfiltered_External_Value
-        (Version, Directory, Unfiltered_Target);
-      Unfiltered_Languages : constant String := Get_Unfiltered_External_Value
-        (Languages, Directory, Unfiltered_Target);
-      Unfiltered_Runtimes  : constant String := Get_Unfiltered_External_Value
-        (Runtimes, Directory, Unfiltered_Target);
-
-      Langs : String_Sets.Set;
-      Runs  : String_Sets.Set;
-      C     : String_Sets.Cursor;
-      C2    : String_Sets.Cursor;
+      Target    : External_Value_Lists.List;
+      Version   : External_Value_Lists.List;
+      Languages : External_Value_Lists.List;
+      Runtimes  : External_Value_Lists.List;
+      Comp      : Compiler;
+      C, C2     : External_Value_Lists.Cursor;
    begin
+      Comp.Name       := To_Unbounded_String (Name);
+      Comp.Path       := To_Unbounded_String (Directory);
+      Comp.Extra_Tool := Descr.Extra_Tool;
+
+      Get_External_Value
+        (Value            => Descr.Target,
+         Comp             => Comp,
+         Split_Into_Words => False,
+         Processed_Value  => Target);
+      if not Is_Empty (Target) then
+         Comp.Target := Element (First (Target)).Value;
+      end if;
+
+      Get_External_Value
+        (Value            => Descr.Version,
+         Comp             => Comp,
+         Split_Into_Words => False,
+         Processed_Value  => Version);
+
       --  If we can't find version, ignore this compiler
-      if Unfiltered_Version = "" then
+      if Is_Empty (Version) then
          raise Ignore_Compiler;
       end if;
 
-      Get_Words (Words  => Unfiltered_Languages,
-                 Filter => Languages.Filter,
-                 Map    => Langs);
-      Get_Words (Words  => Unfiltered_Runtimes,
-                 Filter => Runtimes.Filter,
-                 Map    => Runs);
+      Comp.Version := Element (First (Version)).Value;
 
-      C := First (Langs);
+      Get_External_Value
+        (Value            => Descr.Languages,
+         Comp             => Comp,
+         Split_Into_Words => True,
+         Processed_Value  => Languages);
+      Get_External_Value
+        (Value            => Descr.Runtimes,
+         Comp             => Comp,
+         Split_Into_Words => True,
+         Processed_Value  => Runtimes);
+
+      C := First (Languages);
       while Has_Element (C) loop
          declare
-            L : String := Element (C);
+            L : String := To_String (Element (C).Value);
          begin
             To_Mixed (L);
+            Comp.Language := To_Unbounded_String (L);
 
-            if Is_Empty (Runs) then
-               Append
-                 (Append_To,
-                  Compiler'
-                    (Name       => To_Unbounded_String (Name),
-                     Target     => To_Unbounded_String (Unfiltered_Target),
-                     Path       => To_Unbounded_String (Path),
-                     Version    => To_Unbounded_String (Unfiltered_Version),
-                     Language   => To_Unbounded_String (L),
-                     Runtime    => Null_Unbounded_String,
-                     Extra_Tool => Extra_Tool));
-
+            if Is_Empty (Runtimes) then
+               Append (Append_To, Comp);
             else
-               C2 := First (Runs);
+               C2 := First (Runtimes);
                while Has_Element (C2) loop
-                  Append
-                    (Append_To,
-                     Compiler'
-                       (Name       => To_Unbounded_String (Name),
-                        Path       => To_Unbounded_String (Path),
-                        Target     => To_Unbounded_String (Unfiltered_Target),
-                        Version    => To_Unbounded_String (Unfiltered_Version),
-                        Language   => To_Unbounded_String (L),
-                        Runtime    => To_Unbounded_String (Element (C2)),
-                        Extra_Tool => Extra_Tool));
+                  Comp.Runtime     := Element (C2).Value;
+                  Comp.Runtime_Dir := Element (C2).Extracted_From;
+                  Append (Append_To, Comp);
                   Next (C2);
                end loop;
             end if;
@@ -768,13 +876,8 @@ package body GprConfig.Knowledge is
                   For_Each_Language_Runtime
                     (Append_To  => Append_To,
                      Name       => Key (C),
-                     Path       => Directory,
                      Directory  => Directory,
-                     Target     => Element (C).Target,
-                     Version    => Element (C).Version,
-                     Languages  => Element (C).Languages,
-                     Runtimes   => Element (C).Runtimes,
-                     Extra_Tool => Element (C).Extra_Tool);
+                     Descr      => Element (C));
                end if;
             exception
                when Ada.Directories.Name_Error =>
@@ -873,28 +976,35 @@ package body GprConfig.Knowledge is
    -- Match --
    -----------
 
-   function Match
-     (Filter   : Compilers_Filter;
-      Selected : Compiler_Lists.List) return Boolean
+   procedure Match
+     (Filter            : Compilers_Filter;
+      Selected          : Compiler_Lists.List;
+      Matching_Compiler : out Compiler;
+      Matched           : out Boolean)
    is
       C : Compiler_Filter_Lists.Cursor := First (Filter.Compiler);
+      M : Boolean;
    begin
       while Has_Element (C) loop
-         if Match (Element (C), Selected) then
-            return True;
+         Match (Element (C), Selected, Matching_Compiler, M);
+         if M then
+            Matched := True;
+            return;
          end if;
          Next (C);
       end loop;
-      return False;
+      Matched := False;
    end Match;
 
    -----------
    -- Match --
    -----------
 
-   function Match
-     (Filter   : Compiler_Filter;
-      Selected : Compiler_Lists.List) return Boolean
+   procedure Match
+     (Filter            : Compiler_Filter;
+      Selected          : Compiler_Lists.List;
+      Matching_Compiler : out Compiler;
+      Matched           : out Boolean)
    is
       C    : Compiler_Lists.Cursor := First (Selected);
       Comp : Compiler;
@@ -916,30 +1026,42 @@ package body GprConfig.Knowledge is
                 (Compile (To_String (Filter.Language), Case_Insensitive),
                  To_String (Comp.Language)))
          then
-            return True;
+            Matching_Compiler := Comp;
+            Matched           := True;
+            return;
          end if;
          Next (C);
       end loop;
-      return False;
+      Matched := False;
    end Match;
 
    -----------
    -- Match --
    -----------
 
-   function Match
-     (Filter   : Compilers_Filter_Lists.List;
-      Selected : Compiler_Lists.List) return Boolean
+   procedure Match
+     (Filter            : Compilers_Filter_Lists.List;
+      Selected          : Compiler_Lists.List;
+      Matching_Compiler : out Compiler;
+      Matched           : out Boolean)
    is
+      use Ada.Containers;
       C : Compilers_Filter_Lists.Cursor := First (Filter);
+      M : Boolean;
    begin
       while Has_Element (C) loop
-         if not Match (Element (C), Selected) then
-            return False;
+         Match (Element (C), Selected, Matching_Compiler, M);
+         if not M then
+            Matched := False;
+            return;
          end if;
          Next (C);
       end loop;
-      return True;
+
+      if Length (Filter) > 1 then
+         Matching_Compiler := No_Compiler;
+      end if;
+      Matched := True;
    end Match;
 
    -----------
@@ -1001,8 +1123,9 @@ package body GprConfig.Knowledge is
    ------------------
 
    procedure Merge_Config
-     (Packages : in out String_Maps.Map;
-      Config   : String)
+     (Packages          : in out String_Maps.Map;
+      Selected_Compiler : Compiler;
+      Config            : String)
    is
       procedure Add_Package
         (Name : String; Chunk : String; Prefix : String := "      ");
@@ -1012,18 +1135,20 @@ package body GprConfig.Knowledge is
         (Name : String; Chunk : String; Prefix : String := "      ")
       is
          C : constant String_Maps.Cursor := Find (Packages, Name);
+         Replaced : constant String := Substitute_Special_Dirs
+           (Chunk, Selected_Compiler);
       begin
-         if Chunk /= "" then
+         if Replaced /= "" then
             if Has_Element (C) then
                Replace_Element
                  (Packages,
                   C,
                   Element (C) & ASCII.LF & Prefix
-                  & To_Unbounded_String (Chunk));
+                  & To_Unbounded_String (Replaced));
             else
                Insert
                  (Packages,
-                  Name, Prefix & To_Unbounded_String (Chunk));
+                  Name, Prefix & To_Unbounded_String (Replaced));
             end if;
          end if;
       end Add_Package;
@@ -1095,11 +1220,13 @@ package body GprConfig.Knowledge is
       Selected : Compiler_Lists.List) return Boolean
    is
       Config : Configuration_Lists.Cursor := First (Base.Configurations);
+      M      : Boolean;
+      Matching_Compiler : Compiler;
    begin
       while Has_Element (Config) loop
-         if Match (Element (Config).Compilers_Filters, Selected)
-           and then Match (Element (Config).Targets_Filters, Selected)
-         then
+         Match (Element (Config).Compilers_Filters, Selected,
+                Matching_Compiler, M);
+         if M and then Match (Element (Config).Targets_Filters, Selected) then
             if not Element (Config).Supported then
                return False;
             end if;
@@ -1122,9 +1249,14 @@ package body GprConfig.Knowledge is
       Config   : Configuration_Lists.Cursor := First (Base.Configurations);
       Packages : String_Maps.Map;
       C        : String_Maps.Cursor;
+      Selected_Compiler : Compiler;
+      M                 : Boolean;
    begin
       while Has_Element (Config) loop
-         if Match (Element (Config).Compilers_Filters, Selected)
+         Match (Element (Config).Compilers_Filters, Selected,
+               Selected_Compiler, M);
+
+         if M
            and then Match (Element (Config).Targets_Filters, Selected)
          then
             if not Element (Config).Supported then
@@ -1135,7 +1267,10 @@ package body GprConfig.Knowledge is
                return;
             end if;
 
-            Merge_Config (Packages, To_String (Element (Config).Config));
+            Merge_Config
+              (Packages,
+               Selected_Compiler,
+               To_String (Element (Config).Config));
          end if;
 
          Next (Config);

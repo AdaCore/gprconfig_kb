@@ -21,13 +21,14 @@ package GprConfig.Knowledge is
    --  Only information relevant to the current host is parsed.
 
    type Compiler is record
-      Name       : Ada.Strings.Unbounded.Unbounded_String;
-      Target     : Ada.Strings.Unbounded.Unbounded_String;
-      Path       : Ada.Strings.Unbounded.Unbounded_String;
-      Version    : Ada.Strings.Unbounded.Unbounded_String;
-      Runtime    : Ada.Strings.Unbounded.Unbounded_String;
-      Language   : Ada.Strings.Unbounded.Unbounded_String;
-      Extra_Tool : Ada.Strings.Unbounded.Unbounded_String;
+      Name        : Ada.Strings.Unbounded.Unbounded_String;
+      Target      : Ada.Strings.Unbounded.Unbounded_String;
+      Path        : Ada.Strings.Unbounded.Unbounded_String;
+      Version     : Ada.Strings.Unbounded.Unbounded_String;
+      Runtime     : Ada.Strings.Unbounded.Unbounded_String;
+      Runtime_Dir : Ada.Strings.Unbounded.Unbounded_String;
+      Language    : Ada.Strings.Unbounded.Unbounded_String;
+      Extra_Tool  : Ada.Strings.Unbounded.Unbounded_String;
    end record;
    No_Compiler : constant Compiler;
    --  Describes one of the compilers found on the PATH.
@@ -77,13 +78,14 @@ package GprConfig.Knowledge is
 
 private
    No_Compiler : constant Compiler :=
-     (Name       => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Target     => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Path       => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Version    => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Runtime    => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Language   => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Extra_Tool => Ada.Strings.Unbounded.Null_Unbounded_String);
+     (Name        => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Target      => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Runtime     => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Language    => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Extra_Tool  => Ada.Strings.Unbounded.Null_Unbounded_String);
 
    type External_Value_Type is (Value_Constant,
                                 Value_Shell,
@@ -104,6 +106,7 @@ private
             Directory_Group : Natural;
       end case;
    end record;
+
    Null_External_Value : constant External_Value :=
      (Typ        => Value_Constant,
       Filter     => Ada.Strings.Unbounded.Null_Unbounded_String,

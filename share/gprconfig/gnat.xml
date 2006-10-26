@@ -19,8 +19,9 @@
       for Dot_Replacement use "-";
    end Naming;
 
+   GNAT_Runtime_Dir := "$RUNTIME_DIR/../../..";
+
    package Language_Processing is
-      GNAT_Runtime_Dir := "$PATH/../lib/gcc/$TARGET/$VERSION/";
       for Language_Kind            ("Ada") use "unit_based";
       for Compiler_Driver          ("Ada") use "gcc";
       for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
