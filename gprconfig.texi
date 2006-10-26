@@ -192,6 +192,34 @@ XML description files.
 Prevents @code{gprconfig} from reading its default knowledge base. You should
 point to another directory with @code{-db directory}, or gprconfig will not be
 able to generate any configuration file.
+
+@item -config name,directory[,version[,language[,target[,runtime]]]]
+
+This parameter is used to preselect configurations.
+"name" should be one of the known compiler names (e.g. "GNAT", "GCC",...), the
+full list of which is visible when gprconfig is used interactively and you add
+a custom compiler. However, you can use an unknown name, but in this case you
+need to provide all the information yourself.
+
+"path" is the directory that contains the compiler executable, for instance
+@file{/usr/bin} (and not the installation prefix @file{/bin}).
+
+If "name" is a known compiler name, the remaining attributes will have defaults
+computed automatically by @code{gprconfig}. You can either specify them, or
+use an empty string to get the default value and specify a later parameter.
+
+@smallexample
+  gprconfig -config GNAT,/usr/bin       # automatic parameters
+  gprconfig -config GCC,/usr/bin,,C     # automatic version
+@end smallexample
+
+@item -batch
+
+If this parameter is specified, @code{gprconfig} doesn't go into its
+interactive compiler selection, but generates the output configuration file
+directly from the compilers selected with the @code{-config} command line
+switch.
+
 @end itemize
 
 @c ----------------------------------------------------------------------

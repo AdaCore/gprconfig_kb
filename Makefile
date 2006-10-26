@@ -16,7 +16,7 @@ gprconfig.pdf: gprconfig.texi
 
 test: all force
 	${RM} standard.gpr
-	./gprconfig -o standard.gpr
+	./gprconfig -o standard.gpr -config GNAT,/usr/local/gnat-5.05w/bin -batch
 	@cat standard.gpr
 
 force:

@@ -5,9 +5,8 @@
 --  This unit is responsible for parsing the gprconfig knowledge base.
 
 with Ada.Containers.Doubly_Linked_Lists;
+with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Hashed_Maps;
-with Ada.Containers.Indefinite_Hashed_Sets;
-with Ada.Strings.Hash;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;
 
@@ -75,6 +74,20 @@ package GprConfig.Knowledge is
    function TU (Str : String) return Ada.Strings.Unbounded.Unbounded_String;
    --  returns an unbounded string for Str (or Null_Unbounded_String if
    --  Str is the empty string)
+
+   package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
+     (String);
+
+   procedure Get_Words
+     (Words  : String;
+      Filter : Ada.Strings.Unbounded.Unbounded_String;
+      Map    : out String_Lists.List;
+      Allow_Empty_Elements : Boolean);
+   --  Return the list of words in Words. Splitting is done on special
+   --  characters, so as to be compatible with a list of languages or a list of
+   --  runtimes
+   --  If Allow_Empty_Elements is false, then empty strings are not stored in
+   --  the list.
 
 private
    No_Compiler : constant Compiler :=
@@ -146,13 +159,10 @@ private
 
    package Compilers_Filter_Lists is new Ada.Containers.Doubly_Linked_Lists
      (Compilers_Filter);
-   package String_Sets is new Ada.Containers.Indefinite_Hashed_Sets
-     (String, Ada.Strings.Hash, --  ??? On case-insensitive systems
-      "=");
 
    type Configuration is record
       Compilers_Filters : Compilers_Filter_Lists.List;
-      Targets_Filters   : String_Sets.Set;  --  these are regexps
+      Targets_Filters   : String_Lists.List;  --  these are regexps
       Config            : Ada.Strings.Unbounded.Unbounded_String;
 
       Supported         : Boolean;

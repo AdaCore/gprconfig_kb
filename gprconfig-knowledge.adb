@@ -36,9 +36,9 @@ package body GprConfig.Knowledge is
    package External_Value_Lists is new Ada.Containers.Doubly_Linked_Lists
      (External_Value_Item);
 
-   use Compiler_Lists, Compiler_Description_Maps, String_Sets;
+   use Compiler_Lists, Compiler_Description_Maps;
    use Configuration_Lists, Compilers_Filter_Lists, String_Maps;
-   use Compiler_Filter_Lists, External_Value_Lists;
+   use Compiler_Filter_Lists, External_Value_Lists, String_Lists;
 
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
@@ -85,14 +85,6 @@ package body GprConfig.Knowledge is
    --  constant string is further assumed to be a comma-separated or space-
    --  separated string, and split.
 
-   procedure Get_Words
-     (Words  : String;
-      Filter : Unbounded_String;
-      Map    : out String_Sets.Set);
-   --  Return the list of words in Words. Splitting is done on special
-   --  characters, so as to be compatible with a list of languages or a list of
-   --  runtimes
-
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
@@ -138,7 +130,7 @@ package body GprConfig.Knowledge is
    --  to set the first compiler that matched in that node
 
    function Match
-     (Target_Filter : String_Sets.Set;
+     (Target_Filter : String_Lists.List;
       Selected      : Compiler_Lists.List) return Boolean;
    --  Return True if Filter matches the list of selected configurations
 
@@ -334,8 +326,8 @@ package body GprConfig.Knowledge is
                N2 := N.Child;
                while N2 /= null loop
                   if N2.Tag.all = "target" then
-                     Include (Config.Targets_Filters,
-                              Get_Attribute (N2, "name", ""));
+                     Append (Config.Targets_Filters,
+                             Get_Attribute (N2, "name", ""));
                   else
                      Put_Line
                        (Standard_Error, "Unknown XML tag in " & File & ": "
@@ -580,7 +572,8 @@ package body GprConfig.Knowledge is
                Parse_All_Dirs
                  (Processed_Value => Processed_Value,
                   Current_Dir     =>
-                    Current_Dir & Directory_Separator
+                    Normalize_Pathname (Current_Dir, Resolve_Links => False)
+                    & Directory_Separator
                     & Path_To_Check (First .. Last - 1)
                     & Directory_Separator,
                   Path_To_Check   =>
@@ -636,8 +629,8 @@ package body GprConfig.Knowledge is
       Status     : aliased Integer;
       Extracted_From : Unbounded_String;
       Result         : Unbounded_String;
-      Split          : String_Sets.Set;
-      C              : String_Sets.Cursor;
+      Split          : String_Lists.List;
+      C              : String_Lists.Cursor;
    begin
       Clear (Processed_Value);
       case Value.Typ is
@@ -707,7 +700,8 @@ package body GprConfig.Knowledge is
             if Split_Into_Words then
                Get_Words (Words  => To_String (Result),
                           Filter => Value.Filter,
-                          Map    => Split);
+                          Map    => Split,
+                          Allow_Empty_Elements => False);
                C := First (Split);
                while Has_Element (C) loop
                   Append
@@ -734,25 +728,27 @@ package body GprConfig.Knowledge is
    procedure Get_Words
      (Words  : String;
       Filter : Unbounded_String;
-      Map    : out String_Sets.Set)
+      Map    : out String_Lists.List;
+      Allow_Empty_Elements : Boolean)
    is
       First      : Integer := Words'First;
       Last       : Integer;
-      Filter_Set : String_Sets.Set;
+      Filter_Set : String_Lists.List;
    begin
       if Filter /= Null_Unbounded_String then
-         Get_Words (To_String (Filter), Null_Unbounded_String, Filter_Set);
+         Get_Words (To_String (Filter), Null_Unbounded_String, Filter_Set,
+                    Allow_Empty_Elements => True);
       end if;
 
-      while First <= Words'Last loop
-         while First <= Words'Last
-           and then (Words (First) = ' '
-                     or else Words (First) = ',')
-         loop
-            First := First + 1;
-         end loop;
+      while First <= Words'Last
+        and then (Words (First) = ' '
+                  or else Words (First) = ',')
+      loop
+         First := First + 1;
+      end loop;
 
-         if First <= Words'Last then
+      while First <= Words'Last loop
+         if Words (First) /= ' ' and then Words (First) /= ',' then
             Last := First + 1;
             while Last <= Words'Last
               and then Words (Last) /= ' '
@@ -760,12 +756,16 @@ package body GprConfig.Knowledge is
             loop
                Last := Last + 1;
             end loop;
+         else
+            Last := First;
+         end if;
 
-            if Is_Empty (Filter_Set)
-              or else Contains (Filter_Set, Words (First .. Last - 1))
-            then
-               Include (Map, Words (First .. Last - 1));
-            end if;
+         if (Allow_Empty_Elements or else First <= Last - 1)
+           and then
+             (Is_Empty (Filter_Set)
+              or else Contains (Filter_Set, Words (First .. Last - 1)))
+         then
+            Append (Map, Words (First .. Last - 1));
          end if;
 
          First := Last + 1;
@@ -923,7 +923,7 @@ package body GprConfig.Knowledge is
      (Base      : Knowledge_Base;
       Compilers : out Compiler_Lists.List)
    is
-      Map : String_Sets.Set;
+      Map : String_Lists.List;
    begin
       if Ada.Environment_Variables.Exists ("PATH") then
          declare
@@ -943,7 +943,7 @@ package body GprConfig.Knowledge is
                --  twice. This is both more efficient and avoids duplicates in
                --  the final result list
                if not Contains (Map, Path (First .. Last - 1)) then
-                  Include (Map, Path (First .. Last - 1));
+                  Append (Map, Path (First .. Last - 1));
                   Find_Compilers_In_Dir
                     (Append_To => Compilers,
                      Base      => Base,
@@ -1074,10 +1074,10 @@ package body GprConfig.Knowledge is
    -----------
 
    function Match
-     (Target_Filter : String_Sets.Set;
+     (Target_Filter : String_Lists.List;
       Selected      : Compiler_Lists.List) return Boolean
    is
-      Target : String_Sets.Cursor := First (Target_Filter);
+      Target : String_Lists.Cursor := First (Target_Filter);
       Comp   : Compiler_Lists.Cursor;
    begin
       if Is_Empty (Target_Filter) then

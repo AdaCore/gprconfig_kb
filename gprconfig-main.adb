@@ -3,6 +3,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line;          use Ada.Command_Line;
+with Ada.Containers;            use Ada.Containers;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -46,6 +47,28 @@ procedure GprConfig.Main is
    procedure Enter_Custom_Target (Base : Knowledge_Base; Comp : out Compiler);
    --  Ask the user for a custom compiler
 
+   procedure Parse_Config_Parameter
+     (Custom_Comps : in out Compiler_Lists.List;
+      Config       : String);
+   --  Parse the -config parameter, and store the (partial) information found
+   --  there in Selected_Compilers
+
+   procedure Select_Compilers_Interactively
+     (Base               : Knowledge_Base;
+      Selected_Compilers : in out Compiler_Lists.List;
+      Custom_Comps       : in out Compiler_Lists.List);
+   --  Ask the user for compilers to be selected
+
+   procedure Complete_Command_Line_Compilers
+     (Base         : Knowledge_Base;
+      Custom_Comps : in out Compiler_Lists.List);
+   --  Complete missing information for the compilers specified on the command
+   --  line.
+
+   procedure Show_Command_Line_Config (Selected_Comps : Compiler_Lists.List);
+   --  Display the batch command line that would have the same effect as the
+   --  current selection of compilers.
+
    ----------
    -- Help --
    ----------
@@ -56,6 +79,13 @@ procedure GprConfig.Main is
       Put_Line ("           default is " & To_String (Output_File));
       Put_Line (" -db dir : Parse dir as an additional knowledge base");
       Put_Line (" -db-    : Do not load the standard knowledge base");
+      Put_Line (" -config name,path[,version[,language[,target[,runtime]]]]");
+      Put_Line ("           Preselect a compiler. When name is one of the"
+                & " names known to gprconfig,");
+      Put_Line ("           you do not need to provide any of the optional"
+                & " parameter, and can leave an");
+      Put_Line ("           empty string instead");
+      Put_Line (" -batch  : batch mode, no interactive compiler selection");
    end Help;
 
    ----------------------------
@@ -187,6 +217,17 @@ procedure GprConfig.Main is
          Comp.Runtime := TU (Line (Line'First .. Last));
       end if;
 
+      if Comp.Runtime /= Null_Unbounded_String then
+         Put
+           ("Runtime directory [" & To_String (Complete.Runtime_Dir) & "]: ");
+         Get_Line (Line, Last);
+         if Last = 0 then
+            Comp.Runtime_Dir := Complete.Runtime_Dir;
+         else
+            Comp.Runtime_Dir := TU (Line (Line'First .. Last));
+         end if;
+      end if;
+
       if Complete.Target = Null_Unbounded_String then
          Put ("Target [" & Sdefault.Hostname & "]: ");
       else
@@ -205,11 +246,275 @@ procedure GprConfig.Main is
       end if;
    end Enter_Custom_Target;
 
+   ----------------------------
+   -- Parse_Config_Parameter --
+   ----------------------------
+
+   procedure Parse_Config_Parameter
+     (Custom_Comps : in out Compiler_Lists.List;
+      Config       : String)
+   is
+      use String_Lists;
+      Map  : String_Lists.List;
+      C    : String_Lists.Cursor;
+      Comp : Compiler;
+   begin
+      Get_Words (Config, Filter => Null_Unbounded_String, Map => Map,
+                 Allow_Empty_Elements => True);
+      if Length (Map) < 2 then
+         return;  --  we need at least a name and a path
+      end if;
+
+      C := First (Map);
+      Comp.Name := TU (Element (C));
+      Next (C);
+      Comp.Path := TU (Element (C));
+
+      Next (C);
+      if Has_Element (C) then
+         Comp.Version := TU (Element (C));
+         Next (C);
+         if Has_Element (C) then
+            Comp.Language := TU (Element (C));
+            Next (C);
+            if Has_Element (C) then
+               Comp.Target := TU (Element (C));
+               Next (C);
+               if Has_Element (C) then
+                  Comp.Runtime := TU (Element (C));
+               end if;
+            end if;
+         end if;
+      end if;
+
+      Append (Custom_Comps, Comp);
+   end Parse_Config_Parameter;
+
+   ------------------------------------
+   -- Select_Compilers_Interactively --
+   ------------------------------------
+
+   procedure Select_Compilers_Interactively
+     (Base               : Knowledge_Base;
+      Selected_Compilers : in out Compiler_Lists.List;
+      Custom_Comps       : in out Compiler_Lists.List)
+   is
+      Compilers : Compiler_Lists.List;
+   begin
+      Find_Compilers_In_Path (Base, Compilers);
+
+      declare
+         Compilers_Count : constant Natural := Natural (Length (Compilers));
+         Selected : Boolean_Array  (1 .. Compilers_Count) := (others => False);
+         Selectable : Boolean_Array  (1 .. Compilers_Count) :=
+           (others => True);
+         Selected_Count  : Natural := 0;
+         Comps           : Compiler_Array (1 .. Compilers_Count);
+         Comp            : Compiler_Lists.Cursor := First (Compilers);
+         Index, Tmp      : Natural;
+         Choice          : Character;
+         Selected_Target : Unbounded_String;
+         Line            : String (1 .. 1024);
+      begin
+         for C in Comps'Range loop
+            Comps (C) := Element (Comp);
+            Next (Comp);
+         end loop;
+
+         loop
+            Put_Line ("--------------------------------------------------");
+            Put_Line
+              ("gprconfig has detected the following known compilers"
+               & " on your PATH:");
+            Index := 1;
+            while Index <= Comps'Last loop
+               if Selectable (Index) or Selected (Index) then
+                  Display_Compiler (Comps (Index), Selected (Index), Index);
+               end if;
+               Index := Index + 1;
+            end loop;
+
+            Comp := First (Custom_Comps);
+            while Has_Element (Comp) loop
+               Display_Compiler (Element (Comp), True, Index);
+               Index := Index + 1;
+               Next (Comp);
+            end loop;
+
+            Put_Line (" (o) Other compiler");
+            Put_Line (" (s) Generate configuration file");
+            Put ("Toggle selection for: ");
+            Get_Line (Line, Tmp);
+            if Tmp = 0 then
+               Choice := ASCII.NUL;
+            else
+               Choice := Line (Line'First);
+            end if;
+
+            if Choice = 'o' then
+               --  Update Selected_Target if needed
+               declare
+                  Comp : Compiler;
+               begin
+                  Enter_Custom_Target (Base, Comp);
+                  Append (Custom_Comps, Comp);
+
+                  Selected_Count := Selected_Count + 1;
+                  if Selected_Count = 1 then
+                     Selected_Target := Comp.Target;
+                  end if;
+               end;
+
+            elsif Choice = 's' then
+               exit;
+
+            else
+               --  Selected one of the compilers we found ?
+               Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
+
+               if Tmp in 1 .. Comps'Last then
+                  Selected (Tmp) := not Selected (Tmp);
+
+                  if Selected (Tmp) then
+                     Selected_Count := Selected_Count + 1;
+                     if Selected_Count = 1 then
+                        Selected_Target := Comps (Tmp).Target;
+                     end if;
+                  else
+                     Selected_Count := Selected_Count - 1;
+                  end if;
+
+                  --  Selected one of the custom compilers
+               elsif Tmp in Comps'Last + 1 .. Index - 1 then
+                  Selected_Count := Selected_Count - 1;
+                  Comp := First (Custom_Comps);
+                  Tmp := Tmp - Comps'Last;
+                  while Tmp > 0 and then Has_Element (Comp) loop
+                     Tmp := Tmp - 1;
+                     Next (Comp);
+                  end loop;
+                  Delete (Custom_Comps, Comp);
+
+               else
+                  --  Invalid choice
+                  null;
+               end if;
+
+               if Selected_Count = 0 then
+                  Selected_Target := Null_Unbounded_String;
+               end if;
+
+               --  Only keep those compilers that might be compatible with the
+               --  current selection. For instance, if we won't know how to
+               --  link sources compiled with A and sources compiled with B,
+               --  and A is selected, there is no point in showing B.
+               --
+               --  Only keep other compilers with the same target, since
+               --  otherwise linking makes no sense.
+
+               Put_Line
+                 ("Filtering the list to only show compatible compilers");
+               for C in Comps'Range loop
+                  if not Selected (C) then
+                     Selected_Compilers := Custom_Comps;
+                     To_List (Comps, Selected, Selected_Compilers);
+                     Append (Selected_Compilers, Comps (C));
+                     Selectable (C) :=
+                       (Selected_Count = 0
+                        or else Architecture_Equal
+                          (To_String (Selected_Target),
+                           To_String (Comps (C).Target)))
+                       and then Is_Supported_Config (Base, Selected_Compilers);
+                  end if;
+               end loop;
+            end if;
+         end loop;
+
+         Selected_Compilers := Custom_Comps;
+         To_List (Comps, Selected, Selected_Compilers);
+      end;
+   end Select_Compilers_Interactively;
+
+   -------------------------------------
+   -- Complete_Command_Line_Compilers --
+   -------------------------------------
+
+   procedure Complete_Command_Line_Compilers
+     (Base         : Knowledge_Base;
+      Custom_Comps : in out Compiler_Lists.List)
+   is
+      procedure Update_Comps (Elem : in out Compiler);
+      --  Update element with the appropriate info from the knowledge base
+
+      procedure Update_Comps (Elem : in out Compiler) is
+         Completion : Compiler_Lists.List;
+      begin
+         Find_Matching_Compilers
+           (Name      => To_String (Elem.Name),
+            Path      => To_String (Elem.Path),
+            Base      => Base,
+            Compilers => Completion);
+         if not Is_Empty (Completion) then
+            if Elem.Version = Null_Unbounded_String then
+               Elem.Version := Element (First (Completion)).Version;
+            end if;
+            if Elem.Language = Null_Unbounded_String then
+               Elem.Language := Element (First (Completion)).Language;
+            end if;
+            if Elem.Runtime = Null_Unbounded_String then
+               Elem.Runtime := Element (First (Completion)).Runtime;
+            end if;
+            if Elem.Runtime_Dir = Null_Unbounded_String then
+               Elem.Runtime_Dir := Element (First (Completion)).Runtime_Dir;
+            end if;
+            if Elem.Target = Null_Unbounded_String then
+               Elem.Target := Element (First (Completion)).Target;
+            end if;
+         end if;
+      end Update_Comps;
+
+      C : Compiler_Lists.Cursor := First (Custom_Comps);
+   begin
+      while Has_Element (C) loop
+         Update_Element (Custom_Comps, C, Update_Comps'Unrestricted_Access);
+         Next (C);
+      end loop;
+   end Complete_Command_Line_Compilers;
+
+   ------------------------------
+   -- Show_Command_Line_Config --
+   ------------------------------
+
+   procedure Show_Command_Line_Config (Selected_Comps : Compiler_Lists.List) is
+      C : Compiler_Lists.Cursor;
+   begin
+      if not Is_Empty (Selected_Comps) then
+         Put_Line ("You can regenerate the same config file in batch mode");
+         Put_Line (" with the following command line:");
+         New_Line;
+         Put ("gprconfig -batch");
+
+         C := First (Selected_Comps);
+         while Has_Element (C) loop
+            Put
+              (" -config " & To_String (Element (C).Name)
+               & "," & To_String (Element (C).Path)
+               & "," & To_String (Element (C).Version)
+               & "," & To_String (Element (C).Language)
+               & "," & To_String (Element (C).Target)
+               & "," & To_String (Element (C).Runtime));
+            Next (C);
+         end loop;
+         New_Line;
+      end if;
+   end Show_Command_Line_Config;
+
    Base               : Knowledge_Base;
-   Compilers          : Compiler_Lists.List;
    Selected_Compilers : Compiler_Lists.List;
+   Custom_Comps       : Compiler_Lists.List;
    Gprmake_Path : GNAT.OS_Lib.String_Access := Locate_Exec_On_Path (Gprmake);
    Load_Standard_Base : Boolean := True;
+   Batch              : Boolean := False;
 
 begin
    if Gprmake_Path /= null  then
@@ -222,7 +527,13 @@ begin
    Free (Gprmake_Path);
 
    loop
-      case Getopt ("o: db: h") is
+      case Getopt ("batch config: db: h: o:") is
+         when 'b' =>
+            Batch := True;
+
+         when 'c' =>
+            Parse_Config_Parameter (Custom_Comps, Parameter);
+
          when 'd' =>
             if Parameter = "-" then
                Load_Standard_Base := False;
@@ -243,139 +554,16 @@ begin
       Parse_Knowledge_Base (Base, Get_Database_Directory);
    end if;
 
-   Find_Compilers_In_Path (Base, Compilers);
+   Complete_Command_Line_Compilers (Base, Custom_Comps);
 
-   declare
-      Compilers_Count : constant Natural := Natural (Length (Compilers));
-      Selected    : Boolean_Array  (1 .. Compilers_Count) := (others => False);
-      Selectable  : Boolean_Array  (1 .. Compilers_Count) := (others => True);
-      Selected_Count  : Natural := 0;
-      Comps           : Compiler_Array (1 .. Compilers_Count);
-      Comp            : Compiler_Lists.Cursor := First (Compilers);
-      Custom_Comps    : Compiler_Lists.List;
-      Index, Tmp      : Natural;
-      Choice          : Character;
-      Selected_Target : Unbounded_String;
-      Line            : String (1 .. 1024);
-   begin
-      for C in Comps'Range loop
-         Comps (C) := Element (Comp);
-         Next (Comp);
-      end loop;
-
-      loop
-         Put_Line ("--------------------------------------------------");
-         Put_Line
-           ("gprconfig has detected the following known compilers"
-            & " on your PATH:");
-         Index := 1;
-         while Index <= Comps'Last loop
-            if Selectable (Index) or Selected (Index) then
-               Display_Compiler (Comps (Index), Selected (Index), Index);
-            end if;
-            Index := Index + 1;
-         end loop;
-
-         Comp := First (Custom_Comps);
-         while Has_Element (Comp) loop
-            Display_Compiler (Element (Comp), True, Index);
-            Index := Index + 1;
-            Next (Comp);
-         end loop;
-
-         Put_Line (" (o) Other compiler");
-         Put_Line (" (s) Generate configuration file");
-         Put ("Toggle selection for: ");
-         Get_Line (Line, Tmp);
-         if Tmp = 0 then
-            Choice := ASCII.NUL;
-         else
-            Choice := Line (Line'First);
-         end if;
-
-         if Choice = 'o' then
-            --  Update Selected_Target if needed
-            declare
-               Comp : Compiler;
-            begin
-               Enter_Custom_Target (Base, Comp);
-               Append (Custom_Comps, Comp);
-
-               Selected_Count := Selected_Count + 1;
-               if Selected_Count = 1 then
-                  Selected_Target := Comp.Target;
-               end if;
-            end;
-
-         elsif Choice = 's' then
-            exit;
-
-         else
-            --  Selected one of the compilers we found ?
-            Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
-
-            if Tmp in 1 .. Comps'Last then
-               Selected (Tmp) := not Selected (Tmp);
-
-               if Selected (Tmp) then
-                  Selected_Count := Selected_Count + 1;
-                  if Selected_Count = 1 then
-                     Selected_Target := Comps (Tmp).Target;
-                  end if;
-               else
-                  Selected_Count := Selected_Count - 1;
-               end if;
-
-            --  Selected one of the custom compilers
-            elsif Tmp in Comps'Last + 1 .. Index - 1 then
-               Selected_Count := Selected_Count - 1;
-               Comp := First (Custom_Comps);
-               Tmp := Tmp - Comps'Last;
-               while Tmp > 0 and then Has_Element (Comp) loop
-                  Tmp := Tmp - 1;
-                  Next (Comp);
-               end loop;
-               Delete (Custom_Comps, Comp);
-
-            else
-               --  Invalid choice
-               null;
-            end if;
-
-            if Selected_Count = 0 then
-               Selected_Target := Null_Unbounded_String;
-            end if;
-
-            --  Only keep those compilers that might be compatible with the
-            --  current selection. For instance, if we won't know how to link
-            --  sources compiled with A and sources compiled with B, and A is
-            --  selected, there is no point in showing B.
-            --
-            --  Only keep other compilers with the same target, since otherwise
-            --  linking makes no sense.
-
-            Put_Line ("Filtering the list to only show compatible compilers");
-            for C in Comps'Range loop
-               if not Selected (C) then
-                  Selected_Compilers := Custom_Comps;
-                  To_List (Comps, Selected, Selected_Compilers);
-                  Append (Selected_Compilers, Comps (C));
-                  Selectable (C) :=
-                    (Selected_Count = 0
-                     or else Architecture_Equal
-                       (To_String (Selected_Target),
-                        To_String (Comps (C).Target)))
-                    and then Is_Supported_Config (Base, Selected_Compilers);
-               end if;
-            end loop;
-         end if;
-      end loop;
-
+   if not Batch then
+      Select_Compilers_Interactively
+        (Base, Selected_Compilers, Custom_Comps);
+      Show_Command_Line_Config (Selected_Compilers);
+   else
       Selected_Compilers := Custom_Comps;
-      To_List (Comps, Selected, Selected_Compilers);
-   end;
+   end if;
 
-   Put_Line ("--------------- Generating output -----------");
    if Output_File /= Null_Unbounded_String then
       Generate_Configuration
         (Base, Selected_Compilers, To_String (Output_File));
