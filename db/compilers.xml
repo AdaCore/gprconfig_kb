@@ -18,7 +18,7 @@
       <filter>c,c++,fortran</filter>
     </languages>
     <target>
-      <external>gcc -dumpmachine</external>
+      <external regexp="(.*)\n" group="1">gcc -dumpmachine</external>
     </target>
   </compiler_description>
 
@@ -36,7 +36,7 @@
     </version>
     <languages>C</languages>
     <target>
-      <external>gcc -dumpmachine</external>
+      <external regexp="(.*)\n" group="1">gcc -dumpmachine</external>
     </target>
   </compiler_description>
 
@@ -57,7 +57,7 @@
     </runtimes>
     <extra_tool>create_ada_runtime_project</extra_tool>
     <target>
-      <external>gcc -dumpmachine</external>
+      <external regexp="(.*)\n" group="1">gcc -dumpmachine</external>
     </target>
   </compiler_description>
 
