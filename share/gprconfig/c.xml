@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<gprconfig>
+   <!--  This package provides the default standard options for a gcc
+         C compiler -->
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC" language="C" />
+     </compilers>
+     <config>
+   package Naming is
+      for Spec_Suffix ("C") use ".h";
+      for Body_Suffix ("C") use ".c";
+   end Naming;
+
+   package Language_Processing is
+      for Language_Kind            ("C") use "file_based";
+      for Compiler_Driver          ("C") use "gcc";
+      for Compiler_Minimum_Options ("C") use ("-c", "-x", "c");
+      for Compiler_PIC_Option      ("C") use ("-fPIC");
+      for Dependency_File_Kind     ("C") use "Makefile";
+      for Dependency_Option        ("C") use ("-Wp,-MD,");
+      for Include_Path             ("C") use "CPATH";
+   end Language_Processing;
+     </config>
+   </configuration>
+
+   <!--  This setting partly overwrites the one above. In the
+         generated configuration file, both appears, but since this
+         one comes later, its attributes are used -->
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC" language="C" /> 
+     </compilers>
+     <targets>
+       <target name=".*LynxOS.*" />
+       <target name=".*pentium-mingw.*" />
+       <target name=".*tru64.*" />
+     </targets>
+     <config>
+   package Language_Processing is
+      for Compiler_PIC_Option      ("C") use ();
+   end Language_Processing;
+     </config>
+   </configuration>
+
+</gprconfig>
