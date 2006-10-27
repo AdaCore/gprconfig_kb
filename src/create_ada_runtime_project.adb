@@ -30,12 +30,11 @@
 --  directory) and adalib (the object directory). It is "externally built". Its
 --  package Naming gives the mapping of the source file names to unit names.
 
---  The utility takes one argument, the path name of the adainclude directory
-
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Text_IO;             use Ada.Text_IO;
 
+with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.HTable;               use GNAT.HTable;
@@ -47,9 +46,6 @@ procedure Create_Ada_Runtime_Project is
 
    Project_File : Ada.Text_IO.File_Type;
    --  The project file being created
-
-   File_Name : constant String := "ada_runtime.gpr";
-   --  Its file name
 
    Adainclude : String_Access;
    --  The path name of the adainclude directory, given as argument of the
@@ -75,9 +71,13 @@ procedure Create_Ada_Runtime_Project is
    Success     : Boolean;
    Return_Code : Integer;
 
+   Output_File : String_Access := new String'("ada_runtime.gpr");
+   --  Name of the final project file being created
+
    Output_File_Name : constant String := "output.txt";
    Output           : Ada.Text_IO.File_Type;
-   --  The text file where the output of the compiler invocation is stored
+   --  The text file where the output of the compiler invocation is stored.
+   --  This is temporary output from gcc
 
    Line      : String (1 .. 1_000);
    Line_Last : Natural;
@@ -116,6 +116,9 @@ procedure Create_Ada_Runtime_Project is
    procedure Fail (S : String);
    --  Outputs S to Standard_Error, followed by a newline and then raises the
    --  exception Err.
+
+   procedure Help;
+   --  Display help on using this application
 
    -----------
    -- Equal --
@@ -187,15 +190,38 @@ procedure Create_Ada_Runtime_Project is
       end if;
    end Hash;
 
+   ----------
+   -- Help --
+   ----------
+
+   procedure Help is
+   begin
+      Put_Line (" -adainclude <dir>: Location of the adainclude directory");
+      Put_Line (" -o file:           Output file name");
+      Put_Line ("                    Default is " & Output_File.all);
+   end Help;
+
 --  Start of processing for Create_Ada_Runtime_Project
 
 begin
    --  The utility needs to be invoked with only one argument: the path name
    --  of the adainclude directory.
 
-   if Argument_Count /= 1 then
-      Fail ("one argument: the path of the adainclude directory");
-   end if;
+   loop
+      case Getopt ("adainclude: o: h") is
+         when 'a' =>
+            Free (Adainclude);
+            Adainclude := new String'(Parameter);
+         when 'o' =>
+            Free (Output_File);
+            Output_File := new String'(Parameter);
+         when 'h' =>
+            Help;
+            return;
+         when others =>
+            exit;
+      end case;
+   end loop;
 
    Gcc_Path := Locate_Exec_On_Path (Gcc);
 
@@ -204,8 +230,6 @@ begin
    end if;
 
    Get_Mapping;
-
-   Adainclude := new String'(Argument (1));
 
    --  Change the working directory to the adainclude directory
 
@@ -218,7 +242,7 @@ begin
 
    --  Create the project file in the parent directory of adainclude
 
-   Create (Project_File, Out_File, "../" & File_Name);
+   Create (Project_File, Out_File, Output_File.all);
 
    --  Put the first lines that are always the same
 
@@ -328,6 +352,10 @@ begin
    Delete_File (Output_File_Name, Success);
 
 exception
+   when Invalid_Switch | Invalid_Parameter =>
+      Put_Line ("Invalid switch: " & Full_Switch);
+      Help;
+
    when Err =>
       Set_Exit_Status (1);
 

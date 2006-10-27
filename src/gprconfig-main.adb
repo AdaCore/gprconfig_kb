@@ -485,9 +485,9 @@ procedure GprConfig.Main is
       C : Compiler_Lists.Cursor;
    begin
       if not Is_Empty (Selected_Comps) then
+         New_Line;
          Put_Line ("You can regenerate the same config file in batch mode");
          Put_Line (" with the following command line:");
-         New_Line;
          Put ("gprconfig -batch");
 
          C := First (Selected_Comps);
@@ -501,6 +501,7 @@ procedure GprConfig.Main is
                & "," & To_String (Element (C).Runtime));
             Next (C);
          end loop;
+         New_Line;
          New_Line;
       end if;
    end Show_Command_Line_Config;

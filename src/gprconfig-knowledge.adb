@@ -1387,6 +1387,7 @@ package body GprConfig.Knowledge is
                Status  : Integer;
                pragma Unreferenced (Status);
             begin
+               New_Line;
                Put_Line ("Executing " & Command);
                Status := Spawn
                  (Args (Args'First).all, Args (Args'First + 1 .. Args'Last));
