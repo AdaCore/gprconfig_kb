@@ -1,6 +1,23 @@
+INSTALL=@INSTALL@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+PREFIX=@PREFIX@
+CP=cp -p
+MKDIR=mkdir -p
+
 all: obj/gprmake_dummies.o force
 	gnatmake -Pgprconfig gprconfig-main
 	gnatmake -Pgprconfig create_ada_runtime_project gprmake gprbind gprlib
+
+install: all
+	${MKDIR} ${PREFIX}/bin
+	${MKDIR} ${PREFIX}/share/gpr
+	${MKDIR} ${PREFIX}/share/gprconfig
+	${INSTALL_PROGRAM} gprconfig ${PREFIX}/bin
+	${INSTALL_PROGRAM} gprmake ${PREFIX}/bin
+	${INSTALL_PROGRAM} gprbind ${PREFIX}/bin
+	${INSTALL_PROGRAM} gprlib ${PREFIX}/bin
+	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/bin
+	${CP} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
 
 obj/gprmake_dummies.o: src/gprmake_dummies.c
 	gcc -c -o $@ $<
@@ -15,7 +32,8 @@ clean: clean_doc
 	@${RM} standard_foo.gpr doc/gprconfig.pdf
 
 distclean: clean
-	${RM} config.log config.status src/gprconfig-sdefault.ads gnat.gpr
+	@${RM} config.log config.status src/gprconfig-sdefault.ads gnat.gpr
+	@${RM} Makefile
 
 doc: doc/gprconfig.pdf
 doc/gprconfig.pdf: doc/gprconfig.texi
