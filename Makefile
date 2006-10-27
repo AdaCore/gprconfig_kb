@@ -15,7 +15,7 @@ clean: clean_doc
 	@${RM} standard_foo.gpr doc/gprconfig.pdf
 
 distclean: clean
-	${RM} config.log config.status doc/sdefault.ads
+	${RM} config.log config.status src/gprconfig-sdefault.ads gnat.gpr
 
 doc: doc/gprconfig.pdf
 doc/gprconfig.pdf: doc/gprconfig.texi
