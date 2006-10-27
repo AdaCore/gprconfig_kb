@@ -8,6 +8,7 @@ with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
+with GNAT.Strings;
 with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
 
@@ -92,9 +93,10 @@ procedure GprConfig.Main is
    ----------------------------
 
    function Get_Database_Directory return String is
+      Prog_Dir : constant String := Get_Program_Directory;
       Suffix : constant String := "share" & Directory_Separator & "gprconfig";
    begin
-      return Get_Program_Directory & Suffix;
+      return Prog_Dir & Suffix;
    end Get_Database_Directory;
 
    ----------------------
@@ -506,9 +508,16 @@ procedure GprConfig.Main is
    Base               : Knowledge_Base;
    Selected_Compilers : Compiler_Lists.List;
    Custom_Comps       : Compiler_Lists.List;
-   Gprmake_Path : GNAT.OS_Lib.String_Access := Locate_Exec_On_Path (Gprmake);
    Load_Standard_Base : Boolean := True;
    Batch              : Boolean := False;
+
+   --  We need to add the executable suffix here, since on windows,
+   --  Locate_Exec_On_Path will also return directories with the name "gprmake"
+   --  ie the current directory when gprconfig is run from the current dir.
+   Exec_Suffix        : constant GNAT.Strings.String_Access :=
+     Get_Executable_Suffix;
+   Gprmake_Path : GNAT.OS_Lib.String_Access :=
+     Locate_Exec_On_Path (Gprmake & Exec_Suffix.all);
 
 begin
    if Gprmake_Path /= null  then

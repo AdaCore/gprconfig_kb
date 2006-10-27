@@ -168,6 +168,13 @@ package body GprConfig.Knowledge is
       Normalized : constant String := Normalize_Pathname
         (Command & Directory_Separator & "..", Resolve_Links => True);
    begin
+      if Is_Regular_File (Command & "src/gprconfig.ads") then
+         --  Special case for gprconfig developers
+         if Is_Directory (Command & "share") then
+            return Command;
+         end if;
+      end if;
+
       if Normalized (Normalized'Last) = Directory_Separator then
          return Normalized;
       else
@@ -1342,6 +1349,8 @@ package body GprConfig.Knowledge is
 
          Next (Config);
       end loop;
+
+      Put_Line ("Creating configuration file: " & Output_File);
 
       Create (Output, Out_File, Output_File);
       Put_Line (Output, "project " & Project_Name & " is");
