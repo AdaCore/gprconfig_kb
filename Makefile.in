@@ -40,10 +40,8 @@ doc/gprconfig.pdf: doc/gprconfig.texi
 	cd doc; echo x | texi2dvi -p gprconfig.texi
 	${MAKE} clean_doc
 
-test: all force
-	${RM} standard_foo.gpr
-	./gprconfig -o standard_foo.gpr -config GNAT,/usr/local/gnat-5.05w/bin -batch
-	@cat standard_foo.gpr
+tests: all force
+	cd tests; ./test.cmd
 
 force:
 
