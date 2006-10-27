@@ -67,7 +67,7 @@
     <name>GNAT</name>
     <executable>gnatmake</executable>
     <version>
-      <external regexp="GNATLS \S+ (\S+)" group="1">gnatls -v</external>
+      <external regexp="GNATLS.+?(\d\S+)" group="1">gnatls -v</external>
     </version>
     <languages>Ada</languages>
     <runtimes>
