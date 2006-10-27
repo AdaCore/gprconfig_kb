@@ -89,6 +89,12 @@ package GprConfig.Knowledge is
    --  If Allow_Empty_Elements is false, then empty strings are not stored in
    --  the list.
 
+   function Get_Program_Directory return String;
+   --  Get the directory in which the application is installed. For instance,
+   --  it would return /usr/local if the gprconfig executable is
+   --  /usr/local/bin/gprconfig.
+   --  The returned value always ends with a directory separator
+
 private
    No_Compiler : constant Compiler :=
      (Name        => Ada.Strings.Unbounded.Null_Unbounded_String,

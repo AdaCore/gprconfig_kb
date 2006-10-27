@@ -2,9 +2,7 @@
 --                   Copyright (C) 2006, AdaCore                            --
 ------------------------------------------------------------------------------
 
-with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
-with Ada.Directories;           use Ada.Directories;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Command_Line;         use GNAT.Command_Line;
@@ -78,7 +76,8 @@ procedure GprConfig.Main is
       Put_Line (" -o file : Name and directory of the output file");
       Put_Line ("           default is " & To_String (Output_File));
       Put_Line (" -db dir : Parse dir as an additional knowledge base");
-      Put_Line (" -db-    : Do not load the standard knowledge base");
+      Put_Line (" -db-    : Do not load the standard knowledge base from");
+      Put_Line ("          " & Get_Database_Directory);
       Put_Line (" -config name,path[,version[,language[,target[,runtime]]]]");
       Put_Line ("           Preselect a compiler. When name is one of the"
                 & " names known to gprconfig,");
@@ -93,17 +92,9 @@ procedure GprConfig.Main is
    ----------------------------
 
    function Get_Database_Directory return String is
-      Command : constant String :=
-        Containing_Directory (Ada.Command_Line.Command_Name);
-      Normalized : constant String :=
-        Normalize_Pathname (Command, Resolve_Links => True);
       Suffix : constant String := "share" & Directory_Separator & "gprconfig";
    begin
-      if Normalized (Normalized'Last) = Directory_Separator then
-         return Normalized & Suffix;
-      else
-         return Normalized & Directory_Separator & Suffix;
-      end if;
+      return Get_Program_Directory & Suffix;
    end Get_Database_Directory;
 
    ----------------------

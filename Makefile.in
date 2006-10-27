@@ -16,13 +16,14 @@ all: obj/gprmake_dummies.o force
 
 install: all
 	${MKDIR} ${PREFIX}/bin
+	${MKDIR} ${PREFIX}/libexec/gprmake
 	${MKDIR} ${PREFIX}/share/gpr
 	${MKDIR} ${PREFIX}/share/gprconfig
 	${INSTALL_PROGRAM} gprconfig ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprmake ${PREFIX}/bin
-	${INSTALL_PROGRAM} gprbind ${PREFIX}/bin
-	${INSTALL_PROGRAM} gprlib ${PREFIX}/bin
-	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/bin
+	${INSTALL_PROGRAM} gprbind ${PREFIX}/libexec/gprmake/
+	${INSTALL_PROGRAM} gprlib ${PREFIX}/libexec/gprmake/
+	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprmake/
 	${CP} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
 
 obj/gprmake_dummies.o: src/gprmake_dummies.c

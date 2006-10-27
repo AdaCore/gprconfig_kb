@@ -2,6 +2,7 @@
 --                   Copyright (C) 2006, AdaCore                            --
 ------------------------------------------------------------------------------
 
+with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
@@ -156,6 +157,23 @@ package body GprConfig.Knowledge is
 
    Exec_Suffix : constant GNAT.Strings.String_Access :=
       Get_Executable_Suffix;
+
+   ---------------------------
+   -- Get_Program_Directory --
+   ---------------------------
+
+   function Get_Program_Directory return String is
+      Command : constant String :=
+        Containing_Directory (Ada.Command_Line.Command_Name);
+      Normalized : constant String := Normalize_Pathname
+        (Command & Directory_Separator & "..", Resolve_Links => True);
+   begin
+      if Normalized (Normalized'Last) = Directory_Separator then
+         return Normalized;
+      else
+         return Normalized & Directory_Separator;
+      end if;
+   end Get_Program_Directory;
 
    --------
    -- TU --
@@ -530,6 +548,14 @@ package body GprConfig.Knowledge is
                Append (Result, Output_Dir);
                Last := Pos + 11;
                Pos  := Pos + 10;
+
+            elsif Pos + 16 <= Str'Last
+              and then Str (Pos .. Pos + 16) = "$GPRCONFIG_PREFIX"
+            then
+               Append (Result, Str (Last .. Pos - 1));
+               Append (Result, Get_Program_Directory);
+               Last := Pos + 17;
+               Pos  := Pos + 16;
 
             end if;
          end if;
