@@ -33,7 +33,7 @@
      <targets negate="true">
        <target name=".*LynxOS.*" />
        <target name=".*pentium-mingw.*" />
-       <target name=".*tru64.*" />
+       <target name=".*dec-osf.*" />
      </targets>
      <config>
    package Language_Processing is

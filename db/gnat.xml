@@ -7,10 +7,7 @@
         GNAT_Runtime_Dir and Toolchain_Version are currently incorrect -->
 
   <configuration>
-   <compilers>
-     <compiler name="GNAT" />
-   </compilers>
-
+   <compilers><compiler name="GNAT" /></compilers>
    <config>
    package Naming is
       for Spec_Suffix ("Ada") use ".ads";
@@ -25,7 +22,6 @@
       for Language_Kind            ("Ada") use "unit_based";
       for Compiler_Driver          ("Ada") use "gcc";
       for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
-      for Compiler_PIC_Option      ("Ada") use ("-fPIC");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
       for Mapping_Body_Suffix      ("Ada") use "%b";
@@ -52,6 +48,22 @@
           Gnat_Runtime_Dir &amp; "ada_runtime.gpr";
       for Binder_Driver         ("Ada") use "gprbind";
       for Toolchain_Version     ("Ada") use "GNAT $VERSION";
+   end Language_Processing;
+   </config>
+  </configuration>
+
+  <!--  Whether -fPIC is needed -->
+  <configuration>
+   <compilers><compiler name="GNAT" /></compilers>
+   <targets negate="true">
+      <target name=".*lynxos.*" />
+      <target name=".*mingw.*" />
+      <target name=".*dec-osf.*" />
+      <target name=".*vms.*" />
+   </targets>
+   <config>
+   package Language_Processing is
+      for Compiler_PIC_Option      ("Ada") use ("-fPIC");
    end Language_Processing;
    </config>
   </configuration>

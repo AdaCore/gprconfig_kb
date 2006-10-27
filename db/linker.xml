@@ -5,10 +5,6 @@
         application with GNAT and either GCC or G++ -->
   <configuration>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers>
-       <compiler name="GCC" />
-       <compiler name="G++" />
-    </compilers>
     <config>
    package Language_Processing is
       for Default_Language use "Ada";
@@ -21,20 +17,19 @@
 
   <!--  Systems with no support for libraries at all -->
   <configuration>
-    <hosts negate="true">
-       <host name=".*aix.*" />
-       <host name=".*darwin.*" />
-       <host name=".*hpux.*" />
-       <host name=".*linux.*" />
-       <host name=".*irix.*" />
-       <host name=".*sunos.*" />
-       <host name=".*solaris.*" />
-       <host name=".*lynxos.*" />
-       <host name=".*mingw.*" />
-       <host name=".*vms.*" />
-    </hosts>
+    <targets negate="true">
+       <target name=".*aix.*" />
+       <target name=".*darwin.*" />
+       <target name=".*hpux.*" />
+       <target name=".*linux.*" />
+       <target name=".*irix.*" />
+       <target name=".*sunos.*" />
+       <target name=".*solaris.*" />
+       <target name=".*lynxos.*" />
+       <target name=".*mingw.*" />
+       <target name=".*vms.*" />
+    </targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers><compiler name="GCC" /><compiler name="G++" />
     <config>
    package Language_Processing is
       for Library_Support  use "none";
@@ -44,31 +39,25 @@
 
   <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
-    <hosts>
-       <host name=".*aix.*" />
-       <host name=".*lynxos.*" />
-    </hosts>
+    <targets>
+       <target name=".*aix.*" />
+       <target name=".*lynxos.*" />
+    </targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers><compiler name="GCC" /><compiler name="G++" />
-    </compilers>
     <config>
-   package Language_Processing is
-     for Library_Support  use "static_only";
-     for Library_Builder  use "gprlib";  --  ??? Is this correct for AIX
-   end Language_Processing;
+    package Language_Processing is
+      for Library_Support  use "static_only";
+      for Library_Builder  use "gprlib";  --  ??? Is this correct for AIX
+    end Language_Processing;
     </config>
   </configuration>
 
   <!--  Darwin -->
   <configuration>
-    <hosts>
-       <host name=".*darwin.*" />
-    </hosts>
+    <targets>
+       <target name=".*darwin.*" />
+    </targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers>
-       <compiler name="GCC" />
-       <compiler name="G++" />
-    </compilers>
     <config>
    package Language_Processing is
       for Library_Support use "full";
@@ -86,11 +75,10 @@
 
   <!--  HPUX -->
   <configuration>
-    <hosts>
-       <host name=".*hpux.*" />
-    </hosts>
+    <targets>
+       <target name=".*hpux.*" />
+    </targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
     <config>
    package Language_Processing is
       for Library_Builder  use "gprlib";
@@ -109,12 +97,11 @@
 
   <!-- linux and Irix-->
   <configuration>
-    <hosts>
-       <host name=".*linux.*" />
-       <host name=".*irix.*" />
-    </hosts>
+    <targets>
+       <target name=".*linux.*" />
+       <target name=".*irix.*" />
+    </targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
     <config>
    package Language_Processing is
       for Library_Builder  use "gprlib";
@@ -134,9 +121,8 @@
 
   <!--  Solaris -->
   <configuration>
-    <hosts><host name=".*sunos.*" /><host name=".*solaris.*"/></hosts>
+    <targets><target name=".*sunos.*" /><target name=".*solaris.*"/></targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
     <config>
    package Language_Processing is
       for Library_Builder  use "gprlib";
@@ -157,9 +143,8 @@
 
   <!--  Windows -->
   <configuration>
-    <hosts><host name=".*mingw.*" /></hosts>
+    <targets><target name=".*mingw.*" /></targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
     <config>
    package Language_Processing is
       for Library_Builder  use "gprlib";
@@ -176,9 +161,8 @@
 
   <!--  VMS -->  
   <configuration>
-    <hosts><host name=".*vms.*" /></hosts>
+    <targets><target name=".*vms.*" /></targets>
     <compilers><compiler name="GNAT" /></compilers>
-    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
     <config>
    package Language_Processing is
       for Library_Builder  use "gprlib";
