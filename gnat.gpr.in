@@ -17,7 +17,7 @@ project GNAT is
    package Naming is
       for Body ("sdefault") use "gprmake_sdefault.adb";
       case Shared.OS is
-         when "standard" =>
+         when "standard" | "Windows_NT" =>
             for Body ("gprlib.build_shared_lib") use "gprlib-build_shared_lib-nosymbols.adb";
          when "vms" => 
             for Body ("gprlib.build_shared_lib") use "gprlib-build_shared_lib-vms.adb";
