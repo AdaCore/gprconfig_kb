@@ -3,7 +3,7 @@ project GNAT is
    for Source_Dirs use ("@GNAT_SOURCE_DIR@");
    for Object_Dir  use Shared'Object_Dir;
    for Exec_Dir    use Shared'Exec_Dir;
-   for Main use ("create_ada_runtime_project", "gprmake", "gprlib", "gprbind");
+   for Main use ("gprmake", "gprlib", "gprbind");
    for Source_List_File use "@GNAT_SOURCE_DIR@/MANIFEST.GPRMAKE";
 
    package Builder  renames Shared.Builder;

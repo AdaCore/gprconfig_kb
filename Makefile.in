@@ -11,8 +11,8 @@ GNATMAKE=${GNATMAKE} -XOS=vms
 endif
 
 all: obj/gprmake_dummies.o force
-	${GNATMAKE} -Pgprconfig gprconfig-main
-	${GNATMAKE} -Pgprconfig create_ada_runtime_project gprmake gprbind gprlib
+	${GNATMAKE} -Pgprconfig
+	${GNATMAKE} -Pgprconfig gprmake gprbind gprlib
 
 install: all
 	${MKDIR} ${PREFIX}/bin
