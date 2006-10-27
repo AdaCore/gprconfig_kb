@@ -453,8 +453,10 @@ node.
 If the contents of the node is a @code{<directory}> child, this
 indicates that @code{gprconfig} should find all the files matching the
 regular expression. Regexp is a path relative to the directory that contains
-the @code{<executable>} file. Special constructs can be specified in the
-regexp:
+the @code{<executable>} file, and should use unix directory separators
+(ie '/'), since the actual directory will be converted into this format
+before the match, for system independence of the knowledge base. Special
+constructs can be specified in the regexp:
 
 @itemize -
 @item "$HOST"  is replaced by the architecture of the host on which

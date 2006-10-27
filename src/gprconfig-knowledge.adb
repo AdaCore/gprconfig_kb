@@ -10,6 +10,7 @@ with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with Glib.XML;                  use Glib;
 with GNAT.Case_Util;            use GNAT.Case_Util;
+with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Expect;               use GNAT.Expect;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Regpat;               use GNAT.Regpat;
@@ -593,8 +594,9 @@ package body GprConfig.Knowledge is
          declare
             Matched : Match_Array (0 .. Group);
          begin
-            --  We matched, so insert the relevant path
-            Match (Regexp, Current_Dir, Matched);
+            --  We matched, so insert the relevant path. Convert the path to
+            --  unix format first, so that the regexp is system-independent
+            Match (Regexp, Format_Pathname (Current_Dir, UNIX), Matched);
             if Matched (Group) /= No_Match then
                Append
                  (Processed_Value,
@@ -1319,7 +1321,7 @@ package body GprConfig.Knowledge is
       Selected_Compiler : Compiler;
       M                 : Boolean;
       Comp              : Compiler_Lists.Cursor;
-      Project_Name      : String := Base_Name (Output_File);
+      Project_Name      : String := Ada.Directories.Base_Name (Output_File);
    begin
       To_Mixed (Project_Name);
 
