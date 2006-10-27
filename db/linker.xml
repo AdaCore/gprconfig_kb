@@ -4,9 +4,7 @@
   <!--  This configuration shows how to link a multi language
         application with GNAT and either GCC or G++ -->
   <configuration>
-    <compilers>
-       <compiler name="GNAT" />
-    </compilers>
+    <compilers><compiler name="GNAT" /></compilers>
     <compilers>
        <compiler name="GCC" />
        <compiler name="G++" />
@@ -15,31 +13,183 @@
    package Language_Processing is
       for Default_Language use "Ada";
       for Archive_Builder  use ("ar", "cr");
-      for Archive_Indexer  use ("ranlib");
+      for Archive_Indexer  use Language_Processing'Archive_Index &amp; ("ranlib");
       for Archive_Suffix   use ".a";
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <!--  Systems with no support for libraries at all -->
+  <configuration>
+    <hosts negate="true">
+       <host name=".*aix.*" />
+       <host name=".*darwin.*" />
+       <host name=".*hpux.*" />
+       <host name=".*linux.*" />
+       <host name=".*irix.*" />
+       <host name=".*sunos.*" />
+       <host name=".*solaris.*" />
+       <host name=".*lynxos.*" />
+       <host name=".*mingw.*" />
+       <host name=".*vms.*" />
+    </hosts>
+    <compilers><compiler name="GNAT" /></compilers>
+    <compilers><compiler name="GCC" /><compiler name="G++" />
+    <config>
+   package Language_Processing is
       for Library_Support  use "none";
    end Language_Processing;
     </config>
   </configuration>
 
-  <!--  Linking on AIX -->
+  <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
     <hosts>
-      <host name=".*aix.*" />
+       <host name=".*aix.*" />
+       <host name=".*lynxos.*" />
     </hosts>
-    <compilers>
-       <compiler name="GNAT" />
+    <compilers><compiler name="GNAT" /></compilers>
+    <compilers><compiler name="GCC" /><compiler name="G++" />
     </compilers>
+    <config>
+   package Language_Processing is
+     for Library_Support  use "static_only";
+     for Library_Builder  use "gprlib";  --  ??? Is this correct for AIX
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <!--  Darwin -->
+  <configuration>
+    <hosts>
+       <host name=".*darwin.*" />
+    </hosts>
+    <compilers><compiler name="GNAT" /></compilers>
     <compilers>
        <compiler name="GCC" />
        <compiler name="G++" />
     </compilers>
     <config>
    package Language_Processing is
-     for Library_Support  use "static_only";
+      for Library_Support use "full";
+      for Shared_Library_Prefix use "lib";
+      for Symbolic_Link_Supported use "true";
+      for Library_Major_Minor_Id_Supported use "true";
+
+      for Shared_Library_Suffix use ".dylib";
+      for Archive_Indexer use Language_Processing'Archive_Indexer &amp; ("-c");
+      for Shared_Library_Minimum_Options use
+            ("-dynamiclib", "-Wl,-flat_namespace", "-shared-libgcc");
    end Language_Processing;
     </config>
   </configuration>
 
+  <!--  HPUX -->
+  <configuration>
+    <hosts>
+       <host name=".*hpux.*" />
+    </hosts>
+    <compilers><compiler name="GNAT" /></compilers>
+    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
+    <config>
+   package Language_Processing is
+      for Library_Builder  use "gprlib";
+      for Library_Support  use "full";
+      for Shared_Library_Prefix use "lib";
+      for Symbolic_Link_Supported use "true";
+      for Library_Major_Minor_Id_Supported use "true";
+      for Shared_Library_Minimum_Options use ("-shared");
+      for Library_Version_Options use ("-Wl,-soname,");
 
+      for Shared_Library_Suffix use ".sl";
+      for Run_Path_Option  use ("-Wl,+b,");
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <!-- linux and Irix-->
+  <configuration>
+    <hosts>
+       <host name=".*linux.*" />
+       <host name=".*irix.*" />
+    </hosts>
+    <compilers><compiler name="GNAT" /></compilers>
+    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
+    <config>
+   package Language_Processing is
+      for Library_Builder  use "gprlib";
+      for Library_Support  use "full";
+      for Shared_Library_Prefix use "lib";
+      for Symbolic_Link_Supported use "true";
+      for Library_Major_Minor_Id_Supported use "true";
+      for Shared_Library_Minimum_Options use ("-shared");
+      for Library_Version_Options use ("-Wl,-soname,");
+
+      for Shared_Library_Suffix use ".so";
+      for Library_Auto_init_Supported use "true";
+      for Run_Path_Option  use ("-Wl,-rpath,");
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <!--  Solaris -->
+  <configuration>
+    <hosts><host name=".*sunos.*" /><host name=".*solaris.*"/></hosts>
+    <compilers><compiler name="GNAT" /></compilers>
+    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
+    <config>
+   package Language_Processing is
+      for Library_Builder  use "gprlib";
+      for Library_Support  use "full";
+      for Shared_Library_Prefix use "lib";
+      for Symbolic_Link_Supported use "true";
+      for Library_Major_Minor_Id_Supported use "true";
+      for Shared_Library_Minimum_Options use ("-shared");
+
+      for Library_Version_Options use ("-Wl,-h,");
+
+      for Shared_Library_Suffix use ".so";
+      for Library_Auto_init_Supported use "true";
+      for Run_Path_Option  use ("-Wl,-R,");
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <!--  Windows -->
+  <configuration>
+    <hosts><host name=".*mingw.*" /></hosts>
+    <compilers><compiler name="GNAT" /></compilers>
+    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
+    <config>
+   package Language_Processing is
+      for Library_Builder  use "gprlib";
+      for Library_Support  use "full";
+      for Shared_Library_Prefix use "";
+      for Symbolic_Link_Supported use "false";
+      for Library_Major_Minor_Id_Supported use "false";
+      for Shared_Library_Minimum_Options use ("-shared");
+      for Library_Version_Options use ("-Wl,-soname,");
+      for Shared_Library_Suffix use ".dll";
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <!--  VMS -->  
+  <configuration>
+    <hosts><host name=".*vms.*" /></hosts>
+    <compilers><compiler name="GNAT" /></compilers>
+    <compilers><compiler name="GCC" /><compiler name="G++" /></compilers>
+    <config>
+   package Language_Processing is
+      for Library_Builder  use "gprlib";
+      for Library_Support  use "full";
+      for Shared_Library_Prefix use "lib";
+      for Shared_Library_Suffix use ".exe";
+      for Symbolic_Link_Supported use "false";
+      for Library_Major_Minor_Id_Supported use "false";
+      for Shared_Library_Minimum_Options use ("-shared", "-shared-libgcc");
+      for Library_Auto_init_Supported use "true";
+   end Language_Processing;
+    </config>
+  </configuration>
 </gprconfig>
