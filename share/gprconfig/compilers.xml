@@ -61,7 +61,11 @@
   <!--   GNAT
     To find the list of supported runtimes, we check the contents of the
     directory. To be compatible with older versions of GNAT (3.16 for instance),
-    we also accept lib/gcc-lib as the directory that contains the runtime files
+    we also accept lib/gcc-lib as the directory that contains the runtime files.
+
+    Implementation note: we put two spaces after -adainclude $... in the external_tool,
+    because on windows the path will end with a '\', and this would act as a quote for
+    the following space.
   -->
   <compiler_description>
     <name>GNAT</name>
@@ -73,7 +77,7 @@
     <runtimes>
        <directory group="2" >../lib/gcc(-lib)?/$TARGET/.*/rts-(.*)/adainclude/</directory>
     </runtimes>
-    <extra_tool>$GPRCONFIG_PREFIXlibexec/gprmake/create_ada_runtime_project -adainclude $RUNTIME_DIR -o $OUTPUT_DIRada_runtime.gpr -mapping $GPRCONFIG_PREFIXshare/gprconfig/gnat_runtime.mapping</extra_tool>
+    <extra_tool>$GPRCONFIG_PREFIXlibexec/gprmake/create_ada_runtime_project -adainclude $RUNTIME_DIR  -o $OUTPUT_DIRada_runtime.gpr -mapping $GPRCONFIG_PREFIXshare/gprconfig/gnat_runtime.mapping</extra_tool>
     <target>
       <external regexp="[^\r\n]+">gcc -dumpmachine</external>
     </target>
