@@ -1,12 +1,18 @@
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 PREFIX=@PREFIX@
+HOST=@HOST@
 CP=cp -p
 MKDIR=mkdir -p
 
+GNATMAKE=gnatmake
+ifeq ($(strip $(filter-out %vms%,$(HOST))),)
+GNATMAKE=${GNATMAKE} -XOS=vms
+endif
+
 all: obj/gprmake_dummies.o force
-	gnatmake -Pgprconfig gprconfig-main
-	gnatmake -Pgprconfig create_ada_runtime_project gprmake gprbind gprlib
+	${GNATMAKE} -Pgprconfig gprconfig-main
+	${GNATMAKE} -Pgprconfig create_ada_runtime_project gprmake gprbind gprlib
 
 install: all
 	${MKDIR} ${PREFIX}/bin

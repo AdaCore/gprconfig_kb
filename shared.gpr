@@ -4,6 +4,9 @@ project Shared is
    for Object_Dir use "obj";
    for Exec_Dir use ".";
 
+   type OS_Type is ("standard", "vms");
+   OS : OS_Type := External ("OS", "standard");
+
    package Builder is
       for Executable ("gprconfig-main.adb") use "gprconfig";
       for Default_Switches ("Ada") use ("-m");
@@ -11,7 +14,7 @@ project Shared is
 
    package Compiler is
       for Default_Switches ("Ada") use ("-g", "-gnat05", "-gnatVa", "-gnaty", "-gnatg");
-      for Default_Switches ("Ada") use Compiler'Default_Switches("Ada") & ("-gnatwaCJe");
+      for Default_Switches ("Ada") use Compiler'Default_Switches("Ada") & ("-gnatwaCJ");
    end Compiler;
 
    package Binder is
