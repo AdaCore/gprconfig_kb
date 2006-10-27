@@ -1,0 +1,20 @@
+
+Building and Installing
+=======================
+
+Requirements:
+   - You need access to part of part of the GNAT sources.
+     These sources are either packaged directly with the source package
+     for gprconfig and gprmake (in a subdirectory called gnat/), or you
+     access them by some other means (direct access to the repository,
+     download of the GNAT source package,...)
+     In the last two cases, you can either create a local link called
+     "gnat" that points to the directory containing src/prj.ads, or
+     use the --with-gnat-source-dir=<dir> switch
+
+Compiling:
+   - Execute the usual commands:
+       ./configure
+       or  ./configure --with-gnat-source-dir=<dir>
+
+       make

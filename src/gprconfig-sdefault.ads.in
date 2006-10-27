@@ -1,4 +1,4 @@
-package Sdefault is
+package GprConfig.Sdefault is
    pragma Warnings (Off);
    Hostname           : constant String := "@HOST@";
-end Sdefault;
+end GprConfig.Sdefault;

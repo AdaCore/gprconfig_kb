@@ -11,7 +11,7 @@ with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GprConfig.Knowledge;       use GprConfig.Knowledge;
-with Sdefault;
+with GprConfig.Sdefault;
 
 procedure GprConfig.Main is
    Gprmake : constant String := "gprmake";

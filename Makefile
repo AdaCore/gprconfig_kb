@@ -1,5 +1,9 @@
-all:
-	gnatmake -Pgprconfig
+all: obj/gprmake_dummies.o force
+	gnatmake -Pgprconfig gprconfig-main
+	gnatmake -Pgprconfig create_ada_runtime_project gprmake gprbind gprlib
+
+obj/gprmake_dummies.o: src/gprmake_dummies.c
+	gcc -c -o $@ $<
 
 clean_doc:
 	@cd doc; ${RM} gprconfig.cp gprconfig.log gprconfig.ky gprconfig.toc
@@ -7,7 +11,7 @@ clean_doc:
 	@cd doc; ${RM} gprconfig.tp gprconfig.cps gprconfig.vr
 
 clean: clean_doc
-	gnat clean -q -Pgprconfig
+	gnat clean -q -r -Pgprconfig
 	@${RM} standard_foo.gpr doc/gprconfig.pdf
 
 distclean: clean

@@ -1,6 +1,8 @@
 AC_INIT(src/gprconfig.ads)
 AC_CANONICAL_SYSTEM
 HOST=$host
+AM_GNAT_SOURCES
 
 AC_SUBST(HOST)
-AC_OUTPUT(src/sdefault.ads)
+AC_SUBST(GNAT_SOURCE_DIR)
+AC_OUTPUT(src/gprconfig-sdefault.ads gnat.gpr)

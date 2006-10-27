@@ -1,0 +1,21 @@
+
+project Shared is
+   for Source_Dirs use ();
+   for Object_Dir use "obj";
+   for Exec_Dir use ".";
+
+   package Builder is
+      for Executable ("gprconfig-main.adb") use "gprconfig";
+      for Default_Switches ("Ada") use ("-m");
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("Ada") use ("-g", "-gnat05", "-gnatVa", "-gnaty", "-gnatg");
+      for Default_Switches ("Ada") use Compiler'Default_Switches("Ada") & ("-gnatwaCJe");
+   end Compiler;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-E");
+   end Binder;
+
+end Shared;

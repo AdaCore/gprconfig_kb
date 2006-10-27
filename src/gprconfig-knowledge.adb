@@ -13,7 +13,7 @@ with GNAT.Expect;               use GNAT.Expect;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Regpat;               use GNAT.Regpat;
 with GNAT.Strings;              use GNAT.Strings;
-with Sdefault;                  use Sdefault;
+with GprConfig.Sdefault;        use GprConfig.Sdefault;
 
 package body GprConfig.Knowledge is
 
