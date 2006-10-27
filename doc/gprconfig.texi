@@ -467,8 +467,10 @@ regexp:
       available when computing the target of, or course, the version.
 @item "$PATH" is the current directory, ie the one containing the executable
       found through @code{<executable>}.
-@item "$GPRCONFIG_PREFIX" is the directory in which the gprconfig executable
-      is found. This directory always ends with a directory separator.
+@item "$GPRCONFIG_PREFIX" is the directory in which gprconfig
+      was installed (e.g @file{"/usr/local"} if the executable is in
+      @file{"/usr/local/bin/gprconfig"}. This directory always ends with a
+      directory separator.
 @item "$RUNTIME", "$RUNTIME_DIR", "$LANGUAGE", "$OUTPUT_DIR"
       This string will always be substituted by the empty string when the
       value of the external value is computed. These are special strings
