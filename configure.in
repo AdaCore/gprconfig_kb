@@ -1,6 +1,6 @@
-AC_INIT(gprconfig.ads)
+AC_INIT(src/gprconfig.ads)
 AC_CANONICAL_SYSTEM
 HOST=$host
 
 AC_SUBST(HOST)
-AC_OUTPUT(sdefault.ads)
+AC_OUTPUT(src/sdefault.ads)

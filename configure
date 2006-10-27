@@ -271,7 +271,7 @@ PACKAGE_VERSION=
 PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
-ac_unique_file="gprconfig.ads"
+ac_unique_file="src/gprconfig.ads"
 ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os HOST LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
@@ -1330,7 +1330,7 @@ test -n "$target_alias" &&
 HOST=$host
 
 
-          ac_config_files="$ac_config_files sdefault.ads"
+          ac_config_files="$ac_config_files src/sdefault.ads"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -1881,7 +1881,7 @@ for ac_config_target in $ac_config_targets
 do
   case "$ac_config_target" in
   # Handling of arguments.
-  "sdefault.ads" ) CONFIG_FILES="$CONFIG_FILES sdefault.ads" ;;
+  "src/sdefault.ads" ) CONFIG_FILES="$CONFIG_FILES src/sdefault.ads" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;

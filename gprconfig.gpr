@@ -1,5 +1,8 @@
 project GprConfig is
    for Main use ("gprconfig-main.adb");
+   for Source_Dirs use ("src");
+   for Object_Dir use "obj";
+   for Exec_Dir use ".";
 
    package Builder is
       for Executable ("gprconfig-main.adb") use "gprconfig";

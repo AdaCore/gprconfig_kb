@@ -3,16 +3,16 @@ all:
 
 clean:
 	gnat clean -q -Pgprconfig
-	${RM} standard.gpr
+	${RM} standard_foo.gpr
 
 distclean: clean
-	${RM} config.log config.status sdefault.ads
+	${RM} config.log config.status doc/sdefault.ads
 
 gprconfig.pdf: gprconfig.texi
-	echo x | texi2dvi -p $<
-	${RM} gprconfig.cp gprconfig.log gprconfig.ky gprconfig.toc
-	${RM} gprconfig.aux gprconfig.fn gprconfig.pg
-	${RM} gprconfig.tp gprconfig.cps gprconfig.vr
+	cd doc; echo x | texi2dvi -p $<
+	cd doc; ${RM} gprconfig.cp gprconfig.log gprconfig.ky gprconfig.toc
+	cd doc; ${RM} gprconfig.aux gprconfig.fn gprconfig.pg
+	cd doc; ${RM} gprconfig.tp gprconfig.cps gprconfig.vr
 
 test: all force
 	${RM} standard_foo.gpr
