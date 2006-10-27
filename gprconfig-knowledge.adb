@@ -1286,7 +1286,10 @@ package body GprConfig.Knowledge is
       Selected_Compiler : Compiler;
       M                 : Boolean;
       Comp              : Compiler_Lists.Cursor;
+      Project_Name      : String := Base_Name (Output_File);
    begin
+      To_Mixed (Project_Name);
+
       while Has_Element (Config) loop
          Match (Element (Config).Compilers_Filters, Selected,
                Selected_Compiler, M);
@@ -1315,6 +1318,8 @@ package body GprConfig.Knowledge is
       end loop;
 
       Create (Output, Out_File, Output_File);
+      Put_Line (Output, "project " & Project_Name & " is");
+
       C := First (Packages);
       while Has_Element (C) loop
          if Key (C) /= "" then
@@ -1326,6 +1331,9 @@ package body GprConfig.Knowledge is
          end if;
          Next (C);
       end loop;
+
+      Put_Line (Output, "end " & Project_Name & ";");
+
       Close (Output);
 
       --  Launch external tools
