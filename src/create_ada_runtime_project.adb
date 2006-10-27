@@ -71,6 +71,9 @@ procedure Create_Ada_Runtime_Project is
    Success     : Boolean;
    Return_Code : Integer;
 
+   Mapping_File_Name : String_Access := new String'("gnat_runtime.mapping");
+   --  Location of the default mapping file.
+
    Output_File : String_Access := new String'("ada_runtime.gpr");
    --  Name of the final project file being created
 
@@ -109,9 +112,11 @@ procedure Create_Ada_Runtime_Project is
 
    function Hash is new GNAT.HTable.Hash (Header_Num);
 
-   procedure Get_Mapping;
-   --  Read file gnat_runtime.mapping to get the mapping of source file names
+   procedure Get_Mapping (Mapping_File : String);
+   --  Read file mapping file to get the mapping of source file names
    --  to unit names and populate hash table Mapping.
+   --  If the file doesn't exist, nothing is done, but
+   --  Create_Ada_Runtime_Project will execute more slowly
 
    procedure Fail (S : String);
    --  Outputs S to Standard_Error, followed by a newline and then raises the
@@ -148,13 +153,13 @@ procedure Create_Ada_Runtime_Project is
    -- Get_Mapping --
    -----------------
 
-   procedure Get_Mapping is
+   procedure Get_Mapping (Mapping_File : String) is
       File : File_Type;
       Line : String (1 .. 1_000);
       Last : Natural;
 
    begin
-      Open (File, In_File, "gnat_runtime.mapping");
+      Open (File, In_File, Mapping_File);
 
       while not End_Of_File (File) loop
          Get_Line (File, Line, Last);
@@ -197,7 +202,8 @@ procedure Create_Ada_Runtime_Project is
    procedure Help is
    begin
       Put_Line (" -adainclude <dir>: Location of the adainclude directory");
-      Put_Line (" -o file:           Output file name");
+      Put_Line (" -mapping <file>  : Location of the pre-built mapping file");
+      Put_Line (" -o <file>        : Output file name");
       Put_Line ("                    Default is " & Output_File.all);
    end Help;
 
@@ -208,10 +214,13 @@ begin
    --  of the adainclude directory.
 
    loop
-      case Getopt ("adainclude: o: h") is
+      case Getopt ("adainclude: o: mapping: h") is
          when 'a' =>
             Free (Adainclude);
             Adainclude := new String'(Parameter);
+         when 'm' =>
+            Free (Mapping_File_Name);
+            Mapping_File_Name := new String'(Parameter);
          when 'o' =>
             Free (Output_File);
             Output_File := new String'(Parameter);
@@ -229,7 +238,7 @@ begin
       Fail ("cannot find " & Gcc);
    end if;
 
-   Get_Mapping;
+   Get_Mapping (Mapping_File_Name.all);
 
    --  Change the working directory to the adainclude directory
 

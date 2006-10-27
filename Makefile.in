@@ -25,6 +25,7 @@ install: all
 	${INSTALL_PROGRAM} gprlib ${PREFIX}/libexec/gprmake/
 	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprmake/
 	${CP} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
+	${CP} share/gprconfig/gnat_runtime.mapping ${PREFIX}/share/gprconfig
 
 obj/gprmake_dummies.o: src/gprmake_dummies.c
 	gcc -c -o $@ $<
