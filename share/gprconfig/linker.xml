@@ -9,7 +9,7 @@
    package Language_Processing is
       for Default_Language use "Ada";
       for Archive_Builder  use ("ar", "cr");
-      for Archive_Indexer  use Language_Processing'Archive_Index &amp; ("ranlib");
+      for Archive_Indexer  use ("ranlib");
       for Archive_Suffix   use ".a";
    end Language_Processing;
     </config>
@@ -47,7 +47,7 @@
     <config>
     package Language_Processing is
       for Library_Support  use "static_only";
-      for Library_Builder  use "gprlib";  --  ??? Is this correct for AIX
+      for Library_Builder  use "gprlib";
     end Language_Processing;
     </config>
   </configuration>
