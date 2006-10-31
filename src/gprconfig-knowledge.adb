@@ -159,6 +159,19 @@ package body GprConfig.Knowledge is
    Exec_Suffix : constant GNAT.Strings.String_Access :=
       Get_Executable_Suffix;
 
+   -----------------------
+   -- Name_As_Directory --
+   -----------------------
+
+   function Name_As_Directory (Dir : String) return String is
+   begin
+      if Dir (Dir'Last) = Directory_Separator then
+         return Dir;
+      else
+         return Dir & Directory_Separator;
+      end if;
+   end Name_As_Directory;
+
    ---------------------------
    -- Get_Program_Directory --
    ---------------------------
@@ -513,7 +526,8 @@ package body GprConfig.Knowledge is
               and then Str (Pos .. Pos + 11) = "$RUNTIME_DIR"
             then
                Append (Result, Str (Last .. Pos - 1));
-               Append (Result, Comp.Runtime_Dir);
+               Append
+                 (Result, Name_As_Directory (To_String (Comp.Runtime_Dir)));
                Last := Pos + 12;
                Pos  := Pos + 11;
 
@@ -1346,7 +1360,8 @@ package body GprConfig.Knowledge is
               (Packages,
                Selected_Compiler,
                To_String (Element (Config).Config),
-               Output_Dir => Containing_Directory (Output_File));
+               Output_Dir => Name_As_Directory
+                 (Containing_Directory (Output_File)));
          end if;
 
          Next (Config);

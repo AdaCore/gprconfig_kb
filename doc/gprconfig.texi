@@ -477,6 +477,7 @@ constructs can be specified in the regexp:
       This string will always be substituted by the empty string when the
       value of the external value is computed. These are special strings
       used when substituting text in configuration chunks.
+      OUTPUT_DIR and RUNTIME_DIR always end with a directory separator.
 @item "regexp" can be any valid regular expression. This will only match
       a directory name, not a subdirectory
 @end itemize

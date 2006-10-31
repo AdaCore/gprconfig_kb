@@ -95,6 +95,9 @@ package GprConfig.Knowledge is
    --  /usr/local/bin/gprconfig.
    --  The returned value always ends with a directory separator
 
+   function Name_As_Directory (Dir : String) return String;
+   --  Ensure that Dir ends with a directory separator
+
 private
    No_Compiler : constant Compiler :=
      (Name        => Ada.Strings.Unbounded.Null_Unbounded_String,
