@@ -102,11 +102,14 @@ package body GprConfig.Knowledge is
       Current_Dir       : String;
       Path_To_Check     : String;
       Regexp            : Pattern_Matcher;
-      Group             : Natural);
+      Value_If_Match    : String;
+      Group             : Integer);
    --  Parse all subdirectories of Current_Dir for those that match
    --  Path_To_Check (see description of <directory>). When a match is found,
    --  the regexp is evaluated against the current directory, and the matching
-   --  parenthesis group is appended to Append_To (comma-separated)
+   --  parenthesis group is appended to Append_To (comma-separated).
+   --  If Group is -1, then Value_If_Match is used instead of the parenthesis
+   --  group.
 
    function Substitute_Special_Dirs
      (Str         : String;
@@ -248,8 +251,18 @@ package body GprConfig.Knowledge is
             External_Node :=
               (Typ             => Value_Directory,
                Directory       => To_Unbounded_String (Tmp.Value.all),
-               Directory_Group => Integer'Value
-                 (Get_Attribute (Tmp, "group", "0")));
+               Dir_If_Match    => Null_Unbounded_String,
+               Directory_Group => 0);
+            begin
+               External_Node.Directory_Group := Integer'Value
+                 (Get_Attribute (Tmp, "group", "0"));
+            exception
+               when Constraint_Error =>
+                  External_Node.Directory_Group := -1;
+                  External_Node.Dir_If_Match :=
+                    To_Unbounded_String (Get_Attribute (Tmp, "group", "0"));
+            end;
+
             Append (Value.Nodes, External_Node);
          elsif Tmp.Tag.all = "filter" then
             Value.Filter := To_Unbounded_String (Tmp.Value.all);
@@ -577,7 +590,8 @@ package body GprConfig.Knowledge is
       Current_Dir       : String;
       Path_To_Check     : String;
       Regexp            : Pattern_Matcher;
-      Group             : Natural)
+      Value_If_Match    : String;
+      Group             : Integer)
    is
       First : constant Integer := Path_To_Check'First;
       Last  : Integer;
@@ -586,21 +600,28 @@ package body GprConfig.Knowledge is
         or else Path_To_Check = "/"
         or else Path_To_Check = "" & Directory_Separator
       then
-         declare
-            Matched : Match_Array (0 .. Group);
-         begin
-            --  We matched, so insert the relevant path. Convert the path to
-            --  unix format first, so that the regexp is system-independent
-            Match (Regexp, Format_Pathname (Current_Dir, UNIX), Matched);
-            if Matched (Group) /= No_Match then
-               Append
-                 (Processed_Value,
-                  (Value => To_Unbounded_String
-                     (Current_Dir
-                        (Matched (Group).First .. Matched (Group).Last)),
-                   Extracted_From => To_Unbounded_String (Current_Dir)));
-            end if;
-         end;
+         if Group = -1 then
+            Append
+              (Processed_Value,
+               (Value => To_Unbounded_String (Value_If_Match),
+                Extracted_From => To_Unbounded_String (Current_Dir)));
+         else
+            declare
+               Matched : Match_Array (0 .. Group);
+            begin
+               --  We matched, so insert the relevant path. Convert the path to
+               --  unix format first, so that the regexp is system-independent
+               Match (Regexp, Format_Pathname (Current_Dir, UNIX), Matched);
+               if Matched (Group) /= No_Match then
+                  Append
+                    (Processed_Value,
+                     (Value => To_Unbounded_String
+                        (Current_Dir
+                           (Matched (Group).First .. Matched (Group).Last)),
+                      Extracted_From => To_Unbounded_String (Current_Dir)));
+               end if;
+            end;
+         end if;
 
       else
          Last := First + 1;
@@ -611,13 +632,21 @@ package body GprConfig.Knowledge is
             Last := Last + 1;
          end loop;
 
-         --  If we do not have a regexp
+         --  If we do not have a regexp.
+         --  ??? Should we ignore symbolic links (see commented code below),
+         --  since for instance for the GNAT runtime we could have an
+         --  "adainclude" link pointing to "rts-native/adainclude", and
+         --  therefore the runtime appears twice. Since it appears with
+         --  different names ("default" and "native"), we currently leave both
          if GNAT.Regpat.Quote (Path_To_Check (First .. Last - 1)) =
            Path_To_Check (First .. Last - 1)
          then
             if Ada.Directories.Exists
               (Current_Dir & Directory_Separator
                & Path_To_Check (First .. Last - 1))
+--                and then not Is_Symbolic_Link
+--                  (Current_Dir & Directory_Separator
+--                   & Path_To_Check (First .. Last - 1))
             then
                --  If there is such a subdir, keep checking
                Parse_All_Dirs
@@ -630,6 +659,7 @@ package body GprConfig.Knowledge is
                   Path_To_Check   =>
                     Path_To_Check (Last + 1 .. Path_To_Check'Last),
                   Regexp          => Regexp,
+                  Value_If_Match  => Value_If_Match,
                   Group           => Group);
             end if;
 
@@ -658,6 +688,7 @@ package body GprConfig.Knowledge is
                         Path_To_Check   =>
                           Path_To_Check (Last + 1 .. Path_To_Check'Last),
                         Regexp          => Regexp,
+                        Value_If_Match  => Value_If_Match,
                         Group           => Group);
                   end if;
                end loop;
@@ -741,6 +772,7 @@ package body GprConfig.Knowledge is
                      Current_Dir     => To_String (Comp.Path),
                      Path_To_Check   => Search,
                      Regexp          => Compile (Search),
+                     Value_If_Match  => To_String (Node.Dir_If_Match),
                      Group           => Node.Directory_Group);
                end;
          end case;

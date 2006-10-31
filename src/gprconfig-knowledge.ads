@@ -124,7 +124,8 @@ private
                Group           : Natural;
             when Value_Directory =>
                Directory       : Ada.Strings.Unbounded.Unbounded_String;
-               Directory_Group : Natural;
+               Directory_Group : Integer;
+               Dir_If_Match    : Ada.Strings.Unbounded.Unbounded_String;
          end case;
       end record;
 

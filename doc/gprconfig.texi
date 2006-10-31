@@ -487,7 +487,8 @@ constructs can be specified in the regexp:
 @end itemize
 
 The group attribute indicates which parenthesis group should be returned.
-It defaults to 0 which indicates the whole matched path.
+It defaults to 0 which indicates the whole matched path. If this attribute is
+not an integer, but a string, then it is the value returned.
 
 For instance, finding the list of supported runtimes for the GNAT compiler
 is done with:
@@ -495,8 +496,12 @@ is done with:
 @smallexample
 <runtimes>
  <directory group="1">../lib/gcc?/$TARGET/.*/rts-(.*)/adainclude</directory>
+ <directory group="default">../lib/gcc?/$TARGET/.*/adainclude</directory>
 </runtimes>
 @end smallexample
+
+Note the second node, which matches the default runtime, and displays it as
+such.
 
 @item @code{<filter>value1,value2,...</filter>}
 
