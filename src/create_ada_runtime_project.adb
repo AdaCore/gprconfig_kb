@@ -47,7 +47,7 @@ procedure Create_Ada_Runtime_Project is
    Project_File : Ada.Text_IO.File_Type;
    --  The project file being created
 
-   Adainclude : String_Access;
+   Adainclude : String_Access := new String'("adainclude");
    --  The path name of the adainclude directory, given as argument of the
    --  utility.
 
@@ -258,8 +258,11 @@ begin
    Put_Line (Project_File, "project Ada_Runtime is");
    New_Line (Project_File);
    Put_Line (Project_File, "   for Languages use (""Ada"");");
-   Put_Line (Project_File, "   for Source_Dirs use (""adainclude"");");
-   Put_Line (Project_File, "   for Object_Dir use ""adalib"";");
+   Put_Line (Project_File, "   for Source_Dirs use ("""
+             & Adainclude.all & """);");
+   Put_Line (Project_File, "   for Object_Dir use """
+             & Adainclude.all
+             & ".." & Directory_Separator & "adalib"";");
    New_Line (Project_File);
    Put_Line (Project_File, "   for Externally_Built use ""true"";");
    New_Line (Project_File);
