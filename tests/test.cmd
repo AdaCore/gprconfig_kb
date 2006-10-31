@@ -4,13 +4,15 @@ test_config () {
   expected="$1"
   shift
   switches="$@"
+  pwd=`pwd`
   ../gprconfig -o output.gpr -batch $switches
-  diff $expected output.gpr >/dev/null
+  sed -e "s,$pwd,.," output.gpr > output2.gpr
+  diff $expected output2.gpr >/dev/null
   if test $? != 0 ; then
      echo "-------  $expected failed"
-     diff $expected output.gpr
+     diff $expected output2.gpr
   fi
-  rm output.gpr
+  rm output.gpr output2.gpr
 }
 
 

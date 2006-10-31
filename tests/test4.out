@@ -1,5 +1,4 @@
 project Output is
-   GNAT_Runtime_Dir := "../../..";
    package Language_Processing is
       for Language_Kind            ("Ada") use "unit_based";
       for Compiler_Driver          ("Ada") use "gcc";
@@ -27,7 +26,7 @@ project Output is
       for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
       for Runtime_Project       ("Ada") use
-          Gnat_Runtime_Dir & "ada_runtime.gpr";
+          "./ada_runtime.gpr";
       for Binder_Driver         ("Ada") use "gprbind";
       for Toolchain_Version     ("Ada") use "GNAT 5.04";
       for Default_Language use "Ada";
