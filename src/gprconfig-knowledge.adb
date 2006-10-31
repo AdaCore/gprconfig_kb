@@ -1426,7 +1426,7 @@ package body GprConfig.Knowledge is
                   Comp       => Element (Comp),
                   Output_Dir => Containing_Directory (Output_File));
                Args : Argument_List_Access := Argument_String_To_List
-                 (Command);
+                 (Format_Pathname (Command, UNIX));
                Status  : Integer;
                pragma Unreferenced (Status);
             begin
