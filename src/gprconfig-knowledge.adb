@@ -1421,17 +1421,26 @@ package body GprConfig.Knowledge is
            and then Element (Comp).Extra_Tool /= ""
          then
             declare
-               Command : constant String := Substitute_Special_Dirs
-                 (Str        => To_String (Element (Comp).Extra_Tool),
-                  Comp       => Element (Comp),
-                  Output_Dir => Containing_Directory (Output_File));
                Args : Argument_List_Access := Argument_String_To_List
-                 (Format_Pathname (Command, UNIX));
+                 (To_String (Element (Comp).Extra_Tool));
+               Tmp  : GNAT.Strings.String_Access;
                Status  : Integer;
                pragma Unreferenced (Status);
             begin
                New_Line;
-               Put_Line ("Executing " & Command);
+               Put ("Executing ");
+               for A in Args'Range loop
+                  Tmp := Args (A);
+                  Args (A) := new String'
+                    (Substitute_Special_Dirs
+                       (Str        => Tmp.all,
+                        Comp       => Element (Comp),
+                        Output_Dir => Containing_Directory (Output_File)));
+                  Put (Args (A).all & " ");
+                  GNAT.Strings.Free (Tmp);
+               end loop;
+               New_Line;
+
                Status := Spawn
                  (Args (Args'First).all, Args (Args'First + 1 .. Args'Last));
                GNAT.Strings.Free (Args);
