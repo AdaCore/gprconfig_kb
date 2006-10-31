@@ -170,7 +170,9 @@ package body GprConfig.Knowledge is
 
    function Name_As_Directory (Dir : String) return String is
    begin
-      if Dir (Dir'Last) = Directory_Separator then
+      if Dir (Dir'Last) = Directory_Separator
+        or else Dir (Dir'Last) = '/'
+      then
          return Dir;
       else
          return Dir & Directory_Separator;
@@ -566,7 +568,7 @@ package body GprConfig.Knowledge is
             elsif Str (Word_Start .. Word_End) = "PATH" then
                Append (Result, Comp.Path);
             elsif Str (Word_Start .. Word_End) = "OUTPUT_DIR" then
-               Append (Result, Output_Dir);
+               Append (Result, Name_As_Directory (Output_Dir));
             elsif Str (Word_Start .. Word_End) = "GPRCONFIG_PREFIX" then
                Append (Result, Get_Program_Directory);
             end if;
@@ -1385,8 +1387,7 @@ package body GprConfig.Knowledge is
               (Packages,
                Selected_Compiler,
                To_String (Element (Config).Config),
-               Output_Dir => Name_As_Directory
-                 (Containing_Directory (Output_File)));
+               Output_Dir => Containing_Directory (Output_File));
          end if;
 
          Next (Config);
