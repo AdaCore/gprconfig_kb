@@ -43,9 +43,9 @@
       for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
       for Runtime_Project       ("Ada") use
-          "$OUTPUT_DIRada_runtime.gpr";
+          "${OUTPUT_DIR}ada_runtime.gpr";
       for Binder_Driver         ("Ada") use "gprbind";
-      for Toolchain_Version     ("Ada") use "GNAT $VERSION";
+      for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
    end Language_Processing;
    </config>
   </configuration>

@@ -2,6 +2,7 @@
 --                   Copyright (C) 2006, AdaCore                            --
 ------------------------------------------------------------------------------
 
+with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
@@ -178,9 +179,10 @@ package body GprConfig.Knowledge is
 
    function Get_Program_Directory return String is
       Command : constant String :=
-        Containing_Directory (Ada.Command_Line.Command_Name);
+        Name_As_Directory
+          (Containing_Directory (Ada.Command_Line.Command_Name));
       Normalized : constant String := Normalize_Pathname
-        (Command & Directory_Separator & "..", Resolve_Links => True);
+        (Command & "..", Resolve_Links => True);
    begin
       if Is_Regular_File (Command & "src/gprconfig.ads") then
          --  Special case for gprconfig developers
@@ -503,85 +505,63 @@ package body GprConfig.Knowledge is
       Pos    : Natural := Str'First;
       Last   : Natural := Str'First;
       Result : Unbounded_String;
+      Word_Start, Word_End, Tmp : Natural;
    begin
-      while Pos <= Str'Last loop
-         if Str (Pos) = '$' then
-            if Pos + 4 <= Str'Last
-              and then Str (Pos .. Pos + 4) = "$HOST"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+      while Pos < Str'Last loop
+         if Str (Pos) = '$' and then Str (Pos + 1) = '$' then
+            Append (Result, Str (Last .. Pos - 1));
+            Append (Result, "$");
+            Last := Pos + 2;
+            Pos  := Last;
+
+         elsif Str (Pos) = '$' then
+            if Str (Pos + 1)  = '{' then
+               Word_Start := Pos + 2;
+               Tmp := Pos + 2;
+               while Tmp <= Str'Last and then Str (Tmp) /= '}' loop
+                  Tmp := Tmp + 1;
+               end loop;
+               Tmp := Tmp + 1;
+               Word_End := Tmp - 2;
+            else
+               Word_Start := Pos + 1;
+               Tmp := Pos + 1;
+               while Tmp <= Str'Last
+                 and then (Is_Alphanumeric (Str (Tmp)) or Str (Tmp) = '_')
+               loop
+                  Tmp := Tmp + 1;
+               end loop;
+               Word_End := Tmp - 1;
+            end if;
+
+            Append (Result, Str (Last ..  Pos - 1));
+
+            if Str (Word_Start .. Word_End) = "HOST" then
                Append (Result, Sdefault.Hostname);
-               Last := Pos + 5;
-               Pos  := Pos + 4;
-
-            elsif Pos + 6 <= Str'Last
-              and then Str (Pos .. Pos + 6) = "$TARGET"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "TARGET" then
                Append (Result, Comp.Target);
-               Last := Pos + 7;
-               Pos  := Pos + 6;
-
-            elsif Pos + 11 <= Str'Last
-              and then Str (Pos .. Pos + 11) = "$RUNTIME_DIR"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "RUNTIME_DIR" then
                Append
                  (Result, Name_As_Directory (To_String (Comp.Runtime_Dir)));
-               Last := Pos + 12;
-               Pos  := Pos + 11;
-
-            elsif Pos + 7 <= Str'Last
-              and then Str (Pos .. Pos + 7) = "$VERSION"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "VERSION" then
                Append (Result, Comp.Version);
-               Last := Pos + 8;
-               Pos  := Pos + 7;
-
-            elsif Pos + 8 <= Str'Last
-              and then Str (Pos .. Pos + 8) = "$LANGUAGE"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "LANGUAGE" then
                Append (Result, Comp.Language);
-               Last := Pos + 9;
-               Pos  := Pos + 8;
-
-            elsif Pos + 7 <= Str'Last
-              and then Str (Pos .. Pos + 7) = "$RUNTIME"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "RUNTIME" then
                Append (Result, Comp.Runtime);
-               Last := Pos + 8;
-               Pos  := Pos + 7;
-
-            elsif Pos + 4 <= Str'Last
-              and then Str (Pos .. Pos + 4) = "$PATH"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "PATH" then
                Append (Result, Comp.Path);
-               Last := Pos + 5;
-               Pos  := Pos + 4;
-
-            elsif Pos + 10 <= Str'Last
-              and then Str (Pos .. Pos + 10) = "$OUTPUT_DIR"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "OUTPUT_DIR" then
                Append (Result, Output_Dir);
-               Last := Pos + 11;
-               Pos  := Pos + 10;
-
-            elsif Pos + 16 <= Str'Last
-              and then Str (Pos .. Pos + 16) = "$GPRCONFIG_PREFIX"
-            then
-               Append (Result, Str (Last .. Pos - 1));
+            elsif Str (Word_Start .. Word_End) = "GPRCONFIG_PREFIX" then
                Append (Result, Get_Program_Directory);
-               Last := Pos + 17;
-               Pos  := Pos + 16;
-
             end if;
+
+            Last := Tmp;
+            Pos  := Last;
+         else
+            Pos := Pos + 1;
          end if;
-         Pos := Pos + 1;
       end loop;
       Append (Result, Str (Last .. Str'Last));
       return To_String (Result);
