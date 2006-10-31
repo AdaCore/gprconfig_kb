@@ -112,28 +112,35 @@ private
    type External_Value_Type is (Value_Constant,
                                 Value_Shell,
                                 Value_Directory);
+   type External_Value_Node
+     (Typ : External_Value_Type := Value_Constant) is
+      record
+         case Typ is
+            when Value_Constant =>
+               Value           : Ada.Strings.Unbounded.Unbounded_String;
+            when Value_Shell    =>
+               Command         : Ada.Strings.Unbounded.Unbounded_String;
+               Regexp          : Ada.Strings.Unbounded.Unbounded_String;
+               Group           : Natural;
+            when Value_Directory =>
+               Directory       : Ada.Strings.Unbounded.Unbounded_String;
+               Directory_Group : Natural;
+         end case;
+      end record;
 
-   type External_Value (Typ : External_Value_Type := Value_Constant) is record
+   package External_Value_Nodes is new Ada.Containers.Doubly_Linked_Lists
+     (External_Value_Node);
+
+   type External_Value is record
       Filter     : Ada.Strings.Unbounded.Unbounded_String;
       Must_Match : Ada.Strings.Unbounded.Unbounded_String;
-      case Typ is
-         when Value_Constant =>
-            Value           : Ada.Strings.Unbounded.Unbounded_String;
-         when Value_Shell    =>
-            Command         : Ada.Strings.Unbounded.Unbounded_String;
-            Regexp          : Ada.Strings.Unbounded.Unbounded_String;
-            Group           : Natural;
-         when Value_Directory =>
-            Directory       : Ada.Strings.Unbounded.Unbounded_String;
-            Directory_Group : Natural;
-      end case;
+      Nodes      : External_Value_Nodes.List;
    end record;
 
    Null_External_Value : constant External_Value :=
-     (Typ        => Value_Constant,
-      Filter     => Ada.Strings.Unbounded.Null_Unbounded_String,
+     (Filter     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Must_Match => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Value      => Ada.Strings.Unbounded.Null_Unbounded_String);
+      Nodes      => External_Value_Nodes.Empty_List);
 
    type Compiler_Description is record
       Executable : Ada.Strings.Unbounded.Unbounded_String;

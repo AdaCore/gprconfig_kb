@@ -406,7 +406,11 @@ below for the full list of such special substrings)
 @noindent
 A number of the XML nodes described above can contain one or more children,
 and explain how to query a value from the executable. Here is the list of
-valid contents for these nodes:
+valid contents for these nodes. The @code{<directory>} and @code{<external>}
+children can be repeated multiple times, and the @code{<filter>} and
+@code{<must_match>} nodes will be applied to each of these. The final
+value of the external value is the sum of the computation for each of the
+@code{<directory>} and @code{<external>} nodes.
 
 @itemize @bullet
 @item A simple string

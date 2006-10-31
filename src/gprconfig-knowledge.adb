@@ -42,6 +42,7 @@ package body GprConfig.Knowledge is
    use Compiler_Lists, Compiler_Description_Maps;
    use Configuration_Lists, Compilers_Filter_Lists, String_Maps;
    use Compiler_Filter_Lists, External_Value_Lists, String_Lists;
+   use External_Value_Nodes;
 
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
@@ -221,35 +222,35 @@ package body GprConfig.Knowledge is
       Node        : Node_Ptr)
    is
       use type Glib.String_Ptr;
-      Tmp : Node_Ptr := Node.Child;
+      Tmp           : Node_Ptr := Node.Child;
+      External_Node : External_Value_Node;
    begin
       Value.Filter     := Null_Unbounded_String;
       Value.Must_Match := Null_Unbounded_String;
 
       if Node.Value /= null then
-         Value := (Typ        => Value_Constant,
-                   Filter     => Null_Unbounded_String,
-                   Must_Match => Value.Must_Match,
-                   Value      => To_Unbounded_String (Node.Value.all));
+         External_Node := (Typ        => Value_Constant,
+                           Value      => To_Unbounded_String (Node.Value.all));
+         Append (Value.Nodes, External_Node);
       end if;
 
       while Tmp /= null loop
          if Tmp.Tag.all = "external" then
-            Value := (Typ        => Value_Shell,
-                      Filter     => Value.Filter,
-                      Must_Match => Value.Must_Match,
-                      Command    => To_Unbounded_String (Tmp.Value.all),
-                      Regexp     => To_Unbounded_String
-                        (Get_Attribute (Tmp, "regexp", ".*")),
-                      Group      => Integer'Value
-                        (Get_Attribute (Tmp, "group", "0")));
+            External_Node :=
+              (Typ        => Value_Shell,
+               Command    => To_Unbounded_String (Tmp.Value.all),
+               Regexp     => To_Unbounded_String
+                 (Get_Attribute (Tmp, "regexp", ".*")),
+               Group      => Integer'Value
+                 (Get_Attribute (Tmp, "group", "0")));
+            Append (Value.Nodes, External_Node);
          elsif Tmp.Tag.all = "directory" then
-            Value := (Typ             => Value_Directory,
-                      Filter          => Value.Filter,
-                      Must_Match      => Value.Must_Match,
-                      Directory       => To_Unbounded_String (Tmp.Value.all),
-                      Directory_Group => Integer'Value
-                        (Get_Attribute (Tmp, "group", "0")));
+            External_Node :=
+              (Typ             => Value_Directory,
+               Directory       => To_Unbounded_String (Tmp.Value.all),
+               Directory_Group => Integer'Value
+                 (Get_Attribute (Tmp, "group", "0")));
+            Append (Value.Nodes, External_Node);
          elsif Tmp.Tag.all = "filter" then
             Value.Filter := To_Unbounded_String (Tmp.Value.all);
          elsif Tmp.Tag.all = "must_match" then
@@ -678,98 +679,110 @@ package body GprConfig.Knowledge is
       Saved_Path : constant String := Ada.Environment_Variables.Value ("PATH");
       Status     : aliased Integer;
       Extracted_From : Unbounded_String;
-      Result         : Unbounded_String;
+      Tmp_Result     : Unbounded_String;
       Split          : String_Lists.List;
       C              : String_Lists.Cursor;
+      Node_Cursor    : External_Value_Nodes.Cursor := First (Value.Nodes);
+      Node           : External_Value_Node;
    begin
       Clear (Processed_Value);
-      case Value.Typ is
-         when Value_Constant =>
-            Result := To_Unbounded_String
-              (Substitute_Special_Dirs
-                 (To_String (Value.Value), Comp, Output_Dir => ""));
 
-         when Value_Shell =>
-            Ada.Environment_Variables.Set
-              ("PATH", To_String (Comp.Path) & Path_Separator & Saved_Path);
-            declare
-               Command : constant String := Substitute_Special_Dirs
-                 (To_String (Value.Command), Comp, Output_Dir => "");
-               Args   : Argument_List_Access := Argument_String_To_List
-                 (Command);
-               Output : constant String := Get_Command_Output
-                 (Command     => Args (Args'First).all,
-                  Arguments   => Args (Args'First + 1 .. Args'Last),
-                  Input       => "",
-                  Status      => Status'Unchecked_Access,
-                  Err_To_Out  => True);
-               Regexp : constant Pattern_Matcher := Compile
-                 (To_String (Value.Regexp), Multiple_Lines);
-               Matched : Match_Array (0 .. Value.Group);
-            begin
-               GNAT.Strings.Free (Args);
-               Ada.Environment_Variables.Set ("PATH", Saved_Path);
+      while Has_Element (Node_Cursor) loop
+         Node           := Element (Node_Cursor);
+         Tmp_Result     := Null_Unbounded_String;
+         Extracted_From := Null_Unbounded_String;
 
-               Match (Regexp, Output, Matched);
-               if Matched (Value.Group) /= No_Match then
-                  Extracted_From := To_Unbounded_String (Output);
-                  Result := To_Unbounded_String
-                    (Output (Matched (Value.Group).First ..
-                             Matched (Value.Group).Last));
+         case Node.Typ is
+            when Value_Constant =>
+               Tmp_Result := To_Unbounded_String
+                 (Substitute_Special_Dirs
+                    (To_String (Node.Value), Comp, Output_Dir => ""));
+
+            when Value_Shell =>
+               Ada.Environment_Variables.Set
+                 ("PATH", To_String (Comp.Path) & Path_Separator & Saved_Path);
+               declare
+                  Command : constant String := Substitute_Special_Dirs
+                    (To_String (Node.Command), Comp, Output_Dir => "");
+                  Args   : Argument_List_Access := Argument_String_To_List
+                    (Command);
+                  Output : constant String := Get_Command_Output
+                    (Command     => Args (Args'First).all,
+                     Arguments   => Args (Args'First + 1 .. Args'Last),
+                     Input       => "",
+                     Status      => Status'Unchecked_Access,
+                     Err_To_Out  => True);
+                  Regexp : constant Pattern_Matcher := Compile
+                    (To_String (Node.Regexp), Multiple_Lines);
+                  Matched : Match_Array (0 .. Node.Group);
+               begin
+                  GNAT.Strings.Free (Args);
+                  Ada.Environment_Variables.Set ("PATH", Saved_Path);
+
+                  Match (Regexp, Output, Matched);
+                  if Matched (Node.Group) /= No_Match then
+                     Extracted_From := To_Unbounded_String (Output);
+                     Tmp_Result := To_Unbounded_String
+                       (Output (Matched (Node.Group).First ..
+                                Matched (Node.Group).Last));
+                  else
+                     Extracted_From := Null_Unbounded_String;
+                     Tmp_Result         := Null_Unbounded_String;
+                  end if;
+               end;
+
+            when Value_Directory =>
+               declare
+                  Search : constant String := Substitute_Special_Dirs
+                    (To_String (Node.Directory), Comp, Output_Dir => "");
+               begin
+                  Parse_All_Dirs
+                    (Processed_Value => Processed_Value,
+                     Current_Dir     => To_String (Comp.Path),
+                     Path_To_Check   => Search,
+                     Regexp          => Compile (Search),
+                     Group           => Node.Directory_Group);
+               end;
+         end case;
+
+         if Value.Must_Match /= Null_Unbounded_String
+           and then not Match (Expression => To_String (Value.Must_Match),
+                               Data       => To_String (Tmp_Result))
+         then
+            raise Ignore_Compiler;
+         end if;
+
+         case Node.Typ is
+            when Value_Directory =>
+               null;  --  already split
+
+            when Value_Shell | Value_Constant =>
+               if Split_Into_Words then
+                  Get_Words (Words  => To_String (Tmp_Result),
+                             Filter => Value.Filter,
+                             Map    => Split,
+                             Allow_Empty_Elements => False);
+                  C := First (Split);
+                  while Has_Element (C) loop
+                     Append
+                       (Processed_Value,
+                        External_Value_Item'
+                          (Value          => To_Unbounded_String (Element (C)),
+                           Extracted_From => Extracted_From));
+                     Next (C);
+                  end loop;
+
                else
-                  Extracted_From := Null_Unbounded_String;
-                  Result         := Null_Unbounded_String;
-               end if;
-            end;
-
-         when Value_Directory =>
-            declare
-               Search : constant String := Substitute_Special_Dirs
-                 (To_String (Value.Directory), Comp, Output_Dir => "");
-            begin
-               Parse_All_Dirs
-                 (Processed_Value => Processed_Value,
-                  Current_Dir     => To_String (Comp.Path),
-                  Path_To_Check   => Search,
-                  Regexp          => Compile (Search),
-                  Group           => Value.Directory_Group);
-            end;
-      end case;
-
-      if Value.Must_Match /= Null_Unbounded_String
-        and then not Match (Expression => To_String (Value.Must_Match),
-                            Data       => To_String (Result))
-      then
-         raise Ignore_Compiler;
-      end if;
-
-      case Value.Typ is
-         when Value_Directory =>
-            null;  --  already split
-
-         when Value_Shell | Value_Constant =>
-            if Split_Into_Words then
-               Get_Words (Words  => To_String (Result),
-                          Filter => Value.Filter,
-                          Map    => Split,
-                          Allow_Empty_Elements => False);
-               C := First (Split);
-               while Has_Element (C) loop
                   Append
                     (Processed_Value,
                      External_Value_Item'
-                       (Value          => To_Unbounded_String (Element (C)),
+                       (Value          => Tmp_Result,
                         Extracted_From => Extracted_From));
-                  Next (C);
-               end loop;
+               end if;
+         end case;
 
-            else
-               Append
-                 (Processed_Value,
-                  External_Value_Item'
-                    (Value => Result, Extracted_From => Extracted_From));
-            end if;
-      end case;
+         Next (Node_Cursor);
+      end loop;
    end Get_External_Value;
 
    ---------------
