@@ -13,7 +13,7 @@ project GprConfig is
    package Binder   renames Shared.Binder;
 
    package IDE is
-      for VCS_Kind use "SVN";
+      for VCS_Kind use "subversion";
    end IDE;
 
 end GprConfig;
