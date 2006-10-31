@@ -77,7 +77,7 @@
     <runtimes>
        <directory group="2" >../lib/gcc(-lib)?/$TARGET/.*/rts-(.*)/adainclude/</directory>
     </runtimes>
-    <extra_tool>$GPRCONFIG_PREFIXlibexec/gprmake/create_ada_runtime_project -adainclude $RUNTIME_DIR  -o $OUTPUT_DIRada_runtime.gpr -mapping $GPRCONFIG_PREFIXshare/gprconfig/gnat_runtime.mapping</extra_tool>
+    <extra_tool>${GPRCONFIG_PREFIX}libexec/gprmake/create_ada_runtime_project -adainclude ${RUNTIME_DIR}  -o ${OUTPUT_DIR}ada_runtime.gpr -mapping ${GPRCONFIG_PREFIX}share/gprconfig/gnat_runtime.mapping</extra_tool>
     <target>
       <external regexp="[^\r\n]+">gcc -dumpmachine</external>
     </target>
