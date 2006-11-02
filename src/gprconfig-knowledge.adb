@@ -4,6 +4,7 @@
 
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;          use Ada.Command_Line;
+with Ada.Containers;            use Ada.Containers;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
@@ -561,6 +562,8 @@ package body GprConfig.Knowledge is
                  (Result, Name_As_Directory (To_String (Comp.Runtime_Dir)));
             elsif Str (Word_Start .. Word_End) = "VERSION" then
                Append (Result, Comp.Version);
+            elsif Str (Word_Start .. Word_End) = "VERSION2" then
+               Append (Result, Comp.Version2);
             elsif Str (Word_Start .. Word_End) = "LANGUAGE" then
                Append (Result, Comp.Language);
             elsif Str (Word_Start .. Word_End) = "RUNTIME" then
@@ -913,6 +916,10 @@ package body GprConfig.Knowledge is
 
       Comp.Version := Element (First (Version)).Value;
 
+      if Length (Version) >= 2 then
+         Comp.Version2 := Element (Next (First (Version))).Value;
+      end if;
+
       Get_External_Value
         (Value            => Descr.Languages,
          Comp             => Comp,
@@ -1148,7 +1155,6 @@ package body GprConfig.Knowledge is
       Matching_Compiler : out Compiler;
       Matched           : out Boolean)
    is
-      use Ada.Containers;
       C : Compilers_Filter_Lists.Cursor := First (Filter);
       M : Boolean;
    begin

@@ -372,6 +372,11 @@ The value returned by the system will be split into words. As a result, if
 the returned value is "ada,c,c++", there are three languages supported by the
 compiler. The words can be comma-separated or space-separated.
 
+If you use have several child nodes, the first one will be used to set the
+special @code{$VERSION} substitution string (see External Values below), and
+the second will be used to defined the special @code{$VERSION2} substitution
+string.
+
 @item @code{<languages>}
 
 This node indicates how to query the list of languages. See "External values"
@@ -471,6 +476,10 @@ constructs can be specified in the regexp:
       when computing the target itself
 @item "$@{VERSION@}" is replaced by the version of the compiler. This is not
       available when computing the target of, or course, the version.
+@item "$@{VERSION2@}" is replaced by the second version of the compiler. Some
+      compilers depend on other tools (like GNAT depends on gcc), and this
+      version might for instance contain the version number for these other
+      tools. The exact semantic, though, depends on the @code{<version>} node.
 @item "$@{PATH@}" is the current directory, ie the one containing the executable
       found through @code{<executable>}.
 @item "$@{GPRCONFIG_PREFIX@}" is the directory in which gprconfig

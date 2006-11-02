@@ -24,6 +24,7 @@ package GprConfig.Knowledge is
       Target      : Ada.Strings.Unbounded.Unbounded_String;
       Path        : Ada.Strings.Unbounded.Unbounded_String;
       Version     : Ada.Strings.Unbounded.Unbounded_String;
+      Version2    : Ada.Strings.Unbounded.Unbounded_String;
       Runtime     : Ada.Strings.Unbounded.Unbounded_String;
       Runtime_Dir : Ada.Strings.Unbounded.Unbounded_String;
       Language    : Ada.Strings.Unbounded.Unbounded_String;
@@ -104,6 +105,7 @@ private
       Target      => Ada.Strings.Unbounded.Null_Unbounded_String,
       Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
       Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Version2    => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
       Language    => Ada.Strings.Unbounded.Null_Unbounded_String,
