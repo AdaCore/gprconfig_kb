@@ -481,7 +481,8 @@ constructs can be specified in the regexp:
       version might for instance contain the version number for these other
       tools. The exact semantic, though, depends on the @code{<version>} node.
 @item "$@{PATH@}" is the current directory, ie the one containing the executable
-      found through @code{<executable>}.
+      found through @code{<executable>}. It always ends with a directory
+      separator.
 @item "$@{GPRCONFIG_PREFIX@}" is the directory in which gprconfig
       was installed (e.g @file{"/usr/local"} if the executable is in
       @file{"/usr/local/bin/gprconfig"}. This directory always ends with a

@@ -569,7 +569,7 @@ package body GprConfig.Knowledge is
             elsif Str (Word_Start .. Word_End) = "RUNTIME" then
                Append (Result, Comp.Runtime);
             elsif Str (Word_Start .. Word_End) = "PATH" then
-               Append (Result, Comp.Path);
+               Append (Result, Name_As_Directory (To_String (Comp.Path)));
             elsif Str (Word_Start .. Word_End) = "OUTPUT_DIR" then
                Append (Result, Name_As_Directory (Output_Dir));
             elsif Str (Word_Start .. Word_End) = "GPRCONFIG_PREFIX" then
