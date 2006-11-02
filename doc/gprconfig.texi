@@ -57,7 +57,7 @@ Using gprconfig
 Knowledge base
 * Description of the knowledge base::
 * General file format::
-* Compilers description::
+* Compiler description::
 * Configurations::
 
 @end detailmenu
@@ -94,10 +94,10 @@ that one that should be used.
 @c ---------------------------------------------------------------------
 
 @noindent
-When you launch gprconfig, it will first search for all compilers it can
-find on your @code{PATH}. It is recommended, although not mandatory, that
-you put the compilers that you expect to use for your application before you
-launch @code{gprconfig}, since that simplifies the setup.
+When you launch gprconfig, it will first search for all compilers it can find on
+your @code{PATH}. It is recommended, although not mandatory, that you put the
+compilers that you expect to use for your application in your @code{PATH} before
+you launch @code{gprconfig}, since that simplifies the setup.
 
 @code{gprconfig} will then display a list of all the compilers it has found,
 along with the language they can compile, the runtime they use (when
@@ -125,7 +125,7 @@ information about a compiler that was not found automatically:
 
 In the knowledge base of @code{gprconfig}, each compiler is associated
 with a simple name. All the known names are listed next to the question.
-If your compile is one of the known ones, enter the name. You can also
+If your compiler is one of the known ones, enter the name. You can also
 enter any other name, but then @code{gprconfig} will not be able to
 guess any of the remaining info.
 
@@ -139,7 +139,7 @@ compiler installed in @file{/usr/local/gnat/bin/gnatmake}, the path would be
 @item Version
 
 The version of your compiler. If the Name you provided is one of the known
-compiler, @code{gprconfig} will try to guess it for you, so that you can
+compilers, @code{gprconfig} will try to guess it for you, so that you can
 simply press enter if the guess is valid.
 
 @item Language
@@ -193,7 +193,7 @@ Prevents @code{gprconfig} from reading its default knowledge base. You should
 point to another directory with @code{-db directory}, or gprconfig will not be
 able to generate any configuration file.
 
-@item -config name,directory[,version[,language[,target[,runtime]]]]
+@item -config name,path[,version[,language[,target[,runtime]]]]
 
 This parameter is used to preselect configurations.
 "name" should be one of the known compiler names (e.g. "GNAT", "GCC",...), the
@@ -230,7 +230,7 @@ switch.
 @menu
 * Description of the knowledge base::
 * General file format::
-* Compilers description::
+* Compiler description::
 * Configurations::
 @end menu
 
@@ -251,7 +251,7 @@ base. Users can easily contribute to this general knowledge base, and have
 The knowledge base contains various kind of information:
 @itemize @bullet
 @item Compiler description
-   
+
    When it is run interactively, @code{gprconfig} will search on the user's
    @code{PATH} for known compilers, and try to automatically guess their
    configuration (version, supported languages, supported targets, runtimes,
@@ -267,8 +267,8 @@ The knowledge base contains various kind of information:
    some specific command line switches might have to be enforced. The
    knowledge base is a good place to store such information once and for all.
 
-   For instance, with the GNAT compiler, using the soft floats runtims should
-   force @code{gprmake} to use the @code{-msoft-floats} compilation switch.
+   For instance, with the GNAT compiler, using the soft-float runtime should
+   force @code{gprmake} to use the @code{-msoft-float} compilation switch.
 
 @item Linker options
 
@@ -298,7 +298,7 @@ to contribute new knowledge.
 The location of the knowledge base is @file{$prefix/share/gprconfig},
 where @file{$prefix} is the directory in which @code{gprconfig} was
 installed. Any file with extension @file{.xml} in this directory will
-be parsed automatically by gprconfig on startup.
+be parsed automatically by gprconfig at startup.
 
 All files must have the following format:
 
@@ -321,8 +321,8 @@ can be used to replace the '...' code above. These tags can either all be
 put in a single XML files, or split in several files.
 
 @c ------------------------------------------------------------------------
-@node Compilers description
-@section Compilers description
+@node Compiler description
+@section Compiler description
 @c ------------------------------------------------------------------------
 
 @noindent
@@ -358,10 +358,10 @@ to search for on the PATH. Examples are @file{"gnatls"}, @file{"gcc}",
 @dots{}
 
 @code{gprconfig} searches in all directories listed on the PATH for such
-an executable. When one is found, the rest of the @code{<compiler_description}
+an executable. When one is found, the rest of the @code{<compiler_description>}
 children is checked to know whether the compiler is valid. The directory
 in which the executable was found becomes the "current directory" for
-the remaining XML children. 
+the remaining XML children.
 
 @item @code{<version>}
 
@@ -400,7 +400,7 @@ This node contains the name of an extra tool to run if the compiler is
 selected by the user. Typically, it can be used to generate a user-visible
 project file for the user, like @file{ada_runtime.gpr}. This attribute is
 the full command line used to launch the tool, where special substrings like
-"$OUTPUT_DIR",... will be automatically substituted (see External Values 
+"$OUTPUT_DIR",... will be automatically substituted (see External Values
 below for the full list of such special substrings)
 
 @end itemize
@@ -475,7 +475,7 @@ constructs can be specified in the regexp:
       as returned by the @code{<target>} node. This is of course not available
       when computing the target itself
 @item "$@{VERSION@}" is replaced by the version of the compiler. This is not
-      available when computing the target of, or course, the version.
+      available when computing the target or, of course, the version itself.
 @item "$@{VERSION2@}" is replaced by the second version of the compiler. Some
       compilers depend on other tools (like GNAT depends on gcc), and this
       version might for instance contain the version number for these other
@@ -484,7 +484,7 @@ constructs can be specified in the regexp:
       found through @code{<executable>}. It always ends with a directory
       separator.
 @item "$@{GPRCONFIG_PREFIX@}" is the directory in which gprconfig
-      was installed (e.g @file{"/usr/local"} if the executable is in
+      was installed (e.g @file{"/usr/local/"} if the executable is
       @file{"/usr/local/bin/gprconfig"}. This directory always ends with a
       directory separator.
 @item "$@{RUNTIME@}", "$@{RUNTIME_DIR@}", "$@{LANGUAGE@}", "$@{OUTPUT_DIR@}"
@@ -505,8 +505,8 @@ is done with:
 
 @smallexample
 <runtimes>
- <directory group="1">../lib/gcc?/$TARGET/.*/rts-(.*)/adainclude</directory>
- <directory group="default">../lib/gcc?/$TARGET/.*/adainclude</directory>
+ <directory group="1">../lib/gcc?/$@{TARGET@}/.*/rts-(.*)/adainclude</directory>
+ <directory group="default">../lib/gcc?/$@{TARGET@}/.*/adainclude</directory>
 </runtimes>
 @end smallexample
 
@@ -521,8 +521,8 @@ considered as a comma-separated or space-separated list of words), and only
 those words in "value1", "value2",... is kept.
 
 For instance, the @code{gcc} compiler will return a lot of supported
-languages, including "ada". However, we never want to use it as an Ada
-compiler, so we would put:
+languages, including "ada". If we do not want to use it as an Ada
+compiler, so we can put:
 
 @smallexample
 <languages>
@@ -567,9 +567,9 @@ similar chunks and put in the final configuration file that is generated
 by @code{gprconfig}.
 
 For instance, it is possible to indicate that a chunk should only be
-included if the GNAT compiler with the soft-floats runtime is used. Such
+included if the GNAT compiler with the soft-float runtime is used. Such
 a chunk can for instance be used to ensure that Ada sources are always
-compiled with the @code{-msoft-floats} command line switch.
+compiled with the @code{-msoft-float} command line switch.
 
 @code{gprconfig} doesn't do intelligent merging of chunks. All it does
 is group packages together. For instance, if the two chunks are:
@@ -595,12 +595,22 @@ Then the final configuration file will look like:
 @end smallexample
 
 As a result, to avoid conflicts, it is recommended that the chunks be
-written so that they they easily collaborate together. For instance, the
-two chunks above should be written as:
-
+written so that they they easily collaborate together. For instance, if we
+want to obtain something equivalent to
 @smallexample
    package Language_Processing is
+      for Attr1 use ("foo", "bar");
+   end Language_Processing;
+@end smallexample
+the two chunks above should be written as:
+@smallexample
+chunk1:
+   package Language_Processing is
       for Attr1 use Language_Processing'Attr1 & ("foo");
+   end Language_Processing;
+chunk2:
+   package Language_Processing is
+      for Attr1 use Language_Processing'Attr1 & ("bar");
    end Language_Processing;
 @end smallexample
 
@@ -656,7 +666,7 @@ g++ 3.4.1:
   </compilers>
   <compilers>
     <compiler name="G++" version="3.4.1" />
-  </compilers>  
+  </compilers>
   ...
 </configuration>
 @end smallexample
