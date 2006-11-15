@@ -224,11 +224,7 @@ package body GprConfig.Knowledge is
          end if;
       end if;
 
-      if Normalized (Normalized'Last) = Directory_Separator then
-         return Normalized;
-      else
-         return Normalized & Directory_Separator;
-      end if;
+      return Name_As_Directory (Normalized);
    end Get_Program_Directory;
 
    --------
