@@ -11,7 +11,7 @@
     <name>GCC</name>
     <executable>gcc</executable>
     <version>
-      <external regexp="^gcc version (\S+)" group="1">gcc -v</external>
+      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">gcc --version</external>
     </version>
     <languages>
       <external regexp="--enable-languages=(\S+)" group="1">gcc -v</external>
@@ -47,7 +47,7 @@
     <name>G++</name>
     <executable>g++</executable>
     <version>
-      <external regexp="^gcc version (\S+)" group="1">g++ -v</external>
+      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">g++ --version</external>
     </version>
     <languages>
       <external regexp="--enable-languages=(\S+)" group="1">g++ -v</external>
