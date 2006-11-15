@@ -185,9 +185,35 @@ package body GprConfig.Knowledge is
    ---------------------------
 
    function Get_Program_Directory return String is
-      Command : constant String :=
-        Name_As_Directory
-          (Containing_Directory (Ada.Command_Line.Command_Name));
+      function Get_Command return String;
+      --  Return the full path to the command being executed
+
+      function Get_Command return String is
+         Tmp : constant String := Dir_Name (Ada.Command_Line.Command_Name);
+         Tmp2 : GNAT.Strings.String_Access;
+      begin
+         --  On unix, command_name doesn't include the directory name when the
+         --  command was found on the PATH. In such a case, which check on the
+         --  PATH ourselves to find it.
+
+         if Tmp = "" or else Tmp = "./" then
+            Tmp2 := Locate_Exec_On_Path (Ada.Command_Line.Command_Name);
+            if GNAT.Strings."=" (Tmp2, null) then
+               return Tmp;
+            else
+               declare
+                  S : constant String := Containing_Directory (Tmp2.all);
+               begin
+                  GNAT.Strings.Free (Tmp2);
+                  return S;
+               end;
+            end if;
+         else
+            return Containing_Directory (Ada.Command_Line.Command_Name);
+         end if;
+      end Get_Command;
+
+      Command : constant String := Name_As_Directory (Get_Command);
       Normalized : constant String := Normalize_Pathname
         (Command & "..", Resolve_Links => True);
    begin
