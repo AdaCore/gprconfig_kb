@@ -2,30 +2,15 @@ with "shared";
 project GNAT is
    for Source_Dirs use ("@GNAT_SOURCE_DIR@");
    for Object_Dir  use Shared'Object_Dir;
-   for Exec_Dir    use Shared'Exec_Dir;
-   for Main use ("gprmake", "gprlib", "gprbind");
    for Source_List_File use "@GNAT_SOURCE_DIR@/MANIFEST.GPRMAKE";
 
-   package Builder  renames Shared.Builder;
 
    package Compiler is
       for Default_Switches ("Ada") use Shared.Compiler'Default_Switches("Ada") & ("-gnatpg");
    end Compiler;
 
-   package Binder   renames Shared.Binder;
-
    package Naming is
       for Body ("sdefault") use "gprmake_sdefault.adb";
-      case Shared.OS is
-         when "standard" | "Windows_NT" =>
-            for Body ("gprlib.build_shared_lib") use "gprlib-build_shared_lib-nosymbols.adb";
-         when "vms" => 
-            for Body ("gprlib.build_shared_lib") use "gprlib-build_shared_lib-vms.adb";
-      end case;
    end Naming;
-
-   package Linker is
-      for Default_Switches ("Ada") use ("obj/gprmake_dummies.o");
-   end Linker;
 
 end GNAT;
