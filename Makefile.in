@@ -13,7 +13,7 @@ endif
 
 all: obj/gprmake_dummies.o force
 	${GNATMAKE} -Pgprconfig
-	${GNATMAKE} -Pgprconfig gprmake gprbind gprlib
+	${GNATMAKE} -Pgprconfig gprmake gprbind gprlib gprclean
 
 install: all
 	${MKDIR} ${PREFIX}/bin
@@ -22,6 +22,7 @@ install: all
 	${MKDIR} ${PREFIX}/share/gprconfig
 	${INSTALL_PROGRAM} gprconfig ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprmake ${PREFIX}/bin
+	${INSTALL_PROGRAM} gprclean ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprbind ${PREFIX}/libexec/gprmake/
 	${INSTALL_PROGRAM} gprlib ${PREFIX}/libexec/gprmake/
 	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprmake/

@@ -1,0 +1,1294 @@
+------------------------------------------------------------------------------
+--                                                                          --
+--                         GNAT COMPILER COMPONENTS                         --
+--                                                                          --
+--                             C L E A N G P R                              --
+--                                                                          --
+--                                 B o d y                                  --
+--                                                                          --
+--          Copyright (C) 2006, Free Software Foundation, Inc.              --
+--                                                                          --
+-- GNAT is free software;  you can  redistribute it  and/or modify it under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
+-- ware  Foundation;  either version 2,  or (at your option) any later ver- --
+-- sion.  GNAT is distributed in the hope that it will be useful, but WITH- --
+-- OUT ANY WARRANTY;  without even the  implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License --
+-- for  more details.  You should have  received  a copy of the GNU General --
+-- Public License  distributed with GNAT;  see file COPYING.  If not, write --
+-- to  the  Free Software Foundation,  51  Franklin  Street,  Fifth  Floor, --
+-- Boston, MA 02110-1301, USA.                                              --
+--                                                                          --
+-- GNAT was originally developed  by the GNAT team at  New York University. --
+-- Extensive contributions were provided by Ada Core Technologies Inc.      --
+--                                                                          --
+------------------------------------------------------------------------------
+
+with Csets;
+with Confgpr;  use Confgpr;
+with Gnatvsn;  use Gnatvsn;
+with Makeutl;  use Makeutl;
+with Namet;    use Namet;
+with Opt;      use Opt;
+with Osint;
+with Prj;      use Prj;
+with Prj.Ext;
+with Prj.Pars;
+with Prj.Util; use Prj.Util;
+with Sinput.P;
+with Snames;
+with Table;
+with Types;    use Types;
+
+with Ada.Command_Line;          use Ada.Command_Line;
+
+with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.IO;                   use GNAT.IO;
+with GNAT.OS_Lib;               use GNAT.OS_Lib;
+
+package body Cleangpr is
+
+   Initialized : Boolean := False;
+   --  Set to True by the first call to Initialize.
+   --  To avoid reinitialization of some packages.
+
+   Object_Suffix   : constant String := Get_Target_Object_Suffix.all;
+   --  The suffix of the object files on the platform
+
+   Force_Deletions : Boolean := False;
+   --  Set to True by switch -f. When True, attempts to delete non writable
+   --  files will be done.
+
+   Do_Nothing : Boolean := False;
+   --  Set to True when switch -n is specified. When True, no file is deleted.
+   --  gnatclean only lists the files that would have been deleted if the
+   --  switch -n had not been specified.
+
+   File_Deleted : Boolean := False;
+   --  Set to True if at least one file has been deleted
+
+   Copyright_Displayed : Boolean := False;
+   Usage_Displayed     : Boolean := False;
+   --  Flags set to True when the action is performed, to avoid duplicate
+   --  displays.
+
+   Project_File_Name : String_Access := null;
+   --  The name of the project file specified with option -P
+
+   Main_Project : Prj.Project_Id := Prj.No_Project;
+   --  The id of the main project
+
+   All_Projects : Boolean := False;
+   --  Set to True when option -r is used, so that all projects in the project
+   --  tree are cleaned.
+
+   --  Packages of project files where unknown attributes are errors
+
+   Naming_String   : aliased String := "naming";
+   Builder_String  : aliased String := "builder";
+   Compiler_String : aliased String := "compiler";
+   Binder_String   : aliased String := "binder";
+   Linker_String   : aliased String := "linker";
+
+   Package_Names : aliased String_List :=
+     (Naming_String   'Access,
+      Builder_String  'Access,
+      Compiler_String 'Access,
+      Binder_String   'Access,
+      Linker_String   'Access);
+
+   Packages_To_Check : constant String_List_Access := Package_Names'Access;
+
+   package Processed_Projects is new Table.Table
+     (Table_Component_Type => Project_Id,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 0,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Cleangpr.Processed_Projects");
+   --  Table to keep track of what project files have been processed, when
+   --  switch -r is specified.
+
+   -----------------------------
+   -- Other local subprograms --
+   -----------------------------
+
+   procedure Clean_Archive (Project : Project_Id);
+   --  Delete a global archive or a fake library project archive and the
+   --  dependency file, if they exist.
+
+   procedure Clean_Interface_Copy_Directory (Project : Project_Id);
+   --  Delete files in an interface coy directory directory: any file that is
+   --  a copy of a source of the project.
+
+   procedure Clean_Library_Directory (Project : Project_Id);
+   --  Delete the library file in a library directory and any ALI file
+   --  of a source of the project in a library ALI directory.
+
+   procedure Clean_Project (Project : Project_Id);
+   --  Do the cleaning work when a project file is specified.
+   --  This procedure calls itself recursively when there are several
+   --  project files in the tree rooted at the main project file and switch -r
+   --  has been specified.
+
+   procedure Delete (In_Directory : String; File : String);
+   --  Delete one file, or list the file name if switch -n is specified
+
+   procedure Delete_Binder_Generated_Files (Dir : String; Source : Name_Id);
+   --  Delete the binder generated file in directory Dir for Source
+
+   procedure Display_Copyright;
+   --  Display the Copyright notice. If called several times, display the
+   --  Copyright notice only the first time.
+
+   procedure Initialize;
+   --  Call the necessary package initializations
+
+   procedure Parse_Cmd_Line;
+   --  Parse the command line
+
+   function Ultimate_Extension_Of (Project : Project_Id) return Project_Id;
+   --  Returns either Project, if it is not extended by another project, or
+   --  the project that extends Project, directly or indirectly, and that is
+   --  not itself extended. Returns No_Project if Project is No_Project.
+
+   procedure Usage;
+   --  Display the usage.
+   --  If called several times, the usage is displayed only the first time.
+
+   -------------------
+   -- Clean_Archive --
+   -------------------
+
+   procedure Clean_Archive (Project : Project_Id) is
+      Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
+      Data        : constant Project_Data :=
+                      Project_Tree.Projects.Table (Project);
+
+      Archive_Name : constant String :=
+                       "lib" & Get_Name_String (Data.Name) &
+                       Get_Name_String (Project_Tree.Archive_Suffix);
+      --  The name of the archive file for this project
+
+      Archive_Dep_Name : constant String :=
+                           "lib" & Get_Name_String (Data.Name) & ".deps";
+      --  The name of the archive dependency file for this project
+
+      Obj_Dir : constant String := Get_Name_String (Data.Object_Directory);
+
+   begin
+      Change_Dir (Obj_Dir);
+
+      if Is_Regular_File (Archive_Name) then
+         Delete (Obj_Dir, Archive_Name);
+      end if;
+
+      if Is_Regular_File (Archive_Dep_Name) then
+         Delete (Obj_Dir, Archive_Dep_Name);
+      end if;
+
+      Change_Dir (Current_Dir);
+   end Clean_Archive;
+
+   ------------------------------------
+   -- Clean_Interface_Copy_Directory --
+   ------------------------------------
+
+   procedure Clean_Interface_Copy_Directory (Project : Project_Id) is
+      Current : constant String := Get_Current_Dir;
+      Data    : constant Project_Data := Project_Tree.Projects.Table (Project);
+
+      Direc : Dir_Type;
+
+      Name : String (1 .. 200);
+      Last : Natural;
+
+      Delete_File : Boolean;
+
+      Source      : Prj.Source_Id;
+      Src_Data    : Source_Data;
+
+      File_Name   : Name_Id;
+
+   begin
+      if Data.Library and then Data.Library_Src_Dir /= No_Name then
+         declare
+            Directory : constant String :=
+                          Get_Name_String (Data.Library_Src_Dir);
+
+         begin
+            Change_Dir (Get_Name_String (Data.Library_Src_Dir));
+            Open (Direc, ".");
+
+            --  For each regular file in the directory, if switch -n has not
+            --  been specified, make it writable and delete the file if it is
+            --  a copy of a source of the project.
+
+            loop
+               Read (Direc, Name, Last);
+               exit when Last = 0;
+
+               if Is_Regular_File (Name (1 .. Last)) then
+                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
+
+                  Name_Len := Last;
+                  Name_Buffer (1 .. Name_Len) := Name (1 .. Last);
+                  File_Name := Name_Find;
+
+                  Delete_File := False;
+
+                  Source := Project_Tree.First_Source;
+
+                  loop
+                     Src_Data := Project_Tree.Sources.Table (Source);
+
+                     if Src_Data.Unit /= No_Name
+                       and then
+                         Ultimate_Extension_Of (Src_Data.Project) = Project
+                       and then
+                         Src_Data.File = File_Name
+                     then
+                        Delete_File := True;
+                        exit;
+                     end if;
+
+                     Source := Src_Data.Next_In_Sources;
+                     exit when Source = No_Source;
+                  end loop;
+
+                  if Delete_File then
+                     if not Do_Nothing then
+                        Set_Writable (Name (1 .. Last));
+                     end if;
+
+                     Delete (Directory, Name (1 .. Last));
+                  end if;
+               end if;
+            end loop;
+
+            Close (Direc);
+
+            --  Restore the initial working directory
+
+            Change_Dir (Current);
+         end;
+      end if;
+   end Clean_Interface_Copy_Directory;
+
+   -----------------------------
+   -- Clean_Library_Directory --
+   -----------------------------
+
+   procedure Clean_Library_Directory (Project : Project_Id) is
+      Current : constant String := Get_Current_Dir;
+      Data    : Project_Data := Project_Tree.Projects.Table (Project);
+
+      Lib_Filename : constant String := Get_Name_String (Data.Library_Name);
+      DLL_Name     : constant String :=
+                       Get_Name_String (Project_Tree.Shared_Lib_Prefix) &
+                       Lib_Filename &
+                       Get_Name_String (Project_Tree.Shared_Lib_Suffix);
+      Archive_Name : constant String :=
+                       "lib" & Lib_Filename &
+                       Get_Name_String (Project_Tree.Archive_Suffix);
+      Library_Exchange_File_Name : constant String :=
+                                     Lib_Filename & Library_Exchange_Suffix;
+
+      Direc        : Dir_Type;
+
+      Name : String (1 .. 200);
+      Last : Natural;
+
+      Delete_File : Boolean;
+
+   begin
+      if Data.Library then
+         declare
+            Obj_Directory     : constant String :=
+                                  Get_Name_String (Data.Object_Directory);
+            Lib_Directory     : constant String :=
+                                  Get_Name_String (Data.Library_Dir);
+            Lib_ALI_Directory : constant String :=
+                                  Get_Name_String (Data.Library_ALI_Dir);
+
+         begin
+            Change_Dir (Obj_Directory);
+
+            Open (Direc, ".");
+
+            --  For each regular file in the directory, if switch -n has not
+            --  been specified, make it writable and delete the file if it is
+            --  the library exchange file.
+
+            loop
+               Read (Direc, Name, Last);
+               exit when Last = 0;
+
+               if Is_Regular_File (Name (1 .. Last)) then
+                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
+
+                  if Name (1 .. Last) = Library_Exchange_File_Name then
+                     if not Do_Nothing then
+                        Set_Writable (Name (1 .. Last));
+                     end if;
+
+                     Delete (Obj_Directory, Name (1 .. Last));
+                  end if;
+               end if;
+            end loop;
+
+            Close (Direc);
+
+            Change_Dir (Lib_Directory);
+            Open (Direc, ".");
+
+            --  For each regular file in the directory, if switch -n has not
+            --  been specified, make it writable and delete the file if it is
+            --  the library file.
+
+            loop
+               Read (Direc, Name, Last);
+               exit when Last = 0;
+
+               if Is_Regular_File (Name (1 .. Last)) then
+                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
+
+                  if (Data.Library_Kind = Static and then
+                        Name (1 .. Last) =  Archive_Name)
+                    or else
+                      ((Data.Library_Kind = Dynamic or else
+                          Data.Library_Kind = Relocatable)
+                       and then
+                         Name (1 .. Last) = DLL_Name)
+                  then
+                     if not Do_Nothing then
+                        Set_Writable (Name (1 .. Last));
+                     end if;
+
+                     Delete (Lib_Directory, Name (1 .. Last));
+                  end if;
+               end if;
+            end loop;
+
+            Close (Direc);
+
+            if (Data.Library_Kind = Dynamic
+                or else Data.Library_Kind = Relocatable)
+              and then Data.Lib_Internal_Name /= No_Name
+            then
+               Get_Name_String (Data.Lib_Internal_Name);
+               Osint.Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+
+               declare
+                  Lib_Version : String :=
+                                  Get_Name_String (Data.Lib_Internal_Name);
+
+               begin
+                  Osint.Canonical_Case_File_Name (Lib_Version);
+
+                  Open (Direc, ".");
+
+                  --  For each regular file in the directory, if switch -n
+                  --  has not been specified, make it writable and delete the
+                  --  file if it is the library version file.
+
+                  loop
+                     Read (Direc, Name, Last);
+                     exit when Last = 0;
+
+                     if Is_Regular_File (Name (1 .. Last))
+                       and then Name (1 .. Last) = Lib_Version
+                     then
+                        if not Do_Nothing then
+                           Set_Writable (Name (1 .. Last));
+                        end if;
+
+                        Delete (Lib_Directory, Name (1 .. Last));
+                     end if;
+                  end loop;
+
+                  Close (Direc);
+               end;
+            end if;
+
+            Change_Dir (Lib_ALI_Directory);
+            Open (Direc, ".");
+
+            --  For each regular file in the directory, if switch -n has not
+            --  been specified, make it writable and delete the file if it is
+            --  any dependency file of a source of the project.
+
+            loop
+               Read (Direc, Name, Last);
+               exit when Last = 0;
+
+               if Is_Regular_File (Name (1 .. Last)) then
+                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
+                  Delete_File := False;
+
+                  if Last > 4 and then Name (Last - 3 .. Last) = ".ali" then
+                     declare
+                        Source   : Prj.Source_Id;
+                        Src_Data : Source_Data;
+                     begin
+                        Data := Project_Tree.Projects.Table (Project);
+
+                        Project_Loop : loop
+                           Source := Data.First_Source;
+
+                           while Source /= No_Source loop
+                              Src_Data :=
+                                Project_Tree.Sources.Table (Source);
+
+                              if Src_Data.Dep_Name /= No_Name
+                                and then
+                                  Get_Name_String (Src_Data.Dep_Name) =
+                                  Name (1 .. Last)
+                              then
+                                 Delete_File := True;
+                                 exit Project_Loop;
+                              end if;
+
+                              Source := Src_Data.Next_In_Project;
+                           end loop;
+
+                           exit Project_Loop when Data.Extends = No_Project;
+
+                           Data :=
+                             Project_Tree.Projects.Table (Data.Extends);
+                        end loop Project_Loop;
+                     end;
+                  end if;
+
+                  if Delete_File then
+                     if not Do_Nothing then
+                        Set_Writable (Name (1 .. Last));
+                     end if;
+
+                     Delete (Lib_ALI_Directory, Name (1 .. Last));
+                  end if;
+
+               end if;
+            end loop;
+
+            Close (Direc);
+
+            --  Restore the initial working directory
+
+            Change_Dir (Current);
+         end;
+      end if;
+   end Clean_Library_Directory;
+
+   -------------------
+   -- Clean_Project --
+   -------------------
+
+   procedure Clean_Project (Project : Project_Id) is
+      Main_Source_File : File_Name_Type;
+      --  Name of executable on the command line without directory info
+
+      Executable : Name_Id;
+      --  Name of the executable file
+
+      Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
+      Data        : Project_Data := Project_Tree.Projects.Table (Project);
+
+      Source_Id   : Prj.Source_Id;
+      Source      : Source_Data;
+
+      Global_Archive : Boolean := False;
+
+   begin
+      --  Check that we don't specify executable on the command line for
+      --  a main library project.
+
+      if Project = Main_Project
+        and then Mains.Number_Of_Mains /= 0
+        and then Data.Library
+      then
+         Osint.Fail
+           ("Cannot specify executable(s) for a Library Project File");
+      end if;
+
+      --  Nothing to clean in an externally built project
+
+      if Data.Externally_Built then
+         if Verbose_Mode then
+            Put ("Nothing to do to clean externally built project """);
+            Put (Get_Name_String (Data.Name));
+            Put_Line ("""");
+         end if;
+
+      else
+         if Verbose_Mode then
+            Put ("Cleaning project """);
+            Put (Get_Name_String (Data.Name));
+            Put_Line ("""");
+         end if;
+
+         --  Add project to the list of processed projects
+
+         Processed_Projects.Increment_Last;
+         Processed_Projects.Table (Processed_Projects.Last) := Project;
+
+         if Data.Object_Directory /= No_Name then
+            declare
+               Obj_Dir : constant String :=
+                           Get_Name_String (Data.Object_Directory);
+
+            begin
+               Change_Dir (Obj_Dir);
+
+               --  In multi language mode, delete the linker exchange file
+               --  of a library project, if it exists.
+
+               if Data.Library then
+                  Get_Name_String (Data.Name);
+                  Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
+
+                  if Is_Regular_File (Name_Buffer (1 .. Name_Len)) then
+                     declare
+                        Name : constant String := Name_Buffer (1 .. Name_Len);
+
+                     begin
+                        Delete (Obj_Dir, Name);
+                     end;
+                  end if;
+               end if;
+
+               --  Check if a global archive and it dependency file could have
+               --  been created and, if they exist, delete them.
+
+               if Project = Main_Project and then not Data.Library then
+                  Global_Archive := False;
+
+                  for Proj in Project_Table.First ..
+                    Project_Table.Last (Project_Tree.Projects)
+                  loop
+                     if Project_Tree.Projects.Table
+                       (Proj).First_Source /= No_Source
+                     then
+                        Global_Archive := True;
+                        exit;
+                     end if;
+                  end loop;
+
+                  if Global_Archive then
+                     Clean_Archive (Project);
+                  end if;
+               end if;
+
+               --  Check all the object file for the sources of the current
+               --  project and all the projects it extends.
+
+               loop
+                  --  Delete the object files and the dependency files if they
+                  --  exist.
+
+                  Source_Id := Data.First_Source;
+                  while Source_Id /= No_Source loop
+                     Source :=
+                       Project_Tree.Sources.Table (Source_Id);
+
+                     if Source.Object /= No_Name and then
+                       Is_Regular_File
+                         (Get_Name_String (Source.Object))
+                     then
+                        Delete (Obj_Dir, Get_Name_String (Source.Object));
+                     end if;
+
+                     if Source.Dep_Name /= No_Name and then
+                       Is_Regular_File (Get_Name_String (Source.Dep_Name))
+                     then
+                        Delete (Obj_Dir, Get_Name_String (Source.Dep_Name));
+                     end if;
+
+                     if Source.Switches /= No_Name and then
+                       Is_Regular_File (Get_Name_String (Source.Switches))
+                     then
+                        Delete (Obj_Dir, Get_Name_String (Source.Switches));
+                     end if;
+
+                     Source_Id := Source.Next_In_Project;
+                  end loop;
+
+                  exit when Data.Extends = No_Project;
+
+                  Data := Project_Tree.Projects.Table (Data.Extends);
+               end loop;
+
+               --  Restore Data for the original project
+
+               Data := Project_Tree.Projects.Table (Project);
+
+               --  If it is a library with only non Ada sources, delete
+               --  the fake archive and the dependency file, if they exist.
+
+               if Data.Library
+                 and then Data.Ada_Sources = Nil_String
+               then
+                  Clean_Archive (Project);
+               end if;
+            end;
+         end if;
+
+         --  If this is a library project, clean the library directory, the
+         --  interface copy dir and, for a Stand-Alone Library, the binder
+         --  generated files of the library.
+
+         --  The directories are cleaned only if switch -c is not specified
+
+         if Data.Library then
+            if not Compile_Only then
+               Clean_Library_Directory (Project);
+
+               if Data.Library_Src_Dir /= No_Name then
+                  Clean_Interface_Copy_Directory (Project);
+               end if;
+            end if;
+
+            if Data.Standalone_Library and then
+              Data.Object_Directory /= No_Name
+            then
+               Delete_Binder_Generated_Files
+                 (Get_Name_String (Data.Object_Directory), Data.Library_Name);
+            end if;
+         end if;
+
+         if Verbose_Mode then
+            New_Line;
+         end if;
+      end if;
+
+      --  If switch -r is specified, call Clean_Project recursively for the
+      --  imported projects and the project being extended.
+
+      if All_Projects then
+         declare
+            Imported : Project_List := Data.Imported_Projects;
+            Element  : Project_Element;
+            Process  : Boolean;
+
+         begin
+            --  For each imported project, call Clean_Project if the project
+            --  has not been processed already.
+
+            while Imported /= Empty_Project_List loop
+               Element := Project_Tree.Project_Lists.Table (Imported);
+               Imported := Element.Next;
+               Process := True;
+
+               for
+                 J in Processed_Projects.First .. Processed_Projects.Last
+               loop
+                  if Element.Project = Processed_Projects.Table (J) then
+                     Process := False;
+                     exit;
+                  end if;
+               end loop;
+
+               if Process then
+                  Clean_Project (Element.Project);
+               end if;
+            end loop;
+
+            --  If this project extends another project, call Clean_Project for
+            --  the project being extended. It is guaranteed that it has not
+            --  called before, because no other project may import or extend
+            --  this project.
+
+            if Data.Extends /= No_Project then
+               Clean_Project (Data.Extends);
+            end if;
+         end;
+      end if;
+
+         --  For the main project, delete the executables and the binder
+         --  generated files.
+
+         --  The executables are deleted only if switch -c is not specified
+
+      if Project = Main_Project and then Data.Exec_Directory /= No_Name then
+         declare
+            Exec_Dir : constant String :=
+                         Get_Name_String (Data.Exec_Directory);
+
+         begin
+            Change_Dir (Exec_Dir);
+
+            for N_File in 1 .. Mains.Number_Of_Mains loop
+               Main_Source_File := Create_Name (Mains.Next_Main);
+
+               if not Compile_Only then
+                  Executable :=
+                    Executable_Of
+                      (Project => Main_Project,
+                       In_Tree => Project_Tree,
+                       Main    => Main_Source_File,
+                       Index   => 0);
+
+                  declare
+                     Exec_File_Name : constant String :=
+                                        Get_Name_String (Executable);
+
+                  begin
+                     if Is_Absolute_Path (Name => Exec_File_Name) then
+                        if Is_Regular_File (Exec_File_Name) then
+                           Delete ("", Exec_File_Name);
+                        end if;
+
+                     else
+                        if Is_Regular_File (Exec_File_Name) then
+                           Delete (Exec_Dir, Exec_File_Name);
+                        end if;
+                     end if;
+                  end;
+               end if;
+
+               if Data.Object_Directory /= No_Name then
+                  Delete_Binder_Generated_Files
+                    (Get_Name_String
+                       (Data.Object_Directory),
+                     Osint.Strip_Suffix (Main_Source_File));
+               end if;
+            end loop;
+         end;
+      end if;
+
+      --  Change back to previous directory
+
+      Change_Dir (Current_Dir);
+   end Clean_Project;
+
+   ------------
+   -- Delete --
+   ------------
+
+   procedure Delete (In_Directory : String; File : String) is
+      Full_Name : String (1 .. In_Directory'Length + File'Length + 1);
+      Last : Natural := 0;
+      Success : Boolean;
+
+   begin
+      --  Indicate that at least one file is deleted or is to be deleted
+
+      File_Deleted := True;
+
+      --  Build the path name of the file to delete
+
+      Last := In_Directory'Length;
+      Full_Name (1 .. Last) := In_Directory;
+
+      if Last > 0 and then Full_Name (Last) /= Directory_Separator then
+         Last := Last + 1;
+         Full_Name (Last) := Directory_Separator;
+      end if;
+
+      Full_Name (Last + 1 .. Last + File'Length) := File;
+      Last := Last + File'Length;
+
+      --  If switch -n was used, simply output the path name
+
+      if Do_Nothing then
+         Put_Line (Full_Name (1 .. Last));
+
+      --  Otherwise, delete the file if it is writable
+
+      else
+         if Force_Deletions
+           or else Is_Writable_File (Full_Name (1 .. Last))
+         then
+            Delete_File (Full_Name (1 .. Last), Success);
+         else
+            Success := False;
+         end if;
+
+         if Verbose_Mode or else not Quiet_Output then
+            if not Success then
+               Put ("Warning: """);
+               Put (Full_Name (1 .. Last));
+               Put_Line (""" could not be deleted");
+
+            else
+               Put ("""");
+               Put (Full_Name (1 .. Last));
+               Put_Line (""" has been deleted");
+            end if;
+         end if;
+      end if;
+   end Delete;
+
+   -----------------------------------
+   -- Delete_Binder_Generated_Files --
+   -----------------------------------
+
+   procedure Delete_Binder_Generated_Files (Dir : String; Source : Name_Id) is
+      Source_Name : constant String := Get_Name_String (Source);
+      Current     : constant String := Get_Current_Dir;
+      Last        : constant Positive := 3 + Source_Name'Length;
+      File_Name   : String (1 .. Last + 5);
+      Binder_Exchange_File : constant String :=
+                               Source_Name & Binder_Exchange_Suffix;
+
+   begin
+      Change_Dir (Dir);
+
+      if Is_Regular_File (Binder_Exchange_File) then
+         Delete (Dir, Binder_Exchange_File);
+      end if;
+
+      File_Name (1 .. 3) := "b__";
+      File_Name (4 .. Last) := Source_Name;
+
+      --  Spec
+
+      File_Name (Last + 1 .. Last + 4) := ".ads";
+
+      if Is_Regular_File (File_Name (1 .. Last + 4)) then
+         Delete (Dir, File_Name (1 .. Last + 4));
+      end if;
+
+      --  Body
+
+      File_Name (Last + 1 .. Last + 4) := ".adb";
+
+      if Is_Regular_File (File_Name (1 .. Last + 4)) then
+         Delete (Dir, File_Name (1 .. Last + 4));
+      end if;
+
+      --  ALI file
+
+      File_Name (Last + 1 .. Last + 4) := ".ali";
+
+      if Is_Regular_File (File_Name (1 .. Last + 4)) then
+         Delete (Dir, File_Name (1 .. Last + 4));
+      end if;
+
+      --  Object file
+
+      File_Name (Last + 1 .. Last + Object_Suffix'Length) := Object_Suffix;
+
+      if Is_Regular_File (File_Name (1 .. Last + Object_Suffix'Length)) then
+         Delete (Dir, File_Name (1 .. Last + Object_Suffix'Length));
+      end if;
+
+      --  Change back to previous directory
+
+      Change_Dir (Current);
+   end Delete_Binder_Generated_Files;
+
+   -----------------------
+   -- Display_Copyright --
+   -----------------------
+
+   procedure Display_Copyright is
+   begin
+      if not Copyright_Displayed then
+         Copyright_Displayed := True;
+         Put_Line
+           ("GPRCLEAN " & Gnatvsn.Gnat_Version_String
+            & " Copyright 2006-"
+            & Current_Year
+            & " Free Software Foundation, Inc.");
+      end if;
+   end Display_Copyright;
+
+   --------------
+   -- Gprclean --
+   --------------
+
+   procedure Gprclean is
+   begin
+      Set_Mode (Multi_Language);
+
+      --  Do the necessary initializations
+
+      Cleangpr.Initialize;
+
+      --  Parse the command line, getting the switches and the executable names
+
+      Parse_Cmd_Line;
+
+      --  Check that a project file was specified and get the configuration.
+
+      if Project_File_Name = null then
+         Usage;
+         return;
+      end if;
+
+      if Config_Path = null then
+         Config_Path := Getenv (Config_Path_Env_Var);
+
+         if Config_Path.all = "" then
+            declare
+               Prefix_Path : constant String := Executable_Prefix_Path;
+
+            begin
+               if Prefix_Path'Length /= 0 then
+                  Config_Path :=
+                    new String'(Prefix_Path & Directory_Separator &
+                                "share" & Directory_Separator & "gpr");
+
+               else
+                  Osint.Fail ("No configuration path");
+               end if;
+            end;
+         end if;
+      end if;
+
+      if Config_Project_File_Name = null then
+         Config_Project_File_Name :=
+           new String'(Default_Config_Project_File_Name);
+      end if;
+
+      Get_Configuration (Fail_If_Error => True);
+
+      if Verbose_Mode then
+         Display_Copyright;
+      end if;
+
+      if Opt.Verbose_Mode then
+         New_Line;
+         Put ("Parsing Project File """);
+         Put (Project_File_Name.all);
+         Put_Line (""".");
+         New_Line;
+      end if;
+
+      --  Set the project parsing verbosity to whatever was specified
+      --  by a possible -vP switch.
+
+      Prj.Pars.Set_Verbosity (To => Current_Verbosity);
+
+      --  Parse the project file. If there is an error, Main_Project
+      --  will still be No_Project.
+
+      Sinput.P.Reset_First;
+
+      Prj.Pars.Parse
+        (Project           => Main_Project,
+         In_Tree           => Project_Tree,
+         Project_File_Name => Project_File_Name.all,
+         Packages_To_Check => Packages_To_Check);
+
+      if Main_Project = No_Project then
+         Osint.Fail ("""" & Project_File_Name.all & """ processing failed");
+      end if;
+
+      if Opt.Verbose_Mode then
+         New_Line;
+         Put ("Parsing of Project File """);
+         Put (Project_File_Name.all);
+         Put (""" is finished.");
+         New_Line;
+      end if;
+
+      --  If no executable name was specified, put all the mains of the project
+      --  file (if any) as if there were on the command line.
+
+      if Mains.Number_Of_Mains = 0 then
+         declare
+            Value : String_List_Id :=
+                      Project_Tree.Projects.Table (Main_Project).Mains;
+            Main  : String_Element;
+         begin
+            while Value /= Prj.Nil_String loop
+               Main := Project_Tree.String_Elements.Table (Value);
+               Mains.Add_Main
+                 (Name => Get_Name_String (Main.Value));
+               Value := Main.Next;
+            end loop;
+         end;
+      end if;
+
+      if Verbose_Mode then
+         New_Line;
+      end if;
+
+      Processed_Projects.Init;
+      Clean_Project (Main_Project);
+
+      --  In verbose mode, if Delete has not been called, indicate that
+      --  no file needs to be deleted.
+
+      if Verbose_Mode and (not File_Deleted) then
+         New_Line;
+
+         if Do_Nothing then
+            Put_Line ("No file needs to be deleted");
+         else
+            Put_Line ("No file has been deleted");
+         end if;
+      end if;
+   end Gprclean;
+
+   ----------------
+   -- Initialize --
+   ----------------
+
+   procedure Initialize is
+   begin
+      if not Initialized then
+         Initialized := True;
+
+         --  Initialize some packages
+
+         Csets.Initialize;
+         Namet.Initialize;
+         Snames.Initialize;
+      end if;
+
+      --  Reset global variables
+
+      Do_Nothing := False;
+      File_Deleted := False;
+      Copyright_Displayed := False;
+      Usage_Displayed := False;
+      Free (Project_File_Name);
+      Main_Project := Prj.No_Project;
+      All_Projects := False;
+      Mains.Delete;
+   end Initialize;
+
+   --------------------
+   -- Parse_Cmd_Line --
+   --------------------
+
+   procedure Parse_Cmd_Line is
+      Index : Positive := 1;
+      Last         : constant Natural := Argument_Count;
+
+   begin
+      while Index <= Last loop
+         declare
+            Arg : constant String := Argument (Index);
+
+            procedure Bad_Argument;
+            --  Signal bad argument
+
+            ------------------
+            -- Bad_Argument --
+            ------------------
+
+            procedure Bad_Argument is
+            begin
+               Osint.Fail ("invalid argument """, Arg, """");
+            end Bad_Argument;
+
+         begin
+            if Arg'Length /= 0 then
+               if Arg (1) = '-' then
+                  if Arg'Length = 1 then
+                     Bad_Argument;
+                  end if;
+
+                  case Arg (2) is
+                     when '-' =>
+                        if Arg'Length > 14 and then
+                           Arg (1 .. 14) = "--config_path="
+                        then
+                           Config_Path :=
+                             new String'(Arg (15 .. Arg'Last));
+
+                        elsif Arg'Length > 17 and then
+                              Arg (1 .. 17) = "--config_project="
+                        then
+                           Config_Project_File_Name :=
+                             new String'(Arg (18 .. Arg'Last));
+
+                        else
+                           Bad_Argument;
+                        end if;
+
+                     when 'c'    =>
+                        Compile_Only := True;
+
+                     when 'f' =>
+                        Force_Deletions := True;
+
+                     when 'F' =>
+                        Full_Path_Name_For_Brief_Errors := True;
+
+                     when 'h' =>
+                        Usage;
+
+                     when 'n' =>
+                        Do_Nothing := True;
+
+                     when 'P' =>
+                        if Project_File_Name /= null then
+                           Osint.Fail ("multiple -P switches");
+                        end if;
+
+                        if Arg'Length > 2 then
+                           declare
+                              Prj : constant String := Arg (3 .. Arg'Last);
+                           begin
+                              if Prj'Length > 1 and then
+                                Prj (Prj'First) = '='
+                              then
+                                 Project_File_Name :=
+                                   new String'
+                                     (Prj (Prj'First + 1 ..  Prj'Last));
+                              else
+                                 Project_File_Name := new String'(Prj);
+                              end if;
+                           end;
+
+                        else
+                           if Index = Last then
+                              Osint.Fail ("no project specified after -P");
+                           end if;
+
+                           Index := Index + 1;
+                           Project_File_Name := new String'(Argument (Index));
+                        end if;
+
+                     when 'q' =>
+                        Quiet_Output := True;
+
+                     when 'r' =>
+                        All_Projects := True;
+
+                     when 'v' =>
+                        if Arg = "-v" then
+                           Verbose_Mode := True;
+
+                        elsif Arg = "-vP0" then
+                           Current_Verbosity := Prj.Default;
+
+                        elsif Arg = "-vP1" then
+                           Current_Verbosity := Prj.Medium;
+
+                        elsif Arg = "-vP2" then
+                           Current_Verbosity := Prj.High;
+
+                        else
+                           Bad_Argument;
+                        end if;
+
+                     when 'X' =>
+                        if Arg'Length = 2 then
+                           Bad_Argument;
+                        end if;
+
+                        declare
+                           Ext_Asgn  : constant String := Arg (3 .. Arg'Last);
+                           Start     : Positive := Ext_Asgn'First;
+                           Stop      : Natural  := Ext_Asgn'Last;
+                           Equal_Pos : Natural;
+                           OK        : Boolean  := True;
+
+                        begin
+                           if Ext_Asgn (Start) = '"' then
+                              if Ext_Asgn (Stop) = '"' then
+                                 Start := Start + 1;
+                                 Stop  := Stop - 1;
+
+                              else
+                                 OK := False;
+                              end if;
+                           end if;
+
+                           Equal_Pos := Start;
+
+                           while Equal_Pos <= Stop
+                             and then Ext_Asgn (Equal_Pos) /= '='
+                           loop
+                              Equal_Pos := Equal_Pos + 1;
+                           end loop;
+
+                           if Equal_Pos = Start or else Equal_Pos > Stop then
+                              OK := False;
+                           end if;
+
+                           if OK then
+                              Prj.Ext.Add
+                                (External_Name =>
+                                   Ext_Asgn (Start .. Equal_Pos - 1),
+                                 Value         =>
+                                   Ext_Asgn (Equal_Pos + 1 .. Stop));
+
+                           else
+                              Osint.Fail
+                                ("illegal external assignment '",
+                                 Ext_Asgn, "'");
+                           end if;
+                        end;
+
+                     when others =>
+                        Bad_Argument;
+                  end case;
+
+               else
+                  Mains.Add_Main (Arg);
+               end if;
+            end if;
+         end;
+
+         Index := Index + 1;
+      end loop;
+   end Parse_Cmd_Line;
+
+   ---------------------------
+   -- Ultimate_Extension_Of --
+   ---------------------------
+
+   function Ultimate_Extension_Of (Project : Project_Id) return Project_Id is
+      Result : Project_Id := Project;
+      Data   : Project_Data;
+
+   begin
+      if Project /= No_Project then
+         loop
+            Data := Project_Tree.Projects.Table (Result);
+            exit when Data.Extended_By = No_Project;
+            Result := Data.Extended_By;
+         end loop;
+      end if;
+
+      return Result;
+   end Ultimate_Extension_Of;
+
+   -----------
+   -- Usage --
+   -----------
+
+   procedure Usage is
+   begin
+      if not Usage_Displayed then
+         Usage_Displayed := True;
+         Display_Copyright;
+
+         Put_Line ("Usage: gprclean [switches] -P<project> {name}");
+
+         New_Line;
+
+         Put_Line ("  {name} is zero or more file names");
+         New_Line;
+
+         Put_Line ("  -c       Only delete compiler generated files");
+         Put_Line ("  -f       Force deletions of unwritable files");
+         Put_Line ("  -F       Full project path name " &
+                   "in brief error messages");
+         Put_Line ("  -h       Display this message");
+         Put_Line ("  -n       Nothing to do: only list files to delete");
+         Put_Line ("  -P<proj> Use Project File <proj>");
+         Put_Line ("  -q       Be quiet/terse");
+         Put_Line ("  -r       Clean all projects recursively");
+         Put_Line ("  -v       Verbose mode");
+         Put_Line ("  -vPx     Specify verbosity when parsing Project Files");
+         Put_Line ("  -Xnm=val Specify an external reference " &
+                               "for Project Files");
+         New_Line;
+
+         Put_Line ("  --config_path=<config project file path>");
+         Put_Line ("           Specify the configuration project path");
+         Put_Line ("  --config_project=<main config project file name>");
+         Put_Line ("           Specify the main configuration project " &
+                               "file name");
+         New_Line;
+      end if;
+   end Usage;
+end Cleangpr;
