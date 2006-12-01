@@ -12,6 +12,18 @@ Requirements:
      "gnat" that points to the directory containing src/prj.ads, or
      use the --with-gnat-source-dir=<dir> switch
 
+     One convenient way is to run the following script in the directory
+     that contains this README:
+         if [ -d gnat ]; then
+            (cd gnat; cvs -d nile:/nile.c/cvs/Dev update -r gprmake-2006)
+         else
+             cvs -d nile:/nile.c/cvs/Dev co -r gprmake-2006 gnat/
+         fi
+         (cd gnat;
+             cvs update -A MANIFEST.GPRMAKE
+             cvs update -f `cat MANIFEST.GPRMAKE`)
+         svn update
+
 Compiling:
    - Execute the usual commands:
        ./configure
