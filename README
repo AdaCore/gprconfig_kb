@@ -3,7 +3,7 @@ Building and Installing
 =======================
 
 Requirements:
-   - You need access to part of part of the GNAT sources.
+   - You need access to part of the GNAT sources.
      These sources are either packaged directly with the source package
      for gprconfig and gprmake (in a subdirectory called gnat/), or you
      access them by some other means (direct access to the repository,
