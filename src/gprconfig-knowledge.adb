@@ -103,6 +103,7 @@ package body GprConfig.Knowledge is
       Current_Dir       : String;
       Path_To_Check     : String;
       Regexp            : Pattern_Matcher;
+      Regexp_Str        : String;
       Value_If_Match    : String;
       Group             : Integer);
    --  Parse all subdirectories of Current_Dir for those that match
@@ -162,8 +163,22 @@ package body GprConfig.Knowledge is
    procedure Skip_Spaces_Backward (Str : String; Index : in out Integer);
    --  Same as Skip_Spaces, but goes backward
 
+   procedure Put_Verbose (Str : String);
+   --  Print Str if verbose mode is activated
+
    Exec_Suffix : constant GNAT.Strings.String_Access :=
       Get_Executable_Suffix;
+
+   -----------------
+   -- Put_Verbose --
+   -----------------
+
+   procedure Put_Verbose (Str : String) is
+   begin
+      if Verbose_Mode then
+         Put_Line (Standard_Error, Str);
+      end if;
+   end Put_Verbose;
 
    -----------------------
    -- Name_As_Directory --
@@ -617,6 +632,7 @@ package body GprConfig.Knowledge is
       Current_Dir       : String;
       Path_To_Check     : String;
       Regexp            : Pattern_Matcher;
+      Regexp_Str        : String;
       Value_If_Match    : String;
       Group             : Integer)
    is
@@ -628,6 +644,7 @@ package body GprConfig.Knowledge is
         or else Path_To_Check = "" & Directory_Separator
       then
          if Group = -1 then
+            Put_Verbose ("<directory>: saving " & Current_Dir);
             Append
               (Processed_Value,
                (Value => To_Unbounded_String (Value_If_Match),
@@ -635,17 +652,22 @@ package body GprConfig.Knowledge is
          else
             declare
                Matched : Match_Array (0 .. Group);
+               Dir    : constant String := Format_Pathname (Current_Dir, UNIX);
             begin
                --  We matched, so insert the relevant path. Convert the path to
                --  unix format first, so that the regexp is system-independent
-               Match (Regexp, Format_Pathname (Current_Dir, UNIX), Matched);
+               Match (Regexp, Dir, Matched);
                if Matched (Group) /= No_Match then
+                  Put_Verbose ("<directory>: saving " & Dir);
                   Append
                     (Processed_Value,
                      (Value => To_Unbounded_String
                         (Current_Dir
                            (Matched (Group).First .. Matched (Group).Last)),
                       Extracted_From => To_Unbounded_String (Current_Dir)));
+               else
+                  Put_Verbose
+                    ("<directory>:" & Dir & " doesn't match " & Regexp_Str);
                end if;
             end;
          end if;
@@ -675,6 +697,9 @@ package body GprConfig.Knowledge is
 --                  (Current_Dir & Directory_Separator
 --                   & Path_To_Check (First .. Last - 1))
             then
+               Put_Verbose
+                 ("<directory>: Checking subdirectory "
+                  & Path_To_Check (First .. Last - 1));
                --  If there is such a subdir, keep checking
                Parse_All_Dirs
                  (Processed_Value => Processed_Value,
@@ -686,8 +711,13 @@ package body GprConfig.Knowledge is
                   Path_To_Check   =>
                     Path_To_Check (Last + 1 .. Path_To_Check'Last),
                   Regexp          => Regexp,
+                  Regexp_Str      => Regexp_Str,
                   Value_If_Match  => Value_If_Match,
                   Group           => Group);
+            else
+               Put_Verbose
+                 ("<directory>: No subdirectory "
+                  & Path_To_Check (First .. Last - 1));
             end if;
 
          --  Else we have a regexp, check all files
@@ -697,10 +727,23 @@ package body GprConfig.Knowledge is
                  Compile (Path_To_Check (First .. Last - 1));
                Search : Search_Type;
                File   : Directory_Entry_Type;
+               Filter : Ada.Directories.Filter_Type;
             begin
+               Put_Verbose
+                 ("<directory>: Checking all files in " & Current_Dir
+                  & " that match " & Path_To_Check (First .. Last - 1));
+
+               if Path_To_Check (Last) = '/' then
+                  Put_Verbose ("<directory>: Only search subdirectories");
+                  Filter := (Directory => True, others => False);
+               else
+                  Filter := (others => True);
+               end if;
+
                Start_Search
                  (Search    => Search,
                   Directory => Current_Dir,
+                  Filter    => Filter,
                   Pattern   => "");
                while More_Entries (Search) loop
                   Get_Next_Entry (Search, File);
@@ -708,6 +751,8 @@ package body GprConfig.Knowledge is
                     and then Simple_Name (File) /= ".."
                     and then Match (File_Regexp, Simple_Name (File))
                   then
+                     Put_Verbose
+                       ("<directory>: Matching " & Simple_Name (File));
                      Parse_All_Dirs
                        (Processed_Value => Processed_Value,
                         Current_Dir     =>
@@ -715,6 +760,7 @@ package body GprConfig.Knowledge is
                         Path_To_Check   =>
                           Path_To_Check (Last + 1 .. Path_To_Check'Last),
                         Regexp          => Regexp,
+                        Regexp_Str      => Regexp_Str,
                         Value_If_Match  => Value_If_Match,
                         Group           => Group);
                   end if;
@@ -794,11 +840,13 @@ package body GprConfig.Knowledge is
                   Search : constant String := Substitute_Special_Dirs
                     (To_String (Node.Directory), Comp, Output_Dir => "");
                begin
+                  Put_Verbose ("Searching for directories matching " & Search);
                   Parse_All_Dirs
                     (Processed_Value => Processed_Value,
                      Current_Dir     => To_String (Comp.Path),
                      Path_To_Check   => Search,
                      Regexp          => Compile (Search),
+                     Regexp_Str      => Search,
                      Value_If_Match  => To_String (Node.Dir_If_Match),
                      Group           => Node.Directory_Group);
                end;
@@ -962,7 +1010,12 @@ package body GprConfig.Knowledge is
             Comp.Language := To_Unbounded_String (L);
 
             if Is_Empty (Runtimes) then
-               Append (Append_To, Comp);
+               if Descr.Runtimes /= Null_External_Value then
+                  Put_Verbose ("No runtime found where one is required for: "
+                               & To_String (Comp.Path));
+               else
+                  Append (Append_To, Comp);
+               end if;
             else
                C2 := First (Runtimes);
                while Has_Element (C2) loop

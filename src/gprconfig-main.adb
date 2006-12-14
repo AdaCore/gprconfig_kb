@@ -86,6 +86,7 @@ procedure GprConfig.Main is
                 & " parameter, and can leave an");
       Put_Line ("           empty string instead");
       Put_Line (" -batch  : batch mode, no interactive compiler selection");
+      Put_Line (" -v      : verbose mode");
    end Help;
 
    ----------------------------
@@ -531,7 +532,7 @@ begin
    Free (Gprmake_Path);
 
    loop
-      case Getopt ("batch config: db: h: o:") is
+      case Getopt ("batch config: db: h: o: v") is
          when 'b' =>
             Batch := True;
 
@@ -544,11 +545,17 @@ begin
             else
                Parse_Knowledge_Base (Base, Parameter);
             end if;
+
          when 'h' =>
             Help;
             return;
+
          when 'o' =>
             Output_File := To_Unbounded_String (Parameter);
+
+         when 'v' =>
+            Verbose_Mode := True;
+
          when others =>
             exit;
       end case;
