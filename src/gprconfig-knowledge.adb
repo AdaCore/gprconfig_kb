@@ -1144,6 +1144,7 @@ package body GprConfig.Knowledge is
       Name      : String := "")
    is
       C      : Compiler_Description_Maps.Cursor;
+      Case_Sensitive : constant Boolean := Directory_Separator = '\';
    begin
       --  Do not search all entries in the directory, but check explictly for
       --  the compilers. This results in a lot less system calls, and thus is
@@ -1157,8 +1158,11 @@ package body GprConfig.Knowledge is
                  (Name           => To_String (Element (C).Executable),
                   Directory      => Directory,
                   Resolve_Links  => False,
-                  Case_Sensitive => True) & Exec_Suffix.all;
+                  Case_Sensitive => Case_Sensitive) & Exec_Suffix.all;
             begin
+               Put_Verbose
+                 ("Testing for " & To_String (Element (C).Executable)
+                  & " in " & Directory);
                if Ada.Directories.Exists (F) then
                   For_Each_Language_Runtime
                     (Append_To  => Append_To,
