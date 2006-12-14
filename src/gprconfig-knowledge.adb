@@ -690,35 +690,28 @@ package body GprConfig.Knowledge is
          if GNAT.Regpat.Quote (Path_To_Check (First .. Last - 1)) =
            Path_To_Check (First .. Last - 1)
          then
-            if Ada.Directories.Exists
-              (Current_Dir & Directory_Separator
-               & Path_To_Check (First .. Last - 1))
---                and then not Is_Symbolic_Link
---                  (Current_Dir & Directory_Separator
---                   & Path_To_Check (First .. Last - 1))
-            then
-               Put_Verbose
-                 ("<directory>: Checking subdirectory "
-                  & Path_To_Check (First .. Last - 1));
-               --  If there is such a subdir, keep checking
-               Parse_All_Dirs
-                 (Processed_Value => Processed_Value,
-                  Current_Dir     =>
-                    Normalize_Pathname (Current_Dir, Resolve_Links => False)
-                    & Directory_Separator
-                    & Path_To_Check (First .. Last - 1)
-                    & Directory_Separator,
-                  Path_To_Check   =>
-                    Path_To_Check (Last + 1 .. Path_To_Check'Last),
-                  Regexp          => Regexp,
-                  Regexp_Str      => Regexp_Str,
-                  Value_If_Match  => Value_If_Match,
-                  Group           => Group);
-            else
-               Put_Verbose
-                 ("<directory>: No subdirectory "
-                  & Path_To_Check (First .. Last - 1));
-            end if;
+            declare
+               Dir : constant String :=
+                 Normalize_Pathname (Current_Dir, Resolve_Links => False)
+                 & Directory_Separator
+                 & Path_To_Check (First .. Last - 1);
+            begin
+               if Ada.Directories.Exists (Dir) then
+                  Put_Verbose ("<directory>: Recursing into " & Dir);
+                  --  If there is such a subdir, keep checking
+                  Parse_All_Dirs
+                    (Processed_Value => Processed_Value,
+                     Current_Dir     => Dir & Directory_Separator,
+                     Path_To_Check   =>
+                       Path_To_Check (Last + 1 .. Path_To_Check'Last),
+                     Regexp          => Regexp,
+                     Regexp_Str      => Regexp_Str,
+                     Value_If_Match  => Value_If_Match,
+                     Group           => Group);
+               else
+                  Put_Verbose ("<directory>: No such directory: " & Dir);
+               end if;
+            end;
 
          --  Else we have a regexp, check all files
          else
@@ -729,14 +722,15 @@ package body GprConfig.Knowledge is
                File   : Directory_Entry_Type;
                Filter : Ada.Directories.Filter_Type;
             begin
-               Put_Verbose
-                 ("<directory>: Checking all files in " & Current_Dir
-                  & " that match " & Path_To_Check (First .. Last - 1));
-
                if Path_To_Check (Last) = '/' then
-                  Put_Verbose ("<directory>: Only search subdirectories");
+                  Put_Verbose
+                    ("<directory>: Checking directories in " & Current_Dir
+                     & " that match " & Path_To_Check (First .. Last - 1));
                   Filter := (Directory => True, others => False);
                else
+                  Put_Verbose
+                    ("<directory>: Checking files in " & Current_Dir
+                     & " that match " & Path_To_Check (First .. Last - 1));
                   Filter := (others => True);
                end if;
 
@@ -840,15 +834,34 @@ package body GprConfig.Knowledge is
                   Search : constant String := Substitute_Special_Dirs
                     (To_String (Node.Directory), Comp, Output_Dir => "");
                begin
-                  Put_Verbose ("Searching for directories matching " & Search);
-                  Parse_All_Dirs
-                    (Processed_Value => Processed_Value,
-                     Current_Dir     => To_String (Comp.Path),
-                     Path_To_Check   => Search,
-                     Regexp          => Compile (Search),
-                     Regexp_Str      => Search,
-                     Value_If_Match  => To_String (Node.Dir_If_Match),
-                     Group           => Node.Directory_Group);
+                  if Search (Search'First) = '/'
+                    or else Search (Search'First) = Directory_Separator
+                  then
+                     Put_Verbose
+                       ("Searching for directories matching " & Search
+                        & ", starting from /");
+                     Parse_All_Dirs
+                       (Processed_Value => Processed_Value,
+                        Current_Dir     => "",
+                        Path_To_Check   => Search,
+                        Regexp          =>
+                          Compile (Search (Search'First + 1 .. Search'Last)),
+                        Regexp_Str      => Search,
+                        Value_If_Match  => To_String (Node.Dir_If_Match),
+                        Group           => Node.Directory_Group);
+                  else
+                     Put_Verbose
+                       ("Searching for directories matching " & Search
+                        & ", starting from " & To_String (Comp.Path));
+                     Parse_All_Dirs
+                       (Processed_Value => Processed_Value,
+                        Current_Dir     => To_String (Comp.Path),
+                        Path_To_Check   => Search,
+                        Regexp          => Compile (Search),
+                        Regexp_Str      => Search,
+                        Value_If_Match  => To_String (Node.Dir_If_Match),
+                        Group           => Node.Directory_Group);
+                  end if;
                end;
          end case;
 
