@@ -68,6 +68,9 @@ procedure GprConfig.Main is
    --  Display the batch command line that would have the same effect as the
    --  current selection of compilers.
 
+   function "<" (Comp1, Comp2 : Compiler) return Boolean;
+   --  Compare two compilers, so that similar languages are grouped together
+
    ----------
    -- Help --
    ----------
@@ -284,6 +287,21 @@ procedure GprConfig.Main is
       Append (Custom_Comps, Comp);
    end Parse_Config_Parameter;
 
+   ---------
+   -- "<" --
+   ---------
+
+   function "<" (Comp1, Comp2 : Compiler) return Boolean is
+   begin
+      if Comp1.Language < Comp2.Language then
+         return True;
+      elsif Comp1.Language > Comp2.Language then
+         return False;
+      else
+         return Comp1.Path < Comp2.Path;
+      end if;
+   end "<";
+
    ------------------------------------
    -- Select_Compilers_Interactively --
    ------------------------------------
@@ -293,9 +311,11 @@ procedure GprConfig.Main is
       Selected_Compilers : in out Compiler_Lists.List;
       Custom_Comps       : in out Compiler_Lists.List)
    is
+      package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
       Compilers : Compiler_Lists.List;
    begin
       Find_Compilers_In_Path (Base, Compilers);
+      Compiler_Sort.Sort (Compilers);
 
       declare
          Compilers_Count : constant Natural := Natural (Length (Compilers));
