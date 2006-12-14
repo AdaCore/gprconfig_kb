@@ -925,9 +925,7 @@ package body GprConfig.Knowledge is
                   Search : constant String := Substitute_Special_Dirs
                     (To_String (Node.Directory), Comp, Output_Dir => "");
                begin
-                  if Search (Search'First) = '/'
-                    or else Search (Search'First) = Directory_Separator
-                  then
+                  if Search (Search'First) = '/' then
                      Put_Verbose
                        ("Searching for directories matching " & Search
                         & ", starting from /");
