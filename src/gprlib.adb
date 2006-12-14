@@ -955,7 +955,9 @@ begin
                   Standalone := True;
 
                when Dependency_Files =>
-                  ALIs.Append (new String'(Line (1 .. Last)));
+                  if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
+                     ALIs.Append (new String'(Line (1 .. Last)));
+                  end if;
 
                when Binding_Options =>
                   Binding_Options_Table.Append (new String'(Line (1 .. Last)));
