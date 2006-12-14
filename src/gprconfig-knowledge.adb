@@ -105,13 +105,20 @@ package body GprConfig.Knowledge is
       Regexp            : Pattern_Matcher;
       Regexp_Str        : String;
       Value_If_Match    : String;
-      Group             : Integer);
+      Group             : Integer;
+      Group_Match       : String := "";
+      Group_Count       : Natural := 0);
    --  Parse all subdirectories of Current_Dir for those that match
    --  Path_To_Check (see description of <directory>). When a match is found,
    --  the regexp is evaluated against the current directory, and the matching
    --  parenthesis group is appended to Append_To (comma-separated).
    --  If Group is -1, then Value_If_Match is used instead of the parenthesis
    --  group.
+   --  Group_Match is the substring that matched Group (if it has been matched
+   --  already). Group_Count is the number of parenthesis groups that have been
+   --  processed so far. The idea is to compute the matching substring as we
+   --  go, since the regexp might no longer match in the end, if for instance
+   --  it includes ".." directories.
 
    function Substitute_Special_Dirs
      (Str         : String;
@@ -166,8 +173,61 @@ package body GprConfig.Knowledge is
    procedure Put_Verbose (Str : String);
    --  Print Str if verbose mode is activated
 
+   function Is_Regexp (Str : String) return Boolean;
+   --  Whether Str is a regular expression
+
    Exec_Suffix : constant GNAT.Strings.String_Access :=
-      Get_Executable_Suffix;
+     Get_Executable_Suffix;
+
+   function Unquote
+     (Str : String; Remove_Quoted : Boolean := False) return String;
+   --  Remove special '\' quoting characters from Str.
+   --  As a special case, if Remove_Quoted is true, then '\' and the following
+   --  char are simply omitted in the output.
+   --  For instance:
+   --      Str="A\." Remove_Quoted=False  => output is "A."
+   --      Str="A\." Remove_Quoted=False  => output is "A"
+   -------------
+   -- Unquote --
+   -------------
+
+   function Unquote
+     (Str : String; Remove_Quoted : Boolean := False) return String
+   is
+      Str2  : String (Str'Range);
+      S     : Integer := Str'First;
+      Index : Integer := Str2'First;
+   begin
+      while S <= Str'Last loop
+         if Str (S) = '\' then
+            S := S + 1;
+            if not Remove_Quoted then
+               Str2 (Index) := Str (S);
+               Index := Index + 1;
+            end if;
+         else
+            Str2 (Index) := Str (S);
+            Index := Index + 1;
+         end if;
+         S     := S + 1;
+      end loop;
+      return Str2 (Str2'First .. Index - 1);
+   end Unquote;
+
+   ---------------
+   -- Is_Regexp --
+   ---------------
+
+   function Is_Regexp (Str : String) return Boolean is
+      --  Take into account characters quoted by '\'. We just remove them for
+      --  now, so that when we quote the regexp it won't see these potentially
+      --  special characters.
+      --  The goal is that for instance "\.\." is not considered as a regexp,
+      --  but "\.." is.
+      Str2 : constant String := Unquote (Str, Remove_Quoted => True);
+   begin
+      return GNAT.Regpat.Quote (Str2) /= Str2;
+   end Is_Regexp;
 
    -----------------
    -- Put_Verbose --
@@ -634,7 +694,9 @@ package body GprConfig.Knowledge is
       Regexp            : Pattern_Matcher;
       Regexp_Str        : String;
       Value_If_Match    : String;
-      Group             : Integer)
+      Group             : Integer;
+      Group_Match       : String := "";
+      Group_Count       : Natural := 0)
    is
       First : constant Integer := Path_To_Check'First;
       Last  : Integer;
@@ -644,39 +706,25 @@ package body GprConfig.Knowledge is
         or else Path_To_Check = "" & Directory_Separator
       then
          if Group = -1 then
-            Put_Verbose ("<directory>: saving " & Current_Dir);
+            Put_Verbose ("<dir>: SAVE " & Current_Dir);
             Append
               (Processed_Value,
                (Value => To_Unbounded_String (Value_If_Match),
                 Extracted_From => To_Unbounded_String (Current_Dir)));
          else
-            declare
-               Matched : Match_Array (0 .. Group);
-               Dir    : constant String := Format_Pathname (Current_Dir, UNIX);
-            begin
-               --  We matched, so insert the relevant path. Convert the path to
-               --  unix format first, so that the regexp is system-independent
-               Match (Regexp, Dir, Matched);
-               if Matched (Group) /= No_Match then
-                  Put_Verbose ("<directory>: saving " & Dir);
-                  Append
-                    (Processed_Value,
-                     (Value => To_Unbounded_String
-                        (Current_Dir
-                           (Matched (Group).First .. Matched (Group).Last)),
-                      Extracted_From => To_Unbounded_String (Current_Dir)));
-               else
-                  Put_Verbose
-                    ("<directory>:" & Dir & " doesn't match " & Regexp_Str);
-               end if;
-            end;
+            Put_Verbose ("<dir>: SAVE " & Current_Dir);
+            Append
+              (Processed_Value,
+               (Value          => To_Unbounded_String (Group_Match),
+                Extracted_From => To_Unbounded_String (Current_Dir)));
          end if;
 
       else
+         --  Do not split on '\', since we document we only accept UNIX paths
+         --  anyway. This leaves \ for regexp quotes
          Last := First + 1;
          while Last <= Path_To_Check'Last
            and then Path_To_Check (Last) /= '/'
-           and then Path_To_Check (Last) /= Directory_Separator
          loop
             Last := Last + 1;
          end loop;
@@ -687,50 +735,57 @@ package body GprConfig.Knowledge is
          --  "adainclude" link pointing to "rts-native/adainclude", and
          --  therefore the runtime appears twice. Since it appears with
          --  different names ("default" and "native"), we currently leave both
-         if GNAT.Regpat.Quote (Path_To_Check (First .. Last - 1)) =
-           Path_To_Check (First .. Last - 1)
-         then
+         if not Is_Regexp (Path_To_Check (First .. Last - 1)) then
             declare
                Dir : constant String :=
                  Normalize_Pathname (Current_Dir, Resolve_Links => False)
                  & Directory_Separator
-                 & Path_To_Check (First .. Last - 1);
+                 & Unquote (Path_To_Check (First .. Last - 1));
+               Remains : constant String :=
+                 Path_To_Check (Last + 1 .. Path_To_Check'Last);
             begin
                if Ada.Directories.Exists (Dir) then
-                  Put_Verbose ("<directory>: Recursing into " & Dir);
+                  Put_Verbose ("<dir>: Recurse into " & Dir);
                   --  If there is such a subdir, keep checking
                   Parse_All_Dirs
                     (Processed_Value => Processed_Value,
                      Current_Dir     => Dir & Directory_Separator,
-                     Path_To_Check   =>
-                       Path_To_Check (Last + 1 .. Path_To_Check'Last),
+                     Path_To_Check   => Remains,
                      Regexp          => Regexp,
                      Regexp_Str      => Regexp_Str,
                      Value_If_Match  => Value_If_Match,
-                     Group           => Group);
+                     Group           => Group,
+                     Group_Match     => Group_Match,
+                     Group_Count     => Group_Count);
                else
-                  Put_Verbose ("<directory>: No such directory: " & Dir);
+                  Put_Verbose ("<dir>: No such directory: " & Dir);
                end if;
             end;
 
          --  Else we have a regexp, check all files
          else
             declare
-               File_Regexp : constant Pattern_Matcher :=
-                 Compile (Path_To_Check (First .. Last - 1));
+               File_Re : constant String := Path_To_Check (First .. Last - 1);
+               File_Regexp : constant Pattern_Matcher := Compile (File_Re);
                Search : Search_Type;
                File   : Directory_Entry_Type;
                Filter : Ada.Directories.Filter_Type;
             begin
+               if Verbose_Mode and then File_Re = ".." then
+                  Put_Verbose
+                    ("Potential error: .. is generally not meant as a regexp,"
+                     & " and should be quoted in this case, as in \.\.");
+               end if;
+
                if Path_To_Check (Last) = '/' then
                   Put_Verbose
-                    ("<directory>: Checking directories in " & Current_Dir
-                     & " that match " & Path_To_Check (First .. Last - 1));
+                    ("<dir>: Check directories in " & Current_Dir
+                     & " that match " & File_Re);
                   Filter := (Directory => True, others => False);
                else
                   Put_Verbose
-                    ("<directory>: Checking files in " & Current_Dir
-                     & " that match " & Path_To_Check (First .. Last - 1));
+                    ("<dir>: Check files in " & Current_Dir
+                     & " that match " & File_Re);
                   Filter := (others => True);
                end if;
 
@@ -743,20 +798,56 @@ package body GprConfig.Knowledge is
                   Get_Next_Entry (Search, File);
                   if Simple_Name (File) /= "."
                     and then Simple_Name (File) /= ".."
-                    and then Match (File_Regexp, Simple_Name (File))
                   then
-                     Put_Verbose
-                       ("<directory>: Matching " & Simple_Name (File));
-                     Parse_All_Dirs
-                       (Processed_Value => Processed_Value,
-                        Current_Dir     =>
-                          Full_Name (File) & Directory_Separator,
-                        Path_To_Check   =>
-                          Path_To_Check (Last + 1 .. Path_To_Check'Last),
-                        Regexp          => Regexp,
-                        Regexp_Str      => Regexp_Str,
-                        Value_If_Match  => Value_If_Match,
-                        Group           => Group);
+                     declare
+                        Matched : Match_Array
+                          (0 .. Integer'Max (Group, 0));
+                        Simple  : constant String := Simple_Name (File);
+                        Count  : constant Natural := Paren_Count (File_Regexp);
+                     begin
+                        Match (File_Regexp, Simple, Matched);
+                        if Matched (0) /= No_Match then
+                           Put_Verbose
+                             ("<dir>: Matched " & Simple_Name (File));
+
+                           if Group_Count < Group
+                             and then Group_Count + Count >= Group
+                           then
+                              Put_Verbose
+                                ("<dir>: Found matched group: "
+                                 & Simple (Matched (Group - Group_Count).First
+                                   .. Matched (Group - Group_Count).Last));
+                              Parse_All_Dirs
+                                (Processed_Value => Processed_Value,
+                                 Current_Dir     =>
+                                   Full_Name (File) & Directory_Separator,
+                                 Path_To_Check   => Path_To_Check
+                                   (Last + 1 .. Path_To_Check'Last),
+                                 Regexp          => Regexp,
+                                 Regexp_Str      => Regexp_Str,
+                                 Value_If_Match  => Value_If_Match,
+                                 Group           => Group,
+                                 Group_Match     =>
+                                   Simple (Matched (Group - Group_Count).First
+                                       .. Matched (Group - Group_Count).Last),
+                                 Group_Count     => Group_Count + Count);
+
+                           else
+                              Parse_All_Dirs
+                                (Processed_Value => Processed_Value,
+                                 Current_Dir     =>
+                                   Full_Name (File) & Directory_Separator,
+                                 Path_To_Check   => Path_To_Check
+                                   (Last + 1 .. Path_To_Check'Last),
+                                 Regexp          => Regexp,
+                                 Regexp_Str      => Regexp_Str,
+                                 Value_If_Match  => Value_If_Match,
+                                 Group           => Group,
+                                 Group_Match     => Group_Match,
+                                 Group_Count     => Group_Count + Count);
+                           end if;
+                        end if;
+                     end;
                   end if;
                end loop;
             end;

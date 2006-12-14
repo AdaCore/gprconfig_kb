@@ -493,7 +493,8 @@ constructs can be specified in the regexp:
       used when substituting text in configuration chunks.
       OUTPUT_DIR and RUNTIME_DIR always end with a directory separator.
 @item "regexp" can be any valid regular expression. This will only match
-      a directory name, not a subdirectory
+      a directory name, not a subdirectory. Remember to quote special
+      characters, including ".", if you do not mean to use a regexp.
 @end itemize
 
 The group attribute indicates which parenthesis group should be returned.
@@ -505,8 +506,8 @@ is done with:
 
 @smallexample
 <runtimes>
- <directory group="1">../lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude</directory>
- <directory group="default">../lib/gcc/$@{TARGET@}/.*/adainclude</directory>
+ <directory group="1">\.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude</directory>
+ <directory group="default">\.\./lib/gcc/$@{TARGET@}/.*/adainclude</directory>
 </runtimes>
 @end smallexample
 
