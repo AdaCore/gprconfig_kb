@@ -76,8 +76,8 @@
     </version>
     <languages>Ada</languages>
     <runtimes>
-       <directory group="2" >../lib/gcc(-lib)?/$TARGET/$VERSION2/rts-(.*)/adainclude/</directory>
-       <directory group="default" >../lib/gcc(-lib)?/$TARGET/$VERSION2/adainclude/</directory>
+       <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$VERSION2/rts-(.*)/adainclude/</directory>
+       <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$VERSION2/adainclude/</directory>
     </runtimes>
     <extra_tool>${GPRCONFIG_PREFIX}libexec/gprmake/create_ada_runtime_project -adainclude ${RUNTIME_DIR}  -o ${OUTPUT_DIR}ada_runtime.gpr -mapping ${GPRCONFIG_PREFIX}share/gprconfig/gnat_runtime.mapping</extra_tool>
     <target>
