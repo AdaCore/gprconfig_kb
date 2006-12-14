@@ -45,6 +45,8 @@ package body GprConfig.Knowledge is
    use Compiler_Filter_Lists, External_Value_Lists, String_Lists;
    use External_Value_Nodes;
 
+   Case_Sensitive_Files : constant Boolean := Directory_Separator = '\';
+
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
 
@@ -1144,7 +1146,6 @@ package body GprConfig.Knowledge is
       Name      : String := "")
    is
       C      : Compiler_Description_Maps.Cursor;
-      Case_Sensitive : constant Boolean := Directory_Separator = '\';
    begin
       --  Do not search all entries in the directory, but check explictly for
       --  the compilers. This results in a lot less system calls, and thus is
@@ -1158,11 +1159,10 @@ package body GprConfig.Knowledge is
                  (Name           => To_String (Element (C).Executable),
                   Directory      => Directory,
                   Resolve_Links  => False,
-                  Case_Sensitive => Case_Sensitive) & Exec_Suffix.all;
+                  Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
             begin
                Put_Verbose
-                 ("Testing for " & To_String (Element (C).Executable)
-                  & " in " & Directory);
+                 ("Testing for " & Key (C) & " in " & Directory);
                if Ada.Directories.Exists (F) then
                   For_Each_Language_Runtime
                     (Append_To  => Append_To,
@@ -1225,11 +1225,22 @@ package body GprConfig.Knowledge is
                   Last := Last + 1;
                end loop;
 
+               Put_Verbose ("Parsing PATH: " & Path (First .. Last - 1));
+
                --  Use a hash to make sure we do not parse the same directory
                --  twice. This is both more efficient and avoids duplicates in
                --  the final result list
-               if not Contains (Map, Path (First .. Last - 1)) then
-                  Append (Map, Path (First .. Last - 1));
+               if (Case_Sensitive_Files
+                   and then not Contains (Map, Path (First .. Last - 1)))
+                 or else (not Case_Sensitive_Files
+                          and then not Contains
+                            (Map, To_Lower (Path (First .. Last - 1))))
+               then
+                  if Case_Sensitive_Files then
+                     Append (Map, To_Lower (Path (First .. Last - 1)));
+                  else
+                     Append (Map, Path (First .. Last - 1));
+                  end if;
                   Find_Compilers_In_Dir
                     (Append_To => Compilers,
                      Base      => Base,
