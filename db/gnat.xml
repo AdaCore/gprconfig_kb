@@ -18,7 +18,7 @@
 
    package Language_Processing is
       for Language_Kind            ("Ada") use "unit_based";
-      for Compiler_Driver          ("Ada") use "gcc";
+      for Compiler_Driver          ("Ada") use "${PATH}gcc";
       for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
@@ -44,7 +44,8 @@
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
       for Runtime_Project       ("Ada") use
           "${OUTPUT_DIR}ada_runtime.gpr";
-      for Binder_Driver         ("Ada") use "gprbind";
+      for Binder_Driver         ("Ada") use
+          "${GPRCONFIG_PREFIX}/libexec/gprmake/gprbind";
       for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
    end Language_Processing;
    </config>
