@@ -174,9 +174,6 @@ package body GprConfig.Knowledge is
    procedure Skip_Spaces_Backward (Str : String; Index : in out Integer);
    --  Same as Skip_Spaces, but goes backward
 
-   procedure Put_Verbose (Str : String);
-   --  Print Str if verbose mode is activated
-
    function Is_Regexp (Str : String) return Boolean;
    --  Whether Str is a regular expression
 

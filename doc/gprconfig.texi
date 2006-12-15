@@ -116,7 +116,12 @@ performed: only compilers that target the same platform as the selected
 compiler are now displayed. @code{gprconfig} then checks whether it is
 possible to link sources compiled with the selected compiler and each of
 the remaing compiler; when linking is not possible, the compiler is not
-displayed.
+displayed. Likewise, all compilers for the same language are hidden, so that
+you can only select one compiler per language. If you need to compile your
+application with several C compilers for instance, you should create another
+language, for instance called C2, for that purpose. That will give you the
+flexibility to indicate in the project files which compiler should be used
+for which sources.
 
 The goal of this filtering is to make it more obvious whether you have
 good chances of being able to link. There is however no guarantee that

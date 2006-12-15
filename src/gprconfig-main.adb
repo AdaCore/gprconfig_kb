@@ -340,6 +340,7 @@ procedure GprConfig.Main is
          Comp            : Compiler_Lists.Cursor := First (Compilers);
          Index, Tmp      : Natural;
          Choice          : Character;
+         Selected_Comp   : Compiler;
          Selected_Target : Unbounded_String;
          Line            : String (1 .. 1024);
       begin
@@ -398,6 +399,7 @@ procedure GprConfig.Main is
             else
                --  Selected one of the compilers we found ?
                Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
+               Selected_Comp := No_Compiler;
 
                if Tmp in 1 .. Comps'Last then
                   Selected (Tmp) := not Selected (Tmp);
@@ -407,6 +409,7 @@ procedure GprConfig.Main is
                      if Selected_Count = 1 then
                         Selected_Target := Comps (Tmp).Target;
                      end if;
+                     Selected_Comp   := Comps (Tmp);
                   else
                      Selected_Count := Selected_Count - 1;
                   end if;
@@ -420,6 +423,7 @@ procedure GprConfig.Main is
                      Tmp := Tmp - 1;
                      Next (Comp);
                   end loop;
+                  Selected_Comp := Element (Comp);
                   Delete (Custom_Comps, Comp);
 
                else
@@ -440,7 +444,14 @@ procedure GprConfig.Main is
                --  otherwise linking makes no sense.
 
                Put_Line
-                 ("Filtering the list to only show compatible compilers");
+                 ("Filtering the list to only show compatible compilers"
+                  & " (same target, one per language)");
+               Put_Verbose
+                 ("<filter> remove all compilers for language "
+                  & To_String (Selected_Comp.Language));
+               Put_Verbose
+                 ("<filter> remove all compilers for target /= "
+                  & To_String (Selected_Target));
                for C in Comps'Range loop
                   if not Selected (C) then
                      Selected_Compilers := Custom_Comps;
@@ -451,7 +462,9 @@ procedure GprConfig.Main is
                         or else Architecture_Equal
                           (To_String (Selected_Target),
                            To_String (Comps (C).Target)))
-                       and then Is_Supported_Config (Base, Selected_Compilers);
+                       and then Is_Supported_Config (Base, Selected_Compilers)
+                       and then Selected_Comp.Language /=
+                         Comps (C).Language;
                   end if;
                end loop;
             end if;
