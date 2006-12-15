@@ -102,6 +102,11 @@ you launch @code{gprconfig}, since that simplifies the setup.
 @code{gprconfig} will then display a list of all the compilers it has found,
 along with the language they can compile, the runtime they use (when
 applicable),@dots{}. It will then wait until you select one of the compilers.
+This list is sorted by language, then by order in the @code{PATH} environment
+variable (so that compilers that you are more likely to use appear first),
+then by runtime names and finally by version of the compiler.
+The idea is that the first compiler for any language is the most likely one
+you want to use.
 
 Selection is done by entering the letter that appears on the line for
 each compiler. If the compiler was already selected, it is deselected.

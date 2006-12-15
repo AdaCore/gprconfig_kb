@@ -32,10 +32,14 @@ package GprConfig.Knowledge is
       Runtime_Dir : Ada.Strings.Unbounded.Unbounded_String;
       Language    : Ada.Strings.Unbounded.Unbounded_String;
       Extra_Tool  : Ada.Strings.Unbounded.Unbounded_String;
+      Path_Order  : Integer;
    end record;
    No_Compiler : constant Compiler;
    --  Describes one of the compilers found on the PATH.
    --  Path is the directory that contains the compiler executable.
+   --  Path_Order is used for sorting in the interactive menu: it indicates the
+   --  index in $PATH of the directory, so that we can show first the compilers
+   --  that are first in path.
 
    package Compiler_Lists is new Ada.Containers.Doubly_Linked_Lists (Compiler);
 
@@ -45,10 +49,10 @@ package GprConfig.Knowledge is
    --  Return the list of compilers found on PATH
 
    procedure Find_Matching_Compilers
-     (Name      : String;
-      Path      : String;
-      Base      : Knowledge_Base;
-      Compilers : out Compiler_Lists.List);
+     (Name       : String;
+      Path       : String;
+      Base       : Knowledge_Base;
+      Compilers  : out Compiler_Lists.List);
    --  Given a compiler and its name, find out as much information as we can.
    --  If the compiler is totally unknown, the returned list will be empty.
 
@@ -112,7 +116,8 @@ private
       Runtime     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
       Language    => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Extra_Tool  => Ada.Strings.Unbounded.Null_Unbounded_String);
+      Extra_Tool  => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Path_Order  => 0);
 
    type External_Value_Type is (Value_Constant,
                                 Value_Shell,

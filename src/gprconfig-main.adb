@@ -298,7 +298,20 @@ procedure GprConfig.Main is
       elsif Comp1.Language > Comp2.Language then
          return False;
       else
-         return Comp1.Path < Comp2.Path;
+         if Comp1.Path_Order < Comp2.Path_Order then
+            return True;
+         elsif Comp1.Path_Order > Comp2.Path_Order then
+            return False;
+         else
+            if Comp1.Runtime < Comp2.Runtime then
+               return True;
+            elsif Comp1.Runtime > Comp2.Runtime then
+               return False;
+            else
+               --  More recent version first
+               return Comp1.Version > Comp2.Version;
+            end if;
+         end if;
       end if;
    end "<";
 

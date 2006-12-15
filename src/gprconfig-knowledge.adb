@@ -69,10 +69,11 @@ package body GprConfig.Knowledge is
    --  Parse an XML node that describes an external value
 
    procedure Find_Compilers_In_Dir
-     (Append_To : in out Compiler_Lists.List;
-      Base      : Knowledge_Base;
-      Directory : String;
-      Name      : String := "");
+     (Append_To  : in out Compiler_Lists.List;
+      Base       : Knowledge_Base;
+      Directory  : String;
+      Name       : String := "";
+      Path_Order : Integer);
    --  Find all known compilers in a specific directory.
    --  If Name is specified, then only compilers with that given name are
    --  searched for.
@@ -96,7 +97,8 @@ package body GprConfig.Knowledge is
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
       Directory  : String;
-      Descr      : Compiler_Description);
+      Descr      : Compiler_Description;
+      Path_Order : Integer);
    --  For each language/runtime parsed in Languages/Runtimes, create a new
    --  compiler in the list.
 
@@ -1055,7 +1057,8 @@ package body GprConfig.Knowledge is
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
       Directory  : String;
-      Descr      : Compiler_Description)
+      Descr      : Compiler_Description;
+      Path_Order : Integer)
    is
       Target    : External_Value_Lists.List;
       Version   : External_Value_Lists.List;
@@ -1066,6 +1069,7 @@ package body GprConfig.Knowledge is
    begin
       Comp.Name       := To_Unbounded_String (Name);
       Comp.Path       := To_Unbounded_String (Directory);
+      Comp.Path_Order := Path_Order;
       Comp.Extra_Tool := Descr.Extra_Tool;
 
       Get_External_Value
@@ -1140,10 +1144,11 @@ package body GprConfig.Knowledge is
    ---------------------------
 
    procedure Find_Compilers_In_Dir
-     (Append_To : in out Compiler_Lists.List;
-      Base      : Knowledge_Base;
-      Directory : String;
-      Name      : String := "")
+     (Append_To  : in out Compiler_Lists.List;
+      Base       : Knowledge_Base;
+      Directory  : String;
+      Name       : String := "";
+      Path_Order : Integer)
    is
       C      : Compiler_Description_Maps.Cursor;
    begin
@@ -1168,7 +1173,8 @@ package body GprConfig.Knowledge is
                     (Append_To  => Append_To,
                      Name       => Key (C),
                      Directory  => Directory,
-                     Descr      => Element (C));
+                     Descr      => Element (C),
+                     Path_Order => Path_Order);
                end if;
             exception
                when Ada.Directories.Name_Error =>
@@ -1187,18 +1193,19 @@ package body GprConfig.Knowledge is
    -----------------------------
 
    procedure Find_Matching_Compilers
-     (Name      : String;
-      Path      : String;
-      Base      : Knowledge_Base;
-      Compilers : out Compiler_Lists.List)
+     (Name       : String;
+      Path       : String;
+      Base       : Knowledge_Base;
+      Compilers  : out Compiler_Lists.List)
    is
    begin
       Clear (Compilers);
       Find_Compilers_In_Dir
-        (Append_To => Compilers,
-         Base      => Base,
-         Directory => Path,
-         Name      => Name);
+        (Append_To  => Compilers,
+         Base       => Base,
+         Directory  => Path,
+         Name       => Name,
+         Path_Order => 0);
    end Find_Matching_Compilers;
 
    ----------------------------
@@ -1209,7 +1216,8 @@ package body GprConfig.Knowledge is
      (Base      : Knowledge_Base;
       Compilers : out Compiler_Lists.List)
    is
-      Map : String_Lists.List;
+      Map        : String_Lists.List;
+      Path_Order : Positive := 1;
    begin
       if Ada.Environment_Variables.Exists ("PATH") then
          declare
@@ -1242,11 +1250,13 @@ package body GprConfig.Knowledge is
                      Append (Map, Path (First .. Last - 1));
                   end if;
                   Find_Compilers_In_Dir
-                    (Append_To => Compilers,
-                     Base      => Base,
-                     Directory => Path (First .. Last - 1));
+                    (Append_To  => Compilers,
+                     Base       => Base,
+                     Directory  => Path (First .. Last - 1),
+                     Path_Order => Path_Order);
                end if;
 
+               Path_Order := Path_Order + 1;
                First := Last + 1;
             end loop;
          end;
