@@ -1674,7 +1674,11 @@ package body GprConfig.Knowledge is
 
    function Architecture_Equal (Arch1, Arch2 : String) return Boolean is
    begin
-      return Arch1 = Arch2;
+      --  Special handling for linux: i586-suse-linux is compatible with
+      --  i686-pc-linux-gnu for instance
+
+      return Arch1 = Arch2
+        or else (Match ("linux", Arch1) and then Match ("linux", Arch2));
    end Architecture_Equal;
 
 end GprConfig.Knowledge;
