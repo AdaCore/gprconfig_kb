@@ -2,6 +2,7 @@
 --                   Copyright (C) 2006, AdaCore                            --
 ------------------------------------------------------------------------------
 
+with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Containers;            use Ada.Containers;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -54,9 +55,16 @@ procedure GprConfig.Main is
 
    procedure Select_Compilers_Interactively
      (Base               : Knowledge_Base;
+      Compilers          : Compiler_Lists.List;
       Selected_Compilers : in out Compiler_Lists.List;
       Custom_Comps       : in out Compiler_Lists.List);
    --  Ask the user for compilers to be selected
+
+   procedure Select_Compilers_For_Lang
+     (Languages          : String;
+      Compilers          : Compiler_Lists.List;
+      Selected_Compilers : in out Compiler_Lists.List);
+   --  Select the first compiler for all languages in Languages
 
    procedure Complete_Command_Line_Compilers
      (Base         : Knowledge_Base;
@@ -88,6 +96,8 @@ procedure GprConfig.Main is
       Put_Line ("           you do not need to provide any of the optional"
                 & " parameter, and can leave an");
       Put_Line ("           empty string instead");
+      Put_Line (" -lang [lang1,lang2,...]: Preselect the first compiler for"
+                & " each specified language");
       Put_Line (" -batch  : batch mode, no interactive compiler selection");
       Put_Line (" -v      : verbose mode");
    end Help;
@@ -315,164 +325,213 @@ procedure GprConfig.Main is
       end if;
    end "<";
 
+   -------------------------------
+   -- Select_Compilers_For_Lang --
+   -------------------------------
+
+   procedure Select_Compilers_For_Lang
+     (Languages          : String;
+      Compilers          : Compiler_Lists.List;
+      Selected_Compilers : in out Compiler_Lists.List)
+   is
+      use String_Lists;
+      Langs : String_Lists.List;
+      Comp  : Compiler_Lists.Cursor := First (Compilers);
+      C     : String_Lists.Cursor;
+   begin
+      Get_Words (Words                => Languages,
+                 Filter               => Null_Unbounded_String,
+                 Map                  => Langs,
+                 Allow_Empty_Elements => False);
+
+      while Has_Element (Comp) loop
+         C := Find (Langs, To_Lower (To_String (Element (Comp).Language)));
+         if Has_Element (C) then
+            Append (Selected_Compilers, Element (Comp));
+            Delete (Langs, C);
+         end if;
+
+         Next (Comp);
+      end loop;
+   end Select_Compilers_For_Lang;
+
    ------------------------------------
    -- Select_Compilers_Interactively --
    ------------------------------------
 
    procedure Select_Compilers_Interactively
      (Base               : Knowledge_Base;
+      Compilers          : Compiler_Lists.List;
       Selected_Compilers : in out Compiler_Lists.List;
       Custom_Comps       : in out Compiler_Lists.List)
    is
-      package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
-      Compilers : Compiler_Lists.List;
-   begin
-      Find_Compilers_In_Path (Base, Compilers);
-      Compiler_Sort.Sort (Compilers);
+      Compilers_Count : constant Natural := Natural (Length (Compilers));
+      Selected : Boolean_Array  (1 .. Compilers_Count) := (others => False);
+      Selectable : Boolean_Array  (1 .. Compilers_Count) := (others => True);
+      Comps           : Compiler_Array (1 .. Compilers_Count);
+      Comp            : Compiler_Lists.Cursor := First (Compilers);
+      Index, Tmp      : Natural;
+      Choice          : Character;
+      Line            : String (1 .. 1024);
 
-      declare
-         Compilers_Count : constant Natural := Natural (Length (Compilers));
-         Selected : Boolean_Array  (1 .. Compilers_Count) := (others => False);
-         Selectable : Boolean_Array  (1 .. Compilers_Count) :=
-           (others => True);
-         Selected_Count  : Natural := 0;
-         Comps           : Compiler_Array (1 .. Compilers_Count);
-         Comp            : Compiler_Lists.Cursor := First (Compilers);
-         Index, Tmp      : Natural;
-         Choice          : Character;
-         Selected_Comp   : Compiler;
+      procedure Filter_List;
+      --  Filter the list to display.
+      --  Only keep those compilers that might be compatible with the
+      --  current selection. For instance, if we won't know how to
+      --  link sources compiled with A and sources compiled with B,
+      --  and A is selected, there is no point in showing B.
+      --
+      --  Only keep other compilers with the same target, since
+      --  otherwise linking makes no sense.
+
+      procedure Filter_List is
          Selected_Target : Unbounded_String;
-         Line            : String (1 .. 1024);
+         Tmp_Selection   : Compiler_Lists.List;
+         Tmp_Selection2  : Compiler_Lists.List;
+         Comp            : Compiler_Lists.Cursor;
       begin
-         for C in Comps'Range loop
-            Comps (C) := Element (Comp);
+         --  Simulate the current selection
+         Tmp_Selection := Custom_Comps;
+         To_List (Comps, Selected, Tmp_Selection);
+
+         if Length (Tmp_Selection) = 0 then
+            Selectable := (others => True);
+         else
+            Selected_Target := Element (First (Tmp_Selection)).Target;
+
+            Put_Verbose ("Filtering the list of compilers");
+            Put_Verbose
+              (" <filter> remove all compilers for target /= "
+               & To_String (Selected_Target));
+
+            for C in Comps'Range loop
+               if not Selected (C) then
+                  --  Is the language already selected ?
+                  Selectable (C) := True;
+                  Comp := First (Tmp_Selection);
+                  while Has_Element (Comp) loop
+                     if Element (Comp).Language = Comps (C).Language then
+                        Selectable (C) := False;
+                        if Verbose_Mode then
+                           Put_Verbose ("Already selected language for");
+                           Display_Compiler (Comps (C), False, C);
+                        end if;
+                        exit;
+                     end if;
+                     Next (Comp);
+                  end loop;
+
+                  --  Is the target compatible ?
+                  if Selectable (C) then
+                     Selectable (C) := Architecture_Equal
+                       (To_String (Selected_Target),
+                        To_String (Comps (C).Target));
+                     if not Selectable (C) then
+                        if Verbose_Mode then
+                           Put_Verbose ("Incompatible target for:");
+                           Display_Compiler (Comps (C), False, C);
+                        end if;
+                     end if;
+                  end if;
+
+                  --  Would adding this compiler to the current selection end
+                  --  up with an unsupported config ?
+                  if Selectable (C) then
+                     Tmp_Selection2 := Tmp_Selection;
+                     Append (Tmp_Selection2, Comps (C));
+                     Selectable (C) :=
+                       Is_Supported_Config (Base, Tmp_Selection2);
+                     if not Selectable (C) then
+                        if Verbose_Mode then
+                           Put_Verbose ("Unsupported config for:");
+                           Display_Compiler (Comps (C), False, C);
+                        end if;
+                     end if;
+                  end if;
+               end if;
+            end loop;
+         end if;
+      end Filter_List;
+
+   begin
+      for C in Comps'Range loop
+         Comps (C) := Element (Comp);
+         Selected (C) := Contains (Selected_Compilers, Comps (C));
+         Next (Comp);
+      end loop;
+
+      Filter_List;
+
+      loop
+         Put_Line ("--------------------------------------------------");
+         Put_Line
+           ("gprconfig has detected the following known compilers"
+            & " on your PATH:");
+         Index := 1;
+         while Index <= Comps'Last loop
+            if Selectable (Index) or Selected (Index) then
+               Display_Compiler (Comps (Index), Selected (Index), Index);
+            end if;
+            Index := Index + 1;
+         end loop;
+
+         Comp := First (Custom_Comps);
+         while Has_Element (Comp) loop
+            Display_Compiler (Element (Comp), True, Index);
+            Index := Index + 1;
             Next (Comp);
          end loop;
 
-         loop
-            Put_Line ("--------------------------------------------------");
-            Put_Line
-              ("gprconfig has detected the following known compilers"
-               & " on your PATH:");
-            Index := 1;
-            while Index <= Comps'Last loop
-               if Selectable (Index) or Selected (Index) then
-                  Display_Compiler (Comps (Index), Selected (Index), Index);
-               end if;
-               Index := Index + 1;
-            end loop;
+         Put_Line (" (o) Other compiler");
+         Put_Line (" (s) Generate configuration file");
+         Put ("Toggle selection for: ");
+         Get_Line (Line, Tmp);
+         if Tmp = 0 then
+            Choice := ASCII.NUL;
+         else
+            Choice := Line (Line'First);
+         end if;
 
-            Comp := First (Custom_Comps);
-            while Has_Element (Comp) loop
-               Display_Compiler (Element (Comp), True, Index);
-               Index := Index + 1;
-               Next (Comp);
-            end loop;
+         if Choice = 'o' then
+            --  Update Selected_Target if needed
+            declare
+               Comp : Compiler;
+            begin
+               Enter_Custom_Target (Base, Comp);
+               Append (Custom_Comps, Comp);
+            end;
 
-            Put_Line (" (o) Other compiler");
-            Put_Line (" (s) Generate configuration file");
-            Put ("Toggle selection for: ");
-            Get_Line (Line, Tmp);
-            if Tmp = 0 then
-               Choice := ASCII.NUL;
-            else
-               Choice := Line (Line'First);
-            end if;
+         elsif Choice = 's' then
+            exit;
 
-            if Choice = 'o' then
-               --  Update Selected_Target if needed
-               declare
-                  Comp : Compiler;
-               begin
-                  Enter_Custom_Target (Base, Comp);
-                  Append (Custom_Comps, Comp);
+         else
+            --  Selected one of the compilers we found ?
+            Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
 
-                  Selected_Count := Selected_Count + 1;
-                  if Selected_Count = 1 then
-                     Selected_Target := Comp.Target;
-                  end if;
-               end;
+            if Tmp in 1 .. Comps'Last then
+               Selected (Tmp) := not Selected (Tmp);
 
-            elsif Choice = 's' then
-               exit;
-
-            else
-               --  Selected one of the compilers we found ?
-               Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
-               Selected_Comp := No_Compiler;
-
-               if Tmp in 1 .. Comps'Last then
-                  Selected (Tmp) := not Selected (Tmp);
-
-                  if Selected (Tmp) then
-                     Selected_Count := Selected_Count + 1;
-                     if Selected_Count = 1 then
-                        Selected_Target := Comps (Tmp).Target;
-                     end if;
-                     Selected_Comp   := Comps (Tmp);
-                  else
-                     Selected_Count := Selected_Count - 1;
-                  end if;
-
-                  --  Selected one of the custom compilers
-               elsif Tmp in Comps'Last + 1 .. Index - 1 then
-                  Selected_Count := Selected_Count - 1;
-                  Comp := First (Custom_Comps);
-                  Tmp := Tmp - Comps'Last;
-                  while Tmp > 0 and then Has_Element (Comp) loop
-                     Tmp := Tmp - 1;
-                     Next (Comp);
-                  end loop;
-                  Selected_Comp := Element (Comp);
-                  Delete (Custom_Comps, Comp);
-
-               else
-                  --  Invalid choice
-                  null;
-               end if;
-
-               if Selected_Count = 0 then
-                  Selected_Target := Null_Unbounded_String;
-               end if;
-
-               --  Only keep those compilers that might be compatible with the
-               --  current selection. For instance, if we won't know how to
-               --  link sources compiled with A and sources compiled with B,
-               --  and A is selected, there is no point in showing B.
-               --
-               --  Only keep other compilers with the same target, since
-               --  otherwise linking makes no sense.
-
-               Put_Line
-                 ("Filtering the list to only show compatible compilers"
-                  & " (same target, one per language)");
-               Put_Verbose
-                 ("<filter> remove all compilers for language "
-                  & To_String (Selected_Comp.Language));
-               Put_Verbose
-                 ("<filter> remove all compilers for target /= "
-                  & To_String (Selected_Target));
-               for C in Comps'Range loop
-                  if not Selected (C) then
-                     Selected_Compilers := Custom_Comps;
-                     To_List (Comps, Selected, Selected_Compilers);
-                     Append (Selected_Compilers, Comps (C));
-                     Selectable (C) :=
-                       (Selected_Count = 0
-                        or else Architecture_Equal
-                          (To_String (Selected_Target),
-                           To_String (Comps (C).Target)))
-                       and then Is_Supported_Config (Base, Selected_Compilers)
-                       and then Selected_Comp.Language /=
-                         Comps (C).Language;
-                  end if;
+               --  Selected one of the custom compilers
+            elsif Tmp in Comps'Last + 1 .. Index - 1 then
+               Comp := First (Custom_Comps);
+               Tmp := Tmp - Comps'Last;
+               while Tmp > 0 and then Has_Element (Comp) loop
+                  Tmp := Tmp - 1;
+                  Next (Comp);
                end loop;
-            end if;
-         end loop;
+               Delete (Custom_Comps, Comp);
 
-         Selected_Compilers := Custom_Comps;
-         To_List (Comps, Selected, Selected_Compilers);
-      end;
+            else
+               --  Invalid choice
+               null;
+            end if;
+         end if;
+
+         Filter_List;
+      end loop;
+
+      Selected_Compilers := Custom_Comps;
+      To_List (Comps, Selected, Selected_Compilers);
    end Select_Compilers_Interactively;
 
    -------------------------------------
@@ -566,6 +625,10 @@ procedure GprConfig.Main is
      Get_Executable_Suffix;
    Gprmake_Path : GNAT.OS_Lib.String_Access :=
      Locate_Exec_On_Path (Gprmake & Exec_Suffix.all);
+   Preselect_Lang : Unbounded_String;
+
+   Compilers : Compiler_Lists.List;
+   package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
 
 begin
    if Gprmake_Path /= null  then
@@ -578,7 +641,7 @@ begin
    Free (Gprmake_Path);
 
    loop
-      case Getopt ("batch config: db: h: o: v") is
+      case Getopt ("batch config: db: h: o: v lang?") is
          when 'b' =>
             Batch := True;
 
@@ -595,6 +658,12 @@ begin
          when 'h' =>
             Help;
             return;
+
+         when 'l' =>
+            Preselect_Lang := To_Unbounded_String (Parameter);
+            if Preselect_Lang = "" then
+               Preselect_Lang := To_Unbounded_String ("ada,c,c++");
+            end if;
 
          when 'o' =>
             Output_File := To_Unbounded_String (Parameter);
@@ -613,9 +682,17 @@ begin
 
    Complete_Command_Line_Compilers (Base, Custom_Comps);
 
+   Find_Compilers_In_Path (Base, Compilers);
+   Compiler_Sort.Sort (Compilers);
+
+   if Preselect_Lang /= Null_Unbounded_String then
+      Select_Compilers_For_Lang
+        (To_String (Preselect_Lang), Compilers, Selected_Compilers);
+   end if;
+
    if not Batch then
       Select_Compilers_Interactively
-        (Base, Selected_Compilers, Custom_Comps);
+        (Base, Compilers, Selected_Compilers, Custom_Comps);
       Show_Command_Line_Config (Selected_Compilers);
    else
       Selected_Compilers := Custom_Comps;
