@@ -906,6 +906,8 @@ package body GprConfig.Knowledge is
                     (To_String (Node.Regexp), Multiple_Lines);
                   Matched : Match_Array (0 .. Node.Group);
                begin
+                  Put_Verbose ("Executing " & Command);
+                  Put_Verbose ("   Output is """ & Output & """");
                   GNAT.Strings.Free (Args);
                   Ada.Environment_Variables.Set ("PATH", Saved_Path);
 
@@ -915,9 +917,10 @@ package body GprConfig.Knowledge is
                      Tmp_Result := To_Unbounded_String
                        (Output (Matched (Node.Group).First ..
                                 Matched (Node.Group).Last));
+                     Put_Verbose ("Matched: " & To_String (Tmp_Result));
                   else
                      Extracted_From := Null_Unbounded_String;
-                     Tmp_Result         := Null_Unbounded_String;
+                     Tmp_Result     := Null_Unbounded_String;
                   end if;
                end;
 
@@ -1076,6 +1079,10 @@ package body GprConfig.Knowledge is
          Processed_Value  => Target);
       if not Is_Empty (Target) then
          Comp.Target := Element (First (Target)).Value;
+         Put_Verbose
+           ("Target for this compiler is " & To_String (Comp.Target));
+      else
+         Put_Verbose ("Target unknown for this compiler");
       end if;
 
       Get_External_Value
@@ -1163,9 +1170,10 @@ package body GprConfig.Knowledge is
                   Resolve_Links  => False,
                   Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
             begin
-               Put_Verbose
-                 ("Testing for " & Key (C) & " in " & Directory);
                if Ada.Directories.Exists (F) then
+                  Put_Verbose ("------------------------------------------");
+                  Put_Verbose
+                    ("Processing " & Key (C) & " in " & Directory);
                   For_Each_Language_Runtime
                     (Append_To  => Append_To,
                      Name       => Key (C),
