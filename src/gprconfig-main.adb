@@ -696,7 +696,9 @@ begin
         (Base, Compilers, Selected_Compilers, Custom_Comps);
       Show_Command_Line_Config (Selected_Compilers);
    else
-      Selected_Compilers := Custom_Comps;
+      Splice (Target => Selected_Compilers,
+              Before => First (Selected_Compilers),
+              Source => Custom_Comps);
    end if;
 
    if Output_File /= Null_Unbounded_String then
