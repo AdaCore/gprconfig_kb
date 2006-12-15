@@ -96,8 +96,9 @@ procedure GprConfig.Main is
       Put_Line ("           you do not need to provide any of the optional"
                 & " parameter, and can leave an");
       Put_Line ("           empty string instead");
-      Put_Line (" -lang [lang1,lang2,...]: Preselect the first compiler for"
-                & " each specified language");
+      Put_Line (" -l[lang1,lang2,...]: Preselect the first compiler for"
+                & " each specified language." & ASCII.LF
+                & "         No space between -l and its arguments");
       Put_Line (" -batch  : batch mode, no interactive compiler selection");
       Put_Line (" -v      : verbose mode");
    end Help;
@@ -641,7 +642,7 @@ begin
    Free (Gprmake_Path);
 
    loop
-      case Getopt ("batch config: db: h: o: v lang?") is
+      case Getopt ("batch config: db: h: o: v l?") is
          when 'b' =>
             Batch := True;
 
