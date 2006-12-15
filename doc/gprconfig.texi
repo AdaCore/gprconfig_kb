@@ -223,6 +223,13 @@ use an empty string to get the default value and specify a later parameter.
   gprconfig -config GCC,/usr/bin,,C     # automatic version
 @end smallexample
 
+@item -l[lang1,lang2,..]
+
+This switch is use to automatically select the first compiler for each
+language specified in the list. When no language is specified, the default
+is to select "ada,c,c++". There can be no space between -l and the list of
+languages.
+
 @item -batch
 
 If this parameter is specified, @code{gprconfig} doesn't go into its
