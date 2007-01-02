@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2004-2006, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2007, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -2683,16 +2683,18 @@ package body Makegpr is
          Fail_Program ("no library builder specified");
 
       else
-         Library_Builder_Name :=
-           new String'(Get_Name_String
-                       (Project_Tree.Library_Builder));
-
-         Library_Builder := Locate_Exec_On_Path (Library_Builder_Name.all);
+         Library_Builder :=
+           Locate_Exec_On_Path
+             (Get_Name_String (Project_Tree.Library_Builder));
 
          if Library_Builder = null then
             Fail_Program
               ("could not locate library builder """,
-               Library_Builder_Name.all, """");
+               Get_Name_String (Project_Tree.Library_Builder), """");
+
+         else
+            Library_Builder_Name :=
+              new String'(Base_Name (Library_Builder.all));
          end if;
       end if;
 
