@@ -1524,6 +1524,12 @@ package body Makegpr is
                   Fail_Program
                     ("unable to find binder driver ",
                      Name_Buffer (1 .. Name_Len));
+
+               else
+                  Name_Len := 0;
+                  Add_Str_To_Name_Buffer
+                    (Base_Name (Binder_Driver_Path.all));
+                  Binder_Driver_Name := Name_Find;
                end if;
 
                Compiler_List := Project_Tree.Languages_Data.Table
