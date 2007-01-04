@@ -1,8 +1,9 @@
 ------------------------------------------------------------------------------
---                   Copyright (C) 2006, AdaCore                            --
+--                   Copyright (C) 2006-2007, AdaCore                       --
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
+with Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -23,6 +24,8 @@ procedure GprConfig.Main is
 
    Output_File : Unbounded_String;
 
+   Invalid_Config : exception;
+
    type Boolean_Array  is array (Natural range <>) of Boolean;
    type Compiler_Array is array (Natural range <>) of Compiler;
 
@@ -31,7 +34,7 @@ procedure GprConfig.Main is
    function Get_Database_Directory return String;
    --  Return the location of the knowledge database
 
-   procedure Help;
+   procedure Help (Base : Knowledge_Base);
    --  Display list of switches
 
    procedure Display_Compiler
@@ -83,8 +86,11 @@ procedure GprConfig.Main is
    -- Help --
    ----------
 
-   procedure Help is
+   procedure Help (Base : Knowledge_Base) is
+      Known : Unbounded_String;
    begin
+      Known_Compiler_Names (Base, Known);
+
       Put_Line (" -o file : Name and directory of the output file");
       Put_Line ("           default is " & To_String (Output_File));
       Put_Line (" -db dir : Parse dir as an additional knowledge base");
@@ -96,6 +102,7 @@ procedure GprConfig.Main is
       Put_Line ("           you do not need to provide any of the optional"
                 & " parameter, and can leave an");
       Put_Line ("           empty string instead");
+      Put_Line ("           The known compilers are: " & To_String (Known));
       Put_Line (" -l[lang1,lang2,...]: Preselect the first compiler for"
                 & " each specified language." & ASCII.LF
                 & "         No space between -l and its arguments");
@@ -270,7 +277,7 @@ procedure GprConfig.Main is
       Get_Words (Config, Filter => Null_Unbounded_String, Map => Map,
                  Allow_Empty_Elements => True);
       if Length (Map) < 2 then
-         return;  --  we need at least a name and a path
+         raise Invalid_Config;  --  we need at least a name and a path
       end if;
 
       C := First (Map);
@@ -295,7 +302,13 @@ procedure GprConfig.Main is
          end if;
       end if;
 
+      --  Complete_Command_Line_Compilers will check that this is a valid
+      --  config
       Append (Custom_Comps, Comp);
+
+   exception
+      when others =>
+         raise Invalid_Config;
    end Parse_Config_Parameter;
 
    ---------
@@ -573,6 +586,8 @@ procedure GprConfig.Main is
             if Elem.Extra_Tool = Null_Unbounded_String then
                Elem.Extra_Tool := Element (First (Completion)).Extra_Tool;
             end if;
+         else
+            raise Invalid_Config;
          end if;
       end Update_Comps;
 
@@ -631,6 +646,8 @@ procedure GprConfig.Main is
    Compilers : Compiler_Lists.List;
    package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
 
+   Valid_Switches : constant String := "batch config: db: h o: v l?";
+
 begin
    if Gprmake_Path /= null  then
       Output_File := To_Unbounded_String
@@ -641,8 +658,35 @@ begin
    end if;
    Free (Gprmake_Path);
 
+   --  First check whether we should parse the default knownledge base.
+   --  This needs to be done first, since that influences -config and -h
+   --  at least
+
    loop
-      case Getopt ("batch config: db: h: o: v l?") is
+      case Getopt (Valid_Switches) is
+         when 'd' =>
+            if Parameter = "-" then
+               Load_Standard_Base := False;
+            end if;
+         when 'v' =>
+            Verbose_Mode := True;
+         when ASCII.NUL =>
+            exit;
+         when others =>
+            null;
+      end case;
+   end loop;
+
+   if Load_Standard_Base then
+      Parse_Knowledge_Base (Base, Get_Database_Directory);
+   end if;
+
+   --  Now check all the other command line switches
+
+   Initialize_Option_Scan;
+
+   loop
+      case Getopt (Valid_Switches) is
          when 'b' =>
             Batch := True;
 
@@ -651,13 +695,13 @@ begin
 
          when 'd' =>
             if Parameter = "-" then
-               Load_Standard_Base := False;
+               null;  --  already processed
             else
                Parse_Knowledge_Base (Base, Parameter);
             end if;
 
          when 'h' =>
-            Help;
+            Help (Base);
             return;
 
          when 'l' =>
@@ -670,19 +714,14 @@ begin
             Output_File := To_Unbounded_String (Parameter);
 
          when 'v' =>
-            Verbose_Mode := True;
+            null;   --  already processed
 
          when others =>
             exit;
       end case;
    end loop;
 
-   if Load_Standard_Base then
-      Parse_Knowledge_Base (Base, Get_Database_Directory);
-   end if;
-
    Complete_Command_Line_Compilers (Base, Custom_Comps);
-
    Find_Compilers_In_Path (Base, Compilers);
    Compiler_Sort.Sort (Compilers);
 
@@ -707,8 +746,13 @@ begin
    end if;
 
 exception
+   when Invalid_Config =>
+      Put_Line
+        (Standard_Error, "Invalid configuration specified with -config");
+      Ada.Command_Line.Set_Exit_Status (1);
    when End_Error =>
       null;
    when Invalid_Switch | Invalid_Parameter =>
-      Help;
+      Put_Line ("Invalid command line switch: -" & Full_Switch);
+      Help (Base);
 end GprConfig.Main;

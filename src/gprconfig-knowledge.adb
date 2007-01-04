@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
---                   Copyright (C) 2006, AdaCore                            --
+--                   Copyright (C) 2006-2007, AdaCore                       --
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
@@ -560,6 +560,7 @@ package body GprConfig.Knowledge is
       File_Node : Node_Ptr;
       N         : Node_Ptr;
    begin
+      Put_Verbose ("Parsing knowledge base at " & Directory);
       Start_Search
         (Search,
          Directory => Directory,
