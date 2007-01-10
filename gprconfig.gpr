@@ -19,7 +19,7 @@ project GprConfig is
    package Binder   renames Shared.Binder;
 
    package Linker is
-      for Default_Switches ("Ada") use ("obj/gprmake_dummies.o");
+      for Default_Switches ("Ada") use ("obj/gprmake_dummies.o", "obj/link.o");
    end Linker;
 
    package Naming is

@@ -6,7 +6,7 @@
  *                                                                          *
  *                          C Implementation File                           *
  *                                                                          *
- *               Copyright (C) 2006, Free Software Foundation, Inc.         *
+ *            Copyright (C) 2006-2007, Free Software Foundation, Inc.       *
  *                                                                          *
  * GNAT is free software;  you can  redistribute it  and/or modify it under *
  * terms of the  GNU General Public License as published  by the Free Soft- *
@@ -33,8 +33,5 @@ void set_std_prefix (void) {
   abort ();
 }
 void update_path (void) {
-  abort ();
-}
-void __gnat_run_path_option (void) {
   abort ();
 }
