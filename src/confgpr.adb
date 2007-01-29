@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006, Free Software Foundation, Inc.            --
+--            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -248,6 +248,23 @@ package body Confgpr is
                      end if;
 
                      Put (Into_List => Project_Tree.Archive_Indexer,
+                          From_List => List);
+
+                  elsif Attribute.Name = Name_Library_Partial_Linker then
+
+                     --  Attribute Library_Partial_Linker: the optional linker
+                     --  driver with its minimum options, to partially link
+                     --  archives.
+
+                     List := Attribute.Value.Values;
+
+                     if List = Nil_String then
+                        Error_Msg
+                          ("partial linker cannot be null",
+                           Attribute.Value.Location);
+                     end if;
+
+                     Put (Into_List => Project_Tree.Lib_Partial_Linker,
                           From_List => List);
 
                   elsif Attribute.Name = Name_Archive_Suffix then

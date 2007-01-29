@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006, Free Software Foundation, Inc.            --
+--            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -34,8 +34,6 @@ with System;
 
 separate (Gprlib)
 procedure Build_Shared_Lib is
-
-   Gcc_Name : constant String := "gcc";
 
    Ofiles : constant Argument_List :=
               Argument_List (Object_Files.Table (1 .. Object_Files.Last));

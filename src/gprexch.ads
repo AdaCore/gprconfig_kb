@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2006, Free Software Foundation, Inc.            --
+--            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -121,6 +121,7 @@ package Gprexch is
       Toolchain_Version,
       Archive_Builder,
       Archive_Indexer,
+      Partial_Linker,
       Archive_Suffix,
       Run_Path_Option,
       Auto_Init,
@@ -166,6 +167,8 @@ package Gprexch is
                                  "[ARCHIVE BUILDER]";
    Archive_Indexer_Label     : aliased constant String :=
                                  "[ARCHIVE INDEXER]";
+   Partial_Linker_Label      : aliased constant String :=
+                                 "[PARTIAL LINKER]";
    Archive_Suffix_Label      : aliased constant String :=
                                  "[ARCHIVE SUFFIX]";
    Auto_Init_Label           : aliased constant String :=
@@ -224,6 +227,7 @@ package Gprexch is
                        Toolchain_Version   => Toolchain_Version_Label'Access,
                        Archive_Builder     => Archive_Builder_Label'Access,
                        Archive_Indexer     => Archive_Indexer_Label'Access,
+                       Partial_Linker      => Partial_Linker_Label'Access,
                        Archive_Suffix      => Archive_Suffix_Label'Access,
                        Run_Path_Option     => Run_Path_Option_Label'Access,
                        Auto_Init           => Auto_Init_Label'Access,

@@ -54,6 +54,8 @@ with Types;     use Types;
 
 procedure Gprlib is
 
+   Gcc_Name : constant String := "gcc";
+
    Preserve : Attribute := Time_Stamps;
    --  Used by Copy_ALI_Files. Changed to None for OpenVMS, because
    --  Copy_Attributes always fails on VMS.
@@ -219,6 +221,16 @@ procedure Gprlib is
    AI_Options     : String_List_Access := new String_List (1 .. 10);
    Last_AI_Option : Natural := 0;
    --  Options of the archive indexer
+
+   Partial_Linker : String_Access := null;
+   --  Name of the library partial linker
+
+   PL_Options     : String_List_Access := new String_List (1 .. 10);
+   Last_PL_Option : Natural := 0;
+   --  Options of the library partial linker
+
+   Partial_Linker_Path : String_Access;
+   --  The path to the partial linker driver
 
    Archive_Suffix : String_Access := new String'(".a");
 
@@ -785,6 +797,10 @@ begin
                   Archive_Indexer := null;
                   Last_AI_Option  := 0;
 
+               when Gprexch.Partial_Linker =>
+                  Partial_Linker := null;
+                  Last_PL_Option := 0;
+
                when Gprexch.Auto_Init =>
                   Auto_Init := True;
 
@@ -883,8 +899,8 @@ begin
                   end if;
 
                when Gprexch.Driver_Name =>
-                  Name_Len := 0;
-                  Add_Str_To_Name_Buffer (Line (1 .. Last));
+                  Name_Len := Last;
+                  Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
                   Driver_Name := Name_Find;
 
                when Runtime_Directory =>
@@ -939,6 +955,17 @@ begin
                        (new String'(Line (1 .. Last)),
                         AI_Options,
                         Last_AI_Option);
+                  end if;
+
+               when Gprexch.Partial_Linker =>
+                  if Partial_Linker = null then
+                     Partial_Linker := new String'(Line (1 .. Last));
+
+                  else
+                     Add
+                       (new String'(Line (1 .. Last)),
+                        PL_Options,
+                        Last_PL_Option);
                   end if;
 
                when Gprexch.Archive_Suffix =>
@@ -1220,6 +1247,14 @@ begin
    --  Archives
 
    if Static then
+      if Partial_Linker /= null then
+         Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
+
+         if Partial_Linker_Path = null then
+            Osint.Fail ("unable to locate ", Partial_Linker.all);
+         end if;
+      end if;
+
       if Archive_Builder = null then
          Osint.Fail ("no archive builder specified");
       end if;
@@ -1231,11 +1266,64 @@ begin
            "lib" &
            Library_Name.all &
            Archive_Suffix.all);
+
       Add (Library_Path_Name, AB_Options, Last_AB_Option);
 
-      for J in 1 .. Object_Files.Last loop
-         Add (Object_Files.Table (J), AB_Options, Last_AB_Option);
-      end loop;
+      if Partial_Linker_Path /= null then
+         --  If partial linker is used, do a partial link and put the resulting
+         --  object file in the archive.
+
+         declare
+            Partial : constant String_Access :=
+                        new String'
+                          ("p__" & Library_Name.all & Object_Suffix);
+
+         begin
+            Add (Partial, AB_Options, Last_AB_Option);
+            Add (Partial, PL_Options, Last_PL_Option);
+
+            for J in 1 .. Object_Files.Last loop
+               Add (Object_Files.Table (J), PL_Options, Last_PL_Option);
+            end loop;
+
+            if not Quiet_Output then
+               if Verbose_Mode then
+                  Put (Partial_Linker_Path.all);
+               else
+                  Put (Base_Name (Partial_Linker_Path.all));
+               end if;
+
+               for J in 1 .. Last_PL_Option loop
+                  if (not Verbose_Mode) and then J >= 5 then
+                     Put (" ...");
+                     exit;
+                  end if;
+
+                  Put (' ');
+                  Put (PL_Options (J).all);
+               end loop;
+
+               New_Line;
+            end if;
+
+            Spawn
+              (Partial_Linker_Path.all,
+               PL_Options (1 .. Last_PL_Option),
+               Success);
+
+            if not Success then
+               Osint.Fail
+                 ("call to linker driver ", Partial_Linker.all, " failed");
+            end if;
+         end;
+
+      else
+         --  Partial linker is not specified. Put all objects in the archive.
+
+         for J in 1 .. Object_Files.Last loop
+            Add (Object_Files.Table (J), AB_Options, Last_AB_Option);
+         end loop;
+      end if;
 
       if not Quiet_Output then
          if Verbose_Mode then
@@ -1245,13 +1333,13 @@ begin
          end if;
 
          for J in 1 .. Last_AB_Option loop
-            Put (' ');
-            Put (AB_Options (J).all);
-
-            if (not Verbose_Mode) and then J >= 4 then
+            if (not Verbose_Mode) and then J >= 5 then
                Put (" ...");
                exit;
             end if;
+
+            Put (' ');
+            Put (AB_Options (J).all);
          end loop;
 
          New_Line;

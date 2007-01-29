@@ -3007,6 +3007,24 @@ package body Makegpr is
                end loop;
             end if;
 
+            if Project_Tree.Lib_Partial_Linker /= No_Name_List then
+               Put_Line (Exchange_File, Partial_Linker_Label);
+
+               declare
+                  List : Name_List_Index := Project_Tree.Lib_Partial_Linker;
+                  Nam_Nod : Name_Node;
+
+               begin
+                  while List /= No_Name_List loop
+                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (Nam_Nod.Name));
+                     List := Nam_Nod.Next;
+                  end loop;
+               end;
+            end if;
+
          else
             if Project_Tree.Shared_Lib_Prefix /= No_Name then
                Put_Line (Exchange_File, Shared_Lib_Prefix_Label);
@@ -5365,6 +5383,9 @@ package body Makegpr is
                      Add_Dir (Dir.Value);
                      Current := Dir.Next;
                   end loop;
+
+               elsif Data.Library then
+                  Add_Dir (Data.Library_ALI_Dir);
 
                else
                   Add_Dir (Data.Object_Directory);
