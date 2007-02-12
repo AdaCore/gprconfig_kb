@@ -659,7 +659,10 @@ package body Makegpr is
    --  Get a string access corresponding to Option. Either find the string
    --  access in the All_Options cache, or create a new entry in All_Options.
 
-   procedure Get_Directories (For_Project : Project_Id; Sources : Boolean);
+   procedure Get_Directories
+     (For_Project : Project_Id;
+      Sources     : Boolean;
+      Language    : Name_Id);
    --  Put in table Directories the source directories of project For_Project
    --  and of all the project it imports directly or indirectly.
 
@@ -1976,7 +1979,9 @@ package body Makegpr is
                         begin
                            if Path_Name = null then
                               Get_Directories
-                                (Main_Proj, Sources => False);
+                                (Main_Proj,
+                                 Sources  => False,
+                                 Language => No_Name);
 
                               if Path_Buffer = null then
                                  Path_Buffer :=
@@ -2022,7 +2027,9 @@ package body Makegpr is
                         begin
                            if Path_Name = No_Name then
                               Get_Directories
-                                (Main_Proj, Sources => False);
+                                (Main_Proj,
+                                 Sources  => False,
+                                 Language => No_Name);
 
                               declare
                                  FD     : File_Descriptor;
@@ -4044,7 +4051,10 @@ package body Makegpr is
                      Project_Tree.Projects.Table
                        (Source_Project).Include_Language := Language;
 
-                     Get_Directories (Source_Project, Sources => True);
+                     Get_Directories
+                       (Source_Project,
+                        Sources  => True,
+                        Language => Language_Name);
 
                      if Config.Include_Option /= No_Name_List then
                         --  Get the value of Imported_Directories_Switches
@@ -5319,7 +5329,11 @@ package body Makegpr is
    -- Get_Directories --
    ---------------------
 
-   procedure Get_Directories (For_Project : Project_Id; Sources : Boolean) is
+   procedure Get_Directories
+     (For_Project : Project_Id;
+      Sources     : Boolean;
+      Language    : Name_Id)
+   is
 
       procedure Recursive_Add (Project : Project_Id);
       --  Add all the source directories of a project to the path only if
@@ -5372,17 +5386,33 @@ package body Makegpr is
                         Project_Tree.Projects.Table (Project);
                List : Project_List := Data.Imported_Projects;
 
+               Lang_Proc : Language_Index := Data.First_Language_Processing;
+               Lang_Data : Language_Data;
+               OK : Boolean;
+
             begin
                --  Add to path all directories of this project
 
                if Sources then
-                  Current := Data.Source_Dirs;
+                  OK := False;
 
-                  while Current /= Nil_String loop
-                     Dir := Project_Tree.String_Elements.Table (Current);
-                     Add_Dir (Dir.Value);
-                     Current := Dir.Next;
+                  while Lang_Proc /= No_Language_Index loop
+                     Lang_Data :=
+                       Project_Tree.Languages_Data.Table (Lang_Proc);
+                     OK := Lang_Data.Name = Language;
+                     exit when OK;
+                     Lang_Proc := Lang_Data.Next;
                   end loop;
+
+                  if OK then
+                     Current := Data.Source_Dirs;
+
+                     while Current /= Nil_String loop
+                        Dir := Project_Tree.String_Elements.Table (Current);
+                        Add_Dir (Dir.Value);
+                        Current := Dir.Next;
+                     end loop;
+                  end if;
 
                elsif Data.Library then
                   Add_Dir (Data.Library_ALI_Dir);
