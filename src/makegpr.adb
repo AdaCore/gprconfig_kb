@@ -52,6 +52,7 @@ with Osint;            use Osint;
 with Prj;              use Prj;
 with Prj.Env;
 with Prj.Err;
+with Prj.Ext;          use Prj.Ext;
 with Prj.Pars;
 with Prj.Util;         use Prj.Util;
 with Sinput.P;
@@ -7452,6 +7453,12 @@ package body Makegpr is
                       (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
                end if;
 
+            elsif Command_Line and then
+                  Arg'Length > 3 and then
+                  Arg (1 .. 3) = "-aP"
+            then
+               Add_Search_Project_Directory (Arg (4 .. Arg'Last));
+
             elsif Command_Line and then Arg = "-b" then
                Bind_Only  := not Unique_Compile;
                All_Phases := False;
@@ -7816,6 +7823,11 @@ package body Makegpr is
          Write_Str ("<project name>");
          Write_Eol;
          Write_Str ("           Specify the main config project file name");
+         Write_Eol;
+
+         --  Line for -aP
+
+         Write_Str ("  -aPdir   Add directory dir to project search path");
          Write_Eol;
 
          --  Line for -b
