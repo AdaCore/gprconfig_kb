@@ -1,0 +1,904 @@
+\input texinfo   @c -*-texinfo-*-
+@input texiplus
+@c %**start of header
+
+@c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+@c                                                                            o
+@c                           GPRMAKE DOCUMENTATION                            o
+@c                                                                            o
+@c                  G P R M A K E   U S E R ' S   G U I D E                   o
+@c                                                                            o
+@c                     Copyright (C) 2007, AdaCore                            o
+@c                                                                            o
+@c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+
+@setfilename gprmake_ug.info
+@settitle GPRMAKE User's Guide
+@setchapternewpage odd
+@syncodeindex fn cp
+
+@titlepage
+
+@title GPRMAKE User's Guide
+@c @subtitle Date: $Date: 2006/09/11 04:02:07 $
+@author AdaCore
+
+@page
+@vskip 0pt plus 1filll
+
+Printed March 2007 @*
+Copyright @copyright{} 2007, AdaCore
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+@end titlepage
+
+@ifinfo
+@node Top, Introduction, (dir), (dir)
+@top GPRMAKE User's Guide
+
+@noindent
+@c GPRMAKE User's Guide@*
+@c Document revision level $Revision: 1.0 $@*
+@*
+@noindent
+AdaCore@*
+
+@menu
+* Introduction::
+* Basic Concepts::
+* Guided Tour::
+* Building with gprmake::
+* Cleaning up with gprclean::
+* Configuring with gprconfig::
+* Configuration files Description::
+* Other companion tools::
+* Index::
+
+@detailmenu
+ --- The Detailed Contents ---@*
+
+Introduction
+
+Basic Concepts
+
+Guided Tour
+* First Steps::
+* Subsystems::
+* Libraries::
+
+Building with gprmake
+* Command Line::
+* Switches::
+
+Cleaning up with gprclean
+
+Configuring with gprconfig
+* Using gprconfig::
+* Description of the knowledge base::
+* General file format::
+* Compiler description::
+* Configurations::
+
+Configuration files Description
+
+Other companion tools
+
+Index
+@end detailmenu
+@end menu
+@end ifinfo
+
+@c  ------------------------------------------------------------------------
+@node Introduction
+@unnumbered Introduction
+@c  ------------------------------------------------------------------------
+
+gprmake is a generic software build tool designed for the construction of
+big multi-language systems organized into subsystems and libraries.
+It is well-suited for compiled languages offering separate compilation units
+such as Ada, C, C++ or Fortran.
+
+gprmake manages a 3 step build process
+@itemize @bullet
+@item compilation phase
+each compilation unit of each subsystem is examined in turn, checked for
+consitency and compiled or recommpiled when necessary by the appropriate
+compiler.  The recompilation decision is based on dependency information
+usually produced by a former compilation.
+@item post-compilation phase (or binding)
+Compiled units of a given language are passed to a language specific
+post-compilation tool when it is exist. This is also during this phase
+that objects are grouped into static or dynamic libraries as specified.
+@item linking phase
+All units or libraries from all subsystems are passed to a linker tool
+specific to the set of toolchains used together.
+@end itemize
+
+gprmake is a generic tool in the sense that it allows easy configuration of
+@itemize
+@item language characteristics (e.g. source naming conventions)
+@item toolchain characteristics (e.g. compiler invocation)
+@item subsystem characteristics (e.g. compiler default options)
+@item source file characteristics (e.g. file specific compilation options)
+@end itemize
+
+@c  ------------------------------------------------------------------------
+@node Basic Concepts
+@chapter Basic Concepts
+@c  ------------------------------------------------------------------------
+
+@c describe here basic concepts such as
+@c  - subsystem
+@c  - project file
+@c  - project subpackages
+@c  - project attribute
+@c  - source files, object files, switches
+@c and any other technical terms that are used later
+@c  also mention where to find the project file syntax & semantics
+
+@c  ------------------------------------------------------------------------
+@node Guided Tour
+@chapter Guide Tour
+@c  --------------------------------------------------------------------------
+
+@menu
+* First Steps::
+* Subsystems::
+* Libraries::
+@end menu
+
+@node First Steps
+@section First Steps
+@c show a hello world construction with Ada & C
+
+@node Subsystems
+@section Subsystems
+@c describe a bigger project with several source dirs and object dirs
+
+@node Libraries
+@section Libraries
+@c augment the previous example with putting one of the
+@c subsystem in a library
+@c show how to deal with externa libraries
+
+@c  ------------------------------------------------------------------------
+@node Building with gprmake
+@chapter Building with gprmake
+@c  ------------------------------------------------------------------------
+
+@menu
+* Command Line::
+* Switches::
+@end menu
+
+@node Command Line
+@section Command Line
+@c explain this part
+@c Usage: gprmake -P<project file> [opts]  [name]
+@c    {[-cargs opts] [- cargs:lang pts] [-largs opts][-gargs opts]}
+
+@node Switches
+@section Switches
+@c  --config_path=<path>
+@c           Specify the config path
+@c  --config_project=<project name>
+@c           Specify the main config project file name
+@c  -b       Bind only
+@c  -c       Compile only
+@c  -C       Cache source mappings: use mapping files
+@c  -d       Display progress
+@c   -eL     Follow symbolic links when processing project files
+@c  -f       Force recompilations
+@c  -F       Full project path name in brief error messages
+@c  -jnum    Use num processes to compile
+@c  -k       Keep going after compilation errors
+@c  -l       Link only
+@c  -o name  Choose an alternate executable name
+@c  -p       Create missing obj, lib and exec dirs
+@c  -P proj  Use Project File proj
+@c  -q       Be quiet/terse
+@c  -s       Recompile if compiler switches have changed
+@c  -u       Unique compilation. Only compile the given files
+@c  -U       Unique compilation for all sources of all projects
+@c  -v       Verbose output
+@c  -vPx     Specify verbosity when parsing Project Files
+@c  -we      Treat all warnings as errors
+@c  -wn      Treat warnings as warnings
+@c  -ws      Suppress all warnings
+@c  -Xnm=val Specify an external reference for Project Files
+
+@c  ------------------------------------------------------------------------
+@node Cleaning up with gprclean
+@chapter Cleaning up with gprclean
+@c  ------------------------------------------------------------------------
+
+@c  ------------------------------------------------------------------------
+@node Configuring with gprconfig
+@chapter Configuring with gprconfig
+@c ----------------------------------------------------------------------
+
+@menu
+* Using gprconfig::
+* Description of the knowledge base::
+* General file format::
+* Compiler description::
+* Configurations::
+@end menu
+
+@c ----------------------------------------------------------------------
+@node Using gprconfig
+@section Using gprconfig
+@c ---------------------------------------------------------------------
+
+@noindent
+When you launch gprconfig, it will first search for all compilers it can find on
+your @code{PATH}. It is recommended, although not mandatory, that you put the
+compilers that you expect to use for your application in your @code{PATH} before
+you launch @code{gprconfig}, since that simplifies the setup.
+
+@code{gprconfig} will then display a list of all the compilers it has found,
+along with the language they can compile, the runtime they use (when
+applicable),@dots{}. It will then wait until you select one of the compilers.
+This list is sorted by language, then by order in the @code{PATH} environment
+variable (so that compilers that you are more likely to use appear first),
+then by runtime names and finally by version of the compiler.
+The idea is that the first compiler for any language is the most likely one
+you want to use.
+
+Selection is done by entering the letter that appears on the line for
+each compiler. If the compiler was already selected, it is deselected.
+
+The list of compilers is then displayed again, but some filtering has been
+performed: only compilers that target the same platform as the selected
+compiler are now displayed. @code{gprconfig} then checks whether it is
+possible to link sources compiled with the selected compiler and each of
+the remaing compiler; when linking is not possible, the compiler is not
+displayed. Likewise, all compilers for the same language are hidden, so that
+you can only select one compiler per language. If you need to compile your
+application with several C compilers for instance, you should create another
+language, for instance called C2, for that purpose. That will give you the
+flexibility to indicate in the project files which compiler should be used
+for which sources.
+
+The goal of this filtering is to make it more obvious whether you have
+good chances of being able to link. There is however no guarantee that
+@code{gprconfig} will know for sure how to link any combination of the
+remaining compilers.
+
+In the list, if you select "o", @code{gprconfig} will let you enter
+information about a compiler that was not found automatically:
+@itemize @bullet
+@item Name
+
+In the knowledge base of @code{gprconfig}, each compiler is associated
+with a simple name. All the known names are listed next to the question.
+If your compiler is one of the known ones, enter the name. You can also
+enter any other name, but then @code{gprconfig} will not be able to
+guess any of the remaining info.
+
+@item Path
+
+This is the directory that contains the executable of your compiler, not
+including the name of the compiler itself. For instance, for a GNAT
+compiler installed in @file{/usr/local/gnat/bin/gnatmake}, the path would be
+@file{/usr/local/gnat/bin}.
+
+@item Version
+
+The version of your compiler. If the Name you provided is one of the known
+compilers, @code{gprconfig} will try to guess it for you, so that you can
+simply press enter if the guess is valid.
+
+@item Language
+
+The language that you intend to use the compiler for. If you use the same
+compiler for multiple languages, you should enter only one of these at
+this point, and later on create a new compiler entry for the other
+languages. As for Version, @code{gprconfig} will try to guess it for you
+if it is one of the known compilers.
+
+@item Runtime
+
+The runtime you intend to use for this compiler. For most languages, this
+is not applicable, and you should simply press Enter. Once again,
+@code{gprconfig} will try to guess it if possible.
+
+@item Target
+
+The target architecture for which the compiler is compiling. @code{gprconfig}
+will try to guess it either from the compiler you pointed to, or will by
+default use the current system's architecture, assuming this is not a
+cross compiler.
+@end itemize
+
+You can select as many compilers as are used in your application. Once you
+are done selecting the compilers, select "s", and @code{gprmake} will
+generate the configuration file.
+
+@subsection Command line switches
+
+The following command line switches are supported by @code{gprconfig}.
+
+@itemize @bullet
+@item -o file
+
+The name of the output file. By default, @code{gprconfig} will search for
+@code{gprmake} on your PATH, and create a default configuration file for
+it. But you can alternatively choose to create a different configuration
+file and then use @code{gprmake}'s command line switches to choose among
+these.
+
+@item -db directory
+
+Indicates another directory that should be parsed for gprconfig's knowledge
+base. Most of the time this is only useful if you are creating your own
+XML description files.
+
+@item -db -
+
+Prevents @code{gprconfig} from reading its default knowledge base. You should
+point to another directory with @code{-db directory}, or gprconfig will not be
+able to generate any configuration file.
+
+@item -config name,path[,version[,language[,target[,runtime]]]]
+
+This parameter is used to preselect configurations.
+"name" should be one of the known compiler names (e.g. "GNAT", "GCC",...), the
+full list of which is visible when gprconfig is used interactively and you add
+a custom compiler. However, you can use an unknown name, but in this case you
+need to provide all the information yourself.
+
+"path" is the directory that contains the compiler executable, for instance
+@file{/usr/bin} (and not the installation prefix @file{/bin}).
+
+If "name" is a known compiler name, the remaining attributes will have defaults
+computed automatically by @code{gprconfig}. You can either specify them, or
+use an empty string to get the default value and specify a later parameter.
+
+@smallexample
+  gprconfig -config GNAT,/usr/bin       # automatic parameters
+  gprconfig -config GCC,/usr/bin,,C     # automatic version
+@end smallexample
+
+@item -l[lang1,lang2,..]
+
+This switch is use to automatically select the first compiler for each
+language specified in the list. When no language is specified, the default
+is to select "ada,c,c++". There can be no space between -l and the list of
+languages.
+
+@item -batch
+
+If this parameter is specified, @code{gprconfig} doesn't go into its
+interactive compiler selection, but generates the output configuration file
+directly from the compilers selected with the @code{-config} command line
+switch.
+
+@end itemize
+
+@c ----------------------------------------------------------------------
+@node Description of the knowledge base
+@section Description of the knowledge base
+@c ----------------------------------------------------------------------
+
+
+@noindent
+@code{gprconfig} itself has no hard-coded knowledge of compilers. This way,
+no new version of gprconfig needs to be recompiled whenever a new compiler
+is distributed.
+
+All its knowledge is embedded in a set of XML files, call the knowledge
+base. Users can easily contribute to this general knowledge base, and have
+@code{gprconfig} immediately take advantage of this.
+
+The knowledge base contains various kind of information:
+@itemize @bullet
+@item Compiler description
+
+   When it is run interactively, @code{gprconfig} will search on the user's
+   @code{PATH} for known compilers, and try to automatically guess their
+   configuration (version, supported languages, supported targets, runtimes,
+   @dots{}).
+
+   This step is optional, since a user can also enter all the information
+   manually. However, it is recommended that the knowledge base explicitly
+   lists its known compilers to make configuration easier for end users.
+
+@item Specific compilation switches
+
+   When a compiler is used, depending on its version, target, runtime,@dots{},
+   some specific command line switches might have to be enforced. The
+   knowledge base is a good place to store such information once and for all.
+
+   For instance, with the GNAT compiler, using the soft-float runtime should
+   force @code{gprmake} to use the @code{-msoft-float} compilation switch.
+
+@item Linker options
+
+   Linking a multi-language application is often tricky, and requires specific
+   linker switches. These switches depend on the list of languages, the list
+   of compilers,@dots{}.
+
+@item Unsupported compiler mix
+
+   It is sometimes not possible to link together code compiled with two
+   compilers. The knowledge base should store this information, so that end
+   users do not waste time trying to use that compiler combination.
+
+@end itemize
+
+@c ------------------------------------------------------------------------
+@node General file format
+@section General file format
+@c ------------------------------------------------------------------------
+
+@noindent
+The knowledge base is implemented as a set of XML files. None of these
+files have a special name, nor a special role. Instead, the user can
+freely create new files, and put them in the knowledge base directory,
+to contribute new knowledge.
+
+The location of the knowledge base is @file{$prefix/share/gprconfig},
+where @file{$prefix} is the directory in which @code{gprconfig} was
+installed. Any file with extension @file{.xml} in this directory will
+be parsed automatically by gprconfig at startup.
+
+All files must have the following format:
+
+@smallexample
+<?xml version="1.0">
+<gprconfig>
+   ...
+</gprconfig>
+@end smallexample
+
+The XML parser used by @code{gprconfig} is very simple minded, and does not
+support advanced XML constructs. In fact, it also has a few limitation
+with regards to comments (for instance they cannot contain the '>'
+character).
+
+The root tag must be @code{<gprconfig>}.
+
+The remaining sections in this chapter will list the valid XML tags that
+can be used to replace the '...' code above. These tags can either all be
+put in a single XML files, or split in several files.
+
+@c ------------------------------------------------------------------------
+@node Compiler description
+@section Compiler description
+@c ------------------------------------------------------------------------
+
+@noindent
+One of the XML tags that can be put as a child of @code{<gprconfig>} is
+@code{<compiler_description>}. This node and its children describe one of
+the compilers known to @code{gprconfig}. The tool uses them when it
+initially looks for all compilers known on the user's @code{PATH}
+environment variable.
+
+This is optional information, but simplifies the use of @code{gprconfig}.
+
+This node doesn't accept any XML attribute. However, it accepts a number
+of child tags that explain how to query the various attributes of the
+compiler.
+
+@itemize @bullet
+@item @code{<name>}
+
+This tag contains a simple string, which is the name of the compiler.
+This name must be unique in all the configuration files, and is used to
+identify that compiler_description node.
+
+@smallexample
+<compiler_description>
+   <name>GNAT</name>
+</compiler_description>
+@end smallexample
+
+@item @code{<executable>}
+
+This tag contains a simple string, which is the name of an executable
+to search for on the PATH. Examples are @file{"gnatls"}, @file{"gcc}",
+@dots{}
+
+@code{gprconfig} searches in all directories listed on the PATH for such
+an executable. When one is found, the rest of the @code{<compiler_description>}
+children is checked to know whether the compiler is valid. The directory
+in which the executable was found becomes the "current directory" for
+the remaining XML children.
+
+@item @code{<version>}
+
+This tag contains any of the nodes defined in "external values" below.
+It shows how to query the version number of the compiler. If the version
+cannot be found, the executable will not be listed in the list of compilers.
+The value returned by the system will be split into words. As a result, if
+the returned value is "ada,c,c++", there are three languages supported by the
+compiler. The words can be comma-separated or space-separated.
+
+If you use have several child nodes, the first one will be used to set the
+special @code{$VERSION} substitution string (see External Values below), and
+the second will be used to defined the special @code{$VERSION2} substitution
+string.
+
+@item @code{<languages>}
+
+This node indicates how to query the list of languages. See "External values"
+below for valid children of this node. The returned value is a comma-separated
+or space-separated list of languages.
+
+@item @code{<runtimes>}
+
+This node indicates how to query the list of supported runtimes for the
+compiler. See "External values" below for valid children. The returned value
+is split into words as for @code{<languages>}.
+
+@item @code{<target>}
+
+This node indicates how to query the target architecture for the compiler.
+See "External values" below for valid children.
+
+@item @code{<extra_tool>}
+
+This node contains the name of an extra tool to run if the compiler is
+selected by the user. Typically, it can be used to generate a user-visible
+project file for the user, like @file{ada_runtime.gpr}. This attribute is
+the full command line used to launch the tool, where special substrings like
+"$OUTPUT_DIR",... will be automatically substituted (see External Values
+below for the full list of such special substrings)
+
+@end itemize
+
+@c --------------------------------------------------------------------
+@subsection External values
+@c --------------------------------------------------------------------
+@noindent
+A number of the XML nodes described above can contain one or more children,
+and explain how to query a value from the executable. Here is the list of
+valid contents for these nodes. The @code{<directory>} and @code{<external>}
+children can be repeated multiple times, and the @code{<filter>} and
+@code{<must_match>} nodes will be applied to each of these. The final
+value of the external value is the sum of the computation for each of the
+@code{<directory>} and @code{<external>} nodes.
+
+@itemize @bullet
+@item A simple string
+
+When a simple string is given in the node, this indicates a constant. For
+instance, the list of supported languages might be defined as:
+
+@smallexample
+<compiler_description>
+   <name>GNAT</name>
+   <executable>gnatls</executable>
+   <languages>Ada</languages>
+</compiler_description>
+@end smallexample
+
+for the GNAT compiler, since this is an Ada only compiler anyway.
+
+@item @code{<external match="regexp" group="0">command</external>}
+
+If the contents of the node is an @code{<external>} child, this indicates
+that a command should be run on the system, and its output parsed.
+When the command is run, the current directory (ie the one that contains
+the executable found through the @code{<executable>} node, is put first
+on the PATH. The output of the command is matched again the regular
+expression @code{regexp}. Finally, the parenthesis group specified by
+@code{group} is returned. By default, group is 0, which indicates the
+whole output of the command.
+
+For instance, extracting the version number from @code{gcc} can be done
+with:
+
+@smallexample
+<version>
+   <external regexp="^gcc version (\S+)" group="1">gcc -v</external>
+</version>
+@end smallexample
+
+Since the PATH has been modified, we know that the @code{gcc} command that
+is executed is the one from the same directory as the @code{<external>}
+node.
+
+@item @code{<directory group="0">regexp</directory>}
+
+If the contents of the node is a @code{<directory}> child, this
+indicates that @code{gprconfig} should find all the files matching the
+regular expression. Regexp is a path relative to the directory that contains
+the @code{<executable>} file, and should use unix directory separators
+(ie '/'), since the actual directory will be converted into this format
+before the match, for system independence of the knowledge base. Special
+constructs can be specified in the regexp:
+
+@itemize -
+@item "$@{HOST@}"  is replaced by the architecture of the host on which
+      gprconfig is running. This name is hard-coded in gprconfig itself,
+      and is generated by @code{configure} when gprconfig was build.
+@item "$@{TARGET@}" is replaced by the target architecture of the compiler,
+      as returned by the @code{<target>} node. This is of course not available
+      when computing the target itself
+@item "$@{VERSION@}" is replaced by the version of the compiler. This is not
+      available when computing the target or, of course, the version itself.
+@item "$@{VERSION2@}" is replaced by the second version of the compiler. Some
+      compilers depend on other tools (like GNAT depends on gcc), and this
+      version might for instance contain the version number for these other
+      tools. The exact semantic, though, depends on the @code{<version>} node.
+@item "$@{PATH@}" is the current directory, ie the one containing the executable
+      found through @code{<executable>}. It always ends with a directory
+      separator.
+@item "$@{GPRCONFIG_PREFIX@}" is the directory in which gprconfig
+      was installed (e.g @file{"/usr/local/"} if the executable is
+      @file{"/usr/local/bin/gprconfig"}. This directory always ends with a
+      directory separator.
+@item "$@{RUNTIME@}", "$@{RUNTIME_DIR@}", "$@{LANGUAGE@}", "$@{OUTPUT_DIR@}"
+      This string will always be substituted by the empty string when the
+      value of the external value is computed. These are special strings
+      used when substituting text in configuration chunks.
+      OUTPUT_DIR and RUNTIME_DIR always end with a directory separator.
+@item "regexp" can be any valid regular expression. This will only match
+      a directory name, not a subdirectory. Remember to quote special
+      characters, including ".", if you do not mean to use a regexp.
+@end itemize
+
+The group attribute indicates which parenthesis group should be returned.
+It defaults to 0 which indicates the whole matched path. If this attribute is
+not an integer, but a string, then it is the value returned.
+
+For instance, finding the list of supported runtimes for the GNAT compiler
+is done with:
+
+@smallexample
+<runtimes>
+ <directory group="1">\.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude</directory>
+ <directory group="default">\.\./lib/gcc/$@{TARGET@}/.*/adainclude</directory>
+</runtimes>
+@end smallexample
+
+Note the second node, which matches the default runtime, and displays it as
+such.
+
+@item @code{<filter>value1,value2,...</filter>}
+
+This node must come after one the previously described ones. It is used to
+further filter the output. The previous output is split into words (it is
+considered as a comma-separated or space-separated list of words), and only
+those words in "value1", "value2",... is kept.
+
+For instance, the @code{gcc} compiler will return a lot of supported
+languages, including "ada". If we do not want to use it as an Ada
+compiler, so we can put:
+
+@smallexample
+<languages>
+   <external regexp="languages=(\S+)" group="1">gcc -v</external>
+   <filter>c,c++,fortran</filter>
+</languages>
+@end smallexample
+
+@item @code{<must_match>regexp</must_match>}
+
+If this node is present, then the filtered output is compared with the
+specified regular expression. If no match is found, then the executable
+is not stored in the list of known compilers.
+
+For instance, if one wants to have a @code{<compiler_description>} tag
+specific to an older version of GCC, we could write:
+
+@smallexample
+<version>
+   <external regexp="gcc version (\S+)" group="1">gcc -v </external>
+   <must_match>2.8.1</must_match>
+</version>
+@end smallexample
+
+Other versions of gcc will not match this @code{<compiler_description>}
+node.
+
+@end itemize
+
+@c ------------------------------------------------------------------------
+@node Configurations
+@section Configurations
+@c ------------------------------------------------------------------------
+
+@noindent
+The second type of information stored in the knowledge base are the chunks
+of @code{gprmake} configuration files.
+
+Each of these chunks is also put in an XML node, that provides optional
+filters. If all the filter match, then the chunk will be merged with other
+similar chunks and put in the final configuration file that is generated
+by @code{gprconfig}.
+
+For instance, it is possible to indicate that a chunk should only be
+included if the GNAT compiler with the soft-float runtime is used. Such
+a chunk can for instance be used to ensure that Ada sources are always
+compiled with the @code{-msoft-float} command line switch.
+
+@code{gprconfig} doesn't do intelligent merging of chunks. All it does
+is group packages together. For instance, if the two chunks are:
+
+@smallexample
+chunk1:
+   package Language_Processing is
+     for Attr1 use ("foo");
+   end Language_Processing;
+chunk2:
+   package Language_Processing is
+     for Attr1 use ("bar");
+   end Language_Processing;
+@end smallexample
+
+Then the final configuration file will look like:
+
+@smallexample
+   package Language_Processing is
+      for Attr1 use ("foo");
+      for Attr1 use ("bar");
+   end Language_Processing;
+@end smallexample
+
+As a result, to avoid conflicts, it is recommended that the chunks be
+written so that they they easily collaborate together. For instance, if we
+want to obtain something equivalent to
+@smallexample
+   package Language_Processing is
+      for Attr1 use ("foo", "bar");
+   end Language_Processing;
+@end smallexample
+the two chunks above should be written as:
+@smallexample
+chunk1:
+   package Language_Processing is
+      for Attr1 use Language_Processing'Attr1 & ("foo");
+   end Language_Processing;
+chunk2:
+   package Language_Processing is
+      for Attr1 use Language_Processing'Attr1 & ("bar");
+   end Language_Processing;
+@end smallexample
+
+The chunks are described in an @code{<configuration>} XML node. The most
+important child of such a node is @code{<config>}, which contains the
+chunk itself. For instance, one would write:
+
+@smallexample
+<configuration>
+  ...  list of filters, see below
+  <config>
+   package Language_Processing is
+      for Attr1 use Language_Processing'Attr1 & ("foo");
+   end Language_Processing;
+  </config>
+</configuration>
+@end smallexample
+
+If @code{<config>} is an empty node (ie "<config/>" or "<config></config>")
+was used, then the combination of selected compilers will be reported as
+invalid, in the sense that we know that code compiled with these compilers
+cannot be linked together. As a result, @code{gprconfig} will not create
+the configuration file.
+
+When the @code{<configuration>} node has a single @code{<compilers>}
+child, special substrings are substituted in the chunk. These are the same as
+described for External Values in a previous section, ie "$RUNTIME",
+"$PATH", "$RUNTIME_DIR", "$OUTPUT_DIR", "$VERSION", "$LANGUAGE", "$HOST"
+and "$TARGET". Their
+values are those of the first compiler in @code{<compilers>} that matched.
+"$OUTPUT_DIR" is the directory in which the generated configuration file will
+be created.
+
+The filters themselves are of course defined through XML tags, and can
+be any of:
+
+@itemize @bullet
+@item @code{<compilers negate="false">}
+
+This filter contains a list of @code{<compiler>} children. The
+@code{<compilers>} filter matches if any of its children match.
+However, you can have several @code{<compilers>} filters, in which
+case they must all match. This can be used to include linker switches
+chunks. For instance, the following code would be used to describe
+the linker switches to use when GNAT 5.05 or 5.04 is used in addition to
+g++ 3.4.1:
+
+@smallexample
+<configuration>
+  <compilers>
+    <compiler name="GNAT" version="5.04" />
+    <compiler name="GNAT" version="5.05" />
+  </compilers>
+  <compilers>
+    <compiler name="G++" version="3.4.1" />
+  </compilers>
+  ...
+</configuration>
+@end smallexample
+
+If the attribute "negate" is "true", then the meaning of this filter is
+inverted, and it will match if none of its children matches.
+
+The format of the @code{<compiler>} is the following:
+@smallexample
+   <compiler name="name" version="..." runtime="..." language="..." />
+@end smallexample
+
+The name attribute must be specified, and will match one of the @code{<name>}
+attribute used in the @code{<compiler_description>} children.
+All other attributes are regular expressions, that are matched against
+the corresponding selected compilers. When an attribute is not specified,
+it will always match. Matching is done in a case-insensitive manner.
+For instance, to check a GNAT compiler in the 5.x family, use:
+
+@smallexample
+   <compiler name="GNAT" version="5.\d+" />
+@end smallexample
+
+@item @code{<hosts negate="false">}
+
+This filter contains a list of @code{<host>} children. It matches when
+any of its children matches. You can specificy only one @code{<hosts>}
+node.
+The format of @code{<host>} is a node with a single mandatory attribute
+@code{"name"}, which is a regexp matched against the architecture on
+which @code{gprconfig} is running. The name of the architecture was
+computed by @code{configure} when @code{gprconfig} was build.
+
+If the "negate" attribute is "true", then the meaning of this filter is
+inverted, and it will match when none of its children matches.
+
+For instance, to active a chunk only if the compiler is running on an
+intel linux machine, use:
+
+@smallexample
+   <hosts>
+      <host name="i.86-.*-linux(-gnu)?" />
+   </hosts>
+@end smallexample
+
+@item @code{<targets negate="false">}
+
+This filter contains a list of @code{<target>} children. It behaves
+exactly like @code{<hosts>}, but matches against the architecture
+targeted by the selected compilers. For instance, to activate a chunk
+only when the code is targeted for linux, use:
+
+If the "negate" attribute is "true", then the meaning of this filter is
+inverted, and it will match when none of its children matches.
+
+@smallexample
+   <targets>
+      <target name="i.86-.*-linux(-gnu)?" />
+   </targets>
+@end smallexample
+@end itemize
+
+@c  ------------------------------------------------------------------------
+@node Configuration files Description
+@chapter Configuration files Description
+c  ------------------------------------------------------------------------
+@c describe here the format of the gprmake configuration files
+
+c  ------------------------------------------------------------------------
+@node Other companion tools
+@chapter Other companion tools
+c  ------------------------------------------------------------------------
+@@c describe here gprbind, gprlib & create_ada_runtime
+
+Index
+
+
+@c  --------------------------------------------------------------------------
+@node Index
+@c  --------------------------------------------------------------------------
+
+@unnumbered Index
+
+@c @printindex cp
+
+@contents
+
+@bye
+
