@@ -312,7 +312,7 @@ package body Makegpr is
       Equal      => "=");
    --  A hash table to store the Source_Id of the mains.
 
-   Project_Object_Directory : Project_Id := No_Project;
+   Project_Of_Current_Object_Directory : Project_Id := No_Project;
    --  The object directory of the project for the last binding. Avoid
    --  calling Change_Dir if the current working directory is already this
    --  directory.
@@ -2241,7 +2241,18 @@ package body Makegpr is
       then
          Check_Archive_Builder;
 
-         Change_Dir (Get_Name_String (Data.Object_Directory));
+         if Project_Of_Current_Object_Directory /= For_Project then
+            Project_Of_Current_Object_Directory := For_Project;
+            Change_Dir (Get_Name_String (Data.Object_Directory));
+
+            if Verbose_Mode then
+               Write_Str  ("Changing to object directory of """);
+               Write_Name (Data.Name);
+               Write_Str  (""": """);
+               Write_Name (Data.Object_Directory);
+               Write_Line ("""");
+            end if;
+         end if;
 
          --  Put all sources in the project tree in Source_Indexes
 
@@ -2718,7 +2729,18 @@ package body Makegpr is
 
       --  Work occurs in the object directory
 
-      Change_Dir (Object_Directory_Path);
+      if Project_Of_Current_Object_Directory /= For_Project then
+         Project_Of_Current_Object_Directory := For_Project;
+         Change_Dir (Object_Directory_Path);
+
+         if Verbose_Mode then
+            Write_Str  ("Changing to object directory of """);
+            Write_Name (Data.Name);
+            Write_Str  (""": """);
+            Write_Str  (Object_Directory_Path);
+            Write_Line ("""");
+         end if;
+      end if;
 
       Library_Needs_To_Be_Built := Force_Compilations;
 
@@ -3394,8 +3416,8 @@ package body Makegpr is
       --  Nothing to do if the current working directory is already the correct
       --  object directory.
 
-      if Project_Object_Directory /= Project then
-         Project_Object_Directory := Project;
+      if Project_Of_Current_Object_Directory /= Project then
+         Project_Of_Current_Object_Directory := Project;
 
          --  Set the working directory to the object directory of the actual
          --  project.
@@ -3404,6 +3426,14 @@ package body Makegpr is
            (Get_Name_String
               (Project_Tree.Projects.Table (Project).Object_Directory));
 
+         if Verbose_Mode then
+            Write_Str  ("Changing to object directory of """);
+            Write_Name (Project_Tree.Projects.Table (Project).Name);
+            Write_Str  (""": """);
+            Write_Name
+              (Project_Tree.Projects.Table (Project).Object_Directory);
+            Write_Line ("""");
+         end if;
       end if;
 
    exception
