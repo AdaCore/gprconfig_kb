@@ -3,6 +3,7 @@ INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 PREFIX=@PREFIX@
 HOST=@HOST@
+GNAT_SOURCE_DIR=@GNAT_SOURCE_DIR@
 CP=cp -p
 MKDIR=mkdir -p
 
@@ -31,7 +32,7 @@ install: all
 obj/gprmake_dummies.o: src/gprmake_dummies.c
 	gcc -c -o $@ $<
 
-obj/link.o: gnat/link.c
+obj/link.o: $(GNAT_SOURCE_DIR)/link.c
 	gcc -c -o $@ $<
 
 clean_doc:
