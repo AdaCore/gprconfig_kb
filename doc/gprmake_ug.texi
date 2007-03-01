@@ -95,39 +95,88 @@ Index
 @unnumbered Introduction
 @c  ------------------------------------------------------------------------
 
-gprmake is a generic software build tool designed for the construction of
+gprmake is a generic build tool designed for the construction of
 big multi-language systems organized into subsystems and libraries.
 It is well-suited for compiled languages offering separate compilation units
 such as Ada, C, C++ or Fortran.
 
-gprmake manages a 3 step build process
+@noindent
+gprmake manages a three step build process
 @itemize @bullet
-@item compilation phase
+@item compilation phase:
+
 each compilation unit of each subsystem is examined in turn, checked for
 consitency and compiled or recommpiled when necessary by the appropriate
 compiler.  The recompilation decision is based on dependency information
 usually produced by a former compilation.
-@item post-compilation phase (or binding)
+
+@item post-compilation phase (or binding):
+
 Compiled units of a given language are passed to a language specific
 post-compilation tool when it is exist. This is also during this phase
 that objects are grouped into static or dynamic libraries as specified.
-@item linking phase
+
+@item linking phase:
+
 All units or libraries from all subsystems are passed to a linker tool
 specific to the set of toolchains used together.
 @end itemize
 
-gprmake is a generic tool in the sense that it allows easy configuration of
-@itemize
+@noindent
+@code{gprmake} takes as its main input a project file defining the build
+characteristics of the system under construction such as: which sources to
+use, where to find them, where to store the objects produced by the
+compiler, which options should the various tools be invoked with, etc. It
+is generic in the sense that it provides equivalent build features for all
+supported languages, it allows the definition of new languages and new
+toolchains and it provides means of configuring aspects
+such as: @itemize
 @item language characteristics (e.g. source naming conventions)
 @item toolchain characteristics (e.g. compiler invocation)
 @item subsystem characteristics (e.g. compiler default options)
 @item source file characteristics (e.g. file specific compilation options)
 @end itemize
+On the other hand, @code{gprmake} is not a replacement for general-purpose
+build tools such as @code{make} or @code{ant} which give the user a high
+level of control on the build process itself. When building a system
+requires complex actions that do not fit well in the three-phase process
+described above, @code{gprmake} is not able to manage all the aspects
+of the build process on its own. In such complex situations, it can still
+be used sucessfully to address the appropriate part of the build. for
+instance it can be called from within a Makefile.
 
 @c  ------------------------------------------------------------------------
 @node Basic Concepts
 @chapter Basic Concepts
 @c  ------------------------------------------------------------------------
+
+Let's review some terms that are freely used in the rest of this document
+and which carry a specific technical baggage that may be worth mentioning
+here.
+
+@itemize @bullet
+
+@item source file:
+
+A file containing source code. It is associated to a programming language
+by its naming scheme. For instance, @code{foo.c} is typically the name of
+a C source file; @code{bar.ads} or @code{bar.1.ada} are 2 common
+naming conventions for the file containing an Ada spec; etc. a compilation
+unit is often represented by a main source file and several auxillary
+ones, such as header files in C. Source file naming schemes are used by
+@code{grpmake} to associate source files to languages  so that the right
+compiler can be invoked. The Naming schemes are defined in the
+configuration files associated with languages and toolchains. It can
+also be defined by the user in his project files.
+
+@item object file:
+
+@item project file:
+@item project subpackage:
+@item project attribute:
+@item subsystem:
+@item library:
+@end itemize
 
 @c describe here basic concepts such as
 @c  - subsystem
