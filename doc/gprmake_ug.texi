@@ -224,9 +224,47 @@ also be defined by the user in his project files.
 
 @node Command Line
 @section Command Line
-@c explain this part
-@c Usage: gprmake -P<project file> [opts]  [name]
-@c    {[-cargs opts] [- cargs:lang pts] [-largs opts][-gargs opts]}
+
+@noindent
+
+To use gprmake, you need to specify one main project file, using switch
+-P. Everything else is optional. The optional parts on the command line are
+switches, name(s) of mains and command line separators.
+
+In all cases, gprmake compiles or recompiles all sources in the project tree
+that are not up to date and build or rebuild libraries that are not up to
+date.
+
+If there are one or several names of mains on the command lines, or if
+there are mains declared in the project file (with attribute Main), then
+gprmake will build the executables for the mains. Mains specified on the
+command line may be sources different projects in the project tree.
+
+The different command line separators are:
+
+-cargs
+The arguments that follow up to the next command line separators are
+options for all the compilers. Example: -cargs -g
+
+-cargs:<language name>
+The arguments that follow up to the next command line separators are
+options for the compiler of the specific language.
+Examples:
+-cargs:Ada -gnatf
+-cargs:C -E
+
+-bargs
+The arguments that follow up to the next command line separators are
+options for the binder.
+
+-largs
+The arguments that follow up to the next command line separators are
+options for the linker.
+
+-gargs
+The arguments that follow up to the next command line separators are
+options for gprmake itself. Usually, -gargs is specified after one or
+several other command line separators.
 
 @node Switches
 @section Switches
