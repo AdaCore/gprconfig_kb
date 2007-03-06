@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006, Free Software Foundation, Inc.            --
+--            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -41,6 +41,9 @@ with Osint;
 with Table;
 
 procedure Gprbind is
+
+   Executable_Suffix : constant String_Access := Get_Executable_Suffix;
+   --  The suffix of executables on this platforms
 
    GNATBIND : constant String := Osint.Program_Name ("gnatbind").all;
 
@@ -293,11 +296,27 @@ begin
          Last_Compiler_Option);
 
       if not Quiet_Output then
+         Name_Len := 0;
+
          if Verbose_Mode then
-            Put (Ada_Compiler_Path.all);
+            Add_Str_To_Name_Buffer (Ada_Compiler_Path.all);
          else
-            Put (Base_Name (Ada_Compiler_Path.all));
+            Add_Str_To_Name_Buffer (Base_Name (Ada_Compiler_Path.all));
          end if;
+
+         --  Remove the executable suffix, if present
+
+         if Executable_Suffix'Length > 0
+           and then
+             Name_Len > Executable_Suffix'Length
+           and then
+             Name_Buffer (Name_Len - Executable_Suffix'Length .. Name_Len) =
+               Executable_Suffix.all
+         then
+            Name_Len := Name_Len - Executable_Suffix'Length;
+         end if;
+
+         Put (Name_Buffer (1 .. Name_Len));
 
          for Option in 1 .. Last_Compiler_Option loop
             Put (' ');
