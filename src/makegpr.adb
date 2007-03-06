@@ -65,6 +65,9 @@ with Types;            use Types;
 
 package body Makegpr is
 
+   Executable_Suffix : constant String_Access := Get_Executable_Suffix;
+   --  The suffix of executables on this platforms
+
    Object_Suffix : constant String := Get_Object_Suffix.all;
    --  The suffix of object file for this platform
 
@@ -5001,6 +5004,21 @@ package body Makegpr is
          if Verbose_Mode then
             Write_Str (Path.all);
 
+         elsif Executable_Suffix'Length > 0 and then
+            Name_Length > Executable_Suffix'Length
+         then
+            Name_Len := Name'Length;
+            Name_Buffer (1 .. Name_Len) := Name;
+
+            if Name_Buffer
+                 (Name_Len - Executable_Suffix'Length + 1 .. Name_Len) =
+                 Executable_Suffix.all
+            then
+               Name_Len := Name_Len - Executable_Suffix'Length;
+            end if;
+
+            Put_Line (Name_Buffer (1 .. Name_Len));
+
          else
             Write_Str (Name);
          end if;
@@ -6343,7 +6361,7 @@ package body Makegpr is
             --  ??? Shouldn't this be after the command line options?
 
             for J in 1 .. Binding_Options.Last loop
-               Add_Argument (Binding_Options.Table (J), True);
+               Add_Argument (Binding_Options.Table (J), Verbose_Mode);
             end loop;
 
             --  Add the run path option, if necessary
@@ -6392,7 +6410,7 @@ package body Makegpr is
                      Length := Length + Rpaths.Table (J)'Length;
                   end loop;
 
-                  Add_Argument (Arg, True);
+                  Add_Argument (Arg, Verbose_Mode);
                end;
             end if;
 
@@ -6481,7 +6499,8 @@ package body Makegpr is
             --  Finally add the linker switches specified on the command line
 
             for J in 1 .. Command_Line_Linker_Options.Last loop
-               Add_Argument (Command_Line_Linker_Options.Table (J), True);
+               Add_Argument
+                 (Command_Line_Linker_Options.Table (J), Verbose_Mode);
             end loop;
 
             --  Add the switch(es) to specify the name of the executable
