@@ -171,21 +171,88 @@ also be defined by the user in his project files.
 
 @item object file:
 
-@item project file:
-@item project subpackage:
-@item project attribute:
-@item subsystem:
-@item library:
-@end itemize
+An intermediate file produced by the compiler from a compilation unit. It
+is used by the post-compilation phases to produce final executables or
+libraries. The object files produced in the context of a given project
+are stored in a single directory, the Object_Dir that is usually specified
+in the project file. When there is a need for storing objects in different
+directories, several dependant project files need to be defined.
 
-@c describe here basic concepts such as
-@c  - subsystem
-@c  - project file
-@c  - project subpackages
-@c  - project attribute
-@c  - source files, object files, switches
-@c and any other technical terms that are used later
-@c  also mention where to find the project file syntax & semantics
+@item project file:
+
+A text file using an Ada-like syntax. It defines build-related
+characterists of an application, or a part of it. The characteristics
+include the list of sources, the location of those sources, the location
+where to store the generated object files, the name of the main program
+and the default options for the various tools involved in the build
+process. Those characteristics can be conditionalized thanks to scenario
+variables & case statements.
+
+@item project attribute:
+
+A specific characteristic is defined by a project attribute clause. Its
+value is a string or a sequence of strings. for instance, the Source_Dirs
+attribute is a sequence of strings representing the actual names of the
+directories containing the source of the project. The attribute itself can
+be parametrized. For instance @code{Compiler.Default_Options ("Ada")}
+refers to the default compiler options for the Ada language.
+
+@item project subpackage:
+
+Global characteristics are defined at the top level of the projects.
+Specific characteristics affecting a given tool are grouped in a
+subpackage named after the type of tools it affects. The most common
+subpackages are "Builder", "Compiler", "Binder" & "Linker".
+
+@item project variables:
+
+Two kinds of variables are available with projects: simple variables and
+scenario variables. The former can hold any string, or sequence of strings
+value. They are usesul as shortcut for complex expressions. Scenario
+variables are a restricted version of the former which can only take their
+value from a static enumeration of strings representing the various
+supported scenarios. Those scenario variables are used conjointly with
+the @code{case} construct to offer limited conditionalization of
+project characteristics. Both types of variables are local to the project
+defining them and can get initialized with an external value, such as
+an environment variable, thanks to the @code{external} directive.
+
+@item subsystem:
+
+A subsystem is a coherent part of the complete system to be built. It
+is represented by a set of sources and one object directory. A simple
+system is composed of a single subsystem. Complex systems are
+usually composed of a graph of interdependant subsystems. A subsystem is
+dependant on another subsystem if it cannot be built without any
+knowledge of the other one, and in particular if visibility on some of
+the sources od this other subsystem is required. A subsystem is usually
+represented by one project file. The subsystem dependency relationship
+is represented by the @code{with} clause between corresponding project
+files.
+
+@item library:
+
+A Library is a specific type of subsystem where the objects are
+grouped together using system specific means for the conveniency
+of the user. Project files off a system and language independant way of
+building both static and dynamic libraries. It also support the concept
+of standalone libraries (SAL) which offer two significant properties: the
+initialization of the library is either automatic or very simple; a
+change in the implementation part of the library implies minimal
+post-compilation actions on the complete system and potentially no
+action at all for dynamic SALs.
+
+@item Project extension:
+
+A project extension is a project that represents a non-perturbing
+modification of the original project. Suppose for instance that a
+subsystem is shared by 2 different unrelated systems. If one system
+requires a change in the subsystem it may affect the other system
+negatively. In order to preserve as much sharing of the subsystem, it is
+possible to represent a new version of the subsystem as a delta to the
+original version which only contains the new source files, those that have
+been changed and the objects that are affected by therse changes.
+@end itemize
 
 @c  ------------------------------------------------------------------------
 @node Guided Tour
@@ -198,9 +265,57 @@ also be defined by the user in his project files.
 * Libraries::
 @end menu
 
+This chapter will get, through examples, from the simplest cases of
+multi-language builds to some of the most advanced capability of
+@code{gprbuild}.
+
 @node First Steps
 @section First Steps
-@c show a hello world construction with Ada & C
+
+Let's assume a simple case of interfacing between Ada & C where the main
+program is in turn in each language. With a main program in Ada, we can
+use a project of the sort:
+@smallexample
+project Ada_Main is
+   for Languages    use ("Ada", "C");
+   for Source_Dirs  use ("src");
+   for Object_Dir   use  "obj";
+   for Source_Files use ("ada_main.adb", "c_lib.ads", "lib.h", "lib.c");
+   for Main         use ("ada_main.adb");
+end Ada_Main;
+@end smallexample
+This project says that:
+@itemize
+@item the sources files of this subsystem are in "Ada" and
+in "C".
+@item the list of directories containing the sources is composed of
+a single directory called "src".
+@item the directory holding the objects is "obj".
+@item the complete list of source files is  "ada_main.adb", "c_lib.ads",
+"lib.h", "lib.c".
+@item the main entry point of the system is in the source file
+"main_ada.adb".
+@end itemize
+Those elements are sufficient for @code{gprbuild} to build an executable
+program out of the sources. Note that no indication on how to build
+the various elements are given in the project files which remains a
+description of the project properties rather than a set of actions to
+be executed to acheive given goals. Here is the invocation of @code{gprbuild}
+that allow building the multi-language program:
+@smallexample
+$ gprbuild -Pada_main
+gcc -c e:\examples\first_steps\src\ada_main.adb -o ada_main.o
+gcc -c e:\examples\first_steps\src\c_lib.ads -o c_lib.o
+gcc -c e:\examples\first_steps\src\lib.c -o lib.o
+gprbind.exe ada_main.bexch
+gnatbind -o b__ada_main.adb e:\examples\first_steps\obj\ada_main.ali
+gcc -c -x ada -gnatA b__ada_main.adb -o b__ada_main.o
+ar cr libada_main.a e:\examples\first_steps\obj\ada_main.o ...
+ranlib libada_main.a
+gcc ada_main.o  ... -o ada_main.exe
+@end smallexample
+
+
 
 @node Subsystems
 @section Subsystems
