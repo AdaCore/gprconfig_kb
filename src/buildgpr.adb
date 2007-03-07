@@ -229,10 +229,13 @@ package body Buildgpr is
    Initial_Number_Of_Options : constant := 10;
 
    type Options_Data is record
-      Options : String_List_Access :=
-                  new String_List (1 .. Initial_Number_Of_Options);
-      Visible : Booleans := new Boolean_Array (1 .. Initial_Number_Of_Options);
-      Last    : Natural := 0;
+      Options     : String_List_Access :=
+                      new String_List (1 .. Initial_Number_Of_Options);
+      Visible     : Booleans :=
+                      new Boolean_Array (1 .. Initial_Number_Of_Options);
+      Simple_Name : Booleans :=
+                      new Boolean_Array (1 .. Initial_Number_Of_Options);
+      Last        : Natural := 0;
    end record;
    --  A record type to keep different options with a boolean for each that
    --  indicates if it should be displayed.
@@ -367,13 +370,18 @@ package body Buildgpr is
 
    Initial_Argument_Count : constant Positive := 20;
    Arguments : Argument_List_Access :=
-     new Argument_List (1 .. Initial_Argument_Count);
+                 new Argument_List (1 .. Initial_Argument_Count);
    --  Used to store lists of arguments to be used when spawning a process
 
    Arguments_Displayed : Booleans :=
-     new Boolean_Array (1 .. Initial_Argument_Count);
+                           new Boolean_Array (1 .. Initial_Argument_Count);
    --  For each argument in Arguments, indicate if the argument should be
    --  displayed when procedure Display_Command is called.
+
+   Arguments_Simple_Name : Booleans :=
+                             new Boolean_Array (1 .. Initial_Argument_Count);
+   --  For each argument that should be displayed, indicate that the argument
+   --  is a path name and that only the simple name should be displayed.
 
    Last_Argument : Natural := 0;
    --  Index of the last valid argument in Arguments
@@ -517,11 +525,20 @@ package body Buildgpr is
    pragma Import (C, Install_Int_Handler, "__gnat_install_int_handler");
    --  Called by Gnatmake to install the SIGINT handler below
 
-   procedure Add_Argument (Arg : String_Access; Display : Boolean);
-   procedure Add_Argument (Arg : String; Display : Boolean);
+   procedure Add_Argument
+     (Arg         : String_Access;
+      Display     : Boolean;
+      Simple_Name : Boolean := False);
+   procedure Add_Argument
+     (Arg         : String;
+      Display     : Boolean;
+      Simple_Name : Boolean := False);
    --  Add an argument to Arguments. Reallocate if necessary
 
-   procedure Add_Arguments (Args : Argument_List; Display : Boolean);
+   procedure Add_Arguments
+     (Args        : Argument_List;
+      Display     : Boolean;
+      Simple_Name : Boolean := False);
    --  Add a list of arguments to Arguments. Reallocate if necessary
 
    procedure Add_Compilation_Switches (Source : Source_Id);
@@ -535,23 +552,27 @@ package body Buildgpr is
    --  of Current_Processor and other global variables.
 
    procedure Add_Option
-     (Value   : String;
-      To      : in out Options_Data;
-      Display : Boolean);
+     (Value       : String;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False);
    procedure Add_Option
-     (Value   : Name_Id;
-      To      : in out Options_Data;
-      Display : Boolean);
+     (Value       : Name_Id;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False);
    procedure Add_Options
      (Value         : String_List_Id;
       To            : in out Options_Data;
       Display_All   : Boolean;
-      Display_First : Boolean);
+      Display_First : Boolean;
+      Simple_Name   : Boolean := False);
    procedure Add_Options
      (Value         : String_List;
       To            : in out Options_Data;
       Display_All   : Boolean;
-      Display_First : Boolean);
+      Display_First : Boolean;
+      Simple_Name   : Boolean := False);
    --  Add one or several options to a list of options. Increase the size
    --  of the list, if necessary.
 
@@ -733,7 +754,11 @@ package body Buildgpr is
    -- Add_Argument --
    ------------------
 
-   procedure Add_Argument (Arg : String_Access; Display : Boolean) is
+   procedure Add_Argument
+     (Arg         : String_Access;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
+   is
    begin
       --  Nothing to do if no argument is specified or if argument is empty
 
@@ -753,6 +778,11 @@ package body Buildgpr is
                                              (1 .. Last_Argument +
                                                      Initial_Argument_Count);
 
+               New_Arguments_Simple_Name : constant Booleans :=
+                                             new Boolean_Array
+                                               (1 .. Last_Argument +
+                                                       Initial_Argument_Count);
+
             begin
                New_Arguments (Arguments'Range) := Arguments.all;
 
@@ -768,6 +798,11 @@ package body Buildgpr is
                  Arguments_Displayed.all;
                Free (Arguments_Displayed);
                Arguments_Displayed := New_Arguments_Displayed;
+
+               New_Arguments_Simple_Name (Arguments_Displayed'Range) :=
+                 Arguments_Simple_Name.all;
+               Free (Arguments_Simple_Name);
+               Arguments_Simple_Name := New_Arguments_Simple_Name;
             end;
          end if;
 
@@ -776,10 +811,15 @@ package body Buildgpr is
          Last_Argument := Last_Argument + 1;
          Arguments (Last_Argument) := Arg;
          Arguments_Displayed (Last_Argument) := Display;
+         Arguments_Simple_Name (Last_Argument) := Simple_Name;
       end if;
    end Add_Argument;
 
-   procedure Add_Argument (Arg : String; Display : Boolean) is
+   procedure Add_Argument
+     (Arg         : String;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
+   is
       Argument : String_Access := null;
 
    begin
@@ -808,7 +848,7 @@ package body Buildgpr is
 
          --  And add the argument
 
-         Add_Argument (Argument, Display);
+         Add_Argument (Argument, Display, Simple_Name);
       end if;
    end Add_Argument;
 
@@ -816,7 +856,11 @@ package body Buildgpr is
    -- Add_Arguments --
    -------------------
 
-   procedure Add_Arguments (Args : Argument_List; Display : Boolean) is
+   procedure Add_Arguments
+     (Args        : Argument_List;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
+   is
    begin
       --  Reallocate the arrays, if necessary
 
@@ -856,6 +900,8 @@ package body Buildgpr is
       Arguments (Last_Argument + 1 .. Last_Argument + Args'Length) := Args;
       Arguments_Displayed (Last_Argument + 1 .. Last_Argument + Args'Length) :=
         (others => Display);
+      Arguments_Simple_Name (Last_Argument + 1 .. Last_Argument + Args'Length)
+        := (others => Simple_Name);
       Last_Argument := Last_Argument + Args'Length;
    end Add_Arguments;
 
@@ -939,19 +985,22 @@ package body Buildgpr is
    end Add_Option;
 
    procedure Add_Option
-     (Value   : String;
-      To      : in out Options_Data;
-      Display : Boolean)
+     (Value       : String;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
    is
    begin
       To.Last := To.Last + 1;
 
       if To.Last > To.Options'Last then
          declare
-            New_Options : constant String_List_Access :=
-                            new String_List (1 .. 2 * To.Options'Last);
-            New_Visible : constant Booleans :=
-                            new Boolean_Array (1 .. 2 * To.Visible'Last);
+            New_Options     : constant String_List_Access :=
+                                new String_List (1 .. 2 * To.Options'Last);
+            New_Visible     : constant Booleans :=
+                                new Boolean_Array (1 .. 2 * To.Visible'Last);
+            New_Simple_Name : constant Booleans :=
+                                new Boolean_Array (1 .. 2 * To.Visible'Last);
 
          begin
             New_Options (To.Options'Range) := To.Options.all;
@@ -961,20 +1010,25 @@ package body Buildgpr is
             New_Visible (To.Visible'Range) := To.Visible.all;
             Free (To.Visible);
             To.Visible := New_Visible;
+            New_Simple_Name (To.Simple_Name'Range) := To.Simple_Name.all;
+            Free (To.Simple_Name);
+            To.Simple_Name := New_Simple_Name;
          end;
       end if;
 
-      To.Options (To.Last) := new String'(Value);
-      To.Visible (To.Last) := Display;
+      To.Options (To.Last)     := new String'(Value);
+      To.Visible (To.Last)     := Display;
+      To.Simple_Name (To.Last) := Simple_Name;
    end Add_Option;
 
    procedure Add_Option
-     (Value   : Name_Id;
-      To      : in out Options_Data;
-      Display : Boolean)
+     (Value       : Name_Id;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
    is
    begin
-      Add_Option (Get_Name_String (Value), To, Display);
+      Add_Option (Get_Name_String (Value), To, Display, Simple_Name);
    end Add_Option;
 
    -----------------
@@ -985,7 +1039,8 @@ package body Buildgpr is
      (Value         : String_List_Id;
       To            : in out Options_Data;
       Display_All   : Boolean;
-      Display_First : Boolean)
+      Display_First : Boolean;
+      Simple_Name   : Boolean := False)
    is
       List    : String_List_Id := Value;
       Element : String_Element;
@@ -1002,10 +1057,15 @@ package body Buildgpr is
 
             if To.Last > To.Options'Last then
                declare
-                  New_Options : constant String_List_Access :=
-                                  new String_List (1 .. 2 * To.Options'Last);
-                  New_Visible : constant Booleans :=
-                                  new Boolean_Array (1 .. 2 * To.Visible'Last);
+                  New_Options     : constant String_List_Access :=
+                                      new String_List
+                                        (1 .. 2 * To.Options'Last);
+                  New_Visible     : constant Booleans :=
+                                      new Boolean_Array
+                                        (1 .. 2 * To.Visible'Last);
+                  New_Simple_Name : constant Booleans :=
+                                      new Boolean_Array
+                                        (1 .. 2 * To.Simple_Name'Last);
 
                begin
                   New_Options (To.Options'Range) := To.Options.all;
@@ -1015,10 +1075,14 @@ package body Buildgpr is
                   New_Visible (To.Visible'Range) := To.Visible.all;
                   Free (To.Visible);
                   To.Visible := New_Visible;
+                  New_Simple_Name (To.Simple_Name'Range) := To.Simple_Name.all;
+                  Free (To.Simple_Name);
+                  To.Simple_Name := New_Simple_Name;
                end;
             end if;
 
             To.Options (To.Last) := Option;
+
             if Display_All then
                To.Visible (To.Last) := True;
 
@@ -1029,6 +1093,8 @@ package body Buildgpr is
             else
                To.Visible (To.Last) := False;
             end if;
+
+            To.Simple_Name (To.Last) := Simple_Name;
          end if;
 
          List := Element.Next;
@@ -1039,16 +1105,20 @@ package body Buildgpr is
      (Value         : String_List;
       To            : in out Options_Data;
       Display_All   : Boolean;
-      Display_First : Boolean)
+      Display_First : Boolean;
+      Simple_Name   : Boolean := False)
    is
       First_Display : Boolean := Display_First;
    begin
       while To.Last + Value'Length > To.Options'Last loop
          declare
-            New_Options : constant String_List_Access :=
-                            new String_List (1 .. 2 * To.Options'Last);
-               New_Visible : constant Booleans :=
-                               new Boolean_Array (1 .. 2 * To.Visible'Last);
+            New_Options     : constant String_List_Access :=
+                                new String_List (1 .. 2 * To.Options'Last);
+            New_Visible     : constant Booleans :=
+                                new Boolean_Array (1 .. 2 * To.Visible'Last);
+            New_Simple_Name : constant Booleans :=
+                                new Boolean_Array
+                                  (1 .. 2 * To.Simple_Name'Last);
 
          begin
             New_Options (1 .. To.Last) := To.Options (1 .. To.Last);
@@ -1058,6 +1128,7 @@ package body Buildgpr is
             New_Visible (1 .. To.Last) := To.Visible (1 .. To.Last);
             Free (To.Visible);
             To.Visible := New_Visible;
+            New_Simple_Name (1 .. To.Last) := To.Simple_Name (1 .. To.Last);
          end;
       end loop;
 
@@ -1067,6 +1138,7 @@ package body Buildgpr is
             To.Options (To.Last) := Value (J);
             To.Visible (To.Last) := Display_All or else First_Display;
             First_Display := False;
+            To.Simple_Name (To.Last) := Simple_Name;
          end if;
       end loop;
    end Add_Options;
@@ -1260,7 +1332,8 @@ package body Buildgpr is
                      Add_Option
                        (Name_Buffer (1 .. Name_Len),
                         Compilation_Options,
-                        Opt.Verbose_Mode);
+                        Opt.Verbose_Mode,
+                        Simple_Name => not Verbose_Mode);
 
                      if not Quiet_Output then
                         if Verbose_Mode then
@@ -2222,7 +2295,8 @@ package body Buildgpr is
                         Add_Argument
                           (Get_Name_String (Source.Object_Path),
                            Verbose_Mode or else
-                             (First_Object = Last_Argument));
+                             (First_Object = Last_Argument),
+                           Simple_Name => not Verbose_Mode);
                      end if;
                   end if;
                end if;
@@ -2464,7 +2538,7 @@ package body Buildgpr is
 
             --  Followed by the archive name
 
-            Add_Argument (Archive_Name, True);
+            Add_Argument (Archive_Name, True, Simple_Name => not Verbose_Mode);
 
             First_Object := Last_Argument;
 
@@ -2518,7 +2592,10 @@ package body Buildgpr is
                        (Archive_Indexer_Opts.Options
                           (1 .. Archive_Indexer_Opts.Last),
                         True);
-                     Add_Argument (Archive_Name, True);
+                     Add_Argument
+                       (Archive_Name,
+                        True,
+                        Simple_Name => not Verbose_Mode);
 
                      Display_Command
                        (Archive_Indexer_Name.all, Archive_Indexer_Path);
@@ -3729,6 +3806,8 @@ package body Buildgpr is
          end loop;
       end Add_Config_File_Switch;
 
+   --  Start of processing for Compilation_Phase
+
    begin
       Outstanding_Compiles := 0;
 
@@ -3868,6 +3947,7 @@ package body Buildgpr is
                      end loop;
                   end;
                end if;
+
                --  2) the compilation switches coming from the package Builder
                --     of the main project.
 
@@ -4062,7 +4142,8 @@ package body Buildgpr is
                  (Get_Name_String
                     (Project_Tree.Sources.Table (Source_Identity).Path),
                   To   => Compilation_Options,
-                  Display => True);
+                  Display => True,
+                  Simple_Name => not Verbose_Mode);
 
                --  Set the environment or additional switches for visibility
                --  on source directories.
@@ -4364,7 +4445,16 @@ package body Buildgpr is
                   for Option in 1 .. Compilation_Options.Last loop
                      if Compilation_Options.Visible (Option) then
                         Write_Char (' ');
-                        Write_Str (Compilation_Options.Options (Option).all);
+
+                        if Compilation_Options.Simple_Name (Option) then
+                           Write_Str
+                             (Base_Name
+                                (Compilation_Options.Options (Option).all));
+
+                        else
+                           Write_Str
+                             (Compilation_Options.Options (Option).all);
+                        end if;
                      end if;
                   end loop;
 
@@ -5017,10 +5107,10 @@ package body Buildgpr is
                Name_Len := Name_Len - Executable_Suffix'Length;
             end if;
 
-            Put_Line (Name_Buffer (1 .. Name_Len));
+            Put_Line (Base_Name (Name_Buffer (1 .. Name_Len)));
 
          else
-            Write_Str (Name);
+            Write_Str (Base_Name (Name));
          end if;
 
          --  Display only the arguments for which the display flag is set
@@ -5029,7 +5119,13 @@ package body Buildgpr is
          for Arg in 1 .. Last_Argument loop
             if Arguments_Displayed (Arg) then
                Write_Char (' ');
-               Write_Str (Arguments (Arg).all);
+
+               if Arguments_Simple_Name (Arg) then
+                  Write_Str (Base_Name (Arguments (Arg).all));
+
+               else
+                  Write_Str (Arguments (Arg).all);
+               end if;
 
             elsif Display_Ellipse then
                Write_Str (" ...");
@@ -5215,7 +5311,10 @@ package body Buildgpr is
                        (Name_Buffer
                           (Linker_Lib_Dir_Option'Length + 1 .. Name_Len))
                      then
-                        Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                        Add_Argument
+                          (Name_Buffer (1 .. Name_Len),
+                           True,
+                           Simple_Name => not Verbose_Mode);
 
                      else
                         Add_Argument
@@ -5224,7 +5323,8 @@ package body Buildgpr is
                            Directory_Separator &
                            Name_Buffer
                              (Linker_Lib_Dir_Option'Length + 1 .. Name_Len),
-                           True);
+                           True,
+                           Simple_Name => not Verbose_Mode);
                      end if;
 
                   elsif (Name_Len > Linker_Lib_Name_Option'Length and then
@@ -5242,7 +5342,8 @@ package body Buildgpr is
                        (Project_Tree.Projects.Table (Proj).Dir_Path.all &
                         Directory_Separator &
                         Name_Buffer (1 .. Name_Len),
-                        True);
+                        True,
+                        Simple_Name => True);
                   end if;
                end if;
 
@@ -6521,7 +6622,10 @@ package body Buildgpr is
                procedure Add_Executable_Name is
                begin
                   Add_Str_To_Name_Buffer (Get_Name_String (Exec_Path_Name));
-                  Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                  Add_Argument
+                    (Name_Buffer (1 .. Name_Len),
+                     True,
+                     Simple_Name => not Verbose_Mode);
                end Add_Executable_Name;
 
             begin
