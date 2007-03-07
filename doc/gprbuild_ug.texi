@@ -4,22 +4,22 @@
 
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 @c                                                                            o
-@c                           GPRMAKE DOCUMENTATION                            o
+@c                           GPRBUILD DOCUMENTATION                           o
 @c                                                                            o
-@c                  G P R M A K E   U S E R ' S   G U I D E                   o
+@c                  G P R B U I L D   U S E R ' S   G U I D E                 o
 @c                                                                            o
 @c                     Copyright (C) 2007, AdaCore                            o
 @c                                                                            o
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-@setfilename gprmake_ug.info
-@settitle GPRMAKE User's Guide
+@setfilename gprbuild_ug.info
+@settitle GPRBUILD User's Guide
 @setchapternewpage odd
 @syncodeindex fn cp
 
 @titlepage
 
-@title GPRMAKE User's Guide
+@title GPRBUILD User's Guide
 @c @subtitle Date: $Date: 2006/09/11 04:02:07 $
 @author AdaCore
 
@@ -36,10 +36,10 @@ are preserved on all copies.
 
 @ifinfo
 @node Top, Introduction, (dir), (dir)
-@top GPRMAKE User's Guide
+@top GPRBUILD User's Guide
 
 @noindent
-@c GPRMAKE User's Guide@*
+@c GPRBUILD User's Guide@*
 @c Document revision level $Revision: 1.0 $@*
 @*
 @noindent
@@ -49,7 +49,7 @@ AdaCore@*
 * Introduction::
 * Basic Concepts::
 * Guided Tour::
-* Building with gprmake::
+* Building with gprbuild::
 * Cleaning up with gprclean::
 * Configuring with gprconfig::
 * Configuration files Description::
@@ -68,7 +68,7 @@ Guided Tour
 * Subsystems::
 * Libraries::
 
-Building with gprmake
+Building with gprbuild
 * Command Line::
 * Switches::
 
@@ -95,13 +95,13 @@ Index
 @unnumbered Introduction
 @c  ------------------------------------------------------------------------
 
-gprmake is a generic build tool designed for the construction of
+gprbuild is a generic build tool designed for the construction of
 big multi-language systems organized into subsystems and libraries.
 It is well-suited for compiled languages offering separate compilation units
 such as Ada, C, C++ or Fortran.
 
 @noindent
-gprmake manages a three step build process
+gprbuild manages a three step build process
 @itemize @bullet
 @item compilation phase:
 
@@ -123,7 +123,7 @@ specific to the set of toolchains used together.
 @end itemize
 
 @noindent
-@code{gprmake} takes as its main input a project file defining the build
+@code{gprbuild} takes as its main input a project file defining the build
 characteristics of the system under construction such as: which sources to
 use, where to find them, where to store the objects produced by the
 compiler, which options should the various tools be invoked with, etc. It
@@ -136,11 +136,11 @@ such as: @itemize
 @item subsystem characteristics (e.g. compiler default options)
 @item source file characteristics (e.g. file specific compilation options)
 @end itemize
-On the other hand, @code{gprmake} is not a replacement for general-purpose
+On the other hand, @code{gprbuild} is not a replacement for general-purpose
 build tools such as @code{make} or @code{ant} which give the user a high
 level of control on the build process itself. When building a system
 requires complex actions that do not fit well in the three-phase process
-described above, @code{gprmake} is not able to manage all the aspects
+described above, @code{gprbuild} is not able to manage all the aspects
 of the build process on its own. In such complex situations, it can still
 be used sucessfully to address the appropriate part of the build. for
 instance it can be called from within a Makefile.
@@ -213,8 +213,8 @@ also be defined by the user in his project files.
 @c show how to deal with externa libraries
 
 @c  ------------------------------------------------------------------------
-@node Building with gprmake
-@chapter Building with gprmake
+@node Building with gprbuild
+@chapter Building with gprbuild
 @c  ------------------------------------------------------------------------
 
 @menu
@@ -227,17 +227,17 @@ also be defined by the user in his project files.
 
 @noindent
 
-To use gprmake, you need to specify one main project file, using switch
+To use gprbuild, you need to specify one main project file, using switch
 -P. Everything else is optional. The optional parts on the command line are
 switches, name(s) of mains and command line separators.
 
-In all cases, gprmake compiles or recompiles all sources in the project tree
+In all cases, gprbuild compiles or recompiles all sources in the project tree
 that are not up to date and build or rebuild libraries that are not up to
 date.
 
 If there are one or several names of mains on the command lines, or if
 there are mains declared in the project file (with attribute Main), then
-gprmake will build the executables for the mains. Mains specified on the
+gprbuild will build the executables for the mains. Mains specified on the
 command line may be sources different projects in the project tree.
 
 The different command line separators are:
@@ -263,7 +263,7 @@ options for the linker.
 
 -gargs
 The arguments that follow up to the next command line separators are
-options for gprmake itself. Usually, -gargs is specified after one or
+options for gprbuild itself. Usually, -gargs is specified after one or
 several other command line separators.
 
 @node Switches
@@ -401,7 +401,7 @@ cross compiler.
 @end itemize
 
 You can select as many compilers as are used in your application. Once you
-are done selecting the compilers, select "s", and @code{gprmake} will
+are done selecting the compilers, select "s", and @code{gprconfig} will
 generate the configuration file.
 
 @subsection Command line switches
@@ -412,9 +412,9 @@ The following command line switches are supported by @code{gprconfig}.
 @item -o file
 
 The name of the output file. By default, @code{gprconfig} will search for
-@code{gprmake} on your PATH, and create a default configuration file for
+@code{gprbuild} on your PATH, and create a default configuration file for
 it. But you can alternatively choose to create a different configuration
-file and then use @code{gprmake}'s command line switches to choose among
+file and then use @code{gprbuild}'s command line switches to choose among
 these.
 
 @item -db directory
@@ -500,7 +500,7 @@ The knowledge base contains various kind of information:
    knowledge base is a good place to store such information once and for all.
 
    For instance, with the GNAT compiler, using the soft-float runtime should
-   force @code{gprmake} to use the @code{-msoft-float} compilation switch.
+   force @code{gprbuild} to use the @code{-msoft-float} compilation switch.
 
 @item Linker options
 
@@ -792,7 +792,7 @@ node.
 
 @noindent
 The second type of information stored in the knowledge base are the chunks
-of @code{gprmake} configuration files.
+of @code{gprbuild} configuration files.
 
 Each of these chunks is also put in an XML node, that provides optional
 filters. If all the filter match, then the chunk will be merged with other
@@ -966,7 +966,7 @@ inverted, and it will match when none of its children matches.
 @node Configuration files Description
 @chapter Configuration files Description
 c  ------------------------------------------------------------------------
-@c describe here the format of the gprmake configuration files
+@c describe here the format of the gprbuild configuration files
 
 c  ------------------------------------------------------------------------
 @node Other companion tools
