@@ -47,7 +47,7 @@
     <config>
     package Language_Processing is
       for Library_Support  use "static_only";
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprmake/gprlib";
+      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
     end Language_Processing;
     </config>
   </configuration>
@@ -81,7 +81,7 @@
     <compilers><compiler name="GNAT" /></compilers>
     <config>
    package Language_Processing is
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprmake/gprlib";
+      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
       for Library_Support  use "full";
       for Shared_Library_Prefix use "lib";
       for Symbolic_Link_Supported use "true";
@@ -105,7 +105,7 @@
     <compilers><compiler name="GNAT" /></compilers>
     <config>
    package Language_Processing is
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprmake/gprlib";
+      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
       for Library_Support  use "full";
       for Shared_Library_Prefix use "lib";
       for Symbolic_Link_Supported use "true";
@@ -127,7 +127,7 @@
     <compilers><compiler name="GNAT" /></compilers>
     <config>
    package Language_Processing is
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprmake/gprlib";
+      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
       for Library_Support  use "full";
       for Shared_Library_Prefix use "lib";
       for Symbolic_Link_Supported use "true";
@@ -150,7 +150,7 @@
     <compilers><compiler name="GNAT" /></compilers>
     <config>
    package Language_Processing is
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprmake/gprlib";
+      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
       for Library_Support  use "full";
       for Shared_Library_Prefix use "";
       for Symbolic_Link_Supported use "false";
@@ -169,7 +169,7 @@
     <compilers><compiler name="GNAT" /></compilers>
     <config>
    package Language_Processing is
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprmake/gprlib";
+      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
       for Library_Support  use "full";
       for Shared_Library_Prefix use "lib";
       for Shared_Library_Suffix use ".exe";

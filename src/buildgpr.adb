@@ -2155,7 +2155,13 @@ package body Buildgpr is
                      end if;
 
                      if not Quiet_Output then
-                        Write_Str (Get_Name_String (Binder_Driver_Name));
+                        if Verbose_Mode then
+                           Write_Str (Binder_Driver_Path.all);
+
+                        else
+                           Write_Str (Get_Name_String (Binder_Driver_Name));
+                        end if;
+
                         Write_Char (' ');
                         Write_Line (Bind_Exchange);
                      end if;
@@ -3966,7 +3972,7 @@ package body Buildgpr is
 
                Add_Compilation_Switches (Source_Identity);
 
-               --  4) the switches specified on the gprmake command line for
+               --  4) the switches specified on the gprbuild command line for
                --  all compilers, following "-cargs", if any.
 
                if All_Language_Compiling_Options.Last /= 0 then
@@ -3988,7 +3994,7 @@ package body Buildgpr is
                   end;
                end if;
 
-               --  5) the switches specified on the gprmake command line for
+               --  5) the switches specified on the gprbuild command line for
                --  the compiler of the language, following -cargs:<language>.
 
                Options_Instance :=
@@ -4668,7 +4674,7 @@ package body Buildgpr is
       if not Copyright_Output then
          Copyright_Output := True;
          Write_Eol;
-         Write_Str ("GPRMAKE ");
+         Write_Str ("GPRBUILD ");
          Write_Str (Gnatvsn.Gnat_Version_String);
          Write_Str (" Copyright 2004-");
          Write_Str (Gnatvsn.Current_Year);
@@ -5869,8 +5875,8 @@ package body Buildgpr is
       Prj.Initialize (Project_Tree);
       Mains.Delete;
 
-      --  Add the directory where gprmake is invoked in front of the path,
-      --  if gprmake is invoked from a bin directory or with directory
+      --  Add the directory where gprbuild is invoked in front of the path,
+      --  if gprbuild is invoked from a bin directory or with directory
       --  information. Only do this if the platform is not VMS, where the
       --  notion of path does not really exist.
 
@@ -5948,7 +5954,7 @@ package body Buildgpr is
 
          Config_Path := Getenv (Config_Path_Env_Var);
 
-         --  Then from the prefix, if gprmake is in a <prefix>/bin directory
+         --  Then from the prefix, if gprbuild is in a <prefix>/bin directory
 
          if Config_Path.all = "" then
             declare
@@ -7543,7 +7549,7 @@ package body Buildgpr is
          elsif Arg = "-largs" then
             Current_Processor := Linker;
 
-            --  -gargs     options directly for gprmake
+            --  -gargs     options directly for gprbuild
 
          elsif Arg = "-gargs" then
             Current_Processor := None;
@@ -7556,7 +7562,7 @@ package body Buildgpr is
             Fail_Program
               ("switch -o not allowed within a -largs. Use -o directly.");
 
-            --  If current processor is not gprmake directly, store the option
+            --  If current processor is not gprbuild directly, store the option
             --  in the appropriate table.
 
          elsif Current_Processor /= None then
@@ -7955,9 +7961,9 @@ package body Buildgpr is
          Write_Eol;
          Write_Eol;
 
-         --  GPRMAKE switches
+         --  GPRBUILD switches
 
-         Write_Str ("gprmake switches:");
+         Write_Str ("gprbuild switches:");
          Write_Eol;
 
          --  Line for Config_Path_Option
@@ -8121,7 +8127,7 @@ package body Buildgpr is
 
          --  Line for -gargs
 
-         Write_Str ("  -gargs opts    opts directly interpreted by gprmake");
+         Write_Str ("  -gargs opts    opts directly interpreted by gprbuild");
          Write_Eol;
          Write_Eol;
 

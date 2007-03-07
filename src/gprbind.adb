@@ -260,10 +260,33 @@ begin
    if not Quiet_Output then
       Put (GNATBIND);
 
-      for Option in 1 .. Last_Gnatbind_Option loop
+      if Verbose_Mode then
+         for Option in 1 .. Last_Gnatbind_Option loop
+            Put (' ');
+            Put (Gnatbind_Options (Option).all);
+         end loop;
+
+      else
          Put (' ');
-         Put (Gnatbind_Options (Option).all);
-      end loop;
+
+         if Main_ALI /= null then
+            Put (Base_Name (Main_ALI.all));
+
+            if ALI_Files_Table.Last > 0 then
+               Put (" ...");
+            end if;
+
+         elsif ALI_Files_Table.Last > 0 then
+            Put (Base_Name (ALI_Files_Table.Table (1).all));
+
+            if ALI_Files_Table.Last > 1 then
+               Put (" ...");
+            end if;
+
+            Put (' ');
+            Put (No_Main_Option);
+         end if;
+      end if;
 
       New_Line;
    end if;
@@ -318,10 +341,21 @@ begin
 
          Put (Name_Buffer (1 .. Name_Len));
 
-         for Option in 1 .. Last_Compiler_Option loop
+         if Verbose_Mode then
+            for Option in 1 .. Last_Compiler_Option loop
+               Put (' ');
+               Put (Compiler_Options (Option).all);
+            end loop;
+
+         else
             Put (' ');
-            Put (Compiler_Options (Option).all);
-         end loop;
+            Put (Compiler_Options (1).all);
+
+            if Compiler_Options (1) /= Binder_Generated_File then
+               Put (' ');
+               Put (Binder_Generated_File.all);
+            end if;
+         end if;
 
          New_Line;
       end if;

@@ -45,7 +45,7 @@
       for Runtime_Project       ("Ada") use
           "${OUTPUT_DIR}ada_runtime.gpr";
       for Binder_Driver         ("Ada") use
-          "${GPRCONFIG_PREFIX}/libexec/gprmake/gprbind";
+          "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
       for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
    end Language_Processing;
    </config>

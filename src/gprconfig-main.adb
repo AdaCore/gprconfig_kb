@@ -15,12 +15,12 @@ with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
 
 procedure GprConfig.Main is
-   Gprmake : constant String := "gprmake";
-   --  Name of the gprmake executable. This is searched for on PATH, and used
+   Gprbuild : constant String := "gprbuild";
+   --  Name of the gprbuild executable. This is searched for on PATH, and used
    --  to find out the default location for the output file
 
    Default_Output_File : constant String := "standard.gpr";
-   --  Name of the configuration file used by gprmake by default
+   --  Name of the configuration file used by gprbuild by default
 
    Output_File : Unbounded_String;
 
@@ -635,12 +635,13 @@ procedure GprConfig.Main is
    Batch              : Boolean := False;
 
    --  We need to add the executable suffix here, since on windows,
-   --  Locate_Exec_On_Path will also return directories with the name "gprmake"
-   --  ie the current directory when gprconfig is run from the current dir.
+   --  Locate_Exec_On_Path will also return directories with the name
+   --  "gprbuild" ie the current directory when gprconfig is run from the
+   --  current dir.
    Exec_Suffix        : constant GNAT.Strings.String_Access :=
      Get_Executable_Suffix;
-   Gprmake_Path : GNAT.OS_Lib.String_Access :=
-     Locate_Exec_On_Path (Gprmake & Exec_Suffix.all);
+   Gprbuild_Path : GNAT.OS_Lib.String_Access :=
+     Locate_Exec_On_Path (Gprbuild & Exec_Suffix.all);
    Preselect_Lang : Unbounded_String;
 
    Compilers : Compiler_Lists.List;
@@ -649,14 +650,14 @@ procedure GprConfig.Main is
    Valid_Switches : constant String := "batch config: db: h o: v l?";
 
 begin
-   if Gprmake_Path /= null  then
+   if Gprbuild_Path /= null  then
       Output_File := To_Unbounded_String
-        (Normalize_Pathname (Dir_Name (Gprmake_Path.all) & "..")
+        (Normalize_Pathname (Dir_Name (Gprbuild_Path.all) & "..")
          & Directory_Separator & "share"
          & Directory_Separator & "gpr" & Directory_Separator
          & Default_Output_File);
    end if;
-   Free (Gprmake_Path);
+   Free (Gprbuild_Path);
 
    --  First check whether we should parse the default knownledge base.
    --  This needs to be done first, since that influences -config and -h
