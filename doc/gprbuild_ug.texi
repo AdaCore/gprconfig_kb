@@ -357,30 +357,39 @@ command line may be sources different projects in the project tree.
 
 The different command line separators are:
 
--cargs
+@itemize @bullet
+
+@item -cargs
+
 The arguments that follow up to the next command line separators are
 options for all the compilers. Example: -cargs -g
 
--cargs:<language name>
+@item -cargs:<language name>
+
 The arguments that follow up to the next command line separators are
 options for the compiler of the specific language.
-Examples:
--cargs:Ada -gnatf
--cargs:C -E
 
--bargs
+Examples:
+"-cargs:Ada -gnatf" or
+"-cargs:C -E"
+
+@item -bargs
+
 The arguments that follow up to the next command line separators are
 options for the binder.
 
--largs
+@item -largs
+
 The arguments that follow up to the next command line separators are
 options for the linker.
 
--gargs
+@item -gargs
+
 The arguments that follow up to the next command line separators are
 options for gprbuild itself. Usually, -gargs is specified after one or
 several other command line separators.
 
+@end itemize
 @node Switches
 @section Switches
 @c  --config_path=<path>

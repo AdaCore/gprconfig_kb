@@ -5005,7 +5005,7 @@ package body Makegpr is
             Write_Str (Path.all);
 
          elsif Executable_Suffix'Length > 0 and then
-            Name_Length > Executable_Suffix'Length
+            Name'Length > Executable_Suffix'Length
          then
             Name_Len := Name'Length;
             Name_Buffer (1 .. Name_Len) := Name;
