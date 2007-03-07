@@ -12,24 +12,24 @@ ifeq ($(strip $(filter-out %vms%,$(HOST))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
 
-all: obj/gprmake_dummies.o obj/link.o force
+all: obj/gprbuild_dummies.o obj/link.o force
 	gnatmake -Pgprconfig
 
 install: all
 	${MKDIR} ${PREFIX}/bin
-	${MKDIR} ${PREFIX}/libexec/gprmake
+	${MKDIR} ${PREFIX}/libexec/gprbuild
 	${MKDIR} ${PREFIX}/share/gpr
 	${MKDIR} ${PREFIX}/share/gprconfig
 	${INSTALL_PROGRAM} gprconfig ${PREFIX}/bin
-	${INSTALL_PROGRAM} gprmake ${PREFIX}/bin
+	${INSTALL_PROGRAM} gprbuild ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprclean ${PREFIX}/bin
-	${INSTALL_PROGRAM} gprbind ${PREFIX}/libexec/gprmake/
-	${INSTALL_PROGRAM} gprlib ${PREFIX}/libexec/gprmake/
-	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprmake/
+	${INSTALL_PROGRAM} gprbind ${PREFIX}/libexec/gprbuild/
+	${INSTALL_PROGRAM} gprlib ${PREFIX}/libexec/gprbuild/
+	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprbuild/
 	${CP} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
 	${CP} share/gprconfig/gnat_runtime.mapping ${PREFIX}/share/gprconfig
 
-obj/gprmake_dummies.o: src/gprmake_dummies.c
+obj/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
 
 obj/link.o: $(GNAT_SOURCE_DIR)/link.c

@@ -5,7 +5,7 @@ project GprConfig is
    for Main use
        ("gprconfig-main.adb",
         "create_ada_runtime_project.adb",
-        "gprmake.adb",
+        "gprbuild.adb",
         "gprbind.adb",
         "gprlib.adb",
         "gprclean.adb");
@@ -19,7 +19,7 @@ project GprConfig is
    package Binder   renames Shared.Binder;
 
    package Linker is
-      for Default_Switches ("Ada") use ("obj/gprmake_dummies.o", "obj/link.o");
+      for Default_Switches ("Ada") use ("obj/gprbuild_dummies.o", "obj/link.o");
    end Linker;
 
    package Naming is

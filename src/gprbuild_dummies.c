@@ -2,7 +2,7 @@
  *                                                                          *
  *                         GNAT COMPILER COMPONENTS                         *
  *                                                                          *
- *                       G P R M A K E _ D U M M I E S                      *
+ *                      G P R B U I L D _ D U M M I E S                     *
  *                                                                          *
  *                          C Implementation File                           *
  *                                                                          *

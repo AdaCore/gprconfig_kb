@@ -2,7 +2,7 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                              M A K E G P R                               --
+--                             B U I L D G P R                              --
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
@@ -27,9 +27,9 @@
 --  The following package implements the facilities to compile, bind and/or
 --  link a set of Ada and non Ada sources, specified in Project Files.
 
-package Makegpr is
+package Buildgpr is
 
-   procedure Gprmake;
-   --  The driver of gprmake
+   procedure Gprbuild;
+   --  The driver of gprbuild
 
-end Makegpr;
+end Buildgpr;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                              M A K E G P R                               --
+--                             B U I L D G P R                              --
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
@@ -63,7 +63,7 @@ with Table;
 with Tempdir;
 with Types;            use Types;
 
-package body Makegpr is
+package body Buildgpr is
 
    Executable_Suffix : constant String_Access := Get_Executable_Suffix;
    --  The suffix of executables on this platforms
@@ -5513,15 +5513,15 @@ package body Makegpr is
         ".a";
    end Global_Archive_Name;
 
-   -------------
-   -- Gprmake --
-   -------------
+   --------------
+   -- Gprbuild --
+   --------------
 
-   procedure Gprmake is
+   procedure Gprbuild is
    begin
       --  First initialize and read the command line arguments
 
-      Makegpr.Initialize;
+      Buildgpr.Initialize;
 
       --  And install Ctrl-C handler
 
@@ -5739,7 +5739,7 @@ package body Makegpr is
       end if;
 
       Finish_Program (Fatal => False);
-   end Gprmake;
+   end Gprbuild;
 
    ----------
    -- Hash --
@@ -8024,4 +8024,4 @@ package body Makegpr is
       end if;
    end Usage;
 
-end Makegpr;
+end Buildgpr;

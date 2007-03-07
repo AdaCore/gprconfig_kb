@@ -2,7 +2,7 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             G P R M A K E                                --
+--                             G P R B U I L D                              --
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
@@ -24,13 +24,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  The driver for the gprmake tool
+--  The driver for the gprbuild tool
 
-with Makegpr;
+with Buildgpr;
 
-procedure Gprmake is
+procedure Gprbuild is
 begin
-   --  The code is in Makegpr
+   --  The code is in Buildgpr
 
-   Makegpr.Gprmake;
-end Gprmake;
+   Buildgpr.Gprbuild;
+end Gprbuild;
