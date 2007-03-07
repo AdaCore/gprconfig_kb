@@ -4445,7 +4445,19 @@ package body Buildgpr is
                      Write_Str (Compiler_Path.all);
 
                   else
-                     Write_Str (Get_Name_String (Compiler_Name_Id));
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Base_Name (Compiler_Path.all));
+
+                     if Executable_Suffix'Length /= 0 and then
+                       Name_Len > Executable_Suffix'Length and then
+                       Name_Buffer
+                         (Name_Len - Executable_Suffix'Length + 1 .. Name_Len)
+                         = Executable_Suffix.all
+                     then
+                        Name_Len := Name_Len - Executable_Suffix'Length;
+                     end if;
+
+                     Write_Str (Name_Buffer (1 .. Name_Len));
                   end if;
 
                   for Option in 1 .. Compilation_Options.Last loop
