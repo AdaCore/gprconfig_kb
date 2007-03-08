@@ -337,7 +337,8 @@ begin
            and then
              Name_Len > Executable_Suffix'Length
            and then
-             Name_Buffer (Name_Len - Executable_Suffix'Length .. Name_Len) =
+               Name_Buffer
+                 (Name_Len - Executable_Suffix'Length + 1 .. Name_Len) =
                Executable_Suffix.all
          then
             Name_Len := Name_Len - Executable_Suffix'Length;
