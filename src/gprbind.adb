@@ -258,7 +258,11 @@ begin
    end if;
 
    if not Quiet_Output then
-      Put (GNATBIND);
+      if Verbose_Mode then
+         Put (Gnatbind_Path.all);
+      else
+         Put (GNATBIND);
+      end if;
 
       if Verbose_Mode then
          for Option in 1 .. Last_Gnatbind_Option loop
