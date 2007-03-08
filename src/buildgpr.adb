@@ -2159,7 +2159,19 @@ package body Buildgpr is
                            Write_Str (Binder_Driver_Path.all);
 
                         else
-                           Write_Str (Get_Name_String (Binder_Driver_Name));
+                           Get_Name_String (Binder_Driver_Name);
+
+                           if Executable_Suffix'Length /= 0 and then
+                             Name_Len > Executable_Suffix'Length and then
+                             Name_Buffer
+                               (Name_Len - Executable_Suffix'Length + 1
+                                  .. Name_Len)
+                               = Executable_Suffix.all
+                           then
+                              Name_Len := Name_Len - Executable_Suffix'Length;
+                           end if;
+
+                           Write_Str (Name_Buffer (1 .. Name_Len));
                         end if;
 
                         Write_Char (' ');
@@ -5125,7 +5137,7 @@ package body Buildgpr is
                Name_Len := Name_Len - Executable_Suffix'Length;
             end if;
 
-            Put_Line (Base_Name (Name_Buffer (1 .. Name_Len)));
+            Put (Base_Name (Name_Buffer (1 .. Name_Len)));
 
          else
             Write_Str (Base_Name (Name));
