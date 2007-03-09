@@ -275,11 +275,12 @@ multi-language builds to some of the most advanced capability of
 Let's assume a simple case of interfacing between Ada & C where the main
 program is in turn in each language. With a main program in Ada, we can
 use a project of the sort:
-@smallexample
+@smallexample @c projectfile
 project Ada_Main is
    for Languages    use ("Ada", "C");
-   for Source_Dirs  use ("src");
+   for Source_Dirs  use ("ada_src", "util_src");
    for Object_Dir   use  "obj";
+   for Exec_Dir     use ".";
    for Source_Files use ("ada_main.adb", "c_lib.ads", "lib.h", "lib.c");
    for Main         use ("ada_main.adb");
 end Ada_Main;
@@ -289,10 +290,12 @@ This project says that:
 @item the sources files of this subsystem are in "Ada" and
 in "C".
 @item the list of directories containing the sources is composed of
-a single directory called "src".
+two directories called "ada_src" and "util_src".
 @item the directory holding the objects is "obj".
+@item the directory holding the executables is ".".
 @item the complete list of source files is  "ada_main.adb", "c_lib.ads",
-"lib.h", "lib.c".
+"lib.h", "lib.c". They can be found anywhere in the source directories
+mentioned above.
 @item the main entry point of the system is in the source file
 "main_ada.adb".
 @end itemize
@@ -300,22 +303,60 @@ Those elements are sufficient for @code{gprbuild} to build an executable
 program out of the sources. Note that no indication on how to build
 the various elements are given in the project files which remains a
 description of the project properties rather than a set of actions to
-be executed to acheive given goals. Here is the invocation of @code{gprbuild}
-that allow building the multi-language program:
+be executed to achieve given goals. Here is the invocation of
+@code{gprbuild} that allow building the multi-language program:
 @smallexample
 $ gprbuild -Pada_main
-gcc -c e:\examples\first_steps\src\ada_main.adb -o ada_main.o
-gcc -c e:\examples\first_steps\src\c_lib.ads -o c_lib.o
-gcc -c e:\examples\first_steps\src\lib.c -o lib.o
-gprbind.exe ada_main.bexch
-gnatbind -o b__ada_main.adb e:\examples\first_steps\obj\ada_main.ali
-gcc -c -x ada -gnatA b__ada_main.adb -o b__ada_main.o
-ar cr libada_main.a e:\examples\first_steps\obj\ada_main.o ...
-ranlib libada_main.a
-gcc ada_main.o  ... -o ada_main.exe
+gcc -c ada_main.adb -o ada_main.o
+gcc -c c_lib.ads -o c_lib.o
+gcc -c lib.c -o lib.o
+gprbind ada_main
+<...>
+gcc ada_main.o -o ada_main.exe
 @end smallexample
 
+Let's now see another project of the same kind except that here the
+main program is in C:
 
+@smallexample @c projectfile
+project C_Main is
+   for Languages    use ("Ada", "C");
+   for Source_Dirs  use ("c_src", "util_src");
+   for Object_Dir   use  "obj1";
+   for Main         use ("c_main.c");
+   package Compiler is
+      C_Switches := ("-pedantic");
+      for Default_Switches ("C")   use C_Switches;
+      for Default_Switches ("Ada") use ("-gnaty");
+      for Switches ("c_main.c")    use C_Switches & ("-g");
+   end Compiler;
+end C_Main;
+@end smallexample
+
+This project has many similarities with the previous ones. The Languages,
+Source_Dirs and Object_Dirs are similar. As expected, its main attribute
+now refers to a C source. The first noticeable difference is the lack of
+Source_Files attribute. When not specified directly, this attribute has a
+default value which the complete set of sources of the given Languages to
+be found in the Source_Dirs. Many attributes can be let implicit and have a
+reasonable default value. For instance, the Source_Dirs and the Object_Dir
+default to the current directory (where the project file resides). The
+Main_Dir defaults to the value of the Object_Dir. Etc.
+
+The other notable difference in this new project is the presence of the
+package Compiler whose purpose is to group the attributes specific to
+the compilation phases. The Default_Switches attribute provides the
+list of compilation switches to be used for any source of a given
+Language unless the source has its own set of compilation switches
+specified by the attribute Switches. Note also the use of a variable
+(C_Switches). It can be useful to avoid duplication of information and is
+used in this context to ensure that the file c_main.c is always compiled
+with the default switches whatever they are, plus "-g". In this specific
+situation, the use of a variable could have been replaced by a reference
+to the default_switches attribute:
+@smallexample @c projectfile
+   for Switches ("c_main.c") use Compiler'Default_Switches ("C") & ("-g");
+@end smallexample
 
 @node Subsystems
 @section Subsystems
