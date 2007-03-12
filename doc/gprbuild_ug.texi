@@ -194,7 +194,7 @@ A specific characteristic is defined by a project attribute clause. Its
 value is a string or a sequence of strings. for instance, the Source_Dirs
 attribute is a sequence of strings representing the actual names of the
 directories containing the source of the project. The attribute itself can
-be parametrized. For instance @code{Compiler.Default_Options ("Ada")}
+be parametrized. For instance @code{Compiler'Default_Options ("Ada")}
 refers to the default compiler options for the Ada language.
 
 @item project subpackage:
@@ -273,7 +273,7 @@ multi-language builds to some of the most advanced capability of
 @section First Steps
 
 Let's assume a simple case of interfacing between Ada & C where the main
-program is in turn in each language. With a main program in Ada, we can
+program is first in Ada and then in C. For a main program in Ada, we can
 use a project of the sort:
 @smallexample @c projectfile
 project Ada_Main is
@@ -300,10 +300,10 @@ mentioned above.
 "main_ada.adb".
 @end itemize
 Those elements are sufficient for @code{gprbuild} to build an executable
-program out of the sources. Note that no indication on how to build
+program out of the sources. Note that no direct indication on how to build
 the various elements are given in the project files which remains a
 description of the project properties rather than a set of actions to
-be executed to achieve given goals. Here is the invocation of
+be executed. Here is the invocation of
 @code{gprbuild} that allow building the multi-language program:
 @smallexample
 $ gprbuild -Pada_main
@@ -315,8 +315,19 @@ gprbind ada_main
 gcc ada_main.o -o ada_main.exe
 @end smallexample
 
-Let's now see another project of the same kind except that here the
-main program is in C:
+One notice the three steps described in the introduction of this document:
+the first gcc commands correspond to the compilation phase. The gprbind
+command correspond to the post-compilation phase while the last gcc command
+corresponds to the final link. Note that the the default output of the
+gprbuild execution is kept reasonnably simple and easy to understand for
+the user. It means, in particular, that some of the unimportant commands
+are not shown and that some parameters are abbreviated. Gprbuild's option
+@code{-v} provides a much more verbose output which includes, among other
+information, more complete and accurate compilation, post-compilation and
+link commands.
+
+Let's now see other project capabilities through a slightly different
+project using similar sources and a main program is in C:
 
 @smallexample @c projectfile
 project C_Main is
@@ -333,11 +344,11 @@ project C_Main is
 end C_Main;
 @end smallexample
 
-This project has many similarities with the previous ones. The Languages,
+This project has many similarities with the previous one. The Languages,
 Source_Dirs and Object_Dirs are similar. As expected, its main attribute
 now refers to a C source. The first noticeable difference is the lack of
-Source_Files attribute. When not specified directly, this attribute has a
-default value which the complete set of sources of the given Languages to
+Source_Files attribute. When not specified explicitly, this attribute has
+an implicit value which the complete set of sources of the given Languages to
 be found in the Source_Dirs. Many attributes can be let implicit and have a
 reasonable default value. For instance, the Source_Dirs and the Object_Dir
 default to the current directory (where the project file resides). The
@@ -357,6 +368,29 @@ to the default_switches attribute:
 @smallexample @c projectfile
    for Switches ("c_main.c") use Compiler'Default_Switches ("C") & ("-g");
 @end smallexample
+Here is the output of the gprbuild command using this project:
+@smallexample
+$gprbuild -Pc_main
+gcc -c -pedantic -g c_main.c -o c_main.o
+gcc -c -gnaty ada_lib.adb -o ada_lib.o
+gcc -c -gnaty c_lib.ads -o c_lib.o
+gcc -c -pedantic lib.c -o lib.o
+gprbind c_main
+<...>
+gcc c_main.o -o c_main.exe
+@end smallexample
+
+The switches for compiling Ada sources have been taken into account as
+well as the default switches for C sources in the compilation of lib.c.One
+can also observe that the specific switches for c_main.c have been taken
+into account. When comparing this gprmake output with the previous one,
+one can notice that there are common sources between the two projects,
+namely c_lib.ads and lib.c. Those sources were compiled as part of each
+project. This is not surprizing since the first project was specifying its
+object directory as "obj" while the second one was using "obj1". The
+projects are thus completely independant eventhough they share some
+sources. Would it be possible to share more than the sources and
+in particular avoid unnecessary recompilations?
 
 @node Subsystems
 @section Subsystems
