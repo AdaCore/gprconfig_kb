@@ -383,7 +383,7 @@ gcc c_main.o -o c_main.exe
 The switches for compiling Ada sources have been taken into account as
 well as the default switches for C sources in the compilation of lib.c.One
 can also observe that the specific switches for c_main.c have been taken
-into account. When comparing this gprmake output with the previous one,
+into account. When comparing this gprbuild output with the previous one,
 one can notice that there are common sources between the two projects,
 namely c_lib.ads and lib.c. Those sources were compiled as part of each
 project. This is not surprizing since the first project was specifying its
@@ -410,6 +410,8 @@ in particular avoid unnecessary recompilations?
 @menu
 * Command Line::
 * Switches::
+* Initialisation::
+* Execution::
 @end menu
 
 @node Command Line
@@ -465,6 +467,7 @@ options for gprbuild itself. Usually, -gargs is specified after one or
 several other command line separators.
 
 @end itemize
+
 @node Switches
 @section Switches
 
@@ -623,6 +626,124 @@ Do not consider any warning while processing the project files.
 Specify an external reference that may be queried inside the project files
 using built-in function "external". For example, with -XBUILD=DEBUG,
 external("BUILD") inside a project file will have the value "DEBUG".
+
+@end itemize
+
+@node Initialisation
+@section Initialisation
+
+@noindent
+
+Before performing one or several of its three phases, gprbuild has to read the
+command line, get its configuration and process the project files.
+
+If gprbuild is invoked with an invalid switch or without any project file on
+the command line, it will fail immediately.
+
+Examples:
+
+@smallexample
+$ gprbuild -P
+gprbuild: project file name missing after -P
+
+$ gprbuild -P c_main.gpr -WW
+gprbuild: illegal option "-WW"
+@end smallexample
+
+gprbuild need a configuration project path. The configuration project path can
+be specify on the command line with the switch --config_path=... Otherwise, it
+takes the value of the environment variable GPR_CONFIG_PATH, if it is defined
+and not empty. Otherwise, if the gprbuild executable is located in a
+subdirectory "<prefix>/bin", then the configuration project path is the single
+directory "<prefix>/share/gpr". If gprbuild is not installed in a subdirectory
+"bin", --config_path is not used and the environment variable GPR_CONFIG_PATH
+is not defined, then it will fail with the message:
+
+@smallexample
+gprbuild: no configuration project path available
+@end smallexample
+
+When it has found its configuration project path, gprbuild need to get its
+configuration. By default, the file name of the main configuration project
+is "standard.gpr". This default may be modify using the switch
+--config_project=...
+
+Example:
+
+@smallexample
+$ gprbuild --config_project=my_standard.gpr -P my_project.gpr
+@end smallexample
+
+If gprbuild cannot find the main configuration project on the configuration
+project path, then it will fail with an error message such as:
+
+@smallexample
+$ gprbuild --config_project=my_standard.gpr -P my_project.gpr
+gprbuild: could not locate main configuration project my_standard.gpr
+@end smallexample
+
+Once it has found the main configuration project, gprbuild will process its
+configuration. If the configuration project or projects are not correct
+(see @ref{Configuration files Description}), then gprbuild will fail with
+the appropriate error messages:
+
+@smallexample
+$ gprbuild --config_project=my_standard.gpr -P c_main.gpr
+my_standard.gpr:3:11: undefined attribute "compiler_drive"
+gprbuild: processing of configuration project ".../share/gpr/my_standard.gpr" failed
+@end smallexample
+
+When gprbuild has successfully processed its configuration, then it will
+process the user project file or files. If these user project files are
+incorrect then gprbuild will fail with the appropriate error messages:
+
+@smallexample
+$ gprbuild -P my_project.gpr
+ada_main.gpr:3:26: "src" is not a valid directory
+gprbuild: "my_project.gpr" processing failed
+@end smallexample
+
+Once the user project files have been processed successfully, then gprbuild
+will start to do some work.
+
+@node Execution
+@section Execution
+
+After its initialisation, the behavior of gprbuild will depend on the switches
+it has been invoked with, in particular -u or -U.
+
+If gprbuild is invoked with -u, then its behavior depends if source file names
+are specified on the command line:
+
+@itemize @bullet
+
+@item no source file name is specified on the command line:
+
+gprbuild will attempt to compile all the sources in the project tree. This is
+the same behavior as specifying switch -U.
+
+@item one or several source file names are specified on the command line:
+
+gprbuild will attempt to compile these source files, and only those.
+
+@end itemize
+
+In both cases, the post-compilation phase and the linking phase are not
+performed.
+
+Without -u, gprbuild will first compile or recompile all the sources that are
+not up to date in all the projects in the project tree. Then its behavior
+depends if there are mains or not.
+
+@itemize @bullet
+
+@item There are mains specified:
+
+Mains are either specified as source file names on the command line or, in the
+absence of those, by attribute Main in the main project file.
+
+@item No main is specified
+
 
 @end itemize
 
