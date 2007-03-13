@@ -352,7 +352,7 @@ an implicit value which the complete set of sources of the given Languages to
 be found in the Source_Dirs. Many attributes can be let implicit and have a
 reasonable default value. For instance, the Source_Dirs and the Object_Dir
 default to the current directory (where the project file resides). The
-Main_Dir defaults to the value of the Object_Dir. Etc.
+Exec_Dir defaults to the value of the Object_Dir. Etc.
 
 The other notable difference in this new project is the presence of the
 package Compiler whose purpose is to group the attributes specific to
@@ -467,35 +467,165 @@ several other command line separators.
 @end itemize
 @node Switches
 @section Switches
-@c  --config_path=<path>
-@c           Specify the config path
-@c  --config_project=<project name>
-@c           Specify the main config project file name
-@c  -b       Bind only
-@c  -c       Compile only
-@c  -C       Cache source mappings: use mapping files
-@c  -d       Display progress
-@c   -eL     Follow symbolic links when processing project files
-@c  -f       Force recompilations
-@c  -F       Full project path name in brief error messages
-@c  -jnum    Use num processes to compile
-@c  -k       Keep going after compilation errors
-@c  -l       Link only
-@c  -o name  Choose an alternate executable name
-@c  -p       Create missing obj, lib and exec dirs
-@c  -P proj  Use Project File proj
-@c  -q       Be quiet/terse
-@c  -s       Recompile if compiler switches have changed
-@c  -u       Unique compilation. Only compile the given files
-@c  -U       Unique compilation for all sources of all projects
-@c  -v       Verbose output
-@c  -vPx     Specify verbosity when parsing Project Files
-@c  -we      Treat all warnings as errors
-@c  -wn      Treat warnings as warnings
-@c  -ws      Suppress all warnings
-@c  -Xnm=val Specify an external reference for Project Files
 
-@c  ------------------------------------------------------------------------
+@noindent
+
+The switches that are interpreted directly by gprbuild are:
+
+@itemize @bullet
+
+@item --config_path=<path>
+
+This specifies the configuration path, that is the list of directories
+where gprbuild finds the configuration project files. By default, the
+configuration path is the value of the environment variable GPR_CONFIG_PATH,
+if it is defined, otherwise when gprbuild is installed in <prefix>/bin,
+it is the single directory <prefix>share/gpr.
+
+@item  --config_project=<project name>
+
+This specifies the main configuration project file name. By default, the main
+configuration project file name is "standard.gpr".
+
+@item  -b (Bind only)
+
+Specify to gprbuild that the post-compilation (or binding) phase is to be
+performed, but not the other phases, if they are not specified by appropriate
+switches.
+
+@item  -c (Compile only)
+
+Specify to gprbuild that the compilation phase is to be performed, but not
+the other phases, if they are not specified by appropriate switches.
+
+@item  -C (Cache source mappings: use mapping files)
+
+Specify to gprbuild that, when they are supported by a compiler (for example
+GNAT), mapping files should be used when invoking this compiler.
+
+@item  -d (Display progress)
+
+Display progress for each source, up to date or not, as a single
+line "completed x out of y (zz%)...". If the file need to be compiled
+this is displayed after the invocation of the compiler. These lines are
+displayed even in quiet output (switch -q).
+
+@item  -eL  (Follow symbolic links when processing project files)
+
+By default, symbolic links are not taken into account to compute directories
+when processing project files. Switch -eF changes this default behavior.
+
+@item  -f  (Force recompilations)
+
+Force the complete processing of all phases (or of those explicitely specified)
+even when up to date.
+
+@item  -F   (Full project path name in brief error messages)
+
+By default, in non verbose mode, when an error occurs while processing
+a project file, only the simple name of the project file is displayed in the
+error message. When switch -F is used, the full path of the project file
+is used. This switch has no effect when switch -v is used.
+
+@item  -jnum (use num simultaneous compilation Jobs)
+
+By default, gprbuild invokes one compiler at a time. With switch -j, it is
+possible to instruct gprbuild to spawn several simultaneous compilation jobs
+if needed. For example, -j2 for two simultaneous compilation jobs or -j4 for
+four.
+
+@item -k (Keep going after compilation errors)
+
+By default, gprbuild stops spawning new compilation jobs at the first
+compilation failure. Using switch -k, it is possible to attempt to
+compile/recompile all the sources that are not up to date, even when some
+compilations failed. The post-compilation phase and the linking phase are never
+attempted if there are compilation failures, even when switch -k is used.
+
+@item  -l  (Link only)
+
+Specify to gprbuild that the linking phase is to be performed, but not
+the other phases, if they are not specified by appropriate switches.
+
+@item -o name  (Choose an alternate executable name)
+
+Specify the file name of a single executable. Switch -o cannot be used with
+several mains on the command line or with no main on the command line and
+several mains in attribute Main of the main project.
+
+@item  -p  (Create missing object, library and exec directories)
+
+By default, gprbuild check that the object, libraries and exec directories
+specified in project files exist. Switch -p instructs gprbuild to attempt to
+create missing directories.
+
+@item  -P proj  (use Project file proj)
+
+Specify the path name of the main project file. The space between -P and the
+project file name is optional.
+
+@item -q  (Quiet output)
+
+Do not display anything except errors and progress (switch -d). Cancel any
+previous switch -v.
+
+@item  -s  (recompile if compilation switches have changed)
+
+By default, gprbuild will not recompile a source if all dependencies are
+satisfied. Switch -s instructs gprbuild to recompile sources when a different
+set of compilation switches has been used in the previous compilation, even
+if all dependencies are satisfied. Each time gprbuild invokes a compiler, it
+writes a text file that lists the switches used in the invocation of the
+compiler, so that it can retrieve these switches if -s is used later.
+
+@item  -u  (Unique compilation)
+
+When -u is used in conjunction with sources specified on the command line,
+then gprbuild will attempt to compile these sources, if they are not up to
+date. No other compilation will be attempted and the post-compilation and
+linking phases will not be performed.
+
+When no source is specified on the command line, switch -u is equivalent to
+switch -U: compile all sources of all projects.
+
+@item  -U  (Unique compilation for all sources of all projects)
+
+Attempt to compile all not up to date sources of all projects
+The post-compilation and linking phases are not be performed.
+
+@item  -v   (Verbose output)
+
+Display full paths, all options used in spawned processes and reasons why
+these processes are spawned. Cancel any previous switch -q.
+
+@item  -vPx  (Specify verbosity when parsing Project Files)
+
+By default, gprbuild does not display anything when processing project files,
+except when there are errors. This default behavior is obtained with switch
+-vP0. -vP1 gives more information and -vP2 displays a lot of mostly useless
+information.
+
+@item  -we  (Treat all warnings as errors)
+
+When -we is used, any warning during the processing of the project files
+becomes an error and gprbuild does not attempt any of the phases.
+
+@item  -wn  (Treat warnings as warnings)
+
+Switch -wn may be used to restore the default after -we or -ws.
+
+@item  -ws  (Suppress all warnings)
+
+Do not consider any warning while processing the project files.
+
+@item  -Xnm=val (Specify an external reference for Project Files)
+
+Specify an external reference that may be queried inside the project files
+using built-in function "external". For example, with -XBUILD=DEBUG,
+external("BUILD") inside a project file will have the value "DEBUG".
+
+@end itemize
+
 @node Cleaning up with gprclean
 @chapter Cleaning up with gprclean
 @c  ------------------------------------------------------------------------
