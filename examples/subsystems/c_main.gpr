@@ -1,5 +1,5 @@
-with "Attribute_Sharing";
-with "Common_Subsystem";
+with "attribute_sharing.gpr";
+with "common_subsystem.gpr";
 project C_Main is
    for Languages    use ("C");
    for Source_Dirs  use ("c_src");

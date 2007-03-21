@@ -1,5 +1,5 @@
-with "Attribute_Sharing";
-with "Common_Subsystem";
+with "attribute_sharing.gpr";
+with "common_subsystem.gpr";
 project Ada_Main is
    for Languages    use ("Ada");
    for Source_Dirs  use ("ada_src");

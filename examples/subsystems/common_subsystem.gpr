@@ -1,4 +1,4 @@
-with "Attribute_Sharing";
+with "attribute_sharing.gpr";
 project Common_Subsystem is
    for Languages    use ("Ada", "C");
    for Source_Dirs  use ("util_src");
