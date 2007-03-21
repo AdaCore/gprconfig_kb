@@ -5,6 +5,7 @@
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
+with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Command_Line;         use GNAT.Command_Line;
@@ -307,7 +308,8 @@ procedure GprConfig.Main is
       Append (Custom_Comps, Comp);
 
    exception
-      when others =>
+      when E : others =>
+         Put_Verbose ("Exception raised: " & Exception_Information (E));
          raise Invalid_Config;
    end Parse_Config_Parameter;
 
@@ -586,7 +588,14 @@ procedure GprConfig.Main is
             if Elem.Extra_Tool = Null_Unbounded_String then
                Elem.Extra_Tool := Element (First (Completion)).Extra_Tool;
             end if;
+            if Elem.Prefix = Null_Unbounded_String then
+               Elem.Prefix := Element (First (Completion)).Prefix;
+            end if;
          else
+            Put_Verbose
+              ("Error while querying missing info for a compiler"
+               & " specified on the command line: "
+               & To_String (Elem.Name) & "," & To_String (Elem.Path));
             raise Invalid_Config;
          end if;
       end Update_Comps;
@@ -723,15 +732,15 @@ begin
    end loop;
 
    Complete_Command_Line_Compilers (Base, Custom_Comps);
-   Find_Compilers_In_Path (Base, Compilers);
-   Compiler_Sort.Sort (Compilers);
-
-   if Preselect_Lang /= Null_Unbounded_String then
-      Select_Compilers_For_Lang
-        (To_String (Preselect_Lang), Compilers, Selected_Compilers);
-   end if;
-
    if not Batch then
+      Find_Compilers_In_Path (Base, Compilers);
+      Compiler_Sort.Sort (Compilers);
+
+      if Preselect_Lang /= Null_Unbounded_String then
+         Select_Compilers_For_Lang
+           (To_String (Preselect_Lang), Compilers, Selected_Compilers);
+      end if;
+
       Select_Compilers_Interactively
         (Base, Compilers, Selected_Compilers, Custom_Comps);
       Show_Command_Line_Config (Selected_Compilers);

@@ -1154,9 +1154,29 @@ identify that compiler_description node.
 
 @item @code{<executable>}
 
-This tag contains a simple string, which is the name of an executable
+This tag contains a string, which is the name of an executable
 to search for on the PATH. Examples are @file{"gnatls"}, @file{"gcc}",
 @dots{}
+
+In some cases, the tools have a common suffix, but a prefix that might depend
+on the target. For instance, GNAT uses "gnatmake" for native platforms, but
+"powerpc-wrs-vxworks-gnatmake" for cross-compilers to vxworks. Most of the
+compiler description is the same, however.
+
+For such cases, this tag must specify a "prefix" attribute, and its value is
+assumed to be a regular expression. This allows you to capture the prefix and
+reuse it elsewhere.
+
+When you intend to reuse the prefix, you must set the XML attribute "prefix"
+to the parenthesis group that matches this prefix. In the following example,
+we get the version of the GNAT compiler by running either "gnatls" or
+"powerpc-wrs-vxworks-gnatls", depending on the name of the executable that
+was found.
+
+@smallexample
+<executable prefix="1">(powerpc-wrs-vxworks-)?gnatmake</executable>
+<version><external>$@{PREFIX@}gnatls -v</external></version>
+@end smallexample
 
 @code{gprconfig} searches in all directories listed on the PATH for such
 an executable. When one is found, the rest of the @code{<compiler_description>}
@@ -1281,6 +1301,8 @@ constructs can be specified in the regexp:
       compilers depend on other tools (like GNAT depends on gcc), and this
       version might for instance contain the version number for these other
       tools. The exact semantic, though, depends on the @code{<version>} node.
+@item "$@{PREFIX@}" is replaced by the prefix to the executable name, as
+      defined by the @code{<executable>} node.
 @item "$@{PATH@}" is the current directory, ie the one containing the executable
       found through @code{<executable>}. It always ends with a directory
       separator.

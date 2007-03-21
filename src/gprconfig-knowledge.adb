@@ -7,6 +7,7 @@ with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
+with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -71,12 +72,16 @@ package body GprConfig.Knowledge is
    procedure Find_Compilers_In_Dir
      (Append_To  : in out Compiler_Lists.List;
       Base       : Knowledge_Base;
+      Check_Executable_Regexp : Boolean;
       Directory  : String;
       Name       : String := "";
       Path_Order : Integer);
    --  Find all known compilers in a specific directory.
    --  If Name is specified, then only compilers with that given name are
    --  searched for.
+   --  Check_Executable_Regexp should be set to true if at least one of the
+   --  <executable> nodes we are investigating can be a regexp. This changes
+   --  the algorithm used.
 
    procedure Get_External_Value
      (Value            : External_Value;
@@ -97,6 +102,7 @@ package body GprConfig.Knowledge is
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
       Directory  : String;
+      Prefix     : String;
       Descr      : Compiler_Description;
       Path_Order : Integer);
    --  For each language/runtime parsed in Languages/Runtimes, create a new
@@ -401,7 +407,20 @@ package body GprConfig.Knowledge is
    begin
       while N /= null loop
          if N.Tag.all = "executable" then
-            Compiler.Executable := To_Unbounded_String (N.Value.all);
+            declare
+               Prefix : constant String := Get_Attribute (N, "prefix", "@@");
+            begin
+               Compiler.Executable := To_Unbounded_String (N.Value.all);
+               Compiler.Prefix_Index := Integer'Value (Prefix);
+               Compiler.Executable_Re := new Pattern_Matcher'
+                 (Compile (To_String (Compiler.Executable)));
+
+            exception
+               when Constraint_Error =>
+                  Compiler.Prefix_Index := -1;
+                  null;
+            end;
+
          elsif N.Tag.all = "name" then
             Name := N.Value;
          elsif N.Tag.all = "version" then
@@ -607,6 +626,9 @@ package body GprConfig.Knowledge is
    exception
       when Ada.Directories.Name_Error =>
          Put_Line (Standard_Error, "Directory not found: " & Directory);
+      when E : others =>
+         Put_Verbose ("Unexpected exception while parsing knowledge base: "
+                      & Exception_Information (E));
    end Parse_Knowledge_Base;
 
    -----------------------------
@@ -667,6 +689,8 @@ package body GprConfig.Knowledge is
                Append (Result, Comp.Language);
             elsif Str (Word_Start .. Word_End) = "RUNTIME" then
                Append (Result, Comp.Runtime);
+            elsif Str (Word_Start .. Word_End) = "PREFIX" then
+               Append (Result, Comp.Prefix);
             elsif Str (Word_Start .. Word_End) = "PATH" then
                Append (Result, Name_As_Directory (To_String (Comp.Path)));
             elsif Str (Word_Start .. Word_End) = "OUTPUT_DIR" then
@@ -963,6 +987,9 @@ package body GprConfig.Knowledge is
            and then not Match (Expression => To_String (Value.Must_Match),
                                Data       => To_String (Tmp_Result))
          then
+            Put_Verbose ("Ignore compiler since external value "
+                         & To_String (Tmp_Result) & " must match "
+                         & To_String (Value.Must_Match));
             raise Ignore_Compiler;
          end if;
 
@@ -1058,6 +1085,7 @@ package body GprConfig.Knowledge is
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
       Directory  : String;
+      Prefix     : String;
       Descr      : Compiler_Description;
       Path_Order : Integer)
    is
@@ -1072,6 +1100,7 @@ package body GprConfig.Knowledge is
       Comp.Path       := To_Unbounded_String (Directory);
       Comp.Path_Order := Path_Order;
       Comp.Extra_Tool := Descr.Extra_Tool;
+      Comp.Prefix     := To_Unbounded_String (Prefix);
 
       Get_External_Value
         (Value            => Descr.Target,
@@ -1094,6 +1123,7 @@ package body GprConfig.Knowledge is
 
       --  If we can't find version, ignore this compiler
       if Is_Empty (Version) then
+         Put_Verbose ("Ignore compiler, since couldn't guess its version");
          raise Ignore_Compiler;
       end if;
 
@@ -1142,6 +1172,10 @@ package body GprConfig.Knowledge is
 
          Next (C);
       end loop;
+
+   exception
+      when Ignore_Compiler =>
+         null;
    end For_Each_Language_Runtime;
 
    ---------------------------
@@ -1151,47 +1185,127 @@ package body GprConfig.Knowledge is
    procedure Find_Compilers_In_Dir
      (Append_To  : in out Compiler_Lists.List;
       Base       : Knowledge_Base;
+      Check_Executable_Regexp : Boolean;
       Directory  : String;
       Name       : String := "";
       Path_Order : Integer)
    is
-      C      : Compiler_Description_Maps.Cursor;
+      C            : Compiler_Description_Maps.Cursor;
+      Search       : Search_Type;
+      Dir          : Directory_Entry_Type;
    begin
-      --  Do not search all entries in the directory, but check explictly for
-      --  the compilers. This results in a lot less system calls, and thus is
-      --  faster
+      --  Since the name of an executable can be a regular expression, we need
+      --  to look at all files in the directory to see if they match. This
+      --  requires more system calls than if the name was always a simple
+      --  string. So we first check which of the two algorithms should be used.
 
-      C := First (Base.Compilers);
-      while Has_Element (C) loop
-         if Name = "" or else Key (C) = Name then
-            declare
-               F : constant String := Normalize_Pathname
-                 (Name           => To_String (Element (C).Executable),
-                  Directory      => Directory,
-                  Resolve_Links  => False,
-                  Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
-            begin
-               if Ada.Directories.Exists (F) then
-                  Put_Verbose ("------------------------------------------");
-                  Put_Verbose
-                    ("Processing " & Key (C) & " in " & Directory);
-                  For_Each_Language_Runtime
-                    (Append_To  => Append_To,
-                     Name       => Key (C),
-                     Directory  => Directory,
-                     Descr      => Element (C),
-                     Path_Order => Path_Order);
+      Put_Verbose ("Find compilers matching name=" & Name & " in directory="
+                   & Directory & ", using regexp:"
+                   & Boolean'Image (Check_Executable_Regexp));
+
+      if Check_Executable_Regexp then
+         begin
+            Start_Search
+              (Search    => Search,
+               Directory => Directory,
+               Pattern   => "");
+         exception
+            when Ada.Directories.Name_Error =>
+               Put_Verbose ("No such directory:" & Directory);
+               return;
+         end;
+
+         while More_Entries (Search) loop
+            Get_Next_Entry (Search, Dir);
+
+            C := First (Base.Compilers);
+            while Has_Element (C) loop
+               if Name = "" or else Key (C) = Name then
+                  declare
+                     Simple  : constant String := Simple_Name (Dir);
+                     Matches : Match_Array
+                       (0 .. Integer'Max (0, Element (C).Prefix_Index));
+                     Matched : Boolean;
+                     Prefix  : Unbounded_String;
+                  begin
+                     if Element (C).Executable_Re /= null then
+                        Match (Element (C).Executable_Re.all,
+                               Data       => Simple,
+                               Matches    => Matches);
+                        Matched := Matches (0) /= No_Match;
+                     else
+                        Matched := To_String (Element (C).Executable) =
+                          Simple_Name (Dir);
+                     end if;
+
+                     if Matched then
+                        Put_Verbose ("--------------------------------------");
+                        Put_Verbose
+                          ("Processing " & Key (C) & " in " & Directory);
+
+                        if Element (C).Executable_Re /= null
+                          and then Element (C).Prefix_Index >= 0
+                          and then Matches (Element (C).Prefix_Index) /=
+                             No_Match
+                        then
+                           Prefix := To_Unbounded_String
+                             (Simple (Matches (Element (C).Prefix_Index).First
+                                ..  Matches (Element (C).Prefix_Index).Last));
+                        end if;
+
+                        For_Each_Language_Runtime
+                          (Append_To  => Append_To,
+                           Name       => Key (C),
+                           Directory  => Directory,
+                           Prefix     => To_String (Prefix),
+                           Descr      => Element (C),
+                           Path_Order => Path_Order);
+                     end if;
+                  end;
                end if;
-            exception
-               when Ada.Directories.Name_Error =>
-                  null;
-               when Ignore_Compiler =>
-                  null;  --  Nothing to do, the compiler has not been inserted
-            end;
-         end if;
+               Next (C);
+            end loop;
+         end loop;
 
-         Next (C);
-      end loop;
+      else
+         --  Do not search all entries in the directory, but check explictly
+         --  for the compilers. This results in a lot less system calls, and
+         --  thus is faster.
+
+         C := First (Base.Compilers);
+         while Has_Element (C) loop
+            if Name = "" or else Key (C) = Name then
+               declare
+                  F : constant String := Normalize_Pathname
+                    (Name           => To_String (Element (C).Executable),
+                     Directory      => Directory,
+                     Resolve_Links  => False,
+                     Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
+               begin
+                  if Ada.Directories.Exists (F) then
+                     Put_Verbose ("--------------------------------------");
+                     Put_Verbose
+                       ("Processing " & Key (C) & " in " & Directory);
+                     For_Each_Language_Runtime
+                       (Append_To  => Append_To,
+                        Name       => Key (C),
+                        Prefix     => "",
+                        Directory  => Directory,
+                        Descr      => Element (C),
+                        Path_Order => Path_Order);
+                  end if;
+               exception
+                  when Ada.Directories.Name_Error =>
+                     null;
+                  when Ignore_Compiler =>
+                     --  Nothing to do, the compiler has not been inserted
+                     null;
+               end;
+            end if;
+
+            Next (C);
+         end loop;
+      end if;
    end Find_Compilers_In_Dir;
 
    -----------------------------
@@ -1204,11 +1318,26 @@ package body GprConfig.Knowledge is
       Base       : Knowledge_Base;
       Compilers  : out Compiler_Lists.List)
    is
+      Check_Regexp : Boolean := False;
+      C            : Compiler_Description_Maps.Cursor;
    begin
       Clear (Compilers);
+
+      C := First (Base.Compilers);
+      while Has_Element (C) loop
+         if (Name = "" or else Key (C) = Name)
+           and then Element (C).Executable_Re /= null
+         then
+            Check_Regexp := True;
+            exit;
+         end if;
+         Next (C);
+      end loop;
+
       Find_Compilers_In_Dir
         (Append_To  => Compilers,
          Base       => Base,
+         Check_Executable_Regexp => Check_Regexp,
          Directory  => Path,
          Name       => Name,
          Path_Order => 0);
@@ -1255,9 +1384,13 @@ package body GprConfig.Knowledge is
                   else
                      Append (Map, Path (First .. Last - 1));
                   end if;
+
+                  --  We know that at least GNAT uses a regular expression for
+                  --  its <executable> node, so we have to handle regexps
                   Find_Compilers_In_Dir
                     (Append_To  => Compilers,
                      Base       => Base,
+                     Check_Executable_Regexp => True,
                      Directory  => Path (First .. Last - 1),
                      Path_Order => Path_Order);
                end if;

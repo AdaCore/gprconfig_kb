@@ -45,7 +45,7 @@
 
   <compiler_description>
     <name>G++</name>
-    <executable>g++</executable>
+    <executable>g\+\+</executable>
     <version>
       <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">g++ --version</external>
     </version>
@@ -69,10 +69,10 @@
   -->
   <compiler_description>
     <name>GNAT</name>
-    <executable>gnatmake</executable>
+    <executable prefix="1">(.+-)?gnatmake</executable>
     <version>
-      <external regexp="GNATLS.+?(\d+\.\d+)" group="1">gnatls -v</external>
-      <external regexp="^gcc version (\S+)" group="1">gcc -v</external>
+      <external regexp="GNATLS.+?(\d+\.\d+)" group="1">${PREFIX}gnatls -v</external>
+      <external regexp="^gcc version (\S+)" group="1">${PREFIX}gcc -v</external>
     </version>
     <languages>Ada</languages>
     <runtimes>
@@ -81,7 +81,7 @@
     </runtimes>
     <extra_tool>${GPRCONFIG_PREFIX}libexec/gprbuild/create_ada_runtime_project -adainclude ${RUNTIME_DIR}  -o ${OUTPUT_DIR}ada_runtime.gpr -mapping ${GPRCONFIG_PREFIX}share/gprconfig/gnat_runtime.mapping</extra_tool>
     <target>
-      <external regexp="[^\r\n]+">gcc -dumpmachine</external>
+      <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
     </target>
   </compiler_description>
 

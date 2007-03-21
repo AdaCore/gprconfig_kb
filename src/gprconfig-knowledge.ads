@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
---                   Copyright (C) 2006, AdaCore                            --
+--                   Copyright (C) 2006-2007, AdaCore                       --
 ------------------------------------------------------------------------------
 
 --  This unit is responsible for parsing the gprconfig knowledge base.
@@ -9,6 +9,7 @@ with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;
+with GNAT.Regpat;
 
 package GprConfig.Knowledge is
 
@@ -28,6 +29,7 @@ package GprConfig.Knowledge is
       Path        : Ada.Strings.Unbounded.Unbounded_String;
       Version     : Ada.Strings.Unbounded.Unbounded_String;
       Version2    : Ada.Strings.Unbounded.Unbounded_String;
+      Prefix      : Ada.Strings.Unbounded.Unbounded_String;
       Runtime     : Ada.Strings.Unbounded.Unbounded_String;
       Runtime_Dir : Ada.Strings.Unbounded.Unbounded_String;
       Language    : Ada.Strings.Unbounded.Unbounded_String;
@@ -116,6 +118,7 @@ private
       Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
       Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Version2    => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Prefix      => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
       Language    => Ada.Strings.Unbounded.Null_Unbounded_String,
@@ -156,14 +159,21 @@ private
       Must_Match => Ada.Strings.Unbounded.Null_Unbounded_String,
       Nodes      => External_Value_Nodes.Empty_List);
 
+   type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
+
    type Compiler_Description is record
-      Executable : Ada.Strings.Unbounded.Unbounded_String;
-      Version    : External_Value;
-      Languages  : External_Value;
-      Runtimes   : External_Value;
-      Target     : External_Value;
-      Extra_Tool : Ada.Strings.Unbounded.Unbounded_String;
+      Executable    : Ada.Strings.Unbounded.Unbounded_String;
+      Executable_Re : Pattern_Matcher_Access;
+      Prefix_Index  : Integer := -1;
+      Version       : External_Value;
+      Languages     : External_Value;
+      Runtimes      : External_Value;
+      Target        : External_Value;
+      Extra_Tool    : Ada.Strings.Unbounded.Unbounded_String;
    end record;
+   --  Executable_Re is only set if the name of the <executable> must be
+   --  taken as a regular expression.
+
    package Compiler_Description_Maps is new
      Ada.Containers.Indefinite_Hashed_Maps
        (String, Compiler_Description, Ada.Strings.Hash_Case_Insensitive, "=");
