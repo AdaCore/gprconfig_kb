@@ -18,7 +18,7 @@
 
    package Language_Processing is
       for Language_Kind            ("Ada") use "unit_based";
-      for Compiler_Driver          ("Ada") use "${PATH}gcc";
+      for Compiler_Driver          ("Ada") use "${PATH}${PREFIX}gcc";
       for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
