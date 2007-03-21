@@ -6,7 +6,7 @@ test_config () {
   switches="$@"
   pwd=`pwd`
   ../gprconfig -o output.gpr -batch $switches | sed -e '/Creating configuration file/,$d'
-  sed -e "s,$pwd,.," output.gpr > output2.gpr
+  sed -e "s,$pwd,<pwd>," output.gpr > output2.gpr
   diff $expected output2.gpr >/dev/null
   if test $? != 0 ; then
      echo "-------  $expected failed"
@@ -33,6 +33,9 @@ test_config test4.out -config "GNAT,$pwd/bin/,5.04,Ada,alpha-openvms"
 ## Testing linux
 test_config test5.out -config "GNAT,$pwd/bin/,5.04,Ada,i686-pc-linux-gnu"
 test_config test5.out -config "GNAT,$pwd/bin/,5.04,Ada,i585-suse-linux"
+
+## Testing cross-configuration
+test_config test6.out -config "GNAT,$pwd/crossbin/,5.04,Ada,x86-lynxos"
 
 
 

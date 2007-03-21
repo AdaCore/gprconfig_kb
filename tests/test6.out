@@ -1,7 +1,7 @@
 project Output is
    package Language_Processing is
       for Language_Kind            ("Ada") use "unit_based";
-      for Compiler_Driver          ("Ada") use "<pwd>/bin/gcc";
+      for Compiler_Driver          ("Ada") use "<pwd>/crossbin/powerpc-wrs-vxworks-gcc";
       for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
@@ -34,14 +34,8 @@ project Output is
       for Archive_Builder  use ("ar", "cr");
       for Archive_Indexer  use ("ranlib");
       for Archive_Suffix   use ".a";
+      for Library_Support  use "static_only";
       for Library_Builder  use "..//libexec/gprbuild/gprlib";
-      for Library_Support  use "full";
-      for Shared_Library_Prefix use "lib";
-      for Shared_Library_Suffix use ".exe";
-      for Symbolic_Link_Supported use "false";
-      for Library_Major_Minor_Id_Supported use "false";
-      for Shared_Library_Minimum_Options use ("-shared", "-shared-libgcc");
-      for Library_Auto_init_Supported use "true";
    end Language_Processing;
    package Naming is
       for Spec_Suffix ("Ada") use ".ads";

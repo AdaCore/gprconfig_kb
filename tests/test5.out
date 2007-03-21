@@ -1,7 +1,7 @@
 project Output is
    package Language_Processing is
       for Language_Kind            ("Ada") use "unit_based";
-      for Compiler_Driver          ("Ada") use "./bin/gcc";
+      for Compiler_Driver          ("Ada") use "<pwd>/bin/gcc";
       for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
@@ -26,7 +26,7 @@ project Output is
       for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
       for Runtime_Project       ("Ada") use
-          "./ada_runtime.gpr";
+          "<pwd>/ada_runtime.gpr";
       for Binder_Driver         ("Ada") use
           "..//libexec/gprbuild/gprbind";
       for Toolchain_Version     ("Ada") use "GNAT 5.04";

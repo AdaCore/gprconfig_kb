@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ x$1 = x-v ]; then
+   echo "GNATLS Pro 6.1.0w (20070123-34)"
+else
+   echo "Running gnatls $@"
+fi
