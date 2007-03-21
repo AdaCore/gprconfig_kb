@@ -66,7 +66,9 @@ Basic Concepts
 Guided Tour
 * First Steps::
 * Subsystems::
+* Project Extensions::
 * Libraries::
+* Scenarios::
 
 Building with gprbuild
 * Command Line::
@@ -256,13 +258,15 @@ been changed and the objects that are affected by therse changes.
 
 @c  ------------------------------------------------------------------------
 @node Guided Tour
-@chapter Guide Tour
+@chapter Guided Tour
 @c  --------------------------------------------------------------------------
 
 @menu
 * First Steps::
 * Subsystems::
+* Project Extensions::
 * Libraries::
+* Scenarios::
 @end menu
 
 This chapter will get, through examples, from the simplest cases of
@@ -275,6 +279,7 @@ multi-language builds to some of the most advanced capability of
 Let's assume a simple case of interfacing between Ada & C where the main
 program is first in Ada and then in C. For a main program in Ada, we can
 use a project of the sort:
+
 @smallexample @c projectfile
 project Ada_Main is
    for Languages    use ("Ada", "C");
@@ -285,19 +290,21 @@ project Ada_Main is
    for Main         use ("ada_main.adb");
 end Ada_Main;
 @end smallexample
+
+@noindent
 This project says that:
 @itemize
 @item the sources files of this subsystem are in "Ada" and
 in "C".
 @item the list of directories containing the sources is composed of
-two directories called "ada_src" and "util_src".
-@item the directory holding the objects is "obj".
-@item the directory holding the executables is ".".
-@item the complete list of source files is  "ada_main.adb", "c_lib.ads",
-"lib.h", "lib.c". They can be found anywhere in the source directories
-mentioned above.
+two directories called @code{ada_src} and @code{util_src}.
+@item the directory holding the objects is @code{obj}.
+@item the directory holding the executables is @code{.}.
+@item the complete list of source files is @code{ada_main.adb},
+@code{c_lib.ads}, @code{lib.h}, @code{lib.c}. They can be found anywhere
+in the source directories mentioned above.
 @item the main entry point of the system is in the source file
-"main_ada.adb".
+@code{main_ada.adb}.
 @end itemize
 Those elements are sufficient for @code{gprbuild} to build an executable
 program out of the sources. Note that no direct indication on how to build
@@ -315,6 +322,7 @@ gprbind ada_main
 gcc ada_main.o -o ada_main.exe
 @end smallexample
 
+@noindent
 One notice the three steps described in the introduction of this document:
 the first gcc commands correspond to the compilation phase. The gprbind
 command correspond to the post-compilation phase while the last gcc command
@@ -344,6 +352,7 @@ project C_Main is
 end C_Main;
 @end smallexample
 
+@noindent
 This project has many similarities with the previous one. The Languages,
 Source_Dirs and Object_Dirs are similar. As expected, its main attribute
 now refers to a C source. The first noticeable difference is the lack of
@@ -362,13 +371,17 @@ Language unless the source has its own set of compilation switches
 specified by the attribute Switches. Note also the use of a variable
 (C_Switches). It can be useful to avoid duplication of information and is
 used in this context to ensure that the file c_main.c is always compiled
-with the default switches whatever they are, plus "-g". In this specific
+with the default switches whatever they are, plus @code{-g}. In this specific
 situation, the use of a variable could have been replaced by a reference
 to the default_switches attribute:
+
 @smallexample @c projectfile
    for Switches ("c_main.c") use Compiler'Default_Switches ("C") & ("-g");
 @end smallexample
+
+@noindent
 Here is the output of the gprbuild command using this project:
+
 @smallexample
 $gprbuild -Pc_main
 gcc -c -pedantic -g c_main.c -o c_main.o
@@ -380,27 +393,133 @@ gprbind c_main
 gcc c_main.o -o c_main.exe
 @end smallexample
 
-The switches for compiling Ada sources have been taken into account as
-well as the default switches for C sources in the compilation of lib.c.One
-can also observe that the specific switches for c_main.c have been taken
-into account. When comparing this gprbuild output with the previous one,
-one can notice that there are common sources between the two projects,
-namely c_lib.ads and lib.c. Those sources were compiled as part of each
-project. This is not surprizing since the first project was specifying its
-object directory as "obj" while the second one was using "obj1". The
-projects are thus completely independant eventhough they share some
-sources. Would it be possible to share more than the sources and
-in particular avoid unnecessary recompilations?
+@noindent
+The switches for compiling Ada sources have been taken into account as well
+as the default switches for C sources in the compilation of lib.c. One can
+also observe that the specific switches for c_main.c have been taken into
+account. When comparing this gprbuild output with the previous one, one can
+notice that there are common sources between the two projects, namely
+c_lib.ads and lib.c. Those sources were compiled twice, once for each
+projects it is part of. This is not surprising since the two projects
+are independant and have different@code{Object_Dir}s eventhough they share
+some sources. Would it be possible to share more than the sources and in
+particular avoid unnecessary recompilations when compilation units are
+used in several different projects? Slipping the current systems into 
+subsystems is a way forward in answering this question.
 
 @node Subsystems
 @section Subsystems
 @c describe a bigger project with several source dirs and object dirs
+@c describe limited with & extended projects & source duplication.
+
+Let's group the common compilation units in a separate subsystem with
+its own project file to which we attribute a separate Object_Dir:
+
+@smallexample @c projectfile
+project Common_Subsystem is
+   for Source_Dirs  use ("util_src");
+   for Object_Dir   use  "obj_util";
+end Common_Subsystem;
+@end smallexample
+
+@noindent
+So now by default, all the sources in directory @code{util_src} belong to
+project Common_Subsystem and when compiled, their objects go in @code{obj_dir}.
+Other projects, whose sources depend on sources in @code{util_src} can create
+a dependency relationship using a project's with clause:
+
+@smallexample @c projectfile
+with "Common_Subsystem";
+project Ada_Main is
+   for Languages    use ("Ada");
+   for Source_Dirs  use ("ada_src");
+   ...
+end Ada_Main;
+@end smallexample
+
+@noindent
+The @code{Ada_Main.Source_Dirs} does not include @code{util_src} anymore. The
+main program in @code{ada_src} still needs sources from util_src to be compiled.
+It also needs those units built. Now they will be compiled using the build
+properties defined in Common_Subsystem instead of those of Ada_Main. The
+project's @code{with} clause has several effects: it provides visibility of
+sources during the compilation process as if the units from Ada_Main were
+compiled with an implcit @code{-Iutil_src}; it also guarantees that the
+necessary units from Common_Subsystems are available for Ada_Main linking
+phase.
+
+It is also possible use the @code{with} relationship to define a project file
+that allows sharing common attributes or packages. For instance, one can
+ define a project whose only purpose is to centralize the default
+compilation options for various languages:
+
+@smallexample @c projectfile
+project Attribute_Sharing is
+   for Source_Files use ();
+   package Compiler is
+      for Default_Switches ("C")   use ("-pedantic");
+      for Default_Switches ("Ada") use ("-gnaty");
+   end Compiler;
+end Attribute_Sharing;
+@end smallexample
+
+@noindent
+This package does not correspond to a subsystem with
+proper source files and this is conveyed by the definition of @code{Source_Files}
+which is explicitly set to the empty list. It informs the build manager
+that no compilation is to take place directly from this project. Defining
+an empty list of sources is essential for such utility packages because
+otherwise, the default rules apply and all sources in the current directory
+will be associated with this project. Now other projects can share this
+project's attributes and packages. For instance, Ada_Main can share all the
+Compiler's attribute at once using a renaming declaration:
+
+@smallexample @c projectfile
+with "Attribute_Sharing";
+...
+project Ada_Main is
+...
+   package Compiler renames Attribute_Sharing.Compiler;
+end Ada_Main;
+@end smallexample
+
+@noindent
+or if other aspects of the Compiler package need to be defined locally,
+as adding @code{-g} for the c_main.c source only, sharing can be done at the
+attribute level directly as in this new version of C_Main.Compiler:
+@smallexample @c projectfile
+   package Compiler is
+      for Default_Switches ("C") use
+        Attribute_Sharing.Compiler'Default_Switches ("C");
+      for Switches ("c_main.c")  use
+        Compiler'Default_Switches ("C") & ("-g");
+   end Compiler;
+@end smallexample
+If one want to change the compilation options of all C files used for
+building both @code{C_Main} and @code{Ada_Main}, it is sudfficient to edit a single
+project file.
+
+@node Project Extensions
+@section Project Extensions
+
+We have seen how to share both commpilation units and project properties
+among different systems. Sharing is an essential aspect of big system
+programming since it helps getting organized, reduces compilation time,
+and reduce the maintenance burden. Unfortunately, it gets sometimes in
+the way. In the above example, @code{Ada_Main} and @code{C_Main both} depend on
+@code{Common_Subsystems} because they have precisely the same needs but the
+requirements of the two systems can diverge over time and which case
+sharing becomes a problem rather than a solution. For instance, suppose
+that C_Main is now under light maintenance and
 
 @node Libraries
 @section Libraries
 @c augment the previous example with putting one of the
 @c subsystem in a library
 @c show how to deal with externa libraries
+
+@node Scenarios
+@section Scenarios
 
 @c  ------------------------------------------------------------------------
 @node Building with gprbuild
