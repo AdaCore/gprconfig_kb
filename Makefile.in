@@ -12,8 +12,16 @@ ifeq ($(strip $(filter-out %vms%,$(HOST))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
 
-all: obj/gprbuild_dummies.o obj/link.o force
+all gprconfig gprmake gprclean: obj/gprbuild_dummies.o obj/link.o force
+
+all:
 	gnatmake -Pgprconfig
+
+gprmake gprclean:
+	gnatmake -Pgprconfig $@
+
+gprconfig:
+	gnatmake -Pgprconfig gprconfig-main
 
 install: all
 	${MKDIR} ${PREFIX}/bin
