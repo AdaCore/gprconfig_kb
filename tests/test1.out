@@ -1,7 +1,7 @@
 project Output is
    package Language_Processing is
       for Language_Kind            ("Ada") use "unit_based";
-      for Compiler_Driver          ("Ada") use "gcc";
+      for Compiler_Driver          ("Ada") use "./bin/gcc";
       for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
@@ -27,14 +27,15 @@ project Output is
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
       for Runtime_Project       ("Ada") use
           "./ada_runtime.gpr";
-      for Binder_Driver         ("Ada") use "gprbind";
+      for Binder_Driver         ("Ada") use
+          "..//libexec/gprbuild/gprbind";
       for Toolchain_Version     ("Ada") use "GNAT 5.04";
       for Default_Language use "Ada";
       for Archive_Builder  use ("ar", "cr");
-      for Archive_Indexer  use Language_Processing'Archive_Index & ("ranlib");
+      for Archive_Indexer  use ("ranlib");
       for Archive_Suffix   use ".a";
       for Library_Support  use "static_only";
-      for Library_Builder  use "gprlib";  --  ??? Is this correct for AIX
+      for Library_Builder  use "..//libexec/gprbuild/gprlib";
    end Language_Processing;
    package Naming is
       for Spec_Suffix ("Ada") use ".ads";
