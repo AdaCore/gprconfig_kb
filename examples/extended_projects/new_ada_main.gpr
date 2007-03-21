@@ -1,4 +1,4 @@
-with "New_Common_Subsystem";
+with "new_common_subsystem.gpr";
 project New_Ada_Main extends all "../subsystems/ada_main.gpr" is
    for Source_Dirs  use ("new_ada_src");
    for Object_Dir   use  "new_obj";
