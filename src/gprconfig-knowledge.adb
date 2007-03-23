@@ -101,6 +101,7 @@ package body GprConfig.Knowledge is
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
+      Executable : String;
       Directory  : String;
       Prefix     : String;
       Descr      : Compiler_Description;
@@ -413,9 +414,16 @@ package body GprConfig.Knowledge is
                Compiler.Executable := To_Unbounded_String (N.Value.all);
                Compiler.Prefix_Index := Integer'Value (Prefix);
                Compiler.Executable_Re := new Pattern_Matcher'
-                 (Compile (To_String (Compiler.Executable)));
+                 (Compile (To_String ("^" & Compiler.Executable & "$")));
 
             exception
+               when Expression_Error =>
+                  Put_Line
+                    ("Invalid regular expression found in the configuration"
+                     & " files: " & To_String (Compiler.Executable)
+                     & " while parsing " & File);
+                  raise Invalid_Knowledge_Base;
+
                when Constraint_Error =>
                   Compiler.Prefix_Index := -1;
                   null;
@@ -629,6 +637,7 @@ package body GprConfig.Knowledge is
       when E : others =>
          Put_Verbose ("Unexpected exception while parsing knowledge base: "
                       & Exception_Information (E));
+         raise Invalid_Knowledge_Base;
    end Parse_Knowledge_Base;
 
    -----------------------------
@@ -681,6 +690,8 @@ package body GprConfig.Knowledge is
             elsif Str (Word_Start .. Word_End) = "RUNTIME_DIR" then
                Append
                  (Result, Name_As_Directory (To_String (Comp.Runtime_Dir)));
+            elsif Str (Word_Start .. Word_End) = "EXEC" then
+               Append (Result, Comp.Executable);
             elsif Str (Word_Start .. Word_End) = "VERSION" then
                Append (Result, Comp.Version);
             elsif Str (Word_Start .. Word_End) = "VERSION2" then
@@ -1089,6 +1100,7 @@ package body GprConfig.Knowledge is
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
       Name       : String;
+      Executable : String;
       Directory  : String;
       Prefix     : String;
       Descr      : Compiler_Description;
@@ -1106,6 +1118,7 @@ package body GprConfig.Knowledge is
       Comp.Path_Order := Path_Order;
       Comp.Extra_Tool := Descr.Extra_Tool;
       Comp.Prefix     := To_Unbounded_String (Prefix);
+      Comp.Executable := To_Unbounded_String (Executable);
 
       Get_External_Value
         (Value            => Descr.Target,
@@ -1222,7 +1235,6 @@ package body GprConfig.Knowledge is
 
          while More_Entries (Search) loop
             Get_Next_Entry (Search, Dir);
-
             C := First (Base.Compilers);
             while Has_Element (C) loop
                if Name = "" or else Key (C) = Name then
@@ -1261,6 +1273,7 @@ package body GprConfig.Knowledge is
                         For_Each_Language_Runtime
                           (Append_To  => Append_To,
                            Name       => Key (C),
+                           Executable => Simple,
                            Directory  => Directory,
                            Prefix     => To_String (Prefix),
                            Descr      => Element (C),
@@ -1294,6 +1307,7 @@ package body GprConfig.Knowledge is
                      For_Each_Language_Runtime
                        (Append_To  => Append_To,
                         Name       => Key (C),
+                        Executable => To_String (Element (C).Executable),
                         Prefix     => "",
                         Directory  => Directory,
                         Descr      => Element (C),

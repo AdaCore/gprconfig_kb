@@ -17,7 +17,10 @@ package GprConfig.Knowledge is
    --  Whether or not to display extra messages on stdout
 
    Generate_Error : exception;
-   --  To be raise when an error occurs during generation of config files.
+   --  To be raised when an error occurs during generation of config files.
+
+   Invalid_Knowledge_Base : exception;
+   --  To be raised when an error occurred while parsing the knowledge base
 
    type Knowledge_Base is private;
 
@@ -28,6 +31,7 @@ package GprConfig.Knowledge is
 
    type Compiler is record
       Name        : Ada.Strings.Unbounded.Unbounded_String;
+      Executable  : Ada.Strings.Unbounded.Unbounded_String;
       Target      : Ada.Strings.Unbounded.Unbounded_String;
       Path        : Ada.Strings.Unbounded.Unbounded_String;
       Version     : Ada.Strings.Unbounded.Unbounded_String;
@@ -118,6 +122,7 @@ private
    No_Compiler : constant Compiler :=
      (Name        => Ada.Strings.Unbounded.Null_Unbounded_String,
       Target      => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Executable  => Ada.Strings.Unbounded.Null_Unbounded_String,
       Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
       Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Version2    => Ada.Strings.Unbounded.Null_Unbounded_String,

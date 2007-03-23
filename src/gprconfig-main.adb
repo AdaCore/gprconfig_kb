@@ -152,7 +152,8 @@ procedure GprConfig.Main is
          Put (To_String (Comp.Target) & ' ');
       end if;
 
-      Put_Line ("- " & To_String (Comp.Path));
+      Put_Line ("- " & Name_As_Directory (To_String (Comp.Path))
+                & To_String (Comp.Executable));
    end Display_Compiler;
 
    -------------
@@ -591,6 +592,9 @@ procedure GprConfig.Main is
             if Elem.Prefix = Null_Unbounded_String then
                Elem.Prefix := Element (First (Completion)).Prefix;
             end if;
+            if Elem.Executable = Null_Unbounded_String then
+               Elem.Executable := Element (First (Completion)).Executable;
+            end if;
          else
             Put_Verbose
               ("Error while querying missing info for a compiler"
@@ -764,6 +768,10 @@ exception
       Put_Line
         (Standard_Error, "Generation of configuration files failed");
       Ada.Command_Line.Set_Exit_Status (3);
+   when Invalid_Knowledge_Base =>
+      Put_Line
+        (Standard_Error, "Invalid setup of the gprconfig knowledge base");
+      Ada.Command_Line.Set_Exit_Status (4);
    when End_Error =>
       null;
    when Invalid_Switch | Invalid_Parameter =>
