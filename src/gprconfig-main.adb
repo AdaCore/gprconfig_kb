@@ -765,4 +765,5 @@ exception
    when Invalid_Switch | Invalid_Parameter =>
       Put_Line ("Invalid command line switch: -" & Full_Switch);
       Help (Base);
+      Ada.Command_Line.Set_Exit_Status (2);
 end GprConfig.Main;
