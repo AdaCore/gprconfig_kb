@@ -919,34 +919,39 @@ package body GprConfig.Knowledge is
                declare
                   Command : constant String := Substitute_Special_Dirs
                     (To_String (Node.Command), Comp, Output_Dir => "");
-                  Args   : Argument_List_Access := Argument_String_To_List
-                    (Command);
-                  Output : constant String := Get_Command_Output
-                    (Command     => Args (Args'First).all,
-                     Arguments   => Args (Args'First + 1 .. Args'Last),
-                     Input       => "",
-                     Status      => Status'Unchecked_Access,
-                     Err_To_Out  => True);
-                  Regexp : constant Pattern_Matcher := Compile
-                    (To_String (Node.Regexp), Multiple_Lines);
-                  Matched : Match_Array (0 .. Node.Group);
                begin
+                  Extracted_From := Null_Unbounded_String;
+                  Tmp_Result     := Null_Unbounded_String;
                   Put_Verbose ("Executing " & Command);
-                  Put_Verbose ("   Output is """ & Output & """");
-                  GNAT.Strings.Free (Args);
-                  Ada.Environment_Variables.Set ("PATH", Saved_Path);
+                  declare
+                     Args   : Argument_List_Access := Argument_String_To_List
+                       (Command);
+                     Output : constant String := Get_Command_Output
+                       (Command     => Args (Args'First).all,
+                        Arguments   => Args (Args'First + 1 .. Args'Last),
+                        Input       => "",
+                        Status      => Status'Unchecked_Access,
+                        Err_To_Out  => True);
+                     Regexp : constant Pattern_Matcher := Compile
+                       (To_String (Node.Regexp), Multiple_Lines);
+                     Matched : Match_Array (0 .. Node.Group);
+                  begin
+                     Put_Verbose ("   Output is """ & Output & """");
+                     GNAT.Strings.Free (Args);
+                     Ada.Environment_Variables.Set ("PATH", Saved_Path);
 
-                  Match (Regexp, Output, Matched);
-                  if Matched (Node.Group) /= No_Match then
-                     Extracted_From := To_Unbounded_String (Output);
-                     Tmp_Result := To_Unbounded_String
-                       (Output (Matched (Node.Group).First ..
-                                Matched (Node.Group).Last));
-                     Put_Verbose ("Matched: " & To_String (Tmp_Result));
-                  else
-                     Extracted_From := Null_Unbounded_String;
-                     Tmp_Result     := Null_Unbounded_String;
-                  end if;
+                     Match (Regexp, Output, Matched);
+                     if Matched (Node.Group) /= No_Match then
+                        Extracted_From := To_Unbounded_String (Output);
+                        Tmp_Result := To_Unbounded_String
+                          (Output (Matched (Node.Group).First ..
+                                   Matched (Node.Group).Last));
+                        Put_Verbose ("Matched: " & To_String (Tmp_Result));
+                     end if;
+                  end;
+               exception
+                  when Invalid_Process =>
+                     Put_Verbose ("   Spawn failed");
                end;
 
             when Value_Directory =>
