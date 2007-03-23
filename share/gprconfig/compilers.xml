@@ -45,7 +45,7 @@
 
   <compiler_description>
     <name>G++</name>
-    <executable>g\+\+</executable>
+    <executable>g++</executable>
     <version>
       <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">g++ --version</external>
     </version>
