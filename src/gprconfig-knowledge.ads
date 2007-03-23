@@ -16,6 +16,9 @@ package GprConfig.Knowledge is
    Verbose_Mode : Boolean := False;
    --  Whether or not to display extra messages on stdout
 
+   Generate_Error : exception;
+   --  To be raise when an error occurs during generation of config files.
+
    type Knowledge_Base is private;
 
    procedure Parse_Knowledge_Base

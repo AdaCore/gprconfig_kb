@@ -1772,7 +1772,6 @@ package body GprConfig.Knowledge is
                  (To_String (Element (Comp).Extra_Tool));
                Tmp  : GNAT.Strings.String_Access;
                Status  : Integer;
-               pragma Unreferenced (Status);
             begin
                New_Line;
                Put ("Executing ");
@@ -1790,6 +1789,10 @@ package body GprConfig.Knowledge is
 
                Status := Spawn
                  (Args (Args'First).all, Args (Args'First + 1 .. Args'Last));
+               if Status /= 0 then
+                  Put_Line ("Could not execute " & Args (Args'First).all);
+                  raise Generate_Error;
+               end if;
                GNAT.Strings.Free (Args);
             end;
          end if;
@@ -1800,6 +1803,7 @@ package body GprConfig.Knowledge is
    exception
       when Ada.Directories.Name_Error =>
          Put_Line ("Could not create the file " & Output_File);
+         raise Generate_Error;
    end Generate_Configuration;
 
    ------------------------

@@ -760,6 +760,10 @@ exception
       Put_Line
         (Standard_Error, "Invalid configuration specified with -config");
       Ada.Command_Line.Set_Exit_Status (1);
+   when Generate_Error =>
+      Put_Line
+        (Standard_Error, "Generation of configuration files failed");
+      Ada.Command_Line.Set_Exit_Status (3);
    when End_Error =>
       null;
    when Invalid_Switch | Invalid_Parameter =>
