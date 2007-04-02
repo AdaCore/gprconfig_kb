@@ -89,13 +89,13 @@ procedure Gprlib is
    Exchange_File_Name : String_Access;
    --  Name of the exchange file
 
-   S_Osinte_Ads : Name_Id := No_Name;
+   S_Osinte_Ads : File_Name_Type := No_File;
    --  Name_Id for "s-osinte.ads"
 
-   S_Dec_Ads : Name_Id := No_Name;
+   S_Dec_Ads : File_Name_Type := No_File;
    --  Name_Id for "dec.ads"
 
-   G_Trasym_Ads : Name_Id := No_Name;
+   G_Trasym_Ads : File_Name_Type := No_File;
    --  Name_Id for "g-trasym.ads"
 
    Current_Section : Library_Section := No_Library_Section;
@@ -401,7 +401,7 @@ procedure Gprlib is
    ----------------
 
    procedure Check_Libs (ALI_File : String) is
-      Lib_File : Name_Id;
+      Lib_File : File_Name_Type;
       Text     : Text_Buffer_Ptr;
       Id       : ALI.ALI_Id;
 
@@ -617,7 +617,7 @@ procedure Gprlib is
    procedure Copy_Sources is
       Text     : Text_Buffer_Ptr;
       The_ALI  : ALI.ALI_Id;
-      Lib_File : Name_Id;
+      Lib_File : File_Name_Type;
 
       First_Unit  : ALI.Unit_Id;
       Second_Unit : ALI.Unit_Id;
@@ -626,14 +626,14 @@ procedure Gprlib is
 
       use ALI;
 
-      procedure Copy (File_Name : Name_Id);
+      procedure Copy (File_Name : File_Name_Type);
       --  Copy one source of the project to the copy source directory
 
       ----------
       -- Copy --
       ----------
 
-      procedure Copy (File_Name : Name_Id) is
+      procedure Copy (File_Name : File_Name_Type) is
          Success : Boolean := False;
 
          Fname   : constant String := Get_Name_String (File_Name);
@@ -1047,7 +1047,7 @@ begin
          Binder_Generated_Object : constant String :=
                                      "b__" & Library_Name.all & Object_Suffix;
          ALI_First_Index         : Positive;
-         First_ALI               : Name_Id;
+         First_ALI               : File_Name_Type;
          T                       : Text_Buffer_Ptr;
          A                       : ALI.ALI_Id;
          use ALI;
@@ -1413,19 +1413,19 @@ begin
 
       Prj.Initialize (Prj.No_Project_Tree);
 
-      if S_Osinte_Ads = No_Name then
+      if S_Osinte_Ads = No_File then
          Name_Len := 0;
          Add_Str_To_Name_Buffer ("s-osinte.ads");
          S_Osinte_Ads := Name_Find;
       end if;
 
-      if S_Dec_Ads = No_Name then
+      if S_Dec_Ads = No_File then
          Name_Len := 0;
          Add_Str_To_Name_Buffer ("dec.ads");
          S_Dec_Ads := Name_Find;
       end if;
 
-      if G_Trasym_Ads = No_Name then
+      if G_Trasym_Ads = No_File then
          Name_Len := 0;
          Add_Str_To_Name_Buffer ("g-trasym.ads");
          G_Trasym_Ads := Name_Find;
@@ -1550,7 +1550,9 @@ begin
 
       Name_Len := Object_Files.Table (Index)'Length;
       Name_Buffer (1 .. Name_Len) := Object_Files.Table (Index).all;
-      Put_Line (IO_File, String (Osint.File_Stamp (Name_Find)));
+      Put_Line
+        (IO_File,
+         String (Osint.File_Stamp (Path_Name_Type'(Name_Find))));
    end loop;
 
    Close (IO_File);

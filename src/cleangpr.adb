@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2006, Free Software Foundation, Inc.              --
+--          Copyright (C) 2006-2007, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -38,7 +38,6 @@ with Prj.Util; use Prj.Util;
 with Sinput.P;
 with Snames;
 with Table;
-with Types;    use Types;
 
 with Ada.Command_Line;          use Ada.Command_Line;
 
@@ -134,7 +133,9 @@ package body Cleangpr is
    procedure Delete (In_Directory : String; File : String);
    --  Delete one file, or list the file name if switch -n is specified
 
-   procedure Delete_Binder_Generated_Files (Dir : String; Source : Name_Id);
+   procedure Delete_Binder_Generated_Files
+     (Dir    : String;
+      Source : File_Name_Type);
    --  Delete the binder generated file in directory Dir for Source
 
    procedure Display_Copyright;
@@ -208,10 +209,10 @@ package body Cleangpr is
       Source      : Prj.Source_Id;
       Src_Data    : Source_Data;
 
-      File_Name   : Name_Id;
+      File_Name   : File_Name_Type;
 
    begin
-      if Data.Library and then Data.Library_Src_Dir /= No_Name then
+      if Data.Library and then Data.Library_Src_Dir /= No_Path then
          declare
             Directory : constant String :=
                           Get_Name_String (Data.Library_Src_Dir);
@@ -440,7 +441,7 @@ package body Cleangpr is
                               Src_Data :=
                                 Project_Tree.Sources.Table (Source);
 
-                              if Src_Data.Dep_Name /= No_Name
+                              if Src_Data.Dep_Name /= No_File
                                 and then
                                   Get_Name_String (Src_Data.Dep_Name) =
                                   Name (1 .. Last)
@@ -488,7 +489,7 @@ package body Cleangpr is
       Main_Source_File : File_Name_Type;
       --  Name of executable on the command line without directory info
 
-      Executable : Name_Id;
+      Executable : File_Name_Type;
       --  Name of the executable file
 
       Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
@@ -532,7 +533,7 @@ package body Cleangpr is
          Processed_Projects.Increment_Last;
          Processed_Projects.Table (Processed_Projects.Last) := Project;
 
-         if Data.Object_Directory /= No_Name then
+         if Data.Object_Directory /= No_Path then
             declare
                Obj_Dir : constant String :=
                            Get_Name_String (Data.Object_Directory);
@@ -591,20 +592,20 @@ package body Cleangpr is
                      Source :=
                        Project_Tree.Sources.Table (Source_Id);
 
-                     if Source.Object /= No_Name and then
+                     if Source.Object /= No_File and then
                        Is_Regular_File
                          (Get_Name_String (Source.Object))
                      then
                         Delete (Obj_Dir, Get_Name_String (Source.Object));
                      end if;
 
-                     if Source.Dep_Name /= No_Name and then
+                     if Source.Dep_Name /= No_File and then
                        Is_Regular_File (Get_Name_String (Source.Dep_Name))
                      then
                         Delete (Obj_Dir, Get_Name_String (Source.Dep_Name));
                      end if;
 
-                     if Source.Switches /= No_Name and then
+                     if Source.Switches /= No_File and then
                        Is_Regular_File (Get_Name_String (Source.Switches))
                      then
                         Delete (Obj_Dir, Get_Name_String (Source.Switches));
@@ -643,16 +644,17 @@ package body Cleangpr is
             if not Compile_Only then
                Clean_Library_Directory (Project);
 
-               if Data.Library_Src_Dir /= No_Name then
+               if Data.Library_Src_Dir /= No_Path then
                   Clean_Interface_Copy_Directory (Project);
                end if;
             end if;
 
             if Data.Standalone_Library and then
-              Data.Object_Directory /= No_Name
+              Data.Object_Directory /= No_Path
             then
                Delete_Binder_Generated_Files
-                 (Get_Name_String (Data.Object_Directory), Data.Library_Name);
+                 (Get_Name_String (Data.Object_Directory),
+                  File_Name_Type (Data.Library_Name));
             end if;
          end if;
 
@@ -709,7 +711,7 @@ package body Cleangpr is
 
          --  The executables are deleted only if switch -c is not specified
 
-      if Project = Main_Project and then Data.Exec_Directory /= No_Name then
+      if Project = Main_Project and then Data.Exec_Directory /= No_Path then
          declare
             Exec_Dir : constant String :=
                          Get_Name_String (Data.Exec_Directory);
@@ -746,7 +748,7 @@ package body Cleangpr is
                   end;
                end if;
 
-               if Data.Object_Directory /= No_Name then
+               if Data.Object_Directory /= No_Path then
                   Delete_Binder_Generated_Files
                     (Get_Name_String
                        (Data.Object_Directory),
@@ -823,7 +825,10 @@ package body Cleangpr is
    -- Delete_Binder_Generated_Files --
    -----------------------------------
 
-   procedure Delete_Binder_Generated_Files (Dir : String; Source : Name_Id) is
+   procedure Delete_Binder_Generated_Files
+     (Dir    : String;
+      Source : File_Name_Type)
+   is
       Source_Name : constant String := Get_Name_String (Source);
       Current     : constant String := Get_Current_Dir;
       Last        : constant Positive := 3 + Source_Name'Length;

@@ -35,7 +35,6 @@ with Prj;      use Prj;
 with Prj.Ext;  use Prj.Ext;
 with Prj.Pars;
 with Snames;   use Snames;
-with Types;    use Types;
 
 with GNAT.OS_Lib;      use GNAT.OS_Lib;
 
@@ -64,9 +63,9 @@ package body Confgpr is
       List    : Project_List;
       Element : Project_Element;
 
-      Dot_Replacement : Name_Id     := No_Name;
-      Casing          : Casing_Type := All_Lower_Case;
-      Separate_Suffix : Name_Id     := No_Name;
+      Dot_Replacement : File_Name_Type := No_File;
+      Casing          : Casing_Type    := All_Lower_Case;
+      Separate_Suffix : File_Name_Type := No_File;
 
       OK : Boolean := False;
       --  True if configuration if configuration has been successfully checked
@@ -208,14 +207,16 @@ package body Confgpr is
                      --  Attribute Default_Linker: the linker to use when
                      --  attribute Linker is not specified.
 
-                     Project_Tree.Default_Linker := Attribute.Value.Value;
+                     Project_Tree.Default_Linker :=
+                       Path_Name_Type (Attribute.Value.Value);
 
                   elsif Attribute.Name = Name_Library_Builder then
 
                      --  Attribute Library_Builder: the application to invoke
                      --  to build libraries.
 
-                     Project_Tree.Library_Builder := Attribute.Value.Value;
+                     Project_Tree.Library_Builder :=
+                       Path_Name_Type (Attribute.Value.Value);
 
                   elsif Attribute.Name = Name_Archive_Builder then
 
@@ -268,7 +269,8 @@ package body Confgpr is
                           From_List => List);
 
                   elsif Attribute.Name = Name_Archive_Suffix then
-                     Project_Tree.Archive_Suffix := Attribute.Value.Value;
+                     Project_Tree.Archive_Suffix :=
+                       File_Name_Type (Attribute.Value.Value);
 
                   elsif Attribute.Name = Name_Linker_Executable_Option then
 
@@ -349,10 +351,12 @@ package body Confgpr is
                      end;
 
                   elsif Attribute.Name = Name_Shared_Library_Prefix then
-                     Project_Tree.Shared_Lib_Prefix := Attribute.Value.Value;
+                     Project_Tree.Shared_Lib_Prefix :=
+                       File_Name_Type (Attribute.Value.Value);
 
                   elsif Attribute.Name = Name_Shared_Library_Suffix then
-                     Project_Tree.Shared_Lib_Suffix := Attribute.Value.Value;
+                     Project_Tree.Shared_Lib_Suffix :=
+                       File_Name_Type (Attribute.Value.Value);
 
                   elsif Attribute.Name = Name_Symbolic_Link_Supported then
                      declare
@@ -495,7 +499,7 @@ package body Confgpr is
 
                      Project_Tree.Languages_Data.Table
                        (Current_Language_Index).Config.Binder_Driver :=
-                       Element.Value.Value;
+                       File_Name_Type (Element.Value.Value);
                      There_Are_Binder_Drivers := True;
 
                   when Name_Minimum_Binder_Options =>
@@ -524,7 +528,7 @@ package body Confgpr is
 
                      Project_Tree.Languages_Data.Table
                        (Current_Language_Index).Config.Compiler_Driver :=
-                       Element.Value.Value;
+                       File_Name_Type (Element.Value.Value);
 
                   when Name_Compiler_Minimum_Options =>
 
@@ -580,7 +584,7 @@ package body Confgpr is
 
                      Project_Tree.Languages_Data.Table
                        (Current_Language_Index).Config.Mapping_Spec_Suffix :=
-                       Element.Value.Value;
+                       File_Name_Type (Element.Value.Value);
 
                   when Name_Mapping_Body_Suffix =>
 
@@ -588,7 +592,7 @@ package body Confgpr is
 
                      Project_Tree.Languages_Data.Table
                        (Current_Language_Index).Config.Mapping_Body_Suffix :=
-                       Element.Value.Value;
+                       File_Name_Type (Element.Value.Value);
 
                   when Name_Config_File_Switches =>
 
@@ -744,7 +748,9 @@ package body Confgpr is
                      --  Attribute Runtime_Project (<language>)
 
                      declare
-                        Runtime_Project_Path : Name_Id := Element.Value.Value;
+                        Runtime_Project_Path : Path_Name_Type :=
+                                                 Path_Name_Type
+                                                   (Element.Value.Value);
 
                      begin
                         Get_Name_String (Runtime_Project_Path);
@@ -822,7 +828,7 @@ package body Confgpr is
 
                      --  Attribute Separate_Suffix
 
-                     Separate_Suffix := Attribute.Value.Value;
+                     Separate_Suffix := File_Name_Type (Attribute.Value.Value);
 
                   elsif Attribute.Name = Name_Casing then
 
@@ -843,7 +849,7 @@ package body Confgpr is
 
                      --  Attribute Dot_Replacement
 
-                     Dot_Replacement := Attribute.Value.Value;
+                     Dot_Replacement := File_Name_Type (Attribute.Value.Value);
 
                   end if;
                end if;
@@ -880,7 +886,7 @@ package body Confgpr is
                         Project_Tree.Languages_Data.Table
                           (Current_Language_Index).Config.
                           Naming_Data.Spec_Suffix :=
-                            Element.Value.Value;
+                            File_Name_Type (Element.Value.Value);
 
                      when Name_Implementation_Suffix | Name_Body_Suffix =>
 
@@ -889,12 +895,12 @@ package body Confgpr is
                         Project_Tree.Languages_Data.Table
                           (Current_Language_Index).Config.
                           Naming_Data.Body_Suffix :=
-                            Element.Value.Value;
+                            File_Name_Type (Element.Value.Value);
 
                         Project_Tree.Languages_Data.Table
                           (Current_Language_Index).Config.
                           Naming_Data.Separate_Suffix :=
-                            Element.Value.Value;
+                            File_Name_Type (Element.Value.Value);
 
                      when others =>
                         null;
@@ -1035,7 +1041,7 @@ package body Confgpr is
               (Current_Language_Index).Config.Naming_Data.Dot_Replacement :=
               Dot_Replacement;
 
-            if Separate_Suffix /= No_Name then
+            if Separate_Suffix /= No_File then
                Project_Tree.Languages_Data.Table
                  (Current_Language_Index).Config.Naming_Data.Separate_Suffix :=
                  Separate_Suffix;
@@ -1057,16 +1063,16 @@ package body Confgpr is
       --  Give empty names to various prefixes/suffixes, if they have not
       --  been specified in the configuration.
 
-      if Project_Tree.Archive_Suffix = No_Name then
-         Project_Tree.Archive_Suffix := Empty_String;
+      if Project_Tree.Archive_Suffix = No_File then
+         Project_Tree.Archive_Suffix := Empty_File;
       end if;
 
-      if Project_Tree.Shared_Lib_Prefix = No_Name then
-         Project_Tree.Shared_Lib_Prefix := Empty_String;
+      if Project_Tree.Shared_Lib_Prefix = No_File then
+         Project_Tree.Shared_Lib_Prefix := Empty_File;
       end if;
 
-      if Project_Tree.Shared_Lib_Suffix = No_Name then
-         Project_Tree.Shared_Lib_Suffix := Empty_String;
+      if Project_Tree.Shared_Lib_Suffix = No_File then
+         Project_Tree.Shared_Lib_Suffix := Empty_File;
       end if;
 
       if OK then
@@ -1081,17 +1087,17 @@ package body Confgpr is
                --  For unit based languages, Dot_Replacement, Spec_Suffix and
                --  Body_Suffix need to be specified.
 
-               if Lang_Data.Config.Naming_Data.Dot_Replacement = No_Name then
+               if Lang_Data.Config.Naming_Data.Dot_Replacement = No_File then
                   Report_Failure
                     ("Dot_Replacement not specified for ", Current_Language);
                end if;
 
-               if Lang_Data.Config.Naming_Data.Spec_Suffix = No_Name then
+               if Lang_Data.Config.Naming_Data.Spec_Suffix = No_File then
                   Report_Failure
                     ("Spec_Suffix not specified for ", Current_Language);
                end if;
 
-               if Lang_Data.Config.Naming_Data.Body_Suffix = No_Name then
+               if Lang_Data.Config.Naming_Data.Body_Suffix = No_File then
                   Report_Failure
                     ("Body_Suffix not specified for ", Current_Language);
                end if;
@@ -1100,8 +1106,8 @@ package body Confgpr is
                --  For file based languages, either Spec_Suffix or Body_Suffix
                --  need to be specified.
 
-               if Lang_Data.Config.Naming_Data.Spec_Suffix = No_Name and then
-                 Lang_Data.Config.Naming_Data.Body_Suffix = No_Name
+               if Lang_Data.Config.Naming_Data.Spec_Suffix = No_File and then
+                 Lang_Data.Config.Naming_Data.Body_Suffix = No_File
                then
                   Report_Failure
                     ("no suffixes specified for ", Current_Language);
@@ -1110,7 +1116,7 @@ package body Confgpr is
 
             --  For all languages, Compiler_Driver needs to be specified
 
-            if Lang_Data.Config.Compiler_Driver = No_Name then
+            if Lang_Data.Config.Compiler_Driver = No_File then
                Report_Failure
                  ("no compiler specified for ", Current_Language);
             end if;
