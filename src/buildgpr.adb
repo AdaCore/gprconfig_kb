@@ -94,6 +94,8 @@ package body Buildgpr is
    Project_File_Name_Expected : Boolean := False;
    --  True when last switch was -P
 
+   Recursive : Boolean := False;
+
    Naming_String                : aliased String := "naming";
    Language_Processing_String   : aliased String := "language_processing";
    Builder_String               : aliased String := "builder";
@@ -137,8 +139,7 @@ package body Buildgpr is
 
    package Options is
       type Option_Type is
-        (Create_Mapping_File_Option,
-         Force_Compilations_Option,
+        (Force_Compilations_Option,
          Keep_Going_Option,
          Maximum_Processes_Option,
          Quiet_Output_Option,
@@ -151,12 +152,6 @@ package body Buildgpr is
       All_Phases   : Boolean := True;
       --  True when all phases (compilation, binding and linking) are to be
       --  performed.
-
-      Unique_Compile : Boolean := False;
-      --  True when switch -u is used on the command line
-
-      Unique_Compile_All_Projects : Boolean := False;
-      --  Set to True if -U is used
 
       procedure Register_Command_Line_Option
         (Option : Option_Type; Value : Natural := 0);
@@ -4390,12 +4385,10 @@ package body Buildgpr is
                   end if;
                end if;
 
-               --  If mapping files should be used and the compiler supports
-               --  mapping files, add the necessary switch.
+               --  If the compiler supports mapping files, add the necessary
+               --  switch.
 
-               if Create_Mapping_File and then
-                 Config.Mapping_File_Switches /= No_Name_List
-               then
+               if Config.Mapping_File_Switches /= No_Name_List then
                   Mapping_File_Path :=
                     Mapping_Files_Htable.Get_First
                       (Project_Tree.Languages_Data.Table
@@ -5746,25 +5739,20 @@ package body Buildgpr is
 
       Queue.Init;
 
-      --  Compile all sources: no main and switch -U or -u
-
-      if Unique_Compile_All_Projects or else
-        (Unique_Compile and then Mains.Number_Of_Mains = 0)
+      if Mains.Number_Of_Mains = 0 and then
+        (not All_Phases) and then
+        Compile_Only and then
+        (not Bind_Only)
       then
-      --  Check if mains were specified on the command line with -U
-
-         if Mains.Number_Of_Mains /= 0 then
-            Fail_Program ("no mains can be specified with option -U");
-         end if;
-
          Queue.Insert_Project_Sources
-           (Main_Project, All_Projects => Unique_Compile_All_Projects);
+           (Main_Project, All_Projects => Recursive);
 
          Compilation_Phase;
 
-      --  Unique compile: switch -u with mains specified
-
-      elsif Unique_Compile then
+      elsif Mains.Number_Of_Mains /= 0 and then
+        (not All_Phases) and then
+        Compile_Only
+      then
          Check_Mains;
 
          Mains.Reset;
@@ -5800,6 +5788,7 @@ package body Buildgpr is
                end if;
             end;
          end loop;
+
       else
          Get_Mains;
 
@@ -5974,45 +5963,78 @@ package body Buildgpr is
          Fail_Program ("output file name missing after -o");
       end if;
 
-      --  If no project file was specified, display the usage and exit
+      --  If no project file was specified, look first for a default
+
+      if Project_File_Name = null then
+         if Is_Regular_File (Default_Project_File_Name) then
+            Project_File_Name := new String'(Default_Project_File_Name);
+
+         else
+            --  Check if there is a single project file in the current
+            --  directory. If there is one and only one, use it.
+
+            declare
+               Dir : Dir_Type;
+               Str : String (1 .. 255);
+               Last : Natural;
+               Single : String_Access := null;
+
+            begin
+               Open (Dir, ".");
+
+               loop
+                  Read (Dir, Str, Last);
+                  exit when Last = 0;
+
+                  if Last > Project_File_Extension'Length and then
+                    Is_Regular_File (Str (1 .. Last))
+                  then
+                     Canonical_Case_File_Name (Str (1 .. Last));
+
+                     if Str (Last - Project_File_Extension'Length + 1 .. Last)
+                       = Project_File_Extension
+                     then
+                        if Single = null then
+                           Single := new String'(Str (1 .. Last));
+
+                        else
+                           --  There are several project files in the current
+                           --  directory. Reset Single to null and exit.
+
+                           Single := null;
+                           exit;
+                        end if;
+                     end if;
+                  end if;
+               end loop;
+
+               Close (Dir);
+
+               Project_File_Name := Single;
+            end;
+         end if;
+
+         if (not Quiet_Output) and then Project_File_Name /= null then
+            Write_Str ("using project file ");
+            Write_Line (Project_File_Name.all);
+         end if;
+      end if;
 
       if Project_File_Name = null then
          Usage;
          Exit_Program (E_Success);
       end if;
 
-      --  Get the config path, if it has not been given on the command line
-
-      if Config_Path = null then
-         --  First from the environment variable
-
-         Config_Path := Getenv (Config_Path_Env_Var);
-
-         --  Then from the prefix, if gprbuild is in a <prefix>/bin directory
-
-         if Config_Path.all = "" then
-            declare
-               Prefix_Path : constant String := Executable_Prefix_Path;
-
-            begin
-               if Prefix_Path'Length /= 0 then
-                  Config_Path :=
-                    new String'(Prefix_Path & Directory_Separator &
-                                "share" & Directory_Separator & "gpr");
-
-               else
-                  Fail_Program ("no config project path available");
-               end if;
-            end;
-         end if;
-      end if;
-
       --  Name of the config project file defaults if it is not specified
       --  on the command line.
 
       if Config_Project_File_Name = null then
-         Config_Project_File_Name :=
-           new String'(Default_Config_Project_File_Name);
+         Config_Project_File_Name := Getenv (Config_Project_Env_Var);
+
+         if Config_Project_File_Name'Length = 0 then
+            Config_Project_File_Name :=
+              new String'(Default_Config_Project_File_Name);
+         end if;
       end if;
 
    end Initialize;
@@ -7250,9 +7272,6 @@ package body Buildgpr is
       begin
          for Index in 1 .. Command_Line_Options.Last loop
             case Command_Line_Options.Table (Index).Option is
-               when Create_Mapping_File_Option =>
-                  Create_Mapping_File := True;
-
                when Force_Compilations_Option =>
                   Force_Compilations := True;
 
@@ -7625,26 +7644,11 @@ package body Buildgpr is
 
          if Arg (1) = '-' then
 
-            if Command_Line and then Arg'Length > Config_Path_Option'Length
+            if Command_Line
               and then
-                Arg (1 .. Config_Path_Option'Length) = Config_Path_Option
-            then
-               if Config_Path /= null then
-                  Fail_Program
-                    (Config_Path_Option,
-                     "cannot be specified several times");
-
-               else
-                  Config_Path :=
-                    new String'
-                      (Arg (Config_Path_Option'Length + 1 .. Arg'Last));
-               end if;
-
-            elsif Command_Line
+               Arg'Length > Config_Project_Option'Length
               and then
-            Arg'Length > Config_Project_Option'Length
-              and then
-            Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
+               Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
             then
                if Config_Project_File_Name /= null then
                   Fail_Program
@@ -7664,7 +7668,7 @@ package body Buildgpr is
                Add_Search_Project_Directory (Arg (4 .. Arg'Last));
 
             elsif Command_Line and then Arg = "-b" then
-               Bind_Only  := not Unique_Compile;
+               Bind_Only  := True;
                All_Phases := False;
 
             elsif Command_Line and then Arg = "-c" then
@@ -7672,22 +7676,13 @@ package body Buildgpr is
                All_Phases   := False;
 
                if Link_Only then
-                  Bind_Only := not Unique_Compile;
-               end if;
-
-               --  Make sure that when a main is specified and switch -c is
-               --  used, only the main(s) is/are compiled.
-
-               if Mains.Number_Of_Mains > 0 then
-                  Unique_Compile := True;
+                  Bind_Only := True;
                end if;
 
             elsif Arg = "-C" then
-               Create_Mapping_File := True;
+               --  This switch is only for upward compatibility
 
-               if Command_Line then
-                  Register_Command_Line_Option (Create_Mapping_File_Option);
-               end if;
+               null;
 
             elsif Command_Line and then Arg = "-d" then
                Display_Compilation_Progress := True;
@@ -7759,11 +7754,11 @@ package body Buildgpr is
                end if;
 
             elsif Command_Line and then Arg = "-l" then
-               Link_Only  := not Unique_Compile;
+               Link_Only  := True;
                All_Phases := False;
 
                if Compile_Only then
-                  Bind_Only := not Unique_Compile;
+                  Bind_Only := True;
                end if;
 
             elsif Command_Line and then Arg = "-o" then
@@ -7800,27 +7795,15 @@ package body Buildgpr is
                   Register_Command_Line_Option (Quiet_Output_Option);
                end if;
 
+            elsif Command_Line and then Arg = "-r" then
+               Recursive := True;
+
             elsif Arg = "-s" then
                Check_Switches := True;
 
                if Command_Line then
                   Register_Command_Line_Option (Check_Switches_Option);
                end if;
-
-            elsif Command_Line and then Arg = "-u" then
-               Unique_Compile := True;
-               Compile_Only   := True;
-               All_Phases     := False;
-               Bind_Only      := False;
-               Link_Only      := False;
-
-            elsif Command_Line and then Arg = "-U" then
-               Unique_Compile_All_Projects := True;
-               Unique_Compile := True;
-               Compile_Only   := True;
-               All_Phases     := False;
-               Bind_Only      := False;
-               Link_Only      := False;
 
             elsif Arg = "-v" then
                Verbose_Mode := True;
@@ -7884,16 +7867,33 @@ package body Buildgpr is
             end if;
 
          elsif Command_Line then
-            --  Not a switch: must be a main
+            --  The file name of a main or a project file
 
-            Mains.Add_Main (Arg);
+            declare
+               File_Name : String := Arg;
 
-            --  Make sure that when a main is specified and switch -c is used,
-            --  only the main(s) is/are compiled.
+            begin
+               Canonical_Case_File_Name (File_Name);
 
-            if Compile_Only then
-               Unique_Compile := True;
-            end if;
+               if File_Name'Length > Project_File_Extension'Length and then
+                 File_Name
+                   (File_Name'Last - Project_File_Extension'Length + 1
+                    .. File_Name'Last) = Project_File_Extension
+               then
+                  if Project_File_Name /= null then
+                     Fail_Program
+                       ("cannot have several project files specified");
+
+                  else
+                     Project_File_Name := new String'(File_Name);
+                  end if;
+
+               else
+                  --  Not a project file, then it is a main
+
+                  Mains.Add_Main (Arg);
+               end if;
+            end;
          end if;
 
          if not Processed then
@@ -7997,7 +7997,7 @@ package body Buildgpr is
 
          Write_Str ("Usage: ");
          Osint.Write_Program_Name;
-         Write_Str (" -P<project file> [opts]  [name]");
+         Write_Str (" [-P<proj>] [<proj>.gpr] [opts] [name]");
          Write_Eol;
          Write_Str ("    {[-cargs opts] [- cargs:lang pts] [-largs opts]" &
                     "[-gargs opts]}");
@@ -8012,20 +8012,11 @@ package body Buildgpr is
          Write_Str ("gprbuild switches:");
          Write_Eol;
 
-         --  Line for Config_Path_Option
-
-         Write_Str ("  ");
-         Write_Str (Config_Path_Option);
-         Write_Str ("<path>");
-         Write_Eol;
-         Write_Str ("           Specify the config path");
-         Write_Eol;
-
          --  Line for Config_Project_Option
 
          Write_Str ("  ");
          Write_Str (Config_Project_Option);
-         Write_Str ("<project name>");
+         Write_Str ("file.cgpr");
          Write_Eol;
          Write_Str ("           Specify the main config project file name");
          Write_Eol;
@@ -8045,11 +8036,6 @@ package body Buildgpr is
          Write_Str ("  -c       Compile only");
          Write_Eol;
 
-         --  Line for -C
-
-         Write_Str ("  -C       Cache source mappings: use mapping files");
-         Write_Eol;
-
          --  Line for -d
 
          Write_Str ("  -d       Display progress");
@@ -8057,7 +8043,7 @@ package body Buildgpr is
 
          --  Line for -eL
 
-         Write_Str ("   -eL     " &
+         Write_Str ("  -eL      " &
                     "Follow symbolic links when processing project files");
          Write_Eol;
 
@@ -8107,21 +8093,14 @@ package body Buildgpr is
          Write_Str ("  -q       Be quiet/terse");
          Write_Eol;
 
+         --  Line for -r
+
+         Write_Str ("  -r       Recursive (default except when using -c)");
+         Write_Eol;
+
          --  Line for -s
 
          Write_Str ("  -s       Recompile if compiler switches have changed");
-         Write_Eol;
-
-         --  Line for -u
-
-         Write_Str
-           ("  -u       Unique compilation. Only compile the given files");
-         Write_Eol;
-
-         --  Line for -U
-
-         Write_Str
-           ("  -U       Unique compilation for all sources of all projects");
          Write_Eol;
 
          --  Line for -v

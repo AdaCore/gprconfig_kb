@@ -922,29 +922,13 @@ package body Cleangpr is
          return;
       end if;
 
-      if Config_Path = null then
-         Config_Path := Getenv (Config_Path_Env_Var);
-
-         if Config_Path.all = "" then
-            declare
-               Prefix_Path : constant String := Executable_Prefix_Path;
-
-            begin
-               if Prefix_Path'Length /= 0 then
-                  Config_Path :=
-                    new String'(Prefix_Path & Directory_Separator &
-                                "share" & Directory_Separator & "gpr");
-
-               else
-                  Osint.Fail ("No configuration path");
-               end if;
-            end;
-         end if;
-      end if;
-
       if Config_Project_File_Name = null then
-         Config_Project_File_Name :=
-           new String'(Default_Config_Project_File_Name);
+         Config_Project_File_Name := Getenv (Config_Project_Env_Var);
+
+         if Config_Project_File_Name'Length = 0 then
+            Config_Project_File_Name :=
+              new String'(Default_Config_Project_File_Name);
+         end if;
       end if;
 
       Get_Configuration (Fail_If_Error => True);
@@ -1090,17 +1074,14 @@ package body Cleangpr is
 
                   case Arg (2) is
                      when '-' =>
-                        if Arg'Length > 14 and then
-                           Arg (1 .. 14) = "--config_path="
-                        then
-                           Config_Path :=
-                             new String'(Arg (15 .. Arg'Last));
-
-                        elsif Arg'Length > 17 and then
-                              Arg (1 .. 17) = "--config_project="
+                        if Arg'Length > Config_Project_Option'Length and then
+                          Arg (1 .. Config_Project_Option'Length) =
+                             Config_Project_Option
                         then
                            Config_Project_File_Name :=
-                             new String'(Arg (18 .. Arg'Last));
+                             new String'
+                               (Arg (Config_Project_Option'Length + 1 ..
+                                       Arg'Last));
 
                         else
                            Bad_Argument;
@@ -1227,7 +1208,34 @@ package body Cleangpr is
                   end case;
 
                else
-                  Mains.Add_Main (Arg);
+                  --  The file name of a main or a project file
+
+                  declare
+                     File_Name : String := Arg;
+
+                  begin
+                     Osint.Canonical_Case_File_Name (File_Name);
+
+                     if File_Name'Length > Project_File_Extension'Length
+                       and then
+                        File_Name
+                          (File_Name'Last - Project_File_Extension'Length + 1
+                           .. File_Name'Last) = Project_File_Extension
+                     then
+                        if Project_File_Name /= null then
+                           Osint.Fail
+                             ("cannot have several project files specified");
+
+                        else
+                           Project_File_Name := new String'(File_Name);
+                        end if;
+
+                     else
+                        --  Not a project file, then it is a main
+
+                        Mains.Add_Main (Arg);
+                     end if;
+                  end;
                end if;
             end if;
          end;
@@ -1273,6 +1281,9 @@ package body Cleangpr is
          Put_Line ("  {name} is zero or more file names");
          New_Line;
 
+         Put_Line ("  --config=<main config project file name>");
+         Put_Line ("           Specify the configuration project file name");
+         New_Line;
          Put_Line ("  -c       Only delete compiler generated files");
          Put_Line ("  -f       Force deletions of unwritable files");
          Put_Line ("  -F       Full project path name " &
@@ -1286,13 +1297,6 @@ package body Cleangpr is
          Put_Line ("  -vPx     Specify verbosity when parsing Project Files");
          Put_Line ("  -Xnm=val Specify an external reference " &
                                "for Project Files");
-         New_Line;
-
-         Put_Line ("  --config_path=<config project file path>");
-         Put_Line ("           Specify the configuration project path");
-         Put_Line ("  --config_project=<main config project file name>");
-         Put_Line ("           Specify the main configuration project " &
-                               "file name");
          New_Line;
       end if;
    end Usage;

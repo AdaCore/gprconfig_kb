@@ -32,7 +32,6 @@ with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
 with Prj;      use Prj;
-with Prj.Ext;  use Prj.Ext;
 with Prj.Pars;
 with Snames;   use Snames;
 
@@ -58,7 +57,7 @@ package body Confgpr is
 
    procedure Get_Configuration (Fail_If_Error : Boolean) is
       Configuration_Project_Path : String_Access;
-      Project_Path_Saved         : String_Access;
+      Config_Path : String_Access;
 
       List    : Project_List;
       Element : Project_Element;
@@ -97,7 +96,6 @@ package body Confgpr is
       procedure Cleanup is
       begin
          Set_In_Configuration (False);
-         Setenv (Gpr_Project_Path, Project_Path_Saved.all);
 
          --  Remove all configuration projects from the project tree
 
@@ -963,6 +961,19 @@ package body Confgpr is
    begin
       There_Are_Runtime_Projects := False;
 
+      declare
+         Prefix_Path : constant String := Executable_Prefix_Path;
+
+      begin
+         if Prefix_Path'Length /= 0 then
+            Config_Path :=
+              new String'("." & Path_Separator &
+                          Prefix_Path & Directory_Separator &
+                          "share" & Directory_Separator & "gpr");
+         else
+            Config_Path := new String'(".");
+         end if;
+      end;
       --  Locate main configuration project file
 
       Configuration_Project_Path :=
@@ -982,10 +993,8 @@ package body Confgpr is
          end if;
       end if;
 
-      --  Set the project file path and parse the configuration project tree
+      --  Parse the configuration project tree
 
-      Project_Path_Saved := Getenv (Gpr_Project_Path);
-      Setenv (Gpr_Project_Path, Config_Path.all);
       Set_In_Configuration (True);
       Prj.Initialize (Project_Tree);
 
