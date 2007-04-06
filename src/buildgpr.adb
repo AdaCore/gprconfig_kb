@@ -5177,6 +5177,8 @@ package body Buildgpr is
    procedure Fail_Program (S1 : String; S2 : String := ""; S3 : String := "")
    is
    begin
+      Errout.Finalize;
+      Errout.Output_Messages;
       Finish_Program (Fatal => True, S1 => S1, S2 => S2, S3 => S3);
    end Fail_Program;
 
