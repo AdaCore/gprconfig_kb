@@ -7,13 +7,9 @@ project Animals is
       for Default_Switches ("Ada") use ("-g", "-gnat05", "-gnatwA");
    end Compiler;
 
-package binder is
-   for Default_Switches ("Ada") use ("--RTS=sjlj");
-end binder;
-
---   package Linker is 
---      for Default_Switches ("Ada")  use ("-L/cygwin/lib/gcc/i686-pc-mingw32/3.4.4/", "-lstdc++");
---  end Linker;
+--package binder is
+--   for Default_Switches ("Ada") use ("--RTS=sjlj");
+--end binder;
 
    package Naming is
       for Specification_Suffix ("C++") use ".h";

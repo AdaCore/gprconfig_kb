@@ -14,6 +14,9 @@ work:
 	gcc -c -gnat05 $(RTS) b~main.adb
 	gcc  animals_c.oo  b~main.o animals.o main.o -o main$(EXT) $(LIBGNAT_DIR)/libgnat.a -static-libgcc
 
+work2:
+	gprmake -Panimals -largs --LINK=g++ $(CPP_OPT) -cargs:Ada --RTS=sjlj -cargs:C++ $(CPP_OPT)
+
 dont_work:
 	g++ -c $(CPP_OPT) animals_c.cc
 	gnatmake -c  $(RTS) main.adb -gnat05
@@ -23,4 +26,4 @@ dont_work:
 
 clean:
 	gnatclean main
-	$(RM) *~ *.o *.oo 
+	$(RM) *~ *.o *.oo *.TMP
