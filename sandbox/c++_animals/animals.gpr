@@ -7,10 +7,6 @@ project Animals is
       for Default_Switches ("Ada") use ("-g", "-gnat05", "-gnatwA");
    end Compiler;
 
---package binder is
---   for Default_Switches ("Ada") use ("--RTS=sjlj");
---end binder;
-
    package Naming is
       for Specification_Suffix ("C++") use ".h";
       for Implementation_Suffix ("C++") use ".cc";
