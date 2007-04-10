@@ -82,7 +82,7 @@ package body Confgpr is
       --  Read the packages of a configuration project
 
       procedure Put
-        (Into_List : out Name_List_Index;
+        (Into_List : in out Name_List_Index;
          From_List : String_List_Id);
       --  Append a name list to a string list
 
@@ -111,7 +111,7 @@ package body Confgpr is
       ---------
 
       procedure Put
-        (Into_List : out Name_List_Index;
+        (Into_List : in out Name_List_Index;
          From_List : String_List_Id)
       is
          Current_Name : Name_List_Index;
@@ -207,6 +207,16 @@ package body Confgpr is
 
                      Project_Tree.Default_Linker :=
                        Path_Name_Type (Attribute.Value.Value);
+
+                  elsif
+                    Attribute.Name = Name_Default_Minimum_Linker_Options
+                  then
+
+                     --  Attribute Default_Minimum_Linker_Options: the minimum
+                     --  options to use when invoking the default linker
+
+                     Put (Into_List => Project_Tree.Minimum_Linker_Options,
+                          From_List => Attribute.Value.Values);
 
                   elsif Attribute.Name = Name_Library_Builder then
 
@@ -528,9 +538,9 @@ package body Confgpr is
                        (Current_Language_Index).Config.Compiler_Driver :=
                        File_Name_Type (Element.Value.Value);
 
-                  when Name_Compiler_Minimum_Options =>
+                  when Name_Minimum_Compiler_Options =>
 
-                     --  Attribute Compiler_Minimum_Options (<language>)
+                     --  Attribute Minimum_Compiler_Options (<language>)
 
                      List := Element.Value.Values;
 
