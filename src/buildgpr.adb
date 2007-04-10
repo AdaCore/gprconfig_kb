@@ -6169,6 +6169,7 @@ package body Buildgpr is
    procedure Linking_Phase is
       Linker_Name        : String_Access := null;
       Linker_Path        : String_Access;
+      Min_Linker_Opts    : Name_List_Index;
       Exchange_File      : Ada.Text_IO.File_Type;
       Line               : String (1 .. 1_000);
       Last               : Natural;
@@ -6199,7 +6200,6 @@ package body Buildgpr is
             Main_Id        : File_Name_Type;
             Main_Source_Id : Source_Id;
             Main_Source    : Source_Data;
-            Config         : Language_Config;
 
             Exec_Name      : File_Name_Type;
             Exec_Path_Name : Path_Name_Type;
@@ -6272,6 +6272,11 @@ package body Buildgpr is
 
                if Linker_Path = null then
                   Fail_Program ("unable to find linker ", Linker_Name.all);
+
+               else
+                  Data.Linker_Path :=
+                    Path_Name_Type'(Create_Name (Linker_Path.all));
+                  Project_Tree.Projects.Table (Main_Source.Project) := Data;
                end if;
 
             elsif Project_Tree.Default_Linker /= No_Path then
@@ -6285,30 +6290,30 @@ package body Buildgpr is
                end if;
 
             else
-               Config :=
-                 Project_Tree.Languages_Data.Table
-                   (Main_Source.Language).Config;
-               Linker_Name :=
-                 new String'(Get_Name_String (Config.Compiler_Driver));
-
-               if Config.Compiler_Driver_Path /= null then
-                  Linker_Path := Config.Compiler_Driver_Path;
-
-               else
-                  Linker_Path := Locate_Exec_On_Path (Linker_Name.all);
-
-                  if Linker_Path = null then
-                     Fail_Program ("unable to find linker ", Linker_Name.all);
-
-                  else
-                     Project_Tree.Languages_Data.Table
-                       (Main_Source.Language).Config.Compiler_Driver_Path :=
-                       Linker_Path;
-                  end if;
-               end if;
+               Fail_Program
+                 ("no linker specified and " &
+                  "no default linker in the configuration");
             end if;
 
             Last_Argument := 0;
+
+            --  First, the minimum options, if any
+
+            if Data.Linker_Name /= No_File then
+               Min_Linker_Opts := Data.Minimum_Linker_Options;
+
+            else
+               Min_Linker_Opts := Project_Tree.Minimum_Linker_Options;
+            end if;
+
+            while Min_Linker_Opts /= No_Name_List loop
+               Add_Argument
+                 (Get_Name_String
+                    (Project_Tree.Name_Lists.Table (Min_Linker_Opts).Name),
+                  True);
+               Min_Linker_Opts   :=
+                 Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
+            end loop;
 
             Main_Object_TS := File_Stamp (Main_Source.Object);
 
