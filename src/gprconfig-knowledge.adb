@@ -410,8 +410,20 @@ package body GprConfig.Knowledge is
          if N.Tag.all = "executable" then
             declare
                Prefix : constant String := Get_Attribute (N, "prefix", "@@");
+               Val    : constant String := N.Value.all;
+               Suffix : constant String := ".exe";
             begin
-               Compiler.Executable := To_Unbounded_String (N.Value.all);
+
+               --  ??? kludge to make it work on Windows. To be fixed.
+               if Directory_Separator = '\' -- on windows
+                 and then (Val'Length <= Suffix'Length
+                   or else Val (Val'Last - 3 .. Val'Last) /= Suffix)
+               then
+                  Compiler.Executable := To_Unbounded_String (Val & Suffix);
+               else
+                  Compiler.Executable := To_Unbounded_String (Val);
+               end if;
+
                Compiler.Prefix_Index := Integer'Value (Prefix);
                Compiler.Executable_Re := new Pattern_Matcher'
                  (Compile (To_String ("^" & Compiler.Executable & "$")));
@@ -1233,56 +1245,63 @@ package body GprConfig.Knowledge is
                return;
          end;
 
-         while More_Entries (Search) loop
-            Get_Next_Entry (Search, Dir);
-            C := First (Base.Compilers);
-            while Has_Element (C) loop
-               if Name = "" or else Key (C) = Name then
-                  declare
-                     Simple  : constant String := Simple_Name (Dir);
-                     Matches : Match_Array
-                       (0 .. Integer'Max (0, Element (C).Prefix_Index));
-                     Matched : Boolean;
-                     Prefix  : Unbounded_String;
-                  begin
-                     if Element (C).Executable_Re /= null then
-                        Match (Element (C).Executable_Re.all,
-                               Data       => Simple,
-                               Matches    => Matches);
-                        Matched := Matches (0) /= No_Match;
-                     else
-                        Matched := To_String (Element (C).Executable) =
-                          Simple_Name (Dir);
-                     end if;
-
-                     if Matched then
-                        Put_Verbose ("--------------------------------------");
-                        Put_Verbose
-                          ("Processing " & Key (C) & " in " & Directory);
-
-                        if Element (C).Executable_Re /= null
-                          and then Element (C).Prefix_Index >= 0
-                          and then Matches (Element (C).Prefix_Index) /=
-                             No_Match
-                        then
-                           Prefix := To_Unbounded_String
-                             (Simple (Matches (Element (C).Prefix_Index).First
-                                ..  Matches (Element (C).Prefix_Index).Last));
+         loop
+            begin
+               exit when not More_Entries (Search);
+               Get_Next_Entry (Search, Dir);
+               C := First (Base.Compilers);
+               while Has_Element (C) loop
+                  if Name = "" or else Key (C) = Name then
+                     declare
+                        Simple  : constant String := Simple_Name (Dir);
+                        Matches : Match_Array
+                          (0 .. Integer'Max (0, Element (C).Prefix_Index));
+                        Matched : Boolean;
+                        Prefix  : Unbounded_String;
+                     begin
+                        if Element (C).Executable_Re /= null then
+                           Match (Element (C).Executable_Re.all,
+                                  Data       => Simple,
+                                  Matches    => Matches);
+                           Matched := Matches (0) /= No_Match;
+                        else
+                           Matched := To_String (Element (C).Executable) =
+                             Simple_Name (Dir);
                         end if;
 
-                        For_Each_Language_Runtime
-                          (Append_To  => Append_To,
-                           Name       => Key (C),
-                           Executable => Simple,
-                           Directory  => Directory,
-                           Prefix     => To_String (Prefix),
-                           Descr      => Element (C),
-                           Path_Order => Path_Order);
-                     end if;
-                  end;
-               end if;
-               Next (C);
-            end loop;
+                        if Matched then
+                           Put_Verbose ("---------------------------------");
+                           Put_Verbose
+                             ("Processing " & Key (C) & " in " & Directory);
+
+                           if Element (C).Executable_Re /= null
+                             and then Element (C).Prefix_Index >= 0
+                             and then Matches (Element (C).Prefix_Index) /=
+                             No_Match
+                           then
+                              Prefix := To_Unbounded_String
+                                (Simple (Matches
+                                 (Element (C).Prefix_Index).First
+                                 ..  Matches (Element (C).Prefix_Index).Last));
+                           end if;
+
+                           For_Each_Language_Runtime
+                             (Append_To  => Append_To,
+                              Name       => Key (C),
+                              Executable => Simple,
+                              Directory  => Directory,
+                              Prefix     => To_String (Prefix),
+                              Descr      => Element (C),
+                              Path_Order => Path_Order);
+                        end if;
+                     end;
+                  end if;
+                  Next (C);
+               end loop;
+            exception
+               when Ada.Directories.Name_Error =>
+                  null;
+            end;
          end loop;
 
       else
