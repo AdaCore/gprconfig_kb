@@ -28,16 +28,33 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" /> 
+       <compiler name="GCC" language="C" />
      </compilers>
      <targets negate="true">
        <target name=".*LynxOS.*" />
        <target name=".*pentium-mingw.*" />
+       <target name=".*cygwin.*" />
        <target name=".*dec-osf.*" />
      </targets>
      <config>
    package Language_Processing is
       for Compiler_PIC_Option      ("C") use ("-fPIC");
+   end Language_Processing;
+     </config>
+   </configuration>
+
+  <!-- for cygwin we make sure that the option -mno-cygwin is used -->
+   <configuration>
+     <compilers>
+       <compiler name="GCC" language="C" />
+     </compilers>
+     <targets>
+     <target name=".*cygwin.*" />
+     </targets>
+     <config>
+   package Language_Processing is
+      for Minimum_Compiler_Options ("C") use
+        Language_Processing'Minimum_Compiler_Options ("C") &amp; ("-mno-cygwin");
    end Language_Processing;
      </config>
    </configuration>
