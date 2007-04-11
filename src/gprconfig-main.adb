@@ -20,7 +20,7 @@ procedure GprConfig.Main is
    --  Name of the gprbuild executable. This is searched for on PATH, and used
    --  to find out the default location for the output file
 
-   Default_Output_File : constant String := "standard.gpr";
+   Default_Output_File : constant String := "default.cgpr";
    --  Name of the configuration file used by gprbuild by default
 
    Output_File : Unbounded_String;

@@ -180,4 +180,39 @@
    end Language_Processing;
     </config>
   </configuration>
+
+  <!--  use C++ to link if it is used, otherwise Ada otherwise C    -->
+  <!-- ??? we have been obliged to use the "name" filter instead of -->
+  <!-- the "language" one which would give a better default rule    -->
+ 
+  <configuration>
+    <compilers><compiler name="G++" /></compilers>
+    <config>
+   package Language_Processing is
+      for Default_Linker use Language_Processing'Compiler_Driver ("C++");
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <configuration>
+    <compilers negate="true"><compiler name="G++" /></compilers>
+    <compilers><compiler name="GNAT" /></compilers>
+    <config>
+   package Language_Processing is
+      for Default_Linker use Language_Processing'Compiler_Driver ("Ada");
+   end Language_Processing;
+    </config>
+  </configuration>
+  <configuration>
+    <compilers negate="true">
+      <compiler name="G++" />
+      <compiler name="GNAT" />
+    </compilers>
+    <compilers><compiler name="GCC" /></compilers>
+    <config>
+   package Language_Processing is
+      for Default_Linker use Language_Processing'Compiler_Driver ("C");
+   end Language_Processing;
+    </config>
+  </configuration>
 </gprconfig>

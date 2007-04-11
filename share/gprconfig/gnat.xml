@@ -66,4 +66,39 @@
    end Language_Processing;
    </config>
   </configuration>
+
+  <!-- add the --RTS= arg to the compiler and binder for GNAT -->
+  <!-- ??? how do we generalize for any runtime? -->
+  <configuration>
+   <compilers>
+     <compiler name="GNAT" runtime="sjlj" />
+     <compiler name="GNAT" runtime="zfp" />
+     <compiler name="GNAT" runtime="zcx" />
+     <compiler name="GNAT" runtime="marte" />
+     <compiler name="GNAT" runtime="zfp" />
+     <compiler name="GNAT" runtime="raven" />
+     <compiler name="GNAT" runtime="soft-float" />
+   </compilers>
+   <config>
+   package Language_Processing is
+      for Minimum_Compiler_Options ("Ada") use 
+        Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("--RTS=$RUNTIME");
+      for Minimum_Binder_Options ("Ada") use 
+        Language_Processing'Minimum_Binder_Options ("Ada") &amp; ("--RTS=$RUNTIME");
+   end Language_Processing;
+   </config>
+  </configuration>
+
+  <!-- add commpiler option -msoft-float when the runtime is soft-float->
+  <configuration>
+   <compilers>
+     <compiler name="GNAT" runtime="soft-float" />
+   </compilers>
+   <config>
+   package Language_Processing is
+      for Minimum_Compiler_Options ("Ada") use 
+        Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("-msoft-float");
+   end Language_Processing;
+   </config>
+  </configuration>
 </gprconfig>
