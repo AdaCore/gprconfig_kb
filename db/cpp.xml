@@ -28,12 +28,13 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++" language="C\+\+" /> 
+       <compiler name="G++" language="C\+\+" />
      </compilers>
      <targets negate="true">
        <target name=".*LynxOS.*" />
        <target name=".*pentium-mingw.*" />
-       <target name=".*tru64.*" />
+       <target name=".*cygwin.*" />
+        <target name=".*tru64.*" />
      </targets>
      <config>
    package Language_Processing is
@@ -42,4 +43,21 @@
      </config>
    </configuration>
 
+   <!-- for cygwin we make sure that the option -mno-cygwin is used -->
+   <configuration>
+     <compilers>
+       <compiler name="G++" language="C\+\+" />
+     </compilers>
+     <targets>
+     <target name=".*cygwin.*" />
+     </targets>
+     <config>
+   package Language_Processing is
+      for Minimum_Compiler_Options ("C++") use
+        Language_Processing'Minimum_Compiler_Options ("C++") &amp; ("-mno-cygwin");
+      for Default_Minimum_Linker_Options use
+        Language_Processing'Minimum_Linker_Options &amp; ("-mno-cygwin");
+   end Language_Processing;
+     </config>
+   </configuration>
 </gprconfig>
