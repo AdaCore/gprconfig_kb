@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <gprconfig>
-   <!--  This package provides the default standard options for a gcc
-         C compiler -->
+   <!--  This package provides the default standard options for a g77
+         Fortran compiler -->
 
    <configuration>
      <compilers>
