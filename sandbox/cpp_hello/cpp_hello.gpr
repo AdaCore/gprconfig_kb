@@ -1,0 +1,17 @@
+project Cpp_hello is
+
+   for Source_Dirs use (".");
+   for Languages use ("C++");
+   for Main use ("cpp_hello.cc");
+
+   package Compiler is  
+      for Default_Switches ("Ada") use ("-g", "-gnat05", "-gnatwA");
+      for Default_Switches ("C++") use ("-mlongcall");
+   end Compiler;
+
+   package Naming is
+      for Specification_Suffix ("C++") use ".h";
+      for Implementation_Suffix ("C++") use ".cc";
+   end Naming;
+
+end Cpp_Hello;
