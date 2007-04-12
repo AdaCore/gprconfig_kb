@@ -45,7 +45,12 @@ procedure Gprbind is
    Executable_Suffix : constant String_Access := Get_Executable_Suffix;
    --  The suffix of executables on this platforms
 
-   GNATBIND : constant String := Osint.Program_Name ("gnatbind").all;
+   GNATBIND : String_Access := new String'("gnatbind");
+   --  The file name of the gnatbind executable. May be modified by an option
+   --  in the Minimum_Binder_Options.
+
+   Gnatbind_Prefix_Equal : constant String := "gnatbind_prefix=";
+   --  Start of the option to specify a prefix for the gnatbind executable.
 
    Quiet_Output : Boolean := False;
    Verbose_Mode : Boolean := False;
@@ -206,7 +211,28 @@ begin
                   ALI_Files_Table.Append (new String'(Line (1 .. Last)));
 
                when Binding_Options =>
-                  Binding_Options_Table.Append (new String'(Line (1 .. Last)));
+                  --  Check if a gnatbind prefix is specified
+
+                  if Last > Gnatbind_Prefix_Equal'Length
+                    and then Line (1 .. Gnatbind_Prefix_Equal'Length) =
+                             Gnatbind_Prefix_Equal
+                  then
+                     --  There is always a '-' between <prefix> and "gnatbind".
+                     --  Ad one if not already in <prefix>.
+
+                     if Line (Last) /= '-' then
+                        Last := Last + 1;
+                        Line (Last) := '-';
+                     end if;
+
+                     GNATBIND := new String'
+                       (Line (Gnatbind_Prefix_Equal'Length + 1 .. Last) &
+                        "gnatbind");
+
+                  else
+                     Binding_Options_Table.Append
+                                             (new String'(Line (1 .. Last)));
+                  end if;
 
                when Generated_Object_File |
                     Resulting_Options |
@@ -247,10 +273,10 @@ begin
          Last_Gnatbind_Option);
    end loop;
 
-   Gnatbind_Path := Locate_Exec_On_Path (GNATBIND);
+   Gnatbind_Path := Locate_Exec_On_Path (GNATBIND.all);
 
    if Gnatbind_Path = null then
-      Osint.Fail ("could not locate ", GNATBIND);
+      Osint.Fail ("could not locate ", GNATBIND.all);
    end if;
 
    if Main_ALI = null then
@@ -261,7 +287,7 @@ begin
       if Verbose_Mode then
          Put (Gnatbind_Path.all);
       else
-         Put (GNATBIND);
+         Put (GNATBIND.all);
       end if;
 
       if Verbose_Mode then
