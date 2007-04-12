@@ -5,7 +5,7 @@
 project Vx6_Ppc_Kernel is
    Wind_Base := external ("WIND_BASE");
    Wind_Gnu_Path := external ("WIND_GNU_PATH");
-   Wind_Diab_Path := external ("WIND_DIAB_PATH");
+--   Wind_Diab_Path := external ("WIND_DIAB_PATH");
    Wind_Host_Type := external ("WIND_HOST_TYPE");
 
    package Language_Processing is
@@ -13,7 +13,7 @@ project Vx6_Ppc_Kernel is
 --      for Compiler_Driver          ("C") use "dcc";
 --      for Compiler_Minimum_Options ("C") use ("-tPPC7400FV:vxworks64", "-c");
       for Compiler_Driver          ("C") use "powerpc-wrs-vxworks-gcc";
-      for Compiler_Minimum_Options ("C") use ("-x", "c", "-c");
+      for Minimum_Compiler_Options ("C") use ("-x", "c", "-c");
       for Dependency_File_Kind     ("C") use "Makefile";
       for Dependency_Option        ("C") use ("-Wp,-MD,");
       for Include_Path             ("C") use "CPATH";
@@ -21,7 +21,7 @@ project Vx6_Ppc_Kernel is
 
       for Language_Kind            ("Ada") use "unit_based";
       for Compiler_Driver          ("Ada") use "powerpc-wrs-vxworks-gcc";
-      for Compiler_Minimum_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
+      for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
       for Mapping_Body_Suffix      ("Ada") use "%b";
@@ -47,14 +47,18 @@ project Vx6_Ppc_Kernel is
       for Runtime_Project       ("Ada") use
           "/nfs/alexandria/alexandria.a/home/gingold/gprmake/ada_runtime.gpr";
       for Binder_Driver         ("Ada") use
-          "powerpc-wrs-vxworks-gprbind";
+          "/alexandria.a/home/gingold/local/libexec/gprbuild/powerpc-wrs-vxworks-gprbind";
       for Toolchain_Version     ("Ada") use "GNAT 6.0";
       for Compiler_PIC_Option      ("Ada") use ("-fPIC");
       for Default_Language use "Ada";
-      for Archive_Builder  use ("powerpc-wrs-vxworks-ar", "cr");
+      for Archive_Builder  use ("arppc", "cr");
       for Archive_Indexer  use ("powerpc-wrs-vxworks-ranlib");
       for Archive_Suffix   use ".a";
       for Library_Support  use "none";
+      for Default_Linker use Language_Processing'Compiler_Driver ("C");
+--	for Minimum_Default_Linker_Options use ("-v");
+--      for Minimum_Default_Linker_Options use ("powerpc-wrs-vxworks-gcc", "-nostdlib", "-Wl,-r", "-o");
+
    end Language_Processing;
    package Naming is
       for Spec_Suffix ("C") use ".h";
