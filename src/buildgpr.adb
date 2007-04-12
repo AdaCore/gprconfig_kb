@@ -1452,13 +1452,15 @@ package body Buildgpr is
 
             if Source.Language_Name = Language
               and then
-                Source.Unit /= No_Name
-              and then
-                (Source.Kind = Impl
+                (Config.Kind /= Unit_Based
                  or else
-                   Source.Other_Part = No_Source)
-              and then
-                (not Is_Subunit (Source))
+                   (Source.Unit /= No_Name
+                    and then
+                      (Source.Kind = Impl
+                       or else
+                         Source.Other_Part = No_Source)
+                    and then
+                      (not Is_Subunit (Source))))
               and then Is_Included_In_Global_Archive
                 (Source.Object, Source.Project)
             then
