@@ -1,0 +1,11 @@
+with "fm";
+project ft1 is
+   for Languages use ("Fortran");
+   for Main use ("ess.f");
+
+   package Naming is
+      for Specification_Suffix ("fortran") use ".f";
+   end Naming;
+
+end ft1;
+
