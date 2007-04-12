@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<gprconfig>
+   <!--  This package provides the default standard options for a gcc
+         C compiler -->
+
+   <configuration>
+     <compilers>
+       <compiler name="G77" language="Fortran" />
+     </compilers>
+     <config>
+   package Naming is
+      for Body_Suffix ("Fortran") use ".f";
+   end Naming;
+
+   package Language_Processing is
+      for Language_Kind            ("Fortran") use "file_based";
+      for Compiler_Driver          ("Fortran") use "g77";
+      for Minimum_Compiler_Options ("Fortran") use ("-c");
+      for Dependency_File_Kind     ("Fortran") use "Makefile";
+      for Dependency_Option        ("Fortran") use ("-Wp,-MD,");
+      for Include_Path             ("Fortran") use "CPATH";
+   end Language_Processing;
+     </config>
+   </configuration>
+
+   <!--  Additional switches needed on some platforms -->
+
+   <configuration>
+     <compilers>
+       <compiler name="G77" language="Fortran" />
+     </compilers>
+     <targets negate="true">
+       <target name=".*LynxOS.*" />
+       <target name=".*pentium-mingw.*" />
+       <target name=".*cygwin.*" />
+       <target name=".*dec-osf.*" />
+     </targets>
+     <config>
+   package Language_Processing is
+      for Compiler_PIC_Option      ("Fortran") use ("-fPIC");
+   end Language_Processing;
+     </config>
+   </configuration>
+
+  <!-- for cygwin we make sure that the option -mno-cygwin is used -->
+   <configuration>
+     <compilers>
+       <compiler name="G77" language="Fortran" />
+     </compilers>
+     <targets>
+     <target name=".*cygwin.*" />
+     </targets>
+     <config>
+   package Language_Processing is
+      for Minimum_Compiler_Options ("Fortran") use
+        Language_Processing'Minimum_Compiler_Options ("Fortran") &amp; ("-mno-cygwin");
+   end Language_Processing;
+     </config>
+   </configuration>
+
+</gprconfig>
