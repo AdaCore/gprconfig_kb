@@ -179,13 +179,14 @@ begin
                when Shared_Libs =>
                   Osint.Fail ("shared libs section should be empty");
 
-               when Generated_Source_File =>
+               when Gprexch.Main_Base_Name =>
                   if Binder_Generated_File /= null then
                      Osint.Fail
-                       ("binder generated file specified multiple times");
+                       ("main base name specified multiple times");
                   end if;
 
-                  Binder_Generated_File := new String'(Line (1 .. Last));
+                  Binder_Generated_File :=
+                    new String'("b__" & Line (1 .. Last) & ".adb");
 
                when Compiler_Path =>
                   if Ada_Compiler_Path /= null then
@@ -430,7 +431,7 @@ begin
 
       Create (IO_File, Out_File, Exchange_File_Name.all);
 
-      Put_Line (IO_File, Generated_Object_File_Label);
+      Put_Line (IO_File, Binding_Label (Generated_Object_File));
       Put_Line (IO_File, Object (Object'First .. Object_Last));
 
       --  Get the options from the binder generated file
@@ -441,7 +442,7 @@ begin
       end loop;
 
       if not End_Of_File (BG_File) then
-         Put_Line (IO_File, Resulting_Options_Label);
+         Put_Line (IO_File, Binding_Label (Resulting_Options));
 
          loop
             Get_Line (BG_File, Line, Last);
@@ -492,7 +493,7 @@ begin
       end if;
 
       if not Static_Libs then
-         Put_Line (IO_File, Run_Path_Option_Label);
+         Put_Line (IO_File, Binding_Label (Run_Path_Option));
          Put_Line (IO_File, Adalib_Dir.all);
          Name_Len := Adalib_Dir'Length;
          Name_Buffer (1 .. Name_Len) := Adalib_Dir.all;
