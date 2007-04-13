@@ -1540,10 +1540,10 @@ begin
          Osint.Fail ("could not create ", Exchange_File_Name.all);
    end;
 
-   Put_Line (IO_File, Library_Path_Label);
+   Put_Line (IO_File, Library_Label (Library_Path));
    Put_Line (IO_File, Library_Path_Name.all);
 
-   Put_Line (IO_File, Object_Files_Label);
+   Put_Line (IO_File, Library_Label (Gprexch.Object_Files));
 
    for Index in 1 .. Last_Object_File_Index loop
       Put_Line (IO_File, Object_Files.Table (Index).all);
