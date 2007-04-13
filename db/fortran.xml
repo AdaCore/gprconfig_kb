@@ -15,12 +15,9 @@
    package Language_Processing is
       for Language_Kind            ("Fortran") use "file_based";
       for Compiler_Driver          ("Fortran") use "g77";
-      for Minimum_Compiler_Options ("Fortran") use ("-c");
-      for Dependency_File_Kind     ("Fortran") use "Makefile";
-      for Dependency_Option        ("Fortran") use ("-Wp,-MD,");
+      for Minimum_Compiler_Options ("Fortran") use ("-c", "-fno-underscoring");
+      for Dependency_File_Kind     ("Fortran") use "none";
       for Include_Path             ("Fortran") use "CPATH";
-      for Minimum_Compiler_Options ("Fortran") use
-        Language_Processing'Minimum_Compiler_Options ("Fortran") &amp; ("-fno-underscoring");
    end Language_Processing;
      </config>
    </configuration>
