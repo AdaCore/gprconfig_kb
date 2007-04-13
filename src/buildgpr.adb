@@ -1740,7 +1740,8 @@ package body Buildgpr is
                   if not Binder_Driver_Needs_To_Be_Called then
                      Get_Line (Exchange_File, Line, Last);
 
-                     if Line (1 .. Last) /= Generated_Object_File_Label
+                     if Line (1 .. Last) /=
+                          Binding_Label (Generated_Object_File)
                        or else End_Of_File (Exchange_File)
                      then
                         Binder_Driver_Needs_To_Be_Called := True;
@@ -1839,20 +1840,21 @@ package body Buildgpr is
                      --  Quiet or Verbose
 
                      if Quiet_Output then
-                        Put_Line (Exchange_File, Quiet_Label);
+                        Put_Line (Exchange_File, Binding_Label (Quiet));
 
                      elsif Verbose_Mode then
-                        Put_Line (Exchange_File, Verbose_Label);
+                        Put_Line (Exchange_File, Binding_Label (Verbose));
                      end if;
 
                      if Shared_Libs then
-                        Put_Line (Exchange_File, Shared_Libs_Label);
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label (Gprexch.Shared_Libs));
                      end if;
 
                      --  First, the name of binder generated source file
 
                      Name_Len := 0;
-                     Add_Str_To_Name_Buffer ("b__");
                      Add_Str_To_Name_Buffer (Main);
 
                      for J in reverse 4 .. Name_Len loop
@@ -1862,20 +1864,21 @@ package body Buildgpr is
                         end if;
                      end loop;
 
-                     Add_Str_To_Name_Buffer (".adb");
-
-                     Put_Line (Exchange_File, Generated_Source_File_Label);
+                     Put_Line
+                       (Exchange_File, Binding_Label (Main_Base_Name));
                      Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
 
                      --  Then, the compiler path
 
-                     Put_Line (Exchange_File, Compiler_Path_Label);
+                     Put_Line
+                       (Exchange_File, Binding_Label (Gprexch.Compiler_Path));
                      Put_Line
                        (Exchange_File, Compiler_Path.all);
 
                      --  Followed by compiler options
 
-                     Put_Line (Exchange_File, Compiler_Options_Label);
+                     Put_Line
+                       (Exchange_File, Binding_Label (Compiler_Options));
 
                      while Compiler_Switch_List /= No_Name_List loop
                         Put_Line
@@ -1891,7 +1894,9 @@ package body Buildgpr is
                      --  Then, the Dependency files
 
                      if Main_Source.Unit /= No_Name then
-                        Put_Line (Exchange_File, Main_Dependency_File_Label);
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label (Main_Dependency_File));
                         Put_Line
                           (Exchange_File,
                            Get_Name_String (Main_Source.Dep_Path));
@@ -1904,7 +1909,8 @@ package body Buildgpr is
                      --  list.
 
                      if Main_Source.Unit = No_Name or else There_Are_Roots then
-                        Put_Line (Exchange_File, Dependency_Files_Label);
+                        Put_Line
+                          (Exchange_File, Binding_Label (Dependency_Files));
 
                         Add_Dependency_Files (Main_Proj);
 
@@ -1994,7 +2000,8 @@ package body Buildgpr is
                            Binder_Options.Last > 0
                         then
                            Put_Line
-                             (Exchange_File, Binding_Options_Label);
+                             (Exchange_File,
+                              Binding_Label (Gprexch.Binding_Options));
 
                            --  First, the minimum binder options, if any
 
@@ -2906,7 +2913,7 @@ package body Buildgpr is
 
          Get_Line (Exchange_File, Name_Buffer, Name_Len);
 
-         if Name_Buffer (1 .. Name_Len) /= Library_Path_Label then
+         if Name_Buffer (1 .. Name_Len) /= Library_Label (Library_Path) then
             Library_Needs_To_Be_Built := True;
             Close (Exchange_File);
 
@@ -2936,7 +2943,7 @@ package body Buildgpr is
 
          Get_Line (Exchange_File, Name_Buffer, Name_Len);
 
-         if Name_Buffer (1 .. Name_Len) /= Object_Files_Label then
+         if Name_Buffer (1 .. Name_Len) /= Library_Label (Object_Files) then
             Library_Needs_To_Be_Built := True;
 
             if Verbose_Mode then
@@ -3039,14 +3046,14 @@ package body Buildgpr is
          end;
 
          if Quiet_Output then
-            Put_Line (Exchange_File, Quiet_Label);
+            Put_Line (Exchange_File, Library_Label (Quiet));
 
          elsif Verbose_Mode then
-            Put_Line (Exchange_File, Verbose_Label);
+            Put_Line (Exchange_File, Library_Label (Verbose));
          end if;
 
          if Library_Objs.Last > 0 then
-            Put_Line (Exchange_File, Object_Files_Label);
+            Put_Line (Exchange_File, Library_Label (Object_Files));
 
             for J in 1 .. Library_Objs.Last loop
                Put_Line
@@ -3056,7 +3063,7 @@ package body Buildgpr is
          end if;
 
          if There_Are_Runtime_Projects then
-            Put_Line (Exchange_File, Runtime_Directory_Label);
+            Put_Line (Exchange_File, Library_Label (Runtime_Directory));
 
             declare
                Nam_Proj : Makeutl.Name_Project := Runtimes.Get_First;
@@ -3077,25 +3084,26 @@ package body Buildgpr is
             end;
          end if;
 
-         Put_Line (Exchange_File, Library_Name_Label);
+         Put_Line (Exchange_File, Library_Label (Library_Name));
          Put_Line (Exchange_File, Get_Name_String (Data.Library_Name));
 
          if Data.Lib_Internal_Name /= No_Name then
-            Put_Line (Exchange_File, Library_Version_Label);
+            Put_Line (Exchange_File, Library_Label (Library_Version));
             Put_Line (Exchange_File, Get_Name_String (Data.Lib_Internal_Name));
          end if;
 
-         Put_Line (Exchange_File, Library_Directory_Label);
+         Put_Line (Exchange_File, Library_Label (Library_Directory));
          Put_Line (Exchange_File, Get_Name_String (Data.Library_Dir));
 
          if Data.Library_ALI_Dir /= No_Path and then
            Data.Library_ALI_Dir /= Data.Library_Dir
          then
-            Put_Line (Exchange_File, Library_Dependency_Directory_Label);
+            Put_Line
+              (Exchange_File, Library_Label (Library_Dependency_Directory));
             Put_Line (Exchange_File, Get_Name_String (Data.Library_ALI_Dir));
          end if;
 
-         Put_Line (Exchange_File, Object_Directory_Label);
+         Put_Line (Exchange_File, Library_Label (Object_Directory));
          Put_Line (Exchange_File, Object_Directory_Path);
 
          if Data.Extends /= No_Project then
@@ -3115,9 +3123,9 @@ package body Buildgpr is
          end if;
 
          if Data.Library_Kind = Static then
-            Put_Line (Exchange_File, Static_Label);
+            Put_Line (Exchange_File, Library_Label (Static));
 
-            Put_Line (Exchange_File, Archive_Builder_Label);
+            Put_Line (Exchange_File, Library_Label (Archive_Builder));
             Put_Line (Exchange_File, Archive_Builder_Path.all);
 
             for J in 1 .. Archive_Builder_Opts.Last loop
@@ -3125,14 +3133,14 @@ package body Buildgpr is
             end loop;
 
             if Project_Tree.Archive_Suffix /= No_File then
-               Put_Line (Exchange_File, Archive_Suffix_Label);
+               Put_Line (Exchange_File, Library_Label (Archive_Suffix));
                Put_Line
                  (Exchange_File,
                   Get_Name_String (Project_Tree.Archive_Suffix));
             end if;
 
             if Archive_Indexer_Path /= null then
-               Put_Line (Exchange_File, Archive_Indexer_Label);
+               Put_Line (Exchange_File, Library_Label (Archive_Indexer));
                Put_Line (Exchange_File, Archive_Indexer_Path.all);
 
                for J in 1 .. Archive_Indexer_Opts.Last loop
@@ -3142,7 +3150,7 @@ package body Buildgpr is
             end if;
 
             if Project_Tree.Lib_Partial_Linker /= No_Name_List then
-               Put_Line (Exchange_File, Partial_Linker_Label);
+               Put_Line (Exchange_File, Library_Label (Partial_Linker));
 
                declare
                   List : Name_List_Index := Project_Tree.Lib_Partial_Linker;
@@ -3161,21 +3169,22 @@ package body Buildgpr is
 
          else
             if Project_Tree.Shared_Lib_Prefix /= No_File then
-               Put_Line (Exchange_File, Shared_Lib_Prefix_Label);
+               Put_Line (Exchange_File, Library_Label (Shared_Lib_Prefix));
                Put_Line
                  (Exchange_File,
                   Get_Name_String (Project_Tree.Shared_Lib_Prefix));
             end if;
 
             if Project_Tree.Shared_Lib_Suffix /= No_File then
-               Put_Line (Exchange_File, Shared_Lib_Suffix_Label);
+               Put_Line (Exchange_File, Library_Label (Shared_Lib_Suffix));
                Put_Line
                  (Exchange_File,
                   Get_Name_String (Project_Tree.Shared_Lib_Suffix));
             end if;
 
             if Project_Tree.Shared_Lib_Min_Options /= No_Name_List then
-               Put_Line (Exchange_File, Shared_Lib_Minimum_Options_Label);
+               Put_Line
+                 (Exchange_File, Library_Label (Shared_Lib_Minimum_Options));
                declare
                   List : Name_List_Index :=
                            Project_Tree.Shared_Lib_Min_Options;
@@ -3193,7 +3202,8 @@ package body Buildgpr is
             end if;
 
             if Project_Tree.Lib_Version_Options /= No_Name_List then
-               Put_Line (Exchange_File, Library_Version_Options_Label);
+               Put_Line
+                 (Exchange_File, Library_Label (Library_Version_Options));
                declare
                   List : Name_List_Index := Project_Tree.Lib_Version_Options;
                   Nam_Nod : Name_Node;
@@ -3210,22 +3220,24 @@ package body Buildgpr is
             end if;
 
             if Project_Tree.Symbolic_Link_Supported then
-               Put_Line (Exchange_File, Symbolic_Link_Supported_Label);
+               Put_Line
+                 (Exchange_File, Library_Label (Symbolic_Link_Supported));
             end if;
 
             if Project_Tree.Lib_Maj_Min_Id_Supported then
-               Put_Line (Exchange_File, Major_Minor_Id_Supported_Label);
+               Put_Line
+                 (Exchange_File, Library_Label (Major_Minor_Id_Supported));
             end if;
 
             Process_Imported_Libraries (For_Project);
 
             if Data.Library_Kind = Relocatable then
-               Put_Line (Exchange_File, Relocatable_Label);
+               Put_Line (Exchange_File, Library_Label (Relocatable));
             end if;
 
             if Data.Standalone_Library then
                if Data.Lib_Auto_Init then
-                  Put_Line (Exchange_File, Auto_Init_Label);
+                  Put_Line (Exchange_File, Library_Label (Auto_Init));
                end if;
 
                declare
@@ -3259,7 +3271,9 @@ package body Buildgpr is
                                 In_Tree   => Project_Tree);
 
                            if not Switches.Default then
-                              Put_Line (Exchange_File, Binding_Options_Label);
+                              Put_Line
+                                (Exchange_File,
+                                 Library_Label (Gprexch.Binding_Options));
                               Switch := Switches.Values;
 
                               while Switch /= Nil_String loop
@@ -3280,7 +3294,8 @@ package body Buildgpr is
             end if;
 
             if Project_Tree.Run_Path_Option /= No_Name_List then
-               Put_Line (Exchange_File, Run_Path_Option_Label);
+               Put_Line
+                 (Exchange_File, Library_Label (Gprexch.Run_Path_Option));
 
                declare
                   List : Name_List_Index := Project_Tree.Run_Path_Option;
@@ -3316,7 +3331,9 @@ package body Buildgpr is
 
                      if Name_Len /= 0 then
                         if Output_Label then
-                           Put_Line (Exchange_File, Library_Options_Label);
+                           Put_Line
+                             (Exchange_File,
+                              Library_Label (Gprexch.Library_Options));
                            Output_Label := False;
                         end if;
 
@@ -3332,7 +3349,7 @@ package body Buildgpr is
             --  file.
 
             if Library_Projs.Last > 0 then
-               Put_Line (Exchange_File, Imported_Libraries_Label);
+               Put_Line (Exchange_File, Library_Label (Imported_Libraries));
 
                for J in reverse 1 .. Library_Projs.Last loop
                   Put_Line
@@ -3349,7 +3366,7 @@ package body Buildgpr is
             end if;
          end if;
 
-         Put_Line (Exchange_File, Dependency_Files_Label);
+         Put_Line (Exchange_File, Library_Label (Dependency_Files));
 
          declare
             Current_Proj : Project_Id := For_Project;
@@ -3390,7 +3407,7 @@ package body Buildgpr is
 
             if Lang_Data.Config.Toolchain_Version /= No_Name then
                if not Toolchain_Version_Label_Written then
-                  Put_Line (Exchange_File, Toolchain_Version_Label);
+                  Put_Line (Exchange_File, Library_Label (Toolchain_Version));
                   Toolchain_Version_Label_Written := True;
                end if;
 
@@ -3405,7 +3422,7 @@ package body Buildgpr is
 
          if Data.Standalone_Library then
             if Data.Lib_Auto_Init then
-               Put_Line (Exchange_File, Auto_Init_Label);
+               Put_Line (Exchange_File, Library_Label (Auto_Init));
             end if;
 
             declare
@@ -3413,7 +3430,7 @@ package body Buildgpr is
                Element        : String_Element;
 
             begin
-               Put_Line (Exchange_File, Interface_Dep_Files_Label);
+               Put_Line (Exchange_File, Library_Label (Interface_Dep_Files));
 
                while Interface_ALIs /= Nil_String loop
                   Element :=
@@ -3424,11 +3441,11 @@ package body Buildgpr is
             end;
 
             if Data.Library_Src_Dir /= No_Path then
-               Put_Line (Exchange_File, Copy_Source_Dir_Label);
+               Put_Line (Exchange_File, Library_Label (Copy_Source_Dir));
                Put_Line
                  (Exchange_File, Get_Name_String (Data.Library_Src_Dir));
 
-               Put_Line (Exchange_File, Sources_Label);
+               Put_Line (Exchange_File, Library_Label (Sources));
 
                --  Copy the path of the sources
 
