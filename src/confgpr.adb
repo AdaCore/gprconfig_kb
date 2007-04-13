@@ -208,6 +208,13 @@ package body Confgpr is
                      Project_Tree.Default_Linker :=
                        Path_Name_Type (Attribute.Value.Value);
 
+                  elsif Attribute.Name = Name_Executable_Suffix then
+
+                     --  Attribute Executable_Suffix: the suffix of the
+                     --  executables.
+
+                     Project_Tree.Executable_Suffix := Attribute.Value.Value;
+
                   elsif
                     Attribute.Name = Name_Default_Minimum_Linker_Options
                   then
