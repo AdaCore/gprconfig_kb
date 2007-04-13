@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006, Free Software Foundation, Inc.            --
+--            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -24,10 +24,31 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Osint;
-pragma Elaborate_All (Osint);
-
 package body Gprexch is
+
+   type String_Ptr is access String;
+
+   Binding_Labels : array (Binding_Section) of String_Ptr;
+   --  The list of labels of the different section in a binder exchange file.
+   --  Populated in the package body.
+
+   Library_Labels : array (Library_Section) of String_Ptr;
+   --  The list of labels of the different section in a library exchange file.
+   --  Populated in the package body.
+
+   -------------------
+   -- Binding_Label --
+   -------------------
+
+   function Binding_Label (Section : Binding_Section) return String is
+   begin
+      if Binding_Labels (Section) = null then
+         return "";
+
+      else
+         return Binding_Labels (Section).all;
+      end if;
+   end Binding_Label;
 
    -------------------------
    -- Get_Binding_Section --
@@ -63,29 +84,45 @@ package body Gprexch is
       return No_Library_Section;
    end Get_Library_Section;
 
---  Package elaboration code (checks all labels start with square bracket)
+   -------------------
+   -- Library_Label --
+   -------------------
+
+   function Library_Label (Section : Library_Section) return String is
+   begin
+      if Library_Labels (Section) = null then
+         return "";
+
+      else
+         return Library_Labels (Section).all;
+      end if;
+   end Library_Label;
+
+--  Package elaboration code (build the lists of section labels)
 
 begin
    for J in Binding_Labels'Range loop
-      if Binding_Labels (J) /= null and then
-        Binding_Labels (J) (Binding_Labels (J)'First) /= '['
-      then
-         Osint.Fail
-           ("binding exchange section label """,
-            Binding_Labels (J).all,
-            """ does not start with a '['");
-      end if;
+      Binding_Labels (J) := new String'('[' & J'Img & ']');
+
+      for K in Binding_Labels (J)'Range loop
+         if Binding_Labels (J) (K) = '_' then
+            Binding_Labels (J) (K) := ' ';
+         end if;
+      end loop;
    end loop;
 
+   Binding_Labels (No_Binding_Section) := null;
+
    for J in Library_Labels'Range loop
-      if Library_Labels (J) /= null and then
-        Library_Labels (J) (Library_Labels (J)'First) /= '['
-      then
-         Osint.Fail
-           ("library exchange section label """,
-            Library_Labels (J).all,
-            """ does not start with a '['");
-      end if;
+      Library_Labels (J) := new String'('[' & J'Img & ']');
+
+      for K in Library_Labels (J)'Range loop
+         if Library_Labels (J) (K) = '_' then
+            Library_Labels (J) (K) := ' ';
+         end if;
+      end loop;
    end loop;
+
+   Library_Labels (No_Library_Section) := null;
 
 end Gprexch;
