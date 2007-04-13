@@ -19,6 +19,8 @@
       for Dependency_File_Kind     ("Fortran") use "Makefile";
       for Dependency_Option        ("Fortran") use ("-Wp,-MD,");
       for Include_Path             ("Fortran") use "CPATH";
+      for Minimum_Compiler_Options ("Fortran") use
+        Language_Processing'Minimum_Compiler_Options ("Fortran") &amp; ("-fno-underscoring");
    end Language_Processing;
      </config>
    </configuration>
@@ -54,6 +56,8 @@
    package Language_Processing is
       for Minimum_Compiler_Options ("Fortran") use
         Language_Processing'Minimum_Compiler_Options ("Fortran") &amp; ("-mno-cygwin");
+      for Default_Minimum_Linker_Options use
+        Language_Processing'Minimum_Linker_Options &amp; ("-mno-cygwin");
    end Language_Processing;
      </config>
    </configuration>

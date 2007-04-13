@@ -81,22 +81,22 @@
    </compilers>
    <config>
    package Language_Processing is
-      for Minimum_Compiler_Options ("Ada") use 
+      for Minimum_Compiler_Options ("Ada") use
         Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("--RTS=$RUNTIME");
-      for Minimum_Binder_Options ("Ada") use 
+      for Minimum_Binder_Options ("Ada") use
         Language_Processing'Minimum_Binder_Options ("Ada") &amp; ("--RTS=$RUNTIME");
    end Language_Processing;
    </config>
   </configuration>
 
-  <!-- add commpiler option -msoft-float when the runtime is soft-float->
+  <!-- add commpiler option -msoft-float when the runtime is soft-float -->
   <configuration>
    <compilers>
      <compiler name="GNAT" runtime="soft-float" />
    </compilers>
    <config>
    package Language_Processing is
-      for Minimum_Compiler_Options ("Ada") use 
+      for Minimum_Compiler_Options ("Ada") use
         Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("-msoft-float");
    end Language_Processing;
    </config>

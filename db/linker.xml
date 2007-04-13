@@ -181,10 +181,13 @@
     </config>
   </configuration>
 
-  <!--  use C++ to link if it is used, otherwise Ada otherwise C    -->
+  <!--  use C++,Fortran, Ada or C driver to link in this order      -->
   <!-- ??? we have been obliged to use the "name" filter instead of -->
   <!-- the "language" one which would give a better default rule    -->
- 
+  <!-- When GNAT is not used for linking, and the other compiler is -->
+  <!-- a different version of gcc, GNAT needs to be using a sjlj -->
+  <!-- runtime -->
+
   <configuration>
     <compilers><compiler name="G++" /></compilers>
     <config>
@@ -196,6 +199,19 @@
 
   <configuration>
     <compilers negate="true"><compiler name="G++" /></compilers>
+    <compilers><compiler name="G77" /></compilers>
+    <config>
+   package Language_Processing is
+      for Default_Linker use Language_Processing'Compiler_Driver ("Fortran");
+   end Language_Processing;
+    </config>
+  </configuration>
+
+  <configuration>
+    <compilers negate="true">
+      <compiler name="G++" />
+      <compiler name="G77" />
+    </compilers>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
    package Language_Processing is
@@ -206,6 +222,7 @@
   <configuration>
     <compilers negate="true">
       <compiler name="G++" />
+      <compiler name="G77" />
       <compiler name="GNAT" />
     </compilers>
     <compilers><compiler name="GCC" /></compilers>
