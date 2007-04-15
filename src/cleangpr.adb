@@ -27,6 +27,7 @@
 with Csets;
 with Confgpr;  use Confgpr;
 with Gnatvsn;  use Gnatvsn;
+with Gpr_Util; use Gpr_Util;
 with Makeutl;  use Makeutl;
 with Namet;    use Namet;
 with Opt;      use Opt;

@@ -26,6 +26,7 @@
 
 with Casing;   use Casing;
 with Errout;   use Errout;
+with Gpr_Util; use Gpr_Util;
 with Makeutl;  use Makeutl;
 with Namet;    use Namet;
 with Opt;      use Opt;
@@ -528,6 +529,14 @@ package body Confgpr is
                             (Current_Language_Index).Config.
                             Binder_Min_Options,
                           From_List => List);
+
+                  when Name_Binder_Prefix =>
+
+                     --  Attribute Binding_Prefix (<language>)
+
+                     Project_Tree.Languages_Data.Table
+                       (Current_Language_Index).Config.Binder_Prefix :=
+                       Element.Value.Value;
 
                   when Name_Compiler_Driver =>
 
