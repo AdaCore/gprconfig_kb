@@ -411,15 +411,12 @@ package body GprConfig.Knowledge is
             declare
                Prefix : constant String := Get_Attribute (N, "prefix", "@@");
                Val    : constant String := N.Value.all;
-               Exec_Suffix : GNAT.Strings.String_Access :=
-                 Get_Executable_Suffix;
             begin
-               Compiler.Executable :=
-                 To_Unbounded_String (Val & Exec_Suffix.all);
-               GNAT.Strings.Free (Exec_Suffix);
+               Compiler.Executable := To_Unbounded_String (Val);
                Compiler.Prefix_Index := Integer'Value (Prefix);
                Compiler.Executable_Re := new Pattern_Matcher'
-                 (Compile (To_String ("^" & Compiler.Executable & "$")));
+                 (Compile (To_String ("^" & Compiler.Executable
+                                      & "(" & Exec_Suffix.all & ")?$")));
 
             exception
                when Expression_Error =>
