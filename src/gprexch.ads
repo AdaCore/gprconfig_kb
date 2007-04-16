@@ -46,6 +46,7 @@ package Gprexch is
       Dependency_Files,
       Binding_Options,
       Generated_Object_File,
+      Generated_Source_Files,
       Resulting_Options,
       Run_Path_Option);
 

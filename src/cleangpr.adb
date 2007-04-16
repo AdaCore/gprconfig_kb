@@ -27,6 +27,7 @@
 with Csets;
 with Confgpr;  use Confgpr;
 with Gnatvsn;  use Gnatvsn;
+with Gprexch;  use Gprexch;
 with Gpr_Util; use Gpr_Util;
 with Makeutl;  use Makeutl;
 with Namet;    use Namet;
@@ -40,7 +41,8 @@ with Sinput.P;
 with Snames;
 with Table;
 
-with Ada.Command_Line;          use Ada.Command_Line;
+with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.IO;                   use GNAT.IO;
@@ -51,9 +53,6 @@ package body Cleangpr is
    Initialized : Boolean := False;
    --  Set to True by the first call to Initialize.
    --  To avoid reinitialization of some packages.
-
-   Object_Suffix   : constant String := Get_Target_Object_Suffix.all;
-   --  The suffix of the object files on the platform
 
    Force_Deletions : Boolean := False;
    --  Set to True by switch -f. When True, attempts to delete non writable
@@ -649,14 +648,6 @@ package body Cleangpr is
                   Clean_Interface_Copy_Directory (Project);
                end if;
             end if;
-
-            if Data.Standalone_Library and then
-              Data.Object_Directory /= No_Path
-            then
-               Delete_Binder_Generated_Files
-                 (Get_Name_String (Data.Object_Directory),
-                  File_Name_Type (Data.Library_Name));
-            end if;
          end if;
 
          if Verbose_Mode then
@@ -830,58 +821,84 @@ package body Cleangpr is
      (Dir    : String;
       Source : File_Name_Type)
    is
-      Source_Name : constant String := Get_Name_String (Source);
       Current     : constant String := Get_Current_Dir;
-      Last        : constant Positive := 3 + Source_Name'Length;
-      File_Name   : String (1 .. Last + 5);
-      Binder_Exchange_File : constant String :=
-                               Source_Name & Binder_Exchange_Suffix;
+      B_Data      : Binding_Data;
+      Base_Name   : File_Name_Type;
 
    begin
-      Change_Dir (Dir);
-
-      if Is_Regular_File (Binder_Exchange_File) then
-         Delete (Dir, Binder_Exchange_File);
+      if There_Are_Binder_Drivers and then Binding_Languages.Last = 0 then
+         Find_Binding_Languages;
       end if;
 
-      File_Name (1 .. 3) := "b__";
-      File_Name (4 .. Last) := Source_Name;
+      if There_Are_Binder_Drivers then
+         --  Get the main base name
 
-      --  Spec
+         Get_Name_String (Source);
+         Osint.Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
 
-      File_Name (Last + 1 .. Last + 4) := ".ads";
+         for J in reverse 4 .. Name_Len loop
+            if Name_Buffer (J) = '.' then
+               Name_Len := J - 1;
+               exit;
+            end if;
+         end loop;
 
-      if Is_Regular_File (File_Name (1 .. Last + 4)) then
-         Delete (Dir, File_Name (1 .. Last + 4));
+         Base_Name := Name_Find;
+
+         --  Work in the object directory
+
+         Change_Dir (Dir);
+
+         for B_Index in 1 .. Binding_Languages.Last loop
+            B_Data := Binding_Languages.Table (B_Index);
+
+            declare
+               File_Name : constant String :=
+                             Binder_Exchange_File_Name
+                               (Base_Name, B_Data.Binder_Prefix).all;
+               File      : Ada.Text_IO.File_Type;
+               Line      : String (1 .. 1_000);
+               Last      : Natural;
+               Section   : Binding_Section := No_Binding_Section;
+            begin
+               if Is_Regular_File (File_Name) then
+                  Ada.Text_IO.Open (File, Ada.Text_IO.In_File, File_Name);
+
+                  while not Ada.Text_IO.End_Of_File (File) loop
+                     Ada.Text_IO.Get_Line (File, Line, Last);
+
+                     if Last > 0 then
+                        if Line (1) = '[' then
+                           Section :=
+                             Get_Binding_Section (Line (1 .. Last));
+
+                        else
+                           case Section is
+                              when Generated_Object_File |
+                                   Generated_Source_Files =>
+
+                                 if Is_Regular_File (Line (1 .. Last)) then
+                                    Delete (Dir, Line (1 .. Last));
+                                 end if;
+
+                              when others =>
+                                 null;
+                           end case;
+                        end if;
+                     end if;
+                  end loop;
+
+                  Ada.Text_IO.Close (File);
+
+                  Delete (Dir, File_Name);
+               end if;
+            end;
+         end loop;
+
+         --  Change back to previous directory
+
+         Change_Dir (Current);
       end if;
-
-      --  Body
-
-      File_Name (Last + 1 .. Last + 4) := ".adb";
-
-      if Is_Regular_File (File_Name (1 .. Last + 4)) then
-         Delete (Dir, File_Name (1 .. Last + 4));
-      end if;
-
-      --  ALI file
-
-      File_Name (Last + 1 .. Last + 4) := ".ali";
-
-      if Is_Regular_File (File_Name (1 .. Last + 4)) then
-         Delete (Dir, File_Name (1 .. Last + 4));
-      end if;
-
-      --  Object file
-
-      File_Name (Last + 1 .. Last + Object_Suffix'Length) := Object_Suffix;
-
-      if Is_Regular_File (File_Name (1 .. Last + Object_Suffix'Length)) then
-         Delete (Dir, File_Name (1 .. Last + Object_Suffix'Length));
-      end if;
-
-      --  Change back to previous directory
-
-      Change_Dir (Current);
    end Delete_Binder_Generated_Files;
 
    -----------------------

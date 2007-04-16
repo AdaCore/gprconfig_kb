@@ -32,25 +32,19 @@ with Output;  use Output;
 
 package body Gpr_Util is
 
-   Object_Suffix : constant String := Get_Object_Suffix.all;
-   --  The suffix of object file for this platform
-
    -------------------------------
    -- Binder_Exchange_File_Name --
    -------------------------------
 
    function Binder_Exchange_File_Name
-     (Object_File : File_Name_Type; Prefix : Name_Id)
+     (Main_Base_Name : File_Name_Type; Prefix : Name_Id)
       return String_Access
    is
-      File_Name : constant String := Get_Name_String (Object_File);
+      File_Name : constant String := Get_Name_String (Main_Base_Name);
    begin
       Get_Name_String (Prefix);
       Add_Str_To_Name_Buffer (File_Name);
-      Name_Len := Name_Len - Object_Suffix'Length;
-      Name_Buffer (Name_Len + 1 .. Name_Len + Binder_Exchange_Suffix'Length) :=
-        Binder_Exchange_Suffix;
-      Name_Len := Name_Len + Binder_Exchange_Suffix'Length;
+      Add_Str_To_Name_Buffer (Binder_Exchange_Suffix);
       return new String'(Name_Buffer (1 .. Name_Len));
    end Binder_Exchange_File_Name;
 

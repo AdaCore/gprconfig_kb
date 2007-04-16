@@ -85,6 +85,7 @@ procedure Gprbind is
 
    Main_ALI : String_Access := null;
 
+   Main_Base_Name        : String_Access := null;
    Binder_Generated_File : String_Access := null;
    BG_File               : File_Type;
 
@@ -180,13 +181,12 @@ begin
                   Osint.Fail ("shared libs section should be empty");
 
                when Gprexch.Main_Base_Name =>
-                  if Binder_Generated_File /= null then
+                  if Main_Base_Name /= null then
                      Osint.Fail
                        ("main base name specified multiple times");
                   end if;
 
-                  Binder_Generated_File :=
-                    new String'("b__" & Line (1 .. Last) & ".adb");
+                  Main_Base_Name := new String'(Line (1 .. Last));
 
                when Compiler_Path =>
                   if Ada_Compiler_Path /= null then
@@ -236,6 +236,7 @@ begin
                   end if;
 
                when Generated_Object_File |
+                    Generated_Source_Files |
                     Resulting_Options |
                     Run_Path_Option =>
                   null;
@@ -243,6 +244,14 @@ begin
          end if;
       end if;
    end loop;
+
+   if Main_Base_Name = null then
+      Osint.Fail ("no main base name specified");
+
+   else
+      Binder_Generated_File :=
+        new String'("b__" & Main_Base_Name.all & ".adb");
+   end if;
 
    Close (IO_File);
 
@@ -253,7 +262,10 @@ begin
    --  Specify the name of the generated file to gnatbind
 
    Add (Dash_o, Gnatbind_Options, Last_Gnatbind_Option);
-   Add (Binder_Generated_File, Gnatbind_Options, Last_Gnatbind_Option);
+   Add
+     (Binder_Generated_File.all,
+      Gnatbind_Options,
+      Last_Gnatbind_Option);
 
    if not Is_Regular_File (Ada_Compiler_Path.all) then
       Osint.Fail ("could not find the Ada compiler");
@@ -331,21 +343,20 @@ begin
       Osint.Fail ("invocation of gnatbind failed");
    end if;
 
-   Add (Binder_Generated_File, Compiler_Options, Last_Compiler_Option);
+   Add
+     (Binder_Generated_File,
+      Compiler_Options,
+      Last_Compiler_Option);
 
    declare
-      Object      : String := Binder_Generated_File.all;
-      Object_Last : constant Positive := Object'Last - 2;
-
+      Object : constant String := "b__" & Main_Base_Name.all & ".o";
    begin
-      Object (Object_Last) := 'o';
-
       Add
         (Dash_o,
          Compiler_Options,
          Last_Compiler_Option);
       Add
-        (Object (Object'First .. Object_Last),
+        (Object,
          Compiler_Options,
          Last_Compiler_Option);
 
@@ -432,7 +443,12 @@ begin
       Create (IO_File, Out_File, Exchange_File_Name.all);
 
       Put_Line (IO_File, Binding_Label (Generated_Object_File));
-      Put_Line (IO_File, Object (Object'First .. Object_Last));
+      Put_Line (IO_File, Object);
+
+      Put_Line (IO_File, Binding_Label (Generated_Source_Files));
+      Put_Line (IO_File, "b__" & Main_Base_Name.all & ".ads");
+      Put_Line (IO_File, Binder_Generated_File.all);
+      Put_Line (IO_File, "b__" & Main_Base_Name.all & ".ali");
 
       --  Get the options from the binder generated file
 

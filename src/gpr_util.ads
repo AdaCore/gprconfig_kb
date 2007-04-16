@@ -103,7 +103,7 @@ package Gpr_Util is
    --  projects.
 
    function Binder_Exchange_File_Name
-     (Object_File : File_Name_Type; Prefix : Name_Id)
+     (Main_Base_Name : File_Name_Type; Prefix : Name_Id)
       return String_Access;
    --  Returns the name of the binder exchange file corresponding to an
    --  object file and a language.

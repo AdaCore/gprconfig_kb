@@ -1587,8 +1587,23 @@ package body Buildgpr is
                                   Ultimate_Extending_Project_Of
                                     (Main_Source.Project);
                B_Data         : Binding_Data;
+               Main_Base_Name : File_Name_Type;
 
             begin
+               --  Get the main base name
+
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Main);
+
+               for J in reverse 4 .. Name_Len loop
+                  if Name_Buffer (J) = '.' then
+                     Name_Len := J - 1;
+                     exit;
+                  end if;
+               end loop;
+
+               Main_Base_Name := Name_Find;
+
                Change_To_Object_Directory (Main_Proj);
 
                if There_Are_Binder_Drivers then
@@ -1612,7 +1627,7 @@ package body Buildgpr is
 
                      Bind_Exchange :=
                        Binder_Exchange_File_Name
-                         (Main_Source.Object, B_Data.Binder_Prefix);
+                         (Main_Base_Name, B_Data.Binder_Prefix);
                      Bind_Exchange_TS :=
                        File_Stamp
                          (Path_Name_Type'(Create_Name (Bind_Exchange.all)));
@@ -1751,8 +1766,7 @@ package body Buildgpr is
 
                         Create (Exchange_File, Out_File, Bind_Exchange.all);
 
-                        --  Optional lines
-                        --  Quiet or Verbose
+                        --  Optional line: Quiet or Verbose
 
                         if Quiet_Output then
                            Put_Line (Exchange_File, Binding_Label (Quiet));
@@ -1761,27 +1775,20 @@ package body Buildgpr is
                            Put_Line (Exchange_File, Binding_Label (Verbose));
                         end if;
 
+                        --  Optional line: shared libs
                         if Shared_Libs then
                            Put_Line
                              (Exchange_File,
                               Binding_Label (Gprexch.Shared_Libs));
                         end if;
 
-                        --  First, the name of binder generated source file
-
-                        Name_Len := 0;
-                        Add_Str_To_Name_Buffer (Main);
-
-                        for J in reverse 4 .. Name_Len loop
-                           if Name_Buffer (J) = '.' then
-                              Name_Len := J - 1;
-                              exit;
-                           end if;
-                        end loop;
+                        --  First, the main base name
 
                         Put_Line
-                          (Exchange_File, Binding_Label (Main_Base_Name));
-                        Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
+                          (Exchange_File,
+                           Binding_Label (Gprexch.Main_Base_Name));
+                        Put_Line
+                          (Exchange_File, Get_Name_String (Main_Base_Name));
 
                         --  Then, the compiler path
 
@@ -6110,6 +6117,8 @@ package body Buildgpr is
 
             Main_Proj      : Project_Id;
 
+            Main_Base_Name : File_Name_Type;
+
          begin
             exit when Display_Main'Length = 0;
 
@@ -6122,6 +6131,20 @@ package body Buildgpr is
             Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
             Main_Proj  := Ultimate_Extending_Project_Of (Main_Source.Project);
             Data        := Project_Tree.Projects.Table (Main_Source.Project);
+
+            --  Get the main base name
+
+            Name_Len := 0;
+            Add_Str_To_Name_Buffer (Main);
+
+            for J in reverse 4 .. Name_Len loop
+               if Name_Buffer (J) = '.' then
+                  Name_Len := J - 1;
+                  exit;
+               end if;
+            end loop;
+
+            Main_Base_Name := Name_Find;
 
             Change_To_Object_Directory (Main_Proj);
 
@@ -6261,7 +6284,7 @@ package body Buildgpr is
                                 Binding_Languages.Table (B_Index);
                      Exchange_File_Name : constant String :=
                                             Binder_Exchange_File_Name
-                                              (Main_Source.Object,
+                                              (Main_Base_Name,
                                                B_Data.Binder_Prefix).all;
 
                   begin
