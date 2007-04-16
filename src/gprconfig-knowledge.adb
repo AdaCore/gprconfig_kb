@@ -411,19 +411,12 @@ package body GprConfig.Knowledge is
             declare
                Prefix : constant String := Get_Attribute (N, "prefix", "@@");
                Val    : constant String := N.Value.all;
-               Suffix : constant String := ".exe";
+               Exec_Suffix : GNAT.Strings.String_Access :=
+                 Get_Executable_Suffix;
             begin
-
-               --  ??? kludge to make it work on Windows. To be fixed.
-               if Directory_Separator = '\' -- on windows
-                 and then (Val'Length <= Suffix'Length
-                   or else Val (Val'Last - 3 .. Val'Last) /= Suffix)
-               then
-                  Compiler.Executable := To_Unbounded_String (Val & Suffix);
-               else
-                  Compiler.Executable := To_Unbounded_String (Val);
-               end if;
-
+               Compiler.Executable :=
+                 To_Unbounded_String (Val & Exec_Suffix.all);
+               GNAT.Strings.Free (Exec_Suffix);
                Compiler.Prefix_Index := Integer'Value (Prefix);
                Compiler.Executable_Re := new Pattern_Matcher'
                  (Compile (To_String ("^" & Compiler.Executable & "$")));
