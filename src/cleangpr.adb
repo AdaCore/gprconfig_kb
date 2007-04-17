@@ -707,20 +707,40 @@ package body Cleangpr is
          declare
             Exec_Dir : constant String :=
                          Get_Name_String (Data.Exec_Directory);
+            Source   : Prj.Source_Id;
 
          begin
             Change_Dir (Exec_Dir);
 
             for N_File in 1 .. Mains.Number_Of_Mains loop
-               Main_Source_File := Create_Name (Mains.Next_Main);
+               declare
+                  Display_Main : constant String := Mains.Next_Main;
+                  Main         : String := Display_Main;
+               begin
+                  Osint.Canonical_Case_File_Name (Main);
+                  Main_Source_File := Create_Name (Main);
+               end;
+
+               Source := Project_Tree.First_Source;
+
+               while Source /= No_Source loop
+                  exit when Project_Tree.Sources.Table (Source).File =
+                              Main_Source_File;
+
+                  Source :=
+                    Project_Tree.Sources.Table (Source).Next_In_Sources;
+               end loop;
 
                if not Compile_Only then
                   Executable :=
                     Executable_Of
-                      (Project => Main_Project,
-                       In_Tree => Project_Tree,
-                       Main    => Main_Source_File,
-                       Index   => 0);
+                      (Project  => Main_Project,
+                       In_Tree  => Project_Tree,
+                       Main     => Main_Source_File,
+                       Index    => 0,
+                       Ada_Main =>
+                         Project_Tree.Sources.Table (Source).Language_Name =
+                         Snames.Name_Ada);
 
                   declare
                      Exec_File_Name : constant String :=
