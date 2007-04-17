@@ -80,6 +80,14 @@ package body Buildgpr is
    Usage_Output     : Boolean := False;
    --  Flags to avoid multiple displays of Copyright notice and of Usage
 
+   Usage_Needed : Boolean := False;
+   --  Set by swith -h: usage will be displayed after all command line
+   --  switches have been scanned.
+
+   Display_Paths : Boolean := False;
+   --  Set by switch --display_paths: config project path and user project path
+   --  will be displayed af ter all command lineswitches have been scanned.
+
    Output_File_Name           : String_Access := null;
    --  The name given after a switch -o
 
@@ -91,6 +99,9 @@ package body Buildgpr is
 
    Project_File_Name_Expected : Boolean := False;
    --  True when last switch was -P
+
+   Search_Project_Dir_Expected : Boolean := False;
+   --  True when last switch was -aP
 
    Recursive : Boolean := False;
 
@@ -4186,30 +4197,6 @@ package body Buildgpr is
                             (Include_Options.Options
                                  (1 .. Include_Options.Last));
 
-                     elsif Config.Include_Path /= No_Name then
-                        --  Get the value of Include_Path
-
-                        if Path_Buffer = null then
-                           Path_Buffer :=
-                             new String (1 .. Path_Buffer_Initial_Length);
-                        end if;
-
-                        Path_Last := 0;
-
-                        for Index in 1 .. Directories.Last loop
-                           if Path_Last /= 0 then
-                              Add_To_Path (Path_Separator);
-                           end if;
-
-                           Add_To_Path
-                             (Get_Name_String
-                                (Directories.Table (Index)));
-                        end loop;
-
-                        Project_Tree.Projects.Table
-                          (Source_Project).Include_Path :=
-                          new String'(Path_Buffer (1 .. Path_Last));
-
                      elsif Config.Include_Path_File /= No_Name then
                         --  Create temp path file and store its name in
                         --  Include_Path_File.
@@ -4246,10 +4233,40 @@ package body Buildgpr is
                               Fail_Program ("disk full");
                            end if;
                         end;
+
+                     elsif Config.Include_Path /= No_Name then
+                        --  Get the value of Include_Path
+
+                        if Path_Buffer = null then
+                           Path_Buffer :=
+                             new String (1 .. Path_Buffer_Initial_Length);
+                        end if;
+
+                        Path_Last := 0;
+
+                        for Index in 1 .. Directories.Last loop
+                           if Path_Last /= 0 then
+                              Add_To_Path (Path_Separator);
+                           end if;
+
+                           Add_To_Path
+                             (Get_Name_String
+                                (Directories.Table (Index)));
+                        end loop;
+
+                        Project_Tree.Projects.Table
+                          (Source_Project).Include_Path :=
+                          new String'(Path_Buffer (1 .. Path_Last));
                      end if;
                   end if;
 
-                  if Config.Include_Path /= No_Name then
+                  if Config.Include_Path_File /= No_Name then
+                     Setenv (Get_Name_String (Config.Include_Path_File),
+                             Get_Name_String
+                               (Project_Tree.Projects.Table
+                               (Source_Project).Include_Path_File));
+
+                  elsif Config.Include_Path /= No_Name then
                      Setenv (Get_Name_String (Config.Include_Path),
                              Project_Tree.Projects.Table
                                (Source_Project).Include_Path.all);
@@ -4261,12 +4278,6 @@ package body Buildgpr is
                           (Project_Tree.Projects.Table (Source_Project).
                                                           Include_Path.all);
                      end if;
-
-                  elsif Config.Include_Path_File /= No_Name then
-                     Setenv (Get_Name_String (Config.Include_Path_File),
-                             Get_Name_String
-                               (Project_Tree.Projects.Table
-                                  (Source_Project).Include_Path_File));
                   end if;
                end if;
 
@@ -5863,6 +5874,42 @@ package body Buildgpr is
          Scan_Arg (Argument (Next_Arg), Command_Line => True);
       end loop Scan_Args;
 
+      --  If --display-paths was specified, display the config and the user
+      --  project paths and exit.
+
+      if Display_Paths then
+         Write_Char ('.');
+
+         declare
+            Prefix_Path : constant String := Executable_Prefix_Path;
+
+         begin
+            if Prefix_Path'Length /= 0 then
+               Write_Char (Path_Separator);
+               Write_Str (Prefix_Path);
+               Write_Char (Directory_Separator);
+               Write_Str ("share");
+               Write_Char (Directory_Separator);
+               Write_Str ("gpr");
+            end if;
+         end;
+
+         Write_Eol;
+
+         Write_Line (Project_Path);
+
+         Exit_Program (E_Success);
+      end if;
+
+      if Verbose_Mode then
+         Copyright;
+      end if;
+
+      if Usage_Needed then
+         Usage;
+         Usage_Needed := False;
+      end if;
+
       --  Fail if command line ended with "-P"
 
       if Project_File_Name_Expected then
@@ -5872,6 +5919,11 @@ package body Buildgpr is
 
       elsif Output_File_Name_Expected then
          Fail_Program ("output file name missing after -o");
+
+      --  Or if it ended with "-aP"
+
+      elsif Search_Project_Dir_Expected then
+         Fail_Program ("directory name missing after -aP");
       end if;
 
       --  If no project file was specified, look first for a default
@@ -7517,6 +7569,14 @@ package body Buildgpr is
                Output_File_Name := new String'(Arg);
             end if;
 
+         elsif Search_Project_Dir_Expected then
+            if Arg (1) = '-' then
+               Fail_Program ("directory name missing after -aP");
+            else
+               Search_Project_Dir_Expected := False;
+               Add_Search_Project_Directory (Arg);
+            end if;
+
             --  Set the processor/language for the following switches
 
             --  -cargs         all compiler arguments
@@ -7590,7 +7650,30 @@ package body Buildgpr is
 
          if Arg (1) = '-' then
 
-            if Command_Line
+            if Command_Line and then Arg = "--version" then
+               Write_Str ("GPRBUILD ");
+               Write_Str (Gnatvsn.Gnat_Version_String);
+               Write_Eol;
+               Write_Str ("Copyright 2004-");
+               Write_Str (Gnatvsn.Current_Year);
+               Write_Str (", Free Software Foundation, Inc.");
+               Write_Eol;
+               Write_Line (Gnatvsn.Gnat_Free_Software);
+               Write_Eol;
+               Exit_Program (E_Success);
+
+            elsif Command_Line and then Arg = "--help" then
+               Copyright_Output := True;
+               --  To avoid the Copyright notice that should not be output
+               --  for --help.
+
+               Usage;
+               Exit_Program (E_Success);
+
+            elsif Command_Line and then Arg = "--display-paths" then
+               Display_Paths := True;
+
+            elsif Command_Line
               and then
                Arg'Length > Config_Project_Option'Length
               and then
@@ -7608,10 +7691,15 @@ package body Buildgpr is
                end if;
 
             elsif Command_Line and then
-                  Arg'Length > 3 and then
+                  Arg'Length >= 3 and then
                   Arg (1 .. 3) = "-aP"
             then
-               Add_Search_Project_Directory (Arg (4 .. Arg'Last));
+               if Arg'Length = 3 then
+                  Search_Project_Dir_Expected := True;
+
+               else
+                  Add_Search_Project_Directory (Arg (4 .. Arg'Last));
+               end if;
 
             elsif Command_Line and then Arg = "-b" then
                Bind_Only  := True;
@@ -7661,7 +7749,7 @@ package body Buildgpr is
                Full_Path_Name_For_Brief_Errors := True;
 
             elsif Command_Line and then Arg = "-h" then
-               Usage;
+               Usage_Needed := True;
 
             elsif Arg'Length > 2 and then Arg (2) = 'j' then
                declare
@@ -7754,10 +7842,6 @@ package body Buildgpr is
             elsif Arg = "-v" then
                Verbose_Mode := True;
                Quiet_Output := False;
-
-               if Command_Line then
-                  Copyright;
-               end if;
 
                if Command_Line then
                   Register_Command_Line_Option (Verbose_Mode_Option);
@@ -7945,7 +8029,7 @@ package body Buildgpr is
          Osint.Write_Program_Name;
          Write_Str (" [-P<proj>] [<proj>.gpr] [opts] [name]");
          Write_Eol;
-         Write_Str ("    {[-cargs opts] [- cargs:lang pts] [-largs opts]" &
+         Write_Str ("    {[-cargs opts] [- cargs:lang opts] [-largs opts]" &
                     "[-gargs opts]}");
          Write_Eol;
          Write_Eol;
@@ -7969,7 +8053,7 @@ package body Buildgpr is
 
          --  Line for -aP
 
-         Write_Str ("  -aPdir   Add directory dir to project search path");
+         Write_Str ("  -aP dir  Add directory dir to project search path");
          Write_Eol;
 
          --  Line for -b

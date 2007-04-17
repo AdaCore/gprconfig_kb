@@ -812,6 +812,14 @@ package body Confgpr is
                         There_Are_Runtime_Projects := True;
                      end;
 
+                  when Name_Toolchain_Description =>
+
+                     --  Attribute Toolchain_Description (<language>)
+
+                     Project_Tree.Languages_Data.Table
+                       (Current_Language_Index).Config.Toolchain_Description :=
+                       Element.Value.Value;
+
                   when Name_Toolchain_Version =>
 
                      --  Attribute Toolchain_Version (<language>)
