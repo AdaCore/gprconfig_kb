@@ -21,6 +21,10 @@ IFS="
 # Parse exchange file.
 section='Unknown'
 dep_files=""
+bindsec='Unknown'
+nm="nm-not-defined"
+cc="cc-not-defined"
+verbose=""
 
 while read line; do
    case $line in
@@ -28,12 +32,20 @@ while read line; do
       "[COMPILER PATH]") section="discard" ;;
       "[COMPILER OPTIONS]") section="discard" ;;
       "[DEPENDENCY FILES]") section="dependency" ;;
+      "[BINDING OPTIONS]") section="options" ;;
+      "[VERBOSE]") verbose=y; section="Unknown" ;;
       \[*)  echo "Unknown section ($line)"; exit 1 ;;
       *) case $section in
         "discard") ;;
         "Unknown") echo "Malformed exchange file"; exit 1 ;;
         "base name") basename=$line ;;
         "dependency") dep_files="$dep_files $line" ;;
+        "options")
+           case $line in
+              --nm=*) nm=`echo $line | sed -e "s/^--nm=//"` ;;
+              --cc=*) cc=`echo $line | sed -e "s/^--cc=//"` ;;
+              *) echo "Unknown binder option ($line)" ;;
+           esac ;;
         *) echo "Internal error (section $section) unhandled"; exit 1 ;;
         esac
    esac
@@ -48,8 +60,8 @@ exec 3>&-
 object_files=`echo $dep_files | sed -e 's/\\.d\$/.o/'`
 
 # Do the real work.
-nmppc $object_files | munch > cpp__$basename.c
-ccppc -c cpp__$basename.c
+$nm $object_files | munch > cpp__$basename.c
+$cc -c cpp__$basename.c
 
 # Generate the exchange file.
 cat > $1 <<EOF
