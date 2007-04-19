@@ -272,14 +272,38 @@ package body Buildgpr is
       Equal      => "=");
    --  A hash table to get the compilation option table from the language name.
 
-   package Binder_Options is new Table.Table
+   package All_Language_Binder_Options is new Table.Table
      (Table_Component_Type => String_Access,
-      Table_Index_Type     => Integer,
+      Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
-      Table_Initial        => 20,
+      Table_Initial        => 10,
       Table_Increment      => 100,
-      Table_Name           => "Makegpr.Binder_Options");
-   --  Table to store the binder options
+      Table_Name           => "Makegpr.All_Language_Binder_Options");
+   --  Table to store the options for all binders, that is those that
+   --  follow the switch "-bargs" without any mention of language.
+
+   package Binder_Options is new GNAT.Dynamic_Tables
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100);
+   --  Tables to store the options for the binders of the different
+   --  languages, that is those after switch "-bargs:<lang>".
+
+   type Bind_Option_Table_Ref is access Binder_Options.Instance;
+   No_Bind_Option_Table : constant Bind_Option_Table_Ref := null;
+
+   Current_Bind_Option_Table : Bind_Option_Table_Ref := No_Bind_Option_Table;
+
+   package Binder_Options_HTable is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Bind_Option_Table_Ref,
+      No_Element => No_Bind_Option_Table,
+      Key        => Name_Id,
+      Hash       => Prj.Hash,
+      Equal      => "=");
+   --  A hash table to get the compilation option table from the language name
 
    package Binding_Options is new Table.Table
      (Table_Component_Type => String_Access,
@@ -954,9 +978,17 @@ package body Buildgpr is
 
          when Binder =>
 
-            --  Add option to the binder table
+            if Current_Bind_Option_Table = No_Bind_Option_Table then
+               --  Option for all binder
 
-            Binder_Options.Append (Option);
+               All_Language_Binder_Options.Append (Option);
+
+            else
+               --  Option for a single binder
+
+               Binder_Options.Append
+                 (Current_Bind_Option_Table.all, Option);
+            end if;
 
          when Compiler =>
 
@@ -1600,6 +1632,9 @@ package body Buildgpr is
                B_Data         : Binding_Data;
                Main_Base_Name : File_Name_Type;
 
+               Options_Instance : Bind_Option_Table_Ref :=
+                                    No_Bind_Option_Table;
+
             begin
                --  Get the main base name
 
@@ -1939,9 +1974,13 @@ package body Buildgpr is
                            --  on the command line, put them in the exchange
                            --  file.
 
+                           Options_Instance :=
+                             Binder_Options_HTable.Get (B_Data.Language_Name);
+
                            if Min_Options /= No_Name_List or else
                              Switches.Kind = Prj.List or else
-                             Binder_Options.Last > 0
+                             All_Language_Binder_Options.Last > 0 or else
+                             Options_Instance /= No_Bind_Option_Table
                            then
                               Put_Line
                                 (Exchange_File,
@@ -1985,13 +2024,30 @@ package body Buildgpr is
                                  end loop;
                               end if;
 
-                              --  Finally those on the command line, if any
+                              --  Then those on the command line, for all
+                              --  binder drivers, if any.
 
-                              for J in 1 .. Binder_Options.Last loop
+                              for
+                                J in 1 .. All_Language_Binder_Options.Last
+                              loop
                                  Put_Line
                                    (Exchange_File,
-                                    Binder_Options.Table (J).all);
+                                    All_Language_Binder_Options.Table (J).all);
                               end loop;
+
+                              --  Finally those on the command line for the
+                              --  binder driver of the language
+
+                              if Options_Instance /= No_Bind_Option_Table then
+                                 for Index in 1 .. Binder_Options.Last
+                                                     (Options_Instance.all)
+                                 loop
+                                    Put_Line
+                                      (Exchange_File,
+                                       Options_Instance.Table (Index).all);
+                                 end loop;
+                              end if;
+
                            end if;
                         end;
 
@@ -7606,13 +7662,36 @@ package body Buildgpr is
                     (Lang, Current_Comp_Option_Table);
                   Compiling_Options.Init (Current_Comp_Option_Table.all);
                end if;
-
             end;
 
-            --  -bargs     binder arguments
+            --  -bargs     all binder arguments
 
          elsif Arg = "-bargs" then
             Current_Processor := Binder;
+            Current_Bind_Option_Table := No_Bind_Option_Table;
+
+            --  -bargs:lang    arguments for binder of language lang
+
+         elsif Arg'Length > 7 and then Arg (1 .. 7) = "-bargs:" then
+            Current_Processor := Binder;
+
+            Name_Len := 0;
+            Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
+            To_Lower (Name_Buffer (1 .. Name_Len));
+
+            declare
+               Lang : constant Name_Id := Name_Find;
+            begin
+               Current_Bind_Option_Table :=
+                 Binder_Options_HTable.Get (Lang);
+
+               if Current_Bind_Option_Table = No_Bind_Option_Table then
+                  Current_Bind_Option_Table := new Binder_Options.Instance;
+                  Binder_Options_HTable.Set
+                    (Lang, Current_Bind_Option_Table);
+                  Binder_Options.Init (Current_Bind_Option_Table.all);
+               end if;
+            end;
 
             --  -largs     linker arguments
 
@@ -8167,12 +8246,22 @@ package body Buildgpr is
 
          --  Line for -cargs
 
-         Write_Line ("  -cargs opts    opts are passed to the all compilers");
+         Write_Line ("  -cargs opts    opts are passed to all compilers");
 
          --  Line for -cargs:lang
 
          Write_Line ("  -cargs:<lang> opts");
          Write_Line ("                 opts are passed to the compiler " &
+                     "for language <lang> ");
+
+         --  Line for -bargs
+
+         Write_Line ("  -bargs opts    opts are passed to all binders");
+
+         --  Line for -cargs:lang
+
+         Write_Line ("  -bargs:<lang> opts");
+         Write_Line ("                 opts are passed to the binder " &
                      "for language <lang> ");
 
          --  Line for -largs
