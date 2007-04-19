@@ -1,0 +1,69 @@
+--  Simple project cross-compiling C++ Ada for VxWorks6 on Ppc.
+
+project Vx6_Ppc_Kernel_Adacpp is
+   Wind_Base := external ("WIND_BASE");
+   Wind_Gnu_Path := external ("WIND_GNU_PATH");
+--   Wind_Diab_Path := external ("WIND_DIAB_PATH");
+   Wind_Host_Type := external ("WIND_HOST_TYPE");
+
+   package Language_Processing is
+      for Language_Kind            ("C++") use "file_based";
+      for Compiler_Driver          ("C++") use "c++ppc";
+      for Minimum_Compiler_Options ("C++") use ("-c", "-x", "c++");
+      for Dependency_File_Kind     ("C++") use "Makefile";
+      for Dependency_Option        ("C++") use ("-Wp,-MD,");
+      for Include_Path             ("C++") use "CPATH";
+      for Binder_Driver            ("C++") use "/alexandria.a/home/gingold/local/libexec/gprbuild/gprmunch.sh";
+      for Minimum_Binder_Options   ("C++") use ("--nm=nmppc");
+
+      for Language_Kind            ("Ada") use "unit_based";
+      for Compiler_Driver          ("Ada") use "powerpc-wrs-vxworks-gcc";
+      for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
+      for Mapping_File_Switches    ("Ada") use ("-gnatem=");
+      for Mapping_Spec_Suffix      ("Ada") use "%s";
+      for Mapping_Body_Suffix      ("Ada") use "%b";
+      for Config_File_Switches     ("Ada") use ("-gnatec=");
+      for Config_Body_File_Name    ("Ada") use
+           "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
+      for Config_Spec_File_Name    ("Ada") use
+           "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
+      for Config_Body_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name_Project " &
+           "  (Body_File_Name  => ""*%b""," &
+           "   Casing          => %c," &
+           "   Dot_Replacement => ""%d"");";
+      for Config_Spec_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name_Project " &
+           "  (Spec_File_Name  => ""*%s""," &
+           "   Casing          => %c," &
+           "   Dot_Replacement => ""%d"");";
+      for Dependency_File_Kind  ("Ada") use "ALI_File";
+      for Config_File_Unique    ("Ada") use "False";
+      for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
+      for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
+      for Runtime_Project       ("Ada") use
+          "/nfs/alexandria/alexandria.a/home/gingold/gprmake/ada_runtime.gpr";
+      for Binder_Driver         ("Ada") use
+          "/alexandria.a/home/gingold/local/libexec/gprbuild/powerpc-wrs-vxworks-gprbind";
+      for Toolchain_Version     ("Ada") use "GNAT 6.0";
+      for Compiler_PIC_Option      ("Ada") use ("-fPIC");
+      for Default_Language use "Ada";
+      for Archive_Builder  use ("arppc", "cr");
+      for Archive_Indexer  use ("powerpc-wrs-vxworks-ranlib");
+      for Archive_Suffix   use ".a";
+      for Library_Support  use "none";
+      for Default_Linker use Language_Processing'Compiler_Driver ("C++");
+--	for Minimum_Default_Linker_Options use ("-v");
+--      for Minimum_Default_Linker_Options use ("powerpc-wrs-vxworks-gcc", "-nostdlib", "-Wl,-r", "-o");
+      for Executable_Suffix use ".out";
+
+   end Language_Processing;
+   package Naming is
+      for Spec_Suffix ("C++") use ".hh";
+      for Body_Suffix ("C++") use ".cpp";
+      for Spec_Suffix ("Ada") use ".ads";
+      for Body_Suffix ("Ada") use ".adb";
+      for Casing use "lowercase";
+      for Dot_Replacement use "-";
+   end Naming;
+end Vx6_Ppc_Kernel_Adacpp;
