@@ -14,7 +14,7 @@ project Vx6_Ppc_Kernel_Adacpp is
       for Dependency_Option        ("C++") use ("-Wp,-MD,");
       for Include_Path             ("C++") use "CPATH";
       for Binder_Driver            ("C++") use "/alexandria.a/home/gingold/local/libexec/gprbuild/gprmunch.sh";
-      for Minimum_Binder_Options   ("C++") use ("--nm=nmppc");
+      for Minimum_Binder_Options   ("C++") use ("--nm=nmppc", "--cc=ccppc");
 
       for Language_Kind            ("Ada") use "unit_based";
       for Compiler_Driver          ("Ada") use "powerpc-wrs-vxworks-gcc";
