@@ -404,7 +404,7 @@ projects it is part of. This is not surprising since the two projects
 are independant and have different@code{Object_Dir}s eventhough they share
 some sources. Would it be possible to share more than the sources and in
 particular avoid unnecessary recompilations when compilation units are
-used in several different projects? Slipping the current systems into 
+used in several different projects? Slipping the current systems into
 subsystems is a way forward in answering this question.
 
 @node Subsystems
@@ -572,7 +572,16 @@ Examples:
 @item -bargs
 
 The arguments that follow up to the next command line separators are
-options for the binder.
+options for all binder drivers.
+
+@item -bargs:<language name>
+
+The arguments that follow up to the next command line separators are
+options for the binder driver of the specific language.
+
+Examples:
+"-bargs:Ada binder_prefix=ppc-elf" or
+"-bargs:C++ c_compiler_name=ccppc"
 
 @item -largs
 
@@ -596,18 +605,30 @@ The switches that are interpreted directly by gprbuild are:
 
 @itemize @bullet
 
-@item --config_path=<path>
+@item  --version
 
-This specifies the configuration path, that is the list of directories
-where gprbuild finds the configuration project files. By default, the
-configuration path is the value of the environment variable GPR_CONFIG_PATH,
-if it is defined, otherwise when gprbuild is installed in <prefix>/bin,
-it is the single directory <prefix>share/gpr.
+Display information about gprbuild: version, origin and legal status, then
+exit successfully, ignoring other options.
 
-@item  --config_project=<project name>
+@item  --help
 
-This specifies the main configuration project file name. By default, the main
-configuration project file name is "standard.gpr".
+Display gprbuild usage, then exit successfully, ignoring other options.
+
+@item  --display-paths
+
+Display the configuration project file search path and the user project file
+search path, then exit successfully, ignoring other options.
+
+@item  --config=<config project file name>
+
+This specifies the configuration project file name. By default, the
+configuration project file name is "default.cgpr". Option --config= cannot be
+specified several times.
+
+@item  -aP dir (Add directory dir to project search path)
+
+Specify to gprbuild to add directory "dir" to the user project file search
+path, before the default directory.
 
 @item  -b (Bind only)
 
@@ -619,11 +640,6 @@ switches.
 
 Specify to gprbuild that the compilation phase is to be performed, but not
 the other phases, if they are not specified by appropriate switches.
-
-@item  -C (Cache source mappings: use mapping files)
-
-Specify to gprbuild that, when they are supported by a compiler (for example
-GNAT), mapping files should be used when invoking this compiler.
 
 @item  -d (Display progress)
 
@@ -684,7 +700,8 @@ create missing directories.
 @item  -P proj  (use Project file proj)
 
 Specify the path name of the main project file. The space between -P and the
-project file name is optional.
+project file name is optional. Specifying a project file name (with suffix
+".gpr") may be used in place of option -P. Only one user project file
 
 @item -q  (Quiet output)
 
@@ -699,21 +716,6 @@ set of compilation switches has been used in the previous compilation, even
 if all dependencies are satisfied. Each time gprbuild invokes a compiler, it
 writes a text file that lists the switches used in the invocation of the
 compiler, so that it can retrieve these switches if -s is used later.
-
-@item  -u  (Unique compilation)
-
-When -u is used in conjunction with sources specified on the command line,
-then gprbuild will attempt to compile these sources, if they are not up to
-date. No other compilation will be attempted and the post-compilation and
-linking phases will not be performed.
-
-When no source is specified on the command line, switch -u is equivalent to
-switch -U: compile all sources of all projects.
-
-@item  -U  (Unique compilation for all sources of all projects)
-
-Attempt to compile all not up to date sources of all projects
-The post-compilation and linking phases are not be performed.
 
 @item  -v   (Verbose output)
 
@@ -769,47 +771,39 @@ $ gprbuild -P c_main.gpr -WW
 gprbuild: illegal option "-WW"
 @end smallexample
 
-gprbuild need a configuration project path. The configuration project path can
-be specify on the command line with the switch --config_path=... Otherwise, it
-takes the value of the environment variable GPR_CONFIG_PATH, if it is defined
-and not empty. Otherwise, if the gprbuild executable is located in a
-subdirectory "<prefix>/bin", then the configuration project path is the single
-directory "<prefix>/share/gpr". If gprbuild is not installed in a subdirectory
-"bin", --config_path is not used and the environment variable GPR_CONFIG_PATH
-is not defined, then it will fail with the message:
-
-@smallexample
-gprbuild: no configuration project path available
-@end smallexample
+gprbuild looks for the configuration project file, first in the current
+working directory, then in the default configuration project directory.
+If the gprbuild executable is located in a subdirectory "<prefix>/bin", then
+the default configuration project directory is "<prefix>/share/gpr", otherwise
+there is no default configuration project directory.
 
 When it has found its configuration project path, gprbuild need to get its
 configuration. By default, the file name of the main configuration project
-is "standard.gpr". This default may be modify using the switch
---config_project=...
+is "default.cgpr". This default may be modify using the switch --config=...
 
 Example:
 
 @smallexample
-$ gprbuild --config_project=my_standard.gpr -P my_project.gpr
+$ gprbuild --config=my_standard.cgpr -P my_project.gpr
 @end smallexample
 
 If gprbuild cannot find the main configuration project on the configuration
 project path, then it will fail with an error message such as:
 
 @smallexample
-$ gprbuild --config_project=my_standard.gpr -P my_project.gpr
-gprbuild: could not locate main configuration project my_standard.gpr
+$ gprbuild --config=my_standard.cgpr -P my_project.gpr
+gprbuild: could not locate main configuration project my_standard.cgpr
 @end smallexample
 
 Once it has found the main configuration project, gprbuild will process its
-configuration. If the configuration project or projects are not correct
+configuration. If the configuration project is not correct
 (see @ref{Configuration files Description}), then gprbuild will fail with
 the appropriate error messages:
 
 @smallexample
-$ gprbuild --config_project=my_standard.gpr -P c_main.gpr
+$ gprbuild --config_project=my_standard.cgpr -P c_main.gpr
 my_standard.gpr:3:11: undefined attribute "compiler_drive"
-gprbuild: processing of configuration project ".../share/gpr/my_standard.gpr" failed
+gprbuild: processing of configuration project ".../my_standard.cgpr" failed
 @end smallexample
 
 When gprbuild has successfully processed its configuration, then it will
@@ -828,29 +822,7 @@ will start to do some work.
 @node Execution
 @section Execution
 
-After its initialisation, the behavior of gprbuild will depend on the switches
-it has been invoked with, in particular -u or -U.
-
-If gprbuild is invoked with -u, then its behavior depends if source file names
-are specified on the command line:
-
-@itemize @bullet
-
-@item no source file name is specified on the command line:
-
-gprbuild will attempt to compile all the sources in the project tree. This is
-the same behavior as specifying switch -U.
-
-@item one or several source file names are specified on the command line:
-
-gprbuild will attempt to compile these source files, and only those.
-
-@end itemize
-
-In both cases, the post-compilation phase and the linking phase are not
-performed.
-
-Without -u, gprbuild will first compile or recompile all the sources that are
+gprbuild will first compile or recompile all the sources that are
 not up to date in all the projects in the project tree. Then its behavior
 depends if there are mains or not.
 
@@ -860,6 +832,13 @@ depends if there are mains or not.
 
 Mains are either specified as source file names on the command line or, in the
 absence of those, by attribute Main in the main project file.
+
+When mains are specified, gprbuild will proceed with its three phases, or with
+those phases that have been specified by switches. Specifying both the
+compilation phase (@code{-c}) and the linking phase (@code{-l}) implies also
+the post-compilation phase (@code{-b}).
+
+...
 
 @item No main is specified
 
