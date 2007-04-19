@@ -1421,8 +1421,6 @@ package body Buildgpr is
       Proj_List            : Project_List;
       Proj_Element         : Project_Element;
 
-      Config               : Language_Config;
-
       Shared_Libs          : Boolean := False;
 
       Bind_Exchange_TS     : Time_Stamp_Type;
@@ -1430,8 +1428,9 @@ package body Buildgpr is
       Binder_Driver_Needs_To_Be_Called : Boolean := False;
 
       procedure Add_Dependency_Files
-        (For_Project  : Project_Id;
-         For_Language : Name_Id);
+        (For_Project : Project_Id;
+         Language    : Language_Index;
+         Lang_Name   : Name_Id);
       --  Put the dependency files of the project in the binder exchange file
 
       procedure Check_Dependency_Files
@@ -1443,20 +1442,24 @@ package body Buildgpr is
       --------------------------
 
       procedure Add_Dependency_Files
-        (For_Project  : Project_Id;
-         For_Language : Name_Id)
+        (For_Project : Project_Id;
+         Language    : Language_Index;
+         Lang_Name   : Name_Id)
       is
-            Data    : Project_Data;
-            Src_Id  : Source_Id;
-            Source  : Source_Data;
-            Add_It  : Boolean := False;
+         Data    : Project_Data;
+         Src_Id  : Source_Id;
+         Source  : Source_Data;
+         Add_It  : Boolean := False;
+         Config  : constant Language_Config :=
+                     Project_Tree.Languages_Data.Table (Language).Config;
+
       begin
          Data := Project_Tree.Projects.Table (For_Project);
          Src_Id := Data.First_Source;
          while Src_Id /= No_Source loop
             Source := Project_Tree.Sources.Table (Src_Id);
 
-            if Source.Language_Name = For_Language
+            if Source.Language_Name = Lang_Name
               and then
                 (Config.Kind /= Unit_Based
                  or else
@@ -1887,7 +1890,9 @@ package body Buildgpr is
                              (Exchange_File, Binding_Label (Dependency_Files));
 
                            Add_Dependency_Files
-                             (Main_Proj, B_Data.Language_Name);
+                             (Main_Proj,
+                              B_Data.Language,
+                              B_Data.Language_Name);
 
                            Proj_List :=
                              Project_Tree.Projects.Table
@@ -1897,7 +1902,9 @@ package body Buildgpr is
                               Proj_Element :=
                                 Project_Tree.Project_Lists.Table (Proj_List);
                               Add_Dependency_Files
-                                (Proj_Element.Project, B_Data.Language_Name);
+                                (Proj_Element.Project,
+                                 B_Data.Language,
+                                 B_Data.Language_Name);
                               Proj_List := Proj_Element.Next;
                            end loop;
                         end if;
@@ -1920,7 +1927,9 @@ package body Buildgpr is
                            Element      : String_Element;
 
                            Min_Options  : Name_List_Index :=
-                                            Config.Binder_Min_Options;
+                                            Project_Tree.Languages_Data.Table
+                                              (B_Data.Language).
+                                                 Config.Binder_Min_Options;
                            Option       : Name_Node;
 
                         begin
