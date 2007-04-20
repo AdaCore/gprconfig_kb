@@ -65,7 +65,7 @@ $cc -c cpp__$basename.c
 
 # Generate the exchange file.
 cat > $1 <<EOF
-[GENERATED SOURCE FILE]
+[GENERATED SOURCE FILES]
 cpp__$basename.c
 [GENERATED OBJECT FILE]
 cpp__$basename.o
