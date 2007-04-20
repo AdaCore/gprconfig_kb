@@ -5,20 +5,35 @@
     supported languages, but we can parse the output of gcc -v.
     We filter out some of the languages, since for instance Ada is handled
     directly by GNAT, not through GCC (which doesn't necessarily have an
-    Ada runtime installed anyway.
+    Ada runtime installed anyway).
   -->
   <compiler_description>
     <name>GCC</name>
-    <executable>gcc</executable>
+    <executable prefix="1">(.+-)?gcc</executable>
     <version>
-      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">gcc --version</external>
+      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">${PREFIX}gcc --version</external>
     </version>
     <languages>
-      <external regexp="--enable-languages=(\S+)" group="1">gcc -v</external>
+      <external regexp="--enable-languages=(\S+)" group="1">${PREFIX}gcc -v</external>
       <filter>c,fortran</filter>
     </languages>
     <target>
-      <external regexp="[^\r\n]+">gcc -dumpmachine</external>
+      <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
+    </target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>GCC-WRS</name>
+    <executable prefix="1">cc(.+)</executable>
+    <version>
+      <external regexp="^cc.+ \(GCC\) ([0-9.]+) \(Wind River" group="1">cc${PREFIX} --version</external>
+    </version>
+    <languages>
+      <external regexp="--enable-languages=(\S+)" group="1">cc${PREFIX} -v</external>
+      <filter>c,fortran</filter>
+    </languages>
+    <target>
+      <external regexp="[^\r\n]+">cc${PREFIX} -dumpmachine</external>
     </target>
   </compiler_description>
 
@@ -55,6 +70,18 @@
     </languages>
     <target>
       <external regexp="[^\r\n]+">gcc -dumpmachine</external>
+    </target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>GCC-ASM</name>
+    <executable prefix="1">(.+-)?gcc</executable>
+    <version>
+      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">${PREFIX}gcc --version</external>
+    </version>
+    <languages>Asm</languages>
+    <target>
+      <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
     </target>
   </compiler_description>
 
