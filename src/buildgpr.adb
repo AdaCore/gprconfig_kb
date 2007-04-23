@@ -2278,9 +2278,13 @@ package body Buildgpr is
             while Id /= No_Source loop
                Source := Project_Tree.Sources.Table (Id);
 
-               if Source.Kind = Impl or else
-                 (Source.Unit /= No_Name and then
-                    Source.Other_Part = No_Source)
+               if (not Source.Locally_Removed)
+                 and then
+                 (Source.Kind = Impl
+                  or else
+                  (Source.Unit /= No_Name
+                   and then
+                   Source.Other_Part = No_Source))
                then
                   if not Is_Subunit (Source) then
                      Initialize_Source_Record (Id);
@@ -2322,9 +2326,13 @@ package body Buildgpr is
             while Id /= No_Source loop
                Source := Project_Tree.Sources.Table (Id);
 
-               if Source.Kind = Impl or else
-                 (Source.Unit /= No_Name and then
-                    Source.Other_Part = No_Source)
+               if (not Source.Locally_Removed)
+                 and then
+                  (Source.Kind = Impl
+                  or else
+                   (Source.Unit /= No_Name
+                     and then
+                    Source.Other_Part = No_Source))
                then
                   if not Is_Subunit (Source) then
                      --  Only include object file name that have not been
@@ -7253,7 +7261,11 @@ package body Buildgpr is
                      while Dep_Src /= No_Source loop
                         Initialize_Source_Record (Dep_Src);
 
-                        if Project_Tree.Sources.Table (Dep_Src).Unit /= No_Name
+                        if (not Project_Tree.Sources.Table
+                                  (Dep_Src).Locally_Removed)
+                          and then
+                            Project_Tree.Sources.Table (Dep_Src).Unit /=
+                              No_Name
                           and then
                             Project_Tree.Sources.Table (Dep_Src).File = Sfile
                         then
