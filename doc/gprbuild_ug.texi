@@ -50,9 +50,9 @@ AdaCore@*
 * Basic Concepts::
 * Guided Tour::
 * Building with gprbuild::
+* Configuration::
 * Cleaning up with gprclean::
 * Configuring with gprconfig::
-* Configuration files Description::
 * Other companion tools::
 * Index::
 
@@ -73,6 +73,13 @@ Guided Tour
 Building with gprbuild
 * Command Line::
 * Switches::
+* Initialisation::
+* Compilation of one or several sources::
+* Compilation Phase::
+* Post-Compilation Phase::
+* Linking Phase::
+
+Configuration
 
 Cleaning up with gprclean
 
@@ -82,8 +89,6 @@ Configuring with gprconfig
 * General file format::
 * Compiler description::
 * Configurations::
-
-Configuration files Description
 
 Other companion tools
 
@@ -530,7 +535,10 @@ that C_Main is now under light maintenance and
 * Command Line::
 * Switches::
 * Initialisation::
-* Execution::
+* Compilation of one or several sources::
+* Compilation Phase::
+* Post-Compilation Phase::
+* Linking Phase::
 @end menu
 
 @node Command Line
@@ -797,7 +805,7 @@ gprbuild: could not locate main configuration project my_standard.cgpr
 
 Once it has found the main configuration project, gprbuild will process its
 configuration. If the configuration project is not correct
-(see @ref{Configuration files Description}), then gprbuild will fail with
+(see @ref{Configuration}), then gprbuild will fail with
 the appropriate error messages:
 
 @smallexample
@@ -819,31 +827,125 @@ gprbuild: "my_project.gpr" processing failed
 Once the user project files have been processed successfully, then gprbuild
 will start to do some work.
 
-@node Execution
-@section Execution
+@node Compilation of one or several sources
+@section Compilation of one or several sources
 
-gprbuild will first compile or recompile all the sources that are
-not up to date in all the projects in the project tree. Then its behavior
-depends if there are mains or not.
+If gprbuild is invoked with -c and there are one or several source file names
+specified on the command line, gprbuild will compile or recompile these
+sources, if they are not up to date or if -f is also specified.
+Then gprbuild will stop its execution, even if -b or -l are specified.
+
+The options/switches used to compile these sources are described in section
+@ref{Compilation Phase}.
+
+@node Compilation Phase
+@section Compilation Phase
+
+When switch -c is used or when switches -b or -l are not used, gprbuild will
+first compile or recompile all the sources that are not up to date in all the
+projects in the project tree.
+
+gprbuild will first consider each source and decide if it needs to be
+(re)compiled.
+
+A source needs to be compiled in the following cases:
 
 @itemize @bullet
 
-@item There are mains specified:
+@item Switch -f (Force recompilations) is used
 
-Mains are either specified as source file names on the command line or, in the
-absence of those, by attribute Main in the main project file.
+@item The object file does not exist
 
-When mains are specified, gprbuild will proceed with its three phases, or with
-those phases that have been specified by switches. Specifying both the
-compilation phase (@code{-c}) and the linking phase (@code{-l}) implies also
-the post-compilation phase (@code{-b}).
+@item The object file is earlier than the source
 
-...
+@item The dependency file does not exist
 
-@item No main is specified
+@item The dependency file is earlier than the source
 
+@item The switch file does not exist
+
+@item The switch file is earlier than the source
+
+@item The dependency file cannot be read
+
+@item The dependency file is empty
+
+@item The dependency file has a wrong format
+
+@item A source listed in the dependency file does not exist
+
+@item A source listed in the dependency has an incompatible time stamp
+
+@item A source listed in the dependency file has been replaced
+
+@item Switch -s is used and the source has been compiled with different
+      switches or with the same switches in a different order
 
 @end itemize
+
+When a source is successfully compiled, the following files are normally
+created in the object directory of the project of the source:
+
+@itemize @bullet
+
+@item An object file
+
+@item A dependency file, except when the dependency kind for the language
+      is "none"
+
+@item A switch file
+
+@end itemize
+
+The compiler for the language of the source is invoked with the following
+switches/options:
+
+@itemize @bullet
+
+@item The minimum default compilation switches for the language
+
+@item The global compilation switches coming from package Builder of the
+      main project
+
+@item The compilation switches coming from package Compiler of the project of
+      the source
+
+@item The compilation switches specified on the command line for all compilers,
+      after "-cargs"
+
+@item The compilation switches for the language of the source, specified
+      after "-cargs:<language>"
+
+@item Various other options such as a switch to create the dependency file
+      while compiling, a switch to specify a configuration file, a switch
+      to specify a mapping file or switches to indicate where to look for
+      other source or header files that are needed to compile the source.
+
+@end itemize
+
+If compilation is needed, then all the options/switches, except those
+described as "Various other options" are written to the switch file.
+The switch file is a text file. It file name is obtained by replacing
+the suffix of the source with ".cswi". For example, the switch file
+for source "main.adb" is "main.cswi" and for "toto.c" it is "toto.cswi".
+
+If the compilation is successful, then if the creation of the dependency
+file is not done during compilation but after (see configuration attribute
+Compute_Dependency), then the process to create the dependency file is
+invoked.
+
+If gprbuild is invoked with a switch -j specifying more that one compilation
+process, then several compilation processes for several sources of possibly
+different languages are spawned concurently.
+
+@node Post-Compilation Phase
+@section Post-Compilation Phase
+
+@node Linking Phase
+@section Linking Phase
+
+@node Configuration
+@chapter Configuration
 
 @node Cleaning up with gprclean
 @chapter Cleaning up with gprclean
@@ -1541,12 +1643,6 @@ inverted, and it will match when none of its children matches.
 @end itemize
 
 @c  ------------------------------------------------------------------------
-@node Configuration files Description
-@chapter Configuration files Description
-c  ------------------------------------------------------------------------
-@c describe here the format of the gprbuild configuration files
-
-c  ------------------------------------------------------------------------
 @node Other companion tools
 @chapter Other companion tools
 c  ------------------------------------------------------------------------
