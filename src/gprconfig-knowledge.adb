@@ -416,7 +416,7 @@ package body GprConfig.Knowledge is
                Compiler.Prefix_Index := Integer'Value (Prefix);
                Compiler.Executable_Re := new Pattern_Matcher'
                  (Compile (To_String ("^" & Compiler.Executable
-                                      & "(" & Exec_Suffix.all & ")?$")));
+                                      & Exec_Suffix.all & "$")));
 
             exception
                when Expression_Error =>
@@ -1255,8 +1255,8 @@ package body GprConfig.Knowledge is
                                   Matches    => Matches);
                            Matched := Matches (0) /= No_Match;
                         else
-                           Matched := To_String (Element (C).Executable) =
-                             Simple_Name (Dir);
+                           Matched := (To_String (Element (C).Executable) &
+                             Exec_Suffix.all) = Simple_Name (Dir);
                         end if;
 
                         if Matched then
