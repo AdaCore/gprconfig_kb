@@ -47,6 +47,7 @@ package body GprConfig.Knowledge is
    use External_Value_Nodes;
 
    Case_Sensitive_Files : constant Boolean := Directory_Separator = '\';
+   On_Windows           : constant Boolean := Directory_Separator = '\';
 
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
@@ -108,6 +109,9 @@ package body GprConfig.Knowledge is
       Path_Order : Integer);
    --  For each language/runtime parsed in Languages/Runtimes, create a new
    --  compiler in the list.
+
+   function Is_Windows_Executable (Filename : String) return Boolean;
+   --  Verify that a given filename is indeed an executable
 
    procedure Parse_All_Dirs
      (Processed_Value  : out External_Value_Lists.List;
@@ -221,6 +225,36 @@ package body GprConfig.Knowledge is
       end loop;
       return Str2 (Str2'First .. Index - 1);
    end Unquote;
+
+   ---------------------------
+   -- Is_Windows_Executable --
+   ---------------------------
+
+   function Is_Windows_Executable (Filename : String) return Boolean is
+
+      type Byte is mod 256;
+      for Byte'Size use 8;
+      for Byte'Alignment use 1;
+      type Bytes is array (Positive range <>) of Byte;
+
+      Windows_Pattern : constant Bytes := (77, 90, 144, 0);
+
+      Fd : constant File_Descriptor := Open_Read (Filename, Binary);
+      B  : Bytes (1 .. 4);
+      N_Read : Integer;
+   begin
+      N_Read := Read (Fd, B'Address, 4);
+      Close (Fd);
+      if N_Read < 4 then
+         return False;
+      else
+         if B = Windows_Pattern then
+            return True;
+         else
+            return False;
+         end if;
+      end if;
+   end Is_Windows_Executable;
 
    ---------------
    -- Is_Regexp --
@@ -1115,6 +1149,17 @@ package body GprConfig.Knowledge is
       Comp      : Compiler;
       C, C2     : External_Value_Lists.Cursor;
    begin
+
+      --  verify that the compiler is indeed a real executable
+      --  on Windows and not a cygwin symbolic link
+
+      if On_Windows
+        and then not Is_Windows_Executable
+          (Directory & Directory_Separator & Executable)
+      then
+         return;
+      end if;
+
       Comp.Name       := To_Unbounded_String (Name);
       Comp.Path       := To_Unbounded_String (Directory);
       Comp.Path_Order := Path_Order;
