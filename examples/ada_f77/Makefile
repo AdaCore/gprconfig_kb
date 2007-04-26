@@ -1,4 +1,4 @@
 all:
-	gprbuild -v ft1.gpr
+	gprbuild ft1.gpr
 clean:
-	gprclean -r ft1.gpr
+	gprclean -q -r ft1.gpr

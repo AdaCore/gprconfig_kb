@@ -3,9 +3,13 @@ project ft1 is
    for Languages use ("Fortran");
    for Main use ("ess.f");
 
+   package Language_Processing is
+      for Linker use "g77";
+      for Minimum_Linker_Options use ("-mno-cygwin");
+   end Language_Processing;
+
    package Naming is
       for Specification_Suffix ("fortran") use ".f";
    end Naming;
-
 end ft1;
 
