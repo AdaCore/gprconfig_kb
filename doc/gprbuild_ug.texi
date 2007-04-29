@@ -944,9 +944,289 @@ different languages are spawned concurently.
 @node Linking Phase
 @section Linking Phase
 
+@c  ------------------------------------------------------------------------
 @node Configuration
 @chapter Configuration
+@c  ------------------------------------------------------------------------
 
+@menu
+* Package Naming::
+* Package Language_Processing::
+@end menu
+
+@noindent
+gprbuild needs to have a configuration file to know the different
+characteristics of the toolchains that can be used to compile sources and
+build libraries and executables.
+
+A configuration file is a special kind of project file: it uses the same
+syntax as a standard project file but its content is limited to two packages:
+Naming and Language_Processing and some of their attributes.
+
+The default name of the configuration file, when to specified to gprbuild by
+switch --config= is "default.cgpr". Although the name of the configuration
+file can be valid file name, it is recommended that its suffix be ".cgpr" (for
+Configuration GNAT Project), so that it cannot be confused with a standard
+project file which has the suffix ".gpr".
+
+In the description of the attributes that follows, when an attribute is an
+associative array indexed by the language name, for example
+Spec_Suffix (<language>), then the name of the language is case insensitive.
+For example, "C" and "c" are allowed.
+
+@node Package Naming
+@section Package Naming
+
+Attributes in package Naming of a configuration file specify defaults. These
+attributes may be used in user project files to replace these defaults.
+
+The following attributes may appear in package Naming of a configuration file:
+
+@itemize @bullet
+@item Spec_Suffix (<language>)
+
+Specifies the default suffix for a "spec" or header file. Examples:
+
+@smallexample
+   for Spec_Suffix ("Ada") use ".ads";
+   for Spec_Suffix ("C")   use ".h";
+   for Spec_Suffix ("C++") use ".hh";
+@end smallexample
+
+@item Body_Suffix (<language>)
+
+Specifies the default sufix for a "body" or a source file. Examples:
+
+@smallexample
+   for Body_Suffix ("Ada") use ".adb";
+   for Body_Suffix ("C")   use ".c";
+   for Body_Suffix ("C++") use ".cpp";
+@end smallexample
+
+@item Separate_Suffix
+
+Specifies the suffix for a subunit source file (separate) in Ada. If attribute
+Separate_Suffix is not specified, then the default suffix of subunit source
+files is the same as the default suffix for body source files. Example:
+
+@smallexample
+   for Separate_Suffix use ".sep";
+@end smallexample
+
+@item Casing
+
+Specifies the casing of spec and body files in a unit based language
+(such as Ada) to know how to map a unit name to its file name. The values for
+this attribute may only be "lowercase", "UPPERCASE" and "Mixedcase".
+The default, when attribute Casing is not specified is lower case.
+It is rarely the case when this attribute needs to be specified, as on
+platforms where file names are not case sensitive (such as Windows of VMS)
+the default (lower case) will work fine.
+
+@item Dot_Replacement
+
+Specifies the string to replace a dot ('.') in unit name of a unit based
+language (such as Ada) to obtain its file name. If there is any unit based
+language in the configuration, attribute Dot_Replacement must be declared.
+Example:
+
+@smallexample
+   for Dot_Replacement use "-";
+@end smallexample
+
+@end itemize
+
+@node Package Language_Processing
+@section Package Language_Processing
+
+@menu
+* General Attributes::
+* Compiling Attributes::
+* Mapping File Related Attributes::
+* Config File Related Attributes::
+* Dependency Related Attributes::
+* Search Path Related Attributes::
+* Binding Related Attributes::
+* Linking Related Attributes::
+* General Library Related Attributes::
+* Archive Related Attributes::
+* Shared Library Related Attributes::
+@end menu
+
+@node General Attributes
+@subsection General Attributes
+
+@itemize @bullet
+
+@item Default_Language
+
+@item Run_Path_Option
+
+@item Executable_Suffix
+
+@item Toolchain_Version (<language>)
+
+@item Toolchain_Description (<language>)
+
+@end itemize
+
+@node Compiling Attributes
+@subsection Compiling Attributes
+
+@itemize @bullet
+
+@item Language_Kind <language>)
+
+@item Compiler_Driver (<language>)
+
+@item Minimum_Compiler_Options (<language>)
+
+@item Compiler_PIC_Option (<language>)
+
+@item Runtime_Project (<language>)
+
+@end itemize
+
+@node Mapping File Related Attributes
+@subsection Mapping File Related Attributes
+
+@itemize @bullet
+
+@item Mapping_File_Switches (<language>)
+
+@item Mapping_Spec_Suffix (<language>)
+
+@item Mapping_Body_Suffix (<language>)
+
+@end itemize
+
+@node Config File Related Attributes
+@subsection Config File Related Attributes
+
+@itemize @bullet
+
+@item Config_File_Switches (<language>)
+
+@item Config_Body_File_Name (<language>)
+
+@item Config_Spec_File_Name (<language>)
+
+@item Config_Body_File_Name_Pattern (<language>)
+
+@item Config_Spec_File_Name_Pattern (<language>)
+
+@item Config_File_Unique (<language>)
+
+@end itemize
+
+@node Dependency Related Attributes
+@subsection Dependency Related Attributes
+
+@itemize @bullet
+
+@item Dependency_File_Kind (<language>)
+
+@item Dependency_Option (<language>)
+
+@item Compute_Dependency (<language>)
+
+@end itemize
+
+@node Search Path Related Attributes
+@subsection Search Path Related Attributes
+
+@itemize @bullet
+
+@item Include_Option (<language>)
+
+@item Include_Path (<language>)
+
+@item Include_Path_File (<language>)
+
+@item Objects_Path (<language>)
+
+@item Objects_Path_File (<language>)
+
+@end itemize
+
+@node Binding Related Attributes
+@subsection Binding Related Attributes
+
+@itemize @bullet
+
+@item Binder_Driver (<language>)
+
+@item Minimum_Binder_Options (<language>)
+
+@item Binder_Prefix (<language>)
+
+@end itemize
+
+@node Linking Related Attributes
+@subsection Linking Related Attributes
+
+@itemize @bullet
+
+@item Default_Linker
+
+@item Default_Minimum_Linker_Options
+
+@item Linker_Executable_Option
+
+@item Linker_Lib_Dir_Option
+
+@item Linker_Lib_Name_Option
+
+@end itemize
+
+@node General Library Related Attributes
+@subsection General Library Related Attributes
+
+@itemize @bullet
+
+@item Library_Support
+
+@item Library_Builder
+
+@end itemize
+
+@node Archive Related Attributes
+@subsection Archive Related Attributes
+
+@itemize @bullet
+
+@item Archive_Builder
+
+@item Archive_Indexer
+
+@item Archive_Suffix
+
+@item Library_Partial_Linker
+
+@end itemize
+
+@node Shared Library Related Attributes
+@subsection Shared Library Related Attributes
+
+@itemize @bullet
+
+@item Shared_Library_Prefix
+
+@item Shared_Library_Suffix
+
+@item Symbolic_Link_Supported
+
+@item Library_Major_Minor_ID_Supported
+
+@item Library_Auto_Init_Supported
+
+@item Shared_Library_Minimum_Options
+
+@item Library_Version_Options
+
+@end itemize
+
+@c  ------------------------------------------------------------------------
 @node Cleaning up with gprclean
 @chapter Cleaning up with gprclean
 @c  ------------------------------------------------------------------------
