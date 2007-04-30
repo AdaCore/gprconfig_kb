@@ -1119,15 +1119,56 @@ may be used by other tools, for example GPS. Example:
 
 @itemize @bullet
 
-@item Language_Kind <language>)
+@item Language_Kind (<language>)
+
+Specifies if a language is file based or unit based. By default, if attribute
+Language_Kind is not declared for a language, the language is file based.
+There are only two possible values for this attribute: "file_based" or
+"unit_based". Example:
+
+@smallexample
+   for Language_Kind ("Ada") use "unit_based";
+@end smallexample
 
 @item Compiler_Driver (<language>)
 
+Specifies the name of the executable for the compiler of a language. The single
+string value of this attribute may be an absolute path or a relative path. If
+relative, then the execution path is searched. Examples:
+
+@smallexample
+   for Compiler_Driver ("C++") use "g++";
+   for Compiler_Driver ("Ada") use "/.../bin/gcc";
+@end smallexample
+
 @item Minimum_Compiler_Options (<language>)
+
+Specifies the minimum options that must be used when invoking the compiler
+of a language. Examples:
+
+@smallexample
+   for Minimum_Compiler_Options ("C")   use ("-c", "-x", "c");
+   for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnata");
+@end smallexample
 
 @item Compiler_PIC_Option (<language>)
 
+Specifies the option or options that must be used when compiling a source of
+a language to be put in a shared library. Example:
+
+@smallexample
+   for Compiler_PIC_Option ("C") use ("-fPIC");
+@end smallexample
+
 @item Runtime_Project (<language>)
+
+Specifies, if there is one, the path of the runtime project of a language.
+If it is a relative path, it is relative to the directory of the configuration
+file. Example:
+
+@smallexample
+   for Runtime_Project ("Ada") use "/.../share/gpr/ada_runtime.gpr";
+@end smallexample
 
 @end itemize
 
