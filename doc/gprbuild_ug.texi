@@ -1378,9 +1378,43 @@ one. Example:
 
 @item Dependency_File_Kind (<language>)
 
+Specifies the dependency kind for a language. The case insensitive value of
+this attribute must be "none" (the default), "Makefile" (for most toolchains)
+or "ALI_File" (for GNAT). Example:
+
+@smallexample
+   for Dependency_File_Kind ("C")   use "Makefile";
+   for Dependency_File_Kind ("Ada") use "ALI_File";
+@end smallexample
+
 @item Dependency_Option (<language>)
 
+When Dependency_File_Kind is "Makefile", attribute Dependency_Option specifies
+the option or options to add to the compiler invocation so that it creates
+the dependency file at the same time. The value of attribute Dependency_Option
+is a string list. The name of the dependency file is added to the last string
+in the list, which may be empty. Example:
+
+@smallexample
+   for Dependency_Option ("C") use ("-Wp,-MD,");
+@end smallexample
+
+With this Dependency_Option, when compiling "file.c", the compiler will be
+invoked with the option "-Wp,-MD,file.d".
+
+Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
+
 @item Compute_Dependency (<language>)
+
+Specifies the command and options to create a dependency file for a source.
+The full path name of the source is appended to the last string of the string
+list value. Example:
+
+@smallexample
+   for Compute_Dependency ("C") use ("gcc", "-E", "-Wp,-M", "");
+@end smallexample
+
+Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
 
 @end itemize
 
