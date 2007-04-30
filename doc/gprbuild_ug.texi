@@ -1060,13 +1060,57 @@ Example:
 
 @item Default_Language
 
+Specifies the name of the language of the immediate sources of a project when
+attribute Languages is not declared in the project. If attribute
+Default_Language is not declared in the configuration file, then all user
+project files in the project tree must have an attribute Languages declared
+except when the extend another project. Example:
+
+@smallexample
+   for Default_Language use "ada";
+@end smallexample
+
 @item Run_Path_Option
+
+Specifies a "run path option", that is an option to use when linking an
+executable or a shared library to indicate the path where to look for other
+libraries. The value of this attribute is a string list. When linking an
+executable or a shared library, the search path is concatenated with the last
+string in the list, which may be an empty string. Example:
+
+@smallexample
+   for Run_Path_Option  use ("-Wl,-rpath,");
+@end smallexample
 
 @item Executable_Suffix
 
+Specifies the default executable suffix. This default may be overwritten if
+attribute Executable_Suffix is declared in package Builder of the main user
+project. If no attribute Executable_Suffix is declared, then there is no
+suffix for executables. Example:
+
+@smallexample
+   for Default_Suffix use ".exe";
+@end smallexample
+
 @item Toolchain_Version (<language>)
 
+Specifies a version for a toolchain, as a single string. This toolchain
+version is passed to the library builder. Example:
+
+@smallexample
+   for Toolchain_Version ("Ada") use "GNAT 6.1";
+@end smallexample
+
 @item Toolchain_Description (<language>)
+
+Specifies as a single string a description of a toolchain. This attribute is
+not directly used by gprbuild or its auxiliary tools (gprbind and gprlib) but
+may be used by other tools, for example GPS. Example:
+
+@smallexample
+   for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
+@end smallexample
 
 @end itemize
 
