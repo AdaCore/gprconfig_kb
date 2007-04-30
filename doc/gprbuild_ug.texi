@@ -1179,9 +1179,33 @@ file. Example:
 
 @item Mapping_File_Switches (<language>)
 
+Specifies the switch or switches to be used to specify a mapping file to the
+compiler. When attribute Mapping_File_Switches is not declared, then no
+mapping file is specified to the compiler. The value of this attribute is a
+string list. The path name of the mapping file is concatenated with the last
+string in the string list, which may be empty. Example:
+
+@smallexample
+   for Mapping_File_Switches ("Ada") use ("-gnatem=");
+@end smallexample
+
 @item Mapping_Spec_Suffix (<language>)
 
+Specifies, for unit based languages that support mapping files, the suffix in
+the mapping file that needs to be added to the unit name for specs. Example:
+
+@smallexample
+    for Mapping_Spec_Suffix ("Ada") use "%s";
+@end smallexample
+
 @item Mapping_Body_Suffix (<language>)
+
+Specifies, for unit based languages that support mapping files, the suffix in
+the mapping file that needs to be added to the unit name for bodies. Example:
+
+@smallexample
+    for Mapping_Spec_Suffix ("Ada") use "%b";
+@end smallexample
 
 @end itemize
 
