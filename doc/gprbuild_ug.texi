@@ -1273,19 +1273,101 @@ the mapping file that needs to be added to the unit name for bodies. Example:
 @node Config File Related Attributes
 @subsection Config File Related Attributes
 
+@noindent
+
+In the value of config file attributes defined below, there are some
+placeholders that gprbuild will replace. These placeholders are:
+
+@itemize @bullet
+
+@item %u : the unit name
+
+@item %f : the file name of the source
+
+@item %s : the spec suffix
+
+@item %b : the body suffix
+
+@item %c : the casing
+
+@item %d : the dot replacement string
+
+@end itemize
+
+Attributes:
+
 @itemize @bullet
 
 @item Config_File_Switches (<language>)
 
+Specifies the switch or switches to be used to specify a confi file to the
+compiler. When attribute Config_File_Switches is not declared, then no
+config file is specified to the compiler. The value of this attribute is a
+string list. The path name of the config file is concatenated with the last
+string in the string list, which may be empty. Example:
+
+@smallexample
+   for Config_File_Switches ("Ada") use ("-gnatec=");
+@end smallexample
+
 @item Config_Body_File_Name (<language>)
+
+Specifies the line to be put in a config file to indicate the file name of a
+body. Example:
+
+@smallexample
+   for Config_Body_File_Name ("Ada") use
+       "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
+@end smallexample
 
 @item Config_Spec_File_Name (<language>)
 
+Specifies the line to be put in a config file to indicate the file name of a
+spec. Example:
+
+@smallexample
+   for Config_Spec_File_Name ("Ada") use
+       "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
+@end smallexample
+
 @item Config_Body_File_Name_Pattern (<language>)
+
+Specifies the line to be put in a config file to indicate a body file name
+pattern. Example:
+
+@smallexample
+   for Config_Body_File_Name_Pattern ("Ada") use
+       "pragma Source_File_Name_Project " &
+       "  (Body_File_Name  => ""*%b""," &
+       "   Casing          => %c," &
+       "   Dot_Replacement => ""%d"");";
+@end smallexample
 
 @item Config_Spec_File_Name_Pattern (<language>)
 
+Specifies the line to be put in a config file to indicate a spec file name
+pattern. Example:
+
+@smallexample
+   for Config_Spec_File_Name_Pattern ("Ada") use
+       "pragma Source_File_Name_Project " &
+       "  (Spec_File_Name  => ""*%s""," &
+       "   Casing          => %c," &
+       "   Dot_Replacement => ""%d"");";
+@end smallexample
+
 @item Config_File_Unique (<language>)
+
+Specifies, for languages that support config files, if several config files
+may be indicated to the compiler, or not. This attribute may have only two
+values: "true" or "false" (case insensitive). The default, when this attribute
+is not specified, is "false". When the value "true" is specified for this
+attribute, gprbuild will concatenate the config files, if there are more than
+one. Example:
+
+@smallexample
+   for Config_File_Unique ("Ada") use "True";
+@end smallexample
 
 @end itemize
 
