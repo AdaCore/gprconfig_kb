@@ -507,15 +507,65 @@ project file.
 @node Project Extensions
 @section Project Extensions
 
-We have seen how to share both commpilation units and project properties
+We have seen how to share both compilation units and project properties
 among different systems. Sharing is an essential aspect of big system
-programming since it helps getting organized, reduces compilation time,
-and reduce the maintenance burden. Unfortunately, it gets sometimes in
-the way. In the above example, @code{Ada_Main} and @code{C_Main both} depend on
+programming since it helps getting organized, reduces compilation time, and
+reduce the maintenance burden. Unfortunately, it gets sometimes in the way.
+In the above example, @code{Ada_Main} and @code{C_Main both} depend on
 @code{Common_Subsystems} because they have precisely the same needs but the
 requirements of the two systems can diverge over time and which case
-sharing becomes a problem rather than a solution. For instance, suppose
-that C_Main is now under light maintenance and
+sharing becomes a problem rather than a solution. For instance let us
+suppose that C_Main is now under maintenance and should not be changed
+carelessly while Ada_Main is still under active development which require
+changes in the sources of the common subsystem. How can we satisfy
+Ada_Main's needs without taking any risks of perturbing C_Main? One
+possibility is to duplicate the common_subsystem completely so that one
+version can evolve while the other one can remain frozen. That will force
+duplication and recompilation of the whole project. Extensions provide a
+more flexible mechansim making it possible to provide a new version of
+a subsystem without having to duplicate the sources which do not change.
+A project extension inherit all the sources and object from the project it
+extends and allow the possibility to redefine some of the sources
+which hide the original versions. Once can also add new sources or remove
+existing ones.
+Here is an example of extension of project common_subsystem:
+
+@smallexample @c projectfile
+project New_Common_Subsystem extends "../subsystems/common_subsystem.gpr" is
+   for Source_Dirs  use ("new_util_src");
+   for Object_Dir   use  "new_obj_util";
+end New_Common_Subsystem;
+@end smallexample
+
+The project sources are to be found in @code{Common_Subsystem.Source_Dirs}
+and @code{New_Common_Subsystem.Source_Dirs}. The latter hiding the former
+when the same source filenames are found in both. New sources can be
+added to the project extension by simply placing them in its
+Source_Dirs. Original Sources can be removed thanks to the Attribute
+@code{Locally_Removed_Files}.
+When building a project extension, all units depending on new versions of
+sources are rebuilt in the extension's @code{Object_Dir}. Other objects
+remain in their original location and will be used by the builder whenever
+necessary.
+
+We have seem how to define a project extension but how can this extension
+be used in the context of a big program composed of many subsystems?
+Extending one subsystem may affect implicity many other subsystems
+depending on it eventhough there are no source change in those
+dependant projects. In order to avoid the necessity for generating a
+project extension for each of the affected subsystems, one can use the
+notion of "extending all" which basically means "extend all the projects
+necessary so that this specific project extension can be used instead of
+its original version. Here is an example of an extending-all project:
+
+@smallexample @c projectfile
+with "new_common_subsystem.gpr";
+project New_Ada_Main extends all "../subsystems/ada_main.gpr" is
+   for Source_Dirs  use ("new_ada_src");
+   for Object_Dir   use  "new_obj";
+   for Exec_Dir     use ".";
+end New_Ada_Main;
+@end smallexample
 
 @node Libraries
 @section Libraries
@@ -546,18 +596,29 @@ that C_Main is now under light maintenance and
 
 @noindent
 
-To use gprbuild, you need to specify one main project file, using switch
--P. Everything else is optional. The optional parts on the command line are
-switches, name(s) of mains and command line separators.
+Three elements can optionally be specified on gprbuild command line:
+the main project file, switches for gprbuild itself or for the tools it
+drives and finally, main source files:
+@smallexample
+gprbuild [<proj>.gpr] [switches] [names]
+  @{[-cargs opts] [- cargs:lang opts] [-largs opts][-gargs opts]@}
+@end smallexample
 
-In all cases, gprbuild compiles or recompiles all sources in the project tree
+If the main project file is not specified on the command line, either
+directly or using the @code{-P} switch, gprbuild uses the project file
+in the current directory as long as there is a single one.
+
+Main source files represent the source to be used as a main program. It
+they are not specified on the command line, gprbuild uses
+the source files specified with the Main attribute in the project file. If
+none exists, then no executable will be built.
+
+When main source files are
+specified along with switch @code{-c}, then only recompilation will
+be considered only for those source files. In all other cases, gprbuild
+compiles or recompiles all sources in the project tree
 that are not up to date and build or rebuild libraries that are not up to
 date.
-
-If there are one or several names of mains on the command lines, or if
-there are mains declared in the project file (with attribute Main), then
-gprbuild will build the executables for the mains. Mains specified on the
-command line may be sources different projects in the project tree.
 
 The different command line separators are:
 
