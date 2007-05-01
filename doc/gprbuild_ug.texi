@@ -1491,9 +1491,31 @@ object search path. Example:
 
 @item Binder_Driver (<language>)
 
+Specifies the name of the executable of the binder driver. When this attribute
+is not specified, there is no binder for the language. Example:
+
+@smallexample
+   for Binder_Driver ("Ada") use "/.../gprbind";
+@end smallexample
+
 @item Minimum_Binder_Options (<language>)
 
+Specifies the minimum options to be used when invoking the binder driver.
+These options are put in the appropriate section in the binder exchange file,
+one option per line. Example:
+
+@smallexample
+   for Minimum_Binder_Options ("Ada") use ("gnatbind-prefix=<prefix>");
+@end smallexample
+
 @item Binder_Prefix (<language>)
+
+Specifies the prefix to be used in the name of the binder exchange file.
+Example:
+
+@smallexample
+   for Binder_Prefix ("C++") use ("c__");
+@end smallexample
 
 @end itemize
 
@@ -1504,13 +1526,54 @@ object search path. Example:
 
 @item Default_Linker
 
+Specifies the name of the executable of the default linker. Example:
+
+@smallexample
+   for Default_Linker use "g++";
+@end smallexample
+
 @item Default_Minimum_Linker_Options
+
+Specifies the minimum options to be used when invoking the default linker.
 
 @item Linker_Executable_Option
 
+Specifies the option or options to be used when invoking the linker to indicate
+the name of the executable produced. The value of this attribute is a string
+list. The name of the executable is concatenated with the last string in the
+string list, which may be empty. If this attribute is not specified, then
+the option is "-o" followed by the name of the executable. Example (equivalent
+to the default):
+
+@smallexample
+   for Linker_Executable_Option use ("-o", "");
+@end smallexample
+
 @item Linker_Lib_Dir_Option
 
+Specifies the option or options to be used when invoking the linker to indicate
+a directory to be searched by the linker to find libraries. The value of this
+attribute is a string list. The path name of the directory is concatenated
+with the last string in the string list, which may be empty. If this attribute
+is not specified, then the option is "-L" concatenated with the directory path
+name. Example (equivalent to the default):
+
+@smallexample
+   for Linker_Lib_Dir_Option use ("-L");
+@end smallexample
+
 @item Linker_Lib_Name_Option
+
+Specifies the option or options to be used when invoking the linker to indicate
+the name of a library to be used by the linker to. The value of this
+attribute is a string list. The name of the library is concatenated
+with the last string in the string list, which may be empty. If this attribute
+is not specified, then the option is "-l" concatenated with the library name.
+Example (equivalent to the default):
+
+@smallexample
+   for Linker_Lib_Name_Option use ("-l");
+@end smallexample
 
 @end itemize
 
@@ -1521,7 +1584,21 @@ object search path. Example:
 
 @item Library_Support
 
+Specifies the level of support for library project. If this attribute is not
+specified, then library projects are not supported. The only potential values
+for this attribute are "none", "static_only" and "full". Example:
+
+@smallexample
+   for Library_Support use "full";
+@end smallexample
+
 @item Library_Builder
+
+Specifies the name of the executable for the library builder. Example:
+
+@smallexample
+   for Library_Builder use "/.../gprlib";
+@end smallexample
 
 @end itemize
 
@@ -1532,11 +1609,41 @@ object search path. Example:
 
 @item Archive_Builder
 
+Specifies the name of the executable of the archive builder with the minimum
+options, if any. Example:
+
+@smallexample
+   for Archive_Builder use ("ar", "cr");
+@end smallexample
+
 @item Archive_Indexer
+
+Specifies the name of the executable of the archive indexer with the minimum
+options, if any. If this attribute is not specified, then there is no
+archive indexer. Example:
+
+@smallexample
+   for Archive_Indexer use ("ranlib");
+@end smallexample
 
 @item Archive_Suffix
 
+Specifies the suffix of the archives. If this attribute is not specified, then
+the suffix of the archives is defaulted to ".a". Example:
+
+@smallexample
+   for Archive_Suffix use ".olb"; --  for VMS
+@end smallexample
+
 @item Library_Partial_Linker
+
+Specifies the name of the executable of the partial linker with the options
+to be used, if any. If this attribute is not specified, then there is no
+partial linking. Example:
+
+@smallexample
+   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+@end smallexample
 
 @end itemize
 
@@ -1547,17 +1654,71 @@ object search path. Example:
 
 @item Shared_Library_Prefix
 
+Specifies the prefix of the file names of shared libraries. When this attribute
+is not specified, the prefix is "lib". Example:
+
+@smallexample
+   for Shared_Library_Prefix use ""; --  for Windows
+@end smallexample
+
 @item Shared_Library_Suffix
+
+Specifies the suffix of the file names of shared libraries. When this attribute
+is not specified, the prefix is ".so". Example:
+
+@smallexample
+   for Shared_Library_Suffix use ".dll"; --  for Windows
+@end smallexample
 
 @item Symbolic_Link_Supported
 
+Specifies if symbolic links are supported by the platforms. The possible values
+of this attribute are "false" (the default) and "true". When this attribute is
+not specified, symbolic links are not supported.
+
+@smallexample
+   for Symbolic_Link_Supported use "true";
+@end smallexample
+
 @item Library_Major_Minor_ID_Supported
+
+Specifies if major and minor IDs are supported for shared libraries.
+The possible values of this attribute are "false" (the default) and "true".
+When this attribute is not specified, major and minor IDs are not supported.
+
+@smallexample
+   for Library_Major_Minor_ID_Supported use "True";
+@end smallexample
 
 @item Library_Auto_Init_Supported
 
+Specifies if library auto initialization is supported. The possible values of
+this attribute are "false" (the default) and "true". When this attribute is not
+specified, library auto initialization is not supported.
+
+@smallexample
+   for Library_Auto_Init_Supported use "true";
+@end smallexample
+
 @item Shared_Library_Minimum_Options
 
+Specifies the minimum options to be used when building shared library. These
+options are put in the appropriate section in the library exchange file when
+the library builder is invoked. Example:
+
+@smallexample
+   for Shared_Library_Minimum_Options use  ("-shared");
+@end smallexample
+
 @item Library_Version_Options
+
+Specifies the option or options to be used when a library version is used.
+These options are put in the appropriate section in the library exchange file
+when the library builder is invoked. Example:
+
+@smallexample
+   for Library_Version_Options use ("-Wl,-soname,");
+@end smallexample
 
 @end itemize
 
