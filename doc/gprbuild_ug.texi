@@ -1425,13 +1425,62 @@ Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
 
 @item Include_Option (<language>)
 
+Specifies the option or options to use when invoking the compiler to indicate
+that a directory is part of the source search path. The value of this
+attribute is a string list. The full path name of the directory is concatenated
+with the last string in the string list, which may be empty. Example:
+
+@smallexample
+   for Include_Option ("C") use ("-I");
+@end smallexample
+
+Attribute Include_Option cannot specified if either one of the attributes
+Include_Path or Include_Path_File are specified.
+
 @item Include_Path (<language>)
+
+Specifies the name of an environment variable that is used by the compiler to
+get the source search path. The value of the environment variable is the source
+search path to be used by the compiler. Example:
+
+@smallexample
+   for Include_Path ("C")   use "CPATH";
+   for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
+@end smallexample
 
 @item Include_Path_File (<language>)
 
+Specifies the name of an environment variable that is used by the compiler to
+get the source search path. The value of the environment variable is the path
+name of a text file that contain the path names of the directories of the
+source search path. Example:
+
+@smallexample
+   for Include_Path_File ("Ada") use "ADA_PRJ_INCLUDE_FILE";
+@end smallexample
+
+If both attributes Include_Path and
+
 @item Objects_Path (<language>)
 
+Specifies the name of an environment variable that is used by the compiler to
+get the object search path. The value of the environment variable is the object
+search path to be used by the compiler. Example:
+
+@smallexample
+   for Objects_Path ("Ada") use "ADA_OBJECTS_PATH";
+@end smallexample
+
 @item Objects_Path_File (<language>)
+
+Specifies the name of an environment variable that is used by the compiler to
+get the object search path. The value of the environment variable is the path
+name of a text file that contain the path names of the directories of the
+object search path. Example:
+
+@smallexample
+   for Objects_Path_File ("Ada") use "ADA_PRJ_OBJECTS_FILE";
+@end smallexample
 
 @end itemize
 
