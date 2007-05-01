@@ -1,8 +1,8 @@
-with "fm";
-project ft1 is
+with "fm_ssal";
+project ft2 is
    for Languages use ("Fortran");
-   for Main use ("ess.f");
-   for Object_Dir use "fobj1";
+   for Main use ("ess2.f");
+   for Object_Dir use "fobj2";
 
    package Language_Processing is
       for Compiler_Driver          ("Fortran") use "g77";
@@ -15,5 +15,5 @@ project ft1 is
    package Naming is
       for Specification_Suffix ("fortran") use ".f";
    end Naming;
-end ft1;
+end ft2;
 
