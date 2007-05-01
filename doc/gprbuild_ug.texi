@@ -1209,7 +1209,7 @@ of a language. Examples:
 
 @smallexample
    for Minimum_Compiler_Options ("C")   use ("-c", "-x", "c");
-   for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnata");
+   for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
 @end smallexample
 
 @item Compiler_PIC_Option (<language>)
