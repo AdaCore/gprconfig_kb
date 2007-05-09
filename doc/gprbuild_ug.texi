@@ -215,7 +215,7 @@ subpackages are "Builder", "Compiler", "Binder" & "Linker".
 
 Two kinds of variables are available with projects: simple variables and
 scenario variables. The former can hold any string, or sequence of strings
-value. They are usesul as shortcut for complex expressions. Scenario
+value. They are useful as shortcut for complex expressions. Scenario
 variables are a restricted version of the former which can only take their
 value from a static enumeration of strings representing the various
 supported scenarios. Those scenario variables are used conjointly with
