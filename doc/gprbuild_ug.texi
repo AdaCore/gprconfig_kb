@@ -198,7 +198,7 @@ variables & case statements.
 @item project attribute:
 
 A specific characteristic is defined by a project attribute clause. Its
-value is a string or a sequence of strings. for instance, the Source_Dirs
+value is a string or a sequence of strings. For instance, the Source_Dirs
 attribute is a sequence of strings representing the actual names of the
 directories containing the source of the project. The attribute itself can
 be parametrized. For instance @code{Compiler'Default_Options ("Ada")}
