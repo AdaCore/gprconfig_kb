@@ -5,7 +5,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="Asm" />
+       <compiler name="GCC-ASM" language="Asm" />
      </compilers>
      <config>
    package Naming is
@@ -15,7 +15,7 @@
    package Language_Processing is
       for Language_Kind            ("Asm_Cpp") use "file_based";
       for Compiler_Driver          ("Asm_Cpp") use "${PATH}${PREFIX}gcc";
-      for Compiler_Minimum_Options ("Asm_Cpp") use ("-c", "-x", "assembler-with-cpp");
+      for Minimum_Compiler_Options ("Asm_Cpp") use ("-c", "-x", "assembler-with-cpp");
       for Dependency_File_Kind     ("Asm_Cpp") use "Makefile";
       for Dependency_Option        ("Asm_Cpp") use ("-Wp,-MD,");
       for Include_Path             ("Asm_Cpp") use "CPATH";
@@ -28,9 +28,8 @@
    package Language_Processing is
       for Language_Kind            ("Asm") use "file_based";
       for Compiler_Driver          ("Asm") use "${PATH}${PREFIX}gcc";
-      for Compiler_Minimum_Options ("Asm") use ("-c", "-x", "assembler-with-cpp");
-      for Dependency_File_Kind     ("Asm") use "Makefile";
-      for Dependency_Option        ("Asm") use ("-Wp,-MD,");
+      for Minimum_Compiler_Options ("Asm") use ("-c", "-x", "assembler");
+      for Dependency_File_Kind     ("Asm") use "none";
       for Include_Path             ("Asm") use "CPATH";
    end Language_Processing;
 
@@ -41,9 +40,8 @@
    package Language_Processing is
       for Language_Kind            ("Asm2") use "file_based";
       for Compiler_Driver          ("Asm2") use "${PATH}${PREFIX}gcc";
-      for Compiler_Minimum_Options ("Asm2") use ("-c", "-x", "assembler-with-cpp");
-      for Dependency_File_Kind     ("Asm2") use "Makefile";
-      for Dependency_Option        ("Asm2") use ("-Wp,-MD,");
+      for Minimum_Compiler_Options ("Asm2") use ("-c", "-x", "assembler");
+      for Dependency_File_Kind     ("Asm2") use "none";
       for Include_Path             ("Asm2") use "CPATH";
    end Language_Processing;
      </config>
