@@ -1,0 +1,79 @@
+project Hello is
+   package Language_Processing is
+      for Language_Kind            ("C") use "file_based";
+      for Compiler_Driver          ("C") use "/paris.a/gnatmail/gcc-41/install-oslo/bin/powerpc-elf-gcc";
+      for Minimum_Compiler_Options ("C") use ("-c", "-x", "c");
+      for Dependency_File_Kind     ("C") use "Makefile";
+      for Dependency_Option        ("C") use ("-Wp,-MD,");
+      for Include_Path             ("C") use "CPATH";
+      for Compiler_PIC_Option      ("C") use ("-fPIC");
+      for Language_Kind            ("Ada") use "unit_based";
+      for Compiler_Driver          ("Ada") use "/paris.a/gnatmail/gcc-41/install-oslo/bin/powerpc-elf-gcc";
+      for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
+      for Mapping_File_Switches    ("Ada") use ("-gnatem=");
+      for Mapping_Spec_Suffix      ("Ada") use "%s";
+      for Mapping_Body_Suffix      ("Ada") use "%b";
+      for Config_File_Switches     ("Ada") use ("-gnatec=");
+      for Config_Body_File_Name    ("Ada") use
+           "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
+      for Config_Spec_File_Name    ("Ada") use
+           "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
+      for Config_Body_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name_Project " &
+           "  (Body_File_Name  => ""*%b""," &
+           "   Casing          => %c," &
+           "   Dot_Replacement => ""%d"");";
+      for Config_Spec_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name_Project " &
+           "  (Spec_File_Name  => ""*%s""," &
+           "   Casing          => %c," &
+           "   Dot_Replacement => ""%d"");";
+      for Dependency_File_Kind  ("Ada") use "ALI_File";
+      for Config_File_Unique    ("Ada") use "False";
+      for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
+      for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
+      for Runtime_Project       ("Ada") use
+          "/nfs/alexandria/alexandria.a/home/gingold/gprmake/examples/ppc-elf/ada_runtime.gpr";
+      for Binder_Driver         ("Ada") use
+          "/nfs/alexandria/alexandria.a/home/gingold/local//libexec/gprbuild/gprbind";
+      for Toolchain_Version     ("Ada") use "GNAT 6.1";
+      for Compiler_PIC_Option      ("Ada") use ("-fPIC");
+      for Minimum_Compiler_Options ("Ada") use
+        Language_Processing'Minimum_Compiler_Options ("Ada") & ("--RTS=zfp");
+      for Minimum_Binder_Options ("Ada") use
+        Language_Processing'Minimum_Binder_Options ("Ada") & ("--RTS=zfp");
+      for Default_Language use "Ada";
+      for Archive_Builder  use ("powerpc-elf-ar", "cr");
+      for Archive_Indexer  use ("powerpc-elf-ranlib");
+      for Archive_Suffix   use ".a";
+      for Library_Support  use "none";
+      for Default_Linker use Language_Processing'Compiler_Driver ("Ada");
+      for Language_Kind            ("Asm_Cpp") use "file_based";
+      for Compiler_Driver          ("Asm_Cpp") use "/paris.a/gnatmail/gcc-41/install-oslo/bin/powerpc-elf-gcc";
+      for Minimum_Compiler_Options ("Asm_Cpp") use ("-c", "-x", "assembler-with-cpp");
+      for Dependency_File_Kind     ("Asm_Cpp") use "Makefile";
+      for Dependency_Option        ("Asm_Cpp") use ("-Wp,-MD,");
+      for Include_Path             ("Asm_Cpp") use "CPATH";
+      for Language_Kind            ("Asm") use "file_based";
+      for Compiler_Driver          ("Asm") use "/paris.a/gnatmail/gcc-41/install-oslo/bin/powerpc-elf-gcc";
+      for Minimum_Compiler_Options ("Asm") use ("-c", "-x", "assembler");
+      for Dependency_File_Kind     ("Asm") use "none";
+      for Include_Path             ("Asm") use "CPATH";
+      for Language_Kind            ("Asm2") use "file_based";
+      for Compiler_Driver          ("Asm2") use "/paris.a/gnatmail/gcc-41/install-oslo/bin/powerpc-elf-gcc";
+      for Minimum_Compiler_Options ("Asm2") use ("-c", "-x", "assembler");
+      for Dependency_File_Kind     ("Asm2") use "none";
+      for Include_Path             ("Asm2") use "CPATH";
+   end Language_Processing;
+   package Naming is
+      for Spec_Suffix ("C") use ".h";
+      for Body_Suffix ("C") use ".c";
+      for Spec_Suffix ("Ada") use ".ads";
+      for Body_Suffix ("Ada") use ".adb";
+      for Casing use "lowercase";
+      for Dot_Replacement use "-";
+      for Implementation_Suffix ("Asm_Cpp") use ".S";
+      for Implementation_Suffix ("Asm") use ".s";
+      for Implementation_Suffix ("Asm2") use ".asm";
+   end Naming;
+end Hello;

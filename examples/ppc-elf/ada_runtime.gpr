@@ -1,0 +1,40 @@
+project Ada_Runtime is
+
+   for Languages use ("Ada");
+   for Source_Dirs use ("/oslo.a/gnatmail/gcc-41/install-oslo/lib/gcc/powerpc-elf/4.1.3/rts-zfp/adainclude/");
+   for Object_Dir use "/oslo.a/gnatmail/gcc-41/install-oslo/lib/gcc/powerpc-elf/4.1.3/rts-zfp/adainclude/../adalib";
+
+   for Externally_Built use "true";
+
+   package Naming is
+      for Spec ("Ada.Tags") use "a-tags.ads";
+      for Spec ("Ada.Unchecked_Conversion") use "a-unccon.ads";
+      for Spec ("Ada.Unchecked_Deallocation") use "a-uncdea.ads";
+      for Spec ("GNAT.IO") use "g-io.ads";
+      for Spec ("GNAT.SOURCE_INFO") use "g-souinf.ads";
+      for Spec ("Interfaces.C") use "i-c.ads";
+      for Spec ("Interfaces") use "interfac.ads";
+      for Spec ("System.Assertions") use "s-assert.ads";
+      for Spec ("System.Address_To_Access_Conversions") use "s-atacco.ads";
+      for Spec ("System.Fat_Flt") use "s-fatflt.ads";
+      for Spec ("System.Fat_Gen") use "s-fatgen.ads";
+      for Spec ("System.Fat_Lflt") use "s-fatlfl.ads";
+      for Spec ("System.Fat_Llf") use "s-fatllf.ads";
+      for Spec ("System.Fat_Sflt") use "s-fatsfl.ads";
+      for Spec ("System.Machine_Code") use "s-maccod.ads";
+      for Spec ("System.Secondary_Stack") use "s-secsta.ads";
+      for Spec ("System.Storage_Elements") use "s-stoele.ads";
+      for Spec ("System.Unsigned_Types") use "s-unstyp.ads";
+      for Spec ("Unchecked_Conversion") use "unchconv.ads";
+      for Spec ("Unchecked_Deallocation") use "unchdeal.ads";
+      for Body ("Ada.Tags") use "a-tags.adb";
+      for Body ("GNAT.IO") use "g-io.adb";
+      for Body ("System.Assertions") use "s-assert.adb";
+      for Body ("System.Address_To_Access_Conversions") use "s-atacco.adb";
+      for Body ("System.Fat_Gen") use "s-fatgen.adb";
+      for Body ("System.Secondary_Stack") use "s-secsta.adb";
+      for Body ("System.Storage_Elements") use "s-stoele.adb";
+      for Body ("System.Traceback") use "s-traceb.adb";
+   end Naming;
+
+end Ada_Runtime;
