@@ -8,8 +8,8 @@
     <config>
    package Language_Processing is
       for Default_Language use "Ada";
-      for Archive_Builder  use ("ar", "cr");
-      for Archive_Indexer  use ("ranlib");
+      for Archive_Builder  use ("${PREFIX}ar", "cr");
+      for Archive_Indexer  use ("${PREFIX}ranlib");
       for Archive_Suffix   use ".a";
    end Language_Processing;
     </config>

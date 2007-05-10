@@ -15,7 +15,7 @@
 
    package Language_Processing is
       for Language_Kind            ("C") use "file_based";
-      for Compiler_Driver          ("C") use "gcc";
+      for Compiler_Driver          ("C") use "${PATH}${PREFIX}gcc";
       for Minimum_Compiler_Options ("C") use ("-c", "-x", "c");
       for Dependency_File_Kind     ("C") use "Makefile";
       for Dependency_Option        ("C") use ("-Wp,-MD,");
