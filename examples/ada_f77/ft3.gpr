@@ -3,17 +3,5 @@ project ft3 is
    for Languages use ("Fortran");
    for Main use ("ess2.f");
    for Object_Dir use "fobj3";
-
-   package Language_Processing is
-      for Compiler_Driver          ("Fortran") use "g77";
-      for Minimum_Compiler_Options ("Fortran") use 
-        ("-c", "-fno-underscoring", "-mno-cygwin");
-      for Linker use "g77";
-      for Minimum_Linker_Options use ("-mno-cygwin");
-   end Language_Processing;
-
-   package Naming is
-      for Specification_Suffix ("fortran") use ".f";
-   end Naming;
 end ft3;
 

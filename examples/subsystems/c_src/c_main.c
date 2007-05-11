@@ -5,6 +5,7 @@ int main (void) {
   adainit();
   do_it_in_ada ();
   adafinal();
+  exit (0);
 }
 
 
