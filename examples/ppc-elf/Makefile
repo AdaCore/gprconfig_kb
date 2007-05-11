@@ -9,6 +9,7 @@ all: obj/hello
 
 clean: force
 	gprclean --config=hello.cgpr -Phello
+	$(RM) hello.cgpr
 
 run:
 	powerpc-elf-gdb --batch --command=gdb.run objs/hello
