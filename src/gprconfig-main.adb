@@ -679,18 +679,21 @@ procedure GprConfig.Main is
       while Has_Element (F) loop
          declare
             C : Compiler_Lists.Cursor := First (Compilers);
+            Found : Boolean := False;
          begin
             while Has_Element (C) loop
                if Filter_Match (Element (C), Element (F)) then
                   Append (Selected_Comps, Element (C));
-                  goto found;
+                  Found := True;
+                  exit;
                end if;
                Next (C);
             end loop;
-            --  ??? Display filter in message.
-            Put_Line
-              (Standard_Error, "warning: no matching compiler for filter");
-            << found >> null;
+            if not Found then
+               --  ??? Display filter in message.
+               Put_Line
+                 (Standard_Error, "warning: no matching compiler for filter");
+            end if;
          end;
          Next (F);
       end loop;
