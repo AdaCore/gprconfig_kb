@@ -76,6 +76,13 @@ procedure GprConfig.Main is
    --  Complete missing information for the compilers specified on the command
    --  line.
 
+   procedure Filter_Compilers
+     (Selected_Comps : in out Compiler_Lists.List;
+      Compilers      : Compiler_Lists.List;
+      Filters        : Compiler_Lists.List);
+   --  For every element of Filters appends the first matching element in
+   --  Compilers to Selected_Comps.  If none is found emits a warning.
+
    procedure Show_Command_Line_Config (Selected_Comps : Compiler_Lists.List);
    --  Display the batch command line that would have the same effect as the
    --  current selection of compilers.
@@ -612,6 +619,83 @@ procedure GprConfig.Main is
       end loop;
    end Complete_Command_Line_Compilers;
 
+   ----------------------
+   -- Filter_Compilers --
+   ----------------------
+
+   procedure Filter_Compilers
+     (Selected_Comps : in out Compiler_Lists.List;
+      Compilers      : Compiler_Lists.List;
+      Filters        : Compiler_Lists.List)
+   is
+      function Filter_Match (Comp : Compiler; Filter : Compiler)
+                            return Boolean;
+      --  Returns True if Comp match Filter.
+
+      ------------------
+      -- Filter_Match --
+      ------------------
+
+      function Filter_Match (Comp : Compiler; Filter : Compiler)
+                            return Boolean is
+      begin
+         if Length (Filter.Name) > 0 and then Comp.Name /= Filter.Name then
+            return False;
+         end if;
+
+         if Length (Filter.Path) > 0 and then Filter.Path /= Comp.Path then
+            return False;
+         end if;
+
+         if Length (Filter.Version) > 0
+           and then Filter.Version /= Comp.Version
+         then
+            return False;
+         end if;
+
+         if Length (Filter.Language) > 0
+           and then Filter.Language /= Comp.Language
+         then
+            return False;
+         end if;
+
+         if Length (Filter.Target) > 0
+           and then Filter.Target /= Comp.Target
+         then
+            return False;
+         end if;
+
+         if Length (Filter.Runtime) > 0
+           and then Filter.Runtime /= Comp.Runtime
+         then
+            return False;
+         end if;
+
+         return True;
+      end Filter_Match;
+
+      F : Compiler_Lists.Cursor := First (Filters);
+   begin
+      while Has_Element (F) loop
+         declare
+            C : Compiler_Lists.Cursor := First (Compilers);
+         begin
+            while Has_Element (C) loop
+               if Filter_Match (Element (C), Element (F)) then
+                  Append (Selected_Comps, Element (C));
+                  goto found;
+               end if;
+               Next (C);
+            end loop;
+            --  ??? Display filter in message.
+            Put_Line
+              (Standard_Error, "warning: no matching compiler for filter");
+            << found >> null;
+         end;
+         Next (F);
+      end loop;
+   end Filter_Compilers;
+
    ------------------------------
    -- Show_Command_Line_Config --
    ------------------------------
@@ -644,6 +728,7 @@ procedure GprConfig.Main is
    Base               : Knowledge_Base;
    Selected_Compilers : Compiler_Lists.List;
    Custom_Comps       : Compiler_Lists.List;
+   Filters            : Compiler_Lists.List;
    Load_Standard_Base : Boolean := True;
    Batch              : Boolean := False;
 
@@ -705,7 +790,7 @@ begin
             Batch := True;
 
          when 'c' =>
-            Parse_Config_Parameter (Custom_Comps, Parameter);
+            Parse_Config_Parameter (Filters, Parameter);
 
          when 'd' =>
             if Parameter = "-" then
@@ -736,8 +821,13 @@ begin
    end loop;
 
    Complete_Command_Line_Compilers (Base, Custom_Comps);
+   Find_Compilers_In_Path (Base, Compilers);
+
+   if not Is_Empty (Filters) then
+      Filter_Compilers (Selected_Compilers, Compilers, Filters);
+   end if;
+
    if not Batch then
-      Find_Compilers_In_Path (Base, Compilers);
       Compiler_Sort.Sort (Compilers);
 
       if Preselect_Lang /= Null_Unbounded_String then
