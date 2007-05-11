@@ -5,12 +5,10 @@ hello.cgpr:
 	gprconfig -batch -config GNAT,,,Ada,powerpc-elf,zfp -config GCC-ASM,,,Asm,powerpc-elf, -config GCC,,,C,powerpc-elf, -o $@
 
 
-PREFIX=powerpc-elf-
+all: obj/hello
 
-# Currently not run by default.
-all:
-
-clean:
+clean: force
+	gprclean --config=hello.cgpr -Phello
 
 run:
 	powerpc-elf-gdb --batch --command=gdb.run objs/hello
