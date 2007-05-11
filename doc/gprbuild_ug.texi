@@ -1147,8 +1147,8 @@ string in the list, which may be an empty string. Example:
 
 Specifies the default executable suffix. This default may be overwritten if
 attribute Executable_Suffix is declared in package Builder of the main user
-project. If no attribute Executable_Suffix is declared, then there is no
-suffix for executables. Example:
+project. If no attribute Executable_Suffix is declared, then the default
+executable suffix for the host platform is used. Example:
 
 @smallexample
    for Default_Suffix use ".exe";
