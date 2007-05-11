@@ -285,27 +285,25 @@ procedure GprConfig.Main is
    begin
       Get_Words (Config, Filter => Null_Unbounded_String, Map => Map,
                  Allow_Empty_Elements => True);
-      if Length (Map) < 2 then
-         raise Invalid_Config;  --  we need at least a name and a path
-      end if;
 
       C := First (Map);
       Comp.Name := TU (Element (C));
       Next (C);
-      Comp.Path := TU (Element (C));
-
-      Next (C);
       if Has_Element (C) then
-         Comp.Version := TU (Element (C));
+         Comp.Path := TU (Element (C));
          Next (C);
          if Has_Element (C) then
-            Comp.Language := TU (Element (C));
+            Comp.Version := TU (Element (C));
             Next (C);
             if Has_Element (C) then
-               Comp.Target := TU (Element (C));
+               Comp.Language := TU (Element (C));
                Next (C);
                if Has_Element (C) then
-                  Comp.Runtime := TU (Element (C));
+                  Comp.Target := TU (Element (C));
+                  Next (C);
+                  if Has_Element (C) then
+                     Comp.Runtime := TU (Element (C));
+                  end if;
                end if;
             end if;
          end if;
@@ -678,21 +676,29 @@ procedure GprConfig.Main is
    begin
       while Has_Element (F) loop
          declare
-            C : Compiler_Lists.Cursor := First (Compilers);
+            C     : Compiler_Lists.Cursor := First (Compilers);
+            Comp  : Compiler;
+            Filt  : Compiler;
             Found : Boolean := False;
          begin
             while Has_Element (C) loop
-               if Filter_Match (Element (C), Element (F)) then
-                  Append (Selected_Comps, Element (C));
+               Comp := Element (C);
+               Filt := Element (F);
+               if Filter_Match (Comp, Filt) then
+                  Append (Selected_Comps, Comp);
                   Found := True;
                   exit;
                end if;
                Next (C);
             end loop;
             if not Found then
-               --  ??? Display filter in message.
+               Put_Line (Standard_Error,
+                         "warning: no matching compiler for filter: ");
                Put_Line
-                 (Standard_Error, "warning: no matching compiler for filter");
+                 (Standard_Error, "  -config " & To_String (Filt.Name) & ','
+                  & To_String (Filt.Path) & ',' & To_String (Filt.Version)
+                  & ',' & To_String (Filt.Language) & ','
+                  & To_String (Filt.Target) & ',' & To_String (Filt.Runtime));
             end if;
          end;
          Next (F);

@@ -1097,12 +1097,14 @@ package body GprConfig.Knowledge is
                     Allow_Empty_Elements => True);
       end if;
 
-      while First <= Words'Last
-        and then (Words (First) = ' '
-                  or else Words (First) = ',')
-      loop
-         First := First + 1;
-      end loop;
+      if not Allow_Empty_Elements then
+         while First <= Words'Last
+           and then (Words (First) = ' '
+                     or else Words (First) = ',')
+         loop
+            First := First + 1;
+         end loop;
+      end if;
 
       while First <= Words'Last loop
          if Words (First) /= ' ' and then Words (First) /= ',' then
