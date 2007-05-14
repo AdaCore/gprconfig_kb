@@ -28,6 +28,7 @@ install: all
 	${MKDIR} ${PREFIX}/libexec/gprbuild
 	${MKDIR} ${PREFIX}/share/gpr
 	${MKDIR} ${PREFIX}/share/gprconfig
+	${MKDIR} ${PREFIX}/share/examples
 	${INSTALL_PROGRAM} gprconfig ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprbuild ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprclean ${PREFIX}/bin
@@ -36,6 +37,7 @@ install: all
 	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprbuild/
 	${CP} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
 	${CP} share/gprconfig/gnat_runtime.mapping ${PREFIX}/share/gprconfig
+	${CP} -r examples ${PREFIX}/share/examples/gprbuild
 
 obj/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
