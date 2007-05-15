@@ -2181,7 +2181,11 @@ package body Buildgpr is
                               Write_Str (B_Data.Binder_Driver_Path.all);
 
                            else
-                              Get_Name_String (B_Data.Binder_Driver_Name);
+                              Name_Len := 0;
+                              Add_Str_To_Name_Buffer
+                                (Base_Name
+                                   (Get_Name_String
+                                      (B_Data.Binder_Driver_Name)));
 
                               if Executable_Suffix'Length /= 0 and then
                                 Name_Len > Executable_Suffix'Length and then
