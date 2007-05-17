@@ -1020,9 +1020,7 @@ package body Confgpr is
             Osint.Fail
               ("could not locate main configuration project ",
                Config_Project_File_Name.all);
-
          else
-            Set_Mode (Ada_Only);
             return;
          end if;
       end if;
@@ -1048,7 +1046,6 @@ package body Confgpr is
                """ failed");
 
          else
-            Set_Mode (Ada_Only);
             Cleanup;
             return;
          end if;
@@ -1171,9 +1168,6 @@ package body Confgpr is
       if not OK then
          if Fail_If_Error then
             Osint.Fail ("language configuration incorrect");
-
-         else
-            Set_Mode (Ada_Only);
          end if;
       end if;
 

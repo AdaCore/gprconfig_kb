@@ -15,7 +15,9 @@ project Shared is
 
    package Compiler is
       for Default_Switches ("Ada") use
-        ("-g", "-gnat05", "-gnatVa", "-gnatyg", "-gnatwaCJIe");
+        ("-g", "-gnat05", "-gnatVa",
+--         "-gnatyg",
+         "-gnatwaCJIe");
    end Compiler;
 
    package Binder is

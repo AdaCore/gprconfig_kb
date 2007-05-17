@@ -25,18 +25,18 @@
 ------------------------------------------------------------------------------
 
 with Csets;
-with Confgpr;  use Confgpr;
-with Gnatvsn;  use Gnatvsn;
-with Gprexch;  use Gprexch;
-with Gpr_Util; use Gpr_Util;
-with Makeutl;  use Makeutl;
-with Namet;    use Namet;
-with Opt;      use Opt;
+with Confgpr;     use Confgpr;
+with GPR_Version; use GPR_Version;
+with Gprexch;     use Gprexch;
+with Gpr_Util;    use Gpr_Util;
+with Makeutl;     use Makeutl;
+with Namet;       use Namet;
+with Opt;         use Opt;
 with Osint;
-with Prj;      use Prj;
+with Prj;         use Prj;
 with Prj.Ext;
 with Prj.Pars;
-with Prj.Util; use Prj.Util;
+with Prj.Util;    use Prj.Util;
 with Sinput.P;
 with Snames;
 with Table;
@@ -930,7 +930,7 @@ package body Cleangpr is
       if not Copyright_Displayed then
          Copyright_Displayed := True;
          Put_Line
-           ("GPRCLEAN " & Gnatvsn.Gnat_Version_String
+           ("GPRCLEAN " & GPR_Version.Gpr_Version_String
             & " Copyright 2006-"
             & Current_Year
             & " Free Software Foundation, Inc.");
@@ -943,8 +943,6 @@ package body Cleangpr is
 
    procedure Gprclean is
    begin
-      Set_Mode (Multi_Language);
-
       --  Do the necessary initializations
 
       Cleangpr.Initialize;

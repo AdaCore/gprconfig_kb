@@ -35,7 +35,7 @@ with Confgpr;   use Confgpr;
 with Debug;     use Debug;
 with Errout;    use Errout;
 with Err_Vars;
-with Gnatvsn;
+with GPR_Version;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_Tables;
@@ -4745,9 +4745,9 @@ package body Buildgpr is
          Copyright_Output := True;
          Write_Eol;
          Write_Str ("GPRBUILD ");
-         Write_Str (Gnatvsn.Gnat_Version_String);
+         Write_Str (GPR_Version.Gpr_Version_String);
          Write_Str (" Copyright 2004-");
-         Write_Str (Gnatvsn.Current_Year);
+         Write_Str (GPR_Version.Current_Year);
          Write_Str (", Free Software Foundation, Inc.");
          Write_Eol;
       end if;
@@ -5891,8 +5891,6 @@ package body Buildgpr is
       Csets.Initialize;
       Namet.Initialize;
       Snames.Initialize;
-
-      Prj.Set_Mode (Multi_Language);
 
       Prj.Initialize (Project_Tree);
       Mains.Delete;
@@ -7756,13 +7754,13 @@ package body Buildgpr is
 
             if Command_Line and then Arg = "--version" then
                Write_Str ("GPRBUILD ");
-               Write_Str (Gnatvsn.Gnat_Version_String);
+               Write_Str (GPR_Version.Gpr_Version_String);
                Write_Eol;
                Write_Str ("Copyright 2004-");
-               Write_Str (Gnatvsn.Current_Year);
+               Write_Str (GPR_Version.Current_Year);
                Write_Str (", Free Software Foundation, Inc.");
                Write_Eol;
-               Write_Line (Gnatvsn.Gnat_Free_Software);
+               Write_Line (GPR_Version.Gpr_Free_Software);
                Write_Eol;
                Exit_Program (E_Success);
 
