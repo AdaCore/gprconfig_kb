@@ -36,7 +36,7 @@
 
 package GPR_Version is
 
-   Gpr_Static_Version_String : constant String := "1.0w (20070513-41)";
+   Gpr_Static_Version_String : constant String := "1.0w (20070517-41)";
    --  Static string identifying this version, that can be used as an argument
    --  to e.g. pragma Ident.
    --
