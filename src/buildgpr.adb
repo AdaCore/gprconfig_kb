@@ -5675,7 +5675,8 @@ package body Buildgpr is
         (In_Tree           => Project_Tree,
          Project           => Main_Project,
          Project_File_Name => Project_File_Name.all,
-         Packages_To_Check => Packages_To_Check);
+         Packages_To_Check => Packages_To_Check,
+         When_No_Sources   => Silent);
 
       if Main_Project = No_Project then
          Fail_Program ("""", Project_File_Name.all, """ processing failed");

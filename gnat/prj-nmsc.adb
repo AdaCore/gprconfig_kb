@@ -53,7 +53,7 @@ package body Prj.Nmsc is
    --  Set to point to error reporting procedure
 
    When_No_Sources : Error_Warning := Error;
-   --  Indicates what should be done when there is no Ada sources in a non
+   --  Indicates what should be done when there is no sources in a non
    --  extending Ada project.
 
    type Name_Location is record
