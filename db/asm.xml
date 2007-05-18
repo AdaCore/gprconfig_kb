@@ -9,7 +9,7 @@
      </compilers>
      <config>
    package Naming is
-      for Implementation_Suffix ("Asm_Cpp") use ".S";
+      for Body_Suffix ("Asm_Cpp") use ".S";
    end Naming;
 
    package Language_Processing is
@@ -22,7 +22,7 @@
    end Language_Processing;
 
    package Naming is
-      for Implementation_Suffix ("Asm") use ".s";
+      for Body_Suffix ("Asm") use ".s";
    end Naming;
 
    package Language_Processing is
@@ -34,7 +34,7 @@
    end Language_Processing;
 
    package Naming is
-      for Implementation_Suffix ("Asm2") use ".asm";
+      for Body_Suffix ("Asm2") use ".asm";
    end Naming;
 
    package Language_Processing is
