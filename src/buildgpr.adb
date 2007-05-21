@@ -7771,6 +7771,8 @@ package body Buildgpr is
                --  for --help.
 
                Usage;
+               Write_Eol;
+               Write_Line ("Report bugs to report@adacore.com");
                Exit_Program (E_Success);
 
             elsif Command_Line and then Arg = "--display-paths" then

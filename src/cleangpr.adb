@@ -32,6 +32,7 @@ with Gpr_Util;    use Gpr_Util;
 with Makeutl;     use Makeutl;
 with Namet;       use Namet;
 with Opt;         use Opt;
+with Output;      use Output;
 with Osint;
 with Prj;         use Prj;
 with Prj.Ext;
@@ -1106,6 +1107,32 @@ package body Cleangpr is
                if Arg (1) = '-' then
                   if Arg'Length = 1 then
                      Bad_Argument;
+                  end if;
+
+                  --  First, deal with --version and --help
+
+                  if Arg = "--version" then
+                     Write_Str ("GPRCLEAN ");
+                     Write_Str (GPR_Version.Gpr_Version_String);
+                     Write_Eol;
+                     Write_Str ("Copyright 2006-");
+                     Write_Str (GPR_Version.Current_Year);
+                     Write_Str (", Free Software Foundation, Inc.");
+                     Write_Eol;
+                     Write_Line (GPR_Version.Gpr_Free_Software);
+                     Write_Eol;
+                     Osint.Exit_Program (Osint.E_Success);
+                  end if;
+
+                  if Arg = "--help" then
+                     Copyright_Displayed := True;
+                     --  To avoid the Copyright notice that should not be output
+                     --  for --help.
+
+                     Usage;
+                     Write_Eol;
+                     Write_Line ("Report bugs to report@adacore.com");
+                     Osint.Exit_Program (Osint.E_Success);
                   end if;
 
                   case Arg (2) is
