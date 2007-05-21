@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 1992-2006, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2007, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1094,7 +1094,10 @@ package body Uintp is
             X_Bigger := True;
          else
             Sum_Length := R_Length + 1;
-            if R_Length > L_Length then Y_Bigger := True; end if;
+
+            if R_Length > L_Length then
+               Y_Bigger := True;
+            end if;
          end if;
 
          --  Make copies of the absolute values of L_Vec and R_Vec into

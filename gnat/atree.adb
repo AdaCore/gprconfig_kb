@@ -7075,35 +7075,55 @@ package body Atree is
       procedure Set_Node1_With_Parent (N : Node_Id; Val : Node_Id) is
       begin
          pragma Assert (N in Nodes.First .. Nodes.Last);
-         if Val > Error then Set_Parent (Val, N); end if;
+
+         if Val > Error then
+            Set_Parent (Val, N);
+         end if;
+
          Set_Node1 (N, Val);
       end Set_Node1_With_Parent;
 
       procedure Set_Node2_With_Parent (N : Node_Id; Val : Node_Id) is
       begin
          pragma Assert (N in Nodes.First .. Nodes.Last);
-         if Val > Error then Set_Parent (Val, N); end if;
+
+         if Val > Error then
+            Set_Parent (Val, N);
+         end if;
+
          Set_Node2 (N, Val);
       end Set_Node2_With_Parent;
 
       procedure Set_Node3_With_Parent (N : Node_Id; Val : Node_Id) is
       begin
          pragma Assert (N in Nodes.First .. Nodes.Last);
-         if Val > Error then Set_Parent (Val, N); end if;
+
+         if Val > Error then
+            Set_Parent (Val, N);
+         end if;
+
          Set_Node3 (N, Val);
       end Set_Node3_With_Parent;
 
       procedure Set_Node4_With_Parent (N : Node_Id; Val : Node_Id) is
       begin
          pragma Assert (N in Nodes.First .. Nodes.Last);
-         if Val > Error then Set_Parent (Val, N); end if;
+
+         if Val > Error then
+            Set_Parent (Val, N);
+         end if;
+
          Set_Node4 (N, Val);
       end Set_Node4_With_Parent;
 
       procedure Set_Node5_With_Parent (N : Node_Id; Val : Node_Id) is
       begin
          pragma Assert (N in Nodes.First .. Nodes.Last);
-         if Val > Error then Set_Parent (Val, N); end if;
+
+         if Val > Error then
+            Set_Parent (Val, N);
+         end if;
+
          Set_Node5 (N, Val);
       end Set_Node5_With_Parent;
 
