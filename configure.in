@@ -10,4 +10,4 @@ AM_GNAT_SOURCES
 AC_SUBST(HOST)
 AC_SUBST(PREFIX)
 AC_SUBST(GNAT_SOURCE_DIR)
-AC_OUTPUT(src/gprconfig-sdefault.ads gnat.gpr Makefile)
+AC_OUTPUT(src/gprconfig-sdefault.ads Makefile)
