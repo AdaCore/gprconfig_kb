@@ -760,6 +760,9 @@ package body Buildgpr is
    --  Returns the ultimate extending project of project Proj. If project Proj
    --  is not extended, returns Proj.
 
+   function Unit_Exists (Name : Name_Id; Language : Name_Id) return Boolean;
+   --  Check that a unit of a language exists in the project tree
+
    procedure Usage;
    --  Display the usage
 
@@ -1796,6 +1799,7 @@ package body Buildgpr is
                                             In_Tree  => Project_Tree);
                            List      : String_List_Id;
                            Element   : String_Element;
+                           Unit_Name : Name_Id;
                         begin
                            if Var /= Nil_Variable_Value then
                               List := Var.Values;
@@ -1806,9 +1810,26 @@ package body Buildgpr is
                                  Get_Name_String (Element.Value);
                                  Canonical_Case_File_Name
                                    (Name_Buffer (1 .. Name_Len));
-                                 Roots_HTable.Set (K => Name_Find, E => True);
-                                 There_Are_Roots := True;
+                                 Unit_Name := Name_Find;
+
+                                 -- Check that unit exists in the project tree.
+                                 --  Fail if it does not.
+
+                                 if Unit_Exists
+                                   (Unit_Name, B_Data.Language_Name)
+                                 then
+                                    Roots_HTable.Set (K => Unit_Name, E => True);
+                                    There_Are_Roots := True;
+
+                                 else
+                                    Fail_Program
+                                      ("no unit named ",
+                                       Get_Name_String (Unit_Name),
+                                       " (specified in Roots)");
+                                 end if;
+
                                  List := Element.Next;
+
                               end loop;
                            end if;
                         end;
@@ -8119,6 +8140,28 @@ package body Buildgpr is
 
       return Prj;
    end Ultimate_Extending_Project_Of;
+
+   -----------------
+   -- Unit_Exists --
+   -----------------
+
+   function Unit_Exists (Name : Name_Id; Language : Name_Id) return Boolean is
+      Src_Id  : Source_Id;
+      Source  : Source_Data;
+   begin
+      Src_Id := Project_Tree.First_Source;
+      while Src_Id /= No_Source loop
+         Source := Project_Tree.Sources.Table (Src_Id);
+
+         if Source.Language_Name = Language and then Source.Unit = Name then
+            return True;
+         end if;
+
+         Src_Id := Source.Next_In_Sources;
+      end loop;
+
+      return False;
+   end Unit_Exists;
 
    -----------
    -- Usage --
