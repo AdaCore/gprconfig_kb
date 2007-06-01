@@ -6846,8 +6846,11 @@ package body Buildgpr is
 
       Source_Path   : constant String :=
                         Get_Name_String (Src_Data.Path);
+
       Object_Name   : constant String :=
                         Get_Name_String (Src_Data.Object);
+      C_Object_Name : String := Object_Name;
+
       Object_Path   : constant String :=
                         Get_Name_String (Src_Data.Object_Path);
       Dep_Name      : constant String :=
@@ -6869,6 +6872,8 @@ package body Buildgpr is
       if Force_Compilations then
          return True;
       end if;
+
+      Canonical_Case_File_Name (C_Object_Name);
 
       if Verbose_Mode then
          Write_Str  ("   Checking ");
@@ -7019,11 +7024,15 @@ package body Buildgpr is
                Start  := 1;
                Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
 
+               if Finish /= 0 then
+                  Canonical_Case_File_Name (Name_Buffer (1 .. Finish - 1));
+               end if;
+
                --  First line must start with name of object file, followed by
                --  colon.
 
                if Finish = 0 or else
-                 Name_Buffer (1 .. Finish - 1) /= Object_Name
+                 Name_Buffer (1 .. Finish - 1) /= C_Object_Name
                then
                   if Verbose_Mode then
                      Write_Str  ("      -> dependency file ");
