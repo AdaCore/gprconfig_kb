@@ -4168,6 +4168,53 @@ package body Buildgpr is
             end if;
 
             if Compilation_Needed then
+               --  Update, if necessary, the path of the object file, of the
+               --  dependency file and of the switches file, in the case of the
+               --  compilation of a source in an extended project, when the
+               --  source is in a project being extended.
+
+               Project_Tree.Sources.Table (Source_Identity).Object_Project :=
+                 Source_Project;
+
+               if Source_Project /=
+                 Project_Tree.Sources.Table (Source_Identity).Project
+               then
+                  Get_Name_String
+                    (Project_Tree.Projects.Table
+                       (Source_Project).Object_Directory);
+                  Name_Len := Name_Len + 1;
+                  Name_Buffer (Name_Len) := Directory_Separator;
+                  Add_Str_To_Name_Buffer
+                    (Get_Name_String
+                       (Project_Tree.Sources.Table (Source_Identity).Object));
+                  Project_Tree.Sources.Table (Source_Identity).Object_Path :=
+                    Name_Find;
+
+                  Get_Name_String
+                    (Project_Tree.Projects.Table
+                       (Source_Project).Object_Directory);
+                  Name_Len := Name_Len + 1;
+                  Name_Buffer (Name_Len) := Directory_Separator;
+                  Add_Str_To_Name_Buffer
+                    (Get_Name_String
+                       (Project_Tree.Sources.Table
+                          (Source_Identity).Dep_Name));
+                  Project_Tree.Sources.Table (Source_Identity).Dep_Path :=
+                    Name_Find;
+
+                  Get_Name_String
+                    (Project_Tree.Projects.Table
+                       (Source_Project).Object_Directory);
+                  Name_Len := Name_Len + 1;
+                  Name_Buffer (Name_Len) := Directory_Separator;
+                  Add_Str_To_Name_Buffer
+                    (Get_Name_String
+                       (Project_Tree.Sources.Table
+                          (Source_Identity).Switches));
+                  Project_Tree.Sources.Table (Source_Identity).Switches_Path :=
+                    Name_Find;
+               end if;
+
                --  Write the switches file
 
                declare
@@ -6106,7 +6153,8 @@ package body Buildgpr is
    procedure Initialize_Source_Record (Source : Source_Id) is
       Src_Data : Source_Data  := Project_Tree.Sources.Table (Source);
       Data     : Project_Data;
-
+      Obj_Proj : Project_Id := Src_Data.Project;
+      Found    : Boolean := False;
    begin
       if Src_Data.Source_TS = Empty_Time_Stamp then
          Data := Project_Tree.Projects.Table (Src_Data.Project);
@@ -6155,12 +6203,22 @@ package body Buildgpr is
 
             Src_Data.Switches_TS := File_Stamp (Src_Data.Switches_Path);
 
-            Project_Tree.Sources.Table (Source) := Src_Data;
+            if Src_Data.Object_TS /= Empty_Time_Stamp then
+               Found := True;
+               Src_Data.Object_Project := Obj_Proj;
+               Project_Tree.Sources.Table (Source) := Src_Data;
+            end if;
 
-            exit when Src_Data.Object_TS /= Empty_Time_Stamp or else
-            Data.Extended_By = No_Project;
+            Obj_Proj := Data.Extended_By;
+            if Obj_Proj = No_Project then
+               if not Found then
+                  Project_Tree.Sources.Table (Source) := Src_Data;
+               end if;
 
-            Data := Project_Tree.Projects.Table (Data.Extended_By);
+               exit;
+            end if;
+
+            Data := Project_Tree.Projects.Table (Obj_Proj);
          end loop;
       end if;
    end Initialize_Source_Record;
@@ -6389,7 +6447,8 @@ package body Buildgpr is
                  Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
             end loop;
 
-            Main_Object_TS := File_Stamp (Main_Source.Object);
+            Main_Object_TS :=
+              File_Stamp (File_Name_Type (Main_Source.Object_Path));
 
             if not Linker_Needs_To_Be_Called then
                if Main_Object_TS = Empty_Time_Stamp then
@@ -6416,7 +6475,12 @@ package body Buildgpr is
                   " does not exist");
             end if;
 
-            Add_Argument (Get_Name_String (Main_Source.Object), True);
+            if Main_Proj = Main_Source.Object_Project then
+               Add_Argument (Get_Name_String (Main_Source.Object), True);
+
+            else
+               Add_Argument (Get_Name_String (Main_Source.Object_Path), True);
+            end if;
 
             if There_Are_Binder_Drivers
               and then Binding_Languages.Last = 0
@@ -6868,6 +6932,13 @@ package body Buildgpr is
       Source_In_Dependencies : Boolean := False;
       --  Set True if source was found in dependency file of its object file
 
+      Num_Ext  : Natural;
+      --  Number of extending projects
+
+      ALI_Project : Project_Id;
+      --  If the ALI file is in the object directory of a project, this is
+      --  the project id.
+
    begin
       if Force_Compilations then
          return True;
@@ -7244,6 +7315,7 @@ package body Buildgpr is
                Stamp    : Time_Stamp_Type;
                Dep_Src  : Source_Id;
                Found    : Boolean;
+               Proj     : Project_Id;
 
             begin
                if Text = null then
@@ -7280,6 +7352,33 @@ package body Buildgpr is
 
                   return True;
                end if;
+
+               --  We need to heck that the ALI file is in the correct object
+               --  directory. If it is in the object directory of a project
+               --  that is extended and it depends on a source that is in one
+               --  of its extending projects, then the ALI file is not in the
+               --  correct object directory.
+
+               ALI_Project := Src_Data.Object_Project;
+
+               --  Count the extending projects
+
+               Num_Ext := 0;
+               Proj := ALI_Project;
+               loop
+                  Proj := Project_Tree.Projects.Table (Proj).Extended_By;
+                  exit when Proj = No_Project;
+                  Num_Ext := Num_Ext + 1;
+               end loop;
+
+               declare
+                  Projects : array (1 .. Num_Ext) of Project_Id;
+               begin
+                  Proj := ALI_Project;
+                  for J in Projects'Range loop
+                     Proj := Project_Tree.Projects.Table (Proj).Extended_By;
+                     Projects (J) := Proj;
+                  end loop;
 
                for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
                  ALI.ALIs.Table (The_ALI).Last_Sdep
@@ -7323,6 +7422,20 @@ package body Buildgpr is
 
                            else
                               Found := True;
+
+                              for J in Projects'Range loop
+                                 if Project_Tree.Sources.Table
+                                      (Dep_Src).Project = Projects (J)
+                                 then
+                                    if Verbose_Mode then
+                                       Write_Line
+                                         ("   -> wrong object directory");
+                                    end if;
+
+                                    return True;
+                                 end if;
+                              end loop;
+
                               exit;
                            end if;
                         end if;
@@ -7337,7 +7450,8 @@ package body Buildgpr is
                         return True;
                      end if;
                   end if;
-               end loop;
+                  end loop;
+               end;
             end;
       end case;
 
