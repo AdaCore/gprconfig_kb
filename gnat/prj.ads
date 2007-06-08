@@ -506,6 +506,7 @@ package Prj is
       Path                 : Path_Name_Type        := No_Path;
       Display_Path         : Path_Name_Type        := No_Path;
       Source_TS            : Time_Stamp_Type       := Empty_Time_Stamp;
+      Object_Project       : Project_Id            := No_Project;
       Object_Exists        : Boolean               := True;
       Object               : File_Name_Type        := No_File;
       Current_Object_Path  : Path_Name_Type        := No_Path;
@@ -545,6 +546,7 @@ package Prj is
                        Path                => No_Path,
                        Display_Path        => No_Path,
                        Source_TS           => Empty_Time_Stamp,
+                       Object_Project      => No_Project,
                        Object_Exists       => True,
                        Object              => No_File,
                        Current_Object_Path => No_Path,
