@@ -163,13 +163,18 @@ procedure Create_Ada_Runtime_Project is
 
       while not End_Of_File (File) loop
          Get_Line (File, Line, Last);
-         Key := new String'(Line (1 .. Last));
-         Get_Line (File, Line, Last);
-         Elem.Spec := Line (1 .. Last) = "spec";
-         Get_Line (File, Line, Last);
-         Elem.Unit := new String'(Line (1 .. Last));
 
-         Mapping.Set (Key, Elem);
+         --  Skip the line if it is a comment line
+
+         if Last > 2 and then Line (1 .. 2) /= "--" then
+            Key := new String'(Line (1 .. Last));
+            Get_Line (File, Line, Last);
+            Elem.Spec := Line (1 .. Last) = "spec";
+            Get_Line (File, Line, Last);
+            Elem.Unit := new String'(Line (1 .. Last));
+
+            Mapping.Set (Key, Elem);
+         end if;
       end loop;
 
       Close (File);
