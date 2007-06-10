@@ -86,6 +86,9 @@ procedure Create_Ada_Runtime_Project is
    Line_Last : Natural;
    Spec      : Boolean;
 
+   Verbose_Mode : Boolean := False;
+   --  True if switch -v is used
+
    subtype Header_Num is Natural range 0 .. 4095;
    function Hash (Key : String_Access) return Header_Num;
    function Equal (K1, K2 : String_Access) return Boolean;
@@ -184,6 +187,10 @@ procedure Create_Ada_Runtime_Project is
          if Is_Open (File) then
             Close (File);
          end if;
+
+         if Verbose_Mode then
+            Put_Line (Standard_Error, "Could not read " & Mapping_File);
+         end if;
    end Get_Mapping;
 
    ----------
@@ -209,6 +216,7 @@ procedure Create_Ada_Runtime_Project is
       Put_Line (" -adainclude <dir>: Location of the adainclude directory");
       Put_Line (" -mapping <file>  : Location of the pre-built mapping file");
       Put_Line (" -o <file>        : Output file name");
+      Put_Line (" -v               : Verbose mode");
       Put_Line ("                    Default is " & Output_File.all);
    end Help;
 
@@ -219,7 +227,7 @@ begin
    --  of the adainclude directory.
 
    loop
-      case Getopt ("adainclude: o: mapping: h") is
+      case Getopt ("adainclude: o: mapping: h v") is
          when 'a' =>
             Free (Adainclude);
             Adainclude := new String'(Parameter);
@@ -232,6 +240,8 @@ begin
          when 'h' =>
             Help;
             return;
+         when 'v' =>
+            Verbose_Mode := True;
          when others =>
             exit;
       end case;
@@ -309,6 +319,17 @@ begin
 
          else
             Args (Args'Last) := new String'(Str (1 .. Last));
+
+            if Verbose_Mode then
+               Put (Gcc_Path.all);
+
+               for J in Args'Range loop
+                  Put (' ' & Args (J).all);
+               end loop;
+
+               New_Line;
+            end if;
+
             Spawn (Gcc_Path.all, Args, Output_File_Name, Success, Return_Code);
 
             if Success then
