@@ -5544,7 +5544,6 @@ package body Buildgpr is
       end if;
 
       if Err_Vars.Total_Errors_Detected > 0 then
-         Errout.Finalize;
          Fail_Program ("problems with main sources");
       end if;
    end Get_Mains;
@@ -5961,6 +5960,7 @@ package body Buildgpr is
       Namet.Initialize;
       Snames.Initialize;
 
+      Prj.Set_Mode (Multi_Language);
       Prj.Initialize (Project_Tree);
       Mains.Delete;
 
@@ -7445,8 +7445,11 @@ package body Buildgpr is
                      end loop;
 
                      if not Found then
-                        Write_Str ("    -> could not find ");
-                        Write_Line (Get_Name_String (Sfile));
+                        if Verbose_Mode then
+                           Write_Str ("    -> could not find ");
+                           Write_Line (Get_Name_String (Sfile));
+                        end if;
+
                         return True;
                      end if;
                   end if;
