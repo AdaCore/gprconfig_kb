@@ -1075,6 +1075,7 @@ package body Cleangpr is
       Main_Project := Prj.No_Project;
       All_Projects := False;
       Mains.Delete;
+      Prj.Set_Mode (Multi_Language);
    end Initialize;
 
    --------------------
