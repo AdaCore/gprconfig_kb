@@ -1,6 +1,7 @@
 SHELL=/bin/sh
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
 PREFIX=@PREFIX@
 HOST=@HOST@
 GNAT_SOURCE_DIR=@GNAT_SOURCE_DIR@
@@ -12,12 +13,22 @@ ifeq ($(strip $(filter-out %vms%,$(HOST))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
 
-all gprconfig gprmake gprclean: obj/gprbuild_dummies.o obj/link.o force
-
+.PHONY: all gprbuild gprconfig install clean_doc clean_dist doc tests examples force
 all:
 	gnatmake -Pgprconfig
 
-gprmake gprclean:
+all gprconfig gprbuild gprclean: obj/gprbuild_dummies.o obj/link.o force
+
+copy_gnat_src: force
+ifneq ($(GNAT_SOURCE_DIR),gnat)
+	-@$(foreach f,$(shell cat gnat/MANIFEST.GPRBUILD), \
+	  $(CP) $(GNAT_SOURCE_DIR)/$(f) gnat > /dev/null 2>&1  ;)
+	cd gnat && patch < prj-gnat-6.0.1.diff
+else
+	@echo "improper GNAT_SOURCE_DIR ($(GNAT_SOURCE_DIR))"
+endif
+
+gprbuild gprclean:
 	gnatmake -Pgprconfig $@
 
 gprconfig:
@@ -28,16 +39,16 @@ install: all
 	${MKDIR} ${PREFIX}/libexec/gprbuild
 	${MKDIR} ${PREFIX}/share/gpr
 	${MKDIR} ${PREFIX}/share/gprconfig
-	${MKDIR} ${PREFIX}/share/examples
+	${MKDIR} ${PREFIX}/share/examples/gprbuild
 	${INSTALL_PROGRAM} gprconfig ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprbuild ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprclean ${PREFIX}/bin
 	${INSTALL_PROGRAM} gprbind ${PREFIX}/libexec/gprbuild/
 	${INSTALL_PROGRAM} gprlib ${PREFIX}/libexec/gprbuild/
 	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprbuild/
-	${CP} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
-	${CP} share/gprconfig/gnat_runtime.mapping ${PREFIX}/share/gprconfig
-	${CP} -r examples ${PREFIX}/share/examples/gprbuild
+	${INSTALL_DATA} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
+	${INSTALL_DATA} share/gprconfig/gnat_runtime.mapping ${PREFIX}/share/gprconfig
+	${CP} -r examples/* ${PREFIX}/share/examples/gprbuild
 
 obj/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
@@ -45,26 +56,22 @@ obj/gprbuild_dummies.o: src/gprbuild_dummies.c
 obj/link.o: $(GNAT_SOURCE_DIR)/link.c
 	gcc -c -o $@ $<
 
-clean_doc:
-	@cd doc; ${RM} gprconfig.cp gprconfig.log gprconfig.ky gprconfig.toc
-	@cd doc; ${RM} gprconfig.aux gprconfig.fn gprconfig.pg
-	@cd doc; ${RM} gprconfig.tp gprconfig.cps gprconfig.vr
-
-clean: clean_doc
+clean:
 	gnat clean -q -r -Pgprconfig
-	@${RM} standard_foo.gpr doc/gprconfig.pdf
+	make -C doc clean
 
-distclean: clean
-	@${RM} config.log config.status src/gprconfig-sdefault.ads gnat.gpr
+distclean:
+	gnat clean -q -r -Pgprconfig
+	@${RM} config.log config.status src/gprconfig-sdefault.ads
 	@${RM} Makefile
+	@${RM} obj/*
+	make -C doc distclean
+doc:
+	make -C doc
 
-doc: doc/gprconfig.pdf
-doc/gprconfig.pdf: doc/gprconfig.texi
-	cd doc; echo x | texi2dvi -p gprconfig.texi
-	${MAKE} clean_doc
-
-tests: all force
+tests: force
 	cd tests; ./test.cmd
-
+examples: force
+	make -C examples
 force:
 
