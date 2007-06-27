@@ -38,6 +38,7 @@ with Gprexch; use Gprexch;
 with Makeutl; use Makeutl;
 with Namet;   use Namet;
 with Osint;
+with Tempdir;
 with Table;
 
 procedure Gprbind is
@@ -334,10 +335,121 @@ begin
       New_Line;
    end if;
 
-   Spawn
-     (Gnatbind_Path.all,
-      Gnatbind_Options (1 .. Last_Gnatbind_Option),
-      Success);
+   declare
+      Size : Natural := 0;
+      Maximum_Size : Integer;
+      pragma Import (C, Maximum_Size, "__gnat_link_max");
+      --  Maximum number of bytes to put in an invocation of the
+      --  gnatbind.
+
+   begin
+      for J in 1 .. Last_Gnatbind_Option loop
+         Size := Size + Gnatbind_Options (J)'Length + 1;
+      end loop;
+
+      --  Invoke gnatbind with the arguments if the size is not too large
+
+      if Size <= Maximum_Size then
+         Spawn
+           (Gnatbind_Path.all,
+            Gnatbind_Options (1 .. Last_Gnatbind_Option),
+            Success);
+
+
+      else
+         --  Otherwise create a temporary response file
+
+         declare
+            FD            : File_Descriptor;
+            Path          : Path_Name_Type;
+            Args          : Argument_List (1 .. 1);
+            EOL           : constant String (1 .. 1) := (1 => ASCII.LF);
+            Status        : Integer;
+            Succ          : Boolean;
+            Quotes_Needed : Boolean;
+            Last_Char     : Natural;
+            Ch            : Character;
+
+         begin
+            Tempdir.Create_Temp_File (FD, Path);
+            Args (1) := new String'("@" & Get_Name_String (Path));
+
+            for J in 1 .. Last_Gnatbind_Option loop
+
+               --  Check if the argument should be quoted
+
+               Quotes_Needed := False;
+               Last_Char     := Gnatbind_Options (J)'Length;
+
+               for K in Gnatbind_Options (J)'Range loop
+                  Ch := Gnatbind_Options (J) (K);
+
+                  if Ch = ' ' or else Ch = ASCII.HT or else Ch = '"' then
+                     Quotes_Needed := True;
+                     exit;
+                  end if;
+               end loop;
+
+               if Quotes_Needed then
+
+                  --  Quote the argument, doubling '"'
+
+                  declare
+                     Arg : String (1 .. Gnatbind_Options (J)'Length * 2 + 2);
+
+                  begin
+                     Arg (1) := '"';
+                     Last_Char := 1;
+
+                     for K in Gnatbind_Options (J)'Range loop
+                        Ch := Gnatbind_Options (J) (K);
+                        Last_Char := Last_Char + 1;
+                        Arg (Last_Char) := Ch;
+
+                        if Ch = '"' then
+                           Last_Char := Last_Char + 1;
+                           Arg (Last_Char) := '"';
+                        end if;
+                     end loop;
+
+                     Last_Char := Last_Char + 1;
+                     Arg (Last_Char) := '"';
+
+                     Status := Write (FD, Arg'Address, Last_Char);
+                  end;
+
+               else
+                  Status := Write
+                    (FD,
+                     Gnatbind_Options (J) (Gnatbind_Options (J)'First)'Address,
+                     Last_Char);
+               end if;
+
+               if Status /= Last_Char then
+                  Osint.Fail ("disk full");
+               end if;
+
+               Status := Write (FD, EOL (1)'Address, 1);
+
+               if Status /= 1 then
+                  Osint.Fail ("disk full");
+               end if;
+            end loop;
+
+            Close (FD);
+
+            --  And invoke gnatbind with this this response file
+
+            Spawn (Gnatbind_Path.all, Args, Success);
+
+            Delete_File (Get_Name_String (Path), Succ);
+
+            if not Succ then
+               null;
+            end if;
+         end;
+      end if;
+   end;
 
    if not Success then
       Osint.Fail ("invocation of gnatbind failed");
