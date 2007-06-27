@@ -55,7 +55,7 @@ package body Gpr_Util is
    procedure Fail_Program (S1 : String; S2 : String := ""; S3 : String := "")
    is
    begin
-      Errout.Finalize;
+      Errout.Finalize (Last_Call => True);
       Errout.Output_Messages;
       Finish_Program (Fatal => True, S1 => S1, S2 => S2, S3 => S3);
    end Fail_Program;
