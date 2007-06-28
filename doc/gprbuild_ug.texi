@@ -34,7 +34,7 @@ this manual provided the copyright notice and this permission notice
 are preserved on all copies.
 @end titlepage
 
-@ifinfo
+@ifnottex
 @node Top, Introduction, (dir), (dir)
 @top GPRBUILD User's Guide
 
@@ -47,8 +47,8 @@ AdaCore@*
 
 @menu
 * Introduction::
-* Basic Concepts::
 * Guided Tour::
+* Important Concepts::
 * Building with gprbuild::
 * Configuration::
 * Cleaning up with gprclean::
@@ -61,14 +61,14 @@ AdaCore@*
 
 Introduction
 
-Basic Concepts
-
 Guided Tour
 * First Steps::
 * Subsystems::
 * Project Extensions::
 * Libraries::
-* Scenarios::
+* Scenarios & conditional source files::
+
+Basic Concepts
 
 Building with gprbuild
 * Command Line::
@@ -95,7 +95,7 @@ Other companion tools
 Index
 @end detailmenu
 @end menu
-@end ifinfo
+@end ifnottex
 
 @c  ------------------------------------------------------------------------
 @node Introduction
@@ -153,37 +153,40 @@ be used sucessfully to address the appropriate part of the build. for
 instance it can be called from within a Makefile.
 
 @c  ------------------------------------------------------------------------
-@node Basic Concepts
-@chapter Basic Concepts
+@node Important Concepts
+@chapter Important Concepts
 @c  ------------------------------------------------------------------------
 
-Let's review some terms that are freely used in the rest of this document
-and which carry a specific technical baggage that may be worth mentioning
-here.
+Let's discuss some the important concepts that are the foundation of the
+GNAT Project files and the GPRbuild process.
 
 @itemize @bullet
 
-@item source file:
+@item source files & source directories:
 
-A file containing source code. It is associated to a programming language
-by its naming scheme. For instance, @code{foo.c} is typically the name of
-a C source file; @code{bar.ads} or @code{bar.1.ada} are 2 common
-naming conventions for the file containing an Ada spec; etc. a compilation
-unit is often represented by a main source file and several auxillary
-ones, such as header files in C. Source file naming schemes are used by
-@code{grpmake} to associate source files to languages  so that the right
-compiler can be invoked. The Naming schemes are defined in the
-configuration files associated with languages and toolchains. It can
-also be defined by the user in his project files.
+A source file is associated to a programming
+language through a naming scheme. For instance, @code{foo.c} is typically
+the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are 2
+common naming conventions for the file containing an Ada spec; etc.
+A compilation unit is often represented by a main source file and several
+auxillary ones, such as header files in C. The naming scheme can be defined
+in a project file or a configuration file and is used by
+@code{gprbuild} to recognize the source files invoke the right compiler.
+Source files are looked for in source directories. One can define the
+source directories thanks to the @code{Source_Dirs} attribute. By default,
+all the files following the naming schemes of the supported languages are
+considered but it is possible to control the list of source files with
+specific attributes.
 
-@item object file:
+@item object files and objec directory:
 
-An intermediate file produced by the compiler from a compilation unit. It
-is used by the post-compilation phases to produce final executables or
-libraries. The object files produced in the context of a given project
-are stored in a single directory, the Object_Dir that is usually specified
-in the project file. When there is a need for storing objects in different
-directories, several dependant project files need to be defined.
+An object file is an intermediate file produced by the compiler from a
+compilation unit. It is used by the post-compilation phases to produce
+final executables or libraries. The object files produced in the context of
+a given project are stored in a single directory, the Object_Dir that can
+be specified in the project file. A need for storing
+objects in different directories correspond to the need to split the
+system into distinct subsystems.
 
 @item project file:
 
@@ -271,12 +274,14 @@ been changed and the objects that are affected by therse changes.
 * Subsystems::
 * Project Extensions::
 * Libraries::
-* Scenarios::
+* Scenarios & conditional source files::
 @end menu
 
 This chapter will get, through examples, from the simplest cases of
 multi-language builds to some of the most advanced capability of
-@code{gprbuild}.
+@code{gprbuild}. Note that all the examples used in the text are extracted
+from the examples of the gprbuild package which are installed on your
+system at $root/share/examples/gprbuild.
 
 @node First Steps
 @section First Steps
@@ -573,8 +578,11 @@ end New_Ada_Main;
 @c subsystem in a library
 @c show how to deal with externa libraries
 
-@node Scenarios
-@section Scenarios
+@node Scenarios & conditional source files
+@section Scenarios & conditional source files
+
+
+
 
 @c  ------------------------------------------------------------------------
 @node Building with gprbuild

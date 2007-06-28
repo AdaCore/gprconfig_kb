@@ -1,0 +1,45 @@
+<?xml version="1.0" ?>
+<gprconfig>
+   <!--  This package provides adjustments for cross compilers -->
+   <!-- ppc-elf executables do not have any extension -->
+   <configuration>
+     <targets>
+       <target name="powerpc-elf" />
+     </targets>
+     <config>
+   package Language_Processing is
+      for Executable_Suffix use "";
+   end Language_Processing;
+     </config>
+   </configuration>
+
+   <!-- vx6/kernel executables have a .out extension -->
+
+   <configuration>
+     <compilers>
+       <compiler name="GNAT" runtime="kernel" />
+     </compilers>
+     <config>
+   package Language_Processing is
+      for Executable_Suffix use ".out";
+   end Language_Processing;
+     </config>
+   </configuration>
+
+   <!-- vx6/rtp executables have a .vxe extension and need -mrtp -->
+
+   <configuration>
+     <compilers>
+       <compiler name="GNAT" runtime="rtp" />
+     </compilers>
+     <config>
+   package Language_Processing is
+      for Executable_Suffix use ".vxe";
+      for Minimum_Compiler_Options ("Ada") use
+        Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("-mrtp", "--RTS=$RUNTIME");
+      for Minimum_Binder_Options ("Ada") use
+        Language_Processing'Minimum_Binder_Options ("Ada") &amp; ("--RTS=$RUNTIME");
+   end Language_Processing;
+     </config>
+   </configuration>
+</gprconfig>
