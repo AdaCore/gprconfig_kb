@@ -1,0 +1,83 @@
+project Gprbuild is
+   type OS_Type is ("unix", "vms", "Windows_NT");
+   OS : OS_Type := External ("OS", "unix");
+
+   type Build_Type is ("debug", "production");
+   Bld : Build_Type := External ("BUILD", "debug");
+
+  for Main use
+       ("gprconfig-main.adb",
+        "create_ada_runtime_project.adb",
+        "gprbuild.adb",
+        "gprbind.adb",
+        "gprlib.adb",
+        "gprclean.adb");
+   for Source_Dirs use ("src", "gnat");
+
+
+   for Object_Dir use "obj";
+   for Exec_Dir use ".";
+
+   for Languages use ("Ada");
+   -- We only build the Ada part with projects so that we do not
+   -- have boostrap issues with gprbuild
+
+   package Builder is
+      for Executable ("gprconfig-main.adb") use "gprconfig";
+   end Builder;
+
+   package Compiler is
+      common_switches := ("-gnat05", "-gnaty");
+      case Bld is
+         when "debug" =>
+            for Default_Switches ("Ada") use common_switches &
+            ("-g", "-gnatVa", "-gnatwaCJI"
+             --  ??? warning as error should be considered back when
+             --  builgpr.adb line 7384 indentation is fixed
+             -- , "-gnatwe"
+             , "-gnatyg");
+            --  ??? re-enable when gprbuild works with initialize_scalars
+            -- for Local_Configuration_Pragmas use "debug.adc";
+         when "production" =>
+            for Default_Switches ("Ada") use common_switches &
+              ("-O2", "-gnatpn", "-gnatws");
+      end case;
+   end Compiler;
+
+   package Binder is
+      common_switches := ("-E");
+      case Bld is
+         when "debug" =>
+            for Default_Switches ("Ada") use common_switches
+            --  ??? to be re-enabled with gprbuild can be built with
+            -- initialize_scalars
+            --  & ("-Sin")
+            ;
+         when "production" =>
+            for Default_Switches ("Ada") use common_switches;
+         end case;
+   end Binder;
+
+
+   package Linker is
+      -- Link manually the C part
+      for Default_Switches ("Ada") use
+	("obj/gprbuild_dummies.o", "obj/link.o");
+   end Linker;
+
+   package Naming is
+      case OS is
+         when "unix" | "Windows_NT" =>
+            for Body ("gprlib.build_shared_lib")
+              use "gprlib-build_shared_lib-nosymbols.adb";
+         when "vms" =>
+            for Body ("gprlib.build_shared_lib")
+              use "gprlib-build_shared_lib-vms.adb";
+      end case;
+   end Naming;
+
+   package IDE is
+      for VCS_Kind use "subversion";
+   end IDE;
+
+end Gprbuild;
