@@ -1128,7 +1128,7 @@ package body Cleangpr is
                   if Arg = "--help" then
                      Copyright_Displayed := True;
                      --  To avoid the Copyright notice that should not be
-                     --   output for --help.
+                     --  output for --help.
 
                      Usage;
                      Write_Eol;
