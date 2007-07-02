@@ -6,6 +6,16 @@ can be used on Winodws platforms with a full
 CYGWIN installation. The latter makes it simpler to build gprbuild but
 is not required to use it.
 
+Using alternate GNAT Sources
+============================
+
+gprbuild uses some sources of the GNAT package. They are found by
+default in the gnat dir. If one want to use other GNAT sources, the
+recommended procedure is to create a link called gnat_src and call the
+Makefile target copy_gnat_src
+   $ ln -s path_to_gnat_sources gnat_src
+   $ make copy_gnat_src -f Makefile.in
+
 Configuring
 ===========
 
@@ -14,18 +24,9 @@ Configuring is usually done simply as:
 2 parameters may be worth specifying: --prefix for specifying the
 installation root and --build for specifying the build host. In particular,
 on Windows, when using cygwin to build, it is necessary to configure with
- ./configure --build=pentium-mingw32msv
-if one wants to use mingw based compilers such as GNAT Pro or GNAT GPL.
-
-Using alternate GNAT Sources
-============================
-
-gprbuild uses some sources of the GNAT package. They are found by
-default in the gnat dir. If one want to use other GNAT sources, the
-recommended procedure is to create a link called gnat_src and call the
-Makefile target copy_gnat_src
-   $ ln -s path_to_gnat_sources gnatsrc
-   $ make copy_gnat_src
+--build=pentium-mingw32msv if one wants to use mingw based compilers
+such as GNAT Pro or GNAT GPL. Here is an example of such a command:
+./configure --build=pentium-mingw32msv  --prefix=$HOME/local
 
 Building and Installing
 =======================
