@@ -1,6 +1,0 @@
-project C_Hello is
-   for Languages    use ("C");
-   for Source_Dirs  use (".");
-   for Object_Dir   use  ".";
-   for Main         use ("hello.c");
-end C_Hello;
