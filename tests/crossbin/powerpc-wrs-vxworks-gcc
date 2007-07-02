@@ -1,8 +1,0 @@
-#!/bin/sh
-if [ x$1 = x-v ]; then
-   echo "gcc version 3.4.6"
-elif [ x$1 = x-dumpmachine ]; then
-   echo "i686-pc-linux-gnu"
-else
-   echo "Running gcc $@"
-fi
