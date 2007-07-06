@@ -1,6 +1,6 @@
 with Util;
 procedure Main is
-   A : aliased integer;
+   A : aliased integer := 1;
    procedure C_Routine (x : in out Integer);
    pragma Import (C, C_Routine);
 
