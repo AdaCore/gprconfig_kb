@@ -44,7 +44,7 @@ project Namings is
             for Implementation_Exceptions ("C") use ("my_routine.c1");
          when "case2" =>
             for Implementation_Exceptions ("C") use ("my_routine2.c1");
-            for Body ("Util.Print2") use "_print2.adb";
+            for Body ("Util.Print2") use "_print2.ada";
          when "case3" =>
             for Implementation_Exceptions ("C") use ("my_routine2.c1");
             for Body ("Util") use "util-case2.ada";
