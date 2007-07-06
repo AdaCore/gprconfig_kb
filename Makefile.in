@@ -2,13 +2,20 @@ SHELL=/bin/sh
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@
-PREFIX=@PREFIX@
 HOST=@HOST@
 GNAT_SOURCE_DIR=gnat_src
 CP=cp -p
 MKDIR=mkdir -p
-RM=rm -f
 BUILD=debug
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+datarootdir=@datarootdir@
+datadir=@datadir@
+bindir=@bindir@
+libdir=@libdir@
+libexecdir=@libexecdir@
+docdir=${datadir}/doc/@PACKAGE_TARNAME@
 
 GNATMAKE=gnatmake
 ifeq ($(strip $(filter-out %vms%,$(HOST))),)
@@ -36,21 +43,21 @@ gprconfig:
 .PHONY: install clean distclean
 
 install: all
-	${MKDIR} ${PREFIX}/bin
-	${MKDIR} ${PREFIX}/libexec/gprbuild
-	${MKDIR} ${PREFIX}/share/gpr
-	${MKDIR} ${PREFIX}/share/gprconfig
-	${INSTALL_PROGRAM} gprconfig ${PREFIX}/bin
-	${INSTALL_PROGRAM} gprbuild ${PREFIX}/bin
-	${INSTALL_PROGRAM} gprclean ${PREFIX}/bin
-	${INSTALL_PROGRAM} gprbind ${PREFIX}/libexec/gprbuild/
-	${INSTALL_PROGRAM} gprlib ${PREFIX}/libexec/gprbuild/
-	${INSTALL_PROGRAM} create_ada_runtime_project ${PREFIX}/libexec/gprbuild/
-	${INSTALL_DATA} share/gprconfig/*.xml ${PREFIX}/share/gprconfig
-	${INSTALL_DATA} share/gprconfig/gnat_runtime.mapping ${PREFIX}/share/gprconfig
-	$(RM) -r ${PREFIX}/share/examples/gprbuild
-	${MKDIR} ${PREFIX}/share/examples/gprbuild
-	${CP} -r examples/* ${PREFIX}/share/examples/gprbuild
+	${MKDIR} ${bindir}
+	${MKDIR} ${libexecdir}/gprbuild
+	${MKDIR} ${datadir}/gpr
+	${MKDIR} ${datadir}/gprconfig
+	${INSTALL_PROGRAM} gprconfig ${bindir}
+	${INSTALL_PROGRAM} gprbuild ${bindir}
+	${INSTALL_PROGRAM} gprclean ${bindir}
+	${INSTALL_PROGRAM} gprbind ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} create_ada_runtime_project ${libexecdir}/gprbuild/
+	${INSTALL_DATA} share/gprconfig/*.xml ${datadir}/gprconfig
+	${INSTALL_DATA} share/gprconfig/gnat_runtime.mapping ${datadir}/gprconfig
+	$(RM) -r ${datadir}/examples/gprbuild
+	${MKDIR} ${datadir}/examples/gprbuild
+	${CP} -r examples/* ${datadir}/examples/gprbuild
 
 obj/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
@@ -74,8 +81,8 @@ doc:
 	make -C doc
 
 install-doc:
-	$(MKDIR) ${PREFIX}/share/doc/gprbuild/html
-	${INSTALL_DATA} doc/*.html ${PREFIX}/share/doc/gprbuild/html
+	$(MKDIR) ${docdir}/gprbuild/html
+	${INSTALL_DATA} doc/*.html ${docdir}/gprbuild/html
 
 tests: force
 	cd tests; ./test.cmd
