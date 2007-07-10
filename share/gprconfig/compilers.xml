@@ -24,7 +24,7 @@
 
   <compiler_description>
     <name>GCC-WRS</name>
-    <executable prefix="1">cc(.+)</executable>
+    <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
       <external regexp="^cc.+ \(GCC\) ([0-9.]+) \(Wind River" group="1">cc${PREFIX} --version</external>
     </version>
