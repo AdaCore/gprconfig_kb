@@ -355,7 +355,6 @@ begin
             Gnatbind_Options (1 .. Last_Gnatbind_Option),
             Success);
 
-
       else
          --  Otherwise create a temporary response file
 
