@@ -526,9 +526,18 @@ procedure GprConfig.Main is
          elsif Choice = 's' then
             exit;
 
+         elsif Choice = ASCII.NUL then
+            null;
+
          else
             --  Selected one of the compilers we found ?
-            Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
+            begin
+               Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
+            exception
+               when Constraint_Error =>
+                  --  No selection
+                  exit;
+            end;
 
             if Tmp in 1 .. Comps'Last then
                Selected (Tmp) := not Selected (Tmp);
