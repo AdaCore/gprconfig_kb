@@ -29,6 +29,7 @@
  * Extensive contributions were provided by Ada Core Technologies Inc.      *
  *                                                                          *
 ****************************************************************************/
+#include <stdlib.h>
 void set_std_prefix (void) {
   abort ();
 }
