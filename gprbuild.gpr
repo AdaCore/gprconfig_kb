@@ -1,5 +1,3 @@
-with "internal/gprtests/gprtest";
-
 project Gprbuild is
    type OS_Type is ("unix", "vms", "Windows_NT");
    OS : OS_Type := External ("OS", "unix");
