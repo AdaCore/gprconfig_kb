@@ -7,9 +7,9 @@
        <target name="powerpc-elf" />
      </targets>
      <config>
-   package Language_Processing is
+   package Builder is
       for Executable_Suffix use "";
-   end Language_Processing;
+   end Builder;
      </config>
    </configuration>
 
@@ -20,9 +20,9 @@
        <compiler name="GNAT" runtime="kernel" />
      </compilers>
      <config>
-   package Language_Processing is
+   package Builder is
       for Executable_Suffix use ".out";
-   end Language_Processing;
+   end Builder;
      </config>
    </configuration>
 
@@ -33,13 +33,19 @@
        <compiler name="GNAT" runtime="rtp" />
      </compilers>
      <config>
-   package Language_Processing is
+   package Builder is
       for Executable_Suffix use ".vxe";
-      for Minimum_Compiler_Options ("Ada") use
-        Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("-mrtp", "--RTS=$RUNTIME");
-      for Minimum_Binder_Options ("Ada") use
-        Language_Processing'Minimum_Binder_Options ("Ada") &amp; ("--RTS=$RUNTIME");
-   end Language_Processing;
+   end Builder;
+
+   package Compiler is
+      for Switches ("Ada") use
+        Binder'Switches ("Ada") &amp; ("-mrtp", "--RTS=$RUNTIME");
+   end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use
+        Binder'Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+   end Binder;
      </config>
    </configuration>
 </gprconfig>

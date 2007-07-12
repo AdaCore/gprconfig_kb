@@ -169,7 +169,7 @@ package body Cleangpr is
 
       Archive_Name : constant String :=
                        "lib" & Get_Name_String (Data.Name) &
-                       Get_Name_String (Project_Tree.Archive_Suffix);
+                       Get_Name_String (Project_Tree.Config.Archive_Suffix);
       --  The name of the archive file for this project
 
       Archive_Dep_Name : constant String :=
@@ -287,12 +287,13 @@ package body Cleangpr is
 
       Lib_Filename : constant String := Get_Name_String (Data.Library_Name);
       DLL_Name     : constant String :=
-                       Get_Name_String (Project_Tree.Shared_Lib_Prefix) &
+                       Get_Name_String
+                         (Project_Tree.Config.Shared_Lib_Prefix) &
                        Lib_Filename &
-                       Get_Name_String (Project_Tree.Shared_Lib_Suffix);
+                       Get_Name_String (Project_Tree.Config.Shared_Lib_Suffix);
       Archive_Name : constant String :=
                        "lib" & Lib_Filename &
-                       Get_Name_String (Project_Tree.Archive_Suffix);
+                       Get_Name_String (Project_Tree.Config.Archive_Suffix);
       Library_Exchange_File_Name : constant String :=
                                      Lib_Filename & Library_Exchange_Suffix;
 

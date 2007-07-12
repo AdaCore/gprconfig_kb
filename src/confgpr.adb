@@ -34,6 +34,7 @@ with Osint;    use Osint;
 with Output;   use Output;
 with Prj;      use Prj;
 with Prj.Pars;
+with Prj.Util; use Prj.Util;
 with Snames;   use Snames;
 
 with GNAT.OS_Lib;      use GNAT.OS_Lib;
@@ -79,13 +80,16 @@ package body Confgpr is
       procedure Cleanup;
       --  Restore environment and reinitialize project tree
 
+      procedure Process_Project_Level (Attributes : Variable_Id);
+      --  Process the simple attributes at the project level of a configuration
+      --  project.
+
+      procedure Process_Project_Level (Arrays : Array_Id);
+      --  Process the associate array attributes at the project level of a
+      --  configuration project.
+
       procedure Process_Packages (Project : Project_Id);
       --  Read the packages of a configuration project
-
-      procedure Put
-        (Into_List : in out Name_List_Index;
-         From_List : String_List_Id);
-      --  Append a name list to a string list
 
       procedure Report_Failure (S : String; N : Name_Id);
       --  Set OK to False. If Fail_If_Error is True, output an error message
@@ -107,46 +111,6 @@ package body Confgpr is
          Project_Table.Init (Project_Tree.Projects);
       end Cleanup;
 
-      ---------
-      -- Put --
-      ---------
-
-      procedure Put
-        (Into_List : in out Name_List_Index;
-         From_List : String_List_Id)
-      is
-         Current_Name : Name_List_Index;
-         List         : String_List_Id;
-         Element      : String_Element;
-         Last         : Name_List_Index :=
-                          Name_List_Table.Last (Project_Tree.Name_Lists);
-
-      begin
-         Current_Name := No_Name_List;
-
-         List := From_List;
-         while List /= Nil_String loop
-            Element := Project_Tree.String_Elements.Table (List);
-
-            Name_List_Table.Append
-              (Project_Tree.Name_Lists,
-               (Name => Element.Value, Next => No_Name_List));
-
-            Last := Last + 1;
-
-            if Current_Name = No_Name_List then
-               Into_List := Last;
-
-            else
-               Project_Tree.Name_Lists.Table (Current_Name).Next := Last;
-            end if;
-
-            Current_Name := Last;
-
-            List := Element.Next;
-         end loop;
-      end Put;
-
       ----------------------
       -- Process_Packages --
       ----------------------
@@ -157,6 +121,18 @@ package body Confgpr is
          Packages : Package_Id;
          Element  : Package_Element;
 
+         procedure Process_Binder (Arrays : Array_Id);
+         --  Process the associate array attributes of package Binder of a
+         --  configuration project.
+
+         procedure Process_Builder (Attributes : Variable_Id);
+         --  Process the simple attributes of package Builder of a
+         --  configuration project.
+
+         procedure Process_Compiler (Arrays : Array_Id);
+         --  Process the associate array attributes of package Compiler of a
+         --  configuration project.
+
          procedure Process_Naming (Attributes : Variable_Id);
          --  Process the simple attributes of package Naming of a configuration
          --  project.
@@ -165,304 +141,25 @@ package body Confgpr is
          --  Process the associate array attributes of package Naming of a
          --  configuration project.
 
-         procedure Process_Language_Processing (Attributes : Variable_Id);
-         --  Process simple the attributes of package Language_Processing of a
+         procedure Process_Linker (Attributes : Variable_Id);
+         --  Process the simple attributes of package Linker of a
          --  configuration project.
 
-         procedure Process_Language_Processing (Arrays : Array_Id);
-         --  Process the associate array attributes of package
-         --  Language_Processing of a configuration project.
-
-         ---------------------------------
-         -- Process_Language_Processing --
-         ---------------------------------
-
-         procedure Process_Language_Processing (Attributes : Variable_Id) is
-            Attribute_Id : Variable_Id;
-            Attribute    : Variable;
-            List         : String_List_Id;
-
-         begin
-            --  Process non associated array attribute from package
-            --  Language_Processing.
-
-            Attribute_Id := Attributes;
-            while Attribute_Id /= No_Variable loop
-               Attribute :=
-                 Project_Tree.Variable_Elements.Table (Attribute_Id);
-
-               if not Attribute.Value.Default then
-                  if Attribute.Name = Name_Default_Language then
-
-                     --  Attribute Default_Language: the single language of
-                     --  a project when attribute Languages is not specified.
-
-                     Get_Name_String (Attribute.Value.Value);
-                     To_Lower (Name_Buffer (1 .. Name_Len));
-                     Project_Tree.Default_Language := Name_Find;
-
-                  elsif Attribute.Name = Name_Default_Linker then
-
-                     --  Attribute Default_Linker: the linker to use when
-                     --  attribute Linker is not specified.
-
-                     Project_Tree.Default_Linker :=
-                       Path_Name_Type (Attribute.Value.Value);
-
-                  elsif Attribute.Name = Name_Executable_Suffix then
-
-                     --  Attribute Executable_Suffix: the suffix of the
-                     --  executables.
-
-                     Project_Tree.Executable_Suffix := Attribute.Value.Value;
-
-                  elsif
-                    Attribute.Name = Name_Default_Minimum_Linker_Options
-                  then
-
-                     --  Attribute Default_Minimum_Linker_Options: the minimum
-                     --  options to use when invoking the default linker
-
-                     Put (Into_List => Project_Tree.Minimum_Linker_Options,
-                          From_List => Attribute.Value.Values);
-
-                  elsif Attribute.Name = Name_Library_Builder then
-
-                     --  Attribute Library_Builder: the application to invoke
-                     --  to build libraries.
-
-                     Project_Tree.Library_Builder :=
-                       Path_Name_Type (Attribute.Value.Value);
-
-                  elsif Attribute.Name = Name_Archive_Builder then
-
-                     --  Attribute Archive_Builder: the archive builder
-                     --  (usually "ar") and its minimum options (usually "cr").
-
-                     List := Attribute.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("archive builder cannot be null",
-                           Attribute.Value.Location);
-                     end if;
-
-                     Put (Into_List => Project_Tree.Archive_Builder,
-                          From_List => List);
-
-                  elsif Attribute.Name = Name_Archive_Indexer then
-
-                     --  Attribute Archive_Indexer: the optional archive
-                     --  indexer (usually "ranlib") with its minimum options
-                     --  (usually none).
-
-                     List := Attribute.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("archive indexer cannot be null",
-                           Attribute.Value.Location);
-                     end if;
-
-                     Put (Into_List => Project_Tree.Archive_Indexer,
-                          From_List => List);
-
-                  elsif Attribute.Name = Name_Library_Partial_Linker then
-
-                     --  Attribute Library_Partial_Linker: the optional linker
-                     --  driver with its minimum options, to partially link
-                     --  archives.
-
-                     List := Attribute.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("partial linker cannot be null",
-                           Attribute.Value.Location);
-                     end if;
-
-                     Put (Into_List => Project_Tree.Lib_Partial_Linker,
-                          From_List => List);
-
-                  elsif Attribute.Name = Name_Archive_Suffix then
-                     Project_Tree.Archive_Suffix :=
-                       File_Name_Type (Attribute.Value.Value);
-
-                  elsif Attribute.Name = Name_Linker_Executable_Option then
-
-                     --  Attribute Linker_Executable_Option: optional options
-                     --  to specify an executable name. Defaults to "-o".
-
-                     List := Attribute.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("linker executable option cannot be null",
-                           Attribute.Value.Location);
-                     end if;
-
-                     Put (Into_List => Project_Tree.Linker_Executable_Option,
-                          From_List => List);
-
-                  elsif Attribute.Name = Name_Linker_Lib_Dir_Option then
-
-                     --  Attribute Linker_Lib_Dir_Option: optional options
-                     --  to specify a library search directory. Defaults to
-                     --  "-L".
-
-                     Get_Name_String (Attribute.Value.Value);
-
-                     if Name_Len = 0 then
-                        Error_Msg
-                          ("linker library directory option cannot be empty",
-                           Attribute.Value.Location);
-                     end if;
-
-                     Project_Tree.Linker_Lib_Dir_Option :=
-                       Attribute.Value.Value;
-
-                  elsif Attribute.Name = Name_Linker_Lib_Name_Option then
-
-                     --  Attribute Linker_Lib_Name_Option: optional options
-                     --  to specify the name of a library to be linked in.
-                     --  Defaults to "-l".
-
-                     Get_Name_String (Attribute.Value.Value);
-
-                     if Name_Len = 0 then
-                        Error_Msg
-                          ("linker library name option cannot be empty",
-                           Attribute.Value.Location);
-                     end if;
-
-                     Project_Tree.Linker_Lib_Name_Option :=
-                       Attribute.Value.Value;
-
-                  elsif Attribute.Name = Name_Run_Path_Option then
-
-                     --  Attribute Run_Path_Option: optional options to
-                     --  specify a path for libraries.
-
-                     List := Attribute.Value.Values;
-
-                     if List /= Nil_String then
-                        Put (Into_List => Project_Tree.Run_Path_Option,
-                             From_List => List);
-                     end if;
-
-                  elsif Attribute.Name = Name_Library_Support then
-                     declare
-                        pragma Unsuppress (All_Checks);
-                     begin
-                        Project_Tree.Lib_Support :=
-                          Library_Support'Value (Get_Name_String
-                                             (Attribute.Value.Value));
-                     exception
-                        when Constraint_Error =>
-                           Error_Msg
-                             ("invalid value """ &
-                              Get_Name_String (Attribute.Value.Value) &
-                              """ for Library_Support",
-                              Attribute.Value.Location);
-                     end;
-
-                  elsif Attribute.Name = Name_Shared_Library_Prefix then
-                     Project_Tree.Shared_Lib_Prefix :=
-                       File_Name_Type (Attribute.Value.Value);
-
-                  elsif Attribute.Name = Name_Shared_Library_Suffix then
-                     Project_Tree.Shared_Lib_Suffix :=
-                       File_Name_Type (Attribute.Value.Value);
-
-                  elsif Attribute.Name = Name_Symbolic_Link_Supported then
-                     declare
-                        pragma Unsuppress (All_Checks);
-                     begin
-                        Project_Tree.Symbolic_Link_Supported :=
-                          Boolean'Value (Get_Name_String
-                                         (Attribute.Value.Value));
-                     exception
-                        when Constraint_Error =>
-                           Error_Msg
-                             ("invalid value """ &
-                              Get_Name_String (Attribute.Value.Value) &
-                              """ for Symbolic_Link_Supported",
-                              Attribute.Value.Location);
-                     end;
-
-                  elsif
-                    Attribute.Name = Name_Library_Major_Minor_Id_Supported
-                  then
-                     declare
-                        pragma Unsuppress (All_Checks);
-                     begin
-                        Project_Tree.Lib_Maj_Min_Id_Supported :=
-                          Boolean'Value (Get_Name_String
-                                         (Attribute.Value.Value));
-                     exception
-                        when Constraint_Error =>
-                           Error_Msg
-                             ("invalid value """ &
-                              Get_Name_String (Attribute.Value.Value) &
-                              """ for Library_Major_Minor_Id_Supported",
-                              Attribute.Value.Location);
-                     end;
-
-                  elsif
-                    Attribute.Name = Name_Library_Auto_Init_Supported
-                  then
-                     declare
-                        pragma Unsuppress (All_Checks);
-                     begin
-                        Project_Tree.Auto_Init_Supported :=
-                          Boolean'Value (Get_Name_String
-                                         (Attribute.Value.Value));
-                     exception
-                        when Constraint_Error =>
-                           Error_Msg
-                             ("invalid value """ &
-                              Get_Name_String (Attribute.Value.Value) &
-                              """ for Library_Auto_Init_Supported",
-                              Attribute.Value.Location);
-                     end;
-
-                  elsif
-                    Attribute.Name = Name_Shared_Library_Minimum_Options
-                  then
-                     List := Attribute.Value.Values;
-
-                     if List /= Nil_String then
-                        Put (Into_List => Project_Tree.Shared_Lib_Min_Options,
-                             From_List => List);
-                     end if;
-
-                  elsif
-                    Attribute.Name = Name_Library_Version_Options
-                  then
-                     List := Attribute.Value.Values;
-
-                     if List /= Nil_String then
-                        Put (Into_List => Project_Tree.Lib_Version_Options,
-                             From_List => List);
-                     end if;
-                  end if;
-               end if;
-
-               Attribute_Id := Attribute.Next;
-            end loop;
-         end Process_Language_Processing;
-
-         procedure Process_Language_Processing (Arrays : Array_Id) is
-            Current_Array_Id : Array_Id := Arrays;
+         --------------------
+         -- Process_Binder --
+         --------------------
+
+         procedure Process_Binder (Arrays : Array_Id) is
+            Current_Array_Id : Array_Id;
             Current_Array    : Array_Data;
             Element_Id       : Array_Element_Id;
             Element          : Array_Element;
             List             : String_List_Id;
 
          begin
-            --  Process the associative array attribute of package
-            --  Language_Processing.
+            --  Process the associative array attribute of package Binder
 
+            Current_Array_Id := Arrays;
             while Current_Array_Id /= No_Array loop
                Current_Array := Project_Tree.Arrays.Table (Current_Array_Id);
 
@@ -475,361 +172,54 @@ package body Confgpr is
                   Get_Language_Index_Of (Element.Index);
 
                   case Current_Array.Name is
+                     when Name_Driver =>
 
-                  when Name_Language_Kind =>
-
-                     --  Attribute Language_Kind (<language>): unit based or
-                     --  file based.
-
-                     begin
-                        Project_Tree.Languages_Data.Table
-                          (Current_Language_Index).Config.Kind :=
-                          Language_Kind'Value
-                            (Get_Name_String (Element.Value.Value));
-                     exception
-                        when Constraint_Error =>
-                           Error_Msg
-                             ("invalid value for language kind",
-                              Element.Value.Location);
-                     end;
-
-                  when Name_Dependency_File_Kind =>
-
-                     --  Attribute Dependency_File_Kind (<language>)
-
-                     begin
-                        Project_Tree.Languages_Data.Table
-                          (Current_Language_Index).Config.Dependency_Kind :=
-                          Dependency_File_Kind'Value
-                            (Get_Name_String (Element.Value.Value));
-                     exception
-                        when Constraint_Error =>
-                           Error_Msg
-                             ("invalid value for dependency file kind",
-                              Element.Value.Location);
-                     end;
-
-                  when Name_Binder_Driver =>
-
-                     --  Attribute Binder_Driver (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Binder_Driver :=
-                       File_Name_Type (Element.Value.Value);
-                     There_Are_Binder_Drivers := True;
-
-                  when Name_Minimum_Binder_Options =>
-
-                     --  Attribute Minimum_Binder_Options (<language>)
-
-                     List := Element.Value.Values;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.
-                            Binder_Min_Options,
-                          From_List => List);
-
-                  when Name_Binder_Prefix =>
-
-                     --  Attribute Binding_Prefix (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Binder_Prefix :=
-                       Element.Value.Value;
-
-                  when Name_Compiler_Driver =>
-
-                     --  Attribute Compiler_Driver (<language>)
-
-                     Get_Name_String (Element.Value.Value);
-
-                     if Name_Len = 0 then
-                        Error_Msg
-                          ("compiler driver name cannot be empty",
-                           Element.Value.Location);
-                     end if;
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Compiler_Driver :=
-                       File_Name_Type (Element.Value.Value);
-
-                  when Name_Minimum_Compiler_Options =>
-
-                     --  Attribute Minimum_Compiler_Options (<language>)
-
-                     List := Element.Value.Values;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.
-                            Compiler_Min_Options,
-                          From_List => List);
-
-                  when Name_Compiler_Pic_Option =>
-
-                     --  Attribute Compiler_Pic_Option (<language>)
-
-                     List := Element.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("compiler PIC option cannot be null",
-                           Element.Value.Location);
-                     end if;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.
-                            Compilation_PIC_Option,
-                          From_List => List);
-
-                  when Name_Mapping_File_Switches =>
-
-                     --  Attribute Mapping_File_Switches (<language>)
-
-                     List := Element.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("mapping file switches cannot be null",
-                           Element.Value.Location);
-                     end if;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.
-                                                       Mapping_File_Switches,
-                          From_List => List);
-
-                  when Name_Mapping_Spec_Suffix =>
-
-                     --  Attribute Mapping_Spec_Suffix (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Mapping_Spec_Suffix :=
-                       File_Name_Type (Element.Value.Value);
-
-                  when Name_Mapping_Body_Suffix =>
-
-                     --  Attribute Mapping_Body_Suffix (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Mapping_Body_Suffix :=
-                       File_Name_Type (Element.Value.Value);
-
-                  when Name_Config_File_Switches =>
-
-                     --  Attribute Config_File_Switches (<language>)
-
-                     List := Element.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("config file switches cannot be null",
-                           Element.Value.Location);
-                     end if;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.
-                            Config_File_Switches,
-                          From_List => List);
-
-                  when Name_Dependency_Option =>
-
-                     --  Attribute Dependency_Option (<language>)
-
-                     List := Element.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("dependency option cannot be null",
-                           Element.Value.Location);
-                     end if;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.Dependency_Option,
-                          From_List => List);
-
-                  when Name_Compute_Dependency =>
-
-                     --  Attribute Compute_Dependency (<language>)
-
-                     List := Element.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("compute dependency cannot be null",
-                           Element.Value.Location);
-                     end if;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.Compute_Dependency,
-                          From_List => List);
-
-                  when Name_Include_Option =>
-
-                     --  Attribute Include_Option (<language>)
-
-                     List := Element.Value.Values;
-
-                     if List = Nil_String then
-                        Error_Msg
-                          ("include option cannot be null",
-                           Element.Value.Location);
-                     end if;
-
-                     Put (Into_List =>
-                          Project_Tree.Languages_Data.Table
-                            (Current_Language_Index).Config.Include_Option,
-                          From_List => List);
-
-                  when Name_Include_Path =>
-
-                     --  Attribute Include_Path (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Include_Path :=
-                       Element.Value.Value;
-
-                  when Name_Include_Path_File =>
-
-                     --  Attribute Include_Path_File (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Include_Path_File :=
-                       Element.Value.Value;
-
-                  when Name_Objects_Path =>
-
-                     --  Attribute Objects_Path (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Objects_Path :=
-                       Element.Value.Value;
-
-                  when Name_Objects_Path_File =>
-
-                     --  Attribute Objects_Path_File (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Objects_Path_File :=
-                       Element.Value.Value;
-
-                  when Name_Config_Body_File_Name =>
-
-                     --  Attribute Config_Body_File_Name (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Config_Body :=
-                       Element.Value.Value;
-
-                  when Name_Config_Body_File_Name_Pattern =>
-
-                     --  Attribute Config_Body_File_Name_Pattern (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Config_Body_Pattern :=
-                       Element.Value.Value;
-
-                  when Name_Config_Spec_File_Name =>
-
-                     --  Attribute Config_Spec_File_Name (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Config_Spec :=
-                       Element.Value.Value;
-
-                  when Name_Config_Spec_File_Name_Pattern =>
-
-                     --  Attribute Config_Spec_File_Name_Pattern (<language>)
-
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Config_Spec_Pattern :=
-                       Element.Value.Value;
-
-                  when Name_Config_File_Unique =>
-
-                     --  Attribute Config_File_Unique (<language>)
-
-                     begin
-                        Project_Tree.Languages_Data.Table
-                          (Current_Language_Index).Config.Config_File_Unique :=
-                          Boolean'Value
-                            (Get_Name_String (Element.Value.Value));
-                     exception
-                        when Constraint_Error =>
-                           Error_Msg
-                             ("illegal value gor Config_File_Unique",
-                              Element.Value.Location);
-                     end;
-
-                  when Name_Runtime_Project =>
-
-                     --  Attribute Runtime_Project (<language>)
-
-                     declare
-                        Runtime_Project_Path : Path_Name_Type :=
-                                                 Path_Name_Type
-                                                   (Element.Value.Value);
-
-                     begin
-                        Get_Name_String (Runtime_Project_Path);
-
-                        if not Is_Absolute_Path
-                                 (Name_Buffer (1 .. Name_Len))
-                        then
-                           declare
-                              Real_Path : constant String :=
-                                            Normalize_Pathname
-                                              (Name      =>
-                                                 Name_Buffer (1 .. Name_Len),
-                                               Directory =>
-                                                 Get_Name_String
-                                                   (Data.Directory));
-                           begin
-                              if Real_Path'Length /= 0 then
-                                 Runtime_Project_Path :=
-                                   Create_Name (Real_Path);
-                              end if;
-                           end;
-                        end if;
+                        --  Attribute Driver (<language>)
 
                         Project_Tree.Languages_Data.Table
-                          (Current_Language_Index).Config.Runtime_Project :=
-                          Runtime_Project_Path;
+                          (Current_Language_Index).Config.Binder_Driver :=
+                          File_Name_Type (Element.Value.Value);
+                        There_Are_Binder_Drivers := True;
 
-                        Runtimes.Set
-                          (Project_Tree.Languages_Data.Table
-                             (Current_Language_Index).Name,
-                           (Lang => Project_Tree.Languages_Data.Table
-                                      (Current_Language_Index).Name,
-                            Name => Runtime_Project_Path,
-                            Proj => No_Project));
-                        There_Are_Runtime_Projects := True;
-                     end;
+                     when Name_Switches =>
 
-                  when Name_Toolchain_Description =>
+                        --  Attribute Switches (<language>)
 
-                     --  Attribute Toolchain_Description (<language>)
+                        List := Element.Value.Values;
 
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Toolchain_Description :=
-                       Element.Value.Value;
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index).Config.
+                               Binder_Min_Options,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
 
-                  when Name_Toolchain_Version =>
+                     when Name_Prefix =>
 
-                     --  Attribute Toolchain_Version (<language>)
+                        --  Attribute Prefix (<language>)
 
-                     Project_Tree.Languages_Data.Table
-                       (Current_Language_Index).Config.Toolchain_Version :=
-                       Element.Value.Value;
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Binder_Prefix :=
+                          Element.Value.Value;
 
-                  when others =>
-                     null;
+                     when Name_Objects_Path =>
+
+                        --  Attribute Objects_Path (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Objects_Path :=
+                          Element.Value.Value;
+
+                     when Name_Objects_Path_File =>
+
+                        --  Attribute Objects_Path (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Objects_Path_File :=
+                          Element.Value.Value;
+
+                     when others =>
+                        null;
                   end case;
 
                   Element_Id := Element.Next;
@@ -837,7 +227,321 @@ package body Confgpr is
 
                Current_Array_Id := Current_Array.Next;
             end loop;
-         end Process_Language_Processing;
+         end Process_Binder;
+
+         ---------------------
+         -- Process_Builder --
+         ---------------------
+
+         procedure Process_Builder (Attributes : Variable_Id) is
+            Attribute_Id : Variable_Id;
+            Attribute    : Variable;
+
+         begin
+            --  Process non associated array attribute from package Builder
+
+            Attribute_Id := Attributes;
+            while Attribute_Id /= No_Variable loop
+               Attribute :=
+                 Project_Tree.Variable_Elements.Table (Attribute_Id);
+
+               if not Attribute.Value.Default then
+                  if Attribute.Name = Name_Executable_Suffix then
+
+                     --  Attribute Executable_Suffix: the suffix of the
+                     --  executables.
+
+                     Project_Tree.Config.Executable_Suffix :=
+                       Attribute.Value.Value;
+                  end if;
+               end if;
+
+               Attribute_Id := Attribute.Next;
+            end loop;
+         end Process_Builder;
+
+         ----------------------
+         -- Process_Compiler --
+         ----------------------
+
+         procedure Process_Compiler (Arrays : Array_Id) is
+            Current_Array_Id : Array_Id;
+            Current_Array    : Array_Data;
+            Element_Id       : Array_Element_Id;
+            Element          : Array_Element;
+            List             : String_List_Id;
+
+         begin
+            --  Process the associative array attribute of package Compiler
+
+            Current_Array_Id := Arrays;
+            while Current_Array_Id /= No_Array loop
+               Current_Array := Project_Tree.Arrays.Table (Current_Array_Id);
+
+               Element_Id := Current_Array.Value;
+               while Element_Id /= No_Array_Element loop
+                  Element := Project_Tree.Array_Elements.Table (Element_Id);
+
+                  --  Get the name of the language
+
+                  Get_Language_Index_Of (Element.Index);
+
+                  case Current_Array.Name is
+                     when Name_Dependency_Switches =>
+
+                        --  Attribute Dependency_Switches (<language>)
+
+                        List := Element.Value.Values;
+
+                        if List = Nil_String then
+                           Error_Msg
+                             ("dependency option cannot be null",
+                              Element.Value.Location);
+                        end if;
+
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index)
+                             .Config.Dependency_Option,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
+
+                     when Name_Dependency_Driver =>
+
+                        --  Attribute Dependency_Driver (<language>)
+
+                        List := Element.Value.Values;
+
+                        if List = Nil_String then
+                           Error_Msg
+                             ("compute dependency cannot be null",
+                              Element.Value.Location);
+                        end if;
+
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index)
+                             .Config.Compute_Dependency,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
+
+                     when Name_Include_Option =>
+
+                        --  Attribute Include_Option (<language>)
+
+                        List := Element.Value.Values;
+
+                        if List = Nil_String then
+                           Error_Msg
+                             ("include option cannot be null",
+                              Element.Value.Location);
+                        end if;
+
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index).Config.Include_Option,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
+
+                     when Name_Include_Path =>
+
+                        --  Attribute Include_Path (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Include_Path :=
+                          Element.Value.Value;
+
+                     when Name_Include_Path_File =>
+
+                        --  Attribute Include_Path_File (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Include_Path_File :=
+                          Element.Value.Value;
+
+                     when Name_Driver =>
+
+                        --  Attribute Driver (<language>)
+
+                        Get_Name_String (Element.Value.Value);
+
+                        if Name_Len = 0 then
+                           Error_Msg
+                             ("compiler driver name cannot be empty",
+                              Element.Value.Location);
+                        end if;
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Compiler_Driver :=
+                          File_Name_Type (Element.Value.Value);
+
+                     when Name_Switches =>
+
+                        --  Attribute Minimum_Compiler_Options (<language>)
+
+                        List := Element.Value.Values;
+
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index).Config.
+                               Compiler_Min_Options,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
+
+                     when Name_Pic_Option =>
+
+                        --  Attribute Compiler_Pic_Option (<language>)
+
+                        List := Element.Value.Values;
+
+                        if List = Nil_String then
+                           Error_Msg
+                             ("compiler PIC option cannot be null",
+                              Element.Value.Location);
+                        end if;
+
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index).Config.
+                               Compilation_PIC_Option,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
+
+                     when Name_Mapping_File_Switches =>
+
+                        --  Attribute Mapping_File_Switches (<language>)
+
+                        List := Element.Value.Values;
+
+                        if List = Nil_String then
+                           Error_Msg
+                             ("mapping file switches cannot be null",
+                              Element.Value.Location);
+                        end if;
+
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index).Config.
+                               Mapping_File_Switches,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
+
+                     when Name_Mapping_Spec_Suffix =>
+
+                        --  Attribute Mapping_Spec_Suffix (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index)
+                          .Config.Mapping_Spec_Suffix :=
+                            File_Name_Type (Element.Value.Value);
+
+                     when Name_Mapping_Body_Suffix =>
+
+                        --  Attribute Mapping_Body_Suffix (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index)
+                          .Config.Mapping_Body_Suffix :=
+                            File_Name_Type (Element.Value.Value);
+
+                     when Name_Config_File_Switches =>
+
+                        --  Attribute Config_File_Switches (<language>)
+
+                        List := Element.Value.Values;
+
+                        if List = Nil_String then
+                           Error_Msg
+                             ("config file switches cannot be null",
+                              Element.Value.Location);
+                        end if;
+
+                        Put (Into_List =>
+                             Project_Tree.Languages_Data.Table
+                               (Current_Language_Index).Config.
+                               Config_File_Switches,
+                             From_List => List,
+                             In_Tree   => Project_Tree);
+
+                     when Name_Objects_Path =>
+
+                        --  Attribute Objects_Path (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Objects_Path :=
+                          Element.Value.Value;
+
+                     when Name_Objects_Path_File =>
+
+                        --  Attribute Objects_Path_File (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Objects_Path_File :=
+                          Element.Value.Value;
+
+                     when Name_Config_Body_File_Name =>
+
+                        --  Attribute Config_Body_File_Name (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Config_Body :=
+                          Element.Value.Value;
+
+                     when Name_Config_Body_File_Name_Pattern =>
+
+                        --  Attribute Config_Body_File_Name_Pattern
+                        --  (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index)
+                          .Config.Config_Body_Pattern :=
+                          Element.Value.Value;
+
+                     when Name_Config_Spec_File_Name =>
+
+                        --  Attribute Config_Spec_File_Name (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index).Config.Config_Spec :=
+                          Element.Value.Value;
+
+                     when Name_Config_Spec_File_Name_Pattern =>
+
+                        --  Attribute Config_Spec_File_Name_Pattern
+                        --  (<language>)
+
+                        Project_Tree.Languages_Data.Table
+                          (Current_Language_Index)
+                          .Config.Config_Spec_Pattern :=
+                          Element.Value.Value;
+
+                     when Name_Config_File_Unique =>
+
+                        --  Attribute Config_File_Unique (<language>)
+
+                        begin
+                           Project_Tree.Languages_Data.Table
+                             (Current_Language_Index)
+                             .Config.Config_File_Unique :=
+                             Boolean'Value
+                               (Get_Name_String (Element.Value.Value));
+                        exception
+                           when Constraint_Error =>
+                              Error_Msg
+                                ("illegal value gor Config_File_Unique",
+                                 Element.Value.Location);
+                        end;
+
+                     when others =>
+                        null;
+                  end case;
+
+                  Element_Id := Element.Next;
+               end loop;
+
+               Current_Array_Id := Current_Array.Next;
+            end loop;
+         end Process_Compiler;
 
          --------------------
          -- Process_Naming --
@@ -945,6 +649,49 @@ package body Confgpr is
             end loop;
          end Process_Naming;
 
+         --------------------
+         -- Process_Linker --
+         --------------------
+
+         procedure Process_Linker (Attributes : Variable_Id) is
+            Attribute_Id : Variable_Id;
+            Attribute    : Variable;
+
+         begin
+            --  Process non associated array attribute from package Linker
+
+            Attribute_Id := Attributes;
+            while Attribute_Id /= No_Variable loop
+               Attribute :=
+                 Project_Tree.Variable_Elements.Table (Attribute_Id);
+
+               if not Attribute.Value.Default then
+                  if Attribute.Name = Name_Driver then
+
+                     --  Attribute Linker'Driver: the default linker to use
+
+                     Project_Tree.Config.Linker :=
+                       Path_Name_Type (Attribute.Value.Value);
+
+                  elsif
+                    Attribute.Name = Name_Required_Switches
+                  then
+
+                     --  Attribute Required_Switches: the minimum
+                     --  options to use when invoking the linker
+
+                     Put (Into_List =>
+                            Project_Tree.Config.Minimum_Linker_Options,
+                          From_List => Attribute.Value.Values,
+                          In_Tree   => Project_Tree);
+
+                  end if;
+               end if;
+
+               Attribute_Id := Attribute.Next;
+            end loop;
+         end Process_Linker;
+
       --  Start of processing for Process_Packages
 
       begin
@@ -952,24 +699,357 @@ package body Confgpr is
          while Packages /= No_Package loop
             Element := Project_Tree.Packages.Table (Packages);
 
-            if Element.Name = Name_Naming then
+            case Element.Name is
+               when Name_Binder =>
 
-               --  Process attributes of package Naming
+                  --  Process attributes of package Binder
 
-               Process_Naming (Element.Decl.Attributes);
-               Process_Naming (Element.Decl.Arrays);
+                  Process_Binder (Element.Decl.Arrays);
 
-            elsif Element.Name = Name_Language_Processing then
+               when Name_Builder =>
 
-               --  Process attributes of package Language_Processing
+                  --  Process attributes of package Builder
 
-               Process_Language_Processing (Element.Decl.Attributes);
-               Process_Language_Processing (Element.Decl.Arrays);
-            end if;
+                  Process_Builder (Element.Decl.Attributes);
+
+               when Name_Compiler =>
+
+                  --  Process attributes of package Compiler
+
+                  Process_Compiler (Element.Decl.Arrays);
+
+               when Name_Linker =>
+
+                  --  Process attributes of package Linker
+
+                  Process_Linker (Element.Decl.Attributes);
+
+               when Name_Naming =>
+
+                  --  Process attributes of package Naming
+
+                  Process_Naming (Element.Decl.Attributes);
+                  Process_Naming (Element.Decl.Arrays);
+
+               when others =>
+                  null;
+            end case;
 
             Packages := Element.Next;
          end loop;
       end Process_Packages;
+
+      ---------------------------
+      -- Process_Project_Level --
+      ---------------------------
+
+      procedure Process_Project_Level (Attributes : Variable_Id) is
+         Attribute_Id : Variable_Id;
+         Attribute    : Variable;
+         List         : String_List_Id;
+
+      begin
+         --  Process non associated array attribute at project level
+
+         Attribute_Id := Attributes;
+         while Attribute_Id /= No_Variable loop
+            Attribute :=
+              Project_Tree.Variable_Elements.Table (Attribute_Id);
+
+            if not Attribute.Value.Default then
+               if Attribute.Name = Name_Default_Language then
+
+                  --  Attribute Default_Language: the single language of
+                  --  a project when attribute Languages is not specified.
+
+                  Get_Name_String (Attribute.Value.Value);
+                  To_Lower (Name_Buffer (1 .. Name_Len));
+                  Project_Tree.Default_Language := Name_Find;
+
+               elsif Attribute.Name = Name_Library_Builder then
+
+                  --  Attribute Library_Builder: the application to invoke
+                  --  to build libraries.
+
+                  Project_Tree.Config.Library_Builder :=
+                    Path_Name_Type (Attribute.Value.Value);
+
+               elsif Attribute.Name = Name_Archive_Builder then
+
+                  --  Attribute Archive_Builder: the archive builder
+                  --  (usually "ar") and its minimum options (usually "cr").
+
+                  List := Attribute.Value.Values;
+
+                  if List = Nil_String then
+                     Error_Msg
+                       ("archive builder cannot be null",
+                        Attribute.Value.Location);
+                  end if;
+
+                  Put (Into_List => Project_Tree.Config.Archive_Builder,
+                       From_List => List,
+                       In_Tree   => Project_Tree);
+
+               elsif Attribute.Name = Name_Archive_Indexer then
+
+                  --  Attribute Archive_Indexer: the optional archive
+                  --  indexer (usually "ranlib") with its minimum options
+                  --  (usually none).
+
+                  List := Attribute.Value.Values;
+
+                  if List = Nil_String then
+                     Error_Msg
+                       ("archive indexer cannot be null",
+                        Attribute.Value.Location);
+                  end if;
+
+                  Put (Into_List => Project_Tree.Config.Archive_Indexer,
+                       From_List => List,
+                       In_Tree   => Project_Tree);
+
+               elsif Attribute.Name = Name_Library_Partial_Linker then
+
+                  --  Attribute Library_Partial_Linker: the optional linker
+                  --  driver with its minimum options, to partially link
+                  --  archives.
+
+                  List := Attribute.Value.Values;
+
+                  if List = Nil_String then
+                     Error_Msg
+                       ("partial linker cannot be null",
+                        Attribute.Value.Location);
+                  end if;
+
+                  Put (Into_List => Project_Tree.Config.Lib_Partial_Linker,
+                       From_List => List,
+                       In_Tree   => Project_Tree);
+
+               elsif Attribute.Name = Name_Archive_Suffix then
+                  Project_Tree.Config.Archive_Suffix :=
+                    File_Name_Type (Attribute.Value.Value);
+
+               elsif Attribute.Name = Name_Linker_Executable_Option then
+
+                  --  Attribute Linker_Executable_Option: optional options
+                  --  to specify an executable name. Defaults to "-o".
+
+                  List := Attribute.Value.Values;
+
+                  if List = Nil_String then
+                     Error_Msg
+                       ("linker executable option cannot be null",
+                        Attribute.Value.Location);
+                  end if;
+
+                  Put (Into_List =>
+                         Project_Tree.Config.Linker_Executable_Option,
+                       From_List => List,
+                       In_Tree   => Project_Tree);
+
+               elsif Attribute.Name = Name_Linker_Lib_Dir_Option then
+
+                  --  Attribute Linker_Lib_Dir_Option: optional options
+                  --  to specify a library search directory. Defaults to
+                  --  "-L".
+
+                  Get_Name_String (Attribute.Value.Value);
+
+                  if Name_Len = 0 then
+                     Error_Msg
+                       ("linker library directory option cannot be empty",
+                        Attribute.Value.Location);
+                  end if;
+
+                  Project_Tree.Config.Linker_Lib_Dir_Option :=
+                    Attribute.Value.Value;
+
+               elsif Attribute.Name = Name_Linker_Lib_Name_Option then
+
+                  --  Attribute Linker_Lib_Name_Option: optional options
+                  --  to specify the name of a library to be linked in.
+                  --  Defaults to "-l".
+
+                  Get_Name_String (Attribute.Value.Value);
+
+                  if Name_Len = 0 then
+                     Error_Msg
+                       ("linker library name option cannot be empty",
+                        Attribute.Value.Location);
+                  end if;
+
+                  Project_Tree.Config.Linker_Lib_Name_Option :=
+                    Attribute.Value.Value;
+
+               elsif Attribute.Name = Name_Run_Path_Option then
+
+                  --  Attribute Run_Path_Option: optional options to
+                  --  specify a path for libraries.
+
+                  List := Attribute.Value.Values;
+
+                  if List /= Nil_String then
+                     Put (Into_List => Project_Tree.Config.Run_Path_Option,
+                          From_List => List,
+                          In_Tree   => Project_Tree);
+                  end if;
+
+               elsif Attribute.Name = Name_Library_Support then
+                  declare
+                     pragma Unsuppress (All_Checks);
+                  begin
+                     Project_Tree.Config.Lib_Support :=
+                       Library_Support'Value (Get_Name_String
+                                              (Attribute.Value.Value));
+                  exception
+                     when Constraint_Error =>
+                        Error_Msg
+                          ("invalid value """ &
+                           Get_Name_String (Attribute.Value.Value) &
+                           """ for Library_Support",
+                           Attribute.Value.Location);
+                  end;
+
+               elsif Attribute.Name = Name_Shared_Library_Prefix then
+                  Project_Tree.Config.Shared_Lib_Prefix :=
+                    File_Name_Type (Attribute.Value.Value);
+
+               elsif Attribute.Name = Name_Shared_Library_Suffix then
+                  Project_Tree.Config.Shared_Lib_Suffix :=
+                    File_Name_Type (Attribute.Value.Value);
+
+               elsif Attribute.Name = Name_Symbolic_Link_Supported then
+                  declare
+                     pragma Unsuppress (All_Checks);
+                  begin
+                     Project_Tree.Config.Symbolic_Link_Supported :=
+                       Boolean'Value (Get_Name_String
+                                      (Attribute.Value.Value));
+                  exception
+                     when Constraint_Error =>
+                        Error_Msg
+                          ("invalid value """ &
+                           Get_Name_String (Attribute.Value.Value) &
+                           """ for Symbolic_Link_Supported",
+                           Attribute.Value.Location);
+                  end;
+
+               elsif
+                 Attribute.Name = Name_Library_Major_Minor_Id_Supported
+               then
+                  declare
+                     pragma Unsuppress (All_Checks);
+                  begin
+                     Project_Tree.Config.Lib_Maj_Min_Id_Supported :=
+                       Boolean'Value (Get_Name_String
+                                      (Attribute.Value.Value));
+                  exception
+                     when Constraint_Error =>
+                        Error_Msg
+                          ("invalid value """ &
+                           Get_Name_String (Attribute.Value.Value) &
+                           """ for Library_Major_Minor_Id_Supported",
+                           Attribute.Value.Location);
+                  end;
+
+               elsif
+                 Attribute.Name = Name_Library_Auto_Init_Supported
+               then
+                  declare
+                     pragma Unsuppress (All_Checks);
+                  begin
+                     Project_Tree.Config.Auto_Init_Supported :=
+                       Boolean'Value (Get_Name_String
+                                      (Attribute.Value.Value));
+                  exception
+                     when Constraint_Error =>
+                        Error_Msg
+                          ("invalid value """ &
+                           Get_Name_String (Attribute.Value.Value) &
+                           """ for Library_Auto_Init_Supported",
+                           Attribute.Value.Location);
+                  end;
+
+               elsif
+                 Attribute.Name = Name_Shared_Library_Minimum_Switches
+               then
+                  List := Attribute.Value.Values;
+
+                  if List /= Nil_String then
+                     Put (Into_List =>
+                            Project_Tree.Config.Shared_Lib_Min_Options,
+                          From_List => List,
+                          In_Tree   => Project_Tree);
+                  end if;
+
+               elsif
+                 Attribute.Name = Name_Library_Version_Switches
+               then
+                  List := Attribute.Value.Values;
+
+                  if List /= Nil_String then
+                     Put (Into_List =>
+                            Project_Tree.Config.Lib_Version_Options,
+                          From_List => List,
+                          In_Tree   => Project_Tree);
+                  end if;
+               end if;
+            end if;
+
+            Attribute_Id := Attribute.Next;
+         end loop;
+      end Process_Project_Level;
+
+      procedure Process_Project_Level (Arrays : Array_Id) is
+         Current_Array_Id : Array_Id := Arrays;
+         Current_Array    : Array_Data;
+         Element_Id       : Array_Element_Id;
+         Element          : Array_Element;
+
+      begin
+         --  Process the associative array attributes at project level
+
+         while Current_Array_Id /= No_Array loop
+            Current_Array := Project_Tree.Arrays.Table (Current_Array_Id);
+
+            Element_Id := Current_Array.Value;
+            while Element_Id /= No_Array_Element loop
+               Element := Project_Tree.Array_Elements.Table (Element_Id);
+
+               --  Get the name of the language
+
+               Get_Language_Index_Of (Element.Index);
+
+               case Current_Array.Name is
+
+                  when Name_Toolchain_Description =>
+
+                     --  Attribute Toolchain_Description (<language>)
+
+                     Project_Tree.Languages_Data.Table
+                       (Current_Language_Index).Config.Toolchain_Description :=
+                       Element.Value.Value;
+
+                  when Name_Toolchain_Version =>
+
+                     --  Attribute Toolchain_Version (<language>)
+
+                     Project_Tree.Languages_Data.Table
+                       (Current_Language_Index).Config.Toolchain_Version :=
+                       Element.Value.Value;
+
+                  when others =>
+                     null;
+               end case;
+
+               Element_Id := Element.Next;
+            end loop;
+
+            Current_Array_Id := Current_Array.Next;
+         end loop;
+      end Process_Project_Level;
 
       --------------------
       -- Report_Failure --
@@ -1065,6 +1145,14 @@ package body Confgpr is
 
       --  Finally, process the main configuration project file
 
+      Process_Project_Level
+        (Attributes => Project_Tree.Projects.Table
+           (Main_Config_Project).Decl.Attributes);
+
+      Process_Project_Level
+        (Arrays => Project_Tree.Projects.Table
+           (Main_Config_Project).Decl.Arrays);
+
       Process_Packages (Main_Config_Project);
 
       --  For unit based languages, set Casing, Dot_Replacement and
@@ -1103,16 +1191,16 @@ package body Confgpr is
       --  Give empty names to various prefixes/suffixes, if they have not
       --  been specified in the configuration.
 
-      if Project_Tree.Archive_Suffix = No_File then
-         Project_Tree.Archive_Suffix := Empty_File;
+      if Project_Tree.Config.Archive_Suffix = No_File then
+         Project_Tree.Config.Archive_Suffix := Empty_File;
       end if;
 
-      if Project_Tree.Shared_Lib_Prefix = No_File then
-         Project_Tree.Shared_Lib_Prefix := Empty_File;
+      if Project_Tree.Config.Shared_Lib_Prefix = No_File then
+         Project_Tree.Config.Shared_Lib_Prefix := Empty_File;
       end if;
 
-      if Project_Tree.Shared_Lib_Suffix = No_File then
-         Project_Tree.Shared_Lib_Suffix := Empty_File;
+      if Project_Tree.Config.Shared_Lib_Suffix = No_File then
+         Project_Tree.Config.Shared_Lib_Suffix := Empty_File;
       end if;
 
       if OK then
@@ -1182,17 +1270,22 @@ package body Confgpr is
 
    procedure Get_Language_Index_Of (Language : Name_Id) is
       Curr_Index : Language_Index;
+      Real_Language : Name_Id;
 
    begin
+      Get_Name_String (Language);
+      To_Lower (Name_Buffer (1 .. Name_Len));
+      Real_Language := Name_Find;
+
       --  Nothing to do if the language is the same as the current language
 
-      if Current_Language /= Language then
-         Current_Language := Language;
+      if Current_Language /= Real_Language then
+         Current_Language := Real_Language;
 
          Curr_Index := Project_Tree.First_Language;
          while Curr_Index /= No_Language_Index loop
             if Project_Tree.Languages_Data.Table (Curr_Index).Name =
-              Language
+              Real_Language
             then
                Current_Language_Index := Curr_Index;
                return;
@@ -1206,13 +1299,20 @@ package body Confgpr is
          Current_Language_Index :=
            Language_Data_Table.Last (Project_Tree.Languages_Data);
          Project_Tree.Languages_Data.Table (Current_Language_Index) :=
-           (Name          => Language,
+           (Name          => Real_Language,
             Display_Name  => Language,
             Config        => No_Language_Config,
             First_Source  => No_Source,
             Mapping_Files => Mapping_Files_Htable.Nil,
             Next          => Project_Tree.First_Language);
          Project_Tree.First_Language := Current_Language_Index;
+
+         if Real_Language = Name_Ada then
+            Project_Tree.Languages_Data.Table
+              (Current_Language_Index).Config.Kind := Unit_Based;
+            Project_Tree.Languages_Data.Table
+              (Current_Language_Index).Config.Dependency_Kind := ALI_File;
+         end if;
       end if;
    end Get_Language_Index_Of;
 

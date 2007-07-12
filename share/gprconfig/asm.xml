@@ -12,38 +12,31 @@
       for Body_Suffix ("Asm_Cpp") use ".S";
    end Naming;
 
-   package Language_Processing is
-      for Language_Kind            ("Asm_Cpp") use "file_based";
-      for Compiler_Driver          ("Asm_Cpp") use "${PATH}${PREFIX}gcc";
-      for Minimum_Compiler_Options ("Asm_Cpp") use ("-c", "-x", "assembler-with-cpp");
-      for Dependency_File_Kind     ("Asm_Cpp") use "Makefile";
-      for Dependency_Option        ("Asm_Cpp") use ("-Wp,-MD,");
+   package Compiler is
+      for Driver          ("Asm_Cpp") use "${PATH}${PREFIX}gcc";
+      for Switches ("Asm_Cpp") use ("-c", "-x", "assembler-with-cpp");
       for Include_Path             ("Asm_Cpp") use "CPATH";
-   end Language_Processing;
+   end Compiler;
 
    package Naming is
       for Body_Suffix ("Asm") use ".s";
    end Naming;
 
-   package Language_Processing is
-      for Language_Kind            ("Asm") use "file_based";
-      for Compiler_Driver          ("Asm") use "${PATH}${PREFIX}gcc";
-      for Minimum_Compiler_Options ("Asm") use ("-c", "-x", "assembler");
-      for Dependency_File_Kind     ("Asm") use "none";
+   package Compiler is
+      for Driver          ("Asm") use "${PATH}${PREFIX}gcc";
+      for Switches ("Asm") use ("-c", "-x", "assembler");
       for Include_Path             ("Asm") use "CPATH";
-   end Language_Processing;
+   end Compiler;
 
    package Naming is
       for Body_Suffix ("Asm2") use ".asm";
    end Naming;
 
-   package Language_Processing is
-      for Language_Kind            ("Asm2") use "file_based";
-      for Compiler_Driver          ("Asm2") use "${PATH}${PREFIX}gcc";
-      for Minimum_Compiler_Options ("Asm2") use ("-c", "-x", "assembler");
-      for Dependency_File_Kind     ("Asm2") use "none";
+   package Compiler is
+      for Driver          ("Asm2") use "${PATH}${PREFIX}gcc";
+      for Switches ("Asm2") use ("-c", "-x", "assembler");
       for Include_Path             ("Asm2") use "CPATH";
-   end Language_Processing;
+   end Compiler;
      </config>
    </configuration>
 </gprconfig>
