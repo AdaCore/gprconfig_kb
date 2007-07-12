@@ -1780,11 +1780,24 @@ package body GprConfig.Knowledge is
       Config   : Configuration_Lists.Cursor := First (Base.Configurations);
       Output            : File_Type;
       Packages          : String_Maps.Map;
-      C                 : String_Maps.Cursor;
+--      C                 : String_Maps.Cursor;
       Selected_Compiler : Compiler;
       M                 : Boolean;
       Comp              : Compiler_Lists.Cursor;
       Project_Name      : String := Ada.Directories.Base_Name (Output_File);
+
+      procedure Gen (C : String_Maps.Cursor);
+      procedure Gen (C : String_Maps.Cursor) is
+      begin
+         if Key (C) /= "" then
+            Put_Line (Output, "   package " & Key (C) & " is");
+         end if;
+         Put_Line (Output, To_String (Element (C)));
+         if Key (C) /= "" then
+            Put_Line (Output, "   end " & Key (C) & ";");
+         end if;
+      end Gen;
+
    begin
       To_Mixed (Project_Name);
 
@@ -1820,17 +1833,11 @@ package body GprConfig.Knowledge is
       Create (Output, Out_File, Output_File);
       Put_Line (Output, "project " & Project_Name & " is");
 
-      C := First (Packages);
-      while Has_Element (C) loop
-         if Key (C) /= "" then
-            Put_Line (Output, "   package " & Key (C) & " is");
-         end if;
-         Put_Line (Output, To_String (Element (C)));
-         if Key (C) /= "" then
-            Put_Line (Output, "   end " & Key (C) & ";");
-         end if;
-         Next (C);
-      end loop;
+      Gen (Find (Packages, ""));
+      Gen (Find (Packages, "Compiler"));
+      Gen (Find (Packages, "Naming"));
+      Gen (Find (Packages, "Binder"));
+      Gen (Find (Packages, "Linker"));
 
       Put_Line (Output, "end " & Project_Name & ";");
 

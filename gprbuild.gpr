@@ -30,7 +30,7 @@ project Gprbuild is
       case Bld is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches &
-            ("-g", "-gnatVa", "-gnatwaCJI"
+            ("-g", "-gnata", "-gnatVa", "-gnatwaCJI"
              --  ??? warning as error should be considered back when
              --  builgpr.adb line 7384 indentation is fixed
              -- , "-gnatwe"
