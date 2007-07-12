@@ -12,13 +12,11 @@
       for Body_Suffix ("Fortran") use ".f";
    end Naming;
 
-   package Language_Processing is
-      for Language_Kind            ("Fortran") use "file_based";
-      for Compiler_Driver          ("Fortran") use "g77";
-      for Minimum_Compiler_Options ("Fortran") use ("-c", "-fno-underscoring");
-      for Dependency_File_Kind     ("Fortran") use "none";
-      for Include_Path             ("Fortran") use "CPATH";
-   end Language_Processing;
+   package Compiler is
+      for Driver          ("Fortran") use "g77";
+      for Switches        ("Fortran") use ("-c", "-fno-underscoring");
+      for Include_Path    ("Fortran") use "CPATH";
+   end Compiler;
      </config>
    </configuration>
 
@@ -35,9 +33,9 @@
        <target name=".*dec-osf.*" />
      </targets>
      <config>
-   package Language_Processing is
-      for Compiler_PIC_Option      ("Fortran") use ("-fPIC");
-   end Language_Processing;
+   package Compiler is
+      for PIC_Option      ("Fortran") use ("-fPIC");
+   end Compiler;
      </config>
    </configuration>
 
@@ -50,12 +48,15 @@
      <target name=".*cygwin.*" />
      </targets>
      <config>
-   package Language_Processing is
-      for Minimum_Compiler_Options ("Fortran") use
-        Language_Processing'Minimum_Compiler_Options ("Fortran") &amp; ("-mno-cygwin");
-      for Default_Minimum_Linker_Options use
-        Language_Processing'Minimum_Linker_Options &amp; ("-mno-cygwin");
-   end Language_Processing;
+   package Compiler is
+      for Switches ("Fortran") use
+        Compiler'Switches ("Fortran") &amp; ("-mno-cygwin");
+   end Compiler;
+
+   package Linker is
+      for Switches ("Fortran") use
+         Linker'Switches ("Fortran")  &amp; ("-mno-cygwin");
+   end Linker;
      </config>
    </configuration>
 

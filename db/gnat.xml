@@ -16,10 +16,9 @@
       for Dot_Replacement use "-";
    end Naming;
 
-   package Language_Processing is
-      for Language_Kind            ("Ada") use "unit_based";
-      for Compiler_Driver          ("Ada") use "${PATH}${PREFIX}gcc";
-      for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
+   package Compiler is
+      for Driver          ("Ada") use "${PATH}${PREFIX}gcc";
+      for Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
       for Mapping_Body_Suffix      ("Ada") use "%b";
@@ -38,16 +37,17 @@
            "  (Spec_File_Name  => ""*%s""," &amp;
            "   Casing          => %c," &amp;
            "   Dot_Replacement => ""%d"");";
-      for Dependency_File_Kind  ("Ada") use "ALI_File";
       for Config_File_Unique    ("Ada") use "False";
       for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
+   end Compiler;
+
+   package Binder is
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
-      for Runtime_Project       ("Ada") use
-          "${OUTPUT_DIR}ada_runtime.gpr";
-      for Binder_Driver         ("Ada") use
+      for Driver         ("Ada") use
           "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
-      for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
-   end Language_Processing;
+   end Binder;
+
+   for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
    </config>
   </configuration>
 
@@ -61,9 +61,9 @@
       <target name=".*vms.*" />
    </targets>
    <config>
-   package Language_Processing is
-      for Compiler_PIC_Option      ("Ada") use ("-fPIC");
-   end Language_Processing;
+   package Compiler is
+      for PIC_Option      ("Ada") use ("-fPIC");
+   end Compiler;
    </config>
   </configuration>
 
@@ -80,12 +80,15 @@
      <compiler name="GNAT" runtime="soft-float" />
    </compilers>
    <config>
-   package Language_Processing is
-      for Minimum_Compiler_Options ("Ada") use
-        Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("--RTS=$RUNTIME");
-      for Minimum_Binder_Options ("Ada") use
-        Language_Processing'Minimum_Binder_Options ("Ada") &amp; ("--RTS=$RUNTIME");
-   end Language_Processing;
+   package Compiler is
+      for Switches ("Ada") use
+        Compiler'Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+   end Compiler;
+
+   package Binder is
+      for Switches ("Ada") use
+        Binder'Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+   end Binder;
    </config>
   </configuration>
 
@@ -95,10 +98,10 @@
      <compiler name="GNAT" runtime="soft-float" />
    </compilers>
    <config>
-   package Language_Processing is
-      for Minimum_Compiler_Options ("Ada") use
-        Language_Processing'Minimum_Compiler_Options ("Ada") &amp; ("-msoft-float");
-   end Language_Processing;
+   package Compiler is
+      for Switches ("Ada") use
+        Compiler'Switches ("Ada") &amp; ("-msoft-float");
+   end Compiler;
    </config>
   </configuration>
 </gprconfig>
