@@ -9,7 +9,6 @@ clean: force
 	gprclean -Pc_main
 	gprclean -Pada_main
 	$(RM) default.cgpr
-	$(RM) ada_runtime.gpr
 
 run: all
 	ada_main

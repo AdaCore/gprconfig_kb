@@ -10,6 +10,7 @@ clean:
 	gprclean -q -r ft1.gpr
 	gprclean -q -r ft2.gpr
 	gprclean -q -r ft3.gpr
+	$(RM) default.cgpr
 
 run: all
 	fobj1/ess

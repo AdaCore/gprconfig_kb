@@ -11,7 +11,6 @@ clean: force
 	gprclean -Pnamings -XC1=case2
 	gprclean -Pnamings -XC1=case3
 	$(RM) default.cgpr
-	$(RM) ada_runtime.gpr
 
 run: all
 	main-case1

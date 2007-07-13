@@ -1787,9 +1787,14 @@ package body GprConfig.Knowledge is
       Project_Name      : String := Ada.Directories.Base_Name (Output_File);
 
       procedure Gen (C : String_Maps.Cursor);
+      --  C is a cursor of the map "Packages"
+      --  Generate the chunk of the config file corresponding to the
+      --  given package.
+
       procedure Gen (C : String_Maps.Cursor) is
       begin
          if Key (C) /= "" then
+            New_Line (Output);
             Put_Line (Output, "   package " & Key (C) & " is");
          end if;
          Put_Line (Output, To_String (Element (C)));

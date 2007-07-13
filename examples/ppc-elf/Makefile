@@ -9,7 +9,6 @@ hello.cgpr:
 clean: force
 	gprclean --config=hello.cgpr -Phello
 	$(RM) hello.cgpr
-	$(RM) ada_runtime.gpr
 
 run: all
 	powerpc-elf-gdb --batch --command=gdb.run objs/hello

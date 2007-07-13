@@ -9,7 +9,6 @@ clean: force
 	gprclean -r -Panimals
 	gprclean -r -Pexcept
 	$(RM) default.cgpr
-	$(RM) ada_runtime.gpr
 
 run: all
 	ada_main
