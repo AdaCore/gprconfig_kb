@@ -6,10 +6,10 @@
   <configuration>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Default_Language use "Ada";
-      for Archive_Builder  use ("${PREFIX}ar", "cr");
-      for Archive_Indexer  use ("${PREFIX}ranlib");
-      for Archive_Suffix   use ".a";
+   for Default_Language use "Ada";
+   for Archive_Builder  use ("${PREFIX}ar", "cr");
+   for Archive_Indexer  use ("${PREFIX}ranlib");
+   for Archive_Suffix   use ".a";
     </config>
   </configuration>
 
@@ -29,7 +29,7 @@
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Support  use "none";
+   for Library_Support  use "none";
     </config>
   </configuration>
 
@@ -41,8 +41,8 @@
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Support  use "static_only";
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
+   for Library_Support  use "static_only";
+   for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
     </config>
   </configuration>
 
@@ -53,15 +53,15 @@
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Support use "full";
-      for Shared_Library_Prefix use "lib";
-      for Symbolic_Link_Supported use "true";
-      for Library_Major_Minor_Id_Supported use "true";
+   for Library_Support use "full";
+   for Shared_Library_Prefix use "lib";
+   for Symbolic_Link_Supported use "true";
+   for Library_Major_Minor_Id_Supported use "true";
 
-      for Shared_Library_Suffix use ".dylib";
-      for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
-      for Shared_Library_Minimum_Switches use
-            ("-dynamiclib", "-Wl,-flat_namespace", "-shared-libgcc");
+   for Shared_Library_Suffix use ".dylib";
+   for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
+   for Shared_Library_Minimum_Switches use
+         ("-dynamiclib", "-Wl,-flat_namespace", "-shared-libgcc");
     </config>
   </configuration>
 
@@ -72,16 +72,16 @@
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
-      for Library_Support  use "full";
-      for Shared_Library_Prefix use "lib";
-      for Symbolic_Link_Supported use "true";
-      for Library_Major_Minor_Id_Supported use "true";
-      for Shared_Library_Minimum_Switches use ("-shared");
-      for Library_Version_Switches use ("-Wl,-soname,");
+   for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
+   for Library_Support  use "full";
+   for Shared_Library_Prefix use "lib";
+   for Symbolic_Link_Supported use "true";
+   for Library_Major_Minor_Id_Supported use "true";
+   for Shared_Library_Minimum_Switches use ("-shared");
+   for Library_Version_Switches use ("-Wl,-soname,");
 
-      for Shared_Library_Suffix use ".sl";
-      for Run_Path_Option  use ("-Wl,+b,");
+   for Shared_Library_Suffix use ".sl";
+   for Run_Path_Option  use ("-Wl,+b,");
     </config>
   </configuration>
 
@@ -93,18 +93,18 @@
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
-      for Library_Support  use "full";
-      for Shared_Library_Prefix use "lib";
-      for Symbolic_Link_Supported use "true";
-      for Library_Major_Minor_Id_Supported use "true";
-      for Shared_Library_Minimum_Switches use ("-shared");
-      for Library_Version_Switches use ("-Wl,-soname,");
+   for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
+   for Library_Support  use "full";
+   for Shared_Library_Prefix use "lib";
+   for Symbolic_Link_Supported use "true";
+   for Library_Major_Minor_Id_Supported use "true";
+   for Shared_Library_Minimum_Switches use ("-shared");
+   for Library_Version_Switches use ("-Wl,-soname,");
 
-      for Shared_Library_Suffix use ".so";
-      for Library_Auto_init_Supported use "true";
-      for Run_Path_Option  use ("-Wl,-rpath,");
-      for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+   for Shared_Library_Suffix use ".so";
+   for Library_Auto_init_Supported use "true";
+   for Run_Path_Option  use ("-Wl,-rpath,");
+   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>
 
@@ -113,19 +113,19 @@
     <targets><target name=".*sunos.*" /><target name=".*solaris.*"/></targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
-      for Library_Support  use "full";
-      for Shared_Library_Prefix use "lib";
-      for Symbolic_Link_Supported use "true";
-      for Library_Major_Minor_Id_Supported use "true";
-      for Shared_Library_Minimum_Switches use ("-shared");
+   for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
+   for Library_Support  use "full";
+   for Shared_Library_Prefix use "lib";
+   for Symbolic_Link_Supported use "true";
+   for Library_Major_Minor_Id_Supported use "true";
+   for Shared_Library_Minimum_Switches use ("-shared");
 
-      for Library_Version_Switches use ("-Wl,-h,");
+   for Library_Version_Switches use ("-Wl,-h,");
 
-      for Shared_Library_Suffix use ".so";
-      for Library_Auto_init_Supported use "true";
-      for Run_Path_Option  use ("-Wl,-R,");
-      for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+   for Shared_Library_Suffix use ".so";
+   for Library_Auto_init_Supported use "true";
+   for Run_Path_Option  use ("-Wl,-R,");
+   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>
 
@@ -134,15 +134,15 @@
     <targets><target name=".*mingw.*" /></targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
-      for Library_Support  use "full";
-      for Shared_Library_Prefix use "";
-      for Symbolic_Link_Supported use "false";
-      for Library_Major_Minor_Id_Supported use "false";
-      for Shared_Library_Minimum_Switches use ("-shared");
-      for Library_Version_Switches use ("-Wl,-soname,");
-      for Shared_Library_Suffix use ".dll";
-      for Library_Auto_init_Supported use "true";
+   for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
+   for Library_Support  use "full";
+   for Shared_Library_Prefix use "";
+   for Symbolic_Link_Supported use "false";
+   for Library_Major_Minor_Id_Supported use "false";
+   for Shared_Library_Minimum_Switches use ("-shared");
+   for Library_Version_Switches use ("-Wl,-soname,");
+   for Shared_Library_Suffix use ".dll";
+   for Library_Auto_init_Supported use "true";
     </config>
   </configuration>
 
@@ -151,14 +151,14 @@
     <targets><target name=".*vms.*" /></targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
-      for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
-      for Library_Support  use "full";
-      for Shared_Library_Prefix use "lib";
-      for Shared_Library_Suffix use ".exe";
-      for Symbolic_Link_Supported use "false";
-      for Library_Major_Minor_Id_Supported use "false";
-      for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
-      for Library_Auto_init_Supported use "true";
+   for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
+   for Library_Support  use "full";
+   for Shared_Library_Prefix use "lib";
+   for Shared_Library_Suffix use ".exe";
+   for Symbolic_Link_Supported use "false";
+   for Library_Major_Minor_Id_Supported use "false";
+   for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
+   for Library_Auto_init_Supported use "true";
     </config>
   </configuration>
 
