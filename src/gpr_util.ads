@@ -120,7 +120,7 @@ package Gpr_Util is
      (Fatal : Boolean;
       S1    : String := "";
       S2    : String := "";
-      S3 : String := "");
+      S3    : String := "");
    --  Terminate program, with or without a message, setting the status code
    --  according to Fatal.
 

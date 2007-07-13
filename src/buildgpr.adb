@@ -8227,10 +8227,12 @@ package body Buildgpr is
 
          if not Processed then
             if Command_Line then
-               Fail_Program ("illegal option """, Arg, """");
+               Finish_Program
+                 (True, "illegal option """, Arg, """");
 
             else
-               Fail_Program ("illegal option in project file""", Arg, """");
+               Finish_Program
+                 (True, "illegal option in project file""", Arg, """");
             end if;
          end if;
       end if;
