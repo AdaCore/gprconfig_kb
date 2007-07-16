@@ -1793,13 +1793,15 @@ package body GprConfig.Knowledge is
 
       procedure Gen (C : String_Maps.Cursor) is
       begin
-         if Key (C) /= "" then
-            New_Line (Output);
-            Put_Line (Output, "   package " & Key (C) & " is");
-         end if;
-         Put_Line (Output, To_String (Element (C)));
-         if Key (C) /= "" then
-            Put_Line (Output, "   end " & Key (C) & ";");
+         if Has_Element (C) then
+            if Key (C) /= "" then
+               New_Line (Output);
+               Put_Line (Output, "   package " & Key (C) & " is");
+            end if;
+            Put_Line (Output, To_String (Element (C)));
+            if Key (C) /= "" then
+               Put_Line (Output, "   end " & Key (C) & ";");
+            end if;
          end if;
       end Gen;
 
@@ -1832,6 +1834,11 @@ package body GprConfig.Knowledge is
 
          Next (Config);
       end loop;
+
+      if Is_Empty (Packages) then
+         Put_Line ("No configuration found");
+         raise Generate_Error;
+      end if;
 
       Put_Line ("Creating configuration file: " & Output_File);
 
