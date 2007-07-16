@@ -42,14 +42,10 @@ gprconfig:
 
 .PHONY: install clean distclean
 
-install: all
-	${MKDIR} ${bindir}
+install: all install.bin
 	${MKDIR} ${libexecdir}/gprbuild
 	${MKDIR} ${datadir}/gpr
 	${MKDIR} ${datadir}/gprconfig
-	${INSTALL_PROGRAM} gprconfig ${bindir}
-	${INSTALL_PROGRAM} gprbuild ${bindir}
-	${INSTALL_PROGRAM} gprclean ${bindir}
 	${INSTALL_PROGRAM} gprbind ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} create_ada_runtime_project ${libexecdir}/gprbuild/
@@ -58,6 +54,12 @@ install: all
 	$(RM) -r ${datadir}/examples/gprbuild
 	${MKDIR} ${datadir}/examples/gprbuild
 	${CP} -r examples/* ${datadir}/examples/gprbuild
+
+install.bin: gprconfig gprbuild gprclean
+	${MKDIR} ${bindir}
+	${INSTALL_PROGRAM} gprconfig ${bindir}
+	${INSTALL_PROGRAM} gprbuild ${bindir}
+	${INSTALL_PROGRAM} gprclean ${bindir}
 
 obj/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
