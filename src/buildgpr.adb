@@ -938,6 +938,16 @@ package body Buildgpr is
          Options :=
            Value_Of
              (Name                    => Src_Data.Language_Name,
+              Attribute_Or_Array_Name => Name_Switches,
+              In_Package              => Package_Compiler,
+              In_Tree                 => Project_Tree,
+              Force_Lower_Case_Index  => True);
+      end if;
+
+      if Options = Nil_Variable_Value then
+         Options :=
+           Value_Of
+             (Name                    => Src_Data.Language_Name,
               Attribute_Or_Array_Name => Name_Default_Switches,
               In_Package              => Package_Compiler,
               In_Tree                 => Project_Tree);
@@ -1573,6 +1583,8 @@ package body Buildgpr is
       end Check_Dependency_Files;
 
    begin
+      --  Build the libraries, if any
+
       for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
          if Project_Tree.Projects.Table (Proj).Library and then
            Project_Tree.Projects.Table (Proj).Extended_By = No_Project
@@ -2010,7 +2022,17 @@ package body Buildgpr is
                                  if Switches = Nil_Variable_Value then
                                     Switches :=
                                       Prj.Util.Value_Of
-                                        (Index     => Name_Ada,
+                                        (Index     => B_Data.Language_Name,
+                                         Src_Index => 0,
+                                         In_Array  => Switches_Array,
+                                         In_Tree   => Project_Tree,
+                                         Force_Lower_Case_Index => True);
+                                 end if;
+
+                                 if Switches = Nil_Variable_Value then
+                                    Switches :=
+                                      Prj.Util.Value_Of
+                                        (Index     => B_Data.Language_Name,
                                          Src_Index => 0,
                                          In_Array  => Defaults,
                                          In_Tree   => Project_Tree);
@@ -6828,6 +6850,16 @@ package body Buildgpr is
                           Src_Index => 0,
                           In_Array  => Switches_Array,
                           In_Tree   => Project_Tree);
+
+                     if Switches = Nil_Variable_Value then
+                        Switches :=
+                          Prj.Util.Value_Of
+                            (Index     => Main_Source.Language_Name,
+                             Src_Index => 0,
+                             In_Array  => Switches_Array,
+                             In_Tree   => Project_Tree,
+                             Force_Lower_Case_Index => True);
+                     end if;
 
                      if Switches = Nil_Variable_Value then
                         Switches :=
