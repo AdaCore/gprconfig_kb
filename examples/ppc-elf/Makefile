@@ -4,7 +4,7 @@ objs/hello: hello.cgpr force
 	gprbuild --config=hello.cgpr -Phello
 
 hello.cgpr:
-	gprconfig -batch -config GNAT,,,Ada,powerpc-elf,zfp -config GCC-ASM,,,Asm,powerpc-elf, -config GCC,,,C,powerpc-elf, -o $@
+	gprconfig -batch -target=powerpc-elf -config GNAT,,,Ada,,zfp -config GCC-ASM,,,Asm -config GCC,,,C -o $@
 
 clean: force
 	gprclean --config=hello.cgpr -Phello
