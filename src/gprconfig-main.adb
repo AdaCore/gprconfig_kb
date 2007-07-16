@@ -25,6 +25,9 @@ procedure GprConfig.Main is
 
    Output_File : Unbounded_String;
 
+   Selected_Target : Unbounded_String;
+   --  Value of -target switch.
+
    Invalid_Config : exception;
 
    type Boolean_Array  is array (Natural range <>) of Boolean;
@@ -99,6 +102,8 @@ procedure GprConfig.Main is
    begin
       Known_Compiler_Names (Base, Known);
 
+      Put_Line (" -target=target (" & Sdefault.Hostname & " by default)");
+      Put_Line ("           Select specified target or all for any target");
       Put_Line (" -o file : Name and directory of the output file");
       Put_Line ("           default is " & To_String (Output_File));
       Put_Line (" -db dir : Parse dir as an additional knowledge base");
@@ -726,6 +731,12 @@ procedure GprConfig.Main is
          Put_Line ("You can regenerate the same config file in batch mode");
          Put_Line (" with the following command line:");
          Put ("gprconfig -batch");
+         Put (" -target=");
+         if Selected_Target = Null_Unbounded_String then
+            Put ("all");
+         else
+            Put (To_String (Selected_Target));
+         end if;
 
          C := First (Selected_Comps);
          while Has_Element (C) loop
@@ -749,6 +760,7 @@ procedure GprConfig.Main is
    Filters            : Compiler_Lists.List;
    Load_Standard_Base : Boolean := True;
    Batch              : Boolean := False;
+   Show_Targets       : Boolean := False;
 
    --  We need to add the executable suffix here, since on windows,
    --  Locate_Exec_On_Path will also return directories with the name
@@ -763,7 +775,8 @@ procedure GprConfig.Main is
    Compilers : Compiler_Lists.List;
    package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
 
-   Valid_Switches : constant String := "batch config: db: h o: v l?";
+   Valid_Switches : constant String :=
+     "batch config: db: h o: v l? show-targets target=";
 
 begin
    if Gprbuild_Path /= null  then
@@ -774,6 +787,8 @@ begin
          & Default_Output_File);
    end if;
    Free (Gprbuild_Path);
+
+   Selected_Target := TU (Sdefault.Hostname);
 
    --  First check whether we should parse the default knownledge base.
    --  This needs to be done first, since that influences -config and -h
@@ -787,6 +802,13 @@ begin
             end if;
          when 'v' =>
             Verbose_Mode := True;
+         when 't' =>
+            if Parameter = "all" then
+               Selected_Target := Null_Unbounded_String;
+            else
+               Selected_Target := To_Unbounded_String (Parameter);
+               Output_File := To_Unbounded_String (Parameter & ".cgpr");
+            end if;
          when ASCII.NUL =>
             exit;
          when others =>
@@ -830,7 +852,10 @@ begin
          when 'o' =>
             Output_File := To_Unbounded_String (Parameter);
 
-         when 'v' =>
+         when 's' =>
+            Show_Targets := True;
+
+         when 'v' | 't' =>
             null;   --  already processed
 
          when others =>
@@ -840,6 +865,61 @@ begin
 
    Complete_Command_Line_Compilers (Base, Custom_Comps);
    Find_Compilers_In_Path (Base, Compilers);
+
+   if Show_Targets or else Verbose_Mode then
+      declare
+         use String_Lists;
+         All_Target : String_Lists.List;
+         C : Compiler_Lists.Cursor := First (Compilers);
+      begin
+         Put_Line ("List of targets supported by a compiler:");
+         while Has_Element (C) loop
+            declare
+               Cur_Target : constant String := To_String (Element (C).Target);
+               T : String_Lists.Cursor := First (All_Target);
+               Dup : Boolean := False;
+            begin
+               while Has_Element (T) loop
+                  if Element (T) = Cur_Target then
+                     Dup := True;
+                     exit;
+                  end if;
+                  Next (T);
+               end loop;
+               if not Dup then
+                  Put (Cur_Target);
+                  if Cur_Target = Sdefault.Hostname then
+                     Put (" (native target)");
+                  end if;
+                  New_Line;
+                  Append (All_Target, Cur_Target);
+               end if;
+            end;
+            Next (C);
+         end loop;
+      end;
+      if Show_Targets then
+         return;
+      end if;
+   end if;
+
+   --  Remove compilers not matching the target.
+   if Selected_Target /= Null_Unbounded_String then
+      declare
+         C      : Compiler_Lists.Cursor := First (Compilers);
+         Next_C : Compiler_Lists.Cursor;
+      begin
+         while Has_Element (C) loop
+            Next_C := Next (C);
+            if Element (C).Target /= Selected_Target then
+               Put_Verbose ("compiler " & To_String (Element (C).Executable)
+                            & " does not match selected target");
+               Delete (Compilers, C);
+            end if;
+            C := Next_C;
+         end loop;
+      end;
+   end if;
 
    if not Is_Empty (Filters) then
       Filter_Compilers (Selected_Compilers, Compilers, Filters);
