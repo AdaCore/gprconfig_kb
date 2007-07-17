@@ -28,6 +28,10 @@ procedure GprConfig.Main is
    Selected_Target : Unbounded_String;
    --  Value of -target switch.
 
+   Selected_Targets_Set : Targets_Set_Id;
+   --  Targets set id for the selected target.  Valid only if selected target
+   --  is not null_unbounded_string (ie "all").
+
    Invalid_Config : exception;
 
    type Boolean_Array  is array (Natural range <>) of Boolean;
@@ -51,7 +55,9 @@ procedure GprConfig.Main is
       Selected_Compilers : out Compiler_Lists.List);
    --  Return the list of selected compilers in Comps
 
-   procedure Enter_Custom_Target (Base : Knowledge_Base; Comp : out Compiler);
+   procedure Enter_Custom_Compiler
+     (Base : in out Knowledge_Base;
+      Comp : out Compiler);
    --  Ask the user for a custom compiler
 
    procedure Parse_Config_Parameter
@@ -61,7 +67,7 @@ procedure GprConfig.Main is
    --  there in Selected_Compilers
 
    procedure Select_Compilers_Interactively
-     (Base               : Knowledge_Base;
+     (Base               : in out Knowledge_Base;
       Compilers          : Compiler_Lists.List;
       Selected_Compilers : in out Compiler_Lists.List;
       Custom_Comps       : in out Compiler_Lists.List);
@@ -74,7 +80,7 @@ procedure GprConfig.Main is
    --  Select the first compiler for all languages in Languages
 
    procedure Complete_Command_Line_Compilers
-     (Base         : Knowledge_Base;
+     (Base         : in out Knowledge_Base;
       Custom_Comps : in out Compiler_Lists.List);
    --  Complete missing information for the compilers specified on the command
    --  line.
@@ -158,7 +164,7 @@ procedure GprConfig.Main is
       end if;
 
       Put (") ");
-      if Comp.Target /= Sdefault.Hostname
+      if Selected_Target /= Null_Unbounded_String
         and then Comp.Target /= Null_Unbounded_String
       then
          Put (To_String (Comp.Target) & ' ');
@@ -184,12 +190,12 @@ procedure GprConfig.Main is
       end loop;
    end To_List;
 
-   -------------------------
-   -- Enter_Custom_Target --
-   -------------------------
+   ---------------------------
+   -- Enter_Custom_Compiler --
+   ---------------------------
 
-   procedure Enter_Custom_Target
-     (Base : Knowledge_Base; Comp : out Compiler)
+   procedure Enter_Custom_Compiler
+     (Base : in out Knowledge_Base; Comp : out Compiler)
    is
       Default_Path : constant String := "/usr/bin/";
       Line : String (1 .. 4096);
@@ -273,7 +279,8 @@ procedure GprConfig.Main is
       else
          Comp.Target := TU (Line (Line'First .. Last));
       end if;
-   end Enter_Custom_Target;
+      Get_Targets_Set (Base, To_String (Comp.Target), Comp.Targets_Set);
+   end Enter_Custom_Compiler;
 
    ----------------------------
    -- Parse_Config_Parameter --
@@ -387,7 +394,7 @@ procedure GprConfig.Main is
    ------------------------------------
 
    procedure Select_Compilers_Interactively
-     (Base               : Knowledge_Base;
+     (Base               : in out Knowledge_Base;
       Compilers          : Compiler_Lists.List;
       Selected_Compilers : in out Compiler_Lists.List;
       Custom_Comps       : in out Compiler_Lists.List)
@@ -450,10 +457,10 @@ procedure GprConfig.Main is
 
                   --  Is the target compatible ?
                   if Selectable (C) then
-                     Selectable (C) := Architecture_Equal
-                       (To_String (Selected_Target),
-                        To_String (Comps (C).Target));
-                     if not Selectable (C) then
+                     if Selected_Target /= Null_Unbounded_String
+                       and then Comps (C).Targets_Set /= Selected_Targets_Set
+                     then
+                        Selectable (C) := False;
                         if Verbose_Mode then
                            Put_Verbose ("Incompatible target for:");
                            Display_Compiler (Comps (C), False, C);
@@ -524,7 +531,7 @@ procedure GprConfig.Main is
             declare
                Comp : Compiler;
             begin
-               Enter_Custom_Target (Base, Comp);
+               Enter_Custom_Compiler (Base, Comp);
                Append (Custom_Comps, Comp);
             end;
 
@@ -575,7 +582,7 @@ procedure GprConfig.Main is
    -------------------------------------
 
    procedure Complete_Command_Line_Compilers
-     (Base         : Knowledge_Base;
+     (Base         : in out Knowledge_Base;
       Custom_Comps : in out Compiler_Lists.List)
    is
       procedure Update_Comps (Elem : in out Compiler);
@@ -863,6 +870,11 @@ begin
       end case;
    end loop;
 
+   if Selected_Target /= Null_Unbounded_String then
+      Get_Targets_Set
+        (Base, To_String (Selected_Target), Selected_Targets_Set);
+   end if;
+
    Complete_Command_Line_Compilers (Base, Custom_Comps);
    Find_Compilers_In_Path (Base, Compilers);
 
@@ -911,7 +923,7 @@ begin
       begin
          while Has_Element (C) loop
             Next_C := Next (C);
-            if Element (C).Target /= Selected_Target then
+            if Element (C).Targets_Set /= Selected_Targets_Set then
                Put_Verbose ("compiler " & To_String (Element (C).Executable)
                             & " does not match selected target");
                Delete (Compilers, C);

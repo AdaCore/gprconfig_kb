@@ -7,6 +7,7 @@
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Hashed_Maps;
+with Ada.Containers.Vectors;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;
 with GNAT.Regpat;
@@ -29,10 +30,21 @@ package GprConfig.Knowledge is
    --  Parse info from the knowledge base, and store it in memory.
    --  Only information relevant to the current host is parsed.
 
+   type Targets_Set_Id is new Natural;
+   --  Identify a target aliases set.
+
+   Unknown_Targets_Set : constant Targets_Set_Id := 0;
+   --  Special target set when a target is not known.
+
+   subtype Known_Targets_Set_Id is Targets_Set_Id
+     range 1 .. Targets_Set_Id'Last;
+   --  Known targets set.  They are in the base.
+
    type Compiler is record
       Name        : Ada.Strings.Unbounded.Unbounded_String;
       Executable  : Ada.Strings.Unbounded.Unbounded_String;
       Target      : Ada.Strings.Unbounded.Unbounded_String;
+      Targets_Set : Targets_Set_Id;
       Path        : Ada.Strings.Unbounded.Unbounded_String;
       Version     : Ada.Strings.Unbounded.Unbounded_String;
       Version2    : Ada.Strings.Unbounded.Unbounded_String;
@@ -53,14 +65,14 @@ package GprConfig.Knowledge is
    package Compiler_Lists is new Ada.Containers.Doubly_Linked_Lists (Compiler);
 
    procedure Find_Compilers_In_Path
-     (Base      : Knowledge_Base;
+     (Base      : in out Knowledge_Base;
       Compilers : out Compiler_Lists.List);
    --  Return the list of compilers found on PATH
 
    procedure Find_Matching_Compilers
      (Name       : String;
       Path       : String;
-      Base       : Knowledge_Base;
+      Base       : in out Knowledge_Base;
       Compilers  : out Compiler_Lists.List);
    --  Given a compiler and its name, find out as much information as we can.
    --  If the compiler is totally unknown, the returned list will be empty.
@@ -82,11 +94,12 @@ package GprConfig.Knowledge is
    --  Whether we know how to link code compiled with all these selected
    --  compilers
 
-   function Architecture_Equal (Arch1, Arch2 : String) return Boolean;
-   --  Compares two architectures.
-   --  ??? The comparison for now is the same as "=", but in the future we
-   --  should have a way in the .xml file to indicate that "i686-pc-linux-gnu"
-   --  is the same as "i686-suse-linux" for instance.
+   procedure Get_Targets_Set
+     (Base   : in out Knowledge_Base;
+      Target : String;
+      Id     : out Targets_Set_Id);
+   --  Get the target alias set id for a target.  If not already in the base,
+   --  add it.
 
    function TU (Str : String) return Ada.Strings.Unbounded.Unbounded_String;
    --  returns an unbounded string for Str (or Null_Unbounded_String if
@@ -122,6 +135,7 @@ private
    No_Compiler : constant Compiler :=
      (Name        => Ada.Strings.Unbounded.Null_Unbounded_String,
       Target      => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Targets_Set => Unknown_Targets_Set,
       Executable  => Ada.Strings.Unbounded.Null_Unbounded_String,
       Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
       Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
@@ -223,9 +237,16 @@ private
    package Configuration_Lists is new Ada.Containers.Doubly_Linked_Lists
      (Configuration);
 
+   package Target_Lists is new Ada.Containers.Doubly_Linked_Lists
+     (Pattern_Matcher_Access);
+
+   package Targets_Set_Vectors is new Ada.Containers.Vectors
+     (Known_Targets_Set_Id, Target_Lists.List, Target_Lists."=");
+
    type Knowledge_Base is record
       Compilers      : Compiler_Description_Maps.Map;
       Configurations : Configuration_Lists.List;
+      Targets_Sets   : Targets_Set_Vectors.Vector;
    end record;
 
 end GprConfig.Knowledge;

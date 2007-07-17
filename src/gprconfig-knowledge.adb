@@ -64,6 +64,12 @@ package body GprConfig.Knowledge is
       Description : Node_Ptr);
    --  Parse a configuration node
 
+   procedure Parse_Targets_Set
+     (Append_To   : in out Targets_Set_Vectors.Vector;
+      File        : String;
+      Description : Node_Ptr);
+   --  Parse a targets set node
+
    procedure Parse_External_Value
      (Value       : out External_Value;
       File        : String;
@@ -72,7 +78,7 @@ package body GprConfig.Knowledge is
 
    procedure Find_Compilers_In_Dir
      (Append_To  : in out Compiler_Lists.List;
-      Base       : Knowledge_Base;
+      Base       : in out Knowledge_Base;
       Check_Executable_Regexp : Boolean;
       Directory  : String;
       Name       : String := "";
@@ -101,6 +107,7 @@ package body GprConfig.Knowledge is
 
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
+      Base       : in out Knowledge_Base;
       Name       : String;
       Executable : String;
       Directory  : String;
@@ -611,6 +618,49 @@ package body GprConfig.Knowledge is
       end if;
    end Parse_Configuration;
 
+   -----------------------
+   -- Parse_Targets_Set --
+   -----------------------
+
+   procedure Parse_Targets_Set
+     (Append_To   : in out Targets_Set_Vectors.Vector;
+      File        : String;
+      Description : Node_Ptr)
+   is
+      Set      : Target_Lists.List;
+      Pattern  : Pattern_Matcher_Access;
+      N        : Node_Ptr := Description.Child;
+   begin
+      while N /= null loop
+         if N.Tag.all = "target" then
+            declare
+               Val    : constant String := N.Value.all;
+            begin
+               Pattern := new Pattern_Matcher'(Compile ("^" & Val & "$"));
+               Target_Lists.Append (Set, Pattern);
+
+            exception
+               when Expression_Error =>
+                  Put_Line
+                    ("Invalid regular expression " & Val
+                     & " found in the target-set while parsing " & File);
+                  raise Invalid_Knowledge_Base;
+
+            end;
+
+         else
+            Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
+                      & N.Tag.all);
+         end if;
+
+         N := N.Next;
+      end loop;
+
+      if not Target_Lists.Is_Empty (Set) then
+         Targets_Set_Vectors.Append (Append_To, Set);
+      end if;
+   end Parse_Targets_Set;
+
    --------------------------
    -- Parse_Knowledge_Base --
    --------------------------
@@ -648,6 +698,11 @@ package body GprConfig.Knowledge is
                elsif N.Tag.all = "configuration" then
                   Parse_Configuration
                     (Append_To   => Base.Configurations,
+                     File        => Simple_Name (File),
+                     Description => N);
+               elsif N.Tag.all = "targetset" then
+                  Parse_Targets_Set
+                    (Append_To   => Base.Targets_Sets,
                      File        => Simple_Name (File),
                      Description => N);
                else
@@ -1137,6 +1192,7 @@ package body GprConfig.Knowledge is
 
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
+      Base       : in out Knowledge_Base;
       Name       : String;
       Executable : String;
       Directory  : String;
@@ -1178,8 +1234,10 @@ package body GprConfig.Knowledge is
          Comp.Target := Element (First (Target)).Value;
          Put_Verbose
            ("Target for this compiler is " & To_String (Comp.Target));
+         Get_Targets_Set (Base, To_String (Comp.Target), Comp.Targets_Set);
       else
          Put_Verbose ("Target unknown for this compiler");
+         Comp.Targets_Set := Unknown_Targets_Set;
       end if;
 
       Get_External_Value
@@ -1251,7 +1309,7 @@ package body GprConfig.Knowledge is
 
    procedure Find_Compilers_In_Dir
      (Append_To  : in out Compiler_Lists.List;
-      Base       : Knowledge_Base;
+      Base       : in out Knowledge_Base;
       Check_Executable_Regexp : Boolean;
       Directory  : String;
       Name       : String := "";
@@ -1324,6 +1382,7 @@ package body GprConfig.Knowledge is
 
                            For_Each_Language_Runtime
                              (Append_To  => Append_To,
+                              Base       => Base,
                               Name       => Key (C),
                               Executable => Simple,
                               Directory  => Directory,
@@ -1362,6 +1421,7 @@ package body GprConfig.Knowledge is
                        ("Processing " & Key (C) & " in " & Directory);
                      For_Each_Language_Runtime
                        (Append_To  => Append_To,
+                        Base       => Base,
                         Name       => Key (C),
                         Executable => To_String (Element (C).Executable),
                         Prefix     => "",
@@ -1390,7 +1450,7 @@ package body GprConfig.Knowledge is
    procedure Find_Matching_Compilers
      (Name       : String;
       Path       : String;
-      Base       : Knowledge_Base;
+      Base       : in out Knowledge_Base;
       Compilers  : out Compiler_Lists.List)
    is
       Check_Regexp : Boolean := False;
@@ -1423,7 +1483,7 @@ package body GprConfig.Knowledge is
    ----------------------------
 
    procedure Find_Compilers_In_Path
-     (Base      : Knowledge_Base;
+     (Base      : in out Knowledge_Base;
       Compilers : out Compiler_Lists.List)
    is
       Map        : String_Lists.List;
@@ -1784,7 +1844,7 @@ package body GprConfig.Knowledge is
       Selected_Compiler : Compiler;
       M                 : Boolean;
       Comp              : Compiler_Lists.Cursor;
-      Project_Name      : String := Ada.Directories.Base_Name (Output_File);
+      Project_Name      : String := "Default";
 
       procedure Gen (C : String_Maps.Cursor);
       --  C is a cursor of the map "Packages"
@@ -1900,18 +1960,48 @@ package body GprConfig.Knowledge is
          raise Generate_Error;
    end Generate_Configuration;
 
-   ------------------------
-   -- Architecture_Equal --
-   ------------------------
+   ----------------------
+   --  Get_Targets_Set --
+   ----------------------
 
-   function Architecture_Equal (Arch1, Arch2 : String) return Boolean is
+   procedure Get_Targets_Set
+     (Base   : in out Knowledge_Base;
+      Target : String;
+      Id     : out Targets_Set_Id)
+   is
+      use Targets_Set_Vectors;
+      use Target_Lists;
    begin
-      --  Special handling for linux: i586-suse-linux is compatible with
-      --  i686-pc-linux-gnu for instance. Same for mingw32 (G411-026)
+      for I in First_Index (Base.Targets_Sets)
+        .. Last_Index (Base.Targets_Sets)
+      loop
+         declare
+            Set : Target_Lists.List := Element (Base.Targets_Sets, I);
+            C : Target_Lists.Cursor := First (Set);
+         begin
+            while Has_Element (C) loop
+               if GNAT.Regpat.Match (Element (C).all, Target) > 0 then
+                  Id := I;
+                  return;
+               end if;
+               Next (C);
+            end loop;
+         end;
+      end loop;
 
-      return Arch1 = Arch2
-        or else (Match ("linux", Arch1) and then Match ("linux", Arch2))
-        or else (Match ("mingw32", Arch1) and then Match ("mingw32", Arch2));
-   end Architecture_Equal;
+      if Target = "" then
+         Id := Unknown_Targets_Set;
+         return;
+      end if;
 
+      --  Create a new set.
+      declare
+         Set : Target_Lists.List;
+      begin
+         Append (Set, new Pattern_Matcher'(Compile ("^" & Target & "$")));
+         Append (Base.Targets_Sets, Set);
+         Id := Last_Index (Base.Targets_Sets);
+         Put_Verbose ("create a new target set for " & Target);
+      end;
+   end Get_Targets_Set;
 end GprConfig.Knowledge;
