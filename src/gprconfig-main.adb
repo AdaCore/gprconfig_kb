@@ -26,7 +26,7 @@ procedure GprConfig.Main is
    Output_File : Unbounded_String;
 
    Selected_Target : Unbounded_String;
-   --  Value of -target switch.
+   --  Value of --target switch.
 
    Selected_Targets_Set : Targets_Set_Id;
    --  Targets set id for the selected target.  Valid only if selected target
@@ -115,7 +115,7 @@ procedure GprConfig.Main is
       Put_Line (" --db dir : Parse dir as an additional knowledge base.");
       Put_Line (" --db-    : Do not load the standard knowledge base from:");
       Put_Line ("   " & Get_Database_Directory);
-      Put_Line (" --config name,path[,version[,language[,target[,runtime]]]]");
+      Put_Line (" --config language[,version[,runtime[,path[,name]]]]");
       Put_Line ("            Preselect a compiler. When name is one of the"
                 & " names known to ");
       Put_Line ("            gprconfig, you do not need to provide any of the"
@@ -297,23 +297,19 @@ procedure GprConfig.Main is
                  Allow_Empty_Elements => True);
 
       C := First (Map);
-      Comp.Name := TU (Element (C));
+      Comp.Language := TU (Element (C));
       Next (C);
       if Has_Element (C) then
-         Comp.Path := TU (Element (C));
+         Comp.Version := TU (Element (C));
          Next (C);
          if Has_Element (C) then
-            Comp.Version := TU (Element (C));
+            Comp.Runtime := TU (Element (C));
             Next (C);
             if Has_Element (C) then
-               Comp.Language := TU (Element (C));
+               Comp.Path := TU (Element (C));
                Next (C);
                if Has_Element (C) then
-                  Comp.Target := TU (Element (C));
-                  Next (C);
-                  if Has_Element (C) then
-                     Comp.Runtime := TU (Element (C));
-                  end if;
+                  Comp.Name := TU (Element (C));
                end if;
             end if;
          end if;
@@ -417,10 +413,10 @@ procedure GprConfig.Main is
       --  otherwise linking makes no sense.
 
       procedure Filter_List is
-         Selected_Target : Unbounded_String;
-         Tmp_Selection   : Compiler_Lists.List;
-         Tmp_Selection2  : Compiler_Lists.List;
-         Comp            : Compiler_Lists.Cursor;
+         Selected_Targets_Set : Targets_Set_Id;
+         Tmp_Selection        : Compiler_Lists.List;
+         Tmp_Selection2       : Compiler_Lists.List;
+         Comp                 : Compiler_Lists.Cursor;
       begin
          --  Simulate the current selection
          Tmp_Selection := Custom_Comps;
@@ -429,7 +425,8 @@ procedure GprConfig.Main is
          if Length (Tmp_Selection) = 0 then
             Selectable := (others => True);
          else
-            Selected_Target := Element (First (Tmp_Selection)).Target;
+            Selected_Targets_Set :=
+              Element (First (Tmp_Selection)).Targets_Set;
 
             Put_Verbose ("Filtering the list of compilers");
             Put_Verbose
@@ -455,9 +452,7 @@ procedure GprConfig.Main is
 
                   --  Is the target compatible ?
                   if Selectable (C) then
-                     if Selected_Target /= Null_Unbounded_String
-                       and then Comps (C).Targets_Set /= Selected_Targets_Set
-                     then
+                     if Comps (C).Targets_Set /= Selected_Targets_Set then
                         Selectable (C) := False;
                         if Verbose_Mode then
                            Put_Verbose ("Incompatible target for:");
@@ -676,12 +671,6 @@ procedure GprConfig.Main is
             return False;
          end if;
 
-         if Length (Filter.Target) > 0
-           and then Filter.Target /= Comp.Target
-         then
-            return False;
-         end if;
-
          if Length (Filter.Runtime) > 0
            and then Filter.Runtime /= Comp.Runtime
          then
@@ -714,10 +703,12 @@ procedure GprConfig.Main is
                Put_Line (Standard_Error,
                          "warning: no matching compiler for filter: ");
                Put_Line
-                 (Standard_Error, "  --config " & To_String (Filt.Name) & ','
-                  & To_String (Filt.Path) & ',' & To_String (Filt.Version)
-                  & ',' & To_String (Filt.Language) & ','
-                  & To_String (Filt.Target) & ',' & To_String (Filt.Runtime));
+                 (Standard_Error, "  --config "
+                  & To_String (Filt.Language)
+                  & ',' & To_String (Filt.Version)
+                  & ',' & To_String (Filt.Runtime)
+                  & ',' & To_String (Filt.Path)
+                  & ',' & To_String (Filt.Name));
             end if;
          end;
          Next (F);
@@ -745,13 +736,11 @@ procedure GprConfig.Main is
 
          C := First (Selected_Comps);
          while Has_Element (C) loop
-            Put
-              (" --config " & To_String (Element (C).Name)
-               & "," & To_String (Element (C).Path)
-               & "," & To_String (Element (C).Version)
-               & "," & To_String (Element (C).Language)
-               & "," & To_String (Element (C).Target)
-               & "," & To_String (Element (C).Runtime));
+            Put (" --config " & To_String (Element (C).Language)
+                 & "," & To_String (Element (C).Version)
+                 & "," & To_String (Element (C).Runtime)
+                 & "," & To_String (Element (C).Path)
+                 & "," & To_String (Element (C).Name));
             Next (C);
          end loop;
          New_Line;
