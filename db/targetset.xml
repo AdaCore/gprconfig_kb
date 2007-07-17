@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<gprconfig>
+  <!-- x86 linux -->
+  <targetset>
+    <target>i686-pc-linux-gnu</target>
+    <target>i586-suse-linux</target>
+    <target>i386-redhat-linux</target>
+  </targetset>
+
+</gprconfig>
