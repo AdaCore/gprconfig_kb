@@ -108,25 +108,25 @@ procedure GprConfig.Main is
    begin
       Known_Compiler_Names (Base, Known);
 
-      Put_Line (" -target=target (" & Sdefault.Hostname & " by default)");
-      Put_Line ("           Select specified target or all for any target");
-      Put_Line (" -o file : Name and directory of the output file");
-      Put_Line ("           default is " & To_String (Output_File));
-      Put_Line (" -db dir : Parse dir as an additional knowledge base");
-      Put_Line (" -db-    : Do not load the standard knowledge base from");
-      Put_Line ("          " & Get_Database_Directory);
-      Put_Line (" -config name,path[,version[,language[,target[,runtime]]]]");
-      Put_Line ("           Preselect a compiler. When name is one of the"
-                & " names known to gprconfig,");
-      Put_Line ("           you do not need to provide any of the optional"
-                & " parameter, and can leave an");
-      Put_Line ("           empty string instead");
-      Put_Line ("           The known compilers are: " & To_String (Known));
+      Put_Line (" --target=target (" & Sdefault.Hostname & " by default)");
+      Put_Line ("            Select specified target or all for any target.");
+      Put_Line (" -o file  : Name and directory of the output file.");
+      Put_Line ("            default is " & To_String (Output_File));
+      Put_Line (" --db dir : Parse dir as an additional knowledge base.");
+      Put_Line (" --db-    : Do not load the standard knowledge base from:");
+      Put_Line ("   " & Get_Database_Directory);
+      Put_Line (" --config name,path[,version[,language[,target[,runtime]]]]");
+      Put_Line ("            Preselect a compiler. When name is one of the"
+                & " names known to ");
+      Put_Line ("            gprconfig, you do not need to provide any of the"
+                & " optional parameter,");
+      Put_Line ("            and can leave an empty string instead.");
+      Put_Line ("            The known compilers are: " & To_String (Known));
       Put_Line (" -l[lang1,lang2,...]: Preselect the first compiler for"
-                & " each specified language." & ASCII.LF
-                & "         No space between -l and its arguments");
-      Put_Line (" -batch  : batch mode, no interactive compiler selection");
-      Put_Line (" -v      : verbose mode");
+                & " each specified language.");
+      Put_Line ("            (No space between -l and its arguments.)");
+      Put_Line (" --batch  : batch mode, no interactive compiler selection.");
+      Put_Line (" -v       : verbose mode.");
    end Help;
 
    ----------------------------
@@ -164,9 +164,7 @@ procedure GprConfig.Main is
       end if;
 
       Put (") ");
-      if Selected_Target /= Null_Unbounded_String
-        and then Comp.Target /= Null_Unbounded_String
-      then
+      if Comp.Target /= Null_Unbounded_String then
          Put (To_String (Comp.Target) & ' ');
       end if;
 
@@ -716,7 +714,7 @@ procedure GprConfig.Main is
                Put_Line (Standard_Error,
                          "warning: no matching compiler for filter: ");
                Put_Line
-                 (Standard_Error, "  -config " & To_String (Filt.Name) & ','
+                 (Standard_Error, "  --config " & To_String (Filt.Name) & ','
                   & To_String (Filt.Path) & ',' & To_String (Filt.Version)
                   & ',' & To_String (Filt.Language) & ','
                   & To_String (Filt.Target) & ',' & To_String (Filt.Runtime));
@@ -748,7 +746,7 @@ procedure GprConfig.Main is
          C := First (Selected_Comps);
          while Has_Element (C) loop
             Put
-              (" -config " & To_String (Element (C).Name)
+              (" --config " & To_String (Element (C).Name)
                & "," & To_String (Element (C).Path)
                & "," & To_String (Element (C).Version)
                & "," & To_String (Element (C).Language)
@@ -783,7 +781,7 @@ procedure GprConfig.Main is
    package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
 
    Valid_Switches : constant String :=
-     "batch config: db: h o: v l? show-targets target=";
+     "-batch -config: -db: h o: v l? -show-targets -target=";
 
 begin
    if Gprbuild_Path /= null  then
@@ -803,19 +801,23 @@ begin
 
    loop
       case Getopt (Valid_Switches) is
-         when 'd' =>
-            if Parameter = "-" then
-               Load_Standard_Base := False;
+         when '-' =>
+            if Full_Switch = "-db" then
+               if Parameter = "-" then
+                  Load_Standard_Base := False;
+               end if;
+            elsif Full_Switch = "-target" then
+               if Parameter = "all" then
+                  Selected_Target := Null_Unbounded_String;
+               else
+                  Selected_Target := To_Unbounded_String (Parameter);
+                  Output_File := To_Unbounded_String (Parameter & ".cgpr");
+               end if;
             end if;
+
          when 'v' =>
             Verbose_Mode := True;
-         when 't' =>
-            if Parameter = "all" then
-               Selected_Target := Null_Unbounded_String;
-            else
-               Selected_Target := To_Unbounded_String (Parameter);
-               Output_File := To_Unbounded_String (Parameter & ".cgpr");
-            end if;
+
          when ASCII.NUL =>
             exit;
          when others =>
@@ -833,17 +835,19 @@ begin
 
    loop
       case Getopt (Valid_Switches) is
-         when 'b' =>
-            Batch := True;
-
-         when 'c' =>
-            Parse_Config_Parameter (Filters, Parameter);
-
-         when 'd' =>
-            if Parameter = "-" then
-               null;  --  already processed
-            else
-               Parse_Knowledge_Base (Base, Parameter);
+         when '-' =>
+            if Full_Switch = "-config" then
+               Parse_Config_Parameter (Filters, Parameter);
+            elsif Full_Switch = "-batch" then
+               Batch := True;
+            elsif Full_Switch = "-show-targets" then
+               Show_Targets := True;
+            elsif Full_Switch = "-db" then
+               if Parameter = "-" then
+                  null;  --  already processed
+               else
+                  Parse_Knowledge_Base (Base, Parameter);
+               end if;
             end if;
 
          when 'h' =>
@@ -858,9 +862,6 @@ begin
 
          when 'o' =>
             Output_File := To_Unbounded_String (Parameter);
-
-         when 's' =>
-            Show_Targets := True;
 
          when 'v' | 't' =>
             null;   --  already processed
@@ -962,7 +963,7 @@ begin
 exception
    when Invalid_Config =>
       Put_Line
-        (Standard_Error, "Invalid configuration specified with -config");
+        (Standard_Error, "Invalid configuration specified with --config");
       Ada.Command_Line.Set_Exit_Status (1);
    when Generate_Error =>
       Put_Line
