@@ -63,8 +63,8 @@ procedure GprConfig.Main is
    procedure Parse_Config_Parameter
      (Custom_Comps : in out Compiler_Lists.List;
       Config       : String);
-   --  Parse the -config parameter, and store the (partial) information found
-   --  there in Selected_Compilers
+   --  Parse the --config parameter, and store the (partial) information
+   --  found there in Selected_Compilers
 
    procedure Select_Compilers_Interactively
      (Base               : in out Knowledge_Base;
@@ -115,7 +115,7 @@ procedure GprConfig.Main is
       Put_Line (" --db dir : Parse dir as an additional knowledge base.");
       Put_Line (" --db-    : Do not load the standard knowledge base from:");
       Put_Line ("   " & Get_Database_Directory);
-      Put_Line (" --config language[,version[,runtime[,path[,name]]]]");
+      Put_Line (" --config=language[,version[,runtime[,path[,name]]]]");
       Put_Line ("            Preselect a compiler. When name is one of the"
                 & " names known to ");
       Put_Line ("            gprconfig, you do not need to provide any of the"
@@ -689,9 +689,9 @@ procedure GprConfig.Main is
             Filt  : Compiler;
             Found : Boolean := False;
          begin
+            Filt := Element (F);
             while Has_Element (C) loop
                Comp := Element (C);
-               Filt := Element (F);
                if Filter_Match (Comp, Filt) then
                   Append (Selected_Comps, Comp);
                   Found := True;
@@ -703,7 +703,7 @@ procedure GprConfig.Main is
                Put_Line (Standard_Error,
                          "warning: no matching compiler for filter: ");
                Put_Line
-                 (Standard_Error, "  --config "
+                 (Standard_Error, "  --config="
                   & To_String (Filt.Language)
                   & ',' & To_String (Filt.Version)
                   & ',' & To_String (Filt.Runtime)
@@ -736,7 +736,7 @@ procedure GprConfig.Main is
 
          C := First (Selected_Comps);
          while Has_Element (C) loop
-            Put (" --config " & To_String (Element (C).Language)
+            Put (" --config=" & To_String (Element (C).Language)
                  & "," & To_String (Element (C).Version)
                  & "," & To_String (Element (C).Runtime)
                  & "," & To_String (Element (C).Path)
@@ -770,7 +770,7 @@ procedure GprConfig.Main is
    package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
 
    Valid_Switches : constant String :=
-     "-batch -config: -db: h o: v l? -show-targets -target=";
+     "-batch -config= -db: h o: v l? -show-targets -target=";
 
 begin
    if Gprbuild_Path /= null  then
@@ -785,7 +785,7 @@ begin
    Selected_Target := TU (Sdefault.Hostname);
 
    --  First check whether we should parse the default knownledge base.
-   --  This needs to be done first, since that influences -config and -h
+   --  This needs to be done first, since that influences --config and -h
    --  at least
 
    loop
@@ -925,6 +925,18 @@ begin
 
    if not Is_Empty (Filters) then
       Filter_Compilers (Selected_Compilers, Compilers, Filters);
+   end if;
+
+   if Is_Empty (Compilers) then
+      if Selected_Target /= Null_Unbounded_String then
+         Put_Line
+           (Standard_Error,
+            "No compilers found for target " & To_String (Selected_Target));
+      else
+         Put_Line (Standard_Error, "No compilers found");
+      end if;
+      Ada.Command_Line.Set_Exit_Status (1);
+      return;
    end if;
 
    if not Batch then
