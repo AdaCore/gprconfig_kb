@@ -2,7 +2,6 @@
 --                   Copyright (C) 2006-2007, AdaCore                       --
 ------------------------------------------------------------------------------
 
-with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
 with Ada.Exceptions;            use Ada.Exceptions;
@@ -73,12 +72,6 @@ procedure GprConfig.Main is
       Custom_Comps       : in out Compiler_Lists.List);
    --  Ask the user for compilers to be selected
 
-   procedure Select_Compilers_For_Lang
-     (Languages          : String;
-      Compilers          : Compiler_Lists.List;
-      Selected_Compilers : in out Compiler_Lists.List);
-   --  Select the first compiler for all languages in Languages
-
    procedure Complete_Command_Line_Compilers
      (Base         : in out Knowledge_Base;
       Custom_Comps : in out Compiler_Lists.List);
@@ -122,9 +115,6 @@ procedure GprConfig.Main is
                 & " optional parameter,");
       Put_Line ("            and can leave an empty string instead.");
       Put_Line ("            The known compilers are: " & To_String (Known));
-      Put_Line (" -l[lang1,lang2,...]: Preselect the first compiler for"
-                & " each specified language.");
-      Put_Line ("            (No space between -l and its arguments.)");
       Put_Line (" --batch  : batch mode, no interactive compiler selection.");
       Put_Line (" -v       : verbose mode.");
    end Help;
@@ -352,36 +342,6 @@ procedure GprConfig.Main is
          end if;
       end if;
    end "<";
-
-   -------------------------------
-   -- Select_Compilers_For_Lang --
-   -------------------------------
-
-   procedure Select_Compilers_For_Lang
-     (Languages          : String;
-      Compilers          : Compiler_Lists.List;
-      Selected_Compilers : in out Compiler_Lists.List)
-   is
-      use String_Lists;
-      Langs : String_Lists.List;
-      Comp  : Compiler_Lists.Cursor := First (Compilers);
-      C     : String_Lists.Cursor;
-   begin
-      Get_Words (Words                => Languages,
-                 Filter               => Null_Unbounded_String,
-                 Map                  => Langs,
-                 Allow_Empty_Elements => False);
-
-      while Has_Element (Comp) loop
-         C := Find (Langs, To_Lower (To_String (Element (Comp).Language)));
-         if Has_Element (C) then
-            Append (Selected_Compilers, Element (Comp));
-            Delete (Langs, C);
-         end if;
-
-         Next (Comp);
-      end loop;
-   end Select_Compilers_For_Lang;
 
    ------------------------------------
    -- Select_Compilers_Interactively --
@@ -764,13 +724,12 @@ procedure GprConfig.Main is
      Get_Executable_Suffix;
    Gprbuild_Path : GNAT.OS_Lib.String_Access :=
      Locate_Exec_On_Path (Gprbuild & Exec_Suffix.all);
-   Preselect_Lang : Unbounded_String;
 
    Compilers : Compiler_Lists.List;
    package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
 
    Valid_Switches : constant String :=
-     "-batch -config= -db: h o: v l? -show-targets -target=";
+     "-batch -config= -db: h o: v -show-targets -target=";
 
 begin
    if Gprbuild_Path /= null  then
@@ -842,12 +801,6 @@ begin
          when 'h' =>
             Help (Base);
             return;
-
-         when 'l' =>
-            Preselect_Lang := To_Unbounded_String (Parameter);
-            if Preselect_Lang = "" then
-               Preselect_Lang := To_Unbounded_String ("ada,c,c++");
-            end if;
 
          when 'o' =>
             Output_File := To_Unbounded_String (Parameter);
@@ -941,11 +894,6 @@ begin
 
    if not Batch then
       Compiler_Sort.Sort (Compilers);
-
-      if Preselect_Lang /= Null_Unbounded_String then
-         Select_Compilers_For_Lang
-           (To_String (Preselect_Lang), Compilers, Selected_Compilers);
-      end if;
 
       Select_Compilers_Interactively
         (Base, Compilers, Selected_Compilers, Custom_Comps);
