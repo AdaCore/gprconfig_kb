@@ -1808,19 +1808,20 @@ The switches for gprclean are:
 @c ---------------------------------------------------------------------
 
 @noindent
-When you launch gprconfig, it will first search for all compilers it can find on
-your @code{PATH}. It is recommended, although not mandatory, that you put the
-compilers that you expect to use for your application in your @code{PATH} before
-you launch @code{gprconfig}, since that simplifies the setup.
+When you launch gprconfig, it will first search for all compilers it
+can find on your @code{PATH}. It is recommended, although not
+mandatory, that you put the compilers that you expect to use for your
+application in your @code{PATH} before you launch @code{gprconfig},
+since that simplifies the setup.
 
-@code{gprconfig} will then display a list of all the compilers it has found,
-along with the language they can compile, the runtime they use (when
-applicable),@dots{}. It will then wait until you select one of the compilers.
-This list is sorted by language, then by order in the @code{PATH} environment
-variable (so that compilers that you are more likely to use appear first),
-then by runtime names and finally by version of the compiler.
-The idea is that the first compiler for any language is the most likely one
-you want to use.
+@code{gprconfig} will then display a list of all the native compilers
+it has found, along with the language they can compile, the runtime
+they use (when applicable),@dots{}. It will then wait until you select
+one of the compilers.  This list is sorted by language, then by order
+in the @code{PATH} environment variable (so that compilers that you
+are more likely to use appear first), then by runtime names and
+finally by version of the compiler.  The idea is that the first
+compiler for any language is the most likely one you want to use.
 
 Selection is done by entering the letter that appears on the line for
 each compiler. If the compiler was already selected, it is deselected.
@@ -1905,19 +1906,30 @@ it. But you can alternatively choose to create a different configuration
 file and then use @code{gprbuild}'s command line switches to choose among
 these.
 
-@item -db directory
+@item --db directory
 
 Indicates another directory that should be parsed for gprconfig's knowledge
 base. Most of the time this is only useful if you are creating your own
 XML description files.
 
-@item -db -
+@item --db -
 
-Prevents @code{gprconfig} from reading its default knowledge base. You should
-point to another directory with @code{-db directory}, or gprconfig will not be
-able to generate any configuration file.
+Prevents @code{gprconfig} from reading its default knowledge base. You
+should point to another directory with @code{--db directory}, or
+gprconfig will not be able to generate any configuration file.
 
-@item -config name,path[,version[,language[,target[,runtime]]]]
+@item --target target
+
+Specify the target for the compilers.  Only compilers generating code for
+this target will be preselected.  By default the target is the host.  If
+target is all, any target is accepted.  The name of the host target is
+displayed in the help.
+
+@item --show-targets
+
+Simply displays the target of all compilers found and exit.
+
+@item --config language[,version[,runtime[,path[,name]]]]
 
 This parameter is used to preselect configurations.
 "name" should be one of the known compiler names (e.g. "GNAT", "GCC",...), the
@@ -1933,24 +1945,20 @@ computed automatically by @code{gprconfig}. You can either specify them, or
 use an empty string to get the default value and specify a later parameter.
 
 @smallexample
-  gprconfig -config GNAT,/usr/bin       # automatic parameters
-  gprconfig -config GCC,/usr/bin,,C     # automatic version
+  gprconfig --config Ada,,,/usr/bin       # automatic parameters
+  gprconfig --config C,,,/usr/bin,C       # automatic version
 @end smallexample
 
-@item -l[lang1,lang2,..]
-
-This switch is use to automatically select the first compiler for each
-language specified in the list. When no language is specified, the default
-is to select "ada,c,c++". There can be no space between -l and the list of
-languages.
-
-@item -batch
+@item --batch
 
 If this parameter is specified, @code{gprconfig} doesn't go into its
 interactive compiler selection, but generates the output configuration file
-directly from the compilers selected with the @code{-config} command line
+directly from the compilers selected with the @code{--config} command line
 switch.
 
+@item -h
+
+Display help for @code{gprconfig} switches.
 @end itemize
 
 @c ----------------------------------------------------------------------
