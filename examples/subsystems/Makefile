@@ -3,7 +3,7 @@ all: default.cgpr
 	gprbuild -Pada_main
 
 default.cgpr:
-	gprconfig -batch -config GNAT,,,Ada,,default  -config GCC,,,C -o $@
+	gprconfig --batch --config Ada,,default  --config C -o $@
 
 clean: force
 	gprclean -r -Pc_main

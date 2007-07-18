@@ -4,7 +4,7 @@ all: default.cgpr
 	gprbuild ft3.gpr
 
 default.cgpr:
-	gprconfig -batch -config GNAT  -config G77 -o $@
+	gprconfig --batch --config Ada  --config Fortran -o $@
 
 clean:
 	gprclean -q -r ft1.gpr
