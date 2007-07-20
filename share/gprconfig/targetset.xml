@@ -7,4 +7,26 @@
     <target>i386-redhat-linux</target>
   </targetset>
 
+  <!-- ia64 linux -->
+  <targetset>
+    <target>ia64-unknown-linux-gnu</target>
+    <target>ia64-sgi-linux-gnu</target>
+    <target>ia64-hp-linux-gnu</target>
+    <target>ia64-redhat-linux</target>
+    <target>ia64-suse-linux</target>
+  </targetset>
+
+  <!-- x86_64 linux -->
+  <targetset>
+    <target>x86_64-pc-linux-gnu</target>
+    <target>x86_64-redhat-linux</target>
+    <target>x86_64-suse-linux</target>
+  </targetset>
+
+  <!-- x86 solaris -->
+  <targetset>
+    <target>i386-pc-solaris2.10</target>
+    <target>i686-pc-solaris2.8</target>
+  </targetset>
+
 </gprconfig>
