@@ -1021,8 +1021,12 @@ different languages are spawned concurently.
 @c  ------------------------------------------------------------------------
 
 @menu
+* Project Level Attributes::
 * Package Naming::
-* Package Language_Processing::
+* Package Builder::
+* Package Compiler::
+* Package Binder::
+* Package Linker::
 @end menu
 
 @noindent
@@ -1031,12 +1035,13 @@ characteristics of the toolchains that can be used to compile sources and
 build libraries and executables.
 
 A configuration file is a special kind of project file: it uses the same
-syntax as a standard project file but its content is limited to two packages:
-Naming and Language_Processing and some of their attributes.
+syntax as a standard project file. Attributes in the configuration file
+define the configuration. Some of these attributes have a special meaning
+in the configuration.
 
 The default name of the configuration file, when to specified to gprbuild by
 switch --config= is "default.cgpr". Although the name of the configuration
-file can be valid file name, it is recommended that its suffix be ".cgpr" (for
+file can be any valid file name, it is recommended that its suffix be ".cgpr" (for
 Configuration GNAT Project), so that it cannot be confused with a standard
 project file which has the suffix ".gpr".
 
@@ -1044,6 +1049,211 @@ In the description of the attributes that follows, when an attribute is an
 associative array indexed by the language name, for example
 Spec_Suffix (<language>), then the name of the language is case insensitive.
 For example, "C" and "c" are allowed.
+
+@node Project Level Attributes
+@section Project Level Attributes
+
+@menu
+* General Attributes::
+* General Library Related Attributes::
+* Archive Related Attributes::
+* Shared Library Related Attributes::
+@end menu
+
+@node General Attributes
+@subsection General Attributes
+
+@itemize @bullet
+
+@item Default_Language
+
+Specifies the name of the language of the immediate sources of a project when
+attribute Languages is not declared in the project. If attribute
+Default_Language is not declared in the configuration file, then all user
+project files in the project tree must have an attribute Languages declared
+except when the extend another project. Example:
+
+@smallexample
+   for Default_Language use "ada";
+@end smallexample
+
+@item Run_Path_Option
+
+Specifies a "run path option", that is an option to use when linking an
+executable or a shared library to indicate the path where to look for other
+libraries. The value of this attribute is a string list. When linking an
+executable or a shared library, the search path is concatenated with the last
+string in the list, which may be an empty string. Example:
+
+@smallexample
+   for Run_Path_Option  use ("-Wl,-rpath,");
+@end smallexample
+
+@item Toolchain_Version (<language>)
+
+Specifies a version for a toolchain, as a single string. This toolchain
+version is passed to the library builder. Example:
+
+@smallexample
+   for Toolchain_Version ("Ada") use "GNAT 6.1";
+@end smallexample
+
+@item Toolchain_Description (<language>)
+
+Specifies as a single string a description of a toolchain. This attribute is
+not directly used by gprbuild or its auxiliary tools (gprbind and gprlib) but
+may be used by other tools, for example GPS. Example:
+
+@smallexample
+   for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
+@end smallexample
+
+@end itemize
+
+@node General Library Related Attributes
+@subsection General Library Related Attributes
+
+@itemize @bullet
+
+@item Library_Support
+
+Specifies the level of support for library project. If this attribute is not
+specified, then library projects are not supported. The only potential values
+for this attribute are "none", "static_only" and "full". Example:
+
+@smallexample
+   for Library_Support use "full";
+@end smallexample
+
+@item Library_Builder
+
+Specifies the name of the executable for the library builder. Example:
+
+@smallexample
+   for Library_Builder use "/.../gprlib";
+@end smallexample
+
+@end itemize
+
+@node Archive Related Attributes
+@subsection Archive Related Attributes
+
+@itemize @bullet
+
+@item Archive_Builder
+
+Specifies the name of the executable of the archive builder with the minimum
+options, if any. Example:
+
+@smallexample
+   for Archive_Builder use ("ar", "cr");
+@end smallexample
+
+@item Archive_Indexer
+
+Specifies the name of the executable of the archive indexer with the minimum
+options, if any. If this attribute is not specified, then there is no
+archive indexer. Example:
+
+@smallexample
+   for Archive_Indexer use ("ranlib");
+@end smallexample
+
+@item Archive_Suffix
+
+Specifies the suffix of the archives. If this attribute is not specified, then
+the suffix of the archives is defaulted to ".a". Example:
+
+@smallexample
+   for Archive_Suffix use ".olb"; --  for VMS
+@end smallexample
+
+@item Library_Partial_Linker
+
+Specifies the name of the executable of the partial linker with the options
+to be used, if any. If this attribute is not specified, then there is no
+partial linking. Example:
+
+@smallexample
+   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+@end smallexample
+
+@end itemize
+
+@node Shared Library Related Attributes
+@subsection Shared Library Related Attributes
+
+@itemize @bullet
+
+@item Shared_Library_Prefix
+
+Specifies the prefix of the file names of shared libraries. When this attribute
+is not specified, the prefix is "lib". Example:
+
+@smallexample
+   for Shared_Library_Prefix use ""; --  for Windows
+@end smallexample
+
+@item Shared_Library_Suffix
+
+Specifies the suffix of the file names of shared libraries. When this attribute
+is not specified, the prefix is ".so". Example:
+
+@smallexample
+   for Shared_Library_Suffix use ".dll"; --  for Windows
+@end smallexample
+
+@item Symbolic_Link_Supported
+
+Specifies if symbolic links are supported by the platforms. The possible values
+of this attribute are "false" (the default) and "true". When this attribute is
+not specified, symbolic links are not supported.
+
+@smallexample
+   for Symbolic_Link_Supported use "true";
+@end smallexample
+
+@item Library_Major_Minor_ID_Supported
+
+Specifies if major and minor IDs are supported for shared libraries.
+The possible values of this attribute are "false" (the default) and "true".
+When this attribute is not specified, major and minor IDs are not supported.
+
+@smallexample
+   for Library_Major_Minor_ID_Supported use "True";
+@end smallexample
+
+@item Library_Auto_Init_Supported
+
+Specifies if library auto initialization is supported. The possible values of
+this attribute are "false" (the default) and "true". When this attribute is not
+specified, library auto initialization is not supported.
+
+@smallexample
+   for Library_Auto_Init_Supported use "true";
+@end smallexample
+
+@item Shared_Library_Minimum_Switches
+
+Specifies the minimum options to be used when building shared library. These
+options are put in the appropriate section in the library exchange file when
+the library builder is invoked. Example:
+
+@smallexample
+   for Shared_Library_Minimum_Switches use  ("-shared");
+@end smallexample
+
+@item Library_Version_Switches
+
+Specifies the option or options to be used when a library version is used.
+These options are put in the appropriate section in the library exchange file
+when the library builder is invoked. Example:
+
+@smallexample
+   for Library_Version_Switches use ("-Wl,-soname,");
+@end smallexample
+
+@end itemize
 
 @node Package Naming
 @section Package Naming
@@ -1107,138 +1317,66 @@ Example:
 
 @end itemize
 
-@node Package Language_Processing
-@section Package Language_Processing
-
-@menu
-* General Attributes::
-* Compiling Attributes::
-* Mapping File Related Attributes::
-* Config File Related Attributes::
-* Dependency Related Attributes::
-* Search Path Related Attributes::
-* Binding Related Attributes::
-* Linking Related Attributes::
-* General Library Related Attributes::
-* Archive Related Attributes::
-* Shared Library Related Attributes::
-@end menu
-
-@node General Attributes
-@subsection General Attributes
+@node Package Builder
+@section Package Builder
 
 @itemize @bullet
 
-@item Default_Language
-
-Specifies the name of the language of the immediate sources of a project when
-attribute Languages is not declared in the project. If attribute
-Default_Language is not declared in the configuration file, then all user
-project files in the project tree must have an attribute Languages declared
-except when the extend another project. Example:
-
-@smallexample
-   for Default_Language use "ada";
-@end smallexample
-
-@item Run_Path_Option
-
-Specifies a "run path option", that is an option to use when linking an
-executable or a shared library to indicate the path where to look for other
-libraries. The value of this attribute is a string list. When linking an
-executable or a shared library, the search path is concatenated with the last
-string in the list, which may be an empty string. Example:
-
-@smallexample
-   for Run_Path_Option  use ("-Wl,-rpath,");
-@end smallexample
-
 @item Executable_Suffix
 
-Specifies the default executable suffix. This default may be overwritten if
-attribute Executable_Suffix is declared in package Builder of the main user
-project. If no attribute Executable_Suffix is declared, then the default
-executable suffix for the host platform is used. Example:
+Specifies the default executable suffix. If no attribute Executable_Suffix is
+declared, then the default executable suffix for the host platform is used.
+Example:
 
 @smallexample
-   for Default_Suffix use ".exe";
-@end smallexample
-
-@item Toolchain_Version (<language>)
-
-Specifies a version for a toolchain, as a single string. This toolchain
-version is passed to the library builder. Example:
-
-@smallexample
-   for Toolchain_Version ("Ada") use "GNAT 6.1";
-@end smallexample
-
-@item Toolchain_Description (<language>)
-
-Specifies as a single string a description of a toolchain. This attribute is
-not directly used by gprbuild or its auxiliary tools (gprbind and gprlib) but
-may be used by other tools, for example GPS. Example:
-
-@smallexample
-   for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
+   for Executable_Suffix use ".exe";
 @end smallexample
 
 @end itemize
 
-@node Compiling Attributes
-@subsection Compiling Attributes
+@node Package Compiler
+@section Package Compiler
+
+@menu
+* General Compilation Attributes::
+* Mapping File Related Attributes::
+* Config File Related Attributes::
+* Dependency Related Attributes::
+@end menu
+
+@node General Compilation Attributes
+@subsection General Compilation Attributes
 
 @itemize @bullet
 
-@item Language_Kind (<language>)
-
-Specifies if a language is file based or unit based. By default, if attribute
-Language_Kind is not declared for a language, the language is file based.
-There are only two possible values for this attribute: "file_based" or
-"unit_based". Example:
-
-@smallexample
-   for Language_Kind ("Ada") use "unit_based";
-@end smallexample
-
-@item Compiler_Driver (<language>)
+@item Driver (<language>)
 
 Specifies the name of the executable for the compiler of a language. The single
 string value of this attribute may be an absolute path or a relative path. If
 relative, then the execution path is searched. Examples:
 
 @smallexample
-   for Compiler_Driver ("C++") use "g++";
-   for Compiler_Driver ("Ada") use "/.../bin/gcc";
+   for Driver ("C++") use "g++";
+   for Driver ("Ada") use "/.../bin/gcc";
 @end smallexample
 
-@item Minimum_Compiler_Options (<language>)
+@item Switches (<language>)
 
 Specifies the minimum options that must be used when invoking the compiler
 of a language. Examples:
 
 @smallexample
-   for Minimum_Compiler_Options ("C")   use ("-c", "-x", "c");
-   for Minimum_Compiler_Options ("Ada") use ("-c", "-x", "ada", "-gnatA");
+   for Switches ("C")   use ("-c", "-x", "c");
+   for Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
 @end smallexample
 
-@item Compiler_PIC_Option (<language>)
+@item PIC_Option (<language>)
 
 Specifies the option or options that must be used when compiling a source of
 a language to be put in a shared library. Example:
 
 @smallexample
-   for Compiler_PIC_Option ("C") use ("-fPIC");
-@end smallexample
-
-@item Runtime_Project (<language>)
-
-Specifies, if there is one, the path of the runtime project of a language.
-If it is a relative path, it is relative to the directory of the configuration
-file. Example:
-
-@smallexample
-   for Runtime_Project ("Ada") use "/.../share/gpr/ada_runtime.gpr";
+   for PIC_Option ("C") use ("-fPIC");
 @end smallexample
 
 @end itemize
@@ -1386,33 +1524,20 @@ one. Example:
 
 @itemize @bullet
 
-@item Dependency_File_Kind (<language>)
+@item Dependency_Switches (<language>)
 
-Specifies the dependency kind for a language. The case insensitive value of
-this attribute must be "none" (the default), "Makefile" (for most toolchains)
-or "ALI_File" (for GNAT). Example:
-
-@smallexample
-   for Dependency_File_Kind ("C")   use "Makefile";
-   for Dependency_File_Kind ("Ada") use "ALI_File";
-@end smallexample
-
-@item Dependency_Option (<language>)
-
-When Dependency_File_Kind is "Makefile", attribute Dependency_Option specifies
+For languages other than Ada, attribute Dependency_Switches specifies
 the option or options to add to the compiler invocation so that it creates
 the dependency file at the same time. The value of attribute Dependency_Option
 is a string list. The name of the dependency file is added to the last string
 in the list, which may be empty. Example:
 
 @smallexample
-   for Dependency_Option ("C") use ("-Wp,-MD,");
+   for Dependency_Switches ("C") use ("-Wp,-MD,");
 @end smallexample
 
 With this Dependency_Option, when compiling "file.c", the compiler will be
 invoked with the option "-Wp,-MD,file.d".
-
-Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
 
 @item Compute_Dependency (<language>)
 
@@ -1433,7 +1558,7 @@ Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
 
 @itemize @bullet
 
-@item Include_Option (<language>)
+@item Include_Switches (<language>)
 
 Specifies the option or options to use when invoking the compiler to indicate
 that a directory is part of the source search path. The value of this
@@ -1441,10 +1566,10 @@ attribute is a string list. The full path name of the directory is concatenated
 with the last string in the string list, which may be empty. Example:
 
 @smallexample
-   for Include_Option ("C") use ("-I");
+   for Include_Switches ("C") use ("-I");
 @end smallexample
 
-Attribute Include_Option cannot specified if either one of the attributes
+Attribute Include_Switches is ignored if either one of the attributes
 Include_Path or Include_Path_File are specified.
 
 @item Include_Path (<language>)
@@ -1458,6 +1583,9 @@ search path to be used by the compiler. Example:
    for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
 @end smallexample
 
+Attribute Include_Path is ignored if attribute Include_Path_File is declared
+for the language.
+
 @item Include_Path_File (<language>)
 
 Specifies the name of an environment variable that is used by the compiler to
@@ -1469,7 +1597,40 @@ source search path. Example:
    for Include_Path_File ("Ada") use "ADA_PRJ_INCLUDE_FILE";
 @end smallexample
 
-If both attributes Include_Path and
+@end itemize
+
+@node Package Binder
+@section Package Binder
+
+@itemize @bullet
+
+@item Driver (<language>)
+
+Specifies the name of the executable of the binder driver. When this attribute
+is not specified, there is no binder for the language. Example:
+
+@smallexample
+   for Driver ("Ada") use "/.../gprbind";
+@end smallexample
+
+@item Switches (<language>)
+
+Specifies the minimum options to be used when invoking the binder driver.
+These options are put in the appropriate section in the binder exchange file,
+one option per line. Example:
+
+@smallexample
+   for Switches ("Ada") use ("--prefix=<prefix>");
+@end smallexample
+
+@item Prefix (<language>)
+
+Specifies the prefix to be used in the name of the binder exchange file.
+Example:
+
+@smallexample
+   for Prefix ("C++") use ("c__");
+@end smallexample
 
 @item Objects_Path (<language>)
 
@@ -1494,241 +1655,22 @@ object search path. Example:
 
 @end itemize
 
-@node Binding Related Attributes
-@subsection Binding Related Attributes
+@node Package Linker
+@section Package Linker
 
 @itemize @bullet
 
-@item Binder_Driver (<language>)
-
-Specifies the name of the executable of the binder driver. When this attribute
-is not specified, there is no binder for the language. Example:
-
-@smallexample
-   for Binder_Driver ("Ada") use "/.../gprbind";
-@end smallexample
-
-@item Minimum_Binder_Options (<language>)
-
-Specifies the minimum options to be used when invoking the binder driver.
-These options are put in the appropriate section in the binder exchange file,
-one option per line. Example:
-
-@smallexample
-   for Minimum_Binder_Options ("Ada") use ("gnatbind-prefix=<prefix>");
-@end smallexample
-
-@item Binder_Prefix (<language>)
-
-Specifies the prefix to be used in the name of the binder exchange file.
-Example:
-
-@smallexample
-   for Binder_Prefix ("C++") use ("c__");
-@end smallexample
-
-@end itemize
-
-@node Linking Related Attributes
-@subsection Linking Related Attributes
-
-@itemize @bullet
-
-@item Default_Linker
+@item Driver
 
 Specifies the name of the executable of the default linker. Example:
 
 @smallexample
-   for Default_Linker use "g++";
+   for Driver use "g++";
 @end smallexample
 
-@item Default_Minimum_Linker_Options
+@item Required_Switches
 
 Specifies the minimum options to be used when invoking the default linker.
-
-@item Linker_Executable_Option
-
-Specifies the option or options to be used when invoking the linker to indicate
-the name of the executable produced. The value of this attribute is a string
-list. The name of the executable is concatenated with the last string in the
-string list, which may be empty. If this attribute is not specified, then
-the option is "-o" followed by the name of the executable. Example (equivalent
-to the default):
-
-@smallexample
-   for Linker_Executable_Option use ("-o", "");
-@end smallexample
-
-@item Linker_Lib_Dir_Option
-
-Specifies the option or options to be used when invoking the linker to indicate
-a directory to be searched by the linker to find libraries. The value of this
-attribute is a string list. The path name of the directory is concatenated
-with the last string in the string list, which may be empty. If this attribute
-is not specified, then the option is "-L" concatenated with the directory path
-name. Example (equivalent to the default):
-
-@smallexample
-   for Linker_Lib_Dir_Option use ("-L");
-@end smallexample
-
-@item Linker_Lib_Name_Option
-
-Specifies the option or options to be used when invoking the linker to indicate
-the name of a library to be used by the linker to. The value of this
-attribute is a string list. The name of the library is concatenated
-with the last string in the string list, which may be empty. If this attribute
-is not specified, then the option is "-l" concatenated with the library name.
-Example (equivalent to the default):
-
-@smallexample
-   for Linker_Lib_Name_Option use ("-l");
-@end smallexample
-
-@end itemize
-
-@node General Library Related Attributes
-@subsection General Library Related Attributes
-
-@itemize @bullet
-
-@item Library_Support
-
-Specifies the level of support for library project. If this attribute is not
-specified, then library projects are not supported. The only potential values
-for this attribute are "none", "static_only" and "full". Example:
-
-@smallexample
-   for Library_Support use "full";
-@end smallexample
-
-@item Library_Builder
-
-Specifies the name of the executable for the library builder. Example:
-
-@smallexample
-   for Library_Builder use "/.../gprlib";
-@end smallexample
-
-@end itemize
-
-@node Archive Related Attributes
-@subsection Archive Related Attributes
-
-@itemize @bullet
-
-@item Archive_Builder
-
-Specifies the name of the executable of the archive builder with the minimum
-options, if any. Example:
-
-@smallexample
-   for Archive_Builder use ("ar", "cr");
-@end smallexample
-
-@item Archive_Indexer
-
-Specifies the name of the executable of the archive indexer with the minimum
-options, if any. If this attribute is not specified, then there is no
-archive indexer. Example:
-
-@smallexample
-   for Archive_Indexer use ("ranlib");
-@end smallexample
-
-@item Archive_Suffix
-
-Specifies the suffix of the archives. If this attribute is not specified, then
-the suffix of the archives is defaulted to ".a". Example:
-
-@smallexample
-   for Archive_Suffix use ".olb"; --  for VMS
-@end smallexample
-
-@item Library_Partial_Linker
-
-Specifies the name of the executable of the partial linker with the options
-to be used, if any. If this attribute is not specified, then there is no
-partial linking. Example:
-
-@smallexample
-   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
-@end smallexample
-
-@end itemize
-
-@node Shared Library Related Attributes
-@subsection Shared Library Related Attributes
-
-@itemize @bullet
-
-@item Shared_Library_Prefix
-
-Specifies the prefix of the file names of shared libraries. When this attribute
-is not specified, the prefix is "lib". Example:
-
-@smallexample
-   for Shared_Library_Prefix use ""; --  for Windows
-@end smallexample
-
-@item Shared_Library_Suffix
-
-Specifies the suffix of the file names of shared libraries. When this attribute
-is not specified, the prefix is ".so". Example:
-
-@smallexample
-   for Shared_Library_Suffix use ".dll"; --  for Windows
-@end smallexample
-
-@item Symbolic_Link_Supported
-
-Specifies if symbolic links are supported by the platforms. The possible values
-of this attribute are "false" (the default) and "true". When this attribute is
-not specified, symbolic links are not supported.
-
-@smallexample
-   for Symbolic_Link_Supported use "true";
-@end smallexample
-
-@item Library_Major_Minor_ID_Supported
-
-Specifies if major and minor IDs are supported for shared libraries.
-The possible values of this attribute are "false" (the default) and "true".
-When this attribute is not specified, major and minor IDs are not supported.
-
-@smallexample
-   for Library_Major_Minor_ID_Supported use "True";
-@end smallexample
-
-@item Library_Auto_Init_Supported
-
-Specifies if library auto initialization is supported. The possible values of
-this attribute are "false" (the default) and "true". When this attribute is not
-specified, library auto initialization is not supported.
-
-@smallexample
-   for Library_Auto_Init_Supported use "true";
-@end smallexample
-
-@item Shared_Library_Minimum_Options
-
-Specifies the minimum options to be used when building shared library. These
-options are put in the appropriate section in the library exchange file when
-the library builder is invoked. Example:
-
-@smallexample
-   for Shared_Library_Minimum_Options use  ("-shared");
-@end smallexample
-
-@item Library_Version_Options
-
-Specifies the option or options to be used when a library version is used.
-These options are put in the appropriate section in the library exchange file
-when the library builder is invoked. Example:
-
-@smallexample
-   for Library_Version_Options use ("-Wl,-soname,");
-@end smallexample
 
 @end itemize
 
