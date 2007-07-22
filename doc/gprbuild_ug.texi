@@ -1342,6 +1342,7 @@ Example:
 * Mapping File Related Attributes::
 * Config File Related Attributes::
 * Dependency Related Attributes::
+* Search Path Related Attributes::
 @end menu
 
 @node General Compilation Attributes
