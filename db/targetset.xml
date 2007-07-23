@@ -31,4 +31,11 @@
     <target>i686-pc-solaris2.8</target>
   </targetset>
 
+  <!-- x86 windows -->
+  <!-- To be confirmed.
+  <targetset>
+    <target>i686-pc-cygwin</target>
+    <target>pentium-mingw32msv</target>
+  </targetset>
+  -->
 </gprconfig>
