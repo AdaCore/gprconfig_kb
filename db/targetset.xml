@@ -19,6 +19,7 @@
   <!-- x86_64 linux -->
   <targetset>
     <target>x86_64-pc-linux-gnu</target>
+    <target>x86_64-unknown-linux-gnu</target>
     <target>x86_64-redhat-linux</target>
     <target>x86_64-suse-linux</target>
   </targetset>
@@ -26,6 +27,7 @@
   <!-- x86 solaris -->
   <targetset>
     <target>i386-pc-solaris2.10</target>
+    <target>i686-pc-solaris2.10</target>
     <target>i686-pc-solaris2.8</target>
   </targetset>
 
