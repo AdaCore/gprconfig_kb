@@ -24,6 +24,8 @@
     <target>x86_64-suse-linux</target>
   </targetset>
 
+  <!-- x86 windows, To be confirmed: i686-pc-cygwin pentium-mingw32msv -->
+
   <!-- x86 solaris -->
   <targetset>
     <target>i386-pc-solaris2.10</target>
@@ -31,11 +33,4 @@
     <target>i686-pc-solaris2.8</target>
   </targetset>
 
-  <!-- x86 windows -->
-  <!-- To be confirmed.
-  <targetset>
-    <target>i686-pc-cygwin</target>
-    <target>pentium-mingw32msv</target>
-  </targetset>
-  -->
 </gprconfig>
