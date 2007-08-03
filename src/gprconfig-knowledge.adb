@@ -1219,7 +1219,8 @@ package body GprConfig.Knowledge is
       end if;
 
       Comp.Name       := To_Unbounded_String (Name);
-      Comp.Path       := To_Unbounded_String (Directory);
+      Comp.Path       := To_Unbounded_String
+        (Normalize_Pathname (Directory, Case_Sensitive => False));
       Comp.Path_Order := Path_Order;
       Comp.Extra_Tool := Descr.Extra_Tool;
       Comp.Prefix     := To_Unbounded_String (Prefix);

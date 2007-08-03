@@ -296,7 +296,8 @@ procedure GprConfig.Main is
             Comp.Runtime := TU (Element (C));
             Next (C);
             if Has_Element (C) then
-               Comp.Path := TU (Element (C));
+               Comp.Path := TU (Normalize_Pathname (Element (C),
+                                                    Case_Sensitive => False));
                Next (C);
                if Has_Element (C) then
                   Comp.Name := TU (Element (C));
