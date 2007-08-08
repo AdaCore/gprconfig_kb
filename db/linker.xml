@@ -136,7 +136,7 @@
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
    for Library_Support  use "full";
-   for Shared_Library_Prefix use "";
+   for Shared_Library_Prefix use "lib";
    for Symbolic_Link_Supported use "false";
    for Library_Major_Minor_Id_Supported use "false";
    for Shared_Library_Minimum_Switches use ("-shared");
