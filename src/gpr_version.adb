@@ -31,52 +31,36 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Gnatvsn; use Gnatvsn;
+
 package body GPR_Version is
-
-   -----------------------
-   -- Gpr_Free_Software --
-   -----------------------
-
-   function Gpr_Free_Software return String is
-   begin
-      case Build_Type is
-         when GPL | FSF =>
-            return
-              "This is free software; see the source for copying conditions." &
-              ASCII.LF &
-              "There is NO warranty; not even for MERCHANTABILITY or FITNESS" &
-              " FOR A PARTICULAR PURPOSE.";
-
-         when Gnatpro =>
-            return
-              "This is free software; see the source for copying conditions." &
-               ASCII.LF &
-               "See your AdaCore support agreement for details of warranty" &
-               " and support." &
-               ASCII.LF &
-               "If you do not have a current support agreement, then there" &
-               " is absolutely" &
-               ASCII.LF &
-               "no warranty; not even for MERCHANTABILITY or FITNESS FOR" &
-               " A PARTICULAR" &
-               ASCII.LF &
-               "PURPOSE.";
-      end case;
-   end Gpr_Free_Software;
 
    ------------------------
    -- Gpr_Version_String --
    ------------------------
 
    function Gpr_Version_String return String is
+      Last  : constant Positive := Gnat_Static_Version_String'Last;
+      First : Positive;
+
    begin
+      --  Find the beginning of the current date
+
+      First := Last;
+      while First > 1 and then Gnat_Static_Version_String (First) /= '(' loop
+         First := First - 1;
+      end loop;
+
       case Build_Type is
          when Gnatpro =>
-            return "Pro " & Gpr_Static_Version_String;
+            return "Pro " & Gpr_Version & " " &
+                    Gnat_Static_Version_String (First .. Last);
          when GPL =>
-            return "GPL " & Gpr_Static_Version_String;
+            return "GPL " & Gpr_Version & " " &
+                    Gnat_Static_Version_String (First .. Last);
          when FSF =>
-            return Gpr_Static_Version_String;
+            return Gpr_Version & " " &
+                    Gnat_Static_Version_String (First .. Last);
       end case;
    end Gpr_Version_String;
 

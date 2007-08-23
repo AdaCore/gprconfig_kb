@@ -35,7 +35,6 @@ with Confgpr;   use Confgpr;
 with Debug;     use Debug;
 with Errout;    use Errout;
 with Err_Vars;
-with GPR_Version;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_Tables;
@@ -43,6 +42,7 @@ with GNAT.HTable;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gpr_Util;         use Gpr_Util;
+with GPR_Version;      use GPR_Version;
 with Gprexch;          use Gprexch;
 with Hostparm;         use Hostparm;
 with Makeutl;          use Makeutl;
@@ -58,6 +58,7 @@ with Prj.Pars;
 with Prj.Util;         use Prj.Util;
 with Sinput.P;
 with Snames;           use Snames;
+with Switch;           use Switch;
 with System;
 with System.Case_Util; use System.Case_Util;
 with Table;
@@ -4872,13 +4873,8 @@ package body Buildgpr is
 
       if not Copyright_Output then
          Copyright_Output := True;
-         Write_Eol;
-         Write_Str ("GPRBUILD ");
-         Write_Str (GPR_Version.Gpr_Version_String);
-         Write_Str (" Copyright 2004-");
-         Write_Str (GPR_Version.Current_Year);
-         Write_Str (", Free Software Foundation, Inc.");
-         Write_Eol;
+         Display_Version
+           ("GPRBUILD", "2004", Version_String => Gpr_Version_String);
       end if;
    end Copyright;
 
@@ -6075,6 +6071,16 @@ package body Buildgpr is
       --  Get the command line arguments
 
       All_Phases := True;
+
+      --  First check for --version or --help
+
+      Check_Version_And_Help
+        ("GPRBUILD",
+         "2004",
+         Usage'Access,
+         Version_String => Gpr_Version_String);
+
+      --  Now process the other options
 
       Scan_Args : for Next_Arg in 1 .. Argument_Count loop
          Scan_Arg (Argument (Next_Arg), Command_Line => True);
@@ -7978,29 +7984,7 @@ package body Buildgpr is
 
          if Arg (1) = '-' then
 
-            if Command_Line and then Arg = "--version" then
-               Write_Str ("GPRBUILD ");
-               Write_Str (GPR_Version.Gpr_Version_String);
-               Write_Eol;
-               Write_Str ("Copyright 2004-");
-               Write_Str (GPR_Version.Current_Year);
-               Write_Str (", Free Software Foundation, Inc.");
-               Write_Eol;
-               Write_Line (GPR_Version.Gpr_Free_Software);
-               Write_Eol;
-               Exit_Program (E_Success);
-
-            elsif Command_Line and then Arg = "--help" then
-               Copyright_Output := True;
-               --  To avoid the Copyright notice that should not be output
-               --  for --help.
-
-               Usage;
-               Write_Eol;
-               Write_Line ("Report bugs to report@adacore.com");
-               Exit_Program (E_Success);
-
-            elsif Command_Line and then Arg = "--display-paths" then
+            if Command_Line and then Arg = "--display-paths" then
                Display_Paths := True;
 
             elsif Command_Line

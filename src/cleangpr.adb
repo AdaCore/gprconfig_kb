@@ -26,13 +26,13 @@
 
 with Csets;
 with Confgpr;     use Confgpr;
-with GPR_Version; use GPR_Version;
 with Gprexch;     use Gprexch;
+with GPR_Version; use GPR_Version;
 with Gpr_Util;    use Gpr_Util;
 with Makeutl;     use Makeutl;
+with MLib;        use MLib;
 with Namet;       use Namet;
 with Opt;         use Opt;
-with Output;      use Output;
 with Osint;
 with Prj;         use Prj;
 with Prj.Ext;
@@ -40,6 +40,7 @@ with Prj.Pars;
 with Prj.Util;    use Prj.Util;
 with Sinput.P;
 with Snames;
+with Switch;      use Switch;
 with Table;
 
 with Ada.Command_Line; use Ada.Command_Line;
@@ -286,12 +287,12 @@ package body Cleangpr is
       Data    : Project_Data := Project_Tree.Projects.Table (Project);
 
       Lib_Filename : constant String := Get_Name_String (Data.Library_Name);
-      DLL_Name     : constant String :=
+      DLL_Name     : String :=
                        Get_Name_String
                          (Project_Tree.Config.Shared_Lib_Prefix) &
                        Lib_Filename &
                        Get_Name_String (Project_Tree.Config.Shared_Lib_Suffix);
-      Archive_Name : constant String :=
+      Archive_Name : String :=
                        "lib" & Lib_Filename &
                        Get_Name_String (Project_Tree.Config.Archive_Suffix);
       Library_Exchange_File_Name : constant String :=
@@ -306,6 +307,9 @@ package body Cleangpr is
 
    begin
       if Data.Library then
+         Osint.Canonical_Case_File_Name (DLL_Name);
+         Osint.Canonical_Case_File_Name (Archive_Name);
+
          declare
             Obj_Directory     : constant String :=
                                   Get_Name_String (Data.Object_Directory);
@@ -353,7 +357,9 @@ package body Cleangpr is
                Read (Direc, Name, Last);
                exit when Last = 0;
 
-               if Is_Regular_File (Name (1 .. Last)) then
+               if Is_Regular_File (Name (1 .. Last))
+                 or else Is_Symbolic_Link (Name (1 .. Last))
+               then
                   Osint.Canonical_Case_File_Name (Name (1 .. Last));
 
                   if (Data.Library_Kind = Static and then
@@ -375,43 +381,79 @@ package body Cleangpr is
 
             Close (Direc);
 
-            if (Data.Library_Kind = Dynamic
-                or else Data.Library_Kind = Relocatable)
-              and then Data.Lib_Internal_Name /= No_Name
-            then
-               Get_Name_String (Data.Lib_Internal_Name);
-               Osint.Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+            if Project_Tree.Config.Symbolic_Link_Supported then
+               if (Data.Library_Kind = Dynamic
+                   or else Data.Library_Kind = Relocatable)
+                 and then Data.Lib_Internal_Name /= No_Name
+               then
+                  declare
+                     Lib_Version : String :=
+                                     Get_Name_String (Data.Lib_Internal_Name);
 
-               declare
-                  Lib_Version : String :=
-                                  Get_Name_String (Data.Lib_Internal_Name);
+                  begin
+                     Osint.Canonical_Case_File_Name (Lib_Version);
 
-               begin
-                  Osint.Canonical_Case_File_Name (Lib_Version);
+                     if Project_Tree.Config.Lib_Maj_Min_Id_Supported then
+                        declare
+                           Maj_Version : String :=
+                                         Major_Id_Name (DLL_Name, Lib_Version);
+                        begin
+                           if Maj_Version /= "" then
+                              Osint.Canonical_Case_File_Name (Maj_Version);
 
-                  Open (Direc, ".");
+                              Open (Direc, ".");
 
-                  --  For each regular file in the directory, if switch -n
-                  --  has not been specified, make it writable and delete the
-                  --  file if it is the library version file.
+                              --  For each regular file in the directory, if
+                              --  switch -n has not been specified, make it
+                              --  writable and delete the file if it is the
+                              --  library major version file.
 
-                  loop
-                     Read (Direc, Name, Last);
-                     exit when Last = 0;
+                              loop
+                                 Read (Direc, Name, Last);
+                                 exit when Last = 0;
 
-                     if Is_Regular_File (Name (1 .. Last))
-                       and then Name (1 .. Last) = Lib_Version
-                     then
-                        if not Do_Nothing then
-                           Set_Writable (Name (1 .. Last));
-                        end if;
+                                 if (Is_Regular_File (Name (1 .. Last))
+                                     or else
+                                     Is_Symbolic_Link (Name (1 .. Last)))
+                                   and then Name (1 .. Last) = Maj_Version
+                                 then
+                                    if not Do_Nothing then
+                                       Set_Writable (Name (1 .. Last));
+                                    end if;
 
-                        Delete (Lib_Directory, Name (1 .. Last));
+                                    Delete (Lib_Directory, Name (1 .. Last));
+                                 end if;
+                              end loop;
+
+                              Close (Direc);
+                           end if;
+                        end;
                      end if;
-                  end loop;
 
-                  Close (Direc);
-               end;
+                     Open (Direc, ".");
+
+                     --  For each regular file in the directory, if switch -n
+                     --  has not been specified, make it writable and delete
+                     --  the file if it is the library version file.
+
+                     loop
+                        Read (Direc, Name, Last);
+                        exit when Last = 0;
+
+                        if Is_Regular_File (Name (1 .. Last))
+                          and then Name (1 .. Last) = Lib_Version
+                        then
+                           if not Do_Nothing then
+                              Set_Writable (Name (1 .. Last));
+                           end if;
+
+                           Delete (Lib_Directory, Name (1 .. Last));
+                        end if;
+                     end loop;
+
+                     Close (Direc);
+                  end;
+               end if;
             end if;
 
             Change_Dir (Lib_ALI_Directory);
@@ -931,11 +973,8 @@ package body Cleangpr is
    begin
       if not Copyright_Displayed then
          Copyright_Displayed := True;
-         Put_Line
-           ("GPRCLEAN " & GPR_Version.Gpr_Version_String
-            & " Copyright 2006-"
-            & Current_Year
-            & " Free Software Foundation, Inc.");
+         Display_Version
+           ("GPRCLEAN", "2006", Version_String => Gpr_Version_String);
       end if;
    end Display_Copyright;
 
@@ -956,6 +995,7 @@ package body Cleangpr is
       --  Check that a project file was specified and get the configuration.
 
       if Project_File_Name = null then
+         Display_Copyright;
          Usage;
          return;
       end if;
@@ -1105,36 +1145,20 @@ package body Cleangpr is
             end Bad_Argument;
 
          begin
+            --  First deal with --version and --help
+
+            Check_Version_And_Help
+              ("GPRCLEAN",
+               "2006",
+               Usage'Unrestricted_Access,
+               Version_String => Gpr_Version_String);
+
+            --  Now deal with the other options
+
             if Arg'Length /= 0 then
                if Arg (1) = '-' then
                   if Arg'Length = 1 then
                      Bad_Argument;
-                  end if;
-
-                  --  First, deal with --version and --help
-
-                  if Arg = "--version" then
-                     Write_Str ("GPRCLEAN ");
-                     Write_Str (GPR_Version.Gpr_Version_String);
-                     Write_Eol;
-                     Write_Str ("Copyright 2006-");
-                     Write_Str (GPR_Version.Current_Year);
-                     Write_Str (", Free Software Foundation, Inc.");
-                     Write_Eol;
-                     Write_Line (GPR_Version.Gpr_Free_Software);
-                     Write_Eol;
-                     Osint.Exit_Program (Osint.E_Success);
-                  end if;
-
-                  if Arg = "--help" then
-                     Copyright_Displayed := True;
-                     --  To avoid the Copyright notice that should not be
-                     --  output for --help.
-
-                     Usage;
-                     Write_Eol;
-                     Write_Line ("Report bugs to report@adacore.com");
-                     Osint.Exit_Program (Osint.E_Success);
                   end if;
 
                   case Arg (2) is
@@ -1162,6 +1186,7 @@ package body Cleangpr is
                         Full_Path_Name_For_Brief_Errors := True;
 
                      when 'h' =>
+                        Display_Copyright;
                         Usage;
 
                      when 'n' =>
@@ -1337,7 +1362,6 @@ package body Cleangpr is
    begin
       if not Usage_Displayed then
          Usage_Displayed := True;
-         Display_Copyright;
 
          Put_Line ("Usage: gprclean [switches] -P<project> {name}");
 

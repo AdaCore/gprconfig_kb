@@ -27,10 +27,8 @@
 --  This is the version of the body of procedure Build_Shared_Lib for most
 --  non VMS platforms where shared libraries are supported.
 
-with Ada.Directories; use Ada.Directories;
-
+with MLib;   use MLib;
 with Output; use Output;
-with System;
 
 separate (Gprlib)
 procedure Build_Shared_Lib is
@@ -49,23 +47,12 @@ procedure Build_Shared_Lib is
 
    Symbolic_Link_Needed : Boolean := False;
 
-   Last_Maj : Positive;
-   Last     : Positive;
-   Ok_Maj   : Boolean := False;
+   Maj_Version : String_Access := new String'("");
 
    Result  : Integer;
    pragma Unreferenced (Result);
 
-   function Symlink
-     (Oldpath : System.Address;
-      Newpath : System.Address) return Integer;
-   pragma Import (C, Symlink, "__gnat_symlink");
-
    procedure Build (Output_File : String);
-
-   function Lib_Version return String;
-
-   procedure Remove_File (Filename : String);
 
    -----------
    -- Build --
@@ -162,42 +149,6 @@ procedure Build_Shared_Lib is
       end if;
    end Build;
 
-   -----------------
-   -- Lib_Version --
-   -----------------
-
-   function Lib_Version return String is
-   begin
-      if Ok_Maj then
-         return Library_Version (1 .. Last_Maj);
-      else
-         return Library_Version.all;
-      end if;
-   end Lib_Version;
-
-   -----------------
-   -- Remove_File --
-   -----------------
-
-   procedure Remove_File (Filename : String) is
-      File    : constant String := Filename & ASCII.Nul;
-      Success : Boolean;
-
-   begin
-      Delete_File (File'Address, Success);
-
-      if Opt.Verbose_Mode then
-         if Success then
-            Write_Str ("deleted ");
-
-         else
-            Write_Str ("could not delete ");
-         end if;
-
-         Write_Line (Filename);
-      end if;
-   end Remove_File;
-
 --  Start of processing for Build_Shared_Lib
 
 --  This body needs comments ???
@@ -214,54 +165,26 @@ begin
 
    else
       if Symbolic_Link_Supported then
-         Last_Maj := Library_Version'Last;
-
          if Major_Minor_Id_Supported then
-            while Last_Maj > 1 loop
-               if Library_Version (Last_Maj) in '0' .. '9' then
-                  Last_Maj := Last_Maj - 1;
-
-               else
-                  Ok_Maj := Last_Maj /= Library_Version'Last and then
-                            Library_Version (Last_Maj) = '.';
-
-                  if Ok_Maj then
-                     Last_Maj := Last_Maj - 1;
-                  end if;
-
-                  exit;
-               end if;
-            end loop;
-
-            if Ok_Maj then
-               Last := Last_Maj;
-               while Last > 1 loop
-                  if Library_Version (Last) in '0' .. '9' then
-                     Last := Last - 1;
-
-                  else
-                     Ok_Maj := Last /= Last_Maj and then
-                               Library_Version (Last) = '.';
-
-                     if Ok_Maj then
-                        Last := Last - 1;
-                        Ok_Maj :=
-                          Simple_Name (Library_Version (1 .. Last)) = Lib_File;
-                     end if;
-
-                     exit;
-                  end if;
-               end loop;
-            end if;
+            Maj_Version :=
+              new String'(Major_Id_Name (Lib_File, Library_Version.all));
          end if;
       end if;
 
       if Library_Version_Options.Last > 0 then
-         Library_Version_Options.Table (Library_Version_Options.Last)  :=
-           new String'
-             (Library_Version_Options.Table
-                  (Library_Version_Options.Last).all &
-              Lib_Version);
+         if Maj_Version.all /= "" then
+            Library_Version_Options.Table (Library_Version_Options.Last)  :=
+              new String'
+                (Library_Version_Options.Table
+                     (Library_Version_Options.Last).all & Maj_Version.all);
+
+         else
+            Library_Version_Options.Table (Library_Version_Options.Last)  :=
+              new String'
+                (Library_Version_Options.Table
+                     (Library_Version_Options.Last).all &
+                 Library_Version.all);
+         end if;
       end if;
 
       if not Is_Absolute_Path (Library_Version.all) then
@@ -270,50 +193,18 @@ begin
              (Library_Directory.all &
               Directory_Separator &
               Library_Version.all);
-
-         if Ok_Maj then
-            Last_Maj := Last_Maj + Library_Directory'Length + 1;
-         end if;
       end if;
 
       Build (Library_Version.all);
       Symbolic_Link_Needed :=
-        Symbolic_Link_Supported and then Library_Version.all /= Lib_File;
+        Symbolic_Link_Supported and then Library_Version.all /= Lib_Path;
 
       if Symbolic_Link_Needed then
-         declare
-            Oldpath : String (1 .. Library_Version.all'Length + 1);
-            Newpath : String (1 .. Lib_Path'Length + 1);
-
-         begin
-            Oldpath (1 .. Library_Version'Length) :=
-              Library_Version.all;
-            Oldpath (Oldpath'Last)            := ASCII.NUL;
-            Newpath (1 .. Lib_Path'Length)    := Lib_Path;
-            Newpath (Newpath'Last)            := ASCII.NUL;
-
-            Remove_File (Lib_Path);
-
-            Result := Symlink (Oldpath'Address, Newpath'Address);
-         end;
-      end if;
-
-      if Symbolic_Link_Supported and then Ok_Maj then
-         declare
-            Oldpath : String (1 .. Library_Version.all'Length + 1);
-            Newpath : String (1 .. Last_Maj + 1);
-
-         begin
-            Oldpath (1 .. Library_Version'Length) :=
-              Library_Version.all;
-            Oldpath (Oldpath'Last)  := ASCII.NUL;
-            Newpath (1 .. Last_Maj) := Library_Version (1 .. Last_Maj);
-            Newpath (Newpath'Last)  := ASCII.NUL;
-
-            Remove_File (Library_Version (1 .. Last_Maj));
-
-            Result := Symlink (Oldpath'Address, Newpath'Address);
-         end;
+         Create_Sym_Links
+           (Lib_Path,
+            Library_Version.all,
+            Library_Directory.all,
+            Maj_Version.all);
       end if;
 
    end if;
