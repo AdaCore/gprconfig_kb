@@ -40,27 +40,47 @@ package body GPR_Version is
    ------------------------
 
    function Gpr_Version_String return String is
-      Last  : constant Positive := Gnat_Static_Version_String'Last;
+      Last  : Positive := Gnat_Static_Version_String'Last;
       First : Positive;
 
-   begin
-      --  Find the beginning of the current date
+      Date : String (1 .. 10) := "(unknown) ";
 
-      First := Last;
-      while First > 1 and then Gnat_Static_Version_String (First) /= '(' loop
-         First := First - 1;
-      end loop;
+   begin
+      --  Find the beginning and the end of the current date, that is the last
+      --  string with 8 consecutive digits in Gnat_Static_Version_String.
+
+      Last_Loop :
+      while Last - Gnat_Static_Version_String'First >= 9 loop
+         if Gnat_Static_Version_String (Last) not in '0' .. '9' then
+            Last := Last - 1;
+
+         else
+            First := Last;
+            First_Loop :
+            while First >= Gnat_Static_Version_String'First and then
+                  Gnat_Static_Version_String (First) in '0' .. '9'
+            loop
+               if Last - First = 7 then
+                  Date :=
+                    '(' & Gnat_Static_Version_String (First .. Last) & ')';
+                  exit Last_Loop;
+
+               else
+                  First := First - 1;
+               end if;
+            end loop First_Loop;
+
+            Last := First;
+         end if;
+      end loop Last_Loop;
 
       case Build_Type is
          when Gnatpro =>
-            return "Pro " & Gpr_Version & " " &
-                    Gnat_Static_Version_String (First .. Last);
+            return "Pro " & Gpr_Version & " " & Date;
          when GPL =>
-            return "GPL " & Gpr_Version & " " &
-                    Gnat_Static_Version_String (First .. Last);
+            return "GPL " & Gpr_Version & " " & Date;
          when FSF =>
-            return Gpr_Version & " " &
-                    Gnat_Static_Version_String (First .. Last);
+            return Gpr_Version & " " & Date;
       end case;
    end Gpr_Version_String;
 

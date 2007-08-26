@@ -6118,6 +6118,7 @@ package body Buildgpr is
       end if;
 
       if Usage_Needed then
+         Copyright;
          Usage;
          Usage_Needed := False;
       end if;
@@ -6196,6 +6197,7 @@ package body Buildgpr is
       end if;
 
       if Project_File_Name = null then
+         Copyright;
          Usage;
          Exit_Program (E_Success);
       end if;
@@ -8314,7 +8316,6 @@ package body Buildgpr is
    begin
       if not Usage_Output then
          Usage_Output := True;
-         Copyright;
 
          Write_Str ("Usage: ");
          Osint.Write_Program_Name;
