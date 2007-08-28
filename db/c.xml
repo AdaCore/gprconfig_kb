@@ -6,6 +6,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="CYGMING-GCC" language="C" />
      </compilers>
      <config>
    package Naming is
@@ -30,7 +31,7 @@
      </compilers>
      <targets negate="true">
        <target name=".*LynxOS.*" />
-       <target name=".*pentium-mingw.*" />
+       <target name=".*mingw.*" />
        <target name=".*cygwin.*" />
        <target name=".*dec-osf.*" />
      </targets>
@@ -44,11 +45,8 @@
   <!-- for cygwin we make sure that the option -mno-cygwin is used -->
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" />
+       <compiler name="CYGMING-GCC" language="C" />
      </compilers>
-     <targets>
-     <target name=".*cygwin.*" />
-     </targets>
      <config>
    package Compiler is
       for Switches ("C") use

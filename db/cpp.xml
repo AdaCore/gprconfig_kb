@@ -5,19 +5,20 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++" language="C\+\+" />
+        <compiler name="G++" language="C++" />
+        <compiler name="CYGMING-GCC" language="C++" />
      </compilers>
      <config>
-   package Naming is
+package Naming is
       for Spec_Suffix ("C++") use ".hh";
       for Body_Suffix ("C++") use ".cpp";
    end Naming;
 
    package Compiler is
-      for Driver          ("C++") use "g++";
-      for Switches ("C++") use ("-c", "-x", "c++");
-      for Dependency_Switches        ("C++") use ("-Wp,-MD,");
-      for Include_Path             ("C++") use "CPATH";
+      for Driver              ("C++") use "g++";
+      for Switches            ("C++") use ("-c", "-x", "c++");
+      for Dependency_Switches ("C++") use ("-Wp,-MD,");
+      for Include_Path        ("C++") use "CPATH";
    end Compiler;
      </config>
    </configuration>
@@ -26,11 +27,11 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++" language="C\+\+" />
+       <compiler name="G++" language="C++" />
      </compilers>
      <targets negate="true">
        <target name=".*LynxOS.*" />
-       <target name=".*pentium-mingw.*" />
+       <target name=".*mingw.*" />
        <target name=".*cygwin.*" />
         <target name=".*tru64.*" />
      </targets>
@@ -41,23 +42,16 @@
      </config>
    </configuration>
 
-   <!-- for cygwin we make sure that the option -mno-cygwin is used -->
+   <!-- in cygminw mode, make sure that the option -mno-cygwin is used -->
+
    <configuration>
      <compilers>
-       <compiler name="G++" language="C\+\+" />
+       <compiler name="CYGMING-GCC" language="C++" />
      </compilers>
-     <targets>
-     <target name=".*cygwin.*" />
-     </targets>
      <config>
    package Compiler is
-      for Switches ("C++") use
-        Compiler'Switches ("C++") &amp; ("-mno-cygwin");
+      for Switches            ("C++") use Compiler'Switches ("C++") &amp; ("-mno-cygwin");
    end Compiler;
-
-   package Linker is
-      for Switches ("C++") use Linker'Switches ("C++") &amp; ("-mno-cygwin");
-   end Linker;
      </config>
    </configuration>
 </gprconfig>

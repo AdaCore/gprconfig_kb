@@ -124,4 +124,18 @@
       <external regexp="[^\r\n]+">g77 -dumpmachine</external>
     </target>
   </compiler_description>
+
+   <!--    mingw-cygwin compiler
+  -->
+  <compiler_description>
+    <name>CYGMING-GCC</name>
+    <executable>gcc</executable>
+    <version>
+      <external regexp="^gcc (\([^\)]*\) )?(\S+) \(cygming special\)" group="2">gcc --version</external>
+    </version>
+    <languages>C,C++,Fortran</languages>
+    <target>
+      <external regexp="[^\r\n]+">gcc -mno-cygwin -dumpmachine</external>
+    </target>
+  </compiler_description>
 </gprconfig>

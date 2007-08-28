@@ -6,6 +6,7 @@
    <configuration>
      <compilers>
        <compiler name="G77" language="Fortran" />
+       <compiler name="CYGMING-GCC" language="Fortran" />
      </compilers>
      <config>
    package Naming is
@@ -39,25 +40,16 @@
      </config>
    </configuration>
 
-  <!-- for cygwin we make sure that the option -mno-cygwin is used -->
+   <!-- in cygminw mode, make sure that the option -mno-cygwin is used -->
+
    <configuration>
      <compilers>
-       <compiler name="G77" language="Fortran" />
+       <compiler name="CYGMING-GCC" language="Fortran" />
      </compilers>
-     <targets>
-     <target name=".*cygwin.*" />
-     </targets>
      <config>
    package Compiler is
-      for Switches ("Fortran") use
-        Compiler'Switches ("Fortran") &amp; ("-mno-cygwin");
+      for Switches        ("Fortran") use Compiler'Switches ("Fortran") &amp; ("-mno-cygwin");
    end Compiler;
-
-   package Linker is
-      for Switches ("Fortran") use
-         Linker'Switches ("Fortran")  &amp; ("-mno-cygwin");
-   end Linker;
      </config>
    </configuration>
-
 </gprconfig>

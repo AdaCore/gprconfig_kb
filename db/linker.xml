@@ -146,6 +146,44 @@
     </config>
   </configuration>
 
+  <!--  Cygming -->
+  <configuration>
+    <compilers><compiler name="CYGMING-GCC"/></compilers>
+    <compilers><compiler name="GNAT"/></compilers>
+    <config>
+   package Linker is
+      for Switches ("Ada") use ("-mno-cygwin");
+      for Required_Switches use ("-mno-cygwin");
+   end Linker;
+    </config>
+  </configuration>
+  <configuration>
+    <compilers><compiler name="CYGMING-GCC" language="Fortran"/></compilers>
+    <config>
+   package Linker is
+      for Switches ("Fortran") use ("-mno-cygwin");
+      for Required_Switches use ("-mno-cygwin");
+   end Linker;
+    </config>
+  </configuration>
+  <configuration>
+    <compilers><compiler name="CYGMING-GCC" language="C"/></compilers>
+    <config>
+   package Linker is
+      for Switches ("C") use ("-mno-cygwin");
+   end Linker;
+    </config>
+  </configuration>
+  <configuration>
+    <compilers><compiler name="CYGMING-GCC" language="C++"/></compilers>
+    <config>
+   package Linker is
+      -- for Switches ("C++") use ("-mno-cygwin");
+      for Required_Switches use ("-mno-cygwin");
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  VMS -->
   <configuration>
     <targets><target name=".*vms.*" /></targets>
@@ -163,14 +201,15 @@
   </configuration>
 
   <!--  use C++,Fortran, Ada or C driver to link in this order      -->
-  <!-- ??? we have been obliged to use the "name" filter instead of -->
   <!-- the "language" one which would give a better default rule    -->
   <!-- When GNAT is not used for linking, and the other compiler is -->
   <!-- a different version of gcc, GNAT needs to be using a sjlj -->
   <!-- runtime -->
 
   <configuration>
-    <compilers><compiler name="G++" /></compilers>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C++");
@@ -179,8 +218,12 @@
   </configuration>
 
   <configuration>
-    <compilers negate="true"><compiler name="G++" /></compilers>
-    <compilers><compiler name="G77" /></compilers>
+    <compilers negate="true">
+       <compiler language="C++" />
+    </compilers>
+    <compilers>
+       <compiler language="Fortran" />
+    </compilers>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("Fortran");
@@ -190,10 +233,11 @@
 
   <configuration>
     <compilers negate="true">
-      <compiler name="G++" />
-      <compiler name="G77" />
+       <compiler language="C++" />
+       <compiler language="Fortran" />
     </compilers>
-    <compilers><compiler name="GNAT" /></compilers>
+    <compilers>
+       <compiler language="Ada" /></compilers>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("Ada");
@@ -202,11 +246,13 @@
   </configuration>
   <configuration>
     <compilers negate="true">
-      <compiler name="G++" />
-      <compiler name="G77" />
-      <compiler name="GNAT" />
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
     </compilers>
-    <compilers><compiler name="GCC" /></compilers>
+    <compilers>
+       <compiler language="C" />
+    </compilers>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C");
