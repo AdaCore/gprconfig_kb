@@ -2381,11 +2381,12 @@ The format of the @code{<compiler>} is the following:
    <compiler name="name" version="..." runtime="..." language="..." />
 @end smallexample
 
-The name attribute must be specified, and will match one of the @code{<name>}
-attribute used in the @code{<compiler_description>} children.
-All other attributes are regular expressions, that are matched against
-the corresponding selected compilers. When an attribute is not specified,
-it will always match. Matching is done in a case-insensitive manner.
+The name & language attributes, when specified, match
+the corresponding attributes used in the @code{<compiler_description>}
+children. All other attributes are regular expressions, that are matched
+against the corresponding selected compilers. When an attribute is not
+specified, it will always match. Matching is done in a case-insensitive
+manner.
 For instance, to check a GNAT compiler in the 5.x family, use:
 
 @smallexample

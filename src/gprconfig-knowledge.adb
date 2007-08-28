@@ -1598,7 +1598,8 @@ package body GprConfig.Knowledge is
    begin
       while Has_Element (C) loop
          Comp := Element (C);
-         if Filter.Name = Comp.Name
+         if (Filter.Name = Null_Unbounded_String
+             or else Filter.Name = Comp.Name)
            and then
              (Filter.Version = Null_Unbounded_String
               or else Match
@@ -1609,9 +1610,8 @@ package body GprConfig.Knowledge is
                 (Compile (To_String (Filter.Runtime), Case_Insensitive),
                  To_String (Comp.Runtime)))
            and then (Filter.Language = Null_Unbounded_String
-              or else Match
-                (Compile (To_String (Filter.Language), Case_Insensitive),
-                 To_String (Comp.Language)))
+                     or else To_Lower (To_String (Filter.Language))
+                           = To_Lower (To_String (Comp.Language)))
          then
             Matching_Compiler := Comp;
             Matched           := True;
@@ -1977,7 +1977,8 @@ package body GprConfig.Knowledge is
         .. Last_Index (Base.Targets_Sets)
       loop
          declare
-            Set : Target_Lists.List := Element (Base.Targets_Sets, I);
+            Set : constant Target_Lists.List :=
+              Element (Base.Targets_Sets, I);
             C : Target_Lists.Cursor := First (Set);
          begin
             while Has_Element (C) loop

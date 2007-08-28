@@ -2,6 +2,7 @@
 --                   Copyright (C) 2006-2007, AdaCore                       --
 ------------------------------------------------------------------------------
 
+with Ada.Characters.Handling;  use Ada.Characters.Handling;
 with Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
 with Ada.Exceptions;            use Ada.Exceptions;
@@ -627,7 +628,8 @@ procedure GprConfig.Main is
          end if;
 
          if Length (Filter.Language) > 0
-           and then Filter.Language /= Comp.Language
+           and then To_Lower (To_String (Filter.Language)) /=
+           To_Lower (To_String (Comp.Language))
          then
             return False;
          end if;
