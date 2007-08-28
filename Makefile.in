@@ -84,7 +84,7 @@ doc:
 
 install-doc:
 	$(MKDIR) ${docdir}/html
-	${INSTALL_DATA} doc/*.html ${docdir}/html
+	${CP} doc/*.html ${docdir}/html
 
 tests: force
 	cd tests; ./test.cmd
