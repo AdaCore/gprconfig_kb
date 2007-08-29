@@ -29,6 +29,7 @@
     <target>i386-pc-solaris2.10</target>
     <target>i686-pc-solaris2.10</target>
     <target>i686-pc-solaris2.8</target>
+    <target>i386-pc-solaris2.8</target>
   </targetset>
 
   <!-- x86 windows -->
