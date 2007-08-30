@@ -1105,7 +1105,10 @@ package body GprConfig.Knowledge is
                null;  --  already split
 
             when Value_Shell | Value_Constant =>
-               if Split_Into_Words then
+               if Tmp_Result = Null_Unbounded_String then
+                  null;
+
+               elsif Split_Into_Words then
                   Get_Words (Words  => To_String (Tmp_Result),
                              Filter => Value.Filter,
                              Map    => Split,
