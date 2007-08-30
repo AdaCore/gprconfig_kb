@@ -32,10 +32,18 @@
     <target>i386-pc-solaris2.8</target>
   </targetset>
 
-  <!-- x86 windows -->
+  <!-- x86 windows mingw-->
   <targetset>
-    <!--  TBC: i686-pc-cygwin -->
-    <target>i586-pc-mingw32msv</target>
-    <target>pentium-mingw32msv</target>
+    <!--  known targets: pentium-mingw32msv, i686-pc-mingw32 -->
+    <target>i.*-mingw32.*</target>
+    <target>pent.*-mingw32.*</target>
   </targetset>
+
+    <!-- x86 windows cygwin -->
+  <targetset>
+    <!--  known targets: pentium-mingw32msv, i686-pc-cygwin -->
+    <target>i.*-cygwin.*</target>
+    <target>pent.*-cygwin.*</target>
+  </targetset>
+
 </gprconfig>
