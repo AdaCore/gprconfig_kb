@@ -689,8 +689,8 @@ procedure GprConfig.Main is
          New_Line;
          Put_Line ("You can regenerate the same config file in batch mode");
          Put_Line (" with the following command line:");
-         Put ("gprconfig -batch");
-         Put (" -target=");
+         Put ("gprconfig --batch");
+         Put (" --target=");
          if Selected_Target = Null_Unbounded_String then
             Put ("all");
          else
