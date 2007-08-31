@@ -17,7 +17,7 @@ package Naming is
    package Compiler is
       for Driver              ("C++") use "g++";
       for Switches            ("C++") use ("-c", "-x", "c++");
-      for Dependency_Switches ("C++") use ("-Wp,-MD,");
+      for Dependency_Switches ("C++") use ("-Wp,-MMD,");
       for Include_Path        ("C++") use "CPATH";
    end Compiler;
      </config>
