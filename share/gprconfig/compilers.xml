@@ -11,7 +11,7 @@
     <name>GCC</name>
     <executable prefix="1">(.+-)?gcc</executable>
     <version>
-      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">${PREFIX}gcc --version</external>
+      <external regexp="\(GCC\) (\S+)" group="1">${PREFIX}gcc --version</external>
     </version>
     <languages>
       <external regexp="--enable-languages=(\S+)" group="1">${PREFIX}gcc -v</external>
@@ -62,7 +62,7 @@
     <name>G++</name>
     <executable>g++</executable>
     <version>
-      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">g++ --version</external>
+      <external regexp="\(GCC\) (\S+)" group="1">g++ --version</external>
     </version>
     <languages>
       <external regexp="--enable-languages=(\S+)" group="1">g++ -v</external>
@@ -77,7 +77,7 @@
     <name>GCC-ASM</name>
     <executable prefix="1">(.+-)?gcc</executable>
     <version>
-      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">${PREFIX}gcc --version</external>
+      <external regexp="\(GCC\) (\S+)" group="1">${PREFIX}gcc --version</external>
     </version>
     <languages>Asm</languages>
     <target>
@@ -117,7 +117,7 @@
     <name>G77</name>
     <executable>g77</executable>
     <version>
-      <external regexp="^gcc (\([^\)]*\) )?(\S+)" group="2">g77 --version</external>
+      <external regexp=""\(GCC\) (\S+)" group="1">g77 --version</external>
     </version>
     <languages>Fortran</languages>
     <target>
@@ -131,7 +131,7 @@
     <name>CYGMING-GCC</name>
     <executable>gcc</executable>
     <version>
-      <external regexp="^gcc (\([^\)]*\) )?(\S+) \(cygming special\)" group="2">gcc --version</external>
+      <external regexp="\(GCC\) (\S+).*\(cygming special\)" group="1">gcc --version</external>
     </version>
     <languages>C,C++,Fortran</languages>
     <target>
