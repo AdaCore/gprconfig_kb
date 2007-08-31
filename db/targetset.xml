@@ -53,6 +53,7 @@
   <!-- ppc-darwin -->
   <targetset>
     <target>ppc-darwin</target>
+    <target>powerpc.*darwin.*</target>
   </targetset>
 
   <!-- pa-hpux -->
@@ -61,19 +62,16 @@
     <target>hppa.*-hpux.*</target>
   </targetset>
 
- <!-- ppc-darwin -->
-  <targetset>
-    <target>ppc-darwin</target>
-  </targetset>
-
  <!-- ia64-hpux -->
   <targetset>
-    <target>ia65-hpux</target>
+    <target>ia64-hpux</target>
+    <target>ia64-.*hpux.*</target>
   </targetset>
 
  <!-- alpha-tru64 -->
   <targetset>
     <target>alpha-tru64</target>
+    <target>alpha.*osf.*</target>
   </targetset>
 
  <!-- alpha-openvms -->
@@ -97,6 +95,7 @@
  <!-- x86-lynx -->
   <targetset>
     <target>x86-lynx</target>
+    <target>i.86-elf-lynxos</target>
   </targetset>
 
 <!-- Additional Natives -->
@@ -104,17 +103,24 @@
 
  <!-- x86-windows cygwin -->
   <targetset>
-    <!--  known targets: pentium-mingw32msv, i686-pc-cygwin -->
     <target>i.*-cygwin.*</target>
     <target>pent.*-cygwin.*</target>
   </targetset>
 
+ <!-- Freebsd -->
+  <targetset>
+    <target>x86-freebsd</target>
+    <target>i.86-.*freebsd.*</target>
+  </targetset>
+
 <!-- Cross Ports -->
+<!-- *********** -->
 
  <!-- ppc-lynx-.* -->
   <targetset>
     <target>ppc-lynx-solaris</target>
    <target>ppc-lynx-.*</target>
+   <target>powerpc-elf-lynxos.*</target>
   </targetset>
 
  <!-- ppc-vx6-.* -->
@@ -129,6 +135,7 @@
   <targetset>
     <target>x86-vx6-windows</target>
     <target>x86-vx6-linux</target>
+    <target>i.86-wrs-vxworks</target>
   </targetset>
 
  <!-- ppc-vxw-.*  (vxworks 5) -->
@@ -155,6 +162,7 @@
  <!-- x86-vx653-.*  (vxworks 653) -->
  <targetset>
     <target>x86-vx653-windows</target>
+    <target>i.86-wrs-vxworksae</target>
   </targetset>
 
  <!-- ppc-elf-.*  -->
@@ -167,7 +175,7 @@
  <!-- p55-elf-.*  -->
  <targetset>
     <target>p55-elf-windows</target>
-    <target>p55-elf</target>
+    <target>powerpc-eabispe</target>
   </targetset>
 
  <!-- erc32-elf-.*  -->
