@@ -220,7 +220,7 @@ begin
                              Gnatbind_Prefix_Equal
                   then
                      --  There is always a '-' between <prefix> and "gnatbind".
-                     --  Ad one if not already in <prefix>.
+                     --  Add one if not already in <prefix>.
 
                      if Line (Last) /= '-' then
                         Last := Last + 1;
@@ -286,6 +286,16 @@ begin
          Gnatbind_Options,
          Last_Gnatbind_Option);
    end loop;
+
+   if Ada_Compiler_Path /= null and then
+      not Is_Absolute_Path (GNATBIND.all)
+   then
+      GNATBIND :=
+        new String'
+              (Dir_Name (Ada_Compiler_Path.all) &
+               Directory_Separator &
+               GNATBIND.all);
+   end if;
 
    Gnatbind_Path := Locate_Exec_On_Path (GNATBIND.all);
 
