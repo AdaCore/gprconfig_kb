@@ -1,49 +1,187 @@
 <?xml version="1.0" ?>
+
 <gprconfig>
-  <!-- x86 linux -->
+
+<!-- Native ports -->
+<!-- ************ -->
+
+  <!-- x86-linux -->
   <targetset>
-    <target>i686-pc-linux-gnu</target>
-    <target>i586-suse-linux</target>
-    <target>i386-redhat-linux</target>
+    <target>x86-linux</target>
+    <target>i.86-.*linux.*</target>
   </targetset>
 
-  <!-- ia64 linux -->
+  <!-- x86_64-linux -->
   <targetset>
-    <target>ia64-unknown-linux-gnu</target>
-    <target>ia64-sgi-linux-gnu</target>
-    <target>ia64-hp-linux-gnu</target>
-    <target>ia64-redhat-linux</target>
-    <target>ia64-suse-linux</target>
+    <target>x86_64-linux</target>
+    <target>x86_64-.*linux.*</target>
   </targetset>
 
-  <!-- x86_64 linux -->
+  <!-- ia64-.*-linux -->
   <targetset>
-    <target>x86_64-pc-linux-gnu</target>
-    <target>x86_64-unknown-linux-gnu</target>
-    <target>x86_64-redhat-linux</target>
-    <target>x86_64-suse-linux</target>
+    <target>ia64-hp_linux</target>
+    <target>ia64-sgi_linux</target>
+    <target>ia64-.*linux.*</target>
   </targetset>
 
-  <!-- x86 solaris -->
+  <!-- sparc-solaris -->
   <targetset>
-    <target>i386-pc-solaris2.10</target>
-    <target>i686-pc-solaris2.10</target>
-    <target>i686-pc-solaris2.8</target>
-    <target>i386-pc-solaris2.8</target>
+    <target>sparc-solaris</target>
+    <target>sparc-.*solaris.*</target>
   </targetset>
 
-  <!-- x86 windows mingw-->
+  <!-- sparc64-solaris -->
+  <targetset>
+    <target>sparc64-solaris</target>
+    <target>sparc64-.*solaris.*</target>
+  </targetset>
+
+  <!-- x86-solaris -->
+  <targetset>
+    <target>x86-solaris</target>
+    <target>i.86-pc-solaris.*</target>
+  </targetset>
+
+  <!-- x86-windows (mingw) -->
   <targetset>
     <!--  known targets: pentium-mingw32msv, i686-pc-mingw32 -->
-    <target>i.*-mingw32.*</target>
-    <target>pent.*-mingw32.*</target>
+    <target>x86-windows</target>
+    <target>i.86-.*mingw32.*</target>
+    <target>pentium-.*mingw32.*</target>
   </targetset>
 
-    <!-- x86 windows cygwin -->
+  <!-- ppc-darwin -->
+  <targetset>
+    <target>ppc-darwin</target>
+  </targetset>
+
+  <!-- pa-hpux -->
+  <targetset>
+    <target>pa-hpux</target>
+    <target>hppa.*-hpux.*</target>
+  </targetset>
+
+ <!-- ppc-darwin -->
+  <targetset>
+    <target>ppc-darwin</target>
+  </targetset>
+
+ <!-- ia64-hpux -->
+  <targetset>
+    <target>ia65-hpux</target>
+  </targetset>
+
+ <!-- alpha-tru64 -->
+  <targetset>
+    <target>alpha-tru64</target>
+  </targetset>
+
+ <!-- alpha-openvms -->
+  <targetset>
+    <target>alpha-openvms</target>
+  </targetset>
+
+ <!-- mips-irix -->
+  <targetset>
+    <target>mips-irix</target>
+    <target>mips-.*irix.*</target>
+  </targetset>
+
+ <!-- ppc-aix -->
+  <targetset>
+    <target>ppc-aix</target>
+    <target>powerpc.*-aix.*</target>
+  </targetset>
+
+
+ <!-- x86-lynx -->
+  <targetset>
+    <target>x86-lynx</target>
+  </targetset>
+
+<!-- Additional Natives -->
+<!-- ******************* -->
+
+ <!-- x86-windows cygwin -->
   <targetset>
     <!--  known targets: pentium-mingw32msv, i686-pc-cygwin -->
     <target>i.*-cygwin.*</target>
     <target>pent.*-cygwin.*</target>
   </targetset>
+
+<!-- Cross Ports -->
+
+ <!-- ppc-lynx-.* -->
+  <targetset>
+    <target>ppc-lynx-solaris</target>
+   <target>ppc-lynx-.*</target>
+  </targetset>
+
+ <!-- ppc-vx6-.* -->
+  <targetset>
+    <target>ppc-vx6-solaris</target>
+    <target>ppc-vx6-windows</target>
+    <target>ppc-vx6-linux</target>
+    <target>powerpc-wrs-vxworks</target>
+  </targetset>
+
+ <!-- x86-vx6-.* (vxworks 6) -->
+  <targetset>
+    <target>x86-vx6-windows</target>
+    <target>x86-vx6-linux</target>
+  </targetset>
+
+ <!-- ppc-vxw-.*  (vxworks 5) -->
+  <targetset>
+    <target>ppc-vxw-solaris</target>
+    <target>ppc-vxw-windows</target>
+    <target>powerpc-wrs-vxworks</target>
+  </targetset>
+
+ <!-- ppc-vx178b-.*  (vxworks cert) -->
+ <targetset>
+    <target>ppc-vx178b-solaris</target>
+    <target>ppc-vx178b-windows</target>
+    <target>powerpc-wrs-vxworks</target>
+  </targetset>
+
+ <!-- ppc-vx653-.*  (vxworks 653) -->
+ <targetset>
+    <target>ppc-vx653-solaris</target>
+    <target>ppc-vx653-windows</target>
+    <target>powerpc-wrs-vxworksae</target>
+  </targetset>
+
+ <!-- x86-vx653-.*  (vxworks 653) -->
+ <targetset>
+    <target>x86-vx653-windows</target>
+  </targetset>
+
+ <!-- ppc-elf-.*  -->
+ <targetset>
+    <target>ppc-elf-solaris</target>
+    <target>ppc-elf-windows</target>
+    <target>powerpc-elf</target>
+  </targetset>
+
+ <!-- p55-elf-.*  -->
+ <targetset>
+    <target>p55-elf-windows</target>
+    <target>p55-elf</target>
+  </targetset>
+
+ <!-- erc32-elf-.*  -->
+ <targetset>
+    <target>erc32-elf-solaris</target>
+    <target>erc32-elf-linux</target>
+    <target>erc32-elf.*</target>
+ </targetset>
+
+ <!-- erc32-elf-.*  -->
+ <targetset>
+    <target>leon-elf-solaris</target>
+    <target>leon-elf-linux</target>
+    <target>leon-elf.*</target>
+ </targetset>
 
 </gprconfig>
