@@ -21,6 +21,38 @@
      </config>
    </configuration>
 
+   <!-- in cygminw mode, make sure that the option -mno-cygwin is used -->
+
+   <configuration>
+     <compilers>
+       <compiler name="CYGMING-GCC" language="Fortran" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Switches        ("Fortran") use Compiler'Switches ("Fortran") &amp; ("-mno-cygwin");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <!-- Configuration for GFortran: the GCC fortran 95 compiler -->
+
+   <configuration>
+     <compilers>
+       <compiler name="GFORTRAN" language="Fortran" />
+     </compilers>
+     <config>
+   package Naming is
+      for Body_Suffix ("Fortran") use ".f";
+   end Naming;
+
+   package Compiler is
+      for Driver          ("Fortran") use "gfortran";
+      for Switches        ("Fortran") use ("-c", "-fno-underscoring");
+      for Include_Path    ("Fortran") use "CPATH";
+   end Compiler;
+     </config>
+   </configuration>
+
    <!--  Additional switches needed on some platforms -->
 
    <configuration>
@@ -36,19 +68,6 @@
      <config>
    package Compiler is
       for PIC_Option      ("Fortran") use ("-fPIC");
-   end Compiler;
-     </config>
-   </configuration>
-
-   <!-- in cygminw mode, make sure that the option -mno-cygwin is used -->
-
-   <configuration>
-     <compilers>
-       <compiler name="CYGMING-GCC" language="Fortran" />
-     </compilers>
-     <config>
-   package Compiler is
-      for Switches        ("Fortran") use Compiler'Switches ("Fortran") &amp; ("-mno-cygwin");
    end Compiler;
      </config>
    </configuration>
