@@ -77,6 +77,7 @@
  <!-- alpha-openvms -->
   <targetset>
     <target>alpha-openvms</target>
+    <target>alpha64-dec-openvms.*</target>
   </targetset>
 
  <!-- mips-irix -->
@@ -119,8 +120,8 @@
  <!-- ppc-lynx-.* -->
   <targetset>
     <target>ppc-lynx-solaris</target>
-   <target>ppc-lynx-.*</target>
-   <target>powerpc-elf-lynxos.*</target>
+    <target>ppc-lynx-.*</target>
+    <target>powerpc-elf-lynxos.*</target>
   </targetset>
 
  <!-- ppc-vx6-.* -->
