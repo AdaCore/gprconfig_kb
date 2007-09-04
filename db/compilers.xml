@@ -13,10 +13,7 @@
     <version>
       <external regexp="\(GCC\) (\S+)" group="1">${PREFIX}gcc --version</external>
     </version>
-    <languages>
-      <external regexp="--enable-languages=(\S+)" group="1">${PREFIX}gcc -v</external>
-      <filter>C</filter>
-    </languages>
+    <languages>C</languages>
     <target>
       <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
     </target>
@@ -28,10 +25,7 @@
     <version>
       <external regexp="^cc.+ \(GCC\) ([0-9.]+) \(Wind River" group="1">cc${PREFIX} --version</external>
     </version>
-    <languages>
-      <external regexp="--enable-languages=(\S+)" group="1">cc${PREFIX} -v</external>
-      <filter>c</filter>
-    </languages>
+    <languages>C</languages>
     <target>
       <external regexp="[^\r\n]+">cc${PREFIX} -dumpmachine</external>
     </target>
