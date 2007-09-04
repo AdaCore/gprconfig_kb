@@ -1618,14 +1618,9 @@ package body Buildgpr is
 
       Mains.Reset;
 
-      --  If no main is specified, only build the global archive if the main
-      --  project is not a library project.
+      --  If no main is specified, there is nothing else to do
 
       if Mains.Number_Of_Mains = 0 then
-         if not Project_Tree.Projects.Table (Main_Project).Library then
-            Build_Global_Archive (Main_Project);
-         end if;
-
          return;
       end if;
 
@@ -2291,8 +2286,6 @@ package body Buildgpr is
                      end if;
                   end loop;
                end if;
-
-               Build_Global_Archive (Main_Proj);
             end;
          end;
       end loop;
@@ -6409,6 +6402,10 @@ package body Buildgpr is
             Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
             Main_Proj  := Ultimate_Extending_Project_Of (Main_Source.Project);
             Data        := Project_Tree.Projects.Table (Main_Source.Project);
+
+            --  Build the global archive for this project, if needed
+
+            Build_Global_Archive (Main_Source.Project);
 
             --  Get the main base name
 
