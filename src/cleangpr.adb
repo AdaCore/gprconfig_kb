@@ -115,8 +115,7 @@ package body Cleangpr is
    -----------------------------
 
    procedure Clean_Archive (Project : Project_Id);
-   --  Delete a global archive or a fake library project archive and the
-   --  dependency file, if they exist.
+   --  Delete a global archive and its dependency file, if they exist
 
    procedure Clean_Interface_Copy_Directory (Project : Project_Id);
    --  Delete files in an interface coy directory directory: any file that is
@@ -542,8 +541,6 @@ package body Cleangpr is
       Source_Id   : Prj.Source_Id;
       Source      : Source_Data;
 
-      Global_Archive : Boolean := False;
-
    begin
       --  Check that we don't specify executable on the command line for
       --  a main library project.
@@ -602,26 +599,11 @@ package body Cleangpr is
                   end if;
                end if;
 
-               --  Check if a global archive and it dependency file could have
-               --  been created and, if they exist, delete them.
+               --  For non library project, clean the global archive and its
+               --  dependency file if they exist.
 
-               if Project = Main_Project and then not Data.Library then
-                  Global_Archive := False;
-
-                  for Proj in Project_Table.First ..
-                    Project_Table.Last (Project_Tree.Projects)
-                  loop
-                     if Project_Tree.Projects.Table
-                       (Proj).First_Source /= No_Source
-                     then
-                        Global_Archive := True;
-                        exit;
-                     end if;
-                  end loop;
-
-                  if Global_Archive then
-                     Clean_Archive (Project);
-                  end if;
+               if not Data.Library then
+                  Clean_Archive (Project);
                end if;
 
                --  Check all the object file for the sources of the current
@@ -666,15 +648,6 @@ package body Cleangpr is
                --  Restore Data for the original project
 
                Data := Project_Tree.Projects.Table (Project);
-
-               --  If it is a library with only non Ada sources, delete
-               --  the fake archive and the dependency file, if they exist.
-
-               if Data.Library
-                 and then Data.Ada_Sources = Nil_String
-               then
-                  Clean_Archive (Project);
-               end if;
             end;
          end if;
 
