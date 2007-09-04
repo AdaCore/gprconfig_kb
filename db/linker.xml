@@ -2,11 +2,11 @@
 <gprconfig>
 
   <!--  This configuration shows how to link a multi language
-        application with GNAT and either GCC or G++ -->
-  <configuration>
-    <compilers><compiler name="GNAT" /></compilers>
+        application with GNAT and either GCC or toolchains
+        derived from gcc -->
+
+ <configuration>
     <config>
-   for Default_Language use "Ada";
    for Archive_Builder  use ("${PREFIX}ar", "cr");
    for Archive_Indexer  use ("${PREFIX}ranlib");
    for Archive_Suffix   use ".a";
@@ -51,7 +51,6 @@
     <targets>
        <target name=".*darwin.*" />
     </targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Support use "full";
    for Shared_Library_Prefix use "lib";
@@ -70,7 +69,6 @@
     <targets>
        <target name=".*hpux.*" />
     </targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
    for Library_Support  use "full";
@@ -91,7 +89,6 @@
        <target name=".*linux.*" />
        <target name=".*irix.*" />
     </targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
    for Library_Support  use "full";
@@ -111,7 +108,6 @@
   <!--  Solaris -->
   <configuration>
     <targets><target name=".*sunos.*" /><target name=".*solaris.*"/></targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
    for Library_Support  use "full";
@@ -132,7 +128,6 @@
   <!--  Windows -->
   <configuration>
     <targets><target name=".*mingw.*" /></targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
    for Library_Support  use "full";
@@ -149,37 +144,9 @@
   <!--  Cygming -->
   <configuration>
     <compilers><compiler name="CYGMING-GCC"/></compilers>
-    <compilers><compiler name="GNAT"/></compilers>
     <config>
    package Linker is
-      for Switches ("Ada") use ("-mno-cygwin");
-      for Required_Switches use ("-mno-cygwin");
-   end Linker;
-    </config>
-  </configuration>
-  <configuration>
-    <compilers><compiler name="CYGMING-GCC" language="Fortran"/></compilers>
-    <config>
-   package Linker is
-      for Switches ("Fortran") use ("-mno-cygwin");
-      for Required_Switches use ("-mno-cygwin");
-   end Linker;
-    </config>
-  </configuration>
-  <configuration>
-    <compilers><compiler name="CYGMING-GCC" language="C"/></compilers>
-    <config>
-   package Linker is
-      for Switches ("C") use ("-mno-cygwin");
-   end Linker;
-    </config>
-  </configuration>
-  <configuration>
-    <compilers><compiler name="CYGMING-GCC" language="C++"/></compilers>
-    <config>
-   package Linker is
-      -- for Switches ("C++") use ("-mno-cygwin");
-      for Required_Switches use ("-mno-cygwin");
+       for Required_Switches use ("-mno-cygwin");
    end Linker;
     </config>
   </configuration>
@@ -201,10 +168,6 @@
   </configuration>
 
   <!--  use C++,Fortran, Ada or C driver to link in this order      -->
-  <!-- the "language" one which would give a better default rule    -->
-  <!-- When GNAT is not used for linking, and the other compiler is -->
-  <!-- a different version of gcc, GNAT needs to be using a sjlj -->
-  <!-- runtime -->
 
   <configuration>
     <compilers>
@@ -259,4 +222,53 @@
    end Linker;
     </config>
   </configuration>
+
+ <!-- Default language is Ada, C, Fortran, C++ in that order -->
+
+  <configuration>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <config>
+   for Default_Language use "Ada";
+    </config>
+  </configuration>
+
+  <configuration>
+    <compilers negate="true">
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler language="C" />
+    </compilers>
+    <config>
+   for Default_Language use "C";
+    </config>
+  </configuration>
+
+  <configuration>
+    <compilers negate="true">
+       <compiler language="C" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler language="Fortran" /></compilers>
+    <config>
+   for Default_Language use "Fortran";
+    </config>
+  </configuration>
+  <configuration>
+    <compilers negate="true">
+       <compiler language="C" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
+    <config>
+   for Default_Language use "C++";
+    </config>
+  </configuration>
+
 </gprconfig>
