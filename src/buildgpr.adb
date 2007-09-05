@@ -6401,11 +6401,13 @@ package body Buildgpr is
             Initialize_Source_Record (Main_Source_Id);
             Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
             Main_Proj  := Ultimate_Extending_Project_Of (Main_Source.Project);
-            Data        := Project_Tree.Projects.Table (Main_Source.Project);
+            Data        := Project_Tree.Projects.Table (Main_Proj);
+
+            Change_To_Object_Directory (Main_Proj);
 
             --  Build the global archive for this project, if needed
 
-            Build_Global_Archive (Main_Source.Project);
+            Build_Global_Archive (Main_Proj);
 
             --  Get the main base name
 
@@ -6421,8 +6423,6 @@ package body Buildgpr is
 
             Main_Base_Name := Name_Find;
 
-            Change_To_Object_Directory (Main_Proj);
-
             if (not Linker_Needs_To_Be_Called) and then Verbose_Mode then
                Write_Str ("   Checking executable for ");
                Write_Str (Get_Name_String (Main_Source.File));
@@ -6430,7 +6430,7 @@ package body Buildgpr is
             end if;
 
             Exec_Name := Executable_Of
-              (Project  => Main_Source.Project,
+              (Project  => Main_Proj,
                In_Tree  => Project_Tree,
                Main     => Main_Id,
                Index    => 0,
@@ -6476,7 +6476,7 @@ package body Buildgpr is
                else
                   Data.Linker_Path :=
                     Path_Name_Type'(Create_Name (Linker_Path.all));
-                  Project_Tree.Projects.Table (Main_Source.Project) := Data;
+                  Project_Tree.Projects.Table (Main_Proj) := Data;
                end if;
 
             elsif Data.Config.Linker /= No_Path then
