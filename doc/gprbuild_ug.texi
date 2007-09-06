@@ -50,10 +50,9 @@ AdaCore@*
 * Guided Tour::
 * Important Concepts::
 * Building with gprbuild::
-* Configuration::
 * Cleaning up with gprclean::
 * Configuring with gprconfig::
-* Other companion tools::
+* Configuration File Reference::
 * Index::
 
 @detailmenu
@@ -61,14 +60,14 @@ AdaCore@*
 
 Introduction
 
+Important Concepts
+
 Guided Tour
 * First Steps::
 * Subsystems::
 * Project Extensions::
 * Libraries::
 * Scenarios & conditional source files::
-
-Basic Concepts
 
 Building with gprbuild
 * Command Line::
@@ -79,8 +78,6 @@ Building with gprbuild
 * Post-Compilation Phase::
 * Linking Phase::
 
-Configuration
-
 Cleaning up with gprclean
 
 Configuring with gprconfig
@@ -90,7 +87,7 @@ Configuring with gprconfig
 * Compiler description::
 * Configurations::
 
-Other companion tools
+Configuration File Reference
 
 Index
 @end detailmenu
@@ -130,19 +127,32 @@ specific to the set of toolchains used together.
 @end itemize
 
 @noindent
-@code{gprbuild} takes as its main input a project file defining the build
-characteristics of the system under construction such as: which sources to
-use, where to find them, where to store the objects produced by the
-compiler, which options should the various tools be invoked with, etc. It
-is generic in the sense that it provides equivalent build features for all
-supported languages, it allows the definition of new languages and new
-toolchains and it provides means of configuring aspects
-such as: @itemize
-@item language characteristics (e.g. source naming conventions)
-@item toolchain characteristics (e.g. compiler invocation)
-@item subsystem characteristics (e.g. compiler default options)
-@item source file characteristics (e.g. file specific compilation options)
+@code{gprbuild} takes as its main input a project file (<file>.gpr)
+defining the build characteristics of the system under construction
+such as:
+@itemize
+@item which source to use,
+@item where to find them,
+@item where to store the objects produced by the compiler,
+@item which options should the compiler be invoked with, etc.
 @end itemize
+
+It is generic in the sense that it provides, when possible, equivalent
+build capabilities for all supported languages. For this, it uses a
+configuration file (<file>.cgpr) which has a syntax and structure very
+similar to a project file, but whose goal is to define the characteristics
+of the supported languages and toolchains. The configuration file contains
+information such as:
+such as:
+@itemize
+@item what are the default source naming conventions for each language
+@item what is compiler name, location and mandatory options,
+@item how to compute inter-unit dependency,
+@item how to build static or dynamic libraries
+@item which post-compilation actions are needed
+@item how to link together units from different languages
+@end itemize
+
 On the other hand, @code{gprbuild} is not a replacement for general-purpose
 build tools such as @code{make} or @code{ant} which give the user a high
 level of control on the build process itself. When building a system
@@ -199,6 +209,12 @@ where to store the generated object files, the name of the main program
 and the default options for the various tools involved in the build
 process. Those characteristics can be conditionalized thanks to scenario
 variables & case statements.
+
+@item configuration file:
+
+A text file using the project file syntax. It defines languages and
+their characteristics as well as toolchains for those languages and their
+characteristics.
 
 @item project attribute:
 
@@ -279,11 +295,24 @@ been changed and the objects that are affected by therse changes.
 * Scenarios & conditional source files::
 @end menu
 
-This chapter will get, through examples, from the simplest cases of
+This chapter will guide you, through examples, from the simplest cases of
 multi-language builds to some of the most advanced capability of
 @code{gprbuild}. Note that all the examples used in the text are extracted
 from the examples of the gprbuild package which are installed on your
 system at $root/share/examples/gprbuild.
+
+Gprbuild needs one configuration file describing the languages and
+toolchains to be used as long as project files describing the
+characteristics of the user project. In simple cases, the configuration
+file can be created automatically by gprbuild based on the languages
+defined in users projects and the compilers on his path. There are more
+involved situations such as cross-compilation,
+rich environments with different compilers for the same language, etc.
+where it may be needed to control precisely the generation of
+the desired configuration of toolsets. A tool, gprconfig, described in a
+latter chapter, offers this capability. In the context of this
+guided tour, autoconfiguration is appropriate and thus we will not discuss
+here issues related to configuration.
 
 @node First Steps
 @section First Steps
@@ -876,11 +905,11 @@ gprbuild: could not locate main configuration project my_standard.cgpr
 
 Once it has found the main configuration project, gprbuild will process its
 configuration. If the configuration project is not correct
-(see @ref{Configuration}), then gprbuild will fail with
+(see @ref{Configuration File Reference}), then gprbuild will fail with
 the appropriate error messages:
 
 @smallexample
-$ gprbuild --config_project=my_standard.cgpr -P c_main.gpr
+$ gprbuild --config=my_standard.cgpr -P c_main.gpr
 my_standard.gpr:3:11: undefined attribute "compiler_drive"
 gprbuild: processing of configuration project ".../my_standard.cgpr" failed
 @end smallexample
@@ -927,15 +956,15 @@ A source needs to be compiled in the following cases:
 
 @item The object file does not exist
 
-@item The object file is earlier than the source
+@item The object file is more recent than the source
 
 @item The dependency file does not exist
 
-@item The dependency file is earlier than the source
+@item The dependency file is more recent than the source
 
 @item The switch file does not exist
 
-@item The switch file is earlier than the source
+@item The switch file is more recent than the source
 
 @item The dependency file cannot be read
 
@@ -1015,665 +1044,6 @@ different languages are spawned concurently.
 @node Linking Phase
 @section Linking Phase
 
-@c  ------------------------------------------------------------------------
-@node Configuration
-@chapter Configuration
-@c  ------------------------------------------------------------------------
-
-@menu
-* Project Level Attributes::
-* Package Naming::
-* Package Builder::
-* Package Compiler::
-* Package Binder::
-* Package Linker::
-@end menu
-
-@noindent
-gprbuild needs to have a configuration file to know the different
-characteristics of the toolchains that can be used to compile sources and
-build libraries and executables.
-
-A configuration file is a special kind of project file: it uses the same
-syntax as a standard project file. Attributes in the configuration file
-define the configuration. Some of these attributes have a special meaning
-in the configuration.
-
-The default name of the configuration file, when to specified to gprbuild by
-switch --config= is "default.cgpr". Although the name of the configuration
-file can be any valid file name, it is recommended that its suffix be ".cgpr" (for
-Configuration GNAT Project), so that it cannot be confused with a standard
-project file which has the suffix ".gpr".
-
-In the description of the attributes that follows, when an attribute is an
-associative array indexed by the language name, for example
-Spec_Suffix (<language>), then the name of the language is case insensitive.
-For example, "C" and "c" are allowed.
-
-@node Project Level Attributes
-@section Project Level Attributes
-
-@menu
-* General Attributes::
-* General Library Related Attributes::
-* Archive Related Attributes::
-* Shared Library Related Attributes::
-@end menu
-
-@node General Attributes
-@subsection General Attributes
-
-@itemize @bullet
-
-@item Default_Language
-
-Specifies the name of the language of the immediate sources of a project when
-attribute Languages is not declared in the project. If attribute
-Default_Language is not declared in the configuration file, then all user
-project files in the project tree must have an attribute Languages declared
-except when the extend another project. Example:
-
-@smallexample
-   for Default_Language use "ada";
-@end smallexample
-
-@item Run_Path_Option
-
-Specifies a "run path option", that is an option to use when linking an
-executable or a shared library to indicate the path where to look for other
-libraries. The value of this attribute is a string list. When linking an
-executable or a shared library, the search path is concatenated with the last
-string in the list, which may be an empty string. Example:
-
-@smallexample
-   for Run_Path_Option  use ("-Wl,-rpath,");
-@end smallexample
-
-@item Toolchain_Version (<language>)
-
-Specifies a version for a toolchain, as a single string. This toolchain
-version is passed to the library builder. Example:
-
-@smallexample
-   for Toolchain_Version ("Ada") use "GNAT 6.1";
-@end smallexample
-
-@item Toolchain_Description (<language>)
-
-Specifies as a single string a description of a toolchain. This attribute is
-not directly used by gprbuild or its auxiliary tools (gprbind and gprlib) but
-may be used by other tools, for example GPS. Example:
-
-@smallexample
-   for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
-@end smallexample
-
-@end itemize
-
-@node General Library Related Attributes
-@subsection General Library Related Attributes
-
-@itemize @bullet
-
-@item Library_Support
-
-Specifies the level of support for library project. If this attribute is not
-specified, then library projects are not supported. The only potential values
-for this attribute are "none", "static_only" and "full". Example:
-
-@smallexample
-   for Library_Support use "full";
-@end smallexample
-
-@item Library_Builder
-
-Specifies the name of the executable for the library builder. Example:
-
-@smallexample
-   for Library_Builder use "/.../gprlib";
-@end smallexample
-
-@end itemize
-
-@node Archive Related Attributes
-@subsection Archive Related Attributes
-
-@itemize @bullet
-
-@item Archive_Builder
-
-Specifies the name of the executable of the archive builder with the minimum
-options, if any. Example:
-
-@smallexample
-   for Archive_Builder use ("ar", "cr");
-@end smallexample
-
-@item Archive_Indexer
-
-Specifies the name of the executable of the archive indexer with the minimum
-options, if any. If this attribute is not specified, then there is no
-archive indexer. Example:
-
-@smallexample
-   for Archive_Indexer use ("ranlib");
-@end smallexample
-
-@item Archive_Suffix
-
-Specifies the suffix of the archives. If this attribute is not specified, then
-the suffix of the archives is defaulted to ".a". Example:
-
-@smallexample
-   for Archive_Suffix use ".olb"; --  for VMS
-@end smallexample
-
-@item Library_Partial_Linker
-
-Specifies the name of the executable of the partial linker with the options
-to be used, if any. If this attribute is not specified, then there is no
-partial linking. Example:
-
-@smallexample
-   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
-@end smallexample
-
-@end itemize
-
-@node Shared Library Related Attributes
-@subsection Shared Library Related Attributes
-
-@itemize @bullet
-
-@item Shared_Library_Prefix
-
-Specifies the prefix of the file names of shared libraries. When this attribute
-is not specified, the prefix is "lib". Example:
-
-@smallexample
-   for Shared_Library_Prefix use ""; --  for Windows
-@end smallexample
-
-@item Shared_Library_Suffix
-
-Specifies the suffix of the file names of shared libraries. When this attribute
-is not specified, the prefix is ".so". Example:
-
-@smallexample
-   for Shared_Library_Suffix use ".dll"; --  for Windows
-@end smallexample
-
-@item Symbolic_Link_Supported
-
-Specifies if symbolic links are supported by the platforms. The possible values
-of this attribute are "false" (the default) and "true". When this attribute is
-not specified, symbolic links are not supported.
-
-@smallexample
-   for Symbolic_Link_Supported use "true";
-@end smallexample
-
-@item Library_Major_Minor_ID_Supported
-
-Specifies if major and minor IDs are supported for shared libraries.
-The possible values of this attribute are "false" (the default) and "true".
-When this attribute is not specified, major and minor IDs are not supported.
-
-@smallexample
-   for Library_Major_Minor_ID_Supported use "True";
-@end smallexample
-
-@item Library_Auto_Init_Supported
-
-Specifies if library auto initialization is supported. The possible values of
-this attribute are "false" (the default) and "true". When this attribute is not
-specified, library auto initialization is not supported.
-
-@smallexample
-   for Library_Auto_Init_Supported use "true";
-@end smallexample
-
-@item Shared_Library_Minimum_Switches
-
-Specifies the minimum options to be used when building shared library. These
-options are put in the appropriate section in the library exchange file when
-the library builder is invoked. Example:
-
-@smallexample
-   for Shared_Library_Minimum_Switches use  ("-shared");
-@end smallexample
-
-@item Library_Version_Switches
-
-Specifies the option or options to be used when a library version is used.
-These options are put in the appropriate section in the library exchange file
-when the library builder is invoked. Example:
-
-@smallexample
-   for Library_Version_Switches use ("-Wl,-soname,");
-@end smallexample
-
-@end itemize
-
-@node Package Naming
-@section Package Naming
-
-Attributes in package Naming of a configuration file specify defaults. These
-attributes may be used in user project files to replace these defaults.
-
-The following attributes may appear in package Naming of a configuration file:
-
-@itemize @bullet
-@item Spec_Suffix (<language>)
-
-Specifies the default suffix for a "spec" or header file. Examples:
-
-@smallexample
-   for Spec_Suffix ("Ada") use ".ads";
-   for Spec_Suffix ("C")   use ".h";
-   for Spec_Suffix ("C++") use ".hh";
-@end smallexample
-
-@item Body_Suffix (<language>)
-
-Specifies the default sufix for a "body" or a source file. Examples:
-
-@smallexample
-   for Body_Suffix ("Ada") use ".adb";
-   for Body_Suffix ("C")   use ".c";
-   for Body_Suffix ("C++") use ".cpp";
-@end smallexample
-
-@item Separate_Suffix
-
-Specifies the suffix for a subunit source file (separate) in Ada. If attribute
-Separate_Suffix is not specified, then the default suffix of subunit source
-files is the same as the default suffix for body source files. Example:
-
-@smallexample
-   for Separate_Suffix use ".sep";
-@end smallexample
-
-@item Casing
-
-Specifies the casing of spec and body files in a unit based language
-(such as Ada) to know how to map a unit name to its file name. The values for
-this attribute may only be "lowercase", "UPPERCASE" and "Mixedcase".
-The default, when attribute Casing is not specified is lower case.
-It is rarely the case when this attribute needs to be specified, as on
-platforms where file names are not case sensitive (such as Windows of VMS)
-the default (lower case) will work fine.
-
-@item Dot_Replacement
-
-Specifies the string to replace a dot ('.') in unit name of a unit based
-language (such as Ada) to obtain its file name. If there is any unit based
-language in the configuration, attribute Dot_Replacement must be declared.
-Example:
-
-@smallexample
-   for Dot_Replacement use "-";
-@end smallexample
-
-@end itemize
-
-@node Package Builder
-@section Package Builder
-
-@itemize @bullet
-
-@item Executable_Suffix
-
-Specifies the default executable suffix. If no attribute Executable_Suffix is
-declared, then the default executable suffix for the host platform is used.
-Example:
-
-@smallexample
-   for Executable_Suffix use ".exe";
-@end smallexample
-
-@end itemize
-
-@node Package Compiler
-@section Package Compiler
-
-@menu
-* General Compilation Attributes::
-* Mapping File Related Attributes::
-* Config File Related Attributes::
-* Dependency Related Attributes::
-* Search Path Related Attributes::
-@end menu
-
-@node General Compilation Attributes
-@subsection General Compilation Attributes
-
-@itemize @bullet
-
-@item Driver (<language>)
-
-Specifies the name of the executable for the compiler of a language. The single
-string value of this attribute may be an absolute path or a relative path. If
-relative, then the execution path is searched. Examples:
-
-@smallexample
-   for Driver ("C++") use "g++";
-   for Driver ("Ada") use "/.../bin/gcc";
-@end smallexample
-
-@item Switches (<language>)
-
-Specifies the minimum options that must be used when invoking the compiler
-of a language. Examples:
-
-@smallexample
-   for Switches ("C")   use ("-c", "-x", "c");
-   for Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
-@end smallexample
-
-@item PIC_Option (<language>)
-
-Specifies the option or options that must be used when compiling a source of
-a language to be put in a shared library. Example:
-
-@smallexample
-   for PIC_Option ("C") use ("-fPIC");
-@end smallexample
-
-@end itemize
-
-@node Mapping File Related Attributes
-@subsection Mapping File Related Attributes
-
-@itemize @bullet
-
-@item Mapping_File_Switches (<language>)
-
-Specifies the switch or switches to be used to specify a mapping file to the
-compiler. When attribute Mapping_File_Switches is not declared, then no
-mapping file is specified to the compiler. The value of this attribute is a
-string list. The path name of the mapping file is concatenated with the last
-string in the string list, which may be empty. Example:
-
-@smallexample
-   for Mapping_File_Switches ("Ada") use ("-gnatem=");
-@end smallexample
-
-@item Mapping_Spec_Suffix (<language>)
-
-Specifies, for unit based languages that support mapping files, the suffix in
-the mapping file that needs to be added to the unit name for specs. Example:
-
-@smallexample
-    for Mapping_Spec_Suffix ("Ada") use "%s";
-@end smallexample
-
-@item Mapping_Body_Suffix (<language>)
-
-Specifies, for unit based languages that support mapping files, the suffix in
-the mapping file that needs to be added to the unit name for bodies. Example:
-
-@smallexample
-    for Mapping_Spec_Suffix ("Ada") use "%b";
-@end smallexample
-
-@end itemize
-
-@node Config File Related Attributes
-@subsection Config File Related Attributes
-
-@noindent
-
-In the value of config file attributes defined below, there are some
-placeholders that gprbuild will replace. These placeholders are:
-
-@itemize @bullet
-
-@item %u : the unit name
-
-@item %f : the file name of the source
-
-@item %s : the spec suffix
-
-@item %b : the body suffix
-
-@item %c : the casing
-
-@item %d : the dot replacement string
-
-@end itemize
-
-Attributes:
-
-@itemize @bullet
-
-@item Config_File_Switches (<language>)
-
-Specifies the switch or switches to be used to specify a confi file to the
-compiler. When attribute Config_File_Switches is not declared, then no
-config file is specified to the compiler. The value of this attribute is a
-string list. The path name of the config file is concatenated with the last
-string in the string list, which may be empty. Example:
-
-@smallexample
-   for Config_File_Switches ("Ada") use ("-gnatec=");
-@end smallexample
-
-@item Config_Body_File_Name (<language>)
-
-Specifies the line to be put in a config file to indicate the file name of a
-body. Example:
-
-@smallexample
-   for Config_Body_File_Name ("Ada") use
-       "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
-@end smallexample
-
-@item Config_Spec_File_Name (<language>)
-
-Specifies the line to be put in a config file to indicate the file name of a
-spec. Example:
-
-@smallexample
-   for Config_Spec_File_Name ("Ada") use
-       "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
-@end smallexample
-
-@item Config_Body_File_Name_Pattern (<language>)
-
-Specifies the line to be put in a config file to indicate a body file name
-pattern. Example:
-
-@smallexample
-   for Config_Body_File_Name_Pattern ("Ada") use
-       "pragma Source_File_Name_Project " &
-       "  (Body_File_Name  => ""*%b""," &
-       "   Casing          => %c," &
-       "   Dot_Replacement => ""%d"");";
-@end smallexample
-
-@item Config_Spec_File_Name_Pattern (<language>)
-
-Specifies the line to be put in a config file to indicate a spec file name
-pattern. Example:
-
-@smallexample
-   for Config_Spec_File_Name_Pattern ("Ada") use
-       "pragma Source_File_Name_Project " &
-       "  (Spec_File_Name  => ""*%s""," &
-       "   Casing          => %c," &
-       "   Dot_Replacement => ""%d"");";
-@end smallexample
-
-@item Config_File_Unique (<language>)
-
-Specifies, for languages that support config files, if several config files
-may be indicated to the compiler, or not. This attribute may have only two
-values: "true" or "false" (case insensitive). The default, when this attribute
-is not specified, is "false". When the value "true" is specified for this
-attribute, gprbuild will concatenate the config files, if there are more than
-one. Example:
-
-@smallexample
-   for Config_File_Unique ("Ada") use "True";
-@end smallexample
-
-@end itemize
-
-@node Dependency Related Attributes
-@subsection Dependency Related Attributes
-
-@itemize @bullet
-
-@item Dependency_Switches (<language>)
-
-For languages other than Ada, attribute Dependency_Switches specifies
-the option or options to add to the compiler invocation so that it creates
-the dependency file at the same time. The value of attribute Dependency_Option
-is a string list. The name of the dependency file is added to the last string
-in the list, which may be empty. Example:
-
-@smallexample
-   for Dependency_Switches ("C") use ("-Wp,-MD,");
-@end smallexample
-
-With this Dependency_Option, when compiling "file.c", the compiler will be
-invoked with the option "-Wp,-MD,file.d".
-
-@item Compute_Dependency (<language>)
-
-Specifies the command and options to create a dependency file for a source.
-The full path name of the source is appended to the last string of the string
-list value. Example:
-
-@smallexample
-   for Compute_Dependency ("C") use ("gcc", "-E", "-Wp,-M", "");
-@end smallexample
-
-Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
-
-@end itemize
-
-@node Search Path Related Attributes
-@subsection Search Path Related Attributes
-
-@itemize @bullet
-
-@item Include_Switches (<language>)
-
-Specifies the option or options to use when invoking the compiler to indicate
-that a directory is part of the source search path. The value of this
-attribute is a string list. The full path name of the directory is concatenated
-with the last string in the string list, which may be empty. Example:
-
-@smallexample
-   for Include_Switches ("C") use ("-I");
-@end smallexample
-
-Attribute Include_Switches is ignored if either one of the attributes
-Include_Path or Include_Path_File are specified.
-
-@item Include_Path (<language>)
-
-Specifies the name of an environment variable that is used by the compiler to
-get the source search path. The value of the environment variable is the source
-search path to be used by the compiler. Example:
-
-@smallexample
-   for Include_Path ("C")   use "CPATH";
-   for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
-@end smallexample
-
-Attribute Include_Path is ignored if attribute Include_Path_File is declared
-for the language.
-
-@item Include_Path_File (<language>)
-
-Specifies the name of an environment variable that is used by the compiler to
-get the source search path. The value of the environment variable is the path
-name of a text file that contain the path names of the directories of the
-source search path. Example:
-
-@smallexample
-   for Include_Path_File ("Ada") use "ADA_PRJ_INCLUDE_FILE";
-@end smallexample
-
-@end itemize
-
-@node Package Binder
-@section Package Binder
-
-@itemize @bullet
-
-@item Driver (<language>)
-
-Specifies the name of the executable of the binder driver. When this attribute
-is not specified, there is no binder for the language. Example:
-
-@smallexample
-   for Driver ("Ada") use "/.../gprbind";
-@end smallexample
-
-@item Switches (<language>)
-
-Specifies the minimum options to be used when invoking the binder driver.
-These options are put in the appropriate section in the binder exchange file,
-one option per line. Example:
-
-@smallexample
-   for Switches ("Ada") use ("--prefix=<prefix>");
-@end smallexample
-
-@item Prefix (<language>)
-
-Specifies the prefix to be used in the name of the binder exchange file.
-Example:
-
-@smallexample
-   for Prefix ("C++") use ("c__");
-@end smallexample
-
-@item Objects_Path (<language>)
-
-Specifies the name of an environment variable that is used by the compiler to
-get the object search path. The value of the environment variable is the object
-search path to be used by the compiler. Example:
-
-@smallexample
-   for Objects_Path ("Ada") use "ADA_OBJECTS_PATH";
-@end smallexample
-
-@item Objects_Path_File (<language>)
-
-Specifies the name of an environment variable that is used by the compiler to
-get the object search path. The value of the environment variable is the path
-name of a text file that contain the path names of the directories of the
-object search path. Example:
-
-@smallexample
-   for Objects_Path_File ("Ada") use "ADA_PRJ_OBJECTS_FILE";
-@end smallexample
-
-@end itemize
-
-@node Package Linker
-@section Package Linker
-
-@itemize @bullet
-
-@item Driver
-
-Specifies the name of the executable of the default linker. Example:
-
-@smallexample
-   for Driver use "g++";
-@end smallexample
-
-@item Required_Switches
-
-Specifies the minimum options to be used when invoking the default linker.
-
-@end itemize
 
 @c  ------------------------------------------------------------------------
 @node Cleaning up with gprclean
@@ -1720,8 +1090,8 @@ The switches for gprclean are:
 
 @item  -q : Be quiet/terse. There is no output, except to report problems.
 
-@item  -r : Clean all projects recursively. Without this switch, gprclean only
-            clean the main project.
+@item  -r : (recursive) Clean all projects referenced by the main
+project directly or indirectly. Without this switch, gprclean only clean the main project.
 
 @item  -v  : Verbose mode
 
@@ -2433,10 +1803,664 @@ inverted, and it will match when none of its children matches.
 @end itemize
 
 @c  ------------------------------------------------------------------------
-@node Other companion tools
-@chapter Other companion tools
-c  ------------------------------------------------------------------------
-@@c describe here gprbind, gprlib & create_ada_runtime
+@node Configuration File Reference
+@chapter Configuration File Reference
+@c  ------------------------------------------------------------------------
+
+@menu
+* Project Level Attributes::
+* Package Naming::
+* Package Builder::
+* Package Compiler::
+* Package Binder::
+* Package Linker::
+@end menu
+
+@noindent
+gprbuild needs to have a configuration file to know the different
+characteristics of the toolchains that can be used to compile sources and
+build libraries and executables.
+
+A configuration file is a special kind of project file: it uses the same
+syntax as a standard project file. Attributes in the configuration file
+define the configuration. Some of these attributes have a special meaning
+in the configuration.
+
+The default name of the configuration file, when to specified to gprbuild by
+switch --config= is "default.cgpr". Although the name of the configuration
+file can be any valid file name, it is recommended that its suffix be ".cgpr" (for
+Configuration GNAT Project), so that it cannot be confused with a standard
+project file which has the suffix ".gpr".
+
+In the description of the attributes that follows, when an attribute is an
+associative array indexed by the language name, for example
+Spec_Suffix (<language>), then the name of the language is case insensitive.
+For example, "C" and "c" are allowed.
+
+@node Project Level Attributes
+@section Project Level Attributes
+
+@menu
+* General Attributes::
+* General Library Related Attributes::
+* Archive Related Attributes::
+* Shared Library Related Attributes::
+@end menu
+
+@node General Attributes
+@subsection General Attributes
+
+@itemize @bullet
+
+@item Default_Language
+
+Specifies the name of the language of the immediate sources of a project when
+attribute Languages is not declared in the project. If attribute
+Default_Language is not declared in the configuration file, then all user
+project files in the project tree must have an attribute Languages declared
+except when the extend another project. Example:
+
+@smallexample
+   for Default_Language use "ada";
+@end smallexample
+
+@item Run_Path_Option
+
+Specifies a "run path option", that is an option to use when linking an
+executable or a shared library to indicate the path where to look for other
+libraries. The value of this attribute is a string list. When linking an
+executable or a shared library, the search path is concatenated with the last
+string in the list, which may be an empty string. Example:
+
+@smallexample
+   for Run_Path_Option  use ("-Wl,-rpath,");
+@end smallexample
+
+@item Toolchain_Version (<language>)
+
+Specifies a version for a toolchain, as a single string. This toolchain
+version is passed to the library builder. Example:
+
+@smallexample
+   for Toolchain_Version ("Ada") use "GNAT 6.1";
+@end smallexample
+
+@item Toolchain_Description (<language>)
+
+Specifies as a single string a description of a toolchain. This attribute is
+not directly used by gprbuild or its auxiliary tools (gprbind and gprlib) but
+may be used by other tools, for example GPS. Example:
+
+@smallexample
+   for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
+@end smallexample
+
+@end itemize
+
+@node General Library Related Attributes
+@subsection General Library Related Attributes
+
+@itemize @bullet
+
+@item Library_Support
+
+Specifies the level of support for library project. If this attribute is not
+specified, then library projects are not supported. The only potential values
+for this attribute are "none", "static_only" and "full". Example:
+
+@smallexample
+   for Library_Support use "full";
+@end smallexample
+
+@item Library_Builder
+
+Specifies the name of the executable for the library builder. Example:
+
+@smallexample
+   for Library_Builder use "/.../gprlib";
+@end smallexample
+
+@end itemize
+
+@node Archive Related Attributes
+@subsection Archive Related Attributes
+
+@itemize @bullet
+
+@item Archive_Builder
+
+Specifies the name of the executable of the archive builder with the minimum
+options, if any. Example:
+
+@smallexample
+   for Archive_Builder use ("ar", "cr");
+@end smallexample
+
+@item Archive_Indexer
+
+Specifies the name of the executable of the archive indexer with the minimum
+options, if any. If this attribute is not specified, then there is no
+archive indexer. Example:
+
+@smallexample
+   for Archive_Indexer use ("ranlib");
+@end smallexample
+
+@item Archive_Suffix
+
+Specifies the suffix of the archives. If this attribute is not specified, then
+the suffix of the archives is defaulted to ".a". Example:
+
+@smallexample
+   for Archive_Suffix use ".olb"; --  for VMS
+@end smallexample
+
+@item Library_Partial_Linker
+
+Specifies the name of the executable of the partial linker with the options
+to be used, if any. If this attribute is not specified, then there is no
+partial linking. Example:
+
+@smallexample
+   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+@end smallexample
+
+@end itemize
+
+@node Shared Library Related Attributes
+@subsection Shared Library Related Attributes
+
+@itemize @bullet
+
+@item Shared_Library_Prefix
+
+Specifies the prefix of the file names of shared libraries. When this attribute
+is not specified, the prefix is "lib". Example:
+
+@smallexample
+   for Shared_Library_Prefix use ""; --  for Windows
+@end smallexample
+
+@item Shared_Library_Suffix
+
+Specifies the suffix of the file names of shared libraries. When this attribute
+is not specified, the prefix is ".so". Example:
+
+@smallexample
+   for Shared_Library_Suffix use ".dll"; --  for Windows
+@end smallexample
+
+@item Symbolic_Link_Supported
+
+Specifies if symbolic links are supported by the platforms. The possible values
+of this attribute are "false" (the default) and "true". When this attribute is
+not specified, symbolic links are not supported.
+
+@smallexample
+   for Symbolic_Link_Supported use "true";
+@end smallexample
+
+@item Library_Major_Minor_ID_Supported
+
+Specifies if major and minor IDs are supported for shared libraries.
+The possible values of this attribute are "false" (the default) and "true".
+When this attribute is not specified, major and minor IDs are not supported.
+
+@smallexample
+   for Library_Major_Minor_ID_Supported use "True";
+@end smallexample
+
+@item Library_Auto_Init_Supported
+
+Specifies if library auto initialization is supported. The possible values of
+this attribute are "false" (the default) and "true". When this attribute is not
+specified, library auto initialization is not supported.
+
+@smallexample
+   for Library_Auto_Init_Supported use "true";
+@end smallexample
+
+@item Shared_Library_Minimum_Switches
+
+Specifies the minimum options to be used when building shared library. These
+options are put in the appropriate section in the library exchange file when
+the library builder is invoked. Example:
+
+@smallexample
+   for Shared_Library_Minimum_Switches use  ("-shared");
+@end smallexample
+
+@item Library_Version_Switches
+
+Specifies the option or options to be used when a library version is used.
+These options are put in the appropriate section in the library exchange file
+when the library builder is invoked. Example:
+
+@smallexample
+   for Library_Version_Switches use ("-Wl,-soname,");
+@end smallexample
+
+@end itemize
+
+@node Package Naming
+@section Package Naming
+
+Attributes in package Naming of a configuration file specify defaults. These
+attributes may be used in user project files to replace these defaults.
+
+The following attributes may appear in package Naming of a configuration file:
+
+@itemize @bullet
+@item Spec_Suffix (<language>)
+
+Specifies the default suffix for a "spec" or header file. Examples:
+
+@smallexample
+   for Spec_Suffix ("Ada") use ".ads";
+   for Spec_Suffix ("C")   use ".h";
+   for Spec_Suffix ("C++") use ".hh";
+@end smallexample
+
+@item Body_Suffix (<language>)
+
+Specifies the default sufix for a "body" or a source file. Examples:
+
+@smallexample
+   for Body_Suffix ("Ada") use ".adb";
+   for Body_Suffix ("C")   use ".c";
+   for Body_Suffix ("C++") use ".cpp";
+@end smallexample
+
+@item Separate_Suffix
+
+Specifies the suffix for a subunit source file (separate) in Ada. If attribute
+Separate_Suffix is not specified, then the default suffix of subunit source
+files is the same as the default suffix for body source files. Example:
+
+@smallexample
+   for Separate_Suffix use ".sep";
+@end smallexample
+
+@item Casing
+
+Specifies the casing of spec and body files in a unit based language
+(such as Ada) to know how to map a unit name to its file name. The values for
+this attribute may only be "lowercase", "UPPERCASE" and "Mixedcase".
+The default, when attribute Casing is not specified is lower case.
+It is rarely the case when this attribute needs to be specified, as on
+platforms where file names are not case sensitive (such as Windows of VMS)
+the default (lower case) will work fine.
+
+@item Dot_Replacement
+
+Specifies the string to replace a dot ('.') in unit name of a unit based
+language (such as Ada) to obtain its file name. If there is any unit based
+language in the configuration, attribute Dot_Replacement must be declared.
+Example:
+
+@smallexample
+   for Dot_Replacement use "-";
+@end smallexample
+
+@end itemize
+
+@node Package Builder
+@section Package Builder
+
+@itemize @bullet
+
+@item Executable_Suffix
+
+Specifies the default executable suffix. If no attribute Executable_Suffix is
+declared, then the default executable suffix for the host platform is used.
+Example:
+
+@smallexample
+   for Executable_Suffix use ".exe";
+@end smallexample
+
+@end itemize
+
+@node Package Compiler
+@section Package Compiler
+
+@menu
+* General Compilation Attributes::
+* Mapping File Related Attributes::
+* Config File Related Attributes::
+* Dependency Related Attributes::
+* Search Path Related Attributes::
+@end menu
+
+@node General Compilation Attributes
+@subsection General Compilation Attributes
+
+@itemize @bullet
+
+@item Driver (<language>)
+
+Specifies the name of the executable for the compiler of a language. The single
+string value of this attribute may be an absolute path or a relative path. If
+relative, then the execution path is searched. Examples:
+
+@smallexample
+   for Driver ("C++") use "g++";
+   for Driver ("Ada") use "/.../bin/gcc";
+@end smallexample
+
+@item Switches (<language>)
+
+Specifies the minimum options that must be used when invoking the compiler
+of a language. Examples:
+
+@smallexample
+   for Switches ("C")   use ("-c", "-x", "c");
+   for Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
+@end smallexample
+
+@item PIC_Option (<language>)
+
+Specifies the option or options that must be used when compiling a source of
+a language to be put in a shared library. Example:
+
+@smallexample
+   for PIC_Option ("C") use ("-fPIC");
+@end smallexample
+
+@end itemize
+
+@node Mapping File Related Attributes
+@subsection Mapping File Related Attributes
+
+@itemize @bullet
+
+@item Mapping_File_Switches (<language>)
+
+Specifies the switch or switches to be used to specify a mapping file to the
+compiler. When attribute Mapping_File_Switches is not declared, then no
+mapping file is specified to the compiler. The value of this attribute is a
+string list. The path name of the mapping file is concatenated with the last
+string in the string list, which may be empty. Example:
+
+@smallexample
+   for Mapping_File_Switches ("Ada") use ("-gnatem=");
+@end smallexample
+
+@item Mapping_Spec_Suffix (<language>)
+
+Specifies, for unit based languages that support mapping files, the suffix in
+the mapping file that needs to be added to the unit name for specs. Example:
+
+@smallexample
+    for Mapping_Spec_Suffix ("Ada") use "%s";
+@end smallexample
+
+@item Mapping_Body_Suffix (<language>)
+
+Specifies, for unit based languages that support mapping files, the suffix in
+the mapping file that needs to be added to the unit name for bodies. Example:
+
+@smallexample
+    for Mapping_Spec_Suffix ("Ada") use "%b";
+@end smallexample
+
+@end itemize
+
+@node Config File Related Attributes
+@subsection Config File Related Attributes
+
+@noindent
+
+In the value of config file attributes defined below, there are some
+placeholders that gprbuild will replace. These placeholders are:
+
+@itemize @bullet
+
+@item %u : the unit name
+
+@item %f : the file name of the source
+
+@item %s : the spec suffix
+
+@item %b : the body suffix
+
+@item %c : the casing
+
+@item %d : the dot replacement string
+
+@end itemize
+
+Attributes:
+
+@itemize @bullet
+
+@item Config_File_Switches (<language>)
+
+Specifies the switch or switches to be used to specify a confi file to the
+compiler. When attribute Config_File_Switches is not declared, then no
+config file is specified to the compiler. The value of this attribute is a
+string list. The path name of the config file is concatenated with the last
+string in the string list, which may be empty. Example:
+
+@smallexample
+   for Config_File_Switches ("Ada") use ("-gnatec=");
+@end smallexample
+
+@item Config_Body_File_Name (<language>)
+
+Specifies the line to be put in a config file to indicate the file name of a
+body. Example:
+
+@smallexample
+   for Config_Body_File_Name ("Ada") use
+       "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
+@end smallexample
+
+@item Config_Spec_File_Name (<language>)
+
+Specifies the line to be put in a config file to indicate the file name of a
+spec. Example:
+
+@smallexample
+   for Config_Spec_File_Name ("Ada") use
+       "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
+@end smallexample
+
+@item Config_Body_File_Name_Pattern (<language>)
+
+Specifies the line to be put in a config file to indicate a body file name
+pattern. Example:
+
+@smallexample
+   for Config_Body_File_Name_Pattern ("Ada") use
+       "pragma Source_File_Name_Project " &
+       "  (Body_File_Name  => ""*%b""," &
+       "   Casing          => %c," &
+       "   Dot_Replacement => ""%d"");";
+@end smallexample
+
+@item Config_Spec_File_Name_Pattern (<language>)
+
+Specifies the line to be put in a config file to indicate a spec file name
+pattern. Example:
+
+@smallexample
+   for Config_Spec_File_Name_Pattern ("Ada") use
+       "pragma Source_File_Name_Project " &
+       "  (Spec_File_Name  => ""*%s""," &
+       "   Casing          => %c," &
+       "   Dot_Replacement => ""%d"");";
+@end smallexample
+
+@item Config_File_Unique (<language>)
+
+Specifies, for languages that support config files, if several config files
+may be indicated to the compiler, or not. This attribute may have only two
+values: "true" or "false" (case insensitive). The default, when this attribute
+is not specified, is "false". When the value "true" is specified for this
+attribute, gprbuild will concatenate the config files, if there are more than
+one. Example:
+
+@smallexample
+   for Config_File_Unique ("Ada") use "True";
+@end smallexample
+
+@end itemize
+
+@node Dependency Related Attributes
+@subsection Dependency Related Attributes
+
+@itemize @bullet
+
+@item Dependency_Switches (<language>)
+
+For languages other than Ada, attribute Dependency_Switches specifies
+the option or options to add to the compiler invocation so that it creates
+the dependency file at the same time. The value of attribute Dependency_Option
+is a string list. The name of the dependency file is added to the last string
+in the list, which may be empty. Example:
+
+@smallexample
+   for Dependency_Switches ("C") use ("-Wp,-MD,");
+@end smallexample
+
+With this Dependency_Option, when compiling "file.c", the compiler will be
+invoked with the option "-Wp,-MD,file.d".
+
+@item Compute_Dependency (<language>)
+
+Specifies the command and options to create a dependency file for a source.
+The full path name of the source is appended to the last string of the string
+list value. Example:
+
+@smallexample
+   for Compute_Dependency ("C") use ("gcc", "-E", "-Wp,-M", "");
+@end smallexample
+
+Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
+
+@end itemize
+
+@node Search Path Related Attributes
+@subsection Search Path Related Attributes
+
+@itemize @bullet
+
+@item Include_Switches (<language>)
+
+Specifies the option or options to use when invoking the compiler to indicate
+that a directory is part of the source search path. The value of this
+attribute is a string list. The full path name of the directory is concatenated
+with the last string in the string list, which may be empty. Example:
+
+@smallexample
+   for Include_Switches ("C") use ("-I");
+@end smallexample
+
+Attribute Include_Switches is ignored if either one of the attributes
+Include_Path or Include_Path_File are specified.
+
+@item Include_Path (<language>)
+
+Specifies the name of an environment variable that is used by the compiler to
+get the source search path. The value of the environment variable is the source
+search path to be used by the compiler. Example:
+
+@smallexample
+   for Include_Path ("C")   use "CPATH";
+   for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
+@end smallexample
+
+Attribute Include_Path is ignored if attribute Include_Path_File is declared
+for the language.
+
+@item Include_Path_File (<language>)
+
+Specifies the name of an environment variable that is used by the compiler to
+get the source search path. The value of the environment variable is the path
+name of a text file that contain the path names of the directories of the
+source search path. Example:
+
+@smallexample
+   for Include_Path_File ("Ada") use "ADA_PRJ_INCLUDE_FILE";
+@end smallexample
+
+@end itemize
+
+@node Package Binder
+@section Package Binder
+
+@itemize @bullet
+
+@item Driver (<language>)
+
+Specifies the name of the executable of the binder driver. When this attribute
+is not specified, there is no binder for the language. Example:
+
+@smallexample
+   for Driver ("Ada") use "/.../gprbind";
+@end smallexample
+
+@item Switches (<language>)
+
+Specifies the minimum options to be used when invoking the binder driver.
+These options are put in the appropriate section in the binder exchange file,
+one option per line. Example:
+
+@smallexample
+   for Switches ("Ada") use ("--prefix=<prefix>");
+@end smallexample
+
+@item Prefix (<language>)
+
+Specifies the prefix to be used in the name of the binder exchange file.
+Example:
+
+@smallexample
+   for Prefix ("C++") use ("c__");
+@end smallexample
+
+@item Objects_Path (<language>)
+
+Specifies the name of an environment variable that is used by the compiler to
+get the object search path. The value of the environment variable is the object
+search path to be used by the compiler. Example:
+
+@smallexample
+   for Objects_Path ("Ada") use "ADA_OBJECTS_PATH";
+@end smallexample
+
+@item Objects_Path_File (<language>)
+
+Specifies the name of an environment variable that is used by the compiler to
+get the object search path. The value of the environment variable is the path
+name of a text file that contain the path names of the directories of the
+object search path. Example:
+
+@smallexample
+   for Objects_Path_File ("Ada") use "ADA_PRJ_OBJECTS_FILE";
+@end smallexample
+
+@end itemize
+
+@node Package Linker
+@section Package Linker
+
+@itemize @bullet
+
+@item Driver
+
+Specifies the name of the executable of the default linker. Example:
+
+@smallexample
+   for Driver use "g++";
+@end smallexample
+
+@item Required_Switches
+
+Specifies the minimum options to be used when invoking the default linker.
+
+@end itemize
 
 Index
 
