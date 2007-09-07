@@ -67,7 +67,7 @@ Guided Tour
 * Subsystems::
 * Project Extensions::
 * Libraries::
-* Scenarios & conditional source files::
+* Scenarios and conditional source files::
 
 Building with gprbuild
 * Command Line::
@@ -110,14 +110,14 @@ gprbuild manages a three step build process
 @item compilation phase:
 
 each compilation unit of each subsystem is examined in turn, checked for
-consitency and compiled or recommpiled when necessary by the appropriate
+consitency and compiled or recompiled when necessary by the appropriate
 compiler.  The recompilation decision is based on dependency information
 usually produced by a former compilation.
 
 @item post-compilation phase (or binding):
 
 Compiled units of a given language are passed to a language specific
-post-compilation tool when it is exist. This is also during this phase
+post-compilation tool if any. This is also during this phase
 that objects are grouped into static or dynamic libraries as specified.
 
 @item linking phase:
@@ -131,7 +131,7 @@ specific to the set of toolchains used together.
 defining the build characteristics of the system under construction
 such as:
 @itemize
-@item which source to use,
+@item which sources to use,
 @item where to find them,
 @item where to store the objects produced by the compiler,
 @item which options should the compiler be invoked with, etc.
@@ -143,14 +143,13 @@ configuration file (<file>.cgpr) which has a syntax and structure very
 similar to a project file, but whose goal is to define the characteristics
 of the supported languages and toolchains. The configuration file contains
 information such as:
-such as:
 @itemize
 @item what are the default source naming conventions for each language
 @item what is compiler name, location and mandatory options,
 @item how to compute inter-unit dependency,
-@item how to build static or dynamic libraries
-@item which post-compilation actions are needed
-@item how to link together units from different languages
+@item how to build static or dynamic libraries,
+@item which post-compilation actions are needed,
+@item how to link together units from different languages.
 @end itemize
 
 On the other hand, @code{gprbuild} is not a replacement for general-purpose
@@ -159,7 +158,7 @@ level of control on the build process itself. When building a system
 requires complex actions that do not fit well in the three-phase process
 described above, @code{gprbuild} is not able to manage all the aspects
 of the build process on its own. In such complex situations, it can still
-be used sucessfully to address the appropriate part of the build. for
+be used sucessfully to address the appropriate part of the build. For
 instance it can be called from within a Makefile.
 
 @c  ------------------------------------------------------------------------
@@ -167,25 +166,25 @@ instance it can be called from within a Makefile.
 @chapter Important Concepts
 @c  ------------------------------------------------------------------------
 
-Let's discuss some the important concepts that are the foundation of the
+Let's discuss some of the important concepts that are the foundation of the
 GNAT Project files and the GPRbuild process.
 
 @itemize @bullet
 
-@item source files & source directories:
+@item source files and source directories:
 
 A source file is associated to a language through a naming convention.
 For instance, @code{foo.c} is typically
 the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are 2
-common naming conventions for the file containing an Ada spec; etc.
+common naming conventions for a file containing an Ada spec; etc.
 A compilation unit is often composed of a main source file and potentially
 several auxillary ones, such as header files in C. The naming conventions
 can be defined or modified by the user and are used by
 @code{gprbuild} to invoke the appropriate compiler.
 Source files are looked for in the source directories associated to the
-project with the@code{Source_Dirs} attribute. By default,
+project with the @code{Source_Dirs} attribute. By default,
 all the files in the source directories following the naming conventions
-associatd with the declared languages are
+associated with the declared languages are
 considered to be part of the project. It is also possible to limit the
 list of source files using the @code{Source_Files} or
 @code{Source_List_File} attributes.
@@ -197,7 +196,7 @@ compilation unit. It is used by the post-compilation phases to produce
 final executables or libraries. The object files produced in the context of
 a given project are stored in a single directory, the Object_Dir that can
 be specified in the project file. A need for storing
-objects in different directories correspond to the need to split the
+objects in different directories corresponds to the need to split the
 system into distinct subsystems.
 
 @item project file:
@@ -208,7 +207,7 @@ include the list of sources, the location of those sources, the location
 where to store the generated object files, the name of the main program
 and the default options for the various tools involved in the build
 process. Those characteristics can be conditionalized thanks to scenario
-variables & case statements.
+variables and case statements.
 
 @item configuration file:
 
@@ -221,8 +220,8 @@ characteristics.
 A specific characteristic is defined by a project attribute clause. Its
 value is a string or a sequence of strings. For instance, the Source_Dirs
 attribute is a sequence of strings representing the actual names of the
-directories containing the source of the project. The attribute itself can
-be parametrized. For instance @code{Compiler'Default_Options ("Ada")}
+directories containing the sources of the project. The attribute itself can
+be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
 refers to the default compiler options for the Ada language.
 
 @item project subpackage:
@@ -230,13 +229,13 @@ refers to the default compiler options for the Ada language.
 Global characteristics are defined at the top level of the projects.
 Specific characteristics affecting a given tool are grouped in a
 subpackage named after the type of tools it affects. The most common
-subpackages are "Builder", "Compiler", "Binder" & "Linker".
+subpackages are "Builder", "Compiler", "Binder" and "Linker".
 
 @item project variables:
 
 Two kinds of variables are available with projects: simple variables and
-scenario variables. The former can hold any string, or sequence of strings
-value. They are useful as shortcut for complex expressions. Scenario
+scenario variables. The former can hold any string, or sequence of string
+values. They are useful as shortcut for complex expressions. Scenario
 variables are a restricted version of the former which can only take their
 value from a static enumeration of strings representing the various
 supported scenarios. Those scenario variables are used conjointly with
@@ -253,7 +252,7 @@ system is composed of a single subsystem. Complex systems are
 usually composed of a graph of interdependant subsystems. A subsystem is
 dependant on another subsystem if it cannot be built without any
 knowledge of the other one, and in particular if visibility on some of
-the sources od this other subsystem is required. A subsystem is usually
+the sources of this other subsystem is required. A subsystem is usually
 represented by one project file. The subsystem dependency relationship
 is represented by the @code{with} clause between corresponding project
 files.
@@ -262,9 +261,9 @@ files.
 
 A Library is a specific type of subsystem where the objects are
 grouped together using system specific means for the conveniency
-of the user. Project files off a system and language independant way of
-building both static and dynamic libraries. It also support the concept
-of standalone libraries (SAL) which offer two significant properties: the
+of the user. Project files are a system and language independant way of
+building both static and dynamic libraries. They also support the concept
+of standalone libraries (SAL) which offers two significant properties: the
 initialization of the library is either automatic or very simple; a
 change in the implementation part of the library implies minimal
 post-compilation actions on the complete system and potentially no
@@ -279,7 +278,7 @@ requires a change in the subsystem it may affect the other system
 negatively. In order to preserve as much sharing of the subsystem, it is
 possible to represent a new version of the subsystem as a delta to the
 original version which only contains the new source files, those that have
-been changed and the objects that are affected by therse changes.
+been changed and the objects that are affected by these changes.
 @end itemize
 
 @c  ------------------------------------------------------------------------
@@ -292,24 +291,24 @@ been changed and the objects that are affected by therse changes.
 * Subsystems::
 * Project Extensions::
 * Libraries::
-* Scenarios & conditional source files::
+* Scenarios and conditional source files::
 @end menu
 
 This chapter will guide you, through examples, from the simplest cases of
-multi-language builds to some of the most advanced capability of
+multi-language builds to some of the most advanced capabilities of
 @code{gprbuild}. Note that all the examples used in the text are extracted
 from the examples of the gprbuild package which are installed on your
-system at $root/share/examples/gprbuild.
+system in <prefix>/share/examples/gprbuild/.
 
-Gprbuild needs one configuration file describing the languages and
-toolchains to be used as long as project files describing the
+GPRbuild needs one configuration file describing the languages and
+toolchains to be used as well as project files describing the
 characteristics of the user project. In simple cases, the configuration
-file can be created automatically by gprbuild based on the languages
+file can be created automatically by GPRbuild based on the languages
 defined in users projects and the compilers on his path. There are more
 involved situations such as cross-compilation,
 rich environments with different compilers for the same language, etc.
 where it may be needed to control precisely the generation of
-the desired configuration of toolsets. A tool, gprconfig, described in a
+the desired configuration of toolsets. A tool, @code{gprconfig}, described in a
 latter chapter, offers this capability. In the context of this
 guided tour, autoconfiguration is appropriate and thus we will not discuss
 here issues related to configuration.
@@ -317,7 +316,7 @@ here issues related to configuration.
 @node First Steps
 @section First Steps
 
-Let's assume a simple case of interfacing between Ada & C where the main
+Let's assume a simple case of interfacing between Ada and C where the main
 program is first in Ada and then in C. For a main program in Ada, we can
 use a project of the sort:
 
@@ -335,24 +334,24 @@ end Ada_Main;
 @noindent
 This project says that:
 @itemize
-@item the sources files of this subsystem are in "Ada" and
-in "C".
+@item the sources files of this subsystem are written in Ada and C.
 @item the list of directories containing the sources is composed of
 two directories called @code{ada_src} and @code{util_src}.
 @item the directory holding the objects is @code{obj}.
-@item the directory holding the executables is @code{.}.
+@item the directory holding the executables is @code{.}, that is to say the
+directory containing the project file itself.
 @item the complete list of source files is @code{ada_main.adb},
 @code{c_lib.ads}, @code{lib.h}, @code{lib.c}. They can be found anywhere
 in the source directories mentioned above.
 @item the main entry point of the system is in the source file
-@code{main_ada.adb}.
+@code{ada_main.adb}.
 @end itemize
 Those elements are sufficient for @code{gprbuild} to build an executable
 program out of the sources. Note that no direct indication on how to build
-the various elements are given in the project files which remains a
+the various elements are given in the project file which remains a
 description of the project properties rather than a set of actions to
 be executed. Here is the invocation of
-@code{gprbuild} that allow building the multi-language program:
+@code{gprbuild} that allows building the multi-language program:
 @smallexample
 $ gprbuild -Pada_main
 gcc -c ada_main.adb -o ada_main.o
@@ -364,19 +363,19 @@ gcc ada_main.o -o ada_main.exe
 @end smallexample
 
 @noindent
-One notice the three steps described in the introduction of this document:
+One notices the three steps described in the introduction of this document:
 the first gcc commands correspond to the compilation phase. The gprbind
-command correspond to the post-compilation phase while the last gcc command
-corresponds to the final link. Note that the the default output of the
+command corresponds to the post-compilation phase while the last gcc command
+corresponds to the final link. Note that the default output of the
 gprbuild execution is kept reasonnably simple and easy to understand for
 the user. It means, in particular, that some of the unimportant commands
-are not shown and that some parameters are abbreviated. Gprbuild's option
+are not shown and that some parameters are abbreviated. GPRbuild's option
 @code{-v} provides a much more verbose output which includes, among other
 information, more complete and accurate compilation, post-compilation and
 link commands.
 
 Let's now see other project capabilities through a slightly different
-project using similar sources and a main program is in C:
+project using similar sources and a main program in C:
 
 @smallexample @c projectfile
 project C_Main is
@@ -609,8 +608,8 @@ end New_Ada_Main;
 @c subsystem in a library
 @c show how to deal with externa libraries
 
-@node Scenarios & conditional source files
-@section Scenarios & conditional source files
+@node Scenarios and conditional source files
+@section Scenarios and conditional source files
 
 
 
