@@ -1073,8 +1073,6 @@ package body Confgpr is
    --  Start of processing for Get_Configuration
 
    begin
-      There_Are_Runtime_Projects := False;
-
       declare
          Prefix_Path : constant String := Executable_Prefix_Path;
 

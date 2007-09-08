@@ -644,11 +644,6 @@ package body Buildgpr is
    --  Check that each main is a single file name and that it is a source
    --  of a project from the tree.
 
-   procedure Check_Runtime_Projects;
-   --  If there are runtime projects, for each project using a language with
-   --  a runtime project, add the runtime project to the list of imported
-   --  projects.
-
    procedure Compilation_Phase;
    --  Perform compilations
 
@@ -3169,28 +3164,6 @@ package body Buildgpr is
             end loop;
          end if;
 
-         if There_Are_Runtime_Projects then
-            Put_Line (Exchange_File, Library_Label (Runtime_Directory));
-
-            declare
-               Nam_Proj : Gpr_Util.Name_Project := Runtimes.Get_First;
-
-            begin
-               while Nam_Proj /= No_Name_Project loop
-                  if Nam_Proj.Proj /= No_Project then
-                     Put_Line (Exchange_File, Get_Name_String (Nam_Proj.Lang));
-                     Put_Line
-                       (Exchange_File,
-                        Get_Name_String
-                          (Project_Tree.Projects.Table (Nam_Proj.Proj).
-                             Object_Directory));
-                  end if;
-
-                  Nam_Proj := Runtimes.Get_Next;
-               end loop;
-            end;
-         end if;
-
          Put_Line (Exchange_File, Library_Label (Library_Name));
          Put_Line (Exchange_File, Get_Name_String (Data.Library_Name));
 
@@ -3819,82 +3792,6 @@ package body Buildgpr is
       end loop;
    end Check_Mains;
 
-   ----------------------------
-   -- Check_Runtime_Projects --
-   ----------------------------
-
-   procedure Check_Runtime_Projects is
-   begin
-      --  If there are runtime projects, check if there are for languages
-      --  used by the projects in the Project_Tree. For each such project,
-      --  add the runtime project to the list of imported project.
-
-      if There_Are_Runtime_Projects then
-
-         --  Assume that there is no language in use with a runtime project.
-         --  If this is not true, we will set There_Are_Runtime_Projects to
-         --  True when we find one.
-
-         There_Are_Runtime_Projects := False;
-
-         declare
-            Name_Proj : Gpr_Util.Name_Project;
-            Languages : Name_List_Index;
-            Node      : Name_Node;
-            Imported  : Project_List;
-
-         begin
-            for Project in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-               Languages := Project_Tree.Projects.Table (Project).Languages;
-
-               while Languages /= No_Name_List loop
-                  Node := Project_Tree.Name_Lists.Table (Languages);
-                  Name_Proj := Runtimes.Get (Node.Name);
-
-                  if Name_Proj /= No_Name_Project then
-                     if Name_Proj.Proj = No_Project then
-                        --  New runtime project that has not yet been parsed
-
-                        Prj.Pars.Parse
-                          (In_Tree           => Project_Tree,
-                           Project           => Name_Proj.Proj,
-                           Project_File_Name =>
-                             Get_Name_String (Name_Proj.Name),
-                           Packages_To_Check => Packages_To_Check,
-                           Reset_Tree        => False);
-
-                        if Name_Proj.Proj = No_Project then
-                           Fail_Program
-                             ("processing of runtime project for language ",
-                              Get_Name_String (Node.Name),
-                              " failed");
-                        end if;
-
-                        Runtimes.Set (Node.Name, Name_Proj);
-                        There_Are_Runtime_Projects := True;
-                     end if;
-
-                     --  Add runtime project to the list of dependent projects
-
-                     Project_List_Table.Increment_Last
-                       (Project_Tree.Project_Lists);
-                     Imported := Project_List_Table.Last
-                       (Project_Tree.Project_Lists);
-                     Project_Tree.Project_Lists.Table (Imported) :=
-                       (Project => Name_Proj.Proj,
-                        Next    => Project_Tree.Projects.Table (Project).
-                                     Imported_Projects);
-                     Project_Tree.Projects.Table
-                       (Project).Imported_Projects := Imported;
-                  end if;
-
-                  Languages := Node.Next;
-               end loop;
-            end loop;
-         end;
-      end if;
-   end Check_Runtime_Projects;
-
    -----------------------
    -- Compilation_Phase --
    -----------------------
@@ -3923,8 +3820,6 @@ package body Buildgpr is
       --  to avoid computing it several times.
 
       Mapping_File_Path : Path_Name_Type;
-
-      Runtime_Project : Project_Id;
 
       procedure Add_Config_File_Switch
         (Config    : Language_Config;
@@ -4003,7 +3898,6 @@ package body Buildgpr is
                  Project_Tree.Sources.Table (Source_Identity).Language;
                Language_Name :=
                  Project_Tree.Sources.Table (Source_Identity).Language_Name;
-               Runtime_Project := Runtimes.Get (Language_Name).Proj;
 
                Config := Project_Tree.Languages_Data.Table (Language).Config;
                Compiler_Name_Id :=  Config.Compiler_Driver;
@@ -4570,7 +4464,6 @@ package body Buildgpr is
                      Prj.Env.Create_Mapping_File
                        (Project  => Source_Project,
                         Language => Language_Name,
-                        Runtime  => Runtime_Project,
                         In_Tree  => Project_Tree,
                         Name     => Mapping_File_Path);
                      Mapping_Files_Htable.Set
@@ -4887,8 +4780,6 @@ package body Buildgpr is
       Source   : Source_Id;
       Src_Data : Source_Data;
 
-      Runtime_Project : constant Project_Id := Runtimes.Get (Language).Proj;
-
       procedure Check (Project : Project_Id);
       --  Check the naming schemes of the different projects of the project
       --  tree. For each different naming scheme issue the pattern config
@@ -5187,7 +5078,6 @@ package body Buildgpr is
          Src_Data := Project_Tree.Sources.Table (Source);
 
          if Src_Data.Language_Name = Language  and then
-           Runtime_Project /= Src_Data.Project and then
            Src_Data.Naming_Exception and then
            Src_Data.Unit /= No_Name and then
            not Src_Data.Locally_Removed and then
@@ -5856,8 +5746,6 @@ package body Buildgpr is
 
       --  Check if there are runtime projects and if there are some, parse
       --  them.
-
-      Check_Runtime_Projects;
 
       Queue.Init;
 

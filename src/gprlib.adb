@@ -28,8 +28,6 @@
 --  file. gprlib gets it parameters from a text file and give back results
 --  through the same text file.
 
-with Ada.Characters.Handling; use Ada.Characters.Handling;
-with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
 with Ada.Text_IO;             use Ada.Text_IO;
 with Ada.Command_Line;        use Ada.Command_Line;
 
@@ -49,7 +47,6 @@ with Prj;
 with Snames;
 with Switch;    use Switch;
 with Table;
-with Targparm;
 with Types;     use Types;
 
 procedure Gprlib is
@@ -283,21 +280,9 @@ procedure Gprlib is
 
    Gnatbind_Path : String_Access;
 
-   GNAT_Runtime_Dir : String_Access := null;
-
    Compiler_Name : constant String_Access := Osint.Program_Name ("gcc");
 
    Compiler_Path : String_Access;
-
-   Libgnarl_Needed : Boolean := False;
-   --  Set to True if library needs to be linked with libgnarl
-
-   Libdecgnat_Needed : Boolean := False;
-   --  On OpenVMS, set to True if library needs to be linked with libdecgnat
-
-   Gtrasymobj_Needed : Boolean := False;
-   --  On OpenVMS, set to True if library needs to be linked with
-   --  g-trasym.obj.
 
    Path_Option : String_Access := null;
 
@@ -310,20 +295,8 @@ procedure Gprlib is
    Initial_Rpath_Length : constant := 200;
    --  Initial size of Rpath, when first allocated
 
-   Lgnat : String_Access := new String'("-lgnat");
-
-   Lgnarl : String_Access := new String'("-lgnarl");
-
    procedure Add_Rpath (Path : String);
    --  Add a path name to Rpath
-
-   procedure Check_Libs (ALI_File : String);
-   --  Set Libgnarl_Needed if the ALI_File indicates that there is a need
-   --  to link with -lgnarl (this is the case when there is a dependency
-   --  on s-osinte.ads). On OpenVMS, set Libdecgnat_Needed if the ALI file
-   --  indicates that there is a need to link with -ldecgnat (this is the
-   --  case when there is a dependency on dec.ads), and set
-   --  Gtrasymobj_Needed if there is a dependency on g-trasym.ads.
 
    procedure Copy_ALI_Files;
    --  Copy the ALI files. For not SALs, copy all the ALI files. For SALs,
@@ -395,56 +368,6 @@ procedure Gprlib is
       Rpath (Rpath_Last + 1 .. Rpath_Last + Path'Length) := Path;
       Rpath_Last := Rpath_Last + Path'Length;
    end Add_Rpath;
-
-   ----------------
-   -- Check_Libs --
-   ----------------
-
-   procedure Check_Libs (ALI_File : String) is
-      Lib_File : File_Name_Type;
-      Text     : Text_Buffer_Ptr;
-      Id       : ALI.ALI_Id;
-
-   begin
-      if not Libgnarl_Needed or
-        (Targparm.OpenVMS_On_Target and then
-           ((not Libdecgnat_Needed) or
-              (not Gtrasymobj_Needed)))
-      then
-         --  Scan the ALI file
-
-         Name_Len := ALI_File'Length;
-         Name_Buffer (1 .. Name_Len) := ALI_File;
-         Lib_File := Name_Find;
-         Text := Osint.Read_Library_Info (Lib_File, True);
-
-         Id  := ALI.Scan_ALI
-           (F          => Lib_File,
-            T          => Text,
-            Ignore_ED  => False,
-            Err        => True,
-            Read_Lines => "D");
-         Free (Text);
-
-         --  Look for s-osinte.ads in the dependencies
-
-         for Index in ALI.ALIs.Table (Id).First_Sdep ..
-           ALI.ALIs.Table (Id).Last_Sdep
-         loop
-            if ALI.Sdep.Table (Index).Sfile = S_Osinte_Ads then
-               Libgnarl_Needed := True;
-
-            elsif Targparm.OpenVMS_On_Target then
-               if ALI.Sdep.Table (Index).Sfile = S_Dec_Ads then
-                  Libdecgnat_Needed := True;
-
-               elsif ALI.Sdep.Table (Index).Sfile = G_Trasym_Ads then
-                  Gtrasymobj_Needed := True;
-               end if;
-            end if;
-         end loop;
-      end if;
-   end Check_Libs;
 
    --------------------
    -- Copy_ALI_Files --
@@ -903,33 +826,11 @@ begin
                   Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
                   Driver_Name := Name_Find;
 
-               when Runtime_Directory =>
-                  if End_Of_File (IO_File) then
-                     Osint.Fail
-                       ("no runtime directory for language ",
-                        Line (1 .. Last));
-
-                  elsif To_Lower (Line (1 .. Last)) = "ada" then
-                     Get_Line (IO_File, Line, Last);
-                     GNAT_Runtime_Dir := new String'(Line (1 .. Last));
-
-                  else
-                     Skip_Line (IO_File);
-                  end if;
-
                when Toolchain_Version =>
                   if End_Of_File (IO_File) then
                      Osint.Fail
                        ("no toolchain version for language ",
                         Line (1 .. Last));
-
-                  elsif To_Lower (Line (1 .. Last)) = "ada" then
-                     Get_Line (IO_File, Line, Last);
-
-                     if Last > 5 and then Line (1 .. 5) = "GNAT " then
-                        Lgnat := new String'("-lgnat-" & Line (6 .. Last));
-                        Lgnarl := new String'("-lgnarl-" & Line (6 .. Last));
-                     end if;
 
                   else
                      Skip_Line (IO_File);
@@ -1431,20 +1332,6 @@ begin
          G_Trasym_Ads := Name_Find;
       end if;
 
-      --  Get the ALI files, if any
-
-      if GNAT_Runtime_Dir /= null then
-         for J in 1 .. ALIs.Last loop
-            declare
-               ALI_Name : constant String := ALIs.Table (J).all;
-            begin
-               if Is_Regular_File (ALI_Name) then
-                  Check_Libs (ALI_Name);
-               end if;
-            end;
-         end loop;
-      end if;
-
       for J in 1 .. Imported_Library_Directories.Last loop
          Options_Table.Append
            (new String'
@@ -1462,57 +1349,6 @@ begin
       for J in 1 .. Library_Options_Table.Last loop
          Options_Table.Append (Library_Options_Table.Table (J));
       end loop;
-
-      if GNAT_Runtime_Dir /= null then
-         declare
-            Lib_Directory : constant String := GNAT_Runtime_Dir.all;
-            GCC_Index     : Natural := 0;
-
-         begin
-            Options_Table.Append (new String'("-L" & Lib_Directory));
-
-            --  If Path Option is supported, add libgnat directory path name to
-            --  Rpath.
-
-            if Path_Option /= null then
-               Add_Rpath (Lib_Directory);
-
-               --  Add to the Path Option the directory of the shared version
-               --  of libgcc.
-
-               GCC_Index := Index (Lib_Directory, "/lib/");
-
-               if GCC_Index = 0 then
-                  GCC_Index :=
-                    Index
-                      (Lib_Directory,
-                       Directory_Separator & "lib" & Directory_Separator);
-               end if;
-
-               if GCC_Index /= 0 then
-                  Add_Rpath
-                    (Lib_Directory (Lib_Directory'First .. GCC_Index + 3));
-               end if;
-
-               if Libgnarl_Needed then
-                  Options_Table.Append (Lgnarl);
-               end if;
-
-               if Gtrasymobj_Needed then
-                  Options_Table.Append
-                    (new String'(Lib_Directory & "/g-trasym.obj"));
-               end if;
-
-               if Libdecgnat_Needed then
-                  Options_Table.Append
-                    (new String'("-L" & Lib_Directory & "/../declib"));
-                  Options_Table.Append (new String'("-ldecgnat"));
-               end if;
-            end if;
-
-            Options_Table.Append (Lgnat);
-         end;
-      end if;
 
       if Path_Option /= null and then Rpath /= null then
          Options_Table.Append

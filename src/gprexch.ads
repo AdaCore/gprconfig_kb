@@ -82,7 +82,6 @@ package Gprexch is
       PIC_Option,
       Imported_Libraries,
       Driver_Name,
-      Runtime_Directory,
       Toolchain_Version,
       Archive_Builder,
       Archive_Indexer,

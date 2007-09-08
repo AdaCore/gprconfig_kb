@@ -27,7 +27,6 @@
 --  This package contains constants, variable and subprograms used by gprbuild
 --  and gprclean.
 
-with GNAT.HTable;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
 with Namet;   use Namet;
@@ -35,12 +34,6 @@ with Prj;     use Prj;
 with Table;
 
 package Gpr_Util is
-
-   There_Are_Runtime_Projects : Boolean := False;
-   --  True when there are runtime projects. Set by Get_Configuration when
-   --  an attribute Language_Processing'Runtime_Project is declared.
-   --  Reset to False if there are no sources of the languages with runtime
-   --  projects.
 
    There_Are_Binder_Drivers   : Boolean := False;
    --  True when there is a binder driver. Set by Get_Configuration when
@@ -91,16 +84,6 @@ package Gpr_Util is
 
    No_Name_Project : constant Name_Project :=
                        (Lang => No_Name, Name => No_Path, Proj => No_Project);
-
-   package Runtimes is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
-      Element    => Name_Project,
-      No_Element => No_Name_Project,
-      Key        => Name_Id,
-      Hash       => Prj.Hash,
-      Equal      => "=");
-   --  A hash table to store the path name and project id of the runtime
-   --  projects.
 
    function Binder_Exchange_File_Name
      (Main_Base_Name : File_Name_Type; Prefix : Name_Id)
