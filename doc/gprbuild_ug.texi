@@ -394,7 +394,7 @@ end C_Main;
 
 @noindent
 This project has many similarities with the previous one. The Languages,
-Source_Dirs and Object_Dirs are similar. As expected, its main attribute
+Source_Dirs and Object_Dirs are similar. As expected, its Main attribute
 now refers to a C source. The first noticeable difference is the lack of
 Source_Files attribute. When not specified explicitly, this attribute has
 an implicit value which the complete set of sources of the given Languages to
@@ -411,9 +411,9 @@ Language unless the source has its own set of compilation switches
 specified by the attribute Switches. Note also the use of a variable
 (C_Switches). It can be useful to avoid duplication of information and is
 used in this context to ensure that the file c_main.c is always compiled
-with the default switches whatever they are, plus @code{-g}. In this specific
+with the default switches whatever they are, plus @option{-g}. In this specific
 situation, the use of a variable could have been replaced by a reference
-to the default_switches attribute:
+to the Default_Switches attribute:
 
 @smallexample @c projectfile
    for Switches ("c_main.c") use Compiler'Default_Switches ("C") & ("-g");
@@ -441,10 +441,10 @@ account. When comparing this gprbuild output with the previous one, one can
 notice that there are common sources between the two projects, namely
 c_lib.ads and lib.c. Those sources were compiled twice, once for each
 projects it is part of. This is not surprising since the two projects
-are independant and have different@code{Object_Dir}s eventhough they share
+are independant and have different @code{Object_Dir}s eventhough they share
 some sources. Would it be possible to share more than the sources and in
 particular avoid unnecessary recompilations when compilation units are
-used in several different projects? Slipping the current systems into
+used in several different projects? Splitting the current system into
 subsystems is a way forward in answering this question.
 
 @node Subsystems
@@ -466,7 +466,7 @@ end Common_Subsystem;
 So now by default, all the sources in directory @code{util_src} belong to
 project Common_Subsystem and when compiled, their objects go in @code{obj_dir}.
 Other projects, whose sources depend on sources in @code{util_src} can create
-a dependency relationship using a project's with clause:
+a dependency relationship using a project @code{with} clause:
 
 @smallexample @c projectfile
 with "Common_Subsystem";
@@ -479,7 +479,8 @@ end Ada_Main;
 
 @noindent
 The @code{Ada_Main.Source_Dirs} does not include @code{util_src} anymore. The
-main program in @code{ada_src} still needs sources from util_src to be compiled.
+main program in @code{ada_src} still needs sources from @code{util_src} to be
+compiled.
 It also needs those units built. Now they will be compiled using the build
 properties defined in Common_Subsystem instead of those of Ada_Main. The
 project's @code{with} clause has several effects: it provides visibility of
@@ -488,7 +489,7 @@ compiled with an implcit @code{-Iutil_src}; it also guarantees that the
 necessary units from Common_Subsystems are available for Ada_Main linking
 phase.
 
-It is also possible use the @code{with} relationship to define a project file
+It is also possible to use the @code{with} relationship to define a project file
 that allows sharing common attributes or packages. For instance, one can
  define a project whose only purpose is to centralize the default
 compilation options for various languages:
@@ -535,34 +536,33 @@ attribute level directly as in this new version of C_Main.Compiler:
         Compiler'Default_Switches ("C") & ("-g");
    end Compiler;
 @end smallexample
-If one want to change the compilation options of all C files used for
-building both @code{C_Main} and @code{Ada_Main}, it is sudfficient to edit a single
-project file.
+If one wants to change the compilation options of all C files used for
+building both @code{C_Main} and @code{Ada_Main}, it is sufficient to edit a
+single project file.
 
 @node Project Extensions
 @section Project Extensions
 
 We have seen how to share both compilation units and project properties
 among different systems. Sharing is an essential aspect of big system
-programming since it helps getting organized, reduces compilation time, and
-reduce the maintenance burden. Unfortunately, it gets sometimes in the way.
+programming since it helps getting organized, reduces compilation time and
+reduces the maintenance burden. Unfortunately, it gets sometimes in the way.
 In the above example, @code{Ada_Main} and @code{C_Main both} depend on
 @code{Common_Subsystems} because they have precisely the same needs but the
-requirements of the two systems can diverge over time and which case
+requirements of the two systems can diverge over time in which case
 sharing becomes a problem rather than a solution. For instance let us
 suppose that C_Main is now under maintenance and should not be changed
-carelessly while Ada_Main is still under active development which require
+carelessly while Ada_Main is still under active development which requires
 changes in the sources of the common subsystem. How can we satisfy
-Ada_Main's needs without taking any risks of perturbing C_Main? One
-possibility is to duplicate the common_subsystem completely so that one
+Ada_Main's needs without taking any risk of perturbing C_Main? One
+possibility is to duplicate the common subsystem completely so that one
 version can evolve while the other one can remain frozen. That will force
 duplication and recompilation of the whole project. Extensions provide a
 more flexible mechansim making it possible to provide a new version of
 a subsystem without having to duplicate the sources which do not change.
-A project extension inherit all the sources and object from the project it
-extends and allow the possibility to redefine some of the sources
-which hide the original versions. Once can also add new sources or remove
-existing ones.
+A project extension inherits all the sources and objects from the project it
+extends and allow to redefine some of the sources which hide the original
+versions. One can also add new sources or remove existing ones.
 Here is an example of extension of project common_subsystem:
 
 @smallexample @c projectfile
@@ -573,7 +573,7 @@ end New_Common_Subsystem;
 @end smallexample
 
 The project sources are to be found in @code{Common_Subsystem.Source_Dirs}
-and @code{New_Common_Subsystem.Source_Dirs}. The latter hiding the former
+and @code{New_Common_Subsystem.Source_Dirs}, the latter hiding the former
 when the same source filenames are found in both. New sources can be
 added to the project extension by simply placing them in its
 Source_Dirs. Original Sources can be removed thanks to the Attribute
@@ -583,7 +583,7 @@ sources are rebuilt in the extension's @code{Object_Dir}. Other objects
 remain in their original location and will be used by the builder whenever
 necessary.
 
-We have seem how to define a project extension but how can this extension
+We have seen how to define a project extension but how can this extension
 be used in the context of a big program composed of many subsystems?
 Extending one subsystem may affect implicity many other subsystems
 depending on it eventhough there are no source change in those
@@ -634,25 +634,25 @@ end New_Ada_Main;
 
 @noindent
 
-Three elements can optionally be specified on gprbuild command line:
-the main project file, switches for gprbuild itself or for the tools it
-drives and finally, main source files:
+Three elements can optionally be specified on gprbuild's command line:
+the main project file, the switches for gprbuild itself or for the tools it
+drives and finally, the main source files:
 @smallexample
 gprbuild [<proj>.gpr] [switches] [names]
   @{[-cargs opts] [- cargs:lang opts] [-largs opts][-gargs opts]@}
 @end smallexample
 
 If the main project file is not specified on the command line, either
-directly or using the @code{-P} switch, gprbuild uses the project file
+directly or using the @option{-P} switch, gprbuild uses the project file
 in the current directory as long as there is a single one.
 
-Main source files represent the source to be used as a main program. It
+Main source files represent the sources to be used as the main programs. If
 they are not specified on the command line, gprbuild uses
 the source files specified with the Main attribute in the project file. If
 none exists, then no executable will be built.
 
 When main source files are
-specified along with switch @code{-c}, then only recompilation will
+specified along with switch @option{-c}, then only recompilation will
 be considered only for those source files. In all other cases, gprbuild
 compiles or recompiles all sources in the project tree
 that are not up to date and build or rebuild libraries that are not up to
@@ -662,43 +662,44 @@ The different command line separators are:
 
 @itemize @bullet
 
-@item -cargs
+@item @option{-cargs}
 
 The arguments that follow up to the next command line separators are
-options for all the compilers. Example: -cargs -g
+options for all the compilers.
+Example: "@option{-cargs -g}"
 
-@item -cargs:<language name>
+@item @option{-cargs:}<language name>
 
 The arguments that follow up to the next command line separators are
 options for the compiler of the specific language.
 
 Examples:
-"-cargs:Ada -gnatf" or
-"-cargs:C -E"
+"@option{-cargs:Ada -gnatf}" or
+"@option{-cargs:C -E}"
 
-@item -bargs
+@item @option{-bargs}
 
 The arguments that follow up to the next command line separators are
 options for all binder drivers.
 
-@item -bargs:<language name>
+@item @option{-bargs:}<language name>
 
 The arguments that follow up to the next command line separators are
 options for the binder driver of the specific language.
 
 Examples:
-"-bargs:Ada binder_prefix=ppc-elf" or
-"-bargs:C++ c_compiler_name=ccppc"
+"@option{-bargs:Ada binder_prefix=ppc-elf}" or
+"@option{-bargs:C++ c_compiler_name=ccppc}"
 
-@item -largs
+@item @option{-largs}
 
 The arguments that follow up to the next command line separators are
 options for the linker.
 
-@item -gargs
+@item @option{-gargs}
 
 The arguments that follow up to the next command line separators are
-options for gprbuild itself. Usually, -gargs is specified after one or
+options for gprbuild itself. Usually, @option{-gargs} is specified after one or
 several other command line separators.
 
 @end itemize
@@ -712,147 +713,152 @@ The switches that are interpreted directly by gprbuild are:
 
 @itemize @bullet
 
-@item  --version
+@item @option{--version}
 
 Display information about gprbuild: version, origin and legal status, then
 exit successfully, ignoring other options.
 
-@item  --help
+@item @option{--help}
 
 Display gprbuild usage, then exit successfully, ignoring other options.
 
-@item  --display-paths
+@item @option{--display-paths}
 
 Display the configuration project file search path and the user project file
 search path, then exit successfully, ignoring other options.
 
-@item  --config=<config project file name>
+@item @option{--config=<config project file name>}
 
 This specifies the configuration project file name. By default, the
-configuration project file name is "default.cgpr". Option --config= cannot be
-specified several times.
+configuration project file name is "default.cgpr". Option @option{--config=}
+cannot be specified several times.
 
-@item  -aP dir (Add directory dir to project search path)
+@item @option{-aP dir} (Add directory dir to project search path)
 
 Specify to gprbuild to add directory "dir" to the user project file search
 path, before the default directory.
 
-@item  -b (Bind only)
+@item @option{-b} (Bind only)
 
 Specify to gprbuild that the post-compilation (or binding) phase is to be
 performed, but not the other phases, if they are not specified by appropriate
 switches.
 
-@item  -c (Compile only)
+@item @option{-c} (Compile only)
 
 Specify to gprbuild that the compilation phase is to be performed, but not
 the other phases, if they are not specified by appropriate switches.
 
-@item  -d (Display progress)
+@item @option{-d} (Display progress)
 
 Display progress for each source, up to date or not, as a single
-line "completed x out of y (zz%)...". If the file need to be compiled
+line "completed x out of y (zz%)...". If the file needs to be compiled
 this is displayed after the invocation of the compiler. These lines are
-displayed even in quiet output (switch -q).
+displayed even in quiet output (switch @option{-q}).
 
-@item  -eL  (Follow symbolic links when processing project files)
+@item @option{-eL} (Follow symbolic links when processing project files)
 
 By default, symbolic links are not taken into account to compute directories
-when processing project files. Switch -eF changes this default behavior.
+when processing project files. Switch @option{-eF} changes this default
+behavior.
 
-@item  -f  (Force recompilations)
+@item @option{-f} (Force recompilations)
 
-Force the complete processing of all phases (or of those explicitely specified)
+Force the complete processing of all phases (or of those explicitly specified)
 even when up to date.
 
-@item  -F   (Full project path name in brief error messages)
+@item @option{-F} (Full project path name in brief error messages)
 
 By default, in non verbose mode, when an error occurs while processing
 a project file, only the simple name of the project file is displayed in the
-error message. When switch -F is used, the full path of the project file
-is used. This switch has no effect when switch -v is used.
+error message. When switch @option{-F} is used, the full path of the project
+file is used. This switch has no effect when switch @option{-v} is used.
 
-@item  -jnum (use num simultaneous compilation Jobs)
+@item @option{-j<num>} (use num simultaneous compilation jobs)
 
-By default, gprbuild invokes one compiler at a time. With switch -j, it is
-possible to instruct gprbuild to spawn several simultaneous compilation jobs
-if needed. For example, -j2 for two simultaneous compilation jobs or -j4 for
-four.
+By default, gprbuild invokes one compiler at a time. With switch @option{-j},
+it is possible to instruct gprbuild to spawn several simultaneous compilation
+jobs if needed. For example, @option{-j2} for two simultaneous compilation
+jobs or @option{-j4} for four.
 
-@item -k (Keep going after compilation errors)
+@item @option{-k} (Keep going after compilation errors)
 
 By default, gprbuild stops spawning new compilation jobs at the first
-compilation failure. Using switch -k, it is possible to attempt to
+compilation failure. Using switch @option{-k}, it is possible to attempt to
 compile/recompile all the sources that are not up to date, even when some
 compilations failed. The post-compilation phase and the linking phase are never
-attempted if there are compilation failures, even when switch -k is used.
+attempted if there are compilation failures, even when switch @option{-k} is
+used.
 
-@item  -l  (Link only)
+@item @option{-l} (Link only)
 
 Specify to gprbuild that the linking phase is to be performed, but not
 the other phases, if they are not specified by appropriate switches.
 
-@item -o name  (Choose an alternate executable name)
+@item @option{-o name} (Choose an alternate executable name)
 
 Specify the file name of a single executable. Switch -o cannot be used with
 several mains on the command line or with no main on the command line and
 several mains in attribute Main of the main project.
 
-@item  -p  (Create missing object, library and exec directories)
+@item @option{-p} (Create missing object, library and exec directories)
 
-By default, gprbuild check that the object, libraries and exec directories
-specified in project files exist. Switch -p instructs gprbuild to attempt to
-create missing directories.
+By default, gprbuild check that the object, library and exec directories
+specified in project files exist. Switch @option{-p} instructs gprbuild to
+attempt to create missing directories.
 
-@item  -P proj  (use Project file proj)
+@item @option{-P proj} (use Project file proj)
 
-Specify the path name of the main project file. The space between -P and the
-project file name is optional. Specifying a project file name (with suffix
-".gpr") may be used in place of option -P. Only one user project file
+Specify the path name of the main project file. The space between @option{-P}
+and the project file name is optional. Specifying a project file name (with
+suffix ".gpr") may be used in place of option @option{-P}. Only one user
+project file can be specified.
 
-@item -q  (Quiet output)
+@item @option{-q} (Quiet output)
 
-Do not display anything except errors and progress (switch -d). Cancel any
-previous switch -v.
+Do not display anything except errors and progress (switch @option{-d}).
+Cancel any previous switch @option{-v}.
 
-@item  -s  (recompile if compilation switches have changed)
+@item @option{-s} (recompile if compilation switches have changed)
 
 By default, gprbuild will not recompile a source if all dependencies are
-satisfied. Switch -s instructs gprbuild to recompile sources when a different
-set of compilation switches has been used in the previous compilation, even
-if all dependencies are satisfied. Each time gprbuild invokes a compiler, it
-writes a text file that lists the switches used in the invocation of the
-compiler, so that it can retrieve these switches if -s is used later.
+satisfied. Switch @option{-s} instructs gprbuild to recompile sources when a
+different set of compilation switches has been used in the previous
+compilation, even if all dependencies are satisfied. Each time gprbuild
+invokes a compiler, it writes a text file that lists the switches used in the
+invocation of the compiler, so that it can retrieve these switches if
+@option{-s} is used later.
 
-@item  -v   (Verbose output)
+@item @option{-v} (Verbose output)
 
 Display full paths, all options used in spawned processes and reasons why
-these processes are spawned. Cancel any previous switch -q.
+these processes are spawned. Cancel any previous switch @option{-q}.
 
-@item  -vPx  (Specify verbosity when parsing Project Files)
+@item @option{-vPx} (Specify verbosity when parsing Project Files)
 
 By default, gprbuild does not display anything when processing project files,
 except when there are errors. This default behavior is obtained with switch
--vP0. -vP1 gives more information and -vP2 displays a lot of mostly useless
-information.
+@option{-vP0}. @option{-vP1} gives more information and @option{-vP2} displays
+a lot of mostly useless information.
 
-@item  -we  (Treat all warnings as errors)
+@item @option{-we} (Treat all warnings as errors)
 
-When -we is used, any warning during the processing of the project files
-becomes an error and gprbuild does not attempt any of the phases.
+When @option{-we} is used, any warning during the processing of the project
+files becomes an error and gprbuild does not attempt any of the phases.
 
-@item  -wn  (Treat warnings as warnings)
+@item @option{-wn} (Treat warnings as warnings)
 
-Switch -wn may be used to restore the default after -we or -ws.
+Switch @option{-wn} may be used to restore the default after @option{-we} or
+@option{-ws}.
 
-@item  -ws  (Suppress all warnings)
+@item @option{-ws} (Suppress all warnings)
 
 Do not consider any warning while processing the project files.
 
-@item  -Xnm=val (Specify an external reference for Project Files)
+@item @option{-Xnm=val} (Specify an external reference for Project Files)
 
 Specify an external reference that may be queried inside the project files
-using built-in function "external". For example, with -XBUILD=DEBUG,
+using built-in function "external". For example, with @option{-XBUILD=DEBUG},
 external("BUILD") inside a project file will have the value "DEBUG".
 
 @end itemize
@@ -878,15 +884,16 @@ $ gprbuild -P c_main.gpr -WW
 gprbuild: illegal option "-WW"
 @end smallexample
 
-gprbuild looks for the configuration project file, first in the current
+gprbuild looks for the configuration project file first in the current
 working directory, then in the default configuration project directory.
 If the gprbuild executable is located in a subdirectory "<prefix>/bin", then
 the default configuration project directory is "<prefix>/share/gpr", otherwise
 there is no default configuration project directory.
 
-When it has found its configuration project path, gprbuild need to get its
+When it has found its configuration project path, gprbuild needs to get its
 configuration. By default, the file name of the main configuration project
-is "default.cgpr". This default may be modify using the switch --config=...
+is "default.cgpr". This default may be modifed using the switch
+@option{--config=...}
 
 Example:
 
@@ -905,7 +912,7 @@ gprbuild: could not locate main configuration project my_standard.cgpr
 Once it has found the main configuration project, gprbuild will process its
 configuration. If the configuration project is not correct
 (see @ref{Configuration File Reference}), then gprbuild will fail with
-the appropriate error messages:
+the appropriate error message:
 
 @smallexample
 $ gprbuild --config=my_standard.cgpr -P c_main.gpr
@@ -940,9 +947,9 @@ The options/switches used to compile these sources are described in section
 @node Compilation Phase
 @section Compilation Phase
 
-When switch -c is used or when switches -b or -l are not used, gprbuild will
-first compile or recompile all the sources that are not up to date in all the
-projects in the project tree.
+When switch @option{-c} is used or when switches @option{-b} or @option{-l}
+are not used, gprbuild will first compile or recompile all the sources that
+are not up to date in all the projects in the project tree.
 
 gprbuild will first consider each source and decide if it needs to be
 (re)compiled.
@@ -951,7 +958,7 @@ A source needs to be compiled in the following cases:
 
 @itemize @bullet
 
-@item Switch -f (Force recompilations) is used
+@item Switch @option{-f} (force recompilations) is used
 
 @item The object file does not exist
 
@@ -977,7 +984,7 @@ A source needs to be compiled in the following cases:
 
 @item A source listed in the dependency file has been replaced
 
-@item Switch -s is used and the source has been compiled with different
+@item Switch @option{-s} is used and the source has been compiled with different
       switches or with the same switches in a different order
 
 @end itemize
@@ -1010,10 +1017,10 @@ switches/options:
       the source
 
 @item The compilation switches specified on the command line for all compilers,
-      after "-cargs"
+      after "@option{-cargs}"
 
 @item The compilation switches for the language of the source, specified
-      after "-cargs:<language>"
+      after "@option{-cargs:<language>}"
 
 @item Various other options such as a switch to create the dependency file
       while compiling, a switch to specify a configuration file, a switch
@@ -1024,7 +1031,7 @@ switches/options:
 
 If compilation is needed, then all the options/switches, except those
 described as "Various other options" are written to the switch file.
-The switch file is a text file. It file name is obtained by replacing
+The switch file is a text file. Its file name is obtained by replacing
 the suffix of the source with ".cswi". For example, the switch file
 for source "main.adb" is "main.cswi" and for "toto.c" it is "toto.cswi".
 
@@ -1033,9 +1040,9 @@ file is not done during compilation but after (see configuration attribute
 Compute_Dependency), then the process to create the dependency file is
 invoked.
 
-If gprbuild is invoked with a switch -j specifying more that one compilation
-process, then several compilation processes for several sources of possibly
-different languages are spawned concurently.
+If gprbuild is invoked with a switch @option{-j} specifying more than one
+compilation process, then several compilation processes for several sources of
+possibly different languages are spawned concurrently.
 
 @node Post-Compilation Phase
 @section Post-Compilation Phase
@@ -1071,33 +1078,35 @@ The switches for gprclean are:
 
 @itemize @bullet
 
-@item --config=<main config project file name>
-           Specify the configuration project file name
+@item  @option{--config=<main config project file name>} : Specify the
+       configuration project file name
 
-@item  -c : Only delete compiler generated files. Do not delete executables
-        and libraries.
+@item  @option{-c} : Only delete compiler generated files. Do not delete
+       executables and libraries.
 
-@item  -f : Force deletions of unwritable files
+@item  @option{-f} : Force deletions of unwritable files
 
-@item  -F : Display full project path name in brief error messages
+@item  @option{-F} : Display full project path name in brief error messages
 
-@item  -h : Display this message
+@item  @option{-h} : Display this message
 
-@item  -n : Do not delete files, only list files to delete
+@item  @option{-n} : Do not delete files, only list files to delete
 
-@item  -P<proj> Use Project File <proj>
+@item  @option{-P<proj>} : Use Project File <proj>.
 
-@item  -q : Be quiet/terse. There is no output, except to report problems.
+@item  @option{-q} : Be quiet/terse. There is no output, except to report
+        problems.
 
-@item  -r : (recursive) Clean all projects referenced by the main
-project directly or indirectly. Without this switch, gprclean only clean the main project.
+@item  @option{-r} : (recursive) Clean all projects referenced by the main
+       project directly or indirectly. Without this switch, gprclean only
+       cleans the main project.
 
-@item  -v  : Verbose mode
+@item  @option{-v}  : Verbose mode
 
-@item  -vPx : Specify verbosity when parsing Project Files. x = 0 (default),
-              1 or 2.
+@item  @option{-vPx} : Specify verbosity when parsing Project Files.
+       x = 0 (default), 1 or 2.
 
-@item  -Xnm=val : Specify an external reference for Project Files
+@item  @option{-Xnm=val} : Specify an external reference for Project Files.
 
 @end itemize
 
