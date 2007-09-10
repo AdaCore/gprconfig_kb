@@ -759,7 +759,7 @@ displayed even in quiet output (switch @option{-q}).
 @item @option{-eL} (Follow symbolic links when processing project files)
 
 By default, symbolic links are not taken into account to compute directories
-when processing project files. Switch @option{-eF} changes this default
+when processing project files. Switch @option{-eL} changes this default
 behavior.
 
 @item @option{-f} (Force recompilations)
