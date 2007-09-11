@@ -5999,7 +5999,6 @@ package body Buildgpr is
       end if;
 
       if Usage_Needed then
-         Copyright;
          Usage;
          Usage_Needed := False;
       end if;
