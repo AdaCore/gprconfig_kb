@@ -655,7 +655,7 @@ none exists, then no executable will be built.
 
 When main source files are
 specified along with switch @option{-c}, then only recompilation will
-be considered only for those source files. In all other cases, gprbuild
+be considered for those source files. In all other cases, gprbuild
 compiles or recompiles all sources in the project tree
 that are not up to date and build or rebuild libraries that are not up to
 date.
