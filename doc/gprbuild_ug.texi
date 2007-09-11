@@ -644,7 +644,9 @@ gprbuild [<proj>.gpr] [switches] [names]
 
 If the main project file is not specified on the command line, either
 directly or using the @option{-P} switch, gprbuild uses the project file
-in the current directory as long as there is a single one.
+"default.gpr" if there is one in the current working directory. Otherwise,
+if there is only one project file in the current working directory, gprbuild
+uses this project file.
 
 Main source files represent the sources to be used as the main programs. If
 they are not specified on the command line, gprbuild uses
