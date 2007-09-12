@@ -6301,7 +6301,7 @@ package body Buildgpr is
             Name_Len := 0;
             Add_Str_To_Name_Buffer (Main);
 
-            for J in reverse 4 .. Name_Len loop
+            for J in reverse 2 .. Name_Len loop
                if Name_Buffer (J) = '.' then
                   Name_Len := J - 1;
                   exit;
