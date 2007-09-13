@@ -3186,6 +3186,8 @@ package body Buildgpr is
          Put_Line (Exchange_File, Library_Label (Object_Directory));
          Put_Line (Exchange_File, Object_Directory_Path);
 
+         --  Add object directory of project being extended, if any
+
          if Data.Extends /= No_Project then
             declare
                Proj : Project_Id := Data.Extends;
@@ -3201,6 +3203,27 @@ package body Buildgpr is
                end loop;
             end;
          end if;
+
+         --  Add project directories of imported projects, if any
+
+         declare
+            List : Project_List := Data.All_Imported_Projects;
+            Elem : Project_Element;
+            Pdata : Project_Data;
+
+         begin
+            while List /= Empty_Project_List loop
+               Elem := Project_Tree.Project_Lists.Table (List);
+               Pdata := Project_Tree.Projects.Table (Elem.Project);
+
+               if Pdata.Object_Directory /= No_Path then
+                  Put_Line
+                    (Exchange_File, Get_Name_String (Pdata.Object_Directory));
+               end if;
+
+               List := Elem.Next;
+            end loop;
+         end;
 
          if Data.Library_Kind = Static then
             Put_Line (Exchange_File, Library_Label (Static));
