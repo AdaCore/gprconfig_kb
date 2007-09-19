@@ -124,14 +124,6 @@
     <target>powerpc-elf-lynxos.*</target>
   </targetset>
 
- <!-- ppc-vx6-.* -->
-  <targetset>
-    <target>ppc-vx6-solaris</target>
-    <target>ppc-vx6-windows</target>
-    <target>ppc-vx6-linux</target>
-    <target>powerpc-wrs-vxworks</target>
-  </targetset>
-
  <!-- x86-vx6-.* (vxworks 6) -->
   <targetset>
     <target>x86-vx6-windows</target>
@@ -139,18 +131,18 @@
     <target>i.86-wrs-vxworks</target>
   </targetset>
 
- <!-- ppc-vxw-.*  (vxworks 5) -->
   <targetset>
+    <target>powerpc-wrs-vxworks</target>
+ <!-- ppc-vxw-.*  (vxworks 5) -->
     <target>ppc-vxw-solaris</target>
     <target>ppc-vxw-windows</target>
-    <target>powerpc-wrs-vxworks</target>
-  </targetset>
-
  <!-- ppc-vx178b-.*  (vxworks cert) -->
- <targetset>
     <target>ppc-vx178b-solaris</target>
     <target>ppc-vx178b-windows</target>
-    <target>powerpc-wrs-vxworks</target>
+ <!-- ppc-vx6-.* -->
+    <target>ppc-vx6-solaris</target>
+    <target>ppc-vx6-windows</target>
+    <target>ppc-vx6-linux</target>
   </targetset>
 
  <!-- ppc-vx653-.*  (vxworks 653) -->
