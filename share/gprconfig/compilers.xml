@@ -9,7 +9,7 @@
   -->
   <compiler_description>
     <name>GCC</name>
-    <executable prefix="1">(.+-)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
     <version>
       <external regexp="\(GCC\) (\S+)" group="1">${PREFIX}gcc --version</external>
     </version>
@@ -66,7 +66,7 @@
 
   <compiler_description>
     <name>GCC-ASM</name>
-    <executable prefix="1">(.+-)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
     <version>
       <external regexp="\(GCC\) (\S+)" group="1">${PREFIX}gcc --version</external>
     </version>
@@ -87,15 +87,15 @@
   -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.+-)?gnatmake</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-).*)?gnatmake</executable>
     <version>
       <external regexp="GNATLS.+?(\d+\.\d+)" group="1">${PREFIX}gnatls -v</external>
       <external regexp="^gcc version (\S+)" group="1">${PREFIX}gcc -v</external>
     </version>
     <languages>Ada</languages>
     <runtimes>
-       <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$VERSION2/rts-(.*)/adainclude/</directory>
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$VERSION2/adainclude/</directory>
+       <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$VERSION2/rts-(.*)/adainclude/</directory>
     </runtimes>
     <target>
       <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
