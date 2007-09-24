@@ -4232,6 +4232,7 @@ package body Buildgpr is
                               loop
                                  Nam := Project_Tree.Name_Lists.Table (List);
                                  exit when Nam.Next = No_Name_List;
+
                                  Add_Option
                                    (Nam.Name,
                                     To => Include_Options,
@@ -4239,10 +4240,19 @@ package body Buildgpr is
                                  List := Nam.Next;
                               end loop;
 
+                              Get_Name_String (Directories.Table (Index));
+
+                              while Name_Len > 1 and then
+                                (Name_Buffer (Name_Len) =
+                                   Directory_Separator
+                                 or else Name_Buffer (Name_Len) = '/')
+                              loop
+                                 Name_Len := Name_Len - 1;
+                              end loop;
+
                               Add_Option
                                 (Get_Name_String (Nam.Name) &
-                                 Get_Name_String
-                                          (Directories.Table (Index)),
+                                 Name_Buffer (1 .. Name_Len),
                                  To => Include_Options,
                                  Display => Opt.Verbose_Mode);
                            end loop;
@@ -4306,9 +4316,16 @@ package body Buildgpr is
                               Add_To_Path (Path_Separator);
                            end if;
 
-                           Add_To_Path
-                             (Get_Name_String
-                                (Directories.Table (Index)));
+                           Get_Name_String (Directories.Table (Index));
+
+                           while Name_Len > 1 and then
+                                 (Name_Buffer (Name_Len) = Directory_Separator
+                                  or else Name_Buffer (Name_Len) = '/')
+                           loop
+                              Name_Len := Name_Len - 1;
+                           end loop;
+
+                           Add_To_Path (Name_Buffer (1 .. Name_Len));
                         end loop;
 
                         Project_Tree.Projects.Table
