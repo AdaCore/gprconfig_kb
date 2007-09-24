@@ -41,7 +41,6 @@ package Gprexch is
       Shared_Libs,
       Main_Base_Name,
       Compiler_Path,
-      Compiler_Options,
       Main_Dependency_File,
       Dependency_Files,
       Binding_Options,

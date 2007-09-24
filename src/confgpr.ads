@@ -27,14 +27,11 @@
 --  The following package allow to get the configuration of the Project
 --  Manager. It is used by several tools, including gprmake and gprclean.
 
+with GNAT.OS_Lib; use GNAT.OS_Lib;
 package Confgpr is
 
-   procedure Get_Configuration (Fail_If_Error : Boolean);
+   procedure Get_Configuration (Packages_To_Check : String_List_Access);
    --  Find the main configuration project and parse the project tree rooted at
-   --  this configuration project. Fail_If_Error controls the behavior when an
-   --  error is encountered:
-   --
-   --    If True, the tool fails at the first error.
-   --    If False, the project manager sets the mode to Ada_Only automatically.
+   --  this configuration project. Fails if there is an error.
 
 end Confgpr;

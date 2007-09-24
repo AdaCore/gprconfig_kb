@@ -54,7 +54,7 @@ with Prj;              use Prj;
 with Prj.Env;
 with Prj.Err;
 with Prj.Ext;          use Prj.Ext;
-with Prj.Pars;
+with Prj.Proc;         use Prj.Proc;
 with Prj.Util;         use Prj.Util;
 with Sinput.P;
 with Snames;           use Snames;
@@ -95,9 +95,6 @@ package body Buildgpr is
    Output_File_Name_Expected  : Boolean := False;
    --  True when last switch was -o
 
-   Project_File_Name          : String_Access := null;
-   --  The name of the project file specified with switch -P
-
    Project_File_Name_Expected : Boolean := False;
    --  True when last switch was -P
 
@@ -127,9 +124,6 @@ package body Buildgpr is
    type Processor is (None, Linker, Binder, Compiler);
    Current_Processor : Processor := None;
    --  This variable changes when switches -*args are used
-
-   Main_Project : Project_Id;
-   --  The project id of the main project
 
    Outstanding_Compiles : Natural := 0;
    --  The number of compilation jobs currently spawned
@@ -1412,7 +1406,6 @@ package body Buildgpr is
 
    procedure Binding_Phase is
       Success              : Boolean;
-      Compiler_Switch_List : Name_List_Index;
 
       Exchange_File        : Ada.Text_IO.File_Type;
       Line                 : String (1 .. 1_000);
@@ -1595,21 +1588,8 @@ package body Buildgpr is
 
       --  Check if there is a need to call a binder driver
 
-      if There_Are_Binder_Drivers and then Binding_Languages.Last = 0 then
-
-         --  There maybe binder drivers declared in the configuration, but
-         --  there may not be any source for the corresponding language. So,
-         --  reset There_Are_Binder_Drivers to False and set it back to True
-         --  if there is at least one source for a language with a binder
-         --  driver.
-
-         There_Are_Binder_Drivers := False;
-
-         --  Find the binder drivers.
-
-         Find_Binding_Languages;
-
-      end if;
+      There_Are_Binder_Drivers := False;
+      Find_Binding_Languages;
 
       Mains.Reset;
 
@@ -1791,12 +1771,6 @@ package body Buildgpr is
                         end if;
 
                      else
-                        --  Start at the beginning of the default compiler
-                        --  switches
-
-                        Compiler_Switch_List :=
-                          Project_Tree.Languages_Data.Table
-                            (B_Data.Language).Config.Compiler_Min_Options;
 
                         --  Get the Roots, if any
 
@@ -1891,22 +1865,6 @@ package body Buildgpr is
                              (B_Data.Language).
                                 Config.Compiler_Driver_Path.all);
 
-                        --  Followed by compiler options
-
-                        Put_Line
-                          (Exchange_File, Binding_Label (Compiler_Options));
-
-                        while Compiler_Switch_List /= No_Name_List loop
-                           Put_Line
-                             (Exchange_File,
-                              Get_Name_String
-                                (Project_Tree.Name_Lists.Table
-                                   (Compiler_Switch_List).Name));
-                           Compiler_Switch_List :=
-                             Project_Tree.Name_Lists.Table
-                               (Compiler_Switch_List).Next;
-                        end loop;
-
                         --  Then, the Dependency files
 
                         if Main_Source.Unit /= No_Name then
@@ -1968,12 +1926,9 @@ package body Buildgpr is
                            Switches     : Variable_Value;
                            Switch_List  : String_List_Id;
                            Element      : String_Element;
-
-                           Min_Options  : Name_List_Index :=
-                                            Project_Tree.Languages_Data.Table
-                                              (B_Data.Language).
-                                                 Config.Binder_Min_Options;
-                           Option       : Name_Node;
+                           Config  : constant Language_Config :=
+                             Project_Tree.Languages_Data.Table
+                               (B_Data.Language).Config;
 
                         begin
                            --  First, check if there are binder options
@@ -2039,33 +1994,43 @@ package body Buildgpr is
                            Options_Instance :=
                              Binder_Options_HTable.Get (B_Data.Language_Name);
 
-                           if Min_Options /= No_Name_List or else
-                             Switches.Kind = Prj.List or else
-                             All_Language_Binder_Options.Last > 0 or else
-                             Options_Instance /= No_Bind_Option_Table
+                           if Config.Binder_Required_Switches /= No_Name_List
+                             or else
+                              Switches.Kind = Prj.List
+                             or else
+                              All_Language_Binder_Options.Last > 0
+                             or else
+                              Options_Instance /= No_Bind_Option_Table
                            then
                               Put_Line
                                 (Exchange_File,
                                  Binding_Label (Gprexch.Binding_Options));
 
-                              --  First, the minimum binder options, if any
+                              --  First, the required switches, if any
 
-                              while Min_Options /= No_Name_List loop
-                                 Option :=
-                                   Project_Tree.Name_Lists.Table (Min_Options);
-                                 Get_Name_String (Option.Name);
+                              declare
+                                 List : Name_List_Index :=
+                                   Config.Binder_Required_Switches;
+                                 Elem : Name_Node;
 
-                                 if Name_Len > 0 then
-                                    Put_Line
-                                      (Exchange_File,
-                                       Name_Buffer (1 .. Name_Len));
-                                 end if;
+                              begin
+                                 while List /= No_Name_List loop
+                                    Elem :=
+                                      Project_Tree.Name_Lists.Table (List);
+                                    Get_Name_String (Elem.Name);
 
-                                 Min_Options := Option.Next;
-                              end loop;
+                                    if Name_Len > 0 then
+                                       Put_Line
+                                         (Exchange_File,
+                                          Name_Buffer (1 .. Name_Len));
+                                    end if;
 
-                              --  Then the eventual options in the main project
-                              --  file.
+                                    List := Elem.Next;
+                                 end loop;
+                              end;
+
+                              --  Then, the eventual options in the main
+                              --  project file.
 
                               if Switches.Kind = Prj.List then
                                  Switch_List := Switches.Values;
@@ -3933,10 +3898,6 @@ package body Buildgpr is
                   declare
                      Compiler_Name     : constant String :=
                                            Get_Name_String (Compiler_Name_Id);
-                     Path              : String_Access :=
-                                           Locate_Exec_On_Path (Compiler_Name);
-                     Default_Options   : String_List_Access;
-                     Last_Default_Option : Natural := 0;
                   begin
                      Compiler_Path := Locate_Exec_On_Path (Compiler_Name);
 
@@ -3948,37 +3909,7 @@ package body Buildgpr is
                         Project_Tree.Languages_Data.Table
                           (Language).Config.Compiler_Driver_Path :=
                           Compiler_Path;
-                        Free (Path);
                      end if;
-
-                     List :=
-                       Project_Tree.Languages_Data.Table
-                         (Language).Config.Compiler_Min_Options;
-
-                     loop
-                        exit when List = No_Name_List;
-                        List := Project_Tree.Name_Lists.Table (List).Next;
-                        Last_Default_Option := Last_Default_Option + 1;
-                     end loop;
-
-                     Default_Options :=
-                       new String_List (1 .. Last_Default_Option);
-
-                     List :=
-                       Project_Tree.Languages_Data.Table
-                         (Language).Config.Compiler_Min_Options;
-
-                     for Index in Default_Options'Range loop
-                        Default_Options (Index) :=
-                          new String'
-                            (Get_Name_String
-                                 (Project_Tree.Name_Lists.Table (List).Name));
-                        List := Project_Tree.Name_Lists.Table (List).Next;
-                     end loop;
-
-                     Project_Tree.Languages_Data.Table
-                       (Language).Config.Min_Compiler_Options :=
-                       Default_Options;
                   end;
                end if;
 
@@ -3986,14 +3917,24 @@ package body Buildgpr is
 
                Compilation_Options.Last := 0;
 
-               --  1) the minimal default compilation switches
+               --  1) The required switches
 
-               Add_Options
-                 (Project_Tree.Languages_Data.Table
-                    (Language).Config.Min_Compiler_Options.all,
-                  To            => Compilation_Options,
-                  Display_All   => Opt.Verbose_Mode,
-                  Display_First => True);
+               declare
+                  List : Name_List_Index := Config.Compiler_Required_Switches;
+                  Nam_Nod : Name_Node;
+
+               begin
+                  while List /= No_Name_List loop
+                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                     Add_Option
+                       (Nam_Nod.Name,
+                        To   => Compilation_Options,
+                        Display => True);
+                     List := Nam_Nod.Next;
+                  end loop;
+               end;
+
+               --  2) The PIC option if it exists, for shared libraries
 
                if Project_Tree.Projects.Table (Source_Project).Library
                  and then
@@ -4019,8 +3960,7 @@ package body Buildgpr is
                end if;
 
                --  3) Compiler'Switches(<source file name>), if it is defined,
-               --  otherwise Compiler'Default_Switches (<language name>),
-               --  if defined.
+               --  otherwise Compiler'Switches (<language name>), if defined.
 
                Add_Compilation_Switches (Source_Identity);
 
@@ -5697,23 +5637,25 @@ package body Buildgpr is
 
       --  Then, get the configuration
 
-      Get_Configuration (Fail_If_Error => True);
+      Get_Configuration (Packages_To_Check);
 
       if Err_Vars.Total_Errors_Detected > 0 then
          Prj.Err.Finalize;
          Fail_Program ("problems while getting the configuration");
       end if;
 
-      --  Then, parse the main project
+      --  Finish processing the main project
 
-      Prj.Pars.Parse
-        (In_Tree           => Project_Tree,
-         Project           => Main_Project,
-         Project_File_Name => Project_File_Name.all,
-         Packages_To_Check => Packages_To_Check,
-         When_No_Sources   => Silent);
+      Prj.Proc.Process_Project_Tree_Phase_2
+        (In_Tree                => Project_Tree,
+         Project                => Main_Project,
+         Success                => Gpr_Util.Success,
+         From_Project_Node      => User_Project_Node,
+         From_Project_Node_Tree => Project_Node_Tree,
+         Report_Error           => null,
+         When_No_Sources        => Silent);
 
-      if Main_Project = No_Project then
+      if not Gpr_Util.Success then
          Fail_Program ("""", Project_File_Name.all, """ processing failed");
       end if;
 
@@ -5986,6 +5928,8 @@ package body Buildgpr is
 
       --  Now process the other options
 
+      Autoconfiguration := True;
+
       Scan_Args : for Next_Arg in 1 .. Argument_Count loop
          Scan_Arg (Argument (Next_Arg), Command_Line => True);
       end loop Scan_Args;
@@ -6104,19 +6048,6 @@ package body Buildgpr is
          Usage;
          Exit_Program (E_Success);
       end if;
-
-      --  Name of the config project file defaults if it is not specified
-      --  on the command line.
-
-      if Config_Project_File_Name = null then
-         Config_Project_File_Name := Getenv (Config_Project_Env_Var);
-
-         if Config_Project_File_Name'Length = 0 then
-            Config_Project_File_Name :=
-              new String'(Default_Config_Project_File_Name);
-         end if;
-      end if;
-
    end Initialize;
 
    ------------------------------
@@ -7904,13 +7835,30 @@ package body Buildgpr is
             then
                if Config_Project_File_Name /= null then
                   Fail_Program
-                    (Config_Project_Option,
-                     "cannot be specified several times");
+                    ("several configuration switches cannot be specified");
+
+               else
+                  Autoconfiguration := False;
+                  Config_Project_File_Name :=
+                    new String'
+                      (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
+               end if;
+
+            elsif Command_Line
+              and then
+               Arg'Length > Autoconf_Project_Option'Length
+              and then
+               Arg (1 .. Autoconf_Project_Option'Length) =
+                 Autoconf_Project_Option
+            then
+               if Config_Project_File_Name /= null then
+                  Fail_Program
+                    ("several configuration switches cannot be specified");
 
                else
                   Config_Project_File_Name :=
                     new String'
-                      (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
+                      (Arg (Autoconf_Project_Option'Length + 1 .. Arg'Last));
                end if;
 
             elsif Command_Line and then
@@ -8248,6 +8196,16 @@ package body Buildgpr is
          Write_Str ("file.cgpr");
          Write_Eol;
          Write_Str ("           Specify the main config project file name");
+         Write_Eol;
+
+         --  Line for Autoconf_Project_Option
+
+         Write_Str ("  ");
+         Write_Str (Autoconf_Project_Option);
+         Write_Str ("file.cgpr");
+         Write_Eol;
+         Write_Str
+           ("           Specify/create the main config project file name");
          Write_Eol;
 
          --  Line for -aP

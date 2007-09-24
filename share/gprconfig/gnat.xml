@@ -17,8 +17,8 @@
    end Naming;
 
    package Compiler is
-      for Driver          ("Ada") use "${PATH}${PREFIX}gcc";
-      for Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
+      for Driver                   ("Ada") use "${PATH}${PREFIX}gcc";
+      for Required_Switches        ("Ada") use ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
       for Mapping_Body_Suffix      ("Ada") use "%b";
@@ -81,13 +81,13 @@
    </compilers>
    <config>
    package Compiler is
-      for Switches ("Ada") use
-        Compiler'Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+      for Required_Switches ("Ada") use
+        Compiler'Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
    end Compiler;
 
    package Binder is
-      for Switches ("Ada") use
-        Binder'Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+      for Required_Switches ("Ada") use
+        Binder'Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
    end Binder;
    </config>
   </configuration>
@@ -99,8 +99,8 @@
    </compilers>
    <config>
    package Compiler is
-      for Switches ("Ada") use
-        Compiler'Switches ("Ada") &amp; ("-msoft-float");
+      for Required_Switches ("Ada") use
+        Compiler'Required_Switches ("Ada") &amp; ("-msoft-float");
    end Compiler;
    </config>
   </configuration>

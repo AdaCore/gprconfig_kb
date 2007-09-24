@@ -57,6 +57,7 @@ procedure Gprbind is
    Verbose_Mode : Boolean := False;
 
    No_Main_Option : constant String := "-n";
+   Dash_c         : constant String := "-c";
    Dash_o         : constant String := "-o";
    Dash_shared    : constant String := "-shared";
 
@@ -197,11 +198,6 @@ begin
 
                   Ada_Compiler_Path := new String'(Line (1 .. Last));
 
-               when Gprexch.Compiler_Options =>
-                  Add
-                    (Line (1 .. Last),
-                     Compiler_Options, Last_Compiler_Option);
-
                when Main_Dependency_File =>
                   if Main_ALI /= null then
                      Osint.Fail ("main ALI file specified multiple times");
@@ -311,7 +307,7 @@ begin
       if Verbose_Mode then
          Put (Gnatbind_Path.all);
       else
-         Put (GNATBIND.all);
+         Put (Base_Name (GNATBIND.all));
       end if;
 
       if Verbose_Mode then
@@ -464,10 +460,8 @@ begin
       Osint.Fail ("invocation of gnatbind failed");
    end if;
 
-   Add
-     (Binder_Generated_File,
-      Compiler_Options,
-      Last_Compiler_Option);
+   Add (Dash_c, Compiler_Options, Last_Compiler_Option);
+   Add (Binder_Generated_File, Compiler_Options, Last_Compiler_Option);
 
    declare
       Object : constant String := "b__" & Main_Base_Name.all & ".o";

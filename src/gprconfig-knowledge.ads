@@ -17,6 +17,9 @@ package GprConfig.Knowledge is
    Verbose_Mode : Boolean := False;
    --  Whether or not to display extra messages on stdout
 
+   Quiet_Output : Boolean := False;
+   --  Whether or not to display any message other than error messages
+
    Generate_Error : exception;
    --  To be raised when an error occurs during generation of config files.
 

@@ -36,7 +36,7 @@ with Opt;         use Opt;
 with Osint;
 with Prj;         use Prj;
 with Prj.Ext;
-with Prj.Pars;
+with Prj.Proc;    use Prj.Proc;
 with Prj.Util;    use Prj.Util;
 with Sinput.P;
 with Snames;
@@ -72,12 +72,6 @@ package body Cleangpr is
    Usage_Displayed     : Boolean := False;
    --  Flags set to True when the action is performed, to avoid duplicate
    --  displays.
-
-   Project_File_Name : String_Access := null;
-   --  The name of the project file specified with option -P
-
-   Main_Project : Prj.Project_Id := Prj.No_Project;
-   --  The id of the main project
 
    All_Projects : Boolean := False;
    --  Set to True when option -r is used, so that all projects in the project
@@ -169,7 +163,7 @@ package body Cleangpr is
 
       Archive_Name : constant String :=
                        "lib" & Get_Name_String (Data.Name) &
-                       Get_Name_String (Project_Tree.Config.Archive_Suffix);
+                       Get_Name_String (Data.Config.Archive_Suffix);
       --  The name of the archive file for this project
 
       Archive_Dep_Name : constant String :=
@@ -288,12 +282,12 @@ package body Cleangpr is
       Lib_Filename : constant String := Get_Name_String (Data.Library_Name);
       DLL_Name     : String :=
                        Get_Name_String
-                         (Project_Tree.Config.Shared_Lib_Prefix) &
+                         (Data.Config.Shared_Lib_Prefix) &
                        Lib_Filename &
-                       Get_Name_String (Project_Tree.Config.Shared_Lib_Suffix);
+                       Get_Name_String (Data.Config.Shared_Lib_Suffix);
       Archive_Name : String :=
                        "lib" & Lib_Filename &
-                       Get_Name_String (Project_Tree.Config.Archive_Suffix);
+                       Get_Name_String (Data.Config.Archive_Suffix);
       Library_Exchange_File_Name : constant String :=
                                      Lib_Filename & Library_Exchange_Suffix;
 
@@ -380,7 +374,7 @@ package body Cleangpr is
 
             Close (Direc);
 
-            if Project_Tree.Config.Symbolic_Link_Supported then
+            if Data.Config.Symbolic_Link_Supported then
                if (Data.Library_Kind = Dynamic
                    or else Data.Library_Kind = Relocatable)
                  and then Data.Lib_Internal_Name /= No_Name
@@ -392,7 +386,7 @@ package body Cleangpr is
                   begin
                      Osint.Canonical_Case_File_Name (Lib_Version);
 
-                     if Project_Tree.Config.Lib_Maj_Min_Id_Supported then
+                     if Data.Config.Lib_Maj_Min_Id_Supported then
                         declare
                            Maj_Version : String :=
                                          Major_Id_Name (DLL_Name, Lib_Version);
@@ -973,17 +967,6 @@ package body Cleangpr is
          return;
       end if;
 
-      if Config_Project_File_Name = null then
-         Config_Project_File_Name := Getenv (Config_Project_Env_Var);
-
-         if Config_Project_File_Name'Length = 0 then
-            Config_Project_File_Name :=
-              new String'(Default_Config_Project_File_Name);
-         end if;
-      end if;
-
-      Get_Configuration (Fail_If_Error => True);
-
       if Verbose_Mode then
          Display_Copyright;
       end if;
@@ -996,23 +979,22 @@ package body Cleangpr is
          New_Line;
       end if;
 
-      --  Set the project parsing verbosity to whatever was specified
-      --  by a possible -vP switch.
+      Get_Configuration (Packages_To_Check);
 
-      Prj.Pars.Set_Verbosity (To => Current_Verbosity);
-
-      --  Parse the project file. If there is an error, Main_Project
-      --  will still be No_Project.
+      --  Finish processing the project file
 
       Sinput.P.Reset_First;
 
-      Prj.Pars.Parse
-        (Project           => Main_Project,
-         In_Tree           => Project_Tree,
-         Project_File_Name => Project_File_Name.all,
-         Packages_To_Check => Packages_To_Check);
+      Prj.Proc.Process_Project_Tree_Phase_2
+        (In_Tree                => Project_Tree,
+         Project                => Main_Project,
+         Success                => Gpr_Util.Success,
+         From_Project_Node      => User_Project_Node,
+         From_Project_Node_Tree => Project_Node_Tree,
+         Report_Error           => null,
+         When_No_Sources        => Silent);
 
-      if Main_Project = No_Project then
+      if not Gpr_Util.Success then
          Osint.Fail ("""" & Project_File_Name.all & """ processing failed");
       end if;
 
@@ -1140,11 +1122,21 @@ package body Cleangpr is
                           Arg (1 .. Config_Project_Option'Length) =
                              Config_Project_Option
                         then
+                           Autoconfiguration := False;
                            Config_Project_File_Name :=
                              new String'
                                (Arg (Config_Project_Option'Length + 1 ..
                                        Arg'Last));
 
+                        elsif Arg'Length > Autoconf_Project_Option'Length
+                              and then
+                              Arg (1 .. Autoconf_Project_Option'Length) =
+                                Autoconf_Project_Option
+                        then
+                           Config_Project_File_Name :=
+                             new String'
+                               (Arg (Autoconf_Project_Option'Length + 1 ..
+                                       Arg'Last));
                         else
                            Bad_Argument;
                         end if;

@@ -118,6 +118,7 @@ procedure GprConfig.Main is
       Put_Line ("            The known compilers are: " & To_String (Known));
       Put_Line (" --batch  : batch mode, no interactive compiler selection.");
       Put_Line (" -v       : verbose mode.");
+      Put_Line (" -q       : quiet output.");
    end Help;
 
    ----------------------------
@@ -732,7 +733,7 @@ procedure GprConfig.Main is
    package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
 
    Valid_Switches : constant String :=
-     "-batch -config= -db: h o: v -show-targets -target=";
+     "-batch -config= -db: h o: v q -show-targets -target=";
 
 begin
    if Gprbuild_Path /= null  then
@@ -766,8 +767,13 @@ begin
                end if;
             end if;
 
+         when 'q' =>
+            Quiet_Output := True;
+            Verbose_Mode := False;
+
          when 'v' =>
             Verbose_Mode := True;
+            Quiet_Output := False;
 
          when ASCII.NUL =>
             exit;
@@ -808,7 +814,7 @@ begin
          when 'o' =>
             Output_File := To_Unbounded_String (Parameter);
 
-         when 'v' | 't' =>
+         when 'q' | 'v' | 't' =>
             null;   --  already processed
 
          when others =>

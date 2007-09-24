@@ -1904,7 +1904,9 @@ package body GprConfig.Knowledge is
          raise Generate_Error;
       end if;
 
-      Put_Line ("Creating configuration file: " & Output_File);
+      if not Quiet_Output then
+         Put_Line ("Creating configuration file: " & Output_File);
+      end if;
 
       Create (Output, Out_File, Output_File);
       Put_Line (Output, "project " & Project_Name & " is");

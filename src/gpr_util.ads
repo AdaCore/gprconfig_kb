@@ -29,11 +29,20 @@
 
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
-with Namet;   use Namet;
-with Prj;     use Prj;
+with Namet;    use Namet;
+with Prj;      use Prj;
+with Prj.Tree; use Prj.Tree;
 with Table;
 
 package Gpr_Util is
+
+   Config_Project_Node : Project_Node_Id := Empty_Node;
+   User_Project_Node   : Project_Node_Id := Empty_Node;
+
+   Project_Node_Tree : constant Project_Node_Tree_Ref :=
+     new Project_Node_Tree_Data;
+
+   Success : Boolean := False;
 
    There_Are_Binder_Drivers   : Boolean := False;
    --  True when there is a binder driver. Set by Get_Configuration when
@@ -63,27 +72,35 @@ package Gpr_Util is
 
    Config_Project_Option : constant String := "--config=";
 
+   Autoconf_Project_Option : constant String := "--autoconf=";
+
    Config_Path : String_Access := null;
 
-   Default_Config_Project_File_Name : constant String := "default.cgpr";
+   Default_Name : constant String := "default.cgpr";
 
    Config_Project_Env_Var : constant String := "GPR_CONFIG";
 
    Config_Project_File_Name : String_Access := null;
 
+   Default_Config_Project_File_Name : String_Access := null;
+
+   Autoconfiguration : Boolean := True;
+
+   Main_Config_Project : Project_Id;
+
    --  Default project
 
    Default_Project_File_Name : constant String := "default.gpr";
 
-   type Name_Project is record
-      Lang : Name_Id        := No_Name;
-      Name : Path_Name_Type := No_Path;
-      Proj : Project_Id     := No_Project;
-   end record;
-   --  Component of table Runtimes
+   --  User projects
 
-   No_Name_Project : constant Name_Project :=
-                       (Lang => No_Name, Name => No_Path, Proj => No_Project);
+   Project_File_Name          : String_Access := null;
+   --  The name of the project file specified with switch -P
+
+   Main_Project : Project_Id;
+   --  The project id of the main project
+
+   --  Local subprograms
 
    function Binder_Exchange_File_Name
      (Main_Base_Name : File_Name_Type; Prefix : Name_Id)
