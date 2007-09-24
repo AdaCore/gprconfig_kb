@@ -38,13 +38,13 @@
    end Builder;
 
    package Compiler is
-      for Switches ("Ada") use
-        Binder'Switches ("Ada") &amp; ("-mrtp", "--RTS=$RUNTIME");
+      for Required_Switches ("Ada") use
+        Compiler'Required_Switches ("Ada") &amp; ("-mrtp", "--RTS=$RUNTIME");
    end Compiler;
 
    package Binder is
-      for Switches ("Ada") use
-        Binder'Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+      for Required_Switches ("Ada") use
+        Binder'Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
    end Binder;
      </config>
    </configuration>

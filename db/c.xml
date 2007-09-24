@@ -15,10 +15,10 @@
    end Naming;
 
    package Compiler is
-      for Driver          ("C") use "${PATH}${PREFIX}gcc";
-      for Switches ("C") use ("-c", "-x", "c");
-      for Dependency_Switches      ("C") use ("-Wp,-MMD,");
-      for Include_Path             ("C") use "CPATH";
+      for Driver              ("C") use "${PATH}${PREFIX}gcc";
+      for Required_Switches   ("C") use ("-c", "-x", "c");
+      for Dependency_Switches ("C") use ("-Wp,-MMD,");
+      for Include_Path        ("C") use "CPATH";
    end Compiler;
      </config>
    </configuration>
@@ -37,7 +37,7 @@
      </targets>
      <config>
    package Compiler is
-      for PIC_Option      ("C") use ("-fPIC");
+      for PIC_Option ("C") use ("-fPIC");
    end Compiler;
      </config>
    </configuration>
@@ -49,8 +49,8 @@
      </compilers>
      <config>
    package Compiler is
-      for Switches ("C") use
-        Compiler'Switches ("C") &amp; ("-mno-cygwin");
+      for Required_Switches ("C") use
+        Required_Compiler'Switches ("C") &amp; ("-mno-cygwin");
    end Compiler;
      </config>
    </configuration>
