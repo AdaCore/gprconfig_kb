@@ -34,12 +34,15 @@ with Ada.Command_Line; use Ada.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;      use GNAT.OS_Lib;
 
+with ALI;     use ALI;
 with Gprexch; use Gprexch;
 with Makeutl; use Makeutl;
 with Namet;   use Namet;
 with Osint;
+with Switch;
 with Tempdir;
 with Table;
+with Types;
 
 procedure Gprbind is
 
@@ -57,9 +60,15 @@ procedure Gprbind is
    Verbose_Mode : Boolean := False;
 
    No_Main_Option : constant String := "-n";
-   Dash_c         : constant String := "-c";
    Dash_o         : constant String := "-o";
    Dash_shared    : constant String := "-shared";
+
+   --  Minimum switches to be used to compile the binder generated file
+
+   Dash_c      : constant String := "-c";
+   Dash_gnatA  : constant String := "-gnatA";
+   Dash_gnatWb : constant String := "-gnatWb";
+   Dash_gnatiw : constant String := "-gnatiw";
 
    GCC_Version : Character := '0';
    Gcc_Version_String : constant String := "gcc version ";
@@ -120,16 +129,23 @@ begin
       Osint.Fail ("incorrect invocation");
    end if;
 
+   Namet.Initialize;
+
    Exchange_File_Name := new String'(Argument (1));
 
    --  DEBUG: save a copy of the exchange file
 
-   if Getenv ("GPRBIND_DEBUG").all = "TRUE" then
-      Copy_File
-        (Exchange_File_Name.all,
-         Exchange_File_Name.all & "__saved",
-         Success);
-   end if;
+   declare
+      Gprbind_Debug : constant String := Getenv ("GPRBIND_DEBUG").all;
+
+   begin
+      if Gprbind_Debug = "TRUE" then
+         Copy_File
+           (Exchange_File_Name.all,
+            Exchange_File_Name.all & "__saved",
+            Success);
+      end if;
+   end;
 
    --  Open the binding exchange file
 
@@ -461,6 +477,71 @@ begin
    end if;
 
    Add (Dash_c, Compiler_Options, Last_Compiler_Option);
+   Add (Dash_gnatA, Compiler_Options, Last_Compiler_Option);
+   Add (Dash_gnatWb, Compiler_Options, Last_Compiler_Option);
+   Add (Dash_gnatiw, Compiler_Options, Last_Compiler_Option);
+
+   --  Read the ALI file of the first ALI file. Fetch the back end switches
+   --  from this ALI file and use these switches to compile the binder
+   --  generated file.
+
+   if ALI_Files_Table.Last >= 1 then
+      Initialize_ALI;
+      Name_Len := 0;
+      Add_Str_To_Name_Buffer (ALI_Files_Table.Table (1).all);
+
+      declare
+         use Types;
+         F : constant File_Name_Type := Name_Find;
+         T : Text_Buffer_Ptr;
+         A : ALI_Id;
+
+      begin
+         --  Load the ALI file
+
+         T := Osint.Read_Library_Info (F, True);
+
+         --  Read it. Note that we ignore errors, since we only want very
+         --  limited information from the ali file, and likely a slightly
+         --  wrong version will be just fine, though in normal operation
+         --  we don't expect this to happen!
+
+         A := Scan_ALI
+               (F,
+                T,
+                Ignore_ED     => False,
+                Err           => False,
+                Ignore_Errors => True);
+
+         if A /= No_ALI_Id then
+            for
+              Index in Units.Table (ALIs.Table (A).First_Unit).First_Arg ..
+                       Units.Table (ALIs.Table (A).First_Unit).Last_Arg
+            loop
+               --  Do not compile with the front end switches. However, --RTS
+               --  is to be dealt with specially because the binder-generated
+               --  file need to compiled with the same switch.
+
+               declare
+                  Arg : String_Ptr renames Args.Table (Index);
+               begin
+                  if (not Switch.Is_Front_End_Switch (Arg.all))
+                     or else
+                     (Arg'Length > 5
+                      and then
+                      Arg (Arg'First + 2 .. Arg'First + 5) = "RTS=")
+                  then
+                     Add
+                       (String_Access (Arg),
+                        Compiler_Options,
+                        Last_Compiler_Option);
+                  end if;
+               end;
+            end loop;
+         end if;
+      end;
+   end if;
+
    Add (Binder_Generated_File, Compiler_Options, Last_Compiler_Option);
 
    declare
