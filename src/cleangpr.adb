@@ -857,7 +857,9 @@ package body Cleangpr is
       Base_Name   : File_Name_Type;
 
    begin
-      if There_Are_Binder_Drivers and then Binding_Languages.Last = 0 then
+      There_Are_Binder_Drivers := False;
+
+      if Binding_Languages.Last = 0 then
          Find_Binding_Languages;
       end if;
 
