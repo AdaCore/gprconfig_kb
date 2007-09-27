@@ -178,7 +178,7 @@
     <target>erc32-elf.*</target>
  </targetset>
 
- <!-- erc32-elf-.*  -->
+ <!-- leon-elf-.*  -->
  <targetset>
     <target>leon-elf-solaris</target>
     <target>leon-elf-linux</target>
