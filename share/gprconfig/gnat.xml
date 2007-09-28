@@ -48,6 +48,7 @@
    end Binder;
 
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
+   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR}";
    </config>
   </configuration>
 

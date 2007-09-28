@@ -34,10 +34,12 @@ with Ada.Command_Line; use Ada.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;      use GNAT.OS_Lib;
 
-with ALI;     use ALI;
-with Gprexch; use Gprexch;
-with Makeutl; use Makeutl;
-with Namet;   use Namet;
+with ALI;      use ALI;
+with Gprexch;  use Gprexch;
+with Gpr_Util; use Gpr_Util;
+with Hostparm;
+with Makeutl;  use Makeutl;
+with Namet;    use Namet;
 with Osint;
 with Switch;
 with Tempdir;
@@ -45,6 +47,10 @@ with Table;
 with Types;
 
 procedure Gprbind is
+
+   Preserve : Attribute := Time_Stamps;
+   --  Used in calls to Copy_File. Changed to None for OpenVMS, because
+   --  Copy_Attributes always fails on VMS.
 
    Executable_Suffix : constant String_Access := Get_Executable_Suffix;
    --  The suffix of executables on this platforms
@@ -72,9 +78,6 @@ procedure Gprbind is
 
    GCC_Version : Character := '0';
    Gcc_Version_String : constant String := "gcc version ";
-
-   Begin_Info : constant String := "--  BEGIN Object file/option list";
-   End_Info   : constant String := "--  END Object file/option list   ";
 
    Shared_Libgcc : constant String := "-shared-libgcc";
 
@@ -131,6 +134,12 @@ begin
 
    Namet.Initialize;
 
+   --  Copy_Attributes always fails on VMS
+
+   if Hostparm.OpenVMS then
+      Preserve := None;
+   end if;
+
    Exchange_File_Name := new String'(Argument (1));
 
    --  DEBUG: save a copy of the exchange file
@@ -143,7 +152,9 @@ begin
          Copy_File
            (Exchange_File_Name.all,
             Exchange_File_Name.all & "__saved",
-            Success);
+            Success,
+            Mode => Overwrite,
+            Preserve => Preserve);
       end if;
    end;
 

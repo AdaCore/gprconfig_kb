@@ -36,6 +36,9 @@ with Table;
 
 package Gpr_Util is
 
+   Begin_Info : constant String := "--  BEGIN Object file/option list";
+   End_Info   : constant String := "--  END Object file/option list   ";
+
    Config_Project_Node : Project_Node_Id := Empty_Node;
    User_Project_Node   : Project_Node_Id := Empty_Node;
 

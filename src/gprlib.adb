@@ -38,6 +38,7 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gprexch;   use Gprexch;
+with Gpr_Util;  use Gpr_Util;
 with Hostparm;
 with Makeutl;   use Makeutl;
 with Namet;     use Namet;
@@ -94,6 +95,16 @@ procedure Gprlib is
 
    G_Trasym_Ads : File_Name_Type := No_File;
    --  Name_Id for "g-trasym.ads"
+
+   Libgnat : String_Access := new String'("-lgnat");
+
+   Libgnarl : String_Access := new String'("-lgnarl");
+
+   Libgnarl_Needed : Boolean := False;
+   --  True if libgnarl is needed
+
+   Runtime_Library_Dir : String_Access := null;
+   --  Full path name of tha Ada runtime library
 
    Current_Section : Library_Section := No_Library_Section;
    --  The current section when reading the exchange file
@@ -657,6 +668,7 @@ begin
    if Hostparm.OpenVMS then
       Preserve := None;
    end if;
+
    if Argument_Count /= 1 then
       Put_Line ("usage: gprlib <input file>");
 
@@ -675,7 +687,9 @@ begin
       Copy_File
         (Exchange_File_Name.all,
          Exchange_File_Name.all & "__saved",
-         Success);
+         Success,
+         Mode => Overwrite,
+         Preserve => Preserve);
    end if;
 
    begin
@@ -832,6 +846,14 @@ begin
                        ("no toolchain version for language ",
                         Line (1 .. Last));
 
+                  elsif Line (1 .. Last) = "ada" then
+                     Get_Line (IO_File, Line, Last);
+
+                     if Last > 5 and then Line (1 .. 5) = "GNAT " then
+                        Libgnat := new String'("-lgnat-" & Line (6 .. Last));
+                        Libgnarl := new String'("-lgnarl-" & Line (6 .. Last));
+                     end if;
+
                   else
                      Skip_Line (IO_File);
                   end if;
@@ -895,6 +917,20 @@ begin
 
                when Gprexch.Sources =>
                   Sources.Append (new String'(Line (1 .. Last)));
+
+               when Gprexch.Runtime_Library_Dir =>
+                  if End_Of_File (IO_File) then
+                     Osint.Fail
+                       ("no runtime library dir for language ",
+                        Line (1 .. Last));
+
+                  elsif Line (1 .. Last) = "ada" then
+                     Get_Line (IO_File, Line, Last);
+                     Runtime_Library_Dir := new String'(Line (1 .. Last));
+
+                  else
+                     Skip_Line (IO_File);
+                  end if;
 
             end case;
          end if;
@@ -1142,6 +1178,35 @@ begin
          end if;
 
          Object_Files.Append (new String'(Binder_Generated_Object));
+
+         --  For shared libraries, check if libgnarl is needed
+
+         if Relocatable and then Runtime_Library_Dir /= null then
+            declare
+               BG_File : File_Type;
+               Line : String (1 .. 1_000);
+               Last : Natural;
+
+            begin
+               Open (BG_File, In_File, Binder_Generated_File);
+
+               while not End_Of_File (BG_File) loop
+                  Get_Line (BG_File, Line, Last);
+                  exit when Line (1 .. Last) = Begin_Info;
+               end loop;
+
+               while not End_Of_File (BG_File) loop
+                  Get_Line (BG_File, Line, Last);
+                  exit when Line (1 .. Last) = End_Info;
+
+                  if Line (9 .. Last) = "-lgnarl" then
+                     Libgnarl_Needed := True;
+                     exit;
+                  end if;
+
+               end loop;
+            end;
+         end if;
       end;
    end if;
 
@@ -1353,6 +1418,57 @@ begin
       if Path_Option /= null and then Rpath /= null then
          Options_Table.Append
            (new String'(Path_Option.all & Rpath (1 .. Rpath_Last)));
+      end if;
+
+      --  If Ada is used and we don't already know yet that libgnarl is needed,
+      --  look for s-osinte.ads in all the ALI files. If found in at least one,
+      --  then libgnarl is needed.
+
+      if Runtime_Library_Dir /= null and then not Libgnarl_Needed then
+         declare
+            Lib_File : File_Name_Type;
+            Text     : Text_Buffer_Ptr;
+            Id       : ALI.ALI_Id;
+
+         begin
+            ALI_Loop :
+            for Index in 1 .. ALIs.Last loop
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (ALIs.Table (Index).all);
+               Lib_File := Name_Find;
+               Text := Osint.Read_Library_Info (Lib_File, True);
+
+               Id  := ALI.Scan_ALI
+                 (F          => Lib_File,
+                  T          => Text,
+                  Ignore_ED  => False,
+                  Err        => True,
+                  Read_Lines => "D");
+               Free (Text);
+
+               --  Look for s-osinte.ads in the dependencies
+
+               for Index in ALI.ALIs.Table (Id).First_Sdep ..
+                 ALI.ALIs.Table (Id).Last_Sdep
+               loop
+                  if ALI.Sdep.Table (Index).Sfile = S_Osinte_Ads then
+                     Libgnarl_Needed := True;
+                     exit ALI_Loop;
+                  end if;
+               end loop;
+            end loop ALI_Loop;
+         end;
+      end if;
+
+      if Runtime_Library_Dir /= null then
+         Options_Table.Append
+           (new String'("-L" & Runtime_Library_Dir.all));
+
+         if Libgnarl_Needed then
+            Options_Table.Append (Libgnarl);
+         end if;
+
+         Options_Table.Append (Libgnat);
       end if;
 
       Build_Shared_Lib;

@@ -80,6 +80,7 @@ package Gprexch is
       Major_Minor_Id_Supported,
       PIC_Option,
       Imported_Libraries,
+      Runtime_Library_Dir,
       Driver_Name,
       Toolchain_Version,
       Archive_Builder,

@@ -3301,6 +3301,35 @@ package body Buildgpr is
 
             Process_Imported_Libraries (For_Project);
 
+            --  Check for runtime library dir
+
+            declare
+               List : Language_Index := Data.First_Language_Processing;
+               Elem : Language_Data;
+               First : Boolean := True;
+
+            begin
+               while List /= No_Language_Index loop
+                  Elem := Project_Tree.Languages_Data.Table (List);
+
+                  if Elem.Config.Runtime_Library_Dir /= No_Name then
+                     if First then
+                        Put_Line
+                          (Exchange_File, Library_Label (Runtime_Library_Dir));
+                        First := False;
+                     end if;
+
+                     Put_Line
+                       (Exchange_File, Get_Name_String (Elem.Name));
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (Elem.Config.Runtime_Library_Dir));
+                  end if;
+
+                  List := Elem.Next;
+               end loop;
+            end;
+
             if Data.Library_Kind = Relocatable then
                Put_Line (Exchange_File, Library_Label (Relocatable));
             end if;
