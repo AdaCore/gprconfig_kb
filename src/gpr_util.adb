@@ -27,8 +27,11 @@
 with Debug;   use Debug;
 with Errout;  use Errout;
 with Makeutl; use Makeutl;
+with Opt;     use Opt;
 with Osint;   use Osint;
 with Output;  use Output;
+
+with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body Gpr_Util is
 
@@ -205,5 +208,65 @@ package body Gpr_Util is
          Exit_Program (E_Success);
       end if;
    end Finish_Program;
+
+   ------------------------------
+   -- Look_For_Default_Project --
+   ------------------------------
+
+   procedure Look_For_Default_Project is
+   begin
+      if Is_Regular_File (Default_Project_File_Name) then
+         Project_File_Name := new String'(Default_Project_File_Name);
+
+      else
+         --  Check if there is a single project file in the current
+         --  directory. If there is one and only one, use it.
+
+         declare
+            Dir : Dir_Type;
+            Str : String (1 .. 255);
+            Last : Natural;
+            Single : String_Access := null;
+
+         begin
+            Open (Dir, ".");
+
+            loop
+               Read (Dir, Str, Last);
+               exit when Last = 0;
+
+               if Last > Project_File_Extension'Length and then
+                 Is_Regular_File (Str (1 .. Last))
+               then
+                  Canonical_Case_File_Name (Str (1 .. Last));
+
+                  if Str (Last - Project_File_Extension'Length + 1 .. Last)
+                    = Project_File_Extension
+                  then
+                     if Single = null then
+                        Single := new String'(Str (1 .. Last));
+
+                     else
+                        --  There are several project files in the current
+                        --  directory. Reset Single to null and exit.
+
+                        Single := null;
+                        exit;
+                     end if;
+                  end if;
+               end if;
+            end loop;
+
+            Close (Dir);
+
+            Project_File_Name := Single;
+         end;
+      end if;
+
+      if (not Quiet_Output) and then Project_File_Name /= null then
+         Write_Str ("using project file ");
+         Write_Line (Project_File_Name.all);
+      end if;
+   end Look_For_Default_Project;
 
 end Gpr_Util;

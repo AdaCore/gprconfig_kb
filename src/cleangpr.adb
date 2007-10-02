@@ -963,6 +963,12 @@ package body Cleangpr is
 
       Parse_Cmd_Line;
 
+      --  If no project file was specified, look first for a default
+
+      if Project_File_Name = null then
+         Look_For_Default_Project;
+      end if;
+
       --  Check that a project file was specified and get the configuration.
 
       if Project_File_Name = null then

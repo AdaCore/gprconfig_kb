@@ -127,4 +127,8 @@ package Gpr_Util is
    --  Terminate program, with or without a message, setting the status code
    --  according to Fatal.
 
+   procedure Look_For_Default_Project;
+   --  Check if default.gpr exists in the current directory. If it does, use
+   --  it. Otherwise, if there is only one file ending with .gpr, use it.
+
 end Gpr_Util;
