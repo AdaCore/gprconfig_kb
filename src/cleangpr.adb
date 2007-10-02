@@ -52,6 +52,9 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 package body Cleangpr is
 
+   Object_Suffix : constant String := Get_Target_Object_Suffix.all;
+   --  The suffix of object files on this platform
+
    Initialized : Boolean := False;
    --  Set to True by the first call to Initialize.
    --  To avoid reinitialization of some packages.
@@ -598,6 +601,23 @@ package body Cleangpr is
 
                if not Data.Library then
                   Clean_Archive (Project);
+               end if;
+
+               --  For a static library project, clean the partially link
+               --  object, if there is one.
+
+               if Data.Library and then Data.Library_Kind = Static then
+                  declare
+                     Partial : constant String :=
+                                 Partial_Prefix &
+                                 Get_Name_String (Data.Library_Name) &
+                                 Object_Suffix;
+
+                  begin
+                     if Is_Regular_File (Partial) then
+                        Delete (Obj_Dir, Partial);
+                     end if;
+                  end;
                end if;
 
                --  Check all the object file for the sources of the current

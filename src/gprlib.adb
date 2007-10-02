@@ -1242,7 +1242,7 @@ begin
          declare
             Partial : constant String_Access :=
                         new String'
-                          ("p__" & Library_Name.all & Object_Suffix);
+                          (Partial_Prefix & Library_Name.all & Object_Suffix);
 
          begin
             Add (Partial, AB_Options, Last_AB_Option);

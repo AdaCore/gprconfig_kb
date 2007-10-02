@@ -36,6 +36,8 @@ with Table;
 
 package Gpr_Util is
 
+   Partial_Prefix : constant String := "p__";
+
    Begin_Info : constant String := "--  BEGIN Object file/option list";
    End_Info   : constant String := "--  END Object file/option list   ";
 
