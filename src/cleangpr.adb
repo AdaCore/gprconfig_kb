@@ -112,8 +112,8 @@ package body Cleangpr is
    --  Delete a global archive and its dependency file, if they exist
 
    procedure Clean_Interface_Copy_Directory (Project : Project_Id);
-   --  Delete files in an interface coy directory directory: any file that is
-   --  a copy of a source of the project.
+   --  Delete files in an interface copy directory: any file that is a copy of
+   --  a source of the project.
 
    procedure Clean_Library_Directory (Project : Project_Id);
    --  Delete the library file in a library directory and any ALI file
@@ -742,7 +742,9 @@ package body Cleangpr is
                     Project_Tree.Sources.Table (Source).Next_In_Sources;
                end loop;
 
-               if not Compile_Only then
+               if not Compile_Only
+                 and then Source /= No_Source
+               then
                   Executable :=
                     Executable_Of
                       (Project  => Main_Project,
