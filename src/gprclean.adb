@@ -24,12 +24,12 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  Gprclean is a utility to delete files produced by the gprmake:
+--  Gprclean is a utility to delete files produced by gprbuild:
 --  dependency files, object files, tree files, library files, interface copy
 --  files, binder generated files, executable files and other artifacts.
 
 --  Gprclean is invoked with a project file or a tree of project files with
---  the optional specification of one of several executables.
+--  the optional specification of one or several executables.
 
 with Cleangpr;
 
