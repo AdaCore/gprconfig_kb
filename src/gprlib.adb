@@ -597,7 +597,12 @@ procedure Gprlib is
          Lib_File := Name_Find;
          Text := Osint.Read_Library_Info (Lib_File);
          The_ALI :=
-           ALI.Scan_ALI (Lib_File, Text, Ignore_ED => False, Err => True);
+           ALI.Scan_ALI
+             (Lib_File,
+              Text,
+              Ignore_ED  => False,
+              Err        => True,
+              Read_Lines => "U");
          Free (Text);
 
          Second_Unit := ALI.No_Unit_Id;
@@ -1026,7 +1031,12 @@ begin
 
          --  Read it
 
-         A := Scan_ALI (First_ALI, T, Ignore_ED => False, Err => False);
+         A := Scan_ALI
+           (First_ALI,
+            T,
+            Ignore_ED  => False,
+            Err        => False,
+            Read_Lines => "A");
 
          if A /= No_ALI_Id then
             for Index in
@@ -1129,7 +1139,11 @@ begin
          --  Read it
 
          A := Scan_ALI
-           (First_ALI, T, Ignore_ED => False, Err => False);
+           (First_ALI,
+            T,
+            Ignore_ED  => False,
+            Err        => False,
+            Read_Lines => "A");
 
          if A /= No_ALI_Id then
             for Index in

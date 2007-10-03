@@ -522,7 +522,8 @@ begin
                 T,
                 Ignore_ED     => False,
                 Err           => False,
-                Ignore_Errors => True);
+                Ignore_Errors => True,
+                Read_Lines    => "A");
 
          if A /= No_ALI_Id then
             for
