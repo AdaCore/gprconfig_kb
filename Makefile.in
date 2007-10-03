@@ -50,10 +50,17 @@ install: all install.bin
 	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} create_ada_runtime_project ${libexecdir}/gprbuild/
 	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
-	${INSTALL_DATA} share/gprconfig/gnat_runtime.mapping ${datadir}/gprconfig
+#	${INSTALL_DATA} share/gprconfig/gnat_runtime.mapping ${datadir}/gprconfig
 	$(RM) -r ${datadir}/examples/gprbuild
 	${MKDIR} ${datadir}/examples/gprbuild
 	${CP} -r examples/* ${datadir}/examples/gprbuild
+	${MKDIR} ${datadir}/doc/gprbuild
+	for format in html txt pdf info; do \
+	  if [ -d doc/$$format ] ; then \
+	    ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
+	    ${INSTALL_DATA} doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
+	  fi; \
+	done
 
 install.bin: gprconfig gprbuild gprclean
 	${MKDIR} ${bindir}
