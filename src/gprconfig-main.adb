@@ -553,6 +553,7 @@ procedure GprConfig.Main is
       Completion : Compiler_Lists.List;
    begin
       while Has_Element (C) loop
+         Clear (Completion);
          Elem := Element (C);
 
          Put_Verbose

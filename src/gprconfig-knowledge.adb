@@ -1417,6 +1417,7 @@ package body GprConfig.Knowledge is
       C            : Compiler_Description_Maps.Cursor;
       Search       : Search_Type;
       Dir          : Directory_Entry_Type;
+      Initial_Length : Count_Type;
    begin
       --  Since the name of an executable can be a regular expression, we need
       --  to look at all files in the directory to see if they match. This
@@ -1481,6 +1482,7 @@ package body GprConfig.Knowledge is
                                  ..  Matches (Element (C).Prefix_Index).Last));
                            end if;
 
+                           Initial_Length := Length (Append_To);
                            For_Each_Language_Runtime
                              (Append_To  => Append_To,
                               Base       => Base,
@@ -1497,7 +1499,7 @@ package body GprConfig.Knowledge is
 
                            exit For_All_Files_In_Dir when
                              Stop_At_First_Match
-                             and then Length (Append_To) > 0;
+                             and then Length (Append_To) > Initial_Length;
                         end if;
                      end;
                   end if;
@@ -1528,6 +1530,7 @@ package body GprConfig.Knowledge is
                      Put_Verbose ("--------------------------------------");
                      Put_Verbose
                        ("Processing " & Key (C) & " in " & Directory);
+                     Initial_Length := Length (Append_To);
                      For_Each_Language_Runtime
                        (Append_To  => Append_To,
                         Base       => Base,
@@ -1541,7 +1544,7 @@ package body GprConfig.Knowledge is
                         Stop_At_First_Match => Stop_At_First_Match);
 
                      exit when Stop_At_First_Match
-                       and then Length (Append_To) > 0;
+                       and then Length (Append_To) > Initial_Length;
                   end if;
                exception
                   when Ada.Directories.Name_Error =>
