@@ -14,8 +14,9 @@ with GNAT.Regpat;
 
 package GprConfig.Knowledge is
 
-   Verbose_Mode : Boolean := False;
-   --  Whether or not to display extra messages on stdout
+   Verbose_Level : Natural := 0;
+   --  What level of debug traces to display. The higher, the more messages
+   --  we show
 
    Quiet_Output : Boolean := False;
    --  Whether or not to display any message other than error messages
@@ -69,16 +70,23 @@ package GprConfig.Knowledge is
 
    procedure Find_Compilers_In_Path
      (Base      : in out Knowledge_Base;
-      Compilers : out Compiler_Lists.List);
-   --  Return the list of compilers found on PATH
+      Matching  : Compiler := No_Compiler;
+      Compilers : out Compiler_Lists.List;
+      Stop_At_First_Match : Boolean);
+   --  Return the list of compilers found on PATH, that match Matching (or the
+   --  fields that are specified in Matching).
+   --  If Stop_At_First_Match is true, then stop at the first matching compiler
 
    procedure Find_Matching_Compilers
-     (Name       : String;
-      Path       : String;
+     (Matching   : Compiler;
       Base       : in out Knowledge_Base;
-      Compilers  : out Compiler_Lists.List);
-   --  Given a compiler and its name, find out as much information as we can.
+      Compilers  : out Compiler_Lists.List;
+      Stop_At_First_Match : Boolean);
+   --  Find all compilers matching the (possibly partial) information found in
+   --  Matching.
    --  If the compiler is totally unknown, the returned list will be empty.
+   --  If Stop_At_First_Match is True, then only the first matching compiler is
+   --  returned.
 
    procedure Known_Compiler_Names
      (Base : Knowledge_Base;
@@ -131,8 +139,13 @@ package GprConfig.Knowledge is
    function Name_As_Directory (Dir : String) return String;
    --  Ensure that Dir ends with a directory separator
 
-   procedure Put_Verbose (Str : String);
-   --  Print Str if verbose mode is activated
+   procedure Put_Verbose (Str : String; Indent_Delta : Integer := 0);
+   --  Print Str if verbose mode is activated.
+   --  Indent_Delta will increase the current indentation level for all further
+   --  traces, which is used to highlight nested calls. Only the sign of
+   --  Indent_Delta is taken into account.
+   --  Nothing is printed if Str is the empty string, only the indentation is
+   --  changed
 
 private
    No_Compiler : constant Compiler :=

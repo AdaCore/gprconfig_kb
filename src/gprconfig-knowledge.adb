@@ -52,6 +52,9 @@ package body GprConfig.Knowledge is
    Ignore_Compiler : exception;
    --  Raised when the compiler should be ignored
 
+   Indentation_Level : Integer := 0;
+   --  Current indentation level for traces
+
    procedure Parse_Compiler_Description
      (Append_To   : in out Compiler_Description_Maps.Map;
       File        : String;
@@ -81,19 +84,24 @@ package body GprConfig.Knowledge is
       Base       : in out Knowledge_Base;
       Check_Executable_Regexp : Boolean;
       Directory  : String;
-      Name       : String := "";
-      Path_Order : Integer);
-   --  Find all known compilers in a specific directory.
-   --  If Name is specified, then only compilers with that given name are
-   --  searched for.
+      Matching   : Compiler  := No_Compiler;
+      Path_Order : Integer;
+      Stop_At_First_Match : Boolean);
+   --  Find all known compilers in a specific directory, that match
+   --  Matching (ignoring unset fields in Matching).
    --  Check_Executable_Regexp should be set to true if at least one of the
    --  <executable> nodes we are investigating can be a regexp. This changes
    --  the algorithm used.
+   --  If Stop_At_First_Match is true, then only the first compiler found will
+   --  be returned, instead of looking for all matching compilers. This
+   --  provides a significant speed up in most cases
 
    procedure Get_External_Value
-     (Value            : External_Value;
+     (Attribute        : String;
+      Value            : External_Value;
       Comp             : Compiler;
       Split_Into_Words : Boolean := True;
+      Matching         : String := "";
       Processed_Value  : out External_Value_Lists.List);
    --  Computes the value of Value, depending on its type. When an external
    --  command needs to be executed, Path is put first on the PATH environment
@@ -104,6 +112,8 @@ package body GprConfig.Knowledge is
    --  If Split_Into_Words is true, then the value read from <shell> or as a
    --  constant string is further assumed to be a comma-separated or space-
    --  separated string, and split.
+   --  If Matching is specified, then only those values equal to Matching are
+   --  stored in Processed_Value.
 
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
@@ -112,10 +122,14 @@ package body GprConfig.Knowledge is
       Executable : String;
       Directory  : String;
       Prefix     : String;
+      Matching   : Compiler;
       Descr      : Compiler_Description;
-      Path_Order : Integer);
+      Path_Order : Integer;
+      Stop_At_First_Match : Boolean);
    --  For each language/runtime parsed in Languages/Runtimes, create a new
-   --  compiler in the list.
+   --  compiler in the list, if it matches Matching.
+   --  If Stop_At_First_Match is true, then only the first matching compiler is
+   --  returned, which provides a significant speedup in some cases
 
    function Is_Windows_Executable (Filename : String) return Boolean;
    --  Verify that a given filename is indeed an executable
@@ -282,10 +296,20 @@ package body GprConfig.Knowledge is
    -- Put_Verbose --
    -----------------
 
-   procedure Put_Verbose (Str : String) is
+   procedure Put_Verbose (Str : String; Indent_Delta : Integer := 0) is
    begin
-      if Verbose_Mode then
-         Put_Line (Standard_Error, Str);
+      if Verbose_Level > 0 then
+         if Indent_Delta < 0 then
+            Indentation_Level := Indentation_Level - 2;
+         end if;
+
+         if Str /= "" then
+            Put_Line (Standard_Error, (1 .. Indentation_Level => ' ') & Str);
+         end if;
+
+         if Indent_Delta > 0 then
+            Indentation_Level := Indentation_Level + 2;
+         end if;
       end if;
    end Put_Verbose;
 
@@ -373,7 +397,6 @@ package body GprConfig.Knowledge is
       File        : String;
       Node        : Node_Ptr)
    is
-      use type Glib.String_Ptr;
       Tmp           : Node_Ptr := Node.Child;
       External_Node : External_Value_Node;
    begin
@@ -899,7 +922,7 @@ package body GprConfig.Knowledge is
                File   : Directory_Entry_Type;
                Filter : Ada.Directories.Filter_Type;
             begin
-               if Verbose_Mode and then File_Re = ".." then
+               if Verbose_Level > 0 and then File_Re = ".." then
                   Put_Verbose
                     ("Potential error: .. is generally not meant as a regexp,"
                      & " and should be quoted in this case, as in \.\.");
@@ -988,9 +1011,11 @@ package body GprConfig.Knowledge is
    ------------------------
 
    procedure Get_External_Value
-     (Value            : External_Value;
+     (Attribute        : String;
+      Value            : External_Value;
       Comp             : Compiler;
       Split_Into_Words : Boolean := True;
+      Matching         : String := "";
       Processed_Value  : out External_Value_Lists.List)
    is
       Saved_Path : constant String := Ada.Environment_Variables.Value ("PATH");
@@ -1001,6 +1026,7 @@ package body GprConfig.Knowledge is
       C              : String_Lists.Cursor;
       Node_Cursor    : External_Value_Nodes.Cursor := First (Value.Nodes);
       Node           : External_Value_Node;
+      Cursor, Cursor2 : External_Value_Lists.Cursor;
    begin
       Clear (Processed_Value);
 
@@ -1014,6 +1040,8 @@ package body GprConfig.Knowledge is
                Tmp_Result := To_Unbounded_String
                  (Substitute_Special_Dirs
                     (To_String (Node.Value), Comp, Output_Dir => ""));
+               Put_Verbose
+                 (Attribute & ": constant := " & To_String (Tmp_Result));
 
             when Value_Shell =>
                Ada.Environment_Variables.Set
@@ -1024,7 +1052,6 @@ package body GprConfig.Knowledge is
                begin
                   Extracted_From := Null_Unbounded_String;
                   Tmp_Result     := Null_Unbounded_String;
-                  Put_Verbose ("Executing " & Command);
                   declare
                      Args   : Argument_List_Access := Argument_String_To_List
                        (Command);
@@ -1038,7 +1065,6 @@ package body GprConfig.Knowledge is
                        (To_String (Node.Regexp), Multiple_Lines);
                      Matched : Match_Array (0 .. Node.Group);
                   begin
-                     Put_Verbose ("   Output is """ & Output & """");
                      GNAT.Strings.Free (Args);
                      Ada.Environment_Variables.Set ("PATH", Saved_Path);
 
@@ -1047,13 +1073,32 @@ package body GprConfig.Knowledge is
                         Extracted_From := To_Unbounded_String (Output);
                         Tmp_Result := To_Unbounded_String
                           (Output (Matched (Node.Group).First ..
-                                   Matched (Node.Group).Last));
-                        Put_Verbose ("Matched: " & To_String (Tmp_Result));
+                             Matched (Node.Group).Last));
+                        if Verbose_Level > 1 then
+                           Put_Verbose
+                             (Attribute & ": executing """ & Command
+                              & """ output=""" & Output & """"
+                              & " matched=""" & To_String (Tmp_Result)
+                              & """");
+                        elsif Verbose_Level > 0 then
+                           Put_Verbose
+                             (Attribute & ": executing """ & Command
+                              & """ output=<use -v -v> matched="""
+                              & To_String (Tmp_Result) & """");
+                        end if;
+                     elsif Verbose_Level > 1 then
+                        Put_Verbose (Attribute & ": executing """ & Command
+                                     & """ output=""" & Output & """"
+                                     & " no match");
+                     elsif Verbose_Level > 0 then
+                        Put_Verbose
+                          (Attribute & ": executing """ & Command
+                           & """ output=<use -v -v> no match");
                      end if;
                   end;
                exception
                   when Invalid_Process =>
-                     Put_Verbose ("   Spawn failed");
+                     Put_Verbose ("Spawn failed for " & Command);
                end;
 
             when Value_Directory =>
@@ -1063,8 +1108,8 @@ package body GprConfig.Knowledge is
                begin
                   if Search (Search'First) = '/' then
                      Put_Verbose
-                       ("Searching for directories matching " & Search
-                        & ", starting from /");
+                       (Attribute & ": search directories matching " & Search
+                        & ", starting from /", 1);
                      Parse_All_Dirs
                        (Processed_Value => Processed_Value,
                         Current_Dir     => "",
@@ -1076,8 +1121,8 @@ package body GprConfig.Knowledge is
                         Group           => Node.Directory_Group);
                   else
                      Put_Verbose
-                       ("Searching for directories matching " & Search
-                        & ", starting from " & To_String (Comp.Path));
+                       (Attribute & ": search directories matching " & Search
+                        & ", starting from " & To_String (Comp.Path), 1);
                      Parse_All_Dirs
                        (Processed_Value => Processed_Value,
                         Current_Dir     => To_String (Comp.Path),
@@ -1087,6 +1132,7 @@ package body GprConfig.Knowledge is
                         Value_If_Match  => To_String (Node.Dir_If_Match),
                         Group           => Node.Directory_Group);
                   end if;
+                  Put_Verbose ("Done search directories", -1);
                end;
          end case;
 
@@ -1102,7 +1148,20 @@ package body GprConfig.Knowledge is
 
          case Node.Typ is
             when Value_Directory =>
-               null;  --  already split
+               --  Only keep those matching
+               if Matching /= "" then
+                  Cursor := First (Processed_Value);
+                  while Has_Element (Cursor) loop
+                     Cursor2 := Next (Cursor);
+
+                     if Element (Cursor).Value /= Matching then
+                        Delete (Processed_Value, Cursor);
+                     end if;
+
+                     Cursor := Cursor2;
+                  end loop;
+
+               end if;
 
             when Value_Shell | Value_Constant =>
                if Tmp_Result = Null_Unbounded_String then
@@ -1115,20 +1174,30 @@ package body GprConfig.Knowledge is
                              Allow_Empty_Elements => False);
                   C := First (Split);
                   while Has_Element (C) loop
-                     Append
-                       (Processed_Value,
-                        External_Value_Item'
-                          (Value          => To_Unbounded_String (Element (C)),
-                           Extracted_From => Extracted_From));
+                     if Matching = ""
+                       or else Element (C) = Matching
+                     then
+                        Append
+                          (Processed_Value,
+                           External_Value_Item'
+                             (Value       => To_Unbounded_String (Element (C)),
+                              Extracted_From => Extracted_From));
+                     end if;
                      Next (C);
                   end loop;
 
-               else
+               elsif Matching = ""
+                 or else To_String (Tmp_Result) = Matching
+               then
                   Append
                     (Processed_Value,
                      External_Value_Item'
                        (Value          => Tmp_Result,
                         Extracted_From => Extracted_From));
+
+               else
+                  Put_Verbose
+                    ("Compiler ignored since this criteria does not match");
                end if;
          end case;
 
@@ -1200,8 +1269,10 @@ package body GprConfig.Knowledge is
       Executable : String;
       Directory  : String;
       Prefix     : String;
+      Matching   : Compiler;
       Descr      : Compiler_Description;
-      Path_Order : Integer)
+      Path_Order : Integer;
+      Stop_At_First_Match : Boolean)
    is
       Target    : External_Value_Lists.List;
       Version   : External_Value_Lists.List;
@@ -1229,15 +1300,33 @@ package body GprConfig.Knowledge is
       Comp.Prefix     := To_Unbounded_String (Prefix);
       Comp.Executable := To_Unbounded_String (Executable);
 
+      --  Check the language first, since it is often hard-coded, and often
+      --  specified in --config, so that provides a speed up since we won't
+      --  have to compute the other attributes
+
       Get_External_Value
-        (Value            => Descr.Target,
+        ("languages",
+         Value            => Descr.Languages,
+         Comp             => Comp,
+         Split_Into_Words => True,
+         Matching         => To_String (Matching.Language),
+         Processed_Value  => Languages);
+      if Is_Empty (Languages) then
+         Put_Verbose
+           ("Ignore compiler, since no matching language (must match "
+            & To_String (Matching.Language) & ")");
+         raise Ignore_Compiler;
+      end if;
+
+      Get_External_Value
+        ("target",
+         Value            => Descr.Target,
          Comp             => Comp,
          Split_Into_Words => False,
+         Matching         => To_String (Matching.Target),
          Processed_Value  => Target);
       if not Is_Empty (Target) then
          Comp.Target := Element (First (Target)).Value;
-         Put_Verbose
-           ("Target for this compiler is " & To_String (Comp.Target));
          Get_Targets_Set (Base, To_String (Comp.Target), Comp.Targets_Set);
       else
          Put_Verbose ("Target unknown for this compiler");
@@ -1245,9 +1334,11 @@ package body GprConfig.Knowledge is
       end if;
 
       Get_External_Value
-        (Value            => Descr.Version,
+        ("version",
+         Value            => Descr.Version,
          Comp             => Comp,
          Split_Into_Words => False,
+         Matching         => To_String (Matching.Version),
          Processed_Value  => Version);
 
       --  If we can't find version, ignore this compiler
@@ -1263,14 +1354,11 @@ package body GprConfig.Knowledge is
       end if;
 
       Get_External_Value
-        (Value            => Descr.Languages,
+        ("runtimes",
+         Value            => Descr.Runtimes,
          Comp             => Comp,
          Split_Into_Words => True,
-         Processed_Value  => Languages);
-      Get_External_Value
-        (Value            => Descr.Runtimes,
-         Comp             => Comp,
-         Split_Into_Words => True,
+         Matching         => To_String (Matching.Runtime),
          Processed_Value  => Runtimes);
 
       C := First (Languages);
@@ -1287,6 +1375,9 @@ package body GprConfig.Knowledge is
                                & To_String (Comp.Path));
                else
                   Append (Append_To, Comp);
+                  if Stop_At_First_Match then
+                     return;
+                  end if;
                end if;
             else
                C2 := First (Runtimes);
@@ -1294,6 +1385,9 @@ package body GprConfig.Knowledge is
                   Comp.Runtime     := Element (C2).Value;
                   Comp.Runtime_Dir := Element (C2).Extracted_From;
                   Append (Append_To, Comp);
+                  if Stop_At_First_Match then
+                     return;
+                  end if;
                   Next (C2);
                end loop;
             end if;
@@ -1316,8 +1410,9 @@ package body GprConfig.Knowledge is
       Base       : in out Knowledge_Base;
       Check_Executable_Regexp : Boolean;
       Directory  : String;
-      Name       : String := "";
-      Path_Order : Integer)
+      Matching   : Compiler  := No_Compiler;
+      Path_Order : Integer;
+      Stop_At_First_Match : Boolean)
    is
       C            : Compiler_Description_Maps.Cursor;
       Search       : Search_Type;
@@ -1328,9 +1423,11 @@ package body GprConfig.Knowledge is
       --  requires more system calls than if the name was always a simple
       --  string. So we first check which of the two algorithms should be used.
 
-      Put_Verbose ("Find compilers matching name=" & Name & " in directory="
-                   & Directory & ", using regexp:"
-                   & Boolean'Image (Check_Executable_Regexp));
+      Put_Verbose ("Search compilers """ & To_String (Matching.Name) & """ in "
+                   & Directory & " regexp="
+                   & Boolean'Image (Check_Executable_Regexp)
+                   & " stop_at_first=" & Boolean'Image (Stop_At_First_Match),
+                   1);
 
       if Check_Executable_Regexp then
          begin
@@ -1344,13 +1441,13 @@ package body GprConfig.Knowledge is
                return;
          end;
 
-         loop
+         For_All_Files_In_Dir : loop
             begin
-               exit when not More_Entries (Search);
+               exit For_All_Files_In_Dir when not More_Entries (Search);
                Get_Next_Entry (Search, Dir);
                C := First (Base.Compilers);
                while Has_Element (C) loop
-                  if Name = "" or else Key (C) = Name then
+                  if Matching.Name = "" or else Key (C) = Matching.Name then
                      declare
                         Simple  : constant String := Simple_Name (Dir);
                         Matches : Match_Array
@@ -1369,9 +1466,9 @@ package body GprConfig.Knowledge is
                         end if;
 
                         if Matched then
-                           Put_Verbose ("---------------------------------");
                            Put_Verbose
-                             ("Processing " & Key (C) & " in " & Directory);
+                             (Key (C) & " is candidate: filename=" & Simple,
+                              1);
 
                            if Element (C).Executable_Re /= null
                              and then Element (C).Prefix_Index >= 0
@@ -1390,9 +1487,17 @@ package body GprConfig.Knowledge is
                               Name       => Key (C),
                               Executable => Simple,
                               Directory  => Directory,
+                              Matching   => Matching,
                               Prefix     => To_String (Prefix),
                               Descr      => Element (C),
-                              Path_Order => Path_Order);
+                              Path_Order => Path_Order,
+                              Stop_At_First_Match => Stop_At_First_Match);
+
+                           exit For_All_Files_In_Dir when
+                             Stop_At_First_Match
+                             and then Length (Append_To) > 0;
+
+                           Put_Verbose ("", -1);
                         end if;
                      end;
                   end if;
@@ -1402,7 +1507,7 @@ package body GprConfig.Knowledge is
                when Ada.Directories.Name_Error =>
                   null;
             end;
-         end loop;
+         end loop For_All_Files_In_Dir;
 
       else
          --  Do not search all entries in the directory, but check explictly
@@ -1411,7 +1516,7 @@ package body GprConfig.Knowledge is
 
          C := First (Base.Compilers);
          while Has_Element (C) loop
-            if Name = "" or else Key (C) = Name then
+            if Matching.Name = "" or else Key (C) = Matching.Name then
                declare
                   F : constant String := Normalize_Pathname
                     (Name           => To_String (Element (C).Executable),
@@ -1429,9 +1534,14 @@ package body GprConfig.Knowledge is
                         Name       => Key (C),
                         Executable => To_String (Element (C).Executable),
                         Prefix     => "",
+                        Matching   => Matching,
                         Directory  => Directory,
                         Descr      => Element (C),
-                        Path_Order => Path_Order);
+                        Path_Order => Path_Order,
+                        Stop_At_First_Match => Stop_At_First_Match);
+
+                     exit when Stop_At_First_Match
+                       and then Length (Append_To) > 0;
                   end if;
                exception
                   when Ada.Directories.Name_Error =>
@@ -1445,6 +1555,8 @@ package body GprConfig.Knowledge is
             Next (C);
          end loop;
       end if;
+
+      Put_Verbose ("Done searching for compilers", -1);
    end Find_Compilers_In_Dir;
 
    -----------------------------
@@ -1452,10 +1564,10 @@ package body GprConfig.Knowledge is
    -----------------------------
 
    procedure Find_Matching_Compilers
-     (Name       : String;
-      Path       : String;
+     (Matching   : Compiler;
       Base       : in out Knowledge_Base;
-      Compilers  : out Compiler_Lists.List)
+      Compilers  : out Compiler_Lists.List;
+      Stop_At_First_Match : Boolean)
    is
       Check_Regexp : Boolean := False;
       C            : Compiler_Description_Maps.Cursor;
@@ -1464,7 +1576,7 @@ package body GprConfig.Knowledge is
 
       C := First (Base.Compilers);
       while Has_Element (C) loop
-         if (Name = "" or else Key (C) = Name)
+         if (Matching.Name = "" or else Key (C) = Matching.Name)
            and then Element (C).Executable_Re /= null
          then
             Check_Regexp := True;
@@ -1477,9 +1589,10 @@ package body GprConfig.Knowledge is
         (Append_To  => Compilers,
          Base       => Base,
          Check_Executable_Regexp => Check_Regexp,
-         Directory  => Path,
-         Name       => Name,
-         Path_Order => 0);
+         Directory  => To_String (Matching.Path),
+         Matching   => Matching,
+         Path_Order => 0,
+        Stop_At_First_Match => Stop_At_First_Match);
    end Find_Matching_Compilers;
 
    ----------------------------
@@ -1488,7 +1601,9 @@ package body GprConfig.Knowledge is
 
    procedure Find_Compilers_In_Path
      (Base      : in out Knowledge_Base;
-      Compilers : out Compiler_Lists.List)
+      Matching  : Compiler := No_Compiler;
+      Compilers : out Compiler_Lists.List;
+      Stop_At_First_Match : Boolean)
    is
       Map        : String_Lists.List;
       Path_Order : Positive := 1;
@@ -1527,11 +1642,15 @@ package body GprConfig.Knowledge is
                   --  We know that at least GNAT uses a regular expression for
                   --  its <executable> node, so we have to handle regexps
                   Find_Compilers_In_Dir
-                    (Append_To  => Compilers,
-                     Base       => Base,
+                    (Append_To               => Compilers,
+                     Base                    => Base,
                      Check_Executable_Regexp => True,
-                     Directory  => Path (First .. Last - 1),
-                     Path_Order => Path_Order);
+                     Directory               => Path (First .. Last - 1),
+                     Path_Order              => Path_Order,
+                     Matching                => Matching,
+                     Stop_At_First_Match     => Stop_At_First_Match);
+                  exit when Stop_At_First_Match
+                    and then Length (Compilers) > 0;
                end if;
 
                Path_Order := Path_Order + 1;
@@ -1844,7 +1963,6 @@ package body GprConfig.Knowledge is
       Config   : Configuration_Lists.Cursor := First (Base.Configurations);
       Output            : File_Type;
       Packages          : String_Maps.Map;
---      C                 : String_Maps.Cursor;
       Selected_Compiler : Compiler;
       M                 : Boolean;
       Comp              : Compiler_Lists.Cursor;
@@ -1884,7 +2002,7 @@ package body GprConfig.Knowledge is
             if not Element (Config).Supported then
                Put_Line
                  (Standard_Error,
-                  "Code generated by these compilers cannot be linked together"
+                  "Code generated by these compilers cannot be linked"
                   & " as far as we know.");
                return;
             end if;

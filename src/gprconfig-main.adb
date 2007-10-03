@@ -75,9 +75,15 @@ procedure GprConfig.Main is
 
    procedure Complete_Command_Line_Compilers
      (Base         : in out Knowledge_Base;
-      Custom_Comps : in out Compiler_Lists.List);
-   --  Complete missing information for the compilers specified on the command
-   --  line.
+      Filters      : Compiler_Lists.List;
+      Custom_Comps : out Compiler_Lists.List);
+   --  In batch mode, the --config parameters indicate what compilers should be
+   --  selected. Each of these switch selects the first matching compiler
+   --  available, and all --config switch must match a compiler.
+   --  This procedure is used to find matching compilers, and complete info
+   --  like their version, runtime,... It should only be called in batch mode,
+   --  since otherwise --config only acts as a filter for the compilers that
+   --  are found through the knowledge base.
 
    procedure Filter_Compilers
      (Selected_Comps : in out Compiler_Lists.List;
@@ -210,10 +216,10 @@ procedure GprConfig.Main is
       end if;
 
       Find_Matching_Compilers
-        (Name      => To_String (Comp.Name),
-         Path      => To_String (Comp.Path),
+        (Matching  => Comp,
          Base      => Base,
-         Compilers => Completion);
+         Compilers => Completion,
+         Stop_At_First_Match => True);
       if not Is_Empty (Completion) then
          Complete := Element (First (Completion));
       end if;
@@ -404,7 +410,7 @@ procedure GprConfig.Main is
                   while Has_Element (Comp) loop
                      if Element (Comp).Language = Comps (C).Language then
                         Selectable (C) := False;
-                        if Verbose_Mode then
+                        if Verbose_Level > 0 then
                            Put_Verbose ("Already selected language for");
                            Display_Compiler (Comps (C), False, C);
                         end if;
@@ -417,7 +423,7 @@ procedure GprConfig.Main is
                   if Selectable (C) then
                      if Comps (C).Targets_Set /= Selected_Targets_Set then
                         Selectable (C) := False;
-                        if Verbose_Mode then
+                        if Verbose_Level > 0 then
                            Put_Verbose ("Incompatible target for:");
                            Display_Compiler (Comps (C), False, C);
                         end if;
@@ -432,7 +438,7 @@ procedure GprConfig.Main is
                      Selectable (C) :=
                        Is_Supported_Config (Base, Tmp_Selection2);
                      if not Selectable (C) then
-                        if Verbose_Mode then
+                        if Verbose_Level > 0 then
                            Put_Verbose ("Unsupported config for:");
                            Display_Compiler (Comps (C), False, C);
                         end if;
@@ -539,57 +545,60 @@ procedure GprConfig.Main is
 
    procedure Complete_Command_Line_Compilers
      (Base         : in out Knowledge_Base;
-      Custom_Comps : in out Compiler_Lists.List)
+      Filters      : Compiler_Lists.List;
+      Custom_Comps : out Compiler_Lists.List)
    is
-      procedure Update_Comps (Elem : in out Compiler);
-      --  Update element with the appropriate info from the knowledge base
-
-      procedure Update_Comps (Elem : in out Compiler) is
-         Completion : Compiler_Lists.List;
-      begin
-         Find_Matching_Compilers
-           (Name      => To_String (Elem.Name),
-            Path      => To_String (Elem.Path),
-            Base      => Base,
-            Compilers => Completion);
-         if not Is_Empty (Completion) then
-            if Elem.Version = Null_Unbounded_String then
-               Elem.Version := Element (First (Completion)).Version;
-            end if;
-            if Elem.Language = Null_Unbounded_String then
-               Elem.Language := Element (First (Completion)).Language;
-            end if;
-            if Elem.Runtime = Null_Unbounded_String then
-               Elem.Runtime := Element (First (Completion)).Runtime;
-            end if;
-            if Elem.Runtime_Dir = Null_Unbounded_String then
-               Elem.Runtime_Dir := Element (First (Completion)).Runtime_Dir;
-            end if;
-            if Elem.Target = Null_Unbounded_String then
-               Elem.Target := Element (First (Completion)).Target;
-            end if;
-            if Elem.Extra_Tool = Null_Unbounded_String then
-               Elem.Extra_Tool := Element (First (Completion)).Extra_Tool;
-            end if;
-            if Elem.Prefix = Null_Unbounded_String then
-               Elem.Prefix := Element (First (Completion)).Prefix;
-            end if;
-            if Elem.Executable = Null_Unbounded_String then
-               Elem.Executable := Element (First (Completion)).Executable;
-            end if;
-         else
-            Put_Verbose
-              ("Error while querying missing info for a compiler"
-               & " specified on the command line: "
-               & To_String (Elem.Name) & "," & To_String (Elem.Path));
-            raise Invalid_Config;
-         end if;
-      end Update_Comps;
-
-      C : Compiler_Lists.Cursor := First (Custom_Comps);
+      C    : Compiler_Lists.Cursor := First (Filters);
+      Elem : Compiler;
+      Completion : Compiler_Lists.List;
    begin
       while Has_Element (C) loop
-         Update_Element (Custom_Comps, C, Update_Comps'Unrestricted_Access);
+         Elem := Element (C);
+
+         Put_Verbose
+           ("Completing info for --config="
+            & To_String (Elem.Language)
+            & ',' & To_String (Elem.Version)
+            & ',' & To_String (Elem.Runtime)
+            & ',' & To_String (Elem.Path)
+            & ',' & To_String (Elem.Name), 1);
+
+         if Elem.Path /= "" then
+            Find_Matching_Compilers
+              (Matching  => Elem,
+               Base      => Base,
+               Compilers => Completion,
+               Stop_At_First_Match => True);
+         else
+            Find_Compilers_In_Path
+              (Matching  => Elem,
+               Base      => Base,
+               Compilers => Completion,
+               Stop_At_First_Match => True);
+         end if;
+
+         if not Is_Empty (Completion) then
+            Elem := Element (First (Completion));
+            Put_Verbose ("Found matching compiler "
+                         & To_String (Elem.Language)
+                         & ',' & To_String (Elem.Version)
+                         & ',' & To_String (Elem.Runtime)
+                         & ',' & To_String (Elem.Path)
+                         & ',' & To_String (Elem.Name), -1);
+            Append (Custom_Comps, Elem);
+         else
+            Put_Verbose ("", -1);
+            Put_Line
+              (Standard_Error,
+               "Error: no matching compiler found for --config="
+               & To_String (Elem.Language)
+               & ',' & To_String (Elem.Version)
+               & ',' & To_String (Elem.Runtime)
+               & ',' & To_String (Elem.Path)
+               & ',' & To_String (Elem.Name));
+            raise Invalid_Config;
+         end if;
+
          Next (C);
       end loop;
    end Complete_Command_Line_Compilers;
@@ -769,10 +778,10 @@ begin
 
          when 'q' =>
             Quiet_Output := True;
-            Verbose_Mode := False;
+            Verbose_Level := 0;
 
          when 'v' =>
-            Verbose_Mode := True;
+            Verbose_Level := Verbose_Level + 1;
             Quiet_Output := False;
 
          when ASCII.NUL =>
@@ -827,90 +836,96 @@ begin
         (Base, To_String (Selected_Target), Selected_Targets_Set);
    end if;
 
-   Complete_Command_Line_Compilers (Base, Custom_Comps);
-   Find_Compilers_In_Path (Base, Compilers);
+   if Batch then
+      Complete_Command_Line_Compilers (Base, Filters, Selected_Compilers);
+      Splice (Target => Selected_Compilers,
+              Before => First (Selected_Compilers),
+              Source => Custom_Comps);
 
-   if Show_Targets or else Verbose_Mode then
-      declare
-         use String_Lists;
-         All_Target : String_Lists.List;
-         C : Compiler_Lists.Cursor := First (Compilers);
-      begin
-         Put_Line ("List of targets supported by a compiler:");
-         while Has_Element (C) loop
-            declare
-               Cur_Target : constant String := To_String (Element (C).Target);
-               T : String_Lists.Cursor := First (All_Target);
-               Dup : Boolean := False;
-            begin
-               while Has_Element (T) loop
-                  if Element (T) = Cur_Target then
-                     Dup := True;
-                     exit;
+   else
+      Find_Compilers_In_Path
+        (Base                => Base,
+         Matching            => No_Compiler,
+         Compilers           => Compilers,
+         Stop_At_First_Match => False);
+
+      if Show_Targets or else Verbose_Level > 0 then
+         declare
+            use String_Lists;
+            All_Target : String_Lists.List;
+            C : Compiler_Lists.Cursor := First (Compilers);
+         begin
+            Put_Line ("List of targets supported by a compiler:");
+            while Has_Element (C) loop
+               declare
+                  Cur_Target : constant String :=
+                    To_String (Element (C).Target);
+                  T : String_Lists.Cursor := First (All_Target);
+                  Dup : Boolean := False;
+               begin
+                  while Has_Element (T) loop
+                     if Element (T) = Cur_Target then
+                        Dup := True;
+                        exit;
+                     end if;
+                     Next (T);
+                  end loop;
+                  if not Dup then
+                     Put (Cur_Target);
+                     if Cur_Target = Sdefault.Hostname then
+                        Put (" (native target)");
+                     end if;
+                     New_Line;
+                     Append (All_Target, Cur_Target);
                   end if;
-                  Next (T);
-               end loop;
-               if not Dup then
-                  Put (Cur_Target);
-                  if Cur_Target = Sdefault.Hostname then
-                     Put (" (native target)");
-                  end if;
-                  New_Line;
-                  Append (All_Target, Cur_Target);
+               end;
+               Next (C);
+            end loop;
+         end;
+         if Show_Targets then
+            return;
+         end if;
+      end if;
+
+      --  Remove compilers not matching the target.
+      if Selected_Target /= Null_Unbounded_String then
+         declare
+            C      : Compiler_Lists.Cursor := First (Compilers);
+            Next_C : Compiler_Lists.Cursor;
+         begin
+            while Has_Element (C) loop
+               Next_C := Next (C);
+               if Element (C).Targets_Set /= Selected_Targets_Set then
+                  Put_Verbose ("compiler " & To_String (Element (C).Executable)
+                               & " does not match selected target");
+                  Delete (Compilers, C);
                end if;
-            end;
-            Next (C);
-         end loop;
-      end;
-      if Show_Targets then
+               C := Next_C;
+            end loop;
+         end;
+      end if;
+
+      if not Is_Empty (Filters) then
+         Filter_Compilers (Selected_Compilers, Compilers, Filters);
+      end if;
+
+      if Is_Empty (Compilers) then
+         if Selected_Target /= Null_Unbounded_String then
+            Put_Line
+              (Standard_Error,
+               "No compilers found for target " & To_String (Selected_Target));
+         else
+            Put_Line (Standard_Error, "No compilers found");
+         end if;
+         Ada.Command_Line.Set_Exit_Status (1);
          return;
       end if;
-   end if;
 
-   --  Remove compilers not matching the target.
-   if Selected_Target /= Null_Unbounded_String then
-      declare
-         C      : Compiler_Lists.Cursor := First (Compilers);
-         Next_C : Compiler_Lists.Cursor;
-      begin
-         while Has_Element (C) loop
-            Next_C := Next (C);
-            if Element (C).Targets_Set /= Selected_Targets_Set then
-               Put_Verbose ("compiler " & To_String (Element (C).Executable)
-                            & " does not match selected target");
-               Delete (Compilers, C);
-            end if;
-            C := Next_C;
-         end loop;
-      end;
-   end if;
-
-   if not Is_Empty (Filters) then
-      Filter_Compilers (Selected_Compilers, Compilers, Filters);
-   end if;
-
-   if Is_Empty (Compilers) then
-      if Selected_Target /= Null_Unbounded_String then
-         Put_Line
-           (Standard_Error,
-            "No compilers found for target " & To_String (Selected_Target));
-      else
-         Put_Line (Standard_Error, "No compilers found");
-      end if;
-      Ada.Command_Line.Set_Exit_Status (1);
-      return;
-   end if;
-
-   if not Batch then
       Compiler_Sort.Sort (Compilers);
 
       Select_Compilers_Interactively
         (Base, Compilers, Selected_Compilers, Custom_Comps);
       Show_Command_Line_Config (Selected_Compilers);
-   else
-      Splice (Target => Selected_Compilers,
-              Before => First (Selected_Compilers),
-              Source => Custom_Comps);
    end if;
 
    if Output_File /= Null_Unbounded_String then
