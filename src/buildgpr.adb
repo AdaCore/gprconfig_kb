@@ -7255,7 +7255,7 @@ package body Buildgpr is
                   if Verbose_Mode then
                      Write_Str ("    -> ");
                      Write_Str (Get_Name_String (Src_Data.Dep_Path));
-                     Write_Line ("is incorrectly formatted");
+                     Write_Line (" is incorrectly formatted");
                   end if;
 
                   return True;
