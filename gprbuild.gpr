@@ -1,3 +1,5 @@
+with "share/share.gpr";
+
 project Gprbuild is
    type OS_Type is ("unix", "vms", "Windows_NT");
    OS : OS_Type := External ("OS", "unix");
