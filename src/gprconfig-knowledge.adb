@@ -1493,11 +1493,11 @@ package body GprConfig.Knowledge is
                               Path_Order => Path_Order,
                               Stop_At_First_Match => Stop_At_First_Match);
 
+                           Put_Verbose ("", -1);
+
                            exit For_All_Files_In_Dir when
                              Stop_At_First_Match
                              and then Length (Append_To) > 0;
-
-                           Put_Verbose ("", -1);
                         end if;
                      end;
                   end if;
