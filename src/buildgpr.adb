@@ -796,7 +796,7 @@ package body Buildgpr is
                Free (Arguments_Displayed);
                Arguments_Displayed := New_Arguments_Displayed;
 
-               New_Arguments_Simple_Name (Arguments_Displayed'Range) :=
+               New_Arguments_Simple_Name (Arguments_Simple_Name'Range) :=
                  Arguments_Simple_Name.all;
                Free (Arguments_Simple_Name);
                Arguments_Simple_Name := New_Arguments_Simple_Name;
