@@ -496,10 +496,16 @@ begin
    --  from this ALI file and use these switches to compile the binder
    --  generated file.
 
-   if ALI_Files_Table.Last >= 1 then
+   if Main_ALI /= null or else ALI_Files_Table.Last >= 1 then
       Initialize_ALI;
       Name_Len := 0;
-      Add_Str_To_Name_Buffer (ALI_Files_Table.Table (1).all);
+
+      if Main_ALI /= null then
+         Add_Str_To_Name_Buffer (Main_ALI.all);
+
+      else
+         Add_Str_To_Name_Buffer (ALI_Files_Table.Table (1).all);
+      end if;
 
       declare
          use Types;
