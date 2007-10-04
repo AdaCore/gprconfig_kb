@@ -82,7 +82,7 @@ EOF
 fi
 
 while [ true ]; do
-  echo -n "Type 1, or 2 (then RETURN) to choose an option: "
+  echo "Type 1, or 2 (then RETURN) to choose an option: "
   read answer
   case $answer in
 
