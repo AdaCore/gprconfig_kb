@@ -17,6 +17,16 @@ libdir=@libdir@
 libexecdir=@libexecdir@
 docdir=${datadir}/doc/@PACKAGE_TARNAME@
 
+objdir=obj
+ifeq ($(BUILD), debug)
+objdir=obj-debug
+endif
+ifeq ($(BUILD), coverage)
+objdir=obj-cov
+endif
+
+dummy:=$(shell $(MKDIR) $(objdir))
+
 GNATMAKE=gnatmake
 ifeq ($(strip $(filter-out %vms%,$(HOST))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
@@ -26,7 +36,7 @@ endif
 all:
 	gnatmake -Pgprbuild -XBUILD=${BUILD}
 
-all gprconfig gprbuild gprclean: obj/gprbuild_dummies.o obj/link.o force
+all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
 copy_gnat_src: force
 	-@$(foreach f,$(shell cat gnat/MANIFEST.GPRBUILD), \
@@ -68,10 +78,10 @@ install.bin: gprconfig gprbuild gprclean
 	${INSTALL_PROGRAM} gprbuild ${bindir}
 	${INSTALL_PROGRAM} gprclean ${bindir}
 
-obj/gprbuild_dummies.o: src/gprbuild_dummies.c
+$(objdir)/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
 
-obj/link.o: gnat/link.c
+$(objdir)/link.o: gnat/link.c
 	gcc -c -o $@ $<
 
 clean:
@@ -81,7 +91,7 @@ distclean:
 	gnat clean -q -r -Pgprbuild
 	@${RM} config.log config.status src/gprconfig-sdefault.ads
 	@${RM} Makefile
-	@${RM} obj/*
+	@${RM} $(objdir)/*
 	make -C doc clean
 	make -C examples clean
 

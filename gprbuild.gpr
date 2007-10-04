@@ -4,7 +4,7 @@ project Gprbuild is
    type OS_Type is ("unix", "vms", "Windows_NT");
    OS : OS_Type := External ("OS", "unix");
 
-   type Build_Type is ("debug", "production");
+   type Build_Type is ("debug", "production", "coverage");
    Bld : Build_Type := External ("BUILD", "debug");
 
   for Main use
@@ -16,7 +16,12 @@ project Gprbuild is
         "gprclean.adb");
    for Source_Dirs use ("src", "gnat");
 
-   for Object_Dir use "obj";
+   case Bld is
+      when "production" => for Object_Dir use "obj";
+      when "coverage"   => for Object_Dir use "obj-cov";
+      when "debug"      => for Object_Dir use "obj-debug";
+   end case;
+
    for Exec_Dir use ".";
 
    for Languages use ("Ada");
@@ -39,6 +44,9 @@ project Gprbuild is
              , "-gnatyg");
             --  ??? re-enable when gprbuild works with initialize_scalars
             -- for Local_Configuration_Pragmas use "debug.adc";
+         when "coverage" =>
+            for Default_Switches ("Ada") use common_switches &
+              ("-ftest-coverage", "-fprofile-arcs");
          when "production" =>
             for Default_Switches ("Ada") use common_switches &
               ("-O2", "-gnatpn", "-gnatws");
@@ -56,14 +64,19 @@ project Gprbuild is
             ;
          when "production" =>
             for Default_Switches ("Ada") use common_switches;
+         when "coverage" =>
+            for Default_Switches ("Ada") use common_switches;
          end case;
    end Binder;
 
 
    package Linker is
       -- Link manually the C part
-      for Default_Switches ("Ada") use
-	("obj/gprbuild_dummies.o", "obj/link.o");
+      common_switches := ("obj/gprbuild_dummies.o", "obj/link.o");
+      case Bld is
+         when "production"|"debug"   => for Default_Switches ("Ada") use common_switches;
+         when "coverage" => for Default_Switches ("Ada") use common_switches & ("-lgcov");
+      end case;
    end Linker;
 
    package Naming is
