@@ -115,6 +115,8 @@ package body GprConfig.Knowledge is
    --  separated string, and split.
    --  If Matching is specified, then only those values equal to Matching are
    --  stored in Processed_Value.
+   --  Comparisong with Matching is case-insensitive (this is needed for
+   --  languages, does not matter for versions, is not used for targets)
 
    procedure For_Each_Language_Runtime
      (Append_To  : in out Compiler_Lists.List;
@@ -1156,7 +1158,9 @@ package body GprConfig.Knowledge is
                   while Has_Element (Cursor) loop
                      Cursor2 := Next (Cursor);
 
-                     if Element (Cursor).Value /= Matching then
+                     if To_Lower (To_String (Element (Cursor).Value)) /=
+                       To_Lower (Matching)
+                     then
                         Delete (Processed_Value, Cursor);
                      end if;
 
@@ -1177,7 +1181,7 @@ package body GprConfig.Knowledge is
                   C := First (Split);
                   while Has_Element (C) loop
                      if Matching = ""
-                       or else Element (C) = Matching
+                       or else To_Lower (Element (C)) = To_Lower (Matching)
                      then
                         Append
                           (Processed_Value,
@@ -1189,7 +1193,8 @@ package body GprConfig.Knowledge is
                   end loop;
 
                elsif Matching = ""
-                 or else To_String (Tmp_Result) = Matching
+                 or else To_Lower (To_String (Tmp_Result)) =
+                   To_Lower (Matching)
                then
                   Append
                     (Processed_Value,
