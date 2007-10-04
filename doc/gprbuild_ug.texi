@@ -657,6 +657,13 @@ compiles or recompiles all sources in the project tree
 that are not up to date and build or rebuild libraries that are not up to
 date.
 
+If gprbuild is invoked without switch @option{--config=} or
+@option{--autoconf=}, then gprbuild will look for a configuration project file
+"default.cgpr". If there is no such file in the configuration project path,
+then gprbuild will invoke gprconfig with the languages nof the project files,
+and create a configuration project file "auto.cgpr" in the object directory
+of a the main project.
+
 The different command line separators are:
 
 @itemize @bullet
@@ -723,14 +730,23 @@ Display gprbuild usage, then exit successfully, ignoring other options.
 
 @item @option{--display-paths}
 
-Display the configuration project file search path and the user project file
-search path, then exit successfully, ignoring other options.
+Display two lines: the configuration project file search path and the user
+project file search path, then exit successfully, ignoring other options.
 
 @item @option{--config=<config project file name>}
 
 This specifies the configuration project file name. By default, the
 configuration project file name is "default.cgpr". Option @option{--config=}
-cannot be specified several times.
+cannot be specified several times. The configuration project file specified
+with @option{--config=} must exist.
+
+@item @option{--autoconf=<config project file name>}
+
+This specifies a configuration project file name that already exists or will
+be created automatically. Option @option{--autoconf=}
+cannot be specified several times. If the configuration project file specified
+with @option{--autoconf=} exist, then it is used. Otherwise, gprconfig is
+invoked to create it automatically.
 
 @item @option{-aP dir} (Add directory dir to project search path)
 
@@ -810,7 +826,7 @@ attempt to create missing directories.
 
 Specify the path name of the main project file. The space between @option{-P}
 and the project file name is optional. Specifying a project file name (with
-suffix ".gpr") may be used in place of option @option{-P}. Only one user
+suffix ".gpr") may be used in place of option @option{-P}. Only one main
 project file can be specified.
 
 @item @option{-q} (Quiet output)
@@ -901,25 +917,18 @@ $ gprbuild --config=my_standard.cgpr -P my_project.gpr
 @end smallexample
 
 If gprbuild cannot find the main configuration project on the configuration
-project path, then it will fail with an error message such as:
+project path, then it will look for all the languages specified in the user
+project tree and invoke gprconfig to create an configuration project file
+named "auto.cgpr" and located in the object directory of the main project file.
 
-@smallexample
-$ gprbuild --config=my_standard.cgpr -P my_project.gpr
-gprbuild: could not locate main configuration project my_standard.cgpr
-@end smallexample
+Once it has found the configuration project, gprbuild will process its
+configuration: if a single string attribute is specified in the configuration
+project and is not specified in a user project, then the attribute is added
+to the user project; if a string list attribute is specified in the
+configuration project then its value is prepended to the corresponding
+attribute in the user project.
 
-Once it has found the main configuration project, gprbuild will process its
-configuration. If the configuration project is not correct
-(see @ref{Configuration File Reference}), then gprbuild will fail with
-the appropriate error message:
-
-@smallexample
-$ gprbuild --config=my_standard.cgpr -P c_main.gpr
-my_standard.gpr:3:11: undefined attribute "compiler_drive"
-gprbuild: processing of configuration project ".../my_standard.cgpr" failed
-@end smallexample
-
-When gprbuild has successfully processed its configuration, then it will
+When gprbuild has processed its configuration, then it will
 process the user project file or files. If these user project files are
 incorrect then gprbuild will fail with the appropriate error messages:
 
@@ -1007,10 +1016,7 @@ switches/options:
 
 @itemize @bullet
 
-@item The minimum default compilation switches for the language
-
-@item The global compilation switches coming from package Builder of the
-      main project
+@item The required compilation switches for the language
 
 @item The compilation switches coming from package Compiler of the project of
       the source
@@ -1079,6 +1085,14 @@ The switches for gprclean are:
 
 @item  @option{--config=<main config project file name>} : Specify the
        configuration project file name
+
+@item @option{--autoconf=<config project file name>}
+
+This specifies a configuration project file name that already exists or will
+be created automatically. Option @option{--autoconf=}
+cannot be specified several times. If the configuration project file specified
+with @option{--autoconf=} exist, then it is used. Otherwise, gprconfig is
+invoked to create it automatically.
 
 @item  @option{-c} : Only delete compiler generated files. Do not delete
        executables and libraries.
