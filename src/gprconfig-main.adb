@@ -29,8 +29,7 @@ procedure GprConfig.Main is
    --  Value of --target switch.
 
    Selected_Targets_Set : Targets_Set_Id;
-   --  Targets set id for the selected target.  Valid only if selected target
-   --  is not null_unbounded_string (ie "all").
+   --  Targets set id for the selected target.
 
    Invalid_Config : exception;
 
@@ -75,6 +74,7 @@ procedure GprConfig.Main is
 
    procedure Complete_Command_Line_Compilers
      (Base         : in out Knowledge_Base;
+      On_Target    : Targets_Set_Id;
       Filters      : Compiler_Lists.List;
       Custom_Comps : out Compiler_Lists.List);
    --  In batch mode, the --config parameters indicate what compilers should be
@@ -219,6 +219,7 @@ procedure GprConfig.Main is
         (Matching  => Comp,
          Base      => Base,
          Compilers => Completion,
+         On_Target => Selected_Targets_Set,
          Stop_At_First_Match => True);
       if not Is_Empty (Completion) then
          Complete := Element (First (Completion));
@@ -545,6 +546,7 @@ procedure GprConfig.Main is
 
    procedure Complete_Command_Line_Compilers
      (Base         : in out Knowledge_Base;
+      On_Target    : Targets_Set_Id;
       Filters      : Compiler_Lists.List;
       Custom_Comps : out Compiler_Lists.List)
    is
@@ -567,12 +569,14 @@ procedure GprConfig.Main is
          if Elem.Path /= "" then
             Find_Matching_Compilers
               (Matching  => Elem,
+               On_Target => On_Target,
                Base      => Base,
                Compilers => Completion,
                Stop_At_First_Match => True);
          else
             Find_Compilers_In_Path
               (Matching  => Elem,
+               On_Target => On_Target,
                Base      => Base,
                Compilers => Completion,
                Stop_At_First_Match => True);
@@ -832,13 +836,18 @@ begin
       end case;
    end loop;
 
-   if Selected_Target /= Null_Unbounded_String then
-      Get_Targets_Set
-        (Base, To_String (Selected_Target), Selected_Targets_Set);
-   end if;
+   Put_Verbose ("Only compilers matching target "
+                & To_String (Selected_Target)
+                & " will be preserved");
+   Get_Targets_Set
+     (Base, To_String (Selected_Target), Selected_Targets_Set);
 
    if Batch then
-      Complete_Command_Line_Compilers (Base, Filters, Selected_Compilers);
+      Complete_Command_Line_Compilers
+        (Base,
+         Selected_Targets_Set,
+         Filters,
+         Selected_Compilers);
       Splice (Target => Selected_Compilers,
               Before => First (Selected_Compilers),
               Source => Custom_Comps);
@@ -847,6 +856,7 @@ begin
       Find_Compilers_In_Path
         (Base                => Base,
          Matching            => No_Compiler,
+         On_Target           => Selected_Targets_Set,
          Compilers           => Compilers,
          Stop_At_First_Match => False);
 
@@ -886,24 +896,6 @@ begin
          if Show_Targets then
             return;
          end if;
-      end if;
-
-      --  Remove compilers not matching the target.
-      if Selected_Target /= Null_Unbounded_String then
-         declare
-            C      : Compiler_Lists.Cursor := First (Compilers);
-            Next_C : Compiler_Lists.Cursor;
-         begin
-            while Has_Element (C) loop
-               Next_C := Next (C);
-               if Element (C).Targets_Set /= Selected_Targets_Set then
-                  Put_Verbose ("compiler " & To_String (Element (C).Executable)
-                               & " does not match selected target");
-                  Delete (Compilers, C);
-               end if;
-               C := Next_C;
-            end loop;
-         end;
       end if;
 
       if not Is_Empty (Filters) then

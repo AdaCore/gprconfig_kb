@@ -34,8 +34,11 @@ package GprConfig.Knowledge is
    --  Parse info from the knowledge base, and store it in memory.
    --  Only information relevant to the current host is parsed.
 
-   type Targets_Set_Id is new Natural;
+   type Targets_Set_Id is range -1 .. Natural'Last;
    --  Identify a target aliases set.
+
+   All_Target_Sets     : constant Targets_Set_Id := -1;
+   --  Matches all target sets
 
    Unknown_Targets_Set : constant Targets_Set_Id := 0;
    --  Special target set when a target is not known.
@@ -70,6 +73,7 @@ package GprConfig.Knowledge is
 
    procedure Find_Compilers_In_Path
      (Base      : in out Knowledge_Base;
+      On_Target : Targets_Set_Id;
       Matching  : Compiler := No_Compiler;
       Compilers : out Compiler_Lists.List;
       Stop_At_First_Match : Boolean);
@@ -79,6 +83,7 @@ package GprConfig.Knowledge is
 
    procedure Find_Matching_Compilers
      (Matching   : Compiler;
+      On_Target  : Targets_Set_Id;
       Base       : in out Knowledge_Base;
       Compilers  : out Compiler_Lists.List;
       Stop_At_First_Match : Boolean);

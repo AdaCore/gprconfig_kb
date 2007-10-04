@@ -85,6 +85,7 @@ package body GprConfig.Knowledge is
       Check_Executable_Regexp : Boolean;
       Directory  : String;
       Matching   : Compiler  := No_Compiler;
+      On_Target  : Targets_Set_Id;
       Path_Order : Integer;
       Stop_At_First_Match : Boolean);
    --  Find all known compilers in a specific directory, that match
@@ -123,6 +124,7 @@ package body GprConfig.Knowledge is
       Directory  : String;
       Prefix     : String;
       Matching   : Compiler;
+      On_Target  : Targets_Set_Id;
       Descr      : Compiler_Description;
       Path_Order : Integer;
       Stop_At_First_Match : Boolean);
@@ -1270,6 +1272,7 @@ package body GprConfig.Knowledge is
       Directory  : String;
       Prefix     : String;
       Matching   : Compiler;
+      On_Target  : Targets_Set_Id;
       Descr      : Compiler_Description;
       Path_Order : Integer;
       Stop_At_First_Match : Boolean)
@@ -1331,6 +1334,13 @@ package body GprConfig.Knowledge is
       else
          Put_Verbose ("Target unknown for this compiler");
          Comp.Targets_Set := Unknown_Targets_Set;
+      end if;
+
+      if On_Target /= All_Target_Sets
+        and then Comp.Targets_Set /= On_Target
+      then
+         Put_Verbose ("Target for this compiler does not match --target");
+         raise Ignore_Compiler;
       end if;
 
       Get_External_Value
@@ -1411,6 +1421,7 @@ package body GprConfig.Knowledge is
       Check_Executable_Regexp : Boolean;
       Directory  : String;
       Matching   : Compiler  := No_Compiler;
+      On_Target  : Targets_Set_Id;
       Path_Order : Integer;
       Stop_At_First_Match : Boolean)
    is
@@ -1490,6 +1501,7 @@ package body GprConfig.Knowledge is
                               Executable => Simple,
                               Directory  => Directory,
                               Matching   => Matching,
+                              On_Target  => On_Target,
                               Prefix     => To_String (Prefix),
                               Descr      => Element (C),
                               Path_Order => Path_Order,
@@ -1538,6 +1550,7 @@ package body GprConfig.Knowledge is
                         Executable => To_String (Element (C).Executable),
                         Prefix     => "",
                         Matching   => Matching,
+                        On_Target  => On_Target,
                         Directory  => Directory,
                         Descr      => Element (C),
                         Path_Order => Path_Order,
@@ -1559,7 +1572,7 @@ package body GprConfig.Knowledge is
          end loop;
       end if;
 
-      Put_Verbose ("Done searching for compilers", -1);
+      Put_Verbose ("", -1);
    end Find_Compilers_In_Dir;
 
    -----------------------------
@@ -1568,6 +1581,7 @@ package body GprConfig.Knowledge is
 
    procedure Find_Matching_Compilers
      (Matching   : Compiler;
+      On_Target  : Targets_Set_Id;
       Base       : in out Knowledge_Base;
       Compilers  : out Compiler_Lists.List;
       Stop_At_First_Match : Boolean)
@@ -1594,6 +1608,7 @@ package body GprConfig.Knowledge is
          Check_Executable_Regexp => Check_Regexp,
          Directory  => To_String (Matching.Path),
          Matching   => Matching,
+         On_Target  => On_Target,
          Path_Order => 0,
         Stop_At_First_Match => Stop_At_First_Match);
    end Find_Matching_Compilers;
@@ -1604,6 +1619,7 @@ package body GprConfig.Knowledge is
 
    procedure Find_Compilers_In_Path
      (Base      : in out Knowledge_Base;
+      On_Target : Targets_Set_Id;
       Matching  : Compiler := No_Compiler;
       Compilers : out Compiler_Lists.List;
       Stop_At_First_Match : Boolean)
@@ -1651,6 +1667,7 @@ package body GprConfig.Knowledge is
                      Directory               => Path (First .. Last - 1),
                      Path_Order              => Path_Order,
                      Matching                => Matching,
+                     On_Target               => On_Target,
                      Stop_At_First_Match     => Stop_At_First_Match);
                   exit when Stop_At_First_Match
                     and then Length (Compilers) > 0;
@@ -2099,6 +2116,11 @@ package body GprConfig.Knowledge is
       use Targets_Set_Vectors;
       use Target_Lists;
    begin
+      if Target = "" then
+         Id := All_Target_Sets;
+         return;
+      end if;
+
       for I in First_Index (Base.Targets_Sets)
         .. Last_Index (Base.Targets_Sets)
       loop
@@ -2116,11 +2138,6 @@ package body GprConfig.Knowledge is
             end loop;
          end;
       end loop;
-
-      if Target = "" then
-         Id := Unknown_Targets_Set;
-         return;
-      end if;
 
       --  Create a new set.
       declare
