@@ -60,14 +60,14 @@ AdaCore@*
 
 Introduction
 
-Important Concepts
-
 Guided Tour
 * First Steps::
 * Subsystems::
 * Project Extensions::
 * Libraries::
 * Scenarios and conditional source files::
+
+Important Concepts
 
 Building with gprbuild
 * Command Line::
@@ -160,126 +160,6 @@ described above, @code{gprbuild} is not able to manage all the aspects
 of the build process on its own. In such complex situations, it can still
 be used sucessfully to address the appropriate part of the build. For
 instance it can be called from within a Makefile.
-
-@c  ------------------------------------------------------------------------
-@node Important Concepts
-@chapter Important Concepts
-@c  ------------------------------------------------------------------------
-
-Let's discuss some of the important concepts that are the foundation of the
-GNAT Project files and the GPRbuild process.
-
-@itemize @bullet
-
-@item source files and source directories:
-
-A source file is associated to a language through a naming convention.
-For instance, @code{foo.c} is typically
-the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are 2
-common naming conventions for a file containing an Ada spec; etc.
-A compilation unit is often composed of a main source file and potentially
-several auxillary ones, such as header files in C. The naming conventions
-can be defined or modified by the user and are used by
-@code{gprbuild} to invoke the appropriate compiler.
-Source files are looked for in the source directories associated to the
-project with the @code{Source_Dirs} attribute. By default,
-all the files in the source directories following the naming conventions
-associated with the declared languages are
-considered to be part of the project. It is also possible to limit the
-list of source files using the @code{Source_Files} or
-@code{Source_List_File} attributes.
-
-@item object files and object directory:
-
-An object file is an intermediate file produced by the compiler from a
-compilation unit. It is used by the post-compilation phases to produce
-final executables or libraries. The object files produced in the context of
-a given project are stored in a single directory, the Object_Dir that can
-be specified in the project file. A need for storing
-objects in different directories corresponds to the need to split the
-system into distinct subsystems.
-
-@item project file:
-
-A text file using an Ada-like syntax. It defines build-related
-characterists of an application, or a part of it. The characteristics
-include the list of sources, the location of those sources, the location
-where to store the generated object files, the name of the main program
-and the default options for the various tools involved in the build
-process. Those characteristics can be conditionalized thanks to scenario
-variables and case statements.
-
-@item configuration file:
-
-A text file using the project file syntax. It defines languages and
-their characteristics as well as toolchains for those languages and their
-characteristics.
-
-@item project attribute:
-
-A specific characteristic is defined by a project attribute clause. Its
-value is a string or a sequence of strings. For instance, the Source_Dirs
-attribute is a sequence of strings representing the actual names of the
-directories containing the sources of the project. The attribute itself can
-be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
-refers to the default compiler options for the Ada language.
-
-@item project subpackage:
-
-Global characteristics are defined at the top level of the projects.
-Specific characteristics affecting a given tool are grouped in a
-subpackage named after the type of tools it affects. The most common
-subpackages are "Builder", "Compiler", "Binder" and "Linker".
-
-@item project variables:
-
-Two kinds of variables are available with projects: simple variables and
-scenario variables. The former can hold any string, or sequence of string
-values. They are useful as shortcut for complex expressions. Scenario
-variables are a restricted version of the former which can only take their
-value from a static enumeration of strings representing the various
-supported scenarios. Those scenario variables are used conjointly with
-the @code{case} construct to offer limited conditionalization of
-project characteristics. Both types of variables are local to the project
-defining them and can get initialized with an external value, such as
-an environment variable, thanks to the @code{external} directive.
-
-@item subsystem:
-
-A subsystem is a coherent part of the complete system to be built. It
-is represented by a set of sources and one object directory. A simple
-system is composed of a single subsystem. Complex systems are
-usually composed of a graph of interdependant subsystems. A subsystem is
-dependant on another subsystem if it cannot be built without any
-knowledge of the other one, and in particular if visibility on some of
-the sources of this other subsystem is required. A subsystem is usually
-represented by one project file. The subsystem dependency relationship
-is represented by the @code{with} clause between corresponding project
-files.
-
-@item library:
-
-A Library is a specific type of subsystem where the objects are
-grouped together using system specific means for the conveniency
-of the user. Project files are a system and language independant way of
-building both static and dynamic libraries. They also support the concept
-of standalone libraries (SAL) which offers two significant properties: the
-initialization of the library is either automatic or very simple; a
-change in the implementation part of the library implies minimal
-post-compilation actions on the complete system and potentially no
-action at all for dynamic SALs.
-
-@item Project extension:
-
-A project extension is a project that represents a non-perturbing
-modification of the original project. Suppose for instance that a
-subsystem is shared by 2 different unrelated systems. If one system
-requires a change in the subsystem it may affect the other system
-negatively. In order to preserve as much sharing of the subsystem, it is
-possible to represent a new version of the subsystem as a delta to the
-original version which only contains the new source files, those that have
-been changed and the objects that are affected by these changes.
-@end itemize
 
 @c  ------------------------------------------------------------------------
 @node Guided Tour
@@ -611,8 +491,125 @@ end New_Ada_Main;
 @node Scenarios and conditional source files
 @section Scenarios and conditional source files
 
+@c  ------------------------------------------------------------------------
+@node Important Concepts
+@chapter Important Concepts
+@c  ------------------------------------------------------------------------
 
+Let's discuss some of the important concepts that are the foundation of the
+GNAT Project files and the GPRbuild process.
 
+@itemize @bullet
+
+@item source files and source directories:
+
+A source file is associated to a language through a naming convention.
+For instance, @code{foo.c} is typically
+the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are 2
+common naming conventions for a file containing an Ada spec; etc.
+A compilation unit is often composed of a main source file and potentially
+several auxillary ones, such as header files in C. The naming conventions
+can be defined or modified by the user and are used by
+@code{gprbuild} to invoke the appropriate compiler.
+Source files are looked for in the source directories associated to the
+project with the @code{Source_Dirs} attribute. By default,
+all the files in the source directories following the naming conventions
+associated with the declared languages are
+considered to be part of the project. It is also possible to limit the
+list of source files using the @code{Source_Files} or
+@code{Source_List_File} attributes.
+
+@item object files and object directory:
+
+An object file is an intermediate file produced by the compiler from a
+compilation unit. It is used by the post-compilation phases to produce
+final executables or libraries. The object files produced in the context of
+a given project are stored in a single directory, the Object_Dir that can
+be specified in the project file. A need for storing
+objects in different directories corresponds to the need to split the
+system into distinct subsystems.
+
+@item project file:
+
+A text file using an Ada-like syntax. It defines build-related
+characterists of an application, or a part of it. The characteristics
+include the list of sources, the location of those sources, the location
+where to store the generated object files, the name of the main program
+and the default options for the various tools involved in the build
+process. Those characteristics can be conditionalized thanks to scenario
+variables and case statements.
+
+@item configuration file:
+
+A text file using the project file syntax. It defines languages and
+their characteristics as well as toolchains for those languages and their
+characteristics.
+
+@item project attribute:
+
+A specific characteristic is defined by a project attribute clause. Its
+value is a string or a sequence of strings. For instance, the Source_Dirs
+attribute is a sequence of strings representing the actual names of the
+directories containing the sources of the project. The attribute itself can
+be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
+refers to the default compiler options for the Ada language.
+
+@item project subpackage:
+
+Global characteristics are defined at the top level of the projects.
+Specific characteristics affecting a given tool are grouped in a
+subpackage named after the type of tools it affects. The most common
+subpackages are "Builder", "Compiler", "Binder" and "Linker".
+
+@item project variables:
+
+Two kinds of variables are available with projects: simple variables and
+scenario variables. The former can hold any string, or sequence of string
+values. They are useful as shortcut for complex expressions. Scenario
+variables are a restricted version of the former which can only take their
+value from a static enumeration of strings representing the various
+supported scenarios. Those scenario variables are used conjointly with
+the @code{case} construct to offer limited conditionalization of
+project characteristics. Both types of variables are local to the project
+defining them and can get initialized with an external value, such as
+an environment variable, thanks to the @code{external} directive.
+
+@item subsystem:
+
+A subsystem is a coherent part of the complete system to be built. It
+is represented by a set of sources and one object directory. A simple
+system is composed of a single subsystem. Complex systems are
+usually composed of a graph of interdependant subsystems. A subsystem is
+dependant on another subsystem if it cannot be built without any
+knowledge of the other one, and in particular if visibility on some of
+the sources of this other subsystem is required. A subsystem is usually
+represented by one project file. The subsystem dependency relationship
+is represented by the @code{with} clause between corresponding project
+files.
+
+@item library:
+
+A Library is a specific type of subsystem where the objects are
+grouped together using system specific means for the conveniency
+of the user. Project files are a system and language independant way of
+building both static and dynamic libraries. They also support the concept
+of standalone libraries (SAL) which offers two significant properties: the
+initialization of the library is either automatic or very simple; a
+change in the implementation part of the library implies minimal
+post-compilation actions on the complete system and potentially no
+action at all for dynamic SALs.
+
+@item Project extension:
+
+A project extension is a project that represents a non-perturbing
+modification of the original project. Suppose for instance that a
+subsystem is shared by 2 different unrelated systems. If one system
+requires a change in the subsystem it may affect the other system
+negatively. In order to preserve as much sharing of the subsystem, it is
+possible to represent a new version of the subsystem as a delta to the
+original version which only contains the new source files, those that have
+been changed and the objects that are affected by these changes.
+@end itemize
 
 @c  ------------------------------------------------------------------------
 @node Building with gprbuild
