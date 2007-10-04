@@ -52,7 +52,7 @@ AdaCore@*
 * Building with gprbuild::
 * Cleaning up with gprclean::
 * Configuring with gprconfig::
-* Configuration File Reference::
+* ::
 * Index::
 
 @detailmenu
@@ -1847,16 +1847,24 @@ syntax as a standard project file. Attributes in the configuration file
 define the configuration. Some of these attributes have a special meaning
 in the configuration.
 
-The default name of the configuration file, when to specified to gprbuild by
-switch --config= is "default.cgpr". Although the name of the configuration
-file can be any valid file name, it is recommended that its suffix be ".cgpr" (for
-Configuration GNAT Project), so that it cannot be confused with a standard
-project file which has the suffix ".gpr".
+The default name of the configuration file, when not specified to gprbuild by
+switches --config= or --autoconf= is "default.cgpr". Although the name of the
+configuration file can be any valid file name, it is recommended that its
+suffix be ".cgpr" (for Configuration GNAT Project), so that it cannot be
+confused with a standard project file which has the suffix ".gpr".
+
+When "default.cgpr" cannot be found in the configuration project path,
+then gprbuild invokes gprconfig to create a configuration file.
 
 In the description of the attributes that follows, when an attribute is an
 associative array indexed by the language name, for example
 Spec_Suffix (<language>), then the name of the language is case insensitive.
 For example, "C" and "c" are allowed.
+
+Any attribute may appear in a configuration project file. All attributes in
+a configuration project file are inherited by each user project file in the
+project tree. However, usually only the attributes detailed below make sense
+in the configuration project file.
 
 @node Project Level Attributes
 @section Project Level Attributes
@@ -1905,6 +1913,9 @@ version is passed to the library builder. Example:
 @smallexample
    for Toolchain_Version ("Ada") use "GNAT 6.1";
 @end smallexample
+
+This attribute is used by gprbind to decide on the names of the shared GNAT
+runtime libraries.
 
 @item Toolchain_Description (<language>)
 
@@ -1999,7 +2010,7 @@ Specifies the prefix of the file names of shared libraries. When this attribute
 is not specified, the prefix is "lib". Example:
 
 @smallexample
-   for Shared_Library_Prefix use ""; --  for Windows
+   for Shared_Library_Prefix use ""; --  for Windows, if needed
 @end smallexample
 
 @item Shared_Library_Suffix
@@ -2061,6 +2072,17 @@ when the library builder is invoked. Example:
    for Library_Version_Switches use ("-Wl,-soname,");
 @end smallexample
 
+@item Runtime_Library_Dir (<language>)
+
+Specifies the directory for thr runtime libraries for the language.
+Example:
+
+@smallexample
+   for Runtime_Library_Dir ("Ada") use "/path/to/adalib";
+@end smallexample
+
+This attribute is used by gprlib to link shared libraries with Ada code.
+
 @end itemize
 
 @node Package Naming
@@ -2069,7 +2091,8 @@ when the library builder is invoked. Example:
 Attributes in package Naming of a configuration file specify defaults. These
 attributes may be used in user project files to replace these defaults.
 
-The following attributes may appear in package Naming of a configuration file:
+The following attributes usually appear in package Naming of a configuration
+file:
 
 @itemize @bullet
 @item Spec_Suffix (<language>)
@@ -2169,14 +2192,14 @@ relative, then the execution path is searched. Examples:
    for Driver ("Ada") use "/.../bin/gcc";
 @end smallexample
 
-@item Switches (<language>)
+@item Required_Switches (<language>)
 
 Specifies the minimum options that must be used when invoking the compiler
 of a language. Examples:
 
 @smallexample
-   for Switches ("C")   use ("-c", "-x", "c");
-   for Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
+   for Required_Switches ("C")   use ("-c", "-x", "c");
+   for Required_Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
 @end smallexample
 
 @item PIC_Option (<language>)
@@ -2358,7 +2381,8 @@ list value. Example:
    for Compute_Dependency ("C") use ("gcc", "-E", "-Wp,-M", "");
 @end smallexample
 
-Attributes Dependency_Option and Compute_Dependency are mutually exclusive.
+Usually, attributes Dependency_Option and Compute_Dependency are not both
+specified.
 
 @end itemize
 
@@ -2422,14 +2446,14 @@ is not specified, there is no binder for the language. Example:
    for Driver ("Ada") use "/.../gprbind";
 @end smallexample
 
-@item Switches (<language>)
+@item Required_Switches (<language>)
 
 Specifies the minimum options to be used when invoking the binder driver.
 These options are put in the appropriate section in the binder exchange file,
 one option per line. Example:
 
 @smallexample
-   for Switches ("Ada") use ("--prefix=<prefix>");
+   for Required_Switches ("Ada") use ("--prefix=<prefix>");
 @end smallexample
 
 @item Prefix (<language>)
