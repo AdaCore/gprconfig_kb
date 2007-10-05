@@ -50,7 +50,7 @@
      <config>
    package Compiler is
       for Required_Switches ("C") use
-        Required_Compiler'Switches ("C") &amp; ("-mno-cygwin");
+        Compiler'Required_Switches ("C") &amp; ("-mno-cygwin");
    end Compiler;
      </config>
    </configuration>
