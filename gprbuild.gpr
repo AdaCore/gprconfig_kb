@@ -73,8 +73,8 @@ project Gprbuild is
 
    package Linker is
       -- Link manually the C part
-      common_switches := (GprBuild'Object_Dir & "/gprbuild_dummies.o", 
-	                  GprBuild'Object_Dir & "/link.o");
+      common_switches := (project'Object_Dir & "/gprbuild_dummies.o", 
+	                  project'Object_Dir & "/link.o");
       case Bld is
          when "production"|"debug"   => for Default_Switches ("Ada") use common_switches;
          when "coverage" => for Default_Switches ("Ada") use common_switches & ("-lgcov");
