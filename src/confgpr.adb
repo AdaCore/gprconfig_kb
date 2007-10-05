@@ -358,6 +358,16 @@ package body Confgpr is
          Always_Errout_Finalize => False,
          Packages_To_Check      => Packages_To_Check);
 
+      if User_Project_Node = Empty_Node then
+         --  Don't flush messages. This has already been taken care of by the
+         --  above call. Oterwise, it results in se same message being
+         --  displayed twice.
+
+         Fail_Program
+           ("""", Project_File_Name.all, """ processing failed",
+            Flush_Messages => False);
+      end if;
+
       Process_Project_Tree_Phase_1
         (In_Tree                => Project_Tree,
          Project                => Main_Project,
@@ -366,7 +376,9 @@ package body Confgpr is
          From_Project_Node_Tree => Project_Node_Tree,
          Report_Error           => null);
 
-      --  ??? fail if there is an error
+      if not Success then
+         Fail_Program ("""", Project_File_Name.all, """ processing failed");
+      end if;
 
       --  If Autoconfiguration is True, get the languages from the user project
       --  tree, call gprconfig and check that the config file exists.

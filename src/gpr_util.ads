@@ -118,7 +118,11 @@ package Gpr_Util is
    --  binder driver. Populate table Binding_Languages and set variable
    --  There_Are_Binder_Drivers accordingly.
 
-   procedure Fail_Program (S1 : String; S2 : String := ""; S3 : String := "");
+   procedure Fail_Program
+     (S1             : String;
+      S2             : String  := "";
+      S3             : String  := "";
+      Flush_Messages : Boolean := True);
    --  Terminate program with a message and a fatal status code
 
    procedure Finish_Program
