@@ -41,7 +41,8 @@ project Gprbuild is
              --  ??? warning as error should be considered back when
              --  builgpr.adb line 7384 indentation is fixed
              -- , "-gnatwe"
-             , "-gnatyg");
+             -- , "-gnatyg"
+             );
             --  ??? re-enable when gprbuild works with initialize_scalars
             -- for Local_Configuration_Pragmas use "debug.adc";
          when "coverage" =>
@@ -72,7 +73,8 @@ project Gprbuild is
 
    package Linker is
       -- Link manually the C part
-      common_switches := ("obj/gprbuild_dummies.o", "obj/link.o");
+      common_switches := (GprBuild'Object_Dir & "/gprbuild_dummies.o", 
+	                  GprBuild'Object_Dir & "/link.o");
       case Bld is
          when "production"|"debug"   => for Default_Switches ("Ada") use common_switches;
          when "coverage" => for Default_Switches ("Ada") use common_switches & ("-lgcov");
