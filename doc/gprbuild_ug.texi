@@ -52,7 +52,7 @@ AdaCore@*
 * Building with gprbuild::
 * Cleaning up with gprclean::
 * Configuring with gprconfig::
-* ::
+* Configuration File Reference::
 * Index::
 
 @detailmenu
@@ -88,6 +88,12 @@ Configuring with gprconfig
 * Configurations::
 
 Configuration File Reference
+* Project Level Attributes::
+* Package Naming::
+* Package Builder::
+* Package Compiler::
+* Package Binder::
+* Package Linker::
 
 Index
 @end detailmenu
