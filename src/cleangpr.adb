@@ -880,10 +880,7 @@ package body Cleangpr is
 
    begin
       There_Are_Binder_Drivers := False;
-
-      if Binding_Languages.Last = 0 then
-         Find_Binding_Languages;
-      end if;
+      Find_Binding_Languages;
 
       if There_Are_Binder_Drivers then
          --  Get the main base name
