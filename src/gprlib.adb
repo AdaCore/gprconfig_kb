@@ -210,6 +210,22 @@ procedure Gprlib is
       Table_Increment      => 100,
       Table_Name           => "Gprlib.Sources");
 
+   package Generated_Sources is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 2,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Generated_Sources");
+
+   package Generated_Objects is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 2,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Generated_Objects");
+
    Auto_Init : Boolean := False;
    --  True when a SAL is auto initializable
 
@@ -937,6 +953,9 @@ begin
                      Skip_Line (IO_File);
                   end if;
 
+               when Gprexch.Generated_Object_Files |
+                    Gprexch.Generated_Source_Files =>
+                  null;
             end case;
          end if;
       end if;
@@ -1113,6 +1132,13 @@ begin
             Osint.Fail ("invocation of ", Gnatbind_Name.all, " failed");
          end if;
 
+         Generated_Sources.Append
+           (new String'("b__" & Library_Name.all & ".ads"));
+         Generated_Sources.Append
+           (new String'("b__" & Library_Name.all & ".adb"));
+         Generated_Sources.Append
+           (new String'("b__" & Library_Name.all & ".ali"));
+
          Compiler_Path := Locate_Exec_On_Path (Compiler_Name.all);
 
          if Compiler_Path = null then
@@ -1190,6 +1216,8 @@ begin
          if not Success then
             Osint.Fail ("invocation of ", Compiler_Name.all, " failed");
          end if;
+
+         Generated_Objects.Append (new String'(Binder_Generated_Object));
 
          Object_Files.Append (new String'(Binder_Generated_Object));
 
@@ -1520,6 +1548,22 @@ begin
         (IO_File,
          String (Osint.File_Stamp (Path_Name_Type'(Name_Find))));
    end loop;
+
+   if Generated_Sources.Last > 0 then
+      Put_Line (IO_File, Library_Label (Gprexch.Generated_Source_Files));
+
+      for Index in 1 .. Generated_Sources.Last loop
+         Put_Line (IO_File, Generated_Sources.Table (Index).all);
+      end loop;
+   end if;
+
+   if Generated_Objects.Last > 0 then
+      Put_Line (IO_File, Library_Label (Gprexch.Generated_Object_Files));
+
+      for Index in 1 .. Generated_Objects.Last loop
+         Put_Line (IO_File, Generated_Objects.Table (Index).all);
+      end loop;
+   end if;
 
    Close (IO_File);
 end Gprlib;

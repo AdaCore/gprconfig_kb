@@ -93,7 +93,9 @@ package Gprexch is
       Dependency_Files,
       Binding_Options,
       Copy_Source_Dir,
-      Sources);
+      Sources,
+      Generated_Object_Files,
+      Generated_Source_Files);
 
    function Library_Label (Section : Library_Section) return String;
    --  Return the label for a section in a library exchange file
