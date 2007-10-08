@@ -5722,7 +5722,7 @@ package body Buildgpr is
                               Value_Of
                                 (Name                    => No_Name,
                                  Attribute_Or_Array_Name =>
-                                   Name_Builder_Switches,
+                                                        Name_Builder_Switches,
                                  In_Package              => Builder_Package,
                                  In_Tree                 => Project_Tree);
 
