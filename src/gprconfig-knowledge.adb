@@ -8,6 +8,7 @@ with Ada.Containers;            use Ada.Containers;
 with Ada.Directories;           use Ada.Directories;
 with Ada.Environment_Variables; use Ada.Environment_Variables;
 with Ada.Exceptions;            use Ada.Exceptions;
+with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -2104,7 +2105,7 @@ package body GprConfig.Knowledge is
       end loop;
 
    exception
-      when Ada.Directories.Name_Error =>
+      when Ada.Directories.Name_Error | Ada.IO_Exceptions.Use_Error =>
          Put_Line ("Could not create the file " & Output_File);
          raise Generate_Error;
    end Generate_Configuration;
