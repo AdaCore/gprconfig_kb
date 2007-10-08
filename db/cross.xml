@@ -26,6 +26,21 @@
      </config>
    </configuration>
 
+   <!--  Use Windriver archiver -->
+   <configuration>
+     <targets>
+       <target name="powerpc-wrs-vxworks" />
+     </targets>
+     <config>
+   for Archive_Builder  use ("arppc", "cr");
+   for Archive_Indexer  use ("ranlibppc");
+   package Binder is
+      for Required_Switches ("Ada") use
+          ("gnatbind_prefix=powerpc-wrs-vxworks");
+   end Binder;
+     </config>
+   </configuration>
+
    <!-- vx6/rtp executables have a .vxe extension and need -mrtp -->
 
    <configuration>

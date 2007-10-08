@@ -5,7 +5,10 @@
         application with GNAT and either GCC or toolchains
         derived from gcc -->
 
- <configuration>
+  <configuration>
+    <targets negate="true">
+      <target name="powerpc-wrs-vxworks" />
+    </targets>
     <config>
    for Archive_Builder  use ("${PREFIX}ar", "cr");
    for Archive_Indexer  use ("${PREFIX}ranlib");
