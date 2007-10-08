@@ -682,7 +682,12 @@ begin
 
             if Line (1) = '-' then
                if Last >= 3 and then Line (2) = 'L' then
-                  Adalib_Dir := new String'(Line (3 .. Last));
+                  --  Set Adalib_Dir only if libgnat is found inside.
+                  if Is_Regular_File (Line (3 .. Last) &
+                                      Directory_Separator & "libgnat.a")
+                  then
+                     Adalib_Dir := new String'(Line (3 .. Last));
+                  end if;
                   Put_Line (IO_File, Line (1 .. Last));
 
                elsif Line (1 .. Last) = "-static" then
