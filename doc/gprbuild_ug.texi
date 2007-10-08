@@ -1114,7 +1114,7 @@ invoked to create it automatically.
 @item  @option{-P<proj>} : Use Project File <proj>.
 
 @item  @option{-q} : Be quiet/terse. There is no output, except to report
-        problems.
+       problems.
 
 @item  @option{-r} : (recursive) Clean all projects referenced by the main
        project directly or indirectly. Without this switch, gprclean only
@@ -1154,14 +1154,14 @@ mandatory, that you put the compilers that you expect to use for your
 application in your @code{PATH} before you launch @code{gprconfig},
 since that simplifies the setup.
 
-@code{gprconfig} will then display a list of all the native compilers
+@code{gprconfig} will then display the list of all the native compilers
 it has found, along with the language they can compile, the runtime
 they use (when applicable),@dots{}. It will then wait until you select
 one of the compilers.  This list is sorted by language, then by order
 in the @code{PATH} environment variable (so that compilers that you
 are more likely to use appear first), then by runtime names and
 finally by version of the compiler.  The idea is that the first
-compiler for any language is the most likely one you want to use.
+compiler for any language is most likely the one you want to use.
 
 Selection is done by entering the letter that appears on the line for
 each compiler. If the compiler was already selected, it is deselected.
@@ -1238,7 +1238,7 @@ generate the configuration file.
 The following command line switches are supported by @code{gprconfig}.
 
 @itemize @bullet
-@item -o file
+@item @option{-o file}
 
 The name of the output file. By default, @code{gprconfig} will search for
 @code{gprbuild} on your PATH, and create a default configuration file for
@@ -1246,30 +1246,30 @@ it. But you can alternatively choose to create a different configuration
 file and then use @code{gprbuild}'s command line switches to choose among
 these.
 
-@item --db directory
+@item @option{--db directory}
 
 Indicates another directory that should be parsed for gprconfig's knowledge
 base. Most of the time this is only useful if you are creating your own
 XML description files.
 
-@item --db -
+@item @option{--db -}
 
 Prevents @code{gprconfig} from reading its default knowledge base. You
 should point to another directory with @code{--db directory}, or
 gprconfig will not be able to generate any configuration file.
 
-@item --target target
+@item @option{--target target}
 
-Specify the target for the compilers.  Only compilers generating code for
-this target will be preselected.  By default the target is the host.  If
-target is all, any target is accepted.  The name of the host target is
+Specifies the target for the compilers. Only compilers generating code for
+this target will be preselected. By default the target is the host. If
+target is "all", any target is accepted. The name of the host target is
 displayed in the help.
 
-@item --show-targets
+@item @option{--show-targets}
 
-Simply displays the target of all compilers found and exit.
+Simply displays the target of all compilers found and exits.
 
-@item --config language[,version[,runtime[,path[,name]]]]
+@item @option{--config language[,version[,runtime[,path[,name]]]]}
 
 This parameter is used to preselect configurations.
 "name" should be one of the known compiler names (e.g. "GNAT", "GCC",...), the
@@ -1289,14 +1289,14 @@ use an empty string to get the default value and specify a later parameter.
   gprconfig --config C,,,/usr/bin,C       # automatic version
 @end smallexample
 
-@item --batch
+@item @option{--batch}
 
 If this parameter is specified, @code{gprconfig} doesn't go into its
 interactive compiler selection, but generates the output configuration file
 directly from the compilers selected with the @code{--config} command line
 switch.
 
-@item -h
+@item @option{-h}
 
 Display help for @code{gprconfig} switches.
 @end itemize
@@ -1312,7 +1312,7 @@ Display help for @code{gprconfig} switches.
 no new version of gprconfig needs to be recompiled whenever a new compiler
 is distributed.
 
-All its knowledge is embedded in a set of XML files, call the knowledge
+All its knowledge is embedded in a set of XML files called the knowledge
 base. Users can easily contribute to this general knowledge base, and have
 @code{gprconfig} immediately take advantage of this.
 
@@ -1331,24 +1331,24 @@ The knowledge base contains various kind of information:
 
 @item Specific compilation switches
 
-   When a compiler is used, depending on its version, target, runtime,@dots{},
+   When a compiler is used, depending on its version, target, runtime, @dots{},
    some specific command line switches might have to be enforced. The
    knowledge base is a good place to store such information once and for all.
 
    For instance, with the GNAT compiler, using the soft-float runtime should
-   force @code{gprbuild} to use the @code{-msoft-float} compilation switch.
+   force @code{gprbuild} to use the @option{-msoft-float} compilation switch.
 
 @item Linker options
 
    Linking a multi-language application is often tricky, and requires specific
    linker switches. These switches depend on the list of languages, the list
-   of compilers,@dots{}.
+   of compilers, @dots{}.
 
 @item Unsupported compiler mix
 
    It is sometimes not possible to link together code compiled with two
-   compilers. The knowledge base should store this information, so that end
-   users do not waste time trying to use that compiler combination.
+   particular compilers. The knowledge base should store this information,
+   so that end users do not waste time trying to use that compiler combination.
 
 @end itemize
 
@@ -1427,7 +1427,7 @@ to search for on the PATH. Examples are @file{"gnatls"}, @file{"gcc}",
 
 In some cases, the tools have a common suffix, but a prefix that might depend
 on the target. For instance, GNAT uses "gnatmake" for native platforms, but
-"powerpc-wrs-vxworks-gnatmake" for cross-compilers to vxworks. Most of the
+"powerpc-wrs-vxworks-gnatmake" for cross-compilers to VxWorks. Most of the
 compiler description is the same, however.
 
 For such cases, this tag must specify a "prefix" attribute, and its value is
@@ -1465,7 +1465,7 @@ The value returned by the system will be split into words. As a result, if
 the returned value is "ada,c,c++", there are three languages supported by the
 compiler. The words can be comma-separated or space-separated.
 
-If you use have several child nodes, the first one will be used to set the
+If you have several child nodes, the first one will be used to set the
 special @code{$VERSION} substitution string (see External Values below), and
 the second will be used to defined the special @code{$VERSION2} substitution
 string.
@@ -1503,7 +1503,7 @@ below for the full list of such special substrings)
 @c --------------------------------------------------------------------
 @noindent
 A number of the XML nodes described above can contain one or more children,
-and explain how to query a value from the executable. Here is the list of
+and specify how to query a value from an executable. Here is the list of
 valid contents for these nodes. The @code{<directory>} and @code{<external>}
 children can be repeated multiple times, and the @code{<filter>} and
 @code{<must_match>} nodes will be applied to each of these. The final
@@ -1621,7 +1621,7 @@ those words in "value1", "value2",... is kept.
 
 For instance, the @code{gcc} compiler will return a lot of supported
 languages, including "ada". If we do not want to use it as an Ada
-compiler, so we can put:
+compiler we can put:
 
 @smallexample
 <languages>
@@ -1694,7 +1694,7 @@ Then the final configuration file will look like:
 @end smallexample
 
 As a result, to avoid conflicts, it is recommended that the chunks be
-written so that they they easily collaborate together. For instance, if we
+written so that they easily collaborate together. For instance, if we
 want to obtain something equivalent to
 @smallexample
    package Language_Processing is
@@ -1713,7 +1713,7 @@ chunk2:
    end Language_Processing;
 @end smallexample
 
-The chunks are described in an @code{<configuration>} XML node. The most
+The chunks are described in a @code{<configuration>} XML node. The most
 important child of such a node is @code{<config>}, which contains the
 chunk itself. For instance, one would write:
 
@@ -2286,8 +2286,8 @@ Attributes:
 
 @item Config_File_Switches (<language>)
 
-Specifies the switch or switches to be used to specify a confi file to the
-compiler. When attribute Config_File_Switches is not declared, then no
+Specifies the switch or switches to be used to specify a configuration file to
+the compiler. When attribute Config_File_Switches is not declared, then no
 config file is specified to the compiler. The value of this attribute is a
 string list. The path name of the config file is concatenated with the last
 string in the string list, which may be empty. Example:
