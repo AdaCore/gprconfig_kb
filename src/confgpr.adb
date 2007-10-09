@@ -485,6 +485,11 @@ package body Confgpr is
                            To_Lower (Name_Buffer (1 .. Name_Len));
                            Lang := Name_Find;
                            Language_Htable.Set (Lang, Lang);
+
+                        else
+                           --  If no language is declared, default to Ada
+
+                           Language_Htable.Set (Name_Ada, Name_Ada);
                         end if;
                      end if;
 
