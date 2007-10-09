@@ -89,7 +89,11 @@ package Gpr_Util is
 
    Default_Config_Project_File_Name : String_Access := null;
 
+   Configuration_Project_Path : String_Access;
+
    Autoconfiguration : Boolean := True;
+
+   Delete_Autoconf_File : Boolean := False;
 
    Main_Config_Project : Project_Id;
 

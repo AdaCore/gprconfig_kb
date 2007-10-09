@@ -1095,6 +1095,10 @@ package body Cleangpr is
       Processed_Projects.Init;
       Clean_Project (Main_Project);
 
+      if Delete_Autoconf_File then
+         Delete ("", Configuration_Project_Path.all);
+      end if;
+
       --  In verbose mode, if Delete has not been called, indicate that
       --  no file needs to be deleted.
 

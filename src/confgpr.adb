@@ -272,14 +272,14 @@ package body Confgpr is
    -----------------------
 
    procedure Get_Configuration (Packages_To_Check : String_List_Access) is
-      Configuration_Project_Path : String_Access;
       Config_Path : String_Access;
 
       Main_Object_Dir : Path_Name_Type := No_Path;
 
-   --  Start of processing for Get_Configuration
-
    begin
+      Configuration_Project_Path := null;
+      Delete_Autoconf_File := Autoconfiguration;
+
       declare
          Prefix_Path : constant String := Executable_Prefix_Path;
 
@@ -332,6 +332,7 @@ package body Confgpr is
             Config_Project_File_Name :=
               new String'(Default_Config_Project_File_Name.all);
             Autoconfiguration := False;
+            Delete_Autoconf_File := False;
          end if;
       end if;
 
