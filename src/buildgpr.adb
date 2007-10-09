@@ -8177,8 +8177,8 @@ package body Buildgpr is
          Osint.Write_Program_Name;
          Write_Str (" [-P<proj>] [<proj>.gpr] [opts] [name]");
          Write_Eol;
-         Write_Str ("    {[-cargs opts] [- cargs:lang opts] [-largs opts]" &
-                    "[-gargs opts]}");
+         Write_Str ("    {[-cargs opts] [-cargs:lang opts] [-largs opts]" &
+                    " [-gargs opts]}");
          Write_Eol;
          Write_Eol;
          Write_Str ("  name is zero or more file names");
