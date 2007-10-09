@@ -28,6 +28,7 @@ fname.adb
 fname.ads
 gnatvsn.adb
 gnatvsn.ads
+gnat_style.css
 hostparm.ads
 lib-list.adb
 lib-sort.adb

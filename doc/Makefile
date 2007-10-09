@@ -1,7 +1,7 @@
 DOC=gprbuild_ug
 MAKE_INFO=makeinfo --force --no-split
 MAKE_TXT=$(MAKE_INFO) --no-headers --fill-column=79
-MAKE_HTML=$(MAKE_INFO) --html --number-sections --css-include=gnat_style.css
+MAKE_HTML=$(MAKE_INFO) --html --number-sections --css-include=../gnat/gnat_style.css
 MAKE_PDF=texi2pdf -q
 
 .PHONY: all txt info html pdf clean
