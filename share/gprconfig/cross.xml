@@ -49,10 +49,22 @@
      </config>
    </configuration>
 
-   <!--  Use Windriver archiver -->
+   <!-- vx653 executables have a .out extension.  -->
    <configuration>
      <targets>
-       <target name="powerpc-wrs-vxworks" />
+       <target name="powerpc-wrs-vxworksae" />
+     </targets>
+     <config>
+   package Builder is
+      for Executable_Suffix use ".out";
+   end Builder;
+     </config>
+   </configuration>
+
+   <!--  Use WindRiver archiver -->
+   <configuration>
+     <targets>
+       <target name="powerpc-wrs-vxworks.*" />
      </targets>
      <config>
    for Archive_Builder  use ("arppc", "cr");
@@ -63,5 +75,4 @@
    end Binder;
      </config>
    </configuration>
-
 </gprconfig>
