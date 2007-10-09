@@ -14,7 +14,6 @@
    </configuration>
 
    <!-- vx6/kernel executables have a .out extension -->
-
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="kernel" />
@@ -26,19 +25,7 @@
      </config>
    </configuration>
 
-   <!--  Use Windriver archiver -->
-   <configuration>
-     <targets>
-       <target name="ppc-vx6.*" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("arppc", "cr");
-   for Archive_Indexer  use ("ranlibppc");
-     </config>
-   </configuration>
-
    <!-- vx6/rtp executables have a .vxe extension and need -mrtp -->
-
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="rtp" />
@@ -76,14 +63,11 @@
    <configuration>
      <targets>
        <target name="powerpc-wrs-vxworks.*" />
+       <target name="ppc-vx6.*" />
      </targets>
      <config>
    for Archive_Builder  use ("arppc", "cr");
    for Archive_Indexer  use ("ranlibppc");
-   package Binder is
-      for Required_Switches ("Ada") use
-          ("gnatbind_prefix=${PREFIX}");
-   end Binder;
      </config>
    </configuration>
 
@@ -94,10 +78,21 @@
      <config>
    for Archive_Builder  use ("arpentium", "cr");
    for Archive_Indexer  use ("ranlibpentium");
+     </config>
+   </configuration>
+
+   <!--  Set prefix of gnatbind -->
+   <configuration>
+     <targets>
+       <target name=".*-wrs-vxworks.*" />
+       <target name="powerpc-elf" />
+     </targets>
+     <config>
    package Binder is
       for Required_Switches ("Ada") use
           ("gnatbind_prefix=${PREFIX}");
    end Binder;
      </config>
    </configuration>
+
 </gprconfig>
