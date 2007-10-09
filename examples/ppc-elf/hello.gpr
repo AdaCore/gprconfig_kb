@@ -6,10 +6,6 @@ project Hello is
    for Object_Dir use "objs";
    for Source_Dirs use ("srcs");
 
-   package Binder is
-      for Default_Switches ("Ada") use ("gnatbind_prefix=powerpc-elf-", "-v");
-   end Binder;
-
    package Linker is
       for Default_Switches ("Ada") use ("-Wl,-u,_start,-Ttext=0x100000");
    end Linker;
