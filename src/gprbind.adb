@@ -111,6 +111,8 @@ procedure Gprbind is
 
    Current_Section : Binding_Section := No_Binding_Section;
 
+   All_Binding_Options : Boolean;
+
    package Binding_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -674,14 +676,20 @@ begin
       if not End_Of_File (BG_File) then
          Put_Line (IO_File, Binding_Label (Resulting_Options));
 
+         All_Binding_Options := False;
          loop
             Get_Line (BG_File, Line, Last);
             exit when Line (1 .. Last) = End_Info;
             Line (1 .. Last - 8) := Line (9 .. Last);
             Last := Last - 8;
 
-            if Line (1) = '-' then
-               if Last >= 3 and then Line (2) = 'L' then
+            if All_Binding_Options or else Line (1) = '-' then
+               All_Binding_Options := True;
+               --  After the first switch, we take all options, because some
+               --  of the options specified in pragma Linker_Options may not
+               --  start with '-'.
+
+               if Last >= 3 and then Line (1 .. 2) = "-L" then
                   --  Set Adalib_Dir only if libgnat is found inside.
                   if Is_Regular_File (Line (3 .. Last) &
                                       Directory_Separator & "libgnat.a")
