@@ -1999,19 +1999,31 @@ package body GprConfig.Knowledge is
       --  Generate the chunk of the config file corresponding to the
       --  given package.
 
+      procedure Gen_And_Remove (Name : String);
+      --  Generate the chunk of the config file corresponding to the
+      --  package name and remove it from the map.
+
       procedure Gen (C : String_Maps.Cursor) is
       begin
-         if Has_Element (C) then
-            if Key (C) /= "" then
-               New_Line (Output);
-               Put_Line (Output, "   package " & Key (C) & " is");
-            end if;
-            Put_Line (Output, To_String (Element (C)));
-            if Key (C) /= "" then
-               Put_Line (Output, "   end " & Key (C) & ";");
-            end if;
+         if Key (C) /= "" then
+            New_Line (Output);
+            Put_Line (Output, "   package " & Key (C) & " is");
+         end if;
+         Put_Line (Output, To_String (Element (C)));
+         if Key (C) /= "" then
+            Put_Line (Output, "   end " & Key (C) & ";");
          end if;
       end Gen;
+
+      procedure Gen_And_Remove (Name : String)
+      is
+         C : String_Maps.Cursor := Find (Packages, Name);
+      begin
+         if Has_Element (C) then
+            Gen (C);
+            Delete (Packages, C);
+         end if;
+      end Gen_And_Remove;
 
    begin
       To_Mixed (Project_Name);
@@ -2055,11 +2067,17 @@ package body GprConfig.Knowledge is
       Create (Output, Out_File, Output_File);
       Put_Line (Output, "project " & Project_Name & " is");
 
-      Gen (Find (Packages, ""));
-      Gen (Find (Packages, "Compiler"));
-      Gen (Find (Packages, "Naming"));
-      Gen (Find (Packages, "Binder"));
-      Gen (Find (Packages, "Linker"));
+      --  Generate known packages in order.  This takes care of possible
+      --  dependencies.
+      Gen_And_Remove ("");
+      Gen_And_Remove ("Builder");
+      Gen_And_Remove ("Compiler");
+      Gen_And_Remove ("Naming");
+      Gen_And_Remove ("Binder");
+      Gen_And_Remove ("Linker");
+
+      --  Generate remaining packages.
+      Iterate (Packages, Gen'Access);
 
       Put_Line (Output, "end " & Project_Name & ";");
 
