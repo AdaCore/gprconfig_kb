@@ -5701,6 +5701,8 @@ package body Buildgpr is
          Report_Error           => null,
          When_No_Sources        => Silent);
 
+      Prj.Err.Finalize;
+
       if not Gpr_Util.Success then
          Fail_Program ("""", Project_File_Name.all, """ processing failed");
       end if;
@@ -6041,7 +6043,8 @@ package body Buildgpr is
       if Project_File_Name = null then
          Copyright;
          Usage;
-         Exit_Program (E_Success);
+         Fail_Program
+           ("no project file specified and no default project file");
       end if;
    end Initialize;
 
