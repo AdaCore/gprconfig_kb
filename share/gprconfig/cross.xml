@@ -26,6 +26,17 @@
      </config>
    </configuration>
 
+   <!--  Use Windriver archiver -->
+   <configuration>
+     <targets>
+       <target name="ppc-vx6.*" />
+     </targets>
+     <config>
+   for Archive_Builder  use ("arppc", "cr");
+   for Archive_Indexer  use ("ranlibppc");
+     </config>
+   </configuration>
+
    <!-- vx6/rtp executables have a .vxe extension and need -mrtp -->
 
    <configuration>
@@ -52,7 +63,7 @@
    <!-- vx653 executables have a .out extension.  -->
    <configuration>
      <targets>
-       <target name="powerpc-wrs-vxworksae" />
+       <target name=".*-wrs-vxworksae" />
      </targets>
      <config>
    package Builder is
@@ -69,6 +80,20 @@
      <config>
    for Archive_Builder  use ("arppc", "cr");
    for Archive_Indexer  use ("ranlibppc");
+   package Binder is
+      for Required_Switches ("Ada") use
+          ("gnatbind_prefix=${PREFIX}");
+   end Binder;
+     </config>
+   </configuration>
+
+   <configuration>
+     <targets>
+       <target name="i586-wrs-vxworks.*" />
+     </targets>
+     <config>
+   for Archive_Builder  use ("arpentium", "cr");
+   for Archive_Indexer  use ("ranlibpentium");
    package Binder is
       for Required_Switches ("Ada") use
           ("gnatbind_prefix=${PREFIX}");

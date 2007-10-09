@@ -7,7 +7,7 @@
 
   <configuration>
     <targets negate="true">
-      <target name="powerpc-wrs-vxworks.*" />
+      <target name=".*-wrs-vxworks.*" />
     </targets>
     <config>
    for Archive_Builder  use ("${PREFIX}ar", "cr");
