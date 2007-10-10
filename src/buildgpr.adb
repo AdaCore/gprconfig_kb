@@ -1553,7 +1553,7 @@ package body Buildgpr is
                               String (Bind_Exchange_TS)
                         then
                            Write_Line
-                             (" is more recent that the binder exchange file");
+                             (" is more recent than the binder exchange file");
 
                         else
                            Write_Line
@@ -1660,7 +1660,10 @@ package body Buildgpr is
                      if (not Binder_Driver_Needs_To_Be_Called) and then
                        Verbose_Mode
                      then
-                        Write_Line ("   Checking binder generated files ...");
+                        Write_Line
+                          ("   Checking binder generated files for " &
+                           Display_Main &
+                           "...");
                      end if;
 
                      Bind_Exchange :=
@@ -5097,7 +5100,7 @@ package body Buildgpr is
             if Src_Data.Kind = Spec and then Config.Config_Spec /= No_Name then
                Get_Name_String (Config.Config_Spec);
 
-            elsif Src_Data.Kind = Impl and then
+            elsif (Src_Data.Kind = Impl or else Src_Data.Kind = Sep) and then
                   Config.Config_Body /= No_Name
             then
                Get_Name_String (Config.Config_Body);
