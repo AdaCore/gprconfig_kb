@@ -130,7 +130,7 @@
     </target>
   </compiler_description>
 
-   <!--    mingw-cygwin compiler
+ <!--    mingw-cygwin compiler
   -->
   <compiler_description>
     <name>CYGMING-GCC</name>
