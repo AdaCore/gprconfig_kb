@@ -13,7 +13,6 @@ project Gprbuild is
 
    for Main use
        ("gprconfig-main.adb",
-        "create_ada_runtime_project.adb",
         "gprbuild.adb",
         "gprbind.adb",
         "gprlib.adb",

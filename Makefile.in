@@ -70,9 +70,7 @@ install: all install.bin
 	${MKDIR} ${datadir}/gprconfig
 	${INSTALL_PROGRAM} gprbind ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
-	${INSTALL_PROGRAM} create_ada_runtime_project ${libexecdir}/gprbuild/
 	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
-#	${INSTALL_DATA} share/gprconfig/gnat_runtime.mapping ${datadir}/gprconfig
 	$(RM) -r ${datadir}/examples/gprbuild
 	${MKDIR} ${datadir}/examples/gprbuild
 	${CP} -r examples/* ${datadir}/examples/gprbuild
