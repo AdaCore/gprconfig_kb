@@ -7639,6 +7639,8 @@ package body Buildgpr is
                                             (Source.Project).Externally_Built
                and then
                 Source.Kind /= Sep
+               and then
+                Source.Path /= No_Path
             then
                if Source.Kind = Impl or else
                  (Source.Unit /= No_Name and then
