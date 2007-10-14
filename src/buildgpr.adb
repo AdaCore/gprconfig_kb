@@ -6418,7 +6418,18 @@ package body Buildgpr is
             Project_Tree.Sources.Table (Source).Get_Object := True;
          end if;
 
-         if (Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Spec)
+         if Src_Data.Lang_Kind = Unit_Based
+           and then
+           Src_Data.Kind = Impl
+           and then
+           Is_Subunit (Src_Data)
+         then
+            Src_Data.Kind := Sep;
+            Src_Data.Get_Object := False;
+            Project_Tree.Sources.Table (Source) := Src_Data;
+            return;
+
+         elsif (Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Spec)
             or else
             (Src_Data.Lang_Kind = Unit_Based
              and then
@@ -6426,8 +6437,9 @@ package body Buildgpr is
               or else
               (Src_Data.Kind = Spec
                and then
-               Src_Data.Other_Part = No_Source)))
+               Src_Data.Other_Part /= No_Source)))
          then
+            Project_Tree.Sources.Table (Source).Get_Object := False;
             return;
          end if;
 
@@ -8013,6 +8025,12 @@ package body Buildgpr is
                return;
             end if;
          end loop;
+
+         if Current_Verbosity = High then
+            Write_Str ("Adding """);
+            Write_Str (Get_Name_String (Source_File_Name));
+            Write_Line (""" to the queue");
+         end if;
 
          Q.Append
            (New_Val =>
