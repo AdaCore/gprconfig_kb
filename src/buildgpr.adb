@@ -103,6 +103,8 @@ package body Buildgpr is
 
    Recursive : Boolean := False;
 
+   Closure_Needed : Boolean := False;
+
    Naming_String                : aliased String := "naming";
    Language_Processing_String   : aliased String := "language_processing";
    Builder_String               : aliased String := "builder";
@@ -337,6 +339,19 @@ package body Buildgpr is
       Equal      => "=");
    --  A hash table to store the Source_Id of the mains.
 
+   type Root_Array is array (Positive range <>) of Source_Id;
+   type Roots_Access is access Root_Array;
+   No_Roots : constant Roots_Access := null;
+
+   package Root_Sources is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Roots_Access,
+      No_Element => No_Roots,
+      Key        => File_Name_Type,
+      Hash       => Prj.Hash,
+      Equal      => "=");
+   --  A hash table to store the Roots of the mains, if any.
+
    Project_Of_Current_Object_Directory : Project_Id := No_Project;
    --  The object directory of the project for the last binding. Avoid
    --  calling Change_Dir if the current working directory is already this
@@ -415,18 +430,6 @@ package body Buildgpr is
    --  A table to cache arguments, to avoid multiple allocation of the same
    --  strings. It is not possible to use a hash table, because String is
    --  an unconstrained type.
-
-   There_Are_Roots : Boolean := False;
-   --  True if there are Roots in the Roots_HTable
-
-   package Roots_HTable is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
-      Element    => Boolean,
-      No_Element => False,
-      Key        => Name_Id,
-      Hash       => Prj.Hash,
-      Equal      => "=");
-   --  A hash table to keep the roots
 
    package Directories is new Table.Table
      (Table_Component_Type => Path_Name_Type,
@@ -524,7 +527,8 @@ package body Buildgpr is
 
       procedure Insert_Project_Sources
         (The_Project  : Project_Id;
-         All_Projects : Boolean);
+         All_Projects : Boolean;
+         Unit_Based   : Boolean);
       --  Insert the sources from The_Project and, if All_Projects is True,
       --  from all the projects it imports directly or indirectly.
 
@@ -697,7 +701,9 @@ package body Buildgpr is
    --  Do the necessary package initialization and process the command line
    --  arguments.
 
-   procedure Initialize_Source_Record (Source : Source_Id);
+   procedure Initialize_Source_Record
+     (Source      : Source_Id;
+      Need_Object : Boolean := False);
    --  Get the different components of a source record: object and dependency
    --  file and path names and, if they exist, their time stamps.
 
@@ -736,13 +742,13 @@ package body Buildgpr is
    --  Called when the program is interrupted by Ctrl-C to delete the
    --  temporary mapping files and configuration pragmas files.
 
+   function Source_Of (File : String) return Source_Data;
+   --  Return the source data corresponding to a file name
+
    function Ultimate_Extending_Project_Of (Proj : Project_Id)
                                            return Project_Id;
    --  Returns the ultimate extending project of project Proj. If project Proj
    --  is not extended, returns Proj.
-
-   function Unit_Exists (Name : Name_Id; Language : Name_Id) return Boolean;
-   --  Check that a unit of a language exists in the project tree
 
    procedure Usage;
    --  Display the usage
@@ -1424,7 +1430,7 @@ package body Buildgpr is
         (For_Project : Project_Id;
          Language    : Language_Index;
          Lang_Name   : Name_Id;
-         Main_Unit   : Name_Id);
+         Main_Source : Source_Data);
       --  Put the dependency files of the project in the binder exchange file
 
       procedure Check_Dependency_Files
@@ -1439,29 +1445,26 @@ package body Buildgpr is
         (For_Project : Project_Id;
          Language    : Language_Index;
          Lang_Name   : Name_Id;
-         Main_Unit   : Name_Id)
+         Main_Source : Source_Data)
       is
          Data    : Project_Data;
          Src_Id  : Source_Id;
          Source  : Source_Data;
-         Add_It  : Boolean := False;
          Config  : constant Language_Config :=
                      Project_Tree.Languages_Data.Table (Language).Config;
+         Roots   : Roots_Access;
 
-      begin
-         Data := Project_Tree.Projects.Table (For_Project);
-         Src_Id := Data.First_Source;
-         while Src_Id /= No_Source loop
-            Initialize_Source_Record (Src_Id);
-            Source := Project_Tree.Sources.Table (Src_Id);
+         procedure Put_Source;
 
+         procedure Put_Source is
+         begin
             if Source.Language_Name = Lang_Name
               and then
                 (Config.Kind /= Unit_Based
                  or else
                    (Source.Unit /= No_Name
                     and then
-                    Source.Unit /= Main_Unit
+                      Source.Unit /= Main_Source.Unit
                     and then
                       (Source.Kind = Impl
                        or else
@@ -1471,28 +1474,39 @@ package body Buildgpr is
               and then Is_Included_In_Global_Archive
                 (Source.Object, Source.Project)
             then
-               if There_Are_Roots then
-                  Add_It := Roots_HTable.Get (Source.Unit);
+               Initialize_Source_Record (Src_Id);
+               Source := Project_Tree.Sources.Table (Src_Id);
+               Put_Line
+                 (Exchange_File,
+                  Get_Name_String (Source.Dep_Path));
+            end if;
+         end Put_Source;
 
-                  if Add_It then
-                     Roots_HTable.Remove (Source.Unit);
-                  end if;
+      begin
+         Data := Project_Tree.Projects.Table (For_Project);
 
-               else
-                  Add_It := True;
-               end if;
+         Roots := Root_Sources.Get (Main_Source.File);
 
-               if Add_It then
+         if Roots = No_Roots then
+            if Main_Source.Unit = No_Name then
+               Src_Id := Data.First_Source;
+               while Src_Id /= No_Source loop
                   Initialize_Source_Record (Src_Id);
                   Source := Project_Tree.Sources.Table (Src_Id);
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (Source.Dep_Path));
-               end if;
+                  Put_Source;
+                  Src_Id := Source.Next_In_Project;
+               end loop;
             end if;
 
-            Src_Id := Source.Next_In_Project;
-         end loop;
+         else
+            --  Put the Roots
+            for J in Roots'Range loop
+               Src_Id := Roots (J);
+               Initialize_Source_Record (Src_Id);
+               Source := Project_Tree.Sources.Table (Src_Id);
+               Put_Source;
+            end loop;
+         end if;
       end Add_Dependency_Files;
 
       ----------------------------
@@ -1774,63 +1788,6 @@ package body Buildgpr is
                         end if;
 
                      else
-
-                        --  Get the Roots, if any
-
-                        There_Are_Roots := False;
-                        Roots_HTable.Reset;
-
-                        declare
-                           Ar_Elm_Id : constant Array_Element_Id :=
-                                         Value_Of
-                                           (Name      => Name_Roots,
-                                            In_Arrays =>
-                                              Project_Tree.Projects.Table
-                                                (Main_Proj).Decl.Arrays,
-                                            In_Tree   => Project_Tree);
-                           Var       : constant Variable_Value :=
-                                         Value_Of
-                                           (Index    => B_Data.Language_Name,
-                                            In_Array => Ar_Elm_Id,
-                                            In_Tree  => Project_Tree);
-                           List      : String_List_Id;
-                           Element   : String_Element;
-                           Unit_Name : Name_Id;
-                        begin
-                           if Var /= Nil_Variable_Value then
-                              List := Var.Values;
-
-                              while List /= Nil_String loop
-                                 Element :=
-                                   Project_Tree.String_Elements.Table (List);
-                                 Get_Name_String (Element.Value);
-                                 Canonical_Case_File_Name
-                                   (Name_Buffer (1 .. Name_Len));
-                                 Unit_Name := Name_Find;
-
-                                 --  Check that unit exists in the project
-                                 --  tree. Fail if it does not.
-
-                                 if Unit_Exists
-                                   (Unit_Name, B_Data.Language_Name)
-                                 then
-                                    Roots_HTable.Set
-                                      (K => Unit_Name, E => True);
-                                    There_Are_Roots := True;
-
-                                 else
-                                    Fail_Program
-                                      ("no unit named ",
-                                       Get_Name_String (Unit_Name),
-                                       " (specified in Roots)");
-                                 end if;
-
-                                 List := Element.Next;
-
-                              end loop;
-                           end if;
-                        end;
-
                         Create (Exchange_File, Out_File, Bind_Exchange.all);
 
                         --  Optional line: Quiet or Verbose
@@ -1885,33 +1842,29 @@ package body Buildgpr is
                         --  no main unit and Roots (<language>) is not
                         --  specified or is an empty list.
 
-                        if Main_Source.Unit = No_Name
-                          or else There_Are_Roots
-                        then
-                           Put_Line
-                             (Exchange_File, Binding_Label (Dependency_Files));
+                        Put_Line
+                          (Exchange_File, Binding_Label (Dependency_Files));
 
+                        Add_Dependency_Files
+                          (Main_Proj,
+                           B_Data.Language,
+                           B_Data.Language_Name,
+                           Main_Source);
+
+                        Proj_List :=
+                          Project_Tree.Projects.Table
+                            (Main_Proj).All_Imported_Projects;
+
+                        while Proj_List /= Empty_Project_List loop
+                           Proj_Element :=
+                             Project_Tree.Project_Lists.Table (Proj_List);
                            Add_Dependency_Files
-                             (Main_Proj,
+                             (Proj_Element.Project,
                               B_Data.Language,
                               B_Data.Language_Name,
-                              Main_Source.Unit);
-
-                           Proj_List :=
-                             Project_Tree.Projects.Table
-                               (Main_Proj).All_Imported_Projects;
-
-                           while Proj_List /= Empty_Project_List loop
-                              Proj_Element :=
-                                Project_Tree.Project_Lists.Table (Proj_List);
-                              Add_Dependency_Files
-                                (Proj_Element.Project,
-                                 B_Data.Language,
-                                 B_Data.Language_Name,
-                                 Main_Source.Unit);
-                              Proj_List := Proj_Element.Next;
-                           end loop;
-                        end if;
+                              Main_Source);
+                           Proj_List := Proj_Element.Next;
+                        end loop;
 
                         --  Put the options, if any
 
@@ -2097,6 +2050,10 @@ package body Buildgpr is
                                               (Main_Proj).Objects_Path;
                            begin
                               if Path_Name = null then
+                                 if Current_Verbosity = High then
+                                    Put_Line (Env_Var & " :");
+                                 end if;
+
                                  Get_Directories
                                    (Main_Proj,
                                     Sources  => False,
@@ -2118,6 +2075,12 @@ package body Buildgpr is
                                     Add_To_Path
                                       (Get_Name_String
                                          (Directories.Table (Index)));
+
+                                    if Current_Verbosity = High then
+                                       Put_Line
+                                         (Get_Name_String
+                                            (Directories.Table (Index)));
+                                    end if;
                                  end loop;
 
                                  Path_Name :=
@@ -2152,6 +2115,10 @@ package body Buildgpr is
                                               Objects_Path_File_Without_Libs;
                            begin
                               if Path_Name = No_Path then
+                                 if Current_Verbosity = High then
+                                    Put_Line (Env_Var & " :");
+                                 end if;
+
                                  Get_Directories
                                    (Main_Proj,
                                     Sources  => False,
@@ -2178,6 +2145,12 @@ package body Buildgpr is
                                     for Index in 1 .. Directories.Last loop
                                        Get_Name_String
                                          (Directories.Table (Index));
+
+                                       if Current_Verbosity = High then
+                                          Put_Line
+                                            (Name_Buffer (1 .. Name_Len));
+                                       end if;
+
                                        Name_Len := Name_Len + 1;
                                        Name_Buffer (Name_Len) := ASCII.LF;
 
@@ -2319,6 +2292,8 @@ package body Buildgpr is
                   or else
                   (Source.Unit /= No_Name
                    and then
+                   Source.Kind = Spec
+                   and then
                    Source.Other_Part = No_Source))
                then
                   if not Is_Subunit (Source) then
@@ -2330,7 +2305,7 @@ package body Buildgpr is
 
                      if Source.Object /= No_File
                        and then
-                         Is_Included_In_Global_Archive (Source.Object, Proj)
+                        Is_Included_In_Global_Archive (Source.Object, Proj)
                      then
                         Add_Source_Id (Proj, Id);
                      end if;
@@ -2366,7 +2341,9 @@ package body Buildgpr is
                   (Source.Kind = Impl
                   or else
                    (Source.Unit /= No_Name
-                     and then
+                    and then
+                    Source.Kind = Spec
+                    and then
                     Source.Other_Part = No_Source))
                then
                   if not Is_Subunit (Source) then
@@ -2375,7 +2352,7 @@ package body Buildgpr is
 
                      if Source.Object /= No_File
                        and then
-                         Is_Included_In_Global_Archive (Source.Object, Proj)
+                        Is_Included_In_Global_Archive (Source.Object, Proj)
                      then
                         Add_Argument
                           (Get_Name_String (Source.Object_Path),
@@ -2828,7 +2805,8 @@ package body Buildgpr is
 
                Src_Data := Project_Tree.Sources.Table (Source);
 
-               if (Src_Data.Unit = No_Name and then Src_Data.Kind = Impl)
+               if not Src_Data.Locally_Removed and then
+                 ((Src_Data.Unit = No_Name and then Src_Data.Kind = Impl)
                  or else
                    (Src_Data.Unit /= No_Name
                     and then
@@ -2836,7 +2814,7 @@ package body Buildgpr is
                        or else
                          Src_Data.Other_Part = No_Source)
                     and then
-                      (not Is_Subunit (Src_Data)))
+                      (not Is_Subunit (Src_Data))))
                then
                   Library_Objs.Append
                     ((Path  => Src_Data.Object_Path,
@@ -2970,6 +2948,14 @@ package body Buildgpr is
                      Write_Line (""" does not exist");
                      Library_Needs_To_Be_Built := True;
                end;
+
+               if End_Of_File (Exchange_File) then
+                  Write_Str ("      -> library exchange file """);
+                  Write_Str (Exchange_File_Name.all);
+                  Write_Line (""" is empty");
+                  Library_Needs_To_Be_Built := True;
+               end if;
+
             end if;
          end;
       end if;
@@ -3484,15 +3470,19 @@ package body Buildgpr is
                while Source /= No_Source loop
                   Src_Data := Project_Tree.Sources.Table (Source);
 
-                  if Src_Data.Kind = Spec then
-                     if Src_Data.Other_Part = No_Source then
-                        Put_Line
-                          (Exchange_File, Get_Name_String (Src_Data.Dep_Name));
-                     end if;
+                  if not Src_Data.Locally_Removed then
+                     if Src_Data.Kind = Spec then
+                        if Src_Data.Other_Part = No_Source then
+                           Put_Line
+                             (Exchange_File,
+                              Get_Name_String (Src_Data.Dep_Name));
+                        end if;
 
-                  elsif not Is_Subunit (Src_Data) then
-                     Put_Line
-                       (Exchange_File, Get_Name_String (Src_Data.Dep_Name));
+                     elsif not Is_Subunit (Src_Data) then
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String (Src_Data.Dep_Name));
+                     end if;
                   end if;
 
                   Source := Src_Data.Next_In_Project;
@@ -3810,6 +3800,167 @@ package body Buildgpr is
             end if;
          end;
       end loop;
+
+      Mains.Reset;
+
+      while Closure_Needed loop
+         declare
+            Display_Main : constant String := Mains.Next_Main;
+            Main         : String := Display_Main;
+            Main_Id      : File_Name_Type;
+            Source       : Source_Id;
+
+            Project      : Project_Id;
+            Data         : Project_Data;
+            Root_Arr     : Array_Element_Id;
+            Roots        : Variable_Value;
+            Root_List    : Roots_Access;
+            Nmb_Root     : Natural;
+            List         : String_List_Id;
+            Elem         : String_Element;
+            Unit_Name    : Name_Id;
+            Root_Source  : Source_Id;
+            Src_Data     : Source_Data;
+         begin
+            exit when Display_Main'Length = 0;
+
+            Canonical_Case_File_Name (Main);
+            Main_Id := Create_Name (Main);
+            Source := Main_Sources.Get (Main_Id);
+
+            if Source /= No_Source then
+               if Current_Verbosity = High then
+                  Write_Str ("Looking for roots for ");
+                  Write_Line (Display_Main);
+               end if;
+
+               Src_Data := Project_Tree.Sources.Table (Source);
+               Project := Src_Data.Project;
+               Queue.Insert
+                 (Source_File_Name => Main_Id,
+                  Source_Identity  => Source,
+                  Source_Project   => Project);
+
+               Data := Project_Tree.Projects.Table (Project);
+               Root_Arr :=
+                 Prj.Util.Value_Of
+                   (Name      => Name_Roots,
+                    In_Arrays => Data.Decl.Arrays,
+                    In_Tree   => Project_Tree);
+               Roots :=
+                 Prj.Util.Value_Of
+                   (Index     => Name_Id (Main_Id),
+                    Src_Index => 0,
+                    In_Array  => Root_Arr,
+                    In_Tree   => Project_Tree);
+
+               if Roots = Nil_Variable_Value then
+                  Roots :=
+                    Prj.Util.Value_Of
+                      (Index                  => Src_Data.Language_Name,
+                       Src_Index              => 0,
+                       In_Array               => Root_Arr,
+                       In_Tree                => Project_Tree,
+                       Force_Lower_Case_Index => True);
+               end if;
+
+               if Roots = Nil_Variable_Value then
+                  if Current_Verbosity = High then
+                     Write_Line ("   -> no roots declared");
+                  end if;
+
+                  if Src_Data.Lang_Kind /= Unit_Based then
+                     Closure_Needed := False;
+                  end if;
+
+               else
+                  --  First count the roots
+
+                  Nmb_Root := 0;
+                  List := Roots.Values;
+                  while List /= Nil_String loop
+                     Elem := Project_Tree.String_Elements.Table (List);
+                     Nmb_Root := Nmb_Root + 1;
+                     List := Elem.Next;
+                  end loop;
+
+                  --  Now get the source id of the roots
+                  Root_List := new Root_Array (1 .. Nmb_Root);
+
+                  if Nmb_Root /= 0 then
+                     List := Roots.Values;
+                     Nmb_Root := 0;
+                     while List /= Nil_String loop
+                        Elem := Project_Tree.String_Elements.Table (List);
+                        Nmb_Root := Nmb_Root + 1;
+                        Get_Name_String (Elem.Value);
+                        To_Lower (Name_Buffer (1 .. Name_Len));
+                        Unit_Name := Name_Find;
+
+                        Root_Source := Project_Tree.First_Source;
+                        while Root_Source /= No_Source loop
+                           Src_Data :=
+                             Project_Tree.Sources.Table (Root_Source);
+
+                           if Src_Data.Unit = Unit_Name then
+                              case Src_Data.Kind is
+                              when Impl =>
+                                 null;
+
+                              when Spec =>
+                                 if Src_Data.Other_Part /= No_Source then
+                                    Root_Source := Src_Data.Other_Part;
+                                 end if;
+
+                              when Sep =>
+                                 Root_Source := No_Source;
+                              end case;
+
+                              exit;
+                           end if;
+
+                           Root_Source := Src_Data.Next_In_Sources;
+                        end loop;
+
+                        if Root_Source = No_Source then
+                           --  report error
+                           Error_Msg
+                             ("Unit " & Get_Name_String (Unit_Name) &
+                              " does not exist",
+                              Roots.Location);
+
+                        else
+                           Queue.Insert
+                             (Source_File_Name => Src_Data.File,
+                              Source_Identity  => Root_Source,
+                              Source_Project   => Src_Data.Project);
+
+                           if Current_Verbosity = High then
+                              Write_Str ("   -> ");
+                              Write_Line
+                                (Get_Name_String
+                                   (Project_Tree.Sources.Table
+                                      (Root_Source).Display_File));
+                           end if;
+                        end if;
+
+                        Root_List (Nmb_Root) := Root_Source;
+                        List := Elem.Next;
+                     end loop;
+
+                  elsif Current_Verbosity = High then
+                     Write_Line ("   -> no roots");
+                  end if;
+
+                  Root_Sources.Set (Main_Id, Root_List);
+               end if;
+            end if;
+         end;
+      end loop;
+
+      if Total_Errors_Detected /= 0 then
+         Fail_Program ("cannot continue");
+      end if;
    end Check_Mains;
 
    -----------------------
@@ -3841,9 +3992,27 @@ package body Buildgpr is
 
       Mapping_File_Path : Path_Name_Type;
 
+      package Good_ALI is new Table.Table
+        (Table_Component_Type => ALI.ALI_Id,
+         Table_Index_Type     => Natural,
+         Table_Low_Bound      => 1,
+         Table_Initial        => 50,
+         Table_Increment      => 100,
+         Table_Name           => "Buildgpr.Good_ALI");
+      --  Contains the set of valid ALI files that have not yet been scanned
+
       procedure Add_Config_File_Switch
         (Config    : Language_Config;
          Path_Name : Path_Name_Type);
+
+      function Get_Next_Good_ALI return ALI.ALI_Id;
+      --  Returns the next good ALI_Id record
+
+      function Good_ALI_Present return Boolean;
+      --  Returns True if any ALI file was recorded in the previous set
+
+      procedure Record_ALI_For (Source_Identity : Source_Id);
+      --  Record the Id of an ALI file in Good_ALI table
 
       ----------------------------
       -- Add_Config_File_Switch --
@@ -3873,6 +4042,58 @@ package body Buildgpr is
             List := Nam.Next;
          end loop;
       end Add_Config_File_Switch;
+
+      -----------------------
+      -- Get_Next_Good_ALI --
+      -----------------------
+
+      function Get_Next_Good_ALI return ALI.ALI_Id is
+         Result : ALI.ALI_Id;
+
+      begin
+         pragma Assert (Good_ALI_Present);
+         Result := Good_ALI.Table (Good_ALI.Last);
+         Good_ALI.Decrement_Last;
+         return Result;
+      end Get_Next_Good_ALI;
+
+      ----------------------
+      -- Good_ALI_Present --
+      ----------------------
+
+      function Good_ALI_Present return Boolean is
+      begin
+         return Good_ALI.First <= Good_ALI.Last;
+      end Good_ALI_Present;
+
+      ---------------------
+      -- Record_Good_ALI --
+      ---------------------
+
+      procedure Record_ALI_For (Source_Identity : Source_Id) is
+         Src_Data : constant Source_Data :=
+                      Project_Tree.Sources.Table (Source_Identity);
+         The_ALI  : ALI.ALI_Id;
+         Text     : Text_Buffer_Ptr :=
+                      Read_Library_Info
+                        (File_Name_Type (Src_Data.Dep_Path));
+
+      begin
+         if Text /= null then
+            --  Read the ALI file but read only the necessary lines.
+
+            The_ALI :=
+              ALI.Scan_ALI
+                (File_Name_Type (Src_Data.Dep_Path),
+                 Text,
+                 Ignore_ED     => False,
+                 Err           => True,
+                 Read_Lines    => "W");
+            Free (Text);
+            Good_ALI.Increment_Last;
+            Good_ALI.Table (Good_ALI.Last) := The_ALI;
+         end if;
+      end Record_ALI_For;
 
    --  Start of processing for Compilation_Phase
 
@@ -3909,7 +4130,7 @@ package body Buildgpr is
 
             Change_To_Object_Directory (Source_Project);
 
-            Initialize_Source_Record (Source_Identity);
+            Initialize_Source_Record (Source_Identity, Need_Object => True);
 
             Compilation_Needed := Need_To_Compile (Source_Identity);
 
@@ -4574,19 +4795,13 @@ package body Buildgpr is
                  (Pid, Source_Identity, Mapping_File_Path, Compilation);
 
                Need_To_Rebuild_Global_Archives := True;
-            end if;
 
-            if Display_Compilation_Progress then
-               Write_Str ("completed ");
-               Write_Int (Int (Queue.First - 1));
-               Write_Str (" out of ");
-               Write_Int (Int (Queue.Size));
-               Write_Str (" (");
-               Write_Int (Int (((Queue.First - 1) * 100) / Queue.Size));
-               Write_Str ("%)...");
-               Write_Eol;
+            elsif Closure_Needed and then
+                  Project_Tree.Sources.Table
+                     (Source_Identity).Dependency = ALI_File
+            then
+               Record_ALI_For (Source_Identity);
             end if;
-
          end if;
 
          --  PHASE 2: Now check if we should wait for a compilation to
@@ -4601,9 +4816,92 @@ package body Buildgpr is
 
             if not Compilation_OK then
                Record_Failure (Source_Identity);
+
+            elsif Closure_Needed and then
+                  Project_Tree.Sources.Table
+                    (Source_Identity).Dependency = ALI_File
+            then
+               Record_ALI_For (Source_Identity);
             end if;
          end if;
 
+         --  Phase 3: Check if we recorded good ALI files. If yes process
+         --  them now in the order in which they have been recorded. There
+         --  are two occasions in which we record good ali files. The first is
+         --  in phase 1 when, after scanning an existing ALI file we realize
+         --  it is up-to-date, the second instance is after a successful
+         --  compilation.
+
+         declare
+            The_ALI   : ALI.ALI_Id;
+            Sfile     : File_Name_Type;
+            Source    : Source_Id;
+
+         begin
+            while Good_ALI_Present loop
+               The_ALI := Get_Next_Good_ALI;
+
+               --  Now insert in the Q the unmarked source files (i.e. those
+               --  which have never been inserted in the Q and hence never
+               --  considered). Only do that if Unique_Compile is False.
+
+               for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+                        ALI.ALIs.Table (The_ALI).Last_Unit
+               loop
+                  for K in ALI.Units.Table (J).First_With ..
+                           ALI.Units.Table (J).Last_With
+                  loop
+                     Sfile := ALI.Withs.Table (K).Sfile;
+                     Source := Project_Tree.First_Source;
+
+                     while Source /= No_Source loop
+                        if Project_Tree.Sources.Table (Source).File =
+                             Sfile
+                        then
+                           case Project_Tree.Sources.Table (Source).Kind is
+                              when Spec =>
+                                 if Project_Tree.Sources.Table
+                                   (Source).Other_Part /= No_Source
+                                 then
+                                    Source := Project_Tree.Sources.Table
+                                                (Source).Other_Part;
+                                 end if;
+
+                              when Impl =>
+                                 null;
+
+                              when Sep =>
+                                 Source := No_Source;
+                           end case;
+
+                           exit;
+                        end if;
+
+                        Source :=
+                          Project_Tree.Sources.Table (Source).Next_In_Sources;
+                     end loop;
+
+                     if Source /= No_Source then
+                        Queue.Insert
+                          (Sfile,
+                           Source,
+                           Project_Tree.Sources.Table (Source).Project);
+                     end if;
+                  end loop;
+               end loop;
+            end loop;
+         end;
+
+         if Display_Compilation_Progress then
+            Write_Str ("completed ");
+            Write_Int (Int (Queue.First - 1));
+            Write_Str (" out of ");
+            Write_Int (Int (Queue.Size));
+            Write_Str (" (");
+            Write_Int (Int (((Queue.First - 1) * 100) / Queue.Size));
+            Write_Str ("%)...");
+            Write_Eol;
+         end if;
       end loop Compilation_Loop;
    end Compilation_Phase;
 
@@ -5690,7 +5988,9 @@ package body Buildgpr is
 
       if Err_Vars.Total_Errors_Detected > 0 then
          Prj.Err.Finalize;
-         Fail_Program ("problems while getting the configuration");
+         Fail_Program
+           ("problems while getting the configuration",
+            Flush_Messages => False);
       end if;
 
       --  Finish processing the main project
@@ -5704,64 +6004,18 @@ package body Buildgpr is
          Report_Error           => null,
          When_No_Sources        => Silent);
 
-      Prj.Err.Finalize;
-
       if not Gpr_Util.Success then
-         Fail_Program ("""", Project_File_Name.all, """ processing failed");
+         Prj.Err.Finalize;
+         Fail_Program
+           ("""",
+            Project_File_Name.all,
+            """ processing failed",
+            Flush_Messages => False);
       end if;
 
       for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
          Compute_All_Imported_Projects (Proj);
       end loop;
-
-      --  Get the builder switches in the main project,if any
-
-      declare
-         Builder_Package  : constant Package_Id :=
-                              Value_Of (Name_Builder,
-                                        Project_Tree.Projects.Table
-                                          (Main_Project).Decl.Packages,
-                                        Project_Tree);
-
-         Builder_Switches : constant Variable_Value :=
-                              Value_Of
-                                (Name                    => No_Name,
-                                 Attribute_Or_Array_Name =>
-                                                        Name_Builder_Switches,
-                                 In_Package              => Builder_Package,
-                                 In_Tree                 => Project_Tree);
-
-         List             : String_List_Id;
-         Element          : String_Element;
-
-      begin
-         if Builder_Switches /= Nil_Variable_Value and then
-           (not Builder_Switches.Default)
-         then
-            List := Builder_Switches.Values;
-
-            while List /= Nil_String loop
-               Element := Project_Tree.String_Elements.Table (List);
-               Get_Name_String (Element.Value);
-
-               if Name_Len /= 0 then
-                  Scan_Arg
-                    (Name_Buffer (1 .. Name_Len),
-                     Command_Line => False);
-               end if;
-
-               List := Element.Next;
-            end loop;
-         end if;
-      end;
-
-      --  Reprocess recorded command line options that have priority over
-      --  those in the main project file.
-
-      Options.Process_Command_Line_Options;
-
-      --  Check if there are runtime projects and if there are some, parse
-      --  them.
 
       Queue.Init;
 
@@ -5771,55 +6025,43 @@ package body Buildgpr is
         (not Bind_Only)
       then
          Queue.Insert_Project_Sources
-           (Main_Project, All_Projects => Recursive);
-
-         Compilation_Phase;
+           (Main_Project, All_Projects => Recursive, Unit_Based => True);
+         Closure_Needed := False;
 
       elsif Mains.Number_Of_Mains /= 0 and then
         (not All_Phases) and then
         Compile_Only
       then
+         Closure_Needed := False;
          Check_Mains;
-
-         Mains.Reset;
-
-         loop
-            declare
-               Display_Main : constant String := Mains.Next_Main;
-               Main         : String := Display_Main;
-               Main_Id      : File_Name_Type;
-               Source       : Source_Id;
-
-            begin
-               exit when Display_Main'Length = 0;
-
-               Canonical_Case_File_Name (Main);
-               Main_Id := Create_Name (Main);
-               Source := Main_Sources.Get (Main_Id);
-
-               if Source /= No_Source then
-                  Main_Sources.Remove (Main_Id);
-
-                  Queue.Insert
-                    (Source_File_Name => Main_Id,
-                     Source_Identity  => Source,
-                     Source_Project   =>
-                       Project_Tree.Sources.Table (Source).Project);
-
-                  Compilation_Phase;
-               end if;
-            end;
-         end loop;
 
       else
          Get_Mains;
 
+         Closure_Needed := True;
          Check_Mains;
 
-         --  Compilation phase
+         --  If we need the closures of Ada mains and roots, then if we need
+         --  to perform the binding phase, then we need first to execute the
+         --  compilation phase, otherwise we will not know what the content of
+         --  the global archive.
+
+         if Closure_Needed and then (not All_Phases) and then Bind_Only then
+            Compile_Only := True;
+         end if;
 
          if All_Phases or Compile_Only then
-            Queue.Insert_Project_Sources (Main_Project, All_Projects => True);
+            --  If the closure is needed, we put in the queue all file based
+            --  sources and all sources in library projects.
+
+            if Closure_Needed then
+               Queue.Insert_Project_Sources
+                 (Main_Project, All_Projects => True, Unit_Based => False);
+
+            else
+               Queue.Insert_Project_Sources
+                 (Main_Project, All_Projects => True, Unit_Based => True);
+            end if;
 
             --  If no sources to compile, then there is nothing to do
 
@@ -5834,59 +6076,162 @@ package body Buildgpr is
 
                Finish_Program (Fatal => False);
             end if;
+         end if;
 
-            Compilation_Phase;
+      end if;
 
-            if Err_Vars.Total_Errors_Detected > 0
-               or else Bad_Compilations.Last > 0
-            then
-               --  If there is more than one compilation failure, output
-               --  a summary of the sources that could not be compiled.
+      --  Get the builder switches in the main project, if any
 
-               if Bad_Compilations.Last > 1 then
-                  declare
-                     Source   : Source_Id;
-                     Src_Data : Source_Data;
+      if Mains.Number_Of_Mains > 0 then
+         declare
+            Builder_Package  : constant Package_Id :=
+                                 Value_Of (Name_Builder,
+                                           Project_Tree.Projects.Table
+                                             (Main_Project).Decl.Packages,
+                                           Project_Tree);
 
-                  begin
-                     Write_Eol;
+            Switches : Variable_Value;
 
-                     for Index in 1 .. Bad_Compilations.Last loop
-                        Source := Bad_Compilations.Table (Index);
+            List             : String_List_Id;
+            Element          : String_Element;
 
-                        if Source /= No_Source then
-                           Src_Data := Project_Tree.Sources.Table (Source);
+            Name             : Name_Id := No_Name;
+            Lang             : Name_Id := No_Name;
+            Source           : Source_Data;
+         begin
+            Mains.Reset;
 
-                           Write_Str ("   compilation of ");
-                           Write_Str (Get_Name_String (Src_Data.Display_File));
-                           Write_Line (" failed");
-                        end if;
-                     end loop;
+            for Index in 1 .. Mains.Number_Of_Mains loop
+               Source := Source_Of (Mains.Next_Main);
+               if Source /= No_Source_Data then
+                  if Name = No_Name and then Lang = No_Name then
+                     --  First main
 
-                     Write_Eol;
-                  end;
+                     Name := Name_Id (Source.File);
+                     Lang := Source.Language_Name;
+
+                  elsif Lang = Source.Language_Name then
+                     --  Other mains. If they are of the same language, use
+                     --  the language as the name.
+
+                     Name := Lang;
+
+                  else
+                     --  There are mains with different languages: no switches
+                     --  from package Builder.
+
+                     Name := No_Name;
+                     exit;
+                  end if;
+               end if;
+            end loop;
+
+            if Name /= No_Name and then Builder_Package /= No_Package then
+               Switches := Value_Of
+                 (Name                    => Name,
+                  Attribute_Or_Array_Name => Name_Switches,
+                  In_Package              => Builder_Package,
+                  In_Tree                 => Project_Tree);
+
+               if (Switches = Nil_Variable_Value or else Switches.Default)
+                 and then Name /= Lang
+               then
+                  Switches := Value_Of
+                    (Name                    => Lang,
+                     Attribute_Or_Array_Name => Name_Switches,
+                     In_Package              => Builder_Package,
+                     In_Tree                 => Project_Tree);
                end if;
 
-               Fail_Program ("*** compilation phase failed");
+               if Switches = Nil_Variable_Value or else Switches.Default then
+                  Switches := Value_Of
+                    (Name                    => Lang,
+                     Attribute_Or_Array_Name => Name_Default_Switches,
+                     In_Package              => Builder_Package,
+                     In_Tree                 => Project_Tree);
+               end if;
+
+               if Switches /= Nil_Variable_Value and then
+                 (not Switches.Default)
+               then
+                  List := Switches.Values;
+
+                  while List /= Nil_String loop
+                     Element := Project_Tree.String_Elements.Table (List);
+                     Get_Name_String (Element.Value);
+
+                     if Name_Len /= 0 then
+                        Scan_Arg
+                          (Name_Buffer (1 .. Name_Len),
+                           Command_Line => False);
+                     end if;
+
+                     List := Element.Next;
+                  end loop;
+               end if;
             end if;
+         end;
+      end if;
+
+      --  Reprocess recorded command line options that have priority over
+      --  those in the main project file.
+
+      Options.Process_Command_Line_Options;
+
+      --  Compilation phase
+
+      if All_Phases or Compile_Only then
+         Compilation_Phase;
+
+         if Err_Vars.Total_Errors_Detected > 0
+           or else Bad_Compilations.Last > 0
+         then
+            --  If there is more than one compilation failure, output
+            --  a summary of the sources that could not be compiled.
+
+            if Bad_Compilations.Last > 1 then
+               declare
+                  Source   : Source_Id;
+                  Src_Data : Source_Data;
+
+               begin
+                  Write_Eol;
+
+                  for Index in 1 .. Bad_Compilations.Last loop
+                     Source := Bad_Compilations.Table (Index);
+
+                     if Source /= No_Source then
+                        Src_Data := Project_Tree.Sources.Table (Source);
+
+                        Write_Str ("   compilation of ");
+                        Write_Str (Get_Name_String (Src_Data.Display_File));
+                        Write_Line (" failed");
+                     end if;
+                  end loop;
+
+                  Write_Eol;
+               end;
+            end if;
+
+            Fail_Program ("*** compilation phase failed");
          end if;
+      end if;
 
-         --  Binding phase
+      --  Binding phase
 
-         if All_Phases or Bind_Only then
-            Binding_Phase;
+      if All_Phases or Bind_Only then
+         Binding_Phase;
 
-            if Err_Vars.Total_Errors_Detected > 0 then
-               Fail_Program ("*** bind failed");
-            end if;
+         if Err_Vars.Total_Errors_Detected > 0 then
+            Fail_Program ("*** bind failed");
          end if;
+      end if;
 
-         if All_Phases or Link_Only then
-            Linking_Phase;
+      if All_Phases or Link_Only then
+         Linking_Phase;
 
-            if Err_Vars.Total_Errors_Detected > 0 then
-               Fail_Program ("*** link failed");
-            end if;
+         if Err_Vars.Total_Errors_Detected > 0 then
+            Fail_Program ("*** link failed");
          end if;
       end if;
 
@@ -6055,16 +6400,36 @@ package body Buildgpr is
    -- Initialize_Source_Record --
    ------------------------------
 
-   procedure Initialize_Source_Record (Source : Source_Id) is
+   procedure Initialize_Source_Record
+     (Source      : Source_Id;
+      Need_Object : Boolean := False)
+   is
       Src_Data : Source_Data  := Project_Tree.Sources.Table (Source);
       Data     : Project_Data;
       Obj_Proj : Project_Id := Src_Data.Project;
       Found    : Boolean := False;
    begin
-      if Src_Data.Source_TS = Empty_Time_Stamp then
+      if Src_Data.Source_TS = Empty_Time_Stamp or else Need_Object then
          Data := Project_Tree.Projects.Table (Src_Data.Project);
-
          Src_Data.Source_TS := File_Stamp (Src_Data.Path);
+
+         if Need_Object then
+            Src_Data.Get_Object := True;
+            Project_Tree.Sources.Table (Source).Get_Object := True;
+         end if;
+
+         if (Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Spec)
+            or else
+            (Src_Data.Lang_Kind = Unit_Based
+             and then
+             (Src_Data.Kind = Sep
+              or else
+              (Src_Data.Kind = Spec
+               and then
+               Src_Data.Other_Part = No_Source)))
+         then
+            return;
+         end if;
 
          loop
             declare
@@ -6137,8 +6502,9 @@ package body Buildgpr is
       Project     : Project_Id)
       return Boolean
    is
-      Data   : Project_Data := Project_Tree.Projects.Table (Project);
-      Source : Source_Id;
+      Data     : Project_Data := Project_Tree.Projects.Table (Project);
+      Source   : Source_Id;
+      Src_Data : Source_Data;
 
    begin
       while Data.Extended_By /= No_Project loop
@@ -6146,13 +6512,52 @@ package body Buildgpr is
 
          Source := Data.First_Source;
          while Source /= No_Source loop
-            if Project_Tree.Sources.Table (Source).Object =  Object_Name then
+            Src_Data := Project_Tree.Sources.Table (Source);
+
+            if ((Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Impl)
+                or else
+                (Src_Data.Lang_Kind = Unit_Based
+                 and then
+                 (Src_Data.Kind = Impl
+                  or else
+                  (Src_Data.Kind = Spec
+                   and then
+                   Src_Data.Other_Part = No_Source))))
+                and then
+                Src_Data.Object =  Object_Name
+            then
                return False;
             else
-               Source :=
-                 Project_Tree.Sources.Table (Source).Next_In_Project;
+               Source := Project_Tree.Sources.Table (Source).Next_In_Project;
             end if;
          end loop;
+      end loop;
+
+      Data := Project_Tree.Projects.Table (Project);
+      Source := Data.First_Source;
+      while Source /= No_Source loop
+         Src_Data := Project_Tree.Sources.Table (Source);
+
+         if ((Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Impl)
+             or else
+             (Src_Data.Lang_Kind = Unit_Based
+              and then
+              (Src_Data.Kind = Impl
+              or else
+              (Src_Data.Kind = Spec
+               and then
+               Src_Data.Other_Part = No_Source))))
+            and then
+            Src_Data.Object =  Object_Name
+         then
+            return Src_Data.Lang_Kind /= Unit_Based or else
+                  (not Closure_Needed) or else
+                  Src_Data.Get_Object;
+
+         else
+            Source :=
+              Project_Tree.Sources.Table (Source).Next_In_Project;
+         end if;
       end loop;
 
       return True;
@@ -6165,10 +6570,13 @@ package body Buildgpr is
    function Is_Subunit (Source : Source_Data) return Boolean is
       Src_Ind : Source_File_Index;
    begin
+      if Source.Kind = Sep then
+         return True;
+
       --  A Spec, a file based language source or a body with a spec cannot be
       --  a subunit.
 
-      if Source.Kind = Spec or else
+      elsif Source.Kind = Spec or else
         Source.Unit = No_Name or else
         Source.Other_Part /= No_Source
       then
@@ -7619,7 +8027,8 @@ package body Buildgpr is
 
       procedure Insert_Project_Sources
         (The_Project  : Project_Id;
-         All_Projects : Boolean)
+         All_Projects : Boolean;
+         Unit_Based   : Boolean)
       is
          Source : Source_Data;
 
@@ -7644,9 +8053,15 @@ package body Buildgpr is
             then
                if Source.Kind = Impl or else
                  (Source.Unit /= No_Name and then
+                  Source.Kind = Spec and then
                   Source.Other_Part = No_Source)
                then
-                  if not Is_Subunit (Source) then
+                  if (Unit_Based or else
+                      Source.Unit = No_Name or else
+                      Project_Tree.Projects.Table (Source.Project).Library)
+                     and then
+                     not Is_Subunit (Source)
+                  then
                      Insert
                        (Source_File_Name => Source.File,
                         Source_Identity  => Index,
@@ -8128,6 +8543,26 @@ package body Buildgpr is
       OS_Exit (1);
    end Sigint_Intercepted;
 
+   function Source_Of (File : String) return Source_Data is
+      File_Id : File_Name_Type;
+      Source : Source_Data;
+   begin
+      Name_Len := 0;
+      Add_Str_To_Name_Buffer (File);
+      Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+      File_Id := Name_Find;
+
+      for Index in 1 .. Source_Data_Table.Last (Project_Tree.Sources) loop
+         Source := Project_Tree.Sources.Table (Index);
+
+         if Source.File = File_Id then
+            return Source;
+         end if;
+      end loop;
+
+      return No_Source_Data;
+   end Source_Of;
+
    -----------------------------------
    -- Ultimate_Extending_Project_Of --
    -----------------------------------
@@ -8146,28 +8581,6 @@ package body Buildgpr is
 
       return Prj;
    end Ultimate_Extending_Project_Of;
-
-   -----------------
-   -- Unit_Exists --
-   -----------------
-
-   function Unit_Exists (Name : Name_Id; Language : Name_Id) return Boolean is
-      Src_Id  : Source_Id;
-      Source  : Source_Data;
-   begin
-      Src_Id := Project_Tree.First_Source;
-      while Src_Id /= No_Source loop
-         Source := Project_Tree.Sources.Table (Src_Id);
-
-         if Source.Language_Name = Language and then Source.Unit = Name then
-            return True;
-         end if;
-
-         Src_Id := Source.Next_In_Sources;
-      end loop;
-
-      return False;
-   end Unit_Exists;
 
    -----------
    -- Usage --

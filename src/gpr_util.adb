@@ -30,6 +30,7 @@ with Makeutl; use Makeutl;
 with Opt;     use Opt;
 with Osint;   use Osint;
 with Output;  use Output;
+with Types;   use Types;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
@@ -62,8 +63,10 @@ package body Gpr_Util is
       Flush_Messages : Boolean := True) is
    begin
       if Flush_Messages then
-         Errout.Finalize (Last_Call => True);
-         Errout.Output_Messages;
+         if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
+            Errout.Finalize (Last_Call => True);
+            Errout.Output_Messages;
+         end if;
       end if;
 
       Finish_Program (Fatal => True, S1 => S1, S2 => S2, S3 => S3);
