@@ -6038,8 +6038,15 @@ package body Buildgpr is
       else
          Get_Mains;
 
-         Closure_Needed := True;
-         Check_Mains;
+         if Mains.Number_Of_Mains = 0 then
+            --  Compile everything if there is no main
+
+            Closure_Needed := False;
+
+         else
+            Closure_Needed := True;
+            Check_Mains;
+         end if;
 
          --  If we need the closures of Ada mains and roots, then if we need
          --  to perform the binding phase, then we need first to execute the
