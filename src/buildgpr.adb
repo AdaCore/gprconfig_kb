@@ -8338,49 +8338,60 @@ package body Buildgpr is
 
          --  -bargs     all binder arguments
 
-      elsif Command_Line and then Arg = "-bargs" then
-         Current_Processor := Binder;
-         Current_Bind_Option_Table := No_Bind_Option_Table;
+      elsif Arg = "-bargs" then
+         if Command_Line then
+            Current_Processor := Binder;
+            Current_Bind_Option_Table := No_Bind_Option_Table;
+
+         else
+            Processed := False;
+         end if;
 
          --  -bargs:lang    arguments for binder of language lang
 
-      elsif Command_Line
-            and then Arg'Length > 7
-            and then Arg (1 .. 7) = "-bargs:"
-      then
-         Current_Processor := Binder;
+      elsif Arg'Length > 7 and then Arg (1 .. 7) = "-bargs:" then
+         if Command_Line then
+            Current_Processor := Binder;
 
-         Name_Len := 0;
-         Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
-         To_Lower (Name_Buffer (1 .. Name_Len));
+            Name_Len := 0;
+            Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
+            To_Lower (Name_Buffer (1 .. Name_Len));
 
-         declare
-            Lang : constant Name_Id := Name_Find;
-         begin
-            Current_Bind_Option_Table :=
-              Binder_Options_HTable.Get (Lang);
+            declare
+               Lang : constant Name_Id := Name_Find;
+            begin
+               Current_Bind_Option_Table :=
+                 Binder_Options_HTable.Get (Lang);
 
-            if Current_Bind_Option_Table = No_Bind_Option_Table then
-               Current_Bind_Option_Table := new Binder_Options.Instance;
-               Binder_Options_HTable.Set
-                 (Lang, Current_Bind_Option_Table);
-               Binder_Options.Init (Current_Bind_Option_Table.all);
-            end if;
-         end;
+               if Current_Bind_Option_Table = No_Bind_Option_Table then
+                  Current_Bind_Option_Table := new Binder_Options.Instance;
+                  Binder_Options_HTable.Set
+                    (Lang, Current_Bind_Option_Table);
+                  Binder_Options.Init (Current_Bind_Option_Table.all);
+               end if;
+            end;
+
+         else
+            Processed := False;
+         end if;
 
          --  -largs     linker arguments
 
-      elsif Command_Line and then Arg = "-largs" then
-         Current_Processor := Linker;
+      elsif Arg = "-largs" then
+         if Command_Line then
+            Current_Processor := Linker;
+
+         else
+            Processed := False;
+         end if;
 
          --  -gargs     options directly for gprbuild
 
-      elsif Command_Line and then Arg = "-gargs" then
+      elsif Arg = "-gargs" then
          Current_Processor := None;
 
-         --  A special test is needed for the -o switch within a -largs
-         --  since that is another way to specify the name of the final
-         --  executable.
+         --  A special test is needed for the -o switch within a -largs since
+         --  that is another way to specify the name of the final executable.
 
       elsif Command_Line
             and then Current_Processor = Linker
