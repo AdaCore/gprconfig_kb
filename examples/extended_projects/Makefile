@@ -1,4 +1,4 @@
-all: ../subsystems/simple.cgpr
+all: ../subsystems/default.cgpr
 	gprbuild -Pnew_ada_main --config=../subsystems/default.cgpr
 
 ../subsystems/default.cgpr:
