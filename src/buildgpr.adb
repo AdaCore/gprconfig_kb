@@ -1520,9 +1520,11 @@ package body Buildgpr is
          begin
             if Source.Language_Name = Lang_Name
               and then
-                (Config.Kind /= Unit_Based
+                ((Config.Kind = File_Based and then Source.Kind = Impl)
                  or else
-                   (Source.Unit /= No_Name
+                   (Config.Kind = Unit_Based
+                    and then
+                      Source.Unit /= No_Name
                     and then
                       Source.Unit /= Main_Source.Unit
                     and then
@@ -8681,7 +8683,7 @@ package body Buildgpr is
 
          else
             Finish_Program
-              (True, "illegal option in project file""", Arg, """");
+              (True, "illegal option """, Arg, """ in project file");
          end if;
       end if;
    end Scan_Arg;
