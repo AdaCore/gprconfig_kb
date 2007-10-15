@@ -203,6 +203,18 @@ package body Buildgpr is
       Equal      => "=");
    --  Hash table to keep data for all spawned jobs
 
+   package All_Language_Builder_Compiling_Options is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           =>
+        "Makegpr.All_Language_Builder_Compiling_Options");
+   --  Table to store the options for all compilers, that is those that
+   --  follow the switch "-cargs" without any mention of language in the
+   --  Builder switches.
+
    package All_Language_Compiling_Options is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -211,7 +223,18 @@ package body Buildgpr is
       Table_Increment      => 100,
       Table_Name           => "Makegpr.All_Language_Compiling_Options");
    --  Table to store the options for all compilers, that is those that
-   --  follow the switch "-cargs" without any mention of language.
+   --  follow the switch "-cargs" without any mention of language on the
+   --  command line.
+
+   package Builder_Compiling_Options is new GNAT.Dynamic_Tables
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100);
+   --  Tables to store the options for the compilers of the different
+   --  languages, that is those after switch "-cargs:<lang>", in the Builder
+   --  switches.
 
    package Compiling_Options is new GNAT.Dynamic_Tables
      (Table_Component_Type => String_Access,
@@ -220,7 +243,8 @@ package body Buildgpr is
       Table_Initial        => 10,
       Table_Increment      => 100);
    --  Tables to store the options for the compilers of the different
-   --  languages, that is those after switch "-cargs:<lang>".
+   --  languages, that is those after switch "-cargs:<lang>", on the command
+   --  line.
 
    type Boolean_Array is array (Positive range <>) of Boolean;
    type Booleans is access Boolean_Array;
@@ -256,6 +280,14 @@ package body Buildgpr is
 
    Current_Comp_Option_Table : Comp_Option_Table_Ref := No_Comp_Option_Table;
 
+   type Builder_Comp_Option_Table_Ref is
+     access Builder_Compiling_Options.Instance;
+   No_Builder_Comp_Option_Table : constant Builder_Comp_Option_Table_Ref :=
+                                    null;
+
+   Current_Builder_Comp_Option_Table : Builder_Comp_Option_Table_Ref :=
+                                         No_Builder_Comp_Option_Table;
+
    package Compiling_Options_HTable is new GNAT.HTable.Simple_HTable
      (Header_Num => Prj.Header_Num,
       Element    => Comp_Option_Table_Ref,
@@ -263,7 +295,18 @@ package body Buildgpr is
       Key        => Name_Id,
       Hash       => Prj.Hash,
       Equal      => "=");
-   --  A hash table to get the compilation option table from the language name.
+   --  A hash table to get the command line compilation option table from the
+   --  language name.
+
+   package Builder_Compiling_Options_HTable is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Builder_Comp_Option_Table_Ref,
+      No_Element => No_Builder_Comp_Option_Table,
+      Key        => Name_Id,
+      Hash       => Prj.Hash,
+      Equal      => "=");
+   --  A hash table to get the builder compilation option table from the
+   --  language name.
 
    package All_Language_Binder_Options is new Table.Table
      (Table_Component_Type => String_Access,
@@ -569,7 +612,7 @@ package body Buildgpr is
    --  Compiler'Switches(<source file name>), if it is defined, otherwise in
    --  Compiler'Default_Switches (<language name>), if it is defined.
 
-   procedure Add_Option (Arg : String);
+   procedure Add_Option (Arg : String; Command_Line : Boolean);
    --  Add a switch for a compiler or all compilers, or for the binder or for
    --  the linker. The table where this option is stored depends on the value
    --  of Current_Processor and other global variables.
@@ -962,7 +1005,7 @@ package body Buildgpr is
    -- Add_Option --
    ----------------
 
-   procedure Add_Option (Arg : String) is
+   procedure Add_Option (Arg : String; Command_Line : Boolean) is
       Option : constant String_Access := new String'(Arg);
 
    begin
@@ -992,16 +1035,33 @@ package body Buildgpr is
 
          when Compiler =>
 
-            if Current_Comp_Option_Table = No_Comp_Option_Table then
-               --  Option for all compilers
+            if Command_Line then
+               if Current_Comp_Option_Table = No_Comp_Option_Table then
+                  --  Option for all compilers
 
-               All_Language_Compiling_Options.Append (Option);
+                  All_Language_Compiling_Options.Append (Option);
+
+               else
+                  --  Option for a single compiler
+
+                  Compiling_Options.Append
+                    (Current_Comp_Option_Table.all, Option);
+               end if;
 
             else
-               --  Option for a single compiler
+               if Current_Builder_Comp_Option_Table =
+                    No_Builder_Comp_Option_Table
+               then
+                  --  Option for all compilers
 
-               Compiling_Options.Append
-                 (Current_Comp_Option_Table.all, Option);
+                  All_Language_Builder_Compiling_Options.Append (Option);
+
+               else
+                  --  Option for a single compiler
+
+                  Builder_Compiling_Options.Append
+                    (Current_Builder_Comp_Option_Table.all, Option);
+               end if;
             end if;
       end case;
    end Add_Option;
@@ -3983,7 +4043,8 @@ package body Buildgpr is
 
       Compilation_Needed : Boolean;
 
-      Options_Instance : Comp_Option_Table_Ref;
+      Options_Instance         : Comp_Option_Table_Ref;
+      Builder_Options_Instance : Builder_Comp_Option_Table_Ref;
 
       Current_Project      : Project_Id := No_Project;
       Current_Language_Ind : Language_Index := No_Language_Index;
@@ -4187,7 +4248,56 @@ package body Buildgpr is
                   end loop;
                end;
 
-               --  2) The PIC option if it exists, for shared libraries
+               --  2) the compilation switches specified in package Builder for
+               --  all compilers, following "-cargs", if any.
+
+               if All_Language_Builder_Compiling_Options.Last /= 0 then
+                  declare
+                     Options :
+                       String_List
+                         (1 .. All_Language_Builder_Compiling_Options.Last);
+
+                  begin
+                     for Index in Options'Range loop
+                        Options (Index) :=
+                          All_Language_Builder_Compiling_Options.Table (Index);
+                     end loop;
+
+                     Add_Options
+                       (Options,
+                        To            => Compilation_Options,
+                        Display_All   => True,
+                        Display_First => True);
+                  end;
+               end if;
+
+               --  3) the compilation switches specified in package Builder for
+               --  the compiler of the language, following -cargs:<language>.
+
+               Builder_Options_Instance :=
+                 Builder_Compiling_Options_HTable.Get (Language_Name);
+
+               if Builder_Options_Instance /= No_Builder_Comp_Option_Table then
+                  declare
+                     Options : String_List
+                                 (1 .. Builder_Compiling_Options.Last
+                                         (Builder_Options_Instance.all));
+
+                  begin
+                     for Index in Options'Range loop
+                        Options (Index) :=
+                          Builder_Options_Instance.Table (Index);
+                     end loop;
+
+                     Add_Options
+                       (Options,
+                        To            => Compilation_Options,
+                        Display_All   => True,
+                        Display_First => True);
+                  end;
+               end if;
+
+               --  4) The PIC option if it exists, for shared libraries
 
                if Project_Tree.Projects.Table (Source_Project).Library
                  and then
@@ -4212,7 +4322,7 @@ package body Buildgpr is
                   end;
                end if;
 
-               --  3) Compiler'Switches(<source file name>), if it is defined,
+               --  5) Compiler'Switches(<source file name>), if it is defined,
                --  otherwise Compiler'Switches (<language name>), if defined.
 
                Add_Compilation_Switches (Source_Identity);
@@ -4239,7 +4349,7 @@ package body Buildgpr is
                   end;
                end if;
 
-               --  5) the switches specified on the gprbuild command line for
+               --  6) the switches specified on the gprbuild command line for
                --  the compiler of the language, following -cargs:<language>.
 
                Options_Instance :=
@@ -8133,7 +8243,7 @@ package body Buildgpr is
    --------------
 
    procedure Scan_Arg (Arg : String; Command_Line : Boolean) is
-      Processed : Boolean := False;
+      Processed : Boolean := True;
    begin
       pragma Assert (Arg'First = 1);
 
@@ -8141,59 +8251,62 @@ package body Buildgpr is
          return;
       end if;
 
-      if Command_Line then
-         Processed := True;
+      --  If preceding switch was -P, a project file name need to be
+      --  specified, not a switch.
 
-         --  If preceding switch was -P, a project file name need to be
+      if Project_File_Name_Expected then
+         if Arg (1) = '-' then
+            Fail_Program ("project file name missing after -P");
+         else
+            Project_File_Name_Expected := False;
+            Project_File_Name := new String'(Arg);
+         end if;
+
+         --  If preceding switch was -o, an executable name need to be
          --  specified, not a switch.
 
-         if Project_File_Name_Expected then
-            if Arg (1) = '-' then
-               Fail_Program ("project file name missing after -P");
-            else
-               Project_File_Name_Expected := False;
-               Project_File_Name := new String'(Arg);
-            end if;
+      elsif Output_File_Name_Expected then
+         if Arg (1) = '-' then
+            Fail_Program ("output file name missing after -o");
+         else
+            Output_File_Name_Expected := False;
+            Output_File_Name := new String'(Arg);
+         end if;
 
-            --  If preceding switch was -o, an executable name need to be
-            --  specified, not a switch.
+      elsif Search_Project_Dir_Expected then
+         if Arg (1) = '-' then
+            Fail_Program ("directory name missing after -aP");
+         else
+            Search_Project_Dir_Expected := False;
+            Add_Search_Project_Directory (Arg);
+         end if;
 
-         elsif Output_File_Name_Expected then
-            if Arg (1) = '-' then
-               Fail_Program ("output file name missing after -o");
-            else
-               Output_File_Name_Expected := False;
-               Output_File_Name := new String'(Arg);
-            end if;
+         --  Set the processor/language for the following switches
 
-         elsif Search_Project_Dir_Expected then
-            if Arg (1) = '-' then
-               Fail_Program ("directory name missing after -aP");
-            else
-               Search_Project_Dir_Expected := False;
-               Add_Search_Project_Directory (Arg);
-            end if;
+         --  -cargs         all compiler arguments
 
-            --  Set the processor/language for the following switches
+      elsif Arg = "-cargs" then
+         Current_Processor := Compiler;
 
-            --  -cargs         all compiler arguments
-
-         elsif Arg = "-cargs" then
-            Current_Processor := Compiler;
+         if Command_Line then
             Current_Comp_Option_Table := No_Comp_Option_Table;
 
-            --  -cargs:lang    arguments for compiler of language lang
+         else
+            Current_Builder_Comp_Option_Table := No_Builder_Comp_Option_Table;
+         end if;
+         --  -cargs:lang    arguments for compiler of language lang
 
-         elsif Arg'Length > 7 and then Arg (1 .. 7) = "-cargs:" then
-            Current_Processor := Compiler;
+      elsif Arg'Length > 7 and then Arg (1 .. 7) = "-cargs:" then
+         Current_Processor := Compiler;
 
-            Name_Len := 0;
-            Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
-            To_Lower (Name_Buffer (1 .. Name_Len));
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
+         To_Lower (Name_Buffer (1 .. Name_Len));
 
-            declare
-               Lang : constant Name_Id := Name_Find;
-            begin
+         declare
+            Lang : constant Name_Id := Name_Find;
+         begin
+            if Command_Line then
                Current_Comp_Option_Table :=
                  Compiling_Options_HTable.Get (Lang);
 
@@ -8203,273 +8316,287 @@ package body Buildgpr is
                     (Lang, Current_Comp_Option_Table);
                   Compiling_Options.Init (Current_Comp_Option_Table.all);
                end if;
-            end;
 
-            --  -bargs     all binder arguments
+            else
+               Current_Builder_Comp_Option_Table :=
+                 Builder_Compiling_Options_HTable.Get (Lang);
 
-         elsif Arg = "-bargs" then
-            Current_Processor := Binder;
-            Current_Bind_Option_Table := No_Bind_Option_Table;
-
-            --  -bargs:lang    arguments for binder of language lang
-
-         elsif Arg'Length > 7 and then Arg (1 .. 7) = "-bargs:" then
-            Current_Processor := Binder;
-
-            Name_Len := 0;
-            Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
-            To_Lower (Name_Buffer (1 .. Name_Len));
-
-            declare
-               Lang : constant Name_Id := Name_Find;
-            begin
-               Current_Bind_Option_Table :=
-                 Binder_Options_HTable.Get (Lang);
-
-               if Current_Bind_Option_Table = No_Bind_Option_Table then
-                  Current_Bind_Option_Table := new Binder_Options.Instance;
-                  Binder_Options_HTable.Set
-                    (Lang, Current_Bind_Option_Table);
-                  Binder_Options.Init (Current_Bind_Option_Table.all);
+               if Current_Builder_Comp_Option_Table =
+                 No_Builder_Comp_Option_Table
+               then
+                  Current_Builder_Comp_Option_Table :=
+                    new Builder_Compiling_Options.Instance;
+                  Builder_Compiling_Options_HTable.Set
+                    (Lang, Current_Builder_Comp_Option_Table);
+                  Builder_Compiling_Options.Init
+                    (Current_Builder_Comp_Option_Table.all);
                end if;
-            end;
+            end if;
+         end;
 
-            --  -largs     linker arguments
+         --  -bargs     all binder arguments
 
-         elsif Arg = "-largs" then
-            Current_Processor := Linker;
+      elsif Command_Line and then Arg = "-bargs" then
+         Current_Processor := Binder;
+         Current_Bind_Option_Table := No_Bind_Option_Table;
 
-            --  -gargs     options directly for gprbuild
+         --  -bargs:lang    arguments for binder of language lang
 
-         elsif Arg = "-gargs" then
-            Current_Processor := None;
+      elsif Command_Line
+            and then Arg'Length > 7
+            and then Arg (1 .. 7) = "-bargs:"
+      then
+         Current_Processor := Binder;
 
-            --  A special test is needed for the -o switch within a -largs
-            --  since that is another way to specify the name of the final
-            --  executable.
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
+         To_Lower (Name_Buffer (1 .. Name_Len));
 
-         elsif Current_Processor = Linker and then Arg = "-o" then
+         declare
+            Lang : constant Name_Id := Name_Find;
+         begin
+            Current_Bind_Option_Table :=
+              Binder_Options_HTable.Get (Lang);
+
+            if Current_Bind_Option_Table = No_Bind_Option_Table then
+               Current_Bind_Option_Table := new Binder_Options.Instance;
+               Binder_Options_HTable.Set
+                 (Lang, Current_Bind_Option_Table);
+               Binder_Options.Init (Current_Bind_Option_Table.all);
+            end if;
+         end;
+
+         --  -largs     linker arguments
+
+      elsif Command_Line and then Arg = "-largs" then
+         Current_Processor := Linker;
+
+         --  -gargs     options directly for gprbuild
+
+      elsif Command_Line and then Arg = "-gargs" then
+         Current_Processor := None;
+
+         --  A special test is needed for the -o switch within a -largs
+         --  since that is another way to specify the name of the final
+         --  executable.
+
+      elsif Command_Line
+            and then Current_Processor = Linker
+            and then Arg = "-o"
+      then
             Fail_Program
               ("switch -o not allowed within a -largs. Use -o directly.");
 
-            --  If current processor is not gprbuild directly, store the option
-            --  in the appropriate table.
+         --  If current processor is not gprbuild directly, store the option
+         --  in the appropriate table.
 
-         elsif Current_Processor /= None then
-            Add_Option (Arg);
-
-         else
-            Processed := False;
-         end if;
-      end if;
-
-      if not Processed then
-         Processed := True;
+      elsif Current_Processor /= None then
+         Add_Option (Arg, Command_Line);
 
          --  Switches start with '-'
 
-         if Arg (1) = '-' then
+      elsif Arg (1) = '-' then
 
-            if Command_Line and then Arg = "--display-paths" then
-               Display_Paths := True;
+         if Command_Line and then Arg = "--display-paths" then
+            Display_Paths := True;
 
-            elsif Command_Line
-              and then
-               Arg'Length > Config_Project_Option'Length
-              and then
-               Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
+         elsif Command_Line
+           and then
+         Arg'Length > Config_Project_Option'Length
+           and then
+         Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
+         then
+            if Config_Project_File_Name /= null then
+               Fail_Program
+                 ("several configuration switches cannot be specified");
+
+            else
+               Autoconfiguration := False;
+               Config_Project_File_Name :=
+                 new String'
+                   (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
+            end if;
+
+         elsif Command_Line
+           and then
+         Arg'Length > Autoconf_Project_Option'Length
+           and then
+         Arg (1 .. Autoconf_Project_Option'Length) =
+           Autoconf_Project_Option
+         then
+            if Config_Project_File_Name /= null then
+               Fail_Program
+                 ("several configuration switches cannot be specified");
+
+            else
+               Config_Project_File_Name :=
+                 new String'
+                   (Arg (Autoconf_Project_Option'Length + 1 .. Arg'Last));
+            end if;
+
+         elsif Command_Line and then
+         Arg'Length >= 3 and then
+         Arg (1 .. 3) = "-aP"
+         then
+            if Arg'Length = 3 then
+               Search_Project_Dir_Expected := True;
+
+            else
+               Add_Search_Project_Directory (Arg (4 .. Arg'Last));
+            end if;
+
+         elsif Command_Line and then Arg = "-b" then
+            Bind_Only  := True;
+            All_Phases := False;
+
+         elsif Command_Line and then Arg = "-c" then
+            Compile_Only := True;
+            All_Phases   := False;
+
+            if Link_Only then
+               Bind_Only := True;
+            end if;
+
+         elsif Arg = "-C" then
+            --  This switch is only for upward compatibility
+
+            null;
+
+         elsif Command_Line and then Arg = "-d" then
+            Display_Compilation_Progress := True;
+
+         elsif Command_Line and then
+         Arg'Length = 3 and then
+         Arg (2) = 'd'
+         then
+            if Arg (3) in '1' .. '9' or else
+              Arg (3) in 'a' .. 'z' or else
+              Arg (3) in 'A' .. 'Z'
             then
-               if Config_Project_File_Name /= null then
-                  Fail_Program
-                    ("several configuration switches cannot be specified");
+               Set_Debug_Flag (Arg (3));
 
-               else
-                  Autoconfiguration := False;
-                  Config_Project_File_Name :=
-                    new String'
-                      (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
-               end if;
+            else
+               Fail_Program ("illegal debug switch ", Arg);
+            end if;
 
-            elsif Command_Line
-              and then
-               Arg'Length > Autoconf_Project_Option'Length
-              and then
-               Arg (1 .. Autoconf_Project_Option'Length) =
-                 Autoconf_Project_Option
-            then
-               if Config_Project_File_Name /= null then
-                  Fail_Program
-                    ("several configuration switches cannot be specified");
+         elsif Command_Line and then Arg = "-eL" then
+            Follow_Links := True;
 
-               else
-                  Config_Project_File_Name :=
-                    new String'
-                      (Arg (Autoconf_Project_Option'Length + 1 .. Arg'Last));
-               end if;
+         elsif Arg = "-f" then
+            Force_Compilations := True;
+            Need_To_Rebuild_Global_Archives := True;
 
-            elsif Command_Line and then
-                  Arg'Length >= 3 and then
-                  Arg (1 .. 3) = "-aP"
-            then
-               if Arg'Length = 3 then
-                  Search_Project_Dir_Expected := True;
+            if Command_Line then
+               Register_Command_Line_Option (Force_Compilations_Option);
+            end if;
 
-               else
-                  Add_Search_Project_Directory (Arg (4 .. Arg'Last));
-               end if;
+         elsif Command_Line and then Arg = "-F" then
+            Full_Path_Name_For_Brief_Errors := True;
 
-            elsif Command_Line and then Arg = "-b" then
-               Bind_Only  := True;
-               All_Phases := False;
+         elsif Command_Line and then Arg = "-h" then
+            Usage_Needed := True;
 
-            elsif Command_Line and then Arg = "-c" then
-               Compile_Only := True;
-               All_Phases   := False;
+         elsif Arg'Length > 2 and then Arg (2) = 'j' then
+            declare
+               Max_Proc : Natural := 0;
+            begin
+               for J in 3 .. Arg'Length loop
+                  if Arg (J) in '0' .. '9' then
+                     Max_Proc := (Max_Proc * 10) +
+                       Character'Pos (Arg (J)) -
+                       Character'Pos ('0');
 
-               if Link_Only then
-                  Bind_Only := True;
-               end if;
-
-            elsif Arg = "-C" then
-               --  This switch is only for upward compatibility
-
-               null;
-
-            elsif Command_Line and then Arg = "-d" then
-               Display_Compilation_Progress := True;
-
-            elsif Command_Line and then
-                  Arg'Length = 3 and then
-                  Arg (2) = 'd'
-            then
-               if Arg (3) in '1' .. '9' or else
-                  Arg (3) in 'a' .. 'z' or else
-                  Arg (3) in 'A' .. 'Z'
-               then
-                  Set_Debug_Flag (Arg (3));
-
-               else
-                  Fail_Program ("illegal debug switch ", Arg);
-               end if;
-
-            elsif Command_Line and then Arg = "-eL" then
-               Follow_Links := True;
-
-            elsif Arg = "-f" then
-               Force_Compilations := True;
-               Need_To_Rebuild_Global_Archives := True;
-
-               if Command_Line then
-                  Register_Command_Line_Option (Force_Compilations_Option);
-               end if;
-
-            elsif Command_Line and then Arg = "-F" then
-               Full_Path_Name_For_Brief_Errors := True;
-
-            elsif Command_Line and then Arg = "-h" then
-               Usage_Needed := True;
-
-            elsif Arg'Length > 2 and then Arg (2) = 'j' then
-               declare
-                  Max_Proc : Natural := 0;
-               begin
-                  for J in 3 .. Arg'Length loop
-                     if Arg (J) in '0' .. '9' then
-                        Max_Proc := (Max_Proc * 10) +
-                          Character'Pos (Arg (J)) -
-                          Character'Pos ('0');
-
-                     else
-                        Processed := False;
-                     end if;
-                  end loop;
-
-                  if Max_Proc = 0 then
+                  else
                      Processed := False;
                   end if;
+               end loop;
 
-                  if Processed then
-                     Maximum_Processes := Max_Proc;
-                  end if;
-               end;
-
-               if Processed and then Command_Line then
-                  Register_Command_Line_Option
-                    (Maximum_Processes_Option, Maximum_Processes);
+               if Max_Proc = 0 then
+                  Processed := False;
                end if;
 
-            elsif Arg = "-k" then
-               Keep_Going := True;
-
-               if Command_Line then
-                  Register_Command_Line_Option (Keep_Going_Option);
+               if Processed then
+                  Maximum_Processes := Max_Proc;
                end if;
+            end;
 
-            elsif Command_Line and then Arg = "-l" then
-               Link_Only  := True;
-               All_Phases := False;
+            if Processed and then Command_Line then
+               Register_Command_Line_Option
+                 (Maximum_Processes_Option, Maximum_Processes);
+            end if;
 
-               if Compile_Only then
-                  Bind_Only := True;
-               end if;
+         elsif Arg = "-k" then
+            Keep_Going := True;
 
-            elsif Command_Line and then Arg = "-o" then
-               if Output_File_Name /= null then
-                  Fail_Program ("cannot specify several -o switches");
+            if Command_Line then
+               Register_Command_Line_Option (Keep_Going_Option);
+            end if;
 
-               else
-                  Output_File_Name_Expected := True;
-               end if;
+         elsif Command_Line and then Arg = "-l" then
+            Link_Only  := True;
+            All_Phases := False;
 
-            elsif Command_Line and then
-                  (Arg = "-p" or else Arg = "--create-missing-dirs")
-            then
-               Setup_Projects := True;
+            if Compile_Only then
+               Bind_Only := True;
+            end if;
 
-            elsif Command_Line and then
-                  Arg'Length >= 2 and then Arg (2) = 'P'
-            then
-               if Project_File_Name /= null then
-                  Fail_Program ("cannot have several project files specified");
+         elsif Command_Line and then Arg = "-o" then
+            if Output_File_Name /= null then
+               Fail_Program ("cannot specify several -o switches");
 
-               elsif Arg'Length = 2 then
-                  Project_File_Name_Expected := True;
+            else
+               Output_File_Name_Expected := True;
+            end if;
 
-               else
-                  Project_File_Name := new String'(Arg (3 .. Arg'Last));
-               end if;
+         elsif Command_Line and then
+           (Arg = "-p" or else Arg = "--create-missing-dirs")
+         then
+            Setup_Projects := True;
 
-            elsif Arg = "-q" then
-               Quiet_Output := True;
-               Verbose_Mode := False;
+         elsif Command_Line and then
+         Arg'Length >= 2 and then Arg (2) = 'P'
+         then
+            if Project_File_Name /= null then
+               Fail_Program ("cannot have several project files specified");
 
-               if Command_Line then
-                  Register_Command_Line_Option (Quiet_Output_Option);
-               end if;
+            elsif Arg'Length = 2 then
+               Project_File_Name_Expected := True;
 
-            elsif Command_Line and then Arg = "-r" then
-               Recursive := True;
+            else
+               Project_File_Name := new String'(Arg (3 .. Arg'Last));
+            end if;
 
-            elsif Arg = "-s" then
-               Check_Switches := True;
+         elsif Arg = "-q" then
+            Quiet_Output := True;
+            Verbose_Mode := False;
 
-               if Command_Line then
-                  Register_Command_Line_Option (Check_Switches_Option);
-               end if;
+            if Command_Line then
+               Register_Command_Line_Option (Quiet_Output_Option);
+            end if;
 
-            elsif Arg = "-v" then
-               Verbose_Mode := True;
-               Quiet_Output := False;
+         elsif Command_Line and then Arg = "-r" then
+            Recursive := True;
 
-               if Command_Line then
-                  Register_Command_Line_Option (Verbose_Mode_Option);
-               end if;
+         elsif Arg = "-s" then
+            Check_Switches := True;
 
-            elsif Command_Line
-              and then Arg'Length = 4 and then Arg (1 .. 3) = "-vP"
-              and then Arg (4) in '0' .. '2'
-            then
-               case Arg (4) is
+            if Command_Line then
+               Register_Command_Line_Option (Check_Switches_Option);
+            end if;
+
+         elsif Arg = "-v" then
+            Verbose_Mode := True;
+            Quiet_Output := False;
+
+            if Command_Line then
+               Register_Command_Line_Option (Verbose_Mode_Option);
+            end if;
+
+         elsif Command_Line
+           and then Arg'Length = 4 and then Arg (1 .. 3) = "-vP"
+           and then Arg (4) in '0' .. '2'
+         then
+            case Arg (4) is
                when '0' =>
                   Current_Verbosity := Prj.Default;
                when '1' =>
@@ -8478,81 +8605,83 @@ package body Buildgpr is
                   Current_Verbosity := Prj.High;
                when others =>
                   null;
-               end case;
+            end case;
 
-            elsif Arg = "-we" then
-               Warning_Mode := Treat_As_Error;
+         elsif Arg = "-we" then
+            Warning_Mode := Treat_As_Error;
 
-               if Command_Line then
-                  Register_Command_Line_Option (Warnings_Treat_As_Error);
-               end if;
-
-            elsif Arg = "-wn" then
-               Warning_Mode := Normal;
-
-               if Command_Line then
-                  Register_Command_Line_Option (Warnings_Normal);
-               end if;
-
-            elsif Arg = "-ws" then
-               Warning_Mode  := Suppress;
-
-               if Command_Line then
-                  Register_Command_Line_Option (Warnings_Suppress);
-               end if;
-
-            elsif Command_Line
-              and then Arg'Length >= 3
-              and then Arg (2) = 'X'
-              and then Is_External_Assignment (Arg)
-            then
-               --  Is_External_Assignment has side effects when it returns True
-
-               null;
-
-            else
-               Processed := False;
+            if Command_Line then
+               Register_Command_Line_Option (Warnings_Treat_As_Error);
             end if;
 
-         elsif Command_Line then
-            --  The file name of a main or a project file
+         elsif Arg = "-wn" then
+            Warning_Mode := Normal;
 
-            declare
-               File_Name : String := Arg;
+            if Command_Line then
+               Register_Command_Line_Option (Warnings_Normal);
+            end if;
 
-            begin
-               Canonical_Case_File_Name (File_Name);
+         elsif Arg = "-ws" then
+            Warning_Mode  := Suppress;
 
-               if File_Name'Length > Project_File_Extension'Length and then
-                 File_Name
-                   (File_Name'Last - Project_File_Extension'Length + 1
-                    .. File_Name'Last) = Project_File_Extension
-               then
-                  if Project_File_Name /= null then
-                     Fail_Program
-                       ("cannot have several project files specified");
+            if Command_Line then
+               Register_Command_Line_Option (Warnings_Suppress);
+            end if;
 
-                  else
-                     Project_File_Name := new String'(File_Name);
-                  end if;
+         elsif Command_Line
+           and then Arg'Length >= 3
+           and then Arg (2) = 'X'
+           and then Is_External_Assignment (Arg)
+         then
+            --  Is_External_Assignment has side effects when it returns True
 
-               else
-                  --  Not a project file, then it is a main
+            null;
 
-                  Mains.Add_Main (Arg);
-               end if;
-            end;
+         else
+            Processed := False;
          end if;
 
-         if not Processed then
-            if Command_Line then
-               Finish_Program
-                 (True, "illegal option """, Arg, """");
+      elsif Command_Line then
+         --  The file name of a main or a project file
+
+         declare
+            File_Name : String := Arg;
+
+         begin
+            Canonical_Case_File_Name (File_Name);
+
+            if File_Name'Length > Project_File_Extension'Length and then
+              File_Name
+                (File_Name'Last - Project_File_Extension'Length + 1
+                 .. File_Name'Last) = Project_File_Extension
+            then
+               if Project_File_Name /= null then
+                  Fail_Program
+                    ("cannot have several project files specified");
+
+               else
+                  Project_File_Name := new String'(File_Name);
+               end if;
 
             else
-               Finish_Program
-                 (True, "illegal option in project file""", Arg, """");
+               --  Not a project file, then it is a main
+
+               Mains.Add_Main (Arg);
             end if;
+         end;
+
+      else
+         Processed := False;
+      end if;
+
+      if not Processed then
+         if Command_Line then
+            Finish_Program
+              (True, "illegal option """, Arg, """");
+
+         else
+            Finish_Program
+              (True, "illegal option in project file""", Arg, """");
          end if;
       end if;
    end Scan_Arg;
