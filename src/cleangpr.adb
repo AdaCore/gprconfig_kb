@@ -155,6 +155,9 @@ package body Cleangpr is
    --  Display the usage.
    --  If called several times, the usage is displayed only the first time.
 
+   procedure Check_Version_And_Help is new
+     Check_Version_And_Help_G (Usage);
+
    -------------------
    -- Clean_Archive --
    -------------------
@@ -1173,7 +1176,6 @@ package body Cleangpr is
             Check_Version_And_Help
               ("GPRCLEAN",
                "2006",
-               Usage'Unrestricted_Access,
                Version_String => Gpr_Version_String);
 
             --  Now deal with the other options

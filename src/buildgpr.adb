@@ -796,6 +796,9 @@ package body Buildgpr is
    procedure Usage;
    --  Display the usage
 
+   procedure Check_Version_And_Help is new
+     Check_Version_And_Help_G (Usage);
+
    ------------------
    -- Add_Argument --
    ------------------
@@ -6438,7 +6441,6 @@ package body Buildgpr is
       Check_Version_And_Help
         ("GPRBUILD",
          "2004",
-         Usage'Access,
          Version_String => Gpr_Version_String);
 
       --  Now process the other options
