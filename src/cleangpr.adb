@@ -619,23 +619,6 @@ package body Cleangpr is
             begin
                Change_Dir (Obj_Dir);
 
-               --  In multi language mode, delete the linker exchange file
-               --  of a library project, if it exists.
-
-               if Data.Library then
-                  Get_Name_String (Data.Name);
-                  Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
-
-                  if Is_Regular_File (Name_Buffer (1 .. Name_Len)) then
-                     declare
-                        Name : constant String := Name_Buffer (1 .. Name_Len);
-
-                     begin
-                        Delete (Obj_Dir, Name);
-                     end;
-                  end if;
-               end if;
-
                --  For non library project, clean the global archive and its
                --  dependency file if they exist.
 
