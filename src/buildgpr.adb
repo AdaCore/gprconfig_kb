@@ -3244,6 +3244,32 @@ package body Buildgpr is
             end loop;
          end;
 
+         Put_Line (Exchange_File, Library_Label (Compilers));
+
+         declare
+            Lang : Language_Index := Data.First_Language_Processing;
+            Lang_Data : Language_Data;
+
+         begin
+            while Lang /= No_Language_Index loop
+               Lang_Data := Project_Tree.Languages_Data.Table (Lang);
+
+               if Lang_Data.Config.Compiler_Driver_Path /= null then
+                  Put_Line (Exchange_File, Get_Name_String (Lang_Data.Name));
+                  Put_Line
+                    (Exchange_File, Lang_Data.Config.Compiler_Driver_Path.all);
+
+               elsif Lang_Data.Config.Compiler_Driver /= No_File then
+                  Put_Line (Exchange_File, Get_Name_String (Lang_Data.Name));
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (Lang_Data.Config.Compiler_Driver));
+               end if;
+
+               Lang := Lang_Data.Next;
+            end loop;
+         end;
+
          if Data.Library_Kind = Static then
             Put_Line (Exchange_File, Library_Label (Static));
 

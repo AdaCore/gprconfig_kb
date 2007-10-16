@@ -82,6 +82,7 @@ package Gprexch is
       Imported_Libraries,
       Runtime_Library_Dir,
       Driver_Name,
+      Compilers,
       Toolchain_Version,
       Archive_Builder,
       Archive_Indexer,

@@ -28,8 +28,8 @@
 --  file. gprlib gets it parameters from a text file and give back results
 --  through the same text file.
 
-with Ada.Text_IO;             use Ada.Text_IO;
-with Ada.Command_Line;        use Ada.Command_Line;
+with Ada.Text_IO;       use Ada.Text_IO;
+with Ada.Command_Line;  use Ada.Command_Line;
 
 with ALI;
 with Csets;
@@ -37,18 +37,19 @@ with Csets;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
-with Gprexch;   use Gprexch;
-with Gpr_Util;  use Gpr_Util;
+with Gprexch;          use Gprexch;
+with Gpr_Util;         use Gpr_Util;
 with Hostparm;
-with Makeutl;   use Makeutl;
-with Namet;     use Namet;
-with Opt;       use Opt;
+with Makeutl;          use Makeutl;
+with Namet;            use Namet;
+with Opt;              use Opt;
 with Osint;
 with Prj;
 with Snames;
-with Switch;    use Switch;
+with Switch;           use Switch;
+with System.Case_Util; use System.Case_Util;
 with Table;
-with Types;     use Types;
+with Types;            use Types;
 
 procedure Gprlib is
 
@@ -303,11 +304,11 @@ procedure Gprlib is
 
    Driver_Name : Name_Id := No_Name;
 
-   Gnatbind_Name : constant String_Access := Osint.Program_Name ("gnatbind");
+   Gnatbind_Name : String_Access := Osint.Program_Name ("gnatbind");
 
    Gnatbind_Path : String_Access;
 
-   Compiler_Name : constant String_Access := Osint.Program_Name ("gcc");
+   Compiler_Name : String_Access := Osint.Program_Name ("gcc");
 
    Compiler_Path : String_Access;
 
@@ -860,6 +861,40 @@ begin
                   Name_Len := Last;
                   Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
                   Driver_Name := Name_Find;
+
+               when Gprexch.Compilers =>
+                  if End_Of_File (IO_File) then
+                     Osint.Fail
+                       ("no compiler specified for language ",
+                        Line (1 .. Last));
+
+                  else
+                     To_Lower (Line (1 .. Last));
+
+                     if Line (1 .. Last) = "ada" then
+                        Get_Line (IO_File, Line, Last);
+
+                        if Last = 0 then
+                           Osint.Fail
+                             ("Ada compiler name cannot be empty");
+
+                        else
+                           Compiler_Name :=
+                             new String'(Line (1 .. Last));
+
+                           if Last > 3 and then
+                              Line (Last - 2 .. Last) = "gcc"
+                           then
+                              Gnatbind_Name :=
+                                new String'(Line (1 .. Last - 3) &
+                                            "gnatbind");
+                           end if;
+                        end if;
+
+                     else
+                        Skip_Line (IO_File);
+                     end if;
+                  end if;
 
                when Toolchain_Version =>
                   if End_Of_File (IO_File) then
@@ -1457,11 +1492,6 @@ begin
          Options_Table.Append (Library_Options_Table.Table (J));
       end loop;
 
-      if Path_Option /= null and then Rpath /= null then
-         Options_Table.Append
-           (new String'(Path_Option.all & Rpath (1 .. Rpath_Last)));
-      end if;
-
       --  If Ada is used and we don't already know yet that libgnarl is needed,
       --  look for s-osinte.ads in all the ALI files. If found in at least one,
       --  then libgnarl is needed.
@@ -1506,11 +1536,20 @@ begin
          Options_Table.Append
            (new String'("-L" & Runtime_Library_Dir.all));
 
+         if Path_Option /= null then
+            Add_Rpath (Runtime_Library_Dir.all);
+         end if;
+
          if Libgnarl_Needed then
             Options_Table.Append (Libgnarl);
          end if;
 
          Options_Table.Append (Libgnat);
+      end if;
+
+      if Path_Option /= null and then Rpath /= null then
+         Options_Table.Append
+           (new String'(Path_Option.all & Rpath (1 .. Rpath_Last)));
       end if;
 
       Build_Shared_Lib;
