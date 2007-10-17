@@ -102,7 +102,7 @@
    for Library_Version_Switches use ("-Wl,-soname,");
 
    for Shared_Library_Suffix use ".so";
-   for Library_Auto_init_Supported use "true";
+   for Library_Auto_Init_Supported use "true";
    for Run_Path_Option  use ("-Wl,-rpath,");
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
@@ -122,7 +122,7 @@
    for Library_Version_Switches use ("-Wl,-h,");
 
    for Shared_Library_Suffix use ".so";
-   for Library_Auto_init_Supported use "true";
+   for Library_Auto_Init_Supported use "true";
    for Run_Path_Option  use ("-Wl,-R,");
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
@@ -140,7 +140,7 @@
    for Shared_Library_Minimum_Switches use ("-shared");
    for Library_Version_Switches use ("-Wl,-soname,");
    for Shared_Library_Suffix use ".dll";
-   for Library_Auto_init_Supported use "true";
+   for Library_Auto_Init_Supported use "true";
     </config>
   </configuration>
 
@@ -166,7 +166,7 @@
    for Symbolic_Link_Supported use "false";
    for Library_Major_Minor_Id_Supported use "false";
    for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
-   for Library_Auto_init_Supported use "true";
+   for Library_Auto_Init_Supported use "true";
     </config>
   </configuration>
 
