@@ -349,7 +349,7 @@ package body GprConfig.Knowledge is
          --  command was found on the PATH. In such a case, which check on the
          --  PATH ourselves to find it.
 
-         if Tmp = "" or else Tmp = "./" then
+         if Tmp = "" or else Tmp = "./" or else Tmp = ".\" then
             Tmp2 := Locate_Exec_On_Path (Ada.Command_Line.Command_Name);
             if GNAT.Strings."=" (Tmp2, null) then
                return Tmp;
