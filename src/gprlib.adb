@@ -88,6 +88,9 @@ procedure Gprlib is
    Exchange_File_Name : String_Access;
    --  Name of the exchange file
 
+   GNAT_Version : String_Access := new String'("000");
+   --  The version of GNAT, coming from the Toolchain_Version for Ada
+
    S_Osinte_Ads : File_Name_Type := No_File;
    --  Name_Id for "s-osinte.ads"
 
@@ -908,6 +911,7 @@ begin
                      if Last > 5 and then Line (1 .. 5) = "GNAT " then
                         Libgnat := new String'("-lgnat-" & Line (6 .. Last));
                         Libgnarl := new String'("-lgnarl-" & Line (6 .. Last));
+                        GNAT_Version := new String'(Line (6 .. Last));
                      end if;
 
                   else
@@ -1062,7 +1066,10 @@ begin
            ("b__" & Library_Name.all & ".adb", Bind_Options, Last_Bind_Option);
          Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
 
-         if Auto_Init and then SALs_Use_Constructors then
+         if Auto_Init and then
+           SALs_Use_Constructors and then
+           GNAT_Version.all >= "5.04"
+         then
             Add (Auto_Initialize, Bind_Options, Last_Bind_Option);
          end if;
 
