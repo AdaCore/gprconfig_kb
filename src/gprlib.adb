@@ -885,11 +885,17 @@ begin
                            Compiler_Name :=
                              new String'(Line (1 .. Last));
 
-                           if Last > 3 and then
-                              Line (Last - 2 .. Last) = "gcc"
+                           if Last > 3
+                             and then Line (Last - 2 .. Last) = "gcc"
                            then
                               Gnatbind_Name :=
                                 new String'(Line (1 .. Last - 3) &
+                                            "gnatbind");
+                           elsif Last > 7
+                             and then Line (Last - 6 .. Last) = "gcc.exe"
+                           then
+                              Gnatbind_Name :=
+                                new String'(Line (1 .. Last - 7) &
                                             "gnatbind");
                            end if;
                         end if;
