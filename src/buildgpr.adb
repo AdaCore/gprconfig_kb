@@ -4220,6 +4220,8 @@ package body Buildgpr is
          then
             Queue.Extract (Source_File_Name, Source_Identity, Source_Project);
 
+            Source_Project := Ultimate_Extending_Project_Of (Source_Project);
+
             Change_To_Object_Directory (Source_Project);
 
             Initialize_Source_Record (Source_Identity, Need_Object => True);
@@ -6586,7 +6588,8 @@ package body Buildgpr is
                and then
                Src_Data.Other_Part /= No_Source)))
          then
-            Project_Tree.Sources.Table (Source).Get_Object := False;
+            Src_Data.Get_Object := False;
+            Project_Tree.Sources.Table (Source) := Src_Data;
             return;
          end if;
 
@@ -7880,7 +7883,6 @@ package body Buildgpr is
 
                      if Stamp /= Empty_Time_Stamp then
                         Dep_Src := Project_Tree.First_Source;
---                        Found := False;
 
                         while Dep_Src /= No_Source loop
                            Initialize_Source_Record (Dep_Src);
@@ -7915,8 +7917,6 @@ package body Buildgpr is
                                  return True;
 
                               else
---                                 Found := True;
-
                                  for J in Projects'Range loop
                                     if Project_Tree.Sources.Table
                                       (Dep_Src).Project = Projects (J)
@@ -7938,15 +7938,6 @@ package body Buildgpr is
                              Project_Tree.Sources.Table
                                (Dep_Src).Next_In_Sources;
                         end loop;
-
---                          if not Found then
---                             if Verbose_Mode then
---                                Write_Str ("    -> could not find ");
---                                Write_Line (Get_Name_String (Sfile));
---                             end if;
---
---                             return True;
---                          end if;
                      end if;
                   end loop;
                end;
