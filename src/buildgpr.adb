@@ -3894,7 +3894,7 @@ package body Buildgpr is
 
       Mains.Reset;
 
-      while Closure_Needed loop
+      loop
          declare
             Display_Main : constant String := Mains.Next_Main;
             Main         : String := Display_Main;
@@ -3920,11 +3920,6 @@ package body Buildgpr is
             Source := Main_Sources.Get (Main_Id);
 
             if Source /= No_Source then
-               if Current_Verbosity = High then
-                  Write_Str ("Looking for roots for ");
-                  Write_Line (Display_Main);
-               end if;
-
                Src_Data := Project_Tree.Sources.Table (Source);
                Project := Src_Data.Project;
                Queue.Insert
@@ -3932,118 +3927,130 @@ package body Buildgpr is
                   Source_Identity  => Source,
                   Source_Project   => Project);
 
-               Data := Project_Tree.Projects.Table (Project);
-               Root_Arr :=
-                 Prj.Util.Value_Of
-                   (Name      => Name_Roots,
-                    In_Arrays => Data.Decl.Arrays,
-                    In_Tree   => Project_Tree);
-               Roots :=
-                 Prj.Util.Value_Of
-                   (Index     => Name_Id (Main_Id),
-                    Src_Index => 0,
-                    In_Array  => Root_Arr,
-                    In_Tree   => Project_Tree);
+               --  Look for roots if closure is needed
 
-               if Roots = Nil_Variable_Value then
+               if Closure_Needed then
+                  if Current_Verbosity = High then
+                     Write_Str ("Looking for roots for ");
+                     Write_Line (Display_Main);
+                  end if;
+
+                  Data := Project_Tree.Projects.Table (Project);
+                  Root_Arr :=
+                    Prj.Util.Value_Of
+                      (Name      => Name_Roots,
+                       In_Arrays => Data.Decl.Arrays,
+                       In_Tree   => Project_Tree);
                   Roots :=
                     Prj.Util.Value_Of
-                      (Index                  => Src_Data.Language_Name,
-                       Src_Index              => 0,
-                       In_Array               => Root_Arr,
-                       In_Tree                => Project_Tree,
-                       Force_Lower_Case_Index => True);
-               end if;
+                      (Index     => Name_Id (Main_Id),
+                       Src_Index => 0,
+                       In_Array  => Root_Arr,
+                       In_Tree   => Project_Tree);
 
-               if Roots = Nil_Variable_Value then
-                  if Current_Verbosity = High then
-                     Write_Line ("   -> no roots declared");
+                  if Roots = Nil_Variable_Value then
+                     Roots :=
+                       Prj.Util.Value_Of
+                         (Index                  => Src_Data.Language_Name,
+                          Src_Index              => 0,
+                          In_Array               => Root_Arr,
+                          In_Tree                => Project_Tree,
+                          Force_Lower_Case_Index => True);
                   end if;
 
-                  if Src_Data.Lang_Kind /= Unit_Based then
-                     Closure_Needed := False;
-                  end if;
+                  if Roots = Nil_Variable_Value then
+                     if Current_Verbosity = High then
+                        Write_Line ("   -> no roots declared");
+                     end if;
 
-               else
-                  --  First count the roots
+                     --  If a non Ada main has no roots, then all sources need
+                     --  to be compiled, so no need to check for closure.
 
-                  Nmb_Root := 0;
-                  List := Roots.Values;
-                  while List /= Nil_String loop
-                     Elem := Project_Tree.String_Elements.Table (List);
-                     Nmb_Root := Nmb_Root + 1;
-                     List := Elem.Next;
-                  end loop;
+                     if Src_Data.Lang_Kind /= Unit_Based then
+                        Closure_Needed := False;
+                     end if;
 
-                  --  Now get the source id of the roots
-                  Root_List := new Root_Array (1 .. Nmb_Root);
+                  else
+                     --  First count the roots
 
-                  if Nmb_Root /= 0 then
-                     List := Roots.Values;
                      Nmb_Root := 0;
+                     List := Roots.Values;
                      while List /= Nil_String loop
                         Elem := Project_Tree.String_Elements.Table (List);
                         Nmb_Root := Nmb_Root + 1;
-                        Get_Name_String (Elem.Value);
-                        To_Lower (Name_Buffer (1 .. Name_Len));
-                        Unit_Name := Name_Find;
-
-                        Root_Source := Project_Tree.First_Source;
-                        while Root_Source /= No_Source loop
-                           Src_Data :=
-                             Project_Tree.Sources.Table (Root_Source);
-
-                           if Src_Data.Unit = Unit_Name then
-                              case Src_Data.Kind is
-                              when Impl =>
-                                 null;
-
-                              when Spec =>
-                                 if Src_Data.Other_Part /= No_Source then
-                                    Root_Source := Src_Data.Other_Part;
-                                 end if;
-
-                              when Sep =>
-                                 Root_Source := No_Source;
-                              end case;
-
-                              exit;
-                           end if;
-
-                           Root_Source := Src_Data.Next_In_Sources;
-                        end loop;
-
-                        if Root_Source = No_Source then
-                           --  report error
-                           Error_Msg
-                             ("Unit " & Get_Name_String (Unit_Name) &
-                              " does not exist",
-                              Roots.Location);
-
-                        else
-                           Queue.Insert
-                             (Source_File_Name => Src_Data.File,
-                              Source_Identity  => Root_Source,
-                              Source_Project   => Src_Data.Project);
-
-                           if Current_Verbosity = High then
-                              Write_Str ("   -> ");
-                              Write_Line
-                                (Get_Name_String
-                                   (Project_Tree.Sources.Table
-                                      (Root_Source).Display_File));
-                           end if;
-                        end if;
-
-                        Root_List (Nmb_Root) := Root_Source;
                         List := Elem.Next;
                      end loop;
 
-                  elsif Current_Verbosity = High then
-                     Write_Line ("   -> no roots");
-                  end if;
+                     --  Now get the source id of the roots
+                     Root_List := new Root_Array (1 .. Nmb_Root);
 
-                  Root_Sources.Set (Main_Id, Root_List);
+                     if Nmb_Root /= 0 then
+                        List := Roots.Values;
+                        Nmb_Root := 0;
+                        while List /= Nil_String loop
+                           Elem := Project_Tree.String_Elements.Table (List);
+                           Nmb_Root := Nmb_Root + 1;
+                           Get_Name_String (Elem.Value);
+                           To_Lower (Name_Buffer (1 .. Name_Len));
+                           Unit_Name := Name_Find;
+
+                           Root_Source := Project_Tree.First_Source;
+                           while Root_Source /= No_Source loop
+                              Src_Data :=
+                                Project_Tree.Sources.Table (Root_Source);
+
+                              if Src_Data.Unit = Unit_Name then
+                                 case Src_Data.Kind is
+                                 when Impl =>
+                                    null;
+
+                                 when Spec =>
+                                    if Src_Data.Other_Part /= No_Source then
+                                       Root_Source := Src_Data.Other_Part;
+                                    end if;
+
+                                 when Sep =>
+                                    Root_Source := No_Source;
+                                 end case;
+
+                                 exit;
+                              end if;
+
+                              Root_Source := Src_Data.Next_In_Sources;
+                           end loop;
+
+                           if Root_Source = No_Source then
+                              --  report error
+                              Error_Msg
+                                ("Unit " & Get_Name_String (Unit_Name) &
+                                 " does not exist",
+                                 Roots.Location);
+
+                           else
+                              Queue.Insert
+                                (Source_File_Name => Src_Data.File,
+                                 Source_Identity  => Root_Source,
+                                 Source_Project   => Src_Data.Project);
+
+                              if Current_Verbosity = High then
+                                 Write_Str ("   -> ");
+                                 Write_Line
+                                   (Get_Name_String
+                                      (Project_Tree.Sources.Table
+                                         (Root_Source).Display_File));
+                              end if;
+                           end if;
+
+                           Root_List (Nmb_Root) := Root_Source;
+                           List := Elem.Next;
+                        end loop;
+
+                     elsif Current_Verbosity = High then
+                        Write_Line ("   -> no roots");
+                     end if;
+
+                     Root_Sources.Set (Main_Id, Root_List);
+                  end if;
                end if;
             end if;
          end;
