@@ -5,17 +5,47 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" language="C" />
-       <compiler name="CYGMING-GCC" language="C" />
+       <compiler language="C" />
      </compilers>
      <config>
    package Naming is
       for Spec_Suffix ("C") use ".h";
       for Body_Suffix ("C") use ".c";
    end Naming;
+     </config>
+   </configuration>
 
+   <configuration>
+     <compilers>
+       <compiler name="GCC" language="C" />
+       <compiler name="CYGMING-GCC" language="C" />
+     </compilers>
+     <config>
    package Compiler is
       for Driver              ("C") use "${PATH}${PREFIX}gcc";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS" language="C" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver              ("C") use "${PATH}cc${PREFIX}";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC" language="C" />
+       <compiler name="CYGMING-GCC" language="C" />
+       <compiler name="GCC-WRS" language="C" />
+     </compilers>
+     <config>
+   package Compiler is
       for Required_Switches   ("C") use ("-c", "-x", "c");
       for Dependency_Switches ("C") use ("-Wp,-MMD,");
       for Include_Path        ("C") use "CPATH";
