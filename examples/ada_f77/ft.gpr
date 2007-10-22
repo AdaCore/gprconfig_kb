@@ -1,7 +1,7 @@
 with "fm";
-project ft1 is
+project ft is
    for Languages use ("Fortran");
    for Main use ("ess.f");
-   for Object_Dir use "fobj1";
-end ft1;
+   for Object_Dir use "fobj";
+end ft;
 

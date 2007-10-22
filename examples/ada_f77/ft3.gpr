@@ -1,7 +1,0 @@
-with "fm_dsal";
-project ft3 is
-   for Languages use ("Fortran");
-   for Main use ("ess2.f");
-   for Object_Dir use "fobj3";
-end ft3;
-
