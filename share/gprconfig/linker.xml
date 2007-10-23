@@ -146,7 +146,7 @@
 
   <!--  Cygming -->
   <configuration>
-    <compilers><compiler name="CYGMING-GCC"/></compilers>
+    <compilers><compiler name="GCC-CYGMING"/></compilers>
     <config>
    package Linker is
        for Required_Switches use ("-mno-cygwin");

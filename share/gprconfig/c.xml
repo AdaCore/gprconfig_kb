@@ -18,7 +18,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
-       <compiler name="CYGMING-GCC" language="C" />
+       <compiler name="GCC-CYGMING" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -41,7 +41,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
-       <compiler name="CYGMING-GCC" language="C" />
+       <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-WRS" language="C" />
      </compilers>
      <config>
@@ -75,7 +75,7 @@
   <!-- for cygming we make sure that the option -mno-cygwin is used -->
    <configuration>
      <compilers>
-       <compiler name="CYGMING-GCC" language="C" />
+       <compiler name="GCC-CYGMING" language="C" />
      </compilers>
      <config>
    package Compiler is
