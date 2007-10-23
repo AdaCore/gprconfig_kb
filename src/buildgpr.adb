@@ -105,6 +105,12 @@ package body Buildgpr is
 
    Closure_Needed : Boolean := False;
 
+   Unique_Compile : Boolean := False;
+   --  Set to True if -u or -U or a project file with no main is used
+
+   Unique_Compile_All_Projects : Boolean := False;
+   --  Set to True if -U is used
+
    Naming_String                : aliased String := "naming";
    Language_Processing_String   : aliased String := "language_processing";
    Builder_String               : aliased String := "builder";
@@ -6169,7 +6175,33 @@ package body Buildgpr is
 
       Queue.Init;
 
-      if Mains.Number_Of_Mains = 0 and then
+      --  If -u or -U is specified on the command line, disregard any -c, -b
+      --  or -l switch: only perform compilation.
+
+      if Unique_Compile then
+         All_Phases := False;
+         Compile_Only := True;
+         Bind_Only := False;
+         Link_Only := False;
+         Closure_Needed := False;
+
+         --  If there are mains specified on the command line, only compile
+         --  these sources.
+
+         if Mains.Number_Of_Mains > 0 then
+            Check_Mains;
+
+         --  Otherwise compile all the sources of the main project (-u) or
+         --  all the sources of all projects (-U).
+
+         else
+            Queue.Insert_Project_Sources
+              (Main_Project,
+               All_Projects => Unique_Compile_All_Projects or Recursive,
+               Unit_Based   => True);
+         end if;
+
+      elsif Mains.Number_Of_Mains = 0 and then
         (not All_Phases) and then
         Compile_Only and then
         (not Bind_Only)
@@ -8623,6 +8655,13 @@ package body Buildgpr is
                Register_Command_Line_Option (Check_Switches_Option);
             end if;
 
+         elsif Command_Line and then Arg = "-u" then
+            Unique_Compile := True;
+
+         elsif Command_Line and then Arg = "-U" then
+            Unique_Compile_All_Projects := True;
+            Unique_Compile := True;
+
          elsif Arg = "-v" then
             Verbose_Mode := True;
             Quiet_Output := False;
@@ -8900,6 +8939,18 @@ package body Buildgpr is
          --  Line for -s
 
          Write_Str ("  -s       Recompile if compiler switches have changed");
+         Write_Eol;
+
+         --  Line for -u
+
+         Write_Str
+           ("  -u       Unique compilation, only compile the given files");
+         Write_Eol;
+
+         --  Line for -U
+
+         Write_Str
+           ("  -U       Unique compilation for all sources of all projects");
          Write_Eol;
 
          --  Line for -v
