@@ -25,6 +25,17 @@
      </config>
    </configuration>
 
+   <!--  Use Windriver archiver -->
+   <configuration>
+     <targets>
+       <target name="ppc-vx6.*" />
+     </targets>
+     <config>
+   for Archive_Builder  use ("arppc", "cr");
+   for Archive_Indexer  use ("ranlibppc");
+     </config>
+   </configuration>
+
    <!-- vx6/rtp executables have a .vxe extension and need -mrtp -->
    <configuration>
      <compilers>

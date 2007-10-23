@@ -133,7 +133,7 @@
  <!--    mingw-cygwin compiler
   -->
   <compiler_description>
-    <name>CYGMING-GCC</name>
+    <name>GCC-CYGMING</name>
     <executable>gcc</executable>
     <version>
       <external regexp="\(GCC\) (\S+).*\(cygming special\)" group="1">gcc --version</external>
