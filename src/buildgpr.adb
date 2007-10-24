@@ -3083,53 +3083,45 @@ package body Buildgpr is
          loop
             Get_Line (Exchange_File, Name_Buffer, Name_Len);
 
-            if Name_Buffer (1) = '[' then
-               Library_Needs_To_Be_Built := True;
+            exit when Name_Buffer (1) = '[';
 
+            Object_Path := Name_Find;
+
+            Library_Needs_To_Be_Built := True;
+
+            if End_Of_File (Exchange_File) then
                if Verbose_Mode then
                   Write_Line
                     ("      -> library exchange file has wrong format");
                end if;
 
             else
-               Object_Path := Name_Find;
+               Get_Line (Exchange_File, Name_Buffer, Name_Len);
 
-               Library_Needs_To_Be_Built := True;
+               if Name_Len = Time_Stamp_Length then
+                  Object_TS :=
+                    Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
 
-               if End_Of_File (Exchange_File) then
-                  if Verbose_Mode then
+                  for Index in 1 .. Library_Objs.Last loop
+                     if Object_Path = Library_Objs.Table (Index).Path then
+                        Library_Needs_To_Be_Built :=
+                          Object_TS /= Library_Objs.Table (Index).TS;
+                        Library_Objs.Table (Index).Known := True;
+                        exit;
+                     end if;
+                  end loop;
+
+                  if Library_Needs_To_Be_Built and then Verbose_Mode then
+                     Write_Str ("      -> object file ");
+                     Write_Str (Get_Name_String (Object_Path));
                      Write_Line
-                       ("      -> library exchange file has wrong format");
+                       (" does not exist or have wrong time stamp");
                   end if;
 
                else
-                  Get_Line (Exchange_File, Name_Buffer, Name_Len);
-
-                  if Name_Len = Time_Stamp_Length then
-                     Object_TS :=
-                       Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
-
-                     for Index in 1 .. Library_Objs.Last loop
-                        if Object_Path = Library_Objs.Table (Index).Path then
-                           Library_Needs_To_Be_Built :=
-                             Object_TS /= Library_Objs.Table (Index).TS;
-                           Library_Objs.Table (Index).Known := True;
-                           exit;
-                        end if;
-                     end loop;
-
-                     if Library_Needs_To_Be_Built and then Verbose_Mode then
-                        Write_Str ("      -> object file ");
-                        Write_Str (Get_Name_String (Object_Path));
-                        Write_Line
-                          (" does not exist or have wrong time stamp");
-                     end if;
-
-                  else
-                     if Verbose_Mode then
-                        Write_Line
-                          ("      -> library exchange file has wrong format");
-                     end if;
+                  if Verbose_Mode then
+                     Write_Line
+                       ("      -> library exchange file has wrong format");
                   end if;
                end if;
             end if;
@@ -6646,19 +6638,21 @@ package body Buildgpr is
 
             Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
 
-            declare
-               Dep_Path : constant String :=
-                            Normalize_Pathname
-                              (Name      =>
-                                 Get_Name_String (Src_Data.Dep_Name),
-                               Directory =>
-                                 Get_Name_String (Data.Object_Directory));
+            if Src_Data.Dependency /= None then
+               declare
+                  Dep_Path : constant String :=
+                               Normalize_Pathname
+                                 (Name      =>
+                                    Get_Name_String (Src_Data.Dep_Name),
+                                  Directory =>
+                                    Get_Name_String (Data.Object_Directory));
 
-            begin
-               Src_Data.Dep_Path := Create_Name (Dep_Path);
-            end;
+               begin
+                  Src_Data.Dep_Path := Create_Name (Dep_Path);
+               end;
 
-            Src_Data.Dep_TS := File_Stamp (Src_Data.Dep_Path);
+               Src_Data.Dep_TS := File_Stamp (Src_Data.Dep_Path);
+            end if;
 
             declare
                Switches_Path : constant String :=
@@ -7448,8 +7442,8 @@ package body Buildgpr is
 
       Object_Path   : constant String :=
                         Get_Name_String (Src_Data.Object_Path);
-      Dep_Name      : constant String :=
-                        Get_Name_String (Src_Data.Dep_Path);
+      Dep_Name      : String_Access;
+
       Switches_Name : constant String :=
                         Get_Name_String (Src_Data.Switches_Path);
 
@@ -7508,30 +7502,35 @@ package body Buildgpr is
          return True;
       end if;
 
-      --  If there is no dependency file, then the source needs to be
-      --  recompiled and the dependency file need to be created.
+      if Src_Data.Dependency /= None then
 
-      if Src_Data.Dep_TS = Empty_Time_Stamp then
-         if Verbose_Mode then
-            Write_Str  ("      -> dependency file ");
-            Write_Str  (Dep_Name);
-            Write_Line (" does not exist");
+         Dep_Name := new String'(Get_Name_String (Src_Data.Dep_Path));
+
+         --  If there is no dependency file, then the source needs to be
+         --  recompiled and the dependency file need to be created.
+
+         if Src_Data.Dep_TS = Empty_Time_Stamp then
+            if Verbose_Mode then
+               Write_Str  ("      -> dependency file ");
+               Write_Str  (Dep_Name.all);
+               Write_Line (" does not exist");
+            end if;
+
+            return True;
          end if;
 
-         return True;
-      end if;
+         --  The source needs to be recompiled if the source has been modified
+         --  after the dependency file has been created.
 
-      --  The source needs to be recompiled if the source has been modified
-      --  after the dependency file has been created.
+         if Src_Data.Dep_TS < Src_Data.Source_TS then
+            if Verbose_Mode then
+               Write_Str  ("      -> dependency file ");
+               Write_Str  (Dep_Name.all);
+               Write_Line (" has time stamp earlier than source");
+            end if;
 
-      if  Src_Data.Dep_TS < Src_Data.Source_TS then
-         if Verbose_Mode then
-            Write_Str  ("      -> dependency file ");
-            Write_Str  (Dep_Name);
-            Write_Line (" has time stamp earlier than source");
+            return True;
          end if;
-
-         return True;
       end if;
 
       --  If there is no switches file, then the source needs to be
@@ -7565,7 +7564,7 @@ package body Buildgpr is
             null;
 
          when Makefile =>
-            Open (Dep_File, Dep_Name);
+            Open (Dep_File, Dep_Name.all);
 
             --  If dependency file cannot be open, we need to recompile
             --  the source.
@@ -7573,7 +7572,7 @@ package body Buildgpr is
             if not Is_Valid (Dep_File) then
                if Verbose_Mode then
                   Write_Str  ("      -> could not open dependency file ");
-                  Write_Line (Dep_Name);
+                  Write_Line (Dep_Name.all);
                end if;
 
                return True;
@@ -7614,7 +7613,7 @@ package body Buildgpr is
 
                      if Verbose_Mode then
                         Write_Str  ("      -> dependency file ");
-                        Write_Str  (Dep_Name);
+                        Write_Str  (Dep_Name.all);
                         Write_Line (" is empty");
                      end if;
 
@@ -7638,7 +7637,7 @@ package body Buildgpr is
                then
                   if Verbose_Mode then
                      Write_Str  ("      -> dependency file ");
-                     Write_Str  (Dep_Name);
+                     Write_Str  (Dep_Name.all);
                      Write_Line (" has wrong format");
                   end if;
 
@@ -7676,7 +7675,7 @@ package body Buildgpr is
                            if Start = Last then
                               if Verbose_Mode then
                                  Write_Str  ("      -> dependency file ");
-                                 Write_Str  (Dep_Name);
+                                 Write_Str  (Dep_Name.all);
                                  Write_Line (" has wrong format");
                               end if;
 
