@@ -26,6 +26,7 @@
       <external regexp="^cc.+ \(GCC\) ([0-9.]+) \(Wind River" group="1">cc${PREFIX} --version</external>
     </version>
     <languages>C</languages>
+    <runtimes>kernel,rtp</runtimes>
     <target>
       <external regexp="[^\r\n]+">cc${PREFIX} -dumpmachine</external>
     </target>
