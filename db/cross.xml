@@ -13,10 +13,35 @@
      </config>
    </configuration>
 
+   <!-- Import WIND_BASE on VxWorks targets.  -->
+   <configuration>
+     <targets>
+       <target name="powerpc-wrs-vxworks.*" />
+       <target name="ppc-vx6.*" />
+     </targets>
+     <config>
+   Wind_Base := external ("WIND_BASE");
+     </config>
+   </configuration>
+
+   <!-- Forbid mixing kernel and rtp.  -->
+   <configuration>
+     <compilers><compiler name="GNAT" runtime="kernel" /></compilers>
+     <compilers><compiler name="GCC-WRS" runtime="rtp" /></compilers>
+     <config></config>
+   </configuration>
+
+   <configuration>
+     <compilers><compiler name="GNAT" runtime="rtp" /></compilers>
+     <compilers><compiler name="GCC-WRS" runtime="kernel" /></compilers>
+     <config></config>
+   </configuration>
+
    <!-- vx6/kernel executables have a .out extension -->
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="kernel" />
+       <compiler name="GCC-WRS" runtime="kernel" />
      </compilers>
      <config>
    package Builder is
@@ -40,12 +65,20 @@
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="rtp" />
+       <compiler name="GCC-WRS" runtime="rtp" />
      </compilers>
      <config>
    package Builder is
       for Executable_Suffix use ".vxe";
    end Builder;
+     </config>
+   </configuration>
 
+   <configuration>
+     <compilers>
+       <compiler name="GNAT" runtime="rtp" />
+     </compilers>
+     <config>
    package Compiler is
       for Required_Switches ("Ada") use
         Compiler'Required_Switches ("Ada") &amp; ("-mrtp", "--RTS=$RUNTIME");
@@ -55,6 +88,32 @@
       for Required_Switches ("Ada") use
         Binder'Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
    end Binder;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS" runtime="rtp" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Required_Switches ("C") use
+        Compiler'Required_Switches ("C") &amp; ("-mrtp")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS" runtime="kernel" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Required_Switches ("C") use
+        Compiler'Required_Switches ("C")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h");
+   end Compiler;
      </config>
    </configuration>
 
@@ -98,6 +157,9 @@
        <target name=".*-wrs-vxworks.*" />
        <target name="powerpc-elf" />
      </targets>
+     <compilers>
+       <compiler name="GNAT" />
+     </compilers>
      <config>
    package Binder is
       for Required_Switches ("Ada") use
