@@ -375,6 +375,8 @@ package body Cleangpr is
                   end if;
                end loop;
 
+               Ada.Text_IO.Close (Exchange_File);
+
                if not Do_Nothing then
                   Set_Writable (Library_Exchange_File_Name);
                end if;
