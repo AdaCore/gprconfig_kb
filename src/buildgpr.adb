@@ -1660,8 +1660,9 @@ package body Buildgpr is
       --  Build the libraries, if any
 
       for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-         if Project_Tree.Projects.Table (Proj).Library and then
-           Project_Tree.Projects.Table (Proj).Extended_By = No_Project
+         if Project_Tree.Projects.Table (Proj).Library
+           and then Project_Tree.Projects.Table (Proj).Extended_By = No_Project
+           and then not Project_Tree.Projects.Table (Proj).Externally_Built
          then
             Build_Library (Proj);
 
