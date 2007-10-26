@@ -1,0 +1,8 @@
+with "extern_lib.gpr";
+project Main4 is
+   for Languages    use ("C", "Ada");
+   for Main         use ("c_main.c");
+   package Builder is
+      for Executable ("c_main.c") use "main4";
+   end Builder;
+end Main4;
