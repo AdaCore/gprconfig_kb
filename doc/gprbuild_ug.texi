@@ -61,6 +61,7 @@ AdaCore@*
 Introduction
 
 Guided Tour
+* Configuration::
 * First Steps::
 * Subsystems::
 * Project Extensions::
@@ -173,6 +174,7 @@ instance it can be called from within a Makefile.
 @c  --------------------------------------------------------------------------
 
 @menu
+* Configuration::
 * First Steps::
 * Subsystems::
 * Project Extensions::
@@ -186,9 +188,12 @@ multi-language builds to some of the most advanced capabilities of
 from the examples of the gprbuild package which are installed on your
 system in <prefix>/share/examples/gprbuild/.
 
+@node Configuration
+@section Configuration
+
 GPRbuild needs one configuration file describing the languages and
 toolchains to be used as well as project files describing the
-characteristics of the user project. In simple cases, the configuration
+characteristics of the user project. In most usual cases, the configuration
 file can be created automatically by GPRbuild based on the languages
 defined in users projects and the compilers on his path. There are more
 involved situations such as cross-compilation,
@@ -196,8 +201,68 @@ rich environments with different compilers for the same language, etc.
 where it may be needed to control precisely the generation of
 the desired configuration of toolsets. A tool, @code{gprconfig}, described in a
 latter chapter, offers this capability. In the context of this
-guided tour, autoconfiguration is appropriate and thus we will not discuss
-here issues related to configuration.
+guided tour, most of the examples can use autoconfiguration, so there
+is no need to describe all the configuration possibilities at this stage.
+A few basic concepts will suffice.
+
+GPRbuild will start its build process by trying to locate a configuration
+file called default.cgpr. If such a file is not available or if the option
+@code{--autoconf=xxx} is used, gprbuild will create its own configuration
+file suitable for native development and assuming that there are known
+compilers on the user path for each of the necessary languages. It is
+preferable and often necessary to generate manually ones own
+configuration file when:
+@itemize
+@item using cross compilers
+@item using a specific Ada runtime (e.g. --RTS=sjlj)
+@item working with compilers not in the path or not first in the path
+@item autoconfiguration does not give the expected results
+@end itemize
+
+GPRconfig provides several ways of generating configuration files. By
+default, an simple interactive mode lists all the known compilers for all
+known languages, the user can select a compiler for each of the languages,
+once a compiler has been selected, only compatible compilers for other
+languages are proposed. Here are a few examples of GPRconfig invocation:
+@itemize
+@item
+@smallexample
+ gprconfig
+@end smallexample
+This triggers the interactive mode. The configuration will be generated
+in GPRbuild default location:
+@code{<gprbuild_install_root>/share/gpr/default.cgpr)}
+@item
+@smallexample
+ gprconfig -o path/my_config.cgpr
+ gprbuild --config=path/my_config.cgpr
+@end smallexample
+This triggers also the interactive mode but the resulting configuration
+file has the name and path selected by the user. The second command shows
+how gprbuild can make use of this specific configuration file instead of
+the default one.
+@item
+@smallexample
+ gprconfig --target=ppc-elf
+@end smallexample
+This triggers again the interactive mode and only the relevant
+cross compilers for target ppc-elf will be proposed.
+end itemize
+@item
+@smallexample
+ gprconfig --config=Ada --config=C --batch
+@end smallexample
+This triggers the batch mode and will generate at the default location
+a configuration file using the first native Ada and C compilers on the
+path.
+@item
+@smallexample
+ gprconfig --target=leon-elf --config=Ada,,hi --config=C --batch -o x.cgpr
+@end smallexample
+ This is a combination of the previous possibilities that will create in
+batch a config file called x.cgpr for cross compiling Ada with
+a runtime called 'hi' and C for the LEON processor.
+@end itemize
 
 @node First Steps
 @section First Steps
