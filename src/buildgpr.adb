@@ -8758,7 +8758,11 @@ package body Buildgpr is
 
          else
             Finish_Program
-              (True, "illegal option """, Arg, """ in project file");
+              (True,
+               "illegal option """,
+               Arg,
+               """ in package Builder of project file """ &
+               Project_File_Name.all & '"');
          end if;
       end if;
    end Scan_Arg;
