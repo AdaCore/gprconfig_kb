@@ -2,7 +2,7 @@ with "extern_lib2.gpr";
 project Main5 is
    for Languages    use ("C", "Ada");
    for Main         use ("c_main.c");
-   for Roots ("Ada") use ("ada_lib", "c_lib");
+   for Roots ("C") use ("ada_lib", "c_lib");
    package Builder is
       for Executable ("c_main.c") use "main5";
    end Builder;
