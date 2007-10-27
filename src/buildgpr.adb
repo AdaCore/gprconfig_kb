@@ -1570,6 +1570,7 @@ package body Buildgpr is
             end if;
 
          else
+
             --  Put the Roots
             for J in Roots'Range loop
                Src_Id := Roots (J);
@@ -1923,20 +1924,25 @@ package body Buildgpr is
                            B_Data.Language_Name,
                            Main_Source);
 
-                        Proj_List :=
-                          Project_Tree.Projects.Table
-                            (Main_Proj).All_Imported_Projects;
+                        --  If there are no roots, put the dependency files in
+                        --  the imported projects.
 
-                        while Proj_List /= Empty_Project_List loop
-                           Proj_Element :=
-                             Project_Tree.Project_Lists.Table (Proj_List);
-                           Add_Dependency_Files
-                             (Proj_Element.Project,
-                              B_Data.Language,
-                              B_Data.Language_Name,
-                              Main_Source);
-                           Proj_List := Proj_Element.Next;
-                        end loop;
+                        if Root_Sources.Get (Main_Source.File) = No_Roots then
+                           Proj_List :=
+                             Project_Tree.Projects.Table
+                               (Main_Proj).All_Imported_Projects;
+
+                           while Proj_List /= Empty_Project_List loop
+                              Proj_Element :=
+                                Project_Tree.Project_Lists.Table (Proj_List);
+                              Add_Dependency_Files
+                                (Proj_Element.Project,
+                                 B_Data.Language,
+                                 B_Data.Language_Name,
+                                 Main_Source);
+                              Proj_List := Proj_Element.Next;
+                           end loop;
+                        end if;
 
                         --  Put the options, if any
 
@@ -7465,9 +7471,14 @@ package body Buildgpr is
       --  If the ALI file is in the object directory of a project, this is
       --  the project id.
 
+      Externally_Built : constant Boolean :=
+                           Project_Tree.Projects.Table
+                             (Src_Data.Project).Externally_Built;
+      --  True if the project of the source is externally built
+
    begin
       if Force_Compilations then
-         return True;
+         return not Externally_Built;
       end if;
 
       Canonical_Case_File_Name (C_Object_Name);
@@ -7476,6 +7487,16 @@ package body Buildgpr is
          Write_Str  ("   Checking ");
          Write_Str  (Source_Path);
          Write_Line (" ... ");
+      end if;
+
+      --  No need to compile if project is externally built
+
+      if Externally_Built then
+         if Verbose_Mode then
+            Write_Line ("      project is externally built");
+         end if;
+
+         return False;
       end if;
 
       --  If object file does not exist, of course source need to be compiled
