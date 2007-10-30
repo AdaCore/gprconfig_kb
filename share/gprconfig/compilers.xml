@@ -1,12 +1,6 @@
 <?xml version="1.0" ?>
 <gprconfig>
-  <!--    GCC 3.x
-    These versions of GCC provide no specific switch to get the list of
-    supported languages, but we can parse the output of gcc -v.
-    We filter out some of the languages, since for instance Ada is handled
-    directly by GNAT, not through GCC (which doesn't necessarily have an
-    Ada runtime installed anyway).
-  -->
+  <!--    GCC 3.x -->
   <compiler_description>
     <name>GCC</name>
     <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
@@ -21,12 +15,14 @@
     </target>
   </compiler_description>
 
+  <!-- VxWorks 6 -->
   <compiler_description>
     <name>GCC-WRS</name>
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
-      <external>cc${PREFIX} --version</external>
-      <grep regexp="^cc.+ \(GCC\) ([0-9.]+)( [0-9]+)? \(Wind River" group="1"></grep>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*/(vxworks-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-6.*</must_match>
     </version>
     <languages>C</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -36,17 +32,36 @@
     </target>
   </compiler_description>
 
+  <!-- VxWorks 5 -->
+  <compiler_description>
+    <name>GCC-WRS</name>
+    <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*(tornado-[0-9.]*).*" group="1"></grep>
+      <must_match>tornado-.*</must_match>
+    </version>
+    <languages>C</languages>
+    <target>
+      <external>cc${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!-- VxWorks 653 -->
   <compiler_description>
     <name>GCC-WRS653</name>
-    <executable prefix="1">ccppc</executable>
+    <executable prefix="1">cc(pentium|ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*/(vxworks653).*" group="1"></grep>
       <must_match>vxworks653</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>cert,zfp</runtimes>
-    <target>powerpc-wrs-vxworksae</target>
+    <target>
+      <external>cc${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
   </compiler_description>
 
   <!--     GCC 2.8.1
@@ -69,9 +84,7 @@
     </target>
   </compiler_description>
 
-  <!--  G++ compilers
-  -->
-
+  <!--  G++ compilers  -->
   <compiler_description>
     <name>G++</name>
     <executable>g++</executable>
@@ -100,21 +113,22 @@
     </target>
   </compiler_description>
 
-  <!--   GNAT
-    To find the list of supported runtimes, we check the contents of the
-    directory. To be compatible with older versions of GNAT (3.16 for instance),
-    we also accept lib/gcc-lib as the directory that contains the runtime files.
+   <!--   GNAT
+    To find the list of supported runtimes, we check the contents of
+    the directory. To be compatible with older versions of GNAT (3.16
+    for instance), we also accept lib/gcc-lib as the directory that
+    contains the runtime files.
 
-    Implementation note: we put two spaces after -adainclude $... in the external_tool,
-    because on windows the path will end with a '\', and this would act as a quote for
-    the following space.
-  -->
+    Implementation note: we put two spaces after -adainclude $... in
+    the external_tool, because on windows the path will end with a
+    '\', and this would act as a quote for the following space.
+   -->
   <compiler_description>
     <name>GNAT</name>
     <executable prefix="1">(.*(-wrs-|-elf-).*)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
-      <grep regexp="GNATLS.+?(\d+\.\d+)" group="1"></grep>
+      <grep regexp="^GNATLS.+?(\d+\.\d+)" group="1"></grep>
 
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^gcc version (\S+)" group="1"></grep>
@@ -130,8 +144,7 @@
     </target>
   </compiler_description>
 
- <!--    G77
-  -->
+  <!--    G77  -->
   <compiler_description>
     <name>G77</name>
     <executable>g77</executable>
@@ -146,8 +159,7 @@
     </target>
   </compiler_description>
 
- <!--    GFortran
-  -->
+  <!--    GFortran  -->
   <compiler_description>
     <name>GFORTRAN</name>
     <executable>gfortran</executable>
@@ -162,8 +174,7 @@
     </target>
   </compiler_description>
 
- <!--    mingw-cygwin compiler
-  -->
+  <!--    mingw-cygwin compiler  -->
   <compiler_description>
     <name>GCC-CYGMING</name>
     <executable>gcc</executable>
