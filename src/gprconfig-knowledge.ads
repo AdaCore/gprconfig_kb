@@ -170,19 +170,32 @@ private
 
    type External_Value_Type is (Value_Constant,
                                 Value_Shell,
-                                Value_Directory);
+                                Value_Directory,
+                                Value_Grep,
+                                Value_Filter,
+                                Value_Must_Match,
+                                Value_Done);
    type External_Value_Node
      (Typ : External_Value_Type := Value_Constant) is
       record
          case Typ is
-            when Value_Constant =>
+            when Value_Constant  =>
                Value           : Ada.Strings.Unbounded.Unbounded_String;
-            when Value_Shell    =>
+            when Value_Shell     =>
                Command         : Ada.Strings.Unbounded.Unbounded_String;
-            when Value_Directory =>
+            when Value_Directory  =>
                Directory       : Ada.Strings.Unbounded.Unbounded_String;
                Directory_Group : Integer;
                Dir_If_Match    : Ada.Strings.Unbounded.Unbounded_String;
+            when Value_Grep       =>
+               Regexp          : Ada.Strings.Unbounded.Unbounded_String;
+               Group           : Natural;
+            when Value_Filter     =>
+               Filter          : Ada.Strings.Unbounded.Unbounded_String;
+            when Value_Must_Match =>
+               Must_Match      : Ada.Strings.Unbounded.Unbounded_String;
+            when Value_Done =>
+               null;
          end case;
       end record;
 
@@ -190,19 +203,11 @@ private
      (External_Value_Node);
 
    type External_Value is record
-      Regexp     : Ada.Strings.Unbounded.Unbounded_String;
-      Group      : Natural;
-      Filter     : Ada.Strings.Unbounded.Unbounded_String;
-      Must_Match : Ada.Strings.Unbounded.Unbounded_String;
       Nodes      : External_Value_Nodes.List;
    end record;
 
    Null_External_Value : constant External_Value :=
-     (Regexp     => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Group      => 0,
-      Filter     => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Must_Match => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Nodes      => External_Value_Nodes.Empty_List);
+     (Nodes      => External_Value_Nodes.Empty_List);
 
    type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
 

@@ -404,22 +404,27 @@ package body GprConfig.Knowledge is
    is
       Tmp           : Node_Ptr := Node.Child;
       External_Node : External_Value_Node;
+      Is_Done       : Boolean := True;
    begin
-      Value.Filter     := Null_Unbounded_String;
-      Value.Must_Match := Null_Unbounded_String;
-
+      --  Constant value is not within a nested node.
       if Node.Value /= null then
          External_Node := (Typ        => Value_Constant,
                            Value      => To_Unbounded_String (Node.Value.all));
          Append (Value.Nodes, External_Node);
+         Is_Done := False;
       end if;
 
       while Tmp /= null loop
          if Tmp.Tag.all = "external" then
+            if not Is_Done then
+               Append (Value.Nodes, (Typ => Value_Done));
+            end if;
+
             External_Node :=
               (Typ        => Value_Shell,
                Command    => To_Unbounded_String (Tmp.Value.all));
             Append (Value.Nodes, External_Node);
+            Is_Done := False;
          elsif Tmp.Tag.all = "directory" then
             External_Node :=
               (Typ             => Value_Directory,
@@ -436,7 +441,12 @@ package body GprConfig.Knowledge is
                     To_Unbounded_String (Get_Attribute (Tmp, "group", "0"));
             end;
             Append (Value.Nodes, External_Node);
+            Is_Done := True;
          elsif Tmp.Tag.all = "getenv" then
+            if not Is_Done then
+               Append (Value.Nodes, (Typ => Value_Done));
+            end if;
+
             declare
                Name : constant String := Get_Attribute (Tmp, "name", "");
             begin
@@ -446,23 +456,35 @@ package body GprConfig.Knowledge is
                      Value      => To_Unbounded_String
                      (Ada.Environment_Variables.Value (Name)));
                else
-                  Put_Line (Standard_Error,
-                            "warning: environment variable '" & Name
-                            & "' is not defined");
+                  Put_Verbose ("warning: environment variable '" & Name
+                               & "' is not defined");
                   External_Node :=
                     (Typ        => Value_Constant,
                      Value      => Null_Unbounded_String);
                end if;
-               Append (Value.Nodes, External_Node);
             end;
+            Append (Value.Nodes, External_Node);
+            Is_Done := False;
          elsif Tmp.Tag.all = "filter" then
-            Value.Filter := To_Unbounded_String (Tmp.Value.all);
+            External_Node :=
+              (Typ        => Value_Filter,
+               Filter    => To_Unbounded_String (Tmp.Value.all));
+            Append (Value.Nodes, External_Node);
+            Is_Done := True;
          elsif Tmp.Tag.all = "must_match" then
-            Value.Must_Match := To_Unbounded_String (Tmp.Value.all);
+            External_Node :=
+              (Typ        => Value_Must_Match,
+               Must_Match => To_Unbounded_String (Tmp.Value.all));
+            Append (Value.Nodes, External_Node);
+            Is_Done := True;
          elsif Tmp.Tag.all = "grep" then
-            Value.Regexp := To_Unbounded_String
-              (Get_Attribute (Tmp, "regexp", ".*"));
-            Value.Group := Integer'Value (Get_Attribute (Tmp, "group", "0"));
+            External_Node :=
+              (Typ        => Value_Grep,
+               Regexp     => To_Unbounded_String (Get_Attribute
+                                                  (Tmp, "regexp", ".*")),
+               Group      => Integer'Value (Get_Attribute
+                                            (Tmp, "group", "0")));
+            Append (Value.Nodes, External_Node);
          else
             Put_Line (Standard_Error, "Invalid XML description for "
                       & Node.Tag.all & " in file " & File);
@@ -472,6 +494,10 @@ package body GprConfig.Knowledge is
 
          Tmp := Tmp.Next;
       end  loop;
+
+      if not Is_Done then
+         Append (Value.Nodes, (Typ => Value_Done));
+      end if;
 
    exception
       when Constraint_Error =>
@@ -1045,8 +1071,6 @@ package body GprConfig.Knowledge is
       Status     : aliased Integer;
       Extracted_From : Unbounded_String;
       Tmp_Result     : Unbounded_String;
-      Split          : String_Lists.List;
-      C              : String_Lists.Cursor;
       Node_Cursor    : External_Value_Nodes.Cursor := First (Value.Nodes);
       Node           : External_Value_Node;
       Cursor, Cursor2 : External_Value_Lists.Cursor;
@@ -1054,162 +1078,179 @@ package body GprConfig.Knowledge is
       Clear (Processed_Value);
 
       while Has_Element (Node_Cursor) loop
-         Node           := Element (Node_Cursor);
-         Tmp_Result     := Null_Unbounded_String;
-         Extracted_From := Null_Unbounded_String;
 
-         case Node.Typ is
-            when Value_Constant =>
-               Tmp_Result := To_Unbounded_String
-                 (Substitute_Special_Dirs
-                    (To_String (Node.Value), Comp, Output_Dir => ""));
-               Put_Verbose
-                 (Attribute & ": constant := " & To_String (Tmp_Result));
+         while Has_Element (Node_Cursor) loop
+            Node := Element (Node_Cursor);
 
-            when Value_Shell =>
-               Ada.Environment_Variables.Set
-                 ("PATH", To_String (Comp.Path) & Path_Separator & Saved_Path);
-               declare
-                  Command : constant String := Substitute_Special_Dirs
-                    (To_String (Node.Command), Comp, Output_Dir => "");
-               begin
-                  Extracted_From := Null_Unbounded_String;
-                  Tmp_Result     := Null_Unbounded_String;
+            case Node.Typ is
+               when Value_Constant =>
+                  Tmp_Result := To_Unbounded_String
+                    (Substitute_Special_Dirs
+                     (To_String (Node.Value), Comp, Output_Dir => ""));
+                  Put_Verbose
+                    (Attribute & ": constant := " & To_String (Tmp_Result));
+
+               when Value_Shell =>
+                  Ada.Environment_Variables.Set
+                    ("PATH",
+                     To_String (Comp.Path) & Path_Separator & Saved_Path);
                   declare
-                     Args   : Argument_List_Access := Argument_String_To_List
-                       (Command);
-                     Output : constant String := Get_Command_Output
-                       (Command     => Args (Args'First).all,
-                        Arguments   => Args (Args'First + 1 .. Args'Last),
-                        Input       => "",
-                        Status      => Status'Unchecked_Access,
-                        Err_To_Out  => True);
+                     Command : constant String := Substitute_Special_Dirs
+                       (To_String (Node.Command), Comp, Output_Dir => "");
                   begin
-                     GNAT.Strings.Free (Args);
-                     Ada.Environment_Variables.Set ("PATH", Saved_Path);
-                     Tmp_Result := To_Unbounded_String (Output);
+                     Extracted_From := Null_Unbounded_String;
+                     Tmp_Result     := Null_Unbounded_String;
+                     declare
+                        Args   : Argument_List_Access :=
+                          Argument_String_To_List (Command);
+                        Output : constant String := Get_Command_Output
+                          (Command     => Args (Args'First).all,
+                           Arguments   => Args (Args'First + 1 .. Args'Last),
+                           Input       => "",
+                           Status      => Status'Unchecked_Access,
+                           Err_To_Out  => True);
+                     begin
+                        GNAT.Strings.Free (Args);
+                        Ada.Environment_Variables.Set ("PATH", Saved_Path);
+                        Tmp_Result := To_Unbounded_String (Output);
 
-                     if Verbose_Level > 1 then
-                        Put_Verbose (Attribute & ": executing """ & Command
-                                     & """ output=""" & Output & """");
-                     elsif Verbose_Level > 0 then
+                        if Verbose_Level > 1 then
+                           Put_Verbose (Attribute & ": executing """ & Command
+                                        & """ output=""" & Output & """");
+                        elsif Verbose_Level > 0 then
+                           Put_Verbose
+                             (Attribute & ": executing """ & Command
+                              & """ output=<use -v -v> no match");
+                        end if;
+                     end;
+                  exception
+                     when Invalid_Process =>
+                        Put_Verbose ("Spawn failed for " & Command);
+                  end;
+
+               when Value_Directory =>
+                  declare
+                     Search : constant String := Substitute_Special_Dirs
+                       (To_String (Node.Directory), Comp, Output_Dir => "");
+                  begin
+                     if Search (Search'First) = '/' then
                         Put_Verbose
-                          (Attribute & ": executing """ & Command
-                           & """ output=<use -v -v> no match");
+                          (Attribute & ": search directories matching "
+                           & Search & ", starting from /", 1);
+                        Parse_All_Dirs
+                          (Processed_Value => Processed_Value,
+                           Current_Dir     => "",
+                           Path_To_Check   => Search,
+                           Regexp          =>
+                             Compile (Search (Search'First + 1
+                                              .. Search'Last)),
+                           Regexp_Str      => Search,
+                           Value_If_Match  => To_String (Node.Dir_If_Match),
+                           Group           => Node.Directory_Group);
+                     else
+                        Put_Verbose
+                          (Attribute & ": search directories matching "
+                           & Search & ", starting from "
+                           & To_String (Comp.Path), 1);
+                        Parse_All_Dirs
+                          (Processed_Value => Processed_Value,
+                           Current_Dir     => To_String (Comp.Path),
+                           Path_To_Check   => Search,
+                           Regexp          => Compile (Search),
+                           Regexp_Str      => Search,
+                           Value_If_Match  => To_String (Node.Dir_If_Match),
+                           Group           => Node.Directory_Group);
+                     end if;
+                     Put_Verbose ("Done search directories", -1);
+                  end;
+
+                  --  Only keep those matching
+                  if Matching /= "" then
+                     Cursor := First (Processed_Value);
+                     while Has_Element (Cursor) loop
+                        Cursor2 := Next (Cursor);
+
+                        if To_Lower (To_String (Element (Cursor).Value)) /=
+                          To_Lower (Matching)
+                        then
+                           Delete (Processed_Value, Cursor);
+                        end if;
+
+                        Cursor := Cursor2;
+                     end loop;
+                  end if;
+
+               when Value_Grep =>
+                  declare
+                     Regexp : constant Pattern_Matcher := Compile
+                       (To_String (Node.Regexp), Multiple_Lines);
+                     Matched : Match_Array (0 .. Node.Group);
+                     Tmp_Str : constant String := To_String (Tmp_Result);
+                  begin
+                     Match (Regexp, Tmp_Str, Matched);
+                     if Matched (Node.Group) /= No_Match then
+                        Tmp_Result := To_Unbounded_String
+                          (Tmp_Str (Matched (Node.Group).First ..
+                                    Matched (Node.Group).Last));
+                        Put_Verbose (Attribute & ": grep matched="""
+                                     & To_String (Tmp_Result) & """");
+                     else
+                        Tmp_Result := Null_Unbounded_String;
+                        Put_Verbose (Attribute & ": grep no match");
                      end if;
                   end;
-               exception
-                  when Invalid_Process =>
-                     Put_Verbose ("Spawn failed for " & Command);
-               end;
-
-            when Value_Directory =>
-               declare
-                  Search : constant String := Substitute_Special_Dirs
-                    (To_String (Node.Directory), Comp, Output_Dir => "");
-               begin
-                  if Search (Search'First) = '/' then
-                     Put_Verbose
-                       (Attribute & ": search directories matching " & Search
-                        & ", starting from /", 1);
-                     Parse_All_Dirs
-                       (Processed_Value => Processed_Value,
-                        Current_Dir     => "",
-                        Path_To_Check   => Search,
-                        Regexp          =>
-                          Compile (Search (Search'First + 1 .. Search'Last)),
-                        Regexp_Str      => Search,
-                        Value_If_Match  => To_String (Node.Dir_If_Match),
-                        Group           => Node.Directory_Group);
-                  else
-                     Put_Verbose
-                       (Attribute & ": search directories matching " & Search
-                        & ", starting from " & To_String (Comp.Path), 1);
-                     Parse_All_Dirs
-                       (Processed_Value => Processed_Value,
-                        Current_Dir     => To_String (Comp.Path),
-                        Path_To_Check   => Search,
-                        Regexp          => Compile (Search),
-                        Regexp_Str      => Search,
-                        Value_If_Match  => To_String (Node.Dir_If_Match),
-                        Group           => Node.Directory_Group);
+               when Value_Must_Match =>
+                  if not Match (Expression => To_String (Node.Must_Match),
+                                Data       => To_String (Tmp_Result))
+                  then
+                     Put_Verbose ("Ignore compiler since external value """
+                                  & To_String (Tmp_Result) & """ must match "
+                                  & To_String (Node.Must_Match));
+                     Tmp_Result := Null_Unbounded_String;
                   end if;
-                  Put_Verbose ("Done search directories", -1);
-               end;
-         end case;
+                  exit;
+               when Value_Done
+                 | Value_Filter =>
+                  exit;
+            end case;
 
-         if Value.Regexp /= Null_Unbounded_String then
-            declare
-               Regexp : constant Pattern_Matcher := Compile
-                 (To_String (Value.Regexp), Multiple_Lines);
-               Matched : Match_Array (0 .. Value.Group);
-               Tmp_Str : String := To_String (Tmp_Result);
-            begin
-               Match (Regexp, Tmp_Str, Matched);
-               if Matched (Value.Group) /= No_Match then
-                  Tmp_Result := To_Unbounded_String
-                    (Tmp_Str (Matched (Value.Group).First ..
-                              Matched (Value.Group).Last));
-                  Put_Verbose (Attribute & ": grep matched="""
-                               & To_String (Tmp_Result) & """");
-               else
-                  Tmp_Result := Null_Unbounded_String;
-                  Put_Verbose (Attribute & ": grep no match");
-               end if;
-            end;
-         end if;
-
-         if Value.Must_Match /= Null_Unbounded_String
-           and then not Match (Expression => To_String (Value.Must_Match),
-                               Data       => To_String (Tmp_Result))
-         then
-            Put_Verbose ("Ignore compiler since external value "
-                         & To_String (Tmp_Result) & " must match "
-                         & To_String (Value.Must_Match));
-            raise Ignore_Compiler;
-         end if;
+            Next (Node_Cursor);
+         end loop;
 
          case Node.Typ is
-            when Value_Directory =>
-               --  Only keep those matching
-               if Matching /= "" then
-                  Cursor := First (Processed_Value);
-                  while Has_Element (Cursor) loop
-                     Cursor2 := Next (Cursor);
-
-                     if To_Lower (To_String (Element (Cursor).Value)) /=
-                       To_Lower (Matching)
-                     then
-                        Delete (Processed_Value, Cursor);
-                     end if;
-
-                     Cursor := Cursor2;
-                  end loop;
-
-               end if;
-
-            when Value_Shell | Value_Constant =>
+            when Value_Done | Value_Filter | Value_Must_Match =>
                if Tmp_Result = Null_Unbounded_String then
                   null;
 
                elsif Split_Into_Words then
-                  Get_Words (Words  => To_String (Tmp_Result),
-                             Filter => Value.Filter,
-                             Map    => Split,
-                             Allow_Empty_Elements => False);
-                  C := First (Split);
-                  while Has_Element (C) loop
-                     if Matching = ""
-                       or else To_Lower (Element (C)) = To_Lower (Matching)
-                     then
-                        Append
-                          (Processed_Value,
-                           External_Value_Item'
-                             (Value       => To_Unbounded_String (Element (C)),
-                              Extracted_From => Extracted_From));
+                  declare
+                     Split          : String_Lists.List;
+                     C              : String_Lists.Cursor;
+                     Filter         : Unbounded_String;
+                  begin
+                     if Node.Typ = Value_Filter then
+                        Filter := Node.Filter;
+                     else
+                        Filter := Null_Unbounded_String;
                      end if;
-                     Next (C);
-                  end loop;
+                     Get_Words (Words  => To_String (Tmp_Result),
+                                Filter => Filter,
+                                Map    => Split,
+                                Allow_Empty_Elements => False);
+                     C := First (Split);
+                     while Has_Element (C) loop
+                        if Matching = ""
+                          or else To_Lower (Element (C)) = To_Lower (Matching)
+                        then
+                           Append
+                             (Processed_Value,
+                              External_Value_Item'
+                              (Value    => To_Unbounded_String (Element (C)),
+                               Extracted_From => Extracted_From));
+                        end if;
+                        Next (C);
+                     end loop;
+                  end;
 
                elsif Matching = ""
                  or else To_Lower (To_String (Tmp_Result)) =
@@ -1225,6 +1266,8 @@ package body GprConfig.Knowledge is
                   Put_Verbose
                     ("Compiler ignored since this criteria does not match");
                end if;
+            when others =>
+               null;
          end case;
 
          Next (Node_Cursor);
