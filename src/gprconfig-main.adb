@@ -54,11 +54,6 @@ procedure GprConfig.Main is
       Selected_Compilers : in out Compiler_Lists.List);
    --  Return the list of selected compilers in Comps
 
-   procedure Enter_Custom_Compiler
-     (Base : in out Knowledge_Base;
-      Comp : out Compiler);
-   --  Ask the user for a custom compiler
-
    procedure Parse_Config_Parameter
      (Custom_Comps : in out Compiler_Lists.List;
       Config       : String);
@@ -185,99 +180,6 @@ procedure GprConfig.Main is
          end if;
       end loop;
    end To_List;
-
-   ---------------------------
-   -- Enter_Custom_Compiler --
-   ---------------------------
-
-   procedure Enter_Custom_Compiler
-     (Base : in out Knowledge_Base; Comp : out Compiler)
-   is
-      Default_Path : constant String := "/usr/bin/";
-      Line : String (1 .. 4096);
-      Last : Natural;
-      Completion : Compiler_Lists.List;
-      Complete : Compiler := No_Compiler;
-      Known_Compilers : Unbounded_String;
-   begin
-      Known_Compiler_Names (Base, Known_Compilers);
-
-      Comp := No_Compiler;
-      Put ("Configuration name (" & To_String (Known_Compilers) & "): ");
-      Get_Line (Line, Last);
-      Comp.Name := To_Unbounded_String (Line (Line'First .. Last));
-
-      Put ("Installation directory [" & Default_Path & "]: ");
-      Get_Line (Line, Last);
-      if Last = 0 then
-         Comp.Path := To_Unbounded_String (Default_Path);
-      else
-         Comp.Path := To_Unbounded_String (Line (Line'First .. Last));
-      end if;
-
-      Find_Matching_Compilers
-        (Matching  => Comp,
-         Base      => Base,
-         Compilers => Completion,
-         On_Target => Selected_Targets_Set,
-         Stop_At_First_Match => True);
-      if not Is_Empty (Completion) then
-         Complete := Element (First (Completion));
-      end if;
-
-      Put ("Version [" & To_String (Complete.Version) & "]: ");
-      Get_Line (Line, Last);
-      if Last = 0 then
-         Comp.Version := Complete.Version;
-      else
-         Comp.Version := TU (Line (Line'First .. Last));
-      end if;
-
-      Put ("Language [" & To_String (Complete.Language) & "]: ");
-      Get_Line (Line, Last);
-      if Last = 0 then
-         Comp.Language := Complete.Language;
-      else
-         Comp.Language := TU (Line (Line'First .. Last));
-      end if;
-
-      Put ("Runtime [" & To_String (Complete.Runtime) & "]: ");
-      Get_Line (Line, Last);
-      if Last = 0 then
-         Comp.Runtime := Complete.Runtime;
-      else
-         Comp.Runtime := TU (Line (Line'First .. Last));
-      end if;
-
-      if Comp.Runtime /= Null_Unbounded_String then
-         Put
-           ("Runtime directory [" & To_String (Complete.Runtime_Dir) & "]: ");
-         Get_Line (Line, Last);
-         if Last = 0 then
-            Comp.Runtime_Dir := Complete.Runtime_Dir;
-         else
-            Comp.Runtime_Dir := TU (Line (Line'First .. Last));
-         end if;
-      end if;
-
-      if Complete.Target = Null_Unbounded_String then
-         Put ("Target [" & Sdefault.Hostname & "]: ");
-      else
-         Put ("Target [" & To_String (Complete.Target) & "]: ");
-      end if;
-
-      Get_Line (Line, Last);
-      if Last = 0 then
-         if Complete.Target = Null_Unbounded_String then
-            Comp.Target := To_Unbounded_String (Sdefault.Hostname);
-         else
-            Comp.Target := Complete.Target;
-         end if;
-      else
-         Comp.Target := TU (Line (Line'First .. Last));
-      end if;
-      Get_Targets_Set (Base, To_String (Comp.Target), Comp.Targets_Set);
-   end Enter_Custom_Compiler;
 
    ----------------------------
    -- Parse_Config_Parameter --
@@ -479,9 +381,8 @@ procedure GprConfig.Main is
             Next (Comp);
          end loop;
 
-         Put_Line (" (o) Other compiler");
-         Put_Line (" (s) Generate configuration file");
-         Put ("Toggle selection for: ");
+         Put
+           ("Select or unselect the following compiler (or ""s"" to save): ");
          Get_Line (Line, Tmp);
          if Tmp = 0 then
             Choice := ASCII.NUL;
@@ -489,16 +390,7 @@ procedure GprConfig.Main is
             Choice := Line (Line'First);
          end if;
 
-         if Choice = 'o' then
-            --  Update Selected_Target if needed
-            declare
-               Comp : Compiler;
-            begin
-               Enter_Custom_Compiler (Base, Comp);
-               Append (Custom_Comps, Comp);
-            end;
-
-         elsif Choice = 's' then
+         if Choice = 's' then
             exit;
 
          elsif Choice = ASCII.NUL then
