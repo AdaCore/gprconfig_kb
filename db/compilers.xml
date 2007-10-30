@@ -11,11 +11,13 @@
     <name>GCC</name>
     <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
     <version>
-      <external regexp="\(GCC\) (\S+)" group="1">${PREFIX}gcc --version</external>
+      <external>${PREFIX}gcc --version</external>
+      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
-      <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 
@@ -23,13 +25,28 @@
     <name>GCC-WRS</name>
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
-      <external regexp="^cc.+ \(GCC\) ([0-9.]+) \(Wind River" group="1">cc${PREFIX} --version</external>
+      <external>cc${PREFIX} --version</external>
+      <grep regexp="^cc.+ \(GCC\) ([0-9.]+)( [0-9]+)? \(Wind River" group="1"></grep>
     </version>
     <languages>C</languages>
     <runtimes>kernel,rtp</runtimes>
     <target>
-      <external regexp="[^\r\n]+">cc${PREFIX} -dumpmachine</external>
+      <external>cc${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>GCC-WRS653</name>
+    <executable prefix="1">ccppc</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*/(vxworks653).*" group="1"></grep>
+      <must_match>vxworks653</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>cert,zfp</runtimes>
+    <target>powerpc-wrs-vxworksae</target>
   </compiler_description>
 
   <!--     GCC 2.8.1
@@ -41,12 +58,14 @@
     <name>GCC-28</name>
     <executable>gcc</executable>
     <version>
-      <external regexp="^gcc version (\S+)" group="1">gcc -v</external>
+      <external>gcc -v</external>
+      <grep regexp="^gcc version (\S+)" group="1"></grep>
       <must_match>2\.8\.</must_match>
     </version>
     <languages>C</languages>
     <target>
-      <external regexp="[^\r\n]+">gcc -dumpmachine</external>
+      <external>gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 
@@ -57,11 +76,13 @@
     <name>G++</name>
     <executable>g++</executable>
     <version>
-      <external regexp="\(GCC\) (\S+)" group="1">g++ --version</external>
+      <external>g++ --version</external>
+      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
-      <external regexp="[^\r\n]+">gcc -dumpmachine</external>
+      <external>g++ -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 
@@ -69,11 +90,13 @@
     <name>GCC-ASM</name>
     <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
     <version>
-      <external regexp="\(GCC\) (\S+)" group="1">${PREFIX}gcc --version</external>
+      <external>${PREFIX}gcc --version</external>
+      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
     </version>
     <languages>Asm</languages>
     <target>
-      <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 
@@ -90,8 +113,11 @@
     <name>GNAT</name>
     <executable prefix="1">(.*(-wrs-|-elf-).*)?gnatmake</executable>
     <version>
-      <external regexp="GNATLS.+?(\d+\.\d+)" group="1">${PREFIX}gnatls -v</external>
-      <external regexp="^gcc version (\S+)" group="1">${PREFIX}gcc -v</external>
+      <external>${PREFIX}gnatls -v</external>
+      <grep regexp="GNATLS.+?(\d+\.\d+)" group="1"></grep>
+
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^gcc version (\S+)" group="1"></grep>
     </version>
     <languages>Ada</languages>
     <runtimes>
@@ -99,7 +125,8 @@
        <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$VERSION2/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>
-      <external regexp="[^\r\n]+">${PREFIX}gcc -dumpmachine</external>
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 
@@ -109,11 +136,13 @@
     <name>G77</name>
     <executable>g77</executable>
     <version>
-      <external regexp="\(GCC.*\) (\S+)" group="1">g77 --version</external>
+      <external>g77 --version</external>
+      <grep regexp="\(GCC.*\) (\S+)" group="1"></grep>
     </version>
     <languages>Fortran</languages>
     <target>
-      <external regexp="[^\r\n]+">g77 -dumpmachine</external>
+      <external>g77 -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 
@@ -123,11 +152,13 @@
     <name>GFORTRAN</name>
     <executable>gfortran</executable>
     <version>
-      <external regexp="\(GCC\) (\S+)" group="1">gfortran --version</external>
+      <external>gfortran --version</external>
+      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
     </version>
     <languages>Fortran</languages>
     <target>
-      <external regexp="[^\r\n]+">gfortran -dumpmachine</external>
+      <external>gfortran -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 
@@ -137,11 +168,13 @@
     <name>GCC-CYGMING</name>
     <executable>gcc</executable>
     <version>
-      <external regexp="\(GCC\) (\S+).*\(cygming special\)" group="1">gcc --version</external>
+      <external>gcc --version</external>
+      <grep regexp="\(GCC\) (\S+).*\(cygming special\)" group="1"></grep>
     </version>
     <languages>C,C++,Fortran</languages>
     <target>
-      <external regexp="[^\r\n]+">gcc -mno-cygwin -dumpmachine</external>
+      <external>gcc -mno-cygwin -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
 </gprconfig>
