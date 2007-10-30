@@ -555,6 +555,14 @@ package body Buildgpr is
       Table_Name           => "Makegpr.Naming_Datas");
    --  Naming data when creating config files
 
+   package Project_File_Paths is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => Name_Id,
+      Hash       => Hash,
+      Equal      => "=");
+
    -----------
    -- Queue --
    -----------
@@ -1502,6 +1510,9 @@ package body Buildgpr is
       Bind_Object_TS       : Time_Stamp_Type;
       Binder_Driver_Needs_To_Be_Called : Boolean := False;
 
+      Project_Path         : Name_Id;
+      Project_File_TS      : Time_Stamp_Type;
+
       procedure Add_Dependency_Files
         (For_Project : Project_Id;
          Language    : Language_Index;
@@ -1845,6 +1856,130 @@ package body Buildgpr is
                         end if;
                      end if;
 
+                     if not Binder_Driver_Needs_To_Be_Called then
+                        if End_Of_File (Exchange_File) then
+                           Binder_Driver_Needs_To_Be_Called := True;
+
+                        else
+                           Get_Line (Exchange_File, Line, Last);
+
+                           if Line (1 .. Last) /=
+                             Binding_Label (Project_Files)
+                             or else End_Of_File (Exchange_File)
+                           then
+                              Binder_Driver_Needs_To_Be_Called := True;
+                           end if;
+                        end if;
+
+                        if Binder_Driver_Needs_To_Be_Called then
+                           if Verbose_Mode then
+                              Write_Line
+                                ("      -> binder exchange file " &
+                                 "has wrong syntax");
+                           end if;
+
+                        else
+
+                           --  Populate the hash table Project_File_Paths with
+                           --  the paths of all project files in the closure
+                           --  of the main project.
+
+                           Project_File_Paths.Reset;
+
+                           Project_File_Paths.Set
+                             (Name_Id (Project_Tree.Projects.Table
+                                         (Main_Proj).Path_Name),
+                              True);
+
+                           Proj_List :=
+                             Project_Tree.Projects.Table
+                               (Main_Proj).All_Imported_Projects;
+
+                           while Proj_List /= Empty_Project_List loop
+                              Proj_Element :=
+                                Project_Tree.Project_Lists.Table (Proj_List);
+                              Project_File_Paths.Set
+                                (Name_Id (Project_Tree.Projects.Table
+                                           (Proj_Element.Project).Path_Name),
+                                 True);
+                              Proj_List := Proj_Element.Next;
+                           end loop;
+
+                           --  Get the project file paths from the exchange
+                           --  file and check if they are the expected project
+                           --  files with the same time stamps.
+
+                           while not End_Of_File (Exchange_File) loop
+                              Get_Line (Exchange_File, Name_Buffer, Name_Len);
+                              exit when
+                                Name_Len > 0 and then Name_Buffer (1) = '[';
+
+                              if End_Of_File (Exchange_File) then
+                                 Binder_Driver_Needs_To_Be_Called := True;
+
+                                 if Verbose_Mode then
+                                    Write_Line
+                                      ("      -> binder exchange file " &
+                                       "has wrong syntax");
+                                 end if;
+
+                                 exit;
+                              end if;
+
+                              Project_Path := Name_Find;
+
+                              if Project_File_Paths.Get (Project_Path) then
+                                 Project_File_Paths.Remove (Project_Path);
+                                 Get_Line
+                                   (Exchange_File, Line, Last);
+
+                                 Project_File_TS :=
+                                   File_Stamp (Path_Name_Type (Project_Path));
+
+                                 if String (Project_File_TS) /=
+                                   Line (1 .. Last)
+                                 then
+                                    Binder_Driver_Needs_To_Be_Called := True;
+
+                                    if Verbose_Mode then
+                                       Write_Line
+                                         ("      -> project file " &
+                                          Get_Name_String (Project_Path) &
+                                          " has been modified");
+                                    end if;
+
+                                    exit;
+                                 end if;
+
+                              else
+                                 Binder_Driver_Needs_To_Be_Called := True;
+
+                                 if Verbose_Mode then
+                                    Write_Line
+                                      ("      -> unknown project file " &
+                                       Get_Name_String (Project_Path));
+                                 end if;
+
+                                 exit;
+                              end if;
+                           end loop;
+
+                           --  Check if there are still project file paths in
+                           --  the has table.
+
+                           if (not Binder_Driver_Needs_To_Be_Called) and then
+                             Project_File_Paths.Get_First
+                           then
+                              Binder_Driver_Needs_To_Be_Called := True;
+
+                              if Verbose_Mode then
+                                 Write_Line
+                                   ("      -> more project files");
+                              end if;
+                           end if;
+                        end if;
+                     end if;
+
                      if Is_Open (Exchange_File) then
                         Close (Exchange_File);
                      end if;
@@ -2105,6 +2240,49 @@ package body Buildgpr is
 
                            end if;
                         end;
+
+                        --  Finally, the list of the project paths with their
+                        --  time stamps.
+
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label (Project_Files));
+
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String
+                             (Project_Tree.Projects.Table
+                                (Main_Proj).Path_Name));
+
+                        Put_Line
+                          (Exchange_File,
+                           String
+                             (File_Stamp
+                                (Project_Tree.Projects.Table
+                                   (Main_Proj).Path_Name)));
+
+                        Proj_List :=
+                          Project_Tree.Projects.Table
+                            (Main_Proj).All_Imported_Projects;
+
+                        while Proj_List /= Empty_Project_List loop
+                           Proj_Element :=
+                             Project_Tree.Project_Lists.Table (Proj_List);
+                           Put_Line
+                             (Exchange_File,
+                              Get_Name_String
+                                (Project_Tree.Projects.Table
+                                   (Proj_Element.Project).Path_Name));
+
+                           Put_Line
+                             (Exchange_File,
+                              String
+                                (File_Stamp
+                                   (Project_Tree.Projects.Table
+                                      (Proj_Element.Project).Path_Name)));
+
+                           Proj_List := Proj_Element.Next;
+                        end loop;
 
                         Close (Exchange_File);
 
@@ -4114,8 +4292,10 @@ package body Buildgpr is
 
                         if not Roots_Found then
                            if Pat_Root then
-                              --  ???
-                              null;
+                              Error_Msg_Name_1 := Unit_Name;
+                              Error_Msg
+                                ("?no unit matches pattern %",
+                                 Roots.Location);
 
                            else
                               --  report error
@@ -6498,6 +6678,11 @@ package body Buildgpr is
          if Err_Vars.Total_Errors_Detected > 0 then
             Fail_Program ("*** link failed");
          end if;
+      end if;
+
+      if Warnings_Detected /= 0 then
+         Errout.Finalize (Last_Call => True);
+         Errout.Output_Messages;
       end if;
 
       Finish_Program (Fatal => False);

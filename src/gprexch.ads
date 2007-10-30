@@ -47,7 +47,8 @@ package Gprexch is
       Generated_Object_File,
       Generated_Source_Files,
       Resulting_Options,
-      Run_Path_Option);
+      Run_Path_Option,
+      Project_Files);
 
    function Binding_Label (Section : Binding_Section) return String;
    --  Return the label for a section in a binder exchange file

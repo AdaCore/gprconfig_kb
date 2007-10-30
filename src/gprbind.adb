@@ -130,6 +130,19 @@ procedure Gprbind is
       Table_Increment      => 100,
       Table_Name           => "Gprbind.ALI_File_Table");
 
+   type Path_And_Stamp is record
+      Path : String_Access;
+      Stamp : String_Access;
+   end record;
+
+   package Project_Paths is new Table.Table
+     (Table_Component_Type => Path_And_Stamp,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Gprbind.Project_Paths");
+
 begin
    if Argument_Count /= 1 then
       Osint.Fail ("incorrect invocation");
@@ -260,6 +273,22 @@ begin
                   else
                      Binding_Options_Table.Append
                                              (new String'(Line (1 .. Last)));
+                  end if;
+
+               when Project_Files =>
+                  if End_Of_File (IO_File) then
+                     Osint.Fail ("no time stamp for " & Line (1 .. Last));
+
+                  else
+                     declare
+                        PS : Path_And_Stamp;
+
+                     begin
+                        PS.Path := new String'(Line (1 .. Last));
+                        Get_Line (IO_File, Line, Last);
+                        PS.Stamp := new String'(Line (1 .. Last));
+                        Project_Paths.Append (PS);
+                     end;
                   end if;
 
                when Generated_Object_File |
@@ -659,8 +688,22 @@ begin
 
       Create (IO_File, Out_File, Exchange_File_Name.all);
 
+      --  First, the generated object file
+
       Put_Line (IO_File, Binding_Label (Generated_Object_File));
       Put_Line (IO_File, Object);
+
+      --  Repeat the project paths with their time stamps
+
+      Put_Line (IO_File, Binding_Label (Project_Files));
+
+      for J in 1 .. Project_Paths.Last loop
+         Put_Line (IO_File, Project_Paths.Table (J).Path.all);
+         Put_Line (IO_File, Project_Paths.Table (J).Stamp.all);
+      end loop;
+
+      --  For the benefit of gprclean, the generated files other than the
+      --  generated object file.
 
       Put_Line (IO_File, Binding_Label (Generated_Source_Files));
       Put_Line (IO_File, "b__" & Main_Base_Name.all & ".ads");
@@ -729,6 +772,66 @@ begin
                   else
                      Put_Line (IO_File, Line (1 .. Last));
                   end if;
+
+                  --  Add -L switch for the GCC lib directory
+
+                  declare
+                     L  : Natural := Adalib_Dir'Last;
+                     F : Natural;
+                     Found : Boolean;
+                  begin
+                     --  First, get the parent directory of adalib
+
+                     while L > Adalib_Dir'First + 1 and then
+                       (Adalib_Dir (L) = Directory_Separator or else
+                        Adalib_Dir (L) = '/')
+                     loop
+                        L := L - 1;
+                     end loop;
+
+                     Found := False;
+                     while (not Found) and then
+                           L > Adalib_Dir'First + 1
+                     loop
+                        if Adalib_Dir (L) = Directory_Separator or else
+                          Adalib_Dir (L) = '/'
+                        then
+                           Found := True;
+                        else
+                           L := L - 1;
+                        end if;
+                     end loop;
+
+                     if Found then
+                        --  If we are not in the default runtime, get the
+                        --  parent directory.
+
+                        L := L - 1;
+                        F := L;
+                        Found := False;
+                        while (not Found) and then
+                               F > Adalib_Dir'First + 1
+                        loop
+                           if Adalib_Dir (F) = Directory_Separator or else
+                             Adalib_Dir (F) = '/'
+                           then
+                              Found := True;
+                           else
+                              F := F - 1;
+                           end if;
+                        end loop;
+
+                        if Found and then L > F + 4 and then
+                          Adalib_Dir (F + 1 .. F + 4) = "rts-"
+                        then
+                           L := F - 1;
+                        end if;
+
+                        Put_Line
+                          (IO_File,
+                           "-L" & Adalib_Dir (Adalib_Dir'First .. L));
+                     end if;
+                  end;
 
                elsif Line (1 .. Last) = "-lgnarl" then
                   if Static_Libs then
