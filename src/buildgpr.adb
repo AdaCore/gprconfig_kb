@@ -9068,7 +9068,8 @@ package body Buildgpr is
 
          --  Line for -vPx
 
-         Write_Str ("  -vPx     Specify verbosity when parsing Project Files");
+         Write_Str ("  -vPx     Specify verbosity when parsing Project Files" &
+                    " (x = 0/1/2)");
          Write_Eol;
 
          --  Line for -we
