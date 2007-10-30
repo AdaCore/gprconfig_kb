@@ -1506,7 +1506,8 @@ package body Buildgpr is
         (For_Project : Project_Id;
          Language    : Language_Index;
          Lang_Name   : Name_Id;
-         Main_Source : Source_Data);
+         Main_Source : Source_Data;
+         Dep_Files   : out Boolean);
       --  Put the dependency files of the project in the binder exchange file
 
       procedure Check_Dependency_Files
@@ -1521,7 +1522,8 @@ package body Buildgpr is
         (For_Project : Project_Id;
          Language    : Language_Index;
          Lang_Name   : Name_Id;
-         Main_Source : Source_Data)
+         Main_Source : Source_Data;
+         Dep_Files   : out Boolean)
       is
          Data    : Project_Data;
          Src_Id  : Source_Id;
@@ -1557,10 +1559,12 @@ package body Buildgpr is
                Put_Line
                  (Exchange_File,
                   Get_Name_String (Source.Dep_Path));
+               Dep_Files := True;
             end if;
          end Put_Source;
 
       begin
+         Dep_Files := False;
          Data := Project_Tree.Projects.Table (For_Project);
 
          Roots := Root_Sources.Get (Main_Source.File);
@@ -1715,6 +1719,8 @@ package body Buildgpr is
 
                Options_Instance : Bind_Option_Table_Ref :=
                                     No_Bind_Option_Table;
+
+               Dep_Files      : Boolean;
 
             begin
                Initialize_Source_Record (Main_Source_Id);
@@ -1929,7 +1935,8 @@ package body Buildgpr is
                           (Main_Proj,
                            B_Data.Language,
                            B_Data.Language_Name,
-                           Main_Source);
+                           Main_Source,
+                           Dep_Files);
 
                         --  Put the options, if any
 
@@ -2101,188 +2108,199 @@ package body Buildgpr is
 
                         Close (Exchange_File);
 
-                        if Project_Tree.Languages_Data.Table
-                          (B_Data.Language).Config.Objects_Path /= No_Name
+                        if Main_Source.Unit = No_Name and then
+                          (not Dep_Files)
                         then
-                           declare
-                              Env_Var   : constant String :=
-                                            Get_Name_String
-                                             (Project_Tree.Languages_Data.Table
-                                                 (B_Data.Language).Config.
-                                                 Objects_Path);
-                              Path_Name : String_Access :=
-                                            Project_Tree.Projects.Table
-                                              (Main_Proj).Objects_Path;
-                           begin
-                              if Path_Name = null then
-                                 if Current_Verbosity = High then
-                                    Put_Line (Env_Var & " :");
-                                 end if;
+                           if Verbose_Mode then
+                              Write_Line ("      -> nothing to bind");
+                           end if;
 
-                                 Get_Directories
-                                   (Main_Proj,
-                                    Sources  => False,
-                                    Language => No_Name);
-
-                                 if Path_Buffer = null then
-                                    Path_Buffer :=
-                                      new String
-                                            (1 .. Path_Buffer_Initial_Length);
-                                 end if;
-
-                                 Path_Last := 0;
-
-                                 for Index in 1 .. Directories.Last loop
-                                    if Path_Last /= 0 then
-                                       Add_To_Path (Path_Separator);
-                                    end if;
-
-                                    Add_To_Path
-                                      (Get_Name_String
-                                         (Directories.Table (Index)));
-
+                        else
+                           if Project_Tree.Languages_Data.Table
+                             (B_Data.Language).Config.Objects_Path /= No_Name
+                           then
+                              declare
+                                 Env_Var   : constant String :=
+                                        Get_Name_String
+                                          (Project_Tree.Languages_Data.Table
+                                            (B_Data.Language).Config.
+                                               Objects_Path);
+                                 Path_Name : String_Access :=
+                                               Project_Tree.Projects.Table
+                                                 (Main_Proj).Objects_Path;
+                              begin
+                                 if Path_Name = null then
                                     if Current_Verbosity = High then
-                                       Put_Line
-                                         (Get_Name_String
-                                            (Directories.Table (Index)));
+                                       Put_Line (Env_Var & " :");
                                     end if;
-                                 end loop;
 
-                                 Path_Name :=
-                                   new String'(Path_Buffer (1 .. Path_Last));
-                                 Project_Tree.Projects.Table
-                                   (Main_Proj).Objects_Path :=
-                                   Path_Name;
-                              end if;
+                                    Get_Directories
+                                      (Main_Proj,
+                                       Sources  => False,
+                                       Language => No_Name);
 
-                              Setenv (Env_Var, Path_Name.all);
+                                    if Path_Buffer = null then
+                                       Path_Buffer :=
+                                         new String
+                                           (1 .. Path_Buffer_Initial_Length);
+                                    end if;
 
-                              if Verbose_Mode then
-                                 Write_Str (Env_Var);
-                                 Write_Str (" = ");
-                                 Write_Line (Path_Name.all);
-                              end if;
-                           end;
-
-                        elsif Project_Tree.Languages_Data.Table
-                          (B_Data.Language).Config.Objects_Path_File /=
-                             No_Name
-                        then
-                           declare
-                              Env_Var   : constant String :=
-                                            Get_Name_String
-                                             (Project_Tree.Languages_Data.Table
-                                                 (B_Data.Language).Config.
-                                                 Objects_Path_File);
-                              Path_Name : Path_Name_Type :=
-                                            Project_Tree.Projects.Table
-                                              (Main_Proj).
-                                              Objects_Path_File_Without_Libs;
-                           begin
-                              if Path_Name = No_Path then
-                                 if Current_Verbosity = High then
-                                    Put_Line (Env_Var & " :");
-                                 end if;
-
-                                 Get_Directories
-                                   (Main_Proj,
-                                    Sources  => False,
-                                    Language => No_Name);
-
-                                 declare
-                                    FD     : File_Descriptor;
-                                    Len    : Integer;
-                                    Status : Boolean;
-                                 begin
-                                    Prj.Env.Create_New_Path_File
-                                      (In_Tree   => Project_Tree,
-                                       Path_FD   => FD,
-                                       Path_Name =>
-                                         Project_Tree.Projects.Table
-                                           (Main_Proj).
-                                           Objects_Path_File_Without_Libs);
-
-                                    Path_Name :=
-                                      Project_Tree.Projects.Table
-                                        (Main_Proj).
-                                        Objects_Path_File_Without_Libs;
+                                    Path_Last := 0;
 
                                     for Index in 1 .. Directories.Last loop
-                                       Get_Name_String
-                                         (Directories.Table (Index));
+                                       if Path_Last /= 0 then
+                                          Add_To_Path (Path_Separator);
+                                       end if;
+
+                                       Add_To_Path
+                                         (Get_Name_String
+                                            (Directories.Table (Index)));
 
                                        if Current_Verbosity = High then
                                           Put_Line
-                                            (Name_Buffer (1 .. Name_Len));
-                                       end if;
-
-                                       Name_Len := Name_Len + 1;
-                                       Name_Buffer (Name_Len) := ASCII.LF;
-
-                                       Len :=
-                                         Write
-                                           (FD,
-                                            Name_Buffer (1)'Address, Name_Len);
-
-                                       if Len /= Name_Len then
-                                          Fail_Program ("disk full");
+                                            (Get_Name_String
+                                               (Directories.Table (Index)));
                                        end if;
                                     end loop;
 
-                                    Close (FD, Status);
+                                    Path_Name :=
+                                      new String'(Path_Buffer
+                                                  (1 .. Path_Last));
+                                    Project_Tree.Projects.Table
+                                      (Main_Proj).Objects_Path :=
+                                      Path_Name;
+                                 end if;
 
-                                    if not Status then
-                                       Fail_Program ("disk full");
+                                 Setenv (Env_Var, Path_Name.all);
+
+                                 if Verbose_Mode then
+                                    Write_Str (Env_Var);
+                                    Write_Str (" = ");
+                                    Write_Line (Path_Name.all);
+                                 end if;
+                              end;
+
+                           elsif Project_Tree.Languages_Data.Table
+                             (B_Data.Language).Config.Objects_Path_File /=
+                             No_Name
+                           then
+                              declare
+                                 Env_Var   : constant String :=
+                                        Get_Name_String
+                                          (Project_Tree.Languages_Data.Table
+                                             (B_Data.Language).Config.
+                                                Objects_Path_File);
+                                 Path_Name : Path_Name_Type :=
+                                               Project_Tree.Projects.Table
+                                                 (Main_Proj).
+                                                Objects_Path_File_Without_Libs;
+                              begin
+                                 if Path_Name = No_Path then
+                                    if Current_Verbosity = High then
+                                       Put_Line (Env_Var & " :");
                                     end if;
-                                 end;
-                              end if;
 
-                              Setenv (Env_Var, Get_Name_String (Path_Name));
+                                    Get_Directories
+                                      (Main_Proj,
+                                       Sources  => False,
+                                       Language => No_Name);
 
-                              if Verbose_Mode then
-                                 Write_Str (Env_Var);
-                                 Write_Str (" = ");
-                                 Write_Line (Get_Name_String (Path_Name));
-                              end if;
-                           end;
-                        end if;
+                                    declare
+                                       FD     : File_Descriptor;
+                                       Len    : Integer;
+                                       Status : Boolean;
+                                    begin
+                                       Prj.Env.Create_New_Path_File
+                                         (In_Tree   => Project_Tree,
+                                          Path_FD   => FD,
+                                          Path_Name =>
+                                            Project_Tree.Projects.Table
+                                              (Main_Proj).
+                                              Objects_Path_File_Without_Libs);
 
-                        if not Quiet_Output then
-                           if Verbose_Mode then
-                              Write_Str (B_Data.Binder_Driver_Path.all);
+                                       Path_Name :=
+                                         Project_Tree.Projects.Table
+                                           (Main_Proj).
+                                           Objects_Path_File_Without_Libs;
 
-                           else
-                              Name_Len := 0;
-                              Add_Str_To_Name_Buffer
-                                (Base_Name
-                                   (Get_Name_String
-                                      (B_Data.Binder_Driver_Name)));
+                                       for Index in 1 .. Directories.Last loop
+                                          Get_Name_String
+                                            (Directories.Table (Index));
 
-                              if Executable_Suffix'Length /= 0 and then
-                                Name_Len > Executable_Suffix'Length and then
-                                Name_Buffer
-                                  (Name_Len - Executable_Suffix'Length + 1
-                                   .. Name_Len)
-                                = Executable_Suffix.all
-                              then
-                                 Name_Len :=
-                                   Name_Len - Executable_Suffix'Length;
-                              end if;
+                                          if Current_Verbosity = High then
+                                             Put_Line
+                                               (Name_Buffer (1 .. Name_Len));
+                                          end if;
 
-                              Write_Str (Name_Buffer (1 .. Name_Len));
+                                          Name_Len := Name_Len + 1;
+                                          Name_Buffer (Name_Len) := ASCII.LF;
+
+                                          Len :=
+                                            Write
+                                              (FD,
+                                               Name_Buffer (1)'Address,
+                                               Name_Len);
+
+                                          if Len /= Name_Len then
+                                             Fail_Program ("disk full");
+                                          end if;
+                                       end loop;
+
+                                       Close (FD, Status);
+
+                                       if not Status then
+                                          Fail_Program ("disk full");
+                                       end if;
+                                    end;
+                                 end if;
+
+                                 Setenv (Env_Var, Get_Name_String (Path_Name));
+
+                                 if Verbose_Mode then
+                                    Write_Str (Env_Var);
+                                    Write_Str (" = ");
+                                    Write_Line (Get_Name_String (Path_Name));
+                                 end if;
+                              end;
                            end if;
 
-                           Write_Char (' ');
-                           Write_Line (Bind_Exchange.all);
-                        end if;
+                           if not Quiet_Output then
+                              if Verbose_Mode then
+                                 Write_Str (B_Data.Binder_Driver_Path.all);
 
-                        Spawn
-                          (B_Data.Binder_Driver_Path.all,
-                           (1 => Bind_Exchange),
-                           Success);
+                              else
+                                 Name_Len := 0;
+                                 Add_Str_To_Name_Buffer
+                                   (Base_Name
+                                      (Get_Name_String
+                                         (B_Data.Binder_Driver_Name)));
 
-                        if not Success then
-                           Fail_Program ("unable to bind ", Main);
+                                 if Executable_Suffix'Length /= 0 and then
+                                   Name_Len > Executable_Suffix'Length and then
+                                   Name_Buffer
+                                     (Name_Len - Executable_Suffix'Length + 1
+                                      .. Name_Len)
+                                   = Executable_Suffix.all
+                                 then
+                                    Name_Len :=
+                                      Name_Len - Executable_Suffix'Length;
+                                 end if;
+
+                                 Write_Str (Name_Buffer (1 .. Name_Len));
+                              end if;
+
+                              Write_Char (' ');
+                              Write_Line (Bind_Exchange.all);
+                           end if;
+
+                           Spawn
+                             (B_Data.Binder_Driver_Path.all,
+                              (1 => Bind_Exchange),
+                              Success);
+
+                           if not Success then
+                              Fail_Program ("unable to bind ", Main);
+                           end if;
                         end if;
                      end if;
                   end loop;
