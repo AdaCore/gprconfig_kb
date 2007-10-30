@@ -114,8 +114,6 @@ install-doc:
 	$(MKDIR) ${docdir}/html
 	${CP} doc/*.html ${docdir}/html
 
-tests: force
-	cd tests; ./test.cmd
 examples: force
 	make -C examples
 force:
