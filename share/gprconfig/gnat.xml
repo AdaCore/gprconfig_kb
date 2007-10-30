@@ -68,7 +68,7 @@
    </config>
   </configuration>
 
-  <!-- add the --RTS= arg to the compiler and binder for GNAT -->
+  <!-- add the RTS= arg to the compiler and binder for GNAT -->
   <!-- ??? how do we generalize for any runtime? -->
   <configuration>
    <compilers>
