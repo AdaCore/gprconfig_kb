@@ -179,8 +179,6 @@ private
                Value           : Ada.Strings.Unbounded.Unbounded_String;
             when Value_Shell    =>
                Command         : Ada.Strings.Unbounded.Unbounded_String;
-               Regexp          : Ada.Strings.Unbounded.Unbounded_String;
-               Group           : Natural;
             when Value_Directory =>
                Directory       : Ada.Strings.Unbounded.Unbounded_String;
                Directory_Group : Integer;
@@ -192,13 +190,17 @@ private
      (External_Value_Node);
 
    type External_Value is record
+      Regexp     : Ada.Strings.Unbounded.Unbounded_String;
+      Group      : Natural;
       Filter     : Ada.Strings.Unbounded.Unbounded_String;
       Must_Match : Ada.Strings.Unbounded.Unbounded_String;
       Nodes      : External_Value_Nodes.List;
    end record;
 
    Null_External_Value : constant External_Value :=
-     (Filter     => Ada.Strings.Unbounded.Null_Unbounded_String,
+     (Regexp     => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Group      => 0,
+      Filter     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Must_Match => Ada.Strings.Unbounded.Null_Unbounded_String,
       Nodes      => External_Value_Nodes.Empty_List);
 

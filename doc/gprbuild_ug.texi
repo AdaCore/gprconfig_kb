@@ -1591,14 +1591,38 @@ instance, the list of supported languages might be defined as:
 
 for the GNAT compiler, since this is an Ada only compiler anyway.
 
-@item @code{<external match="regexp" group="0">command</external>}
+@item @code{<getenv name="variable"></getenv>}
+
+If the contents of the node is an @code{<getenv>} child, the value of
+the environment variable @var{variable} is returned.  This variable can be
+later filtered.
+
+@item @code{<external>command</external>}
 
 If the contents of the node is an @code{<external>} child, this indicates
-that a command should be run on the system, and its output parsed.
+that a command should be run on the system.
 When the command is run, the current directory (ie the one that contains
 the executable found through the @code{<executable>} node, is put first
-on the PATH. The output of the command is matched again the regular
-expression @code{regexp}. Finally, the parenthesis group specified by
+on the PATH. The output of the command is returned and may be later filtered.
+
+For instance, extracting the target processor from @code{gcc} can be done
+with:
+
+@smallexample
+<version>
+   <external>gcc -dumpmachine</external>
+</version>
+@end smallexample
+
+Since the PATH has been modified, we know that the @code{gcc} command that
+is executed is the one from the same directory as the @code{<external>}
+node.
+
+@item @code{<grep match="regexp" group="0"></grep>}
+
+This node must come after the previously described ones. It is used to
+further filter the output. The previous output is matched again the regular
+expression @code{regexp} and the parenthesis group specified by
 @code{group} is returned. By default, group is 0, which indicates the
 whole output of the command.
 
@@ -1607,13 +1631,10 @@ with:
 
 @smallexample
 <version>
-   <external regexp="^gcc version (\S+)" group="1">gcc -v</external>
+   <external>gcc -v</external>
+   <grep regexp="^gcc version (\S+)" group="1"></grep>
 </version>
 @end smallexample
-
-Since the PATH has been modified, we know that the @code{gcc} command that
-is executed is the one from the same directory as the @code{<external>}
-node.
 
 @item @code{<directory group="0">regexp</directory>}
 

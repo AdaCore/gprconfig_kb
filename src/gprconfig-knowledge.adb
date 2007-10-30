@@ -418,11 +418,7 @@ package body GprConfig.Knowledge is
          if Tmp.Tag.all = "external" then
             External_Node :=
               (Typ        => Value_Shell,
-               Command    => To_Unbounded_String (Tmp.Value.all),
-               Regexp     => To_Unbounded_String
-                 (Get_Attribute (Tmp, "regexp", ".*")),
-               Group      => Integer'Value
-                 (Get_Attribute (Tmp, "group", "0")));
+               Command    => To_Unbounded_String (Tmp.Value.all));
             Append (Value.Nodes, External_Node);
          elsif Tmp.Tag.all = "directory" then
             External_Node :=
@@ -439,12 +435,34 @@ package body GprConfig.Knowledge is
                   External_Node.Dir_If_Match :=
                     To_Unbounded_String (Get_Attribute (Tmp, "group", "0"));
             end;
-
             Append (Value.Nodes, External_Node);
+         elsif Tmp.Tag.all = "getenv" then
+            declare
+               Name : constant String := Get_Attribute (Tmp, "name", "");
+            begin
+               if Ada.Environment_Variables.Exists (Name) then
+                  External_Node :=
+                    (Typ        => Value_Constant,
+                     Value      => To_Unbounded_String
+                     (Ada.Environment_Variables.Value (Name)));
+               else
+                  Put_Line (Standard_Error,
+                            "warning: environment variable '" & Name
+                            & "' is not defined");
+                  External_Node :=
+                    (Typ        => Value_Constant,
+                     Value      => Null_Unbounded_String);
+               end if;
+               Append (Value.Nodes, External_Node);
+            end;
          elsif Tmp.Tag.all = "filter" then
             Value.Filter := To_Unbounded_String (Tmp.Value.all);
          elsif Tmp.Tag.all = "must_match" then
             Value.Must_Match := To_Unbounded_String (Tmp.Value.all);
+         elsif Tmp.Tag.all = "grep" then
+            Value.Regexp := To_Unbounded_String
+              (Get_Attribute (Tmp, "regexp", ".*"));
+            Value.Group := Integer'Value (Get_Attribute (Tmp, "group", "0"));
          else
             Put_Line (Standard_Error, "Invalid XML description for "
                       & Node.Tag.all & " in file " & File);
@@ -457,7 +475,7 @@ package body GprConfig.Knowledge is
 
    exception
       when Constraint_Error =>
-      Put_Line (Standard_Error, "Invalid group number for " & Node.Tag.all
+         Put_Line (Standard_Error, "Invalid group number for " & Node.Tag.all
                    & " in file " & File);
          Value := Null_External_Value;
    end Parse_External_Value;
@@ -1066,35 +1084,14 @@ package body GprConfig.Knowledge is
                         Input       => "",
                         Status      => Status'Unchecked_Access,
                         Err_To_Out  => True);
-                     Regexp : constant Pattern_Matcher := Compile
-                       (To_String (Node.Regexp), Multiple_Lines);
-                     Matched : Match_Array (0 .. Node.Group);
                   begin
                      GNAT.Strings.Free (Args);
                      Ada.Environment_Variables.Set ("PATH", Saved_Path);
+                     Tmp_Result := To_Unbounded_String (Output);
 
-                     Match (Regexp, Output, Matched);
-                     if Matched (Node.Group) /= No_Match then
-                        Extracted_From := To_Unbounded_String (Output);
-                        Tmp_Result := To_Unbounded_String
-                          (Output (Matched (Node.Group).First ..
-                             Matched (Node.Group).Last));
-                        if Verbose_Level > 1 then
-                           Put_Verbose
-                             (Attribute & ": executing """ & Command
-                              & """ output=""" & Output & """"
-                              & " matched=""" & To_String (Tmp_Result)
-                              & """");
-                        elsif Verbose_Level > 0 then
-                           Put_Verbose
-                             (Attribute & ": executing """ & Command
-                              & """ output=<use -v -v> matched="""
-                              & To_String (Tmp_Result) & """");
-                        end if;
-                     elsif Verbose_Level > 1 then
+                     if Verbose_Level > 1 then
                         Put_Verbose (Attribute & ": executing """ & Command
-                                     & """ output=""" & Output & """"
-                                     & " no match");
+                                     & """ output=""" & Output & """");
                      elsif Verbose_Level > 0 then
                         Put_Verbose
                           (Attribute & ": executing """ & Command
@@ -1140,6 +1137,27 @@ package body GprConfig.Knowledge is
                   Put_Verbose ("Done search directories", -1);
                end;
          end case;
+
+         if Value.Regexp /= Null_Unbounded_String then
+            declare
+               Regexp : constant Pattern_Matcher := Compile
+                 (To_String (Value.Regexp), Multiple_Lines);
+               Matched : Match_Array (0 .. Value.Group);
+               Tmp_Str : String := To_String (Tmp_Result);
+            begin
+               Match (Regexp, Tmp_Str, Matched);
+               if Matched (Value.Group) /= No_Match then
+                  Tmp_Result := To_Unbounded_String
+                    (Tmp_Str (Matched (Value.Group).First ..
+                              Matched (Value.Group).Last));
+                  Put_Verbose (Attribute & ": grep matched="""
+                               & To_String (Tmp_Result) & """");
+               else
+                  Tmp_Result := Null_Unbounded_String;
+                  Put_Verbose (Attribute & ": grep no match");
+               end if;
+            end;
+         end if;
 
          if Value.Must_Match /= Null_Unbounded_String
            and then not Match (Expression => To_String (Value.Must_Match),
