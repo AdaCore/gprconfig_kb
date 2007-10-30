@@ -114,6 +114,9 @@ install-doc:
 	$(MKDIR) ${docdir}/html
 	${CP} doc/*.html ${docdir}/html
 
+tests: force
+	cd internal/gprtests; ./run-test
+
 examples: force
 	make -C examples
 force:
