@@ -51,7 +51,7 @@ procedure GprConfig.Main is
    procedure To_List
      (Comps              : Compiler_Array;
       Selected           : Boolean_Array;
-      Selected_Compilers : out Compiler_Lists.List);
+      Selected_Compilers : in out Compiler_Lists.List);
    --  Return the list of selected compilers in Comps
 
    procedure Enter_Custom_Compiler
@@ -177,7 +177,7 @@ procedure GprConfig.Main is
    procedure To_List
      (Comps              : Compiler_Array;
       Selected           : Boolean_Array;
-      Selected_Compilers : out Compiler_Lists.List) is
+      Selected_Compilers : in out Compiler_Lists.List) is
    begin
       for Index in Comps'Range loop
          if Selected (Index) then
