@@ -1898,10 +1898,11 @@ package body GprConfig.Knowledge is
                   --  appropriate
 
                   Normalized : constant String :=
-                    Normalize_Pathname
-                      (Path (First .. Last - 1),
-                       Resolve_Links  => True,
-                       Case_Sensitive => False);
+                    Name_As_Directory
+                      (Normalize_Pathname
+                         (Path (First .. Last - 1),
+                          Resolve_Links  => True,
+                          Case_Sensitive => False));
                begin
                   Put_Verbose ("Parsing PATH: " & Path (First .. Last - 1)
                                & " normalized=" & Normalized);
@@ -1923,6 +1924,8 @@ package body GprConfig.Knowledge is
                         Stop_At_First_Match     => Stop_At_First_Match);
                      exit when Stop_At_First_Match
                        and then Length (Compilers) > 0;
+                  else
+                     Put_Verbose ("  => Already parsed");
                   end if;
                end;
 
