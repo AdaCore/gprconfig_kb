@@ -110,6 +110,8 @@ procedure GprConfig.Main is
 
       Put_Line (" --target=target (" & Sdefault.Hostname & " by default)");
       Put_Line ("            Select specified target or all for any target.");
+      Put_Line (" --show-targets : List all compiler targets that are known");
+      Put_Line ("            to match the one specified by --target.");
       Put_Line (" -o file  : Name and directory of the output file.");
       Put_Line ("            default is " & To_String (Output_File));
       Put_Line (" --db dir : Parse dir as an additional knowledge base.");
