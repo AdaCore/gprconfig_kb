@@ -12,7 +12,10 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
-with Glib.XML;                  use Glib;
+with DOM.Core.Nodes;            use DOM.Core, DOM.Core.Nodes;
+with DOM.Core.Documents;
+with DOM.Readers;               use DOM.Readers;
+with Input_Sources.File;        use Input_Sources.File;
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Expect;               use GNAT.Expect;
@@ -20,11 +23,9 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Regpat;               use GNAT.Regpat;
 with GNAT.Strings;              use GNAT.Strings;
 with GprConfig.Sdefault;        use GprConfig.Sdefault;
+with Sax.Readers;               use Sax.Readers;
 
 package body GprConfig.Knowledge is
-
-   package XML_Int is new Glib.XML (Integer);
-   use XML_Int;
 
    package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
      (String, Unbounded_String, Ada.Strings.Hash_Case_Insensitive, "=");
@@ -42,9 +43,11 @@ package body GprConfig.Knowledge is
    package External_Value_Lists is new Ada.Containers.Doubly_Linked_Lists
      (External_Value_Item);
 
-   use Compiler_Lists, Compiler_Description_Maps;
-   use Configuration_Lists, Compilers_Filter_Lists, String_Maps;
-   use Compiler_Filter_Lists, External_Value_Lists, String_Lists;
+   package CDM renames Compiler_Description_Maps;
+   package CFL renames Compiler_Filter_Lists;
+   use Compiler_Lists, CFL, Compilers_Filter_Lists;
+   use Configuration_Lists, String_Maps;
+   use External_Value_Lists, String_Lists;
    use External_Value_Nodes;
 
    Case_Sensitive_Files : constant Boolean := Directory_Separator = '\';
@@ -57,28 +60,36 @@ package body GprConfig.Knowledge is
    --  Current indentation level for traces
 
    procedure Parse_Compiler_Description
-     (Append_To   : in out Compiler_Description_Maps.Map;
+     (Append_To   : in out CDM.Map;
       File        : String;
-      Description : Node_Ptr);
+      Description : Node);
    --  Parse a compiler description described by N
 
    procedure Parse_Configuration
      (Append_To   : in out Configuration_Lists.List;
       File        : String;
-      Description : Node_Ptr);
+      Description : Node);
    --  Parse a configuration node
 
    procedure Parse_Targets_Set
      (Append_To   : in out Targets_Set_Vectors.Vector;
       File        : String;
-      Description : Node_Ptr);
+      Description : Node);
    --  Parse a targets set node
 
    procedure Parse_External_Value
-     (Value       : out External_Value;
-      File        : String;
-      Node        : Node_Ptr);
+     (Value    : out External_Value;
+      File     : String;
+      External : Node);
    --  Parse an XML node that describes an external value
+
+   function Get_Attribute
+     (N : Node; Attribute : String; Default : String) return String;
+   --  Return the value of an attribute, or Default if the attribute does not
+   --  exist
+
+   function Node_Value_As_String (N : Node) return String;
+   --  Return the value of the node, concatenating all Text children
 
    procedure Find_Compilers_In_Dir
      (Append_To  : in out Compiler_Lists.List;
@@ -225,6 +236,40 @@ package body GprConfig.Knowledge is
    --  For instance:
    --      Str="A\." Remove_Quoted=False  => output is "A."
    --      Str="A\." Remove_Quoted=False  => output is "A"
+
+   -------------------
+   -- Get_Attribute --
+   -------------------
+
+   function Get_Attribute
+     (N : Node; Attribute : String; Default : String) return String
+   is
+      Attr : constant Node := Get_Named_Item (Attributes (N), Attribute);
+   begin
+      if Attr = null then
+         return Default;
+      else
+         return Node_Value (Attr);
+      end if;
+   end Get_Attribute;
+
+   --------------------------
+   -- Node_Value_As_String --
+   --------------------------
+
+   function Node_Value_As_String (N : Node) return String is
+      Result : Unbounded_String;
+      Child : Node := First_Child (N);
+   begin
+      while Child /= null loop
+         exit when Node_Type (Child) = Element_Node;
+         Append (Result, Node_Value (Child));
+         Child := Next_Sibling (Child);
+      end loop;
+
+      return To_String (Result);
+   end Node_Value_As_String;
+
    -------------
    -- Unquote --
    -------------
@@ -398,38 +443,54 @@ package body GprConfig.Knowledge is
    --------------------------
 
    procedure Parse_External_Value
-     (Value       : out External_Value;
-      File        : String;
-      Node        : Node_Ptr)
+     (Value         : out External_Value;
+      File          : String;
+      External      : Node)
    is
-      Tmp           : Node_Ptr := Node.Child;
+      Tmp           : Node := First_Child (External);
       External_Node : External_Value_Node;
       Is_Done       : Boolean := True;
+      Static_Value  : constant String := Node_Value_As_String (External);
+      Has_Static    : Boolean := False;
    begin
+      for S in Static_Value'Range loop
+         if Static_Value (S) /= ' '
+           and then Static_Value (S) /= ASCII.LF
+         then
+            Has_Static := True;
+            exit;
+         end if;
+      end loop;
+
       --  Constant value is not within a nested node.
-      if Node.Value /= null then
-         External_Node := (Typ        => Value_Constant,
-                           Value      => To_Unbounded_String (Node.Value.all));
+      if Has_Static then
+         External_Node :=
+           (Typ        => Value_Constant,
+            Value      => To_Unbounded_String (Static_Value));
          Append (Value.Nodes, External_Node);
          Is_Done := False;
       end if;
 
       while Tmp /= null loop
-         if Tmp.Tag.all = "external" then
+         if Node_Type (Tmp) /= Element_Node then
+            null;
+
+         elsif Node_Name (Tmp) = "external" then
             if not Is_Done then
                Append (Value.Nodes, (Typ => Value_Done));
             end if;
 
             External_Node :=
               (Typ        => Value_Shell,
-               Command    => To_Unbounded_String (Tmp.Value.all));
+               Command    => To_Unbounded_String (Node_Value_As_String (Tmp)));
             Append (Value.Nodes, External_Node);
             Is_Done := False;
-         elsif Tmp.Tag.all = "directory" then
+
+         elsif Node_Name (Tmp) = "directory" then
             External_Node :=
-              (Typ             => Value_Directory,
-               Directory       => To_Unbounded_String (Tmp.Value.all),
-               Dir_If_Match    => Null_Unbounded_String,
+              (Typ         => Value_Directory,
+               Directory   => To_Unbounded_String (Node_Value_As_String (Tmp)),
+               Dir_If_Match => Null_Unbounded_String,
                Directory_Group => 0);
             begin
                External_Node.Directory_Group := Integer'Value
@@ -442,7 +503,8 @@ package body GprConfig.Knowledge is
             end;
             Append (Value.Nodes, External_Node);
             Is_Done := True;
-         elsif Tmp.Tag.all = "getenv" then
+
+         elsif Node_Name (Tmp) = "getenv" then
             if not Is_Done then
                Append (Value.Nodes, (Typ => Value_Done));
             end if;
@@ -465,19 +527,22 @@ package body GprConfig.Knowledge is
             end;
             Append (Value.Nodes, External_Node);
             Is_Done := False;
-         elsif Tmp.Tag.all = "filter" then
+
+         elsif Node_Name (Tmp) = "filter" then
             External_Node :=
               (Typ        => Value_Filter,
-               Filter    => To_Unbounded_String (Tmp.Value.all));
+               Filter    => To_Unbounded_String (Node_Value_As_String (Tmp)));
             Append (Value.Nodes, External_Node);
             Is_Done := True;
-         elsif Tmp.Tag.all = "must_match" then
+
+         elsif Node_Name (Tmp) = "must_match" then
             External_Node :=
               (Typ        => Value_Must_Match,
-               Must_Match => To_Unbounded_String (Tmp.Value.all));
+               Must_Match => To_Unbounded_String (Node_Value_As_String (Tmp)));
             Append (Value.Nodes, External_Node);
             Is_Done := True;
-         elsif Tmp.Tag.all = "grep" then
+
+         elsif Node_Name (Tmp) = "grep" then
             External_Node :=
               (Typ        => Value_Grep,
                Regexp     => To_Unbounded_String (Get_Attribute
@@ -485,14 +550,15 @@ package body GprConfig.Knowledge is
                Group      => Integer'Value (Get_Attribute
                                             (Tmp, "group", "0")));
             Append (Value.Nodes, External_Node);
+
          else
             Put_Line (Standard_Error, "Invalid XML description for "
-                      & Node.Tag.all & " in file " & File);
-            Put_Line (Standard_Error, "    Invalid tag: " & Tmp.Tag.all);
+                      & Node_Name (External) & " in file " & File);
+            Put_Line (Standard_Error, "    Invalid tag: " & Node_Name (Tmp));
             Value := Null_External_Value;
          end if;
 
-         Tmp := Tmp.Next;
+         Tmp := Next_Sibling (Tmp);
       end  loop;
 
       if not Is_Done then
@@ -501,7 +567,8 @@ package body GprConfig.Knowledge is
 
    exception
       when Constraint_Error =>
-         Put_Line (Standard_Error, "Invalid group number for " & Node.Tag.all
+         Put_Line (Standard_Error, "Invalid group number for "
+                   & Node_Name (External)
                    & " in file " & File);
          Value := Null_External_Value;
    end Parse_External_Value;
@@ -511,19 +578,22 @@ package body GprConfig.Knowledge is
    --------------------------------
 
    procedure Parse_Compiler_Description
-     (Append_To   : in out Compiler_Description_Maps.Map;
+     (Append_To   : in out CDM.Map;
       File        : String;
-      Description : Node_Ptr)
+      Description : Node)
    is
       Compiler : Compiler_Description;
-      N        : Node_Ptr := Description.Child;
-      Name     : String_Ptr;
+      N        : Node := First_Child (Description);
+      Name     : Unbounded_String;
    begin
       while N /= null loop
-         if N.Tag.all = "executable" then
+         if Node_Type (N) /= Element_Node then
+            null;
+
+         elsif Node_Name (N) = "executable" then
             declare
                Prefix : constant String := Get_Attribute (N, "prefix", "@@");
-               Val    : constant String := N.Value.all;
+               Val    : constant String := Node_Value_As_String (N);
             begin
                Compiler.Executable := To_Unbounded_String (Val);
                Compiler.Prefix_Index := Integer'Value (Prefix);
@@ -534,7 +604,8 @@ package body GprConfig.Knowledge is
             exception
                when Expression_Error =>
                   Put_Line
-                    ("Invalid regular expression found in the configuration"
+                    (Standard_Error,
+                     "Invalid regular expression found in the configuration"
                      & " files: " & To_String (Compiler.Executable)
                      & " while parsing " & File);
                   raise Invalid_Knowledge_Base;
@@ -544,40 +615,48 @@ package body GprConfig.Knowledge is
                   null;
             end;
 
-         elsif N.Tag.all = "name" then
-            Name := N.Value;
-         elsif N.Tag.all = "version" then
+         elsif Node_Name (N) = "name" then
+            Name := To_Unbounded_String (Node_Value_As_String (N));
+
+         elsif Node_Name (N) = "version" then
             Parse_External_Value
-              (Value => Compiler.Version,
-               File  => File,
-               Node  => N);
-         elsif N.Tag.all = "languages" then
+              (Value    => Compiler.Version,
+               File     => File,
+               External => N);
+
+         elsif Node_Name (N) = "languages" then
             Parse_External_Value
-              (Value => Compiler.Languages,
-               File  => File,
-               Node  => N);
-         elsif N.Tag.all = "runtimes" then
+              (Value    => Compiler.Languages,
+               File     => File,
+               External => N);
+
+         elsif Node_Name (N) = "runtimes" then
             Parse_External_Value
-              (Value => Compiler.Runtimes,
-               File  => File,
-               Node  => N);
-         elsif N.Tag.all = "target" then
+              (Value    => Compiler.Runtimes,
+               File     => File,
+               External => N);
+
+         elsif Node_Name (N) = "target" then
             Parse_External_Value
-              (Value => Compiler.Target,
-               File  => File,
-               Node  => N);
-         elsif N.Tag.all = "extra_tool" then
-            Compiler.Extra_Tool := To_Unbounded_String (N.Value.all);
+              (Value    => Compiler.Target,
+               File     => File,
+               External => N);
+
+         elsif Node_Name (N) = "extra_tool" then
+            Compiler.Extra_Tool :=
+              To_Unbounded_String (Node_Value_As_String (N));
+
          else
             Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                      & N.Tag.all);
+                      & Node_Name (N));
+            raise Invalid_Knowledge_Base;
          end if;
 
-         N := N.Next;
+         N := Next_Sibling (N);
       end loop;
 
-      if Name /= null then
-         Include (Append_To, Name.all, Compiler);
+      if Name /= "" then
+         CDM.Include (Append_To, To_String (Name), Compiler);
       end if;
    end Parse_Compiler_Description;
 
@@ -588,11 +667,11 @@ package body GprConfig.Knowledge is
    procedure Parse_Configuration
      (Append_To   : in out Configuration_Lists.List;
       File        : String;
-      Description : Node_Ptr)
+      Description : Node)
    is
       Config    : Configuration;
-      N         : Node_Ptr := Description.Child;
-      N2        : Node_Ptr;
+      N         : Node := First_Child (Description);
+      N2        : Node;
       Compilers : Compilers_Filter;
       Ignore_Config : Boolean := False;
       Negate    : Boolean;
@@ -600,11 +679,17 @@ package body GprConfig.Knowledge is
       Config.Supported := True;
 
       while N /= null loop
-         if N.Tag.all = "compilers" then
+         if Node_Type (N) /= Element_Node then
+            null;
+
+         elsif Node_Name (N) = "compilers" then
             Compilers := No_Compilers_Filter;
-            N2 := N.Child;
+            N2 := First_Child (N);
             while N2 /= null loop
-               if N2.Tag.all = "compiler" then
+               if Node_Type (N2) /= Element_Node then
+                  null;
+
+               elsif Node_Name (N2) = "compiler" then
                   Append
                     (Compilers.Compiler,
                      Compiler_Filter'
@@ -614,45 +699,56 @@ package body GprConfig.Knowledge is
                         Language => TU (Get_Attribute (N2, "language", ""))));
                else
                   Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                            & N2.Tag.all);
+                            & Node_Name (N2));
+                  raise Invalid_Knowledge_Base;
                end if;
-               N2 := N2.Next;
+
+               N2 := Next_Sibling (N2);
             end loop;
+
             Compilers.Negate := Boolean'Value
               (Get_Attribute (N, "negate", "False"));
             Append (Config.Compilers_Filters, Compilers);
 
-         elsif N.Tag.all = "targets" then
+         elsif Node_Name (N) = "targets" then
             if not Is_Empty (Config.Targets_Filters) then
                Put_Line (Standard_Error,
                          "Can have a single <targets> filter in " & File);
             else
-               N2 := N.Child;
+               N2 := First_Child (N);
                while N2 /= null loop
-                  if N2.Tag.all = "target" then
+                  if Node_Type (N2) /= Element_Node then
+                     null;
+
+                  elsif Node_Name (N2) = "target" then
                      Append (Config.Targets_Filters,
                              Get_Attribute (N2, "name", ""));
                   else
                      Put_Line
                        (Standard_Error, "Unknown XML tag in " & File & ": "
-                        & N2.Tag.all);
+                        & Node_Name (N2));
+                     raise Invalid_Knowledge_Base;
                   end if;
-                  N2 := N2.Next;
+
+                  N2 := Next_Sibling (N2);
                end loop;
                Config.Negate_Targets := Boolean'Value
                  (Get_Attribute (N, "negate", "False"));
             end if;
 
-         elsif N.Tag.all = "hosts" then
+         elsif Node_Name (N) = "hosts" then
             --  Resolve this filter immediately. This saves memory, since we
             --  don't need to store it in memory if we know it won't apply.
-            N2 := N.Child;
+            N2 := First_Child (N);
             Negate := Boolean'Value
               (Get_Attribute (N, "negate", "False"));
 
             Ignore_Config := not Negate;
             while N2 /= null loop
-               if N2.Tag.all = "host" then
+               if Node_Type (N2) /= Element_Node then
+                  null;
+
+               elsif Node_Name (N2) = "host" then
                   if Match
                     (Get_Attribute (N2, "name", ""), Sdefault.Hostname)
                   then
@@ -662,27 +758,29 @@ package body GprConfig.Knowledge is
 
                else
                   Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                            & N2.Tag.all);
+                            & Node_Name (N2));
+                  raise Invalid_Knowledge_Base;
                end if;
 
-               N2 := N2.Next;
+               N2 := Next_Sibling (N2);
             end loop;
 
             exit when Ignore_Config;
 
-         elsif N.Tag.all = "config" then
-            if N.Value = null or else N.Value.all = "" then
+         elsif Node_Name (N) = "config" then
+            if Node_Value_As_String (N) = "" then
                Config.Supported := False;
             else
-               Append (Config.Config, N.Value.all);
+               Append (Config.Config, Node_Value_As_String (N));
             end if;
 
          else
             Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                      & N.Tag.all);
+                      & Node_Name (N));
+            raise Invalid_Knowledge_Base;
          end if;
 
-         N := N.Next;
+         N := Next_Sibling (N);
       end loop;
 
       if not Ignore_Config then
@@ -697,16 +795,19 @@ package body GprConfig.Knowledge is
    procedure Parse_Targets_Set
      (Append_To   : in out Targets_Set_Vectors.Vector;
       File        : String;
-      Description : Node_Ptr)
+      Description : Node)
    is
       Set      : Target_Lists.List;
       Pattern  : Pattern_Matcher_Access;
-      N        : Node_Ptr := Description.Child;
+      N        : Node := First_Child (Description);
    begin
       while N /= null loop
-         if N.Tag.all = "target" then
+         if Node_Type (N) /= Element_Node then
+            null;
+
+         elsif Node_Name (N) = "target" then
             declare
-               Val    : constant String := N.Value.all;
+               Val    : constant String := Node_Value_As_String (N);
             begin
                Pattern := new Pattern_Matcher'(Compile ("^" & Val & "$"));
                Target_Lists.Append (Set, Pattern);
@@ -722,10 +823,11 @@ package body GprConfig.Knowledge is
 
          else
             Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                      & N.Tag.all);
+                      & Node_Name (N));
+            raise Invalid_Knowledge_Base;
          end if;
 
-         N := N.Next;
+         N := Next_Sibling (N);
       end loop;
 
       if not Target_Lists.Is_Empty (Set) then
@@ -742,8 +844,10 @@ package body GprConfig.Knowledge is
    is
       Search    : Search_Type;
       File      : Directory_Entry_Type;
-      File_Node : Node_Ptr;
-      N         : Node_Ptr;
+      File_Node : Node;
+      N         : Node;
+      Reader    : Tree_Reader;
+      Input     : File_Input;
    begin
       Put_Verbose ("Parsing knowledge base at " & Directory);
       Start_Search
@@ -755,41 +859,50 @@ package body GprConfig.Knowledge is
       while More_Entries (Search) loop
          Get_Next_Entry (Search, File);
 
-         File_Node := Parse (Full_Name (File));
+         Open (Full_Name (File), Input);
+         Parse (Reader, Input);
+         Close (Input);
+         File_Node := DOM.Core.Documents.Get_Element (Get_Tree (Reader));
 
-         if File_Node = null then
-            Put_Line (Standard_Error, "Could not parse " & Simple_Name (File));
-         elsif File_Node.Tag.all = "gprconfig" then
-            N := File_Node.Child;
+         if Node_Name (File_Node) = "gprconfig" then
+            N := First_Child (File_Node);
             while N /= null loop
-               if N.Tag.all = "compiler_description" then
+               if Node_Type (N) /= Element_Node then
+                  null;
+
+               elsif Node_Name (N) = "compiler_description" then
                   Parse_Compiler_Description
                     (Append_To   => Base.Compilers,
                      File        => Simple_Name (File),
                      Description => N);
-               elsif N.Tag.all = "configuration" then
+
+               elsif Node_Name (N) = "configuration" then
                   Parse_Configuration
                     (Append_To   => Base.Configurations,
                      File        => Simple_Name (File),
                      Description => N);
-               elsif N.Tag.all = "targetset" then
+
+               elsif Node_Name (N) = "targetset" then
                   Parse_Targets_Set
                     (Append_To   => Base.Targets_Sets,
                      File        => Simple_Name (File),
                      Description => N);
+
                else
                   Put_Line (Standard_Error,
                             "Unknown XML tag in " & Simple_Name (File) & ": "
-                            & N.Tag.all);
+                            & Node_Name (N));
+                  raise Invalid_Knowledge_Base;
                end if;
 
-               N := N.Next;
+               N := Next_Sibling (N);
             end loop;
          else
             Put_Line (Standard_Error,
                       "Invalid toplevel XML tag in " & Simple_Name (File));
          end if;
-         Free (File_Node);
+
+         Free (Reader);
       end loop;
 
       End_Search (Search);
@@ -797,6 +910,11 @@ package body GprConfig.Knowledge is
    exception
       when Ada.Directories.Name_Error =>
          Put_Line (Standard_Error, "Directory not found: " & Directory);
+
+      when E : XML_Fatal_Error =>
+         Put_Line (Standard_Error, Exception_Message (E));
+         raise Invalid_Knowledge_Base;
+
       when E : others =>
          Put_Verbose ("Unexpected exception while parsing knowledge base: "
                       & Exception_Information (E));
@@ -1080,7 +1198,7 @@ package body GprConfig.Knowledge is
       while Has_Element (Node_Cursor) loop
 
          while Has_Element (Node_Cursor) loop
-            Node := Element (Node_Cursor);
+            Node := External_Value_Nodes.Element (Node_Cursor);
 
             case Node.Typ is
                when Value_Constant =>
@@ -1170,7 +1288,9 @@ package body GprConfig.Knowledge is
                      while Has_Element (Cursor) loop
                         Cursor2 := Next (Cursor);
 
-                        if To_Lower (To_String (Element (Cursor).Value)) /=
+                        if To_Lower
+                          (To_String
+                             (External_Value_Lists.Element (Cursor).Value)) /=
                           To_Lower (Matching)
                         then
                            Delete (Processed_Value, Cursor);
@@ -1199,6 +1319,7 @@ package body GprConfig.Knowledge is
                         Put_Verbose (Attribute & ": grep no match");
                      end if;
                   end;
+
                when Value_Must_Match =>
                   if not Match (Expression => To_String (Node.Must_Match),
                                 Data       => To_String (Tmp_Result))
@@ -1240,12 +1361,14 @@ package body GprConfig.Knowledge is
                      C := First (Split);
                      while Has_Element (C) loop
                         if Matching = ""
-                          or else To_Lower (Element (C)) = To_Lower (Matching)
+                          or else To_Lower (String_Lists.Element (C)) =
+                            To_Lower (Matching)
                         then
                            Append
                              (Processed_Value,
                               External_Value_Item'
-                              (Value    => To_Unbounded_String (Element (C)),
+                                (Value    => To_Unbounded_String
+                                   (String_Lists.Element (C)),
                                Extracted_From => Extracted_From));
                         end if;
                         Next (C);
@@ -1396,7 +1519,7 @@ package body GprConfig.Knowledge is
          Matching         => To_String (Matching.Target),
          Processed_Value  => Target);
       if not Is_Empty (Target) then
-         Comp.Target := Element (First (Target)).Value;
+         Comp.Target := External_Value_Lists.Element (First (Target)).Value;
          Get_Targets_Set (Base, To_String (Comp.Target), Comp.Targets_Set);
       else
          Put_Verbose ("Target unknown for this compiler");
@@ -1424,10 +1547,11 @@ package body GprConfig.Knowledge is
          raise Ignore_Compiler;
       end if;
 
-      Comp.Version := Element (First (Version)).Value;
+      Comp.Version := External_Value_Lists.Element (First (Version)).Value;
 
       if Length (Version) >= 2 then
-         Comp.Version2 := Element (Next (First (Version))).Value;
+         Comp.Version2 :=
+           External_Value_Lists.Element (Next (First (Version))).Value;
       end if;
 
       Get_External_Value
@@ -1441,7 +1565,7 @@ package body GprConfig.Knowledge is
       C := First (Languages);
       while Has_Element (C) loop
          declare
-            L : String := To_String (Element (C).Value);
+            L : String := To_String (External_Value_Lists.Element (C).Value);
          begin
             To_Mixed (L);
             Comp.Language := To_Unbounded_String (L);
@@ -1459,8 +1583,9 @@ package body GprConfig.Knowledge is
             else
                C2 := First (Runtimes);
                while Has_Element (C2) loop
-                  Comp.Runtime     := Element (C2).Value;
-                  Comp.Runtime_Dir := Element (C2).Extracted_From;
+                  Comp.Runtime     := External_Value_Lists.Element (C2).Value;
+                  Comp.Runtime_Dir :=
+                    External_Value_Lists.Element (C2).Extracted_From;
                   Append (Append_To, Comp);
                   if Stop_At_First_Match then
                      return;
@@ -1492,7 +1617,8 @@ package body GprConfig.Knowledge is
       Path_Order : Integer;
       Stop_At_First_Match : Boolean)
    is
-      C            : Compiler_Description_Maps.Cursor;
+      use CDM;
+      C            : CDM.Cursor;
       Search       : Search_Type;
       Dir          : Directory_Entry_Type;
       Initial_Length : Count_Type;
@@ -1530,17 +1656,18 @@ package body GprConfig.Knowledge is
                      declare
                         Simple  : constant String := Simple_Name (Dir);
                         Matches : Match_Array
-                          (0 .. Integer'Max (0, Element (C).Prefix_Index));
+                          (0 .. Integer'Max (0, CDM.Element (C).Prefix_Index));
                         Matched : Boolean;
                         Prefix  : Unbounded_String;
                      begin
-                        if Element (C).Executable_Re /= null then
-                           Match (Element (C).Executable_Re.all,
-                                  Data       => Simple,
-                                  Matches    => Matches);
+                        if CDM.Element (C).Executable_Re /= null then
+                           Match
+                             (CDM.Element (C).Executable_Re.all,
+                              Data       => Simple,
+                              Matches    => Matches);
                            Matched := Matches (0) /= No_Match;
                         else
-                           Matched := (To_String (Element (C).Executable) &
+                           Matched := (To_String (CDM.Element (C).Executable) &
                              Exec_Suffix.all) = Simple_Name (Dir);
                         end if;
 
@@ -1549,15 +1676,15 @@ package body GprConfig.Knowledge is
                              (Key (C) & " is candidate: filename=" & Simple,
                               1);
 
-                           if Element (C).Executable_Re /= null
-                             and then Element (C).Prefix_Index >= 0
-                             and then Matches (Element (C).Prefix_Index) /=
+                           if CDM.Element (C).Executable_Re /= null
+                             and then CDM.Element (C).Prefix_Index >= 0
+                             and then Matches (CDM.Element (C).Prefix_Index) /=
                              No_Match
                            then
                               Prefix := To_Unbounded_String
                                 (Simple (Matches
-                                 (Element (C).Prefix_Index).First
-                                 ..  Matches (Element (C).Prefix_Index).Last));
+                                 (CDM.Element (C).Prefix_Index).First ..
+                                 Matches (CDM.Element (C).Prefix_Index).Last));
                            end if;
 
                            Initial_Length := Length (Append_To);
@@ -1570,7 +1697,7 @@ package body GprConfig.Knowledge is
                               Matching   => Matching,
                               On_Target  => On_Target,
                               Prefix     => To_String (Prefix),
-                              Descr      => Element (C),
+                              Descr      => CDM.Element (C),
                               Path_Order => Path_Order,
                               Stop_At_First_Match => Stop_At_First_Match);
 
@@ -1600,7 +1727,7 @@ package body GprConfig.Knowledge is
             if Matching.Name = "" or else Key (C) = Matching.Name then
                declare
                   F : constant String := Normalize_Pathname
-                    (Name           => To_String (Element (C).Executable),
+                    (Name           => To_String (CDM.Element (C).Executable),
                      Directory      => Directory,
                      Resolve_Links  => False,
                      Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
@@ -1614,12 +1741,12 @@ package body GprConfig.Knowledge is
                        (Append_To  => Append_To,
                         Base       => Base,
                         Name       => Key (C),
-                        Executable => To_String (Element (C).Executable),
+                        Executable => To_String (CDM.Element (C).Executable),
                         Prefix     => "",
                         Matching   => Matching,
                         On_Target  => On_Target,
                         Directory  => Directory,
-                        Descr      => Element (C),
+                        Descr      => CDM.Element (C),
                         Path_Order => Path_Order,
                         Stop_At_First_Match => Stop_At_First_Match);
 
@@ -1653,15 +1780,16 @@ package body GprConfig.Knowledge is
       Compilers  : out Compiler_Lists.List;
       Stop_At_First_Match : Boolean)
    is
+      use CDM;
       Check_Regexp : Boolean := False;
-      C            : Compiler_Description_Maps.Cursor;
+      C            : CDM.Cursor;
    begin
       Clear (Compilers);
 
       C := First (Base.Compilers);
       while Has_Element (C) loop
          if (Matching.Name = "" or else Key (C) = Matching.Name)
-           and then Element (C).Executable_Re /= null
+           and then CDM.Element (C).Executable_Re /= null
          then
             Check_Regexp := True;
             exit;
@@ -1755,7 +1883,8 @@ package body GprConfig.Knowledge is
      (Base : Knowledge_Base;
       List : out Ada.Strings.Unbounded.Unbounded_String)
    is
-      C : Compiler_Description_Maps.Cursor := First (Base.Compilers);
+      use CDM;
+      C : CDM.Cursor := First (Base.Compilers);
    begin
       List := Null_Unbounded_String;
       while Has_Element (C) loop
@@ -1778,11 +1907,11 @@ package body GprConfig.Knowledge is
       Matching_Compiler : out Compiler;
       Matched           : out Boolean)
    is
-      C : Compiler_Filter_Lists.Cursor := First (Filter.Compiler);
+      C : CFL.Cursor := First (Filter.Compiler);
       M : Boolean;
    begin
       while Has_Element (C) loop
-         Match (Element (C), Selected, Matching_Compiler, M);
+         Match (CFL.Element (C), Selected, Matching_Compiler, M);
          if M then
             Matched := not Filter.Negate;
             return;
@@ -1806,7 +1935,7 @@ package body GprConfig.Knowledge is
       Comp : Compiler;
    begin
       while Has_Element (C) loop
-         Comp := Element (C);
+         Comp := Compiler_Lists.Element (C);
          if (Filter.Name = Null_Unbounded_String
              or else Filter.Name = Comp.Name)
            and then
@@ -1845,7 +1974,8 @@ package body GprConfig.Knowledge is
       M : Boolean;
    begin
       while Has_Element (C) loop
-         Match (Element (C), Selected, Matching_Compiler, M);
+         Match (Compilers_Filter_Lists.Element (C),
+                Selected, Matching_Compiler, M);
          if not M then
             Matched := False;
             return;
@@ -1879,8 +2009,8 @@ package body GprConfig.Knowledge is
             Comp := First (Selected);
             while Has_Element (Comp) loop
                if Match
-                 (Compile (Element (Target), Case_Insensitive),
-                  To_String (Element (Comp).Target))
+                 (Compile (String_Lists.Element (Target), Case_Insensitive),
+                  To_String (Compiler_Lists.Element (Comp).Target))
                then
                   return not Negate;
                end if;
@@ -1941,8 +2071,8 @@ package body GprConfig.Knowledge is
                Replace_Element
                  (Packages,
                   C,
-                  Element (C) & ASCII.LF & Prefix
-                  & To_Unbounded_String (Replaced));
+                  String_Maps.Element (C) & ASCII.LF & Prefix
+                  & Replaced);
             else
                Insert
                  (Packages,
@@ -2022,14 +2152,14 @@ package body GprConfig.Knowledge is
       Matching_Compiler : Compiler;
    begin
       while Has_Element (Config) loop
-         Match (Element (Config).Compilers_Filters, Selected,
-                Matching_Compiler, M);
+         Match (Configuration_Lists.Element (Config).Compilers_Filters,
+                Selected, Matching_Compiler, M);
          if M and then Match
-           (Element (Config).Targets_Filters,
-            Element (Config).Negate_Targets,
+           (Configuration_Lists.Element (Config).Targets_Filters,
+            Configuration_Lists.Element (Config).Negate_Targets,
             Selected)
          then
-            if not Element (Config).Supported then
+            if not Configuration_Lists.Element (Config).Supported then
                return False;
             end if;
          end if;
@@ -2070,7 +2200,7 @@ package body GprConfig.Knowledge is
             New_Line (Output);
             Put_Line (Output, "   package " & Key (C) & " is");
          end if;
-         Put_Line (Output, To_String (Element (C)));
+         Put_Line (Output, To_String (String_Maps.Element (C)));
          if Key (C) /= "" then
             Put_Line (Output, "   end " & Key (C) & ";");
          end if;
@@ -2090,15 +2220,16 @@ package body GprConfig.Knowledge is
       To_Mixed (Project_Name);
 
       while Has_Element (Config) loop
-         Match (Element (Config).Compilers_Filters, Selected,
-               Selected_Compiler, M);
+         Match (Configuration_Lists.Element (Config).Compilers_Filters,
+                Selected, Selected_Compiler, M);
 
          if M
-           and then Match (Element (Config).Targets_Filters,
-                           Element (Config).Negate_Targets,
-                           Selected)
+           and then Match
+             (Configuration_Lists.Element (Config).Targets_Filters,
+              Configuration_Lists.Element (Config).Negate_Targets,
+              Selected)
          then
-            if not Element (Config).Supported then
+            if not Configuration_Lists.Element (Config).Supported then
                Put_Line
                  (Standard_Error,
                   "Code generated by these compilers cannot be linked"
@@ -2109,7 +2240,7 @@ package body GprConfig.Knowledge is
             Merge_Config
               (Packages,
                Selected_Compiler,
-               To_String (Element (Config).Config),
+               To_String (Configuration_Lists.Element (Config).Config),
                Output_Dir => Containing_Directory (Output_File));
          end if;
 
@@ -2170,12 +2301,12 @@ package body GprConfig.Knowledge is
       --  Launch external tools
       Comp := First (Selected);
       while Has_Element (Comp) loop
-         if Element (Comp).Extra_Tool /= Null_Unbounded_String
-           and then Element (Comp).Extra_Tool /= ""
+         if Compiler_Lists.Element (Comp).Extra_Tool /= Null_Unbounded_String
+           and then Compiler_Lists.Element (Comp).Extra_Tool /= ""
          then
             declare
                Args : Argument_List_Access := Argument_String_To_List
-                 (To_String (Element (Comp).Extra_Tool));
+                 (To_String (Compiler_Lists.Element (Comp).Extra_Tool));
                Tmp  : GNAT.Strings.String_Access;
                Status  : Integer;
             begin
@@ -2186,7 +2317,7 @@ package body GprConfig.Knowledge is
                   Args (A) := new String'
                     (Substitute_Special_Dirs
                        (Str        => Tmp.all,
-                        Comp       => Element (Comp),
+                        Comp       => Compiler_Lists.Element (Comp),
                         Output_Dir => Containing_Directory (Output_File)));
                   Put (Args (A).all & " ");
                   GNAT.Strings.Free (Tmp);
@@ -2234,11 +2365,13 @@ package body GprConfig.Knowledge is
       loop
          declare
             Set : constant Target_Lists.List :=
-              Element (Base.Targets_Sets, I);
+              Targets_Set_Vectors.Element (Base.Targets_Sets, I);
             C : Target_Lists.Cursor := First (Set);
          begin
             while Has_Element (C) loop
-               if GNAT.Regpat.Match (Element (C).all, Target) > 0 then
+               if GNAT.Regpat.Match
+                 (Target_Lists.Element (C).all, Target) > 0
+               then
                   Id := I;
                   return;
                end if;
@@ -2251,10 +2384,10 @@ package body GprConfig.Knowledge is
       declare
          Set : Target_Lists.List;
       begin
+         Put_Verbose ("create a new target set for " & Target);
          Append (Set, new Pattern_Matcher'(Compile ("^" & Target & "$")));
          Append (Base.Targets_Sets, Set);
          Id := Last_Index (Base.Targets_Sets);
-         Put_Verbose ("create a new target set for " & Target);
       end;
    end Get_Targets_Set;
 end GprConfig.Knowledge;

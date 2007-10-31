@@ -17,6 +17,10 @@ libdir=@libdir@
 libexecdir=@libexecdir@
 docdir=${datadir}/doc/@PACKAGE_TARNAME@
 
+# How do we want to use XML/Ada ?
+LIBRARY_TYPE=static
+export LIBRARY_TYPE
+
 objdir=obj
 ifeq ($(BUILD), debug)
 objdir=obj-debug

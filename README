@@ -19,6 +19,8 @@ Makefile target copy_gnat_src
 Configuring
 ===========
 
+You must install XML/Ada before compiling gprconfig.
+
 Configuring is usually done simply as:
   ./configure
 2 parameters may be worth specifying: --prefix for specifying the
@@ -33,6 +35,12 @@ Building and Installing
 
 Building the main executables is done simply with
    make all
+
+When compiling, you can choose whether you want to link statically with
+XML/Ada (the default), or dynamically. To compile dynamically, you should
+run
+   make LIBRARY_TYPE=relocatable all
+instead
 
 Installation is done with
   make install

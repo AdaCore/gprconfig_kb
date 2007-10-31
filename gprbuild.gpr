@@ -1,6 +1,8 @@
 --  with "share/share.gpr";
 --  ??? GA05-020: gprbuild does not know yet how to deal with unknown languages
 
+with "xmlada";
+
 project Gprbuild is
    type OS_Type is ("unix", "vms", "Windows_NT");
    OS : OS_Type := External ("OS", "unix");
