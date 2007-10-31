@@ -4294,10 +4294,12 @@ package body Buildgpr is
 
                         if not Roots_Found then
                            if Pat_Root then
-                              Error_Msg_Name_1 := Unit_Name;
-                              Error_Msg
-                                ("?no unit matches pattern %",
-                                 Roots.Location);
+                              if not Quiet_Output then
+                                 Error_Msg_Name_1 := Unit_Name;
+                                 Error_Msg
+                                   ("?no unit matches pattern %",
+                                    Roots.Location);
+                              end if;
 
                            else
                               --  report error
