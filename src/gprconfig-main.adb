@@ -350,8 +350,10 @@ procedure GprConfig.Main is
       loop
          Put_Line ("--------------------------------------------------");
          Put_Line
-           ("gprconfig has detected the following known compilers"
-            & " on your PATH:");
+           ("gprconfig has found the following compilers on your PATH.");
+         Put_Line
+           ("Only those matching the target and the selected compilers"
+            & " are displayed.");
          Index := 1;
          while Index <= Comps'Last loop
             if Selectable (Index) or Selected (Index) then
