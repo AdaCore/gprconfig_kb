@@ -1621,7 +1621,7 @@ package body GprConfig.Knowledge is
       function Runtime_Or_Empty return String is
       begin
          if Comp.Runtime /= Null_Unbounded_String then
-            return ',' & To_String (Comp.Runtime) & " runtime";
+            return " (" & To_String (Comp.Runtime) & " runtime)";
          else
             return "";
          end if;
@@ -1645,12 +1645,11 @@ package body GprConfig.Knowledge is
            & ")";
 
       else
-         return Name_As_Directory (To_String (Comp.Path))
+         return To_String (Comp.Language)
+           & " " & Name_As_Directory (To_String (Comp.Path))
            & To_String (Comp.Executable)
            & " " & To_String (Comp.Version)
-           & " (" & To_String (Comp.Language)
-           & Runtime_Or_Empty
-           & ")";
+           & Runtime_Or_Empty;
       end if;
    end To_String;
 
