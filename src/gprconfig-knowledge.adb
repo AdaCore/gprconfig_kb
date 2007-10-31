@@ -1636,13 +1636,12 @@ package body GprConfig.Knowledge is
            & ',' & To_String (Comp.Name);
 
       elsif Verbose_Level > 0 then
-         return Name_As_Directory (To_String (Comp.Path))
+         return To_String (Comp.Language)
+           & " " & Name_As_Directory (To_String (Comp.Path))
            & To_String (Comp.Executable)
            & " " & To_String (Comp.Name)
            & " " & To_String (Comp.Version)
-           & " (" & To_String (Comp.Language)
-           & Runtime_Or_Empty
-           & ")";
+           & Runtime_Or_Empty;
 
       else
          return To_String (Comp.Language)
