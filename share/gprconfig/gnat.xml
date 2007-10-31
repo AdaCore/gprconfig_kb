@@ -1,4 +1,7 @@
 <?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /></compilers>'>
+] >
 
 <gprconfig>
   <!--  A base configuration for any version of GNAT
@@ -7,7 +10,7 @@
         GNAT_Runtime_Dir and Toolchain_Version are currently incorrect -->
 
   <configuration>
-   <compilers><compiler name="GNAT" /></compilers>
+   &filter_gnat;
    <config>
    package Naming is
       for Spec_Suffix ("Ada") use ".ads";
@@ -54,7 +57,7 @@
 
   <!--  Whether -fPIC is needed -->
   <configuration>
-   <compilers><compiler name="GNAT" /></compilers>
+   &filter_gnat;
    <targets negate="true">
       <target name=".*lynxos.*" />
       <target name=".*mingw.*" />
