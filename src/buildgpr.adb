@@ -1611,9 +1611,10 @@ package body Buildgpr is
         (For_Project  : Project_Id;
          For_Language : Name_Id)
       is
-            Data    : Project_Data;
-            Src_Id  : Source_Id;
-            Source  : Source_Data;
+         Data    : Project_Data;
+         Src_Id  : Source_Id;
+         Source  : Source_Data;
+
       begin
          if For_Project /= No_Project and then
            (not Binder_Driver_Needs_To_Be_Called) and then
@@ -1630,14 +1631,15 @@ package body Buildgpr is
                if Source.Language_Name = For_Language
                  and then
                    Source.Unit /= No_Name
-                   and then
-                     (Source.Kind = Impl
-                      or else
-                        Source.Other_Part = No_Source)
+                 and then
+                   (Source.Kind = Impl
+                    or else
+                    Source.Other_Part = No_Source)
                  and then
                    (not Is_Subunit (Source))
-                 and then Is_Included_In_Global_Archive
-                   (Source.Object, Source.Project)
+                 and then
+                   Is_Included_In_Global_Archive
+                     (Source.Object, Source.Project)
                then
                   Initialize_Source_Record (Src_Id);
                   Source := Project_Tree.Sources.Table (Src_Id);
