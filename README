@@ -45,6 +45,9 @@ instead
 Installation is done with
   make install
 
+You can bootstrap grpbuild (compile it with itself) with the following command:
+   make bootstrap
+
 Doc & Examples
 ==============
 The documention is provided in various formats in the doc subdir.
