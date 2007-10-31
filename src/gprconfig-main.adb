@@ -146,23 +146,9 @@ procedure GprConfig.Main is
          Put (' ');
       end if;
 
-      Put
-        ("("
-         & Character'Val (Index + Character'Pos ('A') - 1) & ") "
-         & To_String (Comp.Name)
-         & " " & To_String (Comp.Version)
-         & " (" & To_String (Comp.Language));
-      if Comp.Runtime /= Null_Unbounded_String then
-         Put (',' & To_String (Comp.Runtime) & " runtime");
-      end if;
-
-      Put (") ");
-      if Comp.Target /= Null_Unbounded_String then
-         Put (To_String (Comp.Target) & ' ');
-      end if;
-
-      Put_Line ("- " & Name_As_Directory (To_String (Comp.Path))
-                & To_String (Comp.Executable));
+      Put_Line
+        ("(" & Character'Val (Index + Character'Pos ('A') - 1) & ") "
+         & To_String (Comp, As_Config_Arg => False));
    end Display_Compiler;
 
    -------------
@@ -452,11 +438,7 @@ procedure GprConfig.Main is
 
          Put_Verbose
            ("Completing info for --config="
-            & To_String (Elem.Language)
-            & ',' & To_String (Elem.Version)
-            & ',' & To_String (Elem.Runtime)
-            & ',' & To_String (Elem.Path)
-            & ',' & To_String (Elem.Name), 1);
+            & To_String (Elem, As_Config_Arg => True), 1);
 
          if Elem.Path /= "" then
             Find_Matching_Compilers
@@ -476,23 +458,16 @@ procedure GprConfig.Main is
 
          if not Is_Empty (Completion) then
             Elem := Element (First (Completion));
-            Put_Verbose ("Found matching compiler "
-                         & To_String (Elem.Language)
-                         & ',' & To_String (Elem.Version)
-                         & ',' & To_String (Elem.Runtime)
-                         & ',' & To_String (Elem.Path)
-                         & ',' & To_String (Elem.Name), -1);
+            Put_Verbose
+              ("Found matching compiler "
+               & To_String (Elem, As_Config_Arg => True), -1);
             Append (Custom_Comps, Elem);
          else
             Put_Verbose ("", -1);
             Put_Line
               (Standard_Error,
                "Error: no matching compiler found for --config="
-               & To_String (Elem.Language)
-               & ',' & To_String (Elem.Version)
-               & ',' & To_String (Elem.Runtime)
-               & ',' & To_String (Elem.Path)
-               & ',' & To_String (Elem.Name));
+               & To_String (Elem, As_Config_Arg => True));
             raise Invalid_Config;
          end if;
 
@@ -574,11 +549,7 @@ procedure GprConfig.Main is
                          "warning: no matching compiler for filter: ");
                Put_Line
                  (Standard_Error, "  --config="
-                  & To_String (Filt.Language)
-                  & ',' & To_String (Filt.Version)
-                  & ',' & To_String (Filt.Runtime)
-                  & ',' & To_String (Filt.Path)
-                  & ',' & To_String (Filt.Name));
+                  & To_String (Filt, As_Config_Arg => True));
             end if;
          end;
          Next (F);
@@ -606,11 +577,8 @@ procedure GprConfig.Main is
 
          C := First (Selected_Comps);
          while Has_Element (C) loop
-            Put (" --config=" & To_String (Element (C).Language)
-                 & "," & To_String (Element (C).Version)
-                 & "," & To_String (Element (C).Runtime)
-                 & "," & To_String (Element (C).Path)
-                 & "," & To_String (Element (C).Name));
+            Put (" --config="
+                 & To_String (Element (C), As_Config_Arg => True));
             Next (C);
          end loop;
          New_Line;

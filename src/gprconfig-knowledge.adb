@@ -1575,6 +1575,8 @@ package body GprConfig.Knowledge is
                   Put_Verbose ("No runtime found where one is required for: "
                                & To_String (Comp.Path));
                else
+                  Put_Verbose ("Adding compiler to interactive menu "
+                               & To_String (Comp, True));
                   Append (Append_To, Comp);
                   if Stop_At_First_Match then
                      return;
@@ -1586,6 +1588,8 @@ package body GprConfig.Knowledge is
                   Comp.Runtime     := External_Value_Lists.Element (C2).Value;
                   Comp.Runtime_Dir :=
                     External_Value_Lists.Element (C2).Extracted_From;
+                  Put_Verbose ("Adding compiler to interactive menu "
+                               & To_String (Comp, True));
                   Append (Append_To, Comp);
                   if Stop_At_First_Match then
                      return;
@@ -1602,6 +1606,53 @@ package body GprConfig.Knowledge is
       when Ignore_Compiler =>
          null;
    end For_Each_Language_Runtime;
+
+   ---------------
+   -- To_String --
+   ---------------
+
+   function To_String
+     (Comp          : Compiler;
+      As_Config_Arg : Boolean) return String
+   is
+      function Runtime_Or_Empty return String;
+      --  Return either the runtime or the empty string
+
+      function Runtime_Or_Empty return String is
+      begin
+         if Comp.Runtime /= Null_Unbounded_String then
+            return ',' & To_String (Comp.Runtime) & " runtime";
+         else
+            return "";
+         end if;
+      end Runtime_Or_Empty;
+
+   begin
+      if As_Config_Arg then
+         return To_String (Comp.Language)
+           & ',' & To_String (Comp.Version)
+           & ',' & To_String (Comp.Runtime)
+           & ',' & To_String (Comp.Path)
+           & ',' & To_String (Comp.Name);
+
+      elsif Verbose_Level > 0 then
+         return Name_As_Directory (To_String (Comp.Path))
+           & To_String (Comp.Executable)
+           & " " & To_String (Comp.Name)
+           & " " & To_String (Comp.Version)
+           & " (" & To_String (Comp.Language)
+           & Runtime_Or_Empty
+           & ")";
+
+      else
+         return Name_As_Directory (To_String (Comp.Path))
+           & To_String (Comp.Executable)
+           & " " & To_String (Comp.Version)
+           & " (" & To_String (Comp.Language)
+           & Runtime_Or_Empty
+           & ")";
+      end if;
+   end To_String;
 
    ---------------------------
    -- Find_Compilers_In_Dir --
@@ -1836,37 +1887,44 @@ package body GprConfig.Knowledge is
                   Last := Last + 1;
                end loop;
 
-               Put_Verbose ("Parsing PATH: " & Path (First .. Last - 1));
+               declare
+                  --  Use a hash to make sure we do not parse the same
+                  --  directory twice. This is both more efficient and avoids
+                  --  duplicates in the final result list. To handle the case
+                  --  of links (on linux for instance /usr/bin/X11 points to
+                  --  ".", ie /usr/bin, and compilers would appear duplicated),
+                  --  we resolve symbolic links.
+                  --  This call is also set to fold to lower-case when
+                  --  appropriate
 
-               --  Use a hash to make sure we do not parse the same directory
-               --  twice. This is both more efficient and avoids duplicates in
-               --  the final result list
-               if (Case_Sensitive_Files
-                   and then not Contains (Map, Path (First .. Last - 1)))
-                 or else (not Case_Sensitive_Files
-                          and then not Contains
-                            (Map, To_Lower (Path (First .. Last - 1))))
-               then
-                  if Case_Sensitive_Files then
-                     Append (Map, To_Lower (Path (First .. Last - 1)));
-                  else
-                     Append (Map, Path (First .. Last - 1));
+                  Normalized : constant String :=
+                    Normalize_Pathname
+                      (Path (First .. Last - 1),
+                       Resolve_Links  => True,
+                       Case_Sensitive => False);
+               begin
+                  Put_Verbose ("Parsing PATH: " & Path (First .. Last - 1)
+                               & " normalized=" & Normalized);
+
+                  if not Contains (Map, Normalized) then
+                     Append (Map, Normalized);
+
+                     --  We know that at least GNAT uses a regular expression
+                     --  for its <executable> node, so we have to handle
+                     --  regexps
+                     Find_Compilers_In_Dir
+                       (Append_To               => Compilers,
+                        Base                    => Base,
+                        Check_Executable_Regexp => True,
+                        Directory               => Path (First .. Last - 1),
+                        Path_Order              => Path_Order,
+                        Matching                => Matching,
+                        On_Target               => On_Target,
+                        Stop_At_First_Match     => Stop_At_First_Match);
+                     exit when Stop_At_First_Match
+                       and then Length (Compilers) > 0;
                   end if;
-
-                  --  We know that at least GNAT uses a regular expression for
-                  --  its <executable> node, so we have to handle regexps
-                  Find_Compilers_In_Dir
-                    (Append_To               => Compilers,
-                     Base                    => Base,
-                     Check_Executable_Regexp => True,
-                     Directory               => Path (First .. Last - 1),
-                     Path_Order              => Path_Order,
-                     Matching                => Matching,
-                     On_Target               => On_Target,
-                     Stop_At_First_Match     => Stop_At_First_Match);
-                  exit when Stop_At_First_Match
-                    and then Length (Compilers) > 0;
-               end if;
+               end;
 
                Path_Order := Path_Order + 1;
                First := Last + 1;

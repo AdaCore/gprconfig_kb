@@ -98,6 +98,13 @@ package GprConfig.Knowledge is
       List : out Ada.Strings.Unbounded.Unbounded_String);
    --  Set List to the comma-separated list of known compilers
 
+   function To_String
+     (Comp          : Compiler;
+      As_Config_Arg : Boolean) return String;
+   --  Return a string representing the compiler. It is either the --config
+   --  argument (if As_Config_Arg is true) or the string to use in the
+   --  interactive menu otherwise.
+
    procedure Generate_Configuration
      (Base        : Knowledge_Base;
       Selected    : Compiler_Lists.List;
