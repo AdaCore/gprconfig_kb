@@ -61,6 +61,11 @@ package GprConfig.Knowledge is
       Language    : Ada.Strings.Unbounded.Unbounded_String;
       Extra_Tool  : Ada.Strings.Unbounded.Unbounded_String;
       Path_Order  : Integer;
+
+      Selectable    : Boolean := True;
+      Selected      : Boolean := False;
+      Complete      : Boolean := True;
+      Index_In_List : Character := ASCII.NUL;
    end record;
    No_Compiler : constant Compiler;
    --  Describes one of the compilers found on the PATH.
@@ -68,8 +73,18 @@ package GprConfig.Knowledge is
    --  Path_Order is used for sorting in the interactive menu: it indicates the
    --  index in $PATH of the directory, so that we can show first the compilers
    --  that are first in path.
+   --  Any of these compilers can be selected by the user as part of a config.
+   --  However, to prevent incompatibilities, a compiler can be marked as not
+   --  selectable. This will be re-evaluated based on the current selection.
+   --  Complete is set to True if all the information about the compiler was
+   --  computed. It is set to False if the compiler was specified through a
+   --  command line argument --config, and part of the info needs to be
+   --  computed.
+   --  Index_In_List is used for the interactive menu, and is initialized
+   --  automatically.
 
    package Compiler_Lists is new Ada.Containers.Doubly_Linked_Lists (Compiler);
+   --  A list of compilers.
 
    procedure Find_Compilers_In_Path
      (Base      : in out Knowledge_Base;
@@ -107,15 +122,15 @@ package GprConfig.Knowledge is
 
    procedure Generate_Configuration
      (Base        : Knowledge_Base;
-      Selected    : Compiler_Lists.List;
+      Compilers   : Compiler_Lists.List;
       Output_File : String);
    --  Generate the configuration file for the list of selected compilers
 
    function Is_Supported_Config
-     (Base     : Knowledge_Base;
-      Selected : Compiler_Lists.List) return Boolean;
-   --  Whether we know how to link code compiled with all these selected
-   --  compilers
+     (Base      : Knowledge_Base;
+      Compilers : Compiler_Lists.List) return Boolean;
+   --  Whether we know how to link code compiled with all the selected
+   --  compilers.
 
    procedure Get_Targets_Set
      (Base   : in out Knowledge_Base;
@@ -173,6 +188,10 @@ private
       Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
       Language    => Ada.Strings.Unbounded.Null_Unbounded_String,
       Extra_Tool  => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Selectable  => False,
+      Selected    => False,
+      Complete    => True,
+      Index_In_List => ASCII.NUL,
       Path_Order  => 0);
 
    type External_Value_Type is (Value_Constant,

@@ -181,17 +181,17 @@ package body GprConfig.Knowledge is
 
    procedure Match
      (Filter            : Compilers_Filter_Lists.List;
-      Selected          : Compiler_Lists.List;
+      Compilers         : Compiler_Lists.List;
       Matching_Compiler : out Compiler;
       Matched           : out Boolean);
    procedure Match
      (Filter            : Compilers_Filter;
-      Selected          : Compiler_Lists.List;
+      Compilers         : Compiler_Lists.List;
       Matching_Compiler : out Compiler;
       Matched           : out Boolean);
    procedure Match
      (Filter            : Compiler_Filter;
-      Selected          : Compiler_Lists.List;
+      Compilers         : Compiler_Lists.List;
       Matching_Compiler : out Compiler;
       Matched           : out Boolean);
    --  Check whether Filter matches (and set Matched to the result).
@@ -201,7 +201,7 @@ package body GprConfig.Knowledge is
    function Match
      (Target_Filter : String_Lists.List;
       Negate        : Boolean;
-      Selected      : Compiler_Lists.List) return Boolean;
+      Compilers     : Compiler_Lists.List) return Boolean;
    --  Return True if Filter matches the list of selected configurations
 
    procedure Merge_Config
@@ -1636,7 +1636,8 @@ package body GprConfig.Knowledge is
            & ',' & To_String (Comp.Name);
 
       elsif Verbose_Level > 0 then
-         return To_String (Comp.Language)
+         return "(" & Comp.Index_In_List & ") "
+           & To_String (Comp.Language)
            & " " & Name_As_Directory (To_String (Comp.Path))
            & To_String (Comp.Executable)
            & " " & To_String (Comp.Name)
@@ -1644,7 +1645,8 @@ package body GprConfig.Knowledge is
            & Runtime_Or_Empty;
 
       else
-         return To_String (Comp.Language)
+         return "(" & Comp.Index_In_List & ") "
+           & To_String (Comp.Language)
            & " " & Name_As_Directory (To_String (Comp.Path))
            & To_String (Comp.Executable)
            & " " & To_String (Comp.Version)
@@ -1691,7 +1693,7 @@ package body GprConfig.Knowledge is
                Pattern   => "");
          exception
             when Ada.Directories.Name_Error =>
-               Put_Verbose ("No such directory:" & Directory);
+               Put_Verbose ("No such directory:" & Directory, -1);
                return;
          end;
 
@@ -1962,7 +1964,7 @@ package body GprConfig.Knowledge is
 
    procedure Match
      (Filter            : Compilers_Filter;
-      Selected          : Compiler_Lists.List;
+      Compilers         : Compiler_Lists.List;
       Matching_Compiler : out Compiler;
       Matched           : out Boolean)
    is
@@ -1970,7 +1972,7 @@ package body GprConfig.Knowledge is
       M : Boolean;
    begin
       while Has_Element (C) loop
-         Match (CFL.Element (C), Selected, Matching_Compiler, M);
+         Match (CFL.Element (C), Compilers, Matching_Compiler, M);
          if M then
             Matched := not Filter.Negate;
             return;
@@ -1986,17 +1988,18 @@ package body GprConfig.Knowledge is
 
    procedure Match
      (Filter            : Compiler_Filter;
-      Selected          : Compiler_Lists.List;
+      Compilers         : Compiler_Lists.List;
       Matching_Compiler : out Compiler;
       Matched           : out Boolean)
    is
-      C    : Compiler_Lists.Cursor := First (Selected);
+      C    : Compiler_Lists.Cursor := First (Compilers);
       Comp : Compiler;
    begin
       while Has_Element (C) loop
          Comp := Compiler_Lists.Element (C);
-         if (Filter.Name = Null_Unbounded_String
-             or else Filter.Name = Comp.Name)
+         if Comp.Selected
+           and then (Filter.Name = Null_Unbounded_String
+                     or else Filter.Name = Comp.Name)
            and then
              (Filter.Version = Null_Unbounded_String
               or else Match
@@ -2016,6 +2019,13 @@ package body GprConfig.Knowledge is
          end if;
          Next (C);
       end loop;
+
+--        Put_Verbose
+--          ("No compiler matches name="""
+--           & To_String (Filter.Name) & """ version="""
+--           & To_String (Filter.Version) & """ runtime="""
+--           & To_String (Filter.Runtime) & """ language="""
+--           & To_String (Filter.Language) & """");
       Matched := False;
    end Match;
 
@@ -2025,7 +2035,7 @@ package body GprConfig.Knowledge is
 
    procedure Match
      (Filter            : Compilers_Filter_Lists.List;
-      Selected          : Compiler_Lists.List;
+      Compilers         : Compiler_Lists.List;
       Matching_Compiler : out Compiler;
       Matched           : out Boolean)
    is
@@ -2034,7 +2044,7 @@ package body GprConfig.Knowledge is
    begin
       while Has_Element (C) loop
          Match (Compilers_Filter_Lists.Element (C),
-                Selected, Matching_Compiler, M);
+                Compilers, Matching_Compiler, M);
          if not M then
             Matched := False;
             return;
@@ -2055,7 +2065,7 @@ package body GprConfig.Knowledge is
    function Match
      (Target_Filter : String_Lists.List;
       Negate        : Boolean;
-      Selected      : Compiler_Lists.List) return Boolean
+      Compilers     : Compiler_Lists.List) return Boolean
    is
       Target : String_Lists.Cursor := First (Target_Filter);
       Comp   : Compiler_Lists.Cursor;
@@ -2065,9 +2075,10 @@ package body GprConfig.Knowledge is
 
       else
          while Has_Element (Target) loop
-            Comp := First (Selected);
+            Comp := First (Compilers);
             while Has_Element (Comp) loop
-               if Match
+               if Compiler_Lists.Element (Comp).Selected
+                 and then Match
                  (Compile (String_Lists.Element (Target), Case_Insensitive),
                   To_String (Compiler_Lists.Element (Comp).Target))
                then
@@ -2203,8 +2214,8 @@ package body GprConfig.Knowledge is
    -------------------------
 
    function Is_Supported_Config
-     (Base     : Knowledge_Base;
-      Selected : Compiler_Lists.List) return Boolean
+     (Base      : Knowledge_Base;
+      Compilers : Compiler_Lists.List) return Boolean
    is
       Config : Configuration_Lists.Cursor := First (Base.Configurations);
       M      : Boolean;
@@ -2212,11 +2223,11 @@ package body GprConfig.Knowledge is
    begin
       while Has_Element (Config) loop
          Match (Configuration_Lists.Element (Config).Compilers_Filters,
-                Selected, Matching_Compiler, M);
+                Compilers, Matching_Compiler, M);
          if M and then Match
            (Configuration_Lists.Element (Config).Targets_Filters,
             Configuration_Lists.Element (Config).Negate_Targets,
-            Selected)
+            Compilers)
          then
             if not Configuration_Lists.Element (Config).Supported then
                return False;
@@ -2233,7 +2244,7 @@ package body GprConfig.Knowledge is
 
    procedure Generate_Configuration
      (Base        : Knowledge_Base;
-      Selected    : Compiler_Lists.List;
+      Compilers   : Compiler_Lists.List;
       Output_File : String)
    is
       Config   : Configuration_Lists.Cursor := First (Base.Configurations);
@@ -2280,13 +2291,13 @@ package body GprConfig.Knowledge is
 
       while Has_Element (Config) loop
          Match (Configuration_Lists.Element (Config).Compilers_Filters,
-                Selected, Selected_Compiler, M);
+                Compilers, Selected_Compiler, M);
 
          if M
            and then Match
              (Configuration_Lists.Element (Config).Targets_Filters,
               Configuration_Lists.Element (Config).Negate_Targets,
-              Selected)
+              Compilers)
          then
             if not Configuration_Lists.Element (Config).Supported then
                Put_Line
@@ -2358,9 +2369,10 @@ package body GprConfig.Knowledge is
       Close (Output);
 
       --  Launch external tools
-      Comp := First (Selected);
+
+      Comp := First (Compilers);
       while Has_Element (Comp) loop
-         if Compiler_Lists.Element (Comp).Extra_Tool /= Null_Unbounded_String
+         if Compiler_Lists.Element (Comp).Selected
            and then Compiler_Lists.Element (Comp).Extra_Tool /= ""
          then
             declare

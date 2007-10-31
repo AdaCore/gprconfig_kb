@@ -4,7 +4,6 @@
 
 with Ada.Characters.Handling;  use Ada.Characters.Handling;
 with Ada.Command_Line;
-with Ada.Containers;            use Ada.Containers;
 with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -33,9 +32,6 @@ procedure GprConfig.Main is
 
    Invalid_Config : exception;
 
-   type Boolean_Array  is array (Natural range <>) of Boolean;
-   type Compiler_Array is array (Natural range <>) of Compiler;
-
    use Compiler_Lists;
 
    function Get_Database_Directory return String;
@@ -44,15 +40,8 @@ procedure GprConfig.Main is
    procedure Help (Base : Knowledge_Base);
    --  Display list of switches
 
-   procedure Display_Compiler
-     (Comp : Compiler; Selected : Boolean; Index : Positive);
+   procedure Display_Compiler (Comp : Compiler);
    --  Display a line describing the compiler
-
-   procedure To_List
-     (Comps              : Compiler_Array;
-      Selected           : Boolean_Array;
-      Selected_Compilers : in out Compiler_Lists.List);
-   --  Return the list of selected compilers in Comps
 
    procedure Parse_Config_Parameter
      (Custom_Comps : in out Compiler_Lists.List;
@@ -62,9 +51,7 @@ procedure GprConfig.Main is
 
    procedure Select_Compilers_Interactively
      (Base               : in out Knowledge_Base;
-      Compilers          : Compiler_Lists.List;
-      Selected_Compilers : in out Compiler_Lists.List;
-      Custom_Comps       : in out Compiler_Lists.List);
+      Compilers          : in out Compiler_Lists.List);
    --  Ask the user for compilers to be selected
 
    procedure Complete_Command_Line_Compilers
@@ -81,18 +68,36 @@ procedure GprConfig.Main is
    --  are found through the knowledge base.
 
    procedure Filter_Compilers
-     (Selected_Comps : in out Compiler_Lists.List;
-      Compilers      : Compiler_Lists.List;
+     (Compilers      : in out Compiler_Lists.List;
       Filters        : Compiler_Lists.List);
-   --  For every element of Filters appends the first matching element in
-   --  Compilers to Selected_Comps.  If none is found emits a warning.
+   --  For every element of Filters, selects the first matching compilers in
+   --  Compilers.  If none is found emits a warning.
 
-   procedure Show_Command_Line_Config (Selected_Comps : Compiler_Lists.List);
+   procedure Show_Command_Line_Config (Compilers : Compiler_Lists.List);
    --  Display the batch command line that would have the same effect as the
    --  current selection of compilers.
 
    function "<" (Comp1, Comp2 : Compiler) return Boolean;
    --  Compare two compilers, so that similar languages are grouped together
+
+   procedure Filter_List
+     (Base      : in out Knowledge_Base;
+      Compilers : in out Compiler_Lists.List);
+   --  Compute which compilers are selectable by the user in that list,
+   --  checking for various criteria like compatibility with the target,
+   --  compatibility among the selected compilers,...
+   --  Only keep those compilers that might be compatible with the current
+   --  selection. For instance, if we won't know how to link sources compiled
+   --  with A and sources compiled with B, and A is selected, there is no point
+   --  in showing B.
+   --  Only keep other compilers with the same target, since
+   --  otherwise linking makes no sense.
+
+   procedure Toggle_Selection     (Comp : in out Compiler);
+   procedure Mark_As_Selectable   (Comp : in out Compiler);
+   procedure Mark_As_Unselectable (Comp : in out Compiler);
+   --  Changes some attributes of the compiler. This is used to update elements
+   --  in a list.
 
    ----------
    -- Help --
@@ -137,35 +142,16 @@ procedure GprConfig.Main is
    -- Display_Compiler --
    ----------------------
 
-   procedure Display_Compiler
-     (Comp : Compiler; Selected : Boolean; Index : Positive) is
+   procedure Display_Compiler (Comp : Compiler) is
    begin
-      if Selected then
+      if Comp.Selected then
          Put ('*');
       else
          Put (' ');
       end if;
 
-      Put_Line
-        ("(" & Character'Val (Index + Character'Pos ('A') - 1) & ") "
-         & To_String (Comp, As_Config_Arg => False));
+      Put_Line (To_String (Comp, As_Config_Arg => False));
    end Display_Compiler;
-
-   -------------
-   -- To_List --
-   -------------
-
-   procedure To_List
-     (Comps              : Compiler_Array;
-      Selected           : Boolean_Array;
-      Selected_Compilers : in out Compiler_Lists.List) is
-   begin
-      for Index in Comps'Range loop
-         if Selected (Index) then
-            Append (Selected_Compilers, Comps (Index));
-         end if;
-      end loop;
-   end To_List;
 
    ----------------------------
    -- Parse_Config_Parameter --
@@ -202,6 +188,8 @@ procedure GprConfig.Main is
             end if;
          end if;
       end if;
+
+      Comp.Complete := False;
 
       --  Complete_Command_Line_Compilers will check that this is a valid
       --  config
@@ -241,131 +229,151 @@ procedure GprConfig.Main is
       end if;
    end "<";
 
+   ----------------------
+   -- Toggle_Selection --
+   ----------------------
+
+   procedure Toggle_Selection (Comp : in out Compiler) is
+   begin
+      Comp.Selected := not Comp.Selected;
+   end Toggle_Selection;
+
+   ------------------------
+   -- Mark_As_Selectable --
+   ------------------------
+
+   procedure Mark_As_Selectable   (Comp : in out Compiler) is
+   begin
+      Comp.Selectable := True;
+   end Mark_As_Selectable;
+
+   --------------------------
+   -- Mark_As_Unselectable --
+   --------------------------
+
+   procedure Mark_As_Unselectable (Comp : in out Compiler) is
+   begin
+      Comp.Selectable := False;
+   end Mark_As_Unselectable;
+
+   -----------------
+   -- Filter_List --
+   -----------------
+
+   procedure Filter_List
+     (Base      : in out Knowledge_Base;
+      Compilers : in out Compiler_Lists.List)
+   is
+      Comp, Comp2          : Compiler_Lists.Cursor;
+      Selectable           : Boolean;
+
+   begin
+      Put_Verbose ("Filtering the list of compilers", 1);
+
+      Comp := First (Compilers);
+      while Has_Element (Comp) loop
+         if not Element (Comp).Selected then
+            Selectable := True;
+
+            if Element (Comp).Targets_Set /= Selected_Targets_Set then
+               Selectable := False;
+               if Verbose_Level > 0 then
+                  Put_Verbose ("Incompatible target for: "
+                              & To_String (Element (Comp), False));
+               end if;
+            end if;
+
+            if Selectable then
+               Comp2 := First (Compilers);
+               while Has_Element (Comp2) loop
+                  if Element (Comp2).Selected
+                    and then Element (Comp2).Language = Element (Comp).Language
+                  then
+                     Selectable := False;
+                     if Verbose_Level > 0 then
+                        Put_Verbose ("Already selected language for "
+                                     & To_String (Element (Comp), False));
+                     end if;
+                     exit;
+                  end if;
+                  Next (Comp2);
+               end loop;
+            end if;
+
+            if Selectable then
+               --  Would adding this compiler to the current selection end
+               --  up with an unsupported config ?
+
+               Update_Element (Compilers, Comp, Toggle_Selection'Access);
+               if not Is_Supported_Config (Base, Compilers) then
+                  Selectable := False;
+                  if Verbose_Level > 0 then
+                     Put_Verbose ("Unsupported config for: "
+                                  & To_String (Element (Comp), False));
+                  end if;
+               end if;
+               Update_Element (Compilers, Comp, Toggle_Selection'Access);
+            end if;
+
+            if Selectable then
+               Update_Element (Compilers, Comp, Mark_As_Selectable'Access);
+            else
+               Update_Element (Compilers, Comp, Mark_As_Unselectable'Access);
+            end if;
+         end if;
+
+         Next (Comp);
+      end loop;
+
+      Put_Verbose ("", -1);
+   end Filter_List;
+
    ------------------------------------
    -- Select_Compilers_Interactively --
    ------------------------------------
 
    procedure Select_Compilers_Interactively
      (Base               : in out Knowledge_Base;
-      Compilers          : Compiler_Lists.List;
-      Selected_Compilers : in out Compiler_Lists.List;
-      Custom_Comps       : in out Compiler_Lists.List)
+      Compilers          : in out Compiler_Lists.List)
    is
-      Compilers_Count : constant Natural := Natural (Length (Compilers));
-      Selected : Boolean_Array  (1 .. Compilers_Count) := (others => False);
-      Selectable : Boolean_Array  (1 .. Compilers_Count) := (others => True);
-      Comps           : Compiler_Array (1 .. Compilers_Count);
       Comp            : Compiler_Lists.Cursor := First (Compilers);
-      Index, Tmp      : Natural;
       Choice          : Character;
+      Tmp             : Natural;
       Line            : String (1 .. 1024);
 
-      procedure Filter_List;
-      --  Filter the list to display.
-      --  Only keep those compilers that might be compatible with the
-      --  current selection. For instance, if we won't know how to
-      --  link sources compiled with A and sources compiled with B,
-      --  and A is selected, there is no point in showing B.
-      --
-      --  Only keep other compilers with the same target, since
-      --  otherwise linking makes no sense.
+      procedure Update_Index (Comp : in out Compiler);
+      --  Set the interactive index for this compiler
 
-      procedure Filter_List is
-         Selected_Targets_Set : Targets_Set_Id;
-         Tmp_Selection        : Compiler_Lists.List;
-         Tmp_Selection2       : Compiler_Lists.List;
-         Comp                 : Compiler_Lists.Cursor;
+      procedure Update_Index (Comp : in out Compiler) is
       begin
-         --  Simulate the current selection
-         Tmp_Selection := Custom_Comps;
-         To_List (Comps, Selected, Tmp_Selection);
-
-         if Length (Tmp_Selection) = 0 then
-            Selectable := (others => True);
-         else
-            Selected_Targets_Set :=
-              Element (First (Tmp_Selection)).Targets_Set;
-
-            Put_Verbose ("Filtering the list of compilers");
-            Put_Verbose
-              (" <filter> remove all compilers for target /= "
-               & To_String (Selected_Target));
-
-            for C in Comps'Range loop
-               if not Selected (C) then
-                  --  Is the language already selected ?
-                  Selectable (C) := True;
-                  Comp := First (Tmp_Selection);
-                  while Has_Element (Comp) loop
-                     if Element (Comp).Language = Comps (C).Language then
-                        Selectable (C) := False;
-                        if Verbose_Level > 0 then
-                           Put_Verbose ("Already selected language for");
-                           Display_Compiler (Comps (C), False, C);
-                        end if;
-                        exit;
-                     end if;
-                     Next (Comp);
-                  end loop;
-
-                  --  Is the target compatible ?
-                  if Selectable (C) then
-                     if Comps (C).Targets_Set /= Selected_Targets_Set then
-                        Selectable (C) := False;
-                        if Verbose_Level > 0 then
-                           Put_Verbose ("Incompatible target for:");
-                           Display_Compiler (Comps (C), False, C);
-                        end if;
-                     end if;
-                  end if;
-
-                  --  Would adding this compiler to the current selection end
-                  --  up with an unsupported config ?
-                  if Selectable (C) then
-                     Tmp_Selection2 := Tmp_Selection;
-                     Append (Tmp_Selection2, Comps (C));
-                     Selectable (C) :=
-                       Is_Supported_Config (Base, Tmp_Selection2);
-                     if not Selectable (C) then
-                        if Verbose_Level > 0 then
-                           Put_Verbose ("Unsupported config for:");
-                           Display_Compiler (Comps (C), False, C);
-                        end if;
-                     end if;
-                  end if;
-               end if;
-            end loop;
-         end if;
-      end Filter_List;
+         Comp.Index_In_List := Choice;
+         Choice := Character'Succ (Choice);
+      end Update_Index;
 
    begin
-      for C in Comps'Range loop
-         Comps (C) := Element (Comp);
-         Selected (C) := Contains (Selected_Compilers, Comps (C));
+      Choice := 'A';
+      while Has_Element (Comp) loop
+         Update_Element (Compilers, Comp, Update_Index'Access);
          Next (Comp);
       end loop;
 
-      Filter_List;
-
       loop
+         Filter_List (Base, Compilers);
+
          Put_Line ("--------------------------------------------------");
          Put_Line
            ("gprconfig has found the following compilers on your PATH.");
          Put_Line
            ("Only those matching the target and the selected compilers"
             & " are displayed.");
-         Index := 1;
-         while Index <= Comps'Last loop
-            if Selectable (Index) or Selected (Index) then
-               Display_Compiler (Comps (Index), Selected (Index), Index);
-            end if;
-            Index := Index + 1;
-         end loop;
 
-         Comp := First (Custom_Comps);
+         Comp := First (Compilers);
          while Has_Element (Comp) loop
-            Display_Compiler (Element (Comp), True, Index);
-            Index := Index + 1;
+            if Element (Comp).Selectable
+              or else Element (Comp).Selected
+            then
+               Display_Compiler (Element (Comp));
+            end if;
             Next (Comp);
          end loop;
 
@@ -385,39 +393,16 @@ procedure GprConfig.Main is
             null;
 
          else
-            --  Selected one of the compilers we found ?
-            begin
-               Tmp := Character'Pos (Choice) - Character'Pos ('A') + 1;
-            exception
-               when Constraint_Error =>
-                  --  No selection
+            Comp := First (Compilers);
+            while Has_Element (Comp) loop
+               if Element (Comp).Index_In_List = Choice then
+                  Update_Element (Compilers, Comp, Toggle_Selection'Access);
                   exit;
-            end;
-
-            if Tmp in 1 .. Comps'Last then
-               Selected (Tmp) := not Selected (Tmp);
-
-               --  Selected one of the custom compilers
-            elsif Tmp in Comps'Last + 1 .. Index - 1 then
-               Comp := First (Custom_Comps);
-               Tmp := Tmp - Comps'Last;
-               while Tmp > 0 and then Has_Element (Comp) loop
-                  Tmp := Tmp - 1;
-                  Next (Comp);
-               end loop;
-               Delete (Custom_Comps, Comp);
-
-            else
-               --  Invalid choice
-               null;
-            end if;
+               end if;
+               Next (Comp);
+            end loop;
          end if;
-
-         Filter_List;
       end loop;
-
-      Selected_Compilers := Custom_Comps;
-      To_List (Comps, Selected, Selected_Compilers);
    end Select_Compilers_Interactively;
 
    -------------------------------------
@@ -463,6 +448,7 @@ procedure GprConfig.Main is
             Put_Verbose
               ("Found matching compiler "
                & To_String (Elem, As_Config_Arg => True), -1);
+            Elem.Selected := True;
             Append (Custom_Comps, Elem);
          else
             Put_Verbose ("", -1);
@@ -482,8 +468,7 @@ procedure GprConfig.Main is
    ----------------------
 
    procedure Filter_Compilers
-     (Selected_Comps : in out Compiler_Lists.List;
-      Compilers      : Compiler_Lists.List;
+     (Compilers      : in out Compiler_Lists.List;
       Filters        : Compiler_Lists.List)
    is
       function Filter_Match (Comp : Compiler; Filter : Compiler)
@@ -533,25 +518,25 @@ procedure GprConfig.Main is
          declare
             C     : Compiler_Lists.Cursor := First (Compilers);
             Comp  : Compiler;
-            Filt  : Compiler;
+            Filt  : constant Compiler := Element (F);
             Found : Boolean := False;
          begin
-            Filt := Element (F);
             while Has_Element (C) loop
                Comp := Element (C);
                if Filter_Match (Comp, Filt) then
-                  Append (Selected_Comps, Comp);
+                  if not Comp.Selected then
+                     Update_Element (Compilers, C, Toggle_Selection'Access);
+                  end if;
                   Found := True;
                   exit;
                end if;
                Next (C);
             end loop;
+
             if not Found then
                Put_Line (Standard_Error,
-                         "warning: no matching compiler for filter: ");
-               Put_Line
-                 (Standard_Error, "  --config="
-                  & To_String (Filt, As_Config_Arg => True));
+                         "warning: no matching compiler for --config "
+                         & To_String (Filt, As_Config_Arg => True));
             end if;
          end;
          Next (F);
@@ -562,10 +547,10 @@ procedure GprConfig.Main is
    -- Show_Command_Line_Config --
    ------------------------------
 
-   procedure Show_Command_Line_Config (Selected_Comps : Compiler_Lists.List) is
+   procedure Show_Command_Line_Config (Compilers : Compiler_Lists.List) is
       C : Compiler_Lists.Cursor;
    begin
-      if not Is_Empty (Selected_Comps) then
+      if not Is_Empty (Compilers) then
          New_Line;
          Put_Line ("You can regenerate the same config file in batch mode");
          Put_Line (" with the following command line:");
@@ -577,10 +562,12 @@ procedure GprConfig.Main is
             Put (To_String (Selected_Target));
          end if;
 
-         C := First (Selected_Comps);
+         C := First (Compilers);
          while Has_Element (C) loop
-            Put (" --config="
-                 & To_String (Element (C), As_Config_Arg => True));
+            if Element (C).Selected then
+               Put (" --config="
+                    & To_String (Element (C), As_Config_Arg => True));
+            end if;
             Next (C);
          end loop;
          New_Line;
@@ -589,8 +576,6 @@ procedure GprConfig.Main is
    end Show_Command_Line_Config;
 
    Base               : Knowledge_Base;
-   Selected_Compilers : Compiler_Lists.List;
-   Custom_Comps       : Compiler_Lists.List;
    Filters            : Compiler_Lists.List;
    Load_Standard_Base : Boolean := True;
    Batch              : Boolean := False;
@@ -709,10 +694,7 @@ begin
         (Base,
          Selected_Targets_Set,
          Filters,
-         Selected_Compilers);
-      Splice (Target => Selected_Compilers,
-              Before => First (Selected_Compilers),
-              Source => Custom_Comps);
+         Compilers);
 
    else
       Find_Compilers_In_Path
@@ -760,9 +742,7 @@ begin
          end if;
       end if;
 
-      if not Is_Empty (Filters) then
-         Filter_Compilers (Selected_Compilers, Compilers, Filters);
-      end if;
+      Filter_Compilers (Compilers, Filters);
 
       if Is_Empty (Compilers) then
          if Selected_Target /= Null_Unbounded_String then
@@ -778,14 +758,12 @@ begin
 
       Compiler_Sort.Sort (Compilers);
 
-      Select_Compilers_Interactively
-        (Base, Compilers, Selected_Compilers, Custom_Comps);
-      Show_Command_Line_Config (Selected_Compilers);
+      Select_Compilers_Interactively (Base, Compilers);
+      Show_Command_Line_Config (Compilers);
    end if;
 
    if Output_File /= Null_Unbounded_String then
-      Generate_Configuration
-        (Base, Selected_Compilers, To_String (Output_File));
+      Generate_Configuration (Base, Compilers, To_String (Output_File));
    end if;
 
 exception
