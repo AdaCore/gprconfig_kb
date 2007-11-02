@@ -86,27 +86,37 @@ package GprConfig.Knowledge is
    package Compiler_Lists is new Ada.Containers.Doubly_Linked_Lists (Compiler);
    --  A list of compilers.
 
-   procedure Find_Compilers_In_Path
-     (Base      : in out Knowledge_Base;
-      On_Target : Targets_Set_Id;
-      Matching  : Compiler := No_Compiler;
-      Compilers : out Compiler_Lists.List;
-      Stop_At_First_Match : Boolean);
-   --  Return the list of compilers found on PATH, that match Matching (or the
-   --  fields that are specified in Matching).
-   --  If Stop_At_First_Match is true, then stop at the first matching compiler
+   type Compiler_Iterator is abstract tagged null record;
+   --  An iterator for searches for all known compilers in a list of
+   --  directories. Whenever a new compiler is found, the Callback primitive
+   --  operation is called.
 
-   procedure Find_Matching_Compilers
-     (Matching   : Compiler;
-      On_Target  : Targets_Set_Id;
-      Base       : in out Knowledge_Base;
-      Compilers  : out Compiler_Lists.List;
-      Stop_At_First_Match : Boolean);
-   --  Find all compilers matching the (possibly partial) information found in
-   --  Matching.
-   --  If the compiler is totally unknown, the returned list will be empty.
-   --  If Stop_At_First_Match is True, then only the first matching compiler is
-   --  returned.
+   procedure Callback
+     (Iterator       : in out Compiler_Iterator;
+      Comp           : Compiler;
+      From_Extra_Dir : Boolean;
+      Continue       : out Boolean) is abstract;
+   --  Called whenever a new compiler is discovered.
+   --  It might be discovered either in a path added through a --config
+   --  parameter (in which case From_Extra_Dir is True), or in a path specified
+   --  in the environment variable $PATH (in which case it is False). If the
+   --  directory is both in Extra_Dirs and in $PATH, From_Extra_Dir is set to
+   --  False.
+   --  On exit, Continue should be set to False if there is no need to discover
+   --  further compilers (however there will be no possibility to restart the
+   --  search at the same point later on).
+
+   procedure Foreach_Compiler_In_Path
+     (Iterator            : in out Compiler_Iterator;
+      Base                : in out Knowledge_Base;
+      On_Target           : Targets_Set_Id;
+      Extra_Dirs          : String := "");
+   --  Find all compilers in "Extra_Dirs & $PATH".
+   --  Extra_Dirs should typically be the list of directories found in
+   --  --config command line arguments.
+   --  The only filtering done is the target, for optimization purposes (no
+   --  need to computed all info about the compiler if we know it will not be
+   --  uses anyway).
 
    procedure Known_Compiler_Names
      (Base : Knowledge_Base;

@@ -92,19 +92,16 @@ package body GprConfig.Knowledge is
    function Node_Value_As_String (N : Node) return String;
    --  Return the value of the node, concatenating all Text children
 
-   procedure Find_Compilers_In_Dir
-     (Append_To  : in out Compiler_Lists.List;
+   procedure Foreach_Compiler_In_Dir
+     (Iterator   : in out Compiler_Iterator'Class;
       Base       : in out Knowledge_Base;
       Directory  : String;
-      Matching   : Compiler  := No_Compiler;
+      From_Extra_Dir : Boolean;
       On_Target  : Targets_Set_Id;
       Path_Order : Integer;
-      Stop_At_First_Match : Boolean);
-   --  Find all known compilers in a specific directory, that match
-   --  Matching (ignoring unset fields in Matching).
-   --  If Stop_At_First_Match is true, then only the first compiler found will
-   --  be returned, instead of looking for all matching compilers. This
-   --  provides a significant speed up in most cases
+      Continue   : out Boolean);
+   --  Find all known compilers in Directory, and call Iterator.Callback as
+   --  appropriate.
 
    procedure Get_External_Value
      (Attribute        : String;
@@ -127,18 +124,18 @@ package body GprConfig.Knowledge is
    --  Comparisong with Matching is case-insensitive (this is needed for
    --  languages, does not matter for versions, is not used for targets)
 
-   procedure For_Each_Language_Runtime
-     (Append_To  : in out Compiler_Lists.List;
+   procedure Foreach_Language_Runtime
+     (Iterator   : in out Compiler_Iterator'Class;
       Base       : in out Knowledge_Base;
       Name       : String;
       Executable : String;
       Directory  : String;
       Prefix     : String;
-      Matching   : Compiler;
+      From_Extra_Dir : Boolean;
       On_Target  : Targets_Set_Id;
       Descr      : Compiler_Description;
       Path_Order : Integer;
-      Stop_At_First_Match : Boolean);
+      Continue   : out Boolean);
    --  For each language/runtime parsed in Languages/Runtimes, create a new
    --  compiler in the list, if it matches Matching.
    --  If Stop_At_First_Match is true, then only the first matching compiler is
@@ -1450,22 +1447,22 @@ package body GprConfig.Knowledge is
       end loop;
    end Get_Words;
 
-   -------------------------------
-   -- For_Each_Language_Runtime --
-   -------------------------------
+   ------------------------------
+   -- Foreach_Language_Runtime --
+   ------------------------------
 
-   procedure For_Each_Language_Runtime
-     (Append_To  : in out Compiler_Lists.List;
+   procedure Foreach_Language_Runtime
+     (Iterator   : in out Compiler_Iterator'Class;
       Base       : in out Knowledge_Base;
       Name       : String;
       Executable : String;
       Directory  : String;
       Prefix     : String;
-      Matching   : Compiler;
+      From_Extra_Dir : Boolean;
       On_Target  : Targets_Set_Id;
       Descr      : Compiler_Description;
       Path_Order : Integer;
-      Stop_At_First_Match : Boolean)
+      Continue   : out Boolean)
    is
       Target    : External_Value_Lists.List;
       Version   : External_Value_Lists.List;
@@ -1474,7 +1471,6 @@ package body GprConfig.Knowledge is
       Comp      : Compiler;
       C, C2     : External_Value_Lists.Cursor;
    begin
-
       --  verify that the compiler is indeed a real executable
       --  on Windows and not a cygwin symbolic link
 
@@ -1482,6 +1478,7 @@ package body GprConfig.Knowledge is
         and then not Is_Windows_Executable
           (Directory & Directory_Separator & Executable)
       then
+         Continue := True;
          return;
       end if;
 
@@ -1493,30 +1490,14 @@ package body GprConfig.Knowledge is
       Comp.Prefix     := To_Unbounded_String (Prefix);
       Comp.Executable := To_Unbounded_String (Executable);
 
-      --  Check the language first, since it is often hard-coded, and often
-      --  specified in --config, so that provides a speed up since we won't
-      --  have to compute the other attributes
-
-      Get_External_Value
-        ("languages",
-         Value            => Descr.Languages,
-         Comp             => Comp,
-         Split_Into_Words => True,
-         Matching         => To_String (Matching.Language),
-         Processed_Value  => Languages);
-      if Is_Empty (Languages) then
-         Put_Verbose
-           ("Ignore compiler, since no matching language (must match "
-            & To_String (Matching.Language) & ")");
-         raise Ignore_Compiler;
-      end if;
+      --  Check the target first, for efficiency. If it doesn't match, no need
+      --  to compute other attributes.
 
       Get_External_Value
         ("target",
          Value            => Descr.Target,
          Comp             => Comp,
          Split_Into_Words => False,
-         Matching         => To_String (Matching.Target),
          Processed_Value  => Target);
       if not Is_Empty (Target) then
          Comp.Target := External_Value_Lists.Element (First (Target)).Value;
@@ -1530,7 +1511,23 @@ package body GprConfig.Knowledge is
         and then Comp.Targets_Set /= On_Target
       then
          Put_Verbose ("Target for this compiler does not match --target");
-         raise Ignore_Compiler;
+         Continue := True;
+         return;
+      end if;
+
+      --  Then get the value of the remaining attributes. For most of them, we
+      --  must be able to find a valid value, or the compiler is simply ignored
+
+      Get_External_Value
+        ("languages",
+         Value            => Descr.Languages,
+         Comp             => Comp,
+         Split_Into_Words => True,
+         Processed_Value  => Languages);
+      if Is_Empty (Languages) then
+         Put_Verbose ("Ignore compiler, since no language could be computed");
+         Continue := True;
+         return;
       end if;
 
       Get_External_Value
@@ -1538,13 +1535,12 @@ package body GprConfig.Knowledge is
          Value            => Descr.Version,
          Comp             => Comp,
          Split_Into_Words => False,
-         Matching         => To_String (Matching.Version),
          Processed_Value  => Version);
 
-      --  If we can't find version, ignore this compiler
       if Is_Empty (Version) then
          Put_Verbose ("Ignore compiler, since couldn't guess its version");
-         raise Ignore_Compiler;
+         Continue := True;
+         return;
       end if;
 
       Comp.Version := External_Value_Lists.Element (First (Version)).Value;
@@ -1559,7 +1555,6 @@ package body GprConfig.Knowledge is
          Value            => Descr.Runtimes,
          Comp             => Comp,
          Split_Into_Words => True,
-         Matching         => To_String (Matching.Runtime),
          Processed_Value  => Runtimes);
 
       C := First (Languages);
@@ -1575,25 +1570,31 @@ package body GprConfig.Knowledge is
                   Put_Verbose ("No runtime found where one is required for: "
                                & To_String (Comp.Path));
                else
-                  Put_Verbose ("Adding compiler to interactive menu "
-                               & To_String (Comp, True));
-                  Append (Append_To, Comp);
-                  if Stop_At_First_Match then
+                  Callback
+                    (Iterator       => Iterator,
+                     Comp           => Comp,
+                     From_Extra_Dir => From_Extra_Dir,
+                     Continue       => Continue);
+                  if not Continue then
                      return;
                   end if;
                end if;
+
             else
                C2 := First (Runtimes);
                while Has_Element (C2) loop
                   Comp.Runtime     := External_Value_Lists.Element (C2).Value;
                   Comp.Runtime_Dir :=
                     External_Value_Lists.Element (C2).Extracted_From;
-                  Put_Verbose ("Adding compiler to interactive menu "
-                               & To_String (Comp, True));
-                  Append (Append_To, Comp);
-                  if Stop_At_First_Match then
+                  Callback
+                    (Iterator       => Iterator,
+                     Comp           => Comp,
+                     From_Extra_Dir => From_Extra_Dir,
+                     Continue       => Continue);
+                  if not Continue then
                      return;
                   end if;
+
                   Next (C2);
                end loop;
             end if;
@@ -1605,7 +1606,7 @@ package body GprConfig.Knowledge is
    exception
       when Ignore_Compiler =>
          null;
-   end For_Each_Language_Runtime;
+   end Foreach_Language_Runtime;
 
    ---------------
    -- To_String --
@@ -1645,34 +1646,35 @@ package body GprConfig.Knowledge is
       end if;
    end To_String;
 
-   ---------------------------
-   -- Find_Compilers_In_Dir --
-   ---------------------------
+   -----------------------------
+   -- Foreach_Compiler_In_Dir --
+   -----------------------------
 
-   procedure Find_Compilers_In_Dir
-     (Append_To  : in out Compiler_Lists.List;
+   procedure Foreach_Compiler_In_Dir
+     (Iterator   : in out Compiler_Iterator'Class;
       Base       : in out Knowledge_Base;
       Directory  : String;
-      Matching   : Compiler  := No_Compiler;
+      From_Extra_Dir : Boolean;
       On_Target  : Targets_Set_Id;
       Path_Order : Integer;
-      Stop_At_First_Match : Boolean)
+      Continue   : out Boolean)
    is
       use CDM;
       C            : CDM.Cursor;
       Search       : Search_Type;
       Dir          : Directory_Entry_Type;
-      Initial_Length : Count_Type;
    begin
       --  Since the name of an executable can be a regular expression, we need
       --  to look at all files in the directory to see if they match. This
       --  requires more system calls than if the name was always a simple
       --  string. So we first check which of the two algorithms should be used.
 
-      Put_Verbose ("Search compilers """ & To_String (Matching.Name) & """ in "
+      Continue := True;
+
+      Put_Verbose ("Foreach compiler in "
                    & Directory & " regexp="
                    & Boolean'Image (Base.Check_Executable_Regexp)
-                   & " stop_at_first=" & Boolean'Image (Stop_At_First_Match),
+                   & " extra_dir=" & From_Extra_Dir'Img,
                    1);
 
       if Base.Check_Executable_Regexp then
@@ -1684,6 +1686,7 @@ package body GprConfig.Knowledge is
          exception
             when Ada.Directories.Name_Error =>
                Put_Verbose ("No such directory:" & Directory, -1);
+               Continue := True;
                return;
          end;
 
@@ -1693,63 +1696,58 @@ package body GprConfig.Knowledge is
                Get_Next_Entry (Search, Dir);
                C := First (Base.Compilers);
                while Has_Element (C) loop
-                  if Matching.Name = "" or else Key (C) = Matching.Name then
-                     declare
-                        Simple  : constant String := Simple_Name (Dir);
-                        Matches : Match_Array
-                          (0 .. Integer'Max (0, CDM.Element (C).Prefix_Index));
-                        Matched : Boolean;
-                        Prefix  : Unbounded_String;
-                     begin
-                        if CDM.Element (C).Executable_Re /= null then
-                           Match
-                             (CDM.Element (C).Executable_Re.all,
-                              Data       => Simple,
-                              Matches    => Matches);
-                           Matched := Matches (0) /= No_Match;
-                        else
-                           Matched := (To_String (CDM.Element (C).Executable) &
-                             Exec_Suffix.all) = Simple_Name (Dir);
+                  declare
+                     Simple  : constant String := Simple_Name (Dir);
+                     Matches : Match_Array
+                       (0 .. Integer'Max (0, CDM.Element (C).Prefix_Index));
+                     Matched : Boolean;
+                     Prefix  : Unbounded_String;
+                  begin
+                     if CDM.Element (C).Executable_Re /= null then
+                        Match
+                          (CDM.Element (C).Executable_Re.all,
+                           Data       => Simple,
+                           Matches    => Matches);
+                        Matched := Matches (0) /= No_Match;
+                     else
+                        Matched := (To_String (CDM.Element (C).Executable) &
+                                    Exec_Suffix.all) = Simple_Name (Dir);
+                     end if;
+
+                     if Matched then
+                        Put_Verbose
+                          (Key (C) & " is candidate: filename=" & Simple,
+                           1);
+
+                        if CDM.Element (C).Executable_Re /= null
+                          and then CDM.Element (C).Prefix_Index >= 0
+                          and then Matches (CDM.Element (C).Prefix_Index) /=
+                          No_Match
+                        then
+                           Prefix := To_Unbounded_String
+                             (Simple (Matches
+                              (CDM.Element (C).Prefix_Index).First ..
+                                Matches (CDM.Element (C).Prefix_Index).Last));
                         end if;
 
-                        if Matched then
-                           Put_Verbose
-                             (Key (C) & " is candidate: filename=" & Simple,
-                              1);
+                        Foreach_Language_Runtime
+                          (Iterator   => Iterator,
+                           Base       => Base,
+                           Name       => Key (C),
+                           Executable => Simple,
+                           Directory  => Directory,
+                           On_Target  => On_Target,
+                           Prefix     => To_String (Prefix),
+                           From_Extra_Dir => From_Extra_Dir,
+                           Descr      => CDM.Element (C),
+                           Path_Order => Path_Order,
+                           Continue   => Continue);
 
-                           if CDM.Element (C).Executable_Re /= null
-                             and then CDM.Element (C).Prefix_Index >= 0
-                             and then Matches (CDM.Element (C).Prefix_Index) /=
-                             No_Match
-                           then
-                              Prefix := To_Unbounded_String
-                                (Simple (Matches
-                                 (CDM.Element (C).Prefix_Index).First ..
-                                 Matches (CDM.Element (C).Prefix_Index).Last));
-                           end if;
+                        Put_Verbose ("", -1);
 
-                           Initial_Length := Length (Append_To);
-                           For_Each_Language_Runtime
-                             (Append_To  => Append_To,
-                              Base       => Base,
-                              Name       => Key (C),
-                              Executable => Simple,
-                              Directory  => Directory,
-                              Matching   => Matching,
-                              On_Target  => On_Target,
-                              Prefix     => To_String (Prefix),
-                              Descr      => CDM.Element (C),
-                              Path_Order => Path_Order,
-                              Stop_At_First_Match => Stop_At_First_Match);
-
-                           Put_Verbose ("", -1);
-
-                           exit For_All_Files_In_Dir when
-                             Stop_At_First_Match
-                             and then Length (Append_To) > Initial_Length;
-                        end if;
-                     end;
-                  end if;
+                        exit For_All_Files_In_Dir when not Continue;
+                     end if;
+                  end;
                   Next (C);
                end loop;
             exception
@@ -1765,148 +1763,158 @@ package body GprConfig.Knowledge is
 
          C := First (Base.Compilers);
          while Has_Element (C) loop
-            if Matching.Name = "" or else Key (C) = Matching.Name then
-               declare
-                  F : constant String := Normalize_Pathname
-                    (Name           => To_String (CDM.Element (C).Executable),
-                     Directory      => Directory,
-                     Resolve_Links  => False,
-                     Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
-               begin
-                  if Ada.Directories.Exists (F) then
-                     Put_Verbose ("--------------------------------------");
-                     Put_Verbose
-                       ("Processing " & Key (C) & " in " & Directory);
-                     Initial_Length := Length (Append_To);
-                     For_Each_Language_Runtime
-                       (Append_To  => Append_To,
-                        Base       => Base,
-                        Name       => Key (C),
-                        Executable => To_String (CDM.Element (C).Executable),
-                        Prefix     => "",
-                        Matching   => Matching,
-                        On_Target  => On_Target,
-                        Directory  => Directory,
-                        Descr      => CDM.Element (C),
-                        Path_Order => Path_Order,
-                        Stop_At_First_Match => Stop_At_First_Match);
-
-                     exit when Stop_At_First_Match
-                       and then Length (Append_To) > Initial_Length;
-                  end if;
-               exception
-                  when Ada.Directories.Name_Error =>
-                     null;
-                  when Ignore_Compiler =>
-                     --  Nothing to do, the compiler has not been inserted
-                     null;
-               end;
-            end if;
+            declare
+               F : constant String := Normalize_Pathname
+                 (Name           => To_String (CDM.Element (C).Executable),
+                  Directory      => Directory,
+                  Resolve_Links  => False,
+                  Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
+            begin
+               if Ada.Directories.Exists (F) then
+                  Put_Verbose ("--------------------------------------");
+                  Put_Verbose
+                    ("Processing " & Key (C) & " in " & Directory);
+                  Foreach_Language_Runtime
+                    (Iterator   => Iterator,
+                     Base       => Base,
+                     Name       => Key (C),
+                     Executable => To_String (CDM.Element (C).Executable),
+                     Prefix     => "",
+                     From_Extra_Dir => From_Extra_Dir,
+                     On_Target  => On_Target,
+                     Directory  => Directory,
+                     Descr      => CDM.Element (C),
+                     Path_Order => Path_Order,
+                     Continue   => Continue);
+                  exit when not Continue;
+               end if;
+            exception
+               when Ada.Directories.Name_Error =>
+                  null;
+               when Ignore_Compiler =>
+                  --  Nothing to do, the compiler has not been inserted
+                  null;
+            end;
 
             Next (C);
          end loop;
       end if;
 
       Put_Verbose ("", -1);
-   end Find_Compilers_In_Dir;
+   end Foreach_Compiler_In_Dir;
 
-   -----------------------------
-   -- Find_Matching_Compilers --
-   -----------------------------
+   ------------------------------
+   -- Foreach_Compiler_In_Path --
+   ------------------------------
 
-   procedure Find_Matching_Compilers
-     (Matching   : Compiler;
-      On_Target  : Targets_Set_Id;
-      Base       : in out Knowledge_Base;
-      Compilers  : out Compiler_Lists.List;
-      Stop_At_First_Match : Boolean) is
-   begin
-      Clear (Compilers);
-      Find_Compilers_In_Dir
-        (Append_To  => Compilers,
-         Base       => Base,
-         Directory  => To_String (Matching.Path),
-         Matching   => Matching,
-         On_Target  => On_Target,
-         Path_Order => 0,
-        Stop_At_First_Match => Stop_At_First_Match);
-   end Find_Matching_Compilers;
-
-   ----------------------------
-   -- Find_Compilers_In_Path --
-   ----------------------------
-
-   procedure Find_Compilers_In_Path
-     (Base      : in out Knowledge_Base;
-      On_Target : Targets_Set_Id;
-      Matching  : Compiler := No_Compiler;
-      Compilers : out Compiler_Lists.List;
-      Stop_At_First_Match : Boolean)
+   procedure Foreach_Compiler_In_Path
+     (Iterator            : in out Compiler_Iterator;
+      Base                : in out Knowledge_Base;
+      On_Target           : Targets_Set_Id;
+      Extra_Dirs          : String := "")
    is
-      Map        : String_Lists.List;
-      Path_Order : Positive := 1;
-   begin
-      if Ada.Environment_Variables.Exists ("PATH") then
-         declare
-            Path : constant String := Ada.Environment_Variables.Value ("PATH");
-            First, Last : Natural;
-         begin
-            First := Path'First;
-            while First <= Path'Last loop
-               Last := First + 1;
-               while Last <= Path'Last
-                 and then Path (Last) /= GNAT.OS_Lib.Path_Separator
-               loop
-                  Last := Last + 1;
-               end loop;
+      Dirs : String_Lists.List;
+      Map  : String_Lists.List;
 
-               declare
-                  --  Use a hash to make sure we do not parse the same
-                  --  directory twice. This is both more efficient and avoids
-                  --  duplicates in the final result list. To handle the case
-                  --  of links (on linux for instance /usr/bin/X11 points to
-                  --  ".", ie /usr/bin, and compilers would appear duplicated),
-                  --  we resolve symbolic links.
-                  --  This call is also set to fold to lower-case when
-                  --  appropriate
+      procedure Process_Path
+        (Path : String; Prefix : Character; Prepend_To_List : Boolean);
+      --  Add a directory to the list of directories to examine
 
-                  Normalized : constant String :=
-                    Name_As_Directory
-                      (Normalize_Pathname
-                         (Path (First .. Last - 1),
-                          Resolve_Links  => True,
-                          Case_Sensitive => False));
-               begin
-                  Put_Verbose ("Parsing PATH: " & Path (First .. Last - 1)
-                               & " normalized=" & Normalized);
-
-                  if not Contains (Map, Normalized) then
-                     Append (Map, Normalized);
-
-                     --  We know that at least GNAT uses a regular expression
-                     --  for its <executable> node, so we have to handle
-                     --  regexps
-                     Find_Compilers_In_Dir
-                       (Append_To               => Compilers,
-                        Base                    => Base,
-                        Directory               => Path (First .. Last - 1),
-                        Path_Order              => Path_Order,
-                        Matching                => Matching,
-                        On_Target               => On_Target,
-                        Stop_At_First_Match     => Stop_At_First_Match);
-                     exit when Stop_At_First_Match
-                       and then Length (Compilers) > 0;
-                  else
-                     Put_Verbose ("  => Already parsed");
-                  end if;
-               end;
-
-               Path_Order := Path_Order + 1;
-               First := Last + 1;
+      procedure Process_Path
+        (Path : String; Prefix : Character; Prepend_To_List : Boolean)
+      is
+         First, Last : Natural;
+      begin
+         First := Path'First;
+         while First <= Path'Last loop
+            Last := First + 1;
+            while Last <= Path'Last
+              and then Path (Last) /= GNAT.OS_Lib.Path_Separator
+            loop
+               Last := Last + 1;
             end loop;
-         end;
+
+            declare
+               --  Use a hash to make sure we do not parse the same directory
+               --  twice. This is both more efficient and avoids duplicates in
+               --  the final result list. To handle the case of links (on linux
+               --  for instance /usr/bin/X11 points to ".", ie /usr/bin, and
+               --  compilers would appear duplicated), we resolve symbolic
+               --  links. This call is also set to fold to lower-case when
+               --  appropriate
+
+               Normalized : constant String :=
+                 Name_As_Directory
+                   (Normalize_Pathname
+                      (Path (First .. Last - 1),
+                       Resolve_Links  => True,
+                       Case_Sensitive => False));
+            begin
+               if not Contains (Map, Normalized) then
+                  Append (Map, Normalized);
+
+                  Put_Verbose ("Will examine "
+                               & Prefix & " " & Path (First .. Last - 1));
+
+                  if Prepend_To_List then
+                     Prepend (Dirs, Prefix & Path (First .. Last - 1));
+                  else
+                     Append (Dirs, Prefix & Path (First .. Last - 1));
+                  end if;
+               end if;
+            end;
+            First := Last + 1;
+         end loop;
+      end Process_Path;
+
+      Dir        : String_Lists.Cursor;
+      Path_Order : Positive := 1;
+      Continue   : Boolean;
+   begin
+      --  Preprocess the list of directories that will be searched. When a
+      --  directory appears both in Extra_Dirs and in Path, we prepend it to
+      --  the PATH for optimization purposes: no need to look in all the PATH
+      --  if the compiler(s) will match in that directory. However, this has
+      --  the result that a command line with --config that specifies a path
+      --  and one that doesn't might find the second compiler in the same
+      --  path even if it is not the first one on the PATH. That's minor, and
+      --  a workaround is for the user to specify path for all --config args.
+      --
+      --  We will also need to know later whether the directory comes from
+      --  PATH or extra_dirs. If a directory appears in both, it is said to
+      --  come from PATH, so that all its compilers are taken into account.
+      --  As a special convention, the first character of the directory name is
+      --  set to 'E' if the dir comes from extra_dirs, or 'P' if it comes from
+      --  PATH.
+
+      if Ada.Environment_Variables.Exists ("PATH") then
+         Process_Path (Ada.Environment_Variables.Value ("PATH"), 'P', False);
       end if;
-   end Find_Compilers_In_Path;
+
+      if Extra_Dirs /= "" then
+         Process_Path (Extra_Dirs, 'E', Prepend_To_List => True);
+      end if;
+
+      Dir := First (Dirs);
+      while Has_Element (Dir) loop
+         declare
+            P : constant String := String_Lists.Element (Dir);
+         begin
+            Foreach_Compiler_In_Dir
+              (Iterator                => Iterator,
+               Base                    => Base,
+               Directory               => P (P'First + 1 .. P'Last),
+               From_Extra_Dir          => P (P'First) = 'E',
+               Path_Order              => Path_Order,
+               On_Target               => On_Target,
+               Continue                => Continue);
+            exit when not Continue;
+         end;
+
+         Path_Order := Path_Order + 1;
+         Next (Dir);
+      end loop;
+   end Foreach_Compiler_In_Path;
 
    --------------------------
    -- Known_Compiler_Names --
@@ -1991,13 +1999,6 @@ package body GprConfig.Knowledge is
          end if;
          Next (C);
       end loop;
-
---        Put_Verbose
---          ("No compiler matches name="""
---           & To_String (Filter.Name) & """ version="""
---           & To_String (Filter.Version) & """ runtime="""
---           & To_String (Filter.Runtime) & """ language="""
---           & To_String (Filter.Language) & """");
       Matched := False;
    end Match;
 

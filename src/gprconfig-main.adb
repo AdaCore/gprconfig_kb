@@ -2,8 +2,9 @@
 --                   Copyright (C) 2006-2007, AdaCore                       --
 ------------------------------------------------------------------------------
 
-with Ada.Characters.Handling;  use Ada.Characters.Handling;
+with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;
+with Ada.Containers;            use Ada.Containers;
 with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -67,12 +68,6 @@ procedure GprConfig.Main is
    --  since otherwise --config only acts as a filter for the compilers that
    --  are found through the knowledge base.
 
-   procedure Filter_Compilers
-     (Compilers      : in out Compiler_Lists.List;
-      Filters        : Compiler_Lists.List);
-   --  For every element of Filters, selects the first matching compilers in
-   --  Compilers.  If none is found emits a warning.
-
    procedure Show_Command_Line_Config (Compilers : Compiler_Lists.List);
    --  Display the batch command line that would have the same effect as the
    --  current selection of compilers.
@@ -98,6 +93,45 @@ procedure GprConfig.Main is
    procedure Mark_As_Unselectable (Comp : in out Compiler);
    --  Changes some attributes of the compiler. This is used to update elements
    --  in a list.
+
+   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean;
+   --  Returns True if Comp match Filter (the latter corresponds to a --config
+   --  command line argument).
+
+   type Compiler_Array is array (Count_Type range <>) of Compiler;
+   type Boolean_Array  is array (Count_Type range <>) of Boolean;
+
+   type Batch_Iterator (Count : Count_Type) is new Compiler_Iterator with
+      record
+         Compilers    : Compiler_Array (1 .. Count) :=
+           (others => No_Compiler);
+         Filters      : Compiler_Lists.List;
+      end record;
+   procedure Callback
+     (Iterator       : in out Batch_Iterator;
+      Comp           : Compiler;
+      From_Extra_Dir : Boolean;
+      Continue       : out Boolean);
+   --  Search the first compiler matching each --config command line argument.
+
+   type All_Iterator (Count : Count_Type) is new Compiler_Iterator with
+      record
+         Filter_Matched : Boolean_Array (1 .. Count) := (others => False);
+         Filters        : Compiler_Lists.List;
+         Compilers      : Compiler_Lists.List;
+      end record;
+   procedure Callback
+     (Iterator       : in out All_Iterator;
+      Comp           : Compiler;
+      From_Extra_Dir : Boolean;
+      Continue       : out Boolean);
+   --  Search all compilers on path, preselecting the first one matching each
+   --  of the filters.
+
+   function Extra_Dirs_From_Filters
+     (Filters : Compiler_Lists.List) return Unbounded_String;
+   --  Compute the list of directories that should be prepended to the PATH
+   --  when searching for compilers.
 
    ----------
    -- Help --
@@ -407,6 +441,119 @@ procedure GprConfig.Main is
       end loop;
    end Select_Compilers_Interactively;
 
+   --------------
+   -- Callback --
+   --------------
+
+   procedure Callback
+     (Iterator       : in out Batch_Iterator;
+      Comp           : Compiler;
+      From_Extra_Dir : Boolean;
+      Continue       : out Boolean)
+   is
+      C           : Compiler_Lists.Cursor := First (Iterator.Filters);
+      Index       : Count_Type := 1;
+      Found_Count : Count_Type := 0;
+   begin
+      while Has_Element (C) loop
+         if Iterator.Compilers (Index) /= No_Compiler then
+            Found_Count := Found_Count + 1;
+         else
+            --  A compiler is an "extra_dir" (ie specified on the command line)
+            --  can only match if that directory was explicitly specified in
+            --  --config. We do not want to find all compilers in /dir if that
+            --  directory is not in $PATH
+
+            if (not From_Extra_Dir or else Element (C).Path = Comp.Path)
+              and then Filter_Match (Comp => Comp, Filter => Element (C))
+            then
+               Iterator.Compilers (Index) := Comp;
+               Iterator.Compilers (Index).Selected := True;
+               Found_Count := Found_Count + 1;
+               Put_Verbose
+                 ("Found matching compiler for --config "
+                  & To_String (Element (C), As_Config_Arg => True)
+                  & " Found=" & Found_Count'Img & "/"
+                  & Iterator.Compilers'Length'Img);
+            end if;
+         end if;
+
+         Index := Index + 1;
+         Next (C);
+      end loop;
+
+      --  Stop at first compiler
+      Continue := Found_Count /= Iterator.Compilers'Length;
+   end Callback;
+
+   --------------
+   -- Callback --
+   --------------
+
+   procedure Callback
+     (Iterator       : in out All_Iterator;
+      Comp           : Compiler;
+      From_Extra_Dir : Boolean;
+      Continue       : out Boolean)
+   is
+      New_Comp : Compiler := Comp;
+      C        : Compiler_Lists.Cursor;
+      Index    : Count_Type := 1;
+   begin
+      if Iterator.Filter_Matched /=
+        (Iterator.Filter_Matched'Range => True)
+      then
+         C := First (Iterator.Filters);
+         while Has_Element (C) loop
+            if not Iterator.Filter_Matched (Index)
+              and then Filter_Match (Comp => Comp, Filter => Element (C))
+            then
+               New_Comp.Selected := True;
+               Iterator.Filter_Matched (Index) := True;
+               exit;
+            end if;
+
+            Index := Index + 1;
+            Next (C);
+         end loop;
+      end if;
+
+      --  Ignore compilers from extra directories, unless they have been
+      --  selected because of a --config argument
+
+      if New_Comp.Selected
+        or else not From_Extra_Dir
+      then
+         Put_Verbose
+           ("Adding compiler to interactive menu "
+            & To_String (Comp, True) & " selected=" & New_Comp.Selected'Img);
+         Append (Iterator.Compilers, New_Comp);
+      end if;
+
+      Continue := True;
+   end Callback;
+
+   -----------------------------
+   -- Extra_Dirs_From_Filters --
+   -----------------------------
+
+   function Extra_Dirs_From_Filters
+     (Filters : Compiler_Lists.List) return Unbounded_String
+   is
+      C          : Compiler_Lists.Cursor  := First (Filters);
+      Extra_Dirs : Unbounded_String;
+      Elem       : Compiler;
+   begin
+      while Has_Element (C) loop
+         Elem := Element (C);
+         if Elem.Path /= "" then
+            Append (Extra_Dirs, Elem.Path & Path_Separator);
+         end if;
+         Next (C);
+      end loop;
+      return Extra_Dirs;
+   end Extra_Dirs_From_Filters;
+
    -------------------------------------
    -- Complete_Command_Line_Compilers --
    -------------------------------------
@@ -417,133 +564,86 @@ procedure GprConfig.Main is
       Filters      : Compiler_Lists.List;
       Custom_Comps : out Compiler_Lists.List)
    is
-      C    : Compiler_Lists.Cursor := First (Filters);
-      Elem : Compiler;
-      Completion : Compiler_Lists.List;
+      Iter  : Batch_Iterator (Length (Filters));
+      C     : Compiler_Lists.Cursor;
+      Elem  : Compiler;
+      Index : Count_Type := 1;
+      Found : Boolean := True;
+      Extra_Dirs : constant Unbounded_String :=
+        Extra_Dirs_From_Filters (Filters);
    begin
+      Iter.Filters   := Filters;
+
+      Put_Verbose ("Completing info for --config parameters, extra_dirs="
+                   & To_String (Extra_Dirs), 1);
+
+      Foreach_Compiler_In_Path
+        (Iterator   => Iter,
+         Base       => Base,
+         On_Target  => On_Target,
+         Extra_Dirs => To_String (Extra_Dirs));
+
+      Put_Verbose ("", -1);
+
+      C := First (Filters);
       while Has_Element (C) loop
-         Clear (Completion);
-         Elem := Element (C);
-
-         Put_Verbose
-           ("Completing info for --config="
-            & To_String (Elem, As_Config_Arg => True), 1);
-
-         if Elem.Path /= "" then
-            Find_Matching_Compilers
-              (Matching  => Elem,
-               On_Target => On_Target,
-               Base      => Base,
-               Compilers => Completion,
-               Stop_At_First_Match => True);
-         else
-            Find_Compilers_In_Path
-              (Matching  => Elem,
-               On_Target => On_Target,
-               Base      => Base,
-               Compilers => Completion,
-               Stop_At_First_Match => True);
-         end if;
-
-         if not Is_Empty (Completion) then
-            Elem := Element (First (Completion));
-            Put_Verbose
-              ("Found matching compiler "
-               & To_String (Elem, As_Config_Arg => True), -1);
-            Elem.Selected := True;
-            Append (Custom_Comps, Elem);
-         else
-            Put_Verbose ("", -1);
+         if Iter.Compilers (Index) = No_Compiler then
+            Elem := Element (C);
             Put_Line
               (Standard_Error,
                "Error: no matching compiler found for --config="
                & To_String (Elem, As_Config_Arg => True));
-            raise Invalid_Config;
+
+            --  Keep looking for other errors to be more helpful
+            Found := False;
+         else
+            Append (Custom_Comps, Iter.Compilers (Index));
          end if;
 
+         Index := Index + 1;
          Next (C);
       end loop;
+
+      if not Found then
+         raise Invalid_Config;
+      end if;
    end Complete_Command_Line_Compilers;
 
-   ----------------------
-   -- Filter_Compilers --
-   ----------------------
+   ------------------
+   -- Filter_Match --
+   ------------------
 
-   procedure Filter_Compilers
-     (Compilers      : in out Compiler_Lists.List;
-      Filters        : Compiler_Lists.List)
-   is
-      function Filter_Match (Comp : Compiler; Filter : Compiler)
-                            return Boolean;
-      --  Returns True if Comp match Filter.
-
-      ------------------
-      -- Filter_Match --
-      ------------------
-
-      function Filter_Match (Comp : Compiler; Filter : Compiler)
-                            return Boolean is
-      begin
-         if Length (Filter.Name) > 0 and then Comp.Name /= Filter.Name then
-            return False;
-         end if;
-
-         if Length (Filter.Path) > 0 and then Filter.Path /= Comp.Path then
-            return False;
-         end if;
-
-         if Length (Filter.Version) > 0
-           and then Filter.Version /= Comp.Version
-         then
-            return False;
-         end if;
-
-         if Length (Filter.Language) > 0
-           and then To_Lower (To_String (Filter.Language)) /=
-           To_Lower (To_String (Comp.Language))
-         then
-            return False;
-         end if;
-
-         if Length (Filter.Runtime) > 0
-           and then Filter.Runtime /= Comp.Runtime
-         then
-            return False;
-         end if;
-
-         return True;
-      end Filter_Match;
-
-      F : Compiler_Lists.Cursor := First (Filters);
+   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean is
    begin
-      while Has_Element (F) loop
-         declare
-            C     : Compiler_Lists.Cursor := First (Compilers);
-            Comp  : Compiler;
-            Filt  : constant Compiler := Element (F);
-            Found : Boolean := False;
-         begin
-            while Has_Element (C) loop
-               Comp := Element (C);
-               if Filter_Match (Comp, Filt) then
-                  if not Comp.Selected then
-                     Update_Element (Compilers, C, Toggle_Selection'Access);
-                  end if;
-                  Found := True;
-                  exit;
-               end if;
-               Next (C);
-            end loop;
+      if Length (Filter.Name) > 0 and then Comp.Name /= Filter.Name then
+         return False;
+      end if;
 
-            if not Found then
-               Put_Line (Standard_Error,
-                         "warning: no matching compiler for --config "
-                         & To_String (Filt, As_Config_Arg => True));
-            end if;
-         end;
-         Next (F);
-      end loop;
-   end Filter_Compilers;
+      if Length (Filter.Path) > 0 and then Filter.Path /= Comp.Path then
+         return False;
+      end if;
+
+      if Length (Filter.Version) > 0
+        and then Filter.Version /= Comp.Version
+      then
+         return False;
+      end if;
+
+      if Length (Filter.Language) > 0
+        and then To_Lower (To_String (Filter.Language)) /=
+        To_Lower (To_String (Comp.Language))
+      then
+         return False;
+      end if;
+
+      if Length (Filter.Runtime) > 0
+        and then Filter.Runtime /= Comp.Runtime
+      then
+         return False;
+      end if;
+
+      return True;
+   end Filter_Match;
 
    ------------------------------
    -- Show_Command_Line_Config --
@@ -699,12 +799,17 @@ begin
          Compilers);
 
    else
-      Find_Compilers_In_Path
-        (Base                => Base,
-         Matching            => No_Compiler,
-         On_Target           => Selected_Targets_Set,
-         Compilers           => Compilers,
-         Stop_At_First_Match => False);
+      declare
+         Iter : All_Iterator (Length (Filters));
+      begin
+         Iter.Filters := Filters;
+         Foreach_Compiler_In_Path
+           (Iterator   => Iter,
+            Base       => Base,
+            On_Target  => Selected_Targets_Set,
+            Extra_Dirs => To_String (Extra_Dirs_From_Filters (Filters)));
+         Compilers := Iter.Compilers;
+      end;
 
       if Show_Targets or else Verbose_Level > 0 then
          declare
@@ -743,8 +848,6 @@ begin
             return;
          end if;
       end if;
-
-      Filter_Compilers (Compilers, Filters);
 
       if Is_Empty (Compilers) then
          if Selected_Target /= Null_Unbounded_String then
