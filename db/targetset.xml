@@ -48,6 +48,7 @@
     <target>x86-windows</target>
     <target>i.86-.*mingw32.*</target>
     <target>pentium-.*mingw32.*</target>
+    <target>mingw32</target>
   </targetset>
 
   <!-- ppc-darwin -->
