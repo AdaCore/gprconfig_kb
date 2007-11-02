@@ -14,7 +14,7 @@
    end Naming;
 
    package Compiler is
-      for Driver            ("Fortran") use "g77";
+      for Driver            ("Fortran") use "${PATH}g77";
       for Required_Switches ("Fortran") use ("-c", "-fno-underscoring");
       for Include_Path      ("Fortran") use "CPATH";
    end Compiler;
@@ -47,7 +47,7 @@
    end Naming;
 
    package Compiler is
-      for Driver            ("Fortran") use "gfortran";
+      for Driver            ("Fortran") use "${PATH}gfortran";
       for Required_Switches ("Fortran") use ("-c", "-fno-underscoring");
       for Include_Path      ("Fortran") use "CPATH";
    end Compiler;
