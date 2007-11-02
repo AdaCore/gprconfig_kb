@@ -60,7 +60,8 @@ package body GprConfig.Knowledge is
    --  Current indentation level for traces
 
    procedure Parse_Compiler_Description
-     (Append_To   : in out CDM.Map;
+     (Base        : in out Knowledge_Base;
+      Append_To   : in out CDM.Map;
       File        : String;
       Description : Node);
    --  Parse a compiler description described by N
@@ -94,7 +95,6 @@ package body GprConfig.Knowledge is
    procedure Find_Compilers_In_Dir
      (Append_To  : in out Compiler_Lists.List;
       Base       : in out Knowledge_Base;
-      Check_Executable_Regexp : Boolean;
       Directory  : String;
       Matching   : Compiler  := No_Compiler;
       On_Target  : Targets_Set_Id;
@@ -102,9 +102,6 @@ package body GprConfig.Knowledge is
       Stop_At_First_Match : Boolean);
    --  Find all known compilers in a specific directory, that match
    --  Matching (ignoring unset fields in Matching).
-   --  Check_Executable_Regexp should be set to true if at least one of the
-   --  <executable> nodes we are investigating can be a regexp. This changes
-   --  the algorithm used.
    --  If Stop_At_First_Match is true, then only the first compiler found will
    --  be returned, instead of looking for all matching compilers. This
    --  provides a significant speed up in most cases
@@ -578,7 +575,8 @@ package body GprConfig.Knowledge is
    --------------------------------
 
    procedure Parse_Compiler_Description
-     (Append_To   : in out CDM.Map;
+     (Base        : in out Knowledge_Base;
+      Append_To   : in out CDM.Map;
       File        : String;
       Description : Node)
    is
@@ -600,6 +598,7 @@ package body GprConfig.Knowledge is
                Compiler.Executable_Re := new Pattern_Matcher'
                  (Compile (To_String ("^" & Compiler.Executable
                                       & Exec_Suffix.all & "$")));
+               Base.Check_Executable_Regexp := True;
 
             exception
                when Expression_Error =>
@@ -872,7 +871,8 @@ package body GprConfig.Knowledge is
 
                elsif Node_Name (N) = "compiler_description" then
                   Parse_Compiler_Description
-                    (Append_To   => Base.Compilers,
+                    (Base        => Base,
+                     Append_To   => Base.Compilers,
                      File        => Simple_Name (File),
                      Description => N);
 
@@ -1661,7 +1661,6 @@ package body GprConfig.Knowledge is
    procedure Find_Compilers_In_Dir
      (Append_To  : in out Compiler_Lists.List;
       Base       : in out Knowledge_Base;
-      Check_Executable_Regexp : Boolean;
       Directory  : String;
       Matching   : Compiler  := No_Compiler;
       On_Target  : Targets_Set_Id;
@@ -1681,11 +1680,11 @@ package body GprConfig.Knowledge is
 
       Put_Verbose ("Search compilers """ & To_String (Matching.Name) & """ in "
                    & Directory & " regexp="
-                   & Boolean'Image (Check_Executable_Regexp)
+                   & Boolean'Image (Base.Check_Executable_Regexp)
                    & " stop_at_first=" & Boolean'Image (Stop_At_First_Match),
                    1);
 
-      if Check_Executable_Regexp then
+      if Base.Check_Executable_Regexp then
          begin
             Start_Search
               (Search    => Search,
@@ -1829,29 +1828,12 @@ package body GprConfig.Knowledge is
       On_Target  : Targets_Set_Id;
       Base       : in out Knowledge_Base;
       Compilers  : out Compiler_Lists.List;
-      Stop_At_First_Match : Boolean)
-   is
-      use CDM;
-      Check_Regexp : Boolean := False;
-      C            : CDM.Cursor;
+      Stop_At_First_Match : Boolean) is
    begin
       Clear (Compilers);
-
-      C := First (Base.Compilers);
-      while Has_Element (C) loop
-         if (Matching.Name = "" or else Key (C) = Matching.Name)
-           and then CDM.Element (C).Executable_Re /= null
-         then
-            Check_Regexp := True;
-            exit;
-         end if;
-         Next (C);
-      end loop;
-
       Find_Compilers_In_Dir
         (Append_To  => Compilers,
          Base       => Base,
-         Check_Executable_Regexp => Check_Regexp,
          Directory  => To_String (Matching.Path),
          Matching   => Matching,
          On_Target  => On_Target,
@@ -1916,7 +1898,6 @@ package body GprConfig.Knowledge is
                      Find_Compilers_In_Dir
                        (Append_To               => Compilers,
                         Base                    => Base,
-                        Check_Executable_Regexp => True,
                         Directory               => Path (First .. Last - 1),
                         Path_Order              => Path_Order,
                         Matching                => Matching,

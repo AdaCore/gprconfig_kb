@@ -298,9 +298,13 @@ private
      (Known_Targets_Set_Id, Target_Lists.List, Target_Lists."=");
 
    type Knowledge_Base is record
-      Compilers      : Compiler_Description_Maps.Map;
-      Configurations : Configuration_Lists.List;
-      Targets_Sets   : Targets_Set_Vectors.Vector;
+      Compilers               : Compiler_Description_Maps.Map;
+      Check_Executable_Regexp : Boolean := False;
+      Configurations          : Configuration_Lists.List;
+      Targets_Sets            : Targets_Set_Vectors.Vector;
    end record;
+   --  Check_Executable_Regexp is set to True if at least some of the
+   --  executable names are specified as regular expressions. In such a case,
+   --  a slightly slower algorithm is used to search for compilers.
 
 end GprConfig.Knowledge;
