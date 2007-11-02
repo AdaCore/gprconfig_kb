@@ -1640,8 +1640,7 @@ package body GprConfig.Knowledge is
            & To_String (Comp.Name) & " for "
            & To_String (Comp.Language)
            & " in " & Name_As_Directory (To_String (Comp.Path))
---           & To_String (Comp.Executable)
-           & " " & To_String (Comp.Version)
+           & " version " & To_String (Comp.Version)
            & Runtime_Or_Empty;
       end if;
    end To_String;
