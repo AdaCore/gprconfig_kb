@@ -528,7 +528,7 @@ and @code{New_Common_Subsystem.Source_Dirs}, the latter hiding the former
 when the same source filenames are found in both. New sources can be
 added to the project extension by simply placing them in its
 Source_Dirs. Original Sources can be removed thanks to the Attribute
-@code{Locally_Removed_Files}.
+@code{Excluded_Source_Files}.
 When building a project extension, all units depending on new versions of
 sources are rebuilt in the extension's @code{Object_Dir}. Other objects
 remain in their original location and will be used by the builder whenever
@@ -555,9 +555,76 @@ end New_Ada_Main;
 
 @node Libraries
 @section Libraries
-@c augment the previous example with putting one of the
-@c subsystem in a library
-@c show how to deal with externa libraries
+
+A library is a subsystem packaged in a specific way. There are two
+major kind of libraries: static and dynamic. A project file representing
+a library is very similar to a project file representing a subsystem. One
+just need to give the library a name thanks to attribute
+@code{Library_Name}. It is also possible to define a @code{Library_Dir}
+which allow separating the final library components (e.g. archive files)
+from the compilation byproducts (e.g. object files) which may be needed
+to rebuild effciently a new version of the library but are not of any
+interest for the library users. Here is a simple project file for a static
+library:
+
+@smallexample @c projectfile
+project Static_Lib is
+   for Languages    use ("Ada", "C");
+   for Source_Dirs  use ("lib_src");
+   for Object_Dir   use "obj";
+   for Library_Dir  use "lib";
+   for Library_Kind use "static";
+   for Library_Name use "l1";
+end Static_Lib;
+@end smallexample
+
+The library can be built on its own using standard gprbuild commands,
+for example:
+@smallexample
+$gprbuild static_lib.gpr
+@end smallexample
+It can also be built as a by product of building a main project using this
+library through a "with" as it was the case for simple subsystems:
+@smallexample @c projectfile
+with "static_lib.gpr";
+project Main is
+   for Main  use ("ada_main.adb");
+end Main;
+@end smallexample
+in which case
+@smallexample
+$gprbuild main.gpr
+@end smallexample
+will rebuild the library @code{l1} if it is not uptodate.
+
+To construct a dynamic library instead of a static library, it is just
+a matter of replacing
+@smallexample @c projectfile
+   for Library_Kind use "static";
+@end smallexample
+by
+@smallexample @c projectfile
+   for Library_Kind use "dynamic";
+@end smallexample
+
+Library projects can also be useful to describe a library that one may
+want to use but that cannot be rebuilt for one reaon or another,
+for instance when the sources to rebuild the library are
+not available. Such library projects need simply to use the
+@code{externally_built} attribute as in the example below:
+@smallexample @c projectfile
+project Extern_Lib is
+   for Languages    use ("Ada", "C");
+   for Source_Dirs  use ("lib_src");
+   for Library_Dir  use "lib2";
+   for Library_Kind use "dynamic";
+   for Library_Name use "l2";
+   for Externally_Built use "true";
+end Extern_Lib;
+@end smallexample
+In the case of externally built libraries, the @code{Object_Dir}
+attribute does not need to be specified in this case because
+it will never be used.
 
 @node Scenarios and conditional source files
 @section Scenarios and conditional source files
