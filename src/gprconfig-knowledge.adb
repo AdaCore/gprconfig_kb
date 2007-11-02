@@ -1635,20 +1635,12 @@ package body GprConfig.Knowledge is
            & ',' & To_String (Comp.Path)
            & ',' & To_String (Comp.Name);
 
-      elsif Verbose_Level > 0 then
-         return "(" & Comp.Index_In_List & ") "
-           & To_String (Comp.Language)
-           & " " & Name_As_Directory (To_String (Comp.Path))
-           & To_String (Comp.Executable)
-           & " " & To_String (Comp.Name)
-           & " " & To_String (Comp.Version)
-           & Runtime_Or_Empty;
-
       else
          return "(" & Comp.Index_In_List & ") "
+           & To_String (Comp.Name) & " for "
            & To_String (Comp.Language)
-           & " " & Name_As_Directory (To_String (Comp.Path))
-           & To_String (Comp.Executable)
+           & " in " & Name_As_Directory (To_String (Comp.Path))
+--           & To_String (Comp.Executable)
            & " " & To_String (Comp.Version)
            & Runtime_Or_Empty;
       end if;
