@@ -46,6 +46,7 @@
   <targetset>
     <!--  known targets: pentium-mingw32msv, i686-pc-mingw32 -->
     <target>x86-windows</target>
+    <target>mingw32</target>
     <target>i.86-.*mingw32.*</target>
     <target>pentium-.*mingw32.*</target>
     <target>mingw32</target>

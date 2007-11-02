@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <gprconfig>
-  <!--    GCC 3.x -->
+  <!--    GCC 3.x & 4.x -->
   <compiler_description>
     <name>GCC</name>
     <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
