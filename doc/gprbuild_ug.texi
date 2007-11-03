@@ -797,10 +797,14 @@ that are not up to date.
 
 If gprbuild is invoked without switch @option{--config=} or
 @option{--autoconf=}, then gprbuild will look for a configuration
-project file "default.cgpr". If there is no such file in the
-configuration project path, then gprbuild will invoke gprconfig with
+project file "default.cgpr". If there is no such file in the default
+locations expected by gprbuild (<install>/share/gpr and the current
+directory) then gprbuild will invoke gprconfig with
 the languages no the project files, and create a configuration project
-file "auto.cgpr" in the object directory of the main project.
+file "auto.cgpr" in the object directory of the main project. The project
+"auto.cgpr" will be rebuild at each gprbuild invokation unless you use
+the switch @option{--autoconf=path/auto.cgpr} which will create the config
+file if it does not exist and use it otherwise.
 
 Options given on the gprbuild command line may be passed along to
 individual tools by preceding them with one of the ``command line
