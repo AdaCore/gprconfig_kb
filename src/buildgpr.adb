@@ -1235,6 +1235,8 @@ package body Buildgpr is
             Free (To.Visible);
             To.Visible := New_Visible;
             New_Simple_Name (1 .. To.Last) := To.Simple_Name (1 .. To.Last);
+            Free (To.Simple_Name);
+            To.Simple_Name := New_Simple_Name;
          end;
       end loop;
 
