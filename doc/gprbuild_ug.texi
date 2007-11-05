@@ -1364,16 +1364,111 @@ invoked to create it automatically.
 @section Using GPRconfig
 @c ---------------------------------------------------------------------
 
+@subsection Description
+
+@noindent
+GPRconfig is a tool intended to help you generate the configuration
+files for GPRbuild. It automatically detects the available compilers
+on your system. Once you have selected the one needed for your
+application, it generates the proper configuration file.
+
+@subsection Command line arguments
+
+@noindent
+GPRconfig supports several command line switches. The most important
+switches are:
+
+@table @code
+@item --target=target
+This indicates the intended machine on which your application should
+be run. Examples include 'i686-pc-linux-gnu', 'sparc-solaris' or
+'x86-windows'.
+
+Since different compilers will often return a different
+name for those targets, GPRconfig has an extensive knowledge of which
+targets are compatible, and will for instance accept 'x86-linux' as
+an alias for 'i686-pc-linux-gnu'.
+
+If you enter the special target 'all', then all compilers found on the
+PATH will be displayed.
+
+By default, the target is the one corresponding to the machine on
+which GPRconfig is run.
+
+@item --show-targets
+As mentioned above, GPRconfig knows which targets are compatible. You
+can use this switch to find the list of targets that are compatible
+with @code{--target}.
+
+@item --config=language[,version[,runtime[,path[,name]]]]
+This switch has a lot of optional arguments, which you can omit simply
+by passing the empty string. Its intent is to preselect one or more
+compiler directly from the command line.
+
+Most generally, only the language needs to be specified, and the first
+compiler on the @code{PATH} that matches will be selected. For a
+multi-language application programmed in C and Ada, the command line
+would generally include
+
+@smallexample
+--config=Ada --config=C
+@end smallexample
+
+@code{path} is the directory that contains the compiler executable, for instance
+@file{/usr/bin} (and not the installation prefix @file{/usr}).
+
+@code{name} should be one of the compiler names defined in the GPRconfig
+knowledge base. The list of supported names is visible in the output of
+@code{--help}, and includes "GNAT", "GCC",@dots{}. This name is generally
+not needed, but can be used to distinguish when several compilers could match
+the other arguments of @code{--config}.
+
+The arguments that are left unspecified will be automatically computed by
+GPRconfig.
+
+@smallexample
+  gprconfig --config Ada,,,/usr/bin       # automatic parameters
+  gprconfig --config C,,,/usr/bin,GCC     # automatic version
+@end smallexample
+
+@item --batch
+If this switch is specified, GPRconfig automatically selects the first
+compiler matching each of the @code{--config} switch, and generate the
+configuration file immediately. It will not display an interactive menu.
+
+@item -o file
+This specifies the name of the configuration file that will be generated.
+If this switch is not specified, a default file is generated in the
+installation directory of GPRbuild (assuming you have write access to
+that directory), so that it is automatically picked up by GPRbuild later
+on. If you select a different output file, you will need to specify it
+to GPRbuild.
+
+@item --db directory
+@itemx --db-
+Indicates another directory that should be parsed for GPRconfig's knowledge
+base. Most of the time this is only useful if you are creating your own
+XML description files locally. The second version of thie switch prevents
+GPRconfig from reading its default knowledge base.
+
+@end table
+
+For a list and brief overview of all the switches, run GPRconfig using
+the switch @code{-h}.
+
+@subsection Interactive use
+
 @noindent
 When you launch GPRconfig, it will first search for all compilers it
-can find on your @code{PATH}. It is recommended, although not
+can find on your @code{PATH}, that match the target specified by
+@code{--target}. It is recommended, although not
 mandatory, that you put the compilers that you expect to use for your
 application in your @code{PATH} before you launch @code{GPRconfig},
 since that simplifies the setup.
 
-@code{GPRconfig} will then display the list of all the native compilers
+@code{GPRconfig} then displays the list of all the compilers
 it has found, along with the language they can compile, the runtime
-they use (when applicable),@dots{}. It will then wait until you select
+they use (when applicable),@dots{}. It then waits until you select
 one of the compilers.  This list is sorted by language, then by order
 in the @code{PATH} environment variable (so that compilers that you
 are more likely to use appear first), then by runtime names and
@@ -1381,7 +1476,9 @@ finally by version of the compiler.  The idea is that the first
 compiler for any language is most likely the one you want to use.
 
 Selection is done by entering the letter that appears on the line for
-each compiler. If the compiler was already selected, it is deselected.
+each compiler (be aware that this letter is case sensitive, so you must
+enter the exact casing, upper case or lower case). If the compiler was
+already selected, it is deselected.
 
 The list of compilers is then displayed again, but some filtering has been
 performed: only compilers that target the same platform as the selected
@@ -1400,133 +1497,18 @@ good chances of being able to link. There is however no guarantee that
 @code{GPRconfig} will know for sure how to link any combination of the
 remaining compilers.
 
-In the list, if you select "o", @code{GPRconfig} will let you enter
-information about a compiler that was not found automatically:
-@itemize @bullet
-@item Name
-
-In the knowledge base of @code{GPRconfig}, each compiler is associated
-with a simple name. All the known names are listed next to the question.
-If your compiler is one of the known ones, enter the name. You can also
-enter any other name, but then @code{GPRconfig} will not be able to
-guess any of the remaining info.
-
-@item Path
-
-This is the directory that contains the executable of your compiler, not
-including the name of the compiler itself. For instance, for a GNAT
-compiler installed in @file{/usr/local/gnat/bin/gnatmake}, the path would be
-@file{/usr/local/gnat/bin}.
-
-@item Version
-
-The version of your compiler. If the Name you provided is one of the known
-compilers, @code{GPRconfig} will try to guess it for you, so that you can
-simply press enter if the guess is valid.
-
-@item Language
-
-The language that you intend to use the compiler for. If you use the same
-compiler for multiple languages, you should enter only one of these at
-this point, and later on create a new compiler entry for the other
-languages. As for Version, @code{GPRconfig} will try to guess it for you
-if it is one of the known compilers.
-
-@item Runtime
-
-The runtime you intend to use for this compiler. For most languages, this
-is not applicable, and you should simply press Enter. Once again,
-@code{GPRconfig} will try to guess it if possible.
-
-@item Target
-
-The target architecture for which the compiler is compiling. @code{GPRconfig}
-will try to guess it either from the compiler you pointed to, or will by
-default use the current system's architecture, assuming this is not a
-cross compiler.
-@end itemize
-
 You can select as many compilers as are used in your application. Once you
 are done selecting the compilers, select "s", and @code{GPRconfig} will
 generate the configuration file.
-
-@subsection Command line switches
-
-The following command line switches are supported by @code{GPRconfig}.
-
-@itemize @bullet
-@item @option{-o file}
-
-The name of the output file. By default, @code{GPRconfig} will search for
-@code{gprbuild} on your PATH, and create a default configuration file for
-it. But you can alternatively choose to create a different configuration
-file and then use @code{GPRbuild}'s command line switches to choose among
-these.
-
-@item @option{--db directory}
-
-Indicates another directory that should be parsed for GPRconfig's knowledge
-base. Most of the time this is only useful if you are creating your own
-XML description files.
-
-@item @option{--db -}
-
-Prevents @code{GPRconfig} from reading its default knowledge base. You
-should point to another directory with @code{--db directory}, or
-GPRconfig will not be able to generate any configuration file.
-
-@item @option{--target target}
-
-Specifies the target for the compilers. Only compilers generating code for
-this target will be preselected. By default the target is the host. If
-target is "all", any target is accepted. The name of the host target is
-displayed in the help.
-
-@item @option{--show-targets}
-
-Simply displays the target of all compilers found and exits.
-
-@item @option{--config language[,version[,runtime[,path[,name]]]]}
-
-This parameter is used to preselect configurations.
-"name" should be one of the known compiler names (e.g. "GNAT", "GCC",...), the
-full list of which is visible when GPRconfig is used interactively and you add
-a custom compiler. However, you can use an unknown name, but in this case you
-need to provide all the information yourself.
-
-"path" is the directory that contains the compiler executable, for instance
-@file{/usr/bin} (and not the installation prefix @file{/bin}).
-
-If "name" is a known compiler name, the remaining attributes will have defaults
-computed automatically by @code{GPRconfig}. You can either specify them, or
-use an empty string to get the default value and specify a later parameter.
-
-@smallexample
-  gprconfig --config Ada,,,/usr/bin       # automatic parameters
-  gprconfig --config C,,,/usr/bin,C       # automatic version
-@end smallexample
-
-@item @option{--batch}
-
-If this parameter is specified, @code{GPRconfig} doesn't go into its
-interactive compiler selection, but generates the output configuration file
-directly from the compilers selected with the @code{--config} command line
-switch.
-
-@item @option{-h}
-
-Display help for @code{GPRconfig} switches.
-@end itemize
 
 @c ----------------------------------------------------------------------
 @node Description of the knowledge base
 @section Description of the knowledge base
 @c ----------------------------------------------------------------------
 
-
 @noindent
 @code{GPRconfig} itself has no hard-coded knowledge of compilers. This way,
-no new version of GPRconfig needs to be recompiled whenever a new compiler
+no new version of GPRconfig needs to be recompiled when a new compiler
 is distributed.
 
 All its knowledge is embedded in a set of XML files called the knowledge
@@ -1593,11 +1575,6 @@ All files must have the following format:
    ...
 </gprconfig>
 @end smallexample
-
-The XML parser used by @code{GPRconfig} is very simple minded, and does not
-support advanced XML constructs. In fact, it also has a few limitations
-with regards to comments (for instance they cannot contain the '>'
-character).
 
 The root tag must be @code{<gprconfig>}.
 
