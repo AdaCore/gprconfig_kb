@@ -461,7 +461,7 @@ package body GprConfig.Knowledge is
          External_Node :=
            (Typ        => Value_Constant,
             Value      => To_Unbounded_String (Static_Value));
-         Append (Value.Nodes, External_Node);
+         Append (Value, External_Node);
          Is_Done := False;
       end if;
 
@@ -471,13 +471,13 @@ package body GprConfig.Knowledge is
 
          elsif Node_Name (Tmp) = "external" then
             if not Is_Done then
-               Append (Value.Nodes, (Typ => Value_Done));
+               Append (Value, (Typ => Value_Done));
             end if;
 
             External_Node :=
               (Typ        => Value_Shell,
                Command    => To_Unbounded_String (Node_Value_As_String (Tmp)));
-            Append (Value.Nodes, External_Node);
+            Append (Value, External_Node);
             Is_Done := False;
 
          elsif Node_Name (Tmp) = "directory" then
@@ -495,12 +495,12 @@ package body GprConfig.Knowledge is
                   External_Node.Dir_If_Match :=
                     To_Unbounded_String (Get_Attribute (Tmp, "group", "0"));
             end;
-            Append (Value.Nodes, External_Node);
+            Append (Value, External_Node);
             Is_Done := True;
 
          elsif Node_Name (Tmp) = "getenv" then
             if not Is_Done then
-               Append (Value.Nodes, (Typ => Value_Done));
+               Append (Value, (Typ => Value_Done));
             end if;
 
             declare
@@ -519,21 +519,21 @@ package body GprConfig.Knowledge is
                      Value      => Null_Unbounded_String);
                end if;
             end;
-            Append (Value.Nodes, External_Node);
+            Append (Value, External_Node);
             Is_Done := False;
 
          elsif Node_Name (Tmp) = "filter" then
             External_Node :=
               (Typ        => Value_Filter,
                Filter    => To_Unbounded_String (Node_Value_As_String (Tmp)));
-            Append (Value.Nodes, External_Node);
+            Append (Value, External_Node);
             Is_Done := True;
 
          elsif Node_Name (Tmp) = "must_match" then
             External_Node :=
               (Typ        => Value_Must_Match,
                Must_Match => To_Unbounded_String (Node_Value_As_String (Tmp)));
-            Append (Value.Nodes, External_Node);
+            Append (Value, External_Node);
             Is_Done := True;
 
          elsif Node_Name (Tmp) = "grep" then
@@ -543,7 +543,7 @@ package body GprConfig.Knowledge is
                                                   (Tmp, "regexp", ".*")),
                Group      => Integer'Value (Get_Attribute
                                             (Tmp, "group", "0")));
-            Append (Value.Nodes, External_Node);
+            Append (Value, External_Node);
 
          else
             Put_Line (Standard_Error, "Invalid XML description for "
@@ -556,7 +556,7 @@ package body GprConfig.Knowledge is
       end  loop;
 
       if not Is_Done then
-         Append (Value.Nodes, (Typ => Value_Done));
+         Append (Value, (Typ => Value_Done));
       end if;
 
    exception
@@ -1182,7 +1182,7 @@ package body GprConfig.Knowledge is
       Status     : aliased Integer;
       Extracted_From : Unbounded_String;
       Tmp_Result     : Unbounded_String;
-      Node_Cursor    : External_Value_Nodes.Cursor := First (Value.Nodes);
+      Node_Cursor    : External_Value_Nodes.Cursor := First (Value);
       Node           : External_Value_Node;
       Cursor, Cursor2 : External_Value_Lists.Cursor;
    begin

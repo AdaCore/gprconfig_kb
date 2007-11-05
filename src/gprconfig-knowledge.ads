@@ -236,12 +236,10 @@ private
    package External_Value_Nodes is new Ada.Containers.Doubly_Linked_Lists
      (External_Value_Node);
 
-   type External_Value is record
-      Nodes      : External_Value_Nodes.List;
-   end record;
+   subtype External_Value is External_Value_Nodes.List;
 
    Null_External_Value : constant External_Value :=
-     (Nodes      => External_Value_Nodes.Empty_List);
+     External_Value_Nodes.Empty_List;
 
    type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
 
