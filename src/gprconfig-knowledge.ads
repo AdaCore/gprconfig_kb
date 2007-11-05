@@ -59,7 +59,6 @@ package GprConfig.Knowledge is
       Runtime     : Ada.Strings.Unbounded.Unbounded_String;
       Runtime_Dir : Ada.Strings.Unbounded.Unbounded_String;
       Language    : Ada.Strings.Unbounded.Unbounded_String;
-      Extra_Tool  : Ada.Strings.Unbounded.Unbounded_String;
       Path_Order  : Integer;
 
       Selectable    : Boolean := True;
@@ -197,7 +196,6 @@ private
       Runtime     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
       Language    => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Extra_Tool  => Ada.Strings.Unbounded.Null_Unbounded_String,
       Selectable  => False,
       Selected    => False,
       Complete    => True,
@@ -255,7 +253,6 @@ private
       Languages     : External_Value;
       Runtimes      : External_Value;
       Target        : External_Value;
-      Extra_Tool    : Ada.Strings.Unbounded.Unbounded_String;
    end record;
    --  Executable_Re is only set if the name of the <executable> must be
    --  taken as a regular expression.

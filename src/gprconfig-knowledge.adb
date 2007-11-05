@@ -638,10 +638,6 @@ package body GprConfig.Knowledge is
                File     => File,
                External => N);
 
-         elsif Node_Name (N) = "extra_tool" then
-            Compiler.Extra_Tool :=
-              To_Unbounded_String (Node_Value_As_String (N));
-
          else
             Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
                       & Node_Name (N));
@@ -1486,7 +1482,6 @@ package body GprConfig.Knowledge is
       Comp.Path       := To_Unbounded_String
         (Normalize_Pathname (Directory, Case_Sensitive => False));
       Comp.Path_Order := Path_Order;
-      Comp.Extra_Tool := Descr.Extra_Tool;
       Comp.Prefix     := To_Unbounded_String (Prefix);
       Comp.Executable := To_Unbounded_String (Executable);
 
@@ -2225,7 +2220,6 @@ package body GprConfig.Knowledge is
       Packages          : String_Maps.Map;
       Selected_Compiler : Compiler;
       M                 : Boolean;
-      Comp              : Compiler_Lists.Cursor;
       Project_Name      : String := "Default";
 
       procedure Gen (C : String_Maps.Cursor);
@@ -2340,46 +2334,6 @@ package body GprConfig.Knowledge is
       Put_Line (Output, "end " & Project_Name & ";");
 
       Close (Output);
-
-      --  Launch external tools
-
-      Comp := First (Compilers);
-      while Has_Element (Comp) loop
-         if Compiler_Lists.Element (Comp).Selected
-           and then Compiler_Lists.Element (Comp).Extra_Tool /= ""
-         then
-            declare
-               Args : Argument_List_Access := Argument_String_To_List
-                 (To_String (Compiler_Lists.Element (Comp).Extra_Tool));
-               Tmp  : GNAT.Strings.String_Access;
-               Status  : Integer;
-            begin
-               New_Line;
-               Put ("Executing ");
-               for A in Args'Range loop
-                  Tmp := Args (A);
-                  Args (A) := new String'
-                    (Substitute_Special_Dirs
-                       (Str        => Tmp.all,
-                        Comp       => Compiler_Lists.Element (Comp),
-                        Output_Dir => Containing_Directory (Output_File)));
-                  Put (Args (A).all & " ");
-                  GNAT.Strings.Free (Tmp);
-               end loop;
-               New_Line;
-
-               Status := Spawn
-                 (Args (Args'First).all, Args (Args'First + 1 .. Args'Last));
-               if Status /= 0 then
-                  Put_Line ("Could not execute " & Args (Args'First).all);
-                  raise Generate_Error;
-               end if;
-               GNAT.Strings.Free (Args);
-            end;
-         end if;
-
-         Next (Comp);
-      end loop;
 
    exception
       when Ada.Directories.Name_Error | Ada.IO_Exceptions.Use_Error =>

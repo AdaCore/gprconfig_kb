@@ -234,7 +234,7 @@ languages are proposed. Here are a few examples of GPRconfig invocation:
 @item
 The following command triggers interactive mode. The configuration will be
 generated
-in GPRbuild's default location, 
+in GPRbuild's default location,
 @code{<gprbuild_install_root>/share/gpr/default.cgpr)}
 @smallexample
  gprconfig
@@ -571,7 +571,7 @@ versions. You can also add new sources or remove existing ones.
 Here is an example of extension of project @code{Common_Subsystem}:
 
 @smallexample @c projectfile
-project New_Common_Subsystem 
+project New_Common_Subsystem
         extends "../subsystems/common_subsystem.gpr" is
    for Source_Dirs  use ("new_util_src");
    for Object_Dir   use  "new_obj_util";
@@ -817,7 +817,7 @@ of the original project. Suppose for instance that a
 subsystem @code{S} is shared by two unrelated systems @code{S1} and @code{S2}.
 If @code{S1} requires a
 change in @code{S}, but this change would adversely affect @code{S2},
-then a modified version of @code{S} can be defined as an extension of 
+then a modified version of @code{S} can be defined as an extension of
 @code{S}, a ``delta'' to the original
 version which only contains the new source files (those that have been
 changed) and the objects that are affected by these changes.
@@ -1703,15 +1703,6 @@ is split into words as for @code{<languages>}.
 
 This node indicates how to query the target architecture for the compiler.
 See "External values" below for valid children.
-
-@item @code{<extra_tool>}
-
-This node contains the name of an extra tool to run if the compiler is
-selected by the user. Typically, it can be used to generate a user-visible
-project file for the user, like @file{ada_runtime.gpr}. This attribute is
-the full command line used to launch the tool, where special substrings like
-"$OUTPUT_DIR",... will be automatically substituted (see External Values
-below for the full list of such special substrings)
 
 @end itemize
 
