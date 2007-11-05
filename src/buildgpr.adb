@@ -1783,7 +1783,9 @@ package body Buildgpr is
 
                            if Verbose_Mode then
                               Write_Line
-                              ("      -> binder exchange file does not exist");
+                                ("      -> binder exchange file " &
+                                 Bind_Exchange.all &
+                                 " does not exist");
                            end if;
 
                         else
@@ -1797,7 +1799,8 @@ package body Buildgpr is
                                  if Verbose_Mode then
                                     Write_Line
                                       ("      -> could not open " &
-                                       "binder exchange file");
+                                       "binder exchange file" &
+                                       Bind_Exchange.all);
                                  end if;
                            end;
                         end if;
@@ -1812,8 +1815,9 @@ package body Buildgpr is
 
                               if Verbose_Mode then
                                  Write_Line
-                                   ("      -> binder exchange file " &
-                                    "has wrong syntax");
+                                   ("      -> previous gprbind failed, or " &
+                                    Bind_Exchange.all &
+                                    " corrupted");
                               end if;
                         end;
                      end if;
@@ -1827,8 +1831,9 @@ package body Buildgpr is
 
                            if Verbose_Mode then
                               Write_Line
-                                ("      -> binder exchange file " &
-                                 "has wrong syntax");
+                                ("      -> previous gprbind failed, or " &
+                                 Bind_Exchange.all &
+                                 " corrupted");
                            end if;
 
                         else
@@ -1843,6 +1848,7 @@ package body Buildgpr is
                               if Verbose_Mode then
                                  Write_Line
                                    ("      -> binder generated object " &
+                                    Line (1 .. Last) &
                                     "does not exist");
                               end if;
                            end if;
@@ -1867,8 +1873,9 @@ package body Buildgpr is
                         if Binder_Driver_Needs_To_Be_Called then
                            if Verbose_Mode then
                               Write_Line
-                                ("      -> binder exchange file " &
-                                 "has wrong syntax");
+                                ("      -> previous gprbind failed, or " &
+                                 Bind_Exchange.all &
+                                 " corrupted");
                            end if;
 
                         else
@@ -1912,8 +1919,10 @@ package body Buildgpr is
 
                                  if Verbose_Mode then
                                     Write_Line
-                                      ("      -> binder exchange file " &
-                                       "has wrong syntax");
+                                      ("      -> previous gprbind failed, " &
+                                       "or " &
+                                       Bind_Exchange.all &
+                                       " corrupted");
                                  end if;
 
                                  exit;
