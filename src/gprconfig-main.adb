@@ -41,9 +41,6 @@ procedure GprConfig.Main is
    procedure Help (Base : Knowledge_Base);
    --  Display list of switches
 
-   procedure Display_Compiler (Comp : Compiler);
-   --  Display a line describing the compiler
-
    procedure Parse_Config_Parameter
      (Custom_Comps : in out Compiler_Lists.List;
       Config       : String);
@@ -98,17 +95,22 @@ procedure GprConfig.Main is
    --  Returns True if Comp match Filter (the latter corresponds to a --config
    --  command line argument).
 
-   type Compiler_Array is array (Count_Type range <>) of Compiler;
    type Boolean_Array  is array (Count_Type range <>) of Boolean;
+   type Cursor_Array   is array (Count_Type range <>) of Compiler_Lists.Cursor;
 
    type Batch_Iterator (Count : Count_Type) is new Compiler_Iterator with
       record
-         Compilers    : Compiler_Array (1 .. Count) :=
-           (others => No_Compiler);
-         Filters      : Compiler_Lists.List;
+         Found      : Count_Type := 0;
+         Compilers  : Compiler_Lists.List;
+         Matched    : Cursor_Array (1 .. Count) := (others => No_Element);
+         Filters    : Compiler_Lists.List;
+
+         Found_One  : Boolean_Array (1 .. Count) := (others => False);
+         --  Whether we found at least one matching compiler for each filter
       end record;
    procedure Callback
      (Iterator       : in out Batch_Iterator;
+      Base           : in out Knowledge_Base;
       Comp           : Compiler;
       From_Extra_Dir : Boolean;
       Continue       : out Boolean);
@@ -122,6 +124,7 @@ procedure GprConfig.Main is
       end record;
    procedure Callback
      (Iterator       : in out All_Iterator;
+      Base           : in out Knowledge_Base;
       Comp           : Compiler;
       From_Extra_Dir : Boolean;
       Continue       : out Boolean);
@@ -173,21 +176,6 @@ procedure GprConfig.Main is
    begin
       return Prog_Dir & Suffix;
    end Get_Database_Directory;
-
-   ----------------------
-   -- Display_Compiler --
-   ----------------------
-
-   procedure Display_Compiler (Comp : Compiler) is
-   begin
-      if Comp.Selected then
-         Put ('*');
-      else
-         Put (' ');
-      end if;
-
-      Put_Line (To_String (Comp, As_Config_Arg => False));
-   end Display_Compiler;
 
    ----------------------------
    -- Parse_Config_Parameter --
@@ -403,15 +391,7 @@ procedure GprConfig.Main is
            ("Only those matching the target and the selected compilers"
             & " are displayed.");
 
-         Comp := First (Compilers);
-         while Has_Element (Comp) loop
-            if Element (Comp).Selectable
-              or else Element (Comp).Selected
-            then
-               Display_Compiler (Element (Comp));
-            end if;
-            Next (Comp);
-         end loop;
+         Put (To_String (Compilers, Selected_only => False));
 
          Put
            ("Select or unselect the following compiler (or ""s"" to save): ");
@@ -447,34 +427,63 @@ procedure GprConfig.Main is
 
    procedure Callback
      (Iterator       : in out Batch_Iterator;
+      Base           : in out Knowledge_Base;
       Comp           : Compiler;
       From_Extra_Dir : Boolean;
       Continue       : out Boolean)
    is
       C           : Compiler_Lists.Cursor := First (Iterator.Filters);
       Index       : Count_Type := 1;
-      Found_Count : Count_Type := 0;
    begin
       while Has_Element (C) loop
-         if Iterator.Compilers (Index) /= No_Compiler then
-            Found_Count := Found_Count + 1;
-         else
-            --  A compiler is an "extra_dir" (ie specified on the command line)
-            --  can only match if that directory was explicitly specified in
-            --  --config. We do not want to find all compilers in /dir if that
-            --  directory is not in $PATH
+         --  A compiler is an "extra_dir" (ie specified on the command line)
+         --  can only match if that directory was explicitly specified in
+         --  --config. We do not want to find all compilers in /dir if that
+         --  directory is not in $PATH
 
-            if (not From_Extra_Dir or else Element (C).Path = Comp.Path)
-              and then Filter_Match (Comp => Comp, Filter => Element (C))
-            then
-               Iterator.Compilers (Index) := Comp;
-               Iterator.Compilers (Index).Selected := True;
-               Found_Count := Found_Count + 1;
+         if (not From_Extra_Dir or else Element (C).Path = Comp.Path)
+           and then Filter_Match (Comp => Comp, Filter => Element (C))
+         then
+            Append (Iterator.Compilers, Comp);
+
+            if Verbose_Level > 0 then
                Put_Verbose
-                 ("Found matching compiler for --config "
+                 ("Saving compiler for possible backtracking: "
+                  & To_String (Comp, As_Config_Arg => True)
+                  & " (matches --config "
                   & To_String (Element (C), As_Config_Arg => True)
-                  & " Found=" & Found_Count'Img & "/"
-                  & Iterator.Compilers'Length'Img);
+                  & ")");
+            end if;
+
+            if Iterator.Matched (Index) = No_Element then
+               Iterator.Found := Iterator.Found + 1;
+
+               Put_Verbose
+                 ("Selecting it since this filter was not matched yet "
+                  & Iterator.Found'Img & "/" & Iterator.Count'Img);
+
+               Iterator.Matched (Index) := Last (Iterator.Compilers);
+               Iterator.Found_One (Index) := True;
+               Update_Element (Iterator.Compilers, Iterator.Matched (Index),
+                               Toggle_Selection'Access);
+
+               --  Only keep those compilers that are not incompatible
+               --  (according to the knowledge base). It might happen that none
+               --  is selected as a result, but appropriate action is taken in
+               --  Complete_Command_Line_Compilers. We ignore incompatible sets
+               --  as early as possible, in the hope to limit the number of
+               --  system calls if another set is found before all directories
+               --  are traversed.
+
+               if not Is_Supported_Config (Base, Iterator.Compilers) then
+                  Update_Element (Iterator.Compilers, Iterator.Matched (Index),
+                                  Toggle_Selection'Access);
+                  Put_Verbose
+                    ("Compilers are not compatible, cancelling last"
+                     & " compiler found");
+                  Iterator.Matched (Index) := No_Element;
+                  Iterator.Found := Iterator.Found - 1;
+               end if;
             end if;
          end if;
 
@@ -483,7 +492,7 @@ procedure GprConfig.Main is
       end loop;
 
       --  Stop at first compiler
-      Continue := Found_Count /= Iterator.Compilers'Length;
+      Continue := Iterator.Found /= Iterator.Count;
    end Callback;
 
    --------------
@@ -492,10 +501,12 @@ procedure GprConfig.Main is
 
    procedure Callback
      (Iterator       : in out All_Iterator;
+      Base           : in out Knowledge_Base;
       Comp           : Compiler;
       From_Extra_Dir : Boolean;
       Continue       : out Boolean)
    is
+      pragma Unreferenced (Base);
       New_Comp : Compiler := Comp;
       C        : Compiler_Lists.Cursor;
       Index    : Count_Type := 1;
@@ -565,12 +576,61 @@ procedure GprConfig.Main is
       Custom_Comps : out Compiler_Lists.List)
    is
       Iter  : Batch_Iterator (Length (Filters));
+
+      function Foreach_Nth_Compiler
+        (Filter : Compiler_Lists.Cursor) return Boolean;
+      --  For all possible compiler matching the filter, check whether we
+      --  find a compatible set of compilers matching the next filters.
+      --  Return True if one was found (in which case it is the current
+      --  selection on exit).
+
+      --------------------------
+      -- Foreach_Nth_Compiler --
+      --------------------------
+
+      function Foreach_Nth_Compiler
+        (Filter : Compiler_Lists.Cursor) return Boolean
+      is
+         C           : Compiler_Lists.Cursor := First (Iter.Compilers);
+         Comp_Filter : constant Compiler := Element (Filter);
+      begin
+         while Has_Element (C) loop
+            if Filter_Match (Element (C), Filter => Comp_Filter) then
+               Update_Element (Iter.Compilers, C, Toggle_Selection'Access);
+
+               if Next (Filter) = No_Element then
+                  if Verbose_Level > 0 then
+                     Put_Verbose ("Testing the following compiler set:", 1);
+                     Put_Verbose
+                       (To_String (Iter.Compilers, Selected_Only => True));
+                  end if;
+
+                  if Is_Supported_Config (Base, Iter.Compilers) then
+                     Put_Verbose ("They are compatible", -1);
+                     return True;
+                  else
+                     Put_Verbose ("", -1);
+                  end if;
+
+               else
+                  if Foreach_Nth_Compiler (Next (Filter)) then
+                     return True;
+                  end if;
+               end if;
+
+               Update_Element (Iter.Compilers, C, Toggle_Selection'Access);
+            end if;
+
+            Next (C);
+         end loop;
+
+         return False;
+      end Foreach_Nth_Compiler;
+
       C     : Compiler_Lists.Cursor;
-      Elem  : Compiler;
-      Index : Count_Type := 1;
-      Found : Boolean := True;
       Extra_Dirs : constant Unbounded_String :=
         Extra_Dirs_From_Filters (Filters);
+      Found_All : Boolean := True;
    begin
       Iter.Filters   := Filters;
 
@@ -585,28 +645,56 @@ procedure GprConfig.Main is
 
       Put_Verbose ("", -1);
 
+      --  Check that we could find at least one of each compiler
+
       C := First (Filters);
-      while Has_Element (C) loop
-         if Iter.Compilers (Index) = No_Compiler then
-            Elem := Element (C);
+      for F in Iter.Found_One'Range loop
+         if not Iter.Found_One (F) then
             Put_Line
               (Standard_Error,
                "Error: no matching compiler found for --config="
-               & To_String (Elem, As_Config_Arg => True));
-
-            --  Keep looking for other errors to be more helpful
-            Found := False;
-         else
-            Append (Custom_Comps, Iter.Compilers (Index));
+               & To_String (Element (C), As_Config_Arg => True));
+            Found_All := False;
          end if;
-
-         Index := Index + 1;
          Next (C);
       end loop;
 
-      if not Found then
-         raise Invalid_Config;
+      --  If we could find at least one of each compiler, but that our initial
+      --  attempt returned incompatible sets of compiler, we do a more thorough
+      --  attempt now
+
+      if Found_All
+        and then Iter.Found /= Iter.Count
+      then
+         --  If no compatible set was found, try all possible combinations, in
+         --  the hope that we can finally find one. In the following algorithm,
+         --  we end up checking again some set that were checked in Callback,
+         --  but that would be hard to avoid since the compilers can be found
+         --  in any order.
+
+         Put_Verbose ("Attempting to find a supported compiler set", 1);
+
+         --  Unselect all compilers
+
+         C := First (Iter.Compilers);
+         while Has_Element (C) loop
+            if Element (C).Selected then
+               Update_Element (Iter.Compilers, C, Toggle_Selection'Access);
+            end if;
+            Next (C);
+         end loop;
+
+         if not Foreach_Nth_Compiler (First (Iter.Filters)) then
+            Put_Line
+              (Standard_Error,
+               "Error: no set of compatible compilers was found");
+            raise Invalid_Config;
+         end if;
+
+         Put_Verbose ("", -1);
       end if;
+
+      Custom_Comps := Iter.Compilers;
    end Complete_Command_Line_Compilers;
 
    ------------------
