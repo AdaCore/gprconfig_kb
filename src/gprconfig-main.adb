@@ -655,10 +655,12 @@ procedure GprConfig.Main is
       C := First (Filters);
       for F in Iter.Found_One'Range loop
          if not Iter.Found_One (F) then
-            Put_Line
-              (Standard_Error,
-               "Error: no matching compiler found for --config="
-               & To_String (Element (C), As_Config_Arg => True));
+            if not Quiet_Output then
+               Put_Line
+                 (Standard_Error,
+                  "Error: no matching compiler found for --config="
+                  & To_String (Element (C), As_Config_Arg => True));
+            end if;
             Found_All := False;
          end if;
          Next (C);
