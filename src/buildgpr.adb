@@ -3190,12 +3190,15 @@ package body Buildgpr is
                if Verbose_Mode then
                   if TS = Empty_Time_Stamp then
                      Write_Line
-                       ("      -> library exchange file does not exist");
+                       ("      -> library exchange file " &
+                        Exchange_File_Name.all &
+                        " does not exist");
 
                   else
                      Write_Line
                        ("      -> object files more recent than" &
-                        " library exchange file");
+                        " library exchange file " &
+                        Exchange_File_Name.all);
                   end if;
                end if;
 
@@ -3235,7 +3238,9 @@ package body Buildgpr is
             Close (Exchange_File);
 
             if Verbose_Mode then
-               Write_Line ("      -> library exchange file has wrong format");
+               Write_Line ("      -> library exchange file " &
+                           Exchange_File_Name.all &
+                           " has wrong format");
             end if;
 
          else
@@ -3249,7 +3254,8 @@ package body Buildgpr is
 
                if Verbose_Mode then
                   Write_Line
-                    ("      -> object file(s) more recent than library file");
+                    ("      -> object file(s) more recent than library file " &
+                     Exchange_File_Name.all);
                end if;
 
             end if;
@@ -3266,7 +3272,9 @@ package body Buildgpr is
             Library_Needs_To_Be_Built := True;
 
             if Verbose_Mode then
-               Write_Line ("      -> library exchange file has wrong format");
+               Write_Line ("      -> library exchange file " &
+                           Exchange_File_Name.all &
+                           " has wrong format");
             end if;
          end if;
 
@@ -3284,7 +3292,9 @@ package body Buildgpr is
             if End_Of_File (Exchange_File) then
                if Verbose_Mode then
                   Write_Line
-                    ("      -> library exchange file has wrong format");
+                    ("      -> library exchange file " &
+                     Exchange_File_Name.all &
+                     " has wrong format");
                end if;
 
             else
@@ -3313,7 +3323,9 @@ package body Buildgpr is
                else
                   if Verbose_Mode then
                      Write_Line
-                       ("      -> library exchange file has wrong format");
+                       ("      -> library exchange file " &
+                        Exchange_File_Name.all &
+                        " has wrong format");
                   end if;
                end if;
             end if;
@@ -3352,7 +3364,7 @@ package body Buildgpr is
          exception
             when others =>
                Fail_Program
-                 ("unable to create exchange file ",
+                 ("unable to create library exchange file ",
                   Exchange_File_Name.all);
          end;
 
