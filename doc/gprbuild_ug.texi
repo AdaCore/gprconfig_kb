@@ -13,20 +13,21 @@
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
 @setfilename gprbuild_ug.info
-@settitle GPRBUILD User's Guide
+@settitle GPRbuild User's Guide
 @setchapternewpage odd
 @syncodeindex fn cp
 
 @titlepage
 
-@title GPRBUILD User's Guide
-@c @subtitle Date: $Date: 2006/09/11 04:02:07 $
+@title GPRbuild User's Guide
+@subtitle Document revision level <<TBD>>
+@subtitle Date: <<TBD>>
 @author AdaCore
 
 @page
 @vskip 0pt plus 1filll
 
-Printed March 2007 @*
+Printed November 2007 @*
 Copyright @copyright{} 2007, AdaCore
 
 Permission is granted to make and distribute verbatim copies of
@@ -39,8 +40,9 @@ are preserved on all copies.
 @top GPRBUILD User's Guide
 
 @noindent
-@c GPRBUILD User's Guide@*
-@c Document revision level $Revision: 1.0 $@*
+@c GPRbuild User's Guide@*
+@c Document revision level <<TBD>>@*
+@c Date: <<TBD>>@*
 @*
 @noindent
 AdaCore@*
@@ -49,9 +51,9 @@ AdaCore@*
 * Introduction::
 * Guided Tour::
 * Important Concepts::
-* Building with gprbuild::
-* Cleaning up with gprclean::
-* Configuring with gprconfig::
+* Building with GPRbuild::
+* Cleaning up with GPRclean::
+* Configuring with GPRconfig::
 * Configuration File Reference::
 * Index::
 
@@ -70,7 +72,7 @@ Guided Tour
 
 Important Concepts
 
-Building with gprbuild
+Building with GPRbuild
 * Command Line::
 * Switches::
 * Initialization::
@@ -79,10 +81,10 @@ Building with gprbuild
 * Post-Compilation Phase::
 * Linking Phase::
 
-Cleaning up with gprclean
+Cleaning up with GPRclean
 
-Configuring with gprconfig
-* Using gprconfig::
+Configuring with GPRconfig
+* Using GPRconfig::
 * Description of the knowledge base::
 * General file format::
 * Compiler description::
@@ -106,66 +108,68 @@ Index
 @unnumbered Introduction
 @c  ------------------------------------------------------------------------
 
-gprbuild is a generic build tool designed for the construction of
-big multi-language systems organized into subsystems and libraries.
-It is well-suited for compiled languages offering separate compilation units
+@code{GPRbuild} is a generic build tool designed for the construction of
+large multi-language systems organized into subsystems and libraries.
+It is well-suited for compiled languages supporting separate compilation,
 such as Ada, C, C++ or Fortran.
 
 @noindent
-gprbuild manages a three step build process
+@code{GPRbuild} manages a three step build process
 @itemize @bullet
 @item compilation phase:
 
-each compilation unit of each subsystem is examined in turn, checked for
-consitency and compiled or recompiled when necessary by the appropriate
+Each compilation unit of each subsystem is examined in turn, checked for
+consistency, and compiled or recompiled when necessary by the appropriate
 compiler.  The recompilation decision is based on dependency information
-usually produced by a former compilation.
+that is typically produced by a previous compilation.
 
 @item post-compilation phase (or binding):
 
-Compiled units of a given language are passed to a language specific
-post-compilation tool if any. This is also during this phase
-that objects are grouped into static or dynamic libraries as specified.
+Compiled units from a given language are passed to a language-specific
+post-compilation tool if any. Also during this phase
+objects are grouped into static or dynamic libraries as specified.
 
 @item linking phase:
 
 All units or libraries from all subsystems are passed to a linker tool
-specific to the set of toolchains used together.
+specific to the set of toolchains being used.
 @end itemize
 
 @noindent
-@code{gprbuild} takes as its main input a project file (<file>.gpr)
+@code{GPRbuild} takes as its main input a project file @file{<file>.gpr}
 defining the build characteristics of the system under construction
 such as:
 @itemize
 @item which sources to use,
 @item where to find them,
 @item where to store the objects produced by the compiler,
-@item which options should the compiler be invoked with, etc.
+@item which options should be passed to the compiler.
 @end itemize
 
-It is generic in the sense that it provides, when possible, equivalent
+@noindent
+The tool is generic in that it provides, when possible, equivalent
 build capabilities for all supported languages. For this, it uses a
-configuration file (<file>.cgpr) which has a syntax and structure very
-similar to a project file, but whose goal is to define the characteristics
+configuration file @file{<file>.cgpr} that has a syntax and structure very
+similar to a project file, but which defines the characteristics
 of the supported languages and toolchains. The configuration file contains
 information such as:
 @itemize
-@item what are the default source naming conventions for each language
-@item what is compiler name, location and mandatory options,
+@item the default source naming conventions for each language
+@item the compiler name, location and required options,
 @item how to compute inter-unit dependency,
 @item how to build static or dynamic libraries,
 @item which post-compilation actions are needed,
 @item how to link together units from different languages.
 @end itemize
 
-On the other hand, @code{gprbuild} is not a replacement for general-purpose
+@noindent
+On the other hand, @code{GPRbuild} is not a replacement for general-purpose
 build tools such as @code{make} or @code{ant} which give the user a high
-level of control on the build process itself. When building a system
+level of control over the build process itself. When building a system
 requires complex actions that do not fit well in the three-phase process
-described above, @code{gprbuild} is not able to manage all the aspects
-of the build process on its own. In such complex situations, it can still
-be used sucessfully to address the appropriate part of the build. For
+described above, @code{GPRbuild} might not be sufficient.
+In such situations, @code{GPRbuild} can still
+be used to manage the appropriate part of the build. For
 instance it can be called from within a Makefile.
 
 @c  ------------------------------------------------------------------------
@@ -182,94 +186,102 @@ instance it can be called from within a Makefile.
 * Scenarios and conditional source files::
 @end menu
 
-This chapter will guide you, through examples, from the simplest cases of
-multi-language builds to some of the most advanced capabilities of
-@code{gprbuild}. Note that all the examples used in the text are extracted
-from the examples of the gprbuild package which are installed on your
-system in <prefix>/share/examples/gprbuild/.
+This chapter presents examples ranging from simple
+multi-language builds to some of the most advanced scenarios.
+All the examples shown in the text are included
+in the GPRbuild package, which is installed on your
+system in @file{<prefix>/share/examples/gprbuild/}.
 
 @node Configuration
 @section Configuration
 
-GPRbuild needs one configuration file describing the languages and
-toolchains to be used as well as project files describing the
-characteristics of the user project. In most usual cases, the configuration
-file can be created automatically by GPRbuild based on the languages
-defined in users projects and the compilers on his path. There are more
-involved situations such as cross-compilation,
-rich environments with different compilers for the same language, etc.
-where it may be needed to control precisely the generation of
-the desired configuration of toolsets. A tool, @code{gprconfig}, described in a
-latter chapter, offers this capability. In the context of this
-guided tour, most of the examples can use autoconfiguration, so there
-is no need to describe all the configuration possibilities at this stage.
-A few basic concepts will suffice.
+GPRbuild requires one configuration file describing the languages and
+toolchains to be used, and project files describing the
+characteristics of the user project. Typically the configuration
+file can be created automatically by @code{GPRbuild} based on the languages
+defined in your projects and the compilers on your path. In more
+involved situations -- such as cross compilation, or
+environments with several compilers for the same language --
+you may need to control more precisely the generation of
+the desired configuration of toolsets. A tool, @code{GPRconfig}, described in
+@ref{Configuring with GPRconfig}), offers this capability. In this
+chapter most of the examples can use autoconfiguration.
 
 GPRbuild will start its build process by trying to locate a configuration
-file called default.cgpr. If such a file is not available or if the option
-@code{--autoconf=xxx} is used, gprbuild will create its own configuration
+file called @file{default.cgpr}.
+@cindex @file{default.cgpr} configuration file
+@cindex @option{--autoconf} option (to GPRbuild)
+If such a file is not available or if the option
+@code{--autoconf=xxx} is used, GPRbuild will create its own configuration
 file suitable for native development and assuming that there are known
 compilers on the user path for each of the necessary languages. It is
-preferable and often necessary to generate manually ones own
+preferable and often necessary to manually generate your own
 configuration file when:
 @itemize
-@item using cross compilers
-@item using a specific Ada runtime (e.g. --RTS=sjlj)
-@item working with compilers not in the path or not first in the path
-@item autoconfiguration does not give the expected results
+@item using cross compilers,
+@item using a specific Ada runtime (e.g. @option{--RTS=sjlj}),
+@item working with compilers not in the path or not first in the path, or
+@item autoconfiguration does not give the expected results.
 @end itemize
 
+@noindent
 GPRconfig provides several ways of generating configuration files. By
-default, an simple interactive mode lists all the known compilers for all
-known languages, the user can select a compiler for each of the languages,
+default, a simple interactive mode lists all the known compilers for all
+known languages. You can then select a compiler for each of the languages;
 once a compiler has been selected, only compatible compilers for other
 languages are proposed. Here are a few examples of GPRconfig invocation:
 @itemize
 @item
+The following command triggers interactive mode. The configuration will be
+generated
+in GPRbuild's default location, 
+@code{<gprbuild_install_root>/share/gpr/default.cgpr)}
 @smallexample
  gprconfig
 @end smallexample
-This triggers the interactive mode. The configuration will be generated
-in GPRbuild default location:
-@code{<gprbuild_install_root>/share/gpr/default.cgpr)}
 @item
+The first command below also triggers interactive mode, but the resulting
+configuration
+file has the name and path selected by the user. The second command shows
+how GPRbuild can make use of this specific configuration file instead of
+the default one.
 @smallexample
  gprconfig -o path/my_config.cgpr
  gprbuild --config=path/my_config.cgpr
 @end smallexample
-This triggers also the interactive mode but the resulting configuration
-file has the name and path selected by the user. The second command shows
-how gprbuild can make use of this specific configuration file instead of
-the default one.
+
 @item
+Thie following command again triggers interactive mode, and only the relevant
+cross compilers for target ppc-elf will be proposed.
 @smallexample
  gprconfig --target=ppc-elf
 @end smallexample
-This triggers again the interactive mode and only the relevant
-cross compilers for target ppc-elf will be proposed.
-end itemize
+
 @item
+The next command triggers batch mode and generates at the default location
+a configuration file using the first native Ada and C compilers on the
+path.
 @smallexample
  gprconfig --config=Ada --config=C --batch
 @end smallexample
-This triggers the batch mode and will generate at the default location
-a configuration file using the first native Ada and C compilers on the
-path.
+
 @item
+The next command, a combination of the previous examples, creates in
+batch mode a configuration file named @file{x.cgpr} for cross-compiling
+Ada with
+a run-time called @code{hi} and using C for the LEON processor.
 @smallexample
  gprconfig --target=leon-elf --config=Ada,,hi --config=C --batch -o x.cgpr
 @end smallexample
- This is a combination of the previous possibilities that will create in
-batch a config file called x.cgpr for cross compiling Ada with
-a runtime called 'hi' and C for the LEON processor.
 @end itemize
+
 
 @node First Steps
 @section First Steps
 
-Let's assume a simple case of interfacing between Ada and C where the main
+Assume a simple case of interfacing between Ada and C where the main
 program is first in Ada and then in C. For a main program in Ada, we can
-use a project of the sort:
+use the following project:
 
 @smallexample @c projectfile
 project Ada_Main is
@@ -283,13 +295,13 @@ end Ada_Main;
 @end smallexample
 
 @noindent
-This project says that:
+This project indicates that:
 @itemize
 @item the sources files of this subsystem are written in Ada and C.
-@item the list of directories containing the sources is composed of
-two directories called @code{ada_src} and @code{util_src}.
-@item the directory holding the objects is @code{obj}.
-@item the directory holding the executables is @code{.}, that is to say the
+@item the directories containing the sources are @code{ada_src} and
+@code{util_src}.
+@item the directory for the objects is @code{obj}.
+@item the directory for the executables is ``.''; i.e., the
 directory containing the project file itself.
 @item the complete list of source files is @code{ada_main.adb},
 @code{c_lib.ads}, @code{lib.h}, @code{lib.c}. They can be found anywhere
@@ -297,12 +309,14 @@ in the source directories mentioned above.
 @item the main entry point of the system is in the source file
 @code{ada_main.adb}.
 @end itemize
-These elements are sufficient for @code{gprbuild} to build an executable
-program out of the sources. Note that no direct indication on how to build
-the various elements are given in the project file which remains a
-description of the project properties rather than a set of actions to
+
+@noindent
+This information is sufficient for @code{GPRbuild} to build an executable
+program from the sources. Note that no direct indication on how to build
+the various elements is given in the project file, which describes
+the project properties rather than a set of actions to
 be executed. Here is the invocation of
-@code{gprbuild} that allows building the multi-language program:
+@code{GPRbuild} that allows building the multi-language program:
 @smallexample
 $ gprbuild -Pada_main
 gcc -c ada_main.adb -o ada_main.o
@@ -314,18 +328,30 @@ gcc ada_main.o -o ada_main.exe
 @end smallexample
 
 @noindent
-One notices the three steps described in the introduction of this document:
-the first gcc commands correspond to the compilation phase. The gprbind
-command corresponds to the post-compilation phase while the last gcc command
-corresponds to the final link. Note that the default output of the
-gprbuild execution is kept reasonnably simple and easy to understand for
-the user. It means, in particular, that some of the unimportant commands
-are not shown and that some parameters are abbreviated. GPRbuild's option
-@code{-v} provides a much more verbose output which includes, among other
-information, more complete and accurate compilation, post-compilation and
+Notice the three steps described in the introduction of this document:
+@itemize
+@item
+The first three gcc commands correspond to the compilation phase.
+@item
+The gprbind
+command corresponds to the post-compilation phase.
+@item
+The last gcc command
+corresponds to the final link.
+@end itemize
+
+@noindent
+The default output of
+GPRbuild's execution is kept reasonnably simple and easy to understand.
+In particular, some of the less important commands
+are not shown, and some parameters are abbreviated. GPRbuild's option
+@code{-v}
+@cindex @option {-v} option (for GPRbuild)
+provides a much more verbose output which includes, among other
+information, more complete compilation, post-compilation and
 link commands.
 
-Let's now see other project capabilities through a slightly different
+To illustrate some other GPRbuild capabilities, here is a slightly different
 project using similar sources and a main program in C:
 
 @smallexample @c projectfile
@@ -344,34 +370,44 @@ end C_Main;
 @end smallexample
 
 @noindent
-This project has many similarities with the previous one. The Languages,
-Source_Dirs and Object_Dirs are similar. As expected, its Main attribute
-now refers to a C source. The first noticeable difference is the lack of
-Source_Files attribute. When not specified explicitly, this attribute has
-an implicit value which the complete set of sources of the given Languages to
-be found in the Source_Dirs. Many attributes can be let implicit and have a
-reasonable default value. For instance, the Source_Dirs and the Object_Dir
+This project has many similarities with the previous one, as evident in
+the @code{Languages},
+@code{Source_Dirs} and @code{Object_Dirs} attributes.
+As expected, its @code{Main} attribute
+now refers to a C source. The first noticeable difference is the lack of a
+@code{Source_Files} attribute. When not specified explicitly, this attribute
+has
+an implicit value which is the complete set of sources of the given
+@code{Languages} to
+be found in @code{Source_Dirs}. Many attributes can be left implicit and will
+be given
+reasonable default values. For instance, @code{Source_Dirs} and
+@code{Object_Dir}
 default to the current directory (where the project file resides). The
-Exec_Dir defaults to the value of the Object_Dir. Etc.
+@code{Exec_Dir} attribute defaults to the value of @code{Object_Dir}.
 
 The other notable difference in this new project is the presence of the
-package Compiler whose purpose is to group the attributes specific to
-the compilation phases. The Default_Switches attribute provides the
+package @code{Compiler}, which groups the attributes specific to
+the compilation phases. The @code{Default_Switches} attribute provides the
 list of compilation switches to be used for any source of a given
-Language unless the source has its own set of compilation switches
-specified by the attribute Switches. Note also the use of a variable
-(C_Switches). It can be useful to avoid duplication of information and is
-used in this context to ensure that the file c_main.c is always compiled
-with the default switches whatever they are, plus @option{-g}. In this specific
-situation, the use of a variable could have been replaced by a reference
-to the Default_Switches attribute:
+@code{Languages} value unless the source has its own set of compilation
+switches
+specified by the attribute @code{Switches}. Note also the use of a the
+variable
+@code{C_Switches}. A project variable can be useful to avoid duplication of
+information and
+here ensures that the file @file{c_main.c} is always compiled
+with the default switches (whatever they may be), plus @option{-g}. In this
+specific
+situation the use of a variable could have been replaced by a reference
+to the @code{Default_Switches} attribute:
 
 @smallexample @c projectfile
    for Switches ("c_main.c") use Compiler'Default_Switches ("C") & ("-g");
 @end smallexample
 
 @noindent
-Here is the output of the gprbuild command using this project:
+Here is the output of the GPRbuild command using this project:
 
 @smallexample
 $gprbuild -Pc_main
@@ -385,26 +421,28 @@ gcc c_main.o -o c_main.exe
 @end smallexample
 
 @noindent
-The switches for compiling Ada sources have been taken into account as well
-as the default switches for C sources in the compilation of lib.c. One can
-also observe that the specific switches for c_main.c have been taken into
-account. When comparing this gprbuild output with the previous one, one can
+The switches for compiling Ada sources,
+the default switches for C sources in the compilation of @file{lib.c},
+and the specific switches for @file{c_main.c} have all been taken into
+account.
+When comparing this GPRbuild output with the previous one,
 notice that there are common sources between the two projects, namely
-c_lib.ads and lib.c. Those sources were compiled twice, once for each
-projects it is part of. This is not surprising since the two projects
-are independant and have different @code{Object_Dir}s even though they share
-some sources. Would it be possible to share more than the sources and in
-particular avoid unnecessary recompilations when compilation units are
-used in several different projects? Splitting the current system into
-subsystems is a way forward in answering this question.
+@file{c_lib.ads} and @file{lib.c}. Those sources were compiled twice, once for
+each
+project. This is not surprising, since the two projects
+are independent and have different @code{Object_Dir}s even though they share
+some sources. It is possible to share more than the sources, and thus
+avoid unnecessary recompilations when compilation units are
+used in several different projects, by splitting a system into
+subsystems.
 
 @node Subsystems
 @section Subsystems
 @c describe a bigger project with several source dirs and object dirs
 @c describe limited with & extended projects & source duplication.
 
-Let's group the common compilation units in a separate subsystem with
-its own project file to which we attribute a separate Object_Dir:
+The common compilation units may be grouped in a separate subsystem with
+its own project file and a specified @code{Object_Dir} attribute:
 
 @smallexample @c projectfile
 project Common_Subsystem is
@@ -414,9 +452,10 @@ end Common_Subsystem;
 @end smallexample
 
 @noindent
-So now by default, all the sources in directory @code{util_src} belong to
-project Common_Subsystem and when compiled, their objects go in @code{obj_dir}.
-Other projects, whose sources depend on sources in @code{util_src} can create
+By default, all the sources in directory @code{util_src} belong to
+project @code{Common_Subsystem}, and when compiled, their objects go in
+@code{obj_dir}.
+Other projects, whose sources depend on sources in @code{util_src}, can create
 a dependency relationship using a project @code{with} clause:
 
 @smallexample @c projectfile
@@ -429,19 +468,25 @@ end Ada_Main;
 @end smallexample
 
 @noindent
-The @code{Ada_Main.Source_Dirs} does not include @code{util_src} anymore. The
+The @code{Ada_Main.Source_Dirs} no longer includes @code{util_src}. The
 main program in @code{ada_src} still needs sources from @code{util_src} to be
 compiled.
 It also needs those units built. Now they will be compiled using the build
-properties defined in Common_Subsystem instead of those of Ada_Main. The
-project's @code{with} clause has several effects: it provides visibility of
-sources during the compilation process as if the units from Ada_Main were
-compiled with an implcit @code{-Iutil_src}; it also guarantees that the
-necessary units from Common_Subsystems are available for Ada_Main linking
+properties defined in @code{Common_Subsystem} instead of those of
+@code{Ada_Main}.
+
+The
+project's @code{with} clause has several effects. It provides visibility of
+sources during the compilation process as if the units from @code{Ada_Main}
+were
+compiled with an implcit @code{-Iutil_src} option. It also guarantees that the
+necessary units from @code{Common_Subsystem} are available for
+@code{Ada_Main}'s linking
 phase.
 
-It is also possible to use the @code{with} relationship to define a project file
-that allows sharing common attributes or packages. For instance, one can
+It is also possible to use the @code{with} relationship to define a project
+file
+that allows sharing common attributes or packages. For instance, you can
  define a project whose only purpose is to centralize the default
 compilation options for various languages:
 
@@ -457,14 +502,17 @@ end Attribute_Sharing;
 
 @noindent
 This package does not correspond to a subsystem with
-proper source files and this is conveyed by the definition of @code{Source_Files}
-which is explicitly set to the empty list. It informs the build manager
+proper source files, and this is conveyed by the definition of
+@code{Source_Files}
+as the empty list. It informs the build manager
 that no compilation is to take place directly from this project. Defining
 an empty list of sources is essential for such utility projects because
-otherwise, the default rules apply and all sources in the current directory
-will be associated with this project. Now other projects can share this
-project's attributes and packages. For instance, Ada_Main can share all the
-Compiler's attributes at once using a renaming declaration:
+otherwise the default rules would apply and all sources in the current
+directory
+would be associated with this project. Now other projects can share this
+project's attributes and packages. For instance, @code{Ada_Main} can share all
+the
+@code{Compiler} package's attributes at once using a renaming declaration:
 
 @smallexample @c projectfile
 with "Attribute_Sharing";
@@ -476,9 +524,10 @@ end Ada_Main;
 @end smallexample
 
 @noindent
-or if other aspects of the Compiler package need to be defined locally,
-as adding @code{-g} for the c_main.c source only, sharing can be done at the
-attribute level directly as in this new version of C_Main.Compiler:
+or if other aspects of the @code{Compiler} package need to be defined locally,
+such as adding @code{-g} for the @file{c_main.c} source only, sharing can be
+done at the
+attribute level directly as in this new version of @code{C_Main.Compiler}:
 @smallexample @c projectfile
    package Compiler is
       for Default_Switches ("C") use
@@ -487,62 +536,69 @@ attribute level directly as in this new version of C_Main.Compiler:
         Compiler'Default_Switches ("C") & ("-g");
    end Compiler;
 @end smallexample
-If one wants to change the compilation options of all C files used for
+
+@noindent
+In order to change the compilation options of all C files used for
 building both @code{C_Main} and @code{Ada_Main}, it is sufficient to edit a
 single project file.
 
 @node Project Extensions
 @section Project Extensions
 
-We have seen how to share both compilation units and project properties
-among different systems. Sharing is an essential aspect of big system
-programming since it helps getting organized, reduces compilation time and
-reduces the maintenance burden. Unfortunately, it sometimes gets in the way.
+Previous sections have shown how to share both compilation units and project
+properties
+among different systems. Sharing is an essential aspect of large system
+development since it avoide unnecessary duplication, reduces compilation time
+and
+lessens the maintenance burden. Unfortunately, it sometimes gets in the way.
 In the above example, @code{Ada_Main} and @code{C_Main} both depend on
-@code{Common_Subsystems} because they have precisely the same needs but the
+@code{Common_Subsystems} because they have precisely the same needs, but the
 requirements of the two systems can diverge over time in which case
-sharing becomes a problem rather than a solution. For instance let us
-suppose that C_Main is now under maintenance and should not be changed
-carelessly while Ada_Main is still under active development which requires
-changes in the sources of the common subsystem. How can we satisfy
-Ada_Main's needs without taking any risk of perturbing C_Main? One
+sharing becomes a problem rather than a solution. For instance,
+suppose that @code{C_Main} is now baselined and should not be changed,
+while @code{Ada_Main} is still under active development (which requires
+changes in the sources of the common subsystem). How can we satisfy
+@code{Ada_Main}'s needs without taking any risk of perturbing @code{C_Main}?
+One
 possibility is to duplicate the common subsystem completely so that one
 version can evolve while the other one can remain frozen. That will force
 duplication and recompilation of the whole project. Extensions provide a
-more flexible mechansim making it possible to provide a new version of
-a subsystem without having to duplicate the sources which do not change.
+more flexible mechansim, making it possible to provide a new version of
+a subsystem without having to duplicate the sources that do not change.
 A project extension inherits all the sources and objects from the project it
 extends and allows you to redefine some of the sources which hide the original
-versions. One can also add new sources or remove existing ones.
-Here is an example of extension of project common_subsystem:
+versions. You can also add new sources or remove existing ones.
+Here is an example of extension of project @code{Common_Subsystem}:
 
 @smallexample @c projectfile
-project New_Common_Subsystem extends "../subsystems/common_subsystem.gpr" is
+project New_Common_Subsystem 
+        extends "../subsystems/common_subsystem.gpr" is
    for Source_Dirs  use ("new_util_src");
    for Object_Dir   use  "new_obj_util";
 end New_Common_Subsystem;
 @end smallexample
 
+@noindent
 The project sources are to be found in @code{Common_Subsystem.Source_Dirs}
 and @code{New_Common_Subsystem.Source_Dirs}, the latter hiding the former
 when the same source filenames are found in both. New sources can be
 added to the project extension by simply placing them in its
-Source_Dirs. Original Sources can be removed thanks to the Attribute
+@code{Source_Dirs}. Original Sources can be removed, because of the attribute
 @code{Excluded_Source_Files}.
 When building a project extension, all units depending on new versions of
 sources are rebuilt in the extension's @code{Object_Dir}. Other objects
 remain in their original location and will be used by the builder whenever
 necessary.
 
-We have seen how to define a project extension but how can this extension
-be used in the context of a big program composed of many subsystems?
-Extending one subsystem may affect implicity many other subsystems
-depending on it even though there are no source change in those
-dependant projects. In order to avoid the necessity for generating a
-project extension for each of the affected subsystems, one can use the
-notion of "extending all" which basically means "extend all the projects
+A project extension can
+be used in the context of a large program composed of many subsystems.
+Extending one subsystem may implicitly affect many other subsystems
+depending on it, even though there are no source changes in those
+dependent projects. In order to avoid the need  to generate a
+project extension for each of the affected subsystems, you can use the
+notion of ``extending all'', which basically means ``extend all the projects
 necessary so that this specific project extension can be used instead of
-its original version. Here is an example of an extending-all project:
+its original version''. Here is an example of an extending-all project:
 
 @smallexample @c projectfile
 with "new_common_subsystem.gpr";
@@ -557,14 +613,15 @@ end New_Ada_Main;
 @section Libraries
 
 A library is a subsystem packaged in a specific way. There are two
-major kind of libraries: static and dynamic. A project file representing
-a library is very similar to a project file representing a subsystem. One
-just need to give the library a name thanks to attribute
+major kinds of libraries: @emph{static} and @emph{dynamic}. A project file
+representing
+a library is very similar to a project file representing a subsystem. You
+just need to give the library a name, through the attribute
 @code{Library_Name}. It is also possible to define a @code{Library_Dir}
-which allow separating the final library components (e.g. archive files)
-from the compilation byproducts (e.g. object files) which may be needed
-to rebuild effciently a new version of the library but are not of any
-interest for the library users. Here is a simple project file for a static
+which allows you to separate the final library components (e.g. archive files)
+from the compilation byproducts (e.g. object files) that may be needed
+to efficiently rebuild a new version of the library but which are not of any
+interest to library users. Here is a simple project file for a static
 library:
 
 @smallexample @c projectfile
@@ -578,11 +635,14 @@ project Static_Lib is
 end Static_Lib;
 @end smallexample
 
-The library can be built on its own using standard gprbuild commands,
+@noindent
+The library can be built on its own using standard GPRbuild commands,
 for example:
 @smallexample
 $gprbuild static_lib.gpr
 @end smallexample
+
+@noindent
 It can also be built as a by product of building a main project using this
 library through a "with" as it was the case for simple subsystems:
 @smallexample @c projectfile
@@ -591,24 +651,32 @@ project Main is
    for Main  use ("ada_main.adb");
 end Main;
 @end smallexample
+
+@noindent
 in which case
+
 @smallexample
 $gprbuild main.gpr
 @end smallexample
+
+@noindent
 will rebuild the library @code{l1} if it is not uptodate.
 
-To construct a dynamic library instead of a static library, it is just
-a matter of replacing
+To construct a dynamic library instead of a static library, simply replace
 @smallexample @c projectfile
    for Library_Kind use "static";
 @end smallexample
+
+@noindent
 by
+
 @smallexample @c projectfile
    for Library_Kind use "dynamic";
 @end smallexample
 
-Library projects can also be useful to describe a library that one may
-want to use but that cannot be rebuilt for one reaon or another,
+@noindent
+Library projects can also be useful to describe a library that you may
+want to use but that, for some reason, cannot be rebuilt,
 for instance when the sources to rebuild the library are
 not available. Such library projects need simply to use the
 @code{externally_built} attribute as in the example below:
@@ -622,6 +690,8 @@ project Extern_Lib is
    for Externally_Built use "true";
 end Extern_Lib;
 @end smallexample
+
+@noindent
 In the case of externally built libraries, the @code{Object_Dir}
 attribute does not need to be specified in this case because
 it will never be used.
@@ -631,103 +701,106 @@ it will never be used.
 
 @c  ------------------------------------------------------------------------
 @node Important Concepts
-@chapter Important Concepts
+@chapter Main Concepts
 @c  ------------------------------------------------------------------------
 
-Let's discuss some of the important concepts that are the foundation of the
+The following concepts are the foundation of
 GNAT Project files and the GPRbuild process.
 
 @itemize @bullet
 
-@item source files and source directories:
+@item Source files and source directories
 
-A source file is associated to a language through a naming convention.
+A source file is associated with a language through a naming convention.
 For instance, @code{foo.c} is typically
 the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are two
-common naming conventions for a file containing an Ada spec; etc.
+common naming conventions for a file containing an Ada spec.
 A compilation unit is often composed of a main source file and potentially
 several auxillary ones, such as header files in C. The naming conventions
 can be defined or modified by the user and are used by
-@code{gprbuild} to invoke the appropriate compiler.
-Source files are looked for in the source directories associated to the
-project with the @code{Source_Dirs} attribute. By default,
-all the files in the source directories following the naming conventions
+@code{GPRbuild} to invoke the appropriate compiler.
+Source files are looked up in the source directories associated with the
+project through the @code{Source_Dirs} attribute. By default,
+all the files (in these source directories) following the naming conventions
 associated with the declared languages are
 considered to be part of the project. It is also possible to limit the
 list of source files using the @code{Source_Files} or
 @code{Source_List_File} attributes.
 
-@item object files and object directory:
+@item Object files and object directory
 
 An object file is an intermediate file produced by the compiler from a
 compilation unit. It is used by the post-compilation phases to produce
 final executables or libraries. The object files produced in the context of
-a given project are stored in a single directory, the Object_Dir that can
+a given project are stored in a single directory, the @code{Object_Dir} that
+can
 be specified in the project file. A need for storing
 objects in different directories corresponds to the need to split the
 system into distinct subsystems.
 
-@item project file:
+@item Project file
 
 A text file using an Ada-like syntax. It defines build-related
 characteristics of an application, or a part of it. The characteristics
 include the list of sources, the location of those sources, the location
-where to store the generated object files, the name of the main program
+for the generated object files, the name of the main program,
 and the default options for the various tools involved in the build
-process. These characteristics can be conditionalized thanks to scenario
+process. These characteristics can be conditionalized through scenario
 variables and case statements.
 
-@item configuration file:
+@item Configuration file
 
 A text file using the project file syntax. It defines languages and
 their characteristics as well as toolchains for those languages and their
 characteristics.
 
-@item project attribute:
+@item Project attribute
 
-A specific characteristic is defined by a project attribute clause. Its
-value is a string or a sequence of strings. For instance, the Source_Dirs
+A specific characteristic as defined by a project attribute clause. Its
+value is a string or a sequence of strings. For instance, the
+@code{Source_Dirs}
 attribute is a sequence of strings representing the actual names of the
 directories containing the sources of the project. The attribute itself can
 be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
 refers to the default compiler options for the Ada language.
 
-@item project subpackage:
+@item Project subpackage:
 
-Global characteristics are defined at the top level of the projects.
+Global characteristics are defined at the top level of a project.
 Specific characteristics affecting a given tool are grouped in a
-subpackage named after the type of tools it affects. The most common
-subpackages are "Builder", "Compiler", "Binder" and "Linker".
+subpackage with the same name as the tool. The most common
+subpackages are @code{Builder}, @code{Compiler}, @code{Binder},
+and @code{Linker}.
 
-@item project variables:
+@item Project variables:
 
 Two kinds of variables are available with projects: simple variables and
 scenario variables. The former can hold any string, or sequence of string
 values. They are useful as shortcuts for complex expressions. Scenario
 variables are a restricted version of the former which can only take their
 value from a static enumeration of strings representing the various
-supported scenarios. These scenario variables are used conjointly with
+supported scenarios. These scenario variables are used in conjunction with
 the @code{case} construct to offer limited conditionalization of
 project characteristics. Both types of variables are local to the project
 defining them and can get initialized with an external value, such as
-an environment variable, thanks to the @code{external} directive.
+an environment variable, through the @code{external} directive.
 
-@item subsystem:
+@item Subsystem
 
 A subsystem is a coherent part of the complete system to be built. It
 is represented by a set of sources and one object directory. A simple
 system is composed of a single subsystem. Complex systems are usually
-composed of a graph of interdependant subsystems. A subsystem is
-dependant on another subsystem if knowledge of the other one is
+composed of a graph of interdependent subsystems. A subsystem is
+dependent on another subsystem if knowledge of the other one is
 required to build it, and in particular if visibility on some of the
 sources of this other subsystem is required. A subsystem is usually
 represented by one project file. The subsystem dependency relationship
 is represented by the @code{with} clause between corresponding project
 files.
 
-@item library:
+@item Library:
 
-A Library is a specific type of subsystem where the objects are
+A library is a specific type of subsystem where the objects are
 grouped together using system specific means for the convenience
 of the user. Project files are a system- and language-independant way of
 building both static and dynamic libraries. They also support the concept
@@ -739,19 +812,20 @@ action at all for dynamic SALs.
 
 @item Project extension:
 
-A project extension is a project that represents a non-perturbing
-modification of the original project. Suppose for instance that a
-subsystem is shared by two unrelated systems. If one system requires a
-change in the subsystem it may affect the other system negatively. In
-order to preserve as much sharing of the subsystem, it is possible to
-represent a new version of the subsystem as a delta to the original
-version which only contains the new source files---those that have been
-changed and the objects that are affected by these changes.
+A project extension is a project that represents an augmentation
+of the original project. Suppose for instance that a
+subsystem @code{S} is shared by two unrelated systems @code{S1} and @code{S2}.
+If @code{S1} requires a
+change in @code{S}, but this change would adversely affect @code{S2},
+then a modified version of @code{S} can be defined as an extension of 
+@code{S}, a ``delta'' to the original
+version which only contains the new source files (those that have been
+changed) and the objects that are affected by these changes.
 @end itemize
 
 @c  ------------------------------------------------------------------------
-@node Building with gprbuild
-@chapter Building with gprbuild
+@node Building with GPRbuild
+@chapter Building with GPRbuild
 @c  ------------------------------------------------------------------------
 
 @menu
@@ -769,44 +843,44 @@ changed and the objects that are affected by these changes.
 
 @noindent
 
-Three elements can optionally be specified on gprbuild's command line:
-the main project file, the switches for gprbuild itself or for the tools it
+Three elements can optionally be specified on GPRbuild's command line:
+the main project file, the switches for GPRbuild itself or for the tools it
 drives and finally, the main source files:
 @smallexample
 gprbuild [<proj>.gpr] [switches] [names]
   @{[-cargs opts] [-cargs:lang opts] [-largs opts] [-gargs opts]@}
 @end smallexample
 
-gprbuild requires a project file, which may be specified on the
+GPRbuild requires a project file, which may be specified on the
 command line, either directly or using the @option{-P} switch. If not
-specified, then gprbuild uses the project file "default.gpr" if there
+specified, then GPRbuild uses the project file "default.gpr" if there
 is one in the current working directory. Otherwise, if there is only
-one project file in the current working directory, gprbuild uses this
+one project file in the current working directory, GPRbuild uses this
 project file.
 
 Main source files represent the sources to be used as the main
-programs. If they are not specified on the command line, gprbuild uses
+programs. If they are not specified on the command line, GPRbuild uses
 the source files specified with the Main attribute in the project
 file. If none exists, then no executable will be built.
 
 When source files are specified along with switch @option{-c}, then
 recompilation will be considered only for those source files. In all
-other cases, gprbuild compiles or recompiles all sources in the
+other cases, GPRbuild compiles or recompiles all sources in the
 project tree that are not up to date and builds or rebuilds libraries
 that are not up to date.
 
-If gprbuild is invoked without switch @option{--config=} or
-@option{--autoconf=}, then gprbuild will look for a configuration
+If GPRbuild is invoked without switch @option{--config=} or
+@option{--autoconf=}, then GPRbuild will look for a configuration
 project file "default.cgpr". If there is no such file in the default
-locations expected by gprbuild (<install>/share/gpr and the current
-directory) then gprbuild will invoke gprconfig with
+locations expected by GPRbuild (<install>/share/gpr and the current
+directory) then GPRbuild will invoke GPRconfig with
 the languages no the project files, and create a configuration project
 file "auto.cgpr" in the object directory of the main project. The project
-"auto.cgpr" will be rebuild at each gprbuild invokation unless you use
+"auto.cgpr" will be rebuild at each GPRbuild invokation unless you use
 the switch @option{--autoconf=path/auto.cgpr} which will create the config
 file if it does not exist and use it otherwise.
 
-Options given on the gprbuild command line may be passed along to
+Options given on the GPRbuild command line may be passed along to
 individual tools by preceding them with one of the ``command line
 separators'' shown below. Options following the separator, up to the
 next separator (or end of the command line) are passed along.  The
@@ -851,7 +925,7 @@ options for the linker.
 @item @option{-gargs}
 
 The arguments that follow up to the next command line separators are
-options for gprbuild itself. Usually, @option{-gargs} is specified after one or
+options for GPRbuild itself. Usually, @option{-gargs} is specified after one or
 several other command line separators.
 
 @end itemize
@@ -861,18 +935,18 @@ several other command line separators.
 
 @noindent
 
-The switches that are interpreted directly by gprbuild are:
+The switches that are interpreted directly by GPRbuild are:
 
 @itemize @bullet
 
 @item @option{--version}
 
-Display information about gprbuild: version, origin and legal status, then
+Display information about GPRbuild: version, origin and legal status, then
 exit successfully, ignoring other options.
 
 @item @option{--help}
 
-Display gprbuild usage, then exit successfully, ignoring other options.
+Display GPRbuild usage, then exit successfully, ignoring other options.
 
 @item @option{--display-paths}
 
@@ -892,24 +966,24 @@ This specifies a configuration project file name that already exists
 or will be created automatically. Option @option{--autoconf=} cannot
 be specified more than once. If the configuration project file
 specified with @option{--autoconf=} exists, then it is
-used. Otherwise, gprconfig is invoked to create it automatically.
+used. Otherwise, GPRconfig is invoked to create it automatically.
 
 Note: @option{--config} and @option{--autoconf} cannot both be specified.
 
 @item @option{-aP dir} (Add directory dir to project search path)
 
-Specify to gprbuild to add directory "dir" to the user project file search
+Specify to GPRbuild to add directory "dir" to the user project file search
 path, before the default directory.
 
 @item @option{-b} (Bind only)
 
-Specify to gprbuild that the post-compilation (or binding) phase is to be
+Specify to GPRbuild that the post-compilation (or binding) phase is to be
 performed, but not the other phases, if they are not specified by appropriate
 switches.
 
 @item @option{-c} (Compile only)
 
-Specify to gprbuild that the compilation phase is to be performed, but not
+Specify to GPRbuild that the compilation phase is to be performed, but not
 the other phases, if they are not specified by appropriate switches.
 
 @item @option{-d} (Display progress)
@@ -939,14 +1013,14 @@ file is used. This switch has no effect when switch @option{-v} is used.
 
 @item @option{-j<num>} (use num simultaneous compilation jobs)
 
-By default, gprbuild invokes one compiler at a time. With switch @option{-j},
-it is possible to instruct gprbuild to spawn several simultaneous compilation
+By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
+it is possible to instruct GPRbuild to spawn several simultaneous compilation
 jobs if needed. For example, @option{-j2} for two simultaneous compilation
 jobs or @option{-j4} for four.
 
 @item @option{-k} (Keep going after compilation errors)
 
-By default, gprbuild stops spawning new compilation jobs at the first
+By default, GPRbuild stops spawning new compilation jobs at the first
 compilation failure. Using switch @option{-k}, it is possible to attempt to
 compile/recompile all the sources that are not up to date, even when some
 compilations failed. The post-compilation phase and the linking phase are never
@@ -955,7 +1029,7 @@ used.
 
 @item @option{-l} (Link only)
 
-Specify to gprbuild that the linking phase is to be performed, but not
+Specify to GPRbuild that the linking phase is to be performed, but not
 the other phases, if they are not specified by appropriate switches.
 
 @item @option{-o name} (Choose an alternate executable name)
@@ -966,8 +1040,8 @@ several mains in attribute Main of the main project.
 
 @item @option{-p} (Create missing object, library and exec directories)
 
-By default, gprbuild checks that the object, library and exec directories
-specified in project files exist. Switch @option{-p} instructs gprbuild to
+By default, GPRbuild checks that the object, library and exec directories
+specified in project files exist. Switch @option{-p} instructs GPRbuild to
 attempt to create missing directories.
 
 @item @option{-P proj} (use Project file proj)
@@ -984,10 +1058,10 @@ Cancel any previous switch @option{-v}.
 
 @item @option{-s} (recompile if compilation switches have changed)
 
-By default, gprbuild will not recompile a source if all dependencies are
-satisfied. Switch @option{-s} instructs gprbuild to recompile sources when a
+By default, GPRbuild will not recompile a source if all dependencies are
+satisfied. Switch @option{-s} instructs GPRbuild to recompile sources when a
 different set of compilation switches has been used in the previous
-compilation, even if all dependencies are satisfied. Each time gprbuild
+compilation, even if all dependencies are satisfied. Each time GPRbuild
 invokes a compiler, it writes a text file that lists the switches used in the
 invocation of the compiler, so that it can retrieve these switches if
 @option{-s} is used later.
@@ -999,7 +1073,7 @@ these processes are spawned. Cancel any previous switch @option{-q}.
 
 @item @option{-vPx} (Specify verbosity when parsing Project Files)
 
-By default, gprbuild does not display anything when processing project files,
+By default, GPRbuild does not display anything when processing project files,
 except when there are errors. This default behavior is obtained with switch
 @option{-vP0}. @option{-vP1} gives more information and @option{-vP2} displays
 a lot of mostly useless information.
@@ -1007,7 +1081,7 @@ a lot of mostly useless information.
 @item @option{-we} (Treat all warnings as errors)
 
 When @option{-we} is used, any warning during the processing of the project
-files becomes an error and gprbuild does not attempt any of the phases.
+files becomes an error and GPRbuild does not attempt any of the phases.
 
 @item @option{-wn} (Treat warnings as warnings)
 
@@ -1031,10 +1105,10 @@ external("BUILD") inside a project file will have the value "DEBUG".
 
 @noindent
 
-Before performing one or several of its three phases, gprbuild has to read the
+Before performing one or several of its three phases, GPRbuild has to read the
 command line, get its configuration and process the project files.
 
-If gprbuild is invoked with an invalid switch or without any project file on
+If GPRbuild is invoked with an invalid switch or without any project file on
 the command line, it will fail immediately.
 
 Examples:
@@ -1047,13 +1121,13 @@ $ gprbuild -P c_main.gpr -WW
 gprbuild: illegal option "-WW"
 @end smallexample
 
-gprbuild looks for the configuration project file first in the current
+GPRbuild looks for the configuration project file first in the current
 working directory, then in the default configuration project directory.
-If the gprbuild executable is located in a subdirectory "<prefix>/bin", then
+If the GPRbuild executable is located in a subdirectory "<prefix>/bin", then
 the default configuration project directory is "<prefix>/share/gpr", otherwise
 there is no default configuration project directory.
 
-When it has found its configuration project path, gprbuild needs to get its
+When it has found its configuration project path, GPRbuild needs to get its
 configuration. By default, the file name of the main configuration project
 is "default.cgpr". This default may be modified using the switch
 @option{--config=...}
@@ -1064,21 +1138,21 @@ Example:
 $ gprbuild --config=my_standard.cgpr -P my_project.gpr
 @end smallexample
 
-If gprbuild cannot find the main configuration project on the configuration
+If GPRbuild cannot find the main configuration project on the configuration
 project path, then it will look for all the languages specified in the user
-project tree and invoke gprconfig to create a configuration project file
+project tree and invoke GPRconfig to create a configuration project file
 named "auto.cgpr" and located in the object directory of the main project file.
 
-Once it has found the configuration project, gprbuild will process its
+Once it has found the configuration project, GPRbuild will process its
 configuration: if a single string attribute is specified in the configuration
 project and is not specified in a user project, then the attribute is added
 to the user project; if a string list attribute is specified in the
 configuration project then its value is prepended to the corresponding
 attribute in the user project.
 
-When gprbuild has processed its configuration, then it will
+When GPRbuild has processed its configuration, then it will
 process the user project file or files. If these user project files are
-incorrect then gprbuild will fail with the appropriate error messages:
+incorrect then GPRbuild will fail with the appropriate error messages:
 
 @smallexample
 $ gprbuild -P my_project.gpr
@@ -1086,16 +1160,16 @@ ada_main.gpr:3:26: "src" is not a valid directory
 gprbuild: "my_project.gpr" processing failed
 @end smallexample
 
-Once the user project files have been processed successfully, then gprbuild
+Once the user project files have been processed successfully, then GPRbuild
 will start to do some work.
 
 @node Compilation of one or several sources
 @section Compilation of one or several sources
 
-If gprbuild is invoked with -c and there are one or several source file names
-specified on the command line, gprbuild will compile or recompile these
+If GPRbuild is invoked with -c and there are one or several source file names
+specified on the command line, GPRbuild will compile or recompile these
 sources, if they are not up to date or if -f is also specified.
-Then gprbuild will stop its execution, even if -b or -l are specified.
+Then GPRbuild will stop its execution, even if -b or -l are specified.
 
 The options/switches used to compile these sources are described in section
 @ref{Compilation Phase}.
@@ -1104,10 +1178,10 @@ The options/switches used to compile these sources are described in section
 @section Compilation Phase
 
 When switch @option{-c} is used or when switches @option{-b} or @option{-l}
-are not used, gprbuild will first compile or recompile all the sources that
+are not used, GPRbuild will first compile or recompile all the sources that
 are not up to date in all the projects in the project tree.
 
-gprbuild will first consider each source and decide if it needs to be
+GPRbuild will first consider each source and decide if it needs to be
 (re)compiled.
 
 A source needs to be compiled in the following cases:
@@ -1140,7 +1214,8 @@ A source needs to be compiled in the following cases:
 
 @item A source listed in the dependency file has been replaced
 
-@item Switch @option{-s} is used and the source has been compiled with different
+@item Switch @option{-s} is used and the source has been compiled with
+different
       switches or with the same switches in a different order
 
 @end itemize
@@ -1193,7 +1268,7 @@ file is not done during compilation but after (see configuration attribute
 Compute_Dependency), then the process to create the dependency file is
 invoked.
 
-If gprbuild is invoked with a switch @option{-j} specifying more than one
+If GPRbuild is invoked with a switch @option{-j} specifying more than one
 compilation process, then several compilation processes for several sources of
 possibly different languages are spawned concurrently.
 
@@ -1205,29 +1280,29 @@ possibly different languages are spawned concurrently.
 
 
 @c  ------------------------------------------------------------------------
-@node Cleaning up with gprclean
-@chapter Cleaning up with gprclean
+@node Cleaning up with GPRclean
+@chapter Cleaning up with GPRclean
 @c  ------------------------------------------------------------------------
 
 @menu
-* Switches for gprclean::
+* Switches for GPRclean::
 @end menu
 
-gprclean is a tool associated with gprbuild to remove the files created by
-gprbuild. At a minimum, gprclean must be invoked with a main project file
+GPRclean is a tool associated with GPRbuild to remove the files created by
+GPRbuild. At a minimum, GPRclean must be invoked with a main project file
 with a command such as "gprclean proj.gpr" or "gprclean -P proj.gpr".
 
-Examples of invocation of gprclean:
+Examples of invocation of GPRclean:
 
 @smallexample
    gprclean -r prj1.gpr
    gprclean -c -P prj2.gpr
 @end smallexample
 
-@node Switches for gprclean
-@section Switches for gprclean
+@node Switches for GPRclean
+@section Switches for GPRclean
 
-The switches for gprclean are:
+The switches for GPRclean are:
 
 @itemize @bullet
 
@@ -1239,7 +1314,7 @@ The switches for gprclean are:
 This specifies a configuration project file name that already exists or will
 be created automatically. Option @option{--autoconf=}
 cannot be specified more than once. If the configuration project file specified
-with @option{--autoconf=} exists, then it is used. Otherwise, gprconfig is
+with @option{--autoconf=} exists, then it is used. Otherwise, GPRconfig is
 invoked to create it automatically.
 
 @item  @option{-c} : Only delete compiler generated files. Do not delete
@@ -1259,7 +1334,7 @@ invoked to create it automatically.
        problems.
 
 @item  @option{-r} : (recursive) Clean all projects referenced by the main
-       project directly or indirectly. Without this switch, gprclean only
+       project directly or indirectly. Without this switch, GPRclean only
        cleans the main project.
 
 @item  @option{-v}  : Verbose mode
@@ -1272,12 +1347,12 @@ invoked to create it automatically.
 @end itemize
 
 @c  ------------------------------------------------------------------------
-@node Configuring with gprconfig
-@chapter Configuring with gprconfig
+@node Configuring with GPRconfig
+@chapter Configuring with GPRconfig
 @c ----------------------------------------------------------------------
 
 @menu
-* Using gprconfig::
+* Using GPRconfig::
 * Description of the knowledge base::
 * General file format::
 * Compiler description::
@@ -1285,18 +1360,18 @@ invoked to create it automatically.
 @end menu
 
 @c ----------------------------------------------------------------------
-@node Using gprconfig
-@section Using gprconfig
+@node Using GPRconfig
+@section Using GPRconfig
 @c ---------------------------------------------------------------------
 
 @noindent
-When you launch gprconfig, it will first search for all compilers it
+When you launch GPRconfig, it will first search for all compilers it
 can find on your @code{PATH}. It is recommended, although not
 mandatory, that you put the compilers that you expect to use for your
-application in your @code{PATH} before you launch @code{gprconfig},
+application in your @code{PATH} before you launch @code{GPRconfig},
 since that simplifies the setup.
 
-@code{gprconfig} will then display the list of all the native compilers
+@code{GPRconfig} will then display the list of all the native compilers
 it has found, along with the language they can compile, the runtime
 they use (when applicable),@dots{}. It will then wait until you select
 one of the compilers.  This list is sorted by language, then by order
@@ -1310,7 +1385,7 @@ each compiler. If the compiler was already selected, it is deselected.
 
 The list of compilers is then displayed again, but some filtering has been
 performed: only compilers that target the same platform as the selected
-compiler are now displayed. @code{gprconfig} then checks whether it is
+compiler are now displayed. @code{GPRconfig} then checks whether it is
 possible to link sources compiled with the selected compiler and each of
 the remaining compilers; when linking is not possible, the compiler is not
 displayed. Likewise, all compilers for the same language are hidden, so that
@@ -1322,18 +1397,18 @@ for which sources.
 
 The goal of this filtering is to make it more obvious whether you have
 good chances of being able to link. There is however no guarantee that
-@code{gprconfig} will know for sure how to link any combination of the
+@code{GPRconfig} will know for sure how to link any combination of the
 remaining compilers.
 
-In the list, if you select "o", @code{gprconfig} will let you enter
+In the list, if you select "o", @code{GPRconfig} will let you enter
 information about a compiler that was not found automatically:
 @itemize @bullet
 @item Name
 
-In the knowledge base of @code{gprconfig}, each compiler is associated
+In the knowledge base of @code{GPRconfig}, each compiler is associated
 with a simple name. All the known names are listed next to the question.
 If your compiler is one of the known ones, enter the name. You can also
-enter any other name, but then @code{gprconfig} will not be able to
+enter any other name, but then @code{GPRconfig} will not be able to
 guess any of the remaining info.
 
 @item Path
@@ -1346,7 +1421,7 @@ compiler installed in @file{/usr/local/gnat/bin/gnatmake}, the path would be
 @item Version
 
 The version of your compiler. If the Name you provided is one of the known
-compilers, @code{gprconfig} will try to guess it for you, so that you can
+compilers, @code{GPRconfig} will try to guess it for you, so that you can
 simply press enter if the guess is valid.
 
 @item Language
@@ -1354,51 +1429,51 @@ simply press enter if the guess is valid.
 The language that you intend to use the compiler for. If you use the same
 compiler for multiple languages, you should enter only one of these at
 this point, and later on create a new compiler entry for the other
-languages. As for Version, @code{gprconfig} will try to guess it for you
+languages. As for Version, @code{GPRconfig} will try to guess it for you
 if it is one of the known compilers.
 
 @item Runtime
 
 The runtime you intend to use for this compiler. For most languages, this
 is not applicable, and you should simply press Enter. Once again,
-@code{gprconfig} will try to guess it if possible.
+@code{GPRconfig} will try to guess it if possible.
 
 @item Target
 
-The target architecture for which the compiler is compiling. @code{gprconfig}
+The target architecture for which the compiler is compiling. @code{GPRconfig}
 will try to guess it either from the compiler you pointed to, or will by
 default use the current system's architecture, assuming this is not a
 cross compiler.
 @end itemize
 
 You can select as many compilers as are used in your application. Once you
-are done selecting the compilers, select "s", and @code{gprconfig} will
+are done selecting the compilers, select "s", and @code{GPRconfig} will
 generate the configuration file.
 
 @subsection Command line switches
 
-The following command line switches are supported by @code{gprconfig}.
+The following command line switches are supported by @code{GPRconfig}.
 
 @itemize @bullet
 @item @option{-o file}
 
-The name of the output file. By default, @code{gprconfig} will search for
+The name of the output file. By default, @code{GPRconfig} will search for
 @code{gprbuild} on your PATH, and create a default configuration file for
 it. But you can alternatively choose to create a different configuration
-file and then use @code{gprbuild}'s command line switches to choose among
+file and then use @code{GPRbuild}'s command line switches to choose among
 these.
 
 @item @option{--db directory}
 
-Indicates another directory that should be parsed for gprconfig's knowledge
+Indicates another directory that should be parsed for GPRconfig's knowledge
 base. Most of the time this is only useful if you are creating your own
 XML description files.
 
 @item @option{--db -}
 
-Prevents @code{gprconfig} from reading its default knowledge base. You
+Prevents @code{GPRconfig} from reading its default knowledge base. You
 should point to another directory with @code{--db directory}, or
-gprconfig will not be able to generate any configuration file.
+GPRconfig will not be able to generate any configuration file.
 
 @item @option{--target target}
 
@@ -1415,7 +1490,7 @@ Simply displays the target of all compilers found and exits.
 
 This parameter is used to preselect configurations.
 "name" should be one of the known compiler names (e.g. "GNAT", "GCC",...), the
-full list of which is visible when gprconfig is used interactively and you add
+full list of which is visible when GPRconfig is used interactively and you add
 a custom compiler. However, you can use an unknown name, but in this case you
 need to provide all the information yourself.
 
@@ -1423,7 +1498,7 @@ need to provide all the information yourself.
 @file{/usr/bin} (and not the installation prefix @file{/bin}).
 
 If "name" is a known compiler name, the remaining attributes will have defaults
-computed automatically by @code{gprconfig}. You can either specify them, or
+computed automatically by @code{GPRconfig}. You can either specify them, or
 use an empty string to get the default value and specify a later parameter.
 
 @smallexample
@@ -1433,14 +1508,14 @@ use an empty string to get the default value and specify a later parameter.
 
 @item @option{--batch}
 
-If this parameter is specified, @code{gprconfig} doesn't go into its
+If this parameter is specified, @code{GPRconfig} doesn't go into its
 interactive compiler selection, but generates the output configuration file
 directly from the compilers selected with the @code{--config} command line
 switch.
 
 @item @option{-h}
 
-Display help for @code{gprconfig} switches.
+Display help for @code{GPRconfig} switches.
 @end itemize
 
 @c ----------------------------------------------------------------------
@@ -1450,19 +1525,19 @@ Display help for @code{gprconfig} switches.
 
 
 @noindent
-@code{gprconfig} itself has no hard-coded knowledge of compilers. This way,
-no new version of gprconfig needs to be recompiled whenever a new compiler
+@code{GPRconfig} itself has no hard-coded knowledge of compilers. This way,
+no new version of GPRconfig needs to be recompiled whenever a new compiler
 is distributed.
 
 All its knowledge is embedded in a set of XML files called the knowledge
 base. Users can easily contribute to this general knowledge base, and have
-@code{gprconfig} immediately take advantage of this.
+@code{GPRconfig} immediately take advantage of this.
 
 The knowledge base contains various kinds of information:
 @itemize @bullet
 @item Compiler description
 
-   When it is run interactively, @code{gprconfig} will search on the user's
+   When it is run interactively, @code{GPRconfig} will search on the user's
    @code{PATH} for known compilers, and try to automatically guess their
    configuration (version, supported languages, supported targets, runtimes,
    @dots{}).
@@ -1478,7 +1553,7 @@ The knowledge base contains various kinds of information:
    knowledge base is a good place to store such information once and for all.
 
    For instance, with the GNAT compiler, using the soft-float runtime should
-   force @code{gprbuild} to use the @option{-msoft-float} compilation switch.
+   force @code{GPRbuild} to use the @option{-msoft-float} compilation switch.
 
 @item Linker options
 
@@ -1506,9 +1581,9 @@ freely create new files, and put them in the knowledge base directory,
 to contribute new knowledge.
 
 The location of the knowledge base is @file{$prefix/share/gprconfig},
-where @file{$prefix} is the directory in which @code{gprconfig} was
+where @file{$prefix} is the directory in which @code{GPRconfig} was
 installed. Any file with extension @file{.xml} in this directory will
-be parsed automatically by gprconfig at startup.
+be parsed automatically by GPRconfig at startup.
 
 All files must have the following format:
 
@@ -1519,7 +1594,7 @@ All files must have the following format:
 </gprconfig>
 @end smallexample
 
-The XML parser used by @code{gprconfig} is very simple minded, and does not
+The XML parser used by @code{GPRconfig} is very simple minded, and does not
 support advanced XML constructs. In fact, it also has a few limitations
 with regards to comments (for instance they cannot contain the '>'
 character).
@@ -1538,11 +1613,11 @@ put in a single XML files, or split across several files.
 @noindent
 One of the XML tags that can be put as a child of @code{<gprconfig>} is
 @code{<compiler_description>}. This node and its children describe one of
-the compilers known to @code{gprconfig}. The tool uses them when it
+the compilers known to @code{GPRconfig}. The tool uses them when it
 initially looks for all compilers known on the user's @code{PATH}
 environment variable.
 
-This is optional information, but simplifies the use of @code{gprconfig}.
+This is optional information, but simplifies the use of @code{GPRconfig}.
 
 This node doesn't accept any XML attribute. However, it accepts a number
 of child tags that explain how to query the various attributes of the
@@ -1592,7 +1667,7 @@ Therefore if you specify ".*gnatmake" as the regexp, it will not match
 <version><external>$@{PREFIX@}gnatls -v</external></version>
 @end smallexample
 
-@code{gprconfig} searches in all directories listed on the PATH for such
+@code{GPRconfig} searches in all directories listed on the PATH for such
 an executable. When one is found, the rest of the @code{<compiler_description>}
 children are checked to know whether the compiler is valid. The directory
 in which the executable was found becomes the "current directory" for
@@ -1716,7 +1791,7 @@ with:
 @item @code{<directory group="0">regexp</directory>}
 
 If the contents of the node is a @code{<directory}> child, this
-indicates that @code{gprconfig} should find all the files matching the
+indicates that @code{GPRconfig} should find all the files matching the
 regular expression. Regexp is a path relative to the directory that contains
 the @code{<executable>} file, and should use unix directory separators
 (ie '/'), since the actual directory will be converted into this format
@@ -1728,8 +1803,8 @@ constructs can be specified in the regexp:
       @code{<executable>}. It only contains the basename, not the directory
       information.
 @item "$@{HOST@}"  is replaced by the architecture of the host on which
-      gprconfig is running. This name is hard-coded in gprconfig itself,
-      and is generated by @code{configure} when gprconfig was built.
+      GPRconfig is running. This name is hard-coded in GPRconfig itself,
+      and is generated by @code{configure} when GPRconfig was built.
 @item "$@{TARGET@}" is replaced by the target architecture of the compiler,
       as returned by the @code{<target>} node. This is of course not available
       when computing the target itself.
@@ -1741,10 +1816,11 @@ constructs can be specified in the regexp:
       tools. The exact semantic, though, depends on the @code{<version>} node.
 @item "$@{PREFIX@}" is replaced by the prefix to the executable name, as
       defined by the @code{<executable>} node.
-@item "$@{PATH@}" is the current directory, i.e. the one containing the executable
+@item "$@{PATH@}" is the current directory, i.e. the one containing the
+executable
       found through @code{<executable>}. It always ends with a directory
       separator.
-@item "$@{GPRCONFIG_PREFIX@}" is the directory in which gprconfig
+@item "$@{GPRCONFIG_PREFIX@}" is the directory in which GPRconfig
       was installed (e.g @file{"/usr/local/"} if the executable is
       @file{"/usr/local/bin/gprconfig"}. This directory always ends with a
       directory separator.
@@ -1821,19 +1897,19 @@ node.
 
 @noindent
 The second type of information stored in the knowledge base are the chunks
-of @code{gprbuild} configuration files.
+of @code{GPRbuild} configuration files.
 
 Each of these chunks is also put in an XML node that provides optional
 filters. If all the filters match, then the chunk will be merged with other
 similar chunks and put in the final configuration file that is generated
-by @code{gprconfig}.
+by @code{GPRconfig}.
 
 For instance, it is possible to indicate that a chunk should only be
 included if the GNAT compiler with the soft-float runtime is used. Such
 a chunk can for instance be used to ensure that Ada sources are always
 compiled with the @code{-msoft-float} command line switch.
 
-@code{gprconfig} doesn't do intelligent merging of chunks. All it does
+@code{GPRconfig} doesn't do intelligent merging of chunks. All it does
 is group packages together. For instance, if the two chunks are:
 
 @smallexample
@@ -1894,7 +1970,7 @@ chunk itself. For instance, one would write:
 If @code{<config>} is an empty node (ie "<config/>" or "<config></config>")
 was used, then the combination of selected compilers will be reported as
 invalid, in the sense that we know that code compiled with these compilers
-cannot be linked together. As a result, @code{gprconfig} will not create
+cannot be linked together. As a result, @code{GPRconfig} will not create
 the configuration file.
 
 When the @code{<configuration>} node has a single @code{<compilers>}
@@ -1960,8 +2036,8 @@ any of its children matches. You can specificy only one @code{<hosts>}
 node.
 The format of @code{<host>} is a node with a single mandatory attribute
 @code{"name"}, which is a regexp matched against the architecture on
-which @code{gprconfig} is running. The name of the architecture was
-computed by @code{configure} when @code{gprconfig} was built.
+which @code{GPRconfig} is running. The name of the architecture was
+computed by @code{configure} when @code{GPRconfig} was built.
 
 If the "negate" attribute is "true", then the meaning of this filter is
 inverted, and it will match when none of its children matches.
@@ -2007,7 +2083,7 @@ inverted, and it will match when none of its children matches.
 @end menu
 
 @noindent
-gprbuild needs to have a configuration file to know the different
+GPRbuild needs to have a configuration file to know the different
 characteristics of the toolchains that can be used to compile sources and
 build libraries and executables.
 
@@ -2016,14 +2092,14 @@ syntax as a standard project file. Attributes in the configuration file
 define the configuration. Some of these attributes have a special meaning
 in the configuration.
 
-The default name of the configuration file, when not specified to gprbuild by
+The default name of the configuration file, when not specified to GPRbuild by
 switches --config= or --autoconf= is "default.cgpr". Although the name of the
 configuration file can be any valid file name, it is recommended that its
 suffix be ".cgpr" (for Configuration GNAT Project), so that it cannot be
 confused with a standard project file which has the suffix ".gpr".
 
 When "default.cgpr" cannot be found in the configuration project path,
-then gprbuild invokes gprconfig to create a configuration file.
+then GPRbuild invokes GPRconfig to create a configuration file.
 
 In the description of the attributes that follows, when an attribute is an
 associative array indexed by the language name, for example
@@ -2089,7 +2165,7 @@ runtime libraries.
 @item Toolchain_Description (<language>)
 
 Specifies as a single string a description of a toolchain. This attribute is
-not directly used by gprbuild or its auxiliary tools (gprbind and gprlib) but
+not directly used by GPRbuild or its auxiliary tools (gprbind and gprlib) but
 may be used by other tools, for example GPS. Example:
 
 @smallexample
@@ -2425,7 +2501,7 @@ the mapping file that needs to be added to the unit name for bodies. Example:
 @noindent
 
 In the value of config file attributes defined below, there are some
-placeholders that gprbuild will replace. These placeholders are:
+placeholders that GPRbuild will replace. These placeholders are:
 
 @itemize @bullet
 
@@ -2511,7 +2587,7 @@ Specifies, for languages that support config files, if several config files
 may be indicated to the compiler, or not. This attribute may have only two
 values: "true" or "false" (case insensitive). The default, when this attribute
 is not specified, is "false". When the value "true" is specified for this
-attribute, gprbuild will concatenate the config files, if there are more than
+attribute, GPRbuild will concatenate the config files, if there are more than
 one. Example:
 
 @smallexample
