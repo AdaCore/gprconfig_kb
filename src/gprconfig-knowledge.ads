@@ -125,14 +125,16 @@ package GprConfig.Knowledge is
 
    function To_String
      (Comp          : Compiler;
-      As_Config_Arg : Boolean) return String;
+      As_Config_Arg : Boolean;
+      Show_Target   : Boolean := False) return String;
    --  Return a string representing the compiler. It is either the --config
    --  argument (if As_Config_Arg is true) or the string to use in the
    --  interactive menu otherwise.
 
    function To_String
      (Compilers     : Compiler_Lists.List;
-      Selected_Only : Boolean) return String;
+      Selected_Only : Boolean;
+      Show_Target   : Boolean := False) return String;
    --  Return the list of compilers.
    --  Unselectable compilers are hidden. If Selected_Only is true, then only
    --  compilers that are currently selected are displayed.

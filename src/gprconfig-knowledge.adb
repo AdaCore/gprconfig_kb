@@ -542,10 +542,10 @@ package body GprConfig.Knowledge is
          elsif Node_Name (Tmp) = "grep" then
             External_Node :=
               (Typ        => Value_Grep,
-               Regexp     => To_Unbounded_String (Get_Attribute
-                                                  (Tmp, "regexp", ".*")),
-               Group      => Integer'Value (Get_Attribute
-                                            (Tmp, "group", "0")));
+               Regexp     => To_Unbounded_String
+                 (Get_Attribute (Tmp, "regexp", ".*")),
+               Group      => Integer'Value
+                 (Get_Attribute (Tmp, "group", "0")));
             Append (Value, External_Node);
 
          else
@@ -1305,7 +1305,7 @@ package body GprConfig.Knowledge is
                      Tmp_Str : constant String := To_String (Tmp_Result);
                   begin
                      Match (Regexp, Tmp_Str, Matched);
-                     if Matched (Node.Group) /= No_Match then
+                     if Matched (0) /= No_Match then
                         Tmp_Result := To_Unbounded_String
                           (Tmp_Str (Matched (Node.Group).First ..
                                     Matched (Node.Group).Last));
@@ -1615,13 +1615,13 @@ package body GprConfig.Knowledge is
 
    function To_String
      (Comp          : Compiler;
-      As_Config_Arg : Boolean) return String
+      As_Config_Arg : Boolean;
+      Show_Target   : Boolean := False) return String
    is
       function Runtime_Or_Empty return String;
-      --  Return either the runtime or the empty string
-
       function Selected return String;
-      --  return a string to display whether the compiler is selected
+      function Target return String;
+      --  Return various aspects of the compiler;
 
       function Runtime_Or_Empty return String is
       begin
@@ -1641,6 +1641,15 @@ package body GprConfig.Knowledge is
          end if;
       end Selected;
 
+      function Target return String is
+      begin
+         if Show_Target then
+            return " on " & To_String (Comp.Target);
+         else
+            return "";
+         end if;
+      end Target;
+
    begin
       if As_Config_Arg then
          return To_String (Comp.Language)
@@ -1655,6 +1664,7 @@ package body GprConfig.Knowledge is
            & To_String (Comp.Name) & " for "
            & To_String (Comp.Language)
            & " in " & Name_As_Directory (To_String (Comp.Path))
+           & Target
            & " version " & To_String (Comp.Version)
            & Runtime_Or_Empty;
       end if;
@@ -1666,7 +1676,8 @@ package body GprConfig.Knowledge is
 
    function To_String
      (Compilers     : Compiler_Lists.List;
-      Selected_Only : Boolean) return String
+      Selected_Only : Boolean;
+      Show_Target   : Boolean := False) return String
    is
       Comp   : Compiler_Lists.Cursor := First (Compilers);
       Result : Unbounded_String;
@@ -1676,7 +1687,11 @@ package body GprConfig.Knowledge is
            or else (not Selected_Only
                     and then Compiler_Lists.Element (Comp).Selectable)
          then
-            Append (Result, To_String (Compiler_Lists.Element (Comp), False));
+            Append
+              (Result,
+               To_String
+                 (Compiler_Lists.Element (Comp), False,
+                  Show_Target => Show_Target));
             Append (Result, ASCII.LF);
          end if;
          Next (Comp);

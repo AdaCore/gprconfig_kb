@@ -146,7 +146,8 @@ procedure GprConfig.Main is
       Known_Compiler_Names (Base, Known);
 
       Put_Line (" --target=target (" & Sdefault.Hostname & " by default)");
-      Put_Line ("            Select specified target or all for any target.");
+      Put_Line
+        ("            Select specified target or ""all"" for any target.");
       Put_Line (" --show-targets : List all compiler targets that are known");
       Put_Line ("            to match the one specified by --target.");
       Put_Line (" -o file  : Name and directory of the output file.");
@@ -299,7 +300,9 @@ procedure GprConfig.Main is
          if not Element (Comp).Selected then
             Selectable := True;
 
-            if Element (Comp).Targets_Set /= Selected_Targets_Set then
+            if Selected_Targets_Set /= All_Target_Sets
+              and then Element (Comp).Targets_Set /= Selected_Targets_Set
+            then
                Selectable := False;
                if Verbose_Level > 0 then
                   Put_Verbose ("Incompatible target for: "
@@ -391,7 +394,9 @@ procedure GprConfig.Main is
            ("Only those matching the target and the selected compilers"
             & " are displayed.");
 
-         Put (To_String (Compilers, Selected_only => False));
+         Put (To_String
+              (Compilers, Selected_only => False,
+               Show_Target => Selected_Targets_Set = All_Target_Sets));
 
          Put
            ("Select or unselect the following compiler (or ""s"" to save): ");
