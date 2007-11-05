@@ -92,6 +92,7 @@ package GprConfig.Knowledge is
 
    procedure Callback
      (Iterator       : in out Compiler_Iterator;
+      Base           : in out Knowledge_Base;
       Comp           : Compiler;
       From_Extra_Dir : Boolean;
       Continue       : out Boolean) is abstract;
@@ -128,6 +129,13 @@ package GprConfig.Knowledge is
    --  Return a string representing the compiler. It is either the --config
    --  argument (if As_Config_Arg is true) or the string to use in the
    --  interactive menu otherwise.
+
+   function To_String
+     (Compilers     : Compiler_Lists.List;
+      Selected_Only : Boolean) return String;
+   --  Return the list of compilers.
+   --  Unselectable compilers are hidden. If Selected_Only is true, then only
+   --  compilers that are currently selected are displayed.
 
    procedure Generate_Configuration
      (Base        : Knowledge_Base;

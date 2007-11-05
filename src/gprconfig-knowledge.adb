@@ -84,6 +84,9 @@ package body GprConfig.Knowledge is
       External : Node);
    --  Parse an XML node that describes an external value
 
+   procedure Put_Verbose (Config : Configuration);
+   --  Debug put for Config
+
    function Get_Attribute
      (N : Node; Attribute : String; Default : String) return String;
    --  Return the value of an attribute, or Default if the attribute does not
@@ -851,6 +854,7 @@ package body GprConfig.Knowledge is
       while More_Entries (Search) loop
          Get_Next_Entry (Search, File);
 
+         Put_Verbose ("Parsing file " & Full_Name (File));
          Open (Full_Name (File), Input);
          Parse (Reader, Input);
          Close (Input);
@@ -1567,6 +1571,7 @@ package body GprConfig.Knowledge is
                else
                   Callback
                     (Iterator       => Iterator,
+                     Base           => Base,
                      Comp           => Comp,
                      From_Extra_Dir => From_Extra_Dir,
                      Continue       => Continue);
@@ -1583,6 +1588,7 @@ package body GprConfig.Knowledge is
                     External_Value_Lists.Element (C2).Extracted_From;
                   Callback
                     (Iterator       => Iterator,
+                     Base           => Base,
                      Comp           => Comp,
                      From_Extra_Dir => From_Extra_Dir,
                      Continue       => Continue);
@@ -1614,6 +1620,9 @@ package body GprConfig.Knowledge is
       function Runtime_Or_Empty return String;
       --  Return either the runtime or the empty string
 
+      function Selected return String;
+      --  return a string to display whether the compiler is selected
+
       function Runtime_Or_Empty return String is
       begin
          if Comp.Runtime /= Null_Unbounded_String then
@@ -1622,6 +1631,15 @@ package body GprConfig.Knowledge is
             return "";
          end if;
       end Runtime_Or_Empty;
+
+      function Selected return String is
+      begin
+         if Comp.Selected then
+            return "*";
+         else
+            return " ";
+         end if;
+      end Selected;
 
    begin
       if As_Config_Arg then
@@ -1632,13 +1650,38 @@ package body GprConfig.Knowledge is
            & ',' & To_String (Comp.Name);
 
       else
-         return "(" & Comp.Index_In_List & ") "
+         return Selected
+           & "(" & Comp.Index_In_List & ") "
            & To_String (Comp.Name) & " for "
            & To_String (Comp.Language)
            & " in " & Name_As_Directory (To_String (Comp.Path))
            & " version " & To_String (Comp.Version)
            & Runtime_Or_Empty;
       end if;
+   end To_String;
+
+   ---------------
+   -- To_String --
+   ---------------
+
+   function To_String
+     (Compilers     : Compiler_Lists.List;
+      Selected_Only : Boolean) return String
+   is
+      Comp   : Compiler_Lists.Cursor := First (Compilers);
+      Result : Unbounded_String;
+   begin
+      while Has_Element (Comp) loop
+         if Compiler_Lists.Element (Comp).Selected
+           or else (not Selected_Only
+                    and then Compiler_Lists.Element (Comp).Selectable)
+         then
+            Append (Result, To_String (Compiler_Lists.Element (Comp), False));
+            Append (Result, ASCII.LF);
+         end if;
+         Next (Comp);
+      end loop;
+      return To_String (Result);
    end To_String;
 
    -----------------------------
@@ -1725,6 +1768,7 @@ package body GprConfig.Knowledge is
                                 Matches (CDM.Element (C).Prefix_Index).Last));
                         end if;
 
+                        Continue := True;
                         Foreach_Language_Runtime
                           (Iterator   => Iterator,
                            Base       => Base,
@@ -2177,6 +2221,38 @@ package body GprConfig.Knowledge is
       end loop;
    end Merge_Config;
 
+   -----------------
+   -- Put_Verbose --
+   -----------------
+
+   procedure Put_Verbose (Config : Configuration) is
+      C : Compilers_Filter_Lists.Cursor := First (Config.Compilers_Filters);
+      Comp_Filter : Compilers_Filter;
+      Comp : Compiler_Filter_Lists.Cursor;
+      Filter : Compiler_Filter;
+   begin
+      while Has_Element (C) loop
+         Comp_Filter := Compilers_Filter_Lists.Element (C);
+         Put_Verbose
+           ("<compilers negate='" & Comp_Filter.Negate'Img & "'>", 1);
+         Comp := First (Comp_Filter.Compiler);
+         while Has_Element (Comp) loop
+            Filter := Compiler_Filter_Lists.Element (Comp);
+            Put_Verbose
+              ("<compiler name='"
+               & To_String (Filter.Name) & "' version='"
+               & To_String (Filter.Version) & "' runtime='"
+               & To_String (Filter.Runtime) & "' language='"
+               & To_String (Filter.Language) & "' />");
+            Next (Comp);
+         end loop;
+         Put_Verbose ("</compilers>", -1);
+         Next (C);
+      end loop;
+
+      Put_Verbose ("<config supported='" & Config.Supported'Img & "' />");
+   end Put_Verbose;
+
    -------------------------
    -- Is_Supported_Config --
    -------------------------
@@ -2198,6 +2274,11 @@ package body GprConfig.Knowledge is
             Compilers)
          then
             if not Configuration_Lists.Element (Config).Supported then
+               if Verbose_Level > 0 then
+                  Put_Verbose
+                    ("Selected compilers are not compatible, because of:");
+                  Put_Verbose (Configuration_Lists.Element (Config));
+               end if;
                return False;
             end if;
          end if;
@@ -2285,7 +2366,7 @@ package body GprConfig.Knowledge is
       end loop;
 
       if Is_Empty (Packages) then
-         Put_Line ("No configuration found");
+         Put_Line ("No valid configuration found");
          raise Generate_Error;
       end if;
 
