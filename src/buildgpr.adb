@@ -640,6 +640,11 @@ package body Buildgpr is
    --  of Current_Processor and other global variables.
 
    procedure Add_Option
+     (Value       : String_Access;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False);
+   procedure Add_Option
      (Value       : String;
       To          : in out Options_Data;
       Display     : Boolean;
@@ -1093,7 +1098,7 @@ package body Buildgpr is
    end Add_Option;
 
    procedure Add_Option
-     (Value       : String;
+     (Value       : String_Access;
       To          : in out Options_Data;
       Display     : Boolean;
       Simple_Name : Boolean := False)
@@ -1124,9 +1129,19 @@ package body Buildgpr is
          end;
       end if;
 
-      To.Options (To.Last)     := new String'(Value);
+      To.Options (To.Last)     := Value;
       To.Visible (To.Last)     := Display;
       To.Simple_Name (To.Last) := Simple_Name;
+   end Add_Option;
+
+   procedure Add_Option
+     (Value       : String;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
+   is
+   begin
+      Add_Option (new String'(Value), To, Display, Simple_Name);
    end Add_Option;
 
    procedure Add_Option
@@ -1136,7 +1151,8 @@ package body Buildgpr is
       Simple_Name : Boolean := False)
    is
    begin
-      Add_Option (Get_Name_String (Value), To, Display, Simple_Name);
+      Add_Option
+        (new String'(Get_Name_String (Value)), To, Display, Simple_Name);
    end Add_Option;
 
    -----------------
@@ -1150,59 +1166,22 @@ package body Buildgpr is
       Display_First : Boolean;
       Simple_Name   : Boolean := False)
    is
-      List    : String_List_Id := Value;
-      Element : String_Element;
-      Option  : String_Access;
-      First   : Boolean := True;
+      List            : String_List_Id := Value;
+      Element         : String_Element;
+      Option          : String_Access;
+      First_Display   : Boolean := Display_First;
    begin
       while List /= Nil_String loop
          Element := Project_Tree.String_Elements.Table (List);
          Option := Get_Option (Element.Value);
 
          if Option'Length > 0 then
-
-            To.Last := To.Last + 1;
-
-            if To.Last > To.Options'Last then
-               declare
-                  New_Options     : constant String_List_Access :=
-                                      new String_List
-                                        (1 .. 2 * To.Options'Last);
-                  New_Visible     : constant Booleans :=
-                                      new Boolean_Array
-                                        (1 .. 2 * To.Visible'Last);
-                  New_Simple_Name : constant Booleans :=
-                                      new Boolean_Array
-                                        (1 .. 2 * To.Simple_Name'Last);
-
-               begin
-                  New_Options (To.Options'Range) := To.Options.all;
-                  To.Options.all := (others => null);
-                  Free (To.Options);
-                  To.Options := New_Options;
-                  New_Visible (To.Visible'Range) := To.Visible.all;
-                  Free (To.Visible);
-                  To.Visible := New_Visible;
-                  New_Simple_Name (To.Simple_Name'Range) := To.Simple_Name.all;
-                  Free (To.Simple_Name);
-                  To.Simple_Name := New_Simple_Name;
-               end;
-            end if;
-
-            To.Options (To.Last) := Option;
-
-            if Display_All then
-               To.Visible (To.Last) := True;
-
-            elsif Display_First and First then
-               To.Visible (To.Last) := True;
-               First := False;
-
-            else
-               To.Visible (To.Last) := False;
-            end if;
-
-            To.Simple_Name (To.Last) := Simple_Name;
+            Add_Option
+              (Value       => Option,
+               To          => To,
+               Display     => Display_All or First_Display,
+               Simple_Name => Simple_Name);
+            First_Display := False;
          end if;
 
          List := Element.Next;
@@ -1218,37 +1197,14 @@ package body Buildgpr is
    is
       First_Display : Boolean := Display_First;
    begin
-      while To.Last + Value'Length > To.Options'Last loop
-         declare
-            New_Options     : constant String_List_Access :=
-                                new String_List (1 .. 2 * To.Options'Last);
-            New_Visible     : constant Booleans :=
-                                new Boolean_Array (1 .. 2 * To.Visible'Last);
-            New_Simple_Name : constant Booleans :=
-                                new Boolean_Array
-                                  (1 .. 2 * To.Simple_Name'Last);
-
-         begin
-            New_Options (1 .. To.Last) := To.Options (1 .. To.Last);
-            To.Options.all := (others => null);
-            Free (To.Options);
-            To.Options := New_Options;
-            New_Visible (1 .. To.Last) := To.Visible (1 .. To.Last);
-            Free (To.Visible);
-            To.Visible := New_Visible;
-            New_Simple_Name (1 .. To.Last) := To.Simple_Name (1 .. To.Last);
-            Free (To.Simple_Name);
-            To.Simple_Name := New_Simple_Name;
-         end;
-      end loop;
-
       for J in Value'Range loop
          if Value (J)'Length > 0 then
-            To.Last := To.Last + 1;
-            To.Options (To.Last) := Value (J);
-            To.Visible (To.Last) := Display_All or else First_Display;
+            Add_Option
+              (Value       => Value (J),
+               To          => To,
+               Display     => Display_All or else First_Display,
+               Simple_Name => Simple_Name);
             First_Display := False;
-            To.Simple_Name (To.Last) := Simple_Name;
          end if;
       end loop;
    end Add_Options;
@@ -1540,16 +1496,24 @@ package body Buildgpr is
          Main_Source : Source_Data;
          Dep_Files   : out Boolean)
       is
-         Data    : Project_Data;
+         Data    : constant Project_Data :=
+                     Project_Tree.Projects.Table (For_Project);
          Src_Id  : Source_Id;
          Source  : Source_Data;
          Config  : constant Language_Config :=
                      Project_Tree.Languages_Data.Table (Language).Config;
          Roots   : Roots_Access;
 
-         procedure Put_Source;
+         procedure Put_Dependency_File;
+         --  Put in the exchange file the dependency file path name for source
+         --  Source, if applicable.
 
-         procedure Put_Source is
+         -------------------------
+         -- Put_Dependency_File --
+         -------------------------
+
+         procedure Put_Dependency_File is
+            Local_Data : Project_Data;
          begin
             if Source.Language_Name = Lang_Name
               and then
@@ -1571,16 +1535,29 @@ package body Buildgpr is
             then
                Initialize_Source_Record (Src_Id);
                Source := Project_Tree.Sources.Table (Src_Id);
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (Source.Dep_Path));
+               Local_Data := Project_Tree.Projects.Table (Source.Project);
+
+               if (Source.Project = For_Project) or
+                  (not Local_Data.Library) or
+                  Config.Kind = File_Based
+               then
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (Source.Dep_Path));
+
+               else
+                  Get_Name_String (Local_Data.Library_ALI_Dir);
+                  Add_Char_To_Name_Buffer (Directory_Separator);
+                  Get_Name_String_And_Append (Source.Dep_Name);
+                  Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
+               end if;
+
                Dep_Files := True;
             end if;
-         end Put_Source;
+         end Put_Dependency_File;
 
       begin
          Dep_Files := False;
-         Data := Project_Tree.Projects.Table (For_Project);
 
          Roots := Root_Sources.Get (Main_Source.File);
 
@@ -1590,7 +1567,7 @@ package body Buildgpr is
                while Src_Id /= No_Source loop
                   Initialize_Source_Record (Src_Id);
                   Source := Project_Tree.Sources.Table (Src_Id);
-                  Put_Source;
+                  Put_Dependency_File;
                   Src_Id := Source.Next_In_Project;
                end loop;
             end if;
@@ -1602,7 +1579,7 @@ package body Buildgpr is
                Src_Id := Roots (J);
                Initialize_Source_Record (Src_Id);
                Source := Project_Tree.Sources.Table (Src_Id);
-               Put_Source;
+               Put_Dependency_File;
             end loop;
          end if;
       end Add_Dependency_Files;
@@ -1618,6 +1595,8 @@ package body Buildgpr is
          Data    : Project_Data;
          Src_Id  : Source_Id;
          Source  : Source_Data;
+
+         Dep_TS  : Time_Stamp_Type;
 
       begin
          if For_Project /= No_Project and then
@@ -1648,24 +1627,32 @@ package body Buildgpr is
                   Initialize_Source_Record (Src_Id);
                   Source := Project_Tree.Sources.Table (Src_Id);
 
-                  if Source.Object_TS = Empty_Time_Stamp
+                  if (not Data.Library) or Source.Unit = No_Name then
+                     Dep_TS := Source.Dep_TS;
+
+                  else
+                     Get_Name_String (Data.Library_ALI_Dir);
+                     Add_Char_To_Name_Buffer (Directory_Separator);
+                     Get_Name_String_And_Append (Source.Dep_Name);
+                     Dep_TS := File_Stamp (Path_Name_Type'(Name_Find));
+                  end if;
+
+                  if Dep_TS = Empty_Time_Stamp
                     or else
-                    String (Source.Object_TS) > String (Bind_Exchange_TS)
+                    String (Dep_TS) > String (Bind_Exchange_TS)
                     or else
-                    String (Source.Object_TS) > String (Bind_Object_TS)
+                    String (Dep_TS) > String (Bind_Object_TS)
                   then
                      Binder_Driver_Needs_To_Be_Called := True;
 
                      if Verbose_Mode then
                         Write_Str ("      -> ");
-                        Write_Str (Get_Name_String (Source.Object));
+                        Write_Str (Get_Name_String (Source.Dep_Name));
 
-                        if Source.Object_TS = Empty_Time_Stamp then
+                        if Dep_TS = Empty_Time_Stamp then
                            Write_Line (" does not exist");
 
-                        elsif String (Source.Object_TS) >
-                              String (Bind_Exchange_TS)
-                        then
+                        elsif String (Dep_TS) > String (Bind_Exchange_TS) then
                            Write_Line
                              (" is more recent than the binder exchange file");
 
@@ -4007,8 +3994,7 @@ package body Buildgpr is
                      List := Project_Tree.Name_Lists.Table (List).Next;
                      exit when List = No_Name_List;
                      Add_Option
-                       (Get_Name_String
-                          (Project_Tree.Name_Lists.Table (List).Name),
+                       (Value   => Project_Tree.Name_Lists.Table (List).Name,
                         To      => Archive_Indexer_Opts,
                         Display => True);
                   end loop;
@@ -4849,7 +4835,7 @@ package body Buildgpr is
 
                      else
                         Add_Option
-                          (Get_Name_String (Node.Name),
+                          (Value   => Node.Name,
                            To      => Compilation_Options,
                            Display => Opt.Verbose_Mode);
                      end if;
@@ -5136,8 +5122,8 @@ package body Buildgpr is
 
                         if List /= No_Name_List then
                            Add_Option
-                             (Get_Name_String (Nam_Nod.Name),
-                              To => Compilation_Options,
+                             (Value   => Nam_Nod.Name,
+                              To      => Compilation_Options,
                               Display => Opt.Verbose_Mode);
 
                         else
@@ -6431,6 +6417,11 @@ package body Buildgpr is
             Project_File_Name.all,
             """ processing failed",
             Flush_Messages => False);
+      end if;
+
+      if Warnings_Detected > 0 then
+         Prj.Err.Finalize;
+         Prj.Err.Initialize;
       end if;
 
       for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
