@@ -68,19 +68,14 @@ bootstrap-clean:
 	bootstrap/install/bin/gprclean -Pgprbuild -XBUILD=${BUILD} \
 	  -XBUILD_TOOL=gprbuild
 
-install: all install.bin
-	${MKDIR} ${libexecdir}/gprbuild
+install: all install.data install.bin
 	${MKDIR} ${datadir}/gpr
-	${MKDIR} ${datadir}/gprconfig
-	${INSTALL_PROGRAM} gprbind ${libexecdir}/gprbuild/
-	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
 	${MKDIR} ${datadir}/gps/plug-ins/
 	${INSTALL} doc/gprbuild_gps.xml ${datadir}/gps/plug-ins/
-	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
 	$(RM) -r ${datadir}/examples/gprbuild
 	${MKDIR} ${datadir}/examples/gprbuild
 	${CP} -r examples/* ${datadir}/examples/gprbuild
-	${MKDIR} ${datadir}/doc/gprbuild
+	${RM} -r ${datadir}/doc/gprbuild
 	${MKDIR} ${datadir}/doc/gprbuild
 	for format in html txt pdf info; do \
 	  if [ -d doc/$$format ] ; then \
@@ -90,11 +85,18 @@ install: all install.bin
 	done
 	${CP} doc/*.png ${datadir}/doc/gprbuild/html
 
-install.bin: gprconfig gprbuild gprclean
+install.data: force
+	${MKDIR} ${datadir}/gprconfig
+	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
+
+install.bin: gprconfig gprbuild gprclean gprbind gprlib
 	${MKDIR} ${bindir}
 	${INSTALL_PROGRAM} gprconfig ${bindir}
 	${INSTALL_PROGRAM} gprbuild ${bindir}
 	${INSTALL_PROGRAM} gprclean ${bindir}
+	${MKDIR} ${libexecdir}/gprbuild
+	${INSTALL_PROGRAM} gprbind ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
 
 $(objdir)/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
