@@ -83,10 +83,12 @@ install: all install.bin
 	${MKDIR} ${datadir}/doc/gprbuild
 	${MKDIR} ${datadir}/doc/gprbuild
 	for format in html txt pdf info; do \
-	  if [ -f doc/gprbuild_ug.$$format ] ; then \
-	    ${INSTALL_DATA} doc/gprbuild_ug.$$format ${datadir}/doc/gprbuild; \
+	  if [ -d doc/$$format ] ; then \
+	     ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
+	     ${INSTALL_DATA} doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
 	  fi; \
 	done
+	${CP} doc/*.png ${datadir}/doc/gprbuild/html
 
 install.bin: gprconfig gprbuild gprclean
 	${MKDIR} ${bindir}

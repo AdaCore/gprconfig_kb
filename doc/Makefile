@@ -1,24 +1,37 @@
+## The documentation packages are built in subdirectories, to match
+## what is done in AdaCore's automatic packaging
+
 DOC=gprbuild_ug
+MAKEINFO_HTML_FLAGS=--html --number-sections --css-include=gprbuild.css --no-headers --no-split
+
 MAKE_INFO=makeinfo --force --no-split
 MAKE_TXT=$(MAKE_INFO) --no-headers --fill-column=79
-MAKE_HTML=$(MAKE_INFO) --html --number-sections --css-include=../gnat_src/gnat_style.css 
-MAKE_HTML2=${MAKE_HTML} --no-headers --css-include=gprbuild.css
 MAKE_PDF=texi2pdf -q
+MKDIR=mkdir -p
+RMDIR=rmdir
 
 .PHONY: all txt info html pdf clean
 
-all: txt info html html2 pdf
+all: txt info html pdf
 
 txt:
-	$(MAKE_TXT) -o $(DOC).txt $(DOC).texi
+	${MKDIR} txt
+	$(MAKE_TXT) -o txt/$(DOC).txt $(DOC).texi
 info:
-	$(MAKE_INFO) -o $(DOC).info $(DOC).texi
+	${MKDIR} info
+	$(MAKE_INFO) -o info/$(DOC).info $(DOC).texi
 html:
-	$(MAKE_HTML) -o $(DOC).html $(DOC).texi
-html2:
-	$(MAKE_HTML2) -o $(DOC)_2.html $(DOC).texi
+	${MKDIR} html
+	$(MAKE_INFO) ${MAKEINFO_HTML_FLAGS} -o html/$(DOC).html $(DOC).texi
 pdf:
-	$(MAKE_PDF)  -o $(DOC).pdf $(DOC).texi
+	${MKDIR} pdf
+	cd pdf; $(MAKE_PDF) -c ../$(DOC).texi
 
-clean:
-	${RM} $(DOC).txt $(DOC).html $(DOC).info $(DOC).pdf
+partial_clean:
+	${RM} ${DOC}.aux ${DOC}.cp ${DOC}.cps ${DOC}.cps ${DOC}.fn
+	${RM} ${DOC}.ky ${DOC}.log ${DOC}.pg ${DOC}.toc ${DOC}.tp
+	${RM} ${DOC}.vr
+
+clean: partial_clean
+	${RM} txt/* html/* info/* pdf/*
+	-${RMDIR} txt html info pdf
