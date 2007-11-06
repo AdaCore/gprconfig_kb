@@ -570,8 +570,9 @@ package body GprConfig.Knowledge is
          elsif Node_Name (Tmp) = "grep" then
             External_Node :=
               (Typ        => Value_Grep,
-               Regexp     => To_Unbounded_String
-                 (Get_Attribute (Tmp, "regexp", ".*")),
+               Regexp_Re  => new Pattern_Matcher'
+                 (Compile (Get_Attribute (Tmp, "regexp", ".*"),
+                           Multiple_Lines)),
                Group      => Integer'Value
                  (Get_Attribute (Tmp, "group", "0")));
             Append (Value, External_Node);
@@ -710,6 +711,7 @@ package body GprConfig.Knowledge is
       Compilers : Compilers_Filter;
       Ignore_Config : Boolean := False;
       Negate    : Boolean;
+      Filter    : Compiler_Filter;
    begin
       Config.Supported := True;
 
@@ -725,13 +727,28 @@ package body GprConfig.Knowledge is
                   null;
 
                elsif Node_Name (N2) = "compiler" then
-                  Append
-                    (Compilers.Compiler,
-                     Compiler_Filter'
-                       (Name     => TU (Get_Attribute (N2, "name", "")),
-                        Version  => TU (Get_Attribute (N2, "version", "")),
-                        Runtime  => TU (Get_Attribute (N2, "runtime", "")),
-                        Language => TU (Get_Attribute (N2, "language", ""))));
+                  Filter := Compiler_Filter'
+                    (Name       => TU (Get_Attribute (N2, "name", "")),
+                     Version    => TU (Get_Attribute (N2, "version", "")),
+                     Version_Re => null,
+                     Runtime    => TU (Get_Attribute (N2, "runtime", "")),
+                     Runtime_Re => null,
+                     Language   => TU (Get_Attribute (N2, "language", "")));
+
+                  if Filter.Version /= "" then
+                     Filter.Version_Re := new Pattern_Matcher'
+                       (Compile
+                          (To_String (Filter.Version), Case_Insensitive));
+                  end if;
+
+                  if Filter.Runtime /= "" then
+                     Filter.Runtime_Re := new Pattern_Matcher'
+                       (Compile
+                          (To_String (Filter.Runtime), Case_Insensitive));
+                  end if;
+
+                  Append (Compilers.Compiler, Filter);
+
                else
                   Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
                             & Node_Name (N2));
@@ -1353,12 +1370,10 @@ package body GprConfig.Knowledge is
 
                when Value_Grep =>
                   declare
-                     Regexp : constant Pattern_Matcher := Compile
-                       (To_String (Node.Regexp), Multiple_Lines);
                      Matched : Match_Array (0 .. Node.Group);
                      Tmp_Str : constant String := To_String (Tmp_Result);
                   begin
-                     Match (Regexp, Tmp_Str, Matched);
+                     Match (Node.Regexp_Re.all, Tmp_Str, Matched);
                      if Matched (0) /= No_Match then
                         Tmp_Result := To_Unbounded_String
                           (Tmp_Str (Matched (Node.Group).First ..
@@ -1833,20 +1848,22 @@ package body GprConfig.Knowledge is
                C := First (Base.Compilers);
                while Has_Element (C) loop
                   declare
+                     Config  : constant Compiler_Description :=
+                       CDM.Element (C);
                      Simple  : constant String := Simple_Name (Dir);
                      Matches : Match_Array
-                       (0 .. Integer'Max (0, CDM.Element (C).Prefix_Index));
+                       (0 .. Integer'Max (0, Config.Prefix_Index));
                      Matched : Boolean;
                      Prefix  : Unbounded_String;
                   begin
-                     if CDM.Element (C).Executable_Re /= null then
+                     if Config.Executable_Re /= null then
                         Match
-                          (CDM.Element (C).Executable_Re.all,
+                          (Config.Executable_Re.all,
                            Data       => Simple,
                            Matches    => Matches);
                         Matched := Matches (0) /= No_Match;
                      else
-                        Matched := (To_String (CDM.Element (C).Executable) &
+                        Matched := (To_String (Config.Executable) &
                                     Exec_Suffix.all) = Simple_Name (Dir);
                      end if;
 
@@ -1855,15 +1872,15 @@ package body GprConfig.Knowledge is
                           (Key (C) & " is candidate: filename=" & Simple,
                            1);
 
-                        if CDM.Element (C).Executable_Re /= null
-                          and then CDM.Element (C).Prefix_Index >= 0
-                          and then Matches (CDM.Element (C).Prefix_Index) /=
+                        if Config.Executable_Re /= null
+                          and then Config.Prefix_Index >= 0
+                          and then Matches (Config.Prefix_Index) /=
                           No_Match
                         then
                            Prefix := To_Unbounded_String
                              (Simple (Matches
-                              (CDM.Element (C).Prefix_Index).First ..
-                                Matches (CDM.Element (C).Prefix_Index).Last));
+                              (Config.Prefix_Index).First ..
+                                Matches (Config.Prefix_Index).Last));
                         end if;
 
                         Continue := True;
@@ -1876,7 +1893,7 @@ package body GprConfig.Knowledge is
                            On_Target  => On_Target,
                            Prefix     => To_String (Prefix),
                            From_Extra_Dir => From_Extra_Dir,
-                           Descr      => CDM.Element (C),
+                           Descr      => Config,
                            Path_Order => Path_Order,
                            Continue   => Continue);
 
@@ -1901,8 +1918,10 @@ package body GprConfig.Knowledge is
          C := First (Base.Compilers);
          while Has_Element (C) loop
             declare
+               Config  : constant Compiler_Description :=
+                 CDM.Element (C);
                F : constant String := Normalize_Pathname
-                 (Name           => To_String (CDM.Element (C).Executable),
+                 (Name           => To_String (Config.Executable),
                   Directory      => Directory,
                   Resolve_Links  => False,
                   Case_Sensitive => Case_Sensitive_Files) & Exec_Suffix.all;
@@ -1915,12 +1934,12 @@ package body GprConfig.Knowledge is
                     (Iterator   => Iterator,
                      Base       => Base,
                      Name       => Key (C),
-                     Executable => To_String (CDM.Element (C).Executable),
+                     Executable => To_String (Config.Executable),
                      Prefix     => "",
                      From_Extra_Dir => From_Extra_Dir,
                      On_Target  => On_Target,
                      Directory  => Directory,
-                     Descr      => CDM.Element (C),
+                     Descr      => Config,
                      Path_Order => Path_Order,
                      Continue   => Continue);
                   exit when not Continue;
@@ -2118,14 +2137,10 @@ package body GprConfig.Knowledge is
            and then (Filter.Name = Null_Unbounded_String
                      or else Filter.Name = Comp.Name)
            and then
-             (Filter.Version = Null_Unbounded_String
-              or else Match
-                (Compile (To_String (Filter.Version), Case_Insensitive),
-                 To_String (Comp.Version)))
-           and then (Filter.Runtime = Null_Unbounded_String
-              or else Match
-                (Compile (To_String (Filter.Runtime), Case_Insensitive),
-                 To_String (Comp.Runtime)))
+             (Filter.Version_Re = null
+              or else Match (Filter.Version_Re.all, To_String (Comp.Version)))
+           and then (Filter.Runtime_Re = null
+               or else Match (Filter.Runtime_Re.all, To_String (Comp.Runtime)))
            and then (Filter.Language = Null_Unbounded_String
                      or else To_Lower (To_String (Filter.Language))
                            = To_Lower (To_String (Comp.Language)))

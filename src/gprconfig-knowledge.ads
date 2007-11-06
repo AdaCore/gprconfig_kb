@@ -243,6 +243,8 @@ private
       Index_In_List => ASCII.NUL,
       Path_Order  => 0);
 
+   type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
+
    type External_Value_Type is (Value_Constant,
                                 Value_Shell,
                                 Value_Directory,
@@ -264,7 +266,7 @@ private
                Directory_Group : Integer;
                Dir_If_Match    : Ada.Strings.Unbounded.Unbounded_String;
             when Value_Grep       =>
-               Regexp          : Ada.Strings.Unbounded.Unbounded_String;
+               Regexp_Re       : Pattern_Matcher_Access;
                Group           : Natural;
             when Value_Filter     =>
                Filter          : Ada.Strings.Unbounded.Unbounded_String;
@@ -284,8 +286,6 @@ private
 
    Null_External_Value : constant External_Value :=
      External_Value_Nodes.Empty_List;
-
-   type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
 
    type Compiler_Description is record
       Executable    : Ada.Strings.Unbounded.Unbounded_String;
@@ -307,7 +307,9 @@ private
    type Compiler_Filter is record
       Name       : Ada.Strings.Unbounded.Unbounded_String;
       Version    : Ada.Strings.Unbounded.Unbounded_String;
+      Version_Re : Pattern_Matcher_Access;
       Runtime    : Ada.Strings.Unbounded.Unbounded_String;
+      Runtime_Re : Pattern_Matcher_Access;
       Language   : Ada.Strings.Unbounded.Unbounded_String;
    end record;
    --  Representation for a <compiler> node (in <configuration>)
