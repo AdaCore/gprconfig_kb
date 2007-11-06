@@ -71,6 +71,24 @@
 @end macro
 
 @c -------------------------- macro
+@c This macro is similar to TIP, but only has an effect in html output,
+@c and displayed a note in the margin. This can be used to higlight important
+@c points that are repeated in the text. In the other outputs, we do not
+@c know how to create margin notes, and whether that would only duplicate
+@c information in the main text
+@macro TIPHTML{TXT}
+@ifhtml
+@html
+<div class="tip">
+@end html
+\TXT\
+@html
+</div>
+@end html
+@end ifhtml
+@end macro
+
+@c -------------------------- macro
 @c This macro can be used to insert an "Important" box in the text.
 @c This box is displayed inline in the main body of the text, but is
 @c surrounded by a frame, and has a small icon on the left.
@@ -179,10 +197,16 @@ Cleaning up with GPRclean
 
 Configuring with gprconfig
 * Using gprconfig::
-* Description of the knowledge base::
+* The gprconfig knowledge base::
+
+The gprconfig knowledge base
 * General file format::
 * Compiler description::
 * Configurations::
+
+Compiler description
+* gprconfig external values:: External values.
+* gprconfig variable substitution:: Variable substitution.
 
 Configuration File Reference
 * Project Level Attributes::
@@ -1448,10 +1472,7 @@ invoked to create it automatically.
 
 @menu
 * Using gprconfig::
-* Description of the knowledge base::
-* General file format::
-* Compiler description::
-* Configurations::
+* The gprconfig knowledge base::
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -1467,8 +1488,7 @@ files for GPRbuild. It automatically detects the available compilers
 on your system. Once you have selected the one needed for your
 application, it generates the proper configuration file.
 
-@NOTE{In general, you will not launch @value{gprconfig} explicitly. Instead, it is
-used implicitly by GPRbuild through the use of @code{--config} and
+@NOTE{In general, you will not launch @value{gprconfig} explicitly. Instead, it is used implicitly by GPRbuild through the use of @code{--config} and
 @code{--autoconf} switches}
 
 @subsection Command line arguments
@@ -1479,7 +1499,7 @@ exhaustive list.
 
 @table @option
 @item --target=target
-@TIP{Use @option{--target} to specify on which machine your application will
+@TIPHTML{Use @option{--target} to specify on which machine your application will
 run}
 
 This switch indicates the machine on which your application will
@@ -1499,7 +1519,7 @@ can use this switch to find the list of targets that are compatible
 with @code{--target}.
 
 @item --config=language[,version[,runtime[,path[,name]]]]
-@TIP{Use @option{--config} to automatically select the first matching
+@TIPHTML{Use @option{--config} to automatically select the first matching
 compiler}
 
 The intent of this switch is to preselect one or more compilers directly
@@ -1527,7 +1547,7 @@ could match the other arguments of @option{--config}.
 gprconfig --config C,,,/usr/bin,GCC     # automatic version}
 
 @item --batch
-@TIP{Use @option{--batch} to generate the configuration file with no use
+@TIPHTML{Use @option{--batch} to generate the configuration file with no use
 interaction}
 
 If this switch is specified, @value{gprconfig} automatically selects the first
@@ -1535,7 +1555,7 @@ compiler matching each of the @code{--config} switch, and generate the
 configuration file immediately. It will not display an interactive menu.
 
 @item -o file
-@TIP{Use @option{-o} to specify the name of the configuration file to generate}
+@TIPHTML{Use @option{-o} to specify the name of the configuration file to generate}
 
 This specifies the name of the configuration file that will be generated.
 If this switch is not specified, a default file is generated in the
@@ -1568,6 +1588,9 @@ mandatory, that you put the compilers that you expect to use for your
 application in your @env{PATH} before you launch @command{gprconfig},
 since that simplifies the setup.
 
+@TIPHTML{The list of compilers is sorted so that the most likely compilers
+appear first}
+
 @value{gprconfig} then displays the list of all the compilers
 it has found, along with the language they can compile, the runtime
 they use (when applicable),@dots{}. It then waits until you select
@@ -1581,6 +1604,9 @@ Selection is done by entering the letter that appears on the line for
 each compiler (be aware that this letter is case sensitive, so you must
 enter the exact casing, upper case or lower case). If the compiler was
 already selected, it is deselected.
+
+@TIPHTML{The list of compilers is filtered, so that only compatible compilers
+can be selected}
 
 The list of compilers is then displayed again, but some filtering has been
 performed: only compilers that target the same platform as the selected
@@ -1605,8 +1631,8 @@ are done selecting the compilers, select @key{s}, and @value{gprconfig} will
 generate the configuration file.
 
 @c ----------------------------------------------------------------------
-@node Description of the knowledge base
-@section Description of the knowledge base
+@node The gprconfig knowledge base
+@section The gprconfig knowledge base
 @c ----------------------------------------------------------------------
 
 @noindent
@@ -1614,6 +1640,12 @@ generate the configuration file.
 no new version of @value{gprconfig} needs to be recompiled when a new compiler
 is distributed.
 
+@NOTE{The role and format of the knowledge base is irrelevant for most users
+of @value{gprconfig}, and is only needed when you need to add support for new
+compilers. You can skip this section if you only want to learn how to use
+@value{gprconfig}.}
+
+@noindent
 All its knowledge is embedded in a set of XML files called the knowledge
 base. Users can easily contribute to this general knowledge base, and have
 @value{gprconfig} immediately take advantage of this.
@@ -1622,10 +1654,11 @@ The knowledge base contains various kinds of information:
 @itemize @bullet
 @item Compiler description
 
-   When it is run interactively, @value{gprconfig} will search on the user's
-   @code{PATH} for known compilers, and try to automatically guess their
+   When it is run interactively, @value{gprconfig} searches on the user's
+   @env{PATH} for known compilers, and try to automatically guess their
    configuration (version, supported languages, supported targets, runtimes,
-   @dots{}).
+   @dots{}). The knowledge base tells @value{gprconfig} how to extra the
+   relevant information from a compiler.
 
    This step is optional, since a user can also enter all the information
    manually. However, it is recommended that the knowledge base explicitly
@@ -1633,30 +1666,39 @@ The knowledge base contains various kinds of information:
 
 @item Specific compilation switches
 
-   When a compiler is used, depending on its version, target, runtime, @dots{},
+   When a compiler is used, depending on its version, target, runtime,@dots{},
    some specific command line switches might have to be enforced. The
    knowledge base is a good place to store such information once and for all.
 
    For instance, with the GNAT compiler, using the soft-float runtime should
-   force @code{GPRbuild} to use the @option{-msoft-float} compilation switch.
+   force @emph{gprbuild} to use the @option{-msoft-float} compilation switch.
 
 @item Linker options
 
    Linking a multi-language application is often tricky, and requires specific
    linker switches. These switches depend on the list of languages, the list
-   of compilers, @dots{}.
+   of compilers,@dots{}.
 
 @item Unsupported compiler mix
 
    It is sometimes not possible to link together code compiled with two
    particular compilers. The knowledge base should store this information,
    so that end users do not waste time trying to use that compiler combination.
-
 @end itemize
+
+The end of this section will describe in more details the format of this
+knowledge base, so that, as the case may be, you can add your own information
+an have @value{gprconfig} advantage of this.
+
+@menu
+* General file format::
+* Compiler description::
+* Configurations::
+@end menu
 
 @c ------------------------------------------------------------------------
 @node General file format
-@section General file format
+@subsection General file format
 @c ------------------------------------------------------------------------
 
 @noindent
@@ -1672,75 +1714,67 @@ be parsed automatically by @value{gprconfig} at startup.
 
 All files must have the following format:
 
-@smallexample
-<?xml version="1.0">
-<gprconfig>
-   ...
-</gprconfig>
-@end smallexample
+@CODESAMPLE{<?xml version="1.0">@NL{}
+<gprconfig>@NL{}
+   @dots{}@NL{}
+</gprconfig>}
 
 The root tag must be @code{<gprconfig>}.
 
 The remaining sections in this chapter will list the valid XML tags that
-can be used to replace the '...' code above. These tags can either all be
+can be used to replace the '@dots{}' code above. These tags can either all be
 put in a single XML files, or split across several files.
 
 @c ------------------------------------------------------------------------
 @node Compiler description
-@section Compiler description
+@subsection Compiler description
 @c ------------------------------------------------------------------------
 
 @noindent
 One of the XML tags that can be put as a child of @code{<gprconfig>} is
 @code{<compiler_description>}. This node and its children describe one of
 the compilers known to @value{gprconfig}. The tool uses them when it
-initially looks for all compilers known on the user's @code{PATH}
+initially looks for all compilers known on the user's @env{PATH}
 environment variable.
 
-This is optional information, but simplifies the use of @value{gprconfig}.
+This is optional information, but simplifies the use of @value{gprconfig},
+since the user is then able to omit some parameters from the @option{--config}
+command line argument, and have them automatically computed.
 
-This node doesn't accept any XML attribute. However, it accepts a number
-of child tags that explain how to query the various attributes of the
-compiler.
+The @code{<compiler_description>} node doesn't accept any XML attribute.
+However, it accepts a number of child tags that explain how to query the
+various attributes of the compiler.
 
-@itemize @bullet
-@item @code{<name>}
-
+@table @code
+@item <name>
 This tag contains a simple string, which is the name of the compiler.
 This name must be unique in all the configuration files, and is used to
-identify that compiler_description node.
+identify that @code{compiler_description} node.
 
-@smallexample
-<compiler_description>
-   <name>GNAT</name>
-</compiler_description>
-@end smallexample
+@CODESAMPLE{
+<compiler_description>@NL{}
+   <name>GNAT</name>@NL{}
+</compiler_description>}
 
-@item @code{<executable>}
-
+@item <executable>
 This tag contains a string, which is the name of an executable
-to search for on the PATH. Examples are @file{"gnatls"}, @file{"gcc}",
-@dots{}
+to search for on the PATH. Examples are @samp{gnatls}, @samp{gcc},@dots{}
 
 In some cases, the tools have a common suffix, but a prefix that might depend
-on the target. For instance, GNAT uses "gnatmake" for native platforms, but
-"powerpc-wrs-vxworks-gnatmake" for cross-compilers to VxWorks. Most of the
-compiler description is the same, however.
-
-For such cases, this tag must specify a "prefix" attribute, and its value is
-assumed to be a regular expression. This allows you to capture the prefix and
-reuse it elsewhere.
-
-When you intend to reuse the prefix, you must set the XML attribute "prefix"
-to the parenthesis group that matches this prefix. In the following example,
-we get the version of the GNAT compiler by running either "gnatls" or
-"powerpc-wrs-vxworks-gnatls", depending on the name of the executable that
-was found.
+on the target. For instance, GNAT uses @samp{gnatmake} for native platforms,
+but @samp{powerpc-wrs-vxworks-gnatmake} for cross-compilers to VxWorks.
+Most of the compiler description is the same, however.
+For such cases, the value of the @code{executable} node is considered as
+begin a regular expression. The tag also accepts an attribute @code{prefix},
+which is an integer indicating the parenthesis group that contains the prefix.
+In the following example, we get the version of the GNAT compiler by running
+either @command{gnatls} or @command{powerpc-wrs-vxworks-gnatls}, depending on
+the name of the executable that was found.
 
 The regular expression needs to match the whole name of the file, i.e. it
 contains an implicit "^" at the start, and an implicit "$" at the end.
-Therefore if you specify ".*gnatmake" as the regexp, it will not match
-"gnatmake-debug".
+Therefore if you specify @samp{.*gnatmake} as the regexp, it will not match
+@samp{gnatmake-debug}.
 
 @smallexample
 <executable prefix="1">(powerpc-wrs-vxworks-)?gnatmake</executable>
@@ -1753,41 +1787,43 @@ children are checked to know whether the compiler is valid. The directory
 in which the executable was found becomes the "current directory" for
 the remaining XML children.
 
-@item @code{<version>}
+@item <version>
 
 This tag contains any of the nodes defined in "external values" below.
 It shows how to query the version number of the compiler. If the version
 cannot be found, the executable will not be listed in the list of compilers.
-The value returned by the system will be split into words. As a result, if
-the returned value is "ada,c,c++", there are three languages supported by the
-compiler. The words can be comma-separated or space-separated.
 
-If you have several child nodes, the first one will be used to set the
-special @code{$VERSION} substitution string (see External Values below), and
-the second will be used to define the special @code{$VERSION2} substitution
-string.
-
-@item @code{<languages>}
+@item <languages>
 
 This node indicates how to query the list of languages. See "External values"
-below for valid children of this node. The returned value is a comma-separated
-or space-separated list of languages.
+below for valid children of this node.
 
-@item @code{<runtimes>}
+The value returned by the system will be split into words. As a result, if
+the returned value is "ada,c,c++", there are three languages supported by the
+compiler (and three entries are added to the menu when using @value{gprconfig}
+interactively). The words can be comma-separated or space-separated.
+
+@item <runtimes>
 
 This node indicates how to query the list of supported runtimes for the
 compiler. See "External values" below for valid children. The returned value
 is split into words as for @code{<languages>}.
 
-@item @code{<target>}
+@item <target>
 
 This node indicates how to query the target architecture for the compiler.
 See "External values" below for valid children.
 
-@end itemize
+@end table
+
+@menu
+* gprconfig external values:: External values.
+* gprconfig variable substitution:: Variable substitution.
+@end menu
 
 @c --------------------------------------------------------------------
-@subsection External values
+@node gprconfig external values
+@subsubsection External values
 @c --------------------------------------------------------------------
 @noindent
 A number of the XML nodes described above can contain one or more children,
@@ -1795,8 +1831,8 @@ and specify how to query a value from an executable. Here is the list of
 valid contents for these nodes. The @code{<directory>} and @code{<external>}
 children can be repeated multiple times, and the @code{<filter>} and
 @code{<must_match>} nodes will be applied to each of these. The final
-value of the external value is the sum of the computation for each of the
-@code{<directory>} and @code{<external>} nodes.
+value of the external value is the concatenation of the computation for each
+of the @code{<directory>} and @code{<external>} nodes.
 
 @itemize @bullet
 @item A simple string
@@ -1804,21 +1840,27 @@ value of the external value is the sum of the computation for each of the
 When a simple string is given in the node, this indicates a constant. For
 instance, the list of supported languages might be defined as:
 
-@smallexample
-<compiler_description>
-   <name>GNAT</name>
-   <executable>gnatls</executable>
-   <languages>Ada</languages>
-</compiler_description>
-@end smallexample
+@CODESAMPLE{<compiler_description>@NL{}
+   <name>GNAT</name>@NL{}
+   <executable>gnatmake</executable>@NL{}
+   <languages>Ada</languages>@NL{}
+</compiler_description>}
 
 for the GNAT compiler, since this is an Ada only compiler anyway.
 
-@item @code{<getenv name="variable"></getenv>}
+@item @code{<getenv name="variable" />}
 
 If the contents of the node is an @code{<getenv>} child, the value of
-the environment variable @var{variable} is returned.  This variable can be
-later filtered.
+the environment variable @env{variable} is returned. If the variable is
+not defined, this is an error and the compiler is ignored.
+
+@CODESAMPLE{<compiler_description>@NL{}
+  <name>GCC-WRS</name>@NL{}
+  <executable prefix="1">cc(arm|pentium)</executable>@NL{}
+  <version>@NL{}
+    <getenv name="WIND_BASE" />@NL{}
+  </version>@NL{}
+</compile_description>} 
 
 @item @code{<external>command</external>}
 
@@ -1826,38 +1868,36 @@ If the contents of the node is an @code{<external>} child, this indicates
 that a command should be run on the system.
 When the command is run, the current directory (ie the one that contains
 the executable found through the @code{<executable>} node, is put first
-on the PATH. The output of the command is returned and may be later filtered.
+on the @env{PATH}. The output of the command is returned and may be later
+filtered. The command is not executed through a shell, therefore you cannot
+use output redirection, pipes and other advanced features.
 
-For instance, extracting the target processor from @code{gcc} can be done
+For instance, extracting the target processor from @command{gcc} can be done
 with:
 
-@smallexample
-<version>
-   <external>gcc -dumpmachine</external>
-</version>
-@end smallexample
+@CODESAMPLE{<version>@NL{}
+  <external>gcc -dumpmachine</external>@NL{}
+</version>}
 
-Since the PATH has been modified, we know that the @code{gcc} command that
-is executed is the one from the same directory as the @code{<external>}
+Since the @env{PATH} has been modified, we know that the @command{gcc} command
+that is executed is the one from the same directory as the @code{<external>}
 node.
 
-@item @code{<grep match="regexp" group="0"></grep>}
+@item @code{<grep regexp="regexp" group="0" />}
 
 This node must come after the previously described ones. It is used to
-further filter the output. The previous output is matched again the regular
-expression @code{regexp} and the parenthesis group specified by
-@code{group} is returned. By default, group is 0, which indicates the
+further filter the output. The previous output is matched against the regular
+expression @var{regexp} and the parenthesis group specified by
+@var{group} is returned. By default, group is 0, which indicates the
 whole output of the command.
 
-For instance, extracting the version number from @code{gcc} can be done
+For instance, extracting the version number from @command{gcc} can be done
 with:
 
-@smallexample
-<version>
-   <external>gcc -v</external>
-   <grep regexp="^gcc version (\S+)" group="1"></grep>
-</version>
-@end smallexample
+@CODESAMPLE{<version>@NL{}
+   <external>gcc -v</external>@NL{}
+   <grep regexp="^gcc version (\S+)" group="1" />@NL{}
+</version>}
 
 @item @code{<directory group="0">regexp</directory>}
 
@@ -1866,58 +1906,27 @@ indicates that @value{gprconfig} should find all the files matching the
 regular expression. Regexp is a path relative to the directory that contains
 the @code{<executable>} file, and should use unix directory separators
 (ie '/'), since the actual directory will be converted into this format
-before the match, for system independence of the knowledge base. Special
-constructs can be specified in the regexp:
-
-@itemize -
-@item "$@{EXEC@}" is the name of the executable that was found through
-      @code{<executable>}. It only contains the basename, not the directory
-      information.
-@item "$@{HOST@}"  is replaced by the architecture of the host on which
-      @value{gprconfig} is running. This name is hard-coded in @value{gprconfig} itself,
-      and is generated by @code{configure} when @value{gprconfig} was built.
-@item "$@{TARGET@}" is replaced by the target architecture of the compiler,
-      as returned by the @code{<target>} node. This is of course not available
-      when computing the target itself.
-@item "$@{VERSION@}" is replaced by the version of the compiler. This is not
-      available when computing the target or, of course, the version itself.
-@item "$@{VERSION2@}" is replaced by the second version of the compiler. Some
-      compilers depend on other tools (like GNAT depends on gcc), and this
-      version might for instance contain the version number for these other
-      tools. The exact semantic, though, depends on the @code{<version>} node.
-@item "$@{PREFIX@}" is replaced by the prefix to the executable name, as
-      defined by the @code{<executable>} node.
-@item "$@{PATH@}" is the current directory, i.e. the one containing the
-executable
-      found through @code{<executable>}. It always ends with a directory
-      separator.
-@item "$@{GPRCONFIG_PREFIX@}" is the directory in which @value{gprconfig}
-      was installed (e.g @file{"/usr/local/"} if the executable is
-      @file{"/usr/local/bin/gprconfig"}. This directory always ends with a
-      directory separator.
-@item "$@{RUNTIME@}", "$@{RUNTIME_DIR@}", "$@{LANGUAGE@}", "$@{OUTPUT_DIR@}"
-      This string will always be substituted by the empty string when the
-      value of the external value is computed. These are special strings
-      used when substituting text in configuration chunks.
-      OUTPUT_DIR and RUNTIME_DIR always end with a directory separator.
-@item "regexp" can be any valid regular expression. This will only match
-      a directory name, not a subdirectory. Remember to quote special
-      characters, including ".", if you do not mean to use a regexp.
-@end itemize
+before the match, for system independence of the knowledge base.
 
 The group attribute indicates which parenthesis group should be returned.
 It defaults to 0 which indicates the whole matched path. If this attribute is
 not an integer, but a string, then it is the value returned.
 
+@var{regexp} can be any valid regular expression. This will only match
+a directory name, not a subdirectory. Remember to quote special characters,
+including ".", if you do not mean to use a regexp.
+
 For instance, finding the list of supported runtimes for the GNAT compiler
 is done with:
 
-@smallexample
-<runtimes>
- <directory group="1">\.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude</directory>
- <directory group="default">\.\./lib/gcc/$@{TARGET@}/.*/adainclude</directory>
-</runtimes>
-@end smallexample
+@CODESAMPLE{<runtimes>@NL{}
+ <directory group="1">@NL{}
+    \.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude@NL{}
+ </directory>@NL{}
+ <directory group="default">@NL{}
+   \.\./lib/gcc/$@{TARGET@}/.*/adainclude@NL{}
+ </directory>@NL{}
+</runtimes>}
 
 Note the second node, which matches the default runtime, and displays it as
 such.
@@ -1927,18 +1936,16 @@ such.
 This node must come after one the previously described ones. It is used to
 further filter the output. The previous output is split into words (it is
 considered as a comma-separated or space-separated list of words), and only
-those words in "value1", "value2",... are kept.
+those words in @samp{value1}, @samp{value2},@dots{} are kept.
 
-For instance, the @code{gcc} compiler will return a lot of supported
+For instance, the @command{gcc} compiler will return a lot of supported
 languages, including "ada". If we do not want to use it as an Ada
 compiler we can put:
 
-@smallexample
-<languages>
-   <external regexp="languages=(\S+)" group="1">gcc -v</external>
-   <filter>c,c++,fortran</filter>
-</languages>
-@end smallexample
+@CODESAMPLE{<languages>@NL{}
+   <external regexp="languages=(\S+)" group="1">gcc -v</external>@NL{}
+   <filter>c,c++,fortran</filter>@NL{}
+</languages>}
 
 @item @code{<must_match>regexp</must_match>}
 
@@ -1949,26 +1956,81 @@ is not stored in the list of known compilers.
 For instance, if one wants to have a @code{<compiler_description>} tag
 specific to an older version of GCC, we could write:
 
-@smallexample
-<version>
-   <external regexp="gcc version (\S+)" group="1">gcc -v </external>
-   <must_match>2.8.1</must_match>
-</version>
-@end smallexample
+@CODESAMPLE{<version>@NL{}
+   <external regexp="gcc version (\S+)"@NL{}
+        group="1">gcc -v </external>@NL{}
+   <must_match>2.8.1</must_match>@NL{}
+</version>}
 
 Other versions of gcc will not match this @code{<compiler_description>}
 node.
 
 @end itemize
 
+@c --------------------------------------------------------------------
+@node gprconfig variable substitution
+@subsubsection Variable Substitution
+@c --------------------------------------------------------------------
+@noindent
+The various compiler attributes defined above are made available as
+variables in the rest of the XML files. Each of these variable can be used
+in the value of the various nodes (for instance in @code{<directory>}),
+and in the configurations (@pxref{Configuration}).
+
+Here is the list of predefined variables
+
+@table @var
+@item $@{EXEC@}
+is the name of the executable that was found through @code{<executable>}. It
+only contains the basename, not the directory information.
+
+@item $@{HOST@}
+is replaced by the architecture of the host on which @value{gprconfig} is
+running. This name is hard-coded in @value{gprconfig} itself, and is generated
+by @command{configure} when @value{gprconfig} was built.
+
+@item $@{TARGET@}
+is replaced by the target architecture of the compiler, as returned by the
+@code{<target>} node. This is of course not available when computing the
+target itself.
+
+@item $@{VERSION@}
+is replaced by the version of the compiler. This is not available when
+computing the target or, of course, the version itself.
+
+@item $@{PREFIX@}
+is replaced by the prefix to the executable name, as defined by the
+@code{<executable>} node.
+
+@item $@{PATH@}
+is the current directory, i.e. the one containing the executable found through
+@code{<executable>}. It always ends with a directory separator.
+
+@item $@{GPRCONFIG_PREFIX@}
+is the directory in which @value{gprconfig} was installed (e.g
+@file{"/usr/local/"} if the executable is @file{"/usr/local/bin/gprconfig"}.
+This directory always ends with a directory separator.
+
+@item $@{RUNTIME@}
+@itemx $@{RUNTIME_DIR@}
+@itemx $@{LANGUAGE@}
+@itemx $@{OUTPUT_DIR@}
+This string will always be substituted by the empty string when the
+value of the external value is computed. These are special strings
+used when substituting text in configuration chunks.
+
+@var{OUTPUT_DIR} and @var{RUNTIME_DIR} always end with a directory separator.
+
+@end table
+
 @c ------------------------------------------------------------------------
 @node Configurations
-@section Configurations
+@subsection Configurations
 @c ------------------------------------------------------------------------
 
 @noindent
 The second type of information stored in the knowledge base are the chunks
-of @code{GPRbuild} configuration files.
+of @emph{gprbuild} configuration files.
 
 Each of these chunks is also put in an XML node that provides optional
 filters. If all the filters match, then the chunk will be merged with other
@@ -1983,81 +2045,75 @@ compiled with the @code{-msoft-float} command line switch.
 @value{gprconfig} doesn't do intelligent merging of chunks. All it does
 is group packages together. For instance, if the two chunks are:
 
-@smallexample
-chunk1:
-   package Language_Processing is
-     for Attr1 use ("foo");
-   end Language_Processing;
-chunk2:
-   package Language_Processing is
-     for Attr1 use ("bar");
-   end Language_Processing;
-@end smallexample
+@CODESAMPLE{chunk1:@NL{}
+   @b{package} Language_Processing @b{is}@NL{}
+     @b{for} Attr1 @b{use} ("foo");@NL{}
+   @b{end} Language_Processing;@NL{}
+chunk2:@NL{}
+   @b{package} Language_Processing @b{is}@NL{}
+     @b{for} Attr1 @b{use} ("bar");@NL{}
+   @b{end} Language_Processing;}
 
+@noindent
 Then the final configuration file will look like:
 
-@smallexample
-   package Language_Processing is
-      for Attr1 use ("foo");
-      for Attr1 use ("bar");
-   end Language_Processing;
-@end smallexample
+@CODESAMPLE{@b{package} Language_Processing @b{is}@NL{}
+  @b{for} Attr1 @b{use} ("foo");@NL{}
+  @b{for} Attr1 @b{use} ("bar");@NL{}
+@b{end} Language_Processing;}
 
+@noindent
 As a result, to avoid conflicts, it is recommended that the chunks be
 written so that they easily collaborate together. For instance, if we
 want to obtain something equivalent to
-@smallexample
-   package Language_Processing is
-      for Attr1 use ("foo", "bar");
-   end Language_Processing;
-@end smallexample
-the two chunks above should be written as:
-@smallexample
-chunk1:
-   package Language_Processing is
-      for Attr1 use Language_Processing'Attr1 & ("foo");
-   end Language_Processing;
-chunk2:
-   package Language_Processing is
-      for Attr1 use Language_Processing'Attr1 & ("bar");
-   end Language_Processing;
-@end smallexample
 
+@CODESAMPLE{@b{package} Language_Processing @b{is}@NL{}
+  @b{for} Attr1 @b{use} ("foo", "bar");@NL{}
+@b{end} Language_Processing;}
+
+@noindent
+the two chunks above should be written as:
+
+@CODESAMPLE{chunk1:@NL{}
+  @b{package} Language_Processing @b{is}@NL{}
+    @b{for} Attr1 @b{use} Language_Processing'Attr1 & ("foo");@NL{}
+  @b{end} Language_Processing;@NL{}
+chunk2:@NL{}
+  @b{package} Language_Processing @b{is}@NL{}
+    @b{for} Attr1 @b{use} Language_Processing'Attr1 & ("bar");@NL{}
+  @b{end} Language_Processing;}
+
+@noindent
 The chunks are described in a @code{<configuration>} XML node. The most
 important child of such a node is @code{<config>}, which contains the
 chunk itself. For instance, one would write:
 
-@smallexample
-<configuration>
-  ...  list of filters, see below
-  <config>
-   package Language_Processing is
-      for Attr1 use Language_Processing'Attr1 & ("foo");
-   end Language_Processing;
-  </config>
-</configuration>
-@end smallexample
+@CODESAMPLE{<configuration>@NL{}
+  @i{...  list of filters, see below}@NL{}
+  <config>@NL{}
+   @b{package} Language_Processing @b{is}@NL{}
+      @b{for} Attr1 @b{use} Language_Processing'Attr1 & ("foo");@NL{}
+   @b{end} Language_Processing;@NL{}
+  </config>@NL{}
+</configuration>}
 
-If @code{<config>} is an empty node (ie "<config/>" or "<config></config>")
-was used, then the combination of selected compilers will be reported as
-invalid, in the sense that we know that code compiled with these compilers
-cannot be linked together. As a result, @value{gprconfig} will not create
-the configuration file.
+@noindent
+If @code{<config>} is an empty node (ie @samp{<config/>} or
+@samp{<config></config>}) was used, then the combination of selected
+compilers will be reported as invalid, in the sense that we know that code
+compiled with these compilers cannot be linked together. As a result,
+@value{gprconfig} will not create the configuration file.
 
-When the @code{<configuration>} node has a single @code{<compilers>}
-child, special substrings are substituted in the chunk. These are the same as
-described for External Values in a previous section, i.e. "$RUNTIME",
-"$PATH", "$RUNTIME_DIR", "$OUTPUT_DIR", "$VERSION", "$LANGUAGE", "$HOST"
-and "$TARGET". Their
-values are those of the first compiler in @code{<compilers>} that matched.
-"$OUTPUT_DIR" is the directory in which the generated configuration file will
-be created.
+The special variables (@pxref{gprconfig variable substitution}) are also
+substituted in the chunk. That allows you to compute some attributes of the
+compiler (its path, the runtime,@dots{}), and use them when generating the
+chunks.
 
 The filters themselves are of course defined through XML tags, and can
 be any of:
 
-@itemize @bullet
-@item @code{<compilers negate="false">}
+@table @code
+@item <compilers negate="false">
 
 This filter contains a list of @code{<compiler>} children. The
 @code{<compilers>} filter matches if any of its children match.
@@ -2067,77 +2123,72 @@ chunks. For instance, the following code would be used to describe
 the linker switches to use when GNAT 5.05 or 5.04 is used in addition to
 g++ 3.4.1:
 
-@smallexample
-<configuration>
-  <compilers>
-    <compiler name="GNAT" version="5.04" />
-    <compiler name="GNAT" version="5.05" />
-  </compilers>
-  <compilers>
-    <compiler name="G++" version="3.4.1" />
-  </compilers>
-  ...
-</configuration>
-@end smallexample
+@CODESAMPLE{<configuration>@NL{}
+  <compilers>@NL{}
+    <compiler name="GNAT" version="5.04" />@NL{}
+    <compiler name="GNAT" version="5.05" />@NL{}
+  </compilers>@NL{}
+  <compilers>@NL{}
+    <compiler name="G++" version="3.4.1" />@NL{}
+  </compilers>@NL{}
+  ...@NL{}
+</configuration>}
 
-If the attribute "negate" is "true", then the meaning of this filter is
-inverted, and it will match if none of its children matches.
+@noindent
+If the attribute @var{negate} is @samp{true}, then the meaning of this
+filter is inverted, and it will match if none of its children matches.
 
 The format of the @code{<compiler>} is the following:
-@smallexample
-   <compiler name="name" version="..." runtime="..." language="..." />
-@end smallexample
 
+@CODESAMPLE{<compiler name="name" version="..."@NL{}
+   runtime="..." language="..." />}
+
+@noindent
 The name and language attributes, when specified, match
 the corresponding attributes used in the @code{<compiler_description>}
 children. All other attributes are regular expressions, that are matched
 against the corresponding selected compilers. When an attribute is not
 specified, it will always match. Matching is done in a case-insensitive
 manner.
+
 For instance, to check a GNAT compiler in the 5.x family, use:
 
-@smallexample
-   <compiler name="GNAT" version="5.\d+" />
-@end smallexample
+@CODESAMPLE{<compiler name="GNAT" version="5.\d+" />}
 
-@item @code{<hosts negate="false">}
+@item <hosts negate="false">
 
 This filter contains a list of @code{<host>} children. It matches when
 any of its children matches. You can specificy only one @code{<hosts>}
 node.
 The format of @code{<host>} is a node with a single mandatory attribute
-@code{"name"}, which is a regexp matched against the architecture on
+@var{name}, which is a regexp matched against the architecture on
 which @value{gprconfig} is running. The name of the architecture was
 computed by @code{configure} when @value{gprconfig} was built.
 
-If the "negate" attribute is "true", then the meaning of this filter is
-inverted, and it will match when none of its children matches.
+If the @var{negate} attribute is @samp{true}, then the meaning of this
+filter is inverted, and it will match when none of its children matches.
 
 For instance, to active a chunk only if the compiler is running on an
 intel linux machine, use:
 
-@smallexample
-   <hosts>
-      <host name="i.86-.*-linux(-gnu)?" />
-   </hosts>
-@end smallexample
+@CODESAMPLE{<hosts>@NL{}
+  <host name="i.86-.*-linux(-gnu)?" />@NL{}
+</hosts>}
 
-@item @code{<targets negate="false">}
+@item <targets negate="false">
 
 This filter contains a list of @code{<target>} children. It behaves
 exactly like @code{<hosts>}, but matches against the architecture
 targeted by the selected compilers. For instance, to activate a chunk
 only when the code is targeted for linux, use:
 
-If the "negate" attribute is "true", then the meaning of this filter is
-inverted, and it will match when none of its children matches.
+If the @var{negate} attribute is @samp{true}, then the meaning of this filter
+is inverted, and it will match when none of its children matches.
 
-@smallexample
-   <targets>
-      <target name="i.86-.*-linux(-gnu)?" />
-   </targets>
-@end smallexample
-@end itemize
+@CODESAMPLE{<targets>@NL{}
+  <target name="i.86-.*-linux(-gnu)?" />@NL{}
+</targets>}
+@end table
 
 @c  ------------------------------------------------------------------------
 @node Configuration File Reference
