@@ -1675,18 +1675,41 @@ package body Buildgpr is
    begin
       --  Build the libraries, if any
 
-      for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-         if Project_Tree.Projects.Table (Proj).Library
-           and then Project_Tree.Projects.Table (Proj).Extended_By = No_Project
-           and then not Project_Tree.Projects.Table (Proj).Externally_Built
-         then
-            Build_Library (Proj);
+      --  First, get the libraries in building order in table Library_Projs
 
-            if Project_Tree.Projects.Table (Proj).Library_Kind /= Static then
-               Shared_Libs := True;
-            end if;
-         end if;
-      end loop;
+      Process_Imported_Libraries (Main_Project);
+
+      if Library_Projs.Last > 0 then
+         declare
+            Lib_Projs : array (1 .. Library_Projs.Last) of Project_Id;
+            Proj      : Project_Id;
+
+         begin
+            --  Copy the list of library projects in local array Lib_Projs,
+            --  as procedure Build_Library uses table Library_Projs.
+
+            for J in 1 .. Library_Projs.Last loop
+               Lib_Projs (J) := Library_Projs.Table (J);
+            end loop;
+
+            for J in Lib_Projs'Range loop
+               Proj := Lib_Projs (J);
+
+               if Project_Tree.Projects.Table (Proj).Extended_By = No_Project
+                  and then
+                  not Project_Tree.Projects.Table (Proj).Externally_Built
+               then
+                  Build_Library (Proj);
+
+                  if Project_Tree.Projects.Table (Proj).Library_Kind /=
+                     Static
+                  then
+                     Shared_Libs := True;
+                  end if;
+               end if;
+            end loop;
+         end;
+      end if;
 
       --  Check if there is a need to call a binder driver
 
