@@ -106,6 +106,13 @@ package body GprConfig.Knowledge is
       External : Node);
    --  Parse an XML node that describes an external value
 
+   function Get_Variable_Value
+     (Comp : Compiler;
+      Name : String) return String;
+   --  Return the value of a predefined or user-defined variable.
+   --  If the variable is not defined a warning is emitted and an empty
+   --  string is returned.
+
    procedure Put_Verbose (Config : Configuration);
    --  Debug put for Config
 
@@ -645,6 +652,18 @@ package body GprConfig.Knowledge is
                File     => File,
                External => N);
 
+         elsif Node_Name (N) = "variable" then
+            declare
+               Name   : constant String := Get_Attribute (N, "name", "@@");
+            begin
+               Append (Compiler.Variables, (Typ      => Value_Variable,
+                                            Var_Name => TU (Name)));
+               Parse_External_Value
+                 (Value    => Compiler.Variables,
+                  File     => File,
+                  External => N);
+            end;
+
          elsif Node_Name (N) = "languages" then
             Parse_External_Value
               (Value    => Compiler.Languages,
@@ -940,6 +959,42 @@ package body GprConfig.Knowledge is
          raise Invalid_Knowledge_Base;
    end Parse_Knowledge_Base;
 
+   ------------------------
+   -- Get_Variable_Value --
+   ------------------------
+
+   function Get_Variable_Value
+     (Comp : Compiler;
+      Name : String) return String
+   is
+   begin
+      if Name = "HOST" then
+         return Sdefault.Hostname;
+      elsif Name = "TARGET" then
+         return To_String (Comp.Target);
+      elsif Name = "RUNTIME_DIR" then
+         return Name_As_Directory (To_String (Comp.Runtime_Dir));
+      elsif Name = "EXEC" then
+         return To_String (Comp.Executable);
+      elsif Name = "VERSION" then
+         return To_String (Comp.Version);
+      elsif Name = "LANGUAGE" then
+         return To_String (Comp.Language);
+      elsif Name = "RUNTIME" then
+         return To_String (Comp.Runtime);
+      elsif Name = "PREFIX" then
+         return To_String (Comp.Prefix);
+      elsif Name = "PATH" then
+         return Name_As_Directory (To_String (Comp.Path));
+      elsif Name = "GPRCONFIG_PREFIX" then
+         return Get_Program_Directory;
+      elsif Variables_Maps.Contains (Comp.Variables, TU (Name)) then
+         return To_String (Variables_Maps.Element (Comp.Variables, TU (Name)));
+      end if;
+      Put_Line (Standard_Error, "variable '" & Name & "' is not defined");
+      return "";
+   end Get_Variable_Value;
+
    -----------------------------
    -- Substitute_Special_Dirs --
    -----------------------------
@@ -983,32 +1038,15 @@ package body GprConfig.Knowledge is
 
             Append (Result, Str (Last ..  Pos - 1));
 
-            if Str (Word_Start .. Word_End) = "HOST" then
-               Append (Result, Sdefault.Hostname);
-            elsif Str (Word_Start .. Word_End) = "TARGET" then
-               Append (Result, Comp.Target);
-            elsif Str (Word_Start .. Word_End) = "RUNTIME_DIR" then
-               Append
-                 (Result, Name_As_Directory (To_String (Comp.Runtime_Dir)));
-            elsif Str (Word_Start .. Word_End) = "EXEC" then
-               Append (Result, Comp.Executable);
-            elsif Str (Word_Start .. Word_End) = "VERSION" then
-               Append (Result, Comp.Version);
-            elsif Str (Word_Start .. Word_End) = "VERSION2" then
-               Append (Result, Comp.Version2);
-            elsif Str (Word_Start .. Word_End) = "LANGUAGE" then
-               Append (Result, Comp.Language);
-            elsif Str (Word_Start .. Word_End) = "RUNTIME" then
-               Append (Result, Comp.Runtime);
-            elsif Str (Word_Start .. Word_End) = "PREFIX" then
-               Append (Result, Comp.Prefix);
-            elsif Str (Word_Start .. Word_End) = "PATH" then
-               Append (Result, Name_As_Directory (To_String (Comp.Path)));
-            elsif Str (Word_Start .. Word_End) = "OUTPUT_DIR" then
-               Append (Result, Name_As_Directory (Output_Dir));
-            elsif Str (Word_Start .. Word_End) = "GPRCONFIG_PREFIX" then
-               Append (Result, Get_Program_Directory);
-            end if;
+            declare
+               Name : String renames Str (Word_Start .. Word_End);
+            begin
+               if Name = "OUTPUT_DIR" then
+                  Append (Result, Output_Dir);
+               else
+                  Append (Result, Get_Variable_Value (Comp, Name));
+               end if;
+            end;
 
             Last := Tmp;
             Pos  := Last;
@@ -1220,6 +1258,9 @@ package body GprConfig.Knowledge is
             Node := External_Value_Nodes.Element (Node_Cursor);
 
             case Node.Typ is
+               when Value_Variable =>
+                  Extracted_From := Node.Var_Name;
+
                when Value_Constant =>
                   Tmp_Result := To_Unbounded_String
                     (Substitute_Special_Dirs
@@ -1235,7 +1276,6 @@ package body GprConfig.Knowledge is
                      Command : constant String := Substitute_Special_Dirs
                        (To_String (Node.Command), Comp, Output_Dir => "");
                   begin
-                     Extracted_From := Null_Unbounded_String;
                      Tmp_Result     := Null_Unbounded_String;
                      declare
                         Args   : Argument_List_Access :=
@@ -1412,6 +1452,8 @@ package body GprConfig.Knowledge is
                null;
          end case;
 
+         Extracted_From := Null_Unbounded_String;
+
          Next (Node_Cursor);
       end loop;
    end Get_External_Value;
@@ -1490,6 +1532,7 @@ package body GprConfig.Knowledge is
       Version   : External_Value_Lists.List;
       Languages : External_Value_Lists.List;
       Runtimes  : External_Value_Lists.List;
+      Variables : External_Value_Lists.List;
       Comp      : Compiler;
       C, C2     : External_Value_Lists.Cursor;
    begin
@@ -1540,18 +1583,6 @@ package body GprConfig.Knowledge is
       --  must be able to find a valid value, or the compiler is simply ignored
 
       Get_External_Value
-        ("languages",
-         Value            => Descr.Languages,
-         Comp             => Comp,
-         Split_Into_Words => True,
-         Processed_Value  => Languages);
-      if Is_Empty (Languages) then
-         Put_Verbose ("Ignore compiler, since no language could be computed");
-         Continue := True;
-         return;
-      end if;
-
-      Get_External_Value
         ("version",
          Value            => Descr.Version,
          Comp             => Comp,
@@ -1566,9 +1597,47 @@ package body GprConfig.Knowledge is
 
       Comp.Version := External_Value_Lists.Element (First (Version)).Value;
 
-      if Length (Version) >= 2 then
-         Comp.Version2 :=
-           External_Value_Lists.Element (Next (First (Version))).Value;
+      Get_External_Value
+        ("variables",
+         Value            => Descr.Variables,
+         Comp             => Comp,
+         Split_Into_Words => False,
+         Processed_Value  => Variables);
+
+      C := First (Variables);
+      while Has_Element (C) loop
+         declare
+            Name : Ada.Strings.Unbounded.Unbounded_String renames
+              External_Value_Lists.Element (C).Extracted_From;
+            Val  : Ada.Strings.Unbounded.Unbounded_String renames
+              External_Value_Lists.Element (C).Value;
+         begin
+            if Val = Null_Unbounded_String then
+               Put_Verbose ("Ignore compiler since variable '"
+                            & To_String (Name) & "' is empty");
+               Continue := True;
+               return;
+            end if;
+            if Variables_Maps.Contains (Comp.Variables, Name) then
+               Put_Line (Standard_Error, "Variable '" & To_String (Name)
+                         & "' is already defined");
+            else
+               Variables_Maps.Insert (Comp.Variables, Name, Val);
+            end if;
+         end;
+         Next (C);
+      end loop;
+
+      Get_External_Value
+        ("languages",
+         Value            => Descr.Languages,
+         Comp             => Comp,
+         Split_Into_Words => True,
+         Processed_Value  => Languages);
+      if Is_Empty (Languages) then
+         Put_Verbose ("Ignore compiler, since no language could be computed");
+         Continue := True;
+         return;
       end if;
 
       Get_External_Value

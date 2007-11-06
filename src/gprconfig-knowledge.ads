@@ -29,9 +29,11 @@
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Hashed_Maps;
+with Ada.Containers.Hashed_Maps;
 with Ada.Containers.Vectors;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;
+with Ada.Strings.Unbounded.Hash;
 with GNAT.Regpat;
 
 package GprConfig.Knowledge is
@@ -69,6 +71,13 @@ package GprConfig.Knowledge is
      range 1 .. Targets_Set_Id'Last;
    --  Known targets set.  They are in the base.
 
+   package Variables_Maps is new Ada.Containers.Hashed_Maps
+     (Key_Type        => Ada.Strings.Unbounded.Unbounded_String,
+      Element_Type    => Ada.Strings.Unbounded.Unbounded_String,
+      Hash            => Ada.Strings.Unbounded.Hash,
+      Equivalent_Keys => Ada.Strings.Unbounded."=",
+      "="             => Ada.Strings.Unbounded."=");
+
    type Compiler is record
       Name        : Ada.Strings.Unbounded.Unbounded_String;
       Executable  : Ada.Strings.Unbounded.Unbounded_String;
@@ -76,7 +85,7 @@ package GprConfig.Knowledge is
       Targets_Set : Targets_Set_Id;
       Path        : Ada.Strings.Unbounded.Unbounded_String;
       Version     : Ada.Strings.Unbounded.Unbounded_String;
-      Version2    : Ada.Strings.Unbounded.Unbounded_String;
+      Variables   : Variables_Maps.Map;
       Prefix      : Ada.Strings.Unbounded.Unbounded_String;
       Runtime     : Ada.Strings.Unbounded.Unbounded_String;
       Runtime_Dir : Ada.Strings.Unbounded.Unbounded_String;
@@ -222,6 +231,7 @@ private
       Targets_Set => Unknown_Targets_Set,
       Executable  => Ada.Strings.Unbounded.Null_Unbounded_String,
       Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Variables   => Variables_Maps.Empty_Map,
       Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Version2    => Ada.Strings.Unbounded.Null_Unbounded_String,
       Prefix      => Ada.Strings.Unbounded.Null_Unbounded_String,
@@ -240,6 +250,7 @@ private
                                 Value_Grep,
                                 Value_Filter,
                                 Value_Must_Match,
+                                Value_Variable,
                                 Value_Done);
    type External_Value_Node
      (Typ : External_Value_Type := Value_Constant) is
@@ -260,6 +271,8 @@ private
                Filter          : Ada.Strings.Unbounded.Unbounded_String;
             when Value_Must_Match =>
                Must_Match      : Ada.Strings.Unbounded.Unbounded_String;
+            when Value_Variable =>
+               Var_Name        : Ada.Strings.Unbounded.Unbounded_String;
             when Value_Done =>
                null;
          end case;
@@ -279,10 +292,11 @@ private
       Executable    : Ada.Strings.Unbounded.Unbounded_String;
       Executable_Re : Pattern_Matcher_Access;
       Prefix_Index  : Integer := -1;
+      Target        : External_Value;
       Version       : External_Value;
+      Variables     : External_Value;
       Languages     : External_Value;
       Runtimes      : External_Value;
-      Target        : External_Value;
    end record;
    --  Executable_Re is only set if the name of the <executable> must be
    --  taken as a regular expression.
