@@ -233,7 +233,6 @@ private
       Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
       Variables   => Variables_Maps.Empty_Map,
       Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Version2    => Ada.Strings.Unbounded.Null_Unbounded_String,
       Prefix      => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime     => Ada.Strings.Unbounded.Null_Unbounded_String,
       Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
