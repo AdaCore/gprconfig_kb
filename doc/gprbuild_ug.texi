@@ -1,6 +1,5 @@
 \input texinfo   @c -*-texinfo-*-
 @input texiplus
-@c %**start of header
 
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 @c                                                                            o
@@ -17,8 +16,110 @@
 @setchapternewpage odd
 @syncodeindex fn cp
 
-@titlepage
+@set gprconfig @emph{gprconfig}
 
+@c ------------------------------- macro
+@c This macro can be used to insert code sample. Each line should end with
+@c @NL{}, since otherwise texinfo doesn't guarantee that newlines will be
+@c preserved
+@macro CODESAMPLE{TXT}
+@ifhtml
+@smallexample
+@group
+\TXT\
+@end group
+@end smallexample
+@end ifhtml
+@ifnothtml
+@cartouche
+@example
+@group
+\TXT\
+@end group
+@end example
+@end cartouche
+@end ifnothtml
+@end macro
+
+@c simulates a newline when in a @CODESAMPLE
+@macro NL{}
+@end macro
+
+@c --------------------------- macro
+@c This macro can be used to insert a "Tip" or "Did you know" box. In HTML,
+@c this box is displayed in the right margin of the text, and thus doesn't
+@c disturbs the normal reading flow, but provides additional useful
+@c information. A small icon is displayed on the left of the box.
+@c Calls to this macro should be followed by @noindent for proper rendering
+@c in pdf
+@macro TIP{TXT}
+@ifhtml
+@html
+<div class="tip">
+@end html
+\TXT\
+@html
+</div>
+@end html
+@end ifhtml
+@ifnothtml
+@quotation
+@noindent
+@image{tip,15pt}  \TXT\
+@end quotation
+@end ifnothtml
+@end macro
+
+@c -------------------------- macro
+@c This macro can be used to insert an "Important" box in the text.
+@c This box is displayed inline in the main body of the text, but is
+@c surrounded by a frame, and has a small icon on the left.
+@c Calls to this macro should be followed by @noindent for proper rendering
+@c in pdf
+@macro IMPORTANT{TXT}
+@ifhtml
+@html
+<div class="important">
+@end html
+\TXT\
+@html
+</div>
+@end html
+@end ifhtml
+@ifnothtml
+@quotation
+@noindent
+@image{important,15pt}  \TXT\
+@end quotation
+@end ifnothtml
+@end macro
+
+@c ------------------------- macro
+@c This macro can be used to insert a "Note" box in the text. It is
+@c displayed inline in the main body of the text, but has a different
+@c icon that the "Important" box
+@c Calls to this macro should be followed by @noindent for proper rendering
+@c in pdf
+@macro NOTE{TXT}
+@ifhtml
+@html
+<div class="note">
+@end html
+\TXT\
+@html
+</div>
+@end html
+@end ifhtml
+@ifnothtml
+@quotation
+@noindent
+@image{note,15pt}  \TXT\
+@end quotation
+@end ifnothtml
+@end macro
+@c ---------------------------
+
+@titlepage
 @title GPRbuild User's Guide
 @subtitle Document revision level <<TBD>>
 @subtitle Date: <<TBD>>
@@ -40,25 +141,18 @@ are preserved on all copies.
 @top GPRBUILD User's Guide
 
 @noindent
-@c GPRbuild User's Guide@*
-@c Document revision level <<TBD>>@*
-@c Date: <<TBD>>@*
-@*
-@noindent
-AdaCore@*
-
 @menu
 * Introduction::
 * Guided Tour::
 * Important Concepts::
 * Building with GPRbuild::
 * Cleaning up with GPRclean::
-* Configuring with GPRconfig::
+* Configuring with gprconfig::
 * Configuration File Reference::
 * Index::
 
 @detailmenu
- --- The Detailed Contents ---@*
+ --- The Detailed Contents ---
 
 Introduction
 
@@ -83,8 +177,8 @@ Building with GPRbuild
 
 Cleaning up with GPRclean
 
-Configuring with GPRconfig
-* Using GPRconfig::
+Configuring with gprconfig
+* Using gprconfig::
 * Description of the knowledge base::
 * General file format::
 * Compiler description::
@@ -203,8 +297,8 @@ defined in your projects and the compilers on your path. In more
 involved situations -- such as cross compilation, or
 environments with several compilers for the same language --
 you may need to control more precisely the generation of
-the desired configuration of toolsets. A tool, @code{GPRconfig}, described in
-@ref{Configuring with GPRconfig}), offers this capability. In this
+the desired configuration of toolsets. A tool, @value{gprconfig}, described in
+@ref{Configuring with gprconfig}), offers this capability. In this
 chapter most of the examples can use autoconfiguration.
 
 GPRbuild will start its build process by trying to locate a configuration
@@ -225,11 +319,12 @@ configuration file when:
 @end itemize
 
 @noindent
-GPRconfig provides several ways of generating configuration files. By
+@value{gprconfig} provides several ways of generating configuration files. By
 default, a simple interactive mode lists all the known compilers for all
 known languages. You can then select a compiler for each of the languages;
 once a compiler has been selected, only compatible compilers for other
-languages are proposed. Here are a few examples of GPRconfig invocation:
+languages are proposed. Here are a few examples of @value{gprconfig}
+invocation:
 @itemize
 @item
 The following command triggers interactive mode. The configuration will be
@@ -873,7 +968,7 @@ If GPRbuild is invoked without switch @option{--config=} or
 @option{--autoconf=}, then GPRbuild will look for a configuration
 project file "default.cgpr". If there is no such file in the default
 locations expected by GPRbuild (<install>/share/gpr and the current
-directory) then GPRbuild will invoke GPRconfig with
+directory) then GPRbuild will invoke @value{gprconfig} with
 the languages no the project files, and create a configuration project
 file "auto.cgpr" in the object directory of the main project. The project
 "auto.cgpr" will be rebuild at each GPRbuild invokation unless you use
@@ -966,7 +1061,7 @@ This specifies a configuration project file name that already exists
 or will be created automatically. Option @option{--autoconf=} cannot
 be specified more than once. If the configuration project file
 specified with @option{--autoconf=} exists, then it is
-used. Otherwise, GPRconfig is invoked to create it automatically.
+used. Otherwise, @value{gprconfig} is invoked to create it automatically.
 
 Note: @option{--config} and @option{--autoconf} cannot both be specified.
 
@@ -1140,7 +1235,7 @@ $ gprbuild --config=my_standard.cgpr -P my_project.gpr
 
 If GPRbuild cannot find the main configuration project on the configuration
 project path, then it will look for all the languages specified in the user
-project tree and invoke GPRconfig to create a configuration project file
+project tree and invoke @value{gprconfig} to create a configuration project file
 named "auto.cgpr" and located in the object directory of the main project file.
 
 Once it has found the configuration project, GPRbuild will process its
@@ -1314,7 +1409,7 @@ The switches for GPRclean are:
 This specifies a configuration project file name that already exists or will
 be created automatically. Option @option{--autoconf=}
 cannot be specified more than once. If the configuration project file specified
-with @option{--autoconf=} exists, then it is used. Otherwise, GPRconfig is
+with @option{--autoconf=} exists, then it is used. Otherwise, @value{gprconfig} is
 invoked to create it automatically.
 
 @item  @option{-c} : Only delete compiler generated files. Do not delete
@@ -1347,12 +1442,12 @@ invoked to create it automatically.
 @end itemize
 
 @c  ------------------------------------------------------------------------
-@node Configuring with GPRconfig
-@chapter Configuring with GPRconfig
+@node Configuring with gprconfig
+@chapter Configuring with gprconfig
 @c ----------------------------------------------------------------------
 
 @menu
-* Using GPRconfig::
+* Using gprconfig::
 * Description of the knowledge base::
 * General file format::
 * Compiler description::
@@ -1360,83 +1455,88 @@ invoked to create it automatically.
 @end menu
 
 @c ----------------------------------------------------------------------
-@node Using GPRconfig
-@section Using GPRconfig
+@node Using gprconfig
+@section Using gprconfig
 @c ---------------------------------------------------------------------
 
 @subsection Description
 
 @noindent
-GPRconfig is a tool intended to help you generate the configuration
+@value{gprconfig} is a tool intended to help you generate the configuration
 files for GPRbuild. It automatically detects the available compilers
 on your system. Once you have selected the one needed for your
 application, it generates the proper configuration file.
 
+@NOTE{In general, you will not launch @value{gprconfig} explicitly. Instead, it is
+used implicitly by GPRbuild through the use of @code{--config} and
+@code{--autoconf} switches}
+
 @subsection Command line arguments
 
 @noindent
-GPRconfig supports several command line switches. The most important
-switches are:
+@value{gprconfig} supports several command line switches. The following is an
+exhaustive list.
 
-@table @code
+@table @option
 @item --target=target
-This indicates the intended machine on which your application should
-be run. Examples include 'i686-pc-linux-gnu', 'sparc-solaris' or
-'x86-windows'.
+@TIP{Use @option{--target} to specify on which machine your application will
+run}
 
-Since different compilers will often return a different
-name for those targets, GPRconfig has an extensive knowledge of which
-targets are compatible, and will for instance accept 'x86-linux' as
-an alias for 'i686-pc-linux-gnu'.
+This switch indicates the machine on which your application will
+be run. Examples include @samp{i686-pc-linux-gnu}, @samp{sparc-solaris} or
+@samp{x86-windows}. Since different compilers will often return a different
+name for those targets, @value{gprconfig} has an extensive knowledge of which
+targets are compatible, and will for instance accept @samp{x86-linux} as
+an alias for @samp{i686-pc-linux-gnu}.
+The default target is the machine on which @value{gprconfig} is run.
 
-If you enter the special target 'all', then all compilers found on the
-PATH will be displayed.
-
-By default, the target is the one corresponding to the machine on
-which GPRconfig is run.
+If you enter the special target @samp{all}, then all compilers found on the
+@env{PATH} will be displayed.
 
 @item --show-targets
-As mentioned above, GPRconfig knows which targets are compatible. You
+As mentioned above, @value{gprconfig} knows which targets are compatible. You
 can use this switch to find the list of targets that are compatible
 with @code{--target}.
 
 @item --config=language[,version[,runtime[,path[,name]]]]
-This switch has a lot of optional arguments, which you can omit simply
-by passing the empty string. Its intent is to preselect one or more
-compiler directly from the command line.
+@TIP{Use @option{--config} to automatically select the first matching
+compiler}
 
-Most generally, only the language needs to be specified, and the first
-compiler on the @code{PATH} that matches will be selected. For a
-multi-language application programmed in C and Ada, the command line
-would generally include
+The intent of this switch is to preselect one or more compilers directly
+from the command line. This switch takes several optional arguments, which
+you can omit simply by passing the empty string. When omitted, the arguments
+will be computed automatically by @value{gprconfig}.
 
-@smallexample
---config=Ada --config=C
-@end smallexample
+In general, only @option{language} needs to be specified, and the first
+compiler on the @env{PATH} that can compile this language will be selected.
+For a multi-language application programmed in C and Ada, the command line
+would for instance be:
 
-@code{path} is the directory that contains the compiler executable, for instance
-@file{/usr/bin} (and not the installation prefix @file{/usr}).
+@CODESAMPLE{--config=Ada --config=C}
 
-@code{name} should be one of the compiler names defined in the GPRconfig
-knowledge base. The list of supported names is visible in the output of
-@code{--help}, and includes "GNAT", "GCC",@dots{}. This name is generally
-not needed, but can be used to distinguish when several compilers could match
-the other arguments of @code{--config}.
+@option{path} is the directory that contains the compiler executable, for
+instance @file{/usr/bin} (and not the installation prefix @file{/usr}).
 
-The arguments that are left unspecified will be automatically computed by
-GPRconfig.
+@option{name} should be one of the compiler names defined in the @value{gprconfig}
+knowledge base. The list of supported names can be found in the output of
+@option{--help}, and includes @samp{GNAT}, @samp{GCC},@dots{}. This name is
+generally not needed, but can be used to distinguish when several compilers
+could match the other arguments of @option{--config}.
 
-@smallexample
-  gprconfig --config Ada,,,/usr/bin       # automatic parameters
-  gprconfig --config C,,,/usr/bin,GCC     # automatic version
-@end smallexample
+@CODESAMPLE{gprconfig --config Ada,,,/usr/bin       # automatic parameters@NL{}
+gprconfig --config C,,,/usr/bin,GCC     # automatic version}
 
 @item --batch
-If this switch is specified, GPRconfig automatically selects the first
+@TIP{Use @option{--batch} to generate the configuration file with no use
+interaction}
+
+If this switch is specified, @value{gprconfig} automatically selects the first
 compiler matching each of the @code{--config} switch, and generate the
 configuration file immediately. It will not display an interactive menu.
 
 @item -o file
+@TIP{Use @option{-o} to specify the name of the configuration file to generate}
+
 This specifies the name of the configuration file that will be generated.
 If this switch is not specified, a default file is generated in the
 installation directory of GPRbuild (assuming you have write access to
@@ -1446,31 +1546,33 @@ to GPRbuild.
 
 @item --db directory
 @itemx --db-
-Indicates another directory that should be parsed for GPRconfig's knowledge
+Indicates another directory that should be parsed for @value{gprconfig}'s knowledge
 base. Most of the time this is only useful if you are creating your own
-XML description files locally. The second version of thie switch prevents
-GPRconfig from reading its default knowledge base.
+XML description files locally. The second version of the switch prevents
+@value{gprconfig} from reading its default knowledge base.
+
+@item -h
+Generates a brief help message listing all GPconfig switches and the
+default value for their arguments. This includes the location of the
+knowledge base, the default target,@dots{}
 
 @end table
-
-For a list and brief overview of all the switches, run GPRconfig using
-the switch @code{-h}.
 
 @subsection Interactive use
 
 @noindent
-When you launch GPRconfig, it will first search for all compilers it
-can find on your @code{PATH}, that match the target specified by
-@code{--target}. It is recommended, although not
+When you launch @value{gprconfig}, it first searches for all compilers it
+can find on your @env{PATH}, that match the target specified by
+@option{--target}. It is recommended, although not
 mandatory, that you put the compilers that you expect to use for your
-application in your @code{PATH} before you launch @code{GPRconfig},
+application in your @env{PATH} before you launch @command{gprconfig},
 since that simplifies the setup.
 
-@code{GPRconfig} then displays the list of all the compilers
+@value{gprconfig} then displays the list of all the compilers
 it has found, along with the language they can compile, the runtime
 they use (when applicable),@dots{}. It then waits until you select
 one of the compilers.  This list is sorted by language, then by order
-in the @code{PATH} environment variable (so that compilers that you
+in the @env{PATH} environment variable (so that compilers that you
 are more likely to use appear first), then by runtime names and
 finally by version of the compiler.  The idea is that the first
 compiler for any language is most likely the one you want to use.
@@ -1482,23 +1584,24 @@ already selected, it is deselected.
 
 The list of compilers is then displayed again, but some filtering has been
 performed: only compilers that target the same platform as the selected
-compiler are now displayed. @code{GPRconfig} then checks whether it is
+compiler are now displayed. @value{gprconfig} then checks whether it is
 possible to link sources compiled with the selected compiler and each of
 the remaining compilers; when linking is not possible, the compiler is not
 displayed. Likewise, all compilers for the same language are hidden, so that
-you can only select one compiler per language. If you need to compile your
-application with several C compilers for instance, you should create another
-language, for instance called C2, for that purpose. That will give you the
-flexibility to indicate in the project files which compiler should be used
-for which sources.
+you can only select one compiler per language.
+
+If you need to compile your application with several C compilers for instance,
+you should create another language, for instance called C2, for that purpose.
+That will give you the flexibility to indicate in the project files which
+compiler should be used for which sources.
 
 The goal of this filtering is to make it more obvious whether you have
 good chances of being able to link. There is however no guarantee that
-@code{GPRconfig} will know for sure how to link any combination of the
+@value{gprconfig} will know for sure how to link any combination of the
 remaining compilers.
 
-You can select as many compilers as are used in your application. Once you
-are done selecting the compilers, select "s", and @code{GPRconfig} will
+You can select as many compilers as are needed by your application. Once you
+are done selecting the compilers, select @key{s}, and @value{gprconfig} will
 generate the configuration file.
 
 @c ----------------------------------------------------------------------
@@ -1507,19 +1610,19 @@ generate the configuration file.
 @c ----------------------------------------------------------------------
 
 @noindent
-@code{GPRconfig} itself has no hard-coded knowledge of compilers. This way,
-no new version of GPRconfig needs to be recompiled when a new compiler
+@value{gprconfig} itself has no hard-coded knowledge of compilers. This way,
+no new version of @value{gprconfig} needs to be recompiled when a new compiler
 is distributed.
 
 All its knowledge is embedded in a set of XML files called the knowledge
 base. Users can easily contribute to this general knowledge base, and have
-@code{GPRconfig} immediately take advantage of this.
+@value{gprconfig} immediately take advantage of this.
 
 The knowledge base contains various kinds of information:
 @itemize @bullet
 @item Compiler description
 
-   When it is run interactively, @code{GPRconfig} will search on the user's
+   When it is run interactively, @value{gprconfig} will search on the user's
    @code{PATH} for known compilers, and try to automatically guess their
    configuration (version, supported languages, supported targets, runtimes,
    @dots{}).
@@ -1563,9 +1666,9 @@ freely create new files, and put them in the knowledge base directory,
 to contribute new knowledge.
 
 The location of the knowledge base is @file{$prefix/share/gprconfig},
-where @file{$prefix} is the directory in which @code{GPRconfig} was
+where @file{$prefix} is the directory in which @value{gprconfig} was
 installed. Any file with extension @file{.xml} in this directory will
-be parsed automatically by GPRconfig at startup.
+be parsed automatically by @value{gprconfig} at startup.
 
 All files must have the following format:
 
@@ -1590,11 +1693,11 @@ put in a single XML files, or split across several files.
 @noindent
 One of the XML tags that can be put as a child of @code{<gprconfig>} is
 @code{<compiler_description>}. This node and its children describe one of
-the compilers known to @code{GPRconfig}. The tool uses them when it
+the compilers known to @value{gprconfig}. The tool uses them when it
 initially looks for all compilers known on the user's @code{PATH}
 environment variable.
 
-This is optional information, but simplifies the use of @code{GPRconfig}.
+This is optional information, but simplifies the use of @value{gprconfig}.
 
 This node doesn't accept any XML attribute. However, it accepts a number
 of child tags that explain how to query the various attributes of the
@@ -1644,7 +1747,7 @@ Therefore if you specify ".*gnatmake" as the regexp, it will not match
 <version><external>$@{PREFIX@}gnatls -v</external></version>
 @end smallexample
 
-@code{GPRconfig} searches in all directories listed on the PATH for such
+@value{gprconfig} searches in all directories listed on the PATH for such
 an executable. When one is found, the rest of the @code{<compiler_description>}
 children are checked to know whether the compiler is valid. The directory
 in which the executable was found becomes the "current directory" for
@@ -1759,7 +1862,7 @@ with:
 @item @code{<directory group="0">regexp</directory>}
 
 If the contents of the node is a @code{<directory}> child, this
-indicates that @code{GPRconfig} should find all the files matching the
+indicates that @value{gprconfig} should find all the files matching the
 regular expression. Regexp is a path relative to the directory that contains
 the @code{<executable>} file, and should use unix directory separators
 (ie '/'), since the actual directory will be converted into this format
@@ -1771,8 +1874,8 @@ constructs can be specified in the regexp:
       @code{<executable>}. It only contains the basename, not the directory
       information.
 @item "$@{HOST@}"  is replaced by the architecture of the host on which
-      GPRconfig is running. This name is hard-coded in GPRconfig itself,
-      and is generated by @code{configure} when GPRconfig was built.
+      @value{gprconfig} is running. This name is hard-coded in @value{gprconfig} itself,
+      and is generated by @code{configure} when @value{gprconfig} was built.
 @item "$@{TARGET@}" is replaced by the target architecture of the compiler,
       as returned by the @code{<target>} node. This is of course not available
       when computing the target itself.
@@ -1788,7 +1891,7 @@ constructs can be specified in the regexp:
 executable
       found through @code{<executable>}. It always ends with a directory
       separator.
-@item "$@{GPRCONFIG_PREFIX@}" is the directory in which GPRconfig
+@item "$@{GPRCONFIG_PREFIX@}" is the directory in which @value{gprconfig}
       was installed (e.g @file{"/usr/local/"} if the executable is
       @file{"/usr/local/bin/gprconfig"}. This directory always ends with a
       directory separator.
@@ -1870,14 +1973,14 @@ of @code{GPRbuild} configuration files.
 Each of these chunks is also put in an XML node that provides optional
 filters. If all the filters match, then the chunk will be merged with other
 similar chunks and put in the final configuration file that is generated
-by @code{GPRconfig}.
+by @value{gprconfig}.
 
 For instance, it is possible to indicate that a chunk should only be
 included if the GNAT compiler with the soft-float runtime is used. Such
 a chunk can for instance be used to ensure that Ada sources are always
 compiled with the @code{-msoft-float} command line switch.
 
-@code{GPRconfig} doesn't do intelligent merging of chunks. All it does
+@value{gprconfig} doesn't do intelligent merging of chunks. All it does
 is group packages together. For instance, if the two chunks are:
 
 @smallexample
@@ -1938,7 +2041,7 @@ chunk itself. For instance, one would write:
 If @code{<config>} is an empty node (ie "<config/>" or "<config></config>")
 was used, then the combination of selected compilers will be reported as
 invalid, in the sense that we know that code compiled with these compilers
-cannot be linked together. As a result, @code{GPRconfig} will not create
+cannot be linked together. As a result, @value{gprconfig} will not create
 the configuration file.
 
 When the @code{<configuration>} node has a single @code{<compilers>}
@@ -2004,8 +2107,8 @@ any of its children matches. You can specificy only one @code{<hosts>}
 node.
 The format of @code{<host>} is a node with a single mandatory attribute
 @code{"name"}, which is a regexp matched against the architecture on
-which @code{GPRconfig} is running. The name of the architecture was
-computed by @code{configure} when @code{GPRconfig} was built.
+which @value{gprconfig} is running. The name of the architecture was
+computed by @code{configure} when @value{gprconfig} was built.
 
 If the "negate" attribute is "true", then the meaning of this filter is
 inverted, and it will match when none of its children matches.
@@ -2067,7 +2170,7 @@ suffix be ".cgpr" (for Configuration GNAT Project), so that it cannot be
 confused with a standard project file which has the suffix ".gpr".
 
 When "default.cgpr" cannot be found in the configuration project path,
-then GPRbuild invokes GPRconfig to create a configuration file.
+then GPRbuild invokes @value{gprconfig} to create a configuration file.
 
 In the description of the attributes that follows, when an attribute is an
 associative array indexed by the language name, for example
