@@ -198,12 +198,11 @@ package body GprConfig.Knowledge is
    --  go, since the regexp might no longer match in the end, if for instance
    --  it includes ".." directories.
 
-   function Substitute_Special_Dirs
+   function Substitute_Variables
      (Str         : String;
       Comp        : Compiler;
       Output_Dir  : String) return String;
-   --  Substitute the special "$..." names in Directory, as described in the
-   --  <directory> tag
+   --  Substitute the special "$..." names.
 
    procedure Match
      (Filter            : Compilers_Filter_Lists.List;
@@ -968,7 +967,9 @@ package body GprConfig.Knowledge is
       Name : String) return String
    is
    begin
-      if Name = "HOST" then
+      if Variables_Maps.Contains (Comp.Variables, TU (Name)) then
+         return To_String (Variables_Maps.Element (Comp.Variables, TU (Name)));
+      elsif Name = "HOST" then
          return Sdefault.Hostname;
       elsif Name = "TARGET" then
          return To_String (Comp.Target);
@@ -988,18 +989,16 @@ package body GprConfig.Knowledge is
          return Name_As_Directory (To_String (Comp.Path));
       elsif Name = "GPRCONFIG_PREFIX" then
          return Get_Program_Directory;
-      elsif Variables_Maps.Contains (Comp.Variables, TU (Name)) then
-         return To_String (Variables_Maps.Element (Comp.Variables, TU (Name)));
       end if;
       Put_Line (Standard_Error, "variable '" & Name & "' is not defined");
       return "";
    end Get_Variable_Value;
 
-   -----------------------------
-   -- Substitute_Special_Dirs --
-   -----------------------------
+   --------------------------
+   -- Substitute_Variables --
+   --------------------------
 
-   function Substitute_Special_Dirs
+   function Substitute_Variables
      (Str         : String;
       Comp        : Compiler;
       Output_Dir  : String) return String
@@ -1038,15 +1037,8 @@ package body GprConfig.Knowledge is
 
             Append (Result, Str (Last ..  Pos - 1));
 
-            declare
-               Name : String renames Str (Word_Start .. Word_End);
-            begin
-               if Name = "OUTPUT_DIR" then
-                  Append (Result, Output_Dir);
-               else
-                  Append (Result, Get_Variable_Value (Comp, Name));
-               end if;
-            end;
+            Append (Result,
+                    Get_Variable_Value (Comp, Str (Word_Start .. Word_End)));
 
             Last := Tmp;
             Pos  := Last;
@@ -1056,7 +1048,7 @@ package body GprConfig.Knowledge is
       end loop;
       Append (Result, Str (Last .. Str'Last));
       return To_String (Result);
-   end Substitute_Special_Dirs;
+   end Substitute_Variables;
 
    --------------------
    -- Parse_All_Dirs --
@@ -1263,7 +1255,7 @@ package body GprConfig.Knowledge is
 
                when Value_Constant =>
                   Tmp_Result := To_Unbounded_String
-                    (Substitute_Special_Dirs
+                    (Substitute_Variables
                      (To_String (Node.Value), Comp, Output_Dir => ""));
                   Put_Verbose
                     (Attribute & ": constant := " & To_String (Tmp_Result));
@@ -1273,7 +1265,7 @@ package body GprConfig.Knowledge is
                     ("PATH",
                      To_String (Comp.Path) & Path_Separator & Saved_Path);
                   declare
-                     Command : constant String := Substitute_Special_Dirs
+                     Command : constant String := Substitute_Variables
                        (To_String (Node.Command), Comp, Output_Dir => "");
                   begin
                      Tmp_Result     := Null_Unbounded_String;
@@ -1307,7 +1299,7 @@ package body GprConfig.Knowledge is
 
                when Value_Directory =>
                   declare
-                     Search : constant String := Substitute_Special_Dirs
+                     Search : constant String := Substitute_Variables
                        (To_String (Node.Directory), Comp, Output_Dir => "");
                   begin
                      if Search (Search'First) = '/' then
@@ -2251,7 +2243,7 @@ package body GprConfig.Knowledge is
         (Name : String; Chunk : String; Prefix : String := "      ")
       is
          C : constant String_Maps.Cursor := Find (Packages, Name);
-         Replaced : constant String := Substitute_Special_Dirs
+         Replaced : constant String := Substitute_Variables
            (Chunk, Selected_Compiler, Output_Dir);
       begin
          if Replaced /= "" then
