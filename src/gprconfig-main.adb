@@ -36,6 +36,7 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Strings;
 with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
+with Namet;                     use Namet;
 
 procedure GprConfig.Main is
    Gprbuild : constant String := "gprbuild";
@@ -213,24 +214,26 @@ procedure GprConfig.Main is
       C    : String_Lists.Cursor;
       Comp : Compiler;
    begin
-      Get_Words (Config, Filter => Null_Unbounded_String, Map => Map,
+      Get_Words (Config, Filter => No_Name, Map => Map,
                  Allow_Empty_Elements => True);
 
       C := First (Map);
-      Comp.Language := TU (Element (C));
+      Comp.Language_Case := Get_String (Element (C));
+      Comp.Language_LC   := Get_String (To_Lower (Element (C)));
       Next (C);
       if Has_Element (C) then
-         Comp.Version := TU (Element (C));
+         Comp.Version := Get_String (Element (C));
          Next (C);
          if Has_Element (C) then
-            Comp.Runtime := TU (Element (C));
+            Comp.Runtime := Get_String (Element (C));
             Next (C);
             if Has_Element (C) then
-               Comp.Path := TU (Normalize_Pathname (Element (C),
-                                                    Case_Sensitive => False));
+               Comp.Path := Get_String
+                 (Normalize_Pathname (Element (C),
+                  Case_Sensitive => False));
                Next (C);
                if Has_Element (C) then
-                  Comp.Name := TU (Element (C));
+                  Comp.Name := Get_String (Element (C));
                end if;
             end if;
          end if;
@@ -254,26 +257,27 @@ procedure GprConfig.Main is
 
    function "<" (Comp1, Comp2 : Compiler) return Boolean is
    begin
-      if Comp1.Language < Comp2.Language then
-         return True;
-      elsif Comp1.Language > Comp2.Language then
-         return False;
-      else
-         if Comp1.Path_Order < Comp2.Path_Order then
+      case Compare (Comp1.Language_LC, Comp2.Language_LC) is
+         when Before =>
             return True;
-         elsif Comp1.Path_Order > Comp2.Path_Order then
+         when After =>
             return False;
-         else
-            if Comp1.Runtime < Comp2.Runtime then
+         when Equal =>
+            if Comp1.Path_Order < Comp2.Path_Order then
                return True;
-            elsif Comp1.Runtime > Comp2.Runtime then
+            elsif Comp2.Path_Order < Comp1.Path_Order then
                return False;
             else
-               --  More recent version first
-               return Comp1.Version > Comp2.Version;
+               case Compare (Comp1.Runtime, Comp2.Runtime) is
+                  when Before =>
+                     return True;
+                  when After =>
+                     return False;
+                  when Equal =>
+                     return Compare (Comp1.Version, Comp2.Version) = Before;
+               end case;
             end if;
-         end if;
-      end if;
+      end case;
    end "<";
 
    ----------------------
@@ -336,7 +340,8 @@ procedure GprConfig.Main is
                Comp2 := First (Compilers);
                while Has_Element (Comp2) loop
                   if Element (Comp2).Selected
-                    and then Element (Comp2).Language = Element (Comp).Language
+                    and then Element (Comp2).Language_LC =
+                      Element (Comp).Language_LC
                   then
                      Selectable := False;
                      if Verbose_Level > 0 then
@@ -584,8 +589,8 @@ procedure GprConfig.Main is
    begin
       while Has_Element (C) loop
          Elem := Element (C);
-         if Elem.Path /= "" then
-            Append (Extra_Dirs, Elem.Path & Path_Separator);
+         if Elem.Path /= No_Name then
+            Append (Extra_Dirs, Get_Name_String (Elem.Path) & Path_Separator);
          end if;
          Next (C);
       end loop;
@@ -732,29 +737,24 @@ procedure GprConfig.Main is
 
    function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean is
    begin
-      if Length (Filter.Name) > 0 and then Comp.Name /= Filter.Name then
+      if Filter.Name /= No_Name and then Comp.Name /= Filter.Name then
          return False;
       end if;
 
-      if Length (Filter.Path) > 0 and then Filter.Path /= Comp.Path then
+      if Filter.Path /= No_Name and then Filter.Path /= Comp.Path then
          return False;
       end if;
 
-      if Length (Filter.Version) > 0
-        and then Filter.Version /= Comp.Version
-      then
+      if Filter.Version /= No_Name and then Filter.Version /= Comp.Version then
          return False;
       end if;
 
-      if Length (Filter.Language) > 0
-        and then To_Lower (To_String (Filter.Language)) /=
-        To_Lower (To_String (Comp.Language))
-      then
+      if Filter.Runtime /= No_Name and then Filter.Runtime /= Comp.Runtime then
          return False;
       end if;
 
-      if Length (Filter.Runtime) > 0
-        and then Filter.Runtime /= Comp.Runtime
+      if Filter.Language_LC /= No_Name
+        and then Filter.Language_LC /= Comp.Language_LC
       then
          return False;
       end if;
@@ -938,7 +938,7 @@ begin
             while Has_Element (C) loop
                declare
                   Cur_Target : constant String :=
-                    To_String (Element (C).Target);
+                    Get_Name_String (Element (C).Target);
                   T : String_Lists.Cursor := First (All_Target);
                   Dup : Boolean := False;
                begin

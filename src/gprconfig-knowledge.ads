@@ -31,10 +31,9 @@ with Ada.Containers.Indefinite_Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers.Vectors;
-with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;
-with Ada.Strings.Unbounded.Hash;
 with GNAT.Regpat;
+with Namet;
 
 package GprConfig.Knowledge is
 
@@ -71,26 +70,34 @@ package GprConfig.Knowledge is
      range 1 .. Targets_Set_Id'Last;
    --  Known targets set.  They are in the base.
 
+   function Hash_Case_Insensitive
+     (Name : Namet.Name_Id) return Ada.Containers.Hash_Type;
    package Variables_Maps is new Ada.Containers.Hashed_Maps
-     (Key_Type        => Ada.Strings.Unbounded.Unbounded_String,
-      Element_Type    => Ada.Strings.Unbounded.Unbounded_String,
-      Hash            => Ada.Strings.Unbounded.Hash,
-      Equivalent_Keys => Ada.Strings.Unbounded."=",
-      "="             => Ada.Strings.Unbounded."=");
+     (Key_Type        => Namet.Name_Id,
+      Element_Type    => Namet.Name_Id,
+      Hash            => Hash_Case_Insensitive,
+      Equivalent_Keys => Namet."=",
+      "="             => Namet."=");
 
    type Compiler is record
-      Name        : Ada.Strings.Unbounded.Unbounded_String;
-      Executable  : Ada.Strings.Unbounded.Unbounded_String;
-      Target      : Ada.Strings.Unbounded.Unbounded_String;
+      Name        : Namet.Name_Id;
+      Executable  : Namet.Name_Id;
+      Target      : Namet.Name_Id;
       Targets_Set : Targets_Set_Id;
-      Path        : Ada.Strings.Unbounded.Unbounded_String;
-      Version     : Ada.Strings.Unbounded.Unbounded_String;
+      Path        : Namet.Name_Id;
+      Version     : Namet.Name_Id;
       Variables   : Variables_Maps.Map;
-      Prefix      : Ada.Strings.Unbounded.Unbounded_String;
-      Runtime     : Ada.Strings.Unbounded.Unbounded_String;
-      Runtime_Dir : Ada.Strings.Unbounded.Unbounded_String;
-      Language    : Ada.Strings.Unbounded.Unbounded_String;
+      Prefix      : Namet.Name_Id := Namet.No_Name;
+      Runtime     : Namet.Name_Id := Namet.No_Name;
+      Runtime_Dir : Namet.Name_Id := Namet.No_Name;
       Path_Order  : Integer;
+
+      Language_Case : Namet.Name_Id := Namet.No_Name;
+      --  The supported language, with the casing read from the compiler. This
+      --  is for display purposes only
+
+      Language_LC : Namet.Name_Id := Namet.No_Name;
+      --  The supported language, always lower case
 
       Selectable    : Boolean := True;
       Selected      : Boolean := False;
@@ -198,7 +205,7 @@ package GprConfig.Knowledge is
 
    procedure Get_Words
      (Words  : String;
-      Filter : Ada.Strings.Unbounded.Unbounded_String;
+      Filter : Namet.Name_Id;
       Map    : out String_Lists.List;
       Allow_Empty_Elements : Boolean);
    --  Return the list of words in Words. Splitting is done on special
@@ -224,19 +231,28 @@ package GprConfig.Knowledge is
    --  Nothing is printed if Str is the empty string, only the indentation is
    --  changed
 
+   function Get_String (Str : String) return Namet.Name_Id;
+   --  Same as Name_Find, but does not require the user to modify
+   --  Name_Buffer manually.
+
+   type Compare_Type is (Before, Equal, After);
+   function Compare (Name1, Name2 : Namet.Name_Id) return Compare_Type;
+   --  Compare alphabetically two strings
+
 private
    No_Compiler : constant Compiler :=
-     (Name        => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Target      => Ada.Strings.Unbounded.Null_Unbounded_String,
+     (Name        => Namet.No_Name,
+      Target      => Namet.No_Name,
       Targets_Set => Unknown_Targets_Set,
-      Executable  => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Path        => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Executable  => Namet.No_Name,
+      Path        => Namet.No_Name,
       Variables   => Variables_Maps.Empty_Map,
-      Version     => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Prefix      => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Runtime     => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Runtime_Dir => Ada.Strings.Unbounded.Null_Unbounded_String,
-      Language    => Ada.Strings.Unbounded.Null_Unbounded_String,
+      Version     => Namet.No_Name,
+      Prefix      => Namet.No_Name,
+      Runtime     => Namet.No_Name,
+      Runtime_Dir => Namet.No_Name,
+      Language_Case => Namet.No_Name,
+      Language_LC => Namet.No_Name,
       Selectable  => False,
       Selected    => False,
       Complete    => True,
@@ -258,22 +274,22 @@ private
       record
          case Typ is
             when Value_Constant  =>
-               Value           : Ada.Strings.Unbounded.Unbounded_String;
+               Value           : Namet.Name_Id;
             when Value_Shell     =>
-               Command         : Ada.Strings.Unbounded.Unbounded_String;
+               Command         : Namet.Name_Id;
             when Value_Directory  =>
-               Directory       : Ada.Strings.Unbounded.Unbounded_String;
+               Directory       : Namet.Name_Id;
                Directory_Group : Integer;
-               Dir_If_Match    : Ada.Strings.Unbounded.Unbounded_String;
+               Dir_If_Match    : Namet.Name_Id;
             when Value_Grep       =>
                Regexp_Re       : Pattern_Matcher_Access;
                Group           : Natural;
             when Value_Filter     =>
-               Filter          : Ada.Strings.Unbounded.Unbounded_String;
+               Filter          : Namet.Name_Id;
             when Value_Must_Match =>
-               Must_Match      : Ada.Strings.Unbounded.Unbounded_String;
+               Must_Match      : Namet.Name_Id;
             when Value_Variable =>
-               Var_Name        : Ada.Strings.Unbounded.Unbounded_String;
+               Var_Name        : Namet.Name_Id;
             when Value_Done =>
                null;
          end case;
@@ -288,7 +304,8 @@ private
      External_Value_Nodes.Empty_List;
 
    type Compiler_Description is record
-      Executable    : Ada.Strings.Unbounded.Unbounded_String;
+      Name          : Namet.Name_Id := Namet.No_Name;
+      Executable    : Namet.Name_Id;
       Executable_Re : Pattern_Matcher_Access;
       Prefix_Index  : Integer := -1;
       Target        : External_Value;
@@ -302,15 +319,16 @@ private
 
    package Compiler_Description_Maps is new
      Ada.Containers.Indefinite_Hashed_Maps
-       (String, Compiler_Description, Ada.Strings.Hash_Case_Insensitive, "=");
+       (Namet.Name_Id, Compiler_Description,
+        Hash_Case_Insensitive, Namet."=");
 
    type Compiler_Filter is record
-      Name       : Ada.Strings.Unbounded.Unbounded_String;
-      Version    : Ada.Strings.Unbounded.Unbounded_String;
-      Version_Re : Pattern_Matcher_Access;
-      Runtime    : Ada.Strings.Unbounded.Unbounded_String;
-      Runtime_Re : Pattern_Matcher_Access;
-      Language   : Ada.Strings.Unbounded.Unbounded_String;
+      Name        : Namet.Name_Id;
+      Version     : Namet.Name_Id;
+      Version_Re  : Pattern_Matcher_Access;
+      Runtime     : Namet.Name_Id;
+      Runtime_Re  : Pattern_Matcher_Access;
+      Language_LC : Namet.Name_Id;
    end record;
    --  Representation for a <compiler> node (in <configuration>)
 
@@ -334,7 +352,7 @@ private
       Compilers_Filters : Compilers_Filter_Lists.List;
       Targets_Filters   : String_Lists.List;  --  these are regexps
       Negate_Targets    : Boolean  := False;
-      Config            : Ada.Strings.Unbounded.Unbounded_String;
+      Config            : Namet.Name_Id;
 
       Supported         : Boolean;
       --  Whether the combination of compilers is supported
