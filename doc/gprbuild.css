@@ -23,6 +23,18 @@
    div.note         {background-image: url(note.png); }
    div.important    {background-image: url(important.png); }
 
+   div.side         {position: absolute;
+                     font-style: italic;
+                     font-size: small;
+                     text-align: left;
+                     width: 200px;
+                     left: 840px;
+                     z-index: 3;
+                     color: #447bcd;}
+   div.side a:link,
+   div.side a:visited { text-decoration: none; color: #447bcd;}
+   
+
    div.contents ul ul { padding-left: 10px;
                         list-style-type: none;
                     }

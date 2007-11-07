@@ -18,6 +18,9 @@
 
 @set gprconfig GPRconfig
 
+@c Should be set if we want to generate an index
+@c @set useindex 1
+
 @c ------------------------------- macro
 @c This macro can be used to insert code sample. Each line should end with
 @c @NL{}, since otherwise texinfo doesn't guarantee that newlines will be
@@ -133,6 +136,27 @@
 @end quotation
 @end ifnothtml
 @end macro
+
+@c -------------------------- macro
+@c This macro creates index entries. Optionaly, it can display that
+@c entry in the right-side margin of the text in HTML, to help people
+@c locate where exactly the index entry points to.
+
+@macro CINDEX{TXT}
+@cindex \TXT\
+@ifset useindex
+@ifhtml
+@html
+<div class="side"><a href="#Index">
+@end html
+\TXT\
+@html
+</a></div>
+@end html
+@end ifhtml
+@end ifset
+@end macro
+
 @c ---------------------------
 
 @titlepage
@@ -165,7 +189,9 @@ are preserved on all copies.
 * Cleaning up with GPRclean::
 * Configuring with gprconfig::
 * Configuration File Reference::
+@ifset useindex
 * Index::
+@end ifset
 
 @detailmenu
  --- The Detailed Contents ---
@@ -325,8 +351,8 @@ chapter most of the examples can use autoconfiguration.
 
 GPRbuild will start its build process by trying to locate a configuration
 file called @file{default.cgpr}.
-@cindex @file{default.cgpr} configuration file
-@cindex @option{--autoconf} option (to GPRbuild)
+@CINDEX{@file{default.cgpr} configuration file}
+@CINDEX{@option{--autoconf} option (to GPRbuild)}
 If such a file is not available or if the option
 @code{--autoconf=xxx} is used, GPRbuild will create its own configuration
 file suitable for native development and assuming that there are known
@@ -463,7 +489,7 @@ GPRbuild's execution is kept reasonnably simple and easy to understand.
 In particular, some of the less important commands
 are not shown, and some parameters are abbreviated. GPRbuild's option
 @code{-v}
-@cindex @option {-v} option (for GPRbuild)
+@CINDEX{@option{-v} option (for GPRbuild)}
 provides a much more verbose output which includes, among other
 information, more complete compilation, post-compilation and
 link commands.
@@ -1518,6 +1544,7 @@ exhaustive list.
 
 @table @option
 @item --target=target
+@CINDEX{@option{--target} for gprconfig}
 @TIPHTML{Use @option{--target} to specify on which machine your application will
 run}
 
@@ -1533,11 +1560,13 @@ If you enter the special target @samp{all}, then all compilers found on the
 @env{PATH} will be displayed.
 
 @item --show-targets
+@CINDEX{@option{--show-target} for gprconfig}
 As mentioned above, @value{gprconfig} knows which targets are compatible. You
 can use this switch to find the list of targets that are compatible
 with @code{--target}.
 
 @item --config=language[,version[,runtime[,path[,name]]]]
+@CINDEX{@option{--config} for gprconfig}
 @TIPHTML{Use @option{--config} to automatically select the first matching
 compiler}
 
@@ -1566,16 +1595,16 @@ could match the other arguments of @option{--config}.
 gprconfig --config C,,,/usr/bin,GCC     # automatic version}
 
 @item --batch
+@CINDEX{@option{--batch} for gprconfig}
 @TIPHTML{Use @option{--batch} to generate the configuration file with no use
 interaction}
-
 If this switch is specified, @value{gprconfig} automatically selects the first
 compiler matching each of the @code{--config} switch, and generate the
 configuration file immediately. It will not display an interactive menu.
 
 @item -o file
+@CINDEX{@option{-o} for gprconfig}
 @TIPHTML{Use @option{-o} to specify the name of the configuration file to generate}
-
 This specifies the name of the configuration file that will be generated.
 If this switch is not specified, a default file is generated in the
 installation directory of GPRbuild (assuming you have write access to
@@ -1585,12 +1614,14 @@ to GPRbuild.
 
 @item --db directory
 @itemx --db-
+@CINDEX{@option{--db} for gprconfig}
 Indicates another directory that should be parsed for @value{gprconfig}'s knowledge
 base. Most of the time this is only useful if you are creating your own
 XML description files locally. The second version of the switch prevents
 @value{gprconfig} from reading its default knowledge base.
 
 @item -h
+@CINDEX{@option{-h} for gprconfig}
 Generates a brief help message listing all GPconfig switches and the
 default value for their arguments. This includes the location of the
 knowledge base, the default target,@dots{}
@@ -1852,6 +1883,8 @@ children can be repeated multiple times, and the @code{<filter>} and
 @code{<must_match>} nodes will be applied to each of these. The final
 value of the external value is the concatenation of the computation for each
 of the @code{<directory>} and @code{<external>} nodes.
+
+@CINDEX{gprconfig, external values}
 
 @itemize @bullet
 @item A simple string
@@ -2892,16 +2925,14 @@ Specifies the minimum options to be used when invoking the default linker.
 
 @end itemize
 
-Index
-
-
+@ifset useindex
 @c  --------------------------------------------------------------------------
 @node Index
+@unnumbered Index
 @c  --------------------------------------------------------------------------
 
-@unnumbered Index
-
-@c @printindex cp
+@printindex cp
+@end ifset
 
 @contents
 
