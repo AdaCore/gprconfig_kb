@@ -81,9 +81,11 @@ install: all install.data install.bin
 	  if [ -d doc/$$format ] ; then \
 	     ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
 	     ${INSTALL_DATA} doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
+	     if [ $$format = html ] ; then \
+	        ${CP} doc/*.png ${datadir}/doc/gprbuild/html; \
+	     fi; \
 	  fi; \
 	done
-	${CP} doc/*.png ${datadir}/doc/gprbuild/html
 
 install.data: force
 	${MKDIR} ${datadir}/gprconfig
