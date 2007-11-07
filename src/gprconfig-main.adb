@@ -230,8 +230,9 @@ procedure GprConfig.Main is
             Next (C);
             if Has_Element (C) then
                Comp.Path := Get_String_Or_No_Name
-                 (Normalize_Pathname (Element (C),
-                  Case_Sensitive => False));
+                 (Name_As_Directory
+                    (Normalize_Pathname (Element (C),
+                     Case_Sensitive => False)));
                Next (C);
                if Has_Element (C) then
                   Comp.Name := Get_String_Or_No_Name (Element (C));

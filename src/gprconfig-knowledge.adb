@@ -1012,7 +1012,7 @@ package body GprConfig.Knowledge is
       elsif Name = "PREFIX" then
          return Get_Name_String_Or_Null (Comp.Prefix);
       elsif Name = "PATH" then
-         return Name_As_Directory (Get_Name_String (Comp.Path));
+         return Get_Name_String (Comp.Path);
       elsif Name = "GPRCONFIG_PREFIX" then
          return Get_Program_Directory;
       end if;
@@ -1539,7 +1539,8 @@ package body GprConfig.Knowledge is
 
       Comp.Name       := Name;
       Comp.Path       := Get_String
-        (Normalize_Pathname (Directory, Case_Sensitive => False));
+        (Name_As_Directory
+           (Normalize_Pathname (Directory, Case_Sensitive => False)));
       Comp.Path_Order := Path_Order;
       Comp.Prefix     := Prefix;
       Comp.Executable := Executable;
