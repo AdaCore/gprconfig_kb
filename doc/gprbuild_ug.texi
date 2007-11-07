@@ -2033,12 +2033,11 @@ This directory always ends with a directory separator.
 @item $@{RUNTIME@}
 @itemx $@{RUNTIME_DIR@}
 @itemx $@{LANGUAGE@}
-@itemx $@{OUTPUT_DIR@}
 This string will always be substituted by the empty string when the
 value of the external value is computed. These are special strings
 used when substituting text in configuration chunks.
 
-@var{OUTPUT_DIR} and @var{RUNTIME_DIR} always end with a directory separator.
+@var{RUNTIME_DIR} always end with a directory separator.
 
 @end table
 
