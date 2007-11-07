@@ -734,12 +734,13 @@ package body GprConfig.Knowledge is
                        Get_Attribute (N2, "runtime", "");
                   begin
                      Filter := Compiler_Filter'
-                       (Name    => Get_String (Get_Attribute (N2, "name", "")),
-                        Version    => Get_String (Version),
+                       (Name       => Get_String_Or_No_Name
+                          (Get_Attribute (N2, "name", "")),
+                        Version    => Get_String_Or_No_Name (Version),
                         Version_Re => null,
-                        Runtime    => Get_String (Runtime),
+                        Runtime    => Get_String_Or_No_Name (Runtime),
                         Runtime_Re => null,
-                        Language_LC   => Get_String
+                        Language_LC   => Get_String_Or_No_Name
                           (To_Lower (Get_Attribute (N2, "language", ""))));
 
                      if Version /= "" then
@@ -2586,6 +2587,21 @@ package body GprConfig.Knowledge is
       Name_Buffer (1 .. Name_Len) := Str;
       return Name_Find;
    end Get_String;
+
+   ---------------------------
+   -- Get_String_Or_No_Name --
+   ---------------------------
+
+   function Get_String_Or_No_Name (Str : String) return Namet.Name_Id is
+   begin
+      if Str = "" then
+         return No_Name;
+      else
+         Name_Len := Str'Length;
+         Name_Buffer (1 .. Name_Len) := Str;
+         return Name_Find;
+      end if;
+   end Get_String_Or_No_Name;
 
    -------------
    -- Compare --

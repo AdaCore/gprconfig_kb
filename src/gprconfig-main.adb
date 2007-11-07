@@ -218,36 +218,23 @@ procedure GprConfig.Main is
                  Allow_Empty_Elements => True);
 
       C := First (Map);
-      if Element (C) /= "" then
-         Comp.Language_Case := Get_String (Element (C));
-         Comp.Language_LC   := Get_String (To_Lower (Element (C)));
-      end if;
+      Comp.Language_Case := Get_String_Or_No_Name (Element (C));
+      Comp.Language_LC   := Get_String_Or_No_Name (To_Lower (Element (C)));
 
       Next (C);
       if Has_Element (C) then
-         if Element (C) /= "" then
-            Comp.Version := Get_String (Element (C));
-         end if;
-
+         Comp.Version := Get_String_Or_No_Name (Element (C));
          Next (C);
          if Has_Element (C) then
-            if Element (C) /= "" then
-               Comp.Runtime := Get_String (Element (C));
-            end if;
-
+            Comp.Runtime := Get_String_Or_No_Name (Element (C));
             Next (C);
             if Has_Element (C) then
-               if Element (C) /= "" then
-                  Comp.Path := Get_String
-                    (Normalize_Pathname (Element (C),
-                     Case_Sensitive => False));
-               end if;
-
+               Comp.Path := Get_String_Or_No_Name
+                 (Normalize_Pathname (Element (C),
+                  Case_Sensitive => False));
                Next (C);
                if Has_Element (C) then
-                  if Element (C) /= "" then
-                     Comp.Name := Get_String (Element (C));
-                  end if;
+                  Comp.Name := Get_String_Or_No_Name (Element (C));
                end if;
             end if;
          end if;

@@ -232,8 +232,10 @@ package GprConfig.Knowledge is
    --  changed
 
    function Get_String (Str : String) return Namet.Name_Id;
+   function Get_String_Or_No_Name (Str : String) return Namet.Name_Id;
    --  Same as Name_Find, but does not require the user to modify
    --  Name_Buffer manually.
+   --  The second version returns No_Name is the string is empty
 
    type Compare_Type is (Before, Equal, After);
    function Compare (Name1, Name2 : Namet.Name_Id) return Compare_Type;
