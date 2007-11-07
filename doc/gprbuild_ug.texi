@@ -16,7 +16,7 @@
 @setchapternewpage odd
 @syncodeindex fn cp
 
-@set gprconfig @emph{gprconfig}
+@set gprconfig GPRconfig
 
 @c ------------------------------- macro
 @c This macro can be used to insert code sample. Each line should end with
@@ -961,90 +961,101 @@ changed) and the objects that are affected by these changes.
 @section Command Line
 
 @noindent
-
 Three elements can optionally be specified on GPRbuild's command line:
-the main project file, the switches for GPRbuild itself or for the tools it
-drives and finally, the main source files:
+@itemize
+@item the main project file,
+@item the switches for GPRbuild itself or for the tools it
+drives, and
+@item the main source files.
+@end itemize
+
+@noindent
+The general syntax is thus:
 @smallexample
 gprbuild [<proj>.gpr] [switches] [names]
   @{[-cargs opts] [-cargs:lang opts] [-largs opts] [-gargs opts]@}
 @end smallexample
 
+@noindent
 GPRbuild requires a project file, which may be specified on the
-command line, either directly or using the @option{-P} switch. If not
-specified, then GPRbuild uses the project file "default.gpr" if there
+command line, either directly or through the @option{-P} switch. If not
+specified, then GPRbuild uses the project file @file{default.gpr} if there
 is one in the current working directory. Otherwise, if there is only
 one project file in the current working directory, GPRbuild uses this
 project file.
 
 Main source files represent the sources to be used as the main
 programs. If they are not specified on the command line, GPRbuild uses
-the source files specified with the Main attribute in the project
+the source files specified with the @code{Main} attribute in the project
 file. If none exists, then no executable will be built.
 
-When source files are specified along with switch @option{-c}, then
+When source files are specified along with the option @option{-c}, then
 recompilation will be considered only for those source files. In all
 other cases, GPRbuild compiles or recompiles all sources in the
-project tree that are not up to date and builds or rebuilds libraries
+project tree that are not up to date, and builds or rebuilds libraries
 that are not up to date.
 
-If GPRbuild is invoked without switch @option{--config=} or
-@option{--autoconf=}, then GPRbuild will look for a configuration
-project file "default.cgpr". If there is no such file in the default
+If invoked without the @option{--config=} or
+@option{--autoconf=} options, then GPRbuild will look for a configuration
+project file @file{default.cgpr}. If there is no such file in the default
 locations expected by GPRbuild (<install>/share/gpr and the current
 directory) then GPRbuild will invoke @value{gprconfig} with
 the languages no the project files, and create a configuration project
-file "auto.cgpr" in the object directory of the main project. The project
-"auto.cgpr" will be rebuild at each GPRbuild invokation unless you use
-the switch @option{--autoconf=path/auto.cgpr} which will create the config
-file if it does not exist and use it otherwise.
+file @file{auto.cgpr} in the object directory of the main project. The project
+@file{auto.cgpr} will be rebuilt at each GPRbuild invocation unless you use
+the switch @option{--autoconf=path/auto.cgpr}, which will use the config file
+if it exists and create it otherwise.
 
 Options given on the GPRbuild command line may be passed along to
 individual tools by preceding them with one of the ``command line
 separators'' shown below. Options following the separator, up to the
-next separator (or end of the command line) are passed along.  The
+next separator (or end of the command line), are passed along.  The
 different command line separators are:
 
 @itemize @bullet
 
 @item @option{-cargs}
 
-The arguments that follow up to the next command line separators are
+The arguments that follow up to the next command line separator are
 options for all compilers for all languages.
-Example: "@option{-cargs -g}"
+Example: @option{-cargs -g}
 
-@item @option{-cargs:}<language name>
+@item @option{-cargs: <language name>}
 
-The arguments that follow up to the next command line separators are
+The arguments that follow up to the next command line separator are
 options for the compiler of the specific language.
 
 Examples:
-"@option{-cargs:Ada -gnatf}" or
-"@option{-cargs:C -E}"
+@itemize
+@item @option{-cargs:Ada -gnatf}
+@item @option{-cargs:C -E}
+@end itemize
 
 @item @option{-bargs}
 
-The arguments that follow up to the next command line separators are
+The arguments that follow up to the next command line separator are
 options for all binder drivers.
 
-@item @option{-bargs:}<language name>
+@item @option{-bargs: <language name>}
 
 The arguments that follow up to the next command line separators are
 options for the binder driver of the specific language.
 
 Examples:
-"@option{-bargs:Ada binder_prefix=ppc-elf}" or
-"@option{-bargs:C++ c_compiler_name=ccppc}"
+@itemize
+@item @option{-bargs:Ada binder_prefix=ppc-elf}
+@item @option{-bargs:C++ c_compiler_name=ccppc}
+@end itemize
 
 @item @option{-largs}
 
-The arguments that follow up to the next command line separators are
+The arguments that follow up to the next command line separator are
 options for the linker.
 
 @item @option{-gargs}
 
-The arguments that follow up to the next command line separators are
-options for GPRbuild itself. Usually, @option{-gargs} is specified after one or
+The arguments that follow up to the next command line separator are
+options for GPRbuild itself. Usually @option{-gargs} is specified after one or
 several other command line separators.
 
 @end itemize
@@ -1053,7 +1064,6 @@ several other command line separators.
 @section Switches
 
 @noindent
-
 The switches that are interpreted directly by GPRbuild are:
 
 @itemize @bullet
@@ -1075,7 +1085,7 @@ project file search path, then exit successfully, ignoring other options.
 @item @option{--config=<config project file name>}
 
 This specifies the configuration project file name. By default, the
-configuration project file name is "default.cgpr". Option @option{--config=}
+configuration project file name is @file{default.cgpr}. Option @option{--config=}
 cannot be specified more than once. The configuration project file specified
 with @option{--config=} must exist.
 
@@ -1089,26 +1099,26 @@ used. Otherwise, @value{gprconfig} is invoked to create it automatically.
 
 Note: @option{--config} and @option{--autoconf} cannot both be specified.
 
-@item @option{-aP dir} (Add directory dir to project search path)
+@item @option{-aP dir} (Add directory @file{dir} to project search path)
 
-Specify to GPRbuild to add directory "dir" to the user project file search
+Specify to GPRbuild to add directory @file{dir} to the user project file search
 path, before the default directory.
 
 @item @option{-b} (Bind only)
 
 Specify to GPRbuild that the post-compilation (or binding) phase is to be
-performed, but not the other phases, if they are not specified by appropriate
+performed, but not the other phases unless they are specified by appropriate
 switches.
 
 @item @option{-c} (Compile only)
 
 Specify to GPRbuild that the compilation phase is to be performed, but not
-the other phases, if they are not specified by appropriate switches.
+the other phases unless they are specified by appropriate switches.
 
 @item @option{-d} (Display progress)
 
 Display progress for each source, up to date or not, as a single
-line "completed x out of y (zz%)...". If the file needs to be compiled
+line @emph{completed x out of y (zz%)...}. If the file needs to be compiled
 this is displayed after the invocation of the compiler. These lines are
 displayed even in quiet output mode (switch @option{-q}).
 
@@ -1130,7 +1140,7 @@ a project file, only the simple name of the project file is displayed in the
 error message. When switch @option{-F} is used, the full path of the project
 file is used. This switch has no effect when switch @option{-v} is used.
 
-@item @option{-j<num>} (use num simultaneous compilation jobs)
+@item @option{-j<num>} (use @emph{num} simultaneous compilation jobs)
 
 By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
 it is possible to instruct GPRbuild to spawn several simultaneous compilation
@@ -1149,13 +1159,14 @@ used.
 @item @option{-l} (Link only)
 
 Specify to GPRbuild that the linking phase is to be performed, but not
-the other phases, if they are not specified by appropriate switches.
+the other phases unless they are specified by appropriate switches.
 
 @item @option{-o name} (Choose an alternate executable name)
 
-Specify the file name of a single executable. Switch -o cannot be used with
-several mains on the command line or with no main on the command line and
-several mains in attribute Main of the main project.
+Specify the file name of a single executable. Switch @option{-o} cannot be
+used with
+several mains on the command line, nor with no main on the command line and
+several mains in attribute @code{Main} of the main project.
 
 @item @option{-p} (Create missing object, library and exec directories)
 
@@ -1163,11 +1174,11 @@ By default, GPRbuild checks that the object, library and exec directories
 specified in project files exist. Switch @option{-p} instructs GPRbuild to
 attempt to create missing directories.
 
-@item @option{-P proj} (use Project file proj)
+@item @option{-P proj} (use Project file @emph{proj})
 
 Specify the path name of the main project file. The space between @option{-P}
 and the project file name is optional. Specifying a project file name (with
-suffix ".gpr") may be used in place of option @option{-P}. Exactly one main
+suffix @file{.gpr}) may be used in place of option @option{-P}. Exactly one main
 project file can be specified.
 
 @item @option{-q} (Quiet output)
@@ -1187,15 +1198,15 @@ invocation of the compiler, so that it can retrieve these switches if
 
 @item @option{-v} (Verbose output)
 
-Display full paths, all options used in spawned processes and reasons why
+Display full paths, all options used in spawned processes, and reasons why
 these processes are spawned. Cancel any previous switch @option{-q}.
 
 @item @option{-vPx} (Specify verbosity when parsing Project Files)
 
 By default, GPRbuild does not display anything when processing project files,
 except when there are errors. This default behavior is obtained with switch
-@option{-vP0}. @option{-vP1} gives more information and @option{-vP2} displays
-a lot of mostly useless information.
+@option{-vP0}. Switches @option{-vP1} and @option{-vP2} yield increasingly
+detailed output.
 
 @item @option{-we} (Treat all warnings as errors)
 
@@ -1209,13 +1220,15 @@ Switch @option{-wn} may be used to restore the default after @option{-we} or
 
 @item @option{-ws} (Suppress all warnings)
 
-Do not consider any warning while processing the project files.
+Do not generate any warnings while processing the project files.
 
 @item @option{-Xnm=val} (Specify an external reference for Project Files)
 
 Specify an external reference that may be queried inside the project files
-using built-in function "external". For example, with @option{-XBUILD=DEBUG},
-external("BUILD") inside a project file will have the value "DEBUG".
+using built-in function @code{external}. For example, with
+@option{-XBUILD=DEBUG},
+@code{external("BUILD")} inside a project file will have the value
+@code{"DEBUG"}.
 
 @end itemize
 
@@ -1223,9 +1236,8 @@ external("BUILD") inside a project file will have the value "DEBUG".
 @section Initialization
 
 @noindent
-
 Before performing one or several of its three phases, GPRbuild has to read the
-command line, get its configuration and process the project files.
+command line, obtain its configuration, and process the project files.
 
 If GPRbuild is invoked with an invalid switch or without any project file on
 the command line, it will fail immediately.
@@ -1240,15 +1252,17 @@ $ gprbuild -P c_main.gpr -WW
 gprbuild: illegal option "-WW"
 @end smallexample
 
+@noindent
 GPRbuild looks for the configuration project file first in the current
 working directory, then in the default configuration project directory.
-If the GPRbuild executable is located in a subdirectory "<prefix>/bin", then
-the default configuration project directory is "<prefix>/share/gpr", otherwise
-there is no default configuration project directory.
+If the GPRbuild executable is located in a subdirectory @file{<prefix>/bin},
+then
+the default configuration project directory is @file{<prefix>/share/gpr},
+otherwise there is no default configuration project directory.
 
-When it has found its configuration project path, GPRbuild needs to get its
+When it has found its configuration project path, GPRbuild needs to obtain its
 configuration. By default, the file name of the main configuration project
-is "default.cgpr". This default may be modified using the switch
+is @file{default.cgpr}. This default may be modified using the switch
 @option{--config=...}
 
 Example:
@@ -1257,15 +1271,17 @@ Example:
 $ gprbuild --config=my_standard.cgpr -P my_project.gpr
 @end smallexample
 
+@noindent
 If GPRbuild cannot find the main configuration project on the configuration
 project path, then it will look for all the languages specified in the user
 project tree and invoke @value{gprconfig} to create a configuration project file
-named "auto.cgpr" and located in the object directory of the main project file.
+named @file{auto.cgpr} that is located in the object directory of the main
+project file.
 
 Once it has found the configuration project, GPRbuild will process its
 configuration: if a single string attribute is specified in the configuration
 project and is not specified in a user project, then the attribute is added
-to the user project; if a string list attribute is specified in the
+to the user project. If a string list attribute is specified in the
 configuration project then its value is prepended to the corresponding
 attribute in the user project.
 
@@ -1279,8 +1295,9 @@ ada_main.gpr:3:26: "src" is not a valid directory
 gprbuild: "my_project.gpr" processing failed
 @end smallexample
 
-Once the user project files have been processed successfully, then GPRbuild
-will start to do some work.
+@noindent
+Once the user project files have been dealt with successfully, GPRbuild
+will start its processing.
 
 @node Compilation of one or several sources
 @section Compilation of one or several sources
@@ -1339,6 +1356,7 @@ different
 
 @end itemize
 
+@noindent
 When a source is successfully compiled, the following files are normally
 created in the object directory of the project of the source:
 
@@ -1347,12 +1365,13 @@ created in the object directory of the project of the source:
 @item An object file
 
 @item A dependency file, except when the dependency kind for the language
-      is "none"
+      is @code{none}
 
 @item A switch file
 
 @end itemize
 
+@noindent
 The compiler for the language of the source is invoked with the following
 switches/options:
 
@@ -1360,14 +1379,14 @@ switches/options:
 
 @item The required compilation switches for the language
 
-@item The compilation switches coming from package Compiler of the project of
-      the source
+@item The compilation switches coming from package @code{Compiler} of the
+project of the source
 
 @item The compilation switches specified on the command line for all compilers,
-      after "@option{-cargs}"
+      after @option{-cargs}
 
 @item The compilation switches for the language of the source, specified
-      after "@option{-cargs:<language>}"
+      after @option{-cargs:<language>}
 
 @item Various other options such as a switch to create the dependency file
       while compiling, a switch to specify a configuration file, a switch
@@ -1376,15 +1395,17 @@ switches/options:
 
 @end itemize
 
+@noindent
 If compilation is needed, then all the options/switches, except those
-described as "Various other options" are written to the switch file.
+described as ``Various other options'' are written to the switch file.
 The switch file is a text file. Its file name is obtained by replacing
-the suffix of the source with ".cswi". For example, the switch file
-for source "main.adb" is "main.cswi" and for "toto.c" it is "toto.cswi".
+the suffix of the source with @file{.cswi}. For example, the switch file
+for source @file{main.adb} is @file{main.cswi} and for 
+@file{toto.c} it is @file{toto.cswi}.
 
 If the compilation is successful, then if the creation of the dependency
 file is not done during compilation but after (see configuration attribute
-Compute_Dependency), then the process to create the dependency file is
+@code{Compute_Dependency}), then the process to create the dependency file is
 invoked.
 
 If GPRbuild is invoked with a switch @option{-j} specifying more than one
@@ -1407,9 +1428,9 @@ possibly different languages are spawned concurrently.
 * Switches for GPRclean::
 @end menu
 
-GPRclean is a tool associated with GPRbuild to remove the files created by
-GPRbuild. At a minimum, GPRclean must be invoked with a main project file
-with a command such as "gprclean proj.gpr" or "gprclean -P proj.gpr".
+The GPRclean tool removes the files created by GPRbuild.
+At a minimum, to invoke GPRclean you must specify a main project file
+in a command such as @code{gprclean proj.gpr} or @code{gprclean -P proj.gpr}.
 
 Examples of invocation of GPRclean:
 
@@ -1432,11 +1453,11 @@ The switches for GPRclean are:
 
 This specifies a configuration project file name that already exists or will
 be created automatically. Option @option{--autoconf=}
-cannot be specified more than once. If the configuration project file specified
-with @option{--autoconf=} exists, then it is used. Otherwise, @value{gprconfig} is
-invoked to create it automatically.
+cannot be specified more than once. If the configuration project file
+specified with @option{--autoconf=} exists, then it is used. Otherwise,
+@value{gprconfig} is invoked to create it automatically.
 
-@item  @option{-c} : Only delete compiler generated files. Do not delete
+@item  @option{-c} : Only delete compiler-generated files. Do not delete
        executables and libraries.
 
 @item  @option{-f} : Force deletions of unwritable files
@@ -1447,7 +1468,7 @@ invoked to create it automatically.
 
 @item  @option{-n} : Do not delete files, only list files to delete
 
-@item  @option{-P<proj>} : Use Project File <proj>.
+@item  @option{-P<proj>} : Use Project File @emph{<proj>}.
 
 @item  @option{-q} : Be quiet/terse. There is no output, except to report
        problems.
