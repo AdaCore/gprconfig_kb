@@ -2063,9 +2063,11 @@ is the directory in which @value{gprconfig} was installed (e.g
 @file{"/usr/local/"} if the executable is @file{"/usr/local/bin/gprconfig"}.
 This directory always ends with a directory separator.
 
+@item $@{LANGUAGE@}
+is the language supported by the compiler, always lower-cased
+
 @item $@{RUNTIME@}
 @itemx $@{RUNTIME_DIR@}
-@itemx $@{LANGUAGE@}
 This string will always be substituted by the empty string when the
 value of the external value is computed. These are special strings
 used when substituting text in configuration chunks.
