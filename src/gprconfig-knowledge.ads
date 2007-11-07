@@ -80,12 +80,12 @@ package GprConfig.Knowledge is
       "="             => Namet."=");
 
    type Compiler is record
-      Name        : Namet.Name_Id;
-      Executable  : Namet.Name_Id;
-      Target      : Namet.Name_Id;
+      Name        : Namet.Name_Id := Namet.No_Name;
+      Executable  : Namet.Name_Id := Namet.No_Name;
+      Target      : Namet.Name_Id := Namet.No_Name;
       Targets_Set : Targets_Set_Id;
-      Path        : Namet.Name_Id;
-      Version     : Namet.Name_Id;
+      Path        : Namet.Name_Id := Namet.No_Name;
+      Version     : Namet.Name_Id := Namet.No_Name;
       Variables   : Variables_Maps.Map;
       Prefix      : Namet.Name_Id := Namet.No_Name;
       Runtime     : Namet.Name_Id := Namet.No_Name;
