@@ -31,13 +31,11 @@
 @end smallexample
 @end ifhtml
 @ifnothtml
-@cartouche
-@example
+@smallexample
 @group
 \TXT\
 @end group
-@end example
-@end cartouche
+@end smallexample
 @end ifnothtml
 @end macro
 
