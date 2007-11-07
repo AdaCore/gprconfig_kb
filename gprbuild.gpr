@@ -53,7 +53,7 @@ project Gprbuild is
    end Builder;
 
    package Compiler is
-      common_switches := ("-gnat05", "-gnaty");
+      common_switches := ("-gnat05", "-gnaty", "-gnatQ");
       case Bld is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches &
