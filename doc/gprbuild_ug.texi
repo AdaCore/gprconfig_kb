@@ -1044,7 +1044,7 @@ The arguments that follow up to the next command line separator are
 options for all compilers for all languages.
 Example: @option{-cargs -g}
 
-@item @option{-cargs: <language name>}
+@item @option{-cargs:<language name>}
 
 The arguments that follow up to the next command line separator are
 options for the compiler of the specific language.
@@ -1060,7 +1060,7 @@ Examples:
 The arguments that follow up to the next command line separator are
 options for all binder drivers.
 
-@item @option{-bargs: <language name>}
+@item @option{-bargs:<language name>}
 
 The arguments that follow up to the next command line separators are
 options for the binder driver of the specific language.
@@ -1219,6 +1219,22 @@ compilation, even if all dependencies are satisfied. Each time GPRbuild
 invokes a compiler, it writes a text file that lists the switches used in the
 invocation of the compiler, so that it can retrieve these switches if
 @option{-s} is used later.
+
+@item @option{-u} (Unique compilation, only compile the given files)
+
+If there are sources specified on the command line, only compile these
+sources. If there are no sources specified on the command line, compile
+all the sources of the main project.
+
+In both cases, do not attempt the binding and the linking phases.
+
+@item @option{-U} (Compile all sources of all projects)
+
+If there are sources specified on the command line, only compile these
+sources. If there are no sources specified on the command line, compile
+all the sources of all the projects in the project tree.
+
+In both cases, do not attempt the binding and the linking phases.
 
 @item @option{-v} (Verbose output)
 
@@ -1424,7 +1440,7 @@ If compilation is needed, then all the options/switches, except those
 described as ``Various other options'' are written to the switch file.
 The switch file is a text file. Its file name is obtained by replacing
 the suffix of the source with @file{.cswi}. For example, the switch file
-for source @file{main.adb} is @file{main.cswi} and for 
+for source @file{main.adb} is @file{main.cswi} and for
 @file{toto.c} it is @file{toto.cswi}.
 
 If the compilation is successful, then if the creation of the dependency
@@ -1694,7 +1710,7 @@ compilers. You can skip this section if you only want to learn how to use
 @value{gprconfig}.}
 
 @noindent
-All knowledge of compilers is embedded in a set of XML files called the 
+All knowledge of compilers is embedded in a set of XML files called the
 @emph{knowledge base}.
 Users can easily contribute to this general knowledge base, and have
 @value{gprconfig} immediately take advantage of any new data.
@@ -1930,7 +1946,7 @@ not defined, this is an error and the compiler is ignored.
   <version>@NL{}
     <getenv name="WIND_BASE" />@NL{}
   </version>@NL{}
-</compile_description>} 
+</compile_description>}
 
 @item @code{<external>command</external>}
 

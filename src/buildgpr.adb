@@ -5293,7 +5293,7 @@ package body Buildgpr is
 
                --  Now insert in the Q the unmarked source files (i.e. those
                --  which have never been inserted in the Q and hence never
-               --  considered). Only do that if Unique_Compile is False.
+               --  considered).
 
                for J in ALI.ALIs.Table (The_ALI).First_Unit ..
                         ALI.ALIs.Table (The_ALI).Last_Unit
