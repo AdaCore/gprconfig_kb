@@ -7,6 +7,7 @@
      <compilers>
         <compiler name="G++" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
+       <compiler name="GCC-MINGW32" language="C++" />
      </compilers>
      <config>
 package Naming is
@@ -15,7 +16,7 @@ package Naming is
    end Naming;
 
    package Compiler is
-      for Driver              ("C++") use "${PATH}g++";
+      for Driver              ("C++") use "${PATH}g++${PREFIX}";
       for Required_Switches   ("C++") use ("-c", "-x", "c++");
       for Dependency_Switches ("C++") use ("-Wp,-MMD,");
       for Include_Path        ("C++") use "CPATH";
@@ -54,5 +55,17 @@ package Naming is
          Compiler'Required_Switches ("C++") &amp; ("-mno-cygwin");
    end Compiler;
      </config>
+   </configuration>
+
+   <!-- this compiler is not compatible with GNAT's default zcx runtime -->
+   <configuration>       
+     <compilers><compiler name="GNAT" runtime="default" /></compilers>
+     <compilers>
+       <compiler name="GCC-CYGMING" language="C++" />
+       <compiler name="GCC-CYGMING" language="Fortran" />
+       <compiler name="GCC-MINGW32" language="C++" />
+       <compiler name="GCC-MINGW32" language="Fortran" />
+     </compilers>
+     <config></config>
    </configuration>
 </gprconfig>

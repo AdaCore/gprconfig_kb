@@ -189,4 +189,19 @@
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
+
+  <compiler_description>
+    <name>GCC-MINGW32</name>
+    <executable prefix="1">gcc(-sjlj|)</executable>
+    <version>
+      <external>gcc${PREFIX} --version</external>
+      <grep regexp="\(GCC\) (\S+).*\(mingw32.*\)" group="1"></grep>
+    </version>
+    <languages>C,C++,Fortran</languages>
+    <target>
+      <external>gcc${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
 </gprconfig>
