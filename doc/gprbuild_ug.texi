@@ -1844,11 +1844,12 @@ the remaining XML children.
 @item <target>
 
 This node indicates how to query the target architecture for the compiler.
-See "External values" below for valid children.
+See @ref{GPRconfig external values, external values} for valid children.
 
 @item <version>
 
-This tag contains any of the nodes defined in ``External values'' below.
+This tag contains any of the nodes defined in @ref{GPRconfig external values,
+external values} below.
 It shows how to query the version number of the compiler. If the version
 cannot be found, the executable will not be listed in the list of compilers.
 
@@ -1856,13 +1857,15 @@ cannot be found, the executable will not be listed in the list of compilers.
 
 This node will define a user variable which may be later referenced.  The
 variables are evaluated just after the version but before the languages
-and the runtimes nodes.  See "External values" below for valid children of
+and the runtimes nodes.  See @ref{GPRconfig external values, external values}
+below for valid children of
 this node.  If the evaluation of this variable is empty then the compiler
 is considered as invalid.
 
 @item <languages>
 
-This node indicates how to query the list of languages. See "External values"
+This node indicates how to query the list of languages. See
+@ref{GPRconfig external values, external values}
 below for valid children of this node.
 
 The value returned by the system will be split into words. As a result, if
@@ -1873,7 +1876,8 @@ interactively). The words can be comma-separated or space-separated.
 @item <runtimes>
 
 This node indicates how to query the list of supported runtimes for the
-compiler. See ``External values'' below for valid children. The returned value
+compiler. See @ref{GPRconfig external values, external values}
+below for valid children. The returned value
 is split into words as for @code{<languages>}.
 
 @end table
