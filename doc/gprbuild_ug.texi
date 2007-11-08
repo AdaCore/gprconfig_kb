@@ -1794,9 +1794,10 @@ This is optional information, but simplifies the use of @value{gprconfig},
 since the user is then able to omit some parameters from the @option{--config}
 command line argument, and have them automatically computed.
 
-The @code{<compiler_description>} node doesn't accept any XML attribute.
-However, it accepts a number of child tags that explain how to query the
-various attributes of the compiler.
+The @code{<compiler_description>} node doesn't accept any XML
+attribute.  However, it accepts a number of child tags that explain
+how to query the various attributes of the compiler.  The child tags
+are evaluated (if necessary) in the same order as they are documented below.
 
 @table @code
 @item <name>
@@ -1840,11 +1841,24 @@ children are checked to know whether the compiler is valid. The directory
 in which the executable was found becomes the ``current directory'' for
 the remaining XML children.
 
+@item <target>
+
+This node indicates how to query the target architecture for the compiler.
+See "External values" below for valid children.
+
 @item <version>
 
 This tag contains any of the nodes defined in ``External values'' below.
 It shows how to query the version number of the compiler. If the version
 cannot be found, the executable will not be listed in the list of compilers.
+
+@item <variable name="varname">
+
+This node will define a user variable which may be later referenced.  The
+variables are evaluated just after the version but before the languages
+and the runtimes nodes.  See "External values" below for valid children of
+this node.  If the evaluation of this variable is empty then the compiler
+is considered as invalid.
 
 @item <languages>
 
@@ -1861,11 +1875,6 @@ interactively). The words can be comma-separated or space-separated.
 This node indicates how to query the list of supported runtimes for the
 compiler. See ``External values'' below for valid children. The returned value
 is split into words as for @code{<languages>}.
-
-@item <target>
-
-This node indicates how to query the target architecture for the compiler.
-See ``External values'' below for valid children.
 
 @end table
 
@@ -1903,6 +1912,8 @@ instance, the list of supported languages might be defined as:
 
 for the GNAT compiler, since this is an Ada-only compiler.
 
+Variables can be referenced in simple strings.
+
 @item @code{<getenv name="variable" />}
 
 If the contents of the node is an @code{<getenv>} child, the value of
@@ -1937,6 +1948,8 @@ with:
 Since the @env{PATH} has been modified, we know that the @command{gcc} command
 that is executed is the one from the same directory as the @code{<external>}
 node.
+
+Variables are substitued in @var{command}.
 
 @item @code{<grep regexp="regexp" group="0" />}
 
@@ -2032,7 +2045,16 @@ variables in the rest of the XML files. Each of these variable can be used
 in the value of the various nodes (for instance in @code{<directory>}),
 and in the configurations (@pxref{Configuration}).
 
-Here is the list of predefined variables
+A variable is referenced by @code{$@{name@}} where @var{name} is either
+a user variable or a predefined variable.  An alternate reference is
+@code{$name} where @var{name} is a sequence of alpha numeric characters or
+underscores.  Finally @code{$$} is replaced by a simple @code{$}.
+
+User variables are defined by @code{<variable>} nodes and may override
+predefined variables.  To avoid a possible override use lower case names.
+
+Predefined variables are always in upper case.  Here is the list of
+predefined variables
 
 @table @var
 @item $@{EXEC@}
@@ -2078,6 +2100,9 @@ used when substituting text in configuration chunks.
 @var{RUNTIME_DIR} always end with a directory separator.
 
 @end table
+
+If a variable is not defined, an error message is issued and the variable
+is substitued by an empty string.
 
 @c ------------------------------------------------------------------------
 @node Configurations
@@ -2160,7 +2185,7 @@ compilers will be reported as invalid, in the sense that code
 compiled with these compilers cannot be linked together. As a result,
 @value{gprconfig} will not create the configuration file.
 
-The special variables (@pxref{gprconfig variable substitution}) are also
+The special variables (@pxref{GPRconfig variable substitution}) are also
 substituted in the chunk. That allows you to compute some attributes of the
 compiler (its path, the runtime,@dots{}), and use them when generating the
 chunks.
