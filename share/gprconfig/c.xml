@@ -29,6 +29,17 @@
 
    <configuration>
      <compilers>
+        <compiler name="GCC-MINGW32" language="C" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver              ("C") use "${PATH}gcc${PREFIX}";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="GCC-WRS" language="C" />
      </compilers>
      <config>
@@ -42,6 +53,7 @@
      <compilers>
        <compiler name="GCC" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
+        <compiler name="GCC-MINGW32" language="C" />
        <compiler name="GCC-WRS" language="C" />
      </compilers>
      <config>
@@ -84,5 +96,4 @@
    end Compiler;
      </config>
    </configuration>
-
 </gprconfig>

@@ -40,6 +40,7 @@
    <configuration>
      <compilers>
        <compiler name="GFORTRAN" language="Fortran" />
+       <compiler name="GCC-MINGW32" language="Fortran" />
      </compilers>
      <config>
    package Naming is
@@ -47,7 +48,7 @@
    end Naming;
 
    package Compiler is
-      for Driver            ("Fortran") use "${PATH}gfortran";
+      for Driver            ("Fortran") use "${PATH}gfortran${PREFIX}";
       for Required_Switches ("Fortran") use ("-c", "-fno-underscoring");
       for Include_Path      ("Fortran") use "CPATH";
    end Compiler;
