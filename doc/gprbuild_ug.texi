@@ -2822,6 +2822,12 @@ one. Example:
 @node Dependency Related Attributes
 @subsection Dependency Related Attributes
 
+There are two dependency related attributes: Dependency_Switches and
+Dependency_Driver. If neither of these two attributes are specified for
+a language other than Ada, then the source needs to be (re)compiled if
+the object file does not exist or the source file is more recent than
+the object file or the switch file.
+
 @itemize @bullet
 
 @item Dependency_Switches (<language>)
@@ -2836,20 +2842,20 @@ in the list, which may be empty. Example:
    for Dependency_Switches ("C") use ("-Wp,-MD,");
 @end smallexample
 
-With this Dependency_Option, when compiling "file.c", the compiler will be
+With these Dependency_Switches, when compiling "file.c", the compiler will be
 invoked with the option "-Wp,-MD,file.d".
 
-@item Compute_Dependency (<language>)
+@item Dependency_Driver (<language>)
 
 Specifies the command and options to create a dependency file for a source.
 The full path name of the source is appended to the last string of the string
 list value. Example:
 
 @smallexample
-   for Compute_Dependency ("C") use ("gcc", "-E", "-Wp,-M", "");
+   for Dependency_Driver ("C") use ("gcc", "-E", "-Wp,-M", "");
 @end smallexample
 
-Usually, attributes Dependency_Option and Compute_Dependency are not both
+Usually, attributes Dependency_Switches and Dependency_Driver are not both
 specified.
 
 @end itemize
