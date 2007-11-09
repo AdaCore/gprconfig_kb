@@ -1695,11 +1695,14 @@ package body Buildgpr is
             for J in Lib_Projs'Range loop
                Proj := Lib_Projs (J);
 
-               if Project_Tree.Projects.Table (Proj).Extended_By = No_Project
-                  and then
-                  not Project_Tree.Projects.Table (Proj).Externally_Built
+               if Project_Tree.Projects.Table
+                    (Proj).Extended_By = No_Project
                then
-                  Build_Library (Proj);
+                  if not Project_Tree.Projects.Table
+                           (Proj).Externally_Built
+                  then
+                     Build_Library (Proj);
+                  end if;
 
                   if Project_Tree.Projects.Table (Proj).Library_Kind /=
                      Static
