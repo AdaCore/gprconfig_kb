@@ -360,7 +360,8 @@ compilers on the user path for each of the necessary languages. It is
 preferable and often necessary to manually generate your own
 configuration file when:
 @itemize
-@item using cross compilers,
+@item using cross compilers (in which case you need to use gprconfig's
+@option{--target=}) option,
 @item using a specific Ada runtime (e.g. @option{--RTS=sjlj}),
 @item working with compilers not in the path or not first in the path, or
 @item autoconfiguration does not give the expected results.
@@ -411,8 +412,7 @@ path.
 @item
 The next command, a combination of the previous examples, creates in
 batch mode a configuration file named @file{x.cgpr} for cross-compiling
-Ada with
-a run-time called @code{hi} and using C for the LEON processor.
+Ada with a run-time called @code{hi} and using C for the LEON processor.
 @smallexample
  gprconfig --target=leon-elf --config=Ada,,hi --config=C --batch -o x.cgpr
 @end smallexample
@@ -1563,9 +1563,12 @@ application, it generates the proper configuration file.
 @TIPHTML{Use @option{--target} to specify on which machine your application will
 run}
 
-This switch indicates the machine on which your application will
-be run. Examples include @samp{i686-pc-linux-gnu}, @samp{sparc-solaris} or
-@samp{x86-windows}. Since different compilers will often return a different
+This switch indicates the target computer on which your application will
+be run. It is mostly useful for cross configurations. Examples include
+@samp{ppc-elf}, @samp{ppc-vx6-windows}. It can also be used in native
+configurations and is useful when the same machine can run different kind
+of compilers such as mingw32 and cygwin on Windows or x86-32 and x86-64
+on GNU Linux. Since different compilers will often return a different
 name for those targets, @value{gprconfig} has an extensive knowledge of which
 targets are compatible, and will for example accept @samp{x86-linux} as
 an alias for @samp{i686-pc-linux-gnu}.
