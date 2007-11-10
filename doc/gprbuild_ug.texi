@@ -73,7 +73,7 @@
 
 @c -------------------------- macro
 @c This macro is similar to TIP, but only has an effect in html output,
-@c and displayed a note in the margin. This can be used to higlight important
+@c and displayed a note in the margin. This can be used to highlight important
 @c points that are repeated in the text. In the other outputs, we do not
 @c know how to create margin notes, and whether that would only duplicate
 @c information in the main text
@@ -138,7 +138,7 @@
 @end macro
 
 @c -------------------------- macro
-@c This macro creates index entries. Optionaly, it can display that
+@c This macro creates index entries. Optionally, it can display that
 @c entry in the right-side margin of the text in HTML, to help people
 @c locate where exactly the index entry points to.
 
@@ -229,8 +229,8 @@ The GPRconfig knowledge base
 * Configurations::
 
 Compiler description
-* GPRconfig external values:: External values.
-* GPRconfig variable substitution:: Variable substitution.
+* GPRconfig external values::
+* GPRconfig variable substitution::
 
 Configuration File Reference
 * Project Level Attributes::
@@ -395,7 +395,7 @@ the default one.
 @end smallexample
 
 @item
-Thie following command again triggers interactive mode, and only the relevant
+The following command again triggers interactive mode, and only the relevant
 cross compilers for target ppc-elf will be proposed.
 @smallexample
  gprconfig --target=ppc-elf
@@ -485,7 +485,7 @@ corresponds to the final link.
 
 @noindent
 The default output of
-GPRbuild's execution is kept reasonnably simple and easy to understand.
+GPRbuild's execution is kept reasonably simple and easy to understand.
 In particular, some of the less important commands
 are not shown, and some parameters are abbreviated. GPRbuild's option
 @code{-v}
@@ -622,7 +622,7 @@ The
 project's @code{with} clause has several effects. It provides visibility of
 sources during the compilation process as if the units from @code{Ada_Main}
 were
-compiled with an implcit @code{-Iutil_src} option. It also guarantees that the
+compiled with an implicit @code{-Iutil_src} option. It also guarantees that the
 necessary units from @code{Common_Subsystem} are available for
 @code{Ada_Main}'s linking
 phase.
@@ -691,7 +691,7 @@ single project file.
 Previous sections have shown how to share both compilation units and project
 properties
 among different systems. Sharing is an essential aspect of large system
-development since it avoide unnecessary duplication, reduces compilation time
+development since it avoids unnecessary duplication, reduces compilation time
 and
 lessens the maintenance burden. Unfortunately, it sometimes gets in the way.
 In the above example, @code{Ada_Main} and @code{C_Main} both depend on
@@ -706,7 +706,7 @@ One
 possibility is to duplicate the common subsystem completely so that one
 version can evolve while the other one can remain frozen. That will force
 duplication and recompilation of the whole project. Extensions provide a
-more flexible mechansim, making it possible to provide a new version of
+more flexible mechanism, making it possible to provide a new version of
 a subsystem without having to duplicate the sources that do not change.
 A project extension inherits all the sources and objects from the project it
 extends and allows you to redefine some of the sources which hide the original
@@ -803,7 +803,7 @@ $gprbuild main.gpr
 @end smallexample
 
 @noindent
-will rebuild the library @code{l1} if it is not uptodate.
+will rebuild the library @code{l1} if it is not up to date.
 
 To construct a dynamic library instead of a static library, simply replace
 @smallexample @c projectfile
@@ -859,7 +859,7 @@ For instance, @code{foo.c} is typically
 the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are two
 common naming conventions for a file containing an Ada spec.
 A compilation unit is often composed of a main source file and potentially
-several auxillary ones, such as header files in C. The naming conventions
+several auxiliary ones, such as header files in C. The naming conventions
 can be defined or modified by the user and are used by
 @code{GPRbuild} to invoke the appropriate compiler.
 Source files are looked up in the source directories associated with the
@@ -945,7 +945,7 @@ files.
 
 A library is a specific type of subsystem where the objects are
 grouped together using system specific means for the convenience
-of the user. Project files are a system- and language-independant way of
+of the user. Project files are a system- and language-independent way of
 building both static and dynamic libraries. They also support the concept
 of standalone libraries (SAL) which offers two significant properties: the
 initialization of the library is either automatic or very simple; a
@@ -1744,7 +1744,7 @@ The knowledge base contains various kinds of information:
 @item Linker options
 
    Linking a multi-language application often has some subtleties,
-   and typially requires specific linker switches.
+   and typically requires specific linker switches.
    These switches depend on the list of languages, the list
    of compilers,@dots{}.
 
@@ -1863,12 +1863,11 @@ the remaining XML children.
 @item <target>
 
 This node indicates how to query the target architecture for the compiler.
-See @ref{GPRconfig external values, external values} for valid children.
+See @ref{GPRconfig external values} for valid children.
 
 @item <version>
 
-This tag contains any of the nodes defined in @ref{GPRconfig external values,
-external values} below.
+This tag contains any of the nodes defined in @ref{GPRconfig external values} below.
 It shows how to query the version number of the compiler. If the version
 cannot be found, the executable will not be listed in the list of compilers.
 
@@ -1876,7 +1875,7 @@ cannot be found, the executable will not be listed in the list of compilers.
 
 This node will define a user variable which may be later referenced.  The
 variables are evaluated just after the version but before the languages
-and the runtimes nodes.  See @ref{GPRconfig external values, external values}
+and the runtimes nodes.  See @ref{GPRconfig external values}
 below for valid children of
 this node.  If the evaluation of this variable is empty then the compiler
 is considered as invalid.
@@ -1884,7 +1883,7 @@ is considered as invalid.
 @item <languages>
 
 This node indicates how to query the list of languages. See
-@ref{GPRconfig external values, external values}
+@ref{GPRconfig external values}
 below for valid children of this node.
 
 The value returned by the system will be split into words. As a result, if
@@ -1895,15 +1894,15 @@ interactively). The words can be comma-separated or space-separated.
 @item <runtimes>
 
 This node indicates how to query the list of supported runtimes for the
-compiler. See @ref{GPRconfig external values, external values}
+compiler. See @ref{GPRconfig external values}
 below for valid children. The returned value
 is split into words as for @code{<languages>}.
 
 @end table
 
 @menu
-* GPRconfig external values:: External values.
-* GPRconfig variable substitution:: Variable substitution.
+* GPRconfig external values::
+* GPRconfig variable substitution::
 @end menu
 
 @c --------------------------------------------------------------------
@@ -1972,7 +1971,7 @@ Since the @env{PATH} has been modified, we know that the @command{gcc} command
 that is executed is the one from the same directory as the @code{<external>}
 node.
 
-Variables are substitued in @var{command}.
+Variables are substituted in @var{command}.
 
 @item @code{<grep regexp="regexp" group="0" />}
 
@@ -2125,7 +2124,7 @@ used when substituting text in configuration chunks.
 @end table
 
 If a variable is not defined, an error message is issued and the variable
-is substitued by an empty string.
+is substituted by an empty string.
 
 @c ------------------------------------------------------------------------
 @node Configurations
@@ -2262,7 +2261,7 @@ For instance, to check a GNAT compiler in the 5.x family, use:
 @item <hosts negate="false">
 
 This filter contains a list of @code{<host>} children. It matches when
-any of its children matches. You can specificy only one @code{<hosts>}
+any of its children matches. You can specify only one @code{<hosts>}
 node.
 The format of @code{<host>} is a node with a single mandatory attribute
 @var{name}, which is a regexp matched against the architecture on
@@ -2319,22 +2318,22 @@ define the configuration. Some of these attributes have a special meaning
 in the configuration.
 
 The default name of the configuration file, when not specified to GPRbuild by
-switches --config= or --autoconf= is "default.cgpr". Although the name of the
+switches --config= or --autoconf= is @file{default.cgpr}. Although the name of the
 configuration file can be any valid file name, it is recommended that its
-suffix be ".cgpr" (for Configuration GNAT Project), so that it cannot be
-confused with a standard project file which has the suffix ".gpr".
+suffix be @file{.cgpr} (for Configuration GNAT Project), so that it cannot be
+confused with a standard project file which has the suffix @file{.gpr}.
 
-When "default.cgpr" cannot be found in the configuration project path,
-then GPRbuild invokes @value{gprconfig} to create a configuration file.
+When @file{default.cgpr} cannot be found in the configuration project path,
+GPRbuild invokes @value{gprconfig} to create a configuration file.
 
-In the description of the attributes that follows, when an attribute is an
+In the following description of the attributes, when an attribute is an
 associative array indexed by the language name, for example
-Spec_Suffix (<language>), then the name of the language is case insensitive.
-For example, "C" and "c" are allowed.
+@code{Spec_Suffix (<language>)}, then the name of the language is case insensitive.
+For example, both @code{C} and @code{c} are allowed.
 
 Any attribute may appear in a configuration project file. All attributes in
 a configuration project file are inherited by each user project file in the
-project tree. However, usually only the attributes detailed below make sense
+project tree. However, usually only the attributes listed below make sense
 in the configuration project file.
 
 @node Project Level Attributes
@@ -2355,10 +2354,10 @@ in the configuration project file.
 @item Default_Language
 
 Specifies the name of the language of the immediate sources of a project when
-attribute Languages is not declared in the project. If attribute
-Default_Language is not declared in the configuration file, then all user
-project files in the project tree must have an attribute Languages declared
-except when they extend another project. Example:
+attribute @code{Languages} is not declared in the project. If attribute
+@code{Default_Language} is not declared in the configuration file, then each user
+project file in the project tree must have an attribute @code{Languages} declared,
+unless it extends another project. Example:
 
 @smallexample
    for Default_Language use "ada";
@@ -2366,7 +2365,7 @@ except when they extend another project. Example:
 
 @item Run_Path_Option
 
-Specifies a "run path option", that is an option to use when linking an
+Specifies a ``run path option''; i.e., an option to use when linking an
 executable or a shared library to indicate the path where to look for other
 libraries. The value of this attribute is a string list. When linking an
 executable or a shared library, the search path is concatenated with the last
@@ -2385,13 +2384,13 @@ version is passed to the library builder. Example:
    for Toolchain_Version ("Ada") use "GNAT 6.1";
 @end smallexample
 
-This attribute is used by gprbind to decide on the names of the shared GNAT
+This attribute is used by GPRbind to decide on the names of the shared GNAT
 runtime libraries.
 
 @item Toolchain_Description (<language>)
 
 Specifies as a single string a description of a toolchain. This attribute is
-not directly used by GPRbuild or its auxiliary tools (gprbind and gprlib) but
+not directly used by GPRbuild or its auxiliary tools (GPRbind and GPRlib) but
 may be used by other tools, for example GPS. Example:
 
 @smallexample
@@ -2409,7 +2408,7 @@ may be used by other tools, for example GPS. Example:
 
 Specifies the level of support for library project. If this attribute is not
 specified, then library projects are not supported. The only potential values
-for this attribute are "none", "static_only" and "full". Example:
+for this attribute are @code{none}, @code{static_only} and @code{full}. Example:
 
 @smallexample
    for Library_Support use "full";
@@ -2452,7 +2451,7 @@ archive indexer. Example:
 @item Archive_Suffix
 
 Specifies the suffix of the archives. If this attribute is not specified, then
-the suffix of the archives is defaulted to ".a". Example:
+the suffix of the archives is defaulted to @file{.a}. Example:
 
 @smallexample
    for Archive_Suffix use ".olb"; --  for VMS
@@ -2478,7 +2477,7 @@ partial linking. Example:
 @item Shared_Library_Prefix
 
 Specifies the prefix of the file names of shared libraries. When this attribute
-is not specified, the prefix is "lib". Example:
+is not specified, the prefix is @code{lib}. Example:
 
 @smallexample
    for Shared_Library_Prefix use ""; --  for Windows, if needed
@@ -2487,7 +2486,7 @@ is not specified, the prefix is "lib". Example:
 @item Shared_Library_Suffix
 
 Specifies the suffix of the file names of shared libraries. When this attribute
-is not specified, the prefix is ".so". Example:
+is not specified, the suffix is @file{.so}. Example:
 
 @smallexample
    for Shared_Library_Suffix use ".dll"; --  for Windows
@@ -2496,7 +2495,7 @@ is not specified, the prefix is ".so". Example:
 @item Symbolic_Link_Supported
 
 Specifies if symbolic links are supported by the platforms. The possible values
-of this attribute are "false" (the default) and "true". When this attribute is
+of this attribute are @code{"false"} (the default) and @code{"true"}. When this attribute is
 not specified, symbolic links are not supported.
 
 @smallexample
@@ -2506,7 +2505,7 @@ not specified, symbolic links are not supported.
 @item Library_Major_Minor_ID_Supported
 
 Specifies if major and minor IDs are supported for shared libraries.
-The possible values of this attribute are "false" (the default) and "true".
+The possible values of this attribute are @code{"false"} (the default) and @code{"true"}.
 When this attribute is not specified, major and minor IDs are not supported.
 
 @smallexample
@@ -2516,7 +2515,7 @@ When this attribute is not specified, major and minor IDs are not supported.
 @item Library_Auto_Init_Supported
 
 Specifies if library auto initialization is supported. The possible values of
-this attribute are "false" (the default) and "true". When this attribute is not
+this attribute are @code{"false"} (the default) and @code{"true"}. When this attribute is not
 specified, library auto initialization is not supported.
 
 @smallexample
@@ -2545,30 +2544,30 @@ when the library builder is invoked. Example:
 
 @item Runtime_Library_Dir (<language>)
 
-Specifies the directory for thr runtime libraries for the language.
+Specifies the directory for the runtime libraries for the language.
 Example:
 
 @smallexample
    for Runtime_Library_Dir ("Ada") use "/path/to/adalib";
 @end smallexample
 
-This attribute is used by gprlib to link shared libraries with Ada code.
+This attribute is used by GPRlib to link shared libraries with Ada code.
 
 @end itemize
 
 @node Package Naming
 @section Package Naming
 
-Attributes in package Naming of a configuration file specify defaults. These
+Attributes in package @code{Naming} of a configuration file specify defaults. These
 attributes may be used in user project files to replace these defaults.
 
-The following attributes usually appear in package Naming of a configuration
+The following attributes usually appear in package @code{Naming} of a configuration
 file:
 
 @itemize @bullet
 @item Spec_Suffix (<language>)
 
-Specifies the default suffix for a "spec" or header file. Examples:
+Specifies the default suffix for a ``spec'' or header file. Examples:
 
 @smallexample
    for Spec_Suffix ("Ada") use ".ads";
@@ -2578,7 +2577,7 @@ Specifies the default suffix for a "spec" or header file. Examples:
 
 @item Body_Suffix (<language>)
 
-Specifies the default sufix for a "body" or a source file. Examples:
+Specifies the default suffix for a ``body'' or a source file. Examples:
 
 @smallexample
    for Body_Suffix ("Ada") use ".adb";
@@ -2589,7 +2588,7 @@ Specifies the default sufix for a "body" or a source file. Examples:
 @item Separate_Suffix
 
 Specifies the suffix for a subunit source file (separate) in Ada. If attribute
-Separate_Suffix is not specified, then the default suffix of subunit source
+@code{Separate_Suffix} is not specified, then the default suffix of subunit source
 files is the same as the default suffix for body source files. Example:
 
 @smallexample
@@ -2600,17 +2599,17 @@ files is the same as the default suffix for body source files. Example:
 
 Specifies the casing of spec and body files in a unit based language
 (such as Ada) to know how to map a unit name to its file name. The values for
-this attribute may only be "lowercase", "UPPERCASE" and "Mixedcase".
-The default, when attribute Casing is not specified is lower case.
-It is rarely the case when this attribute needs to be specified, as on
-platforms where file names are not case sensitive (such as Windows of VMS)
-the default (lower case) will work fine.
+this attribute may only be @code{"lowercase"}, @code{"UPPERCASE"} and @code{"Mixedcase"}.
+The default, when attribute @code{Casing} is not specified is lower case.
+This attribute rarely needs to be specified, since on
+platforms where file names are not case sensitive (such as Windows or VMS)
+the default (lower case) will suffice.
 
 @item Dot_Replacement
 
-Specifies the string to replace a dot ('.') in unit name of a unit based
+Specifies the string to replace a dot (``.'') in unit names of a unit based
 language (such as Ada) to obtain its file name. If there is any unit based
-language in the configuration, attribute Dot_Replacement must be declared.
+language in the configuration, attribute @code{Dot_Replacement} must be declared.
 Example:
 
 @smallexample
@@ -2626,7 +2625,7 @@ Example:
 
 @item Executable_Suffix
 
-Specifies the default executable suffix. If no attribute Executable_Suffix is
+Specifies the default executable suffix. If no attribute @code{Executable_Suffix} is
 declared, then the default executable suffix for the host platform is used.
 Example:
 
@@ -2692,7 +2691,7 @@ a language to be put in a shared library. Example:
 @item Mapping_File_Switches (<language>)
 
 Specifies the switch or switches to be used to specify a mapping file to the
-compiler. When attribute Mapping_File_Switches is not declared, then no
+compiler. When attribute @code{Mapping_File_Switches} is not declared, then no
 mapping file is specified to the compiler. The value of this attribute is a
 string list. The path name of the mapping file is concatenated with the last
 string in the string list, which may be empty. Example:
@@ -2752,7 +2751,7 @@ Attributes:
 @item Config_File_Switches (<language>)
 
 Specifies the switch or switches to be used to specify a configuration file to
-the compiler. When attribute Config_File_Switches is not declared, then no
+the compiler. When attribute @code{Config_File_Switches} is not declared, then no
 config file is specified to the compiler. The value of this attribute is a
 string list. The path name of the config file is concatenated with the last
 string in the string list, which may be empty. Example:
@@ -2811,8 +2810,8 @@ pattern. Example:
 
 Specifies, for languages that support config files, if several config files
 may be indicated to the compiler, or not. This attribute may have only two
-values: "true" or "false" (case insensitive). The default, when this attribute
-is not specified, is "false". When the value "true" is specified for this
+values: @code{"true"} or @code{"false"} (case insensitive). The default, when this attribute
+is not specified, is @code{"false"}. When the value @code{"true"} is specified for this
 attribute, GPRbuild will concatenate the config files, if there are more than
 one. Example:
 
@@ -2825,8 +2824,8 @@ one. Example:
 @node Dependency Related Attributes
 @subsection Dependency Related Attributes
 
-There are two dependency related attributes: Dependency_Switches and
-Dependency_Driver. If neither of these two attributes are specified for
+There are two dependency-related attributes: @code{Dependency_Switches} and
+@code{Dependency_Driver}. If neither of these two attributes are specified for
 a language other than Ada, then the source needs to be (re)compiled if
 the object file does not exist or the source file is more recent than
 the object file or the switch file.
@@ -2835,9 +2834,9 @@ the object file or the switch file.
 
 @item Dependency_Switches (<language>)
 
-For languages other than Ada, attribute Dependency_Switches specifies
+For languages other than Ada, attribute @code{Dependency_Switches} specifies
 the option or options to add to the compiler invocation so that it creates
-the dependency file at the same time. The value of attribute Dependency_Option
+the dependency file at the same time. The value of attribute @code{Dependency_Option}
 is a string list. The name of the dependency file is added to the last string
 in the list, which may be empty. Example:
 
@@ -2845,8 +2844,8 @@ in the list, which may be empty. Example:
    for Dependency_Switches ("C") use ("-Wp,-MD,");
 @end smallexample
 
-With these Dependency_Switches, when compiling "file.c", the compiler will be
-invoked with the option "-Wp,-MD,file.d".
+With these @code{Dependency_Switches}, when compiling @file{file.c} the compiler will be
+invoked with the option @option{-Wp,-MD,file.d}.
 
 @item Dependency_Driver (<language>)
 
@@ -2858,7 +2857,7 @@ list value. Example:
    for Dependency_Driver ("C") use ("gcc", "-E", "-Wp,-M", "");
 @end smallexample
 
-Usually, attributes Dependency_Switches and Dependency_Driver are not both
+Usually, attributes @code{Dependency_Switches} and @code{Dependency_Driver} are not both
 specified.
 
 @end itemize
@@ -2879,8 +2878,8 @@ with the last string in the string list, which may be empty. Example:
    for Include_Switches ("C") use ("-I");
 @end smallexample
 
-Attribute Include_Switches is ignored if either one of the attributes
-Include_Path or Include_Path_File are specified.
+Attribute @code{Include_Switches} is ignored if either one of the attributes
+@code{Include_Path} or @code{Include_Path_File} are specified.
 
 @item Include_Path (<language>)
 
@@ -2893,7 +2892,7 @@ search path to be used by the compiler. Example:
    for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
 @end smallexample
 
-Attribute Include_Path is ignored if attribute Include_Path_File is declared
+Attribute @code{Include_Path} is ignored if attribute @code{Include_Path_File} is declared
 for the language.
 
 @item Include_Path_File (<language>)
