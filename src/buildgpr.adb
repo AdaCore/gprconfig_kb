@@ -799,7 +799,9 @@ package body Buildgpr is
    --    - Either of these 3 files are older than the source or any source it
    --      depends on.
 
-   procedure Process_Imported_Libraries (For_Project : Project_Id);
+   procedure Process_Imported_Libraries
+     (For_Project        : Project_Id;
+      And_Project_Itself : Boolean := False);
    --  Get the imported library project ids in table Library_Projs
 
    procedure Record_Failure (Source : Source_Id);
@@ -1677,7 +1679,7 @@ package body Buildgpr is
 
       --  First, get the libraries in building order in table Library_Projs
 
-      Process_Imported_Libraries (Main_Project);
+      Process_Imported_Libraries (Main_Project, And_Project_Itself => True);
 
       if Library_Projs.Last > 0 then
          declare
@@ -8409,7 +8411,10 @@ package body Buildgpr is
    -- Process_Imported_Libraries --
    --------------------------------
 
-   procedure Process_Imported_Libraries (For_Project : Project_Id) is
+   procedure Process_Imported_Libraries
+     (For_Project        : Project_Id;
+      And_Project_Itself : Boolean := False)
+   is
 
       procedure Process_Project (Project : Project_Id);
       --  Process Project and its imported projects recursively.
@@ -8448,7 +8453,9 @@ package body Buildgpr is
 
             --  If it is a library project, add it to Library_Projs
 
-            if Project /= For_Project and then Data.Library then
+            if (And_Project_Itself or (Project /= For_Project))
+              and then Data.Library
+            then
                Library_Projs.Increment_Last;
                Library_Projs.Table (Library_Projs.Last) := Project;
             end if;
