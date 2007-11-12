@@ -39,7 +39,7 @@
   <!-- x86-solaris -->
   <targetset>
     <target>x86-solaris</target>
-    <target>i.86-pc-solaris.*</target>
+    <target>i.86-(pc)?solaris.*</target>
   </targetset>
 
   <!-- x86-windows (mingw) -->
