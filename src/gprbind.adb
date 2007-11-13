@@ -68,6 +68,7 @@ procedure Gprbind is
    No_Main_Option : constant String := "-n";
    Dash_o         : constant String := "-o";
    Dash_shared    : constant String := "-shared";
+   Dash_x         : constant String := "-x";
 
    --  Minimum switches to be used to compile the binder generated file
 
@@ -310,6 +311,8 @@ begin
    end if;
 
    Close (IO_File);
+
+   Add (Dash_x, Gnatbind_Options, Last_Gnatbind_Option);
 
    if not Static_Libs then
       Add (Dash_shared, Gnatbind_Options, Last_Gnatbind_Option);
