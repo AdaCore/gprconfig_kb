@@ -296,7 +296,7 @@ similar to a project file, but which defines the characteristics
 of the supported languages and toolchains. The configuration file contains
 information such as:
 @itemize
-@item the default source naming conventions for each language
+@item the default source naming conventions for each language,
 @item the compiler name, location and required options,
 @item how to compute inter-unit dependency,
 @item how to build static or dynamic libraries,
@@ -356,7 +356,7 @@ file called @file{default.cgpr}.
 If such a file is not available or if the option
 @code{--autoconf=xxx} is used, GPRbuild will create its own configuration
 file suitable for native development and assuming that there are known
-compilers on the user path for each of the necessary languages. It is
+compilers on your path for each of the necessary languages. It is
 preferable and often necessary to manually generate your own
 configuration file when:
 @itemize
@@ -423,8 +423,8 @@ Ada with a run-time called @code{hi} and using C for the LEON processor.
 @section First Steps
 
 Assume a simple case of interfacing between Ada and C where the main
-program is first in Ada and then in C. For a main program in Ada, we can
-use the following project:
+program is first in Ada and then in C. For a main program in Ada the
+following project may be used:
 
 @smallexample @c projectfile
 project Ada_Main is
@@ -466,12 +466,12 @@ gcc -c ada_main.adb -o ada_main.o
 gcc -c c_lib.ads -o c_lib.o
 gcc -c lib.c -o lib.o
 gprbind ada_main
-<...>
+...
 gcc ada_main.o -o ada_main.exe
 @end smallexample
 
 @noindent
-Notice the three steps described in the introduction of this document:
+Notice the three steps described in the @ref{Introduction}:
 @itemize
 @item
 The first three gcc commands correspond to the compilation phase.
@@ -486,7 +486,7 @@ corresponds to the final link.
 @noindent
 The default output of
 GPRbuild's execution is kept reasonably simple and easy to understand.
-In particular, some of the less important commands
+In particular, some of the less frequently used commands
 are not shown, and some parameters are abbreviated. GPRbuild's option
 @code{-v}
 @CINDEX{@option{-v} option (for GPRbuild)}
@@ -559,7 +559,7 @@ gcc -c -gnaty ada_lib.adb -o ada_lib.o
 gcc -c -gnaty c_lib.ads -o c_lib.o
 gcc -c -pedantic lib.c -o lib.o
 gprbind c_main
-<...>
+...
 gcc c_main.o -o c_main.exe
 @end smallexample
 
@@ -700,8 +700,8 @@ requirements of the two systems can diverge over time in which case
 sharing becomes a problem rather than a solution. For instance,
 suppose that @code{C_Main} is now baselined and should not be changed,
 while @code{Ada_Main} is still under active development (which requires
-changes in the sources of the common subsystem). How can we satisfy
-@code{Ada_Main}'s needs without taking any risk of perturbing @code{C_Main}?
+changes in the sources of the common subsystem). The issue is how to satisfy
+@code{Ada_Main}'s needs without taking any risk of perturbing @code{C_Main}.
 One
 possibility is to duplicate the common subsystem completely so that one
 version can evolve while the other one can remain frozen. That will force
@@ -711,7 +711,7 @@ a subsystem without having to duplicate the sources that do not change.
 A project extension inherits all the sources and objects from the project it
 extends and allows you to redefine some of the sources which hide the original
 versions. You can also add new sources or remove existing ones.
-Here is an example of extension of project @code{Common_Subsystem}:
+Here is an example of extending project @code{Common_Subsystem}:
 
 @smallexample @c projectfile
 project New_Common_Subsystem
@@ -726,7 +726,7 @@ The project sources are to be found in @code{Common_Subsystem.Source_Dirs}
 and @code{New_Common_Subsystem.Source_Dirs}, the latter hiding the former
 when the same source filenames are found in both. New sources can be
 added to the project extension by simply placing them in its
-@code{Source_Dirs}. Original Sources can be removed, because of the attribute
+@code{Source_Dirs}. Original sources can be removed, because of the attribute
 @code{Excluded_Source_Files}.
 When building a project extension, all units depending on new versions of
 sources are rebuilt in the extension's @code{Object_Dir}. Other objects
@@ -842,6 +842,9 @@ it will never be used.
 @node Scenarios and conditional source files
 @section Scenarios and conditional source files
 
+@noindent
+@emph{To be provided in a subsequent version of the document.}
+
 @c  ------------------------------------------------------------------------
 @node Important Concepts
 @chapter Main Concepts
@@ -859,8 +862,9 @@ For instance, @code{foo.c} is typically
 the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are two
 common naming conventions for a file containing an Ada spec.
 A compilation unit is often composed of a main source file and potentially
-several auxiliary ones, such as header files in C. The naming conventions
-can be defined or modified by the user and are used by
+several auxiliary ones, such as header files in C.
+You can define or modify the naming conventions,
+which are used by
 @code{GPRbuild} to invoke the appropriate compiler.
 Source files are looked up in the source directories associated with the
 project through the @code{Source_Dirs} attribute. By default,
@@ -907,7 +911,7 @@ directories containing the sources of the project. The attribute itself can
 be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
 refers to the default compiler options for the Ada language.
 
-@item Project subpackage:
+@item Project subpackage
 
 Global characteristics are defined at the top level of a project.
 Specific characteristics affecting a given tool are grouped in a
@@ -915,13 +919,13 @@ subpackage with the same name as the tool. The most common
 subpackages are @code{Builder}, @code{Compiler}, @code{Binder},
 and @code{Linker}.
 
-@item Project variables:
+@item Project variables
 
 Two kinds of variables are available with projects: simple variables and
-scenario variables. The former can hold any string, or sequence of string
-values. They are useful as shortcuts for complex expressions. Scenario
-variables are a restricted version of the former which can only take their
-value from a static enumeration of strings representing the various
+scenario variables. A simple variable can hold any string, or sequence of string
+values; this is useful as a shortcut for a complex expression. Scenario
+variables are a restricted version of simple variables; they can only take their
+values from a static enumeration of strings representing the various
 supported scenarios. These scenario variables are used in conjunction with
 the @code{case} construct to offer limited conditionalization of
 project characteristics. Both types of variables are local to the project
@@ -941,11 +945,11 @@ represented by one project file. The subsystem dependency relationship
 is represented by the @code{with} clause between corresponding project
 files.
 
-@item Library:
+@item Library
 
-A library is a specific type of subsystem where the objects are
-grouped together using system specific means for the convenience
-of the user. Project files are a system- and language-independent way of
+A library is a specific type of subsystem where, for convenience, you group
+the objects together using system-specific means.
+Project files are a system- and language-independent way of
 building both static and dynamic libraries. They also support the concept
 of standalone libraries (SAL) which offers two significant properties: the
 initialization of the library is either automatic or very simple; a
@@ -953,7 +957,7 @@ change in the implementation part of the library implies minimal
 post-compilation actions on the complete system and potentially no
 action at all for dynamic SALs.
 
-@item Project extension:
+@item Project extension
 
 A project extension is a project that represents an augmentation
 of the original project. Suppose for instance that a
@@ -1024,7 +1028,7 @@ If invoked without the @option{--config=} or
 project file @file{default.cgpr}. If there is no such file in the default
 locations expected by GPRbuild (<install>/share/gpr and the current
 directory) then GPRbuild will invoke @value{gprconfig} with
-the languages no the project files, and create a configuration project
+the languages from the project files, and create a configuration project
 file @file{auto.cgpr} in the object directory of the main project. The project
 @file{auto.cgpr} will be rebuilt at each GPRbuild invocation unless you use
 the switch @option{--autoconf=path/auto.cgpr}, which will use the config file
@@ -1325,7 +1329,7 @@ to the user project. If a string list attribute is specified in the
 configuration project then its value is prepended to the corresponding
 attribute in the user project.
 
-When GPRbuild has processed its configuration, then it will
+After GPRbuild has processed its configuration, it will
 process the user project file or files. If these user project files are
 incorrect then GPRbuild will fail with the appropriate error messages:
 
@@ -1428,9 +1432,9 @@ project of the source
 @item The compilation switches for the language of the source, specified
       after @option{-cargs:<language>}
 
-@item Various other options such as a switch to create the dependency file
+@item Various other options including a switch to create the dependency file
       while compiling, a switch to specify a configuration file, a switch
-      to specify a mapping file or switches to indicate where to look for
+      to specify a mapping file, and switches to indicate where to look for
       other source or header files that are needed to compile the source.
 
 @end itemize
@@ -1455,9 +1459,15 @@ possibly different languages are spawned concurrently.
 @node Post-Compilation Phase
 @section Post-Compilation Phase
 
+@noindent
+@emph{To be provided in a subsequent version of the document.}
+
+
 @node Linking Phase
 @section Linking Phase
 
+@noindent
+@emph{To be provided in a subsequent version of the document.}
 
 @c  ------------------------------------------------------------------------
 @node Cleaning up with GPRclean
@@ -1558,7 +1568,7 @@ application, it generates the proper configuration file.
 @value{gprconfig} supports the following command line switches:
 
 @table @option
-@item --target=target
+@item --target=platform
 @CINDEX{@option{--target} for gprconfig}
 @TIPHTML{Use @option{--target} to specify on which machine your application will
 run}
@@ -1707,8 +1717,8 @@ generate the configuration file.
 is no need to recompile a new version of @value{gprconfig} when a new compiler
 is distributed.
 
-@NOTE{The role and format of the knowledge base is irrelevant for most users
-of @value{gprconfig}, and is only needed when you need to add support for new
+@NOTE{The role and format of the knowledge base are irrelevant for most users
+of @value{gprconfig}, and are only needed when you need to add support for new
 compilers. You can skip this section if you only want to learn how to use
 @value{gprconfig}.}
 
