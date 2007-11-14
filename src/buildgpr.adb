@@ -4584,14 +4584,17 @@ package body Buildgpr is
                declare
                   List : Name_List_Index := Config.Compiler_Required_Switches;
                   Nam_Nod : Name_Node;
+                  First   : Boolean;
 
                begin
+                  First := True;
                   while List /= No_Name_List loop
                      Nam_Nod := Project_Tree.Name_Lists.Table (List);
                      Add_Option
                        (Nam_Nod.Name,
                         To   => Compilation_Options,
-                        Display => True);
+                        Display => First or Verbose_Mode);
+                     First := False;
                      List := Nam_Nod.Next;
                   end loop;
                end;
