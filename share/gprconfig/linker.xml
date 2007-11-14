@@ -29,6 +29,7 @@
        <target name=".*lynxos.*" />
        <target name=".*mingw.*" />
        <target name=".*vms.*" />
+       <target name=".*osf.*" />
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
@@ -41,6 +42,7 @@
     <targets>
        <target name=".*aix.*" />
        <target name=".*lynxos.*" />
+       <target name=".*osf.*" />
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
