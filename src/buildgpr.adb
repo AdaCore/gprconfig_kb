@@ -1324,13 +1324,16 @@ package body Buildgpr is
 
             if Comp_Data.Purpose = Compilation then
 
-               --  Update the time stamp of the object file if the compilation
-               --  was successful.
+               --  Update the time stamps of the object file and of the
+               --  dependency file if the compilation was successful.
 
                if OK then
                   Project_Tree.Sources.Table (Source).Object_TS :=
                     File_Stamp
                       (Project_Tree.Sources.Table (Source).Object_Path);
+                  Project_Tree.Sources.Table (Source).Dep_TS :=
+                    File_Stamp
+                      (Project_Tree.Sources.Table (Source).Dep_Path);
                end if;
 
                Language := Project_Tree.Sources.Table (Source).Language;
@@ -1877,7 +1880,7 @@ package body Buildgpr is
                                  Write_Line
                                    ("      -> binder generated object " &
                                     Line (1 .. Last) &
-                                    "does not exist");
+                                    " does not exist");
                               end if;
                            end if;
                         end if;
