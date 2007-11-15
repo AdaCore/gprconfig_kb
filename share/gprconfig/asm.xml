@@ -14,7 +14,9 @@
 
    package Compiler is
       for Driver            ("Asm_Cpp") use "${PATH}${PREFIX}gcc";
-      for Required_Switches ("Asm_Cpp") use ("-c", "-x", "assembler-with-cpp");
+      for Required_Switches ("Asm_Cpp") use
+         Compiler'Required_Switches ("Asm_Cpp") &amp;
+         ("-c", "-x", "assembler-with-cpp");
       for Include_Path      ("Asm_Cpp") use "CPATH";
    end Compiler;
 
@@ -24,7 +26,9 @@
 
    package Compiler is
       for Driver            ("Asm") use "${PATH}${PREFIX}gcc";
-      for Required_Switches ("Asm") use ("-c", "-x", "assembler");
+      for Required_Switches ("Asm") use
+        Compiler'Required_Switches ("Asm") &amp;
+        ("-c", "-x", "assembler");
       for Include_Path      ("Asm") use "CPATH";
    end Compiler;
 
@@ -34,7 +38,9 @@
 
    package Compiler is
       for Driver            ("Asm2") use "${PATH}${PREFIX}gcc";
-      for Required_Switches ("Asm2") use ("-c", "-x", "assembler");
+      for Required_Switches ("Asm2") use
+        Compiler'Required_Switches ("Asm2") &amp;
+        ("-c", "-x", "assembler");
       for Include_Path      ("Asm2") use "CPATH";
    end Compiler;
      </config>
