@@ -53,12 +53,13 @@
      <compilers>
        <compiler name="GCC" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
-        <compiler name="GCC-MINGW32" language="C" />
+       <compiler name="GCC-MINGW32" language="C" />
        <compiler name="GCC-WRS" language="C" />
      </compilers>
      <config>
    package Compiler is
-      for Required_Switches   ("C") use ("-c", "-x", "c");
+      for Required_Switches   ("C") use
+         Compiler'Required_Switches ("C") &amp; ("-c", "-x", "c");
       for Dependency_Switches ("C") use ("-Wp,-MMD,");
       for Include_Path        ("C") use "CPATH";
    end Compiler;
