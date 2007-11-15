@@ -17,7 +17,9 @@ package Naming is
 
    package Compiler is
       for Driver              ("C++") use "${PATH}g++${PREFIX}";
-      for Required_Switches   ("C++") use ("-c", "-x", "c++");
+      for Required_Switches   ("C++") use
+        Compiler'Required_Switches ("C++") &amp;
+        ("-c", "-x", "c++");
       for Dependency_Switches ("C++") use ("-Wp,-MMD,");
       for Include_Path        ("C++") use "CPATH";
    end Compiler;
@@ -58,7 +60,7 @@ package Naming is
    </configuration>
 
    <!-- this compiler is not compatible with GNAT's default zcx runtime -->
-   <configuration>       
+   <configuration>
      <compilers><compiler name="GNAT" runtime="default" /></compilers>
      <compilers>
        <compiler name="GCC-CYGMING" language="C++" />

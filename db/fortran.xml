@@ -15,7 +15,9 @@
 
    package Compiler is
       for Driver            ("Fortran") use "${PATH}g77";
-      for Required_Switches ("Fortran") use ("-c", "-fno-underscoring");
+      for Required_Switches ("Fortran") use
+         Compiler'Required_Switches ("Fortran") &amp;
+         ("-c", "-fno-underscoring");
       for Include_Path      ("Fortran") use "CPATH";
    end Compiler;
      </config>
@@ -49,7 +51,9 @@
 
    package Compiler is
       for Driver            ("Fortran") use "${PATH}gfortran${PREFIX}";
-      for Required_Switches ("Fortran") use ("-c", "-fno-underscoring");
+      for Required_Switches ("Fortran") use
+         Compiler'Required_Switches ("Fortran") &amp;
+         ("-c", "-fno-underscoring");
       for Include_Path      ("Fortran") use "CPATH";
    end Compiler;
      </config>
