@@ -2983,6 +2983,7 @@ package body Buildgpr is
                            Delete_File (Archive_Dep_Name, Success);
                         end if;
 
+                        Fail_Program ("global archive could not be built");
                         return;
                      end if;
                   end if;
@@ -3025,6 +3026,8 @@ package body Buildgpr is
                      Delete_File (Archive_Dep_Name, Success);
                   end if;
 
+                  Fail_Program ("global archive could not be built");
+                  return;
                end if;
             end if;
          end if;
