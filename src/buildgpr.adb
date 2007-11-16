@@ -2599,7 +2599,7 @@ package body Buildgpr is
 
                      if Source.Object /= No_File
                        and then
-                        Is_Included_In_Global_Archive (Source.Object, Proj)
+                        Is_Included_In_Global_Archive (Source.Object, Project)
                      then
                         Add_Source_Id (Proj, Id);
                      end if;
@@ -2646,7 +2646,7 @@ package body Buildgpr is
 
                      if Source.Object /= No_File
                        and then
-                        Is_Included_In_Global_Archive (Source.Object, Proj)
+                        Is_Included_In_Global_Archive (Source.Object, Project)
                      then
                         Add_Argument
                           (Get_Name_String (Source.Object_Path),
@@ -7034,6 +7034,9 @@ package body Buildgpr is
       Src_Data : Source_Data;
 
    begin
+      --  If a source is overriden in an extending project, then the object
+      --  file is not included in the global archive.
+
       while Data.Extended_By /= No_Project loop
          Data := Project_Tree.Projects.Table (Data.Extended_By);
 
