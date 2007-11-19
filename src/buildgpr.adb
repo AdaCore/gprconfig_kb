@@ -692,8 +692,12 @@ package body Buildgpr is
    procedure Binding_Phase;
    --  Perform binding, if needed
 
-   procedure Build_Global_Archive (For_Project : Project_Id);
-   --  Build, if necessary, the global archive for a main project
+   procedure Build_Global_Archive
+     (For_Project    : Project_Id;
+      Has_Been_Built : out Boolean);
+   --  Build, if necessary, the global archive for a main project.
+   --  Out parameter Has_Been_Built is True iff the global archive has been
+   --  built/rebuilt.
 
    procedure Build_Library (For_Project : Project_Id);
    --  Build, if necessary, the library of a library project
@@ -2525,7 +2529,10 @@ package body Buildgpr is
    -- Build_Global_Archive --
    --------------------------
 
-   procedure Build_Global_Archive (For_Project : Project_Id) is
+   procedure Build_Global_Archive
+     (For_Project : Project_Id;
+      Has_Been_Built : out Boolean)
+   is
       Data : constant Project_Data :=
                Project_Tree.Projects.Table (For_Project);
 
@@ -2536,9 +2543,6 @@ package body Buildgpr is
       Archive_Dep_Name : constant String :=
         "lib" & Get_Name_String (Data.Name) & ".deps";
       --  The name of the archive dependency file for this project
-
-      Need_To_Rebuild : Boolean := Need_To_Rebuild_Global_Archives;
-      --  When True, archive will be rebuilt
 
       File : Prj.Util.Text_File;
 
@@ -2667,6 +2671,8 @@ package body Buildgpr is
       end Add_Objects;
 
    begin
+      Has_Been_Built := Need_To_Rebuild_Global_Archives;
+
       --  No need to build the global archive, if it has already been done
 
       if Data.Object_Directory /= No_Path and then
@@ -2708,7 +2714,7 @@ package body Buildgpr is
             Proj_List := Proj_Element.Next;
          end loop;
 
-         if not Need_To_Rebuild then
+         if not Has_Been_Built then
             if Verbose_Mode then
                Write_Str  ("   Checking ");
                Write_Str  (Archive_Name);
@@ -2718,7 +2724,7 @@ package body Buildgpr is
             --  If the archive does not exist, of course it needs to be built
 
             if not Is_Regular_File (Archive_Name) then
-               Need_To_Rebuild := True;
+               Has_Been_Built := True;
 
                if Verbose_Mode then
                   Write_Line ("      -> archive does not exist");
@@ -2735,7 +2741,7 @@ package body Buildgpr is
                --  to rebuild the archive and to create its dependency file.
 
                if not Is_Valid (File) then
-                  Need_To_Rebuild := True;
+                  Has_Been_Built := True;
 
                   if Verbose_Mode then
                      Write_Str  ("      -> archive dependency file ");
@@ -2777,7 +2783,7 @@ package body Buildgpr is
                      --  archive needs to be rebuilt.
 
                      if Src_Id = No_Source then
-                        Need_To_Rebuild := True;
+                        Has_Been_Built := True;
                         if Verbose_Mode then
                            Write_Str  ("      -> ");
                            Write_Str  (Get_Name_String (Object_Path));
@@ -2792,7 +2798,7 @@ package body Buildgpr is
                      --  truncated, and the archive need to be rebuilt.
 
                      if End_Of_File (File) then
-                        Need_To_Rebuild := True;
+                        Has_Been_Built := True;
 
                         if Verbose_Mode then
                            Write_Str  ("      -> archive dependency file ");
@@ -2809,7 +2815,7 @@ package body Buildgpr is
                      --  archive needs to be rebuilt.
 
                      if Name_Len /= Time_Stamp_Length then
-                        Need_To_Rebuild := True;
+                        Has_Been_Built := True;
 
                         if Verbose_Mode then
                            Write_Str  ("      -> archive dependency file ");
@@ -2831,7 +2837,7 @@ package body Buildgpr is
                      --  or less; here the check is for an exact match.
 
                      if String (Time_Stamp) /= String (Source.Object_TS) then
-                        Need_To_Rebuild := True;
+                        Has_Been_Built := True;
 
                         if Verbose_Mode then
                            Write_Str  ("      -> time stamp of ");
@@ -2863,10 +2869,10 @@ package body Buildgpr is
             end if;
          end if;
 
-         if not Need_To_Rebuild then
+         if not Has_Been_Built then
             for S in 1 .. Last_Source loop
                if not Source_Indexes (S).Found then
-                  Need_To_Rebuild := True;
+                  Has_Been_Built := True;
 
                   if Verbose_Mode then
                      Source := Project_Tree.Sources.Table
@@ -2881,7 +2887,7 @@ package body Buildgpr is
             end loop;
          end if;
 
-         if not Need_To_Rebuild then
+         if not Has_Been_Built then
             if Verbose_Mode then
                Write_Line  ("      -> up to date");
             end if;
@@ -7150,6 +7156,8 @@ package body Buildgpr is
 
       Global_Archive_TS  : Time_Stamp_Type;
 
+      Global_Archive_Has_Been_Built : Boolean := False;
+
    begin
       Mains.Reset;
 
@@ -7170,6 +7178,8 @@ package body Buildgpr is
 
             Main_Base_Name : File_Name_Type;
 
+            Has_Been_Built : Boolean;
+
          begin
             exit when Display_Main'Length = 0;
 
@@ -7188,7 +7198,10 @@ package body Buildgpr is
 
             --  Build the global archive for this project, if needed
 
-            Build_Global_Archive (Main_Proj);
+            Build_Global_Archive (Main_Proj, Has_Been_Built);
+
+            Global_Archive_Has_Been_Built :=
+              Global_Archive_Has_Been_Built or Has_Been_Built;
 
             --  Get the main base name
 
@@ -7520,6 +7533,16 @@ package body Buildgpr is
                   Get_Name_String
                     (Project_Tree.Projects.Table (Main_Proj).Name),
                   " does not exist");
+            end if;
+
+            if (not Linker_Needs_To_Be_Called) and then
+              Global_Archive_Has_Been_Built
+            then
+               Linker_Needs_To_Be_Called := True;
+
+               if Verbose_Mode then
+                  Write_Line ("      -> global archive has just been built");
+               end if;
             end if;
 
             if (not Linker_Needs_To_Be_Called) and then
