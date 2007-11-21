@@ -80,7 +80,7 @@ install: all install.data install.bin
 	for format in html txt pdf info; do \
 	  if [ -d doc/$$format ] ; then \
 	     ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
-	     ${INSTALL_DATA} doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
+	     ${CP} doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
 	     if [ $$format = html ] ; then \
 	        ${CP} doc/*.png ${datadir}/doc/gprbuild/html; \
 	     fi; \
