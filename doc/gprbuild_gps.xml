@@ -13,11 +13,4 @@
      <menu>/Help/Gprbuild/Gprbuild User's Guide</menu>
   </documentation_file>
 
-  <documentation_file>
-     <name>gprbuild_ug_2.html</name>
-     <descr>Gprbuild User's Guide (alternate CSS)</descr>
-     <category>GNAT</category>
-     <menu>/Help/Gprbuild/Gprbuild User's Guide (alternate CSS)</menu>
-  </documentation_file>
-
 </GPS>
