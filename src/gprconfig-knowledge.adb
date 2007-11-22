@@ -2137,8 +2137,10 @@ package body GprConfig.Knowledge is
               or else Match
                 (Filter.Version_Re.all, Get_Name_String (Comp.Version)))
            and then (Filter.Runtime_Re = null
-                     or else Match (Filter.Runtime_Re.all,
-                                    Get_Name_String (Comp.Runtime)))
+                     or else
+                       (Comp.Runtime /= No_Name and then
+                        Match (Filter.Runtime_Re.all,
+                               Get_Name_String (Comp.Runtime))))
            and then (Filter.Language_LC = No_Name
                      or else Filter.Language_LC = Comp.Language_LC)
          then
