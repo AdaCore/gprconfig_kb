@@ -1303,7 +1303,7 @@ begin
    --  Archives
 
    if Static then
-      if Partial_Linker /= null then
+      if Standalone and then Partial_Linker /= null then
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
          if Partial_Linker_Path = null then
@@ -1325,7 +1325,7 @@ begin
 
       Add (Library_Path_Name, AB_Options, Last_AB_Option);
 
-      if Partial_Linker_Path /= null then
+      if Standalone and then Partial_Linker_Path /= null then
          --  If partial linker is used, do a partial link and put the resulting
          --  object file in the archive.
 
@@ -1374,7 +1374,8 @@ begin
          end;
 
       else
-         --  Partial linker is not specified. Put all objects in the archive.
+         --  Not a standalone library, or Partial linker is not specified.
+         --  Put all objects in the archive.
 
          for J in 1 .. Object_Files.Last loop
             Add (Object_Files.Table (J), AB_Options, Last_AB_Option);
