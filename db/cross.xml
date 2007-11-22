@@ -26,14 +26,8 @@
 
    <!-- Forbid mixing kernel and rtp.  -->
    <configuration>
-     <compilers><compiler name="GNAT" runtime="kernel" /></compilers>
-     <compilers><compiler name="GCC-WRS" runtime="rtp" /></compilers>
-     <config></config>
-   </configuration>
-
-   <configuration>
-     <compilers><compiler name="GNAT" runtime="rtp" /></compilers>
-     <compilers><compiler name="GCC-WRS" runtime="kernel" /></compilers>
+     <compilers><compiler runtime="kernel" /></compilers>
+     <compilers><compiler runtime="rtp" /></compilers>
      <config></config>
    </configuration>
 
@@ -41,7 +35,8 @@
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="kernel" />
-       <compiler name="GCC-WRS" runtime="kernel" />
+       <compiler name="GCC-WRS6" runtime="kernel" />
+       <compiler name="GCC-WRS5" />
      </compilers>
      <config>
    package Builder is
@@ -56,8 +51,8 @@
        <target name="ppc-vx6.*" />
      </targets>
      <config>
-   for Archive_Builder  use ("arppc", "cr");
-   for Archive_Indexer  use ("ranlibppc");
+   for Archive_Builder use ("arppc", "cr");
+   for Archive_Indexer use ("ranlibppc");
      </config>
    </configuration>
 
@@ -65,7 +60,7 @@
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="rtp" />
-       <compiler name="GCC-WRS" runtime="rtp" />
+       <compiler name="GCC-WRS6" runtime="rtp" />
      </compilers>
      <config>
    package Builder is
@@ -93,7 +88,7 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS" runtime="rtp" />
+       <compiler name="GCC-WRS6" runtime="rtp" />
      </compilers>
      <config>
    package Compiler is
@@ -106,7 +101,8 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS" runtime="kernel" />
+       <compiler name="GCC-WRS5" runtime="kernel" />
+       <compiler name="GCC-WRS6" runtime="kernel" />
      </compilers>
      <config>
    package Compiler is

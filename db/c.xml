@@ -40,7 +40,8 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS" language="C" />
+       <compiler name="GCC-WRS5" language="C" />
+       <compiler name="GCC-WRS6" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -54,7 +55,8 @@
        <compiler name="GCC" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-MINGW32" language="C" />
-       <compiler name="GCC-WRS" language="C" />
+       <compiler name="GCC-WRS5" language="C" />
+       <compiler name="GCC-WRS6" language="C" />
      </compilers>
      <config>
    package Compiler is

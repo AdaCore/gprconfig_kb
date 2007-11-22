@@ -17,7 +17,7 @@
 
   <!-- VxWorks 6 -->
   <compiler_description>
-    <name>GCC-WRS</name>
+    <name>GCC-WRS6</name>
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
@@ -34,7 +34,7 @@
 
   <!-- VxWorks 5 -->
   <compiler_description>
-    <name>GCC-WRS</name>
+    <name>GCC-WRS5</name>
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
