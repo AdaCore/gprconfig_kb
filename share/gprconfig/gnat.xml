@@ -22,12 +22,36 @@
    package Compiler is
       for Driver                   ("Ada") use "${PATH}${PREFIX}gcc";
       for Required_Switches        ("Ada") use
-          Compiler'Required_Switches ("Ada") 
+          Compiler'Required_Switches ("Ada")
 	     &amp; ("-c", "-x", "ada", "-gnatA");
       for Mapping_File_Switches    ("Ada") use ("-gnatem=");
       for Mapping_Spec_Suffix      ("Ada") use "%s";
       for Mapping_Body_Suffix      ("Ada") use "%b";
       for Config_File_Switches     ("Ada") use ("-gnatec=");
+      for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
+   end Compiler;
+
+   package Binder is
+      for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
+      for Required_Switches     ("Ada") use
+          Binder'Required_Switches ("Ada")  &amp; ("-I-");
+      for Driver         ("Ada") use
+          "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
+   end Binder;
+
+   for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
+   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR}";
+   </config>
+  </configuration>
+
+  <configuration>
+   &filter_gnat;
+   <compilers negate="true">
+     <compiler version="3.16" />
+     <compiler version="5.00" />
+   </compilers>
+   <config>
+   package Compiler is
       for Config_Body_File_Name    ("Ada") use
            "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
       for Config_Spec_File_Name    ("Ada") use
@@ -43,19 +67,33 @@
            "   Casing          => %c," &amp;
            "   Dot_Replacement => ""%d"");";
       for Config_File_Unique    ("Ada") use "False";
-      for Include_Path_File     ("Ada") use "ADA_PRJ_INCLUDE_FILE";
    end Compiler;
+   </config>
+  </configuration>
 
-   package Binder is
-      for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
-      for Required_Switches     ("Ada") use
-          Binder'Required_Switches ("Ada")  &amp; ("-I-");
-      for Driver         ("Ada") use
-          "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
-   end Binder;
-
-   for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
-   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR}";
+  <configuration>
+   &filter_gnat;
+   <compilers>
+     <compiler version="3.16" />
+   </compilers>
+   <config>
+   package Compiler is
+      for Config_Body_File_Name    ("Ada") use
+           "pragma Source_File_Name (%u, Body_File_Name => ""%f"");";
+      for Config_Spec_File_Name    ("Ada") use
+           "pragma Source_File_Name (%u, Spec_File_Name => ""%f"");";
+      for Config_Body_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name " &amp;
+           "  (Body_File_Name  => ""*%b""," &amp;
+           "   Casing          => %c," &amp;
+           "   Dot_Replacement => ""%d"");";
+      for Config_Spec_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name " &amp;
+           "  (Spec_File_Name  => ""*%s""," &amp;
+           "   Casing          => %c," &amp;
+           "   Dot_Replacement => ""%d"");";
+      for Config_File_Unique    ("Ada") use "True";
+   end Compiler;
    </config>
   </configuration>
 
