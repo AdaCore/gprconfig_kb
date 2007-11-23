@@ -1197,6 +1197,19 @@ package body Cleangpr is
                            Bad_Argument;
                         end if;
 
+                     when 'a' =>
+                        if Arg'Length < 4 then
+                           Bad_Argument;
+                        end if;
+
+                        if Arg (3) = 'P' then
+                           Prj.Ext.Add_Search_Project_Directory
+                             (Arg (4 .. Arg'Last));
+
+                        else
+                           Bad_Argument;
+                        end if;
+
                      when 'c'    =>
                         Compile_Only := True;
 
@@ -1394,10 +1407,11 @@ package body Cleangpr is
          Put_Line ("  --config=<main config project file name>");
          Put_Line ("           Specify the configuration project file name");
          New_Line;
+         Put_Line ("  -aPdir   Add directory dir to project search path");
          Put_Line ("  -c       Only delete compiler generated files");
          Put_Line ("  -f       Force deletions of unwritable files");
          Put_Line ("  -F       Full project path name " &
-                   "in brief error messages");
+                   "           in brief error messages");
          Put_Line ("  -h       Display this message");
          Put_Line ("  -n       Nothing to do: only list files to delete");
          Put_Line ("  -P<proj> Use Project File <proj>");
