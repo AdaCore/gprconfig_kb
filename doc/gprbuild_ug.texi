@@ -1615,7 +1615,7 @@ instance @file{/usr/bin} (and not the installation prefix @file{/usr}).
 
 @option{name} should be one of the compiler names defined in the @value{gprconfig}
 knowledge base. The list of supported names can be found in the output of
-@option{--help}, and includes @samp{GNAT}, @samp{GCC},@dots{}. This name is
+@option{-h}, and includes @samp{GNAT}, @samp{GCC},@dots{}. This name is
 generally not needed, but can be used to distinguish among several compilers
 that could match the other arguments of @option{--config}.
 
