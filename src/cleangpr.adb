@@ -1411,7 +1411,7 @@ package body Cleangpr is
          Put_Line ("  -c       Only delete compiler generated files");
          Put_Line ("  -f       Force deletions of unwritable files");
          Put_Line ("  -F       Full project path name " &
-                   "           in brief error messages");
+                   "in brief error messages");
          Put_Line ("  -h       Display this message");
          Put_Line ("  -n       Nothing to do: only list files to delete");
          Put_Line ("  -P<proj> Use Project File <proj>");
@@ -1420,7 +1420,7 @@ package body Cleangpr is
          Put_Line ("  -v       Verbose mode");
          Put_Line ("  -vPx     Specify verbosity when parsing Project Files");
          Put_Line ("  -Xnm=val Specify an external reference " &
-                               "for Project Files");
+                   "for Project Files");
          New_Line;
       end if;
    end Usage;
