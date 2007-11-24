@@ -18,6 +18,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="GCC-28" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
      </compilers>
      <config>
@@ -53,6 +54,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="GCC-28" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-MINGW32" language="C" />
        <compiler name="GCC-WRS5" language="C" />
@@ -73,6 +75,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="GCC-28" language="C" />
      </compilers>
      <targets negate="true">
        <target name=".*LynxOS.*" />
