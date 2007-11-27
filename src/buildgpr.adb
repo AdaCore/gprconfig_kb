@@ -7463,6 +7463,49 @@ package body Buildgpr is
                end loop;
             end if;
 
+            --  Add the global archive
+
+            Global_Archive_TS :=
+              File_Stamp
+                (Path_Name_Type'
+                   (Create_Name (Global_Archive_Name (Main_Proj))));
+
+            if Global_Archive_TS = Empty_Time_Stamp then
+               if (not Linker_Needs_To_Be_Called) and then Verbose_Mode then
+                  Write_Line ("      -> global archive does not exist");
+               end if;
+
+               Fail_Program
+                 ("global archive for project file ",
+                  Get_Name_String
+                    (Project_Tree.Projects.Table (Main_Proj).Name),
+                  " does not exist");
+            end if;
+
+            if (not Linker_Needs_To_Be_Called) and then
+              Global_Archive_Has_Been_Built
+            then
+               Linker_Needs_To_Be_Called := True;
+
+               if Verbose_Mode then
+                  Write_Line ("      -> global archive has just been built");
+               end if;
+            end if;
+
+            if (not Linker_Needs_To_Be_Called) and then
+              String (Global_Archive_TS) > String (Executable_TS)
+            then
+               Linker_Needs_To_Be_Called := True;
+
+               if Verbose_Mode then
+                  Write_Line ("      -> global archive is more recent than " &
+                            "executable");
+               end if;
+            end if;
+
+            Add_Argument
+              (Global_Archive_Name (Main_Proj), Verbose_Mode);
+
             --  Add the library switches, if there are libraries
 
             Process_Imported_Libraries (Main_Proj);
@@ -7515,49 +7558,6 @@ package body Buildgpr is
                      Verbose_Mode);
                end if;
             end loop;
-
-            --  Add the global archive
-
-            Global_Archive_TS :=
-              File_Stamp
-                (Path_Name_Type'
-                   (Create_Name (Global_Archive_Name (Main_Proj))));
-
-            if Global_Archive_TS = Empty_Time_Stamp then
-               if (not Linker_Needs_To_Be_Called) and then Verbose_Mode then
-                  Write_Line ("      -> global archive does not exist");
-               end if;
-
-               Fail_Program
-                 ("global archive for project file ",
-                  Get_Name_String
-                    (Project_Tree.Projects.Table (Main_Proj).Name),
-                  " does not exist");
-            end if;
-
-            if (not Linker_Needs_To_Be_Called) and then
-              Global_Archive_Has_Been_Built
-            then
-               Linker_Needs_To_Be_Called := True;
-
-               if Verbose_Mode then
-                  Write_Line ("      -> global archive has just been built");
-               end if;
-            end if;
-
-            if (not Linker_Needs_To_Be_Called) and then
-              String (Global_Archive_TS) > String (Executable_TS)
-            then
-               Linker_Needs_To_Be_Called := True;
-
-               if Verbose_Mode then
-                  Write_Line ("      -> global archive is more recent than " &
-                            "executable");
-               end if;
-            end if;
-
-            Add_Argument
-              (Global_Archive_Name (Main_Proj), Verbose_Mode);
 
             --  Add the additional options, if any
             --  ??? Shouldn't this be after the command line options?
