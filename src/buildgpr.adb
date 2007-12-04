@@ -8929,7 +8929,7 @@ package body Buildgpr is
             end if;
 
          elsif Command_Line and then Arg = "-eL" then
-            Follow_Links := True;
+            Follow_Links_For_Files := True;
 
          elsif Arg = "-f" then
             Force_Compilations := True;
