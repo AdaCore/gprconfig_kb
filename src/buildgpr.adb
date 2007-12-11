@@ -116,7 +116,6 @@ package body Buildgpr is
    --  Set to True if -U is used
 
    Naming_String                : aliased String := "naming";
-   Language_Processing_String   : aliased String := "language_processing";
    Builder_String               : aliased String := "builder";
    Compiler_String              : aliased String := "compiler";
    Binder_String                : aliased String := "binder";
@@ -125,7 +124,6 @@ package body Buildgpr is
 
    List_Of_Packages : aliased String_List :=
                         (Naming_String              'Access,
-                         Language_Processing_String 'Access,
                          Builder_String             'Access,
                          Compiler_String            'Access,
                          Binder_String              'Access,
