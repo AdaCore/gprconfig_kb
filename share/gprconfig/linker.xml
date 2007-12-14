@@ -42,7 +42,6 @@
     <targets>
        <target name=".*aix.*" />
        <target name=".*lynxos.*" />
-       <target name=".*osf.*" />
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
@@ -156,13 +155,24 @@
     </config>
   </configuration>
 
-  <!--  Cygming -->
+  <!-- Tru64-->
   <configuration>
-    <compilers><compiler name="GCC-CYGMING"/></compilers>
+    <targets>
+       <target name=".*osf.*" />
+    </targets>
     <config>
-   package Linker is
-       for Required_Switches use ("-mno-cygwin");
-   end Linker;
+   for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
+   for Library_Support  use "full";
+   for Shared_Library_Prefix use "lib";
+   for Symbolic_Link_Supported use "true";
+   for Library_Major_Minor_Id_Supported use "true";
+   for Shared_Library_Minimum_Switches use
+      ("-shared", "-Wl,-expect_unresolved,*");
+   for Library_Version_Switches use ("-Wl,-soname,");
+
+   for Shared_Library_Suffix use ".so";
+   for Library_Auto_Init_Supported use "true";
+   for Run_Path_Option  use ("-Wl,-rpath,");
     </config>
   </configuration>
 
@@ -179,6 +189,16 @@
    for Library_Major_Minor_Id_Supported use "false";
    for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
    for Library_Auto_Init_Supported use "true";
+    </config>
+  </configuration>
+
+  <!--  Cygming -->
+  <configuration>
+    <compilers><compiler name="GCC-CYGMING"/></compilers>
+    <config>
+   package Linker is
+       for Required_Switches use ("-mno-cygwin");
+   end Linker;
     </config>
   </configuration>
 
