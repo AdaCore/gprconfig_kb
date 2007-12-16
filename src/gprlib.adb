@@ -326,6 +326,13 @@ procedure Gprlib is
    Initial_Rpath_Length : constant := 200;
    --  Initial size of Rpath, when first allocated
 
+   Arguments : String_List_Access := new String_List (1 .. 20);
+   Last_Arg  : Natural := 0;
+
+   procedure Add_Arg (Arg : String_Access);
+   --  Add one argument to the Arguments list. Increase the size of the list
+   --  if necessary.
+
    procedure Add_Rpath (Path : String);
    --  Add a path name to Rpath
 
@@ -345,6 +352,29 @@ procedure Gprlib is
    procedure Build_Shared_Lib;
 
    procedure Build_Shared_Lib is separate;
+
+   -------------
+   -- Add_Arg --
+   -------------
+
+   procedure Add_Arg (Arg : String_Access) is
+   begin
+      if Last_Arg = Arguments'Last then
+         --  Double the size of Arguments
+
+         declare
+            New_Args : constant String_List_Access :=
+                         new String_List (1 .. 2 * Last_Arg);
+
+         begin
+            New_Args (Arguments'Range) := Arguments.all;
+            Arguments := New_Args;
+         end;
+      end if;
+
+      Last_Arg := Last_Arg + 1;
+      Arguments (Last_Arg) := Arg;
+   end Add_Arg;
 
    ---------------
    -- Add_Rpath --
