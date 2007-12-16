@@ -3650,7 +3650,7 @@ package body Buildgpr is
                end loop;
             end;
 
-            if Data.Library_Kind = Relocatable then
+            if Data.Library_Kind /= Static then
                Put_Line (Exchange_File, Library_Label (Relocatable));
             end if;
 
@@ -8857,6 +8857,10 @@ package body Buildgpr is
                Fail_Program
                  ("several configuration switches cannot be specified");
 
+            elsif Target_Name /= null then
+               Fail_Program
+                 ("configuration and target switches cannot be used together");
+
             else
                Autoconfiguration := False;
                Config_Project_File_Name :=
@@ -8866,19 +8870,43 @@ package body Buildgpr is
 
          elsif Command_Line
            and then
-         Arg'Length > Autoconf_Project_Option'Length
+            Arg'Length > Autoconf_Project_Option'Length
            and then
-         Arg (1 .. Autoconf_Project_Option'Length) =
-           Autoconf_Project_Option
+            Arg (1 .. Autoconf_Project_Option'Length) =
+              Autoconf_Project_Option
          then
             if Config_Project_File_Name /= null then
                Fail_Program
                  ("several configuration switches cannot be specified");
 
+            elsif Target_Name /= null then
+               Fail_Program
+                 ("configuration and target switches cannot be used together");
+
             else
                Config_Project_File_Name :=
                  new String'
                    (Arg (Autoconf_Project_Option'Length + 1 .. Arg'Last));
+            end if;
+
+         elsif Command_Line
+           and then
+            Arg'Length > Target_Project_Option'Length
+           and then
+            Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
+         then
+            if Target_Name /= null then
+               Fail_Program
+                 ("several target switches cannot be specified");
+
+            elsif Config_Project_File_Name /= null then
+               Fail_Program
+                 ("configuration and target switches cannot be used together");
+
+            else
+               Target_Name :=
+                 new String'
+                   (Arg (Target_Project_Option'Length + 1 .. Arg'Last));
             end if;
 
          elsif Command_Line and then
@@ -9237,6 +9265,16 @@ package body Buildgpr is
          Write_Eol;
          Write_Str
            ("           Specify/create the main config project file name");
+         Write_Eol;
+
+         --  Line for Target_Project_Option
+
+         Write_Str ("  ");
+         Write_Str (Target_Project_Option);
+         Write_Str ("targetname");
+         Write_Eol;
+         Write_Str
+           ("           Specify a target for cross platforms");
          Write_Eol;
 
          --  Line for -aP

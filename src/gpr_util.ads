@@ -79,11 +79,15 @@ package Gpr_Util is
 
    Autoconf_Project_Option : constant String := "--autoconf=";
 
+   Target_Project_Option : constant String := "--target=";
+
    Config_Path : String_Access := null;
 
    Default_Name : constant String := "default.cgpr";
 
    Config_Project_Env_Var : constant String := "GPR_CONFIG";
+
+   Target_Name : String_Access := null;
 
    Config_Project_File_Name : String_Access := null;
 

@@ -1176,23 +1176,71 @@ package body Cleangpr is
                      when '-' =>
                         if Arg'Length > Config_Project_Option'Length and then
                           Arg (1 .. Config_Project_Option'Length) =
-                             Config_Project_Option
+                          Config_Project_Option
                         then
-                           Autoconfiguration := False;
-                           Config_Project_File_Name :=
-                             new String'
-                               (Arg (Config_Project_Option'Length + 1 ..
-                                       Arg'Last));
+                           if Config_Project_File_Name /= null then
+                              Fail_Program
+                                ("several configuration switches cannot " &
+                                 "be specified");
+
+                           elsif Target_Name /= null then
+                              Fail_Program
+                                ("configuration and target switches cannot " &
+                                 "be used together");
+
+                           else
+
+                              Autoconfiguration := False;
+                              Config_Project_File_Name :=
+                                new String'
+                                  (Arg (Config_Project_Option'Length + 1 ..
+                                     Arg'Last));
+                           end if;
 
                         elsif Arg'Length > Autoconf_Project_Option'Length
                               and then
                               Arg (1 .. Autoconf_Project_Option'Length) =
                                 Autoconf_Project_Option
                         then
-                           Config_Project_File_Name :=
-                             new String'
-                               (Arg (Autoconf_Project_Option'Length + 1 ..
-                                       Arg'Last));
+                           if Config_Project_File_Name /= null then
+                              Fail_Program
+                                ("several configuration switches cannot " &
+                                 "be specified");
+
+                           elsif Target_Name /= null then
+                              Fail_Program
+                                ("configuration and target switches cannot " &
+                                 "be used together");
+
+                           else
+                              Config_Project_File_Name :=
+                                new String'
+                                  (Arg (Autoconf_Project_Option'Length + 1 ..
+                                        Arg'Last));
+                           end if;
+
+                        elsif
+                          Arg'Length > Target_Project_Option'Length
+                          and then
+                          Arg (1 .. Target_Project_Option'Length) =
+                             Target_Project_Option
+                        then
+                           if Target_Name /= null then
+                              Fail_Program
+                              ("several target switches cannot be specified");
+
+                           elsif Config_Project_File_Name /= null then
+                              Fail_Program
+                                ("configuration and target switches cannot " &
+                                 "be used together");
+
+                           else
+                              Target_Name :=
+                                new String'
+                                  (Arg (Target_Project_Option'Length + 1 ..
+                                        Arg'Last));
+                           end if;
+
                         else
                            Bad_Argument;
                         end if;
@@ -1404,9 +1452,15 @@ package body Cleangpr is
          Put_Line ("  {name} is zero or more file names");
          New_Line;
 
-         Put_Line ("  --config=<main config project file name>");
+         Put_Line ("  --config=file.cgpr");
          Put_Line ("           Specify the configuration project file name");
+         Put_Line ("  --autoconf=file.cgpr");
+         Put_Line
+           ("           Specify/create the main config project file name");
+         Put_Line ("  --target=targetname");
+         Put_Line ("           Specify a target for cross polatforms");
          New_Line;
+
          Put_Line ("  -aPdir   Add directory dir to project search path");
          Put_Line ("  -c       Only delete compiler generated files");
          Put_Line ("  -f       Force deletions of unwritable files");

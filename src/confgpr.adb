@@ -294,7 +294,13 @@ package body Confgpr is
          end if;
       end;
 
-      Default_Config_Project_File_Name := Getenv (Config_Project_Env_Var);
+      if Target_Name /= null then
+         Default_Config_Project_File_Name := new String'
+           (Target_Name.all & ".cgpr");
+
+      else
+         Default_Config_Project_File_Name := Getenv (Config_Project_Env_Var);
+      end if;
 
       if Default_Config_Project_File_Name'Length = 0 then
          Default_Config_Project_File_Name := new String'(Default_Name);
@@ -540,6 +546,12 @@ package body Confgpr is
             if Quiet_Output then
                Args (4) := new String'("-q");
                Arg_Last := 4;
+            end if;
+
+            if Target_Name /= null then
+               Args (4) :=
+                 new String'(Target_Project_Option & Target_Name.all);
+               Arg_Last := 5;
             end if;
 
             Name := Language_Htable.Get_First;
