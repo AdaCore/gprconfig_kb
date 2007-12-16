@@ -61,11 +61,6 @@ procedure Build_Shared_Lib is
    --  Not one comment below in this body ???
 
    procedure Build (Output_File : String) is
-      Arguments :
-         Argument_List
-          (1 .. 10 + Ofiles'Length + Options'Length);
-
-      A        : Natural := 0;
       Success  : Boolean;
 
       Out_Opt : constant String_Access :=
@@ -91,45 +86,40 @@ procedure Build_Shared_Lib is
          end if;
       end if;
 
+      Last_Arg := 0;
+
       for J in 1 .. Shared_Lib_Minimum_Options.Last loop
-         A := A + 1;
-         Arguments (A) := Shared_Lib_Minimum_Options.Table (J);
+         Add_Arg (Shared_Lib_Minimum_Options.Table (J));
       end loop;
 
-      A := A + 1;
-      Arguments (A) := Out_Opt;
+      Add_Arg (Out_Opt);
 
-      A := A + 1;
-      Arguments (A) := Out_V;
+      Add_Arg (Out_V);
 
       for J in Options'Range loop
          if Options (J) /= null and then Options (J).all /= "" then
-            A := A + 1;
-            Arguments (A) := Options (J);
+            Add_Arg (Options (J));
          end if;
       end loop;
 
       for J in 1 .. Library_Version_Options.Last loop
          if Library_Version_Options.Table (J).all /= "" then
-            A := A + 1;
-            Arguments (A) := Library_Version_Options.Table (J);
+            Add_Arg (Library_Version_Options.Table (J));
          end if;
       end loop;
 
       for J in 1 .. Library_Options_Table.Last loop
-         A := A + 1;
-         Arguments (A) := Library_Options_Table.Table (J);
+         Add_Arg (Library_Options_Table.Table (J));
       end loop;
 
       for J in Ofiles'Range loop
-         A := A + 1;
-         Arguments (A) := Ofiles (J);
+         Add_Arg (Ofiles (J));
       end loop;
 
       if not Opt.Quiet_Output then
          Write_Str (Driver.all);
 
-         for J in 1 .. A loop
+         for J in 1 .. Last_Arg loop
             Write_Char (' ');
             Write_Str  (Arguments (J).all);
          end loop;
@@ -137,7 +127,7 @@ procedure Build_Shared_Lib is
          Write_Eol;
       end if;
 
-      Spawn (Driver.all, Arguments (1 .. A), Success);
+      Spawn (Driver.all, Arguments (1 .. Last_Arg), Success);
 
       if not Success then
          if Driver_Name = No_Name then
