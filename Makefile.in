@@ -38,7 +38,7 @@ endif
 
 .PHONY: all gprbuild gprconfig gprclean copy_gnat_src bootstrap
 all:
-	gnatmake -Pgprbuild -XBUILD=${BUILD}
+	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD}
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
