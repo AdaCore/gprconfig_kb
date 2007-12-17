@@ -551,7 +551,7 @@ package body Confgpr is
             if Target_Name /= null then
                Args (4) :=
                  new String'(Target_Project_Option & Target_Name.all);
-               Arg_Last := 5;
+               Arg_Last := 4;
             end if;
 
             Name := Language_Htable.Get_First;
