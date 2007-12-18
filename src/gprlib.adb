@@ -757,282 +757,282 @@ begin
    while not End_Of_File (IO_File) loop
       Get_Line (IO_File, Line, Last);
 
-      if Last > 0 then
-         if Line (1) = '[' then
-            Current_Section := Get_Library_Section (Line (1 .. Last));
+      if Last > 0 and then Line (1) = '[' then
+         Current_Section := Get_Library_Section (Line (1 .. Last));
 
-            case Current_Section is
-               when No_Library_Section =>
-                  Osint.Fail ("unknown section: ", Line (1 .. Last));
+         case Current_Section is
+            when No_Library_Section =>
+               Osint.Fail ("unknown section: ", Line (1 .. Last));
 
-               when Quiet =>
-                  Quiet_Output := True;
-                  Verbose_Mode := False;
+            when Quiet =>
+               Quiet_Output := True;
+               Verbose_Mode := False;
 
-               when Verbose =>
-                  Quiet_Output := False;
-                  Verbose_Mode := True;
+            when Verbose =>
+               Quiet_Output := False;
+               Verbose_Mode := True;
 
-               when Gprexch.Relocatable =>
-                  Relocatable := True;
-                  Static      := False;
+            when Gprexch.Relocatable =>
+               Relocatable := True;
+               Static      := False;
 
-               when Gprexch.Static =>
-                  Static      := True;
-                  Relocatable := False;
+            when Gprexch.Static =>
+               Static      := True;
+               Relocatable := False;
 
-               when Gprexch.Archive_Builder =>
-                  Archive_Builder := null;
-                  Last_AB_Option  := 0;
+            when Gprexch.Archive_Builder =>
+               Archive_Builder := null;
+               Last_AB_Option  := 0;
 
-               when Gprexch.Archive_Indexer =>
-                  Archive_Indexer := null;
-                  Last_AI_Option  := 0;
+            when Gprexch.Archive_Indexer =>
+               Archive_Indexer := null;
+               Last_AI_Option  := 0;
 
-               when Gprexch.Partial_Linker =>
-                  Partial_Linker := null;
-                  Last_PL_Option := 0;
+            when Gprexch.Partial_Linker =>
+               Partial_Linker := null;
+               Last_PL_Option := 0;
 
-               when Gprexch.Auto_Init =>
-                  Auto_Init := True;
+            when Gprexch.Auto_Init =>
+               Auto_Init := True;
 
-               when Gprexch.Symbolic_Link_Supported =>
-                  Symbolic_Link_Supported  := True;
+            when Gprexch.Symbolic_Link_Supported =>
+               Symbolic_Link_Supported  := True;
 
-               when Gprexch.Major_Minor_Id_Supported =>
-                  Major_Minor_Id_Supported := True;
+            when Gprexch.Major_Minor_Id_Supported =>
+               Major_Minor_Id_Supported := True;
 
-               when others =>
-                  null;
-            end case;
+            when others =>
+               null;
+         end case;
 
-         else
-            case Current_Section is
-               when No_Library_Section =>
-                  Osint.Fail ("no section specified: ", Line (1 .. Last));
+      elsif Last > 0
+        or else Current_Section = Gprexch.Shared_Lib_Prefix
+      then
+         case Current_Section is
+            when No_Library_Section =>
+               Osint.Fail ("no section specified: ", Line (1 .. Last));
 
-               when Quiet =>
-                  Osint.Fail ("quiet section should be empty");
+            when Quiet =>
+               Osint.Fail ("quiet section should be empty");
 
-               when Verbose =>
-                  Osint.Fail ("verbose section should be empty");
+            when Verbose =>
+               Osint.Fail ("verbose section should be empty");
 
-               when Gprexch.Relocatable =>
-                  Osint.Fail ("relocatable section should be empty");
+            when Gprexch.Relocatable =>
+               Osint.Fail ("relocatable section should be empty");
 
-               when Gprexch.Static =>
-                  Osint.Fail ("static section should be empty");
+            when Gprexch.Static =>
+               Osint.Fail ("static section should be empty");
 
-               when Gprexch.Object_Files =>
-                  Object_Files.Append (new String'(Line (1 .. Last)));
+            when Gprexch.Object_Files =>
+               Object_Files.Append (new String'(Line (1 .. Last)));
 
-               when Gprexch.Options =>
-                  Options_Table.Append (new String'(Line (1 .. Last)));
+            when Gprexch.Options =>
+               Options_Table.Append (new String'(Line (1 .. Last)));
 
-               when Gprexch.Object_Directory =>
-                  Object_Directories.Append (new String'(Line (1 .. Last)));
+            when Gprexch.Object_Directory =>
+               Object_Directories.Append (new String'(Line (1 .. Last)));
 
-               when Gprexch.Library_Name =>
-                  Library_Name := new String'(Line (1 .. Last));
+            when Gprexch.Library_Name =>
+               Library_Name := new String'(Line (1 .. Last));
 
-               when Gprexch.Library_Directory =>
-                  Library_Directory := new String'(Line (1 .. Last));
+            when Gprexch.Library_Directory =>
+               Library_Directory := new String'(Line (1 .. Last));
 
-               when Gprexch.Library_Dependency_Directory =>
-                  Library_Dependency_Directory :=
-                    new String'(Line (1 .. Last));
+            when Gprexch.Library_Dependency_Directory =>
+               Library_Dependency_Directory :=
+                 new String'(Line (1 .. Last));
 
-               when Gprexch.Library_Version =>
-                  Library_Version := new String'(Line (1 .. Last));
+            when Gprexch.Library_Version =>
+               Library_Version := new String'(Line (1 .. Last));
 
-               when Gprexch.Library_Options =>
-                  Library_Options_Table.Append (new String'(Line (1 .. Last)));
+            when Gprexch.Library_Options =>
+               Library_Options_Table.Append (new String'(Line (1 .. Last)));
 
-               when Library_Path =>
-                  Osint.Fail ("library path should not be specified");
+            when Library_Path =>
+               Osint.Fail ("library path should not be specified");
 
-               when Gprexch.Library_Version_Options =>
-                  Library_Version_Options.Append
-                                            (new String'(Line (1 .. Last)));
+            when Gprexch.Library_Version_Options =>
+               Library_Version_Options.Append
+                 (new String'(Line (1 .. Last)));
 
-               when Gprexch.Shared_Lib_Prefix =>
-                  Shared_Lib_Prefix := new String'(Line (1 .. Last));
+            when Gprexch.Shared_Lib_Prefix =>
+               Shared_Lib_Prefix := new String'(Line (1 .. Last));
 
-               when Gprexch.Shared_Lib_Suffix =>
-                  Shared_Lib_Suffix := new String'(Line (1 .. Last));
+            when Gprexch.Shared_Lib_Suffix =>
+               Shared_Lib_Suffix := new String'(Line (1 .. Last));
 
-               when Gprexch.Shared_Lib_Minimum_Options =>
-                  Shared_Lib_Minimum_Options.Append
-                                               (new String'(Line (1 .. Last)));
+            when Gprexch.Shared_Lib_Minimum_Options =>
+               Shared_Lib_Minimum_Options.Append
+                 (new String'(Line (1 .. Last)));
 
-               when Gprexch.Symbolic_Link_Supported =>
+            when Gprexch.Symbolic_Link_Supported =>
+               Osint.Fail
+                 ("symbolic link supported section should be empty");
+
+            when Gprexch.Major_Minor_Id_Supported =>
+               Osint.Fail
+                 ("major minor id supported section should be empty");
+
+            when Gprexch.PIC_Option =>
+               PIC_Option := new String'(Line (1 .. Last));
+
+            when Gprexch.Imported_Libraries =>
+               if End_Of_File (IO_File) then
                   Osint.Fail
-                    ("symbolic link supported section should be empty");
+                    ("no library name for imported library ",
+                     Line (1 .. Last));
 
-               when Gprexch.Major_Minor_Id_Supported =>
+               else
+                  Imported_Library_Directories.Append
+                    (new String'(Line (1 .. Last)));
+                  Get_Line (IO_File, Line, Last);
+                  Imported_Library_Names.Append
+                    (new String'(Line (1 .. Last)));
+               end if;
+
+            when Gprexch.Driver_Name =>
+               Name_Len := Last;
+               Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
+               Driver_Name := Name_Find;
+
+            when Gprexch.Compilers =>
+               if End_Of_File (IO_File) then
                   Osint.Fail
-                    ("major minor id supported section should be empty");
+                    ("no compiler specified for language ",
+                     Line (1 .. Last));
 
-               when Gprexch.PIC_Option =>
-                  PIC_Option := new String'(Line (1 .. Last));
+               else
+                  To_Lower (Line (1 .. Last));
 
-               when Gprexch.Imported_Libraries =>
-                  if End_Of_File (IO_File) then
-                     Osint.Fail
-                       ("no library name for imported library ",
-                        Line (1 .. Last));
-
-                  else
-                     Imported_Library_Directories.Append
-                       (new String'(Line (1 .. Last)));
+                  if Line (1 .. Last) = "ada" then
                      Get_Line (IO_File, Line, Last);
-                     Imported_Library_Names.Append
-                       (new String'(Line (1 .. Last)));
-                  end if;
 
-               when Gprexch.Driver_Name =>
-                  Name_Len := Last;
-                  Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
-                  Driver_Name := Name_Find;
-
-               when Gprexch.Compilers =>
-                  if End_Of_File (IO_File) then
-                     Osint.Fail
-                       ("no compiler specified for language ",
-                        Line (1 .. Last));
-
-                  else
-                     To_Lower (Line (1 .. Last));
-
-                     if Line (1 .. Last) = "ada" then
-                        Get_Line (IO_File, Line, Last);
-
-                        if Last = 0 then
-                           Osint.Fail
-                             ("Ada compiler name cannot be empty");
-
-                        else
-                           Compiler_Name :=
-                             new String'(Line (1 .. Last));
-
-                           if Last > 3
-                             and then Line (Last - 2 .. Last) = "gcc"
-                           then
-                              Gnatbind_Name :=
-                                new String'(Line (1 .. Last - 3) &
-                                            "gnatbind");
-                           elsif Last > 7
-                             and then Line (Last - 6 .. Last) = "gcc.exe"
-                           then
-                              Gnatbind_Name :=
-                                new String'(Line (1 .. Last - 7) &
-                                            "gnatbind");
-                           end if;
-                        end if;
+                     if Last = 0 then
+                        Osint.Fail
+                          ("Ada compiler name cannot be empty");
 
                      else
-                        Skip_Line (IO_File);
-                     end if;
-                  end if;
+                        Compiler_Name :=
+                          new String'(Line (1 .. Last));
 
-               when Toolchain_Version =>
-                  if End_Of_File (IO_File) then
-                     Osint.Fail
-                       ("no toolchain version for language ",
-                        Line (1 .. Last));
-
-                  elsif Line (1 .. Last) = "ada" then
-                     Get_Line (IO_File, Line, Last);
-
-                     if Last > 5 and then Line (1 .. 5) = "GNAT " then
-                        Libgnat := new String'("-lgnat-" & Line (6 .. Last));
-                        Libgnarl := new String'("-lgnarl-" & Line (6 .. Last));
-                        GNAT_Version := new String'(Line (6 .. Last));
+                        if Last > 3
+                          and then Line (Last - 2 .. Last) = "gcc"
+                        then
+                           Gnatbind_Name :=
+                             new String'(Line (1 .. Last - 3) &
+                                         "gnatbind");
+                        elsif Last > 7
+                          and then Line (Last - 6 .. Last) = "gcc.exe"
+                        then
+                           Gnatbind_Name :=
+                             new String'(Line (1 .. Last - 7) &
+                                         "gnatbind");
+                        end if;
                      end if;
 
                   else
                      Skip_Line (IO_File);
                   end if;
+               end if;
 
-               when Gprexch.Archive_Builder =>
-                  if Archive_Builder = null then
-                     Archive_Builder := new String'(Line (1 .. Last));
+            when Toolchain_Version =>
+               if End_Of_File (IO_File) then
+                  Osint.Fail
+                    ("no toolchain version for language ",
+                     Line (1 .. Last));
 
-                  else
-                     Add
-                       (new String'(Line (1 .. Last)),
-                        AB_Options,
-                        Last_AB_Option);
+               elsif Line (1 .. Last) = "ada" then
+                  Get_Line (IO_File, Line, Last);
+
+                  if Last > 5 and then Line (1 .. 5) = "GNAT " then
+                     Libgnat := new String'("-lgnat-" & Line (6 .. Last));
+                     Libgnarl := new String'("-lgnarl-" & Line (6 .. Last));
+                     GNAT_Version := new String'(Line (6 .. Last));
                   end if;
 
-               when Gprexch.Archive_Indexer =>
-                  if Archive_Indexer = null then
-                     Archive_Indexer := new String'(Line (1 .. Last));
+               else
+                  Skip_Line (IO_File);
+               end if;
 
-                  else
-                     Add
-                       (new String'(Line (1 .. Last)),
-                        AI_Options,
-                        Last_AI_Option);
-                  end if;
+            when Gprexch.Archive_Builder =>
+               if Archive_Builder = null then
+                  Archive_Builder := new String'(Line (1 .. Last));
 
-               when Gprexch.Partial_Linker =>
-                  if Partial_Linker = null then
-                     Partial_Linker := new String'(Line (1 .. Last));
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     AB_Options,
+                     Last_AB_Option);
+               end if;
 
-                  else
-                     Add
-                       (new String'(Line (1 .. Last)),
-                        PL_Options,
-                        Last_PL_Option);
-                  end if;
+            when Gprexch.Archive_Indexer =>
+               if Archive_Indexer = null then
+                  Archive_Indexer := new String'(Line (1 .. Last));
 
-               when Gprexch.Archive_Suffix =>
-                  Archive_Suffix := new String'(Line (1 .. Last));
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     AI_Options,
+                     Last_AI_Option);
+               end if;
 
-               when Gprexch.Run_Path_Option =>
-                  Path_Option := new String'(Line (1 .. Last));
+            when Gprexch.Partial_Linker =>
+               if Partial_Linker = null then
+                  Partial_Linker := new String'(Line (1 .. Last));
 
-               when Gprexch.Auto_Init =>
-                  Osint.Fail ("auto init section should be empty");
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     PL_Options,
+                     Last_PL_Option);
+               end if;
 
-               when Interface_Dep_Files =>
-                  Interface_ALIs.Append (new String'(Line (1 .. Last)));
-                  Standalone := True;
+            when Gprexch.Archive_Suffix =>
+               Archive_Suffix := new String'(Line (1 .. Last));
 
-               when Dependency_Files =>
-                  if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
-                     ALIs.Append (new String'(Line (1 .. Last)));
-                  end if;
+            when Gprexch.Run_Path_Option =>
+               Path_Option := new String'(Line (1 .. Last));
 
-               when Binding_Options =>
-                  Binding_Options_Table.Append (new String'(Line (1 .. Last)));
+            when Gprexch.Auto_Init =>
+               Osint.Fail ("auto init section should be empty");
 
-               when Copy_Source_Dir =>
-                  Copy_Source_Directory := new String'(Line (1 .. Last));
+            when Interface_Dep_Files =>
+               Interface_ALIs.Append (new String'(Line (1 .. Last)));
+               Standalone := True;
 
-               when Gprexch.Sources =>
-                  Sources.Append (new String'(Line (1 .. Last)));
+            when Dependency_Files =>
+               if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
+                  ALIs.Append (new String'(Line (1 .. Last)));
+               end if;
 
-               when Gprexch.Runtime_Library_Dir =>
-                  if End_Of_File (IO_File) then
-                     Osint.Fail
-                       ("no runtime library dir for language ",
-                        Line (1 .. Last));
+            when Binding_Options =>
+               Binding_Options_Table.Append (new String'(Line (1 .. Last)));
 
-                  elsif Line (1 .. Last) = "ada" then
-                     Get_Line (IO_File, Line, Last);
-                     Runtime_Library_Dir := new String'(Line (1 .. Last));
+            when Copy_Source_Dir =>
+               Copy_Source_Directory := new String'(Line (1 .. Last));
 
-                  else
-                     Skip_Line (IO_File);
-                  end if;
+            when Gprexch.Sources =>
+               Sources.Append (new String'(Line (1 .. Last)));
 
-               when Gprexch.Generated_Object_Files |
-                    Gprexch.Generated_Source_Files =>
-                  null;
-            end case;
-         end if;
+            when Gprexch.Runtime_Library_Dir =>
+               if End_Of_File (IO_File) then
+                  Osint.Fail
+                    ("no runtime library dir for language ",
+                     Line (1 .. Last));
+
+               elsif Line (1 .. Last) = "ada" then
+                  Get_Line (IO_File, Line, Last);
+                  Runtime_Library_Dir := new String'(Line (1 .. Last));
+
+               else
+                  Skip_Line (IO_File);
+               end if;
+
+            when Gprexch.Generated_Object_Files |
+                 Gprexch.Generated_Source_Files =>
+               null;
+         end case;
       end if;
    end loop;
 
