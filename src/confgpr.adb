@@ -24,6 +24,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Directories; use Ada.Directories;
+
 with Errout;   use Errout;
 with Gpr_Util; use Gpr_Util;
 with Makeutl;  use Makeutl;
@@ -426,6 +428,35 @@ package body Confgpr is
 
                   Main_Object_Dir := Name_Find;
                end if;
+            end if;
+         end;
+
+         --  Check if the object directory exists. If Setup_Projects is True
+         --  (-p) and directory does not exist, attempt to create it.
+         --  Otherwise, if directory does not exist, fail without calling
+         --  gprconfig.
+
+         declare
+            Obj_Dir : constant String := Get_Name_String (Main_Object_Dir);
+         begin
+            if not Is_Directory (Obj_Dir) and then Setup_Projects then
+               begin
+                  Create_Path (Obj_Dir);
+
+                  if not Quiet_Output then
+                     Write_Str ("object directory """);
+                     Write_Str (Obj_Dir);
+                     Write_Line (""" created");
+                  end if;
+
+               exception
+                  when others =>
+                     Fail ("could not create object directory ", Obj_Dir);
+               end;
+            end if;
+
+            if not Is_Directory (Obj_Dir) then
+               Fail ("object directory ", Obj_Dir, " does not exist");
             end if;
          end;
 
