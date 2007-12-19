@@ -1025,14 +1025,15 @@ that are not up to date.
 
 If invoked without the @option{--config=} or
 @option{--autoconf=} options, then GPRbuild will look for a configuration
-project file @file{default.cgpr}. If there is no such file in the default
+project file @file{default.cgpr}, or @file{<targetname>.cgpr} if option
+@option{--terget=<targetname>} is used. If there is no such file in the default
 locations expected by GPRbuild (<install>/share/gpr and the current
 directory) then GPRbuild will invoke @value{gprconfig} with
 the languages from the project files, and create a configuration project
 file @file{auto.cgpr} in the object directory of the main project. The project
 @file{auto.cgpr} will be rebuilt at each GPRbuild invocation unless you use
-the switch @option{--autoconf=path/auto.cgpr}, which will use the config file
-if it exists and create it otherwise.
+the switch @option{--autoconf=path/auto.cgpr}, which will use the configuration
+project file if it exists and create it otherwise.
 
 Options given on the GPRbuild command line may be passed along to
 individual tools by preceding them with one of the ``command line
@@ -1125,7 +1126,16 @@ be specified more than once. If the configuration project file
 specified with @option{--autoconf=} exists, then it is
 used. Otherwise, @value{gprconfig} is invoked to create it automatically.
 
-Note: @option{--config} and @option{--autoconf} cannot both be specified.
+@item @option{--target=<targetname>}
+
+This specifies that the default configuration project file is
+@file{<targetname>.cgpr}. If no configuration project file with this name
+is found, then @value{gprconfig} is invoked with option
+@option{--target=<targetname>}to create a configuration project file
+@file{auto.cgpr}.
+
+Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
+can be specified.
 
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 
