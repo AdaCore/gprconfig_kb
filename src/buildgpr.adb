@@ -7807,6 +7807,7 @@ package body Buildgpr is
       Dep_File : Prj.Util.Text_File;
       Start    : Natural;
       Finish   : Natural;
+      Last_Obj : Natural;
 
       Looping : Boolean := False;
       --  Set to True at the end of the first Big_Loop for Makefile fragments
@@ -7998,14 +7999,27 @@ package body Buildgpr is
                Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
 
                if Finish /= 0 then
-                  Canonical_Case_File_Name (Name_Buffer (1 .. Finish - 1));
+                  Last_Obj := Finish;
+                  loop
+                     Last_Obj := Last_Obj - 1;
+                     exit when Last_Obj = Start
+                       or else Name_Buffer (Last_Obj) /= ' ';
+                  end loop;
+
+                  while Start < Last_Obj
+                    and then Name_Buffer (Start) = ' '
+                  loop
+                     Start := Start + 1;
+                  end loop;
+
+                  Canonical_Case_File_Name (Name_Buffer (Start .. Last_Obj));
                end if;
 
                --  First line must start with name of object file, followed by
                --  colon.
 
                if Finish = 0 or else
-                 Name_Buffer (1 .. Finish - 1) /= C_Object_Name
+                 Name_Buffer (Start .. Last_Obj) /= C_Object_Name
                then
                   if Verbose_Mode then
                      Write_Str  ("      -> dependency file ");
