@@ -99,6 +99,23 @@
     </target>
   </compiler_description>
 
+  <!-- G++ for VxWorks 653 -->
+  <compiler_description>
+    <name>G++-WRS653</name>
+    <executable prefix="1">c\+\+(pentium|ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653).*" group="1"></grep>
+      <must_match>vxworks653</must_match>
+    </version>
+    <languages>C++</languages>
+    <target>
+      <external>c++${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!--  Assembler -->
   <compiler_description>
     <name>GCC-ASM</name>
     <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
