@@ -53,24 +53,24 @@ procedure Build_Shared_Lib is
    pragma Unreferenced (Result);
 
    procedure Build (Output_File : String);
+   --  Find the library builder executable and invoke it with the correct
+   --  options to build the shared library.
 
    -----------
    -- Build --
    -----------
 
-   --  Not one comment below in this body ???
-
    procedure Build (Output_File : String) is
       Success  : Boolean;
 
-      Out_Opt : constant String_Access :=
-                   new String'("-o");
-      Out_V   : constant String_Access :=
-                   new String'(Output_File);
+      Out_Opt : constant String_Access := new String'("-o");
+      Out_V   : constant String_Access := new String'(Output_File);
 
       Driver : String_Access;
 
    begin
+      --  Get the executable to use, either the specified Driver, or "gcc"
+
       if Driver_Name = No_Name then
          Driver := Locate_Exec_On_Path (Gcc_Name);
 
@@ -88,19 +88,32 @@ procedure Build_Shared_Lib is
 
       Last_Arg := 0;
 
+      --  The minimum arguments
+
       for J in 1 .. Shared_Lib_Minimum_Options.Last loop
          Add_Arg (Shared_Lib_Minimum_Options.Table (J));
       end loop;
 
-      Add_Arg (Out_Opt);
+      --  -o <library file name>
 
+      Add_Arg (Out_Opt);
       Add_Arg (Out_V);
+
+      --  The object files
+
+      for J in Ofiles'Range loop
+         Add_Arg (Ofiles (J));
+      end loop;
+
+      --  The options
 
       for J in Options'Range loop
          if Options (J) /= null and then Options (J).all /= "" then
             Add_Arg (Options (J));
          end if;
       end loop;
+
+      --  Other options
 
       for J in 1 .. Library_Version_Options.Last loop
          if Library_Version_Options.Table (J).all /= "" then
@@ -112,9 +125,7 @@ procedure Build_Shared_Lib is
          Add_Arg (Library_Options_Table.Table (J));
       end loop;
 
-      for J in Ofiles'Range loop
-         Add_Arg (Ofiles (J));
-      end loop;
+      --  Display command if not in quiet mode
 
       if not Opt.Quiet_Output then
          Write_Str (Driver.all);
@@ -126,6 +137,8 @@ procedure Build_Shared_Lib is
 
          Write_Eol;
       end if;
+
+      --  Finally spawn the library builder driver
 
       Spawn (Driver.all, Arguments (1 .. Last_Arg), Success);
 
@@ -141,8 +154,6 @@ procedure Build_Shared_Lib is
 
 --  Start of processing for Build_Shared_Lib
 
---  This body needs comments ???
-
 begin
    if Opt.Verbose_Mode then
       Write_Str ("building relocatable shared library ");
@@ -150,10 +161,16 @@ begin
    end if;
 
    if Library_Version.all = "" then
+      --  If no Library_Version specified, make sure the table is empty and
+      --  call Build.
+
       Library_Version_Options.Set_Last (0);
       Build (Lib_Path);
 
    else
+      --  Put the necessary options corresponding to the Library_Version in the
+      --  table.
+
       if Symbolic_Link_Supported then
          if Major_Minor_Id_Supported then
             Maj_Version :=
@@ -185,7 +202,12 @@ begin
               Library_Version.all);
       end if;
 
+      --  Now that the table has been filled, call Build
+
       Build (Library_Version.all);
+
+      --  Create symbolic link, if appropriate
+
       Symbolic_Link_Needed :=
         Symbolic_Link_Supported and then Library_Version.all /= Lib_Path;
 
