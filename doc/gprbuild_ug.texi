@@ -1382,15 +1382,15 @@ A source needs to be compiled in the following cases:
 
 @item The object file does not exist
 
-@item The object file is more recent than the source
+@item The source is more recent than the object file
 
 @item The dependency file does not exist
 
-@item The dependency file is more recent than the source
+@item The source is more recent than the dependency file
 
 @item The switch file does not exist
 
-@item The switch file is more recent than the source
+@item The source is more recent than the switch file
 
 @item The dependency file cannot be read
 
@@ -1405,8 +1405,7 @@ A source needs to be compiled in the following cases:
 @item A source listed in the dependency file has been replaced
 
 @item Switch @option{-s} is used and the source has been compiled with
-different
-      switches or with the same switches in a different order
+different switches or with the same switches in a different order
 
 @end itemize
 
