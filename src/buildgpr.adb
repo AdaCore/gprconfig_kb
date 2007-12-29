@@ -3463,7 +3463,7 @@ package body Buildgpr is
             end;
          end if;
 
-         --  Add project directories of imported projects, if any
+         --  Add ALI dir directories of imported projects
 
          declare
             List : Project_List := Data.All_Imported_Projects;
@@ -3475,9 +3475,13 @@ package body Buildgpr is
                Elem := Project_Tree.Project_Lists.Table (List);
                Pdata := Project_Tree.Projects.Table (Elem.Project);
 
-               if Pdata.Object_Directory /= No_Path then
+               if Pdata.Library_ALI_Dir /= No_Path then
                   Put_Line
-                    (Exchange_File, Get_Name_String (Pdata.Object_Directory));
+                    (Exchange_File, Get_Name_String (Pdata.Library_ALI_Dir));
+
+               elsif Pdata.Library_Dir /= No_Path then
+                  Put_Line
+                    (Exchange_File, Get_Name_String (Pdata.Library_Dir));
                end if;
 
                List := Elem.Next;
@@ -8025,6 +8029,16 @@ package body Buildgpr is
                      Write_Str  ("      -> dependency file ");
                      Write_Str  (Dep_Name.all);
                      Write_Line (" has wrong format");
+
+                     if Finish = 0 then
+                        Write_Line ("         no colon");
+
+                     else
+                        Write_Str  ("         expected object file name ");
+                        Write_Str  (C_Object_Name);
+                        Write_Str  (", got ");
+                        Write_Line (Name_Buffer (Start .. Last_Obj));
+                     end if;
                   end if;
 
                   Close (Dep_File);
