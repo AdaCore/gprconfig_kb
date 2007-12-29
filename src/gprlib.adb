@@ -1078,9 +1078,9 @@ begin
 
    if Standalone then
       declare
-         Binder_Generated_File   : constant String :=
+         Binder_Generated_File   :  String :=
                                      "b__" & Library_Name.all & ".adb";
-         Binder_Generated_Object : constant String :=
+         Binder_Generated_Object :  String :=
                                      "b__" & Library_Name.all & Object_Suffix;
          ALI_First_Index         : Positive;
          First_ALI               : File_Name_Type;
@@ -1089,6 +1089,9 @@ begin
          use ALI;
 
       begin
+         Osint.Canonical_Case_File_Name (Binder_Generated_File);
+         Osint.Canonical_Case_File_Name (Binder_Generated_Object);
+
          Gnatbind_Path := Locate_Exec_On_Path (Gnatbind_Name.all);
 
          if Gnatbind_Path = null then
