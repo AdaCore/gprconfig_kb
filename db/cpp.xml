@@ -5,18 +5,49 @@
 
    <configuration>
      <compilers>
+        <compiler language="C++" />
+     </compilers>
+     <config>
+   package Naming is
+      for Spec_Suffix ("C++") use ".hh";
+      for Body_Suffix ("C++") use ".cpp";
+   end Naming;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
         <compiler name="G++" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
        <compiler name="GCC-MINGW32" language="C++" />
      </compilers>
      <config>
-package Naming is
-      for Spec_Suffix ("C++") use ".hh";
-      for Body_Suffix ("C++") use ".cpp";
-   end Naming;
-
    package Compiler is
       for Driver              ("C++") use "${PATH}g++${PREFIX}";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+        <compiler name="G++-WRS653" language="C++" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver              ("C++") use "${PATH}c++${PREFIX}";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+        <compiler name="G++" language="C++" />
+        <compiler name="G++-WRS653" language="C++" />
+        <compiler name="GCC-CYGMING" language="C++" />
+       <compiler name="GCC-MINGW32" language="C++" />
+     </compilers>
+     <config>
+   package Compiler is
       for Required_Switches   ("C++") use
         Compiler'Required_Switches ("C++") &amp;
         ("-c", "-x", "c++");
