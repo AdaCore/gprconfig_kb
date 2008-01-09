@@ -16,6 +16,7 @@
   </compiler_description>
 
   <!-- VxWorks 6 -->
+  <!-- We need to distinguish version to correctly report runtimes.  -->
   <compiler_description>
     <name>GCC-WRS6</name>
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
@@ -54,8 +55,8 @@
     <executable prefix="1">cc(pentium|ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks653).*" group="1"></grep>
-      <must_match>vxworks653</must_match>
+      <grep regexp=".*(653).*" group="1"></grep>
+      <must_match>653</must_match>
     </version>
     <languages>C</languages>
     <target>
@@ -105,8 +106,8 @@
     <executable prefix="1">c\+\+(pentium|ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks653).*" group="1"></grep>
-      <must_match>vxworks653</must_match>
+      <grep regexp=".*(653).*" group="1"></grep>
+      <must_match>653</must_match>
     </version>
     <languages>C++</languages>
     <target>
