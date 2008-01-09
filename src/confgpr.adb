@@ -575,14 +575,14 @@ package body Confgpr is
             Arg_Last := 3;
 
             if Quiet_Output then
-               Args (4) := new String'("-q");
-               Arg_Last := 4;
+               Arg_Last := Arg_Last + 1;
+               Args (Arg_Last) := new String'("-q");
             end if;
 
             if Target_Name /= null then
-               Args (4) :=
+               Arg_Last := Arg_Last + 1;
+               Args (Arg_Last) :=
                  new String'(Target_Project_Option & Target_Name.all);
-               Arg_Last := 4;
             end if;
 
             Name := Language_Htable.Get_First;
