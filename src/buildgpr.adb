@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2004-2007, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2008, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -424,9 +424,10 @@ package body Buildgpr is
 
    --  Archive builder name, path and options
 
-   Archive_Builder_Name : String_Access := null;
-   Archive_Builder_Path : String_Access := null;
-   Archive_Builder_Opts : Options_Data;
+   Archive_Builder_Name        : String_Access := null;
+   Archive_Builder_Path        : String_Access := null;
+   Archive_Builder_Opts        : Options_Data;
+   Archive_Builder_Append_Opts : Options_Data;
 
    --  Archive indexer name, path and options
 
@@ -3524,6 +3525,18 @@ package body Buildgpr is
                Put_Line (Exchange_File, Archive_Builder_Opts.Options (J).all);
             end loop;
 
+            if Archive_Builder_Append_Opts.Last > 0 then
+               Put_Line
+                 (Exchange_File,
+                  Library_Label (Archive_Builder_Append_Option));
+
+               for J in 1 .. Archive_Builder_Append_Opts.Last loop
+                  Put_Line
+                    (Exchange_File,
+                     Archive_Builder_Append_Opts.Options (J).all);
+               end loop;
+            end if;
+
             if Data.Config.Archive_Suffix /= No_File then
                Put_Line (Exchange_File, Library_Label (Archive_Suffix));
                Put_Line
@@ -4037,6 +4050,15 @@ package body Buildgpr is
                  (Value   => Project_Tree.Name_Lists.Table (List).Name,
                   To      => Archive_Builder_Opts,
                   Display => True);
+            end loop;
+
+            List := Data.Config.Archive_Builder_Append_Option;
+            while List /= No_Name_List loop
+               Add_Option
+                 (Value   => Project_Tree.Name_Lists.Table (List).Name,
+                  To      => Archive_Builder_Append_Opts,
+                  Display => True);
+               List := Project_Tree.Name_Lists.Table (List).Next;
             end loop;
 
             --  If there is an archive indexer (ranlib), try to locate it on

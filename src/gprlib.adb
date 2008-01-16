@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -52,6 +52,13 @@ with Table;
 with Types;            use Types;
 
 procedure Gprlib is
+
+   Maximum_Size : Integer;
+   pragma Import (C, Maximum_Size, "__gnat_link_max");
+   --  Maximum number of bytes to put in an invocation of the
+   --  Archive_Builder.
+
+   Size : Natural;
 
    Gcc_Name : constant String := "gcc";
 
@@ -242,6 +249,15 @@ procedure Gprlib is
    AB_Options     : String_List_Access := new String_List (1 .. 10);
    Last_AB_Option : Natural := 0;
    --  Options of the archive builder
+
+   First_AB_Object_Pos : Natural;
+   Next_AB_Object_Pos  : Natural;
+   Object_Pos          : Natural;
+   --  Various indexes in AB_Options used when building an archive in chunks
+
+   AB_Append_Options : String_List_Access := new String_List (1 .. 10);
+   Last_AB_Append_Option : Natural := 0;
+   --  Options for appending to an archive
 
    Archive_Indexer : String_Access := null;
    --  Name of the archive indexer
@@ -784,6 +800,9 @@ begin
                Archive_Builder := null;
                Last_AB_Option  := 0;
 
+            when Gprexch.Archive_Builder_Append_Option =>
+               Last_AB_Append_Option := 0;
+
             when Gprexch.Archive_Indexer =>
                Archive_Indexer := null;
                Last_AI_Option  := 0;
@@ -965,6 +984,12 @@ begin
                      AB_Options,
                      Last_AB_Option);
                end if;
+
+            when Gprexch.Archive_Builder_Append_Option =>
+               Add
+                 (new String'(Line (1 .. Last)),
+                  AB_Append_Options,
+                  Last_AB_Append_Option);
 
             when Gprexch.Archive_Indexer =>
                if Archive_Indexer = null then
@@ -1358,6 +1383,8 @@ begin
 
       Add (Library_Path_Name, AB_Options, Last_AB_Option);
 
+      First_AB_Object_Pos := Last_AB_Option + 1;
+
       if Standalone and then Partial_Linker_Path /= null then
          --  If partial linker is used, do a partial link and put the resulting
          --  object file in the archive.
@@ -1415,35 +1442,125 @@ begin
          end loop;
       end if;
 
-      if not Quiet_Output then
-         if Verbose_Mode then
-            Put (Archive_Builder.all);
-         else
-            Put (Base_Name (Archive_Builder.all));
-         end if;
+      if Last_AB_Append_Option = 0 then
+         --  If there is no Archive_Builder_Append_Option, always build the
+         --  archive in one chunk.
 
-         for J in 1 .. Last_AB_Option loop
-            if (not Verbose_Mode) and then J >= 5 then
-               Put (" ...");
-               exit;
-            end if;
+         Next_AB_Object_Pos := Last_AB_Option + 1;
 
-            Put (' ');
-            Put (AB_Options (J).all);
+      else
+         --  If Archive_Builder_Append_Option is specified, for the creation of
+         --  the archive, only put on the command line a number of character
+         --  lower that Maximum_Size.
+
+         Size := 0;
+         for J in 1 .. First_AB_Object_Pos - 1 loop
+            Size := Size + AB_Options (J)'Length + 1;
          end loop;
 
-         New_Line;
+         Next_AB_Object_Pos := First_AB_Object_Pos;
+
+         while Next_AB_Object_Pos <= Last_AB_Option loop
+            Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
+            exit when Size > Maximum_Size;
+            Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
+         end loop;
+
+         --  Display the invocation of the archive builder for the creation of
+         --  the archive.
+
+         if not Quiet_Output then
+            if Verbose_Mode then
+               Put (Archive_Builder.all);
+            else
+               Put (Base_Name (Archive_Builder.all));
+            end if;
+
+            for J in 1 .. Next_AB_Object_Pos - 1 loop
+               if (not Verbose_Mode) and then J >= 5 then
+                  Put (" ...");
+                  exit;
+               end if;
+
+               Put (' ');
+               Put (AB_Options (J).all);
+            end loop;
+
+            New_Line;
+         end if;
+
+         Spawn
+           (Archive_Builder.all,
+            AB_Options (1 .. Next_AB_Object_Pos - 1),
+            Success);
+
+         if not Success then
+            Osint.Fail
+              ("call to archive builder ", Archive_Builder.all, " failed");
+         end if;
       end if;
 
-      Spawn
-        (Archive_Builder.all,
-         AB_Options (1 .. Last_AB_Option),
-         Success);
+      --  If the archive has not been created complete, add the remaining
+      --  chunks
 
-      if not Success then
-         Osint.Fail
-           ("call to archive builder ", Archive_Builder.all, " failed");
+      if Next_AB_Object_Pos <= Last_AB_Option then
+         First_AB_Object_Pos := Last_AB_Append_Option + 2;
+         AB_Options (1 .. Last_AB_Append_Option) :=
+           AB_Append_Options (1 .. Last_AB_Append_Option);
+         AB_Options (Last_AB_Append_Option + 1) := Library_Path_Name;
+
+         loop
+            Size := 0;
+            for J in 1 .. First_AB_Object_Pos - 1 loop
+               Size := Size + AB_Options (J)'Length + 1;
+            end loop;
+
+            Object_Pos := First_AB_Object_Pos;
+            while Next_AB_Object_Pos <= Last_AB_Option loop
+               Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
+               exit when Size > Maximum_Size;
+               AB_Options (Object_Pos) := AB_Options (Next_AB_Object_Pos);
+               Object_Pos := Object_Pos + 1;
+               Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
+            end loop;
+
+            --  Display the invocation of the Archive Builder for this chunk
+
+            if not Quiet_Output then
+               if Verbose_Mode then
+                  Put (Archive_Builder.all);
+               else
+                  Put (Base_Name (Archive_Builder.all));
+               end if;
+
+               for J in 1 .. Object_Pos - 1 loop
+                  if (not Verbose_Mode) and then J >= 5 then
+                     Put (" ...");
+                     exit;
+                  end if;
+
+                  Put (' ');
+                  Put (AB_Options (J).all);
+               end loop;
+
+               New_Line;
+            end if;
+
+            Spawn
+              (Archive_Builder.all,
+               AB_Options (1 .. Object_Pos - 1),
+               Success);
+
+            if not Success then
+               Osint.Fail
+                 ("call to archive builder ", Archive_Builder.all, " failed");
+            end if;
+
+            exit when Next_AB_Object_Pos > Last_AB_Option;
+         end loop;
       end if;
+
+      --  If there is an Archive Indexer, invoke it
 
       if Archive_Indexer /= null then
          Add (Library_Path_Name, AI_Options, Last_AI_Option);
