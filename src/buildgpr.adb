@@ -68,6 +68,11 @@ with Types;            use Types;
 
 package body Buildgpr is
 
+   Maximum_Size : Integer;
+   pragma Import (C, Maximum_Size, "__gnat_link_max");
+   --  Maximum number of bytes to put in an invocation of the
+   --  Archive_Builder.
+
    Name_Star : Name_Id;
    --  The character '*', initialized in procedure Initialize
 
@@ -2561,6 +2566,11 @@ package body Buildgpr is
 
       Success      : Boolean;
 
+      Real_Last_Argument : Positive;
+      Current_Object_Pos : Positive;
+
+      Size : Natural;
+
       procedure Add_Sources (Proj : Project_Id);
       --  Add all the sources of project Proj to Sources_Index
 
@@ -2654,7 +2664,7 @@ package body Buildgpr is
                         Add_Argument
                           (Get_Name_String (Source.Object_Path),
                            Verbose_Mode or else
-                             (First_Object = Last_Argument),
+                             (First_Object >= Last_Argument),
                            Simple_Name => not Verbose_Mode);
                      end if;
                   end if;
@@ -2914,7 +2924,7 @@ package body Buildgpr is
 
             Add_Argument (Archive_Name, True, Simple_Name => not Verbose_Mode);
 
-            First_Object := Last_Argument;
+            First_Object := Last_Argument + 1;
 
             --  Followed by all the object files of the non library projects
 
@@ -2938,9 +2948,31 @@ package body Buildgpr is
             --  No need to create a global archive, if there is no object
             --  file to put into.
 
-            if Last_Argument > First_Object then
+            if Last_Argument >= First_Object then
 
-               --  Spawn the archive builder (ar)
+               Real_Last_Argument := Last_Argument;
+
+               --  If there is an Archive_Builder_Append_Option, we may have to
+               --  build the archive in chuck.
+
+               if Archive_Builder_Append_Opts.Last = 0 then
+                  Current_Object_Pos := Real_Last_Argument + 1;
+
+               else
+                  Size := 0;
+                  for J in 1 .. First_Object - 1 loop
+                     Size := Size + Arguments (J)'Length + 1;
+                  end loop;
+
+                  Current_Object_Pos := First_Object;
+                  while Current_Object_Pos <= Real_Last_Argument loop
+                     Size := Size + Arguments (Current_Object_Pos)'Length + 1;
+                     exit when Size > Maximum_Size;
+                     Current_Object_Pos := Current_Object_Pos + 1;
+                  end loop;
+
+                  Last_Argument := Current_Object_Pos - 1;
+               end if;
 
                Display_Command
                  (Archive_Builder_Name.all,
@@ -2951,6 +2983,53 @@ package body Buildgpr is
                  (Archive_Builder_Path.all,
                   Arguments (1 .. Last_Argument),
                   Success);
+
+               --  If the archive has not been built completely, add the
+               --  remaining chunks.
+
+               if Success and then
+                 Current_Object_Pos <= Real_Last_Argument
+               then
+                  Last_Argument := 0;
+                  Add_Arguments
+                    (Archive_Builder_Append_Opts.Options
+                       (1 .. Archive_Builder_Append_Opts.Last),
+                     True);
+                  Add_Argument
+                    (Archive_Name, True, Simple_Name => not Verbose_Mode);
+                  First_Object := Last_Argument + 1;
+
+                  while Current_Object_Pos <= Real_Last_Argument loop
+                     Size := 0;
+                     for J in 1 .. First_Object - 1 loop
+                        Size := Size + Arguments (J)'Length + 1;
+                     end loop;
+
+                     Last_Argument := First_Object - 1;
+
+                     while Current_Object_Pos <= Real_Last_Argument loop
+                        Size :=
+                          Size + Arguments (Current_Object_Pos)'Length + 1;
+                        exit when Size > Maximum_Size;
+                        Last_Argument := Last_Argument + 1;
+                        Arguments (Last_Argument) :=
+                          Arguments (Current_Object_Pos);
+                        Current_Object_Pos := Current_Object_Pos + 1;
+                     end loop;
+
+                     Display_Command
+                       (Archive_Builder_Name.all,
+                        Archive_Builder_Path,
+                        Ellipse => True);
+
+                     Spawn
+                       (Archive_Builder_Path.all,
+                        Arguments (1 .. Last_Argument),
+                        Success);
+
+                     exit when not Success;
+                  end loop;
+               end if;
 
                --  If the archive was built, run the archive indexer (ranlib)
                --  if there is one.
@@ -2981,8 +3060,8 @@ package body Buildgpr is
 
                      if not Success then
 
-                        --  Running ranlib failed, delete the dependency file,
-                        --  if it exists.
+                        --  Running the archive indexer failed, delete the
+                        --  dependency file, if it exists.
 
                         if Is_Regular_File (Archive_Dep_Name) then
                            Delete_File (Archive_Dep_Name, Success);
