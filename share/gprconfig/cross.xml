@@ -52,6 +52,7 @@
      </targets>
      <config>
    for Archive_Builder use ("arppc", "cr");
+   for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer use ("ranlibppc");
    for Archive_Suffix  use ".a";
      </config>
@@ -134,6 +135,7 @@
      </targets>
      <config>
    for Archive_Builder  use ("arppc", "cr");
+   for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("ranlibppc");
    for Archive_Suffix   use ".a";
      </config>
@@ -145,6 +147,7 @@
      </targets>
      <config>
    for Archive_Builder  use ("arpentium", "cr");
+   for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("ranlibpentium");
    for Archive_Suffix   use ".a";
      </config>
