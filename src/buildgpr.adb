@@ -259,6 +259,10 @@ package body Buildgpr is
    --  languages, that is those after switch "-cargs:<lang>", on the command
    --  line.
 
+   Builder_Switches_Lang : Name_Id := No_Name;
+   --  Used to decide to what compiler the Builder'Default_Switches that
+   --  are not recognized by gprbuild should be given.
+
    type Boolean_Array is array (Positive range <>) of Boolean;
    type Booleans is access Boolean_Array;
 
@@ -6761,6 +6765,16 @@ package body Buildgpr is
                      Attribute_Or_Array_Name => Name_Default_Switches,
                      In_Package              => Builder_Package,
                      In_Tree                 => Project_Tree);
+
+                  --  Set the Builder Switches language, so that switches that
+                  --  are not recognized by gprbuild are passed to the compiler
+                  --  of the language.
+
+                  if Switches /= Nil_Variable_Value and then
+                    (not Switches.Default)
+                  then
+                     Builder_Switches_Lang := Lang;
+                  end if;
                end if;
 
                if Switches /= Nil_Variable_Value and then
@@ -6780,6 +6794,10 @@ package body Buildgpr is
 
                      List := Element.Next;
                   end loop;
+
+                  --  Reset the Builder Switches language
+
+                  Builder_Switches_Lang := No_Name;
                end if;
             end if;
          end;
@@ -9291,12 +9309,36 @@ package body Buildgpr is
               (True, "illegal option """, Arg, """");
 
          else
-            Finish_Program
-              (True,
-               "illegal option """,
-               Arg,
-               """ in package Builder of project file """ &
-               Project_File_Name.all & '"');
+            --  If we have a switch and there is a Builder Switches language
+            --  set, pass this switch to the compiler of the language.
+
+            if Arg (1) = '-' and then Builder_Switches_Lang /= No_Name then
+               Current_Builder_Comp_Option_Table :=
+                 Builder_Compiling_Options_HTable.Get (Builder_Switches_Lang);
+
+               if Current_Builder_Comp_Option_Table =
+                 No_Builder_Comp_Option_Table
+               then
+                  Current_Builder_Comp_Option_Table :=
+                    new Builder_Compiling_Options.Instance;
+                  Builder_Compiling_Options_HTable.Set
+                    (Builder_Switches_Lang, Current_Builder_Comp_Option_Table);
+                  Builder_Compiling_Options.Init
+                    (Current_Builder_Comp_Option_Table.all);
+               end if;
+
+               Current_Processor := Compiler;
+               Add_Option (Arg, False);
+               Current_Processor := None;
+
+            else
+               Finish_Program
+                 (True,
+                  "illegal option """,
+                  Arg,
+                  """ in package Builder of project file """ &
+                  Project_File_Name.all & '"');
+            end if;
          end if;
       end if;
    end Scan_Arg;
