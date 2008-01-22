@@ -1569,12 +1569,18 @@ begin
             if Verbose_Mode then
                Put (Archive_Indexer.all);
             else
-               Put (Base_Name (Archive_Indexer.all));
+               Put (File_Name (Archive_Indexer.all));
             end if;
 
             for J in 1 .. Last_AI_Option loop
                Put (' ');
-               Put (AI_Options (J).all);
+
+               if J = Last_AI_Option and then (not Verbose_Mode) then
+                  Put (File_Name (AI_Options (J).all));
+
+               else
+                  Put (AI_Options (J).all);
+               end if;
             end loop;
 
             New_Line;
