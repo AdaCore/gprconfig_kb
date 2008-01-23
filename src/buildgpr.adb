@@ -6756,7 +6756,8 @@ package body Buildgpr is
                     (Name                    => Lang,
                      Attribute_Or_Array_Name => Name_Switches,
                      In_Package              => Builder_Package,
-                     In_Tree                 => Project_Tree);
+                     In_Tree                 => Project_Tree,
+                     Force_Lower_Case_Index  => True);
                end if;
 
                if Switches = Nil_Variable_Value or else Switches.Default then
