@@ -2508,7 +2508,7 @@ package body GprConfig.Knowledge is
          New_Line (Output);
       end;
 
-      Put_Line (Output, "project " & Project_Name & " is");
+      Put_Line (Output, "configuration project " & Project_Name & " is");
 
       --  Generate known packages in order.  This takes care of possible
       --  dependencies.
