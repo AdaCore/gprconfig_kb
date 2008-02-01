@@ -85,6 +85,11 @@
       for Required_Switches ("Ada") use
         Binder'Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
    end Binder;
+
+   package Linker is
+      for Required_Switches use
+	Linker'Required_Switches &amp; ("-mrtp");
+   end Linker;
      </config>
    </configuration>
 
