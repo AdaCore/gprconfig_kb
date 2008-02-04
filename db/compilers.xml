@@ -3,7 +3,7 @@
   <!--    GCC 3.x & 4.x -->
   <compiler_description>
     <name>GCC</name>
-    <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc --version</external>
       <grep regexp="\(GCC\) (\S+)" group="1"></grep>
@@ -119,7 +119,7 @@
   <!--  Assembler -->
   <compiler_description>
     <name>GCC-ASM</name>
-    <executable prefix="1">(.*(-wrs-|-elf-).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc --version</external>
       <grep regexp="\(GCC\) (\S+)" group="1"></grep>
@@ -143,7 +143,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*(-wrs-|-elf-).*)?gnatmake</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-).*)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+\.\d+)" group="1"></grep>
