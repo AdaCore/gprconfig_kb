@@ -2176,7 +2176,7 @@ package body GprConfig.Knowledge is
          Next (C);
       end loop;
 
-      if Length (Filter) > 1 then
+      if Length (Filter) /= 1 then
          Matching_Compiler := No_Compiler;
       end if;
       Matched := True;
