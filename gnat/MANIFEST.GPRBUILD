@@ -43,10 +43,10 @@ mlib-utl.adb
 mlib-utl.ads
 mlib-tgt-specific.adb
 mlib-tgt-specific.ads
-mlib-tgt-vms.ads
-mlib-tgt-vms.adb
-mlib-tgt-vms-alpha.adb
-mlib-tgt-vms-ia64.adb
+mlib-tgt-vms_common.ads
+mlib-tgt-vms_common.adb
+mlib-tgt-specific-vms-alpha.adb
+mlib-tgt-specific-vms-ia64.adb
 mlib-tgt.adb
 mlib-tgt.ads
 mlib.adb
