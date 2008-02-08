@@ -8878,6 +8878,7 @@ package body Buildgpr is
          else
             Current_Builder_Comp_Option_Table := No_Builder_Comp_Option_Table;
          end if;
+
          --  -cargs:lang    arguments for compiler of language lang
 
       elsif Arg'Length > 7 and then Arg (1 .. 7) = "-cargs:" then
@@ -8921,51 +8922,36 @@ package body Buildgpr is
          --  -bargs     all binder arguments
 
       elsif Arg = "-bargs" then
-         if Command_Line then
-            Current_Processor := Binder;
-            Current_Bind_Option_Table := No_Bind_Option_Table;
-
-         else
-            Processed := False;
-         end if;
+         Current_Processor := Binder;
+         Current_Bind_Option_Table := No_Bind_Option_Table;
 
          --  -bargs:lang    arguments for binder of language lang
 
       elsif Arg'Length > 7 and then Arg (1 .. 7) = "-bargs:" then
-         if Command_Line then
-            Current_Processor := Binder;
+         Current_Processor := Binder;
 
-            Name_Len := 0;
-            Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
-            To_Lower (Name_Buffer (1 .. Name_Len));
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (Arg (8 .. Arg'Last));
+         To_Lower (Name_Buffer (1 .. Name_Len));
 
-            declare
-               Lang : constant Name_Id := Name_Find;
-            begin
-               Current_Bind_Option_Table :=
-                 Binder_Options_HTable.Get (Lang);
+         declare
+            Lang : constant Name_Id := Name_Find;
+         begin
+            Current_Bind_Option_Table :=
+              Binder_Options_HTable.Get (Lang);
 
-               if Current_Bind_Option_Table = No_Bind_Option_Table then
-                  Current_Bind_Option_Table := new Binder_Options.Instance;
-                  Binder_Options_HTable.Set
-                    (Lang, Current_Bind_Option_Table);
-                  Binder_Options.Init (Current_Bind_Option_Table.all);
-               end if;
-            end;
-
-         else
-            Processed := False;
-         end if;
+            if Current_Bind_Option_Table = No_Bind_Option_Table then
+               Current_Bind_Option_Table := new Binder_Options.Instance;
+               Binder_Options_HTable.Set
+                 (Lang, Current_Bind_Option_Table);
+               Binder_Options.Init (Current_Bind_Option_Table.all);
+            end if;
+         end;
 
          --  -largs     linker arguments
 
       elsif Arg = "-largs" then
-         if Command_Line then
-            Current_Processor := Linker;
-
-         else
-            Processed := False;
-         end if;
+         Current_Processor := Linker;
 
          --  -gargs     options directly for gprbuild
 
