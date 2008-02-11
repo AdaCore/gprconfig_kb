@@ -1513,8 +1513,6 @@ package body Buildgpr is
          Main_Source : Source_Data;
          Dep_Files   : out Boolean)
       is
-         Data    : constant Project_Data :=
-                     Project_Tree.Projects.Table (For_Project);
          Src_Id  : Source_Id;
          Source  : Source_Data;
          Config  : constant Language_Config :=
@@ -1580,12 +1578,12 @@ package body Buildgpr is
 
          if Roots = No_Roots then
             if Main_Source.Unit = No_Name then
-               Src_Id := Data.First_Source;
+               Src_Id := Project_Tree.First_Source;
                while Src_Id /= No_Source loop
                   Initialize_Source_Record (Src_Id);
                   Source := Project_Tree.Sources.Table (Src_Id);
                   Put_Dependency_File;
-                  Src_Id := Source.Next_In_Project;
+                  Src_Id := Source.Next_In_Sources;
                end loop;
             end if;
 
@@ -2102,11 +2100,10 @@ package body Buildgpr is
                               Get_Name_String (Main_Source.Dep_Path));
                         end if;
 
-                        --  Add the relevant Dependency files, either those in
-                        --  Roots (<language>) for the project, or all
-                        --  dependency files in the project tree, if there is
-                        --  no main unit and Roots (<language>) is not
-                        --  specified or is an empty list.
+                        --  Add the relevant dependency files, either those in
+                        --  Roots (<main>) for the project, or all dependency
+                        --  files in the project tree, if Roots (<main>) is not
+                        --  specified .
 
                         Put_Line
                           (Exchange_File, Binding_Label (Dependency_Files));
