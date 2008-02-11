@@ -55,6 +55,18 @@
     </config>
   </configuration>
 
+  <!-- Do not run ranlib on AIX -->
+  <configuration>
+    <targets>
+      <target name=".*aix.*" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
   <configuration>
     <targets negate="true">
       <target name=".*-wrs-vxworks.*" />
@@ -62,6 +74,7 @@
       <target name="powerpc-eabispe"/>
       <target name="erc32-elf"/>
       <target name="leon-elf"/>
+      <target name=".*aix.*" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
