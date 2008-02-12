@@ -1559,15 +1559,15 @@ package body Buildgpr is
                   Put_Line
                     (Exchange_File,
                      Get_Name_String (Source.Dep_Path));
+                  Dep_Files := True;
 
-               else
+               elsif not Local_Data.Standalone_Library then
                   Get_Name_String (Local_Data.Library_ALI_Dir);
                   Add_Char_To_Name_Buffer (Directory_Separator);
                   Get_Name_String_And_Append (Source.Dep_Name);
                   Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
+                  Dep_Files := True;
                end if;
-
-               Dep_Files := True;
             end if;
          end Put_Dependency_File;
 
