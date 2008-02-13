@@ -1979,43 +1979,48 @@ package body GprConfig.Knowledge is
       begin
          First := Path'First;
          while First <= Path'Last loop
-            Last := First + 1;
-            while Last <= Path'Last
-              and then Path (Last) /= GNAT.OS_Lib.Path_Separator
-            loop
-               Last := Last + 1;
-            end loop;
+            --  Skip null entries on PATH
+            if Path (First) = GNAT.OS_Lib.Path_Separator then
+               First := First + 1;
+            else
+               Last := First + 1;
+               while Last <= Path'Last
+                 and then Path (Last) /= GNAT.OS_Lib.Path_Separator
+               loop
+                  Last := Last + 1;
+               end loop;
 
-            declare
-               --  Use a hash to make sure we do not parse the same directory
-               --  twice. This is both more efficient and avoids duplicates in
-               --  the final result list. To handle the case of links (on linux
-               --  for instance /usr/bin/X11 points to ".", ie /usr/bin, and
-               --  compilers would appear duplicated), we resolve symbolic
-               --  links. This call is also set to fold to lower-case when
-               --  appropriate
+               declare
+                  --  Use a hash to make sure we do not parse the same
+                  --  directory twice. This is both more efficient and avoids
+                  --  duplicates in the final result list. To handle the case
+                  --  of links (on linux for instance /usr/bin/X11 points to
+                  --  ".", ie /usr/bin, and compilers would appear duplicated),
+                  --  we resolve symbolic links. This call is also set to fold
+                  --  to lower-case when appropriate
 
-               Normalized : constant String :=
-                 Name_As_Directory
-                   (Normalize_Pathname
-                      (Path (First .. Last - 1),
-                       Resolve_Links  => True,
-                       Case_Sensitive => False));
-            begin
-               if not Contains (Map, Normalized) then
-                  Append (Map, Normalized);
+                  Normalized : constant String :=
+                    Name_As_Directory
+                      (Normalize_Pathname
+                           (Path (First .. Last - 1),
+                            Resolve_Links  => True,
+                            Case_Sensitive => False));
+               begin
+                  if not Contains (Map, Normalized) then
+                     Append (Map, Normalized);
 
-                  Put_Verbose ("Will examine "
-                               & Prefix & " " & Path (First .. Last - 1));
+                     Put_Verbose ("Will examine "
+                                  & Prefix & " " & Path (First .. Last - 1));
 
-                  if Prepend_To_List then
-                     Prepend (Dirs, Prefix & Path (First .. Last - 1));
-                  else
-                     Append (Dirs, Prefix & Path (First .. Last - 1));
+                     if Prepend_To_List then
+                        Prepend (Dirs, Prefix & Path (First .. Last - 1));
+                     else
+                        Append (Dirs, Prefix & Path (First .. Last - 1));
+                     end if;
                   end if;
-               end if;
-            end;
-            First := Last + 1;
+               end;
+               First := Last + 1;
+            end if;
          end loop;
       end Process_Path;
 
