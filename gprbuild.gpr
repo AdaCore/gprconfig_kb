@@ -50,6 +50,7 @@ project Gprbuild is
 
    package Builder is
       for Executable ("gprconfig-main.adb") use "gprconfig";
+      for Default_Switches ("Ada") use ("-m");
    end Builder;
 
    package Compiler is
