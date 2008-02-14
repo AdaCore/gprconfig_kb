@@ -12,6 +12,7 @@
       for Spec_Suffix ("C++") use ".hh";
       for Body_Suffix ("C++") use ".cpp";
    end Naming;
+   for Inherit_Source_Path ("C++") use ("C");
      </config>
    </configuration>
 
