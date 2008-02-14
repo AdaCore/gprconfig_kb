@@ -769,12 +769,20 @@ package body Buildgpr is
    --  Get a string access corresponding to Option. Either find the string
    --  access in the All_Options cache, or create a new entry in All_Options.
 
+   type Name_Ids is array (Positive range <>) of Name_Id;
+   No_Names : constant Name_Ids := (1 .. 0 => No_Name);
+   --  Name_Ids is used for list of language names in procedure Get_Directories
+   --  below.
+
    procedure Get_Directories
      (For_Project : Project_Id;
       Sources     : Boolean;
-      Language    : Name_Id);
-   --  Put in table Directories the source directories of project For_Project
-   --  and of all the project it imports directly or indirectly.
+      Languages   : Name_Ids);
+   --  Put in table Directories the source (when Sources is True) or
+   --  object/library (when Sources is False) directories of project
+   --  For_Project and of all the project it imports directly or indirectly.
+   --  The source directories of imported projects are only included if one
+   --  of the declared languages is in the list Languages.
 
    function Global_Archive_Name (For_Project : Project_Id) return String;
    --  Returns the name of the global archive for a project
@@ -2356,8 +2364,8 @@ package body Buildgpr is
 
                                     Get_Directories
                                       (Main_Proj,
-                                       Sources  => False,
-                                       Language => No_Name);
+                                       Sources   => False,
+                                       Languages => No_Names);
 
                                     if Path_Buffer = null then
                                        Path_Buffer :=
@@ -2422,8 +2430,8 @@ package body Buildgpr is
 
                                     Get_Directories
                                       (Main_Proj,
-                                       Sources  => False,
-                                       Language => No_Name);
+                                       Sources   => False,
+                                       Languages => No_Names);
 
                                     declare
                                        FD     : File_Descriptor;
@@ -5038,10 +5046,39 @@ package body Buildgpr is
                      Project_Tree.Projects.Table
                        (Source_Project).Include_Language := Language;
 
-                     Get_Directories
-                       (Source_Project,
-                        Sources  => True,
-                        Language => Language_Name);
+                     declare
+                        Index : Positive;
+                        NL    : Name_List_Index;
+
+                     begin
+                        Index := 1;
+                        NL := Config.Include_Compatible_Languages;
+                        while NL /= No_Name_List loop
+                           Index := Index + 1;
+                           NL := Project_Tree.Name_Lists.Table (NL).Next;
+                        end loop;
+
+                        declare
+                           Languages : Name_Ids (1 .. Index);
+
+                        begin
+                           Index := 1;
+                           Languages (Index) := Language_Name;
+
+                           NL := Config.Include_Compatible_Languages;
+                           while NL /= No_Name_List loop
+                              Index := Index + 1;
+                              Languages (Index) :=
+                                Project_Tree.Name_Lists.Table (NL).Name;
+                              NL := Project_Tree.Name_Lists.Table (NL).Next;
+                           end loop;
+
+                           Get_Directories
+                             (Source_Project,
+                              Sources   => True,
+                              Languages => Languages);
+                        end;
+                     end;
 
                      if Config.Include_Option /= No_Name_List then
                         --  Get the value of Imported_Directories_Switches
@@ -6410,7 +6447,7 @@ package body Buildgpr is
    procedure Get_Directories
      (For_Project : Project_Id;
       Sources     : Boolean;
-      Language    : Name_Id)
+      Languages   : Name_Ids)
    is
 
       procedure Recursive_Add (Project : Project_Id);
@@ -6474,13 +6511,18 @@ package body Buildgpr is
                if Sources then
                   OK := False;
 
+                  Lang_Loop :
                   while Lang_Proc /= No_Language_Index loop
                      Lang_Data :=
                        Project_Tree.Languages_Data.Table (Lang_Proc);
-                     OK := Lang_Data.Name = Language;
-                     exit when OK;
+
+                     for J in Languages'Range loop
+                        OK := Lang_Data.Name = Languages (J);
+                        exit Lang_Loop when OK;
+                     end loop;
+
                      Lang_Proc := Lang_Data.Next;
-                  end loop;
+                  end loop Lang_Loop;
 
                   if OK then
                      Current := Data.Source_Dirs;
