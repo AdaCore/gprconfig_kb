@@ -8249,14 +8249,21 @@ package body Buildgpr is
                            while Finish < Last loop
                               if Line (Finish) = '\' then
                                  --  On Windows, a '\' is part of the path
-                                 --  name, except when it is followed by
-                                 --  another '\' or by a space. On other
-                                 --  platforms, when we are getting a '\' that
-                                 --  is not the last character of the line, the
-                                 --  next character is part of the path name,
-                                 --  even if it is a space.
+                                 --  name, except when it is not the first
+                                 --  character followed by another '\' or by a
+                                 --  space. On other platforms, when we are
+                                 --  getting a '\' that is not the last
+                                 --  character of the line, the next character
+                                 --  is part of the path name, even if it is a
+                                 --  space.
 
                                  if On_Windows and then
+                                   Finish = Start and then
+                                   Line (Finish + 1) = '\'
+                                 then
+                                    Finish := Finish + 2;
+
+                                 elsif On_Windows and then
                                    Line (Finish + 1) /= '\' and then
                                    Line (Finish + 1) /= ' '
                                  then
