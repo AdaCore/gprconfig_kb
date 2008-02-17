@@ -5803,6 +5803,15 @@ package body Buildgpr is
          end Replace;
 
       begin
+         --  Do not check the same project several times to avoid endless loops
+         --  with cycles that include limited withs.
+
+         if Data.Seen then
+            return;
+         end if;
+
+         Project_Tree.Projects.Table (Project).Seen := True;
+
          if Current_Verbosity = High then
             Write_Str ("Checking project file """);
             Write_Str (Namet.Get_Name_String (Data.Name));
@@ -7389,7 +7398,8 @@ package body Buildgpr is
                In_Tree  => Project_Tree,
                Main     => Main_Id,
                Index    => 0,
-               Ada_Main => False);
+               Ada_Main => False,
+               Language => Get_Name_String (Main_Source.Language_Name));
 
             if Data.Exec_Directory = Data.Object_Directory then
                Exec_Path_Name := Path_Name_Type (Exec_Name);
