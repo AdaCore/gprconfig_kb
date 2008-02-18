@@ -124,6 +124,7 @@
      <compiler name="GNAT" runtime="cert" />
      <compiler name="GNAT" runtime="full" />
      <compiler name="GNAT" runtime="zfp" />
+     <compiler name="GNAT" runtime="hi" />
      <compiler name="GNAT" runtime="raven" />
      <compiler name="GNAT" runtime="soft-float" />
    </compilers>
