@@ -822,7 +822,7 @@ package body Cleangpr is
                   Delete_Binder_Generated_Files
                     (Get_Name_String
                        (Data.Object_Directory),
-                     Osint.Strip_Suffix (Main_Source_File));
+                     Main_Source_File);
                end if;
             end loop;
          end;
