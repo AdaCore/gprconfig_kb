@@ -7,7 +7,7 @@
 @c                                                                            o
 @c                  G P R B U I L D   U S E R ' S   G U I D E                 o
 @c                                                                            o
-@c                     Copyright (C) 2007, AdaCore                            o
+@c                      Copyright (C) 2007-2008, AdaCore                      o
 @c                                                                            o
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
@@ -1093,7 +1093,10 @@ several other command line separators.
 @section Switches
 
 @noindent
-The switches that are interpreted directly by GPRbuild are:
+The switches that are interpreted directly by GPRbuild are listed below.
+
+First, the switches that may be specified only on the command line, but not in
+package Builder of the main project:
 
 @itemize @bullet
 
@@ -1166,33 +1169,12 @@ By default, symbolic links are not taken into account to compute directories
 when processing project files. Switch @option{-eL} changes this default
 behavior.
 
-@item @option{-f} (Force recompilations)
-
-Force the complete processing of all phases (or of those explicitly specified)
-even when up to date.
-
 @item @option{-F} (Full project path name in brief error messages)
 
 By default, in non verbose mode, when an error occurs while processing
 a project file, only the simple name of the project file is displayed in the
 error message. When switch @option{-F} is used, the full path of the project
 file is used. This switch has no effect when switch @option{-v} is used.
-
-@item @option{-j<num>} (use @emph{num} simultaneous compilation jobs)
-
-By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
-it is possible to instruct GPRbuild to spawn several simultaneous compilation
-jobs if needed. For example, @option{-j2} for two simultaneous compilation
-jobs or @option{-j4} for four.
-
-@item @option{-k} (Keep going after compilation errors)
-
-By default, GPRbuild stops spawning new compilation jobs at the first
-compilation failure. Using switch @option{-k}, it is possible to attempt to
-compile/recompile all the sources that are not up to date, even when some
-compilations failed. The post-compilation phase and the linking phase are never
-attempted if there are compilation failures, even when switch @option{-k} is
-used.
 
 @item @option{-l} (Link only)
 
@@ -1206,7 +1188,7 @@ used with
 several mains on the command line, nor with no main on the command line and
 several mains in attribute @code{Main} of the main project.
 
-@item @option{-p} (Create missing object, library and exec directories)
+@item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
 
 By default, GPRbuild checks that the object, library and exec directories
 specified in project files exist. Switch @option{-p} instructs GPRbuild to
@@ -1218,21 +1200,6 @@ Specify the path name of the main project file. The space between @option{-P}
 and the project file name is optional. Specifying a project file name (with
 suffix @file{.gpr}) may be used in place of option @option{-P}. Exactly one main
 project file can be specified.
-
-@item @option{-q} (Quiet output)
-
-Do not display anything except errors and progress (switch @option{-d}).
-Cancel any previous switch @option{-v}.
-
-@item @option{-s} (recompile if compilation switches have changed)
-
-By default, GPRbuild will not recompile a source if all dependencies are
-satisfied. Switch @option{-s} instructs GPRbuild to recompile sources when a
-different set of compilation switches has been used in the previous
-compilation, even if all dependencies are satisfied. Each time GPRbuild
-invokes a compiler, it writes a text file that lists the switches used in the
-invocation of the compiler, so that it can retrieve these switches if
-@option{-s} is used later.
 
 @item @option{-u} (Unique compilation, only compile the given files)
 
@@ -1250,17 +1217,68 @@ all the sources of all the projects in the project tree.
 
 In both cases, do not attempt the binding and the linking phases.
 
-@item @option{-v} (Verbose output)
-
-Display full paths, all options used in spawned processes, and reasons why
-these processes are spawned. Cancel any previous switch @option{-q}.
-
 @item @option{-vPx} (Specify verbosity when parsing Project Files)
 
 By default, GPRbuild does not display anything when processing project files,
 except when there are errors. This default behavior is obtained with switch
 @option{-vP0}. Switches @option{-vP1} and @option{-vP2} yield increasingly
 detailed output.
+
+@item @option{-Xnm=val} (Specify an external reference for Project Files)
+
+Specify an external reference that may be queried inside the project files
+using built-in function @code{external}. For example, with
+@option{-XBUILD=DEBUG},
+@code{external("BUILD")} inside a project file will have the value
+@code{"DEBUG"}.
+
+@end itemize
+
+Then, the switches that may be specified on the command line as well as in
+package Builder of the main project (attribute Switches):
+
+@itemize @bullet
+
+@item @option{-f} (Force recompilations)
+
+Force the complete processing of all phases (or of those explicitly specified)
+even when up to date.
+
+@item @option{-j<num>} (use @emph{num} simultaneous compilation jobs)
+
+By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
+it is possible to instruct GPRbuild to spawn several simultaneous compilation
+jobs if needed. For example, @option{-j2} for two simultaneous compilation
+jobs or @option{-j4} for four.
+
+@item @option{-k} (Keep going after compilation errors)
+
+By default, GPRbuild stops spawning new compilation jobs at the first
+compilation failure. Using switch @option{-k}, it is possible to attempt to
+compile/recompile all the sources that are not up to date, even when some
+compilations failed. The post-compilation phase and the linking phase are never
+attempted if there are compilation failures, even when switch @option{-k} is
+used.
+
+@item @option{-q} (Quiet output)
+
+Do not display anything except errors and progress (switch @option{-d}).
+Cancel any previous switch @option{-v}.
+
+@item @option{-s} (recompile if compilation switches have changed)
+
+By default, GPRbuild will not recompile a source if all dependencies are
+satisfied. Switch @option{-s} instructs GPRbuild to recompile sources when a
+different set of compilation switches has been used in the previous
+compilation, even if all dependencies are satisfied. Each time GPRbuild
+invokes a compiler, it writes a text file that lists the switches used in the
+invocation of the compiler, so that it can retrieve these switches if
+@option{-s} is used later.
+
+@item @option{-v} (Verbose output)
+
+Display full paths, all options used in spawned processes, and reasons why
+these processes are spawned. Cancel any previous switch @option{-q}.
 
 @item @option{-we} (Treat all warnings as errors)
 
@@ -1275,14 +1293,6 @@ Switch @option{-wn} may be used to restore the default after @option{-we} or
 @item @option{-ws} (Suppress all warnings)
 
 Do not generate any warnings while processing the project files.
-
-@item @option{-Xnm=val} (Specify an external reference for Project Files)
-
-Specify an external reference that may be queried inside the project files
-using built-in function @code{external}. For example, with
-@option{-XBUILD=DEBUG},
-@code{external("BUILD")} inside a project file will have the value
-@code{"DEBUG"}.
 
 @end itemize
 
