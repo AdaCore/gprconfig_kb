@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2006-2007, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2008, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1261,6 +1261,14 @@ package body Cleangpr is
                      when 'c'    =>
                         Compile_Only := True;
 
+                     when 'e' =>
+                        if Arg = "-eL" then
+                           Follow_Links_For_Files := True;
+
+                        else
+                           Bad_Argument;
+                        end if;
+
                      when 'f' =>
                         Force_Deletions := True;
 
@@ -1463,6 +1471,8 @@ package body Cleangpr is
 
          Put_Line ("  -aPdir   Add directory dir to project search path");
          Put_Line ("  -c       Only delete compiler generated files");
+         Put_Line ("  -eL      Follow symbolic links when processing " &
+                   "project files");
          Put_Line ("  -f       Force deletions of unwritable files");
          Put_Line ("  -F       Full project path name " &
                    "in brief error messages");
