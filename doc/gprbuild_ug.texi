@@ -1140,6 +1140,13 @@ is found, then @value{gprconfig} is invoked with option
 Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
 can be specified.
 
+@item @option{--subdirs=<subdir>}
+
+This indicates that the real directories (except the source directories) are
+subdirectories of the directories specified in the project files. This applies
+in particular to object directories, library directories and exec directories.
+If the directories do not exist, they are created automatically.
+
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 
 Specify to GPRbuild to add directory @file{dir} to the user project file search
@@ -1165,7 +1172,7 @@ displayed even in quiet output mode (switch @option{-q}).
 
 @item @option{-eL} (Follow symbolic links when processing project files)
 
-By default, symbolic links are not taken into account to compute directories
+By default, symbolic links on project files are not taken into account
 when processing project files. Switch @option{-eL} changes this default
 behavior.
 
