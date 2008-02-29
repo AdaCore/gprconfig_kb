@@ -9100,8 +9100,16 @@ package body Buildgpr is
             end if;
 
          elsif Command_Line and then
-         Arg'Length >= 3 and then
-         Arg (1 .. 3) = "-aP"
+           Arg'Length > Subdirs_Option'Length and then
+           Arg (1 .. Subdirs_Option'Length) =
+           Subdirs_Option
+         then
+            Subdirs :=
+              new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
+
+         elsif Command_Line and then
+           Arg'Length >= 3 and then
+           Arg (1 .. 3) = "-aP"
          then
             if Arg'Length = 3 then
                Search_Project_Dir_Expected := True;
@@ -9491,6 +9499,11 @@ package body Buildgpr is
            ("           Specify a target for cross platforms");
          Write_Eol;
 
+         Write_Str ("  --subdirs=dir");
+         Write_Eol;
+         Write_Str ("           Real obj/lib/exec dirs are subdirs");
+         Write_Eol;
+         Write_Eol;
          --  Line for -aP
 
          Write_Str ("  -aP dir  Add directory dir to project search path");
