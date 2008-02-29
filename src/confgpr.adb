@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -39,6 +39,7 @@ with Prj.Proc; use Prj.Proc;
 with Prj.Tree; use Prj.Tree;
 with Prj.Util; use Prj.Util;
 with Snames;   use Snames;
+with Types;    use Types;
 
 with GNAT.HTable;
 
@@ -405,12 +406,12 @@ package body Confgpr is
 
          begin
             if Obj_Dir = Nil_Variable_Value or else Obj_Dir.Default then
-               Main_Object_Dir :=
-                 Project_Tree.Projects.Table (Main_Project).Directory;
+               Get_Name_String
+                 (Project_Tree.Projects.Table (Main_Project).Directory);
 
             else
                if Is_Absolute_Path (Get_Name_String (Obj_Dir.Value)) then
-                  Main_Object_Dir := Path_Name_Type (Obj_Dir.Value);
+                  Get_Name_String (Obj_Dir.Value);
 
                else
                   Name_Len := 0;
@@ -419,16 +420,21 @@ package body Confgpr is
                        (Project_Tree.Projects.Table (Main_Project).Directory));
                   Add_Char_To_Name_Buffer (Directory_Separator);
                   Add_Str_To_Name_Buffer (Get_Name_String (Obj_Dir.Value));
-
-                  for J in 1 .. Name_Len loop
-                     if Name_Buffer (J) = '/' then
-                        Name_Buffer (J) := Directory_Separator;
-                     end if;
-                  end loop;
-
-                  Main_Object_Dir := Name_Find;
                end if;
             end if;
+
+            if Subdirs /= null then
+               Add_Char_To_Name_Buffer (Directory_Separator);
+               Add_Str_To_Name_Buffer (Subdirs.all);
+            end if;
+
+            for J in 1 .. Name_Len loop
+               if Name_Buffer (J) = '/' then
+                  Name_Buffer (J) := Directory_Separator;
+               end if;
+            end loop;
+
+            Main_Object_Dir := Name_Find;
          end;
 
          --  Check if the object directory exists. If Setup_Projects is True
@@ -439,7 +445,9 @@ package body Confgpr is
          declare
             Obj_Dir : constant String := Get_Name_String (Main_Object_Dir);
          begin
-            if not Is_Directory (Obj_Dir) and then Setup_Projects then
+            if not Is_Directory (Obj_Dir)
+              and then (Setup_Projects or Subdirs /= null)
+            then
                begin
                   Create_Path (Obj_Dir);
 
