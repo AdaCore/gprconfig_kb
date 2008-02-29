@@ -1241,6 +1241,14 @@ package body Cleangpr is
                                         Arg'Last));
                            end if;
 
+                        elsif Arg'Length > Subdirs_Option'Length and then
+                          Arg (1 .. Subdirs_Option'Length) =
+                            Subdirs_Option
+                        then
+                           Subdirs :=
+                             new String'
+                               (Arg (Subdirs_Option'Length + 1 .. Arg'Last));
+
                         else
                            Bad_Argument;
                         end if;
@@ -1467,6 +1475,8 @@ package body Cleangpr is
            ("           Specify/create the main config project file name");
          Put_Line ("  --target=targetname");
          Put_Line ("           Specify a target for cross polatforms");
+         Put_Line ("  --subdirs=dir");
+         Put_Line ("           Real obj/lib/exec dirs are subdirs");
          New_Line;
 
          Put_Line ("  -aPdir   Add directory dir to project search path");
