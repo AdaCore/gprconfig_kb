@@ -2612,7 +2612,10 @@ package body Buildgpr is
                    and then
                    Source.Other_Part = No_Source))
                then
-                  if not Is_Subunit (Source) then
+                  if Source.Unit = No_Name
+                    or else Source.Kind = Spec
+                    or else not Is_Subunit (Source)
+                  then
                      Initialize_Source_Record (Id);
                      Source := Project_Tree.Sources.Table (Id);
 
@@ -5444,9 +5447,11 @@ package body Buildgpr is
          --  compilation.
 
          declare
-            The_ALI   : ALI.ALI_Id;
-            Sfile     : File_Name_Type;
-            Source    : Source_Id;
+            The_ALI : ALI.ALI_Id;
+            Sfile   : File_Name_Type;
+            Afile   : File_Name_Type;
+            Src_Id  : Source_Id;
+            Source  : Source_Data;
 
          begin
             while Good_ALI_Present loop
@@ -5463,40 +5468,40 @@ package body Buildgpr is
                            ALI.Units.Table (J).Last_With
                   loop
                      Sfile := ALI.Withs.Table (K).Sfile;
-                     Source := Project_Tree.First_Source;
+                     Afile := ALI.Withs.Table (K).Afile;
+                     Src_Id := Project_Tree.First_Source;
 
-                     while Source /= No_Source loop
-                        if Project_Tree.Sources.Table (Source).File =
-                             Sfile
-                        then
-                           case Project_Tree.Sources.Table (Source).Kind is
+                     while Src_Id /= No_Source loop
+                        Initialize_Source_Record (Src_Id);
+                        Source := Project_Tree.Sources.Table (Src_Id);
+
+                        if Source.Dep_Name = Afile then
+                           case Source.Kind is
                               when Spec =>
-                                 if Project_Tree.Sources.Table
-                                   (Source).Other_Part /= No_Source
-                                 then
-                                    Source := Project_Tree.Sources.Table
-                                                (Source).Other_Part;
+                                 if Source.Other_Part /= No_Source then
+                                    Src_Id := Source.Other_Part;
                                  end if;
 
                               when Impl =>
-                                 null;
+                                 if Is_Subunit (Source) then
+                                    Src_Id := No_Source;
+                                 end if;
 
                               when Sep =>
-                                 Source := No_Source;
+                                 Src_Id := No_Source;
                            end case;
 
                            exit;
                         end if;
 
-                        Source :=
-                          Project_Tree.Sources.Table (Source).Next_In_Sources;
+                        Src_Id := Source.Next_In_Sources;
                      end loop;
 
-                     if Source /= No_Source then
+                     if Src_Id /= No_Source then
                         Queue.Insert
                           (Sfile,
-                           Source,
-                           Project_Tree.Sources.Table (Source).Project);
+                           Src_Id,
+                           Source.Project);
                      end if;
                   end loop;
                end loop;
