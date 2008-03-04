@@ -582,7 +582,7 @@ package body Confgpr is
             Args (3) := Config_Project_File_Name;
             Arg_Last := 3;
 
-            if Quiet_Output then
+            if not Verbose_Mode then
                Arg_Last := Arg_Last + 1;
                Args (Arg_Last) := new String'("-q");
             end if;
@@ -612,7 +612,7 @@ package body Confgpr is
                Name := Language_Htable.Get_Next;
             end loop;
 
-            if not Quiet_Output then
+            if Verbose_Mode then
                Write_Str (Gprconfig_Name);
 
                for J in 1 .. Arg_Last loop
@@ -620,6 +620,11 @@ package body Confgpr is
                   Write_Str (Args (J).all);
                end loop;
 
+               Write_Eol;
+
+            elsif not Quiet_Output then
+               Write_Str ("creating ");
+               Write_Str (Simple_Name (Config_Project_File_Name.all));
                Write_Eol;
             end if;
 
