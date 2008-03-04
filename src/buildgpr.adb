@@ -76,6 +76,16 @@ package body Buildgpr is
    Name_Star : Name_Id;
    --  The character '*', initialized in procedure Initialize
 
+   Dash_L : Name_Id;
+   --  "-L", initialized in procedure Initialize
+
+   Current_Working_Dir : constant String := Get_Current_Dir;
+   --  The current working directory
+
+   Main_Project_Dir : String_Access;
+   --  The absolute path of the project directory of the main project,
+   --  initialized in procedure Initialize.
+
    Executable_Suffix : constant String_Access := Get_Executable_Suffix;
    --  The suffix of executables on this platforms
 
@@ -838,6 +848,11 @@ package body Buildgpr is
    function Source_Of (File : String) return Source_Data;
    --  Return the source data corresponding to a file name
 
+   procedure Test_If_Relative_Path
+     (Switch           : in out String_Access;
+      Parent           : String;
+      Including_Switch : Name_Id);
+
    function Ultimate_Extending_Project_Of (Proj : Project_Id)
                                            return Project_Id;
    --  Returns the ultimate extending project of project Proj. If project Proj
@@ -1059,7 +1074,7 @@ package body Buildgpr is
    ----------------
 
    procedure Add_Option (Arg : String; Command_Line : Boolean) is
-      Option : constant String_Access := new String'(Arg);
+      Option : String_Access := new String'(Arg);
 
    begin
       case Current_Processor is
@@ -1070,9 +1085,35 @@ package body Buildgpr is
 
             --  Add option to the linker table
 
+            if Command_Line then
+               Test_If_Relative_Path
+                 (Switch           => Option,
+                  Parent           => Current_Working_Dir,
+                  Including_Switch => Dash_L);
+
+            else
+               Test_If_Relative_Path
+                 (Switch           => Option,
+                  Parent           => Main_Project_Dir.all,
+                  Including_Switch => Dash_L);
+            end if;
+
             Command_Line_Linker_Options.Append (Option);
 
          when Binder =>
+
+            if Command_Line then
+               Test_If_Relative_Path
+                 (Switch           => Option,
+                  Parent           => Current_Working_Dir,
+                  Including_Switch => No_Name);
+
+            else
+               Test_If_Relative_Path
+                 (Switch           => Option,
+                  Parent           => Main_Project_Dir.all,
+                  Including_Switch => No_Name);
+            end if;
 
             if Current_Bind_Option_Table = No_Bind_Option_Table then
                --  Option for all binder
@@ -2246,22 +2287,33 @@ package body Buildgpr is
                               --  project file.
 
                               if Switches.Kind = Prj.List then
-                                 Switch_List := Switches.Values;
+                                 declare
+                                    Option : String_Access;
 
-                                 while Switch_List /= Nil_String loop
-                                    Element :=
-                                      Project_Tree.String_Elements.Table
-                                        (Switch_List);
-                                    Get_Name_String (Element.Value);
+                                 begin
+                                    Switch_List := Switches.Values;
 
-                                    if Name_Len > 0 then
-                                       Put_Line
-                                         (Exchange_File,
-                                          Name_Buffer (1 .. Name_Len));
-                                    end if;
+                                    while Switch_List /= Nil_String loop
+                                       Element :=
+                                         Project_Tree.String_Elements.Table
+                                           (Switch_List);
 
-                                    Switch_List := Element.Next;
-                                 end loop;
+                                       Get_Name_String (Element.Value);
+
+                                       if Name_Len > 0 then
+                                          Option :=
+                                            new String'
+                                              (Name_Buffer (1 .. Name_Len));
+                                          Test_If_Relative_Path
+                                            (Option,
+                                             Main_Project_Dir.all,
+                                             No_Name);
+                                          Put_Line (Exchange_File, Option.all);
+                                       end if;
+
+                                       Switch_List := Element.Next;
+                                    end loop;
+                                 end;
                               end if;
 
                               --  Then those on the command line, for all
@@ -6644,6 +6696,11 @@ package body Buildgpr is
             Flush_Messages => False);
       end if;
 
+      Main_Project_Dir :=
+        new String'
+          (Get_Name_String
+             (Project_Tree.Projects.Table (Main_Project).Directory));
+
       if Warnings_Detected > 0 then
          Prj.Err.Finalize;
          Prj.Err.Initialize;
@@ -6958,6 +7015,12 @@ package body Buildgpr is
       Name_Len := 1;
       Name_Buffer (1) := '*';
       Name_Star := Name_Find;
+
+      --  Get the name id for "-L";
+
+      Name_Len := 0;
+      Add_Str_To_Name_Buffer ("-L");
+      Dash_L := Name_Find;
 
       --  Add the directory where gprbuild is invoked in front of the path,
       --  if gprbuild is invoked from a bin directory or with directory
@@ -7827,6 +7890,7 @@ package body Buildgpr is
                                              Project_Tree.Packages.Table
                                                (Linker_Package).Decl.Arrays,
                                            In_Tree   => Project_Tree);
+                     Option   : String_Access;
 
                   begin
                      Switches :=
@@ -7869,8 +7933,15 @@ package body Buildgpr is
                               Get_Name_String (Element.Value);
 
                               if Name_Len > 0 then
-                                 Add_Argument
-                                   (Name_Buffer (1 .. Name_Len), True);
+                                 Option :=
+                                   new String'(Name_Buffer (1 .. Name_Len));
+
+                                 Test_If_Relative_Path
+                                   (Option,
+                                    Main_Project_Dir.all,
+                                    Dash_L);
+
+                                 Add_Argument (Option.all, True);
                               end if;
 
                               Switch_List := Element.Next;
@@ -9410,6 +9481,10 @@ package body Buildgpr is
       OS_Exit (1);
    end Sigint_Intercepted;
 
+   ---------------
+   -- Source_Of --
+   ---------------
+
    function Source_Of (File : String) return Source_Data is
       File_Id : File_Name_Type;
       Source : Source_Data;
@@ -9429,6 +9504,40 @@ package body Buildgpr is
 
       return No_Source_Data;
    end Source_Of;
+
+   ---------------------------
+   -- Test_If_Relative_Path --
+   ---------------------------
+
+   procedure Test_If_Relative_Path
+     (Switch           : in out String_Access;
+      Parent           : String;
+      Including_Switch : Name_Id)
+   is
+      Original : constant String (1 .. Switch'Length) := Switch.all;
+
+   begin
+      if Original (1) = '-' and then Including_Switch /= No_Name then
+         declare
+            Inc_Switch : constant String := Get_Name_String (Including_Switch);
+
+         begin
+            if Original'Last > Inc_Switch'Last and then
+              Original (1 .. Inc_Switch'Last) = Inc_Switch and then
+              not Is_Absolute_Path
+                    (Original (Inc_Switch'Last + 1 .. Original'Last))
+            then
+                  Switch := new String'
+                    (Inc_Switch & Parent & Directory_Separator &
+                     Original (Inc_Switch'Last + 1 .. Original'Last));
+            end if;
+         end;
+      end if;
+
+      if Original (1) /= '-' and then not Is_Absolute_Path (Original) then
+         Switch := new String'(Parent & Directory_Separator & Original);
+      end if;
+   end Test_If_Relative_Path;
 
    -----------------------------------
    -- Ultimate_Extending_Project_Of --
