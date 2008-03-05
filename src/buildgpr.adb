@@ -2727,8 +2727,7 @@ package body Buildgpr is
                      then
                         Add_Argument
                           (Get_Name_String (Source.Object_Path),
-                           Verbose_Mode or else
-                             (First_Object > Last_Argument),
+                           Verbose_Mode,
                            Simple_Name => not Verbose_Mode);
                      end if;
                   end if;
