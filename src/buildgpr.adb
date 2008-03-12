@@ -2659,6 +2659,8 @@ package body Buildgpr is
 
                if (not Source.Locally_Removed)
                  and then
+                  Source.Compiled
+                 and then
                  (Source.Kind = Impl
                   or else
                   (Source.Unit /= No_Name
@@ -2748,6 +2750,8 @@ package body Buildgpr is
                   Source := Project_Tree.Sources.Table (Id);
 
                   if (not Source.Locally_Removed)
+                    and then
+                     Source.Compiled
                     and then
                       (Source.Kind = Impl
                        or else
@@ -3291,7 +3295,10 @@ package body Buildgpr is
 
                Src_Data := Project_Tree.Sources.Table (Source);
 
-               if not Src_Data.Locally_Removed and then
+               if (not Src_Data.Locally_Removed)
+                 and then
+                   Src_Data.Compiled
+                 and then
                  ((Src_Data.Unit = No_Name and then Src_Data.Kind = Impl)
                  or else
                    (Src_Data.Unit /= No_Name
@@ -7210,99 +7217,101 @@ package body Buildgpr is
       if Src_Data.Source_TS = Empty_Time_Stamp or else Need_Object then
          Data := Project_Tree.Projects.Table (Src_Data.Project);
          Src_Data.Source_TS := File_Stamp (Src_Data.Path);
+         Project_Tree.Sources.Table (Source) := Src_Data;
 
          if Need_Object then
             Src_Data.Get_Object := True;
             Project_Tree.Sources.Table (Source).Get_Object := True;
          end if;
 
-         if Src_Data.Lang_Kind = Unit_Based
-           and then
-           Src_Data.Kind = Impl
-           and then
-           Is_Subunit (Src_Data)
-         then
-            Src_Data.Kind := Sep;
-            Src_Data.Get_Object := False;
-            Project_Tree.Sources.Table (Source) := Src_Data;
-            return;
+         if Src_Data.Compiled then
+            if Src_Data.Lang_Kind = Unit_Based
+              and then
+                Src_Data.Kind = Impl
+                and then
+                  Is_Subunit (Src_Data)
+            then
+               Src_Data.Kind := Sep;
+               Src_Data.Get_Object := False;
+               Project_Tree.Sources.Table (Source) := Src_Data;
+               return;
 
-         elsif (Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Spec)
-            or else
-            (Src_Data.Lang_Kind = Unit_Based
-             and then
-             (Src_Data.Kind = Sep
+            elsif (Src_Data.Lang_Kind = File_Based
+                   and then Src_Data.Kind = Spec)
               or else
-              (Src_Data.Kind = Spec
-               and then
-               Src_Data.Other_Part /= No_Source)))
-         then
-            Src_Data.Get_Object := False;
-            Project_Tree.Sources.Table (Source) := Src_Data;
-            return;
-         end if;
+                (Src_Data.Lang_Kind = Unit_Based
+                 and then
+                   (Src_Data.Kind = Sep
+                    or else
+                      (Src_Data.Kind = Spec
+                       and then
+                         Src_Data.Other_Part /= No_Source)))
+            then
+               Src_Data.Get_Object := False;
+               Project_Tree.Sources.Table (Source) := Src_Data;
+               return;
+            end if;
 
-         loop
-            declare
-               Object_Path : constant String :=
-                               Normalize_Pathname
-                                 (Name      =>
-                                    Get_Name_String (Src_Data.Object),
-                                  Directory =>
-                                    Get_Name_String (Data.Object_Directory));
-            begin
-               Src_Data.Object_Path := Create_Name (Object_Path);
-            end;
-
-            Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
-
-            if Src_Data.Dependency /= None then
+            loop
                declare
-                  Dep_Path : constant String :=
-                               Normalize_Pathname
-                                 (Name      =>
-                                    Get_Name_String (Src_Data.Dep_Name),
-                                  Directory =>
-                                    Get_Name_String (Data.Object_Directory));
-
+                  Object_Path     :
+                    constant String :=
+                      Normalize_Pathname
+                        (Name      => Get_Name_String (Src_Data.Object),
+                         Directory => Get_Name_String (Data.Object_Directory));
                begin
-                  Src_Data.Dep_Path := Create_Name (Dep_Path);
+                  Src_Data.Object_Path := Create_Name (Object_Path);
                end;
 
-               Src_Data.Dep_TS := File_Stamp (Src_Data.Dep_Path);
-            end if;
+               Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
 
-            declare
-               Switches_Path : constant String :=
-                                 Normalize_Pathname
-                                   (Name      =>
-                                      Get_Name_String (Src_Data.Switches),
-                                    Directory =>
+               if Src_Data.Dependency /= None then
+                  declare
+                     Dep_Path        :
+                       constant String :=
+                         Normalize_Pathname
+                           (Name      => Get_Name_String (Src_Data.Dep_Name),
+                            Directory =>
                                       Get_Name_String (Data.Object_Directory));
 
-            begin
-               Src_Data.Switches_Path := Create_Name (Switches_Path);
-            end;
+                  begin
+                     Src_Data.Dep_Path := Create_Name (Dep_Path);
+                  end;
 
-            Src_Data.Switches_TS := File_Stamp (Src_Data.Switches_Path);
+                  Src_Data.Dep_TS := File_Stamp (Src_Data.Dep_Path);
+               end if;
 
-            if Src_Data.Object_TS /= Empty_Time_Stamp then
-               Found := True;
-               Src_Data.Object_Project := Obj_Proj;
-               Project_Tree.Sources.Table (Source) := Src_Data;
-            end if;
+               declare
+                  Switches_Path :
+                    constant String :=
+                      Normalize_Pathname
+                        (Name      => Get_Name_String (Src_Data.Switches),
+                         Directory => Get_Name_String (Data.Object_Directory));
 
-            Obj_Proj := Data.Extended_By;
-            if Obj_Proj = No_Project then
-               if not Found then
+               begin
+                  Src_Data.Switches_Path := Create_Name (Switches_Path);
+               end;
+
+               Src_Data.Switches_TS := File_Stamp (Src_Data.Switches_Path);
+
+               if Src_Data.Object_TS /= Empty_Time_Stamp then
+                  Found := True;
+                  Src_Data.Object_Project := Obj_Proj;
                   Project_Tree.Sources.Table (Source) := Src_Data;
                end if;
 
-               exit;
-            end if;
+               Obj_Proj := Data.Extended_By;
+               if Obj_Proj = No_Project then
+                  if not Found then
+                     Project_Tree.Sources.Table (Source) := Src_Data;
+                  end if;
 
-            Data := Project_Tree.Projects.Table (Obj_Proj);
-         end loop;
+                  exit;
+               end if;
+
+               Data := Project_Tree.Projects.Table (Obj_Proj);
+            end loop;
+         end if;
       end if;
    end Initialize_Source_Record;
 
@@ -8928,9 +8937,11 @@ package body Buildgpr is
          for Index in 1 .. Source_Data_Table.Last (Project_Tree.Sources) loop
             Source := Project_Tree.Sources.Table (Index);
 
-            if (All_Projects
-                  or else
-                Is_Extending (The_Project, Source.Project, Project_Tree))
+            if Source.Compiled
+               and then
+                (All_Projects
+                   or else
+                 Is_Extending (The_Project, Source.Project, Project_Tree))
                and then
                 not Source.Locally_Removed
                and then
