@@ -2691,11 +2691,15 @@ Example:
 
 Specifies the name of the executable for the compiler of a language. The single
 string value of this attribute may be an absolute path or a relative path. If
-relative, then the execution path is searched. Examples:
+relative, then the execution path is searched. Specifying the empty string for
+this attribute indicates that there is no compiler for the language.
+
+Examples:
 
 @smallexample
    for Driver ("C++") use "g++";
    for Driver ("Ada") use "/.../bin/gcc";
+   for Driver ("Project file") use "";
 @end smallexample
 
 @item Required_Switches (<language>)
