@@ -5,6 +5,7 @@
    <configuration>
      <targets>
        <target name="powerpc-elf" />
+       <target name="powerpc-eabispe" />
      </targets>
      <config>
    package Builder is
@@ -155,6 +156,7 @@
      <targets>
        <target name=".*-wrs-vxworks.*" />
        <target name="powerpc-elf" />
+       <target name="powerpc-eabispe" />
      </targets>
      <compilers>
        <compiler name="GNAT" />
