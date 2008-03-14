@@ -14,11 +14,12 @@
      </config>
    </configuration>
 
-   <!-- Import WIND_BASE on VxWorks targets.  -->
+   <!-- Import WIND_BASE on VxWorks 5 & 6 targets.  -->
    <configuration>
      <targets>
        <target name="powerpc-wrs-vxworks.*" />
        <target name="ppc-vx6.*" />
+       <target name="i.86-wrs-vxworks.*" />
      </targets>
      <config>
    Wind_Base := external ("WIND_BASE");
