@@ -5568,15 +5568,21 @@ package body Buildgpr is
                            ALI.Units.Table (J).Last_With
                   loop
                      Sfile := ALI.Withs.Table (K).Sfile;
-                     Afile := ALI.Withs.Table (K).Afile;
-                     Src_Id := Project_Tree.First_Source;
 
-                     while Src_Id /= No_Source loop
-                        Initialize_Source_Record (Src_Id);
-                        Source := Project_Tree.Sources.Table (Src_Id);
+                     --  Skip generics
 
-                        if Source.Dep_Name = Afile then
-                           case Source.Kind is
+                     if Sfile /= No_File then
+                        Afile := ALI.Withs.Table (K).Afile;
+                        Src_Id := Project_Tree.First_Source;
+
+                        while Src_Id /= No_Source loop
+                           Initialize_Source_Record (Src_Id);
+                           Source := Project_Tree.Sources.Table (Src_Id);
+
+                           if Source.Compiled and then
+                              Source.Dep_Name = Afile
+                           then
+                              case Source.Kind is
                               when Spec =>
                                  if Source.Other_Part /= No_Source then
                                     Src_Id := Source.Other_Part;
@@ -5589,19 +5595,20 @@ package body Buildgpr is
 
                               when Sep =>
                                  Src_Id := No_Source;
-                           end case;
+                              end case;
 
-                           exit;
+                              exit;
+                           end if;
+
+                           Src_Id := Source.Next_In_Sources;
+                        end loop;
+
+                        if Src_Id /= No_Source then
+                           Queue.Insert
+                             (Sfile,
+                              Src_Id,
+                              Source.Project);
                         end if;
-
-                        Src_Id := Source.Next_In_Sources;
-                     end loop;
-
-                     if Src_Id /= No_Source then
-                        Queue.Insert
-                          (Sfile,
-                           Src_Id,
-                           Source.Project);
                      end if;
                   end loop;
                end loop;
@@ -7134,6 +7141,8 @@ package body Buildgpr is
       Scan_Args : for Next_Arg in 1 .. Argument_Count loop
          Scan_Arg (Argument (Next_Arg), Command_Line => True);
       end loop Scan_Args;
+
+      Current_Processor := None;
 
       --  If --display-paths was specified, display the config and the user
       --  project paths and exit.
