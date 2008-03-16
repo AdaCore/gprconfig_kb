@@ -118,6 +118,7 @@
        <target name=".*darwin.*" />
     </targets>
     <config>
+   for Library_Builder use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
    for Library_Support use "full";
    for Shared_Library_Prefix use "lib";
    for Symbolic_Link_Supported use "true";
