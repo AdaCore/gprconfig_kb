@@ -670,10 +670,18 @@ package body GprConfig.Knowledge is
                External => N);
 
          elsif Node_Name (N) = "runtimes" then
-            Parse_External_Value
-              (Value    => Compiler.Runtimes,
-               File     => File,
-               External => N);
+            declare
+               Defaults : constant String := Get_Attribute (N, "default", "");
+            begin
+               if Defaults /= "" then
+                  Get_Words (Defaults, No_Name, Compiler.Default_Runtimes,
+                             False);
+               end if;
+               Parse_External_Value
+                 (Value    => Compiler.Runtimes,
+                  File     => File,
+                  External => N);
+            end;
 
          elsif Node_Name (N) = "target" then
             Parse_External_Value
@@ -1525,6 +1533,7 @@ package body GprConfig.Knowledge is
       Variables : External_Value_Lists.List;
       Comp      : Compiler;
       C, C2     : External_Value_Lists.Cursor;
+      CS        : String_Lists.Cursor;
    begin
       --  verify that the compiler is indeed a real executable
       --  on Windows and not a cygwin symbolic link
@@ -1645,6 +1654,25 @@ package body GprConfig.Knowledge is
          Comp             => Comp,
          Split_Into_Words => True,
          Processed_Value  => Runtimes);
+      --  Put default runtime first.
+      if not Is_Empty (Runtimes) then
+         CS := First (Descr.Default_Runtimes);
+         Defaults_Loop :
+         while Has_Element (CS) loop
+            C2 := First (Runtimes);
+            while Has_Element (C2) loop
+               if Get_Name_String (External_Value_Lists.Element (C2).Value)
+                 = String_Lists.Element (CS)
+               then
+                  Prepend (Runtimes, External_Value_Lists.Element (C2));
+                  Delete (Runtimes, C2);
+                  exit Defaults_Loop;
+               end if;
+               Next (C2);
+            end loop;
+            Next (CS);
+         end loop Defaults_Loop;
+      end if;
 
       C := First (Languages);
       while Has_Element (C) loop

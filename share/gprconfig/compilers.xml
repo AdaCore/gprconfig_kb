@@ -153,7 +153,7 @@
       <grep regexp="^gcc version (\S+)" group="1"></grep>
     </variable>
     <languages>Ada</languages>
-    <runtimes>
+    <runtimes default="default,kernel">
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/adalib/</directory>
        <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/rts-(.*)/adalib/</directory>
     </runtimes>

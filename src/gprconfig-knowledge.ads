@@ -306,15 +306,16 @@ private
      External_Value_Nodes.Empty_List;
 
    type Compiler_Description is record
-      Name          : Namet.Name_Id := Namet.No_Name;
-      Executable    : Namet.Name_Id;
-      Executable_Re : Pattern_Matcher_Access;
-      Prefix_Index  : Integer := -1;
-      Target        : External_Value;
-      Version       : External_Value;
-      Variables     : External_Value;
-      Languages     : External_Value;
-      Runtimes      : External_Value;
+      Name             : Namet.Name_Id := Namet.No_Name;
+      Executable       : Namet.Name_Id;
+      Executable_Re    : Pattern_Matcher_Access;
+      Prefix_Index     : Integer := -1;
+      Target           : External_Value;
+      Version          : External_Value;
+      Variables        : External_Value;
+      Languages        : External_Value;
+      Runtimes         : External_Value;
+      Default_Runtimes : String_Lists.List;
    end record;
    --  Executable_Re is only set if the name of the <executable> must be
    --  taken as a regular expression.
