@@ -80,13 +80,8 @@
      <config>
    package Compiler is
       for Required_Switches ("Ada") use
-        Compiler'Required_Switches ("Ada") &amp; ("-mrtp", "--RTS=$RUNTIME");
+        Compiler'Required_Switches ("Ada") &amp; ("-mrtp");
    end Compiler;
-
-   package Binder is
-      for Required_Switches ("Ada") use
-        Binder'Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
-   end Binder;
 
    package Linker is
       for Required_Switches use
