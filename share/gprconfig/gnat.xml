@@ -39,6 +39,13 @@
           "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
    end Binder;
 
+   package Linker is
+      for Required_Switches use
+         ("-L${PATH}${PREFIX}../lib/gcc/${TARGET}/${gcc_version}",
+          "-L${PATH}${PREFIX}../lib")
+        &amp; Linker'Required_Switches;
+   end Linker;
+
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
    for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR}";
    </config>
