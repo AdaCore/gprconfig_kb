@@ -104,6 +104,7 @@
        <target name="powerpc-eabispe" />
        <target name="erc32-elf" />
        <target name="leon-elf" />
+       <target name=".*wrs-vxworks.*" />
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
