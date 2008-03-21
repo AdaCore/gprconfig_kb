@@ -7602,7 +7602,7 @@ package body Buildgpr is
                Add_Argument
                  (Get_Name_String
                     (Project_Tree.Name_Lists.Table (Min_Linker_Opts).Name),
-                  True);
+                  Verbose_Mode);
                Min_Linker_Opts   :=
                  Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
             end loop;
