@@ -47,19 +47,6 @@
      </config>
    </configuration>
 
-   <!--  Use Windriver archiver -->
-   <configuration>
-     <targets>
-       <target name="ppc-vx6.*" />
-     </targets>
-     <config>
-   for Archive_Builder use ("arppc", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer use ("ranlibppc");
-   for Archive_Suffix  use ".a";
-     </config>
-   </configuration>
-
    <!-- vx6/rtp executables have a .vxe extension and need -mrtp -->
    <configuration>
      <compilers>
@@ -133,7 +120,6 @@
    <configuration>
      <targets>
        <target name="powerpc-wrs-vxworks.*" />
-       <target name="ppc-vx6.*" />
      </targets>
      <config>
    for Archive_Builder  use ("arppc", "cr");
