@@ -843,11 +843,51 @@ it will never be used.
 @section Scenarios and conditional source files
 
 @noindent
-@emph{To be provided in a subsequent version of the document.}
+In the previous section we have seen how to create libraries from
+simple subsystems by using specific attributes. Rather than having
+several almost identical project files defining a static or a dynamic
+version of the library representing a subsystem, one can write a more
+generic version of the project file thanks to the notion of scenarios.
+Scenarios are defined as types with a known set of string values as shown
+by the type @code{Lib_Kind} below. A scenario variable,@code{Kind} below
+can get its initial value from the environment thanks to an @code{external}
+call. This variable can then be used in a case statement as shown below.
+Note that only scenario variables can be used to control case statements.
+There is another kind of untyped string variables illustrated by
+@code{Prefix} below that can be used in general string expressions but
+cannot control case statements and thus are not scenarios variables.
+
+@smallexample @c projectfile
+library project General_Lib is
+   type Lib_Kind is ("static", "dynamic", "extern");
+   Kind : Lib_Kind := external ("LIB", "static");
+   Prefix := "../libraries/";
+   for Languages    use ("Ada", "C");
+   for Source_Dirs  use (Prefix & "lib_src");
+   case Kind is
+      when "static" =>
+         for Object_Dir   use  Prefix & "obj";
+         for Library_Dir  use  Prefix & "lib";
+         for Library_Kind use  "static";
+         for Library_Name use "l1";
+      when "dynamic" =>
+         for Object_Dir   use  Prefix & "obj2";
+         for Library_Dir  use  Prefix & "lib2";
+         for Library_Kind use  "dynamic";
+         for Library_Name use "l2";
+      when "extern" =>
+         for Library_Dir  use  Prefix & "lib2";
+         for Library_Kind use "dynamic";
+         for Library_Name use "l2";
+         for Externally_Built use "true";
+   end case;
+end General_Lib;
+@end smallexample
+
 
 @c  ------------------------------------------------------------------------
 @node Important Concepts
-@chapter Main Concepts
+@chapter Important Concepts
 @c  ------------------------------------------------------------------------
 
 The following concepts are the foundation of
