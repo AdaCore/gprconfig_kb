@@ -628,13 +628,12 @@ necessary units from @code{Common_Subsystem} are available for
 phase.
 
 It is also possible to use the @code{with} relationship to define a project
-file
-that allows sharing common attributes or packages. For instance, you can
- define a project whose only purpose is to centralize the default
+file that allows sharing common attributes or packages. For instance, you
+can define a project whose only purpose is to centralize the default
 compilation options for various languages:
 
 @smallexample @c projectfile
-project Attribute_Sharing is
+abstract project Attribute_Sharing is
    for Source_Files use ();
    package Compiler is
       for Default_Switches ("C")   use ("-pedantic");
@@ -645,16 +644,15 @@ end Attribute_Sharing;
 
 @noindent
 This package does not correspond to a subsystem with
-proper source files, and this is conveyed by the definition of
-@code{Source_Files}
-as the empty list. It informs the build manager
-that no compilation is to take place directly from this project. Defining
-an empty list of sources is essential for such utility projects because
-otherwise the default rules would apply and all sources in the current
-directory
-would be associated with this project. Now other projects can share this
-project's attributes and packages. For instance, @code{Ada_Main} can share all
-the
+proper source files, and this is conveyed by the modifier @code{abstract}
+just before the keyword @code{project}. An abstract project cannot have
+associated sources, hence the definition of @code{Source_Files}
+as the empty list. It informs the build manager that no compilation is to
+take place directly from this project. Defining an empty list of sources is
+essential for such utility projects because otherwise the default rules
+would apply and all sources in the current directory would be associated
+with this project. Now other projects can share this project's attributes
+and packages. For instance, @code{Ada_Main} can share all the
 @code{Compiler} package's attributes at once using a renaming declaration:
 
 @smallexample @c projectfile
@@ -768,7 +766,7 @@ interest to library users. Here is a simple project file for a static
 library:
 
 @smallexample @c projectfile
-project Static_Lib is
+library project Static_Lib is
    for Languages    use ("Ada", "C");
    for Source_Dirs  use ("lib_src");
    for Object_Dir   use "obj";
@@ -824,7 +822,7 @@ for instance when the sources to rebuild the library are
 not available. Such library projects need simply to use the
 @code{externally_built} attribute as in the example below:
 @smallexample @c projectfile
-project Extern_Lib is
+library project Extern_Lib is
    for Languages    use ("Ada", "C");
    for Source_Dirs  use ("lib_src");
    for Library_Dir  use "lib2";

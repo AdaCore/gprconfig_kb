@@ -1,4 +1,4 @@
-project Static_Lib is
+library project Static_Lib is
    for Languages    use ("Ada", "C");
    for Source_Dirs  use ("lib_src");
    for Object_Dir   use "obj";

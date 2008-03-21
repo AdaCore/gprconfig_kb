@@ -1,4 +1,4 @@
-project Extern_Lib is
+library project Extern_Lib is
    for Languages    use ("Ada", "C");
    for Source_Dirs  use ("lib_src");
    for Library_Dir  use "lib2";

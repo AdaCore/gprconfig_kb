@@ -1,4 +1,4 @@
-project Attribute_Sharing is
+abstract project Attribute_Sharing is
    for Source_Files use ();
    package Compiler is
       for Default_Switches ("C")   use ("-pedantic");
