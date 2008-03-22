@@ -5704,6 +5704,10 @@ package body Buildgpr is
       Project_Tree.Projects.Table (Project).All_Imported_Projects :=
         Empty_Project_List;
 
+      --  Make sure Project is not importing itself
+
+      Project_Tree.Projects.Table (Project).Seen := True;
+
       --  Add to the list all projects imported directly or indirectly
 
       Recursive_Add_Imported (Project);
