@@ -1923,6 +1923,18 @@ contains an implicit ``^'' at the start, and an implicit ``$'' at the end.
 Therefore if you specify @samp{.*gnatmake} as the regexp, it will not match
 @samp{gnatmake-debug}.
 
+A special case is when this node is empty (but it must be specified!). In
+such a case, you must also specify the language (see <language> below) as a
+simple string. It is then assumed that the specified language does not
+require a compiler. In the configurations file (@pxref{Configurations}),
+you can test whether that language was specified on the command line by
+using a filter such as
+@smallexample
+ <compilers>
+  <compiler language="name"/>
+ </compilers>
+@end smallexample
+
 @smallexample
 <executable prefix="1">(powerpc-wrs-vxworks-)?gnatmake</executable>
 <version><external>$@{PREFIX@}gnatls -v</external></version>
@@ -1963,7 +1975,12 @@ below for valid children of this node.
 The value returned by the system will be split into words. As a result, if
 the returned value is ``ada,c,c++'', there are three languages supported by the
 compiler (and three entries are added to the menu when using @value{gprconfig}
-interactively). The words can be comma-separated or space-separated.
+interactively).
+
+If the value is a simple string, the words must be comma-separated, so that
+you can specify languages whose name include spaces. However, if the actual
+value is computed from the result of a command, the words can also be
+space-separated, to be compatible with more tools.
 
 @item <runtimes>
 

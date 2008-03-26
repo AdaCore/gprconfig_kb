@@ -1,5 +1,11 @@
 <?xml version="1.0" ?>
 <gprconfig>
+  <compiler_description>
+    <name>GPR projects</name>
+    <executable/>
+    <languages>Project File</languages>
+  </compiler_description>
+
   <!--    GCC 3.x & 4.x -->
   <compiler_description>
     <name>GCC</name>

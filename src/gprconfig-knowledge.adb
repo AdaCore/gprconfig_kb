@@ -622,11 +622,15 @@ package body GprConfig.Knowledge is
                Prefix : constant String := Get_Attribute (N, "prefix", "@@");
                Val    : constant String := Node_Value_As_String (N);
             begin
-               Compiler.Executable := Get_String (Val);
-               Compiler.Prefix_Index := Integer'Value (Prefix);
-               Compiler.Executable_Re := new Pattern_Matcher'
-                 (Compile ("^" & Val & Exec_Suffix.all & "$"));
-               Base.Check_Executable_Regexp := True;
+               if Val = "" then
+                  Compiler.Executable := No_Name;
+               else
+                  Compiler.Executable := Get_String (Val);
+                  Compiler.Prefix_Index := Integer'Value (Prefix);
+                  Compiler.Executable_Re := new Pattern_Matcher'
+                    (Compile ("^" & Val & Exec_Suffix.all & "$"));
+                  Base.Check_Executable_Regexp := True;
+               end if;
 
             exception
                when Expression_Error =>
@@ -1273,6 +1277,7 @@ package body GprConfig.Knowledge is
       Tmp_Result     : Unbounded_String;
       Node_Cursor    : External_Value_Nodes.Cursor := First (Value);
       Node           : External_Value_Node;
+      From_Static    : Boolean := False;
    begin
       Clear (Processed_Value);
 
@@ -1289,6 +1294,7 @@ package body GprConfig.Knowledge is
                   Tmp_Result := To_Unbounded_String
                     (Substitute_Variables
                        (Get_Name_String (Node.Value), Comp));
+                  From_Static := True;
                   Put_Verbose
                     (Attribute & ": constant := " & To_String (Tmp_Result));
 
@@ -1424,12 +1430,27 @@ package body GprConfig.Knowledge is
                      else
                         Filter := No_Name;
                      end if;
-                     Get_Words (Words  => To_String (Tmp_Result),
-                                Filter => Filter,
-                                Separator1 => ' ',
-                                Separator2 => ',',
-                                Map    => Split,
-                                Allow_Empty_Elements => False);
+
+                     --  When an external value is defined as a static string,
+                     --  the only valid separator is ','. When computed
+                     --  however, we also allow space as a separator
+                     if From_Static then
+                        Get_Words (Words  => To_String (Tmp_Result),
+                                   Filter => Filter,
+                                   Separator1 => ',',
+                                   Separator2 => ',',
+                                   Map    => Split,
+                                   Allow_Empty_Elements => False);
+
+                     else
+                        Get_Words (Words  => To_String (Tmp_Result),
+                                   Filter => Filter,
+                                   Separator1 => ' ',
+                                   Separator2 => ',',
+                                   Map    => Split,
+                                   Allow_Empty_Elements => False);
+                     end if;
+
                      C := First (Split);
                      while Has_Element (C) loop
                         Append
@@ -1564,84 +1585,87 @@ package body GprConfig.Knowledge is
       --  Check the target first, for efficiency. If it doesn't match, no need
       --  to compute other attributes.
 
-      Get_External_Value
-        ("target",
-         Value            => Descr.Target,
-         Comp             => Comp,
-         Split_Into_Words => False,
-         Processed_Value  => Target);
-      if not Is_Empty (Target) then
-         Comp.Target := External_Value_Lists.Element (First (Target)).Value;
-         Get_Targets_Set
-           (Base, Get_Name_String (Comp.Target), Comp.Targets_Set);
-      else
-         Put_Verbose ("Target unknown for this compiler");
-         Comp.Targets_Set := Unknown_Targets_Set;
-      end if;
+      if Executable /= No_Name then
+         Get_External_Value
+           ("target",
+            Value            => Descr.Target,
+            Comp             => Comp,
+            Split_Into_Words => False,
+            Processed_Value  => Target);
+         if not Is_Empty (Target) then
+            Comp.Target := External_Value_Lists.Element (First (Target)).Value;
+            Get_Targets_Set
+              (Base, Get_Name_String (Comp.Target), Comp.Targets_Set);
+         else
+            Put_Verbose ("Target unknown for this compiler");
+            Comp.Targets_Set := Unknown_Targets_Set;
+         end if;
 
-      if On_Target /= All_Target_Sets
-        and then Comp.Targets_Set /= On_Target
-      then
-         Put_Verbose ("Target for this compiler does not match --target");
-         Continue := True;
-         return;
-      end if;
+         if On_Target /= All_Target_Sets
+           and then Comp.Targets_Set /= On_Target
+         then
+            Put_Verbose ("Target for this compiler does not match --target");
+            Continue := True;
+            return;
+         end if;
 
-      --  Then get the value of the remaining attributes. For most of them, we
-      --  must be able to find a valid value, or the compiler is simply ignored
+         --  Then get the value of the remaining attributes. For most of them,
+         --  we must be able to find a valid value, or the compiler is simply
+         --  ignored
 
-      Get_External_Value
-        ("version",
-         Value            => Descr.Version,
-         Comp             => Comp,
-         Split_Into_Words => False,
-         Processed_Value  => Version);
+         Get_External_Value
+           ("version",
+            Value            => Descr.Version,
+            Comp             => Comp,
+            Split_Into_Words => False,
+            Processed_Value  => Version);
 
-      if Is_Empty (Version) then
-         Put_Verbose ("Ignore compiler, since couldn't guess its version");
-         Continue := True;
-         return;
-      end if;
+         if Is_Empty (Version) then
+            Put_Verbose ("Ignore compiler, since couldn't guess its version");
+            Continue := True;
+            return;
+         end if;
 
-      Comp.Version := External_Value_Lists.Element (First (Version)).Value;
+         Comp.Version := External_Value_Lists.Element (First (Version)).Value;
 
-      Get_External_Value
-        ("variables",
-         Value            => Descr.Variables,
-         Comp             => Comp,
-         Split_Into_Words => False,
-         Processed_Value  => Variables);
+         Get_External_Value
+           ("variables",
+            Value            => Descr.Variables,
+            Comp             => Comp,
+            Split_Into_Words => False,
+            Processed_Value  => Variables);
 
-      C := First (Variables);
-      while Has_Element (C) loop
-         declare
-            Ext  : constant External_Value_Item :=
-              External_Value_Lists.Element (C);
-         begin
-            if Ext.Value = No_Name then
-               if Verbose_Level > 0 then
-                  Put_Verbose
-                    ("Ignore compiler since variable '"
-                     & Get_Name_String (Ext.Extracted_From) & "' is empty");
+         C := First (Variables);
+         while Has_Element (C) loop
+            declare
+               Ext  : constant External_Value_Item :=
+                 External_Value_Lists.Element (C);
+            begin
+               if Ext.Value = No_Name then
+                  if Verbose_Level > 0 then
+                     Put_Verbose
+                       ("Ignore compiler since variable '"
+                        & Get_Name_String (Ext.Extracted_From) & "' is empty");
+                  end if;
+                  Continue := True;
+                  return;
                end if;
-               Continue := True;
-               return;
-            end if;
 
-            if Variables_Maps.Contains
-              (Comp.Variables, Ext.Extracted_From)
-            then
-               Put_Line
-                 (Standard_Error, "Variable '"
-                  & Get_Name_String (Ext.Extracted_From)
-                  & "' is already defined");
-            else
-               Variables_Maps.Insert
-                 (Comp.Variables, Ext.Extracted_From, Ext.Value);
-            end if;
-         end;
-         Next (C);
-      end loop;
+               if Variables_Maps.Contains
+                 (Comp.Variables, Ext.Extracted_From)
+               then
+                  Put_Line
+                    (Standard_Error, "Variable '"
+                     & Get_Name_String (Ext.Extracted_From)
+                     & "' is already defined");
+               else
+                  Variables_Maps.Insert
+                    (Comp.Variables, Ext.Extracted_From, Ext.Value);
+               end if;
+            end;
+            Next (C);
+         end loop;
+      end if;
 
       Get_External_Value
         ("languages",
@@ -1655,30 +1679,32 @@ package body GprConfig.Knowledge is
          return;
       end if;
 
-      Get_External_Value
-        ("runtimes",
-         Value            => Descr.Runtimes,
-         Comp             => Comp,
-         Split_Into_Words => True,
-         Processed_Value  => Runtimes);
-      --  Put default runtime first.
-      if not Is_Empty (Runtimes) then
-         CS := First (Descr.Default_Runtimes);
-         Defaults_Loop :
-         while Has_Element (CS) loop
-            C2 := First (Runtimes);
-            while Has_Element (C2) loop
-               if Get_Name_String (External_Value_Lists.Element (C2).Value)
-                 = String_Lists.Element (CS)
-               then
-                  Prepend (Runtimes, External_Value_Lists.Element (C2));
-                  Delete (Runtimes, C2);
-                  exit Defaults_Loop;
-               end if;
-               Next (C2);
-            end loop;
-            Next (CS);
-         end loop Defaults_Loop;
+      if Executable /= No_Name then
+         Get_External_Value
+           ("runtimes",
+            Value            => Descr.Runtimes,
+            Comp             => Comp,
+            Split_Into_Words => True,
+            Processed_Value  => Runtimes);
+         --  Put default runtime first.
+         if not Is_Empty (Runtimes) then
+            CS := First (Descr.Default_Runtimes);
+            Defaults_Loop :
+            while Has_Element (CS) loop
+               C2 := First (Runtimes);
+               while Has_Element (C2) loop
+                  if Get_Name_String (External_Value_Lists.Element (C2).Value)
+                    = String_Lists.Element (CS)
+                  then
+                     Prepend (Runtimes, External_Value_Lists.Element (C2));
+                     Delete (Runtimes, C2);
+                     exit Defaults_Loop;
+                  end if;
+                  Next (C2);
+               end loop;
+               Next (CS);
+            end loop Defaults_Loop;
+         end if;
       end if;
 
       C := First (Languages);
@@ -1885,7 +1911,29 @@ package body GprConfig.Knowledge is
                      Matched : Boolean;
                      Prefix  : Name_Id := No_Name;
                   begin
-                     if Config.Executable_Re /= null then
+                     --  A language with no expected compiler => always match
+                     if Config.Executable = No_Name then
+                        Put_Verbose
+                          (Get_Name_String (Key (C))
+                           & " requires no compiler",
+                           1);
+                        Continue := True;
+                        Foreach_Language_Runtime
+                          (Iterator   => Iterator,
+                           Base       => Base,
+                           Name       => Key (C),
+                           Executable => No_Name,
+                           Directory  => Directory,
+                           On_Target  => On_Target,
+                           Prefix     => Prefix,
+                           From_Extra_Dir => From_Extra_Dir,
+                           Descr      => Config,
+                           Path_Order => Path_Order,
+                           Continue   => Continue);
+                        Put_Verbose ("", -1);
+                        exit For_All_Files_In_Dir when not Continue;
+
+                     elsif Config.Executable_Re /= null then
                         Match
                           (Config.Executable_Re.all,
                            Data       => Simple,
@@ -2239,17 +2287,28 @@ package body GprConfig.Knowledge is
 
       else
          while Has_Element (Target) loop
-            Comp := First (Compilers);
-            while Has_Element (Comp) loop
-               if Compiler_Lists.Element (Comp).Selected
-                 and then Match
-                 (Compile (String_Lists.Element (Target), Case_Insensitive),
-                  Get_Name_String (Compiler_Lists.Element (Comp).Target))
-               then
-                  return not Negate;
-               end if;
-               Next (Comp);
-            end loop;
+            declare
+               Pattern : constant Pattern_Matcher :=
+                 Compile (String_Lists.Element (Target), Case_Insensitive);
+            begin
+               Comp := First (Compilers);
+               while Has_Element (Comp) loop
+                  if Compiler_Lists.Element (Comp).Selected then
+                     if Compiler_Lists.Element (Comp).Target = No_Name then
+                        if Match (Pattern, "") then
+                           return not Negate;
+                        end if;
+
+                     elsif Match
+                       (Pattern,
+                        Get_Name_String (Compiler_Lists.Element (Comp).Target))
+                     then
+                        return not Negate;
+                     end if;
+                  end if;
+                  Next (Comp);
+               end loop;
+            end;
 
             Next (Target);
          end loop;
