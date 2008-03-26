@@ -89,7 +89,6 @@
     <targets>
        <target name=".*unknown.*" />
     </targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Support  use "none";
     </config>
@@ -106,7 +105,6 @@
        <target name="leon-elf" />
        <target name=".*wrs-vxworks.*" />
     </targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Support  use "static_only";
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
