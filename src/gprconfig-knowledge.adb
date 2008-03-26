@@ -1932,6 +1932,7 @@ package body GprConfig.Knowledge is
                            Continue   => Continue);
                         Put_Verbose ("", -1);
                         exit For_All_Files_In_Dir when not Continue;
+                        Matched := False;
 
                      elsif Config.Executable_Re /= null then
                         Match
