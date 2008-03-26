@@ -206,6 +206,8 @@ package GprConfig.Knowledge is
    procedure Get_Words
      (Words  : String;
       Filter : Namet.Name_Id;
+      Separator1 : Character;
+      Separator2 : Character;
       Map    : out String_Lists.List;
       Allow_Empty_Elements : Boolean);
    --  Return the list of words in Words. Splitting is done on special

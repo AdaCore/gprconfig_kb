@@ -674,8 +674,8 @@ package body GprConfig.Knowledge is
                Defaults : constant String := Get_Attribute (N, "default", "");
             begin
                if Defaults /= "" then
-                  Get_Words (Defaults, No_Name, Compiler.Default_Runtimes,
-                             False);
+                  Get_Words (Defaults, No_Name, ' ', ',',
+                             Compiler.Default_Runtimes, False);
                end if;
                Parse_External_Value
                  (Value    => Compiler.Runtimes,
@@ -1426,6 +1426,8 @@ package body GprConfig.Knowledge is
                      end if;
                      Get_Words (Words  => To_String (Tmp_Result),
                                 Filter => Filter,
+                                Separator1 => ' ',
+                                Separator2 => ',',
                                 Map    => Split,
                                 Allow_Empty_Elements => False);
                      C := First (Split);
@@ -1463,6 +1465,8 @@ package body GprConfig.Knowledge is
    procedure Get_Words
      (Words  : String;
       Filter : Namet.Name_Id;
+      Separator1 : Character;
+      Separator2 : Character;
       Map    : out String_Lists.List;
       Allow_Empty_Elements : Boolean)
    is
@@ -1471,25 +1475,28 @@ package body GprConfig.Knowledge is
       Filter_Set : String_Lists.List;
    begin
       if Filter /= No_Name then
-         Get_Words (Get_Name_String (Filter), No_Name, Filter_Set,
+         Get_Words (Get_Name_String (Filter), No_Name, Separator1,
+                    Separator2, Filter_Set,
                     Allow_Empty_Elements => True);
       end if;
 
       if not Allow_Empty_Elements then
          while First <= Words'Last
-           and then (Words (First) = ' '
-                     or else Words (First) = ',')
+           and then (Words (First) = Separator1
+                     or else Words (First) = Separator2)
          loop
             First := First + 1;
          end loop;
       end if;
 
       while First <= Words'Last loop
-         if Words (First) /= ' ' and then Words (First) /= ',' then
+         if Words (First) /= Separator1
+           and then Words (First) /= Separator2
+         then
             Last := First + 1;
             while Last <= Words'Last
-              and then Words (Last) /= ' '
-              and then Words (Last) /= ','
+              and then Words (Last) /= Separator1
+              and then Words (Last) /= Separator2
             loop
                Last := Last + 1;
             end loop;

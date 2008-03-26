@@ -213,7 +213,9 @@ procedure GprConfig.Main is
       C    : String_Lists.Cursor;
       Comp : Compiler;
    begin
+      --  Only valid separator is ',', not spaces
       Get_Words (Config, Filter => No_Name, Map => Map,
+                 Separator1 => ',', Separator2 => ',',
                  Allow_Empty_Elements => True);
 
       C := First (Map);
