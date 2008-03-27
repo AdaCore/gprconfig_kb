@@ -235,6 +235,7 @@ procedure GprConfig.Main is
             Put_Verbose ("Language " & LC & " requires no compiler");
             Comp.Complete := True;
             Comp.Selected := True;
+            Comp.Targets_Set := All_Target_Sets;
             Append (Langs_With_No_Compiler, Comp);
 
          else
@@ -349,6 +350,7 @@ procedure GprConfig.Main is
             Selectable := True;
 
             if Selected_Targets_Set /= All_Target_Sets
+              and then Element (Comp).Targets_Set /= All_Target_Sets
               and then Element (Comp).Targets_Set /= Selected_Targets_Set
             then
                Selectable := False;
@@ -971,7 +973,10 @@ begin
             Base       => Base,
             On_Target  => Selected_Targets_Set,
             Extra_Dirs => To_String (Extra_Dirs_From_Filters (Filters)));
-         Compilers := Iter.Compilers;
+
+         Splice (Target => Compilers,
+                 Before => No_Element,
+                 Source => Iter.Compilers);
       end;
 
       if Show_Targets or else Verbose_Level > 0 then
@@ -982,28 +987,30 @@ begin
          begin
             Put_Line ("List of targets supported by a compiler:");
             while Has_Element (C) loop
-               declare
-                  Cur_Target : constant String :=
-                    Get_Name_String (Element (C).Target);
-                  T : String_Lists.Cursor := First (All_Target);
-                  Dup : Boolean := False;
-               begin
-                  while Has_Element (T) loop
-                     if Element (T) = Cur_Target then
-                        Dup := True;
-                        exit;
+               if Element (C).Target /= No_Name then
+                  declare
+                     Cur_Target : constant String :=
+                       Get_Name_String (Element (C).Target);
+                     T : String_Lists.Cursor := First (All_Target);
+                     Dup : Boolean := False;
+                  begin
+                     while Has_Element (T) loop
+                        if Element (T) = Cur_Target then
+                           Dup := True;
+                           exit;
+                        end if;
+                        Next (T);
+                     end loop;
+                     if not Dup then
+                        Put (Cur_Target);
+                        if Cur_Target = Sdefault.Hostname then
+                           Put (" (native target)");
+                        end if;
+                        New_Line;
+                        Append (All_Target, Cur_Target);
                      end if;
-                     Next (T);
-                  end loop;
-                  if not Dup then
-                     Put (Cur_Target);
-                     if Cur_Target = Sdefault.Hostname then
-                        Put (" (native target)");
-                     end if;
-                     New_Line;
-                     Append (All_Target, Cur_Target);
-                  end if;
-               end;
+                  end;
+               end if;
                Next (C);
             end loop;
          end;

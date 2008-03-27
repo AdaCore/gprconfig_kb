@@ -1843,7 +1843,19 @@ package body GprConfig.Knowledge is
       end Target;
 
    begin
-      if As_Config_Arg then
+      if Comp.Executable = No_Name then
+         --  A language that requires no compiler
+
+         if As_Config_Arg then
+            return Get_Name_String_Or_Null (Comp.Language_Case);
+         else
+            return Selected
+              & "(" & Comp.Index_In_List & ") "
+              & Get_Name_String_Or_Null (Comp.Language_Case)
+              & " (no compiler required)";
+         end if;
+
+      elsif As_Config_Arg then
          return Get_Name_String_Or_Null (Comp.Language_Case)
            & ',' & Get_Name_String_Or_Null (Comp.Version)
            & ',' & Get_Name_String_Or_Null (Comp.Runtime)
