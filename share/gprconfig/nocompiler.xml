@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<!--  For languages with no compiler -->
+
+<gprconfig>
+  <configuration>
+   <compilers>
+    <compiler language="Project File"/>
+   </compilers>
+   <config>
+package Naming is
+   for Specification ("Project File") use ".gpr";
+end Naming;
+   </config>
+  </configuration>
+</gprconfig>

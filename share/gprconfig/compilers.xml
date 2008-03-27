@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <gprconfig>
+  <!--  Languages that require no compiler, but can be selected through
+        -config -->
   <compiler_description>
-    <name>GPR projects</name>
-    <executable/>
     <languages>Project File</languages>
   </compiler_description>
 

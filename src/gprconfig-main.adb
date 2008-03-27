@@ -65,10 +65,14 @@ procedure GprConfig.Main is
    --  Display list of switches
 
    procedure Parse_Config_Parameter
-     (Custom_Comps : in out Compiler_Lists.List;
-      Config       : String);
+     (Base                   : Knowledge_Base;
+      Custom_Comps           : in out Compiler_Lists.List;
+      Config                 : String;
+      Langs_With_No_Compiler : out Compiler_Lists.List);
    --  Parse the --config parameter, and store the (partial) information
    --  found there in Selected_Compilers
+   --  When a switch matches a language that requires no compiler, an entry is
+   --  added to Langs_With_No_Compiler.
 
    procedure Select_Compilers_Interactively
      (Base               : in out Knowledge_Base;
@@ -79,7 +83,7 @@ procedure GprConfig.Main is
      (Base         : in out Knowledge_Base;
       On_Target    : Targets_Set_Id;
       Filters      : Compiler_Lists.List;
-      Custom_Comps : out Compiler_Lists.List);
+      Custom_Comps : in out Compiler_Lists.List);
    --  In batch mode, the --config parameters indicate what compilers should be
    --  selected. Each of these switch selects the first matching compiler
    --  available, and all --config switch must match a compiler.
@@ -205,8 +209,10 @@ procedure GprConfig.Main is
    ----------------------------
 
    procedure Parse_Config_Parameter
-     (Custom_Comps : in out Compiler_Lists.List;
-      Config       : String)
+     (Base                   : Knowledge_Base;
+      Custom_Comps           : in out Compiler_Lists.List;
+      Config                 : String;
+      Langs_With_No_Compiler : out Compiler_Lists.List)
    is
       use String_Lists;
       Map  : String_Lists.List;
@@ -219,34 +225,47 @@ procedure GprConfig.Main is
                  Allow_Empty_Elements => True);
 
       C := First (Map);
-      Comp.Language_Case := Get_String_Or_No_Name (Element (C));
-      Comp.Language_LC   := Get_String_Or_No_Name (To_Lower (Element (C)));
+      declare
+         LC : constant String := To_Lower (Element (C));
+      begin
+         Comp.Language_Case := Get_String_Or_No_Name (Element (C));
+         Comp.Language_LC   := Get_String_Or_No_Name (LC);
 
-      Next (C);
-      if Has_Element (C) then
-         Comp.Version := Get_String_Or_No_Name (Element (C));
-         Next (C);
-         if Has_Element (C) then
-            Comp.Runtime := Get_String_Or_No_Name (Element (C));
+         if Is_Language_With_No_Compiler (Base, LC) then
+            Put_Verbose ("Language " & LC & " requires no compiler");
+            Comp.Complete := True;
+            Comp.Selected := True;
+            Append (Langs_With_No_Compiler, Comp);
+
+         else
             Next (C);
             if Has_Element (C) then
-               Comp.Path := Get_String_Or_No_Name
-                 (Name_As_Directory
-                    (Normalize_Pathname (Element (C),
-                     Case_Sensitive => False)));
+               Comp.Version := Get_String_Or_No_Name (Element (C));
                Next (C);
                if Has_Element (C) then
-                  Comp.Name := Get_String_Or_No_Name (Element (C));
+                  Comp.Runtime := Get_String_Or_No_Name (Element (C));
+                  Next (C);
+                  if Has_Element (C) then
+                     Comp.Path := Get_String_Or_No_Name
+                       (Name_As_Directory
+                          (Normalize_Pathname (Element (C),
+                           Case_Sensitive => False)));
+                     Next (C);
+                     if Has_Element (C) then
+                        Comp.Name := Get_String_Or_No_Name (Element (C));
+                     end if;
+                  end if;
                end if;
             end if;
+
+            Comp.Complete := False;
+
+            --  Complete_Command_Line_Compilers will check that this is a valid
+            --  config
+            Put_Verbose ("Language " & LC & " requires a compiler");
+            Append (Custom_Comps, Comp);
          end if;
-      end if;
-
-      Comp.Complete := False;
-
-      --  Complete_Command_Line_Compilers will check that this is a valid
-      --  config
-      Append (Custom_Comps, Comp);
+      end;
 
    exception
       when E : others =>
@@ -608,7 +627,7 @@ procedure GprConfig.Main is
      (Base         : in out Knowledge_Base;
       On_Target    : Targets_Set_Id;
       Filters      : Compiler_Lists.List;
-      Custom_Comps : out Compiler_Lists.List)
+      Custom_Comps : in out Compiler_Lists.List)
    is
       Iter  : Batch_Iterator (Length (Filters));
 
@@ -731,7 +750,9 @@ procedure GprConfig.Main is
          Put_Verbose ("", -1);
       end if;
 
-      Custom_Comps := Iter.Compilers;
+      Splice (Target => Custom_Comps,
+              Before => No_Element,
+              Source => Iter.Compilers);
    end Complete_Command_Line_Compilers;
 
    ------------------
@@ -900,7 +921,7 @@ begin
       case Getopt (Valid_Switches) is
          when '-' =>
             if Full_Switch = "-config" then
-               Parse_Config_Parameter (Filters, Parameter);
+               Parse_Config_Parameter (Base, Filters, Parameter, Compilers);
             elsif Full_Switch = "-batch" then
                Batch := True;
             elsif Full_Switch = "-show-targets" then
@@ -940,7 +961,6 @@ begin
          Selected_Targets_Set,
          Filters,
          Compilers);
-
    else
       declare
          Iter : All_Iterator (Length (Filters));

@@ -85,10 +85,10 @@ package body GprConfig.Knowledge is
 
    procedure Parse_Compiler_Description
      (Base        : in out Knowledge_Base;
-      Append_To   : in out CDM.Map;
       File        : String;
       Description : Node);
-   --  Parse a compiler description described by N
+   --  Parse a compiler description described by N. Appends the result to
+   --  Base.Compilers or Base.No_Compilers
 
    procedure Parse_Configuration
      (Append_To   : in out Configuration_Lists.List;
@@ -395,7 +395,8 @@ package body GprConfig.Knowledge is
 
    function Name_As_Directory (Dir : String) return String is
    begin
-      if Dir (Dir'Last) = Directory_Separator
+      if Dir = ""
+        or else Dir (Dir'Last) = Directory_Separator
         or else Dir (Dir'Last) = '/'
       then
          return Dir;
@@ -606,12 +607,13 @@ package body GprConfig.Knowledge is
 
    procedure Parse_Compiler_Description
      (Base        : in out Knowledge_Base;
-      Append_To   : in out CDM.Map;
       File        : String;
       Description : Node)
    is
       Compiler : Compiler_Description;
       N        : Node := First_Child (Description);
+      Lang     : External_Value_Lists.List;
+      C        : External_Value_Lists.Cursor;
    begin
       while N /= null loop
          if Node_Type (N) /= Element_Node then
@@ -623,7 +625,12 @@ package body GprConfig.Knowledge is
                Val    : constant String := Node_Value_As_String (N);
             begin
                if Val = "" then
+                  --  A special language that requires no executable. We do
+                  --  not store it in the list of compilers, since these should
+                  --  not be detected on the PATH anyway.
+
                   Compiler.Executable := No_Name;
+
                else
                   Compiler.Executable := Get_String (Val);
                   Compiler.Prefix_Index := Integer'Value (Prefix);
@@ -702,10 +709,45 @@ package body GprConfig.Knowledge is
          N := Next_Sibling (N);
       end loop;
 
-      if Compiler.Name /= No_Name then
-         CDM.Include (Append_To, Compiler.Name, Compiler);
+      if Compiler.Executable = No_Name then
+         Get_External_Value
+           (Attribute        => "languages",
+            Value            => Compiler.Languages,
+            Comp             => No_Compiler,
+            Split_Into_Words => True,
+            Processed_Value  => Lang);
+         C := First (Lang);
+         while Has_Element (C) loop
+            String_Lists.Append
+              (Base.No_Compilers,
+               To_Lower
+                 (Get_Name_String (External_Value_Lists.Element (C).Value)));
+            Next (C);
+         end loop;
+
+      elsif Compiler.Name /= No_Name then
+         CDM.Include (Base.Compilers, Compiler.Name, Compiler);
       end if;
    end Parse_Compiler_Description;
+
+   ----------------------------------
+   -- Is_Language_With_No_Compiler --
+   ----------------------------------
+
+   function Is_Language_With_No_Compiler
+     (Base        : Knowledge_Base;
+      Language_LC : String) return Boolean
+   is
+      C : String_Lists.Cursor := First (Base.No_Compilers);
+   begin
+      while Has_Element (C) loop
+         if String_Lists.Element (C) = Language_LC then
+            return True;
+         end if;
+         Next (C);
+      end loop;
+      return False;
+   end Is_Language_With_No_Compiler;
 
    -------------------------
    -- Parse_Configuration --
@@ -946,7 +988,6 @@ package body GprConfig.Knowledge is
                elsif Node_Name (N) = "compiler_description" then
                   Parse_Compiler_Description
                     (Base        => Base,
-                     Append_To   => Base.Compilers,
                      File        => Simple_Name (File),
                      Description => N);
 
@@ -1923,9 +1964,9 @@ package body GprConfig.Knowledge is
                            Base       => Base,
                            Name       => Key (C),
                            Executable => No_Name,
-                           Directory  => Directory,
-                           On_Target  => On_Target,
-                           Prefix     => Prefix,
+                           Directory  => "",
+                           On_Target  => Unknown_Targets_Set,
+                           Prefix     => No_Name,
                            From_Extra_Dir => From_Extra_Dir,
                            Descr      => Config,
                            Path_Order => Path_Order,
@@ -2218,13 +2259,16 @@ package body GprConfig.Knowledge is
    begin
       while Has_Element (C) loop
          Comp := Compiler_Lists.Element (C);
+
          if Comp.Selected
            and then (Filter.Name = No_Name
                      or else Filter.Name = Comp.Name)
            and then
              (Filter.Version_Re = null
-              or else Match
-                (Filter.Version_Re.all, Get_Name_String (Comp.Version)))
+              or else
+                (Comp.Version /= No_Name
+                 and then Match
+                   (Filter.Version_Re.all, Get_Name_String (Comp.Version))))
            and then (Filter.Runtime_Re = null
                      or else
                        (Comp.Runtime /= No_Name and then
@@ -2712,6 +2756,16 @@ package body GprConfig.Knowledge is
 
    function Compare (Name1, Name2 : Namet.Name_Id) return Compare_Type is
    begin
+      if Name1 = No_Name then
+         if Name2 = No_Name then
+            return Equal;
+         else
+            return Before;
+         end if;
+      elsif Name2 = No_Name then
+         return After;
+      end if;
+
       Get_Name_String (Name1);
       declare
          Str1 : constant String (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);

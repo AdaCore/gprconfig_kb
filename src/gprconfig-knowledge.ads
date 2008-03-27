@@ -189,6 +189,12 @@ package GprConfig.Knowledge is
    --  Whether we know how to link code compiled with all the selected
    --  compilers.
 
+   function Is_Language_With_No_Compiler
+     (Base        : Knowledge_Base;
+      Language_LC : String) return Boolean;
+   --  Given a language name (lower case), returns True if that language is
+   --  known to require no compiler
+
    procedure Get_Targets_Set
      (Base   : in out Knowledge_Base;
       Target : String;
@@ -309,7 +315,7 @@ private
 
    type Compiler_Description is record
       Name             : Namet.Name_Id := Namet.No_Name;
-      Executable       : Namet.Name_Id;
+      Executable       : Namet.Name_Id := Namet.No_Name;
       Executable_Re    : Pattern_Matcher_Access;
       Prefix_Index     : Integer := -1;
       Target           : External_Value;
@@ -374,6 +380,7 @@ private
 
    type Knowledge_Base is record
       Compilers               : Compiler_Description_Maps.Map;
+      No_Compilers            : String_Lists.List;
       Check_Executable_Regexp : Boolean := False;
       Configurations          : Configuration_Lists.List;
       Targets_Sets            : Targets_Set_Vectors.Vector;
@@ -381,5 +388,7 @@ private
    --  Check_Executable_Regexp is set to True if at least some of the
    --  executable names are specified as regular expressions. In such a case,
    --  a slightly slower algorithm is used to search for compilers.
+   --  No_Compilers is the list of languages that require no compiler, and thus
+   --  should not be searched on the PATH.
 
 end GprConfig.Knowledge;

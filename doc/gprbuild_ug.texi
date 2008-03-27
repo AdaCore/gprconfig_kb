@@ -1686,6 +1686,13 @@ that could match the other arguments of @option{--config}.
 @CODESAMPLE{gprconfig --config Ada,,,/usr/bin       # automatic parameters@NL{}
 gprconfig --config C,,,/usr/bin,GCC     # automatic version}
 
+This switch is also the only possibility to include in your project some
+languages that are not associated with a compiler. This is sometimes useful
+especially when you are using environments like GPS that support project files.
+For instance, if you select "Project file" as a language, the files matching
+the @file{.gpr} extension will be shown in the editor, although they of course
+play no role for gprbuild itself.
+
 @item --batch
 @CINDEX{@option{--batch} for gprconfig}
 @TIPHTML{Use @option{--batch} to generate the configuration file with no use
