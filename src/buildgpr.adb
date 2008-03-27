@@ -837,6 +837,12 @@ package body Buildgpr is
       And_Project_Itself : Boolean := False);
    --  Get the imported library project ids in table Library_Projs
 
+   function Project_Extends
+     (Extending : Project_Id;
+      Extended  : Project_Id) return Boolean;
+   --  Returns True if Extending is Extended or is extending Extended directly
+   --  or indirectly.
+
    procedure Record_Failure (Source : Source_Id);
    --  Record that compilation of a source failed
 
@@ -4623,6 +4629,13 @@ package body Buildgpr is
 
       Mapping_File_Path : Path_Name_Type;
 
+      Src_Data         : Source_Data;
+      Dep_File         : Text_File;
+
+      Start            : Natural;
+      Finish           : Natural;
+      Last_Obj         : Natural;
+
       package Good_ALI is new Table.Table
         (Table_Component_Type => ALI.ALI_Id,
          Table_Index_Type     => Natural,
@@ -5528,12 +5541,330 @@ package body Buildgpr is
          then
             Await_Compile (Source_Identity, Compilation_OK);
 
+            if Compilation_OK then
+               --  Check if dependencies are on sources in Interfaces
+
+               Src_Data := Project_Tree.Sources.Table (Source_Identity);
+
+               case Src_Data.Dependency is
+               when None =>
+                  null;
+
+               when Makefile =>
+                  Open (Dep_File, Get_Name_String (Src_Data.Dep_Path));
+
+                  --  If dependency file cannot be open, we need to recompile
+                  --  the source.
+
+                  if Is_Valid (Dep_File) then
+
+                     Big_Loop :
+                     loop
+                        declare
+                           End_Of_File_Reached : Boolean := False;
+
+                        begin
+                           loop
+                              if End_Of_File (Dep_File) then
+                                 End_Of_File_Reached := True;
+                                 exit;
+                              end if;
+
+                              Get_Line (Dep_File, Name_Buffer, Name_Len);
+
+                              exit when Name_Len > 0
+                                and then Name_Buffer (1) /= '#';
+                           end loop;
+
+                           exit Big_Loop when End_Of_File_Reached;
+                        end;
+
+                        Start  := 1;
+                        Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
+
+                        exit Big_Loop when Finish = 0;
+
+                        Last_Obj := Finish;
+                        loop
+                           Last_Obj := Last_Obj - 1;
+                           exit when Last_Obj = Start
+                             or else Name_Buffer (Last_Obj) /= ' ';
+                        end loop;
+
+                        while Start < Last_Obj
+                          and then Name_Buffer (Start) = ' '
+                        loop
+                           Start := Start + 1;
+                        end loop;
+
+                        Start := Finish + 2;
+
+                        --  Process each line
+
+                        Line_Loop : loop
+                           declare
+                              Line : String  := Name_Buffer (1 .. Name_Len);
+                              Last : Natural := Name_Len;
+
+                           begin
+                              Name_Loop : loop
+
+                                 --  Find the beginning of the next source path
+                                 --  name.
+
+                                 while Finish < Last and then
+                                       Line (Start) = ' '
+                                 loop
+                                    Start := Start + 1;
+                                 end loop;
+
+                                 --  Go to next line when there is a
+                                 --  continuation character \ at the end of the
+                                 --  line.
+
+                                 exit Name_Loop when Start = Last
+                                   and then Line (Start) = '\';
+
+                                 --  We should not be at the end of the line,
+                                 --  without a continuation character \.
+
+                                 exit Name_Loop when Start = Last;
+
+                                 --  Look for the end of the source path name
+
+                                 Finish := Start;
+
+                                 while Finish < Last loop
+                                    if Line (Finish) = '\' then
+                                       --  On Windows, a '\' is part of the
+                                       --  path name, except when it is not the
+                                       --  first character followed by another
+                                       --  '\' or by a space. On other
+                                       --  platforms, when we are getting a '\'
+                                       --  that is not the last character of
+                                       --  the line, the next character is part
+                                       --  of the path name, even if it is a
+                                       --  space.
+
+                                       if On_Windows and then
+                                         Finish = Start and then
+                                         Line (Finish + 1) = '\'
+                                       then
+                                          Finish := Finish + 2;
+
+                                       elsif On_Windows and then
+                                         Line (Finish + 1) /= '\' and then
+                                         Line (Finish + 1) /= ' '
+                                       then
+                                          Finish := Finish + 1;
+
+                                       else
+                                          Line (Finish .. Last - 1) :=
+                                            Line (Finish + 1 .. Last);
+                                          Last := Last - 1;
+                                       end if;
+
+                                    else
+                                       --  A space that is not preceded by '\'
+                                       --  indicates the end of the path name.
+
+                                       exit when Line (Finish + 1) = ' ';
+                                       Finish := Finish + 1;
+                                    end if;
+                                 end loop;
+
+                                 --  Check this source
+
+                                 declare
+                                    Src_Name : constant String :=
+                                                 Normalize_Pathname
+                                                   (Name           =>
+                                                       Line (Start .. Finish),
+                                                    Resolve_Links  => False,
+                                                    Case_Sensitive => False);
+                                    Source_2   : Source_Id;
+
+                                    Src_Data_2 : Source_Data;
+                                 begin
+
+                                    Name_Len := 0;
+                                    Add_Str_To_Name_Buffer (Src_Name);
+                                    Source_2 := Source_Paths_Htable.Get
+                                      (Project_Tree.Source_Paths_HT,
+                                       Name_Find);
+
+                                    if Source_2 /= No_Source then
+                                       Src_Data_2 :=
+                                         Project_Tree.Sources.Table (Source_2);
+
+                                       if (not Project_Extends
+                                           (Src_Data.Project,
+                                            Src_Data_2.Project))
+                                         and then
+                                           (not Src_Data_2.In_Interfaces)
+                                       then
+                                          Write_Char ('"');
+                                          Write_Str
+                                            (Get_Name_String (Src_Data.Path));
+                                          Write_Str
+                                            (""" cannot import """);
+                                          Write_Str (Src_Name);
+                                          Write_Line (""":");
+
+                                          Write_Str
+                                            ("  it is not part of the " &
+                                             "interfaces of its project """);
+                                          Write_Str
+                                            (Get_Name_String
+                                               (Project_Tree.Projects.Table
+                                                  (Src_Data_2.Project).
+                                                  Display_Name));
+                                          Write_Line ("""");
+
+                                          Compilation_OK := False;
+                                       end if;
+                                    end if;
+                                 end;
+
+                                 exit Line_Loop when Finish = Last;
+
+                                 --  Go get the next source on the line
+
+                                 Start := Finish + 1;
+                              end loop Name_Loop;
+                           end;
+
+                           --  If we are here, we had a continuation character
+                           --  \ at the end of the line, so we continue with
+                           --  the next line.
+
+                           Get_Line (Dep_File, Name_Buffer, Name_Len);
+                           Start  := 1;
+                           Finish := 1;
+                        end loop Line_Loop;
+                     end loop Big_Loop;
+
+                     Close (Dep_File);
+                  end if;
+
+               when ALI_File =>
+                  declare
+                     use type ALI.ALI_Id;
+                     Text       : Text_Buffer_Ptr :=
+                                    Read_Library_Info
+                                      (File_Name_Type (Src_Data.Dep_Path));
+                     The_ALI    : ALI.ALI_Id;
+                     Sfile      : File_Name_Type;
+                     Afile      : File_Name_Type;
+                     Source_2   : Source_Id;
+                     Src_Data_2 : Source_Data;
+
+                  begin
+                     if Text /= null then
+                        --  Read the ALI file but read only the necessary lines
+
+                        The_ALI :=
+                          ALI.Scan_ALI
+                            (File_Name_Type (Src_Data.Dep_Path),
+                             Text,
+                             Ignore_ED     => False,
+                             Err           => True,
+                             Read_Lines    => "W");
+                        Free (Text);
+
+                        if The_ALI /= ALI.No_ALI_Id then
+                           for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+                             ALI.ALIs.Table (The_ALI).Last_Unit
+                           loop
+                              for K in ALI.Units.Table (J).First_With ..
+                                ALI.Units.Table (J).Last_With
+                              loop
+                                 Sfile := ALI.Withs.Table (K).Sfile;
+
+                                 --  Skip generics
+
+                                 if Sfile /= No_File then
+                                    Afile := ALI.Withs.Table (K).Afile;
+                                    Source_2 := Project_Tree.First_Source;
+
+                                    while Source_2 /= No_Source loop
+                                       Initialize_Source_Record (Source_2);
+                                       Src_Data_2 :=
+                                         Project_Tree.Sources.Table (Source_2);
+
+                                       if Src_Data_2.Compiled and then
+                                         Src_Data_2.Dep_Name = Afile
+                                       then
+                                          case Src_Data_2.Kind is
+                                          when Spec =>
+                                             null;
+
+                                          when Impl =>
+                                             if Is_Subunit (Src_Data_2) then
+                                                Source_2 := No_Source;
+                                             end if;
+
+                                          when Sep =>
+                                             Source_2 := No_Source;
+                                          end case;
+
+                                          exit;
+                                       end if;
+
+                                       Source_2 := Src_Data_2.Next_In_Sources;
+                                    end loop;
+
+                                    if Source_2 /= No_Source
+                                      and then
+                                        (not Project_Extends
+                                             (Src_Data.Project,
+                                              Src_Data_2.Project))
+                                      and then
+                                        (not Src_Data_2.In_Interfaces)
+                                    then
+                                       Write_Str ("Unit """);
+                                       Write_Str
+                                         (Get_Name_String (Src_Data.Unit));
+                                       Write_Str (""" cannot import unit """);
+                                       Write_Str
+                                         (Get_Name_String (Src_Data_2.Unit));
+                                       Write_Line (""":");
+
+                                       Write_Str
+                                         ("  it is not part of the " &
+                                          "interfaces of its project """);
+                                       Write_Str
+                                         (Get_Name_String
+                                            (Project_Tree.Projects.Table
+                                               (Src_Data_2.Project).
+                                               Display_Name));
+                                       Write_Line ("""");
+                                       Compilation_OK := False;
+                                    end if;
+                                 end if;
+                              end loop;
+                           end loop;
+                        end if;
+                     end if;
+                  end;
+               end case;
+
+               if not Compilation_OK then
+                  declare
+                     No_Check : Boolean;
+                  begin
+                     Delete_File
+                       (Get_Name_String (Src_Data.Dep_Path), No_Check);
+                  end;
+               end if;
+            end if;
+
             if not Compilation_OK then
                Record_Failure (Source_Identity);
 
             elsif Closure_Needed and then
-                  Project_Tree.Sources.Table
-                    (Source_Identity).Dependency = ALI_File
+              Project_Tree.Sources.Table
+                (Source_Identity).Dependency = ALI_File
             then
                Record_ALI_For (Source_Identity);
             end if;
@@ -8848,6 +9179,28 @@ package body Buildgpr is
 
       Process_Project (For_Project);
    end Process_Imported_Libraries;
+
+   ---------------------
+   -- Project_Extends --
+   ---------------------
+
+   function Project_Extends
+     (Extending : Project_Id;
+      Extended  : Project_Id) return Boolean
+   is
+      Current : Project_Id := Extending;
+   begin
+      loop
+         if Current = No_Project then
+            return False;
+
+         elsif Current = Extended then
+            return True;
+         end if;
+
+         Current := Project_Tree.Projects.Table (Current).Extends;
+      end loop;
+   end Project_Extends;
 
    -----------
    -- Queue --
