@@ -2086,6 +2086,16 @@ package body Buildgpr is
                      end if;
 
                      if not Binder_Driver_Needs_To_Be_Called then
+
+                        --  Reset the Seen flag for all projects, so that all
+                        --  dependency files are check once.
+
+                        for Index in
+                          1 .. Project_Table.Last (Project_Tree.Projects)
+                        loop
+                           Project_Tree.Projects.Table (Index).Seen := False;
+                        end loop;
+
                         Check_Dependency_Files
                           (Main_Proj, B_Data.Language_Name);
 
