@@ -1185,6 +1185,20 @@ subdirectories of the directories specified in the project files. This applies
 in particular to object directories, library directories and exec directories.
 If the directories do not exist, they are created automatically.
 
+@item @option{--direct-import-only}
+
+This indicates that sources of a project should import only sources or
+header files from directly imported projects, that is those projects mentioned
+in a with clause and the projects they extend directly or indirectly.
+A check is done in the compilation phase, after a successful compilation, that
+the sources follow these restrictions. For Ada sources, the check is fully
+enforced. For non Ada sources, the check is partial, as in the dependency
+file there is no distinction between header files directly included and those
+indirectly included. The check will fail if there is no possibility that a
+header file in a non directly imported project could have been indirectly
+imported. If the check fails, the compilation artifacts (dependency file,
+object file, switches file) are deleted.
+
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 
 Specify to GPRbuild to add directory @file{dir} to the user project file search
