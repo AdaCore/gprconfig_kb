@@ -123,6 +123,11 @@ package body Buildgpr is
    Search_Project_Dir_Expected : Boolean := False;
    --  True when last switch was -aP
 
+   Direct_Import_Only_Switch : constant String := "--direct-import-only";
+   Direct_Import_Only : Boolean := False;
+   --  True when switch --direct-import-only is used. Sources are only
+   --  allowed to import from the projects that are directly withed.
+
    Recursive : Boolean := False;
 
    Closure_Needed : Boolean := False;
@@ -584,6 +589,24 @@ package body Buildgpr is
       Hash       => Hash,
       Equal      => "=");
 
+   package Imports is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => Project_Id,
+      Hash       => Hash,
+      Equal      => "=");
+   --  When --direct-import-only is used, contains the project ids a non Ada
+   --  source is allowed to import source from.
+
+   package Included_Sources is new Table.Table
+     (Table_Component_Type => Source_Id,
+      Table_Index_Type     => Integer,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Makegpr.Included_Sources");
+
    -----------
    -- Queue --
    -----------
@@ -762,6 +785,12 @@ package body Buildgpr is
       Language     : Name_Id);
    --  Create a new config file
 
+   function Directly_Imports
+     (Project  : Project_Id;
+      Imported : Project_Id) return Boolean;
+   --  Returns True if Project directly withs Imported or a project extending
+   --  Imported.
+
    procedure Display_Command
      (Name    : String;
       Path    : String_Access;
@@ -848,6 +877,9 @@ package body Buildgpr is
 
    procedure Scan_Arg (Arg : String; Command_Line : Boolean);
    --  Process one command line argument
+
+   procedure Recursive_Import (Project : Project_Id);
+   --  Add to table Imports the projects imported by Project, recursively
 
    procedure Sigint_Intercepted;
    pragma Convention (C, Sigint_Intercepted);
@@ -5552,7 +5584,12 @@ package body Buildgpr is
             Await_Compile (Source_Identity, Compilation_OK);
 
             if Compilation_OK then
-               --  Check if dependencies are on sources in Interfaces
+               --  Check if dependencies are on sources in Interfaces and,
+               --  when --direct-import-only is used, the imported sources
+               --  come from directly withed projects.
+
+               Imports.Reset;
+               Included_Sources.Set_Last (0);
 
                Src_Data := Project_Tree.Sources.Table (Source_Identity);
 
@@ -5562,9 +5599,6 @@ package body Buildgpr is
 
                when Makefile =>
                   Open (Dep_File, Get_Name_String (Src_Data.Dep_Path));
-
-                  --  If dependency file cannot be open, we need to recompile
-                  --  the source.
 
                   if Is_Valid (Dep_File) then
 
@@ -5707,31 +5741,70 @@ package body Buildgpr is
                                        Src_Data_2 :=
                                          Project_Tree.Sources.Table (Source_2);
 
+                                       --  It is a source of a project
+
                                        if (not Project_Extends
                                            (Src_Data.Project,
                                             Src_Data_2.Project))
-                                         and then
-                                           (not Src_Data_2.In_Interfaces)
                                        then
-                                          Write_Char ('"');
-                                          Write_Str
-                                            (Get_Name_String (Src_Data.Path));
-                                          Write_Str
-                                            (""" cannot import """);
-                                          Write_Str (Src_Name);
-                                          Write_Line (""":");
+                                          --  It is not a source of the same
+                                          --  project as the source just
+                                          --  compiled. Check if it can be
+                                          --  imported.
 
-                                          Write_Str
-                                            ("  it is not part of the " &
-                                             "interfaces of its project """);
-                                          Write_Str
-                                            (Get_Name_String
-                                               (Project_Tree.Projects.Table
-                                                  (Src_Data_2.Project).
-                                                  Display_Name));
-                                          Write_Line ("""");
+                                          if Direct_Import_Only then
+                                             if Directly_Imports
+                                               (Src_Data.Project,
+                                                Src_Data_2.Project)
+                                             then
+                                                --  It is a source of a
+                                                --  directly imported project.
+                                                --  Record its project, for
+                                                --  later processing.
 
-                                          Compilation_OK := False;
+                                                Imports.Set
+                                                  (Src_Data_2.Project, True);
+
+                                             else
+                                                --  It is a source of a project
+                                                --  that is not directly
+                                                --  imported. Record the source
+                                                --  for later processing.
+
+                                                Included_Sources.Append
+                                                  (Source_2);
+                                             end if;
+                                          end if;
+
+                                          if
+                                            (not Src_Data_2.In_Interfaces)
+                                          then
+                                             --  It is not a source in the
+                                             --  interfaces of its project.
+                                             --  Report an error and invalidate
+                                             --  the compilation.
+                                             Write_Char ('"');
+                                             Write_Str
+                                               (Get_Name_String
+                                                  (Src_Data.Path));
+                                             Write_Str
+                                               (""" cannot import """);
+                                             Write_Str (Src_Name);
+                                             Write_Line (""":");
+
+                                             Write_Str
+                                               ("  it is not part of the " &
+                                                "interfaces of its " &
+                                                "project """);
+                                             Write_Str
+                                               (Get_Name_String
+                                                  (Project_Tree.Projects.Table
+                                                     (Src_Data_2.Project).
+                                                     Display_Name));
+                                             Write_Line ("""");
+
+                                             Compilation_OK := False;
+                                          end if;
                                        end if;
                                     end if;
                                  end;
@@ -5755,6 +5828,81 @@ package body Buildgpr is
                      end loop Big_Loop;
 
                      Close (Dep_File);
+
+                     if Included_Sources.Last > 0 then
+                        --  Sources in projectly that are not directly imported
+                        --  have been found. Check if they may be imported by
+                        --  other allowed imported sources.
+
+                        declare
+                           L : Project_List :=
+                                 Project_Tree.Projects.Table
+                                   (Src_Data.Project).Imported_Projects;
+                           E : Project_Element;
+
+                           Src_Data_2 : Source_Data;
+
+                        begin
+
+                           --  Put in hash table Imports the project trees
+                           --  rooted at the projects that are already in
+                           --  Imports.
+
+                           while L /= Empty_Project_List loop
+                              E := Project_Tree.Project_Lists.Table (L);
+
+                              if Imports.Get (E.Project) then
+                                 Recursive_Import (E.Project);
+                              end if;
+
+                              L := E.Next;
+                           end loop;
+
+                           --  For all the imported sources from project not
+                           --  directly imported, check if their projects are
+                           --  in has thable imports.
+
+                           for J in 1 .. Included_Sources.Last loop
+                              Src_Data_2 :=
+                                Project_Tree.Sources.Table
+                                  (Included_Sources.Table (J));
+
+                              if not Imports.Get (Src_Data_2.Project) then
+                                 --  This source is either directly imported or
+                                 --  imported from another source that should
+                                 --  not be imported. Report an error and
+                                 --  invalidate the compilation.
+
+                                 Write_Char ('"');
+                                 Write_Str
+                                   (Get_Name_String
+                                      (Src_Data.Path));
+                                 Write_Str
+                                   (""" cannot import """);
+                                 Write_Str (Get_Name_String (Src_Data_2.Path));
+                                 Write_Line (""":");
+
+                                 Write_Str ("  """);
+                                 Write_Str
+                                   (Get_Name_String
+                                      (Project_Tree.Projects.Table
+                                         (Src_Data.Project).
+                                         Display_Name));
+                                 Write_Str
+                                   (""" does not directly " &
+                                    "import project """);
+                                 Write_Str
+                                   (Get_Name_String
+                                      (Project_Tree.Projects.Table
+                                         (Src_Data_2.Project).
+                                         Display_Name));
+                                 Write_Line ("""");
+
+                                 Compilation_OK := False;
+                              end if;
+                           end loop;
+                        end;
+                     end if;
                   end if;
 
                when ALI_File =>
@@ -5794,6 +5942,9 @@ package body Buildgpr is
                                  --  Skip generics
 
                                  if Sfile /= No_File then
+
+                                    --  Look for this source
+
                                     Afile := ALI.Withs.Table (K).Afile;
                                     Source_2 := Project_Tree.First_Source;
 
@@ -5824,32 +5975,81 @@ package body Buildgpr is
                                        Source_2 := Src_Data_2.Next_In_Sources;
                                     end loop;
 
+                                    --  If it is the source of a project that
+                                    --  is not the project of the source just
+                                    --  compiled, check if it is allowed to be
+                                    --  imported.
+
                                     if Source_2 /= No_Source
                                       and then
                                         (not Project_Extends
                                              (Src_Data.Project,
                                               Src_Data_2.Project))
-                                      and then
-                                        (not Src_Data_2.In_Interfaces)
                                     then
-                                       Write_Str ("Unit """);
-                                       Write_Str
-                                         (Get_Name_String (Src_Data.Unit));
-                                       Write_Str (""" cannot import unit """);
-                                       Write_Str
-                                         (Get_Name_String (Src_Data_2.Unit));
-                                       Write_Line (""":");
+                                       if Direct_Import_Only and then
+                                         not Directly_Imports
+                                           (Src_Data.Project,
+                                            Src_Data_2.Project)
+                                       then
+                                          --  It is in a project that is not
+                                          --  directly imported. Report an
+                                          --  error and invalidate the
+                                          --  compilation.
 
-                                       Write_Str
-                                         ("  it is not part of the " &
-                                          "interfaces of its project """);
-                                       Write_Str
-                                         (Get_Name_String
-                                            (Project_Tree.Projects.Table
-                                               (Src_Data_2.Project).
-                                               Display_Name));
-                                       Write_Line ("""");
-                                       Compilation_OK := False;
+                                          Write_Str ("Unit """);
+                                          Write_Str
+                                            (Get_Name_String (Src_Data.Unit));
+                                          Write_Str
+                                            (""" cannot import unit """);
+                                          Write_Str
+                                            (Get_Name_String
+                                               (Src_Data_2.Unit));
+                                          Write_Line (""":");
+
+                                          Write_Str ("  """);
+                                          Write_Str
+                                            (Get_Name_String
+                                               (Project_Tree.Projects.Table
+                                                  (Src_Data.Project).
+                                                  Display_Name));
+                                          Write_Str
+                                            (""" does not directly " &
+                                             "import project """);
+                                          Write_Str
+                                            (Get_Name_String
+                                               (Project_Tree.Projects.Table
+                                                  (Src_Data_2.Project).
+                                                  Display_Name));
+                                          Write_Line ("""");
+
+                                          Compilation_OK := False;
+
+                                       elsif not Src_Data_2.In_Interfaces then
+                                          --  It is not an interface of its
+                                          --  project. Report an error and
+                                          --  invalidate the compilation.
+
+                                          Write_Str ("Unit """);
+                                          Write_Str
+                                            (Get_Name_String (Src_Data.Unit));
+                                          Write_Str
+                                            (""" cannot import unit """);
+                                          Write_Str
+                                            (Get_Name_String
+                                               (Src_Data_2.Unit));
+                                          Write_Line (""":");
+
+                                          Write_Str
+                                            ("  it is not part of the " &
+                                             "interfaces of its project """);
+                                          Write_Str
+                                            (Get_Name_String
+                                               (Project_Tree.Projects.Table
+                                                  (Src_Data_2.Project).
+                                                  Display_Name));
+                                          Write_Line ("""");
+                                          Compilation_OK := False;
+                                       end if;
                                     end if;
                                  end if;
                               end loop;
@@ -5859,12 +6059,27 @@ package body Buildgpr is
                   end;
                end case;
 
+               --  If the compilation was invalidated, delete the compilation
+               --  artifacts.
+
                if not Compilation_OK then
                   declare
                      No_Check : Boolean;
                   begin
-                     Delete_File
-                       (Get_Name_String (Src_Data.Dep_Path), No_Check);
+                     if Src_Data.Dep_Path /= No_Path then
+                        Delete_File
+                          (Get_Name_String (Src_Data.Dep_Path), No_Check);
+                     end if;
+
+                     if Src_Data.Object_Path /= No_Path then
+                        Delete_File
+                          (Get_Name_String (Src_Data.Object_Path), No_Check);
+                     end if;
+
+                     if Src_Data.Switches_Path /= No_Path then
+                        Delete_File
+                          (Get_Name_String (Src_Data.Switches_Path), No_Check);
+                     end if;
                   end;
                end if;
             end if;
@@ -6543,6 +6758,38 @@ package body Buildgpr is
       end if;
 
    end Create_Config_File;
+
+   ----------------------
+   -- Directly_Imports --
+   ----------------------
+
+   function Directly_Imports
+     (Project  : Project_Id;
+      Imported : Project_Id) return Boolean
+   is
+      L : Project_List :=
+            Project_Tree.Projects.Table (Project).Imported_Projects;
+      E : Project_Element;
+      P : Project_Id;
+
+   begin
+      while L /= Empty_Project_List loop
+         E := Project_Tree.Project_Lists.Table (L);
+
+         P := E.Project;
+         while P /= No_Project loop
+            if Imported = P then
+               return True;
+            end if;
+
+            P := Project_Tree.Projects.Table (P).Extends;
+         end loop;
+
+         L := E.Next;
+      end loop;
+
+      return False;
+   end Directly_Imports;
 
    ---------------------
    -- Display_Command --
@@ -7327,10 +7574,10 @@ package body Buildgpr is
          if Err_Vars.Total_Errors_Detected > 0
            or else Bad_Compilations.Last > 0
          then
-            --  If there is more than one compilation failure, output
-            --  a summary of the sources that could not be compiled.
+            --  If switch -k is used, output a summary of the sources that
+            --  could not be compiled.
 
-            if Bad_Compilations.Last > 1 then
+            if Keep_Going and then Bad_Compilations.Last > 0 then
                declare
                   Source   : Source_Id;
                   Src_Data : Source_Data;
@@ -9382,6 +9629,37 @@ package body Buildgpr is
       Bad_Compilations.Table (Bad_Compilations.Last) := Source;
    end Record_Failure;
 
+   ----------------------
+   -- Recursive_Import --
+   ----------------------
+
+   procedure Recursive_Import (Project : Project_Id) is
+      Ext : constant Project_Id :=
+              Project_Tree.Projects.Table (Project).Extends;
+      L   : Project_List :=
+              Project_Tree.Projects.Table (Project).Imported_Projects;
+      E   : Project_Element;
+
+   begin
+      if Ext /= No_Project and then
+        not Imports.Get (Ext)
+      then
+         Imports.Set (Ext, True);
+         Recursive_Import (Ext);
+      end if;
+
+      while L /= Empty_Project_List loop
+         E := Project_Tree.Project_Lists.Table (L);
+
+         if not Imports.Get (E.Project) then
+            Imports.Set (E.Project, True);
+            Recursive_Import (E.Project);
+         end if;
+
+         L := E.Next;
+      end loop;
+   end Recursive_Import;
+
    --------------
    -- Scan_Arg --
    --------------
@@ -9610,6 +9888,9 @@ package body Buildgpr is
          then
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
+
+         elsif Command_Line and then Arg = Direct_Import_Only_Switch then
+            Direct_Import_Only := True;
 
          elsif Command_Line and then
            Arg'Length >= 3 and then
@@ -10045,7 +10326,15 @@ package body Buildgpr is
          Write_Eol;
          Write_Str ("           Real obj/lib/exec dirs are subdirs");
          Write_Eol;
+
+         Write_Str ("  ");
+         Write_Str (Direct_Import_Only_Switch);
          Write_Eol;
+         Write_Str
+           ("           Sources can import only from withed projects");
+         Write_Eol;
+         Write_Eol;
+
          --  Line for -aP
 
          Write_Str ("  -aP dir  Add directory dir to project search path");
