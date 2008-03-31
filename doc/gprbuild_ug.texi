@@ -1534,6 +1534,30 @@ If GPRbuild is invoked with a switch @option{-j} specifying more than one
 compilation process, then several compilation processes for several sources of
 possibly different languages are spawned concurrently.
 
+For each project file, attribute Interfaces may be declared. Its value is a
+list of sources or header files of the project file. For a project file
+extending another one, directly or indirectly, inherited sources may be in
+the list. When Interfaces is not declared, all sources or header files are
+part of the interface of the project. When Interfaces is declared, only those
+sources or header files are part of the interface of the project file. After
+a successful compilation, gprbuild checks that all imported or included sources
+or header files that are from an imported project are part of the interface of
+the imported project. If this check fails, the compilation is invalidated and
+the compilation artifacts (dependency, object and switches files) are deleted.
+
+Example:
+
+@smallexample
+   project Prj is
+      for Languages use ("Ada", "C");
+      for Interfaces use ("pkg.ads", "toto.h");
+   end Prj;
+@end smallexample
+
+If a source from a project importing project Prj imports sources from Prj other
+than package Pkg or includes header files from Prj other than "toto.h", then
+its compilation will be invalidated.
+
 @node Post-Compilation Phase
 @section Post-Compilation Phase
 
