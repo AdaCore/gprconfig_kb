@@ -98,7 +98,7 @@
  <!-- x86-lynx -->
   <targetset>
     <target>x86-lynx</target>
-    <target>i.86-elf-lynxos</target>
+    <target>i.86-.*-lynxos</target>
   </targetset>
 
 <!-- Additional Natives -->
