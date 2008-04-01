@@ -6,6 +6,7 @@
      <targets>
        <target name="powerpc-elf" />
        <target name="powerpc-eabispe" />
+       <target name="avr" />
      </targets>
      <config>
    package Builder is
@@ -149,6 +150,7 @@
        <target name="powerpc-eabispe" />
        <target name="erc32-elf" />
        <target name="leon-elf" />
+       <target name="avr" />
      </targets>
      <compilers>
        <compiler name="GNAT" />

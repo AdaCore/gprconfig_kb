@@ -187,4 +187,9 @@
     <target>leon-elf.*</target>
  </targetset>
 
+ <!-- avr -->
+ <targetset>
+    <target>avr-elf-windows</target>
+    <target>avr</target>
+ </targetset>
 </gprconfig>
