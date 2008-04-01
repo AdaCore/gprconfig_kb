@@ -41,8 +41,8 @@
 
    package Linker is
       for Required_Switches use
-         ("-L${PATH}${PREFIX}../lib/gcc/${TARGET}/${gcc_version}",
-          "-L${PATH}${PREFIX}../lib")
+         ("-L${PATH}../lib/gcc/${TARGET}/${gcc_version}",
+          "-L${PATH}../lib")
         &amp; Linker'Required_Switches;
    end Linker;
 
