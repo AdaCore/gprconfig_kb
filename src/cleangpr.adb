@@ -35,6 +35,7 @@ with Namet;       use Namet;
 with Opt;         use Opt;
 with Osint;
 with Prj;         use Prj;
+with Prj.Err;
 with Prj.Ext;
 with Prj.Proc;    use Prj.Proc;
 with Prj.Util;    use Prj.Util;
@@ -1048,6 +1049,7 @@ package body Cleangpr is
          When_No_Sources        => Silent);
 
       if not Gpr_Util.Success then
+         Prj.Err.Finalize;
          Osint.Fail ("""" & Project_File_Name.all & """ processing failed");
       end if;
 
