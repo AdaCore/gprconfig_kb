@@ -19,3 +19,12 @@ NF-11-H402-020 Static lib projects may import standard projects (2008-04-02)
   projects has been lifted. Shared library projects are still allowed to
   import only shared library projects.
 
+NF-11-H324-006 Restricted imports of sources (2008-04-01)
+
+  New functionalities have been added to restrict the set of sources or
+  header files that can be inported:
+    - switch --direct-import-only forbid sources of a projects to imports
+      sources or header files of a project that is not directly withed.
+    - attribute Interfaces lists the sources and header files that are allowed
+      to be imported from sources of an importing project.
+
