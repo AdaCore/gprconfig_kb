@@ -1,0 +1,14 @@
+===========================================================
+Known problems in GPRBUILD version 1.0.0 as of Apr 03, 2008
+===========================================================
+
+Copyright (c) 2008, AdaCore
+
+The following is a listing of known problems in release 1.0.0. Except where
+specifically noted, all these problems have been corrected in the development
+tree of the 1.1 technology. This means they are corrected in any 1.1.0w
+wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
+the status line. This can be used to determine if a given wavefront has the fix
+identified in the entry.
+
+
