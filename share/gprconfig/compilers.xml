@@ -44,9 +44,9 @@
     <name>GCC-WRS5</name>
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*(tornado-[0-9.]*).*" group="1"></grep>
-      <must_match>tornado-.*</must_match>
+      <external>cc${PREFIX} -v</external>
+      <grep regexp=".*(VxWorks 5*).*" group="1"></grep>
+      <must_match>VxWorks 5</must_match>
     </version>
     <languages>C</languages>
     <target>
