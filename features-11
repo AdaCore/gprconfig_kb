@@ -28,3 +28,10 @@ NF-11-H324-006 Restricted imports of sources (2008-04-01)
     - attribute Interfaces lists the sources and header files that are allowed
       to be imported from sources of an importing project.
 
+NF-11-H117-025 Unrecognized gprbuild switches passed to compiler (2008-01-19)
+
+  When gprbuild takes into account attribute Builder'Default_Switches (<lang>)
+  any switch it does not recognizes is passed to the compiler of language
+  <lang> for all sources of language <lang> in all projects.
+
+
