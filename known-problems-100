@@ -11,3 +11,62 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-100-H115-007 gprbuild fails to build archives with many object files
+
+  Problem:    gprbuild may fail to build archives (for static library or the
+              global archive) when the number of object files is too large.
+
+  Status:     This was fixed in 1.1.0 on 2008-01-16
+
+  Workaround: Either reduce the number of object files, using one or
+              several static libraries, or reduce the absolute paths of
+              the project files.
+
+KP-100-H124-002 Missing objects from externally built projects
+
+  Problem:    When an externally built projects does not contain sources
+              for bodies, but only for some specs, some of the object files
+              may be missing in the global archive.
+
+  Status:     This was fixed in 1.1.0 on 2008-03-06
+
+  Workaround: Convert the externally built project into an externally
+              built static library project.
+
+KP-100-H208-029 -bargs and -largs not allowed in package Builder
+
+  Problem:    Switches -bargs, -bargs:<lang> and -largs are not accepted
+              in the switch attributes of package Builder.
+
+  Status:     This was fixed in 1.1.0 on 2008-02-09
+
+  Workaround: Use these switches only on the command line
+
+KP-100-H216-002 gprbuild crashes with limited with cycle
+
+  Problem:    gprbuild may crash if there are cycles in the project tree
+              using limited withs.
+
+  Status:     This was fixed in 1.1.0 on 2008-02-17
+
+  Workaround: Do not use limited withs
+
+KP-100-H226-027 Missing gprclean switch -eL
+
+  Problem:    The switch -eL, to follow symbolic links when processing
+              project files, is missing for gprclean.
+
+  Status:     This was fixed in 1.1.0 on 2008-02-26
+
+  Workaround: Do not use symbolic links
+
+KP-100-H303-021 Linker switches not relative to project directory
+
+  Problem:    When using switches in package Linker that include relative
+              paths, the paths are relative to the object directory, not to
+              the project directory as is done for gnatmake.
+
+  Status:     This was fixed in 1.1.0 on 2008-03-04
+
+  Workaround: Use only absolute paths
+
