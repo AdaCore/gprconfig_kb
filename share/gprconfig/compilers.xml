@@ -45,7 +45,7 @@
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
       <external>cc${PREFIX} -v</external>
-      <grep regexp=".*(VxWorks 5*).*" group="1"></grep>
+      <grep regexp=".*(VxWorks 5).*" group="1"></grep>
       <must_match>VxWorks 5</must_match>
     </version>
     <languages>C</languages>
