@@ -11,4 +11,10 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+NF-11-H402-020 Static lib projects may import standard projects (2008-04-02)
+
+  The restriction that static library projects could only import library
+  projects has been lifted. Shared library projects are still allowed to
+  import only shared library projects.
+
 
