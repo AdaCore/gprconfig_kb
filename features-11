@@ -13,3 +13,9 @@ This date shows the implementation date of the feature. Any 1.1.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-11-H402-020 Static lib projects may import standard projects (2008-04-02)
+
+  The restriction that static library projects could only import library
+  projects has been lifted. Shared library projects are still allowed to
+  import only shared library projects.
+
