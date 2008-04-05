@@ -16,6 +16,6 @@ will any subsequent releases.
 NF-12-H404-015 Warning when no source of a language (2008-04-05)
 
   When a language is declared or defaulted in a project file and there is
-  no source of the language, gprbuild now issues a warning indicatiing this,
+  no source of the language, gprbuild now issues a warning indicating this,
   unless warnings are suppressed.
 
