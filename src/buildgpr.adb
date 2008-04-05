@@ -7332,7 +7332,7 @@ package body Buildgpr is
          From_Project_Node_Tree => Project_Node_Tree,
          Report_Error           => null,
          Current_Dir            => Get_Current_Dir,
-         When_No_Sources        => Silent);
+         When_No_Sources        => Warning);
 
       if not Gpr_Util.Success then
          Prj.Err.Finalize;
