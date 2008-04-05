@@ -1,5 +1,5 @@
 =========================================================
-GPRBUILD 1.2 NEW FEATURES LIST Current as of Mar 04, 2008
+GPRBUILD 1.2 NEW FEATURES LIST Current as of Mar 05, 2008
 =========================================================
 
 Copyright (c) 2008, AdaCore
@@ -12,4 +12,10 @@ An ISO date (YYYY-MM-DD) appears in parentheses after the description line.
 This date shows the implementation date of the feature. Any 1.1.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
+
+NF-12-H404-015 Warning when no source of a language (2008-04-05)
+
+  When a language is declared or defaulted in a project file and there is
+  no source of the language, gprbuild now issues a warning indicatiing this,
+  unless warnings are suppressed.
 
