@@ -58,7 +58,7 @@ bootstrap: gprconfig gprbuild
 	echo
 	echo "=== Bootstraping grpbuild"
 	make install prefix=bootstrap/install
-	${MKDIR} bootstrap/${objdir}
+	-${MKDIR} bootstrap/${objdir}
 	bootstrap/install/bin/gprbuild -Pgprbuild -XBUILD=${BUILD} \
 	  -XBUILD_TOOL=gprbuild
 
@@ -69,14 +69,14 @@ bootstrap-clean:
 	  -XBUILD_TOOL=gprbuild
 
 install: all install.data install.bin
-	${MKDIR} ${datadir}/gpr
-	${MKDIR} ${datadir}/gps/plug-ins/
+	-${MKDIR} ${datadir}/gpr
+	-${MKDIR} ${datadir}/gps/plug-ins/
 	${INSTALL} doc/gprbuild_gps.xml ${datadir}/gps/plug-ins/
 	$(RM) -r ${datadir}/examples/gprbuild
-	${MKDIR} ${datadir}/examples/gprbuild
+	-${MKDIR} ${datadir}/examples/gprbuild
 	${CP} -r examples/* ${datadir}/examples/gprbuild
 	${RM} -r ${datadir}/doc/gprbuild
-	${MKDIR} ${datadir}/doc/gprbuild
+	-${MKDIR} ${datadir}/doc/gprbuild
 	for format in html txt pdf info; do \
 	  if [ -d doc/$$format ] ; then \
 	     ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
@@ -88,15 +88,15 @@ install: all install.data install.bin
 	done
 
 install.data: force
-	${MKDIR} ${datadir}/gprconfig
+	-${MKDIR} ${datadir}/gprconfig
 	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
 
 install.bin: gprconfig gprbuild gprclean gprbind gprlib
-	${MKDIR} ${bindir}
+	-${MKDIR} ${bindir}
 	${INSTALL_PROGRAM} gprconfig ${bindir}
 	${INSTALL_PROGRAM} gprbuild ${bindir}
 	${INSTALL_PROGRAM} gprclean ${bindir}
-	${MKDIR} ${libexecdir}/gprbuild
+	-${MKDIR} ${libexecdir}/gprbuild
 	${INSTALL_PROGRAM} gprbind ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
 
@@ -123,7 +123,7 @@ doc:
 	make -C doc
 
 install-doc:
-	$(MKDIR) ${docdir}/html
+	-$(MKDIR) ${docdir}/html
 	${CP} doc/*.html ${docdir}/html
 
 tests: force
