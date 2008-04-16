@@ -366,7 +366,8 @@ package body Confgpr is
          Project                => User_Project_Node,
          Project_File_Name      => Project_File_Name.all,
          Always_Errout_Finalize => False,
-         Packages_To_Check      => Packages_To_Check);
+         Packages_To_Check      => Packages_To_Check,
+         Current_Directory      => Current_Directory);
 
       if User_Project_Node = Empty_Node then
          --  Don't flush messages. This has already been taken care of by the
@@ -666,7 +667,8 @@ package body Confgpr is
          Project                => Config_Project_Node,
          Project_File_Name      => Configuration_Project_Path.all,
          Always_Errout_Finalize => False,
-         Packages_To_Check      => Packages_To_Check);
+         Packages_To_Check      => Packages_To_Check,
+         Current_Directory      => Current_Directory);
 
       if Config_Project_Node /= Empty_Node then
          Prj.Proc.Process_Project_Tree_Phase_1
