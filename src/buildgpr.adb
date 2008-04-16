@@ -855,6 +855,7 @@ package body Buildgpr is
    --  Check if a source need to be compiled.
    --  A source need to be compiled if:
    --    - Force_Compilations is True
+   --    - No object file generated for the language
    --    - Object file does not exist
    --    - Dependency file does not exist
    --    - Switches file does not exist
@@ -3347,6 +3348,8 @@ package body Buildgpr is
                  and then
                    Src_Data.Compiled
                  and then
+                   Src_Data.Object_Linked
+                 and then
                  ((Src_Data.Unit = No_Name and then Src_Data.Kind = Impl)
                  or else
                    (Src_Data.Unit /= No_Name
@@ -3687,21 +3690,22 @@ package body Buildgpr is
 
          --  Add object directory of project being extended, if any
 
-         if Data.Extends /= No_Project then
-            declare
-               Proj : Project_Id := Data.Extends;
+         declare
+            Proj : Project_Id := Data.Extends;
 
-            begin
-               loop
+         begin
+            while Proj /= No_Project loop
+               if
+                 Project_Tree.Projects.Table (Proj).Object_Directory /= No_Path
+               then
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
                        (Project_Tree.Projects.Table (Proj).Object_Directory));
-                  Proj := Project_Tree.Projects.Table (Proj).Extends;
-                  exit when Proj = No_Project;
-               end loop;
-            end;
-         end if;
+               end if;
+               Proj := Project_Tree.Projects.Table (Proj).Extends;
+            end loop;
+         end;
 
          --  Add ALI dir directories of imported projects
 
@@ -5122,23 +5126,25 @@ package body Buildgpr is
 
                --  Write the switches file
 
-               declare
-                  File : Ada.Text_IO.File_Type;
+               if Config.Object_Generated then
+                  declare
+                     File : Ada.Text_IO.File_Type;
 
-               begin
-                  Create
-                    (File,
-                     Out_File,
-                     Get_Name_String
-                       (Project_Tree.Sources.Table (Source_Identity).
-                                                      Switches_Path));
+                  begin
+                     Create
+                       (File,
+                        Out_File,
+                        Get_Name_String
+                          (Project_Tree.Sources.Table (Source_Identity).
+                             Switches_Path));
 
-                  for J in 1 .. Compilation_Options.Last loop
-                     Put_Line (File, Compilation_Options.Options (J).all);
-                  end loop;
+                     for J in 1 .. Compilation_Options.Last loop
+                        Put_Line (File, Compilation_Options.Options (J).all);
+                     end loop;
 
-                  Close (File);
-               end;
+                     Close (File);
+                  end;
+               end if;
 
                --  Add dependency option, if there is one
 
@@ -5507,12 +5513,15 @@ package body Buildgpr is
 
                --  Finally the specification of the object file
 
-               Add_Option ("-o", To => Compilation_Options, Display => True);
-               Add_Option
-                 (Name_Id
-                    (Project_Tree.Sources.Table (Source_Identity).Object),
-                  To      => Compilation_Options,
-                  Display => True);
+               if Config.Object_Generated then
+                  Add_Option
+                    ("-o", To => Compilation_Options, Display => True);
+                  Add_Option
+                    (Name_Id
+                       (Project_Tree.Sources.Table (Source_Identity).Object),
+                     To      => Compilation_Options,
+                     Display => True);
+               end if;
 
                --  Display the command invoked if not in quiet output mode
 
@@ -7976,9 +7985,11 @@ package body Buildgpr is
             and then
             Src_Data.Object =  Object_Name
          then
-            return Src_Data.Lang_Kind /= Unit_Based or else
-                  (not Closure_Needed) or else
-                  Src_Data.Get_Object;
+            return
+              Src_Data.Object_Linked
+              and then (Src_Data.Lang_Kind /= Unit_Based
+                        or else (not Closure_Needed)
+                        or else Src_Data.Get_Object);
 
          else
             Source :=
@@ -8748,6 +8759,18 @@ package body Buildgpr is
          end if;
 
          return False;
+      end if;
+
+      --  If no object file is generated, the "compiler" need to be invoked
+
+      if not Project_Tree.Languages_Data.Table
+        (Src_Data.Language).Config.Object_Generated
+      then
+         if Verbose_Mode then
+            Write_Line ("      -> no object file generated");
+         end if;
+
+         return True;
       end if;
 
       --  If object file does not exist, of course source need to be compiled
