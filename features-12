@@ -1,5 +1,5 @@
 =========================================================
-GPRBUILD 1.2 NEW FEATURES LIST Current as of Mar 05, 2008
+GPRBUILD 1.2 NEW FEATURES LIST Current as of Mar 16, 2008
 =========================================================
 
 Copyright (c) 2008, AdaCore
@@ -13,9 +13,15 @@ This date shows the implementation date of the feature. Any 1.1.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-12-H408-020 New attributes Object_Generated and Objects_Linked (2008-04-16)
+
+  New attributes for languages are created: Object_Generated (when "false",
+  it means that no object file is created by the "compiler") and
+  Objects_Linked (when "false", it means that the object files of the
+  languages are not linked in an executable or put in a library).
+
 NF-12-H404-015 Warning when no source of a language (2008-04-05)
 
   When a language is declared or defaulted in a project file and there is
   no source of the language, gprbuild now issues a warning indicating this,
   unless warnings are suppressed.
-
