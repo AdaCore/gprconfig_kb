@@ -3817,6 +3817,13 @@ package body Buildgpr is
             end if;
 
          else
+            if Data.Config.Shared_Lib_Driver /= No_File then
+               Put_Line (Exchange_File, Library_Label (Driver_Name));
+               Put_Line
+                 (Exchange_File,
+                  Get_Name_String (Data.Config.Shared_Lib_Driver));
+            end if;
+
             if Data.Config.Shared_Lib_Prefix /= No_File then
                Put_Line (Exchange_File, Library_Label (Shared_Lib_Prefix));
                Put_Line
