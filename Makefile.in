@@ -36,7 +36,7 @@ ifeq ($(strip $(filter-out %vms%,$(HOST))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
 
-.PHONY: all gprbuild gprconfig gprclean copy_gnat_src bootstrap
+.PHONY: all gprbuild gprconfig gprclean copy_gnat_src complete bootstrap
 all:
 	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD}
 
@@ -47,6 +47,8 @@ copy_gnat_src: force
 	    $(CP) $(GNAT_SOURCE_DIR)/$(f) gnat ;\
            )\
 	  cd gnat && patch < prj-gnat-6.0.1.diff
+
+complete: copy_gnat_src install
 
 gprbuild gprclean:
 	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} $@
