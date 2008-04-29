@@ -14,16 +14,39 @@ RMDIR=rmdir
 
 all: txt info html pdf
 
+# The following are written to make sure the build fails if the output file
+# already exists, and cannot be overwritten. For example, if we have
+# pdf/gprbuild_ug.pdf open in a browser on windows, the $(MAKE_PDF) command
+# will complain:
+#    cp: cannot create regular file `.../gprbuild_ug.pdf': Device or resource busy
+# but still returns a zero (successful) exit status. Therefore, we delete the
+# output first, so the ${RMDIR} will correctly return a non-zero status.
+# But if pdf does not exist, then the ${RMDIR} command will incorrectly fail;
+# therefore, we do ${MKDIR} first -- hence we do ${MKDIR} twice, which is a bit
+# odd, but successfully works around the bug in $(MAKE_PDF) (i.e. texi2pdf).
+
 txt:
+	${MKDIR} txt
+	${RM} txt/*
+	${RMDIR} txt
 	${MKDIR} txt
 	$(MAKE_TXT) -o txt/$(DOC).txt $(DOC).texi
 info:
 	${MKDIR} info
+	${RM} info/*
+	${RMDIR} info
+	${MKDIR} info
 	$(MAKE_INFO) -o info/$(DOC).info $(DOC).texi
 html:
 	${MKDIR} html
+	${RM} html/*
+	${RMDIR} html
+	${MKDIR} html
 	$(MAKE_INFO) ${MAKEINFO_HTML_FLAGS} -o html/$(DOC).html $(DOC).texi
 pdf:
+	${MKDIR} pdf
+	${RM} pdf/*
+	${RMDIR} pdf
 	${MKDIR} pdf
 	cd pdf; $(MAKE_PDF) -c ../$(DOC).texi
 
@@ -33,5 +56,6 @@ partial_clean:
 	${RM} ${DOC}.vr
 
 clean: partial_clean
+	${MKDIR} txt html info pdf
 	${RM} txt/* html/* info/* pdf/*
-	-${RMDIR} txt html info pdf
+	${RMDIR} txt html info pdf
