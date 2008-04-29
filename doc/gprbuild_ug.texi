@@ -253,7 +253,7 @@ Index
 @code{GPRbuild} is a generic build tool designed for the construction of
 large multi-language systems organized into subsystems and libraries.
 It is well-suited for compiled languages supporting separate compilation,
-such as Ada, C, C++ or Fortran.
+such as Ada, C, C++ and Fortran.
 
 @noindent
 @code{GPRbuild} manages a three step build process
@@ -298,7 +298,7 @@ information such as:
 @itemize
 @item the default source naming conventions for each language,
 @item the compiler name, location and required options,
-@item how to compute inter-unit dependency,
+@item how to compute inter-unit dependencies,
 @item how to build static or dynamic libraries,
 @item which post-compilation actions are needed,
 @item how to link together units from different languages.
@@ -342,8 +342,8 @@ toolchains to be used, and project files describing the
 characteristics of the user project. Typically the configuration
 file can be created automatically by @code{GPRbuild} based on the languages
 defined in your projects and the compilers on your path. In more
-involved situations -- such as cross compilation, or
-environments with several compilers for the same language --
+involved situations --- such as cross compilation, or
+environments with several compilers for the same language ---
 you may need to control more precisely the generation of
 the desired configuration of toolsets. A tool, @value{gprconfig}, described in
 @ref{Configuring with GPRconfig}), offers this capability. In this
@@ -820,7 +820,7 @@ Library projects can also be useful to describe a library that you may
 want to use but that, for some reason, cannot be rebuilt,
 for instance when the sources to rebuild the library are
 not available. Such library projects need simply to use the
-@code{externally_built} attribute as in the example below:
+@code{Externally_Built} attribute as in the example below:
 @smallexample @c projectfile
 library project Extern_Lib is
    for Languages    use ("Ada", "C");
@@ -834,8 +834,8 @@ end Extern_Lib;
 
 @noindent
 In the case of externally built libraries, the @code{Object_Dir}
-attribute does not need to be specified in this case because
-it will never be used.
+attribute does not need to be specified because it will never be
+used.
 
 @node Scenarios and conditional source files
 @section Scenarios and conditional source files
@@ -847,7 +847,7 @@ several almost identical project files defining a static or a dynamic
 version of the library representing a subsystem, one can write a more
 generic version of the project file thanks to the notion of scenarios.
 Scenarios are defined as types with a known set of string values as shown
-by the type @code{Lib_Kind} below. A scenario variable,@code{Kind} below
+by the type @code{Lib_Kind} below. A scenario variable, @code{Kind} below
 can get its initial value from the environment thanks to an @code{external}
 call. This variable can then be used in a case statement as shown below.
 Note that only scenario variables can be used to control case statements.
@@ -918,10 +918,9 @@ An object file is an intermediate file produced by the compiler from a
 compilation unit. It is used by the post-compilation phases to produce
 final executables or libraries. The object files produced in the context of
 a given project are stored in a single directory, the @code{Object_Dir} that
-can
-be specified in the project file. A need for storing
-objects in different directories corresponds to the need to split the
-system into distinct subsystems.
+can be specified in the project file. If you want to store objects in
+two or more object directories, you must split the system into
+distinct subsystems.
 
 @item Project file
 
@@ -1242,10 +1241,11 @@ the other phases unless they are specified by appropriate switches.
 
 @item @option{-o name} (Choose an alternate executable name)
 
-Specify the file name of a single executable. Switch @option{-o} cannot be
-used with
-several mains on the command line, nor with no main on the command line and
-several mains in attribute @code{Main} of the main project.
+Specify the file name of the executable. Switch @option{-o} can
+be used only if there is exactly one executable being built;
+that is, there is exactly one main on the command line,
+or there are no mains on the command line and exactly one
+main in attribute @code{Main} of the main project.
 
 @item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
 
@@ -1308,7 +1308,8 @@ even when up to date.
 By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
 it is possible to instruct GPRbuild to spawn several simultaneous compilation
 jobs if needed. For example, @option{-j2} for two simultaneous compilation
-jobs or @option{-j4} for four.
+jobs or @option{-j4} for four. On a multi-processor system,
+@option{-j<num>} can greatly speed up the build process.
 
 @item @option{-k} (Keep going after compilation errors)
 
@@ -1661,8 +1662,9 @@ files for GPRbuild. It automatically detects the available compilers
 on your system and, after you have selected the one needed for your
 application, it generates the proper configuration file.
 
-@NOTE{In general, you will not launch @value{gprconfig} explicitly. Instead, it is used implicitly by GPRbuild through the use of @code{--config} and
-@code{--autoconf} switches}
+@NOTE{In general, you will not launch @value{gprconfig}
+explicitly. Instead, it is used implicitly by GPRbuild through the use
+of @code{--config} and @code{--autoconf} switches.}
 
 @subsection Command line arguments
 
@@ -1914,7 +1916,7 @@ The root tag must be @code{<gprconfig>}.
 
 The remaining sections in this chapter will list the valid XML tags that
 can be used to replace the ``@dots{}'' code above. These tags can either all be
-placed in a single XML files, or split across several files.
+placed in a single XML file, or split across several files.
 
 @c ------------------------------------------------------------------------
 @node Compiler description
@@ -2023,7 +2025,7 @@ compiler (and three entries are added to the menu when using @value{gprconfig}
 interactively).
 
 If the value is a simple string, the words must be comma-separated, so that
-you can specify languages whose name include spaces. However, if the actual
+you can specify languages whose names include spaces. However, if the actual
 value is computed from the result of a command, the words can also be
 space-separated, to be compatible with more tools.
 
@@ -2074,7 +2076,7 @@ Variables can be referenced in simple strings.
 
 @item @code{<getenv name="variable" />}
 
-If the contents of the node is an @code{<getenv>} child, the value of
+If the contents of the node is a @code{<getenv>} child, the value of
 the environment variable @env{variable} is returned. If the variable is
 not defined, this is an error and the compiler is ignored.
 
@@ -2091,7 +2093,7 @@ not defined, this is an error and the compiler is ignored.
 If the contents of the node is an @code{<external>} child, this indicates
 that a command should be run on the system.
 When the command is run, the current directory (i.e., the one that contains
-the executable found through the @code{<executable>} node, is placed first
+the executable found through the @code{<executable>} node), is placed first
 on the @env{PATH}. The output of the command is returned and may be later
 filtered. The command is not executed through a shell; therefore you cannot
 use output redirection, pipes, or other advanced features.
@@ -2199,7 +2201,7 @@ node.
 @c --------------------------------------------------------------------
 @noindent
 The various compiler attributes defined above are made available as
-variables in the rest of the XML files. Each of these variable can be used
+variables in the rest of the XML files. Each of these variables can be used
 in the value of the various nodes (for instance in @code{<directory>}),
 and in the configurations (@pxref{Configuration}).
 
@@ -2453,11 +2455,13 @@ syntax as a standard project file. Attributes in the configuration file
 define the configuration. Some of these attributes have a special meaning
 in the configuration.
 
-The default name of the configuration file, when not specified to GPRbuild by
-switches --config= or --autoconf= is @file{default.cgpr}. Although the name of the
-configuration file can be any valid file name, it is recommended that its
-suffix be @file{.cgpr} (for Configuration GNAT Project), so that it cannot be
-confused with a standard project file which has the suffix @file{.gpr}.
+The default name of the configuration file, when not specified to
+GPRbuild by switches @option{--config=} or @option{--autoconf=} is
+@file{default.cgpr}. Although the name of the configuration file can
+be any valid file name, it is recommended that its suffix be
+@file{.cgpr} (for Configuration GNAT Project), so that it cannot be
+confused with a standard project file which has the suffix
+@file{.gpr}.
 
 When @file{default.cgpr} cannot be found in the configuration project path,
 GPRbuild invokes @value{gprconfig} to create a configuration file.
@@ -2660,9 +2664,9 @@ specified, library auto initialization is not supported.
 
 @item Shared_Library_Minimum_Switches
 
-Specifies the minimum options to be used when building shared library. These
-options are put in the appropriate section in the library exchange file when
-the library builder is invoked. Example:
+Specifies the minimum options to be used when building a shared
+library. These options are put in the appropriate section in the
+library exchange file when the library builder is invoked. Example:
 
 @smallexample
    for Shared_Library_Minimum_Switches use  ("-shared");
@@ -3039,7 +3043,7 @@ for the language.
 
 Specifies the name of an environment variable that is used by the compiler to
 get the source search path. The value of the environment variable is the path
-name of a text file that contain the path names of the directories of the
+name of a text file that contains the path names of the directories of the
 source search path. Example:
 
 @smallexample
@@ -3095,7 +3099,7 @@ search path to be used by the compiler. Example:
 
 Specifies the name of an environment variable that is used by the compiler to
 get the object search path. The value of the environment variable is the path
-name of a text file that contain the path names of the directories of the
+name of a text file that contains the path names of the directories of the
 object search path. Example:
 
 @smallexample
