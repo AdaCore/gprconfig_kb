@@ -1,5 +1,5 @@
 ===========================================================
-Known problems in GPRBUILD version 1.1.0 as of Apr 22, 2008
+Known problems in GPRBUILD version 1.1.0 as of Apr 30, 2008
 ===========================================================
 
 Copyright (c) 2008, AdaCore
@@ -26,8 +26,8 @@ KP-110-H404-017 gprbuild should fails for declared source not found
 
   Problem:    gprbuild does not detect that a source, declared with
               attribute Source_Files or Source_List_File cannot be found.
-              It sjould fail in this case.
+              It should fail in this case.
 
-  Status:     This was fixed in 1.2.0 on 2008-03-05
+  Status:     This was fixed in 1.2.0 on 2008-04-05
 
   Workaround: Do not declare sources that do not exist
