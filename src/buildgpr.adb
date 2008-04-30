@@ -4068,7 +4068,9 @@ package body Buildgpr is
                while Source /= No_Source loop
                   Src_Data := Project_Tree.Sources.Table (Source);
 
-                  if not Src_Data.Locally_Removed then
+                  if not Src_Data.Locally_Removed
+                    and then Src_Data.Dep_Name /= No_File
+                  then
                      if Src_Data.Kind = Spec then
                         if Src_Data.Other_Part = No_Source then
                            Put_Line
