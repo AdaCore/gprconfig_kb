@@ -5016,7 +5016,7 @@ package body Buildgpr is
                   end;
                end if;
 
-               if not Compilation_Needed then
+               if Check_Switches and then not Compilation_Needed then
                   --  Check switches
 
                   declare
@@ -5031,31 +5031,57 @@ package body Buildgpr is
                           (Project_Tree.Sources.Table (Source_Identity).
                                                          Switches_Path));
 
-                     for Index in 1 .. Compilation_Options.Last loop
-                        if End_Of_File (File) then
-                           if Verbose_Mode then
-                              Write_Line
-                                ("    -> more switches");
-                           end if;
-
-                           Compilation_Needed := True;
-                           exit;
+                     if End_Of_File (File) then
+                        if Verbose_Mode then
+                           Write_Line
+                             ("    -> switches file is empty");
                         end if;
 
+                        Compilation_Needed := True;
+
+                     else
                         Get_Line (File, Line, Last);
 
                         if Line (1 .. Last) /=
-                             Compilation_Options.Options (Index).all
+                          String (Project_Tree.Sources.Table
+                                  (Source_Identity).Object_TS)
                         then
                            if Verbose_Mode then
                               Write_Line
-                                ("    -> different switches");
+                                ("    -> different object file timestamp");
                            end if;
 
                            Compilation_Needed := True;
-                           exit;
                         end if;
-                     end loop;
+                     end if;
+
+                     if not Compilation_Needed then
+                        for Index in 1 .. Compilation_Options.Last loop
+                           if End_Of_File (File) then
+                              if Verbose_Mode then
+                                 Write_Line
+                                   ("    -> more switches");
+                              end if;
+
+                              Compilation_Needed := True;
+                              exit;
+                           end if;
+
+                           Get_Line (File, Line, Last);
+
+                           if Line (1 .. Last) /=
+                             Compilation_Options.Options (Index).all
+                           then
+                              if Verbose_Mode then
+                                 Write_Line
+                                   ("    -> different switches");
+                              end if;
+
+                              Compilation_Needed := True;
+                              exit;
+                           end if;
+                        end loop;
+                     end if;
 
                      if not Compilation_Needed then
                         if End_Of_File (File) then
@@ -5146,6 +5172,11 @@ package body Buildgpr is
                         Get_Name_String
                           (Project_Tree.Sources.Table (Source_Identity).
                              Switches_Path));
+
+                     Put_Line
+                       (File,
+                        String (Project_Tree.Sources.Table
+                          (Source_Identity).Object_TS));
 
                      for J in 1 .. Compilation_Options.Last loop
                         Put_Line (File, Compilation_Options.Options (J).all);
@@ -8838,30 +8869,33 @@ package body Buildgpr is
          end if;
       end if;
 
-      --  If there is no switches file, then the source needs to be
-      --  recompiled and the switches file need to be created.
+      --  If we are checking the switches and there is no switches file, then
+      --  the source needs to be recompiled and the switches file need to be
+      --  created.
 
-      if Src_Data.Switches_TS = Empty_Time_Stamp then
-         if Verbose_Mode then
-            Write_Str  ("      -> switches file ");
-            Write_Str  (Switches_Name);
-            Write_Line (" does not exist");
+      if Check_Switches then
+         if Src_Data.Switches_TS = Empty_Time_Stamp then
+            if Verbose_Mode then
+               Write_Str  ("      -> switches file ");
+               Write_Str  (Switches_Name);
+               Write_Line (" does not exist");
+            end if;
+
+            return True;
          end if;
 
-         return True;
-      end if;
+         --  The source needs to be recompiled if the source has been modified
+         --  after the switches file has been created.
 
-      --  The source needs to be recompiled if the source has been modified
-      --  after the switches file has been created.
+         if  Src_Data.Switches_TS < Src_Data.Source_TS then
+            if Verbose_Mode then
+               Write_Str  ("      -> switches file ");
+               Write_Str  (Switches_Name);
+               Write_Line (" has time stamp earlier than source");
+            end if;
 
-      if  Src_Data.Switches_TS < Src_Data.Source_TS then
-         if Verbose_Mode then
-            Write_Str  ("      -> switches file ");
-            Write_Str  (Switches_Name);
-            Write_Line (" has time stamp earlier than source");
+            return True;
          end if;
-
-         return True;
       end if;
 
       case Src_Data.Dependency is
