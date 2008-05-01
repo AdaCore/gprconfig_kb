@@ -175,10 +175,11 @@
     </config>
   </configuration>
 
-  <!-- linux and Irix-->
+  <!-- linux, freebsd and Irix-->
   <configuration>
     <targets>
        <target name=".*linux.*" />
+       <target name=".*freebsd.*" />
        <target name=".*irix.*" />
     </targets>
     <config>
