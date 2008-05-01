@@ -207,10 +207,11 @@ package body Buildgpr is
    --  building jobs.
 
    type Process_Data is record
-      Pid           : Process_Id      := Invalid_Pid;
-      Source        : Source_Id       := No_Source;
-      Mapping_File  : Path_Name_Type  := No_Path;
-      Purpose       : Process_Purpose := Compilation;
+      Pid           : Process_Id         := Invalid_Pid;
+      Source        : Source_Id          := No_Source;
+      Mapping_File  : Path_Name_Type     := No_Path;
+      Purpose       : Process_Purpose    := Compilation;
+      Options       : String_List_Access := null;
    end record;
    --  Data recorded for each spawned jobs, compilation of dependency file
    --  building.
@@ -219,7 +220,8 @@ package body Buildgpr is
                            (Pid          => Invalid_Pid,
                             Source       => No_Source,
                             Mapping_File => No_Path,
-                            Purpose      => Compilation);
+                            Purpose      => Compilation,
+                            Options      => null);
 
    type Header_Num is range 0 .. 2047;
 
@@ -717,7 +719,8 @@ package body Buildgpr is
      (Pid          : Process_Id;
       Source       : Source_Id;
       Mapping_File : Path_Name_Type;
-      Purpose      : Process_Purpose);
+      Purpose      : Process_Purpose;
+      Options      : String_List_Access);
    --  Record a compiling process
 
    procedure Add_Rpath (Path : String);
@@ -1322,10 +1325,12 @@ package body Buildgpr is
      (Pid          : Process_Id;
       Source       : Source_Id;
       Mapping_File : Path_Name_Type;
-      Purpose      : Process_Purpose)
+      Purpose      : Process_Purpose;
+      Options      : String_List_Access)
    is
    begin
-      Compilation_Htable.Set (Pid, (Pid, Source, Mapping_File, Purpose));
+      Compilation_Htable.Set
+        (Pid, (Pid, Source, Mapping_File, Purpose, Options));
       Outstanding_Compiles := Outstanding_Compiles + 1;
    end Add_Process;
 
@@ -1437,6 +1442,34 @@ package body Buildgpr is
                   Project_Tree.Sources.Table (Source).Dep_TS :=
                     File_Stamp
                       (Project_Tree.Sources.Table (Source).Dep_Path);
+
+                  if Comp_Data.Options /= null then
+                     --  Write the switches file, now that we have the updated
+                     --  time stamp for the object file.
+
+                     declare
+                        File : Ada.Text_IO.File_Type;
+
+                     begin
+                        Create
+                          (File,
+                           Out_File,
+                           Get_Name_String
+                             (Project_Tree.Sources.Table
+                                (Source).Switches_Path));
+
+                        Put_Line
+                          (File,
+                           String
+                             (Project_Tree.Sources.Table (Source).Object_TS));
+
+                        for J in Comp_Data.Options'Range loop
+                           Put_Line (File, Comp_Data.Options (J).all);
+                        end loop;
+
+                        Close (File);
+                     end;
+                  end if;
                end if;
 
                Language := Project_Tree.Sources.Table (Source).Language;
@@ -4691,6 +4724,8 @@ package body Buildgpr is
       Finish           : Natural;
       Last_Obj         : Natural;
 
+      Last_Recorded_Option : Integer;
+
       package Good_ALI is new Table.Table
         (Table_Component_Type => ALI.ALI_Id,
          Table_Index_Type     => Natural,
@@ -5049,6 +5084,12 @@ package body Buildgpr is
                            if Verbose_Mode then
                               Write_Line
                                 ("    -> different object file timestamp");
+                              Write_Line
+                                ("       " & Line (1 .. Last));
+                              Write_Line
+                                ("       " &
+                                 String (Project_Tree.Sources.Table
+                                   (Source_Identity).Object_TS));
                            end if;
 
                            Compilation_Needed := True;
@@ -5159,31 +5200,14 @@ package body Buildgpr is
                     Name_Find;
                end if;
 
-               --  Write the switches file
+               --  Record the last recorded option index, to be able to write
+               --  the switches file later.
 
                if Config.Object_Generated then
-                  declare
-                     File : Ada.Text_IO.File_Type;
+                  Last_Recorded_Option := Compilation_Options.Last;
 
-                  begin
-                     Create
-                       (File,
-                        Out_File,
-                        Get_Name_String
-                          (Project_Tree.Sources.Table (Source_Identity).
-                             Switches_Path));
-
-                     Put_Line
-                       (File,
-                        String (Project_Tree.Sources.Table
-                          (Source_Identity).Object_TS));
-
-                     for J in 1 .. Compilation_Options.Last loop
-                        Put_Line (File, Compilation_Options.Options (J).all);
-                     end loop;
-
-                     Close (File);
-                  end;
+               else
+                  Last_Recorded_Option := -1;
                end if;
 
                --  Add dependency option, if there is one
@@ -5609,8 +5633,23 @@ package body Buildgpr is
                   Compilation_Options.Options
                     (1 .. Compilation_Options.Last));
 
-               Add_Process
-                 (Pid, Source_Identity, Mapping_File_Path, Compilation);
+               declare
+                  Options : String_List_Access := null;
+               begin
+                  if Last_Recorded_Option >= 0 then
+                     Options :=
+                       new String_List'
+                         (Compilation_Options.Options
+                              (1 .. Last_Recorded_Option));
+                  end if;
+
+                  Add_Process
+                    (Pid,
+                     Source_Identity,
+                     Mapping_File_Path,
+                     Compilation,
+                     Options);
+               end;
 
                Need_To_Rebuild_Global_Archives := True;
 
