@@ -109,16 +109,6 @@
     </config>
   </configuration>
 
-  <!--  Systems with no support for libraries at all -->
-  <configuration>
-    <targets>
-       <target name=".*unknown.*" />
-    </targets>
-    <config>
-   for Library_Support  use "none";
-    </config>
-  </configuration>
-
   <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
     <targets>
