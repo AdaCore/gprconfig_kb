@@ -34,7 +34,6 @@ with Csets;
 with Confgpr;   use Confgpr;
 with Debug;     use Debug;
 with Errout;    use Errout;
-with Err_Vars;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_Tables;
@@ -7210,7 +7209,7 @@ package body Buildgpr is
          end;
       end if;
 
-      if Err_Vars.Total_Errors_Detected > 0 then
+      if Total_Errors_Detected > 0 then
          Fail_Program ("problems with main sources");
       end if;
    end Get_Mains;
@@ -7403,7 +7402,7 @@ package body Buildgpr is
 
       Get_Configuration (Packages_To_Check);
 
-      if Err_Vars.Total_Errors_Detected > 0 then
+      if Total_Errors_Detected > 0 then
          Prj.Err.Finalize;
          Fail_Program
            ("problems while getting the configuration",
@@ -7588,22 +7587,40 @@ package body Buildgpr is
             end loop;
 
             if Name /= No_Name and then Builder_Package /= No_Package then
+               --  Get the switches for the single main or the language of the
+               --  mains.
+
                Switches := Value_Of
                  (Name                    => Name,
                   Attribute_Or_Array_Name => Name_Switches,
                   In_Package              => Builder_Package,
                   In_Tree                 => Project_Tree);
 
-               if (Switches = Nil_Variable_Value or else Switches.Default)
-                 and then Name /= Lang
-               then
-                  Switches := Value_Of
-                    (Name                    => Lang,
-                     Attribute_Or_Array_Name => Name_Switches,
-                     In_Package              => Builder_Package,
-                     In_Tree                 => Project_Tree,
-                     Force_Lower_Case_Index  => True);
+               if Name /= Lang then
+                  --  If specific switches for the main have been found,
+                  --  the switches that are not recognized by gprbuild will be
+                  --  global switches for the language of the main.
+
+                  if Switches /= Nil_Variable_Value and then
+                    not Switches.Default
+                  then
+                     Builder_Switches_Lang := Lang;
+
+                  else
+                     --  If no specific switches for the main are declared,
+                     --  check for Switches (<language>).
+
+                     Switches := Value_Of
+                       (Name                    => Lang,
+                        Attribute_Or_Array_Name => Name_Switches,
+                        In_Package              => Builder_Package,
+                        In_Tree                 => Project_Tree,
+                        Force_Lower_Case_Index  => True);
+                  end if;
                end if;
+
+               --  For backward compatibility with gnatmake, if no Switches
+               --  are declared, check for Default_Switches (<language>).
 
                if Switches = Nil_Variable_Value or else Switches.Default then
                   Switches := Value_Of
@@ -7622,6 +7639,8 @@ package body Buildgpr is
                      Builder_Switches_Lang := Lang;
                   end if;
                end if;
+
+               --  If switches have been found, scan them
 
                if Switches /= Nil_Variable_Value and then
                  (not Switches.Default)
@@ -7659,7 +7678,7 @@ package body Buildgpr is
       if All_Phases or Compile_Only then
          Compilation_Phase;
 
-         if Err_Vars.Total_Errors_Detected > 0
+         if Total_Errors_Detected > 0
            or else Bad_Compilations.Last > 0
          then
             --  If switch -k is used, output a summary of the sources that
@@ -7698,7 +7717,7 @@ package body Buildgpr is
       if All_Phases or Bind_Only then
          Binding_Phase;
 
-         if Err_Vars.Total_Errors_Detected > 0 then
+         if Total_Errors_Detected > 0 then
             Fail_Program ("*** bind failed");
          end if;
       end if;
@@ -7706,7 +7725,7 @@ package body Buildgpr is
       if All_Phases or Link_Only then
          Linking_Phase;
 
-         if Err_Vars.Total_Errors_Detected > 0 then
+         if Total_Errors_Detected > 0 then
             Fail_Program ("*** link failed");
          end if;
       end if;
