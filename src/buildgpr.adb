@@ -7136,8 +7136,6 @@ package body Buildgpr is
             List    : String_List_Id := Data.Mains;
             Element : String_Element;
 
-            Source  : Source_Id;
-
          begin
             --  The attribute Main is an empty list, so compile all the
             --  sources of the main project.
@@ -7161,52 +7159,123 @@ package body Buildgpr is
                while List /= Prj.Nil_String loop
                   Element := Project_Tree.String_Elements.Table (List);
 
-                  declare
-                     Display_Main : constant String :=
-                                      Get_Name_String (Element.Value);
-                     Main         : String := Display_Main;
-                     Main_Id      : File_Name_Type;
-                     Project      : Project_Id := Main_Project;
-                  begin
-                     Canonical_Case_File_Name (Main);
-                     Main_Id := Create_Name (Main);
-
-                     loop
-                        Source :=
-                          Project_Tree.Projects.Table (Project).First_Source;
-
-                        while Source /= No_Source and then
-                        Project_Tree.Sources.Table (Source).File /= Main_Id
-                        loop
-                           Source :=
-                             Project_Tree.Sources.Table
-                               (Source).Next_In_Project;
-                        end loop;
-
-                        exit when Source /= No_Source;
-
-                        Project :=
-                          Project_Tree.Projects.Table (Project).Extends;
-
-                        exit when Project = No_Project;
-                     end loop;
-
-                     if Source = No_Source then
-                        Error_Msg_File_1 := Main_Id;
-                        Error_Msg_Name_1 :=
-                          Project_Tree.Projects.Table (Main_Project).Name;
-                        Error_Msg ("{ is not a source of project %%",
-                                   Element.Location);
-
-                     else
-                        Mains.Add_Main (Main);
-                     end if;
-                  end;
+                  Get_Name_String (Element.Value);
+                  Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+                  Mains.Add_Main (Name_Buffer (1 .. Name_Len));
+                  Mains.Set_Location (Element.Location);
 
                   List := Element.Next;
                end loop;
             end if;
          end;
+      end if;
+
+      --  If there are mains, check that they are sources of the main project
+
+      if Mains.Number_Of_Mains > 0 then
+         Mains.Reset;
+
+         for J in 1 .. Mains.Number_Of_Mains loop
+            declare
+               Main     : String := Mains.Next_Main;
+               Location : constant Source_Ptr := Mains.Get_Location;
+               Main_Id  : File_Name_Type;
+               Project  : Project_Id;
+               Source   : Source_Id;
+               Suffix   : File_Name_Type;
+
+            begin
+               --  First, look for the main as specified
+
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Main);
+               Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+               Main_Id := Name_Find;
+
+               Project := Main_Project;
+               loop
+                  Source :=
+                    Project_Tree.Projects.Table (Project).First_Source;
+
+                  while Source /= No_Source and then
+                  Project_Tree.Sources.Table (Source).File /= Main_Id
+                  loop
+                     Source :=
+                       Project_Tree.Sources.Table
+                         (Source).Next_In_Project;
+                  end loop;
+
+                  exit when Source /= No_Source;
+
+                  Project :=
+                    Project_Tree.Projects.Table (Project).Extends;
+
+                  exit when Project = No_Project;
+               end loop;
+
+               if Source = No_Source then
+                  --  Now look for the main with a body suffix
+
+                  Canonical_Case_File_Name (Main);
+
+                  Project := Main_Project;
+                  loop
+                     Source :=
+                       Project_Tree.Projects.Table (Project).First_Source;
+
+                     while Source /= No_Source loop
+                        --  Only consider bodies
+
+                        if Project_Tree.Sources.Table (Source).Kind = Impl then
+                           Get_Name_String
+                             (Project_Tree.Sources.Table (Source).File);
+
+                           if Name_Len > Main'Length
+                             and then Name_Buffer (1 .. Main'Length) = Main
+                           then
+                              Suffix :=
+                                Project_Tree.Languages_Data.Table
+                                  (Project_Tree.Sources.Table
+                                       (Source).Language)
+                                  .Config.Naming_Data.Body_Suffix;
+
+                              exit when Suffix /= No_File and then
+                              Name_Buffer (Main'Length + 1 .. Name_Len) =
+                                Get_Name_String (Suffix);
+                           end if;
+                        end if;
+
+                        Source :=
+                          Project_Tree.Sources.Table (Source).Next_In_Project;
+                     end loop;
+
+                     exit when Source /= No_Source;
+
+                     Project :=
+                       Project_Tree.Projects.Table (Project).Extends;
+
+                     exit when Project = No_Project;
+                  end loop;
+
+                  if Source /= No_Source then
+                     Mains.Update_Main (Name_Buffer (1 .. Name_Len));
+
+                  elsif Location /= No_Location then
+                     --  If the main is declared in package Builder of the
+                     --  main project, report an error. If the main is on the
+                     --  command line, it may be a main from another project,
+                     --  so do nothing: if the main does not exist in another
+                     --  project, an error will be reported later.
+
+                     Error_Msg_File_1 := Main_Id;
+                     Error_Msg_Name_1 :=
+                       Project_Tree.Projects.Table (Main_Project).Name;
+                     Error_Msg ("{ is not a source of project %%",
+                                Location);
+                  end if;
+               end if;
+            end;
+         end loop;
       end if;
 
       if Total_Errors_Detected > 0 then
