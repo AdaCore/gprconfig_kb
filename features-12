@@ -1,6 +1,6 @@
 =========================================================
-GPRBUILD 1.2 NEW FEATURES LIST Current as of Apr 16, 2008
-========================================================
+GPRBUILD 1.2 NEW FEATURES LIST Current as of May 05, 2008
+=========================================================
 
 Copyright (c) 2008, AdaCore
 
@@ -12,6 +12,13 @@ An ISO date (YYYY-MM-DD) appears in parentheses after the description line.
 This date shows the implementation date of the feature. Any 1.2.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
+
+NF-12-H501-004 Improve backward compatibility with gnatmake
+
+  Compatibility with projects accepted by gnatmake is improved:
+    - a main may be truncated: the body suffix may be missing
+    - switches from Builder'Switches (<main>) that are not recognized
+      by gprbuild are for the compiler of the language of the main.
 
 NF-12-H408-020 New attributes Object_Generated and Objects_Linked (2008-04-16)
 
