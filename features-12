@@ -13,7 +13,7 @@ This date shows the implementation date of the feature. Any 1.2.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
-NF-12-H501-004 Improve backward compatibility with gnatmake
+NF-12-H501-004 Improve backward compatibility with gnatmake (2008-05-05)
 
   Compatibility with projects accepted by gnatmake is improved:
     - a main may be truncated: the body suffix may be missing
