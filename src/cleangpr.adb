@@ -755,10 +755,10 @@ package body Cleangpr is
          end;
       end if;
 
-         --  For the main project, delete the executables and the binder
-         --  generated files.
+      --  For the main project, delete the executables and the binder generated
+      --  files.
 
-         --  The executables are deleted only if switch -c is not specified
+      --  The executables are deleted only if switch -c is not specified
 
       if Project = Main_Project and then Data.Exec_Directory /= No_Path then
          declare
@@ -768,6 +768,8 @@ package body Cleangpr is
 
          begin
             Change_Dir (Exec_Dir);
+
+            Mains.Reset;
 
             for N_File in 1 .. Mains.Number_Of_Mains loop
                declare
@@ -1061,23 +1063,7 @@ package body Cleangpr is
          New_Line;
       end if;
 
-      --  If no executable name was specified, put all the mains of the project
-      --  file (if any) as if there were on the command line.
-
-      if Mains.Number_Of_Mains = 0 then
-         declare
-            Value : String_List_Id :=
-                      Project_Tree.Projects.Table (Main_Project).Mains;
-            Main  : String_Element;
-         begin
-            while Value /= Prj.Nil_String loop
-               Main := Project_Tree.String_Elements.Table (Value);
-               Mains.Add_Main
-                 (Name => Get_Name_String (Main.Value));
-               Value := Main.Next;
-            end loop;
-         end;
-      end if;
+      Gpr_Util.Get_Mains;
 
       if Verbose_Mode then
          New_Line;

@@ -81,6 +81,10 @@ package Gpr_Util is
 
    Target_Project_Option : constant String := "--target=";
 
+   No_Name_Map_File_Option : constant String := "--map-file-option";
+
+   Named_Map_File_Option   : constant String := No_Name_Map_File_Option & '=';
+
    Config_Path : String_Access := null;
 
    Default_Name : constant String := "default.cgpr";
@@ -144,5 +148,12 @@ package Gpr_Util is
    procedure Look_For_Default_Project;
    --  Check if default.gpr exists in the current directory. If it does, use
    --  it. Otherwise, if there is only one file ending with .gpr, use it.
+
+   procedure Get_Mains;
+   --  Get the mains. If no main is defined on the command line, take those
+   --  in attribute Main of the main project. If there are mains, check that
+   --  they are not truncated (no body suffix) and if they are put the complete
+   --  file names in the table. Fail if a main specified in attribute Main is
+   --  not a source of the main project.
 
 end Gpr_Util;
