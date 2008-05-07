@@ -177,7 +177,8 @@ package body Cleangpr is
                            "lib" & Get_Name_String (Data.Name) & ".deps";
       --  The name of the archive dependency file for this project
 
-      Obj_Dir : constant String := Get_Name_String (Data.Object_Directory);
+      Obj_Dir     : constant String :=
+                      Get_Name_String (Data.Object_Directory.Name);
 
    begin
       Change_Dir (Obj_Dir);
@@ -214,13 +215,13 @@ package body Cleangpr is
       File_Name   : File_Name_Type;
 
    begin
-      if Data.Library and then Data.Library_Src_Dir /= No_Path then
+      if Data.Library and then Data.Library_Src_Dir /= No_Path_Information then
          declare
             Directory : constant String :=
-                          Get_Name_String (Data.Library_Src_Dir);
+                          Get_Name_String (Data.Library_Src_Dir.Name);
 
          begin
-            Change_Dir (Get_Name_String (Data.Library_Src_Dir));
+            Change_Dir (Get_Name_String (Data.Library_Src_Dir.Name));
             Open (Direc, ".");
 
             --  For each regular file in the directory, if switch -n has not
@@ -312,11 +313,11 @@ package body Cleangpr is
 
          declare
             Obj_Directory     : constant String :=
-                                  Get_Name_String (Data.Object_Directory);
+                                  Get_Name_String (Data.Object_Directory.Name);
             Lib_Directory     : constant String :=
-                                  Get_Name_String (Data.Library_Dir);
+                                  Get_Name_String (Data.Library_Dir.Name);
             Lib_ALI_Directory : constant String :=
-                                  Get_Name_String (Data.Library_ALI_Dir);
+                                  Get_Name_String (Data.Library_ALI_Dir.Name);
 
             Exchange_File : Ada.Text_IO.File_Type;
 
@@ -614,10 +615,10 @@ package body Cleangpr is
          Processed_Projects.Increment_Last;
          Processed_Projects.Table (Processed_Projects.Last) := Project;
 
-         if Data.Object_Directory /= No_Path then
+         if Data.Object_Directory /= No_Path_Information then
             declare
                Obj_Dir : constant String :=
-                           Get_Name_String (Data.Object_Directory);
+                           Get_Name_String (Data.Object_Directory.Name);
 
             begin
                Change_Dir (Obj_Dir);
@@ -701,7 +702,7 @@ package body Cleangpr is
             if not Compile_Only then
                Clean_Library_Directory (Project);
 
-               if Data.Library_Src_Dir /= No_Path then
+               if Data.Library_Src_Dir /= No_Path_Information then
                   Clean_Interface_Copy_Directory (Project);
                end if;
             end if;
@@ -760,10 +761,12 @@ package body Cleangpr is
 
       --  The executables are deleted only if switch -c is not specified
 
-      if Project = Main_Project and then Data.Exec_Directory /= No_Path then
+      if Project = Main_Project
+        and then Data.Exec_Directory /= No_Path_Information
+      then
          declare
             Exec_Dir : constant String :=
-                         Get_Name_String (Data.Exec_Directory);
+                         Get_Name_String (Data.Exec_Directory.Name);
             Source   : Prj.Source_Id;
 
          begin
@@ -821,10 +824,10 @@ package body Cleangpr is
                   end;
                end if;
 
-               if Data.Object_Directory /= No_Path then
+               if Data.Object_Directory /= No_Path_Information then
                   Delete_Binder_Generated_Files
                     (Get_Name_String
-                       (Data.Object_Directory),
+                       (Data.Object_Directory.Name),
                      Main_Source_File);
                end if;
             end loop;

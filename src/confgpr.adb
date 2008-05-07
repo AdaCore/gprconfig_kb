@@ -436,7 +436,7 @@ package body Confgpr is
          begin
             if Obj_Dir = Nil_Variable_Value or else Obj_Dir.Default then
                Get_Name_String
-                 (Project_Tree.Projects.Table (Main_Project).Directory);
+                 (Project_Tree.Projects.Table (Main_Project).Directory.Name);
 
             else
                if Is_Absolute_Path (Get_Name_String (Obj_Dir.Value)) then
@@ -446,7 +446,8 @@ package body Confgpr is
                   Name_Len := 0;
                   Add_Str_To_Name_Buffer
                     (Get_Name_String
-                       (Project_Tree.Projects.Table (Main_Project).Directory));
+                       (Project_Tree.Projects.Table
+                          (Main_Project).Directory.Name));
                   Add_Char_To_Name_Buffer (Directory_Separator);
                   Add_Str_To_Name_Buffer (Get_Name_String (Obj_Dir.Value));
                end if;
