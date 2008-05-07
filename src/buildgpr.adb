@@ -5698,7 +5698,7 @@ package body Buildgpr is
                      loop
                         declare
                            End_Of_File_Reached : Boolean := False;
-
+                           Object_Found        : Boolean := False;
                         begin
                            loop
                               if End_Of_File (Dep_File) then
@@ -5708,8 +5708,24 @@ package body Buildgpr is
 
                               Get_Line (Dep_File, Name_Buffer, Name_Len);
 
-                              exit when Name_Len > 0
-                                and then Name_Buffer (1) /= '#';
+                              if Name_Len > 0
+                                and then Name_Buffer (1) /= '#'
+                              then
+                                 --  Skip a first line that is an empty
+                                 --  continuation line.
+
+                                 for J in 1 .. Name_Len - 1 loop
+                                    if Name_Buffer (J) /= ' ' then
+                                       Object_Found := True;
+                                       exit;
+                                    end if;
+                                 end loop;
+
+                                 exit when
+                                   Object_Found
+                                   or else
+                                   Name_Buffer (Name_Len) /= '\';
+                              end if;
                            end loop;
 
                            exit Big_Loop when End_Of_File_Reached;
@@ -8921,6 +8937,7 @@ package body Buildgpr is
             loop
                declare
                   End_Of_File_Reached : Boolean := False;
+                  Object_Found        : Boolean := False;
 
                begin
                   loop
@@ -8931,7 +8948,24 @@ package body Buildgpr is
 
                      Get_Line (Dep_File, Name_Buffer, Name_Len);
 
-                     exit when Name_Len > 0 and then Name_Buffer (1) /= '#';
+                     if Name_Len > 0
+                       and then Name_Buffer (1) /= '#'
+                     then
+                        --  Skip a first line that is an empty continuation
+                        --  line.
+
+                        for J in 1 .. Name_Len - 1 loop
+                           if Name_Buffer (J) /= ' ' then
+                              Object_Found := True;
+                              exit;
+                           end if;
+                        end loop;
+
+                        exit when
+                          Object_Found
+                          or else
+                        Name_Buffer (Name_Len) /= '\';
+                     end if;
                   end loop;
 
                   --  If dependency file contains only empty lines or comments,
