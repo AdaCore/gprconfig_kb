@@ -1566,16 +1566,28 @@ its compilation will be invalidated.
 The post-compilation phase has two parts: library building and program binding.
 
 If there are libraries that need to be built or rebuilt, @value{gprbuild} will
-call the "library builder", specified by attribute @code{Library_Builder}.
-This is generally the tool @value{gprlib}, provided with GPRbuild.
+call the library builder, specified by attribute @code{Library_Builder}.
+This is generally the tool @value{gprlib}, provided with GPRbuild. If gprbuild
+can determine that a library is already up to date, then the library builder
+will not be called.
 
-If there are mains specified
+If there are mains specified, and for these mains there are sources of
+languages with a binder driver (specified by attribute Binder'Driver
+(<language>), then the binder driver is called for each such mains, but only
+if it needs to. If gprbuild can determine that the artifacts from a previous
+post-compilation phase are already up to date, the binder driver is not called.
+
+If there are no libraries and no binder drivers, then the post-compilation
+phase is empty.
 
 @node Linking Phase
 @section Linking Phase
 
 @noindent
-@emph{To be provided in a subsequent version of the document.}
+When there are mains specified, either in attribute Main or on the command
+line, and these mains are not up to date, the linker is invoked for each main,
+with all the specified or implied options, including the object files generated
+during the post-compilation phase by the binder drivers.
 
 @c  ------------------------------------------------------------------------
 @node Cleaning up with GPRclean
