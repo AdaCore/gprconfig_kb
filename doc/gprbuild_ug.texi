@@ -915,7 +915,7 @@ list of source files using the @code{Source_Files} or
 @item Object files and object directory
 
 An object file is an intermediate file produced by the compiler from a
-compilation unit. It is used by the post-compilation phases to produce
+compilation unit. It is used by the post-compilation phase to produce
 final executables or libraries. The object files produced in the context of
 a given project are stored in a single directory, the @code{Object_Dir} that
 can be specified in the project file. If you want to store objects in
@@ -1563,8 +1563,13 @@ its compilation will be invalidated.
 @section Post-Compilation Phase
 
 @noindent
-@emph{To be provided in a subsequent version of the document.}
+The post-compilation phase has two parts: library building and program binding.
 
+If there are libraries that need to be built or rebuilt, @value{gprbuild} will
+call the "library builder", specified by attribute @code{Library_Builder}.
+This is generally the tool @value{gprlib}, provided with GPRbuild.
+
+If there are mains specified
 
 @node Linking Phase
 @section Linking Phase

@@ -323,11 +323,11 @@ procedure Gprlib is
 
    Driver_Name : Name_Id := No_Name;
 
-   Gnatbind_Name : String_Access := Osint.Program_Name ("gnatbind");
+   Gnatbind_Name : String_Access := Osint.Program_Name ("gnatbind", "gprlib");
 
    Gnatbind_Path : String_Access;
 
-   Compiler_Name : String_Access := Osint.Program_Name ("gcc");
+   Compiler_Name : String_Access := Osint.Program_Name ("gcc", "gprlib");
 
    Compiler_Path : String_Access;
 
