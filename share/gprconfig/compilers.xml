@@ -91,7 +91,7 @@
     </target>
   </compiler_description>
 
-  <!--  G++ compilers  -->
+  <!--  G++ compilers, including recent CodeSourcery compilers  -->
   <compiler_description>
     <name>G++</name>
     <executable>g++</executable>
