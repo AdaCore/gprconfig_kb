@@ -109,6 +109,16 @@
     </config>
   </configuration>
 
+  <!--  Systems with no support for libraries at all -->
+  <configuration>
+    <targets>
+       <target name=".*unknown.*" />
+    </targets>
+    <config>
+   for Library_Support  use "none";
+    </config>
+  </configuration>
+
   <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
     <targets>
@@ -165,11 +175,10 @@
     </config>
   </configuration>
 
-  <!-- linux, freebsd and Irix-->
+  <!-- linux and Irix-->
   <configuration>
     <targets>
        <target name=".*linux.*" />
-       <target name=".*freebsd.*" />
        <target name=".*irix.*" />
     </targets>
     <config>

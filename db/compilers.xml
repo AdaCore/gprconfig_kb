@@ -91,13 +91,13 @@
     </target>
   </compiler_description>
 
-  <!--  G++ compilers, including recent CodeSourcery compilers  -->
+  <!--  G++ compilers  -->
   <compiler_description>
     <name>G++</name>
     <executable>g++</executable>
     <version>
       <external>g++ --version</external>
-      <grep regexp="\((GCC|Sourcery.*)\) (\S+)" group="2"></grep>
+      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
