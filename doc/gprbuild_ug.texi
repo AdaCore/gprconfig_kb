@@ -1184,7 +1184,7 @@ subdirectories of the directories specified in the project files. This applies
 in particular to object directories, library directories and exec directories.
 If the directories do not exist, they are created automatically.
 
-@item @option{--direct-import-only}
+@item @option{--no-indirect-imports}
 
 This indicates that sources of a project should import only sources or
 header files from directly imported projects, that is those projects mentioned
@@ -1197,6 +1197,13 @@ indirectly included. The check will fail if there is no possibility that a
 header file in a non directly imported project could have been indirectly
 imported. If the check fails, the compilation artifacts (dependency file,
 object file, switches file) are deleted.
+
+@item @option{--indirect-imports}
+
+This indicates that sources of a project can import sources or header files
+from directly or indirectly imported projects. This is the default behavior.
+This switch is provided to cancel a previous switch
+@option{--no-indirect-imports} on the command line.
 
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 

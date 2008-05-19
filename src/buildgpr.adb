@@ -122,9 +122,11 @@ package body Buildgpr is
    Search_Project_Dir_Expected : Boolean := False;
    --  True when last switch was -aP
 
-   Direct_Import_Only_Switch : constant String := "--direct-import-only";
-   Direct_Import_Only : Boolean := False;
-   --  True when switch --direct-import-only is used. Sources are only
+   Direct_Import_Only_Switch : constant String  := "--direct-import-only";
+   Indirect_Imports_Switch : constant String    := "--indirect-imports";
+   No_Indirect_Imports_Switch : constant String := "--no-indirect-imports";
+   Indirect_Imports : Boolean := True;
+   --  False when switch --no-indirect-imports is used. Sources are only
    --  allowed to import from the projects that are directly withed.
 
    Recursive : Boolean := False;
@@ -4776,7 +4778,7 @@ package body Buildgpr is
                                           --  compiled. Check if it can be
                                           --  imported.
 
-                                          if Direct_Import_Only then
+                                          if not Indirect_Imports then
                                              if Directly_Imports
                                                (Src_Data.Project,
                                                 Src_Data_2.Project)
@@ -5011,7 +5013,7 @@ package body Buildgpr is
                                              (Src_Data.Project,
                                               Src_Data_2.Project))
                                     then
-                                       if Direct_Import_Only and then
+                                       if not Indirect_Imports and then
                                          not Directly_Imports
                                            (Src_Data.Project,
                                             Src_Data_2.Project)
@@ -9985,8 +9987,15 @@ package body Buildgpr is
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
-         elsif Command_Line and then Arg = Direct_Import_Only_Switch then
-            Direct_Import_Only := True;
+         elsif Command_Line and then Arg = Indirect_Imports_Switch then
+            Indirect_Imports := True;
+
+         elsif Command_Line and then
+           (Arg = No_Indirect_Imports_Switch
+            or else
+            Arg = Direct_Import_Only_Switch)
+         then
+            Indirect_Imports := False;
 
          elsif Command_Line and then
            Arg'Length >= 3 and then
@@ -10424,11 +10433,21 @@ package body Buildgpr is
          Write_Eol;
 
          Write_Str ("  ");
-         Write_Str (Direct_Import_Only_Switch);
+         Write_Str (No_Indirect_Imports_Switch);
          Write_Eol;
          Write_Str
-           ("           Sources can import only from withed projects");
+           ("           Sources can import only from directly imported " &
+            "projects");
          Write_Eol;
+
+         Write_Str ("  ");
+         Write_Str (Indirect_Imports_Switch);
+         Write_Eol;
+         Write_Str
+           ("           Sources can import from directly and indirectly " &
+            "imported projects");
+         Write_Eol;
+
          Write_Eol;
 
          --  Line for -aP
