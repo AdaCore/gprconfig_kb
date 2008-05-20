@@ -161,8 +161,8 @@
 
 @titlepage
 @title GPRbuild User's Guide
-@subtitle Document revision level <<TBD>>
-@subtitle Date: <<TBD>>
+@subtitle Document identifier: $Rev::        $
+@subtitle Date: $Date::            $
 @author AdaCore
 
 @page
