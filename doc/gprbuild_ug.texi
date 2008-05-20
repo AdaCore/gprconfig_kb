@@ -168,8 +168,7 @@
 @page
 @vskip 0pt plus 1filll
 
-Printed November 2007 @*
-Copyright @copyright{} 2007, AdaCore
+Copyright @copyright{} 2007-2008, AdaCore
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
