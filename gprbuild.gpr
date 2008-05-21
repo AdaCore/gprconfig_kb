@@ -4,7 +4,7 @@
 with "xmlada";
 
 project Gprbuild is
-   type OS_Type is ("unix", "vms", "Windows_NT");
+   type OS_Type is ("unix", "avms", "ivms", "Windows_NT");
    OS : OS_Type := External ("OS", "unix");
 
    type Build_Type is ("debug", "production", "coverage");
@@ -95,7 +95,7 @@ project Gprbuild is
    end Binder;
 
    package Linker is
-      Common_Switches := (project'Object_Dir & "/gprbuild_dummies.o", 
+      Common_Switches := (project'Object_Dir & "/gprbuild_dummies.o",
                           project'Object_Dir & "/link.o");
       --  ??? We use project'Object_Dir here instead of GprBuild'Object_Dir
       --  for compatibility with GNAT Pro 6.0.2.
@@ -134,7 +134,7 @@ project Gprbuild is
                    ("mlib-tgt-vms.ads", "mlib-tgt-vms.adb");
                --  Excluded_Source_File not supported by GNAT Pro 6.0.2
 
-            when "vms" =>
+            when "avms" | "ivms" =>
                for Locally_Removed_Files
                  use Common_Excluded_Source_Files;
                --  Excluded_Source_File not supported by GNAT Pro 6.0.2
@@ -150,11 +150,16 @@ project Gprbuild is
               use "gprlib-build_shared_lib-nosymbols.adb";
             for Body ("mlib.tgt.specific")
               use "mlib-tgt-specific.adb";
-         when "vms" =>
+         when "avms" =>
             for Body ("gprlib.build_shared_lib")
               use "gprlib-build_shared_lib-vms.adb";
             for Body ("mlib.tgt.specific")
               use "mlib-tgt-vms-alpha.adb";
+         when "ivms" =>
+            for Body ("gprlib.build_shared_lib")
+              use "gprlib-build_shared_lib-vms.adb";
+            for Body ("mlib.tgt.specific")
+              use "mlib-tgt-vms-ia64.adb";
       end case;
    end Naming;
 
