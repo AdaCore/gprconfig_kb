@@ -152,7 +152,7 @@
     <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-).*)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
-      <grep regexp="^GNATLS.+?(\d+\.\d+)" group="1"></grep>
+      <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
     </version>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
