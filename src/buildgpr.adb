@@ -7124,25 +7124,7 @@ package body Buildgpr is
 
             --  Get the path of the linker driver
 
-            if Data.Linker_Path /= No_Path then
-               Linker_Path := new String'(Get_Name_String (Data.Linker_Path));
-
-            elsif Data.Linker_Name /= No_File then
-               Linker_Name :=
-                 new String'(Get_Name_String (Data.Linker_Name));
-
-               Linker_Path := Locate_Exec_On_Path (Linker_Name.all);
-
-               if Linker_Path = null then
-                  Fail_Program ("unable to find linker ", Linker_Name.all);
-
-               else
-                  Data.Linker_Path :=
-                    Path_Name_Type'(Create_Name (Linker_Path.all));
-                  Project_Tree.Projects.Table (Main_Proj) := Data;
-               end if;
-
-            elsif Data.Config.Linker /= No_Path then
+            if Data.Config.Linker /= No_Path then
                Linker_Name :=
                  new String'(Get_Name_String
                              (Data.Config.Linker));
@@ -7162,13 +7144,7 @@ package body Buildgpr is
 
             --  First, the minimum options, if any
 
-            if Data.Linker_Name /= No_File then
-               Min_Linker_Opts := Data.Minimum_Linker_Options;
-
-            else
-               Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
-            end if;
-
+            Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
             while Min_Linker_Opts /= No_Name_List loop
                Add_Argument
                  (Get_Name_String
