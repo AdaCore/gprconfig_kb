@@ -4170,8 +4170,9 @@ package body Buildgpr is
 
                Add_Option
                  (Get_Name_String
-                    (Project_Tree.Sources.Table (Source_Identity).Path.Name),
-                  To   => Compilation_Options,
+                    (Project_Tree.Sources.Table
+                       (Source_Identity).Path.Name),
+                  To      => Compilation_Options,
                   Display => True,
                   Simple_Name => not Verbose_Mode);
 
@@ -4495,18 +4496,6 @@ package body Buildgpr is
 
                else
                   Mapping_File_Path := No_Path;
-               end if;
-
-               --  Finally the specification of the object file
-
-               if Config.Object_Generated then
-                  Add_Option
-                    ("-o", To => Compilation_Options, Display => True);
-                  Add_Option
-                    (Name_Id
-                       (Project_Tree.Sources.Table (Source_Identity).Object),
-                     To      => Compilation_Options,
-                     Display => True);
                end if;
 
                --  Display the command invoked if not in quiet output mode
