@@ -12,7 +12,7 @@
     <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc --version</external>
-      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
+      <grep regexp="\(GCC\)( \(Sourcery[^)]+)?\s*(\S+)" group="2"></grep>
     </version>
     <languages>C</languages>
     <target>
