@@ -1,6 +1,3 @@
---  with "share/share.gpr";
---  ??? GA05-020: gprbuild does not know yet how to deal with unknown languages
-
 with "xmlada";
 
 project Gprbuild is
@@ -100,16 +97,31 @@ project Gprbuild is
       --  ??? We use project'Object_Dir here instead of GprBuild'Object_Dir
       --  for compatibility with GNAT Pro 6.0.2.
 
+      Common_Switches_VMS :=
+           (project'Object_Dir & "/gprbuild_dummies.obj",
+             project'Object_Dir & "/link.obj");
+
       case Build_Tool is
          when "gnatmake" =>
             -- Link manually the C part
 
             case Bld is
                when "production" | "debug" =>
-                  for Default_Switches ("Ada") use Common_Switches;
+                  case OS is
+                     when "avms" | "ivms" =>
+                         for Default_Switches ("Ada") use Common_Switches_VMS;
+                     when others =>
+                         for Default_Switches ("Ada") use Common_Switches;
+                  end case;
 
                when "coverage"             =>
-                  for Default_Switches ("Ada") use Common_Switches & ("-lgcov");
+                  case OS is
+                     when "avms" | "ivms" =>
+                         for Default_Switches ("Ada") use Common_Switches_VMS;
+                     when others =>
+                         for Default_Switches ("Ada") use
+                               Common_Switches & ("-lgcov");
+                  end case;
             end case;
 
          when "gprbuild" =>
@@ -154,12 +166,12 @@ project Gprbuild is
             for Body ("gprlib.build_shared_lib")
               use "gprlib-build_shared_lib-vms.adb";
             for Body ("mlib.tgt.specific")
-              use "mlib-tgt-vms-alpha.adb";
+              use "mlib-tgt-specific-vms-alpha.adb";
          when "ivms" =>
             for Body ("gprlib.build_shared_lib")
               use "gprlib-build_shared_lib-vms.adb";
             for Body ("mlib.tgt.specific")
-              use "mlib-tgt-vms-ia64.adb";
+              use "mlib-tgt-specific-vms-ia64.adb";
       end case;
    end Naming;
 
