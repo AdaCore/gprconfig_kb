@@ -2146,14 +2146,26 @@ package body GprConfig.Knowledge is
                   if not Contains (Map, Normalized) then
                      Append (Map, Normalized);
 
-                     Put_Verbose ("Will examine "
-                                  & Prefix & " " & Path (First .. Last - 1));
+                     --  Rerun normalize_pathname without resolve_links so that
+                     --  the displayed path looks familiar to the user (no ..,
+                     --  ./ or quotes, but still using the path as shown in
+                     --  $PATH)
+                     declare
+                        Final_Path : constant String :=
+                          Normalize_Pathname
+                            (Path (First .. Last - 1),
+                             Resolve_Links  => False,
+                             Case_Sensitive => False);
+                     begin
+                        Put_Verbose ("Will examine "
+                                     & Prefix & " " & Final_Path);
 
-                     if Prepend_To_List then
-                        Prepend (Dirs, Prefix & Path (First .. Last - 1));
-                     else
-                        Append (Dirs, Prefix & Path (First .. Last - 1));
-                     end if;
+                        if Prepend_To_List then
+                           Prepend (Dirs, Prefix & Final_Path);
+                        else
+                           Append (Dirs, Prefix & Final_Path);
+                        end if;
+                     end;
                   end if;
                end;
                First := Last + 1;
