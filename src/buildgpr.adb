@@ -10029,9 +10029,9 @@ package body Buildgpr is
          elsif Command_Line and then Arg = "-d" then
             Display_Compilation_Progress := True;
 
-         elsif Command_Line and then
-         Arg'Length = 3 and then
-         Arg (2) = 'd'
+         elsif Command_Line
+           and then Arg'Length = 3
+           and then Arg (2) = 'd'
          then
             if Arg (3) in '1' .. '9' or else
               Arg (3) in 'a' .. 'z' or else
@@ -10112,13 +10112,13 @@ package body Buildgpr is
                Output_File_Name_Expected := True;
             end if;
 
-         elsif Command_Line and then
-           (Arg = "-p" or else Arg = "--create-missing-dirs")
+         elsif Command_Line
+           and then (Arg = "-p" or else Arg = "--create-missing-dirs")
          then
             Setup_Projects := True;
 
-         elsif Command_Line and then
-         Arg'Length >= 2 and then Arg (2) = 'P'
+         elsif Command_Line
+           and then Arg'Length >= 2 and then Arg (2) = 'P'
          then
             if Project_File_Name /= null then
                Fail_Program ("cannot have several project files specified");

@@ -24,6 +24,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Command_Line;          use Ada.Command_Line;
+with Ada.Text_IO;
+
+with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.IO;                   use GNAT.IO;
+with GNAT.OS_Lib;               use GNAT.OS_Lib;
+
 with Csets;
 with Confgpr;     use Confgpr;
 with Gprexch;     use Gprexch;
@@ -43,13 +50,6 @@ with Sinput.P;
 with Snames;
 with Switch;      use Switch;
 with Table;
-
-with Ada.Command_Line; use Ada.Command_Line;
-with Ada.Text_IO;
-
-with GNAT.Directory_Operations; use GNAT.Directory_Operations;
-with GNAT.IO;                   use GNAT.IO;
-with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 package body Cleangpr is
 
@@ -656,24 +656,25 @@ package body Cleangpr is
 
                   Source_Id := Data.First_Source;
                   while Source_Id /= No_Source loop
-                     Source :=
-                       Project_Tree.Sources.Table (Source_Id);
+                     Source := Project_Tree.Sources.Table (Source_Id);
 
-                     if Source.Object /= No_File and then
-                       Is_Regular_File
+                     if Source.Object /= No_File
+                       and then Is_Regular_File
                          (Get_Name_String (Source.Object))
                      then
                         Delete (Obj_Dir, Get_Name_String (Source.Object));
                      end if;
 
-                     if Source.Dep_Name /= No_File and then
-                       Is_Regular_File (Get_Name_String (Source.Dep_Name))
+                     if Source.Dep_Name /= No_File
+                       and then Is_Regular_File
+                         (Get_Name_String (Source.Dep_Name))
                      then
                         Delete (Obj_Dir, Get_Name_String (Source.Dep_Name));
                      end if;
 
-                     if Source.Switches /= No_File and then
-                       Is_Regular_File (Get_Name_String (Source.Switches))
+                     if Source.Switches /= No_File
+                       and then Is_Regular_File
+                         (Get_Name_String (Source.Switches))
                      then
                         Delete (Obj_Dir, Get_Name_String (Source.Switches));
                      end if;
@@ -845,8 +846,8 @@ package body Cleangpr is
 
    procedure Delete (In_Directory : String; File : String) is
       Full_Name : String (1 .. In_Directory'Length + File'Length + 1);
-      Last : Natural := 0;
-      Success : Boolean;
+      Last      : Natural := 0;
+      Success   : Boolean;
 
    begin
       --  Indicate that at least one file is deleted or is to be deleted
@@ -1017,7 +1018,7 @@ package body Cleangpr is
          Look_For_Default_Project;
       end if;
 
-      --  Check that a project file was specified and get the configuration.
+      --  Check that a project file was specified and get the configuration
 
       if Project_File_Name = null then
          Display_Copyright;
@@ -1489,4 +1490,5 @@ package body Cleangpr is
          New_Line;
       end if;
    end Usage;
+
 end Cleangpr;
