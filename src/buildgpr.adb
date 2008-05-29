@@ -4168,13 +4168,30 @@ package body Buildgpr is
                   end loop;
                end if;
 
-               Add_Option
-                 (Get_Name_String
+               declare
+                  Source_Path : String_Access;
+
+               begin
+                  Get_Name_String
                     (Project_Tree.Sources.Table
-                       (Source_Identity).Path.Name),
-                  To      => Compilation_Options,
-                  Display => True,
-                  Simple_Name => not Verbose_Mode);
+                       (Source_Identity).Path.Name);
+
+                  case Config.Path_Syntax is
+                     when Canonical =>
+                        Source_Path :=
+                          new String'(Name_Buffer (1 .. Name_Len));
+
+                     when Host =>
+                        Source_Path :=
+                          To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
+                  end case;
+
+                  Add_Option
+                    (Source_Path,
+                     To          => Compilation_Options,
+                     Display     => True,
+                     Simple_Name => not Verbose_Mode);
+               end;
 
                --  Set the environment or additional switches for visibility
                --  on source directories.
@@ -4265,11 +4282,30 @@ package body Buildgpr is
                                  Name_Len := Name_Len - 1;
                               end loop;
 
-                              Add_Option
-                                (Get_Name_String (Nam.Name) &
-                                 Name_Buffer (1 .. Name_Len),
-                                 To => Include_Options,
-                                 Display => Opt.Verbose_Mode);
+                              case Config.Path_Syntax is
+                                 when Canonical =>
+                                    Add_Option
+                                      (Get_Name_String (Nam.Name) &
+                                       Name_Buffer (1 .. Name_Len),
+                                       To      => Include_Options,
+                                       Display => Opt.Verbose_Mode);
+
+                                 when Host =>
+                                    declare
+                                       Host_Path : constant String_Access :=
+                                                     To_Host_Dir_Spec
+                                                       (Name_Buffer
+                                                          (1 .. Name_Len),
+                                                        False);
+
+                                    begin
+                                       Add_Option
+                                         (Get_Name_String (Nam.Name) &
+                                          Host_Path.all,
+                                          To      => Include_Options,
+                                          Display => Opt.Verbose_Mode);
+                                    end;
+                              end case;
                            end loop;
                         end;
 
