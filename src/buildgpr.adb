@@ -7911,6 +7911,13 @@ package body Buildgpr is
                Start  := 1;
                Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
 
+               if Finish = 0 then
+                  Finish :=
+                    Index
+                      (Name_Buffer (1 .. Name_Len),
+                       (1 => ':', 2 => ASCII.HT));
+               end if;
+
                if Finish /= 0 then
                   Last_Obj := Finish;
                   loop
@@ -8040,7 +8047,7 @@ package body Buildgpr is
                               Src_Name : constant String :=
                                            Normalize_Pathname
                                              (Name           =>
-                                                  Line (Start .. Finish),
+                                                Line (Start .. Finish),
                                               Resolve_Links  => False,
                                               Case_Sensitive => False);
                               Src_TS   : Time_Stamp_Type;
