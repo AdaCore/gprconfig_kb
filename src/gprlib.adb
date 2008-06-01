@@ -53,6 +53,10 @@ with Types;            use Types;
 
 procedure Gprlib is
 
+   Shared_Libgnat_Separator : Character := '-';
+   --  Character between "-lgnat" or "-lgnarl" and the toolchain version.
+   --  It is not a constant because it is changed to '_' on VMS.
+
    Maximum_Size : Integer;
    pragma Import (C, Maximum_Size, "__gnat_link_max");
    --  Maximum number of bytes to put in an invocation of the
@@ -757,6 +761,7 @@ begin
 
    if Hostparm.OpenVMS then
       Preserve := None;
+      Shared_Libgnat_Separator := '_';
    end if;
 
    if Argument_Count /= 1 then
@@ -984,9 +989,29 @@ begin
                   Get_Line (IO_File, Line, Last);
 
                   if Last > 5 and then Line (1 .. 5) = "GNAT " then
-                     Libgnat := new String'("-lgnat-" & Line (6 .. Last));
-                     Libgnarl := new String'("-lgnarl-" & Line (6 .. Last));
                      GNAT_Version := new String'(Line (6 .. Last));
+
+                     --  On VMS, replace all '.' with '_', to avoid names with
+                     --  several dots.
+
+                     if Hostparm.OpenVMS then
+                        for J in 6 .. Last loop
+                           if Line (J) = '.' then
+                              Line (J) := '_';
+                           end if;
+                        end loop;
+                     end if;
+
+                     Libgnat :=
+                       new String'
+                         ("-lgnat" &
+                          Shared_Libgnat_Separator &
+                          Line (6 .. Last));
+                     Libgnarl :=
+                       new String'
+                         ("-lgnarl" &
+                          Shared_Libgnat_Separator &
+                          Line (6 .. Last));
                   end if;
 
                else
