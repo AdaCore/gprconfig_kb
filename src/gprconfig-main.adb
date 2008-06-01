@@ -37,6 +37,7 @@ with GNAT.Strings;
 with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
 with GPR_Version;
+with Hostparm;
 with Namet;                     use Namet;
 with Switch;
 
@@ -983,7 +984,7 @@ begin
    Get_Targets_Set
      (Base, To_String (Selected_Target), Selected_Targets_Set);
 
-   if Batch then
+   if Batch or Hostparm.OpenVMS then
       Complete_Command_Line_Compilers
         (Base,
          Selected_Targets_Set,
