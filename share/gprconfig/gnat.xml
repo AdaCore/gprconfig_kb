@@ -82,6 +82,7 @@
    &filter_gnat;
    <compilers>
      <compiler version="3.16" />
+     <compiler version="5.00" />
    </compilers>
    <config>
    package Compiler is
