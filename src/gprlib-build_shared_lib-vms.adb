@@ -25,6 +25,7 @@
 ------------------------------------------------------------------------------
 
 with MLib.Tgt; use MLib.Tgt;
+with MLib.Utl; use MLib.Utl;
 
 separate (Gprlib)
 procedure Build_Shared_Lib is
@@ -32,7 +33,20 @@ procedure Build_Shared_Lib is
    Options : Argument_List (1 .. Options_Table.Last);
 
 begin
-   --  Comments here ???
+   --  If runtime library directory is indicated, call Specify_Adalib_Dir so
+   --  that function MLib.Libgnat returns it. If we don't know what is the
+   --  runtime library directory, set it to the current directory so that
+   --  MLib.Libgnat does not fail.
+
+   if Runtime_Library_Dir /= null then
+      Specify_Adalib_Dir (Runtime_Library_Dir.all);
+
+   else
+      Specify_Adalib_Dir (".");
+   end if;
+
+   --  On VMS, use Build_Dynamic_Library to build the library as there is
+   --  specific handling of symbols.
 
    for J in Ofiles'Range loop
       Ofiles (J) := Object_Files.Table (J);
@@ -45,7 +59,7 @@ begin
    Build_Dynamic_Library
      (Ofiles       => Ofiles,
       Options      => Options,
-      Interfaces   => No_Argument_List,
+      Interfaces   => MLib.No_Argument_List,
       Lib_Filename => Library_Name.all,
       Lib_Dir      => Library_Directory.all,
       Symbol_Data  => Prj.No_Symbols,
