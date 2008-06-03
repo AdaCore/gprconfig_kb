@@ -108,7 +108,7 @@ package body Buildgpr is
 
    Display_Paths : Boolean := False;
    --  Set by switch --display_paths: config project path and user project path
-   --  will be displayed af ter all command lineswitches have been scanned.
+   --  will be displayed after all command lines witches have been scanned.
 
    Output_File_Name           : String_Access := null;
    --  The name given after a switch -o
@@ -6441,7 +6441,11 @@ package body Buildgpr is
                                              (Main_Project).Decl.Packages,
                                            Project_Tree);
 
-            Switches : Variable_Value;
+            Switches         : Variable_Value;
+
+            Global_Compilation_Array    : Array_Element_Id;
+            Global_Compilation_Elem     : Array_Element;
+            Global_Compilation_Switches : Variable_Value;
 
             List             : String_List_Id;
             Element          : String_Element;
@@ -6550,7 +6554,76 @@ package body Buildgpr is
 
                      List := Element.Next;
                   end loop;
+               end if;
 
+               --  If either Switches is declare or Default_Switches is not
+               --  declared, check attribute Global_Compilation_Switches.
+
+               if Builder_Switches_Lang = No_Name then
+                  Global_Compilation_Array := Value_Of
+                    (Name      => Name_Global_Compilation_Switches,
+                     In_Arrays => Project_Tree.Packages.Table
+                       (Builder_Package).Decl.Arrays,
+                     In_Tree   => Project_Tree);
+
+                  while Global_Compilation_Array /= No_Array_Element loop
+                     Global_Compilation_Elem :=
+                       Project_Tree.Array_Elements.Table
+                         (Global_Compilation_Array);
+
+                     Global_Compilation_Switches :=
+                       Global_Compilation_Elem.Value;
+
+                     if Global_Compilation_Switches /= Nil_Variable_Value
+                       and then not Global_Compilation_Switches.Default
+                     then
+                        --  We have found an attribute
+                        --  Global_Compilation_Switches for a language: put the
+                        --  switches in the appropriate table.
+
+                        Current_Processor := Compiler;
+
+                        Current_Builder_Comp_Option_Table :=
+                          Builder_Compiling_Options_HTable.Get (Lang);
+
+                        if Current_Builder_Comp_Option_Table =
+                          No_Builder_Comp_Option_Table
+                        then
+                           Current_Builder_Comp_Option_Table :=
+                             new Builder_Compiling_Options.Instance;
+                           Builder_Compiling_Options_HTable.Set
+                             (Lang, Current_Builder_Comp_Option_Table);
+                           Builder_Compiling_Options.Init
+                             (Current_Builder_Comp_Option_Table.all);
+                        end if;
+
+                        declare
+                           List : String_List_Id :=
+                                    Global_Compilation_Switches.Values;
+                           Elem : String_Element;
+
+                        begin
+                           while List /= Nil_String loop
+                              Elem :=
+                                Project_Tree.String_Elements.Table (List);
+
+                              if Elem.Value /= No_Name then
+                                 Add_Option
+                                   (Get_Name_String (Elem.Value),
+                                    Command_Line => False);
+                              end if;
+
+                              List := Elem.Next;
+                           end loop;
+                        end;
+
+                        Current_Processor := None;
+                     end if;
+
+                     Global_Compilation_Array := Global_Compilation_Elem.Next;
+                  end loop;
+
+               else
                   --  Reset the Builder Switches language
 
                   Builder_Switches_Lang := No_Name;
