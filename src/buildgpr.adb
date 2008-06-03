@@ -8261,7 +8261,7 @@ package body Buildgpr is
                     Text,
                     Ignore_ED     => False,
                     Err           => True,
-                    Read_Lines    => "PD");
+                    Read_Lines    => "PDW");
                Free (Text);
 
                if The_ALI = ALI.No_ALI_Id then
@@ -8281,6 +8281,79 @@ package body Buildgpr is
 
                   return True;
                end if;
+
+               --  Check the all dependent source file names do correspond to
+               --  the mapping of units to file names.
+
+               declare
+                  WR        : ALI.With_Record;
+                  Unit_Name : Name_Id;
+
+                  Src_Id    : Source_Id;
+                  Source    : Source_Data;
+
+                  Current_File_Name    : File_Name_Type;
+                  Other_Part_File_Name : File_Name_Type;
+
+               begin
+                  U_Chk :
+                  for U in ALI.ALIs.Table (The_ALI).First_Unit ..
+                           ALI.ALIs.Table (The_ALI).Last_Unit
+                  loop
+                     W_Check :
+                     for W in ALI.Units.Table (U).First_With
+                          ..
+                        ALI.Units.Table (U).Last_With
+                     loop
+                        WR := ALI.Withs.Table (W);
+
+                        if WR.Sfile /= No_File then
+                           Get_Name_String (WR.Uname);
+                           Name_Len := Name_Len - 2;
+                           Unit_Name := Name_Find;
+
+                           Src_Id := Project_Tree.First_Source;
+                           while Src_Id /= No_Source loop
+                              Source := Project_Tree.Sources.Table (Src_Id);
+
+                              if Source.Unit = Unit_Name then
+                                 Current_File_Name := Source.File;
+
+                                 if Source.Other_Part = No_Source then
+                                    Other_Part_File_Name := No_File;
+
+                                 else
+                                    Other_Part_File_Name :=
+                                      Project_Tree.Sources.Table
+                                        (Source.Other_Part).File;
+                                 end if;
+
+                                 if Current_File_Name /= WR.Sfile
+                                   and then Other_Part_File_Name /= WR.Sfile
+                                 then
+                                    if Verbose_Mode then
+                                       Write_Str ("   -> """);
+                                       Write_Str (Get_Name_String (Unit_Name));
+                                       Write_Str
+                                         (""" sources do not include """);
+                                       Write_Str (Get_Name_String (WR.Sfile));
+                                       Write_Char ('"');
+                                       Write_Eol;
+                                    end if;
+
+                                    return True;
+                                 end if;
+
+                                 exit;
+                              end if;
+
+                              Src_Id := Source.Next_In_Sources;
+                           end loop;
+
+                        end if;
+                     end loop W_Check;
+                  end loop U_Chk;
+               end;
 
                --  We need to check that the ALI file is in the correct object
                --  directory. If it is in the object directory of a project
