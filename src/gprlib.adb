@@ -295,7 +295,8 @@ procedure Gprlib is
 
    Library_Dependency_Directory : String_Access := null;
 
-   Library_Version : String_Access := new String'("");
+   Library_Version      : String_Access := new String'("");
+   Library_Version_Path : String_Access := new String'("");
 
    Symbolic_Link_Supported  : Boolean := False;
 

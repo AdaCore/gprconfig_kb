@@ -194,8 +194,12 @@ begin
          end if;
       end if;
 
-      if not Is_Absolute_Path (Library_Version.all) then
-         Library_Version :=
+
+      if Is_Absolute_Path (Library_Version.all) then
+         Library_Version_Path := Library_Version;
+
+      else
+         Library_Version_Path :=
            new String'
              (Library_Directory.all &
               Directory_Separator &
@@ -204,7 +208,7 @@ begin
 
       --  Now that the table has been filled, call Build
 
-      Build (Library_Version.all);
+      Build (Library_Version_Path.all);
 
       --  Create symbolic link, if appropriate
 
