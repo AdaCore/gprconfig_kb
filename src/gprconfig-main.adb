@@ -416,6 +416,7 @@ procedure GprConfig.Main is
                   "Error: no matching compiler found for --config="
                   & To_String (Element (C), As_Config_Arg => True));
             end if;
+            Ada.Command_Line.Set_Exit_Status (1);
             Found_All := False;
          end if;
          Next (C);
