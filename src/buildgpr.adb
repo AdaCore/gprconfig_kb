@@ -1100,6 +1100,16 @@ package body Buildgpr is
       if Options = Nil_Variable_Value then
          Options :=
            Value_Of
+             (Name                    => All_Other_Names,
+              Attribute_Or_Array_Name => Name_Switches,
+              In_Package              => Package_Compiler,
+              In_Tree                 => Project_Tree,
+              Force_Lower_Case_Index  => True);
+      end if;
+
+      if Options = Nil_Variable_Value then
+         Options :=
+           Value_Of
              (Name                    => Src_Data.Language_Name,
               Attribute_Or_Array_Name => Name_Default_Switches,
               In_Package              => Package_Compiler,
@@ -6481,79 +6491,102 @@ package body Buildgpr is
                end if;
             end loop;
 
-            if Name /= No_Name and then Builder_Package /= No_Package then
-               --  Get the switches for the single main or the language of the
-               --  mains.
+            if  Builder_Package /= No_Package then
 
-               Switches := Value_Of
-                 (Name                    => Name,
-                  Attribute_Or_Array_Name => Name_Switches,
-                  In_Package              => Builder_Package,
-                  In_Tree                 => Project_Tree);
+               if Name = No_Name then
+                  Switches := Value_Of
+                    (Name                    => All_Other_Names,
+                     Attribute_Or_Array_Name => Name_Switches,
+                     In_Package              => Builder_Package,
+                     In_Tree                 => Project_Tree);
+               else
 
-               if Name /= Lang then
-                  --  If specific switches for the main have been found,
-                  --  the switches that are not recognized by gprbuild will be
-                  --  global switches for the language of the main.
+                  --  Get the switches for the single main or the language of
+                  --  the mains.
 
-                  if Switches /= Nil_Variable_Value and then
-                    not Switches.Default
+                  Switches := Value_Of
+                    (Name                    => Name,
+                     Attribute_Or_Array_Name => Name_Switches,
+                     In_Package              => Builder_Package,
+                     In_Tree                 => Project_Tree);
+
+                  if Name /= Lang then
+                     --  If specific switches for the main have been found, the
+                     --  switches that are not recognized by gprbuild will be
+                     --  global switches for the language of the main.
+
+                     if Switches /= Nil_Variable_Value and then
+                       not Switches.Default
+                     then
+                        Builder_Switches_Lang := Lang;
+
+                     else
+                        --  If no specific switches for the main are declared,
+                        --  check for Switches (<language>).
+
+                        Switches := Value_Of
+                          (Name                    => Lang,
+                           Attribute_Or_Array_Name => Name_Switches,
+                           In_Package              => Builder_Package,
+                           In_Tree                 => Project_Tree,
+                           Force_Lower_Case_Index  => True);
+                     end if;
+                  end if;
+
+                  if Switches = Nil_Variable_Value
+                    or else Switches.Default
                   then
-                     Builder_Switches_Lang := Lang;
-
-                  else
-                     --  If no specific switches for the main are declared,
-                     --  check for Switches (<language>).
-
                      Switches := Value_Of
-                       (Name                    => Lang,
+                       (Name                    => All_Other_Names,
                         Attribute_Or_Array_Name => Name_Switches,
                         In_Package              => Builder_Package,
                         In_Tree                 => Project_Tree,
                         Force_Lower_Case_Index  => True);
                   end if;
-               end if;
 
-               --  For backward compatibility with gnatmake, if no Switches
-               --  are declared, check for Default_Switches (<language>).
+                  --  For backward compatibility with gnatmake, if no Switches
+                  --  are declared, check for Default_Switches (<language>).
 
-               if Switches = Nil_Variable_Value or else Switches.Default then
-                  Switches := Value_Of
-                    (Name                    => Lang,
-                     Attribute_Or_Array_Name => Name_Default_Switches,
-                     In_Package              => Builder_Package,
-                     In_Tree                 => Project_Tree);
+                  if Switches = Nil_Variable_Value
+                    or else Switches.Default
+                  then
+                     Switches := Value_Of
+                       (Name                    => Lang,
+                        Attribute_Or_Array_Name => Name_Default_Switches,
+                        In_Package              => Builder_Package,
+                        In_Tree                 => Project_Tree);
 
-                  --  Set the Builder Switches language, so that switches that
-                  --  are not recognized by gprbuild are passed to the compiler
-                  --  of the language.
+                     --  Set the Builder Switches language, so that switches
+                     --  that are not recognized by gprbuild are passed to the
+                     --  compiler of the language.
+
+                     if Switches /= Nil_Variable_Value and then
+                       (not Switches.Default)
+                     then
+                        Builder_Switches_Lang := Lang;
+                     end if;
+                  end if;
+
+                  --  If switches have been found, scan them
 
                   if Switches /= Nil_Variable_Value and then
                     (not Switches.Default)
                   then
-                     Builder_Switches_Lang := Lang;
+                     List := Switches.Values;
+
+                     while List /= Nil_String loop
+                        Element := Project_Tree.String_Elements.Table (List);
+                        Get_Name_String (Element.Value);
+
+                        if Name_Len /= 0 then
+                           Scan_Arg
+                             (Name_Buffer (1 .. Name_Len),
+                              Command_Line => False);
+                        end if;
+
+                        List := Element.Next;
+                     end loop;
                   end if;
-               end if;
-
-               --  If switches have been found, scan them
-
-               if Switches /= Nil_Variable_Value and then
-                 (not Switches.Default)
-               then
-                  List := Switches.Values;
-
-                  while List /= Nil_String loop
-                     Element := Project_Tree.String_Elements.Table (List);
-                     Get_Name_String (Element.Value);
-
-                     if Name_Len /= 0 then
-                        Scan_Arg
-                          (Name_Buffer (1 .. Name_Len),
-                           Command_Line => False);
-                     end if;
-
-                     List := Element.Next;
-                  end loop;
                end if;
 
                --  If either Switches is declare or Default_Switches is not
@@ -7608,6 +7641,16 @@ package body Buildgpr is
                         Switches :=
                           Prj.Util.Value_Of
                             (Index     => Main_Source.Language_Name,
+                             Src_Index => 0,
+                             In_Array  => Switches_Array,
+                             In_Tree   => Project_Tree,
+                             Force_Lower_Case_Index => True);
+                     end if;
+
+                     if Switches = Nil_Variable_Value then
+                        Switches :=
+                          Prj.Util.Value_Of
+                            (Index     => All_Other_Names,
                              Src_Index => 0,
                              In_Array  => Switches_Array,
                              In_Tree   => Project_Tree,
@@ -9257,6 +9300,16 @@ package body Buildgpr is
                                     Switches :=
                                       Prj.Util.Value_Of
                                         (Index     => B_Data.Language_Name,
+                                         Src_Index => 0,
+                                         In_Array  => Switches_Array,
+                                         In_Tree   => Project_Tree,
+                                         Force_Lower_Case_Index => True);
+                                 end if;
+
+                                 if Switches = Nil_Variable_Value then
+                                    Switches :=
+                                      Prj.Util.Value_Of
+                                        (Index     => All_Other_Names,
                                          Src_Index => 0,
                                          In_Array  => Switches_Array,
                                          In_Tree   => Project_Tree,
