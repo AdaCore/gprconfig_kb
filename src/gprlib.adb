@@ -618,7 +618,7 @@ procedure Gprlib is
                         Success := Status and Actual_Len = Len + 3;
 
                         if Success then
-                           Set_Read_Only
+                           Set_Non_Writable
                              (Name_Buffer (1 .. Name_Len - 1));
                         end if;
                      end if;
