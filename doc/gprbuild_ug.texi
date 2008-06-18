@@ -1266,6 +1266,12 @@ and the project file name is optional. Specifying a project file name (with
 suffix @file{.gpr}) may be used in place of option @option{-P}. Exactly one main
 project file can be specified.
 
+@item @option{-r} (Recursive)
+
+This switch has an effect only when @option{-c} or @option{-u} is also
+specified and there are no mains: it means that all sources of all projects
+need to be compiled or recompiled.
+
 @item @option{-u} (Unique compilation, only compile the given files)
 
 If there are sources specified on the command line, only compile these
