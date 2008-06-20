@@ -1577,9 +1577,9 @@ its compilation will be invalidated.
 @noindent
 The post-compilation phase has two parts: library building and program binding.
 
-If there are libraries that need to be built or rebuilt, @value{gprbuild} will
+If there are libraries that need to be built or rebuilt, @emph{gprbuild} will
 call the library builder, specified by attribute @code{Library_Builder}.
-This is generally the tool @value{gprlib}, provided with GPRbuild. If gprbuild
+This is generally the tool @emph{gprlib}, provided with GPRbuild. If gprbuild
 can determine that a library is already up to date, then the library builder
 will not be called.
 
