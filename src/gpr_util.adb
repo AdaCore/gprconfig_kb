@@ -26,6 +26,7 @@
 
 with Debug;   use Debug;
 with Errout;  use Errout;
+with Errutil;
 with Makeutl; use Makeutl;
 with Opt;     use Opt;
 with Osint;   use Osint;
@@ -64,8 +65,7 @@ package body Gpr_Util is
    begin
       if Flush_Messages then
          if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
-            Errout.Finalize (Last_Call => True);
-            Errout.Output_Messages;
+            Errutil.Finalize;
          end if;
       end if;
 

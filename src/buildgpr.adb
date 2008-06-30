@@ -880,8 +880,14 @@ package body Buildgpr is
    procedure Record_Failure (Source : Source_Id);
    --  Record that compilation of a source failed
 
-   procedure Scan_Arg (Arg : String; Command_Line : Boolean);
-   --  Process one command line argument
+   procedure Scan_Arg
+     (Arg          : String;
+      Command_Line : Boolean;
+      Success      : out Boolean);
+   --  Process one gprbuild argument Arg. Command_Line is True if the argument
+   --  is specified on the command line. Optional parameter Additional gives
+   --  additional information about the origin of the argument if it is found
+   --  illegal.
 
    procedure Recursive_Import (Project : Project_Id);
    --  Add to table Imports the projects imported by Project, recursively
@@ -6374,9 +6380,9 @@ package body Buildgpr is
          end if;
 
       elsif Mains.Number_Of_Mains = 0 and then
-        (not All_Phases) and then
+        not All_Phases and then
         Compile_Only and then
-        (not Bind_Only)
+        not Bind_Only
       then
          Queue.Insert_Project_Sources
            (Main_Project, All_Projects => Recursive, Unit_Based => True);
@@ -6457,12 +6463,17 @@ package body Buildgpr is
             Global_Compilation_Elem     : Array_Element;
             Global_Compilation_Switches : Variable_Value;
 
+            Default_Switches_Array : Array_Element_Id;
+
             List             : String_List_Id;
             Element          : String_Element;
 
             Name             : Name_Id := No_Name;
             Lang             : Name_Id := No_Name;
             Source           : Source_Data;
+
+            Success          : Boolean := False;
+
          begin
             Mains.Reset;
 
@@ -6491,14 +6502,37 @@ package body Buildgpr is
                end if;
             end loop;
 
-            if  Builder_Package /= No_Package then
+            if Builder_Package /= No_Package then
+               Global_Compilation_Array := Value_Of
+                 (Name      => Name_Global_Compilation_Switches,
+                  In_Arrays => Project_Tree.Packages.Table
+                    (Builder_Package).Decl.Arrays,
+                  In_Tree   => Project_Tree);
 
-               if Name = No_Name then
+               Default_Switches_Array := Value_Of
+                 (Name      => Name_Default_Switches,
+                  In_Arrays => Project_Tree.Packages.Table
+                    (Builder_Package).Decl.Arrays,
+                  In_Tree   => Project_Tree);
+
+               if Global_Compilation_Array /= No_Array_Element and then
+                  Default_Switches_Array /= No_Array_Element
+               then
+                  Error_Msg
+                    ("Default_Switches forbidden in presence of " &
+                     "Global_Compilation_Switches. Use Switches instead.",
+                     Project_Tree.Array_Elements.Table
+                       (Default_Switches_Array).Value.Location);
+                  Fail_Program
+                    ("*** illegal combination of Builder attributes");
+
+               elsif Name = No_Name then
                   Switches := Value_Of
                     (Name                    => All_Other_Names,
                      Attribute_Or_Array_Name => Name_Switches,
                      In_Package              => Builder_Package,
                      In_Tree                 => Project_Tree);
+
                else
 
                   --  Get the switches for the single main or the language of
@@ -6518,7 +6552,9 @@ package body Buildgpr is
                      if Switches /= Nil_Variable_Value and then
                        not Switches.Default
                      then
-                        Builder_Switches_Lang := Lang;
+                        if Global_Compilation_Array = No_Array_Element then
+                           Builder_Switches_Lang := Lang;
+                        end if;
 
                      else
                         --  If no specific switches for the main are declared,
@@ -6581,7 +6617,20 @@ package body Buildgpr is
                         if Name_Len /= 0 then
                            Scan_Arg
                              (Name_Buffer (1 .. Name_Len),
-                              Command_Line => False);
+                              Command_Line => False,
+                              Success      => Success);
+                        end if;
+
+                        if not Success then
+                           Error_Msg
+                             ('"' & Name_Buffer (1 .. Name_Len) &
+                              """ is not a Builder switch. Consider moving " &
+                              "it to Global_Compilation_Switches.",
+                              Element.Location);
+                           Fail_Program
+                             ("*** illegal switch """,
+                              Name_Buffer (1 .. Name_Len),
+                              """");
                         end if;
 
                         List := Element.Next;
@@ -6589,16 +6638,11 @@ package body Buildgpr is
                   end if;
                end if;
 
-               --  If either Switches is declare or Default_Switches is not
-               --  declared, check attribute Global_Compilation_Switches.
+               --  If either Switches (<main>) is declared or Default_Switches
+               --  is not declared, check attribute
+               --  Global_Compilation_Switches.
 
                if Builder_Switches_Lang = No_Name then
-                  Global_Compilation_Array := Value_Of
-                    (Name      => Name_Global_Compilation_Switches,
-                     In_Arrays => Project_Tree.Packages.Table
-                       (Builder_Package).Decl.Arrays,
-                     In_Tree   => Project_Tree);
-
                   while Global_Compilation_Array /= No_Array_Element loop
                      Global_Compilation_Elem :=
                        Project_Tree.Array_Elements.Table
@@ -6834,9 +6878,17 @@ package body Buildgpr is
 
       Autoconfiguration := True;
 
-      Scan_Args : for Next_Arg in 1 .. Argument_Count loop
-         Scan_Arg (Argument (Next_Arg), Command_Line => True);
-      end loop Scan_Args;
+      declare
+         Do_Not_Care : Boolean;
+
+      begin
+         Scan_Args : for Next_Arg in 1 .. Argument_Count loop
+            Scan_Arg
+              (Argument (Next_Arg),
+               Command_Line => True,
+               Success      => Do_Not_Care);
+         end loop Scan_Args;
+      end;
 
       Current_Processor := None;
 
@@ -9969,10 +10021,16 @@ package body Buildgpr is
    -- Scan_Arg --
    --------------
 
-   procedure Scan_Arg (Arg : String; Command_Line : Boolean) is
+   procedure Scan_Arg
+     (Arg          : String;
+      Command_Line : Boolean;
+      Success      : out Boolean)
+   is
       Processed : Boolean := True;
    begin
       pragma Assert (Arg'First = 1);
+
+      Success := True;
 
       if Arg'Length = 0 then
          return;
@@ -10454,7 +10512,7 @@ package body Buildgpr is
       if not Processed then
          if Command_Line then
             Finish_Program
-              (True, "illegal option """, Arg, """");
+              (True, "illegal option """, Arg, """ on the command line");
 
          else
             --  If we have a switch and there is a Builder Switches language
@@ -10480,12 +10538,7 @@ package body Buildgpr is
                Current_Processor := None;
 
             else
-               Finish_Program
-                 (True,
-                  "illegal option """,
-                  Arg,
-                  """ in package Builder of project file """ &
-                  Project_File_Name.all & '"');
+               Success := False;
             end if;
          end if;
       end if;
