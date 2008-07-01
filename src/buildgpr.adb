@@ -6463,7 +6463,7 @@ package body Buildgpr is
             Global_Compilation_Elem     : Array_Element;
             Global_Compilation_Switches : Variable_Value;
 
-            Default_Switches_Array : Array_Element_Id;
+            Default_Switches_Array : Array_Id;
 
             List             : String_List_Id;
             Element          : String_Element;
@@ -6509,20 +6509,26 @@ package body Buildgpr is
                     (Builder_Package).Decl.Arrays,
                   In_Tree   => Project_Tree);
 
-               Default_Switches_Array := Value_Of
-                 (Name      => Name_Default_Switches,
-                  In_Arrays => Project_Tree.Packages.Table
-                    (Builder_Package).Decl.Arrays,
-                  In_Tree   => Project_Tree);
+               Default_Switches_Array :=
+                 Project_Tree.Packages.Table
+                   (Builder_Package).Decl.Arrays;
+
+               while Default_Switches_Array /= No_Array and then
+               Project_Tree.Arrays.Table (Default_Switches_Array).Name /=
+                 Name_Default_Switches
+               loop
+                  Default_Switches_Array :=
+                    Project_Tree.Arrays.Table (Default_Switches_Array).Next;
+               end loop;
 
                if Global_Compilation_Array /= No_Array_Element and then
-                  Default_Switches_Array /= No_Array_Element
+                  Default_Switches_Array /= No_Array
                then
                   Error_Msg
                     ("Default_Switches forbidden in presence of " &
                      "Global_Compilation_Switches. Use Switches instead.",
-                     Project_Tree.Array_Elements.Table
-                       (Default_Switches_Array).Value.Location);
+                     Project_Tree.Arrays.Table
+                       (Default_Switches_Array).Location);
                   Fail_Program
                     ("*** illegal combination of Builder attributes");
 
@@ -6629,7 +6635,7 @@ package body Buildgpr is
                               Element.Location);
                            Fail_Program
                              ("*** illegal switch """,
-                              Name_Buffer (1 .. Name_Len),
+                              Get_Name_String (Element.Value),
                               """");
                         end if;
 
