@@ -1,20 +1,18 @@
 Preliminary note for Windows users
 ==================================
 
-The build instructions for GPRBUILD may have a slight Unix flavor but they
-can be used on Winodws platforms with a full
-CYGWIN installation. The latter makes it simpler to build gprbuild but
-is not required to use it.
+The build instructions for gprbuild may have a slight UNIX flavor but they
+can be used on Windows platforms with a full CYGWIN installation. The latter
+makes it simpler to build gprbuild but is not required to use it.
 
 Using alternate GNAT Sources
 ============================
 
-gprbuild uses some sources of the GNAT package. They are found by
-default in the gnat dir. If one want to use other GNAT sources, the
-recommended procedure is to create a link called gnat_src and call the
-Makefile target copy_gnat_src
-   $ ln -s path_to_gnat_sources gnat_src
-   $ make copy_gnat_src -f Makefile.in
+Gprbuild uses some sources of the GNAT package. They are found by default in
+the gnat subdirectory. In order to use GNAT sources from another location,
+create a link called gnat_src and call the Makefile target copy_gnat_src:
+   ln -s <path_to_gnat_sources> gnat_src
+   make copy_gnat_src -f Makefile.in
 
 Configuring
 ===========
@@ -23,12 +21,13 @@ You must install XML/Ada before compiling gprconfig.
 
 Configuring is usually done simply as:
   ./configure
-2 parameters may be worth specifying: --prefix for specifying the
+
+Two parameters may be worth specifying: --prefix for specifying the
 installation root and --build for specifying the build host. In particular,
 on Windows, when using cygwin to build, it is necessary to configure with
 --build=pentium-mingw32msv if one wants to use mingw based compilers
 such as GNAT Pro or GNAT GPL. Here is an example of such a command:
-./configure --build=pentium-mingw32msv  --prefix=$HOME/local
+  ./configure --build=pentium-mingw32msv --prefix=$HOME/local
 
 Building and Installing
 =======================
@@ -40,7 +39,7 @@ When compiling, you can choose whether you want to link statically with
 XML/Ada (the default), or dynamically. To compile dynamically, you should
 run
    make LIBRARY_TYPE=relocatable all
-instead
+instead of the above.
 
 Installation is done with
   make install
@@ -50,13 +49,14 @@ You can bootstrap grpbuild (compile it with itself) with the following command:
 
 Doc & Examples
 ==============
-The documention is provided in various formats in the doc subdir.
+
+The documention is provided in various formats in the doc subdirectory.
 It refers to concrete examples that are to be found in the
-examples directory.  Each example can be built easily using the
+examples subdirectory. Each example can be built easily using the
 simple attached Makefile:
    make all    # build the example
    make run    # run the executable(s)
    make clean  # cleanup
 
-all the examples can be built/run/cleaned using the same targets and
-the toplevel examples Makefile
+All the examples can be built/run/cleaned using the same targets and
+the toplevel examples Makefile.
