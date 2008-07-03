@@ -81,6 +81,7 @@ procedure Gprbind is
    Gcc_Version_String : constant String := "gcc version ";
 
    Shared_Libgcc : constant String := "-shared-libgcc";
+   Static_Libgcc : constant String := "-static-libgcc";
 
    IO_File : File_Type;
    --  The file to get the inputs and to put the results of the binding
@@ -758,6 +759,10 @@ begin
                elsif Line (1 .. Last) = "-static" then
                   Static_Libs := True;
                   Put_Line (IO_File, Line (1 .. Last));
+
+                  if GCC_Version >= '3' then
+                     Put_Line (IO_File, Static_Libgcc);
+                  end if;
 
                elsif Line (1 .. Last) = "-shared" then
                   Static_Libs := False;
