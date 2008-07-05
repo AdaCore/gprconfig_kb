@@ -7882,6 +7882,66 @@ package body Buildgpr is
                              (Src_Data.Project).Externally_Built;
       --  True if the project of the source is externally built
 
+      function Check_Unit
+        (Uname : Name_Id;
+         Sfile : File_Name_Type)
+         return Boolean;
+      --  Check that file name Sfile is one of the source of unit Uname.
+      --  Returns True if the unit is in one of the project file, but the file
+      --  name is not one of its source. Returns False otherwise.
+
+      function Check_Unit
+        (Uname : Name_Id;
+         Sfile : File_Name_Type)
+         return Boolean
+      is
+         Src_Id : Source_Id;
+         Source : Source_Data;
+
+         Current_File_Name : File_Name_Type;
+         Other_Part_File_Name     : File_Name_Type;
+      begin
+         Src_Id := Project_Tree.First_Source;
+         while Src_Id /= No_Source loop
+            Source := Project_Tree.Sources.Table (Src_Id);
+
+            if Source.Unit = Uname then
+               Current_File_Name := Source.File;
+
+               if Source.Other_Part = No_Source then
+                  Other_Part_File_Name := No_File;
+
+               else
+                  Other_Part_File_Name :=
+                    Project_Tree.Sources.Table
+                      (Source.Other_Part).File;
+               end if;
+
+               if Current_File_Name /= Sfile
+                 and then Other_Part_File_Name /= Sfile
+               then
+                  if Verbose_Mode then
+                     Write_Str ("   -> """);
+                     Write_Str (Get_Name_String (Uname));
+                     Write_Str
+                       (""" sources do not include """);
+                     Write_Str (Get_Name_String (Sfile));
+                     Write_Char ('"');
+                     Write_Eol;
+                  end if;
+
+                  return True;
+               end if;
+
+               exit;
+            end if;
+
+            Src_Id := Source.Next_In_Sources;
+         end loop;
+
+         return False;
+      end Check_Unit;
+
    begin
       if Force_Compilations then
          return not Externally_Built;
@@ -8388,20 +8448,28 @@ package body Buildgpr is
                --  the mapping of units to file names.
 
                declare
+                  SD        : ALI.Sdep_Record;
                   WR        : ALI.With_Record;
                   Unit_Name : Name_Id;
-
-                  Src_Id    : Source_Id;
-                  Source    : Source_Data;
-
-                  Current_File_Name    : File_Name_Type;
-                  Other_Part_File_Name : File_Name_Type;
 
                begin
                   U_Chk :
                   for U in ALI.ALIs.Table (The_ALI).First_Unit ..
                            ALI.ALIs.Table (The_ALI).Last_Unit
                   loop
+                     --  Check if the file name is one of the source of the
+                     --  unit.
+
+                     Get_Name_String (ALI.Units.Table (U).Uname);
+                     Name_Len := Name_Len - 2;
+                     Unit_Name := Name_Find;
+
+                     if Check_Unit (Unit_Name, ALI.Units.Table (U).Sfile) then
+                        return True;
+                     end if;
+
+                     --  Do the same check for each of the withed units.
+
                      W_Check :
                      for W in ALI.Units.Table (U).First_With
                           ..
@@ -8414,47 +8482,28 @@ package body Buildgpr is
                            Name_Len := Name_Len - 2;
                            Unit_Name := Name_Find;
 
-                           Src_Id := Project_Tree.First_Source;
-                           while Src_Id /= No_Source loop
-                              Source := Project_Tree.Sources.Table (Src_Id);
-
-                              if Source.Unit = Unit_Name then
-                                 Current_File_Name := Source.File;
-
-                                 if Source.Other_Part = No_Source then
-                                    Other_Part_File_Name := No_File;
-
-                                 else
-                                    Other_Part_File_Name :=
-                                      Project_Tree.Sources.Table
-                                        (Source.Other_Part).File;
-                                 end if;
-
-                                 if Current_File_Name /= WR.Sfile
-                                   and then Other_Part_File_Name /= WR.Sfile
-                                 then
-                                    if Verbose_Mode then
-                                       Write_Str ("   -> """);
-                                       Write_Str (Get_Name_String (Unit_Name));
-                                       Write_Str
-                                         (""" sources do not include """);
-                                       Write_Str (Get_Name_String (WR.Sfile));
-                                       Write_Char ('"');
-                                       Write_Eol;
-                                    end if;
-
-                                    return True;
-                                 end if;
-
-                                 exit;
-                              end if;
-
-                              Src_Id := Source.Next_In_Sources;
-                           end loop;
-
+                           if Check_Unit (Unit_Name, WR.Sfile) then
+                              return True;
+                           end if;
                         end if;
                      end loop W_Check;
                   end loop U_Chk;
+
+                  --  Check also the subunits
+
+                  D_Check :
+                  for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
+                           ALI.ALIs.Table (The_ALI).Last_Sdep
+                  loop
+                     SD := ALI.Sdep.Table (D);
+                     Unit_Name := SD.Subunit_Name;
+
+                     if Unit_Name /= No_Name then
+                        if Check_Unit (Unit_Name, SD.Sfile) then
+                           return True;
+                        end if;
+                     end if;
+                  end loop D_Check;
                end;
 
                --  We need to check that the ALI file is in the correct object
