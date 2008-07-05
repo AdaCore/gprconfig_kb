@@ -7882,7 +7882,7 @@ package body Buildgpr is
                              (Src_Data.Project).Externally_Built;
       --  True if the project of the source is externally built
 
-      function Check_Unit
+      function File_Not_A_Source_Of
         (Uname : Name_Id;
          Sfile : File_Name_Type)
          return Boolean;
@@ -7890,7 +7890,11 @@ package body Buildgpr is
       --  Returns True if the unit is in one of the project file, but the file
       --  name is not one of its source. Returns False otherwise.
 
-      function Check_Unit
+      --------------------------
+      -- File_Not_A_Source_Of --
+      --------------------------
+
+      function File_Not_A_Source_Of
         (Uname : Name_Id;
          Sfile : File_Name_Type)
          return Boolean
@@ -7940,7 +7944,7 @@ package body Buildgpr is
          end loop;
 
          return False;
-      end Check_Unit;
+      end File_Not_A_Source_Of;
 
    begin
       if Force_Compilations then
@@ -8464,7 +8468,9 @@ package body Buildgpr is
                      Name_Len := Name_Len - 2;
                      Unit_Name := Name_Find;
 
-                     if Check_Unit (Unit_Name, ALI.Units.Table (U).Sfile) then
+                     if File_Not_A_Source_Of
+                          (Unit_Name, ALI.Units.Table (U).Sfile)
+                     then
                         return True;
                      end if;
 
@@ -8482,7 +8488,7 @@ package body Buildgpr is
                            Name_Len := Name_Len - 2;
                            Unit_Name := Name_Find;
 
-                           if Check_Unit (Unit_Name, WR.Sfile) then
+                           if File_Not_A_Source_Of (Unit_Name, WR.Sfile) then
                               return True;
                            end if;
                         end if;
@@ -8499,7 +8505,7 @@ package body Buildgpr is
                      Unit_Name := SD.Subunit_Name;
 
                      if Unit_Name /= No_Name then
-                        if Check_Unit (Unit_Name, SD.Sfile) then
+                        if File_Not_A_Source_Of (Unit_Name, SD.Sfile) then
                            return True;
                         end if;
                      end if;
