@@ -1438,13 +1438,21 @@ will start its processing.
 @node Compilation of one or several sources
 @section Compilation of one or several sources
 
-If GPRbuild is invoked with -c and there are one or several source file names
-specified on the command line, GPRbuild will compile or recompile these
-sources, if they are not up to date or if -f is also specified.
-Then GPRbuild will stop its execution, even if -b or -l are specified.
+If GPRbuild is invoked with @option{-u} or @option{-U} and there are one or
+several source file names specified on the command line, GPRbuild will compile
+or recompile these sources, if they are not up to date or if @option{-f} is
+also specified. Then GPRbuild will stop its execution.
 
 The options/switches used to compile these sources are described in section
 @ref{Compilation Phase}.
+
+if GPRbuild is invoked with @option{-u}, but no source file name is specified
+on the command line, GPRbuild will compile or recompile all the sources of the
+main project, then stopped its execution.
+
+if GPRbuild is invoked with @option{-U}, but no source file name is specified
+on the command line, GPRbuild will compile or recompile all the sources of all
+the projects in the project tree, then stopped its execution.
 
 @node Compilation Phase
 @section Compilation Phase

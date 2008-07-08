@@ -6413,13 +6413,6 @@ package body Buildgpr is
            (Main_Project, All_Projects => Recursive, Unit_Based => True);
          Closure_Needed := False;
 
-      elsif Mains.Number_Of_Mains /= 0 and then
-        (not All_Phases) and then
-        Compile_Only
-      then
-         Closure_Needed := False;
-         Check_Mains;
-
       else
          Get_Mains;
 
