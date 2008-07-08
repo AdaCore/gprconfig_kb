@@ -660,6 +660,11 @@ package body Buildgpr is
    pragma Import (C, Install_Int_Handler, "__gnat_install_int_handler");
    --  Called by Gnatmake to install the SIGINT handler below
 
+   function Absolute_Path
+     (Path    : Path_Name_Type;
+      Project : Project_Id) return Path_Name_Type;
+   --  Returns an absolute path for a config file
+
    procedure Add_Argument
      (Arg         : String_Access;
       Display     : Boolean;
@@ -915,6 +920,30 @@ package body Buildgpr is
 
    procedure Check_Version_And_Help is new
      Check_Version_And_Help_G (Usage);
+
+   -------------------
+   -- Absolute_Path --
+   -------------------
+
+   function Absolute_Path
+     (Path    : Path_Name_Type;
+      Project : Project_Id) return Path_Name_Type
+   is
+   begin
+      Get_Name_String (Path);
+
+      if not Is_Absolute_Path (Name_Buffer (1 .. Name_Len)) then
+         Get_Name_String
+           (Project_Tree.Projects.Table (Project).Directory.Display_Name);
+         if Name_Buffer (Name_Len) /= Directory_Separator then
+            Add_Char_To_Name_Buffer (Directory_Separator);
+         end if;
+
+         Add_Str_To_Name_Buffer (Get_Name_String (Path));
+      end if;
+
+      return Name_Find;
+   end Absolute_Path;
 
    ------------------
    -- Add_Argument --
@@ -5397,15 +5426,11 @@ package body Buildgpr is
          if Name_Len = 0 then
             return No_Path;
 
-         elsif Is_Absolute_Path (Name_Buffer (1 .. Name_Len)) then
-            return Path_Name_Type (Config_Variable.Value);
-
          else
-            Get_Name_String (Config_Project_Data.Directory.Name);
-            Name_Len := Name_Len + 1;
-            Name_Buffer (Name_Len) := Directory_Separator;
-            Add_Str_To_Name_Buffer (Get_Name_String (Config_Variable.Value));
-            return Name_Find;
+            return
+              Absolute_Path
+                (Path_Name_Type (Config_Variable.Value),
+                 Config_Variable.Project);
          end if;
       end if;
    end Config_File_For;
