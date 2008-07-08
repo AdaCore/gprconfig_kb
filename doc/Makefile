@@ -9,6 +9,7 @@ MAKE_TXT=$(MAKE_INFO) --no-headers --fill-column=79
 MAKE_PDF=texi2pdf -q
 MKDIR=mkdir -p
 RMDIR=rmdir
+CP=cp
 
 .PHONY: all txt info html pdf clean
 
@@ -43,6 +44,7 @@ html:
 	${RMDIR} html
 	${MKDIR} html
 	$(MAKE_INFO) ${MAKEINFO_HTML_FLAGS} -o html/$(DOC).html $(DOC).texi
+	$(CP) important.png note.png tip.png html/
 pdf:
 	${MKDIR} pdf
 	${RM} pdf/*
