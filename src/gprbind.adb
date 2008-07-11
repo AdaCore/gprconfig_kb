@@ -116,6 +116,11 @@ procedure Gprbind is
    All_Binding_Options : Boolean;
    Get_Option          : Boolean;
 
+   GNAT_Version : String_Access := new String'("000");
+   --  The version of GNAT, coming from the Toolchain_Version for Ada
+
+   Delete_Temp_Files : Boolean := True;
+
    package Binding_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -293,6 +298,32 @@ begin
                      end;
                   end if;
 
+               when Gprexch.Toolchain_Version =>
+                  if End_Of_File (IO_File) then
+                     Osint.Fail
+                       ("no toolchain version for language ",
+                        Line (1 .. Last));
+
+                  elsif Line (1 .. Last) = "ada" then
+                     Get_Line (IO_File, Line, Last);
+
+                     if Last > 5 and then Line (1 .. 5) = "GNAT " then
+                        GNAT_Version := new String'(Line (6 .. Last));
+                     end if;
+
+                  else
+                     Skip_Line (IO_File);
+                  end if;
+
+               when Gprexch.Delete_Temp_Files =>
+                  begin
+                     Delete_Temp_Files := Boolean'Value (Line (1 .. Last));
+
+                  exception
+                     when Constraint_Error =>
+                        null;
+                  end;
+
                when Generated_Object_File |
                     Generated_Source_Files |
                     Resulting_Options |
@@ -416,9 +447,10 @@ begin
          Size := Size + Gnatbind_Options (J)'Length + 1;
       end loop;
 
-      --  Invoke gnatbind with the arguments if the size is not too large
+      --  Invoke gnatbind with the arguments if the size is not too large or
+      --  if the version of GNAT is not recent enough.
 
-      if Size <= Maximum_Size then
+      if GNAT_Version.all < "6" or else Size <= Maximum_Size then
          Spawn
            (Gnatbind_Path.all,
             Gnatbind_Options (1 .. Last_Gnatbind_Option),
@@ -510,11 +542,14 @@ begin
 
             Spawn (Gnatbind_Path.all, Args, Success);
 
-            Delete_File (Get_Name_String (Path), Succ);
+            if Delete_Temp_Files then
+               Delete_File (Get_Name_String (Path), Succ);
 
-            if not Succ then
-               null;
+               if not Succ then
+                  null;
+               end if;
             end if;
+
          end;
       end if;
    end;

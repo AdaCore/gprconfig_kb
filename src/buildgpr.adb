@@ -9015,6 +9015,10 @@ package body Buildgpr is
 
                Dep_Files      : Boolean;
 
+               Lang_Index     : Language_Index;
+               Toolchain_Version_Label_Written : Boolean;
+               Lang_Data      : Language_Data;
+
             begin
                Initialize_Source_Record (Main_Source_Id);
                Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
@@ -9321,7 +9325,53 @@ package body Buildgpr is
                            Put_Line (Exchange_File, Binding_Label (Verbose));
                         end if;
 
+                        --  If -dn was used, indicate to gprbind that the
+                        --  temporary response file, if created, should not
+                        --  deleted.
+
+                        if Debug_Flag_N then
+                           Put_Line
+                             (Exchange_File,
+                              Binding_Label (Delete_Temp_Files));
+                           Put_Line (Exchange_File, "False");
+                        end if;
+
+                        --  Send the Toolchain Versions of each language where
+                        --  they are declared.
+
+                        Lang_Index :=
+                          Project_Tree.Projects.Table
+                            (Main_Proj).First_Language_Processing;
+                        Toolchain_Version_Label_Written := False;
+
+                        while Lang_Index /= No_Language_Index loop
+                           Lang_Data :=
+                             Project_Tree.Languages_Data.Table (Lang_Index);
+
+                           if
+                             Lang_Data.Config.Toolchain_Version /= No_Name
+                           then
+                              if not Toolchain_Version_Label_Written then
+                                 Put_Line
+                                   (Exchange_File, Library_Label
+                                      (Toolchain_Version));
+                                 Toolchain_Version_Label_Written := True;
+                              end if;
+
+                              Put_Line
+                                (Exchange_File,
+                                 Get_Name_String (Lang_Data.Name));
+                              Put_Line
+                                (Exchange_File,
+                                 Get_Name_String
+                                   (Lang_Data.Config.Toolchain_Version));
+                           end if;
+
+                           Lang_Index := Lang_Data.Next;
+                        end loop;
+
                         --  Optional line: shared libs
+
                         if Shared_Libs then
                            Put_Line
                              (Exchange_File,
