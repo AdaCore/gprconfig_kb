@@ -162,6 +162,7 @@
 
    for Shared_Library_Suffix use ".sl";
    for Run_Path_Option  use ("-Wl,+b,");
+   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>
 
@@ -236,6 +237,7 @@
    for Library_Version_Switches use ("-Wl,-soname,");
    for Shared_Library_Suffix use ".dll";
    for Library_Auto_Init_Supported use "true";
+   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>
 
