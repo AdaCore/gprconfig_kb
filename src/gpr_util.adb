@@ -429,4 +429,22 @@ package body Gpr_Util is
       end if;
    end Look_For_Default_Project;
 
+   ------------------
+   -- Partial_Name --
+   ------------------
+
+   function Partial_Name
+     (Lib_Name      : String;
+      Number        : Natural;
+      Object_Suffix : String) return String
+   is
+      Img : constant String := Number'Img;
+   begin
+      return
+        Partial_Prefix & Lib_Name &
+        '_' & Img (Img'First + 1 .. Img'Last)
+        & Object_Suffix;
+   end Partial_Name;
+
+
 end Gpr_Util;

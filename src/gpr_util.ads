@@ -156,4 +156,10 @@ package Gpr_Util is
    --  file names in the table. Fail if a main specified in attribute Main is
    --  not a source of the main project.
 
+   function Partial_Name
+     (Lib_Name      : String;
+      Number        : Natural;
+      Object_Suffix : String) return String;
+   --  Returns the name of an object file created by the partial linker
+
 end Gpr_Util;

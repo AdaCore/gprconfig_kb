@@ -370,8 +370,6 @@ procedure Gprlib is
    --  Copy to the Copy_Source_Directory the sources of the interfaces of
    --  a Stand-Alone Library.
 
-   function Partial_Name (Number : Natural) return String_Access;
-
    function SALs_Use_Constructors return Boolean;
    --  Indicate if Stand-Alone Libraries are automatically initialized using
    --  the constructor mechanism.
@@ -744,19 +742,6 @@ procedure Gprlib is
          end if;
       end loop;
    end Copy_Sources;
-
-   ------------------
-   -- Partial_Name --
-   ------------------
-
-   function Partial_Name (Number : Natural) return String_Access is
-      Img : constant String := Number'Img;
-   begin
-      return new String'
-        (Partial_Prefix & Library_Name.all &
-         '_' & Img (Img'First + 1 .. Img'Last)
-         & Object_Suffix);
-   end Partial_Name;
 
    ---------------------------
    -- SALs_Use_Constructors --
@@ -1459,7 +1444,11 @@ begin
          loop
             declare
                Partial : constant String_Access :=
-                           Partial_Name (Partial_Number);
+                           new String'
+                             (Partial_Name
+                                (Library_Name.all,
+                                 Partial_Number,
+                                 Object_Suffix));
                Size    : Natural := 0;
 
                Saved_Last_PL_Option : Natural;
@@ -1471,7 +1460,8 @@ begin
 
                if Partial_Number > 0 then
                   Add
-                    (Partial_Name (Partial_Number - 1),
+                    (Partial_Name
+                       (Library_Name.all, Partial_Number - 1, Object_Suffix),
                      PL_Options,
                      Last_PL_Option);
                end if;

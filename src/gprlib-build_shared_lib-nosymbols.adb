@@ -138,7 +138,11 @@ procedure Build_Shared_Lib is
          loop
             declare
                Partial : constant String_Access :=
-                           Partial_Name (Partial_Number);
+                           new String'
+                             (Partial_Name
+                                (Library_Name.all,
+                                 Partial_Number,
+                                 Object_Suffix));
                Size    : Natural := 0;
 
                Saved_Last_PL_Option : Natural;
@@ -150,7 +154,10 @@ procedure Build_Shared_Lib is
 
                if Partial_Number > 0 then
                   Add
-                    (Partial_Name (Partial_Number - 1),
+                    (Partial_Name
+                       (Library_Name.all,
+                        Partial_Number - 1,
+                        Object_Suffix),
                      PL_Options,
                      Last_PL_Option);
                end if;

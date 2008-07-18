@@ -582,6 +582,7 @@ package body Cleangpr is
       Source_Id   : Prj.Source_Id;
       Source      : Source_Data;
 
+      Partial_Number : Natural;
    begin
       --  Check that we don't specify executable on the command line for
       --  a main library project.
@@ -630,21 +631,29 @@ package body Cleangpr is
                   Clean_Archive (Project);
                end if;
 
-               --  For a static library project, clean the partially link
-               --  object, if there is one.
+               --  For a library project, clean the partially link objects, if
+               --  there are some.
 
-               if Data.Library and then Data.Library_Kind = Static then
-                  declare
-                     Partial : constant String :=
-                                 Partial_Prefix &
-                                 Get_Name_String (Data.Library_Name) &
-                                 Object_Suffix;
+               if Data.Library then
+                  Partial_Number := 0;
+                  loop
+                     declare
+                        Partial : constant String :=
+                                    Partial_Name
+                                      (Get_Name_String (Data.Library_Name),
+                                       Partial_Number,
+                                       Object_Suffix);
 
-                  begin
-                     if Is_Regular_File (Partial) then
-                        Delete (Obj_Dir, Partial);
-                     end if;
-                  end;
+                     begin
+                        if Is_Regular_File (Partial) then
+                           Delete (Obj_Dir, Partial);
+                           Partial_Number := Partial_Number + 1;
+
+                        else
+                           exit;
+                        end if;
+                     end;
+                  end loop;
                end if;
 
                --  Check all the object file for the sources of the current
