@@ -64,6 +64,10 @@ procedure Gprlib is
 
    Size : Natural;
 
+   Partial_Number : Natural;
+
+   First_Object : Positive;
+
    Gcc_Name : constant String := "gcc";
 
    Preserve : Attribute := Time_Stamps;
@@ -365,6 +369,8 @@ procedure Gprlib is
    procedure Copy_Sources;
    --  Copy to the Copy_Source_Directory the sources of the interfaces of
    --  a Stand-Alone Library.
+
+   function Partial_Name (Number : Natural) return String_Access;
 
    function SALs_Use_Constructors return Boolean;
    --  Indicate if Stand-Alone Libraries are automatically initialized using
@@ -738,6 +744,19 @@ procedure Gprlib is
          end if;
       end loop;
    end Copy_Sources;
+
+   ------------------
+   -- Partial_Name --
+   ------------------
+
+   function Partial_Name (Number : Natural) return String_Access is
+      Img : constant String := Number'Img;
+   begin
+      return new String'
+        (Partial_Prefix & Library_Name.all &
+         '_' & Img (Img'First + 1 .. Img'Last)
+         & Object_Suffix);
+   end Partial_Name;
 
    ---------------------------
    -- SALs_Use_Constructors --
@@ -1434,49 +1453,85 @@ begin
          --  If partial linker is used, do a partial link and put the resulting
          --  object file in the archive.
 
-         declare
-            Partial : constant String_Access :=
-                        new String'
-                          (Partial_Prefix & Library_Name.all & Object_Suffix);
+         Partial_Number := 0;
+         First_Object := 1;
 
-         begin
-            Add (Partial, AB_Options, Last_AB_Option);
-            Add (Partial, PL_Options, Last_PL_Option);
+         loop
+            declare
+               Partial : constant String_Access :=
+                           Partial_Name (Partial_Number);
+               Size    : Natural := 0;
 
-            for J in 1 .. Object_Files.Last loop
-               Add (Object_Files.Table (J), PL_Options, Last_PL_Option);
-            end loop;
+               Saved_Last_PL_Option : Natural;
+            begin
+               Saved_Last_PL_Option := Last_PL_Option;
 
-            if not Quiet_Output then
-               if Verbose_Mode then
-                  Put (Partial_Linker_Path.all);
-               else
-                  Put (Base_Name (Partial_Linker_Path.all));
+               Add (Partial, PL_Options, Last_PL_Option);
+               Size := Size + 1 + Partial'Length;
+
+               if Partial_Number > 0 then
+                  Add
+                    (Partial_Name (Partial_Number - 1),
+                     PL_Options,
+                     Last_PL_Option);
                end if;
 
                for J in 1 .. Last_PL_Option loop
-                  if (not Verbose_Mode) and then J >= 5 then
-                     Put (" ...");
-                     exit;
-                  end if;
-
-                  Put (' ');
-                  Put (PL_Options (J).all);
+                  Size := Size + 1 + PL_Options (J)'Length;
                end loop;
 
-               New_Line;
-            end if;
+               loop
+                  Add
+                    (Object_Files.Table (First_Object),
+                     PL_Options,
+                     Last_PL_Option);
+                  Size := Size + 1 + PL_Options (Last_PL_Option)'Length;
 
-            Spawn
-              (Partial_Linker_Path.all,
-               PL_Options (1 .. Last_PL_Option),
-               Success);
+                  First_Object := First_Object + 1;
+                  exit when
+                    First_Object > Object_Files.Last or else
+                    Size >= Maximum_Size;
+               end loop;
 
-            if not Success then
-               Osint.Fail
-                 ("call to linker driver ", Partial_Linker.all, " failed");
-            end if;
-         end;
+               if not Quiet_Output then
+                  if Verbose_Mode then
+                     Put (Partial_Linker_Path.all);
+                  else
+                     Put (Base_Name (Partial_Linker_Path.all));
+                  end if;
+
+                  for J in 1 .. Last_PL_Option loop
+                     if (not Verbose_Mode) and then J >= 5 then
+                        Put (" ...");
+                        exit;
+                     end if;
+
+                     Put (' ');
+                     Put (PL_Options (J).all);
+                  end loop;
+
+                  New_Line;
+               end if;
+
+               Spawn
+                 (Partial_Linker_Path.all,
+                  PL_Options (1 .. Last_PL_Option),
+                  Success);
+
+               if not Success then
+                  Osint.Fail
+                    ("call to linker driver ", Partial_Linker.all, " failed");
+               end if;
+
+               if First_Object > Object_Files.Last then
+                  Add (Partial, AB_Options, Last_AB_Option);
+                  exit;
+               end if;
+
+               Last_PL_Option := Saved_Last_PL_Option;
+               Partial_Number := Partial_Number + 1;
+            end;
+         end loop;
 
       else
          --  Not a standalone library, or Partial linker is not specified.

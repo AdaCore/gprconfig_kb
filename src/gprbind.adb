@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -364,6 +364,10 @@ begin
 
    if Main_ALI /= null then
       Add (Main_ALI.all, Gnatbind_Options, Last_Gnatbind_Option);
+   end if;
+
+   if GNAT_Version.all >= "5.01" then
+      Add ("-F", Gnatbind_Options, Last_Gnatbind_Option);
    end if;
 
    for J in 1 .. ALI_Files_Table.Last loop

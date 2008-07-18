@@ -2758,6 +2758,25 @@ package body Buildgpr is
             end loop;
          end;
 
+         if Data.Config.Lib_Partial_Linker /= No_Name_List then
+            Put_Line (Exchange_File, Library_Label (Partial_Linker));
+
+            declare
+               List    : Name_List_Index :=
+                           Data.Config.Lib_Partial_Linker;
+               Nam_Nod : Name_Node;
+
+            begin
+               while List /= No_Name_List loop
+                  Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (Nam_Nod.Name));
+                  List := Nam_Nod.Next;
+               end loop;
+            end;
+         end if;
+
          if Data.Library_Kind = Static then
             Put_Line (Exchange_File, Library_Label (Static));
 
@@ -2795,25 +2814,6 @@ package body Buildgpr is
                   Put_Line
                     (Exchange_File, Archive_Indexer_Opts.Options (J).all);
                end loop;
-            end if;
-
-            if Data.Config.Lib_Partial_Linker /= No_Name_List then
-               Put_Line (Exchange_File, Library_Label (Partial_Linker));
-
-               declare
-                  List : Name_List_Index :=
-                           Data.Config.Lib_Partial_Linker;
-                  Nam_Nod : Name_Node;
-
-               begin
-                  while List /= No_Name_List loop
-                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                     Put_Line
-                       (Exchange_File,
-                        Get_Name_String (Nam_Nod.Name));
-                     List := Nam_Nod.Next;
-                  end loop;
-               end;
             end if;
 
          else

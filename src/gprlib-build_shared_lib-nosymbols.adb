@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -99,12 +99,6 @@ procedure Build_Shared_Lib is
       Add_Arg (Out_Opt);
       Add_Arg (Out_V);
 
-      --  The object files
-
-      for J in Ofiles'Range loop
-         Add_Arg (Ofiles (J));
-      end loop;
-
       --  The options
 
       for J in Options'Range loop
@@ -124,6 +118,106 @@ procedure Build_Shared_Lib is
       for J in 1 .. Library_Options_Table.Last loop
          Add_Arg (Library_Options_Table.Table (J));
       end loop;
+
+      --  The object files
+
+      if Partial_Linker /= null then
+         Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
+
+         if Partial_Linker_Path = null then
+            Osint.Fail ("unable to locate ", Partial_Linker.all);
+         end if;
+      end if;
+
+      if Partial_Linker_Path /= null then
+         --  If partial linker is used, do a partial link first
+
+         Partial_Number := 0;
+         First_Object := Ofiles'First;
+
+         loop
+            declare
+               Partial : constant String_Access :=
+                           Partial_Name (Partial_Number);
+               Size    : Natural := 0;
+
+               Saved_Last_PL_Option : Natural;
+            begin
+               Saved_Last_PL_Option := Last_PL_Option;
+
+               Add (Partial, PL_Options, Last_PL_Option);
+               Size := Size + 1 + Partial'Length;
+
+               if Partial_Number > 0 then
+                  Add
+                    (Partial_Name (Partial_Number - 1),
+                     PL_Options,
+                     Last_PL_Option);
+               end if;
+
+               for J in 1 .. Last_PL_Option loop
+                  Size := Size + 1 + PL_Options (J)'Length;
+               end loop;
+
+               loop
+                  Add
+                    (Ofiles (First_Object),
+                     PL_Options,
+                     Last_PL_Option);
+                  Size := Size + 1 + PL_Options (Last_PL_Option)'Length;
+
+                  First_Object := First_Object + 1;
+                  exit when
+                    First_Object > Ofiles'Last or else
+                    Size >= Maximum_Size;
+               end loop;
+
+               if not Quiet_Output then
+                  if Verbose_Mode then
+                     Put (Partial_Linker_Path.all);
+                  else
+                     Put (Base_Name (Partial_Linker_Path.all));
+                  end if;
+
+                  for J in 1 .. Last_PL_Option loop
+                     if (not Verbose_Mode) and then J >= 5 then
+                        Put (" ...");
+                        exit;
+                     end if;
+
+                     Put (' ');
+                     Put (PL_Options (J).all);
+                  end loop;
+
+                  New_Line;
+               end if;
+
+               Spawn
+                 (Partial_Linker_Path.all,
+                  PL_Options (1 .. Last_PL_Option),
+                  Success);
+
+               if not Success then
+                  Osint.Fail
+                    ("call to linker driver ", Partial_Linker.all, " failed");
+               end if;
+
+               if First_Object > Ofiles'Last then
+                  Add_Arg (Partial);
+                  exit;
+               end if;
+
+               Last_PL_Option := Saved_Last_PL_Option;
+               Partial_Number := Partial_Number + 1;
+            end;
+         end loop;
+
+      else
+
+         for J in Ofiles'Range loop
+            Add_Arg (Ofiles (J));
+         end loop;
+      end if;
 
       --  Display command if not in quiet mode
 
