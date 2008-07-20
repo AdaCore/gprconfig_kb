@@ -1752,79 +1752,83 @@ package body Buildgpr is
 
       begin
          loop
-            if Project_Tree.Projects.Table (Project).Externally_Built then
-               --  If project is externally built, include all object files in
-               --  the object directory in the global archive.
+            if Project_Tree.Projects.Table (Project).Object_Directory /=
+              No_Path_Information
+            then
+               if Project_Tree.Projects.Table (Project).Externally_Built then
+                  --  If project is externally built, include all object files
+                  --  in the object directory in the global archive.
 
-               declare
-                  Obj_Dir : constant String :=
-                              Get_Name_String
-                                (Project_Tree.Projects.Table (Project).
-                                   Object_Directory.Name);
-                  Dir_Obj : Dir_Type;
+                  declare
+                     Obj_Dir : constant String :=
+                                 Get_Name_String
+                                   (Project_Tree.Projects.Table (Project).
+                                      Object_Directory.Name);
+                     Dir_Obj : Dir_Type;
 
-               begin
-                  Open (Dir_Obj, Obj_Dir);
+                  begin
+                     Open (Dir_Obj, Obj_Dir);
 
-                  loop
-                     Read (Dir_Obj, Name_Buffer, Name_Len);
-                     exit when Name_Len = 0;
+                     loop
+                        Read (Dir_Obj, Name_Buffer, Name_Len);
+                        exit when Name_Len = 0;
 
-                     Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+                        Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
 
-                     if Name_Len > Object_Suffix'Length and then
-                       Name_Buffer
-                         (Name_Len - Object_Suffix'Length + 1 .. Name_Len) =
-                         Object_Suffix
-                     then
-                        Add_Argument
-                          (Obj_Dir & Directory_Separator &
-                           Name_Buffer (1 .. Name_Len),
-                           Verbose_Mode,
-                           Simple_Name => not Verbose_Mode);
-                     end if;
-                  end loop;
-
-                  Close (Dir_Obj);
-               end;
-
-            else
-               Id := Project_Tree.Projects.Table (Project).First_Source;
-
-               while Id /= No_Source loop
-                  Source := Project_Tree.Sources.Table (Id);
-
-                  if (not Source.Locally_Removed)
-                    and then
-                     Source.Compiled
-                    and then
-                      (Source.Kind = Impl
-                       or else
-                         (Source.Unit /= No_Name
-                          and then
-                            Source.Kind = Spec
-                          and then
-                            Source.Other_Part = No_Source))
-                  then
-                     if not Is_Subunit (Source) then
-                        --  Only include object file name that have not been
-                        --  overriden in extending projects.
-
-                        if Source.Object /= No_File
-                           and then
-                           Is_Included_In_Global_Archive
-                             (Source.Object, Project)
+                        if Name_Len > Object_Suffix'Length and then
+                          Name_Buffer
+                            (Name_Len - Object_Suffix'Length + 1 .. Name_Len) =
+                            Object_Suffix
                         then
                            Add_Argument
-                             (Get_Name_String (Source.Object_Path),
+                             (Obj_Dir & Directory_Separator &
+                              Name_Buffer (1 .. Name_Len),
                               Verbose_Mode,
                               Simple_Name => not Verbose_Mode);
                         end if;
-                     end if;
-                  end if;
+                     end loop;
 
-                  Id := Source.Next_In_Project;
-               end loop;
+                     Close (Dir_Obj);
+                  end;
+
+               else
+                  Id := Project_Tree.Projects.Table (Project).First_Source;
+
+                  while Id /= No_Source loop
+                     Source := Project_Tree.Sources.Table (Id);
+
+                     if (not Source.Locally_Removed)
+                       and then
+                         Source.Compiled
+                         and then
+                           (Source.Kind = Impl
+                            or else
+                              (Source.Unit /= No_Name
+                               and then
+                                 Source.Kind = Spec
+                               and then
+                                 Source.Other_Part = No_Source))
+                     then
+                        if not Is_Subunit (Source) then
+                           --  Only include object file name that have not been
+                           --  overriden in extending projects.
+
+                           if Source.Object /= No_File
+                             and then
+                               Is_Included_In_Global_Archive
+                                 (Source.Object, Project)
+                           then
+                              Add_Argument
+                                (Get_Name_String (Source.Object_Path),
+                                 Verbose_Mode,
+                                 Simple_Name => not Verbose_Mode);
+                           end if;
+                        end if;
+                     end if;
+
+                     Id := Source.Next_In_Project;
+                  end loop;
+               end if;
             end if;
 
             Project := Project_Tree.Projects.Table (Project).Extends;
