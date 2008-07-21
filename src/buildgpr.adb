@@ -1514,6 +1514,15 @@ package body Buildgpr is
                         end loop;
 
                         Close (File);
+
+                     exception
+                        when others =>
+                           Fail_Program
+                             ("could not create switches file """,
+                              Get_Name_String
+                                (Project_Tree.Sources.Table
+                                   (Source).Switches_Path),
+                              """");
                      end;
                   end if;
                end if;
@@ -3835,292 +3844,310 @@ package body Buildgpr is
 
             Source_Project := Ultimate_Extending_Project_Of (Source_Project);
 
-            Change_To_Object_Directory (Source_Project);
+            if
+              Project_Tree.Projects.Table (Source_Project).Externally_Built
+            then
+               Compilation_Needed := False;
 
-            Initialize_Source_Record (Source_Identity, Need_Object => True);
+            else
+               Change_To_Object_Directory (Source_Project);
 
-            Compilation_Needed := Need_To_Compile (Source_Identity);
+               Initialize_Source_Record (Source_Identity, Need_Object => True);
 
-            if Compilation_Needed or Check_Switches then
-               Language :=
-                 Project_Tree.Sources.Table (Source_Identity).Language;
-               Language_Name :=
-                 Project_Tree.Sources.Table (Source_Identity).Language_Name;
+               Compilation_Needed := Need_To_Compile (Source_Identity);
 
-               Config := Project_Tree.Languages_Data.Table (Language).Config;
-               Compiler_Name_Id :=  Config.Compiler_Driver;
-               Compiler_Path := Config.Compiler_Driver_Path;
+               if Compilation_Needed or Check_Switches then
+                  Language :=
+                    Project_Tree.Sources.Table (Source_Identity).Language;
+                  Language_Name :=
+                    Project_Tree.Sources.Table (Source_Identity).Language_Name;
 
-               --  If this is the first time we try this compiler, then get its
-               --  path name.
+                  Config :=
+                    Project_Tree.Languages_Data.Table (Language).Config;
+                  Compiler_Name_Id :=  Config.Compiler_Driver;
+                  Compiler_Path := Config.Compiler_Driver_Path;
 
-               if Compiler_Path = null then
+                  --  If this is the first time we try this compiler, then get
+                  --  its path name.
+
+                  if Compiler_Path = null then
+                     declare
+                        Compiler_Name     : constant String :=
+                                              Get_Name_String
+                                                (Compiler_Name_Id);
+                     begin
+                        Compiler_Path := Locate_Exec_On_Path (Compiler_Name);
+
+                        if Compiler_Path = null then
+                           Fail_Program
+                             ("unable to locate """, Compiler_Name, """");
+
+                        else
+                           Project_Tree.Languages_Data.Table
+                             (Language).Config.Compiler_Driver_Path :=
+                             Compiler_Path;
+                        end if;
+                     end;
+                  end if;
+
+                  --  Compilation Switches
+
+                  Compilation_Options.Last := 0;
+
+                  --  1) The required switches
+
                   declare
-                     Compiler_Name     : constant String :=
-                                           Get_Name_String (Compiler_Name_Id);
-                  begin
-                     Compiler_Path := Locate_Exec_On_Path (Compiler_Name);
-
-                     if Compiler_Path = null then
-                        Fail_Program
-                          ("unable to locate """, Compiler_Name, """");
-
-                     else
-                        Project_Tree.Languages_Data.Table
-                          (Language).Config.Compiler_Driver_Path :=
-                          Compiler_Path;
-                     end if;
-                  end;
-               end if;
-
-               --  Compilation Switches
-
-               Compilation_Options.Last := 0;
-
-               --  1) The required switches
-
-               declare
-                  List : Name_List_Index := Config.Compiler_Required_Switches;
-                  Nam_Nod : Name_Node;
-                  First   : Boolean;
-
-               begin
-                  First := True;
-                  while List /= No_Name_List loop
-                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                     Add_Option
-                       (Nam_Nod.Name,
-                        To   => Compilation_Options,
-                        Display => First or Verbose_Mode);
-                     First := False;
-                     List := Nam_Nod.Next;
-                  end loop;
-               end;
-
-               --  2) the compilation switches specified in package Builder for
-               --  all compilers, following "-cargs", if any.
-
-               if All_Language_Builder_Compiling_Options.Last /= 0 then
-                  declare
-                     Options :
-                       String_List
-                         (1 .. All_Language_Builder_Compiling_Options.Last);
-
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) :=
-                          All_Language_Builder_Compiling_Options.Table (Index);
-                     end loop;
-
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
-
-               --  3) the compilation switches specified in package Builder for
-               --  the compiler of the language, following -cargs:<language>.
-
-               Builder_Options_Instance :=
-                 Builder_Compiling_Options_HTable.Get (Language_Name);
-
-               if Builder_Options_Instance /= No_Builder_Comp_Option_Table then
-                  declare
-                     Options : String_List
-                                 (1 .. Builder_Compiling_Options.Last
-                                         (Builder_Options_Instance.all));
-
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) :=
-                          Builder_Options_Instance.Table (Index);
-                     end loop;
-
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
-
-               --  4) The PIC option if it exists, for shared libraries
-
-               if Project_Tree.Projects.Table (Source_Project).Library
-                 and then
-                   Project_Tree.Projects.Table (Source_Project).Library_Kind /=
-                     Static
-                 and then
-                   Config.Compilation_PIC_Option /= No_Name_List
-               then
-                  declare
-                     List : Name_List_Index := Config.Compilation_PIC_Option;
+                     List    : Name_List_Index :=
+                                 Config.Compiler_Required_Switches;
                      Nam_Nod : Name_Node;
+                     First   : Boolean;
 
                   begin
+                     First := True;
                      while List /= No_Name_List loop
                         Nam_Nod := Project_Tree.Name_Lists.Table (List);
                         Add_Option
                           (Nam_Nod.Name,
-                           To   => Compilation_Options,
-                           Display => True);
+                           To      => Compilation_Options,
+                           Display => First or Verbose_Mode);
+                        First := False;
                         List := Nam_Nod.Next;
                      end loop;
                   end;
-               end if;
 
-               --  5) Compiler'Switches(<source file name>), if it is defined,
-               --  otherwise Compiler'Switches (<language name>), if defined.
+                  --  2) the compilation switches specified in package Builder
+                  --  for all compilers, following "-cargs", if any.
 
-               Add_Compilation_Switches (Source_Identity);
+                  if All_Language_Builder_Compiling_Options.Last /= 0 then
+                     declare
+                        Options :
+                        String_List
+                          (1 .. All_Language_Builder_Compiling_Options.Last);
 
-               --  4) the switches specified on the gprbuild command line for
-               --  all compilers, following "-cargs", if any.
+                     begin
+                        for Index in Options'Range loop
+                           Options (Index) :=
+                             All_Language_Builder_Compiling_Options.Table
+                               (Index);
+                        end loop;
 
-               if All_Language_Compiling_Options.Last /= 0 then
-                  declare
-                     Options : String_List
-                                 (1 .. All_Language_Compiling_Options.Last);
+                        Add_Options
+                          (Options,
+                           To            => Compilation_Options,
+                           Display_All   => True,
+                           Display_First => True);
+                     end;
+                  end if;
 
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) :=
-                          All_Language_Compiling_Options.Table (Index);
-                     end loop;
+                  --  3) the compilation switches specified in package Builder
+                  --  for the compiler of the language, following
+                  --  -cargs:<language>.
 
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
+                  Builder_Options_Instance :=
+                    Builder_Compiling_Options_HTable.Get (Language_Name);
 
-               --  6) the switches specified on the gprbuild command line for
-               --  the compiler of the language, following -cargs:<language>.
+                  if
+                    Builder_Options_Instance /= No_Builder_Comp_Option_Table
+                  then
+                     declare
+                        Options : String_List
+                          (1 .. Builder_Compiling_Options.Last
+                             (Builder_Options_Instance.all));
 
-               Options_Instance :=
-                 Compiling_Options_HTable.Get (Language_Name);
+                     begin
+                        for Index in Options'Range loop
+                           Options (Index) :=
+                             Builder_Options_Instance.Table (Index);
+                        end loop;
 
-               if Options_Instance /= No_Comp_Option_Table then
-                  declare
-                     Options : String_List
-                       (1 .. Compiling_Options.Last (Options_Instance.all));
+                        Add_Options
+                          (Options,
+                           To            => Compilation_Options,
+                           Display_All   => True,
+                           Display_First => True);
+                     end;
+                  end if;
 
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) := Options_Instance.Table (Index);
-                     end loop;
+                  --  4) The PIC option if it exists, for shared libraries
 
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
+                  if Project_Tree.Projects.Table (Source_Project).Library
+                    and then
+                      Project_Tree.Projects.Table
+                        (Source_Project).Library_Kind /= Static
+                      and then
+                        Config.Compilation_PIC_Option /= No_Name_List
+                  then
+                     declare
+                        List    : Name_List_Index :=
+                                    Config.Compilation_PIC_Option;
+                        Nam_Nod : Name_Node;
 
-               if Check_Switches and then not Compilation_Needed then
-                  --  Check switches
+                     begin
+                        while List /= No_Name_List loop
+                           Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                           Add_Option
+                             (Nam_Nod.Name,
+                              To      => Compilation_Options,
+                              Display => True);
+                           List := Nam_Nod.Next;
+                        end loop;
+                     end;
+                  end if;
 
-                  declare
-                     File : Ada.Text_IO.File_Type;
-                     Line : String (1 .. 1_000);
-                     Last : Natural;
-                  begin
-                     Open
-                       (File,
-                        In_File,
-                        Get_Name_String
-                          (Project_Tree.Sources.Table (Source_Identity).
-                                                         Switches_Path));
+                  --  5) Compiler'Switches(<source file name>), if it is
+                  --  defined, otherwise Compiler'Switches (<language name>),
+                  --  if defined.
 
-                     if End_Of_File (File) then
-                        if Verbose_Mode then
-                           Write_Line
-                             ("    -> switches file is empty");
-                        end if;
+                  Add_Compilation_Switches (Source_Identity);
 
-                        Compilation_Needed := True;
+                  --  4) the switches specified on the gprbuild command line
+                  --  for all compilers, following "-cargs", if any.
 
-                     else
-                        Get_Line (File, Line, Last);
+                  if All_Language_Compiling_Options.Last /= 0 then
+                     declare
+                        Options : String_List
+                          (1 .. All_Language_Compiling_Options.Last);
 
-                        if Line (1 .. Last) /=
-                          String (Project_Tree.Sources.Table
-                                  (Source_Identity).Object_TS)
-                        then
+                     begin
+                        for Index in Options'Range loop
+                           Options (Index) :=
+                             All_Language_Compiling_Options.Table (Index);
+                        end loop;
+
+                        Add_Options
+                          (Options,
+                           To            => Compilation_Options,
+                           Display_All   => True,
+                           Display_First => True);
+                     end;
+                  end if;
+
+                  --  6) the switches specified on the gprbuild command line
+                  --  for the compiler of the language, following
+                  --  -cargs:<language>.
+
+                  Options_Instance :=
+                    Compiling_Options_HTable.Get (Language_Name);
+
+                  if Options_Instance /= No_Comp_Option_Table then
+                     declare
+                        Options : String_List
+                          (1 .. Compiling_Options.Last (Options_Instance.all));
+
+                     begin
+                        for Index in Options'Range loop
+                           Options (Index) := Options_Instance.Table (Index);
+                        end loop;
+
+                        Add_Options
+                          (Options,
+                           To            => Compilation_Options,
+                           Display_All   => True,
+                           Display_First => True);
+                     end;
+                  end if;
+
+                  if Check_Switches and then not Compilation_Needed then
+                     --  Check switches
+
+                     declare
+                        File : Ada.Text_IO.File_Type;
+                        Line : String (1 .. 1_000);
+                        Last : Natural;
+                     begin
+                        Open
+                          (File,
+                           In_File,
+                           Get_Name_String
+                             (Project_Tree.Sources.Table (Source_Identity).
+                                Switches_Path));
+
+                        if End_Of_File (File) then
                            if Verbose_Mode then
                               Write_Line
-                                ("    -> different object file timestamp");
-                              Write_Line
-                                ("       " & Line (1 .. Last));
-                              Write_Line
-                                ("       " &
-                                 String (Project_Tree.Sources.Table
-                                   (Source_Identity).Object_TS));
+                                ("    -> switches file is empty");
                            end if;
 
                            Compilation_Needed := True;
-                        end if;
-                     end if;
 
-                     if not Compilation_Needed then
-                        for Index in 1 .. Compilation_Options.Last loop
-                           if End_Of_File (File) then
-                              if Verbose_Mode then
-                                 Write_Line
-                                   ("    -> more switches");
-                              end if;
-
-                              Compilation_Needed := True;
-                              exit;
-                           end if;
-
+                        else
                            Get_Line (File, Line, Last);
 
                            if Line (1 .. Last) /=
-                             Compilation_Options.Options (Index).all
+                             String (Project_Tree.Sources.Table
+                                     (Source_Identity).Object_TS)
                            then
                               if Verbose_Mode then
                                  Write_Line
-                                   ("    -> different switches");
+                                   ("    -> different object file timestamp");
+                                 Write_Line
+                                   ("       " & Line (1 .. Last));
+                                 Write_Line
+                                   ("       " &
+                                    String (Project_Tree.Sources.Table
+                                      (Source_Identity).Object_TS));
                               end if;
 
                               Compilation_Needed := True;
-                              exit;
                            end if;
-                        end loop;
-                     end if;
+                        end if;
 
-                     if not Compilation_Needed then
-                        if End_Of_File (File) then
-                           if Verbose_Mode then
-                              Write_Line ("    -> up to date");
+                        if not Compilation_Needed then
+                           for Index in 1 .. Compilation_Options.Last loop
+                              if End_Of_File (File) then
+                                 if Verbose_Mode then
+                                    Write_Line
+                                      ("    -> more switches");
+                                 end if;
+
+                                 Compilation_Needed := True;
+                                 exit;
+                              end if;
+
+                              Get_Line (File, Line, Last);
+
+                              if Line (1 .. Last) /=
+                                Compilation_Options.Options (Index).all
+                              then
+                                 if Verbose_Mode then
+                                    Write_Line
+                                      ("    -> different switches");
+                                 end if;
+
+                                 Compilation_Needed := True;
+                                 exit;
+                              end if;
+                           end loop;
+                        end if;
+
+                        if not Compilation_Needed then
+                           if End_Of_File (File) then
+                              if Verbose_Mode then
+                                 Write_Line ("    -> up to date");
+                              end if;
+
+                           else
+                              if Verbose_Mode then
+                                 Write_Line ("    -> less switches");
+                              end if;
+
+                              Compilation_Needed := True;
                            end if;
+                        end if;
 
-                        else
+                        Close (File);
+
+                     exception
+                        when others =>
                            if Verbose_Mode then
-                              Write_Line ("    -> less switches");
+                              Write_Line ("    -> no switches file");
                            end if;
 
                            Compilation_Needed := True;
-                        end if;
-                     end if;
-
-                     Close (File);
-
-                  exception
-                     when others =>
-                        if Verbose_Mode then
-                           Write_Line ("    -> no switches file");
-                        end if;
-
-                        Compilation_Needed := True;
-                  end;
+                     end;
+                  end if;
                end if;
+
             end if;
 
             if Compilation_Needed then
@@ -4843,9 +4870,9 @@ package body Buildgpr is
 
                                        --  It is a source of a project
 
-                                       if (not Project_Extends
-                                           (Src_Data.Project,
-                                            Src_Data_2.Project))
+                                       if not Project_Extends
+                                         (Src_Data.Project,
+                                          Src_Data_2.Project)
                                        then
                                           --  It is not a source of the same
                                           --  project as the source just
@@ -4876,9 +4903,7 @@ package body Buildgpr is
                                              end if;
                                           end if;
 
-                                          if
-                                            (not Src_Data_2.In_Interfaces)
-                                          then
+                                          if not Src_Data_2.In_Interfaces then
                                              --  It is not a source in the
                                              --  interfaces of its project.
                                              --  Report an error and invalidate
