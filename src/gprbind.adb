@@ -187,7 +187,7 @@ begin
       Open (IO_File, In_File, Exchange_File_Name.all);
    exception
       when others =>
-         Osint.Fail ("could not read ", Exchange_File_Name.all);
+         Osint.Fail ("could not read " & Exchange_File_Name.all);
    end;
 
    --  Get the information from the binding exchange file
@@ -201,7 +201,7 @@ begin
 
             case Current_Section is
                when No_Binding_Section =>
-                  Osint.Fail ("unknown section: ", Line (1 .. Last));
+                  Osint.Fail ("unknown section: " & Line (1 .. Last));
 
                when Quiet =>
                   Quiet_Output := True;
@@ -221,7 +221,7 @@ begin
          else
             case Current_Section is
                when No_Binding_Section =>
-                  Osint.Fail ("no section specified: ", Line (1 .. Last));
+                  Osint.Fail ("no section specified: " & Line (1 .. Last));
 
                when Quiet =>
                   Osint.Fail ("quiet section should be empty");
@@ -301,7 +301,7 @@ begin
                when Gprexch.Toolchain_Version =>
                   if End_Of_File (IO_File) then
                      Osint.Fail
-                       ("no toolchain version for language ",
+                       ("no toolchain version for language " &
                         Line (1 .. Last));
 
                   elsif Line (1 .. Last) = "ada" then
@@ -394,7 +394,7 @@ begin
    Gnatbind_Path := Locate_Exec_On_Path (GNATBIND.all);
 
    if Gnatbind_Path = null then
-      Osint.Fail ("could not locate ", GNATBIND.all);
+      Osint.Fail ("could not locate " & GNATBIND.all);
    end if;
 
    if Main_ALI = null then

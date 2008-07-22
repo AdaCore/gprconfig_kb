@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2007, Free Software Foundation, Inc.            --
+--            Copyright (C) 2007-2008, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -57,11 +57,7 @@ package body Gpr_Util is
    -- Fail_Program --
    ------------------
 
-   procedure Fail_Program
-     (S1             : String;
-      S2             : String  := "";
-      S3             : String  := "";
-      Flush_Messages : Boolean := True) is
+   procedure Fail_Program (S : String; Flush_Messages : Boolean := True) is
    begin
       if Flush_Messages then
          if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
@@ -69,7 +65,7 @@ package body Gpr_Util is
          end if;
       end if;
 
-      Finish_Program (Fatal => True, S1 => S1, S2 => S2, S3 => S3);
+      Finish_Program (Fatal => True, S => S);
    end Fail_Program;
 
    ----------------------------
@@ -125,7 +121,7 @@ package body Gpr_Util is
 
                if Binder_Driver_Path = null then
                   Fail_Program
-                    ("unable to find binder driver ",
+                    ("unable to find binder driver " &
                      Name_Buffer (1 .. Name_Len));
                end if;
 
@@ -146,7 +142,7 @@ package body Gpr_Util is
 
                      if Compiler_Path = null then
                         Fail_Program
-                          ("unable to locate """, Compiler_Name, """");
+                          ("unable to locate """ & Compiler_Name & '"');
 
                      else
                         Project_Tree.Languages_Data.Table
@@ -188,25 +184,18 @@ package body Gpr_Util is
    -- Finish_Program --
    --------------------
 
-   procedure Finish_Program
-     (Fatal : Boolean;
-      S1    : String := "";
-      S2    : String := "";
-      S3    : String := "")
-   is
+   procedure Finish_Program (Fatal : Boolean; S : String := "") is
    begin
       if not Debug_Flag_N then
          Delete_All_Temp_Files;
       end if;
 
-      if S1'Length > 0 then
+      if S'Length > 0 then
          if Fatal then
-            Osint.Fail (S1, S2, S3);
+            Osint.Fail (S);
 
          else
-            Write_Str (S1);
-            Write_Str (S2);
-            Write_Line (S3);
+            Write_Str (S);
          end if;
       end if;
 
@@ -445,6 +434,5 @@ package body Gpr_Util is
         '_' & Img (Img'First + 1 .. Img'Last)
         & Object_Suffix;
    end Partial_Name;
-
 
 end Gpr_Util;

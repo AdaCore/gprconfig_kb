@@ -1518,11 +1518,10 @@ package body Buildgpr is
                      exception
                         when others =>
                            Fail_Program
-                             ("could not create switches file """,
+                             ("could not create switches file """ &
                               Get_Name_String
                                 (Project_Tree.Sources.Table
-                                   (Source).Switches_Path),
-                              """");
+                                   (Source).Switches_Path) & '"');
                      end;
                   end if;
                end if;
@@ -1561,8 +1560,7 @@ package body Buildgpr is
 
                      if Exec_Path = null then
                         Fail_Program
-                          ("unable to find dependency builder ",
-                           Exec_Name);
+                          ("unable to find dependency builder " & Exec_Name);
                      end if;
 
                      List := Nam.Next;
@@ -2423,8 +2421,8 @@ package body Buildgpr is
 
          if Library_Builder = null then
             Fail_Program
-              ("could not locate library builder """,
-               Get_Name_String (Data.Config.Library_Builder), """");
+              ("could not locate library builder """ &
+               Get_Name_String (Data.Config.Library_Builder) & '"');
 
          else
             Library_Builder_Name :=
@@ -2654,7 +2652,7 @@ package body Buildgpr is
          exception
             when others =>
                Fail_Program
-                 ("unable to create library exchange file ",
+                 ("unable to create library exchange file " &
                   Exchange_File_Name.all);
          end;
 
@@ -3212,8 +3210,7 @@ package body Buildgpr is
 
             if not Success then
                Fail_Program
-                 ("could not build library for project ",
-                  Project_Name);
+                 ("could not build library for project " & Project_Name);
             end if;
          end;
       end if;
@@ -3268,10 +3265,10 @@ package body Buildgpr is
 
       when Directory_Error =>
          Fail_Program
-           ("unable to change to object directory """,
+           ("unable to change to object directory """ &
             Get_Name_String
               (Project_Tree.Projects.Table (Project).Object_Directory.Name) &
-            """ of project ",
+            """ of project " &
             Get_Name_String
               (Project_Tree.Projects.Table (Project).Display_Name));
    end Change_To_Object_Directory;
@@ -3303,9 +3300,8 @@ package body Buildgpr is
 
             if Archive_Builder_Path = null then
                Fail_Program
-                 ("unable to locate archive builder """,
-                  Archive_Builder_Name.all,
-                  """");
+                 ("unable to locate archive builder """ &
+                  Archive_Builder_Name.all & '"');
             end if;
 
             loop
@@ -3378,8 +3374,8 @@ package body Buildgpr is
 
             if Base_Name (Main) /= Main then
                Fail_Program
-                 ("mains cannot include directory information (""",
-                  Display_Main,
+                 ("mains cannot include directory information (""" &
+                  Display_Main &
                   """)");
             end if;
 
@@ -3408,14 +3404,12 @@ package body Buildgpr is
 
             if Nmb = 0 then
                Fail_Program
-                 ("""",
-                  Display_Main,
-                  """ is not a source of any project");
+                 ("""" & Display_Main & """ is not a source of any project");
 
             elsif Nmb > 1 then
                Fail_Program
-                 ("""",
-                  Display_Main,
+                 ("""" &
+                  Display_Main &
                   """ is a source of several projects, but not of " &
                   "the main project");
             end if;
@@ -3880,7 +3874,7 @@ package body Buildgpr is
 
                         if Compiler_Path = null then
                            Fail_Program
-                             ("unable to locate """, Compiler_Name, """");
+                             ("unable to locate """ & Compiler_Name & '"');
 
                         else
                            Project_Tree.Languages_Data.Table
@@ -5718,7 +5712,7 @@ package body Buildgpr is
             exception
                when others =>
                   Fail_Program
-                    ("unable to open config file ",
+                    ("unable to open config file " &
                      Get_Name_String (Config_File_Path));
             end;
 
@@ -6385,9 +6379,7 @@ package body Buildgpr is
       if not Gpr_Util.Success then
          Prj.Err.Finalize;
          Fail_Program
-           ("""",
-            Project_File_Name.all,
-            """ processing failed",
+           ("""" & Project_File_Name.all & """ processing failed",
             Flush_Messages => False);
       end if;
 
@@ -6681,9 +6673,8 @@ package body Buildgpr is
                               "it to Global_Compilation_Switches.",
                               Element.Location);
                            Fail_Program
-                             ("*** illegal switch """,
-                              Get_Name_String (Element.Value),
-                              """");
+                             ("*** illegal switch """ &
+                              Get_Name_String (Element.Value) & '"');
                         end if;
 
                         List := Element.Next;
@@ -7368,7 +7359,7 @@ package body Buildgpr is
                Linker_Path := Locate_Exec_On_Path (Linker_Name.all);
 
                if Linker_Path = null then
-                  Fail_Program ("unable to find linker ", Linker_Name.all);
+                  Fail_Program ("unable to find linker " & Linker_Name.all);
                end if;
 
             else
@@ -7414,8 +7405,8 @@ package body Buildgpr is
 
             if Main_Object_TS = Empty_Time_Stamp then
                Fail_Program
-                 ("main object for ",
-                  Get_Name_String (Main_Source.File),
+                 ("main object for " &
+                  Get_Name_String (Main_Source.File) &
                   " does not exist");
             end if;
 
@@ -7537,8 +7528,8 @@ package body Buildgpr is
 
                      else
                         Fail_Program
-                          ("binder exchange file ",
-                           Exchange_File_Name,
+                          ("binder exchange file " &
+                           Exchange_File_Name &
                            " does not exist");
                      end if;
                   end;
@@ -7558,9 +7549,9 @@ package body Buildgpr is
                end if;
 
                Fail_Program
-                 ("global archive for project file ",
+                 ("global archive for project file " &
                   Get_Name_String
-                    (Project_Tree.Projects.Table (Main_Proj).Name),
+                    (Project_Tree.Projects.Table (Main_Proj).Name) &
                   " does not exist");
             end if;
 
@@ -7878,7 +7869,7 @@ package body Buildgpr is
                  (Linker_Path.all, Arguments (1 .. Last_Argument), Success);
 
                if not Success then
-                  Fail_Program ("link of ", Main, " failed");
+                  Fail_Program ("link of " & Main & " failed");
                end if;
             end if;
          end;
@@ -9877,7 +9868,7 @@ package body Buildgpr is
                               Success);
 
                            if not Success then
-                              Fail_Program ("unable to bind ", Main);
+                              Fail_Program ("unable to bind " & Main);
                            end if;
                         end if;
                      end if;
@@ -10463,7 +10454,7 @@ package body Buildgpr is
                Set_Debug_Flag (Arg (3));
 
             else
-               Fail_Program ("illegal debug switch ", Arg);
+               Fail_Program ("illegal debug switch " & Arg);
             end if;
 
          elsif Command_Line and then Arg = "-eL" then
@@ -10671,7 +10662,7 @@ package body Buildgpr is
       if not Processed then
          if Command_Line then
             Finish_Program
-              (True, "illegal option """, Arg, """ on the command line");
+              (True, "illegal option """ & Arg & """ on the command line");
 
          else
             --  If we have a switch and there is a Builder Switches language

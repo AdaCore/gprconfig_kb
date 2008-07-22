@@ -1154,7 +1154,7 @@ package body Cleangpr is
 
             procedure Bad_Argument is
             begin
-               Osint.Fail ("invalid argument """, Arg, """");
+               Osint.Fail ("invalid argument """ & Arg & '"');
             end Bad_Argument;
 
          begin
@@ -1387,8 +1387,8 @@ package body Cleangpr is
 
                            else
                               Osint.Fail
-                                ("illegal external assignment '",
-                                 Ext_Asgn, "'");
+                                ("illegal external assignment '" &
+                                 Ext_Asgn & ''');
                            end if;
                         end;
 

@@ -351,7 +351,7 @@ package body Confgpr is
 
          elsif Configuration_Project_Path = null then
             Osint.Fail
-              ("could not locate main configuration project ",
+              ("could not locate main configuration project " &
                Config_Project_File_Name.all);
          end if;
       end if;
@@ -403,7 +403,7 @@ package body Confgpr is
          --  displayed twice.
 
          Fail_Program
-           ("""", Project_File_Name.all, """ processing failed",
+           ("""" & Project_File_Name.all & """ processing failed",
             Flush_Messages => False);
       end if;
 
@@ -416,7 +416,7 @@ package body Confgpr is
          Report_Error           => null);
 
       if not Success then
-         Fail_Program ("""", Project_File_Name.all, """ processing failed");
+         Fail_Program ("""" & Project_File_Name.all & """ processing failed");
       end if;
 
       --  If Autoconfiguration is True, get the languages from the user project
@@ -489,12 +489,12 @@ package body Confgpr is
 
                exception
                   when others =>
-                     Fail ("could not create object directory ", Obj_Dir);
+                     Fail ("could not create object directory " & Obj_Dir);
                end;
             end if;
 
             if not Is_Directory (Obj_Dir) then
-               Fail ("object directory ", Obj_Dir, " does not exist");
+               Fail ("object directory " & Obj_Dir & " does not exist");
             end if;
          end;
 
@@ -665,7 +665,7 @@ package body Confgpr is
                 (Config_Project_File_Name.all, Config_Path.all);
 
             if Configuration_Project_Path = null then
-               Fail ("could not create ", Config_Project_File_Name.all);
+               Fail ("could not create " & Config_Project_File_Name.all);
             end if;
          end;
       end if;
@@ -683,7 +683,7 @@ package body Confgpr is
 
       if Configuration_Project_Path = null then
          Fail
-           ("config file ", Config_Project_File_Name.all, " does not exist");
+           ("config file " & Config_Project_File_Name.all & " does not exist");
       end if;
 
       if Verbose_Mode then
@@ -714,8 +714,8 @@ package body Confgpr is
         Main_Config_Project = No_Project
       then
          Osint.Fail
-           ("processing of configuration project """,
-            Configuration_Project_Path.all,
+           ("processing of configuration project """ &
+            Configuration_Project_Path.all &
             """ failed");
       end if;
 

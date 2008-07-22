@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2007, Free Software Foundation, Inc.            --
+--            Copyright (C) 2007-2008, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -130,18 +130,10 @@ package Gpr_Util is
    --  binder driver. Populate table Binding_Languages and set variable
    --  There_Are_Binder_Drivers accordingly.
 
-   procedure Fail_Program
-     (S1             : String;
-      S2             : String  := "";
-      S3             : String  := "";
-      Flush_Messages : Boolean := True);
+   procedure Fail_Program (S : String; Flush_Messages : Boolean := True);
    --  Terminate program with a message and a fatal status code
 
-   procedure Finish_Program
-     (Fatal : Boolean;
-      S1    : String := "";
-      S2    : String := "";
-      S3    : String := "");
+   procedure Finish_Program (Fatal : Boolean; S : String := "");
    --  Terminate program, with or without a message, setting the status code
    --  according to Fatal.
 

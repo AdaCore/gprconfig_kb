@@ -75,14 +75,14 @@ procedure Build_Shared_Lib is
          Driver := Locate_Exec_On_Path (Gcc_Name);
 
          if Driver = null then
-            Osint.Fail (Gcc_Name, " not found in path");
+            Osint.Fail (Gcc_Name & " not found in path");
          end if;
 
       else
          Driver := Locate_Exec_On_Path (Get_Name_String (Driver_Name));
 
          if Driver = null then
-            Osint.Fail (Get_Name_String (Driver_Name), " not found in path");
+            Osint.Fail (Get_Name_String (Driver_Name) & " not found in path");
          end if;
       end if;
 
@@ -125,7 +125,7 @@ procedure Build_Shared_Lib is
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
          if Partial_Linker_Path = null then
-            Osint.Fail ("unable to locate ", Partial_Linker.all);
+            Osint.Fail ("unable to locate " & Partial_Linker.all);
          end if;
       end if;
 
@@ -206,7 +206,8 @@ procedure Build_Shared_Lib is
 
                if not Success then
                   Osint.Fail
-                    ("call to linker driver ", Partial_Linker.all, " failed");
+                    ("call to linker driver " &
+                     Partial_Linker.all & " failed");
                end if;
 
                if First_Object > Ofiles'Last then
@@ -245,10 +246,10 @@ procedure Build_Shared_Lib is
 
       if not Success then
          if Driver_Name = No_Name then
-            Osint.Fail (Gcc_Name, " execution error");
+            Osint.Fail (Gcc_Name & " execution error");
 
          else
-            Osint.Fail (Get_Name_String (Driver_Name), " execution error");
+            Osint.Fail (Get_Name_String (Driver_Name) & " execution error");
          end if;
       end if;
    end Build;
@@ -294,7 +295,6 @@ begin
                  Library_Version.all);
          end if;
       end if;
-
 
       if Is_Absolute_Path (Library_Version.all) then
          Library_Version_Path := Library_Version;

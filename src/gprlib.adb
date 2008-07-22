@@ -796,7 +796,7 @@ begin
       Open (IO_File, In_File, Exchange_File_Name.all);
    exception
       when others =>
-         Osint.Fail ("could not read ", Exchange_File_Name.all);
+         Osint.Fail ("could not read " & Exchange_File_Name.all);
    end;
 
    while not End_Of_File (IO_File) loop
@@ -807,7 +807,7 @@ begin
 
          case Current_Section is
             when No_Library_Section =>
-               Osint.Fail ("unknown section: ", Line (1 .. Last));
+               Osint.Fail ("unknown section: " & Line (1 .. Last));
 
             when Quiet =>
                Quiet_Output := True;
@@ -858,7 +858,7 @@ begin
       then
          case Current_Section is
             when No_Library_Section =>
-               Osint.Fail ("no section specified: ", Line (1 .. Last));
+               Osint.Fail ("no section specified: " & Line (1 .. Last));
 
             when Quiet =>
                Osint.Fail ("quiet section should be empty");
@@ -928,7 +928,7 @@ begin
             when Gprexch.Imported_Libraries =>
                if End_Of_File (IO_File) then
                   Osint.Fail
-                    ("no library name for imported library ",
+                    ("no library name for imported library " &
                      Line (1 .. Last));
 
                else
@@ -947,7 +947,7 @@ begin
             when Gprexch.Compilers =>
                if End_Of_File (IO_File) then
                   Osint.Fail
-                    ("no compiler specified for language ",
+                    ("no compiler specified for language " &
                      Line (1 .. Last));
 
                else
@@ -987,7 +987,7 @@ begin
             when Toolchain_Version =>
                if End_Of_File (IO_File) then
                   Osint.Fail
-                    ("no toolchain version for language ",
+                    ("no toolchain version for language " &
                      Line (1 .. Last));
 
                elsif Line (1 .. Last) = "ada" then
@@ -1092,7 +1092,7 @@ begin
             when Gprexch.Runtime_Library_Dir =>
                if End_Of_File (IO_File) then
                   Osint.Fail
-                    ("no runtime library dir for language ",
+                    ("no runtime library dir for language " &
                      Line (1 .. Last));
 
                elsif Line (1 .. Last) = "ada" then
@@ -1146,7 +1146,7 @@ begin
    exception
       when others =>
          Osint.Fail
-           ("cannot change to object directory ",
+           ("cannot change to object directory " &
             Object_Directories.Table (1).all);
    end;
 
@@ -1169,7 +1169,7 @@ begin
          Gnatbind_Path := Locate_Exec_On_Path (Gnatbind_Name.all);
 
          if Gnatbind_Path = null then
-            Osint.Fail ("unable to locate ", Gnatbind_Name.all);
+            Osint.Fail ("unable to locate " & Gnatbind_Name.all);
          end if;
 
          Last_Bind_Option := 0;
@@ -1284,7 +1284,7 @@ begin
            (Gnatbind_Path.all, Bind_Options (1 .. Last_Bind_Option), Success);
 
          if not Success then
-            Osint.Fail ("invocation of ", Gnatbind_Name.all, " failed");
+            Osint.Fail ("invocation of " & Gnatbind_Name.all & " failed");
          end if;
 
          Generated_Sources.Append
@@ -1297,7 +1297,7 @@ begin
          Compiler_Path := Locate_Exec_On_Path (Compiler_Name.all);
 
          if Compiler_Path = null then
-            Osint.Fail ("unable to locate ", Compiler_Name.all);
+            Osint.Fail ("unable to locate " & Compiler_Name.all);
          end if;
 
          Last_Bind_Option := 0;
@@ -1369,7 +1369,7 @@ begin
            (Compiler_Path.all, Bind_Options (1 .. Last_Bind_Option), Success);
 
          if not Success then
-            Osint.Fail ("invocation of ", Compiler_Name.all, " failed");
+            Osint.Fail ("invocation of " & Compiler_Name.all & " failed");
          end if;
 
          Generated_Objects.Append (new String'(Binder_Generated_Object));
@@ -1414,7 +1414,7 @@ begin
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
          if Partial_Linker_Path = null then
-            Osint.Fail ("unable to locate ", Partial_Linker.all);
+            Osint.Fail ("unable to locate " & Partial_Linker.all);
          end if;
       end if;
 
@@ -1510,7 +1510,8 @@ begin
 
                if not Success then
                   Osint.Fail
-                    ("call to linker driver ", Partial_Linker.all, " failed");
+                    ("call to linker driver " &
+                     Partial_Linker.all & " failed");
                end if;
 
                if First_Object > Object_Files.Last then
@@ -1586,7 +1587,7 @@ begin
 
          if not Success then
             Osint.Fail
-              ("call to archive builder ", Archive_Builder.all, " failed");
+              ("call to archive builder " & Archive_Builder.all & " failed");
          end if;
       end if;
 
@@ -1643,7 +1644,8 @@ begin
 
             if not Success then
                Osint.Fail
-                 ("call to archive builder ", Archive_Builder.all, " failed");
+                 ("call to archive builder " &
+                  Archive_Builder.all & " failed");
             end if;
 
             exit when Next_AB_Object_Pos > Last_AB_Option;
@@ -1683,7 +1685,7 @@ begin
 
          if not Success then
             Osint.Fail
-              ("call to archive indexer ", Archive_Indexer.all, " failed");
+              ("call to archive indexer " & Archive_Indexer.all & " failed");
          end if;
       end if;
 
@@ -1830,7 +1832,7 @@ begin
       Create (IO_File, Out_File, Exchange_File_Name.all);
    exception
       when others =>
-         Osint.Fail ("could not create ", Exchange_File_Name.all);
+         Osint.Fail ("could not create " & Exchange_File_Name.all);
    end;
 
    Put_Line (IO_File, Library_Label (Library_Path));
