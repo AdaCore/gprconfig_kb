@@ -4,7 +4,7 @@ project Gprbuild is
    type OS_Type is ("unix", "avms", "ivms", "Windows_NT");
    OS : OS_Type := External ("OS", "unix");
 
-   type Build_Type is ("debug", "production", "coverage");
+   type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := External ("BUILD", "debug");
 
    type Build_Tool_Type is ("gnatmake", "gprbuild");
@@ -23,6 +23,7 @@ project Gprbuild is
          case Bld is
             when "production" => for Object_Dir use "bootstrap/obj";
             when "coverage"   => for Object_Dir use "bootstrap/obj-cov";
+            when "profiling"  => for Object_Dir use "bootstrap/obj-prof";
             when "debug"      => for Object_Dir use "bootstrap/obj-debug";
          end case;
          for Exec_Dir use "bootstrap";
@@ -31,6 +32,7 @@ project Gprbuild is
          case Bld is
             when "production" => for Object_Dir use "obj";
             when "coverage"   => for Object_Dir use "obj-cov";
+            when "profiling"  => for Object_Dir use "obj-prof";
             when "debug"      => for Object_Dir use "obj-debug";
          end case;
          for Exec_Dir use ".";
@@ -67,6 +69,9 @@ project Gprbuild is
          when "coverage" =>
             for Default_Switches ("Ada") use common_switches &
               ("-ftest-coverage", "-fprofile-arcs");
+         when "profiling" =>
+            for Default_Switches ("Ada") use common_switches &
+              ("-pg", "-g");
          when "production" =>
             for Default_Switches ("Ada") use common_switches &
               ("-O2", "-gnatpn", "-gnatws");
@@ -83,10 +88,7 @@ project Gprbuild is
             --  & ("-Sin")
             ;
 
-         when "production" =>
-            for Default_Switches ("Ada") use common_switches;
-
-         when "coverage" =>
+         when "coverage" | "profiling" | "production" =>
             for Default_Switches ("Ada") use common_switches;
          end case;
    end Binder;
@@ -122,6 +124,10 @@ project Gprbuild is
                          for Default_Switches ("Ada") use
                                Common_Switches & ("-lgcov");
                   end case;
+
+               when "profiling"            =>
+                  for Default_Switches ("Ada") use Common_Switches & ("-pg");
+
             end case;
 
          when "gprbuild" =>

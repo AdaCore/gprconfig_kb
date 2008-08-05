@@ -28,6 +28,9 @@ endif
 ifeq ($(BUILD), coverage)
 objdir=obj-cov
 endif
+ifeq ($(BUILD), profiling)
+objdir=obj-prof
+endif
 
 dummy:=$(shell $(MKDIR) $(objdir))
 
