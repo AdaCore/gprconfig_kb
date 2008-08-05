@@ -1653,8 +1653,7 @@ package body Buildgpr is
      (For_Project : Project_Id;
       Has_Been_Built : out Boolean)
    is
-      Data : constant Project_Data :=
-               Project_Tree.Projects.Table (For_Project);
+      Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
 
       Archive_Name : constant String :=
         "lib" & Get_Name_String (Data.Name) & ".a";
@@ -2290,8 +2289,7 @@ package body Buildgpr is
    -------------------
 
    procedure Build_Library (For_Project : Project_Id) is
-      Data : constant Project_Data :=
-               Project_Tree.Projects.Table (For_Project);
+      Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
 
       Object_Directory_Path : constant String :=
                                 Get_Name_String (Data.Object_Directory.Name);
@@ -2721,23 +2719,27 @@ package body Buildgpr is
          declare
             List : Project_List := Data.All_Imported_Projects;
             Elem : Project_Element;
-            Pdata : Project_Data;
 
          begin
             while List /= Empty_Project_List loop
                Elem := Project_Tree.Project_Lists.Table (List);
-               Pdata := Project_Tree.Projects.Table (Elem.Project);
 
-               if Pdata.Library_ALI_Dir /= No_Path_Information then
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (Pdata.Library_ALI_Dir.Name));
+               declare
+                  Pdata : Project_Data renames
+                    Project_Tree.Projects.Table (Elem.Project);
+               begin
 
-               elsif Pdata.Library_Dir /= No_Path_Information then
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (Pdata.Library_Dir.Name));
-               end if;
+                  if Pdata.Library_ALI_Dir /= No_Path_Information then
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (Pdata.Library_ALI_Dir.Name));
+
+                  elsif Pdata.Library_Dir /= No_Path_Information then
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (Pdata.Library_Dir.Name));
+                  end if;
+               end;
 
                List := Elem.Next;
             end loop;
@@ -3068,38 +3070,41 @@ package body Buildgpr is
 
          declare
             Current_Proj : Project_Id := For_Project;
-            Proj_Data    : Project_Data;
             Source       : Source_Id;
             Src_Data     : Source_Data;
          begin
             while Current_Proj /= No_Project loop
-               Proj_Data := Project_Tree.Projects.Table (Current_Proj);
-               Source := Proj_Data.First_Source;
+               declare
+                  Proj_Data : Project_Data renames
+                    Project_Tree.Projects.Table (Current_Proj);
+               begin
+                  Source := Proj_Data.First_Source;
 
-               while Source /= No_Source loop
-                  Src_Data := Project_Tree.Sources.Table (Source);
+                  while Source /= No_Source loop
+                     Src_Data := Project_Tree.Sources.Table (Source);
 
-                  if not Src_Data.Locally_Removed
-                    and then Src_Data.Dep_Name /= No_File
-                  then
-                     if Src_Data.Kind = Spec then
-                        if Src_Data.Other_Part = No_Source then
+                     if not Src_Data.Locally_Removed
+                       and then Src_Data.Dep_Name /= No_File
+                     then
+                        if Src_Data.Kind = Spec then
+                           if Src_Data.Other_Part = No_Source then
+                              Put_Line
+                                (Exchange_File,
+                                 Get_Name_String (Src_Data.Dep_Name));
+                           end if;
+
+                        elsif not Is_Subunit (Src_Data) then
                            Put_Line
                              (Exchange_File,
                               Get_Name_String (Src_Data.Dep_Name));
                         end if;
-
-                     elsif not Is_Subunit (Src_Data) then
-                        Put_Line
-                          (Exchange_File,
-                           Get_Name_String (Src_Data.Dep_Name));
                      end if;
-                  end if;
 
-                  Source := Src_Data.Next_In_Project;
-               end loop;
+                     Source := Src_Data.Next_In_Project;
+                  end loop;
 
-               Current_Proj := Proj_Data.Extends;
+                  Current_Proj := Proj_Data.Extends;
+               end;
             end loop;
          end;
 
@@ -3278,7 +3283,7 @@ package body Buildgpr is
    ---------------------------
 
    procedure Check_Archive_Builder is
-      Data : constant Project_Data :=
+      Data : Project_Data renames
                Project_Tree.Projects.Table (Main_Project);
       List : Name_List_Index;
    begin
@@ -3426,7 +3431,6 @@ package body Buildgpr is
             Source       : Source_Id;
 
             Project      : Project_Id;
-            Data         : Project_Data;
             Root_Arr     : Array_Element_Id;
             Roots        : Variable_Value;
             Root_List    : Roots_Access;
@@ -3463,11 +3467,11 @@ package body Buildgpr is
                      Write_Line (Display_Main);
                   end if;
 
-                  Data := Project_Tree.Projects.Table (Project);
                   Root_Arr :=
                     Prj.Util.Value_Of
                       (Name      => Name_Roots,
-                       In_Arrays => Data.Decl.Arrays,
+                       In_Arrays =>
+                         Project_Tree.Projects.Table (Project).Decl.Arrays,
                        In_Tree   => Project_Tree);
                   Roots :=
                     Prj.Util.Value_Of
@@ -5400,8 +5404,8 @@ package body Buildgpr is
       Language       : Name_Id)
       return Path_Name_Type
    is
-      Config_Project_Data : constant Project_Data :=
-                              Project_Tree.Projects.Table (Project);
+      Config_Project_Data :  Project_Data renames
+        Project_Tree.Projects.Table (Project);
       Config_Package      : constant Package_Id :=
                           Value_Of
                             (Name        => Package_Name,
@@ -5513,7 +5517,7 @@ package body Buildgpr is
       -----------
 
       procedure Check (Project : Project_Id) is
-         Data : constant Project_Data := Project_Tree.Projects.Table (Project);
+         Data : Project_Data renames Project_Tree.Projects.Table (Project);
 
          Lang_Id   : Language_Index := Data.First_Language_Processing;
          Lang_Data : Language_Data;
@@ -5979,8 +5983,7 @@ package body Buildgpr is
       Linker_Lib_Dir_Option  : String_Access;
       Linker_Lib_Name_Option : String_Access;
 
-      Data : constant Project_Data :=
-               Project_Tree.Projects.Table (For_Project);
+      Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
 
       procedure Recursive_Add_Linker_Options (Proj : Project_Id);
       --  The recursive routine used to add linker options
@@ -5990,51 +5993,54 @@ package body Buildgpr is
       ----------------------------------
 
       procedure Recursive_Add_Linker_Options (Proj : Project_Id) is
-         Data           : Project_Data;
          Linker_Package : Package_Id;
          Options        : Variable_Value;
          Imported       : Project_List;
 
       begin
          if Proj /= No_Project then
-            Data := Project_Tree.Projects.Table (Proj);
+            declare
 
-            if not Data.Seen then
-               Project_Tree.Projects.Table (Proj).Seen := True;
-               Imported := Data.Imported_Projects;
+               Data : Project_Data renames Project_Tree.Projects.Table (Proj);
 
-               while Imported /= Empty_Project_List loop
-                  Recursive_Add_Linker_Options
-                    (Project_Tree.Project_Lists.Table
-                       (Imported).Project);
-                  Imported := Project_Tree.Project_Lists.Table
-                                (Imported).Next;
-               end loop;
+            begin
+               if not Data.Seen then
+                  Project_Tree.Projects.Table (Proj).Seen := True;
+                  Imported := Data.Imported_Projects;
 
-               if Proj /= For_Project then
-                  Linker_Package :=
-                    Prj.Util.Value_Of
-                      (Name        => Name_Linker,
-                       In_Packages => Data.Decl.Packages,
-                       In_Tree     => Project_Tree);
-                  Options :=
-                    Prj.Util.Value_Of
-                      (Name                    => Name_Ada,
-                       Index                   => 0,
-                       Attribute_Or_Array_Name => Name_Linker_Options,
-                       In_Package              => Linker_Package,
-                       In_Tree                 => Project_Tree);
+                  while Imported /= Empty_Project_List loop
+                     Recursive_Add_Linker_Options
+                       (Project_Tree.Project_Lists.Table
+                          (Imported).Project);
+                     Imported := Project_Tree.Project_Lists.Table
+                       (Imported).Next;
+                  end loop;
 
-                  --  If attribute is present, add the project with
-                  --  the attribute to table Linker_Opts.
+                  if Proj /= For_Project then
+                     Linker_Package :=
+                       Prj.Util.Value_Of
+                         (Name        => Name_Linker,
+                          In_Packages => Data.Decl.Packages,
+                          In_Tree     => Project_Tree);
+                     Options :=
+                       Prj.Util.Value_Of
+                         (Name                    => Name_Ada,
+                          Index                   => 0,
+                          Attribute_Or_Array_Name => Name_Linker_Options,
+                          In_Package              => Linker_Package,
+                          In_Tree                 => Project_Tree);
 
-                  if Options /= Nil_Variable_Value then
-                     Linker_Opts.Increment_Last;
-                     Linker_Opts.Table (Linker_Opts.Last) :=
-                       (Project => Proj, Options => Options.Values);
+                     --  If attribute is present, add the project with
+                     --  the attribute to table Linker_Opts.
+
+                     if Options /= Nil_Variable_Value then
+                        Linker_Opts.Increment_Last;
+                        Linker_Opts.Table (Linker_Opts.Last) :=
+                          (Project => Proj, Options => Options.Values);
+                     end if;
                   end if;
                end if;
-            end if;
+            end;
          end if;
       end Recursive_Add_Linker_Options;
 
@@ -6252,8 +6258,8 @@ package body Buildgpr is
             Project_Tree.Projects.Table (Project).Seen := True;
 
             declare
-               Data : constant Project_Data :=
-                        Project_Tree.Projects.Table (Project);
+               Data : Project_Data renames
+                 Project_Tree.Projects.Table (Project);
                List : Project_List := Data.Imported_Projects;
 
                Lang_Proc : Language_Index := Data.First_Language_Processing;
@@ -7012,12 +7018,10 @@ package body Buildgpr is
       Need_Object : Boolean := False)
    is
       Src_Data : Source_Data  := Project_Tree.Sources.Table (Source);
-      Data     : Project_Data;
-      Obj_Proj : Project_Id := Src_Data.Project;
+      Obj_Proj : Project_Id;
       Found    : Boolean := False;
    begin
       if Src_Data.Source_TS = Empty_Time_Stamp or else Need_Object then
-         Data := Project_Tree.Projects.Table (Src_Data.Project);
          Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
          Project_Tree.Sources.Table (Source) := Src_Data;
 
@@ -7054,67 +7058,73 @@ package body Buildgpr is
                return;
             end if;
 
+            Obj_Proj := Src_Data.Project;
             loop
                declare
+                  Data : Project_Data renames
+                    Project_Tree.Projects.Table (Obj_Proj);
+
                   Object_Path     :
-                    constant String :=
-                      Normalize_Pathname
-                        (Name      => Get_Name_String (Src_Data.Object),
-                         Directory => Get_Name_String
-                                        (Data.Object_Directory.Name));
+                  constant String :=
+                                      Normalize_Pathname
+                                        (Name      =>
+                                           Get_Name_String (Src_Data.Object),
+                                         Directory => Get_Name_String
+                                           (Data.Object_Directory.Name));
                begin
                   Src_Data.Object_Path := Create_Name (Object_Path);
-               end;
 
-               Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
+                  Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
 
-               if Src_Data.Dependency /= None then
+                  if Src_Data.Dependency /= None then
+                     declare
+                        Dep_Path : constant String :=
+                                     Normalize_Pathname
+                                       (Name      =>
+                                          Get_Name_String
+                                            (Src_Data.Dep_Name),
+                                        Directory =>
+                                          Get_Name_String
+                                            (Data.Object_Directory.Name));
+
+                     begin
+                        Src_Data.Dep_Path := Create_Name (Dep_Path);
+                     end;
+
+                     Src_Data.Dep_TS := File_Stamp (Src_Data.Dep_Path);
+                  end if;
+
                   declare
-                     Dep_Path        :
-                       constant String :=
-                         Normalize_Pathname
-                           (Name      => Get_Name_String (Src_Data.Dep_Name),
-                            Directory =>
-                              Get_Name_String
-                                (Data.Object_Directory.Name));
+                     Switches_Path   :
+                     constant String :=
+                                         Normalize_Pathname
+                                           (Name      => Get_Name_String
+                                                           (Src_Data.Switches),
+                                            Directory => Get_Name_String
+                                              (Data.Object_Directory.Name));
 
                   begin
-                     Src_Data.Dep_Path := Create_Name (Dep_Path);
+                     Src_Data.Switches_Path := Create_Name (Switches_Path);
                   end;
 
-                  Src_Data.Dep_TS := File_Stamp (Src_Data.Dep_Path);
-               end if;
+                  Src_Data.Switches_TS := File_Stamp (Src_Data.Switches_Path);
 
-               declare
-                  Switches_Path :
-                    constant String :=
-                      Normalize_Pathname
-                        (Name      => Get_Name_String (Src_Data.Switches),
-                         Directory => Get_Name_String
-                                        (Data.Object_Directory.Name));
-
-               begin
-                  Src_Data.Switches_Path := Create_Name (Switches_Path);
-               end;
-
-               Src_Data.Switches_TS := File_Stamp (Src_Data.Switches_Path);
-
-               if Src_Data.Object_TS /= Empty_Time_Stamp then
-                  Found := True;
-                  Src_Data.Object_Project := Obj_Proj;
-                  Project_Tree.Sources.Table (Source) := Src_Data;
-               end if;
-
-               Obj_Proj := Data.Extended_By;
-               if Obj_Proj = No_Project then
-                  if not Found then
+                  if Src_Data.Object_TS /= Empty_Time_Stamp then
+                     Found := True;
+                     Src_Data.Object_Project := Obj_Proj;
                      Project_Tree.Sources.Table (Source) := Src_Data;
                   end if;
 
-                  exit;
-               end if;
+                  Obj_Proj := Data.Extended_By;
+                  if Obj_Proj = No_Project then
+                     if not Found then
+                        Project_Tree.Sources.Table (Source) := Src_Data;
+                     end if;
 
-               Data := Project_Tree.Projects.Table (Obj_Proj);
+                     exit;
+                  end if;
+
+               end;
             end loop;
          end if;
       end if;
@@ -7129,6 +7139,7 @@ package body Buildgpr is
       Project     : Project_Id)
       return Boolean
    is
+      Proj     : Project_Id;
       Data     : Project_Data := Project_Tree.Projects.Table (Project);
       Source   : Source_Id;
       Src_Data : Source_Data;
@@ -7137,30 +7148,37 @@ package body Buildgpr is
       --  If a source is overriden in an extending project, then the object
       --  file is not included in the global archive.
 
-      while Data.Extended_By /= No_Project loop
-         Data := Project_Tree.Projects.Table (Data.Extended_By);
+      Proj := Project_Tree.Projects.Table (Project).Extended_By;
+      while Proj /= No_Project loop
+         declare
+            Data : Project_Data renames Project_Tree.Projects.Table (Proj);
 
-         Source := Data.First_Source;
-         while Source /= No_Source loop
-            Src_Data := Project_Tree.Sources.Table (Source);
+         begin
+            Source := Data.First_Source;
+            while Source /= No_Source loop
+               Src_Data := Project_Tree.Sources.Table (Source);
 
-            if ((Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Impl)
-                or else
-                (Src_Data.Lang_Kind = Unit_Based
+               if ((Src_Data.Lang_Kind = File_Based
+                    and then Src_Data.Kind = Impl)
+                   or else
+                     (Src_Data.Lang_Kind = Unit_Based
+                      and then
+                        (Src_Data.Kind = Impl
+                         or else
+                           (Src_Data.Kind = Spec
+                            and then
+                              Src_Data.Other_Part = No_Source))))
                  and then
-                 (Src_Data.Kind = Impl
-                  or else
-                  (Src_Data.Kind = Spec
-                   and then
-                   Src_Data.Other_Part = No_Source))))
-                and then
-                Src_Data.Object =  Object_Name
-            then
-               return False;
-            else
-               Source := Project_Tree.Sources.Table (Source).Next_In_Project;
-            end if;
-         end loop;
+                   Src_Data.Object =  Object_Name
+               then
+                  return False;
+               else
+                  Source :=
+                    Project_Tree.Sources.Table (Source).Next_In_Project;
+               end if;
+            end loop;
+            Proj := Data.Extended_By;
+         end;
       end loop;
 
       Data := Project_Tree.Projects.Table (Project);
@@ -8796,7 +8814,6 @@ package body Buildgpr is
          -------------------------
 
          procedure Put_Dependency_File is
-            Local_Data : Project_Data;
          begin
             if Source.Language_Name = Lang_Name
               and then
@@ -8818,24 +8835,30 @@ package body Buildgpr is
             then
                Initialize_Source_Record (Src_Id);
                Source := Project_Tree.Sources.Table (Src_Id);
-               Local_Data := Project_Tree.Projects.Table (Source.Project);
 
-               if (Source.Project = For_Project) or
-                  (not Local_Data.Library) or
-                  Config.Kind = File_Based
-               then
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (Source.Dep_Path));
-                  Dep_Files := True;
+               declare
+                  Local_Data : Project_Data renames
+                    Project_Tree.Projects.Table (Source.Project);
 
-               elsif not Local_Data.Standalone_Library then
-                  Get_Name_String (Local_Data.Library_ALI_Dir.Name);
-                  Add_Char_To_Name_Buffer (Directory_Separator);
-                  Get_Name_String_And_Append (Source.Dep_Name);
-                  Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
-                  Dep_Files := True;
-               end if;
+               begin
+
+                  if (Source.Project = For_Project) or
+                    (not Local_Data.Library) or
+                    Config.Kind = File_Based
+                  then
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (Source.Dep_Path));
+                     Dep_Files := True;
+
+                  elsif not Local_Data.Standalone_Library then
+                     Get_Name_String (Local_Data.Library_ALI_Dir.Name);
+                     Add_Char_To_Name_Buffer (Directory_Separator);
+                     Get_Name_String_And_Append (Source.Dep_Name);
+                     Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
+                     Dep_Files := True;
+                  end if;
+               end;
             end if;
          end Put_Dependency_File;
 
@@ -8875,7 +8898,6 @@ package body Buildgpr is
         (For_Project  : Project_Id;
          For_Language : Name_Id)
       is
-         Data    : Project_Data;
          Src_Id  : Source_Id;
          Source  : Source_Data;
 
@@ -8886,72 +8908,80 @@ package body Buildgpr is
            (not Binder_Driver_Needs_To_Be_Called) and then
            (not Project_Tree.Projects.Table (For_Project).Seen)
          then
-            Project_Tree.Projects.Table (For_Project).Seen := True;
-            Data := Project_Tree.Projects.Table (For_Project);
+            declare
+               Data : Project_Data renames
+                 Project_Tree.Projects.Table (For_Project);
 
-            Src_Id := Data.First_Source;
+            begin
+               Data.Seen := True;
 
-            while Src_Id /= No_Source loop
-               Source := Project_Tree.Sources.Table (Src_Id);
+               Src_Id := Data.First_Source;
 
-               if Source.Language_Name = For_Language
-                 and then
-                   Source.Unit /= No_Name
-                 and then
-                   (Source.Kind = Impl
-                    or else
-                    Source.Other_Part = No_Source)
-                 and then
-                   (not Is_Subunit (Source))
-                 and then
-                   Is_Included_In_Global_Archive
-                     (Source.Object, Source.Project)
-               then
-                  Initialize_Source_Record (Src_Id);
+               while Src_Id /= No_Source loop
                   Source := Project_Tree.Sources.Table (Src_Id);
 
-                  if (not Data.Library) or Source.Unit = No_Name then
-                     Dep_TS := Source.Dep_TS;
-
-                  else
-                     Get_Name_String (Data.Library_ALI_Dir.Name);
-                     Add_Char_To_Name_Buffer (Directory_Separator);
-                     Get_Name_String_And_Append (Source.Dep_Name);
-                     Dep_TS := File_Stamp (Path_Name_Type'(Name_Find));
-                  end if;
-
-                  if Dep_TS = Empty_Time_Stamp
-                    or else
-                    String (Dep_TS) > String (Bind_Exchange_TS)
-                    or else
-                    String (Dep_TS) > String (Bind_Object_TS)
+                  if Source.Language_Name = For_Language
+                    and then
+                      Source.Unit /= No_Name
+                      and then
+                        (Source.Kind = Impl
+                         or else
+                           Source.Other_Part = No_Source)
+                    and then
+                      (not Is_Subunit (Source))
+                    and then
+                      Is_Included_In_Global_Archive
+                        (Source.Object, Source.Project)
                   then
-                     Binder_Driver_Needs_To_Be_Called := True;
+                     Initialize_Source_Record (Src_Id);
+                     Source := Project_Tree.Sources.Table (Src_Id);
 
-                     if Verbose_Mode then
-                        Write_Str ("      -> ");
-                        Write_Str (Get_Name_String (Source.Dep_Name));
+                     if (not Data.Library) or Source.Unit = No_Name then
+                        Dep_TS := Source.Dep_TS;
 
-                        if Dep_TS = Empty_Time_Stamp then
-                           Write_Line (" does not exist");
-
-                        elsif String (Dep_TS) > String (Bind_Exchange_TS) then
-                           Write_Line
-                             (" is more recent than the binder exchange file");
-
-                        else
-                           Write_Line
-                             (" is more recent that the binder generated " &
-                              "object file");
-                        end if;
+                     else
+                        Get_Name_String (Data.Library_ALI_Dir.Name);
+                        Add_Char_To_Name_Buffer (Directory_Separator);
+                        Get_Name_String_And_Append (Source.Dep_Name);
+                        Dep_TS := File_Stamp (Path_Name_Type'(Name_Find));
                      end if;
 
-                     exit;
-                  end if;
-               end if;
+                     if Dep_TS = Empty_Time_Stamp
+                       or else
+                         String (Dep_TS) > String (Bind_Exchange_TS)
+                       or else
+                         String (Dep_TS) > String (Bind_Object_TS)
+                     then
+                        Binder_Driver_Needs_To_Be_Called := True;
 
-               Src_Id := Source.Next_In_Project;
-            end loop;
+                        if Verbose_Mode then
+                           Write_Str ("      -> ");
+                           Write_Str (Get_Name_String (Source.Dep_Name));
+
+                           if Dep_TS = Empty_Time_Stamp then
+                              Write_Line (" does not exist");
+
+                           elsif
+                             String (Dep_TS) > String (Bind_Exchange_TS)
+                           then
+                              Write_Line
+                                (" is more recent than the binder exchange " &
+                                 "file");
+
+                           else
+                              Write_Line
+                                (" is more recent that the binder generated " &
+                                 "object file");
+                           end if;
+                        end if;
+
+                        exit;
+                     end if;
+                  end if;
+
+                  Src_Id := Source.Next_In_Project;
+               end loop;
+            end;
          end if;
       end Check_Dependency_Files;
 
@@ -9899,8 +9929,7 @@ package body Buildgpr is
       ---------------------
 
       procedure Process_Project (Project : Project_Id) is
-         Data     : constant Project_Data :=
-                      Project_Tree.Projects.Table (Project);
+         Data     : Project_Data renames Project_Tree.Projects.Table (Project);
          Imported : Project_List := Data.Imported_Projects;
          Element  : Project_Element;
 
