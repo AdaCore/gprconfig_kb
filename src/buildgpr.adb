@@ -7794,7 +7794,9 @@ package body Buildgpr is
                  (Command_Line_Linker_Options.Table (J), Verbose_Mode);
             end loop;
 
-            --  Finally, the minimum options, if any
+            --  Finally, the required switches, if any. These are put at the
+            --  end because, if they include -L switches for example, the link
+            --  may fail because the wrong objects or libraries are linked in.
 
             Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
             while Min_Linker_Opts /= No_Name_List loop
