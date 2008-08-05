@@ -7370,18 +7370,6 @@ package body Buildgpr is
 
             Last_Argument := 0;
 
-            --  First, the minimum options, if any
-
-            Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
-            while Min_Linker_Opts /= No_Name_List loop
-               Add_Argument
-                 (Get_Name_String
-                    (Project_Tree.Name_Lists.Table (Min_Linker_Opts).Name),
-                  Verbose_Mode);
-               Min_Linker_Opts   :=
-                 Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
-            end loop;
-
             Main_Object_TS :=
               File_Stamp (File_Name_Type (Main_Source.Object_Path));
 
@@ -7799,11 +7787,23 @@ package body Buildgpr is
 
             Get_Linker_Options (For_Project => Main_Proj);
 
-            --  Finally add the linker switches specified on the command line
+            --  Add the linker switches specified on the command line
 
             for J in 1 .. Command_Line_Linker_Options.Last loop
                Add_Argument
                  (Command_Line_Linker_Options.Table (J), Verbose_Mode);
+            end loop;
+
+            --  Finally, the minimum options, if any
+
+            Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
+            while Min_Linker_Opts /= No_Name_List loop
+               Add_Argument
+                 (Get_Name_String
+                    (Project_Tree.Name_Lists.Table (Min_Linker_Opts).Name),
+                  Verbose_Mode);
+               Min_Linker_Opts   :=
+                 Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
             end loop;
 
             --  Add the switch(es) to specify the name of the executable
