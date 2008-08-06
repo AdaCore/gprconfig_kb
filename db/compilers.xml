@@ -190,7 +190,7 @@
     <executable>gfortran</executable>
     <version>
       <external>gfortran --version</external>
-      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
+      <grep regexp="\((GCC|SUSE Linux)\) (\S+)" group="2"></grep>
     </version>
     <languages>Fortran</languages>
     <target>
