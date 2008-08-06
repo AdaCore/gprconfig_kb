@@ -282,6 +282,13 @@ package body Buildgpr is
    --  languages, that is those after switch "-cargs:<lang>", on the command
    --  line.
 
+   function File_Not_A_Source_Of
+     (Uname : Name_Id;
+      Sfile : File_Name_Type) return Boolean;
+   --  Check that file name Sfile is one of the source of unit Uname.
+   --  Returns True if the unit is in one of the project file, but the file
+   --  name is not one of its source. Returns False otherwise.
+
    Builder_Switches_Lang : Name_Id := No_Name;
    --  Used to decide to what compiler the Builder'Default_Switches that
    --  are not recognized by gprbuild should be given.
@@ -5103,7 +5110,6 @@ package body Buildgpr is
                                     Source_2 := Project_Tree.First_Source;
 
                                     while Source_2 /= No_Source loop
---                                       Initialize_Source_Record (Source_2);
                                        Src_Data_2 :=
                                          Project_Tree.Sources.Table (Source_2)
                                          'Unrestricted_Access;
@@ -7060,9 +7066,7 @@ package body Buildgpr is
          when Source_Info =>
             --  Systematically recompute the time stamp. In fact, this function
             --  is only called once per source file.
---            if Src_Data.Source_TS = Empty_Time_Stamp then
-               Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
---            end if;
+            Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
 
          when Object_Info =>
             Src_Data.Get_Object := True;
@@ -7148,28 +7152,22 @@ package body Buildgpr is
                            end;
                         end if;
 
-                        --  In Ada at least, the switches file is the same as
-                        --  the dependency file, so save a system call
+                        --  The switches file is always different from the
+                        --  dependency file, since it ends with .cswi
 
-                        if Src_Data.Dep_Name = Src_Data.Switches then
-                           Src_Data.Switches_Path := Src_Data.Dep_Path;
-                           Src_Data.Switches_TS := Src_Data.Dep_TS;
-
-                        else
-                           declare
-                              Switches_Path : constant String :=
-                                Normalize_Pathname
-                                  (Name   =>
-                                       Get_Name_String (Src_Data.Switches),
-                                   Resolve_Links => Opt.Follow_Links_For_Files,
-                                   Directory     => Dir);
-                           begin
-                              Src_Data.Switches_Path :=
-                                Create_Name (Switches_Path);
-                              Src_Data.Switches_TS :=
-                                File_Stamp (Src_Data.Switches_Path);
-                           end;
-                        end if;
+                        declare
+                           Switches_Path : constant String :=
+                             Normalize_Pathname
+                               (Name   =>
+                                    Get_Name_String (Src_Data.Switches),
+                                Resolve_Links => Opt.Follow_Links_For_Files,
+                                Directory     => Dir);
+                        begin
+                           Src_Data.Switches_Path :=
+                             Create_Name (Switches_Path);
+                           Src_Data.Switches_TS :=
+                             File_Stamp (Src_Data.Switches_Path);
+                        end;
 
                         exit;
 
@@ -7949,6 +7947,55 @@ package body Buildgpr is
       end loop;
    end Linking_Phase;
 
+   --------------------------
+   -- File_Not_A_Source_Of --
+   --------------------------
+
+   function File_Not_A_Source_Of
+     (Uname : Name_Id;
+      Sfile : File_Name_Type) return Boolean
+   is
+      Src_Id               : Source_Id := Project_Tree.First_Source;
+      Source               : Source_Data_Access;
+      Other_Part_File_Name : File_Name_Type;
+
+   begin
+      while Src_Id /= No_Source loop
+         Source := Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
+
+         if Source.Unit = Uname then
+            if Source.Other_Part = No_Source then
+               Other_Part_File_Name := No_File;
+            else
+               Other_Part_File_Name :=
+                 Project_Tree.Sources.Table (Source.Other_Part).File;
+            end if;
+
+            if Source.File /= Sfile
+              and then Other_Part_File_Name /= Sfile
+            then
+               if Verbose_Mode then
+                  Write_Str ("   -> """);
+                  Write_Str (Get_Name_String (Uname));
+                  Write_Str
+                    (""" sources do not include """);
+                  Write_Str (Get_Name_String (Sfile));
+                  Write_Char ('"');
+                  Write_Eol;
+               end if;
+
+               return True;
+            end if;
+
+            exit;
+         end if;
+
+         Src_Id := Source.Next_In_Sources;
+      end loop;
+
+      return False;
+   end File_Not_A_Source_Of;
+
    ---------------------
    -- Need_To_Compile --
    ---------------------
@@ -7966,7 +8013,6 @@ package body Buildgpr is
 
       Object_Path   : constant String :=
                         Get_Name_String (Src_Data.Object_Path);
-      Dep_Name      : String_Access;
 
       Switches_Name : constant String :=
                         Get_Name_String (Src_Data.Switches_Path);
@@ -7994,69 +8040,553 @@ package body Buildgpr is
                              (Src_Data.Project).Externally_Built;
       --  True if the project of the source is externally built
 
-      function File_Not_A_Source_Of
-        (Uname : Name_Id;
-         Sfile : File_Name_Type)
-         return Boolean;
-      --  Check that file name Sfile is one of the source of unit Uname.
-      --  Returns True if the unit is in one of the project file, but the file
-      --  name is not one of its source. Returns False otherwise.
+      function Process_Makefile_Deps (Dep_Name : String) return Boolean;
+      function Process_ALI_Deps return Boolean;
+      --  Process the dependencies for the current source file for the various
+      --  dependency modes.
+      --  They return True if the file needs to be recompiled
 
-      --------------------------
-      -- File_Not_A_Source_Of --
-      --------------------------
+      ---------------------------
+      -- Process_Makefile_Deps --
+      ---------------------------
 
-      function File_Not_A_Source_Of
-        (Uname : Name_Id;
-         Sfile : File_Name_Type)
-         return Boolean
-      is
-         Src_Id : Source_Id;
-         Source : Source_Data_Access;
-
-         Current_File_Name : File_Name_Type;
-         Other_Part_File_Name     : File_Name_Type;
+      function Process_Makefile_Deps (Dep_Name : String) return Boolean is
       begin
-         Src_Id := Project_Tree.First_Source;
-         while Src_Id /= No_Source loop
-            Source := Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
+         Open (Dep_File, Dep_Name);
 
-            if Source.Unit = Uname then
-               Current_File_Name := Source.File;
+         --  If dependency file cannot be open, we need to recompile
+         --  the source.
 
-               if Source.Other_Part = No_Source then
-                  Other_Part_File_Name := No_File;
+         if not Is_Valid (Dep_File) then
+            if Verbose_Mode then
+               Write_Str  ("      -> could not open dependency file ");
+               Write_Line (Dep_Name);
+            end if;
 
-               else
-                  Other_Part_File_Name :=
-                    Project_Tree.Sources.Table
-                      (Source.Other_Part).File;
-               end if;
+            return True;
+         end if;
 
-               if Current_File_Name /= Sfile
-                 and then Other_Part_File_Name /= Sfile
-               then
-                  if Verbose_Mode then
-                     Write_Str ("   -> """);
-                     Write_Str (Get_Name_String (Uname));
-                     Write_Str
-                       (""" sources do not include """);
-                     Write_Str (Get_Name_String (Sfile));
-                     Write_Char ('"');
-                     Write_Eol;
+         --  Loop Big_Loop is executed several times only when the
+         --  dependency file contains several times
+         --     <object file>: <source1> ...
+         --  When there is only one of such occurence, Big_Loop is exited
+         --  successfully at the beginning of the second loop.
+
+         Big_Loop :
+         loop
+            declare
+               End_Of_File_Reached : Boolean := False;
+               Object_Found        : Boolean := False;
+
+            begin
+               loop
+                  if End_Of_File (Dep_File) then
+                     End_Of_File_Reached := True;
+                     exit;
                   end if;
 
+                  Get_Line (Dep_File, Name_Buffer, Name_Len);
+
+                  if Name_Len > 0
+                    and then Name_Buffer (1) /= '#'
+                  then
+                     --  Skip a first line that is an empty continuation line
+
+                     for J in 1 .. Name_Len - 1 loop
+                        if Name_Buffer (J) /= ' ' then
+                           Object_Found := True;
+                           exit;
+                        end if;
+                     end loop;
+
+                     exit when Object_Found
+                       or else Name_Buffer (Name_Len) /= '\';
+                  end if;
+               end loop;
+
+               --  If dependency file contains only empty lines or comments,
+               --  then dependencies are unknown, and the source needs to be
+               --  recompiled.
+
+               if End_Of_File_Reached then
+                  --  If we have reached the end of file after the first
+                  --  loop, there is nothing else to do.
+
+                  exit Big_Loop when Looping;
+
+                  if Verbose_Mode then
+                     Write_Str  ("      -> dependency file ");
+                     Write_Str  (Dep_Name);
+                     Write_Line (" is empty");
+                  end if;
+
+                  Close (Dep_File);
+                  return True;
+               end if;
+            end;
+
+            Start  := 1;
+            Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
+
+            if Finish = 0 then
+               Finish :=
+                 Index
+                   (Name_Buffer (1 .. Name_Len),
+                    (1 => ':', 2 => ASCII.HT));
+            end if;
+
+            if Finish /= 0 then
+               Last_Obj := Finish;
+               loop
+                  Last_Obj := Last_Obj - 1;
+                  exit when Last_Obj = Start
+                    or else Name_Buffer (Last_Obj) /= ' ';
+               end loop;
+
+               while Start < Last_Obj
+                 and then Name_Buffer (Start) = ' '
+               loop
+                  Start := Start + 1;
+               end loop;
+
+               Canonical_Case_File_Name (Name_Buffer (Start .. Last_Obj));
+            end if;
+
+            --  First line must start with name of object file, followed by
+            --  colon.
+
+            if Finish = 0 or else
+              Name_Buffer (Start .. Last_Obj) /= C_Object_Name
+            then
+               if Verbose_Mode then
+                  Write_Str  ("      -> dependency file ");
+                  Write_Str  (Dep_Name);
+                  Write_Line (" has wrong format");
+
+                  if Finish = 0 then
+                     Write_Line ("         no colon");
+
+                  else
+                     Write_Str  ("         expected object file name ");
+                     Write_Str  (C_Object_Name);
+                     Write_Str  (", got ");
+                     Write_Line (Name_Buffer (Start .. Last_Obj));
+                  end if;
+               end if;
+
+               Close (Dep_File);
+               return True;
+
+            else
+               Start := Finish + 2;
+
+               --  Process each line
+
+               Line_Loop : loop
+                  declare
+                     Line : String  := Name_Buffer (1 .. Name_Len);
+                     Last : Natural := Name_Len;
+
+                  begin
+                     Name_Loop : loop
+
+                        --  Find the beginning of the next source path name
+
+                        while Finish < Last and then Line (Start) = ' ' loop
+                           Start := Start + 1;
+                        end loop;
+
+                        --  Go to next line when there is a continuation
+                        --  character \ at the end of the line.
+
+                        exit Name_Loop when Start = Last
+                          and then Line (Start) = '\';
+
+                        --  We should not be at the end of the line, without
+                        --  a continuation character \.
+
+                        if Start = Last then
+                           if Verbose_Mode then
+                              Write_Str  ("      -> dependency file ");
+                              Write_Str  (Dep_Name);
+                              Write_Line (" has wrong format");
+                           end if;
+
+                           Close (Dep_File);
+                           return True;
+                        end if;
+
+                        --  Look for the end of the source path name
+
+                        Finish := Start;
+
+                        while Finish < Last loop
+                           if Line (Finish) = '\' then
+                              --  On Windows, a '\' is part of the path
+                              --  name, except when it is not the first
+                              --  character followed by another '\' or by a
+                              --  space. On other platforms, when we are
+                              --  getting a '\' that is not the last
+                              --  character of the line, the next character
+                              --  is part of the path name, even if it is a
+                              --  space.
+
+                              if On_Windows
+                                and then Finish = Start
+                                and then Line (Finish + 1) = '\'
+                              then
+                                 Finish := Finish + 2;
+
+                              elsif On_Windows
+                                and then Line (Finish + 1) /= '\'
+                                and then Line (Finish + 1) /= ' '
+                              then
+                                 Finish := Finish + 1;
+
+                              else
+                                 Line (Finish .. Last - 1) :=
+                                   Line (Finish + 1 .. Last);
+                                 Last := Last - 1;
+                              end if;
+
+                           else
+                              --  A space that is not preceded by '\'
+                              --  indicates the end of the path name.
+
+                              exit when Line (Finish + 1) = ' ';
+                              Finish := Finish + 1;
+                           end if;
+                        end loop;
+
+                        --  Check this source
+
+                        declare
+                           Src_Name : constant String :=
+                             Normalize_Pathname
+                               (Name           => Line (Start .. Finish),
+                                Resolve_Links  => False,
+                                Case_Sensitive => False);
+                           Src_TS   : Time_Stamp_Type;
+                           Source   : Source_Id;
+
+                        begin
+                           --  If it is original source, set
+                           --  Source_In_Dependencies.
+
+                           if Src_Name = Source_Path then
+                              Source_In_Dependencies := True;
+                           end if;
+
+                           --  ??? MANU: there shouldn't be a need to compute
+                           --  the timestamp here, since we already have
+                           --  stamps for all source files
+
+                           Name_Len := 0;
+                           Add_Str_To_Name_Buffer (Src_Name);
+                           Src_TS := File_Stamp (File_Name_Type'(Name_Find));
+
+                           --  If the source does not exist, we need to
+                           --  recompile.
+
+                           if Src_TS = Empty_Time_Stamp then
+                              if Verbose_Mode then
+                                 Write_Str  ("      -> source ");
+                                 Write_Str  (Src_Name);
+                                 Write_Line (" does not exist");
+                              end if;
+
+                              Close (Dep_File);
+                              return True;
+
+                              --  If the source has been modified after the
+                              --  object file, we need to recompile.
+
+                           elsif Src_TS > Src_Data.Object_TS then
+                              if Verbose_Mode then
+                                 Write_Str  ("      -> source ");
+                                 Write_Str  (Src_Name);
+                                 Write_Line
+                                   (" has time stamp later than object file");
+                              end if;
+
+                              Close (Dep_File);
+                              return True;
+
+                           else
+                              Name_Len := Src_Name'Length;
+                              Name_Buffer (1 .. Name_Len) := Src_Name;
+                              Source := Source_Paths_Htable.Get
+                                (Project_Tree.Source_Paths_HT, Name_Find);
+
+                              if Source /= No_Source and then
+                                Project_Tree.Sources.Table
+                                  (Source).Replaced_By /= No_Source
+                              then
+                                 if Verbose_Mode then
+                                    Write_Str  ("      -> source ");
+                                    Write_Str  (Src_Name);
+                                    Write_Line (" has been replaced");
+                                 end if;
+
+                                 Close (Dep_File);
+                                 return True;
+                              end if;
+                           end if;
+                        end;
+
+                        --  If the source path name ends the line, we are
+                        --  done.
+
+                        exit Line_Loop when Finish = Last;
+
+                        --  Go get the next source on the line
+
+                        Start := Finish + 1;
+                     end loop Name_Loop;
+                  end;
+
+                  --  If we are here, we had a continuation character \ at
+                  --  the end of the line, so we continue with the next
+                  --  line.
+
+                  Get_Line (Dep_File, Name_Buffer, Name_Len);
+                  Start  := 1;
+                  Finish := 1;
+               end loop Line_Loop;
+            end if;
+
+            --  Set Looping at the end of the first loop
+            Looping := True;
+         end loop Big_Loop;
+
+         Close (Dep_File);
+
+         --  If the original sources were not in the dependency file, then
+         --  we need to recompile. It may mean that we are using a different
+         --  source (different variant) for this object file.
+
+         if not Source_In_Dependencies then
+            if Verbose_Mode then
+               Write_Str  ("      -> source ");
+               Write_Str  (Source_Path);
+               Write_Line (" is not in the dependencies");
+            end if;
+
+            return True;
+         end if;
+
+         return False;
+      end Process_Makefile_Deps;
+
+      ----------------------
+      -- Process_ALI_Deps --
+      ----------------------
+
+      function Process_ALI_Deps return Boolean is
+         use type ALI.ALI_Id;
+         Text     : Text_Buffer_Ptr :=
+           Read_Library_Info
+             (File_Name_Type (Src_Data.Dep_Path));
+         The_ALI  : ALI.ALI_Id;
+         Sfile    : File_Name_Type;
+         Dep_Src  : Source_Id;
+         Proj     : Project_Id;
+      begin
+         if Text = null then
+            if Verbose_Mode then
+               Write_Str ("    -> cannot read ");
+               Write_Line (Get_Name_String (Src_Data.Dep_Path));
+            end if;
+
+            return True;
+         end if;
+
+         --  Read only the necessary lines of the ALI file
+
+         The_ALI :=
+           ALI.Scan_ALI
+             (File_Name_Type (Src_Data.Dep_Path),
+              Text,
+              Ignore_ED     => False,
+              Err           => True,
+              Read_Lines    => "PDW");
+         Free (Text);
+
+         if The_ALI = ALI.No_ALI_Id then
+            if Verbose_Mode then
+               Write_Str ("    -> ");
+               Write_Str (Get_Name_String (Src_Data.Dep_Path));
+               Write_Line (" is incorrectly formatted");
+            end if;
+
+            return True;
+         end if;
+
+         if ALI.ALIs.Table (The_ALI).Compile_Errors then
+            if Verbose_Mode then
+               Write_Line ("    -> last compilation had errors");
+            end if;
+
+            return True;
+         end if;
+
+         --  Check that all dependent source file names do correspond to
+         --  the mapping of units to file names.
+
+         declare
+            Unit_Name : Name_Id;
+
+         begin
+            U_Chk :
+            for U in ALI.ALIs.Table (The_ALI).First_Unit ..
+              ALI.ALIs.Table (The_ALI).Last_Unit
+            loop
+               --  Check if the file name is one of the source of the
+               --  unit.
+
+               Get_Name_String (ALI.Units.Table (U).Uname);
+               Name_Len := Name_Len - 2;
+               Unit_Name := Name_Find;
+
+               if File_Not_A_Source_Of
+                 (Unit_Name, ALI.Units.Table (U).Sfile)
+               then
                   return True;
                end if;
 
-               exit;
-            end if;
+               --  Do the same check for each of the withed units.
 
-            Src_Id := Source.Next_In_Sources;
+               W_Check :
+               for W in ALI.Units.Table (U).First_With ..
+                   ALI.Units.Table (U).Last_With
+               loop
+                  declare
+                     WR : ALI.With_Record renames ALI.Withs.Table (W);
+                  begin
+                     if WR.Sfile /= No_File then
+                        Get_Name_String (WR.Uname);
+                        Name_Len := Name_Len - 2;
+                        Unit_Name := Name_Find;
+
+                        if File_Not_A_Source_Of (Unit_Name, WR.Sfile) then
+                           return True;
+                        end if;
+                     end if;
+                  end;
+               end loop W_Check;
+            end loop U_Chk;
+
+            --  Check also the subunits
+
+            D_Check :
+            for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
+              ALI.ALIs.Table (The_ALI).Last_Sdep
+            loop
+               declare
+                  SD : ALI.Sdep_Record renames ALI.Sdep.Table (D);
+               begin
+                  Unit_Name := SD.Subunit_Name;
+
+                  if Unit_Name /= No_Name then
+                     if File_Not_A_Source_Of (Unit_Name, SD.Sfile) then
+                        return True;
+                     end if;
+                  end if;
+               end;
+            end loop D_Check;
+         end;
+
+         --  We need to check that the ALI file is in the correct object
+         --  directory. If it is in the object directory of a project
+         --  that is extended and it depends on a source that is in one
+         --  of its extending projects, then the ALI file is not in the
+         --  correct object directory.
+
+         ALI_Project := Src_Data.Object_Project;
+
+         --  Count the extending projects
+
+         Num_Ext := 0;
+         Proj := ALI_Project;
+         loop
+            Proj := Project_Tree.Projects.Table (Proj).Extended_By;
+            exit when Proj = No_Project;
+            Num_Ext := Num_Ext + 1;
          end loop;
 
+         declare
+            Projects : array (1 .. Num_Ext) of Project_Id;
+         begin
+            Proj := ALI_Project;
+            for J in Projects'Range loop
+               Proj := Project_Tree.Projects.Table (Proj).Extended_By;
+               Projects (J) := Proj;
+            end loop;
+
+            for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
+              ALI.ALIs.Table (The_ALI).Last_Sdep
+            loop
+               Sfile := ALI.Sdep.Table (D).Sfile;
+
+               if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
+                  Dep_Src := Project_Tree.First_Source;
+
+                  while Dep_Src /= No_Source loop
+                     if (not Project_Tree.Sources.Table
+                         (Dep_Src).Locally_Removed)
+                       and then
+                         Project_Tree.Sources.Table (Dep_Src).Unit /= No_Name
+                       and then
+                         Project_Tree.Sources.Table (Dep_Src).File = Sfile
+                     then
+                        if ALI.Sdep.Table (D).Stamp /=
+                          Project_Tree.Sources.Table (Dep_Src).Source_TS
+                        then
+                           if Verbose_Mode then
+                              Write_Str
+                                ("   -> different time stamp for ");
+                              Write_Line (Get_Name_String (Sfile));
+
+                              if Debug_Flag_T then
+                                 Write_Str ("   in ALI file: ");
+                                 Write_Line
+                                   (String (ALI.Sdep.Table (D).Stamp));
+                                 Write_Str ("   actual file: ");
+                                 Write_Line
+                                   (String (Project_Tree.Sources.Table
+                                    (Dep_Src).Source_TS));
+                              end if;
+                           end if;
+
+                           return True;
+
+                        else
+                           for J in Projects'Range loop
+                              if Project_Tree.Sources.Table
+                                (Dep_Src).Project = Projects (J)
+                              then
+                                 if Verbose_Mode then
+                                    Write_Line
+                                      ("   -> wrong object directory");
+                                 end if;
+
+                                 return True;
+                              end if;
+                           end loop;
+
+                           exit;
+                        end if;
+                     end if;
+
+                     Dep_Src :=
+                       Project_Tree.Sources.Table
+                         (Dep_Src).Next_In_Sources;
+                  end loop;
+               end if;
+            end loop;
+         end;
          return False;
-      end File_Not_A_Source_Of;
+      end Process_ALI_Deps;
 
    begin
       if Force_Compilations then
@@ -8120,15 +8650,13 @@ package body Buildgpr is
 
       if Src_Data.Dependency /= None then
 
-         Dep_Name := new String'(Get_Name_String (Src_Data.Dep_Path));
-
          --  If there is no dependency file, then the source needs to be
          --  recompiled and the dependency file need to be created.
 
          if Src_Data.Dep_TS = Empty_Time_Stamp then
             if Verbose_Mode then
                Write_Str  ("      -> dependency file ");
-               Write_Str  (Dep_Name.all);
+               Write_Str  (Get_Name_String (Src_Data.Dep_Path));
                Write_Line (" does not exist");
             end if;
 
@@ -8141,7 +8669,7 @@ package body Buildgpr is
          if Src_Data.Dep_TS < Src_Data.Source_TS then
             if Verbose_Mode then
                Write_Str  ("      -> dependency file ");
-               Write_Str  (Dep_Name.all);
+               Write_Str  (Get_Name_String (Src_Data.Dep_Path));
                Write_Line (" has time stamp earlier than source");
             end if;
 
@@ -8167,7 +8695,7 @@ package body Buildgpr is
          --  The source needs to be recompiled if the source has been modified
          --  after the switches file has been created.
 
-         if  Src_Data.Switches_TS < Src_Data.Source_TS then
+         if Src_Data.Switches_TS < Src_Data.Source_TS then
             if Verbose_Mode then
                Write_Str  ("      -> switches file ");
                Write_Str  (Switches_Name);
@@ -8183,539 +8711,14 @@ package body Buildgpr is
             null;
 
          when Makefile =>
-            Open (Dep_File, Dep_Name.all);
-
-            --  If dependency file cannot be open, we need to recompile
-            --  the source.
-
-            if not Is_Valid (Dep_File) then
-               if Verbose_Mode then
-                  Write_Str  ("      -> could not open dependency file ");
-                  Write_Line (Dep_Name.all);
-               end if;
-
-               return True;
-            end if;
-
-            --  Loop Big_Loop is executed several times only when the
-            --  dependency file contains several times
-            --     <object file>: <source1> ...
-            --  When there is only one of such occurence, Big_Loop is exited
-            --  successfully at the beginning of the second loop.
-
-            Big_Loop :
-            loop
-               declare
-                  End_Of_File_Reached : Boolean := False;
-                  Object_Found        : Boolean := False;
-
-               begin
-                  loop
-                     if End_Of_File (Dep_File) then
-                        End_Of_File_Reached := True;
-                        exit;
-                     end if;
-
-                     Get_Line (Dep_File, Name_Buffer, Name_Len);
-
-                     if Name_Len > 0
-                       and then Name_Buffer (1) /= '#'
-                     then
-                        --  Skip a first line that is an empty continuation
-                        --  line.
-
-                        for J in 1 .. Name_Len - 1 loop
-                           if Name_Buffer (J) /= ' ' then
-                              Object_Found := True;
-                              exit;
-                           end if;
-                        end loop;
-
-                        exit when
-                          Object_Found
-                          or else
-                        Name_Buffer (Name_Len) /= '\';
-                     end if;
-                  end loop;
-
-                  --  If dependency file contains only empty lines or comments,
-                  --  then dependencies are unknown, and the source needs to be
-                  --  recompiled.
-
-                  if End_Of_File_Reached then
-                     --  If we have reached the end of file after the first
-                     --  loop, there is nothing else to do.
-
-                     exit Big_Loop when Looping;
-
-                     if Verbose_Mode then
-                        Write_Str  ("      -> dependency file ");
-                        Write_Str  (Dep_Name.all);
-                        Write_Line (" is empty");
-                     end if;
-
-                     Close (Dep_File);
-                     return True;
-                  end if;
-               end;
-
-               Start  := 1;
-               Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
-
-               if Finish = 0 then
-                  Finish :=
-                    Index
-                      (Name_Buffer (1 .. Name_Len),
-                       (1 => ':', 2 => ASCII.HT));
-               end if;
-
-               if Finish /= 0 then
-                  Last_Obj := Finish;
-                  loop
-                     Last_Obj := Last_Obj - 1;
-                     exit when Last_Obj = Start
-                       or else Name_Buffer (Last_Obj) /= ' ';
-                  end loop;
-
-                  while Start < Last_Obj
-                    and then Name_Buffer (Start) = ' '
-                  loop
-                     Start := Start + 1;
-                  end loop;
-
-                  Canonical_Case_File_Name (Name_Buffer (Start .. Last_Obj));
-               end if;
-
-               --  First line must start with name of object file, followed by
-               --  colon.
-
-               if Finish = 0 or else
-                 Name_Buffer (Start .. Last_Obj) /= C_Object_Name
-               then
-                  if Verbose_Mode then
-                     Write_Str  ("      -> dependency file ");
-                     Write_Str  (Dep_Name.all);
-                     Write_Line (" has wrong format");
-
-                     if Finish = 0 then
-                        Write_Line ("         no colon");
-
-                     else
-                        Write_Str  ("         expected object file name ");
-                        Write_Str  (C_Object_Name);
-                        Write_Str  (", got ");
-                        Write_Line (Name_Buffer (Start .. Last_Obj));
-                     end if;
-                  end if;
-
-                  Close (Dep_File);
-                  return True;
-
-               else
-                  Start := Finish + 2;
-
-                  --  Process each line
-
-                  Line_Loop : loop
-                     declare
-                        Line : String  := Name_Buffer (1 .. Name_Len);
-                        Last : Natural := Name_Len;
-
-                     begin
-                        Name_Loop : loop
-
-                           --  Find the beginning of the next source path name
-
-                           while Finish < Last and then Line (Start) = ' ' loop
-                              Start := Start + 1;
-                           end loop;
-
-                           --  Go to next line when there is a continuation
-                           --  character \ at the end of the line.
-
-                           exit Name_Loop when Start = Last
-                             and then Line (Start) = '\';
-
-                           --  We should not be at the end of the line, without
-                           --  a continuation character \.
-
-                           if Start = Last then
-                              if Verbose_Mode then
-                                 Write_Str  ("      -> dependency file ");
-                                 Write_Str  (Dep_Name.all);
-                                 Write_Line (" has wrong format");
-                              end if;
-
-                              Close (Dep_File);
-                              return True;
-                           end if;
-
-                           --  Look for the end of the source path name
-
-                           Finish := Start;
-
-                           while Finish < Last loop
-                              if Line (Finish) = '\' then
-                                 --  On Windows, a '\' is part of the path
-                                 --  name, except when it is not the first
-                                 --  character followed by another '\' or by a
-                                 --  space. On other platforms, when we are
-                                 --  getting a '\' that is not the last
-                                 --  character of the line, the next character
-                                 --  is part of the path name, even if it is a
-                                 --  space.
-
-                                 if On_Windows and then
-                                   Finish = Start and then
-                                   Line (Finish + 1) = '\'
-                                 then
-                                    Finish := Finish + 2;
-
-                                 elsif On_Windows and then
-                                   Line (Finish + 1) /= '\' and then
-                                   Line (Finish + 1) /= ' '
-                                 then
-                                    Finish := Finish + 1;
-
-                                 else
-                                    Line (Finish .. Last - 1) :=
-                                      Line (Finish + 1 .. Last);
-                                    Last := Last - 1;
-                                 end if;
-
-                              else
-                                 --  A space that is not preceded by '\'
-                                 --  indicates the end of the path name.
-
-                                 exit when Line (Finish + 1) = ' ';
-                                 Finish := Finish + 1;
-                              end if;
-                           end loop;
-
-                           --  Check this source
-
-                           declare
-                              Src_Name : constant String :=
-                                           Normalize_Pathname
-                                             (Name           =>
-                                                Line (Start .. Finish),
-                                              Resolve_Links  => False,
-                                              Case_Sensitive => False);
-                              Src_TS   : Time_Stamp_Type;
-
-                              Source   : Source_Id;
-
-                           begin
-                              --  If it is original source, set
-                              --  Source_In_Dependencies.
-
-                              if Src_Name = Source_Path then
-                                 Source_In_Dependencies := True;
-                              end if;
-
-                              Name_Len := 0;
-                              Add_Str_To_Name_Buffer (Src_Name);
-                              Src_TS :=
-                                File_Stamp (File_Name_Type'(Name_Find));
-
-                              --  If the source does not exist, we need to
-                              --  recompile.
-
-                              if Src_TS = Empty_Time_Stamp then
-                                 if Verbose_Mode then
-                                    Write_Str  ("      -> source ");
-                                    Write_Str  (Src_Name);
-                                    Write_Line (" does not exist");
-                                 end if;
-
-                                 Close (Dep_File);
-                                 return True;
-
-                                 --  If the source has been modified after the
-                                 --  object file, we need to recompile.
-
-                              elsif Src_TS > Src_Data.Object_TS then
-                                 if Verbose_Mode then
-                                    Write_Str  ("      -> source ");
-                                    Write_Str  (Src_Name);
-                                    Write_Line
-                                    (" has time stamp later than object file");
-                                 end if;
-
-                                 Close (Dep_File);
-                                 return True;
-
-                              else
-                                 Name_Len := Src_Name'Length;
-                                 Name_Buffer (1 .. Name_Len) := Src_Name;
-                                 Source := Source_Paths_Htable.Get
-                                   (Project_Tree.Source_Paths_HT, Name_Find);
-
-                                 if Source /= No_Source and then
-                                   Project_Tree.Sources.Table
-                                     (Source).Replaced_By /= No_Source
-                                 then
-                                    if Verbose_Mode then
-                                       Write_Str  ("      -> source ");
-                                       Write_Str  (Src_Name);
-                                       Write_Line (" has been replaced");
-                                    end if;
-
-                                    Close (Dep_File);
-                                    return True;
-                                 end if;
-                              end if;
-                           end;
-
-                           --  If the source path name ends the line, we are
-                           --  done.
-
-                           exit Line_Loop when Finish = Last;
-
-                           --  Go get the next source on the line
-
-                           Start := Finish + 1;
-                        end loop Name_Loop;
-                     end;
-
-                     --  If we are here, we had a continuation character \ at
-                     --  the end of the line, so we continue with the next
-                     --  line.
-
-                     Get_Line (Dep_File, Name_Buffer, Name_Len);
-                     Start  := 1;
-                     Finish := 1;
-                  end loop Line_Loop;
-               end if;
-
-               --  Set Looping at the end of the first loop
-               Looping := True;
-            end loop Big_Loop;
-
-            Close (Dep_File);
-
-            --  If the original sources were not in the dependency file, then
-            --  we need to recompile. It may mean that we are using a different
-            --  source (different variant) for this object file.
-
-            if not Source_In_Dependencies then
-               if Verbose_Mode then
-                  Write_Str  ("      -> source ");
-                  Write_Str  (Source_Path);
-                  Write_Line (" is not in the dependencies");
-               end if;
-
+            if Process_Makefile_Deps (Get_Name_String (Src_Data.Dep_Path)) then
                return True;
             end if;
 
          when ALI_File =>
-            declare
-               use type ALI.ALI_Id;
-               Text     : Text_Buffer_Ptr :=
-                            Read_Library_Info
-                              (File_Name_Type (Src_Data.Dep_Path));
-               The_ALI  : ALI.ALI_Id;
-               Sfile    : File_Name_Type;
-               Stamp    : Time_Stamp_Type;
-               Dep_Src  : Source_Id;
---               Found    : Boolean;
-               Proj     : Project_Id;
-
-            begin
-               if Text = null then
-                  if Verbose_Mode then
-                     Write_Str ("    -> cannot read ");
-                     Write_Line (Get_Name_String (Src_Data.Dep_Path));
-                  end if;
-
-                  return True;
-               end if;
-
-               --  Read the ALI file but read only the necessary lines.
-
-               The_ALI :=
-                 ALI.Scan_ALI
-                   (File_Name_Type (Src_Data.Dep_Path),
-                    Text,
-                    Ignore_ED     => False,
-                    Err           => True,
-                    Read_Lines    => "PDW");
-               Free (Text);
-
-               if The_ALI = ALI.No_ALI_Id then
-                  if Verbose_Mode then
-                     Write_Str ("    -> ");
-                     Write_Str (Get_Name_String (Src_Data.Dep_Path));
-                     Write_Line (" is incorrectly formatted");
-                  end if;
-
-                  return True;
-               end if;
-
-               if ALI.ALIs.Table (The_ALI).Compile_Errors then
-                  if Verbose_Mode then
-                     Write_Line ("    -> last compilation had errors");
-                  end if;
-
-                  return True;
-               end if;
-
-               --  Check the all dependent source file names do correspond to
-               --  the mapping of units to file names.
-
-               declare
-                  SD        : ALI.Sdep_Record;
-                  WR        : ALI.With_Record;
-                  Unit_Name : Name_Id;
-
-               begin
-                  U_Chk :
-                  for U in ALI.ALIs.Table (The_ALI).First_Unit ..
-                           ALI.ALIs.Table (The_ALI).Last_Unit
-                  loop
-                     --  Check if the file name is one of the source of the
-                     --  unit.
-
-                     Get_Name_String (ALI.Units.Table (U).Uname);
-                     Name_Len := Name_Len - 2;
-                     Unit_Name := Name_Find;
-
-                     if File_Not_A_Source_Of
-                          (Unit_Name, ALI.Units.Table (U).Sfile)
-                     then
-                        return True;
-                     end if;
-
-                     --  Do the same check for each of the withed units.
-
-                     W_Check :
-                     for W in ALI.Units.Table (U).First_With
-                          ..
-                        ALI.Units.Table (U).Last_With
-                     loop
-                        WR := ALI.Withs.Table (W);
-
-                        if WR.Sfile /= No_File then
-                           Get_Name_String (WR.Uname);
-                           Name_Len := Name_Len - 2;
-                           Unit_Name := Name_Find;
-
-                           if File_Not_A_Source_Of (Unit_Name, WR.Sfile) then
-                              return True;
-                           end if;
-                        end if;
-                     end loop W_Check;
-                  end loop U_Chk;
-
-                  --  Check also the subunits
-
-                  D_Check :
-                  for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
-                           ALI.ALIs.Table (The_ALI).Last_Sdep
-                  loop
-                     SD := ALI.Sdep.Table (D);
-                     Unit_Name := SD.Subunit_Name;
-
-                     if Unit_Name /= No_Name then
-                        if File_Not_A_Source_Of (Unit_Name, SD.Sfile) then
-                           return True;
-                        end if;
-                     end if;
-                  end loop D_Check;
-               end;
-
-               --  We need to check that the ALI file is in the correct object
-               --  directory. If it is in the object directory of a project
-               --  that is extended and it depends on a source that is in one
-               --  of its extending projects, then the ALI file is not in the
-               --  correct object directory.
-
-               ALI_Project := Src_Data.Object_Project;
-
-               --  Count the extending projects
-
-               Num_Ext := 0;
-               Proj := ALI_Project;
-               loop
-                  Proj := Project_Tree.Projects.Table (Proj).Extended_By;
-                  exit when Proj = No_Project;
-                  Num_Ext := Num_Ext + 1;
-               end loop;
-
-               declare
-                  Projects : array (1 .. Num_Ext) of Project_Id;
-               begin
-                  Proj := ALI_Project;
-                  for J in Projects'Range loop
-                     Proj := Project_Tree.Projects.Table (Proj).Extended_By;
-                     Projects (J) := Proj;
-                  end loop;
-
-                  for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
-                    ALI.ALIs.Table (The_ALI).Last_Sdep
-                  loop
-                     Sfile := ALI.Sdep.Table (D).Sfile;
-                     Stamp := ALI.Sdep.Table (D).Stamp;
-
-                     if Stamp /= Empty_Time_Stamp then
-                        Dep_Src := Project_Tree.First_Source;
-
-                        while Dep_Src /= No_Source loop
-                           if (not Project_Tree.Sources.Table
-                               (Dep_Src).Locally_Removed)
-                             and then
-                               Project_Tree.Sources.Table (Dep_Src).Unit /=
-                               No_Name
-                               and then
-                                 Project_Tree.Sources.Table
-                                   (Dep_Src).File = Sfile
-                           then
-                              if Stamp /=
-                                Project_Tree.Sources.Table (Dep_Src).Source_TS
-                              then
-                                 if Verbose_Mode then
-                                    Write_Str
-                                      ("   -> different time stamp for ");
-                                    Write_Line (Get_Name_String (Sfile));
-
-                                    if Debug_Flag_T then
-                                       Write_Str ("   in ALI file: ");
-                                       Write_Line (String (Stamp));
-                                       Write_Str ("   actual file: ");
-                                       Write_Line
-                                         (String (Project_Tree.Sources.Table
-                                          (Dep_Src).Source_TS));
-                                    end if;
-                                 end if;
-
-                                 return True;
-
-                              else
-                                 for J in Projects'Range loop
-                                    if Project_Tree.Sources.Table
-                                      (Dep_Src).Project = Projects (J)
-                                    then
-                                       if Verbose_Mode then
-                                          Write_Line
-                                            ("   -> wrong object directory");
-                                       end if;
-
-                                       return True;
-                                    end if;
-                                 end loop;
-
-                                 exit;
-                              end if;
-                           end if;
-
-                           Dep_Src :=
-                             Project_Tree.Sources.Table
-                               (Dep_Src).Next_In_Sources;
-                        end loop;
-                     end if;
-                  end loop;
-               end;
-            end;
+            if Process_ALI_Deps then
+               return True;
+            end if;
       end case;
 
       --  If we are here, then everything is OK, and we don't need
@@ -8726,7 +8729,6 @@ package body Buildgpr is
       end if;
 
       return False;
-
    end Need_To_Compile;
 
    -------------
@@ -9123,7 +9125,6 @@ package body Buildgpr is
                Lang_Data      : Language_Data;
 
             begin
---               Initialize_Source_Record (Main_Source_Id);
                Main_Source :=
                  Project_Tree.Sources.Table
                    (Main_Source_Id)'Unrestricted_Access;
