@@ -7154,19 +7154,11 @@ package body Buildgpr is
                            end;
                         end if;
 
-                        --  Source file is not extended
---  ??? MANU: No need to copy back to the table, since it was modified through
---  ??? the pointer already
---                        if not Found then
---                         Project_Tree.Sources.Table (Source) := Src_Data.all;
---                        end if;
-
                         exit;
 
                      else
                         --  We'll then examine the source that extends this one
                         Obj_Proj := Data.Extended_By;
-
                      end if;
                   end;
                end loop;
