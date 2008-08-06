@@ -836,14 +836,17 @@ package body Buildgpr is
    --  Returns the name of the global archive for a project
 
    procedure Initialize;
-   --  Do the necessary package initialization and process the command line
+   --  Do the necessary package intialization and process the command line
    --  arguments.
 
+   type Source_Info_Type is (Source_Info, Object_Info);
    procedure Initialize_Source_Record
      (Source      : Source_Id;
-      Need_Object : Boolean := False);
-   --  Get the different components of a source record: object and dependency
-   --  file and path names and, if they exist, their time stamps.
+      Info        : Source_Info_Type := Source_Info);
+   --  Get information either about the source file or the object and
+   --  dependency file. This includes timestamps.
+   --  Updating source_info does nothing if the info was already computed
+   --  once. But computing object_info is redone every time
 
    function Is_Included_In_Global_Archive
      (Object_Name : File_Name_Type;
@@ -3812,6 +3815,20 @@ package body Buildgpr is
    begin
       Outstanding_Compiles := 0;
 
+      --  Update info on all sources
+
+      declare
+         Dep_Src : Source_Id := Project_Tree.First_Source;
+      begin
+         while Dep_Src /= No_Source loop
+            Initialize_Source_Record (Dep_Src);
+            Dep_Src := Project_Tree.Sources.Table (Dep_Src).Next_In_Sources;
+         end loop;
+      end;
+
+      --  Then process each files in the queue (new files might be added to
+      --  the queue as a result)
+
       Compilation_Loop :
       while not Queue.Is_Empty or else Outstanding_Compiles > 0 loop
 
@@ -3850,7 +3867,7 @@ package body Buildgpr is
             else
                Change_To_Object_Directory (Source_Project);
 
-               Initialize_Source_Record (Source_Identity, Need_Object => True);
+               Initialize_Source_Record (Source_Identity, Info => Object_Info);
 
                Compilation_Needed := Need_To_Compile (Source_Identity);
 
@@ -7015,119 +7032,146 @@ package body Buildgpr is
 
    procedure Initialize_Source_Record
      (Source      : Source_Id;
-      Need_Object : Boolean := False)
+      Info        : Source_Info_Type := Source_Info)
    is
-      Src_Data : Source_Data  := Project_Tree.Sources.Table (Source);
+      type Source_Data_Access is access Source_Data;
+      Src_Data : constant Source_Data_Access :=
+        Project_Tree.Sources.Table (Source)'Unrestricted_Access;
       Obj_Proj : Project_Id;
       Found    : Boolean := False;
    begin
-      if Src_Data.Source_TS = Empty_Time_Stamp or else Need_Object then
-         Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
-         Project_Tree.Sources.Table (Source) := Src_Data;
-
-         if Need_Object then
-            Src_Data.Get_Object := True;
-            Project_Tree.Sources.Table (Source).Get_Object := True;
-         end if;
-
-         if Src_Data.Compiled then
-            if Src_Data.Lang_Kind = Unit_Based
-              and then
-                Src_Data.Kind = Impl
-                and then
-                  Is_Subunit (Src_Data)
-            then
-               Src_Data.Kind := Sep;
-               Src_Data.Get_Object := False;
-               Project_Tree.Sources.Table (Source) := Src_Data;
-               return;
-
-            elsif (Src_Data.Lang_Kind = File_Based
-                   and then Src_Data.Kind = Spec)
-              or else
-                (Src_Data.Lang_Kind = Unit_Based
-                 and then
-                   (Src_Data.Kind = Sep
-                    or else
-                      (Src_Data.Kind = Spec
-                       and then
-                         Src_Data.Other_Part /= No_Source)))
-            then
-               Src_Data.Get_Object := False;
-               Project_Tree.Sources.Table (Source) := Src_Data;
-               return;
+      case Info is
+         when Source_Info =>
+            if Src_Data.Source_TS = Empty_Time_Stamp then
+               Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
             end if;
 
-            Obj_Proj := Src_Data.Project;
-            loop
-               declare
-                  Data : Project_Data renames
-                    Project_Tree.Projects.Table (Obj_Proj);
+         when Object_Info =>
+            Src_Data.Get_Object := True;
 
-                  Object_Path     :
-                  constant String :=
-                                      Normalize_Pathname
-                                        (Name      =>
-                                           Get_Name_String (Src_Data.Object),
-                                         Directory => Get_Name_String
-                                           (Data.Object_Directory.Name));
-               begin
-                  Src_Data.Object_Path := Create_Name (Object_Path);
+            if Src_Data.Compiled  then
 
-                  Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
+               --  Should the object file be included in the global archive ?
 
-                  if Src_Data.Dependency /= None then
-                     declare
-                        Dep_Path : constant String :=
-                                     Normalize_Pathname
-                                       (Name      =>
-                                          Get_Name_String
-                                            (Src_Data.Dep_Name),
-                                        Directory =>
-                                          Get_Name_String
-                                            (Data.Object_Directory.Name));
+               case Src_Data.Lang_Kind is
+                  when Unit_Based =>
+                     if Src_Data.Kind = Impl
+                       and then Is_Subunit (Src_Data.all)
+                     then
+                        Src_Data.Kind := Sep;
+                        Src_Data.Get_Object := False;
 
-                     begin
-                        Src_Data.Dep_Path := Create_Name (Dep_Path);
-                     end;
-
-                     Src_Data.Dep_TS := File_Stamp (Src_Data.Dep_Path);
-                  end if;
-
-                  declare
-                     Switches_Path   :
-                     constant String :=
-                                         Normalize_Pathname
-                                           (Name      => Get_Name_String
-                                                           (Src_Data.Switches),
-                                            Directory => Get_Name_String
-                                              (Data.Object_Directory.Name));
-
-                  begin
-                     Src_Data.Switches_Path := Create_Name (Switches_Path);
-                  end;
-
-                  Src_Data.Switches_TS := File_Stamp (Src_Data.Switches_Path);
-
-                  if Src_Data.Object_TS /= Empty_Time_Stamp then
-                     Found := True;
-                     Src_Data.Object_Project := Obj_Proj;
-                     Project_Tree.Sources.Table (Source) := Src_Data;
-                  end if;
-
-                  Obj_Proj := Data.Extended_By;
-                  if Obj_Proj = No_Project then
-                     if not Found then
-                        Project_Tree.Sources.Table (Source) := Src_Data;
+                     elsif Src_Data.Kind = Sep
+                       or else
+                         (Src_Data.Kind = Spec
+                          and then Src_Data.Other_Part /= No_Source)
+                     then
+                        Src_Data.Get_Object := False;
                      end if;
 
-                     exit;
-                  end if;
+                  when File_Based =>
+                     if Src_Data.Kind = Spec then
+                        Src_Data.Get_Object := False;
+                     end if;
+               end case;
 
-               end;
-            end loop;
-         end if;
-      end if;
+               if not Src_Data.Get_Object then
+                  --  The attributes were modified directly in the Sources
+                  --  table through the pointer
+                  return;
+               end if;
+
+               --  Find the object file for that source. It could be either in
+               --  the current project or in an extended project
+               --  ??? MANU: seems strange that we should check timestamps
+               --  ??? here, since the info on where the object file is should
+               --  ??? be known from analyzing the project
+
+               Obj_Proj := Src_Data.Project;
+               loop
+                  declare
+                     Data : Project_Data renames
+                       Project_Tree.Projects.Table (Obj_Proj);
+
+                     Dir  : constant String := Get_Name_String
+                       (Data.Object_Directory.Name);
+
+                     Object_Path     : constant String :=
+                       Normalize_Pathname
+                         (Name          => Get_Name_String (Src_Data.Object),
+                          Resolve_Links => Opt.Follow_Links_For_Files,
+                          Directory     => Dir);
+
+                  begin
+                     Src_Data.Object_Path   := Create_Name (Object_Path);
+
+                     Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
+                     if Src_Data.Object_TS /= Empty_Time_Stamp then
+                        Found := True;
+                        Src_Data.Object_Project := Obj_Proj;
+                     end if;
+
+                     --  Only compute the timestamp on the dep files if the
+                     --  source is not overridden later, since otherwise we
+                     --  will loop again here in any case
+
+                     if Data.Extended_By = No_Project then
+
+                        if Src_Data.Dependency /= None then
+                           declare
+                              Dep_Path : constant String :=
+                                Normalize_Pathname
+                                  (Name => Get_Name_String (Src_Data.Dep_Name),
+                                   Resolve_Links => Opt.Follow_Links_For_Files,
+                                   Directory     => Dir);
+                           begin
+                              Src_Data.Dep_Path := Create_Name (Dep_Path);
+                              Src_Data.Dep_TS   :=
+                                File_Stamp (Src_Data.Dep_Path);
+                           end;
+                        end if;
+
+                        --  In Ada at least, the switches file is the same as
+                        --  the dependency file, so save a system call
+
+                        if Src_Data.Dep_Name = Src_Data.Switches then
+                           Src_Data.Switches_Path := Src_Data.Dep_Path;
+                           Src_Data.Switches_TS := Src_Data.Dep_TS;
+
+                        else
+                           declare
+                              Switches_Path : constant String :=
+                                Normalize_Pathname
+                                  (Name   =>
+                                       Get_Name_String (Src_Data.Switches),
+                                   Resolve_Links => Opt.Follow_Links_For_Files,
+                                   Directory     => Dir);
+                           begin
+                              Src_Data.Switches_Path :=
+                                Create_Name (Switches_Path);
+                              Src_Data.Switches_TS :=
+                                File_Stamp (Src_Data.Switches_Path);
+                           end;
+                        end if;
+
+                        --  Source file is not extended
+--  ??? MANU: No need to copy back to the table, since it was modified through
+--  ??? the pointer already
+--                        if not Found then
+--                         Project_Tree.Sources.Table (Source) := Src_Data.all;
+--                        end if;
+
+                        exit;
+
+                     else
+                        --  We'll then examine the source that extends this one
+                        Obj_Proj := Data.Extended_By;
+
+                     end if;
+                  end;
+               end loop;
+            end if;
+      end case;
    end Initialize_Source_Record;
 
    -----------------------------------
@@ -8607,8 +8651,6 @@ package body Buildgpr is
                         Dep_Src := Project_Tree.First_Source;
 
                         while Dep_Src /= No_Source loop
-                           Initialize_Source_Record (Dep_Src);
-
                            if (not Project_Tree.Sources.Table
                                (Dep_Src).Locally_Removed)
                              and then
