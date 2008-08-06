@@ -97,7 +97,7 @@
     <executable>g++</executable>
     <version>
       <external>g++ --version</external>
-      <grep regexp="\((GCC|Sourcery.*)\) (\S+)" group="2"></grep>
+      <grep regexp="\((GCC|Sourcery.*|SUSE Linux)\) (\S+)" group="2"></grep>
     </version>
     <languages>C++</languages>
     <target>
