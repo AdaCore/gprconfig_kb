@@ -67,6 +67,8 @@ with Types;            use Types;
 
 package body Buildgpr is
 
+   type Source_Data_Access is access Source_Data;
+
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
 
@@ -905,7 +907,7 @@ package body Buildgpr is
    --  Called when the program is interrupted by Ctrl-C to delete the
    --  temporary mapping files and configuration pragmas files.
 
-   function Source_Of (File : String) return Source_Data;
+   function Source_Of (File : String) return Source_Data_Access;
    --  Return the source data corresponding to a file name
 
    procedure Test_If_Relative_Path
@@ -1680,7 +1682,7 @@ package body Buildgpr is
 
       Src_Id       : Source_Id;
       S_Id         : Source_Id;
-      Source       : Source_Data;
+      Source       : Source_Data_Access;
 
       Success      : Boolean;
 
@@ -1702,14 +1704,14 @@ package body Buildgpr is
       procedure Add_Sources (Proj : Project_Id) is
          Project : Project_Id := Proj;
          Id : Source_Id;
-         Source : Source_Data;
+         Source : Source_Data_Access;
 
       begin
          loop
             Id := Project_Tree.Projects.Table (Project).First_Source;
 
             while Id /= No_Source loop
-               Source := Project_Tree.Sources.Table (Id);
+               Source := Project_Tree.Sources.Table (Id)'Unrestricted_Access;
 
                if (not Source.Locally_Removed)
                  and then
@@ -1725,10 +1727,10 @@ package body Buildgpr is
                then
                   if Source.Unit = No_Name
                     or else Source.Kind = Spec
-                    or else not Is_Subunit (Source)
+                    or else not Is_Subunit (Source.all)
                   then
-                     Initialize_Source_Record (Id);
-                     Source := Project_Tree.Sources.Table (Id);
+                     Source :=
+                       Project_Tree.Sources.Table (Id)'Unrestricted_Access;
 
                      --  Only include sources with object file names that have
                      --  not been overriden in extending projects.
@@ -1744,6 +1746,7 @@ package body Buildgpr is
 
                Id := Source.Next_In_Project;
             end loop;
+
             Project := Project_Tree.Projects.Table (Project).Extends;
 
             exit when Project = No_Project;
@@ -1757,7 +1760,7 @@ package body Buildgpr is
       procedure Add_Objects (Proj : Project_Id) is
          Project : Project_Id := Proj;
          Id : Source_Id;
-         Source : Source_Data;
+         Source : Source_Data_Access;
 
       begin
          loop
@@ -1804,7 +1807,8 @@ package body Buildgpr is
                   Id := Project_Tree.Projects.Table (Project).First_Source;
 
                   while Id /= No_Source loop
-                     Source := Project_Tree.Sources.Table (Id);
+                     Source :=
+                       Project_Tree.Sources.Table (Id)'Unrestricted_Access;
 
                      if (not Source.Locally_Removed)
                        and then
@@ -1818,7 +1822,7 @@ package body Buildgpr is
                                and then
                                  Source.Other_Part = No_Source))
                      then
-                        if not Is_Subunit (Source) then
+                        if not Is_Subunit (Source.all) then
                            --  Only include object file name that have not been
                            --  overriden in extending projects.
 
@@ -1941,7 +1945,9 @@ package body Buildgpr is
 
                      for S in 1 .. Last_Source loop
                         S_Id := Source_Indexes (S).Id;
-                        Source := Project_Tree.Sources.Table (S_Id);
+                        Source :=
+                          Project_Tree.Sources.Table
+                            (S_Id)'Unrestricted_Access;
 
                         if (not Source_Indexes (S).Found)
                           and then Source.Object_Path = Object_Path
@@ -2052,7 +2058,7 @@ package body Buildgpr is
 
                   if Verbose_Mode then
                      Source := Project_Tree.Sources.Table
-                                  (Source_Indexes (S).Id);
+                                  (Source_Indexes (S).Id)'Unrestricted_Access;
                      Write_Str ("      -> object file ");
                      Write_Str (Get_Name_String (Source.Object_Path));
                      Write_Line (" is not in the dependency file");
@@ -2253,7 +2259,9 @@ package body Buildgpr is
 
                      for S in 1 .. Last_Source loop
                         Src_Id := Source_Indexes (S).Id;
-                        Source := Project_Tree.Sources.Table (Src_Id);
+                        Source :=
+                          Project_Tree.Sources.Table
+                            (Src_Id)'Unrestricted_Access;
                         Put_Line
                           (Dep_File, Get_Name_String (Source.Object_Path));
                         Put_Line
@@ -2322,7 +2330,7 @@ package body Buildgpr is
       Object_TS   : Time_Stamp_Type;
 
       Source      : Source_Id;
-      Src_Data    : Source_Data;
+      Src_Data    : Source_Data_Access;
       Project     : Project_Id;
 
       Unit_Based_Language_Name : Name_Id;
@@ -2337,7 +2345,7 @@ package body Buildgpr is
 
       procedure Get_Objects is
          Source   : Source_Id;
-         Src_Data : Source_Data;
+         Src_Data : Source_Data_Access;
 
          Proj : Project_Id := For_Project;
 
@@ -2348,9 +2356,8 @@ package body Buildgpr is
             Source := Project_Tree.Projects.Table (Proj).First_Source;
 
             while Source /= No_Source loop
-               Initialize_Source_Record (Source);
-
-               Src_Data := Project_Tree.Sources.Table (Source);
+               Src_Data :=
+                 Project_Tree.Sources.Table (Source)'Unrestricted_Access;
 
                if (not Src_Data.Locally_Removed)
                  and then
@@ -2365,8 +2372,7 @@ package body Buildgpr is
                       (Src_Data.Kind = Impl
                        or else
                          Src_Data.Other_Part = No_Source)
-                    and then
-                      (not Is_Subunit (Src_Data))))
+                    and then not Is_Subunit (Src_Data.all)))
                then
                   Library_Objs.Append
                     ((Path  => Src_Data.Object_Path,
@@ -3074,7 +3080,7 @@ package body Buildgpr is
          declare
             Current_Proj : Project_Id := For_Project;
             Source       : Source_Id;
-            Src_Data     : Source_Data;
+            Src_Data     : Source_Data_Access;
          begin
             while Current_Proj /= No_Project loop
                declare
@@ -3084,7 +3090,8 @@ package body Buildgpr is
                   Source := Proj_Data.First_Source;
 
                   while Source /= No_Source loop
-                     Src_Data := Project_Tree.Sources.Table (Source);
+                     Src_Data :=
+                       Project_Tree.Sources.Table (Source)'Unrestricted_Access;
 
                      if not Src_Data.Locally_Removed
                        and then Src_Data.Dep_Name /= No_File
@@ -3096,7 +3103,7 @@ package body Buildgpr is
                                  Get_Name_String (Src_Data.Dep_Name));
                            end if;
 
-                        elsif not Is_Subunit (Src_Data) then
+                        elsif not Is_Subunit (Src_Data.all) then
                            Put_Line
                              (Exchange_File,
                               Get_Name_String (Src_Data.Dep_Name));
@@ -3172,7 +3179,8 @@ package body Buildgpr is
                   Source := Project_Tree.Projects.Table (Project).First_Source;
 
                   while Source /= No_Source loop
-                     Src_Data := Project_Tree.Sources.Table (Source);
+                     Src_Data :=
+                       Project_Tree.Sources.Table (Source)'Unrestricted_Access;
 
                      if  Src_Data.Language_Name = Unit_Based_Language_Name
                        and then
@@ -3446,7 +3454,7 @@ package body Buildgpr is
             Elem         : String_Element;
             Unit_Name    : Name_Id;
             Root_Source  : Source_Id;
-            Src_Data     : Source_Data;
+            Src_Data     : Source_Data_Access;
          begin
             exit when Display_Main'Length = 0;
 
@@ -3455,7 +3463,8 @@ package body Buildgpr is
             Source := Main_Sources.Get (Main_Id);
 
             if Source /= No_Source then
-               Src_Data := Project_Tree.Sources.Table (Source);
+               Src_Data :=
+                 Project_Tree.Sources.Table (Source)'Unrestricted_Access;
                Project := Src_Data.Project;
                Queue.Insert
                  (Source_File_Name => Main_Id,
@@ -3569,7 +3578,8 @@ package body Buildgpr is
                         while Root_Source /= No_Source loop
                            Root_Found := False;
                            Src_Data :=
-                             Project_Tree.Sources.Table (Root_Source);
+                             Project_Tree.Sources.Table
+                               (Root_Source)'Unrestricted_Access;
 
                            if Pat_Root then
                               Root_Found :=
@@ -3698,7 +3708,7 @@ package body Buildgpr is
 
       Mapping_File_Path : Path_Name_Type;
 
-      Src_Data         : Source_Data;
+      Src_Data         : Source_Data_Access;
       Dep_File         : Text_File;
 
       Start            : Natural;
@@ -4717,7 +4727,8 @@ package body Buildgpr is
                Imports.Reset;
                Included_Sources.Set_Last (0);
 
-               Src_Data := Project_Tree.Sources.Table (Source_Identity);
+               Src_Data := Project_Tree.Sources.Table
+                 (Source_Identity)'Unrestricted_Access;
 
                case Src_Data.Dependency is
                when None =>
@@ -4870,7 +4881,7 @@ package body Buildgpr is
                                                     Case_Sensitive => False);
                                     Source_2   : Source_Id;
 
-                                    Src_Data_2 : Source_Data;
+                                    Src_Data_2 : Source_Data_Access;
                                  begin
 
                                     Name_Len := 0;
@@ -4881,7 +4892,8 @@ package body Buildgpr is
 
                                     if Source_2 /= No_Source then
                                        Src_Data_2 :=
-                                         Project_Tree.Sources.Table (Source_2);
+                                         Project_Tree.Sources.Table (Source_2)
+                                         'Unrestricted_Access;
 
                                        --  It is a source of a project
 
@@ -4980,7 +4992,7 @@ package body Buildgpr is
                                    (Src_Data.Project).Imported_Projects;
                            E : Project_Element;
 
-                           Src_Data_2 : Source_Data;
+                           Src_Data_2 : Source_Data_Access;
 
                         begin
 
@@ -5005,7 +5017,8 @@ package body Buildgpr is
                            for J in 1 .. Included_Sources.Last loop
                               Src_Data_2 :=
                                 Project_Tree.Sources.Table
-                                  (Included_Sources.Table (J));
+                                  (Included_Sources.Table (J))
+                                'Unrestricted_Access;
 
                               if not Imports.Get (Src_Data_2.Project) then
                                  --  This source is either directly imported or
@@ -5056,7 +5069,7 @@ package body Buildgpr is
                      Sfile      : File_Name_Type;
                      Afile      : File_Name_Type;
                      Source_2   : Source_Id;
-                     Src_Data_2 : Source_Data;
+                     Src_Data_2 : Source_Data_Access;
 
                   begin
                      if Text /= null then
@@ -5090,9 +5103,10 @@ package body Buildgpr is
                                     Source_2 := Project_Tree.First_Source;
 
                                     while Source_2 /= No_Source loop
-                                       Initialize_Source_Record (Source_2);
+--                                       Initialize_Source_Record (Source_2);
                                        Src_Data_2 :=
-                                         Project_Tree.Sources.Table (Source_2);
+                                         Project_Tree.Sources.Table (Source_2)
+                                         'Unrestricted_Access;
 
                                        if Src_Data_2.Compiled and then
                                          Src_Data_2.Dep_Name = Afile
@@ -5102,7 +5116,9 @@ package body Buildgpr is
                                              null;
 
                                           when Impl =>
-                                             if Is_Subunit (Src_Data_2) then
+                                             if
+                                               Is_Subunit (Src_Data_2.all)
+                                             then
                                                 Source_2 := No_Source;
                                              end if;
 
@@ -5248,7 +5264,7 @@ package body Buildgpr is
             Sfile   : File_Name_Type;
             Afile   : File_Name_Type;
             Src_Id  : Source_Id;
-            Source  : Source_Data;
+            Source  : Source_Data_Access;
 
          begin
             while Good_ALI_Present loop
@@ -5273,8 +5289,8 @@ package body Buildgpr is
                         Src_Id := Project_Tree.First_Source;
 
                         while Src_Id /= No_Source loop
-                           Initialize_Source_Record (Src_Id);
-                           Source := Project_Tree.Sources.Table (Src_Id);
+                           Source := Project_Tree.Sources.Table (Src_Id)
+                             'Unrestricted_Access;
 
                            if Source.Compiled and then
                               Source.Dep_Name = Afile
@@ -5286,7 +5302,7 @@ package body Buildgpr is
                                  end if;
 
                               when Impl =>
-                                 if Is_Subunit (Source) then
+                                 if Is_Subunit (Source.all) then
                                     Src_Id := No_Source;
                                  end if;
 
@@ -5508,7 +5524,7 @@ package body Buildgpr is
       File      : File_Descriptor := Invalid_FD;
 
       Source   : Source_Id;
-      Src_Data : Source_Data;
+      Src_Data : Source_Data_Access;
 
       procedure Check (Project : Project_Id);
       --  Check the naming schemes of the different projects of the project
@@ -5814,7 +5830,7 @@ package body Buildgpr is
       Source := Project_Tree.First_Source;
 
       while Source /= No_Source loop
-         Src_Data := Project_Tree.Sources.Table (Source);
+         Src_Data := Project_Tree.Sources.Table (Source)'Unrestricted_Access;
 
          if Src_Data.Language_Name = Language  and then
            Src_Data.Naming_Exception and then
@@ -6532,7 +6548,7 @@ package body Buildgpr is
 
             Name             : Name_Id := No_Name;
             Lang             : Name_Id := No_Name;
-            Source           : Source_Data;
+            Source           : Source_Data_Access;
 
             Success          : Boolean := False;
 
@@ -6541,7 +6557,7 @@ package body Buildgpr is
 
             for Index in 1 .. Mains.Number_Of_Mains loop
                Source := Source_Of (Mains.Next_Main);
-               if Source /= No_Source_Data then
+               if Source /= null then
                   if Name = No_Name and then Lang = No_Name then
                      --  First main
 
@@ -6796,7 +6812,7 @@ package body Buildgpr is
             if Keep_Going and then Bad_Compilations.Last > 0 then
                declare
                   Source   : Source_Id;
-                  Src_Data : Source_Data;
+                  Src_Data : Source_Data_Access;
 
                begin
                   Write_Eol;
@@ -6805,7 +6821,9 @@ package body Buildgpr is
                      Source := Bad_Compilations.Table (Index);
 
                      if Source /= No_Source then
-                        Src_Data := Project_Tree.Sources.Table (Source);
+                        Src_Data :=
+                          Project_Tree.Sources.Table
+                            (Source)'Unrestricted_Access;
 
                         Write_Str ("   compilation of ");
                         Write_Str (Get_Name_String (Src_Data.Display_File));
@@ -7034,17 +7052,17 @@ package body Buildgpr is
      (Source      : Source_Id;
       Info        : Source_Info_Type := Source_Info)
    is
-      type Source_Data_Access is access Source_Data;
       Src_Data : constant Source_Data_Access :=
         Project_Tree.Sources.Table (Source)'Unrestricted_Access;
       Obj_Proj : Project_Id;
-      Found    : Boolean := False;
    begin
       case Info is
          when Source_Info =>
-            if Src_Data.Source_TS = Empty_Time_Stamp then
+            --  Systematically recompute the time stamp. In fact, this function
+            --  is only called once per source file.
+--            if Src_Data.Source_TS = Empty_Time_Stamp then
                Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
-            end if;
+--            end if;
 
          when Object_Info =>
             Src_Data.Get_Object := True;
@@ -7107,7 +7125,6 @@ package body Buildgpr is
 
                      Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
                      if Src_Data.Object_TS /= Empty_Time_Stamp then
-                        Found := True;
                         Src_Data.Object_Project := Obj_Proj;
                      end if;
 
@@ -7178,7 +7195,7 @@ package body Buildgpr is
       Proj     : Project_Id;
       Data     : Project_Data := Project_Tree.Projects.Table (Project);
       Source   : Source_Id;
-      Src_Data : Source_Data;
+      Src_Data : Source_Data_Access;
 
    begin
       --  If a source is overriden in an extending project, then the object
@@ -7192,7 +7209,8 @@ package body Buildgpr is
          begin
             Source := Data.First_Source;
             while Source /= No_Source loop
-               Src_Data := Project_Tree.Sources.Table (Source);
+               Src_Data :=
+                 Project_Tree.Sources.Table (Source)'Unrestricted_Access;
 
                if ((Src_Data.Lang_Kind = File_Based
                     and then Src_Data.Kind = Impl)
@@ -7204,8 +7222,7 @@ package body Buildgpr is
                            (Src_Data.Kind = Spec
                             and then
                               Src_Data.Other_Part = No_Source))))
-                 and then
-                   Src_Data.Object =  Object_Name
+                 and then Src_Data.Object = Object_Name
                then
                   return False;
                else
@@ -7220,7 +7237,7 @@ package body Buildgpr is
       Data := Project_Tree.Projects.Table (Project);
       Source := Data.First_Source;
       while Source /= No_Source loop
-         Src_Data := Project_Tree.Sources.Table (Source);
+         Src_Data := Project_Tree.Sources.Table (Source)'Unrestricted_Access;
 
          if ((Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Impl)
              or else
@@ -7317,7 +7334,7 @@ package body Buildgpr is
             Main           : String := Display_Main;
             Main_Id        : File_Name_Type;
             Main_Source_Id : Source_Id;
-            Main_Source    : Source_Data;
+            Main_Source    : Source_Data_Access;
 
             Exec_Name      : File_Name_Type;
             Exec_Path_Name : Path_Name_Type;
@@ -7339,8 +7356,8 @@ package body Buildgpr is
 
             Main_Id := Create_Name (Main);
             Main_Source_Id := Main_Sources.Get (Main_Id);
-            Initialize_Source_Record (Main_Source_Id);
-            Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
+            Main_Source :=
+              Project_Tree.Sources.Table (Main_Source_Id)'Unrestricted_Access;
             Main_Proj  := Ultimate_Extending_Project_Of (Main_Source.Project);
             Data        := Project_Tree.Projects.Table (Main_Proj);
 
@@ -7937,7 +7954,8 @@ package body Buildgpr is
    ---------------------
 
    function Need_To_Compile (Source : Source_Id) return Boolean is
-      Src_Data : constant Source_Data := Project_Tree.Sources.Table (Source);
+      Src_Data : constant Source_Data_Access :=
+        Project_Tree.Sources.Table (Source)'Unrestricted_Access;
 
       Source_Path   : constant String :=
                         Get_Name_String (Src_Data.Path.Name);
@@ -7994,14 +8012,14 @@ package body Buildgpr is
          return Boolean
       is
          Src_Id : Source_Id;
-         Source : Source_Data;
+         Source : Source_Data_Access;
 
          Current_File_Name : File_Name_Type;
          Other_Part_File_Name     : File_Name_Type;
       begin
          Src_Id := Project_Tree.First_Source;
          while Src_Id /= No_Source loop
-            Source := Project_Tree.Sources.Table (Src_Id);
+            Source := Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
 
             if Source.Unit = Uname then
                Current_File_Name := Source.File;
@@ -8834,7 +8852,7 @@ package body Buildgpr is
          Dep_Files   : out Boolean)
       is
          Src_Id  : Source_Id;
-         Source  : Source_Data;
+         Source  : Source_Data_Access;
          Config  : constant Language_Config :=
                      Project_Tree.Languages_Data.Table (Language).Config;
          Roots   : Roots_Access;
@@ -8862,13 +8880,12 @@ package body Buildgpr is
                       (Source.Kind = Impl
                        or else
                          Source.Other_Part = No_Source)
-                    and then
-                      (not Is_Subunit (Source))))
+                    and then not Is_Subunit (Source.all)))
               and then Is_Included_In_Global_Archive
                 (Source.Object, Source.Project)
             then
-               Initialize_Source_Record (Src_Id);
-               Source := Project_Tree.Sources.Table (Src_Id);
+               Source :=
+                 Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
 
                declare
                   Local_Data : Project_Data renames
@@ -8905,8 +8922,8 @@ package body Buildgpr is
             if Main_Source.Unit = No_Name then
                Src_Id := Project_Tree.First_Source;
                while Src_Id /= No_Source loop
-                  Initialize_Source_Record (Src_Id);
-                  Source := Project_Tree.Sources.Table (Src_Id);
+                  Source :=
+                    Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
                   Put_Dependency_File;
                   Src_Id := Source.Next_In_Sources;
                end loop;
@@ -8917,8 +8934,8 @@ package body Buildgpr is
             --  Put the Roots
             for J in Roots'Range loop
                Src_Id := Roots (J);
-               Initialize_Source_Record (Src_Id);
-               Source := Project_Tree.Sources.Table (Src_Id);
+               Source :=
+                 Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
                Put_Dependency_File;
             end loop;
          end if;
@@ -8933,7 +8950,7 @@ package body Buildgpr is
          For_Language : Name_Id)
       is
          Src_Id  : Source_Id;
-         Source  : Source_Data;
+         Source  : Source_Data_Access;
 
          Dep_TS  : Time_Stamp_Type;
 
@@ -8952,7 +8969,8 @@ package body Buildgpr is
                Src_Id := Data.First_Source;
 
                while Src_Id /= No_Source loop
-                  Source := Project_Tree.Sources.Table (Src_Id);
+                  Source :=
+                    Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
 
                   if Source.Language_Name = For_Language
                     and then
@@ -8961,14 +8979,13 @@ package body Buildgpr is
                         (Source.Kind = Impl
                          or else
                            Source.Other_Part = No_Source)
-                    and then
-                      (not Is_Subunit (Source))
+                    and then not Is_Subunit (Source.all)
                     and then
                       Is_Included_In_Global_Archive
                         (Source.Object, Source.Project)
                   then
-                     Initialize_Source_Record (Src_Id);
-                     Source := Project_Tree.Sources.Table (Src_Id);
+                     Source :=
+                       Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
 
                      if (not Data.Library) or Source.Unit = No_Name then
                         Dep_TS := Source.Dep_TS;
@@ -9089,7 +9106,7 @@ package body Buildgpr is
                Main_Id        : constant File_Name_Type := Create_Name (Main);
                Main_Source_Id : constant Source_Id :=
                                   Main_Sources.Get (Main_Id);
-               Main_Source    : Source_Data;
+               Main_Source    : Source_Data_Access;
 
                Bind_Exchange  : String_Access;
                Main_Proj      : Project_Id;
@@ -9106,8 +9123,10 @@ package body Buildgpr is
                Lang_Data      : Language_Data;
 
             begin
-               Initialize_Source_Record (Main_Source_Id);
-               Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
+--               Initialize_Source_Record (Main_Source_Id);
+               Main_Source :=
+                 Project_Tree.Sources.Table
+                   (Main_Source_Id)'Unrestricted_Access;
                Main_Proj   :=
                  Ultimate_Extending_Project_Of (Main_Source.Project);
 
@@ -9506,7 +9525,7 @@ package body Buildgpr is
                           (Main_Proj,
                            B_Data.Language,
                            B_Data.Language_Name,
-                           Main_Source,
+                           Main_Source.all,
                            Dep_Files);
 
                         --  Put the options, if any
@@ -10126,11 +10145,11 @@ package body Buildgpr is
          All_Projects : Boolean;
          Unit_Based   : Boolean)
       is
-         Source : Source_Data;
+         Source : Source_Data_Access;
 
       begin
          for Index in 1 .. Source_Data_Table.Last (Project_Tree.Sources) loop
-            Source := Project_Tree.Sources.Table (Index);
+            Source := Project_Tree.Sources.Table (Index)'Unrestricted_Access;
 
             if Source.Compiled
                and then
@@ -10157,8 +10176,7 @@ package body Buildgpr is
                   if (Unit_Based or else
                       Source.Unit = No_Name or else
                       Project_Tree.Projects.Table (Source.Project).Library)
-                     and then
-                     not Is_Subunit (Source)
+                     and then not Is_Subunit (Source.all)
                   then
                      Insert
                        (Source_File_Name => Source.File,
@@ -10774,9 +10792,9 @@ package body Buildgpr is
    -- Source_Of --
    ---------------
 
-   function Source_Of (File : String) return Source_Data is
+   function Source_Of (File : String) return Source_Data_Access is
       File_Id : File_Name_Type;
-      Source : Source_Data;
+      Source : Source_Data_Access;
    begin
       Name_Len := 0;
       Add_Str_To_Name_Buffer (File);
@@ -10784,14 +10802,14 @@ package body Buildgpr is
       File_Id := Name_Find;
 
       for Index in 1 .. Source_Data_Table.Last (Project_Tree.Sources) loop
-         Source := Project_Tree.Sources.Table (Index);
+         Source := Project_Tree.Sources.Table (Index)'Unrestricted_Access;
 
          if Source.File = File_Id then
             return Source;
          end if;
       end loop;
 
-      return No_Source_Data;
+      return null;
    end Source_Of;
 
    ---------------------------
