@@ -126,7 +126,7 @@ project Gprbuild is
                   end case;
 
                when "profiling"            =>
-                  for Default_Switches ("Ada") use Common_Switches & ("-pg");
+                  for Default_Switches ("Ada") use Common_Switches & ("-pg", "-g");
 
             end case;
 
