@@ -67,8 +67,6 @@ with Types;            use Types;
 
 package body Buildgpr is
 
-   type Source_Data_Access is access Source_Data;
-
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
 
@@ -914,7 +912,7 @@ package body Buildgpr is
    --  Called when the program is interrupted by Ctrl-C to delete the
    --  temporary mapping files and configuration pragmas files.
 
-   function Source_Of (File : String) return Source_Data_Access;
+   function Source_Of (File : String) return Source_Id;
    --  Return the source data corresponding to a file name
 
    procedure Test_If_Relative_Path
@@ -1689,7 +1687,6 @@ package body Buildgpr is
 
       Src_Id       : Source_Id;
       S_Id         : Source_Id;
-      Source       : Source_Data_Access;
 
       Success      : Boolean;
 
@@ -1711,47 +1708,46 @@ package body Buildgpr is
       procedure Add_Sources (Proj : Project_Id) is
          Project : Project_Id := Proj;
          Id : Source_Id;
-         Source : Source_Data_Access;
 
       begin
          loop
             Id := Project_Tree.Projects.Table (Project).First_Source;
 
             while Id /= No_Source loop
-               Source := Project_Tree.Sources.Table (Id)'Unrestricted_Access;
-
-               if (not Source.Locally_Removed)
-                 and then
-                  Source.Compiled
-                 and then
-                 (Source.Kind = Impl
-                  or else
-                  (Source.Unit /= No_Name
-                   and then
-                   Source.Kind = Spec
-                   and then
-                   Source.Other_Part = No_Source))
-               then
-                  if Source.Unit = No_Name
-                    or else Source.Kind = Spec
-                    or else not Is_Subunit (Source.all)
+               declare
+                  Source : Source_Data renames
+                    Project_Tree.Sources.Table (Id);
+               begin
+                  if (not Source.Locally_Removed)
+                    and then
+                      Source.Compiled
+                      and then
+                        (Source.Kind = Impl
+                         or else
+                           (Source.Unit /= No_Name
+                            and then
+                              Source.Kind = Spec
+                            and then
+                              Source.Other_Part = No_Source))
                   then
-                     Source :=
-                       Project_Tree.Sources.Table (Id)'Unrestricted_Access;
-
-                     --  Only include sources with object file names that have
-                     --  not been overriden in extending projects.
-
-                     if Source.Object /= No_File
-                       and then
-                        Is_Included_In_Global_Archive (Source.Object, Project)
+                     if Source.Unit = No_Name
+                       or else Source.Kind = Spec
+                       or else not Is_Subunit (Source)
                      then
-                        Add_Source_Id (Proj, Id);
+                        --  Only include sources with object file names that
+                        --  have not been overriden in extending projects.
+
+                        if Source.Object /= No_File
+                          and then Is_Included_In_Global_Archive
+                            (Source.Object, Project)
+                        then
+                           Add_Source_Id (Proj, Id);
+                        end if;
                      end if;
                   end if;
-               end if;
 
-               Id := Source.Next_In_Project;
+                  Id := Source.Next_In_Project;
+               end;
             end loop;
 
             Project := Project_Tree.Projects.Table (Project).Extends;
@@ -1767,7 +1763,6 @@ package body Buildgpr is
       procedure Add_Objects (Proj : Project_Id) is
          Project : Project_Id := Proj;
          Id : Source_Id;
-         Source : Source_Data_Access;
 
       begin
          loop
@@ -1814,39 +1809,41 @@ package body Buildgpr is
                   Id := Project_Tree.Projects.Table (Project).First_Source;
 
                   while Id /= No_Source loop
-                     Source :=
-                       Project_Tree.Sources.Table (Id)'Unrestricted_Access;
+                     declare
+                        Source : Source_Data renames
+                          Project_Tree.Sources.Table (Id);
+                     begin
+                        if (not Source.Locally_Removed)
+                          and then
+                            Source.Compiled
+                            and then
+                              (Source.Kind = Impl
+                               or else
+                                 (Source.Unit /= No_Name
+                                  and then
+                                    Source.Kind = Spec
+                                  and then
+                                    Source.Other_Part = No_Source))
+                        then
+                           if not Is_Subunit (Source) then
+                              --  Only include object file name that have not
+                              --  been overriden in extending projects.
 
-                     if (not Source.Locally_Removed)
-                       and then
-                         Source.Compiled
-                         and then
-                           (Source.Kind = Impl
-                            or else
-                              (Source.Unit /= No_Name
-                               and then
-                                 Source.Kind = Spec
-                               and then
-                                 Source.Other_Part = No_Source))
-                     then
-                        if not Is_Subunit (Source.all) then
-                           --  Only include object file name that have not been
-                           --  overriden in extending projects.
-
-                           if Source.Object /= No_File
-                             and then
-                               Is_Included_In_Global_Archive
-                                 (Source.Object, Project)
-                           then
-                              Add_Argument
-                                (Get_Name_String (Source.Object_Path),
-                                 Verbose_Mode,
-                                 Simple_Name => not Verbose_Mode);
+                              if Source.Object /= No_File
+                                and then
+                                  Is_Included_In_Global_Archive
+                                    (Source.Object, Project)
+                              then
+                                 Add_Argument
+                                   (Get_Name_String (Source.Object_Path),
+                                    Verbose_Mode,
+                                    Simple_Name => not Verbose_Mode);
+                              end if;
                            end if;
                         end if;
-                     end if;
 
-                     Id := Source.Next_In_Project;
+                        Id := Source.Next_In_Project;
+                     end;
                   end loop;
                end if;
             end if;
@@ -1952,20 +1949,22 @@ package body Buildgpr is
 
                      for S in 1 .. Last_Source loop
                         S_Id := Source_Indexes (S).Id;
-                        Source :=
-                          Project_Tree.Sources.Table
-                            (S_Id)'Unrestricted_Access;
 
-                        if (not Source_Indexes (S).Found)
-                          and then Source.Object_Path = Object_Path
-                        then
-                           --  We have found the object file: get the source
-                           --  data, and mark it as found.
+                        declare
+                           Source : Source_Data renames
+                             Project_Tree.Sources.Table (S_Id);
+                        begin
+                           if (not Source_Indexes (S).Found)
+                             and then Source.Object_Path = Object_Path
+                           then
+                              --  We have found the object file: get the source
+                              --  data, and mark it as found.
 
-                           Src_Id := S_Id;
-                           Source_Indexes (S).Found := True;
-                           exit;
-                        end if;
+                              Src_Id := S_Id;
+                              Source_Indexes (S).Found := True;
+                              exit;
+                           end if;
+                        end;
                      end loop;
 
                      --  If it is not for a source of this project, then the
@@ -2025,7 +2024,9 @@ package body Buildgpr is
                      --  Time_Stamp_Type are equal if they differ by 2 seconds
                      --  or less; here the check is for an exact match.
 
-                     if String (Time_Stamp) /= String (Source.Object_TS) then
+                     if String (Time_Stamp) /=
+                       String (Project_Tree.Sources.Table (Src_Id).Object_TS)
+                     then
                         Has_Been_Built := True;
 
                         if Verbose_Mode then
@@ -2036,7 +2037,10 @@ package body Buildgpr is
                            Write_Str  ("         recorded time stamp: ");
                            Write_Line (String (Time_Stamp));
                            Write_Str  ("           actual time stamp: ");
-                           Write_Line (String (Source.Object_TS));
+                           Write_Line
+                             (String
+                                (Project_Tree.Sources.Table (Src_Id)
+                                 .Object_TS));
                         end if;
 
                         exit;
@@ -2049,7 +2053,10 @@ package body Buildgpr is
                            Write_Str  ("         recorded time stamp: ");
                            Write_Line (String (Time_Stamp));
                            Write_Str  ("           actual time stamp: ");
-                           Write_Line (String (Source.Object_TS));
+                           Write_Line
+                             (String
+                                (Project_Tree.Sources.Table (Src_Id)
+                                 .Object_TS));
                      end if;
                   end loop;
 
@@ -2064,10 +2071,9 @@ package body Buildgpr is
                   Has_Been_Built := True;
 
                   if Verbose_Mode then
-                     Source := Project_Tree.Sources.Table
-                                  (Source_Indexes (S).Id)'Unrestricted_Access;
                      Write_Str ("      -> object file ");
-                     Write_Str (Get_Name_String (Source.Object_Path));
+                     Write_Str (Get_Name_String (Project_Tree.Sources.Table
+                                  (Source_Indexes (S).Id).Object_Path));
                      Write_Line (" is not in the dependency file");
                   end if;
 
@@ -2266,13 +2272,14 @@ package body Buildgpr is
 
                      for S in 1 .. Last_Source loop
                         Src_Id := Source_Indexes (S).Id;
-                        Source :=
-                          Project_Tree.Sources.Table
-                            (Src_Id)'Unrestricted_Access;
-                        Put_Line
-                          (Dep_File, Get_Name_String (Source.Object_Path));
-                        Put_Line
-                          (Dep_File, String (Source.Object_TS));
+                        declare
+                           Source : Source_Data renames
+                             Project_Tree.Sources.Table (Src_Id);
+                        begin
+                           Put_Line
+                             (Dep_File, Get_Name_String (Source.Object_Path));
+                           Put_Line (Dep_File, String (Source.Object_TS));
+                        end;
                      end loop;
 
                      Close (Dep_File);
@@ -2337,7 +2344,6 @@ package body Buildgpr is
       Object_TS   : Time_Stamp_Type;
 
       Source      : Source_Id;
-      Src_Data    : Source_Data_Access;
       Project     : Project_Id;
 
       Unit_Based_Language_Name : Name_Id;
@@ -2352,7 +2358,6 @@ package body Buildgpr is
 
       procedure Get_Objects is
          Source   : Source_Id;
-         Src_Data : Source_Data_Access;
 
          Proj : Project_Id := For_Project;
 
@@ -2363,48 +2368,51 @@ package body Buildgpr is
             Source := Project_Tree.Projects.Table (Proj).First_Source;
 
             while Source /= No_Source loop
-               Src_Data :=
-                 Project_Tree.Sources.Table (Source)'Unrestricted_Access;
-
-               if (not Src_Data.Locally_Removed)
-                 and then
-                   Src_Data.Compiled
-                 and then
-                   Src_Data.Object_Linked
-                 and then
-                 ((Src_Data.Unit = No_Name and then Src_Data.Kind = Impl)
-                 or else
-                   (Src_Data.Unit /= No_Name
+               declare
+                  Src_Data : Source_Data renames
+                    Project_Tree.Sources.Table (Source);
+               begin
+                  if (not Src_Data.Locally_Removed)
                     and then
-                      (Src_Data.Kind = Impl
-                       or else
-                         Src_Data.Other_Part = No_Source)
-                    and then not Is_Subunit (Src_Data.all)))
-               then
-                  Library_Objs.Append
-                    ((Path  => Src_Data.Object_Path,
-                      TS    => Src_Data.Object_TS,
-                      Known => False));
+                      Src_Data.Compiled
+                      and then
+                        Src_Data.Object_Linked
+                        and then
+                          ((Src_Data.Unit = No_Name
+                            and then Src_Data.Kind = Impl)
+                           or else
+                             (Src_Data.Unit /= No_Name
+                              and then
+                                (Src_Data.Kind = Impl
+                                 or else
+                                   Src_Data.Other_Part = No_Source)
+                              and then not Is_Subunit (Src_Data)))
+                  then
+                     Library_Objs.Append
+                       ((Path  => Src_Data.Object_Path,
+                         TS    => Src_Data.Object_TS,
+                         Known => False));
 
-                  if Src_Data.Object_TS = Empty_Time_Stamp then
-                     Latest_Object_TS := Never;
+                     if Src_Data.Object_TS = Empty_Time_Stamp then
+                        Latest_Object_TS := Never;
 
-                     if not Library_Needs_To_Be_Built then
-                        Library_Needs_To_Be_Built := True;
+                        if not Library_Needs_To_Be_Built then
+                           Library_Needs_To_Be_Built := True;
 
-                        if Verbose_Mode then
-                           Write_Str ("      -> missing object file: ");
-                           Get_Name_String (Src_Data.Object);
-                           Write_Line (Name_Buffer (1 .. Name_Len));
+                           if Verbose_Mode then
+                              Write_Str ("      -> missing object file: ");
+                              Get_Name_String (Src_Data.Object);
+                              Write_Line (Name_Buffer (1 .. Name_Len));
+                           end if;
                         end if;
+
+                     elsif Src_Data.Object_TS > Latest_Object_TS then
+                        Latest_Object_TS := Src_Data.Object_TS;
                      end if;
-
-                  elsif Src_Data.Object_TS > Latest_Object_TS then
-                     Latest_Object_TS := Src_Data.Object_TS;
                   end if;
-               end if;
 
-               Source := Src_Data.Next_In_Project;
+                  Source := Src_Data.Next_In_Project;
+               end;
             end loop;
 
             Proj := Project_Tree.Projects.Table (Proj).Extends;
@@ -3087,7 +3095,6 @@ package body Buildgpr is
          declare
             Current_Proj : Project_Id := For_Project;
             Source       : Source_Id;
-            Src_Data     : Source_Data_Access;
          begin
             while Current_Proj /= No_Project loop
                declare
@@ -3097,27 +3104,29 @@ package body Buildgpr is
                   Source := Proj_Data.First_Source;
 
                   while Source /= No_Source loop
-                     Src_Data :=
-                       Project_Tree.Sources.Table (Source)'Unrestricted_Access;
+                     declare
+                        Src_Data : Source_Data renames
+                          Project_Tree.Sources.Table (Source);
+                     begin
+                        if not Src_Data.Locally_Removed
+                          and then Src_Data.Dep_Name /= No_File
+                        then
+                           if Src_Data.Kind = Spec then
+                              if Src_Data.Other_Part = No_Source then
+                                 Put_Line
+                                   (Exchange_File,
+                                    Get_Name_String (Src_Data.Dep_Name));
+                              end if;
 
-                     if not Src_Data.Locally_Removed
-                       and then Src_Data.Dep_Name /= No_File
-                     then
-                        if Src_Data.Kind = Spec then
-                           if Src_Data.Other_Part = No_Source then
+                           elsif not Is_Subunit (Src_Data) then
                               Put_Line
                                 (Exchange_File,
                                  Get_Name_String (Src_Data.Dep_Name));
                            end if;
-
-                        elsif not Is_Subunit (Src_Data.all) then
-                           Put_Line
-                             (Exchange_File,
-                              Get_Name_String (Src_Data.Dep_Name));
                         end if;
-                     end if;
 
-                     Source := Src_Data.Next_In_Project;
+                        Source := Src_Data.Next_In_Project;
+                     end;
                   end loop;
 
                   Current_Proj := Proj_Data.Extends;
@@ -3186,21 +3195,23 @@ package body Buildgpr is
                   Source := Project_Tree.Projects.Table (Project).First_Source;
 
                   while Source /= No_Source loop
-                     Src_Data :=
-                       Project_Tree.Sources.Table (Source)'Unrestricted_Access;
+                     declare
+                        Src_Data : Source_Data renames
+                          Project_Tree.Sources.Table (Source);
+                     begin
+                        if  Src_Data.Language_Name = Unit_Based_Language_Name
+                          and then
+                            (not Src_Data.Locally_Removed)
+                          and then
+                            Src_Data.Replaced_By = No_Source
+                        then
+                           Put_Line
+                             (Exchange_File,
+                              Get_Name_String (Src_Data.Path.Name));
+                        end if;
 
-                     if  Src_Data.Language_Name = Unit_Based_Language_Name
-                       and then
-                         (not Src_Data.Locally_Removed)
-                       and then
-                          Src_Data.Replaced_By = No_Source
-                     then
-                        Put_Line
-                          (Exchange_File,
-                           Get_Name_String (Src_Data.Path.Name));
-                     end if;
-
-                     Source := Src_Data.Next_In_Project;
+                        Source := Src_Data.Next_In_Project;
+                     end;
                   end loop;
 
                   Project := Project_Tree.Projects.Table (Project).Extends;
@@ -3461,7 +3472,6 @@ package body Buildgpr is
             Elem         : String_Element;
             Unit_Name    : Name_Id;
             Root_Source  : Source_Id;
-            Src_Data     : Source_Data_Access;
          begin
             exit when Display_Main'Length = 0;
 
@@ -3470,212 +3480,217 @@ package body Buildgpr is
             Source := Main_Sources.Get (Main_Id);
 
             if Source /= No_Source then
-               Src_Data :=
-                 Project_Tree.Sources.Table (Source)'Unrestricted_Access;
-               Project := Src_Data.Project;
-               Queue.Insert
-                 (Source_File_Name => Main_Id,
-                  Source_Identity  => Source,
-                  Source_Project   => Project);
+               declare
+                  Src_Data : Source_Data renames
+                    Project_Tree.Sources.Table (Source);
+               begin
+                  Project := Src_Data.Project;
+                  Queue.Insert
+                    (Source_File_Name => Main_Id,
+                     Source_Identity  => Source,
+                     Source_Project   => Project);
 
-               --  Look for roots if closure is needed
+                  --  Look for roots if closure is needed
 
-               if Closure_Needed then
-                  if Current_Verbosity = High then
-                     Write_Str ("Looking for roots for ");
-                     Write_Line (Display_Main);
-                  end if;
-
-                  Root_Arr :=
-                    Prj.Util.Value_Of
-                      (Name      => Name_Roots,
-                       In_Arrays =>
-                         Project_Tree.Projects.Table (Project).Decl.Arrays,
-                       In_Tree   => Project_Tree);
-                  Roots :=
-                    Prj.Util.Value_Of
-                      (Index     => Name_Id (Main_Id),
-                       Src_Index => 0,
-                       In_Array  => Root_Arr,
-                       In_Tree   => Project_Tree);
-
-                  --  If there is no roots for the specific main, try the
-                  --  language.
-
-                  if Roots = Nil_Variable_Value then
-                     Roots :=
-                       Prj.Util.Value_Of
-                         (Index                  => Src_Data.Language_Name,
-                          Src_Index              => 0,
-                          In_Array               => Root_Arr,
-                          In_Tree                => Project_Tree,
-                          Force_Lower_Case_Index => True);
-                  end if;
-
-                  --  Then try "*"
-
-                  if Roots = Nil_Variable_Value then
-                     Roots :=
-                       Prj.Util.Value_Of
-                         (Index                  => Name_Star,
-                          Src_Index              => 0,
-                          In_Array               => Root_Arr,
-                          In_Tree                => Project_Tree,
-                          Force_Lower_Case_Index => True);
-                  end if;
-
-                  if Roots = Nil_Variable_Value then
+                  if Closure_Needed then
                      if Current_Verbosity = High then
-                        Write_Line ("   -> no roots declared");
+                        Write_Str ("Looking for roots for ");
+                        Write_Line (Display_Main);
                      end if;
 
-                     --  If a non Ada main has no roots, then all sources need
-                     --  to be compiled, so no need to check for closure.
+                     Root_Arr :=
+                       Prj.Util.Value_Of
+                         (Name      => Name_Roots,
+                          In_Arrays =>
+                            Project_Tree.Projects.Table (Project).Decl.Arrays,
+                          In_Tree   => Project_Tree);
+                     Roots :=
+                       Prj.Util.Value_Of
+                         (Index     => Name_Id (Main_Id),
+                          Src_Index => 0,
+                          In_Array  => Root_Arr,
+                          In_Tree   => Project_Tree);
 
-                     if Src_Data.Lang_Kind /= Unit_Based then
-                        Closure_Needed := False;
+                     --  If there is no roots for the specific main, try the
+                     --  language.
+
+                     if Roots = Nil_Variable_Value then
+                        Roots :=
+                          Prj.Util.Value_Of
+                            (Index                  => Src_Data.Language_Name,
+                             Src_Index              => 0,
+                             In_Array               => Root_Arr,
+                             In_Tree                => Project_Tree,
+                             Force_Lower_Case_Index => True);
                      end if;
 
-                  else
-                     List := Roots.Values;
-                     Nmb_Root := 0;
+                     --  Then try "*"
 
-                     Pattern_Loop :
-                     while List /= Nil_String loop
-                        Elem := Project_Tree.String_Elements.Table (List);
-                        Get_Name_String (Elem.Value);
-                        To_Lower (Name_Buffer (1 .. Name_Len));
-                        Unit_Name := Name_Find;
+                     if Roots = Nil_Variable_Value then
+                        Roots :=
+                          Prj.Util.Value_Of
+                            (Index                  => Name_Star,
+                             Src_Index              => 0,
+                             In_Array               => Root_Arr,
+                             In_Tree                => Project_Tree,
+                             Force_Lower_Case_Index => True);
+                     end if;
 
-                        --  Check if it is a unit name or a pattern
-
-                        Pat_Root := False;
-
-                        for J in 1 .. Name_Len loop
-                           if (Name_Buffer (J) not in 'a' .. 'z') and then
-                             (Name_Buffer (J) not in '0' .. '9') and then
-                             (Name_Buffer (J) /= '_') and then
-                             (Name_Buffer (J) /= '.')
-                           then
-                              Pat_Root := True;
-                              exit;
-                           end if;
-                        end loop;
-
-                        if Pat_Root then
-                           begin
-                              Root_Pattern :=
-                                Compile
-                                  (Pattern => Name_Buffer (1 .. Name_Len),
-                                   Glob    => True);
-
-                           exception
-                              when Error_In_Regexp =>
-                                 Error_Msg_Name_1 := Unit_Name;
-                                 Error_Msg
-                                   ("invalid pattern %", Roots.Location);
-                                 exit Pattern_Loop;
-                           end;
+                     if Roots = Nil_Variable_Value then
+                        if Current_Verbosity = High then
+                           Write_Line ("   -> no roots declared");
                         end if;
 
-                        Roots_Found := False;
+                        --  If a non Ada main has no roots, then all sources
+                        --  need to be compiled, so no need to check for
+                        --  closure.
 
-                        Root_Source := Project_Tree.First_Source;
-                        Source_Loop :
-                        while Root_Source /= No_Source loop
-                           Root_Found := False;
-                           Src_Data :=
-                             Project_Tree.Sources.Table
-                               (Root_Source)'Unrestricted_Access;
+                        if Src_Data.Lang_Kind /= Unit_Based then
+                           Closure_Needed := False;
+                        end if;
+
+                     else
+                        List := Roots.Values;
+                        Nmb_Root := 0;
+
+                        Pattern_Loop :
+                        while List /= Nil_String loop
+                           Elem := Project_Tree.String_Elements.Table (List);
+                           Get_Name_String (Elem.Value);
+                           To_Lower (Name_Buffer (1 .. Name_Len));
+                           Unit_Name := Name_Find;
+
+                           --  Check if it is a unit name or a pattern
+
+                           Pat_Root := False;
+
+                           for J in 1 .. Name_Len loop
+                              if (Name_Buffer (J) not in 'a' .. 'z') and then
+                                (Name_Buffer (J) not in '0' .. '9') and then
+                                (Name_Buffer (J) /= '_') and then
+                                (Name_Buffer (J) /= '.')
+                              then
+                                 Pat_Root := True;
+                                 exit;
+                              end if;
+                           end loop;
 
                            if Pat_Root then
-                              Root_Found :=
-                                Src_Data.Unit /= No_Name and then
-                                Match
-                                  (Get_Name_String (Src_Data.Unit),
-                                   Root_Pattern);
+                              begin
+                                 Root_Pattern :=
+                                   Compile
+                                     (Pattern => Name_Buffer (1 .. Name_Len),
+                                      Glob    => True);
 
-                           else
-                              Root_Found := Src_Data.Unit = Unit_Name;
+                              exception
+                                 when Error_In_Regexp =>
+                                    Error_Msg_Name_1 := Unit_Name;
+                                    Error_Msg
+                                      ("invalid pattern %", Roots.Location);
+                                    exit Pattern_Loop;
+                              end;
                            end if;
 
-                           if Root_Found then
-                              case Src_Data.Kind is
-                                 when Impl =>
-                                    null;
+                           Roots_Found := False;
 
-                                 when Spec =>
+                           Root_Source := Project_Tree.First_Source;
+                           Source_Loop :
+                           while Root_Source /= No_Source loop
+                              Root_Found := False;
+                              declare
+                                 Src_Data2 : Source_Data renames
+                                   Project_Tree.Sources.Table (Root_Source);
+                              begin
+                                 if Pat_Root then
                                     Root_Found :=
-                                      Src_Data.Other_Part = No_Source;
+                                      Src_Data2.Unit /= No_Name and then
+                                    Match
+                                      (Get_Name_String (Src_Data2.Unit),
+                                       Root_Pattern);
 
-                                 when Sep =>
-                                    Root_Found := False;
-                              end case;
-                           end if;
+                                 else
+                                    Root_Found := Src_Data2.Unit = Unit_Name;
+                                 end if;
 
-                           if Root_Found then
-                              Roots_Found := True;
+                                 if Root_Found then
+                                    case Src_Data2.Kind is
+                                       when Impl =>
+                                          null;
 
-                              if Current_Verbosity = High then
-                                 Write_Str ("   -> ");
-                                 Write_Line
-                                   (Get_Name_String
-                                      (Project_Tree.Sources.Table
-                                         (Root_Source).Display_File));
-                              end if;
+                                       when Spec =>
+                                          Root_Found :=
+                                            Src_Data2.Other_Part = No_Source;
 
-                              Queue.Insert
-                                (Source_File_Name => Src_Data.File,
-                                 Source_Identity  => Root_Source,
-                                 Source_Project   => Src_Data.Project);
+                                       when Sep =>
+                                          Root_Found := False;
+                                    end case;
+                                 end if;
 
-                              if Nmb_Root = Roots_Buffer'Last then
-                                 declare
-                                    New_Roots : constant Roots_Access :=
-                                      new Root_Array
-                                            (1 .. 2 * Roots_Buffer'Last);
+                                 if Root_Found then
+                                    Roots_Found := True;
 
-                                 begin
-                                    New_Roots (Roots_Buffer'Range) :=
-                                      Roots_Buffer.all;
-                                    Roots_Buffer := New_Roots;
-                                 end;
-                              end if;
+                                    if Current_Verbosity = High then
+                                       Write_Str ("   -> ");
+                                       Write_Line
+                                         (Get_Name_String
+                                            (Project_Tree.Sources.Table
+                                               (Root_Source).Display_File));
+                                    end if;
 
-                              Nmb_Root := Nmb_Root + 1;
-                              Roots_Buffer (Nmb_Root) := Root_Source;
-                              exit Source_Loop when not Pat_Root;
-                           end if;
+                                    Queue.Insert
+                                      (Source_File_Name => Src_Data2.File,
+                                       Source_Identity  => Root_Source,
+                                       Source_Project   => Src_Data2.Project);
 
-                           Root_Source := Src_Data.Next_In_Sources;
-                        end loop Source_Loop;
+                                    if Nmb_Root = Roots_Buffer'Last then
+                                       declare
+                                          New_Roots : constant Roots_Access :=
+                                            new Root_Array
+                                              (1 .. 2 * Roots_Buffer'Last);
 
-                        if not Roots_Found then
-                           if Pat_Root then
-                              if not Quiet_Output then
-                                 Error_Msg_Name_1 := Unit_Name;
+                                       begin
+                                          New_Roots (Roots_Buffer'Range) :=
+                                            Roots_Buffer.all;
+                                          Roots_Buffer := New_Roots;
+                                       end;
+                                    end if;
+
+                                    Nmb_Root := Nmb_Root + 1;
+                                    Roots_Buffer (Nmb_Root) := Root_Source;
+                                    exit Source_Loop when not Pat_Root;
+                                 end if;
+
+                                 Root_Source := Src_Data2.Next_In_Sources;
+                              end;
+                           end loop Source_Loop;
+
+                           if not Roots_Found then
+                              if Pat_Root then
+                                 if not Quiet_Output then
+                                    Error_Msg_Name_1 := Unit_Name;
+                                    Error_Msg
+                                      ("?no unit matches pattern %",
+                                       Roots.Location);
+                                 end if;
+
+                              else
+                                 --  report error
                                  Error_Msg
-                                   ("?no unit matches pattern %",
+                                   ("Unit " & Get_Name_String (Unit_Name) &
+                                    " does not exist",
                                     Roots.Location);
                               end if;
-
-                           else
-                              --  report error
-                              Error_Msg
-                                ("Unit " & Get_Name_String (Unit_Name) &
-                                 " does not exist",
-                                 Roots.Location);
                            end if;
-                        end if;
 
-                        List := Elem.Next;
-                     end loop Pattern_Loop;
+                           List := Elem.Next;
+                        end loop Pattern_Loop;
 
-                     Root_List :=
-                       new Root_Array'(Roots_Buffer (1 .. Nmb_Root));
-                     Root_Sources.Set (Main_Id, Root_List);
+                        Root_List :=
+                          new Root_Array'(Roots_Buffer (1 .. Nmb_Root));
+                        Root_Sources.Set (Main_Id, Root_List);
+                     end if;
                   end if;
-               end if;
+               end;
             end if;
          end;
       end loop;
@@ -3715,7 +3730,6 @@ package body Buildgpr is
 
       Mapping_File_Path : Path_Name_Type;
 
-      Src_Data         : Source_Data_Access;
       Dep_File         : Text_File;
 
       Start            : Natural;
@@ -3745,6 +3759,10 @@ package body Buildgpr is
 
       procedure Record_ALI_For (Source_Identity : Source_Id);
       --  Record the Id of an ALI file in Good_ALI table
+
+      procedure Phase_2_Makefile (Src_Data : Source_Data);
+      procedure Phase_2_ALI      (Src_Data : Source_Data);
+      --  Process the phase2, on Src_Data.Dependency type
 
       ----------------------------
       -- Add_Config_File_Switch --
@@ -3803,8 +3821,8 @@ package body Buildgpr is
       ---------------------
 
       procedure Record_ALI_For (Source_Identity : Source_Id) is
-         Src_Data : constant Source_Data :=
-                      Project_Tree.Sources.Table (Source_Identity);
+         Src_Data : Source_Data renames
+           Project_Tree.Sources.Table (Source_Identity);
          The_ALI  : ALI.ALI_Id;
          Text     : Text_Buffer_Ptr :=
                       Read_Library_Info
@@ -3826,6 +3844,462 @@ package body Buildgpr is
             Good_ALI.Table (Good_ALI.Last) := The_ALI;
          end if;
       end Record_ALI_For;
+
+      ----------------------
+      -- Phase_2_Makefile --
+      ----------------------
+
+      procedure Phase_2_Makefile (Src_Data : Source_Data) is
+      begin
+         Open (Dep_File, Get_Name_String (Src_Data.Dep_Path));
+
+         if Is_Valid (Dep_File) then
+
+            Big_Loop :
+            loop
+               declare
+                  End_Of_File_Reached : Boolean := False;
+                  Object_Found        : Boolean := False;
+               begin
+                  loop
+                     if End_Of_File (Dep_File) then
+                        End_Of_File_Reached := True;
+                        exit;
+                     end if;
+
+                     Get_Line (Dep_File, Name_Buffer, Name_Len);
+
+                     if Name_Len > 0
+                       and then Name_Buffer (1) /= '#'
+                     then
+                        --  Skip a first line that is an empty
+                        --  continuation line.
+
+                        for J in 1 .. Name_Len - 1 loop
+                           if Name_Buffer (J) /= ' ' then
+                              Object_Found := True;
+                              exit;
+                           end if;
+                        end loop;
+
+                        exit when Object_Found
+                          or else Name_Buffer (Name_Len) /= '\';
+                     end if;
+                  end loop;
+
+                  exit Big_Loop when End_Of_File_Reached;
+               end;
+
+               Start  := 1;
+               Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
+
+               exit Big_Loop when Finish = 0;
+
+               Last_Obj := Finish;
+               loop
+                  Last_Obj := Last_Obj - 1;
+                  exit when Last_Obj = Start
+                    or else Name_Buffer (Last_Obj) /= ' ';
+               end loop;
+
+               while Start < Last_Obj
+                 and then Name_Buffer (Start) = ' '
+               loop
+                  Start := Start + 1;
+               end loop;
+
+               Start := Finish + 2;
+
+               --  Process each line
+
+               Line_Loop : loop
+                  declare
+                     Line : String  := Name_Buffer (1 .. Name_Len);
+                     Last : Natural := Name_Len;
+
+                  begin
+                     Name_Loop : loop
+
+                        --  Find the beginning of the next source path
+                        --  name.
+
+                        while Finish < Last and then
+                        Line (Start) = ' '
+                        loop
+                           Start := Start + 1;
+                        end loop;
+
+                        --  Go to next line when there is a
+                        --  continuation character \ at the end of the
+                        --  line.
+
+                        exit Name_Loop when Start = Last
+                          and then Line (Start) = '\';
+
+                        --  We should not be at the end of the line,
+                        --  without a continuation character \.
+
+                        exit Name_Loop when Start = Last;
+
+                        --  Look for the end of the source path name
+
+                        Finish := Start;
+
+                        while Finish < Last loop
+                           if Line (Finish) = '\' then
+                              --  On Windows, a '\' is part of the
+                              --  path name, except when it is not the
+                              --  first character followed by another
+                              --  '\' or by a space. On other
+                              --  platforms, when we are getting a '\'
+                              --  that is not the last character of
+                              --  the line, the next character is part
+                              --  of the path name, even if it is a
+                              --  space.
+
+                              if On_Windows and then
+                                Finish = Start and then
+                                Line (Finish + 1) = '\'
+                              then
+                                 Finish := Finish + 2;
+
+                              elsif On_Windows and then
+                                Line (Finish + 1) /= '\' and then
+                                Line (Finish + 1) /= ' '
+                              then
+                                 Finish := Finish + 1;
+
+                              else
+                                 Line (Finish .. Last - 1) :=
+                                   Line (Finish + 1 .. Last);
+                                 Last := Last - 1;
+                              end if;
+
+                           else
+                              --  A space that is not preceded by '\'
+                              --  indicates the end of the path name.
+
+                              exit when Line (Finish + 1) = ' ';
+                              Finish := Finish + 1;
+                           end if;
+                        end loop;
+
+                        --  Check this source
+
+                        declare
+                           Src_Name : constant String :=
+                             Normalize_Pathname
+                               (Name           =>
+                                    Line (Start .. Finish),
+                                Resolve_Links  => False,
+                                Case_Sensitive => False);
+                           Source_2   : Source_Id;
+
+                        begin
+                           Name_Len := 0;
+                           Add_Str_To_Name_Buffer (Src_Name);
+                           Source_2 := Source_Paths_Htable.Get
+                             (Project_Tree.Source_Paths_HT,
+                              Name_Find);
+
+                           if Source_2 /= No_Source then
+                              declare
+                                 Src_Data_2 : Source_Data renames
+                                   Project_Tree.Sources.Table (Source_2);
+                              begin
+                                 --  It is a source of a project
+
+                                 if not Project_Extends
+                                   (Src_Data.Project, Src_Data_2.Project)
+                                 then
+                                    --  It is not a source of the same project
+                                    --  as the source just compiled. Check if
+                                    --  it can be imported.
+
+                                    if not Indirect_Imports then
+                                       if Directly_Imports
+                                         (Src_Data.Project, Src_Data_2.Project)
+                                       then
+                                          --  It is a source of a directly
+                                          --  imported project. Record its
+                                          --  project, for later processing.
+
+                                          Imports.Set
+                                            (Src_Data_2.Project, True);
+
+                                       else
+                                          --  It is a source of a project that
+                                          --  is not directly imported. Record
+                                          --  the source for later processing.
+
+                                          Included_Sources.Append (Source_2);
+                                       end if;
+                                    end if;
+
+                                    if not Src_Data_2.In_Interfaces then
+                                       --  It is not a source in the interfaces
+                                       --  of its project. Report an error and
+                                       --  invalidate the compilation.
+
+                                       Write_Char ('"');
+                                       Write_Str
+                                         (Get_Name_String
+                                            (Src_Data.Path.Name));
+                                       Write_Str (""" cannot import """);
+                                       Write_Str (Src_Name);
+                                       Write_Line (""":");
+
+                                       Write_Str
+                                         ("  it is not part of the " &
+                                          "interfaces of its project """);
+                                       Write_Str
+                                         (Get_Name_String
+                                            (Project_Tree.Projects.Table
+                                               (Src_Data_2.Project).
+                                               Display_Name));
+                                       Write_Line ("""");
+
+                                       Compilation_OK := False;
+                                    end if;
+                                 end if;
+                              end;
+                           end if;
+                        end;
+
+                        exit Line_Loop when Finish = Last;
+
+                        --  Go get the next source on the line
+
+                        Start := Finish + 1;
+                     end loop Name_Loop;
+                  end;
+
+                  --  If we are here, we had a continuation character
+                  --  \ at the end of the line, so we continue with
+                  --  the next line.
+
+                  Get_Line (Dep_File, Name_Buffer, Name_Len);
+                  Start  := 1;
+                  Finish := 1;
+               end loop Line_Loop;
+            end loop Big_Loop;
+
+            Close (Dep_File);
+
+            if Included_Sources.Last > 0 then
+               --  Sources in projectly that are not directly imported
+               --  have been found. Check if they may be imported by
+               --  other allowed imported sources.
+
+               declare
+                  L : Project_List :=
+                    Project_Tree.Projects.Table
+                      (Src_Data.Project).Imported_Projects;
+                  E : Project_Element;
+
+               begin
+
+                  --  Put in hash table Imports the project trees
+                  --  rooted at the projects that are already in
+                  --  Imports.
+
+                  while L /= Empty_Project_List loop
+                     E := Project_Tree.Project_Lists.Table (L);
+
+                     if Imports.Get (E.Project) then
+                        Recursive_Import (E.Project);
+                     end if;
+
+                     L := E.Next;
+                  end loop;
+
+                  --  For all the imported sources from project not
+                  --  directly imported, check if their projects are
+                  --  in has thable imports.
+
+                  for J in 1 .. Included_Sources.Last loop
+                     declare
+                        Src_Data_2 : Source_Data renames
+                          Project_Tree.Sources.Table
+                            (Included_Sources.Table (J));
+                     begin
+
+                        if not Imports.Get (Src_Data_2.Project) then
+                           --  This source is either directly imported or
+                           --  imported from another source that should not be
+                           --  imported. Report an error and invalidate the
+                           --  compilation.
+
+                           Write_Char ('"');
+                           Write_Str (Get_Name_String (Src_Data.Path.Name));
+                           Write_Str (""" cannot import """);
+                           Write_Str (Get_Name_String (Src_Data_2.Path.Name));
+                           Write_Line (""":");
+
+                           Write_Str ("  """);
+                           Write_Str
+                             (Get_Name_String
+                                (Project_Tree.Projects.Table
+                                   (Src_Data.Project).Display_Name));
+                           Write_Str
+                             (""" does not directly import project """);
+                           Write_Str
+                             (Get_Name_String
+                                (Project_Tree.Projects.Table
+                                   (Src_Data_2.Project).Display_Name));
+                           Write_Line ("""");
+
+                           Compilation_OK := False;
+                        end if;
+                     end;
+                  end loop;
+               end;
+            end if;
+         end if;
+      end Phase_2_Makefile;
+
+      -----------------
+      -- Phase_2_ALI --
+      -----------------
+
+      procedure Phase_2_ALI (Src_Data : Source_Data) is
+         use type ALI.ALI_Id;
+         Text       : Text_Buffer_Ptr :=
+           Read_Library_Info (File_Name_Type (Src_Data.Dep_Path));
+         The_ALI    : ALI.ALI_Id;
+         Sfile      : File_Name_Type;
+         Afile      : File_Name_Type;
+         Source_2   : Source_Id;
+      begin
+         if Text /= null then
+            --  Read the ALI file but read only the necessary lines
+
+            The_ALI :=
+              ALI.Scan_ALI
+                (File_Name_Type (Src_Data.Dep_Path),
+                 Text,
+                 Ignore_ED     => False,
+                 Err           => True,
+                 Read_Lines    => "W");
+            Free (Text);
+
+            if The_ALI /= ALI.No_ALI_Id then
+               for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+                 ALI.ALIs.Table (The_ALI).Last_Unit
+               loop
+                  for K in ALI.Units.Table (J).First_With ..
+                    ALI.Units.Table (J).Last_With
+                  loop
+                     Sfile := ALI.Withs.Table (K).Sfile;
+
+                     --  Skip generics
+
+                     if Sfile /= No_File then
+
+                        --  Look for this source
+
+                        Afile := ALI.Withs.Table (K).Afile;
+                        Source_2 := Project_Tree.First_Source;
+
+                        while Source_2 /= No_Source loop
+                           declare
+                              Src_Data_2 : Source_Data renames
+                                Project_Tree.Sources.Table (Source_2);
+                           begin
+                              if Src_Data_2.Compiled and then
+                                Src_Data_2.Dep_Name = Afile
+                              then
+                                 case Src_Data_2.Kind is
+                                    when Spec =>
+                                       null;
+
+                                    when Impl =>
+                                       if Is_Subunit (Src_Data_2) then
+                                          Source_2 := No_Source;
+                                       end if;
+
+                                    when Sep =>
+                                       Source_2 := No_Source;
+                                 end case;
+
+                                 exit;
+                              end if;
+
+                              Source_2 := Src_Data_2.Next_In_Sources;
+                           end;
+                        end loop;
+
+                        --  If it is the source of a project that is not the
+                        --  project of the source just compiled, check if it is
+                        --  allowed to be imported.
+
+                        declare
+                           Src_Data_2 : Source_Data renames
+                             Project_Tree.Sources.Table (Source_2);
+                        begin
+                           if Source_2 /= No_Source
+                             and then
+                               (not Project_Extends
+                                    (Src_Data.Project, Src_Data_2.Project))
+                           then
+                              if not Indirect_Imports and then
+                                not Directly_Imports
+                                  (Src_Data.Project, Src_Data_2.Project)
+                              then
+                                 --  It is in a project that is not directly
+                                 --  imported. Report an error and invalidate
+                                 --  the compilation.
+
+                                 Write_Str ("Unit """);
+                                 Write_Str (Get_Name_String (Src_Data.Unit));
+                                 Write_Str (""" cannot import unit """);
+                                 Write_Str (Get_Name_String (Src_Data_2.Unit));
+                                 Write_Line (""":");
+
+                                 Write_Str ("  """);
+                                 Write_Str
+                                   (Get_Name_String
+                                      (Project_Tree.Projects.Table
+                                         (Src_Data.Project).Display_Name));
+                                 Write_Str
+                                   (""" does not directly import project """);
+                                 Write_Str
+                                   (Get_Name_String
+                                      (Project_Tree.Projects.Table
+                                         (Src_Data_2.Project).Display_Name));
+                                 Write_Line ("""");
+
+                                 Compilation_OK := False;
+
+                              elsif not Src_Data_2.In_Interfaces then
+                                 --  It is not an interface of its project.
+                                 --  Report an error and invalidate the
+                                 --  compilation.
+
+                                 Write_Str ("Unit """);
+                                 Write_Str (Get_Name_String (Src_Data.Unit));
+                                 Write_Str (""" cannot import unit """);
+                                 Write_Str (Get_Name_String (Src_Data_2.Unit));
+                                 Write_Line (""":");
+
+                                 Write_Str
+                                   ("  it is not part of the " &
+                                    "interfaces of its project """);
+                                 Write_Str
+                                   (Get_Name_String
+                                      (Project_Tree.Projects.Table
+                                         (Src_Data_2.Project).Display_Name));
+                                 Write_Line ("""");
+                                 Compilation_OK := False;
+                              end if;
+                           end if;
+                        end;
+                     end if;
+                  end loop;
+               end loop;
+            end if;
+         end if;
+      end Phase_2_ALI;
 
    --  Start of processing for Compilation_Phase
 
@@ -4734,501 +5208,21 @@ package body Buildgpr is
                Imports.Reset;
                Included_Sources.Set_Last (0);
 
-               Src_Data := Project_Tree.Sources.Table
-                 (Source_Identity)'Unrestricted_Access;
-
-               case Src_Data.Dependency is
-               when None =>
-                  null;
-
-               when Makefile =>
-                  Open (Dep_File, Get_Name_String (Src_Data.Dep_Path));
-
-                  if Is_Valid (Dep_File) then
-
-                     Big_Loop :
-                     loop
-                        declare
-                           End_Of_File_Reached : Boolean := False;
-                           Object_Found        : Boolean := False;
-                        begin
-                           loop
-                              if End_Of_File (Dep_File) then
-                                 End_Of_File_Reached := True;
-                                 exit;
-                              end if;
-
-                              Get_Line (Dep_File, Name_Buffer, Name_Len);
-
-                              if Name_Len > 0
-                                and then Name_Buffer (1) /= '#'
-                              then
-                                 --  Skip a first line that is an empty
-                                 --  continuation line.
-
-                                 for J in 1 .. Name_Len - 1 loop
-                                    if Name_Buffer (J) /= ' ' then
-                                       Object_Found := True;
-                                       exit;
-                                    end if;
-                                 end loop;
-
-                                 exit when
-                                   Object_Found
-                                   or else
-                                   Name_Buffer (Name_Len) /= '\';
-                              end if;
-                           end loop;
-
-                           exit Big_Loop when End_Of_File_Reached;
-                        end;
-
-                        Start  := 1;
-                        Finish := Index (Name_Buffer (1 .. Name_Len), ": ");
-
-                        exit Big_Loop when Finish = 0;
-
-                        Last_Obj := Finish;
-                        loop
-                           Last_Obj := Last_Obj - 1;
-                           exit when Last_Obj = Start
-                             or else Name_Buffer (Last_Obj) /= ' ';
-                        end loop;
-
-                        while Start < Last_Obj
-                          and then Name_Buffer (Start) = ' '
-                        loop
-                           Start := Start + 1;
-                        end loop;
-
-                        Start := Finish + 2;
-
-                        --  Process each line
-
-                        Line_Loop : loop
-                           declare
-                              Line : String  := Name_Buffer (1 .. Name_Len);
-                              Last : Natural := Name_Len;
-
-                           begin
-                              Name_Loop : loop
-
-                                 --  Find the beginning of the next source path
-                                 --  name.
-
-                                 while Finish < Last and then
-                                       Line (Start) = ' '
-                                 loop
-                                    Start := Start + 1;
-                                 end loop;
-
-                                 --  Go to next line when there is a
-                                 --  continuation character \ at the end of the
-                                 --  line.
-
-                                 exit Name_Loop when Start = Last
-                                   and then Line (Start) = '\';
-
-                                 --  We should not be at the end of the line,
-                                 --  without a continuation character \.
-
-                                 exit Name_Loop when Start = Last;
-
-                                 --  Look for the end of the source path name
-
-                                 Finish := Start;
-
-                                 while Finish < Last loop
-                                    if Line (Finish) = '\' then
-                                       --  On Windows, a '\' is part of the
-                                       --  path name, except when it is not the
-                                       --  first character followed by another
-                                       --  '\' or by a space. On other
-                                       --  platforms, when we are getting a '\'
-                                       --  that is not the last character of
-                                       --  the line, the next character is part
-                                       --  of the path name, even if it is a
-                                       --  space.
-
-                                       if On_Windows and then
-                                         Finish = Start and then
-                                         Line (Finish + 1) = '\'
-                                       then
-                                          Finish := Finish + 2;
-
-                                       elsif On_Windows and then
-                                         Line (Finish + 1) /= '\' and then
-                                         Line (Finish + 1) /= ' '
-                                       then
-                                          Finish := Finish + 1;
-
-                                       else
-                                          Line (Finish .. Last - 1) :=
-                                            Line (Finish + 1 .. Last);
-                                          Last := Last - 1;
-                                       end if;
-
-                                    else
-                                       --  A space that is not preceded by '\'
-                                       --  indicates the end of the path name.
-
-                                       exit when Line (Finish + 1) = ' ';
-                                       Finish := Finish + 1;
-                                    end if;
-                                 end loop;
-
-                                 --  Check this source
-
-                                 declare
-                                    Src_Name : constant String :=
-                                                 Normalize_Pathname
-                                                   (Name           =>
-                                                       Line (Start .. Finish),
-                                                    Resolve_Links  => False,
-                                                    Case_Sensitive => False);
-                                    Source_2   : Source_Id;
-
-                                    Src_Data_2 : Source_Data_Access;
-                                 begin
-
-                                    Name_Len := 0;
-                                    Add_Str_To_Name_Buffer (Src_Name);
-                                    Source_2 := Source_Paths_Htable.Get
-                                      (Project_Tree.Source_Paths_HT,
-                                       Name_Find);
-
-                                    if Source_2 /= No_Source then
-                                       Src_Data_2 :=
-                                         Project_Tree.Sources.Table (Source_2)
-                                         'Unrestricted_Access;
-
-                                       --  It is a source of a project
-
-                                       if not Project_Extends
-                                         (Src_Data.Project,
-                                          Src_Data_2.Project)
-                                       then
-                                          --  It is not a source of the same
-                                          --  project as the source just
-                                          --  compiled. Check if it can be
-                                          --  imported.
-
-                                          if not Indirect_Imports then
-                                             if Directly_Imports
-                                               (Src_Data.Project,
-                                                Src_Data_2.Project)
-                                             then
-                                                --  It is a source of a
-                                                --  directly imported project.
-                                                --  Record its project, for
-                                                --  later processing.
-
-                                                Imports.Set
-                                                  (Src_Data_2.Project, True);
-
-                                             else
-                                                --  It is a source of a project
-                                                --  that is not directly
-                                                --  imported. Record the source
-                                                --  for later processing.
-
-                                                Included_Sources.Append
-                                                  (Source_2);
-                                             end if;
-                                          end if;
-
-                                          if not Src_Data_2.In_Interfaces then
-                                             --  It is not a source in the
-                                             --  interfaces of its project.
-                                             --  Report an error and invalidate
-                                             --  the compilation.
-                                             Write_Char ('"');
-                                             Write_Str
-                                               (Get_Name_String
-                                                  (Src_Data.Path.Name));
-                                             Write_Str
-                                               (""" cannot import """);
-                                             Write_Str (Src_Name);
-                                             Write_Line (""":");
-
-                                             Write_Str
-                                               ("  it is not part of the " &
-                                                "interfaces of its " &
-                                                "project """);
-                                             Write_Str
-                                               (Get_Name_String
-                                                  (Project_Tree.Projects.Table
-                                                     (Src_Data_2.Project).
-                                                     Display_Name));
-                                             Write_Line ("""");
-
-                                             Compilation_OK := False;
-                                          end if;
-                                       end if;
-                                    end if;
-                                 end;
-
-                                 exit Line_Loop when Finish = Last;
-
-                                 --  Go get the next source on the line
-
-                                 Start := Finish + 1;
-                              end loop Name_Loop;
-                           end;
-
-                           --  If we are here, we had a continuation character
-                           --  \ at the end of the line, so we continue with
-                           --  the next line.
-
-                           Get_Line (Dep_File, Name_Buffer, Name_Len);
-                           Start  := 1;
-                           Finish := 1;
-                        end loop Line_Loop;
-                     end loop Big_Loop;
-
-                     Close (Dep_File);
-
-                     if Included_Sources.Last > 0 then
-                        --  Sources in projectly that are not directly imported
-                        --  have been found. Check if they may be imported by
-                        --  other allowed imported sources.
-
-                        declare
-                           L : Project_List :=
-                                 Project_Tree.Projects.Table
-                                   (Src_Data.Project).Imported_Projects;
-                           E : Project_Element;
-
-                           Src_Data_2 : Source_Data_Access;
-
-                        begin
-
-                           --  Put in hash table Imports the project trees
-                           --  rooted at the projects that are already in
-                           --  Imports.
-
-                           while L /= Empty_Project_List loop
-                              E := Project_Tree.Project_Lists.Table (L);
-
-                              if Imports.Get (E.Project) then
-                                 Recursive_Import (E.Project);
-                              end if;
-
-                              L := E.Next;
-                           end loop;
-
-                           --  For all the imported sources from project not
-                           --  directly imported, check if their projects are
-                           --  in has thable imports.
-
-                           for J in 1 .. Included_Sources.Last loop
-                              Src_Data_2 :=
-                                Project_Tree.Sources.Table
-                                  (Included_Sources.Table (J))
-                                'Unrestricted_Access;
-
-                              if not Imports.Get (Src_Data_2.Project) then
-                                 --  This source is either directly imported or
-                                 --  imported from another source that should
-                                 --  not be imported. Report an error and
-                                 --  invalidate the compilation.
-
-                                 Write_Char ('"');
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Src_Data.Path.Name));
-                                 Write_Str
-                                   (""" cannot import """);
-                                 Write_Str
-                                   (Get_Name_String (Src_Data_2.Path.Name));
-                                 Write_Line (""":");
-
-                                 Write_Str ("  """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Src_Data.Project).
-                                         Display_Name));
-                                 Write_Str
-                                   (""" does not directly " &
-                                    "import project """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Src_Data_2.Project).
-                                         Display_Name));
-                                 Write_Line ("""");
-
-                                 Compilation_OK := False;
-                              end if;
-                           end loop;
-                        end;
-                     end if;
-                  end if;
-
-               when ALI_File =>
-                  declare
-                     use type ALI.ALI_Id;
-                     Text       : Text_Buffer_Ptr :=
-                                    Read_Library_Info
-                                      (File_Name_Type (Src_Data.Dep_Path));
-                     The_ALI    : ALI.ALI_Id;
-                     Sfile      : File_Name_Type;
-                     Afile      : File_Name_Type;
-                     Source_2   : Source_Id;
-                     Src_Data_2 : Source_Data_Access;
-
-                  begin
-                     if Text /= null then
-                        --  Read the ALI file but read only the necessary lines
-
-                        The_ALI :=
-                          ALI.Scan_ALI
-                            (File_Name_Type (Src_Data.Dep_Path),
-                             Text,
-                             Ignore_ED     => False,
-                             Err           => True,
-                             Read_Lines    => "W");
-                        Free (Text);
-
-                        if The_ALI /= ALI.No_ALI_Id then
-                           for J in ALI.ALIs.Table (The_ALI).First_Unit ..
-                             ALI.ALIs.Table (The_ALI).Last_Unit
-                           loop
-                              for K in ALI.Units.Table (J).First_With ..
-                                ALI.Units.Table (J).Last_With
-                              loop
-                                 Sfile := ALI.Withs.Table (K).Sfile;
-
-                                 --  Skip generics
-
-                                 if Sfile /= No_File then
-
-                                    --  Look for this source
-
-                                    Afile := ALI.Withs.Table (K).Afile;
-                                    Source_2 := Project_Tree.First_Source;
-
-                                    while Source_2 /= No_Source loop
-                                       Src_Data_2 :=
-                                         Project_Tree.Sources.Table (Source_2)
-                                         'Unrestricted_Access;
-
-                                       if Src_Data_2.Compiled and then
-                                         Src_Data_2.Dep_Name = Afile
-                                       then
-                                          case Src_Data_2.Kind is
-                                          when Spec =>
-                                             null;
-
-                                          when Impl =>
-                                             if
-                                               Is_Subunit (Src_Data_2.all)
-                                             then
-                                                Source_2 := No_Source;
-                                             end if;
-
-                                          when Sep =>
-                                             Source_2 := No_Source;
-                                          end case;
-
-                                          exit;
-                                       end if;
-
-                                       Source_2 := Src_Data_2.Next_In_Sources;
-                                    end loop;
-
-                                    --  If it is the source of a project that
-                                    --  is not the project of the source just
-                                    --  compiled, check if it is allowed to be
-                                    --  imported.
-
-                                    if Source_2 /= No_Source
-                                      and then
-                                        (not Project_Extends
-                                             (Src_Data.Project,
-                                              Src_Data_2.Project))
-                                    then
-                                       if not Indirect_Imports and then
-                                         not Directly_Imports
-                                           (Src_Data.Project,
-                                            Src_Data_2.Project)
-                                       then
-                                          --  It is in a project that is not
-                                          --  directly imported. Report an
-                                          --  error and invalidate the
-                                          --  compilation.
-
-                                          Write_Str ("Unit """);
-                                          Write_Str
-                                            (Get_Name_String (Src_Data.Unit));
-                                          Write_Str
-                                            (""" cannot import unit """);
-                                          Write_Str
-                                            (Get_Name_String
-                                               (Src_Data_2.Unit));
-                                          Write_Line (""":");
-
-                                          Write_Str ("  """);
-                                          Write_Str
-                                            (Get_Name_String
-                                               (Project_Tree.Projects.Table
-                                                  (Src_Data.Project).
-                                                  Display_Name));
-                                          Write_Str
-                                            (""" does not directly " &
-                                             "import project """);
-                                          Write_Str
-                                            (Get_Name_String
-                                               (Project_Tree.Projects.Table
-                                                  (Src_Data_2.Project).
-                                                  Display_Name));
-                                          Write_Line ("""");
-
-                                          Compilation_OK := False;
-
-                                       elsif not Src_Data_2.In_Interfaces then
-                                          --  It is not an interface of its
-                                          --  project. Report an error and
-                                          --  invalidate the compilation.
-
-                                          Write_Str ("Unit """);
-                                          Write_Str
-                                            (Get_Name_String (Src_Data.Unit));
-                                          Write_Str
-                                            (""" cannot import unit """);
-                                          Write_Str
-                                            (Get_Name_String
-                                               (Src_Data_2.Unit));
-                                          Write_Line (""":");
-
-                                          Write_Str
-                                            ("  it is not part of the " &
-                                             "interfaces of its project """);
-                                          Write_Str
-                                            (Get_Name_String
-                                               (Project_Tree.Projects.Table
-                                                  (Src_Data_2.Project).
-                                                  Display_Name));
-                                          Write_Line ("""");
-                                          Compilation_OK := False;
-                                       end if;
-                                    end if;
-                                 end if;
-                              end loop;
-                           end loop;
-                        end if;
-                     end if;
-                  end;
-               end case;
-
-               --  If the compilation was invalidated, delete the compilation
-               --  artifacts.
-
-               if not Compilation_OK then
-                  declare
-                     No_Check : Boolean;
-                  begin
+               declare
+                  Src_Data : Source_Data renames
+                    Project_Tree.Sources.Table (Source_Identity);
+                  No_Check : Boolean;
+               begin
+                  case Src_Data.Dependency is
+                     when None     => null;
+                     when Makefile => Phase_2_Makefile (Src_Data);
+                     when ALI_File => Phase_2_ALI (Src_Data);
+                  end case;
+
+                  --  If the compilation was invalidated, delete the
+                  --  compilation artifacts.
+
+                  if not Compilation_OK then
                      if Src_Data.Dep_Path /= No_Path then
                         Delete_File
                           (Get_Name_String (Src_Data.Dep_Path), No_Check);
@@ -5243,8 +5237,8 @@ package body Buildgpr is
                         Delete_File
                           (Get_Name_String (Src_Data.Switches_Path), No_Check);
                      end if;
-                  end;
-               end if;
+                  end if;
+               end;
             end if;
 
             if not Compilation_OK then
@@ -5270,7 +5264,6 @@ package body Buildgpr is
             Sfile   : File_Name_Type;
             Afile   : File_Name_Type;
             Src_Id  : Source_Id;
-            Source  : Source_Data_Access;
 
          begin
             while Good_ALI_Present loop
@@ -5295,38 +5288,40 @@ package body Buildgpr is
                         Src_Id := Project_Tree.First_Source;
 
                         while Src_Id /= No_Source loop
-                           Source := Project_Tree.Sources.Table (Src_Id)
-                             'Unrestricted_Access;
+                           declare
+                              Source : Source_Data renames
+                                Project_Tree.Sources.Table (Src_Id);
+                           begin
+                              if Source.Compiled
+                                and then Source.Dep_Name = Afile
+                              then
+                                 case Source.Kind is
+                                    when Spec =>
+                                       if Source.Other_Part /= No_Source then
+                                          Src_Id := Source.Other_Part;
+                                       end if;
 
-                           if Source.Compiled and then
-                              Source.Dep_Name = Afile
-                           then
-                              case Source.Kind is
-                              when Spec =>
-                                 if Source.Other_Part /= No_Source then
-                                    Src_Id := Source.Other_Part;
-                                 end if;
+                                    when Impl =>
+                                       if Is_Subunit (Source) then
+                                          Src_Id := No_Source;
+                                       end if;
 
-                              when Impl =>
-                                 if Is_Subunit (Source.all) then
-                                    Src_Id := No_Source;
-                                 end if;
+                                    when Sep =>
+                                       Src_Id := No_Source;
+                                 end case;
 
-                              when Sep =>
-                                 Src_Id := No_Source;
-                              end case;
+                                 exit;
+                              end if;
 
-                              exit;
-                           end if;
-
-                           Src_Id := Source.Next_In_Sources;
+                              Src_Id := Source.Next_In_Sources;
+                           end;
                         end loop;
 
                         if Src_Id /= No_Source then
                            Queue.Insert
                              (Sfile,
                               Src_Id,
-                              Source.Project);
+                              Project_Tree.Sources.Table (Src_Id).Project);
                         end if;
                      end if;
                   end loop;
@@ -5530,7 +5525,6 @@ package body Buildgpr is
       File      : File_Descriptor := Invalid_FD;
 
       Source   : Source_Id;
-      Src_Data : Source_Data_Access;
 
       procedure Check (Project : Project_Id);
       --  Check the naming schemes of the different projects of the project
@@ -5836,78 +5830,82 @@ package body Buildgpr is
       Source := Project_Tree.First_Source;
 
       while Source /= No_Source loop
-         Src_Data := Project_Tree.Sources.Table (Source)'Unrestricted_Access;
-
-         if Src_Data.Language_Name = Language  and then
-           Src_Data.Naming_Exception and then
-           Src_Data.Unit /= No_Name and then
-           not Src_Data.Locally_Removed and then
-           Src_Data.Replaced_By = No_Source
-         then
-            Name_Len := 0;
-
-            if Src_Data.Kind = Spec and then Config.Config_Spec /= No_Name then
-               Get_Name_String (Config.Config_Spec);
-
-            elsif (Src_Data.Kind = Impl or else Src_Data.Kind = Sep) and then
-                  Config.Config_Body /= No_Name
+         declare
+            Src_Data : Source_Data renames Project_Tree.Sources.Table (Source);
+         begin
+            if Src_Data.Language_Name = Language
+              and then Src_Data.Naming_Exception
+              and then Src_Data.Unit /= No_Name
+              and then not Src_Data.Locally_Removed
+              and then Src_Data.Replaced_By = No_Source
             then
-               Get_Name_String (Config.Config_Body);
+               Name_Len := 0;
+
+               if Src_Data.Kind = Spec
+                 and then Config.Config_Spec /= No_Name
+               then
+                  Get_Name_String (Config.Config_Spec);
+
+               elsif (Src_Data.Kind = Impl or else Src_Data.Kind = Sep)
+                 and then Config.Config_Body /= No_Name
+               then
+                  Get_Name_String (Config.Config_Body);
+               end if;
+
+               if Name_Len /= 0 then
+                  declare
+                     Cur : Positive := 1;
+                     Unit : constant String := Get_Name_String (Src_Data.Unit);
+                     File_Name : constant String :=
+                       Get_Name_String (Src_Data.Display_File);
+
+                  begin
+                     while Cur < Name_Len loop
+                        if Name_Buffer (Cur) /= '%' then
+                           Cur := Cur + 1;
+
+                        else
+                           case Name_Buffer (Cur + 1) is
+                              when 'u' =>
+                                 Name_Buffer
+                                   (Cur + Unit'Length ..
+                                      Name_Len - 2 + Unit'Length) :=
+                                     Name_Buffer (Cur + 2 .. Name_Len);
+                                 Name_Buffer (Cur .. Cur + Unit'Length - 1) :=
+                                   Unit;
+                                 Cur := Cur + Unit'Length;
+                                 Name_Len := Name_Len - 2 + Unit'Length;
+
+                              when 'f' =>
+                                 Name_Buffer
+                                   (Cur + File_Name'Length ..
+                                      Name_Len - 2 + File_Name'Length) :=
+                                     Name_Buffer (Cur + 2 .. Name_Len);
+                                 Name_Buffer
+                                   (Cur .. Cur + File_Name'Length - 1) :=
+                                   File_Name;
+                                 Cur := Cur + File_Name'Length;
+                                 Name_Len := Name_Len - 2 + File_Name'Length;
+
+                              when '%' =>
+                                 Name_Buffer (Cur .. Name_Len - 1) :=
+                                   Name_Buffer (Cur + 1 .. Name_Len);
+                                 Cur := Cur + 1;
+                                 Name_Len := Name_Len - 1;
+
+                              when others =>
+                                 Cur := Cur + 1;
+                           end case;
+                        end if;
+                     end loop;
+
+                     Put_Line (File, Name_Buffer (1 .. Name_Len));
+                  end;
+               end if;
             end if;
 
-            if Name_Len /= 0 then
-               declare
-                  Cur : Positive := 1;
-                  Unit : constant String := Get_Name_String (Src_Data.Unit);
-                  File_Name : constant String :=
-                                Get_Name_String (Src_Data.Display_File);
-
-               begin
-                  while Cur < Name_Len loop
-                     if Name_Buffer (Cur) /= '%' then
-                        Cur := Cur + 1;
-
-                     else
-                        case Name_Buffer (Cur + 1) is
-                           when 'u' =>
-                              Name_Buffer
-                                (Cur + Unit'Length ..
-                                   Name_Len - 2 + Unit'Length) :=
-                                Name_Buffer (Cur + 2 .. Name_Len);
-                              Name_Buffer (Cur .. Cur + Unit'Length - 1) :=
-                                Unit;
-                              Cur := Cur + Unit'Length;
-                              Name_Len := Name_Len - 2 + Unit'Length;
-
-                           when 'f' =>
-                              Name_Buffer
-                                (Cur + File_Name'Length ..
-                                   Name_Len - 2 + File_Name'Length) :=
-                                Name_Buffer (Cur + 2 .. Name_Len);
-                              Name_Buffer
-                                (Cur .. Cur + File_Name'Length - 1) :=
-                                File_Name;
-                              Cur := Cur + File_Name'Length;
-                              Name_Len := Name_Len - 2 + File_Name'Length;
-
-                           when '%' =>
-                              Name_Buffer (Cur .. Name_Len - 1) :=
-                                Name_Buffer (Cur + 1 .. Name_Len);
-                              Cur := Cur + 1;
-                              Name_Len := Name_Len - 1;
-
-                           when others =>
-                              Cur := Cur + 1;
-                        end case;
-                     end if;
-                  end loop;
-
-                  Put_Line (File, Name_Buffer (1 .. Name_Len));
-               end;
-            end if;
-         end if;
-
-         Source := Src_Data.Next_In_Sources;
+            Source := Src_Data.Next_In_Sources;
+         end;
       end loop;
 
       if File /= Invalid_FD then
@@ -6554,7 +6552,7 @@ package body Buildgpr is
 
             Name             : Name_Id := No_Name;
             Lang             : Name_Id := No_Name;
-            Source           : Source_Data_Access;
+            Source           : Source_Id;
 
             Success          : Boolean := False;
 
@@ -6563,14 +6561,17 @@ package body Buildgpr is
 
             for Index in 1 .. Mains.Number_Of_Mains loop
                Source := Source_Of (Mains.Next_Main);
-               if Source /= null then
+               if Source /= No_Source then
                   if Name = No_Name and then Lang = No_Name then
                      --  First main
 
-                     Name := Name_Id (Source.File);
-                     Lang := Source.Language_Name;
+                     Name :=
+                       Name_Id (Project_Tree.Sources.Table (Source).File);
+                     Lang := Project_Tree.Sources.Table (Source).Language_Name;
 
-                  elsif Lang = Source.Language_Name then
+                  elsif Lang =
+                    Project_Tree.Sources.Table (Source).Language_Name
+                  then
                      --  Other mains. If they are of the same language, use
                      --  the language as the name.
 
@@ -6818,8 +6819,6 @@ package body Buildgpr is
             if Keep_Going and then Bad_Compilations.Last > 0 then
                declare
                   Source   : Source_Id;
-                  Src_Data : Source_Data_Access;
-
                begin
                   Write_Eol;
 
@@ -6827,12 +6826,11 @@ package body Buildgpr is
                      Source := Bad_Compilations.Table (Index);
 
                      if Source /= No_Source then
-                        Src_Data :=
-                          Project_Tree.Sources.Table
-                            (Source)'Unrestricted_Access;
-
                         Write_Str ("   compilation of ");
-                        Write_Str (Get_Name_String (Src_Data.Display_File));
+                        Write_Str
+                          (Get_Name_String
+                             (Project_Tree.Sources.Table (Source)
+                              .Display_File));
                         Write_Line (" failed");
                      end if;
                   end loop;
@@ -7058,8 +7056,8 @@ package body Buildgpr is
      (Source      : Source_Id;
       Info        : Source_Info_Type := Source_Info)
    is
-      Src_Data : constant Source_Data_Access :=
-        Project_Tree.Sources.Table (Source)'Unrestricted_Access;
+      Src_Data : Source_Data renames
+        Project_Tree.Sources.Table (Source);
       Obj_Proj : Project_Id;
    begin
       case Info is
@@ -7078,7 +7076,7 @@ package body Buildgpr is
                case Src_Data.Lang_Kind is
                   when Unit_Based =>
                      if Src_Data.Kind = Impl
-                       and then Is_Subunit (Src_Data.all)
+                       and then Is_Subunit (Src_Data)
                      then
                         Src_Data.Kind := Sep;
                         Src_Data.Get_Object := False;
@@ -7193,7 +7191,6 @@ package body Buildgpr is
       Proj     : Project_Id;
       Data     : Project_Data := Project_Tree.Projects.Table (Project);
       Source   : Source_Id;
-      Src_Data : Source_Data_Access;
 
    begin
       --  If a source is overriden in an extending project, then the object
@@ -7207,26 +7204,28 @@ package body Buildgpr is
          begin
             Source := Data.First_Source;
             while Source /= No_Source loop
-               Src_Data :=
-                 Project_Tree.Sources.Table (Source)'Unrestricted_Access;
-
-               if ((Src_Data.Lang_Kind = File_Based
-                    and then Src_Data.Kind = Impl)
-                   or else
-                     (Src_Data.Lang_Kind = Unit_Based
-                      and then
-                        (Src_Data.Kind = Impl
-                         or else
-                           (Src_Data.Kind = Spec
-                            and then
-                              Src_Data.Other_Part = No_Source))))
-                 and then Src_Data.Object = Object_Name
-               then
-                  return False;
-               else
-                  Source :=
-                    Project_Tree.Sources.Table (Source).Next_In_Project;
-               end if;
+               declare
+                  Src_Data : Source_Data renames
+                    Project_Tree.Sources.Table (Source);
+               begin
+                  if ((Src_Data.Lang_Kind = File_Based
+                       and then Src_Data.Kind = Impl)
+                      or else
+                        (Src_Data.Lang_Kind = Unit_Based
+                         and then
+                           (Src_Data.Kind = Impl
+                            or else
+                              (Src_Data.Kind = Spec
+                               and then
+                                 Src_Data.Other_Part = No_Source))))
+                    and then Src_Data.Object = Object_Name
+                  then
+                     return False;
+                  else
+                     Source :=
+                       Project_Tree.Sources.Table (Source).Next_In_Project;
+                  end if;
+               end;
             end loop;
             Proj := Data.Extended_By;
          end;
@@ -7235,30 +7234,30 @@ package body Buildgpr is
       Data := Project_Tree.Projects.Table (Project);
       Source := Data.First_Source;
       while Source /= No_Source loop
-         Src_Data := Project_Tree.Sources.Table (Source)'Unrestricted_Access;
+         declare
+            Src_Data : Source_Data renames
+              Project_Tree.Sources.Table (Source);
+         begin
+            if ((Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Impl)
+                or else
+                  (Src_Data.Lang_Kind = Unit_Based
+                   and then
+                     (Src_Data.Kind = Impl
+                      or else
+                        (Src_Data.Kind = Spec
+                         and then Src_Data.Other_Part = No_Source))))
+              and then Src_Data.Object =  Object_Name
+            then
+               return Src_Data.Object_Linked
+                 and then (Src_Data.Lang_Kind /= Unit_Based
+                           or else (not Closure_Needed)
+                           or else Src_Data.Get_Object);
 
-         if ((Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Impl)
-             or else
-             (Src_Data.Lang_Kind = Unit_Based
-              and then
-              (Src_Data.Kind = Impl
-              or else
-              (Src_Data.Kind = Spec
-               and then
-               Src_Data.Other_Part = No_Source))))
-            and then
-            Src_Data.Object =  Object_Name
-         then
-            return
-              Src_Data.Object_Linked
-              and then (Src_Data.Lang_Kind /= Unit_Based
-                        or else (not Closure_Needed)
-                        or else Src_Data.Get_Object);
-
-         else
-            Source :=
-              Project_Tree.Sources.Table (Source).Next_In_Project;
-         end if;
+            else
+               Source :=
+                 Project_Tree.Sources.Table (Source).Next_In_Project;
+            end if;
+         end;
       end loop;
 
       return True;
@@ -7332,7 +7331,7 @@ package body Buildgpr is
             Main           : String := Display_Main;
             Main_Id        : File_Name_Type;
             Main_Source_Id : Source_Id;
-            Main_Source    : Source_Data_Access;
+            Main_Source    : Source_Data;
 
             Exec_Name      : File_Name_Type;
             Exec_Path_Name : Path_Name_Type;
@@ -7354,9 +7353,8 @@ package body Buildgpr is
 
             Main_Id := Create_Name (Main);
             Main_Source_Id := Main_Sources.Get (Main_Id);
-            Main_Source :=
-              Project_Tree.Sources.Table (Main_Source_Id)'Unrestricted_Access;
-            Main_Proj  := Ultimate_Extending_Project_Of (Main_Source.Project);
+            Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
+            Main_Proj   := Ultimate_Extending_Project_Of (Main_Source.Project);
             Data        := Project_Tree.Projects.Table (Main_Proj);
 
             Change_To_Object_Directory (Main_Proj);
@@ -7956,41 +7954,42 @@ package body Buildgpr is
       Sfile : File_Name_Type) return Boolean
    is
       Src_Id               : Source_Id := Project_Tree.First_Source;
-      Source               : Source_Data_Access;
       Other_Part_File_Name : File_Name_Type;
 
    begin
       while Src_Id /= No_Source loop
-         Source := Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
-
-         if Source.Unit = Uname then
-            if Source.Other_Part = No_Source then
-               Other_Part_File_Name := No_File;
-            else
-               Other_Part_File_Name :=
-                 Project_Tree.Sources.Table (Source.Other_Part).File;
-            end if;
-
-            if Source.File /= Sfile
-              and then Other_Part_File_Name /= Sfile
-            then
-               if Verbose_Mode then
-                  Write_Str ("   -> """);
-                  Write_Str (Get_Name_String (Uname));
-                  Write_Str
-                    (""" sources do not include """);
-                  Write_Str (Get_Name_String (Sfile));
-                  Write_Char ('"');
-                  Write_Eol;
+         declare
+            Source : Source_Data renames Project_Tree.Sources.Table (Src_Id);
+         begin
+            if Source.Unit = Uname then
+               if Source.Other_Part = No_Source then
+                  Other_Part_File_Name := No_File;
+               else
+                  Other_Part_File_Name :=
+                    Project_Tree.Sources.Table (Source.Other_Part).File;
                end if;
 
-               return True;
+               if Source.File /= Sfile
+                 and then Other_Part_File_Name /= Sfile
+               then
+                  if Verbose_Mode then
+                     Write_Str ("   -> """);
+                     Write_Str (Get_Name_String (Uname));
+                     Write_Str
+                       (""" sources do not include """);
+                     Write_Str (Get_Name_String (Sfile));
+                     Write_Char ('"');
+                     Write_Eol;
+                  end if;
+
+                  return True;
+               end if;
+
+               exit;
             end if;
 
-            exit;
-         end if;
-
-         Src_Id := Source.Next_In_Sources;
+            Src_Id := Source.Next_In_Sources;
+         end;
       end loop;
 
       return False;
@@ -8001,8 +8000,8 @@ package body Buildgpr is
    ---------------------
 
    function Need_To_Compile (Source : Source_Id) return Boolean is
-      Src_Data : constant Source_Data_Access :=
-        Project_Tree.Sources.Table (Source)'Unrestricted_Access;
+      Src_Data : Source_Data renames
+        Project_Tree.Sources.Table (Source);
 
       Source_Path   : constant String :=
                         Get_Name_String (Src_Data.Path.Name);
@@ -8854,12 +8853,11 @@ package body Buildgpr is
          Dep_Files   : out Boolean)
       is
          Src_Id  : Source_Id;
-         Source  : Source_Data_Access;
          Config  : constant Language_Config :=
                      Project_Tree.Languages_Data.Table (Language).Config;
          Roots   : Roots_Access;
 
-         procedure Put_Dependency_File;
+         procedure Put_Dependency_File (Source : Source_Data);
          --  Put in the exchange file the dependency file path name for source
          --  Source, if applicable.
 
@@ -8867,7 +8865,7 @@ package body Buildgpr is
          -- Put_Dependency_File --
          -------------------------
 
-         procedure Put_Dependency_File is
+         procedure Put_Dependency_File (Source : Source_Data) is
          begin
             if Source.Language_Name = Lang_Name
               and then
@@ -8882,32 +8880,29 @@ package body Buildgpr is
                       (Source.Kind = Impl
                        or else
                          Source.Other_Part = No_Source)
-                    and then not Is_Subunit (Source.all)))
+                    and then not Is_Subunit (Source)))
               and then Is_Included_In_Global_Archive
                 (Source.Object, Source.Project)
             then
-               Source :=
-                 Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
-
                declare
+                  Source2 : Source_Data renames
+                    Project_Tree.Sources.Table (Src_Id);
                   Local_Data : Project_Data renames
-                    Project_Tree.Projects.Table (Source.Project);
+                    Project_Tree.Projects.Table (Source2.Project);
 
                begin
-
-                  if (Source.Project = For_Project) or
-                    (not Local_Data.Library) or
-                    Config.Kind = File_Based
+                  if (Source2.Project = For_Project)
+                    or not Local_Data.Library
+                    or Config.Kind = File_Based
                   then
                      Put_Line
-                       (Exchange_File,
-                        Get_Name_String (Source.Dep_Path));
+                       (Exchange_File, Get_Name_String (Source2.Dep_Path));
                      Dep_Files := True;
 
                   elsif not Local_Data.Standalone_Library then
                      Get_Name_String (Local_Data.Library_ALI_Dir.Name);
                      Add_Char_To_Name_Buffer (Directory_Separator);
-                     Get_Name_String_And_Append (Source.Dep_Name);
+                     Get_Name_String_And_Append (Source2.Dep_Name);
                      Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
                      Dep_Files := True;
                   end if;
@@ -8924,21 +8919,17 @@ package body Buildgpr is
             if Main_Source.Unit = No_Name then
                Src_Id := Project_Tree.First_Source;
                while Src_Id /= No_Source loop
-                  Source :=
-                    Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
-                  Put_Dependency_File;
-                  Src_Id := Source.Next_In_Sources;
+                  Put_Dependency_File (Project_Tree.Sources.Table (Src_Id));
+                  Src_Id :=
+                    Project_Tree.Sources.Table (Src_Id).Next_In_Sources;
                end loop;
             end if;
 
          else
-
             --  Put the Roots
             for J in Roots'Range loop
                Src_Id := Roots (J);
-               Source :=
-                 Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
-               Put_Dependency_File;
+               Put_Dependency_File (Project_Tree.Sources.Table (Src_Id));
             end loop;
          end if;
       end Add_Dependency_Files;
@@ -8952,8 +8943,6 @@ package body Buildgpr is
          For_Language : Name_Id)
       is
          Src_Id  : Source_Id;
-         Source  : Source_Data_Access;
-
          Dep_TS  : Time_Stamp_Type;
 
       begin
@@ -8971,68 +8960,65 @@ package body Buildgpr is
                Src_Id := Data.First_Source;
 
                while Src_Id /= No_Source loop
-                  Source :=
-                    Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
-
-                  if Source.Language_Name = For_Language
-                    and then
-                      Source.Unit /= No_Name
-                      and then
-                        (Source.Kind = Impl
-                         or else
-                           Source.Other_Part = No_Source)
-                    and then not Is_Subunit (Source.all)
-                    and then
-                      Is_Included_In_Global_Archive
-                        (Source.Object, Source.Project)
-                  then
-                     Source :=
-                       Project_Tree.Sources.Table (Src_Id)'Unrestricted_Access;
-
-                     if (not Data.Library) or Source.Unit = No_Name then
-                        Dep_TS := Source.Dep_TS;
-
-                     else
-                        Get_Name_String (Data.Library_ALI_Dir.Name);
-                        Add_Char_To_Name_Buffer (Directory_Separator);
-                        Get_Name_String_And_Append (Source.Dep_Name);
-                        Dep_TS := File_Stamp (Path_Name_Type'(Name_Find));
-                     end if;
-
-                     if Dep_TS = Empty_Time_Stamp
-                       or else
-                         String (Dep_TS) > String (Bind_Exchange_TS)
-                       or else
-                         String (Dep_TS) > String (Bind_Object_TS)
+                  declare
+                     Source : Source_Data renames
+                       Project_Tree.Sources.Table (Src_Id);
+                  begin
+                     if Source.Language_Name = For_Language
+                       and then
+                         Source.Unit /= No_Name
+                         and then
+                           (Source.Kind = Impl
+                            or else
+                              Source.Other_Part = No_Source)
+                       and then not Is_Subunit (Source)
+                       and then
+                         Is_Included_In_Global_Archive
+                           (Source.Object, Source.Project)
                      then
-                        Binder_Driver_Needs_To_Be_Called := True;
+                        if (not Data.Library) or Source.Unit = No_Name then
+                           Dep_TS := Source.Dep_TS;
 
-                        if Verbose_Mode then
-                           Write_Str ("      -> ");
-                           Write_Str (Get_Name_String (Source.Dep_Name));
-
-                           if Dep_TS = Empty_Time_Stamp then
-                              Write_Line (" does not exist");
-
-                           elsif
-                             String (Dep_TS) > String (Bind_Exchange_TS)
-                           then
-                              Write_Line
-                                (" is more recent than the binder exchange " &
-                                 "file");
-
-                           else
-                              Write_Line
-                                (" is more recent that the binder generated " &
-                                 "object file");
-                           end if;
+                        else
+                           Get_Name_String (Data.Library_ALI_Dir.Name);
+                           Add_Char_To_Name_Buffer (Directory_Separator);
+                           Get_Name_String_And_Append (Source.Dep_Name);
+                           Dep_TS := File_Stamp (Path_Name_Type'(Name_Find));
                         end if;
 
-                        exit;
-                     end if;
-                  end if;
+                        if Dep_TS = Empty_Time_Stamp
+                          or else String (Dep_TS) > String (Bind_Exchange_TS)
+                          or else String (Dep_TS) > String (Bind_Object_TS)
+                        then
+                           Binder_Driver_Needs_To_Be_Called := True;
 
-                  Src_Id := Source.Next_In_Project;
+                           if Verbose_Mode then
+                              Write_Str ("      -> ");
+                              Write_Str (Get_Name_String (Source.Dep_Name));
+
+                              if Dep_TS = Empty_Time_Stamp then
+                                 Write_Line (" does not exist");
+
+                              elsif
+                                String (Dep_TS) > String (Bind_Exchange_TS)
+                              then
+                                 Write_Line
+                                   (" is more recent than the binder exchange "
+                                    & "file");
+
+                              else
+                                 Write_Line
+                                   (" is more recent that the binder generated"
+                                    & " object file");
+                              end if;
+                           end if;
+
+                           exit;
+                        end if;
+                     end if;
+
+                     Src_Id := Source.Next_In_Project;
+                  end;
                end loop;
             end;
          end if;
@@ -9108,8 +9094,8 @@ package body Buildgpr is
                Main_Id        : constant File_Name_Type := Create_Name (Main);
                Main_Source_Id : constant Source_Id :=
                                   Main_Sources.Get (Main_Id);
-               Main_Source    : Source_Data_Access;
-
+               Main_Source    : Source_Data renames
+                 Project_Tree.Sources.Table (Main_Source_Id);
                Bind_Exchange  : String_Access;
                Main_Proj      : Project_Id;
                B_Data         : Binding_Data;
@@ -9125,9 +9111,6 @@ package body Buildgpr is
                Lang_Data      : Language_Data;
 
             begin
-               Main_Source :=
-                 Project_Tree.Sources.Table
-                   (Main_Source_Id)'Unrestricted_Access;
                Main_Proj   :=
                  Ultimate_Extending_Project_Of (Main_Source.Project);
 
@@ -9526,7 +9509,7 @@ package body Buildgpr is
                           (Main_Proj,
                            B_Data.Language,
                            B_Data.Language_Name,
-                           Main_Source.all,
+                           Main_Source,
                            Dep_Files);
 
                         --  Put the options, if any
@@ -10146,47 +10129,43 @@ package body Buildgpr is
          All_Projects : Boolean;
          Unit_Based   : Boolean)
       is
-         Source : Source_Data_Access;
-
       begin
          for Index in 1 .. Source_Data_Table.Last (Project_Tree.Sources) loop
-            Source := Project_Tree.Sources.Table (Index)'Unrestricted_Access;
-
-            if Source.Compiled
-               and then
-                (All_Projects
-                   or else
-                 Is_Extending (The_Project, Source.Project, Project_Tree))
-               and then
-                not Source.Locally_Removed
-               and then
-                Source.Replaced_By = No_Source
-               and then
-                not Project_Tree.Projects.Table
-                                            (Source.Project).Externally_Built
-               and then
-                Source.Kind /= Sep
-               and then
-                Source.Path /= No_Path_Information
-            then
-               if Source.Kind = Impl or else
-                 (Source.Unit /= No_Name and then
-                  Source.Kind = Spec and then
-                  Source.Other_Part = No_Source)
+            declare
+               Source : Source_Data renames Project_Tree.Sources.Table (Index);
+            begin
+               if Source.Compiled
+                 and then
+                   (All_Projects
+                    or else
+                      Is_Extending (The_Project, Source.Project, Project_Tree))
+                 and then not Source.Locally_Removed
+                 and then Source.Replaced_By = No_Source
+                 and then not Project_Tree.Projects.Table
+                   (Source.Project).Externally_Built
+                 and then Source.Kind /= Sep
+                 and then Source.Path /= No_Path_Information
                then
-                  if (Unit_Based or else
-                      Source.Unit = No_Name or else
-                      Project_Tree.Projects.Table (Source.Project).Library)
-                     and then not Is_Subunit (Source.all)
+                  if Source.Kind = Impl
+                    or else (Source.Unit /= No_Name
+                             and then Source.Kind = Spec
+                             and then Source.Other_Part = No_Source)
                   then
-                     Insert
-                       (Source_File_Name => Source.File,
-                        Source_Identity  => Index,
-                        Source_Project   =>
-                          Ultimate_Extending_Project_Of (Source.Project));
+                     if (Unit_Based
+                         or else Source.Unit = No_Name
+                         or else
+                          Project_Tree.Projects.Table (Source.Project).Library)
+                       and then not Is_Subunit (Source)
+                     then
+                        Insert
+                          (Source_File_Name => Source.File,
+                           Source_Identity  => Index,
+                           Source_Project   =>
+                             Ultimate_Extending_Project_Of (Source.Project));
+                     end if;
                   end if;
                end if;
-            end if;
+            end;
          end loop;
       end Insert_Project_Sources;
 
@@ -10793,9 +10772,8 @@ package body Buildgpr is
    -- Source_Of --
    ---------------
 
-   function Source_Of (File : String) return Source_Data_Access is
+   function Source_Of (File : String) return Source_Id is
       File_Id : File_Name_Type;
-      Source : Source_Data_Access;
    begin
       Name_Len := 0;
       Add_Str_To_Name_Buffer (File);
@@ -10803,14 +10781,12 @@ package body Buildgpr is
       File_Id := Name_Find;
 
       for Index in 1 .. Source_Data_Table.Last (Project_Tree.Sources) loop
-         Source := Project_Tree.Sources.Table (Index)'Unrestricted_Access;
-
-         if Source.File = File_Id then
-            return Source;
+         if Project_Tree.Sources.Table (Index).File = File_Id then
+            return Index;
          end if;
       end loop;
 
-      return null;
+      return No_Source;
    end Source_Of;
 
    ---------------------------
