@@ -4233,67 +4233,74 @@ package body Buildgpr is
                         --  project of the source just compiled, check if it is
                         --  allowed to be imported.
 
-                        declare
-                           Src_Data_2 : Source_Data renames
-                             Project_Tree.Sources.Table (Source_2);
-                        begin
-                           if Source_2 /= No_Source
-                             and then
-                               (not Project_Extends
-                                    (Src_Data.Project, Src_Data_2.Project))
-                           then
-                              if not Indirect_Imports and then
-                                not Directly_Imports
-                                  (Src_Data.Project, Src_Data_2.Project)
+                        if Source_2 /= No_Source then
+                           declare
+                              Src_Data_2 : Source_Data renames
+                                Project_Tree.Sources.Table (Source_2);
+                           begin
+                              if not Project_Extends
+                                (Src_Data.Project, Src_Data_2.Project)
                               then
-                                 --  It is in a project that is not directly
-                                 --  imported. Report an error and invalidate
-                                 --  the compilation.
+                                 if not Indirect_Imports and then
+                                   not Directly_Imports
+                                     (Src_Data.Project, Src_Data_2.Project)
+                                 then
+                                    --  It is in a project that is not directly
+                                    --  imported. Report an error and
+                                    --  invalidate the compilation.
 
-                                 Write_Str ("Unit """);
-                                 Write_Str (Get_Name_String (Src_Data.Unit));
-                                 Write_Str (""" cannot import unit """);
-                                 Write_Str (Get_Name_String (Src_Data_2.Unit));
-                                 Write_Line (""":");
+                                    Write_Str ("Unit """);
+                                    Write_Str
+                                      (Get_Name_String (Src_Data.Unit));
+                                    Write_Str (""" cannot import unit """);
+                                    Write_Str
+                                      (Get_Name_String (Src_Data_2.Unit));
+                                    Write_Line (""":");
 
-                                 Write_Str ("  """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Src_Data.Project).Display_Name));
-                                 Write_Str
-                                   (""" does not directly import project """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Src_Data_2.Project).Display_Name));
-                                 Write_Line ("""");
+                                    Write_Str ("  """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Project_Tree.Projects.Table
+                                            (Src_Data.Project).Display_Name));
+                                    Write_Str
+                                      (""" does not directly import " &
+                                       "project """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Project_Tree.Projects.Table
+                                            (Src_Data_2.Project).
+                                               Display_Name));
+                                    Write_Line ("""");
 
-                                 Compilation_OK := False;
+                                    Compilation_OK := False;
 
-                              elsif not Src_Data_2.In_Interfaces then
-                                 --  It is not an interface of its project.
-                                 --  Report an error and invalidate the
-                                 --  compilation.
+                                 elsif not Src_Data_2.In_Interfaces then
+                                    --  It is not an interface of its project.
+                                    --  Report an error and invalidate the
+                                    --  compilation.
 
-                                 Write_Str ("Unit """);
-                                 Write_Str (Get_Name_String (Src_Data.Unit));
-                                 Write_Str (""" cannot import unit """);
-                                 Write_Str (Get_Name_String (Src_Data_2.Unit));
-                                 Write_Line (""":");
+                                    Write_Str ("Unit """);
+                                    Write_Str
+                                      (Get_Name_String (Src_Data.Unit));
+                                    Write_Str (""" cannot import unit """);
+                                    Write_Str
+                                      (Get_Name_String (Src_Data_2.Unit));
+                                    Write_Line (""":");
 
-                                 Write_Str
-                                   ("  it is not part of the " &
-                                    "interfaces of its project """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Src_Data_2.Project).Display_Name));
-                                 Write_Line ("""");
-                                 Compilation_OK := False;
+                                    Write_Str
+                                      ("  it is not part of the " &
+                                       "interfaces of its project """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Project_Tree.Projects.Table
+                                            (Src_Data_2.Project).
+                                               Display_Name));
+                                    Write_Line ("""");
+                                    Compilation_OK := False;
+                                 end if;
                               end if;
-                           end if;
-                        end;
+                           end;
+                        end if;
                      end if;
                   end loop;
                end loop;
@@ -7953,44 +7960,40 @@ package body Buildgpr is
      (Uname : Name_Id;
       Sfile : File_Name_Type) return Boolean
    is
-      Src_Id               : Source_Id := Project_Tree.First_Source;
+      Src_Id : constant Source_Id :=
+                 Unit_Sources_Htable.Get (Project_Tree.Unit_Sources_HT, Uname);
+
       Other_Part_File_Name : File_Name_Type;
 
    begin
-      while Src_Id /= No_Source loop
+      if Src_Id /= No_Source then
          declare
             Source : Source_Data renames Project_Tree.Sources.Table (Src_Id);
          begin
-            if Source.Unit = Uname then
-               if Source.Other_Part = No_Source then
-                  Other_Part_File_Name := No_File;
-               else
-                  Other_Part_File_Name :=
-                    Project_Tree.Sources.Table (Source.Other_Part).File;
-               end if;
-
-               if Source.File /= Sfile
-                 and then Other_Part_File_Name /= Sfile
-               then
-                  if Verbose_Mode then
-                     Write_Str ("   -> """);
-                     Write_Str (Get_Name_String (Uname));
-                     Write_Str
-                       (""" sources do not include """);
-                     Write_Str (Get_Name_String (Sfile));
-                     Write_Char ('"');
-                     Write_Eol;
-                  end if;
-
-                  return True;
-               end if;
-
-               exit;
+            if Source.Other_Part = No_Source then
+               Other_Part_File_Name := No_File;
+            else
+               Other_Part_File_Name :=
+                 Project_Tree.Sources.Table (Source.Other_Part).File;
             end if;
 
-            Src_Id := Source.Next_In_Sources;
+            if Source.File /= Sfile
+              and then Other_Part_File_Name /= Sfile
+            then
+               if Verbose_Mode then
+                  Write_Str ("   -> """);
+                  Write_Str (Get_Name_String (Uname));
+                  Write_Str
+                    (""" sources do not include """);
+                  Write_Str (Get_Name_String (Sfile));
+                  Write_Char ('"');
+                  Write_Eol;
+               end if;
+
+               return True;
+            end if;
          end;
-      end loop;
+      end if;
 
       return False;
    end File_Not_A_Source_Of;
