@@ -85,6 +85,7 @@ package GprConfig.Knowledge is
       Target      : Namet.Name_Id := Namet.No_Name;
       Targets_Set : Targets_Set_Id;
       Path        : Namet.Name_Id := Namet.No_Name;
+      Base_Name   : Namet.Name_Id := Namet.No_Name;
       Version     : Namet.Name_Id := Namet.No_Name;
       Variables   : Variables_Maps.Map;
       Prefix      : Namet.Name_Id := Namet.No_Name;
@@ -255,6 +256,7 @@ private
       Target      => Namet.No_Name,
       Targets_Set => Unknown_Targets_Set,
       Executable  => Namet.No_Name,
+      Base_Name   => Namet.No_Name,
       Path        => Namet.No_Name,
       Variables   => Variables_Maps.Empty_Map,
       Version     => Namet.No_Name,

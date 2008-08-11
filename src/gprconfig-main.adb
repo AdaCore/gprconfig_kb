@@ -565,7 +565,10 @@ procedure GprConfig.Main is
 
    function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean is
    begin
-      if Filter.Name /= No_Name and then Comp.Name /= Filter.Name then
+      if Filter.Name /= No_Name
+        and then Comp.Name /= Filter.Name
+        and then Comp.Base_Name /= Filter.Name
+      then
          if Verbose_Level > 0 then
             Put_Verbose ("Filter=" & To_String (Filter, True)
                          & ": name does not match");
@@ -873,11 +876,13 @@ procedure GprConfig.Main is
       Put_Line (" --db-    : Do not load the standard knowledge base from:");
       Put_Line ("   " & Get_Database_Directory);
       Put_Line (" --config=language[,version[,runtime[,path[,name]]]]");
-      Put_Line ("            Preselect a compiler. When name is one of the"
-                & " names known to ");
-      Put_Line ("            gprconfig, you do not need to provide any of the"
-                & " optional parameter,");
-      Put_Line ("            and can leave an empty string instead.");
+      Put_Line ("            Preselect a compiler.");
+      Put_Line ("            Name is either one of the names of the blocks");
+      Put_Line ("            in the knowledge base ('GCC', 'GCC-28',...) or");
+      Put_Line ("            the base name of an executable ('gcc',");
+      Put_Line ("            'gnatmake').");
+      Put_Line ("            An empty string can be specified for any of the");
+      Put_Line ("            optional parameters");
    end Usage;
 
 begin

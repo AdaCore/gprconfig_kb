@@ -1755,13 +1755,19 @@ the command line would be:
 instance @file{/usr/bin} (and not the installation prefix @file{/usr}).
 
 @option{name} should be one of the compiler names defined in the @value{gprconfig}
-knowledge base. The list of supported names can be found in the output of
-@option{-h}, and includes @samp{GNAT}, @samp{GCC},@dots{}. This name is
+knowledge base. The list of supported names includes @samp{GNAT},
+@samp{GCC},@dots{}. This name is
 generally not needed, but can be used to distinguish among several compilers
 that could match the other arguments of @option{--config}.
 
+Another possible more frequent use of @option{name} is to specify the base
+name of an executable. For instance, if you prefer to use a diab C compiler
+(executable is called @file{dcc}) instead of @file{gcc}, even if the latter
+appears first in the path, you could specify @file{dcc} as the name parameter.
+
 @CODESAMPLE{gprconfig --config Ada,,,/usr/bin       # automatic parameters@NL{}
-gprconfig --config C,,,/usr/bin,GCC     # automatic version}
+gprconfig --config C,,,/usr/bin,GCC     # automatic version@NL{}
+gprconfig --config C,,,/usr/bin,gcc     # same as above, with exec name}
 
 This switch is also the only possibility to include in your project some
 languages that are not associated with a compiler. This is sometimes useful

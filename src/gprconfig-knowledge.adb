@@ -1619,6 +1619,8 @@ package body GprConfig.Knowledge is
       Comp.Path       := Get_String
         (Name_As_Directory
            (Normalize_Pathname (Directory, Case_Sensitive => False)));
+      Comp.Base_Name  := Get_String
+        (GNAT.Directory_Operations.Base_Name (Get_Name_String (Executable)));
       Comp.Path_Order := Path_Order;
       Comp.Prefix     := Prefix;
       Comp.Executable := Executable;
@@ -1843,24 +1845,20 @@ package body GprConfig.Knowledge is
       end Target;
 
    begin
-      if Comp.Executable = No_Name then
-         --  A language that requires no compiler
-
-         if As_Config_Arg then
-            return Get_Name_String_Or_Null (Comp.Language_Case);
-         else
-            return Selected
-              & "(" & Comp.Index_In_List & ") "
-              & Get_Name_String_Or_Null (Comp.Language_Case)
-              & " (no compiler required)";
-         end if;
-
-      elsif As_Config_Arg then
+      if As_Config_Arg then
          return Get_Name_String_Or_Null (Comp.Language_Case)
            & ',' & Get_Name_String_Or_Null (Comp.Version)
            & ',' & Get_Name_String_Or_Null (Comp.Runtime)
            & ',' & Get_Name_String_Or_Null (Comp.Path)
            & ',' & Get_Name_String_Or_Null (Comp.Name);
+
+      elsif Comp.Executable = No_Name then
+         --  A language that requires no compiler
+
+         return Selected
+           & "(" & Comp.Index_In_List & ") "
+           & Get_Name_String_Or_Null (Comp.Language_Case)
+           & " (no compiler required)";
 
       else
          return Selected
@@ -2286,7 +2284,8 @@ package body GprConfig.Knowledge is
 
          if Comp.Selected
            and then (Filter.Name = No_Name
-                     or else Filter.Name = Comp.Name)
+                     or else Filter.Name = Comp.Name
+                     or else Comp.Base_Name = Filter.Name)
            and then
              (Filter.Version_Re = null
               or else
