@@ -4661,111 +4661,113 @@ package body Buildgpr is
                   end if;
                end if;
 
-            end if;
+               if Compilation_Needed then
+                  --  Update, if necessary, the path of the object file, of the
+                  --  dependency file and of the switches file, in the case of
+                  --  the compilation of a source in an extended project, when
+                  --  the source is in a project being extended.
 
-            if Compilation_Needed then
-               --  Update, if necessary, the path of the object file, of the
-               --  dependency file and of the switches file, in the case of the
-               --  compilation of a source in an extended project, when the
-               --  source is in a project being extended.
+                  Project_Tree.Sources.Table
+                    (Source_Identity).Object_Project :=
+                    Source_Project;
 
-               Project_Tree.Sources.Table (Source_Identity).Object_Project :=
-                 Source_Project;
+                  if Source_Project /=
+                    Project_Tree.Sources.Table (Source_Identity).Project
+                  then
+                     Get_Name_String
+                       (Project_Tree.Projects.Table
+                          (Source_Project).Object_Directory.Name);
+                     Name_Len := Name_Len + 1;
+                     Name_Buffer (Name_Len) := Directory_Separator;
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String
+                          (Project_Tree.Sources.Table
+                             (Source_Identity).Object));
+                     Project_Tree.Sources.Table
+                       (Source_Identity).Object_Path :=
+                       Name_Find;
 
-               if Source_Project /=
-                 Project_Tree.Sources.Table (Source_Identity).Project
-               then
-                  Get_Name_String
-                    (Project_Tree.Projects.Table
-                       (Source_Project).Object_Directory.Name);
-                  Name_Len := Name_Len + 1;
-                  Name_Buffer (Name_Len) := Directory_Separator;
-                  Add_Str_To_Name_Buffer
-                    (Get_Name_String
-                       (Project_Tree.Sources.Table (Source_Identity).Object));
-                  Project_Tree.Sources.Table (Source_Identity).Object_Path :=
-                    Name_Find;
+                     Get_Name_String
+                       (Project_Tree.Projects.Table
+                          (Source_Project).Object_Directory.Name);
+                     Name_Len := Name_Len + 1;
+                     Name_Buffer (Name_Len) := Directory_Separator;
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String
+                          (Project_Tree.Sources.Table
+                             (Source_Identity).Dep_Name));
+                     Project_Tree.Sources.Table (Source_Identity).Dep_Path :=
+                       Name_Find;
 
-                  Get_Name_String
-                    (Project_Tree.Projects.Table
-                       (Source_Project).Object_Directory.Name);
-                  Name_Len := Name_Len + 1;
-                  Name_Buffer (Name_Len) := Directory_Separator;
-                  Add_Str_To_Name_Buffer
-                    (Get_Name_String
-                       (Project_Tree.Sources.Table
-                          (Source_Identity).Dep_Name));
-                  Project_Tree.Sources.Table (Source_Identity).Dep_Path :=
-                    Name_Find;
+                     Get_Name_String
+                       (Project_Tree.Projects.Table
+                          (Source_Project).Object_Directory.Name);
+                     Name_Len := Name_Len + 1;
+                     Name_Buffer (Name_Len) := Directory_Separator;
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String
+                          (Project_Tree.Sources.Table
+                             (Source_Identity).Switches));
+                     Project_Tree.Sources.Table
+                       (Source_Identity).Switches_Path :=
+                       Name_Find;
+                  end if;
 
-                  Get_Name_String
-                    (Project_Tree.Projects.Table
-                       (Source_Project).Object_Directory.Name);
-                  Name_Len := Name_Len + 1;
-                  Name_Buffer (Name_Len) := Directory_Separator;
-                  Add_Str_To_Name_Buffer
-                    (Get_Name_String
-                       (Project_Tree.Sources.Table
-                          (Source_Identity).Switches));
-                  Project_Tree.Sources.Table (Source_Identity).Switches_Path :=
-                    Name_Find;
-               end if;
+                  --  Record the last recorded option index, to be able to
+                  --  write the switches file later.
 
-               --  Record the last recorded option index, to be able to write
-               --  the switches file later.
+                  if Config.Object_Generated then
+                     Last_Recorded_Option := Compilation_Options.Last;
 
-               if Config.Object_Generated then
-                  Last_Recorded_Option := Compilation_Options.Last;
+                  else
+                     Last_Recorded_Option := -1;
+                  end if;
 
-               else
-                  Last_Recorded_Option := -1;
-               end if;
+                  --  Add dependency option, if there is one
 
-               --  Add dependency option, if there is one
+                  List := Project_Tree.Languages_Data.Table (Language).
+                    Config.Dependency_Option;
 
-               List := Project_Tree.Languages_Data.Table (Language).
-                                                      Config.Dependency_Option;
+                  if List /= No_Name_List then
+                     loop
+                        Node := Project_Tree.Name_Lists.Table (List);
+                        List := Node.Next;
 
-               if List /= No_Name_List then
-                  loop
-                     Node := Project_Tree.Name_Lists.Table (List);
-                     List := Node.Next;
+                        if List = No_Name_List then
+                           declare
+                              Dep_Name : constant File_Name_Type :=
+                                           Project_Tree.Sources.Table
+                                             (Source_Identity).Dep_Name;
+                              Switch   : constant String :=
+                                           Get_Name_String (Node.Name) &
+                              Get_Name_String (Dep_Name);
 
-                     if List = No_Name_List then
-                        declare
-                           Dep_Name : constant File_Name_Type :=
-                                        Project_Tree.Sources.Table
-                                          (Source_Identity).Dep_Name;
-                           Switch : constant String :=
-                                      Get_Name_String (Node.Name) &
-                                      Get_Name_String (Dep_Name);
+                           begin
+                              Add_Option
+                                (Switch,
+                                 To      => Compilation_Options,
+                                 Display => Opt.Verbose_Mode);
+                              exit;
+                           end;
 
-                        begin
+                        else
                            Add_Option
-                             (Switch,
+                             (Value   => Node.Name,
                               To      => Compilation_Options,
                               Display => Opt.Verbose_Mode);
-                           exit;
-                        end;
+                        end if;
+                     end loop;
+                  end if;
 
-                     else
-                        Add_Option
-                          (Value   => Node.Name,
-                           To      => Compilation_Options,
-                           Display => Opt.Verbose_Mode);
-                     end if;
-                  end loop;
-               end if;
+                  declare
+                     Source_Path : String_Access;
 
-               declare
-                  Source_Path : String_Access;
+                  begin
+                     Get_Name_String
+                       (Project_Tree.Sources.Table
+                          (Source_Identity).Path.Name);
 
-               begin
-                  Get_Name_String
-                    (Project_Tree.Sources.Table
-                       (Source_Identity).Path.Name);
-
-                  case Config.Path_Syntax is
+                     case Config.Path_Syntax is
                      when Canonical =>
                         Source_Path :=
                           new String'(Name_Buffer (1 .. Name_Len));
@@ -4773,105 +4775,106 @@ package body Buildgpr is
                      when Host =>
                         Source_Path :=
                           To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
-                  end case;
+                     end case;
 
-                  Add_Option
-                    (Source_Path,
-                     To          => Compilation_Options,
-                     Display     => True,
-                     Simple_Name => not Verbose_Mode);
-               end;
+                     Add_Option
+                       (Source_Path,
+                        To          => Compilation_Options,
+                        Display     => True,
+                        Simple_Name => not Verbose_Mode);
+                  end;
 
-               --  Set the environment or additional switches for visibility
-               --  on source directories.
+                  --  Set the environment or additional switches for visibility
+                  --  on source directories.
 
-               if Source_Project /= Current_Project or else
-                  Language /= Current_Language_Ind
-               then
-                  Current_Project      := Source_Project;
-                  Current_Language_Ind := Language;
-
-                  if Project_Tree.Projects.Table
-                    (Source_Project).Include_Language /= Language
-                    and then
-                      (Config.Include_Option /= No_Name_List
-                       or else
-                         Config.Include_Path /= No_Name
-                       or else
-                         Config.Include_Path_File /= No_Name)
+                  if Source_Project /= Current_Project or else
+                    Language /= Current_Language_Ind
                   then
-                     Project_Tree.Projects.Table
-                       (Source_Project).Include_Language := Language;
+                     Current_Project      := Source_Project;
+                     Current_Language_Ind := Language;
 
-                     declare
-                        Index : Positive;
-                        NL    : Name_List_Index;
-
-                     begin
-                        Index := 1;
-                        NL := Config.Include_Compatible_Languages;
-                        while NL /= No_Name_List loop
-                           Index := Index + 1;
-                           NL := Project_Tree.Name_Lists.Table (NL).Next;
-                        end loop;
+                     if Project_Tree.Projects.Table
+                       (Source_Project).Include_Language /= Language
+                       and then
+                         (Config.Include_Option /= No_Name_List
+                          or else
+                            Config.Include_Path /= No_Name
+                          or else
+                            Config.Include_Path_File /= No_Name)
+                     then
+                        Project_Tree.Projects.Table
+                          (Source_Project).Include_Language := Language;
 
                         declare
-                           Languages : Name_Ids (1 .. Index);
+                           Index : Positive;
+                           NL    : Name_List_Index;
 
                         begin
                            Index := 1;
-                           Languages (Index) := Language_Name;
-
                            NL := Config.Include_Compatible_Languages;
                            while NL /= No_Name_List loop
                               Index := Index + 1;
-                              Languages (Index) :=
-                                Project_Tree.Name_Lists.Table (NL).Name;
                               NL := Project_Tree.Name_Lists.Table (NL).Next;
                            end loop;
 
-                           Get_Directories
-                             (Source_Project,
-                              Sources   => True,
-                              Languages => Languages);
+                           declare
+                              Languages : Name_Ids (1 .. Index);
+
+                           begin
+                              Index := 1;
+                              Languages (Index) := Language_Name;
+
+                              NL := Config.Include_Compatible_Languages;
+                              while NL /= No_Name_List loop
+                                 Index := Index + 1;
+                                 Languages (Index) :=
+                                   Project_Tree.Name_Lists.Table (NL).Name;
+                                 NL := Project_Tree.Name_Lists.Table (NL).Next;
+                              end loop;
+
+                              Get_Directories
+                                (Source_Project,
+                                 Sources   => True,
+                                 Languages => Languages);
+                           end;
                         end;
-                     end;
 
-                     if Config.Include_Option /= No_Name_List then
-                        --  Get the value of Imported_Directories_Switches
+                        if Config.Include_Option /= No_Name_List then
+                           --  Get the value of Imported_Directories_Switches
 
-                        declare
-                           List : Name_List_Index;
-                           Nam  : Name_Node;
+                           declare
+                              List : Name_List_Index;
+                              Nam  : Name_Node;
 
-                        begin
-                           Include_Options.Last := 0;
+                           begin
+                              Include_Options.Last := 0;
 
-                           for Index in 1 .. Directories.Last loop
-                              List := Config.Include_Option;
+                              for Index in 1 .. Directories.Last loop
+                                 List := Config.Include_Option;
 
-                              loop
-                                 Nam := Project_Tree.Name_Lists.Table (List);
-                                 exit when Nam.Next = No_Name_List;
+                                 loop
+                                    Nam :=
+                                      Project_Tree.Name_Lists.Table (List);
+                                    exit when Nam.Next = No_Name_List;
 
-                                 Add_Option
-                                   (Nam.Name,
-                                    To => Include_Options,
-                                    Display => Opt.Verbose_Mode);
-                                 List := Nam.Next;
-                              end loop;
+                                    Add_Option
+                                      (Nam.Name,
+                                       To      => Include_Options,
+                                       Display => Opt.Verbose_Mode);
+                                    List := Nam.Next;
+                                 end loop;
 
-                              Get_Name_String (Directories.Table (Index));
+                                 Get_Name_String (Directories.Table (Index));
 
-                              while Name_Len > 1 and then
-                                (Name_Buffer (Name_Len) =
-                                   Directory_Separator
-                                 or else Name_Buffer (Name_Len) = '/')
-                              loop
-                                 Name_Len := Name_Len - 1;
-                              end loop;
+                                 while Name_Len > 1 and then
+                                   (Name_Buffer (Name_Len) =
+                                      Directory_Separator
+                                    or else Name_Buffer (Name_Len) = '/')
+                                 loop
+                                    Name_Len := Name_Len - 1;
+                                 end loop;
 
-                              case Config.Path_Syntax is
+                                 case Config.Path_Syntax is
                                  when Canonical =>
                                     Add_Option
                                       (Get_Name_String (Nam.Name) &
@@ -4894,306 +4897,310 @@ package body Buildgpr is
                                           To      => Include_Options,
                                           Display => Opt.Verbose_Mode);
                                     end;
-                              end case;
-                           end loop;
-                        end;
+                                 end case;
+                              end loop;
+                           end;
 
-                        Project_Tree.Projects.Table
-                          (Source_Project).Imported_Directories_Switches :=
-                          new String_List'
-                            (Include_Options.Options
-                                 (1 .. Include_Options.Last));
+                           Project_Tree.Projects.Table
+                             (Source_Project).Imported_Directories_Switches :=
+                             new String_List'
+                               (Include_Options.Options
+                                    (1 .. Include_Options.Last));
 
-                     elsif Config.Include_Path_File /= No_Name then
-                        --  Create temp path file and store its name in
-                        --  Include_Path_File.
+                        elsif Config.Include_Path_File /= No_Name then
+                           --  Create temp path file and store its name in
+                           --  Include_Path_File.
 
-                        declare
-                           FD     : File_Descriptor;
-                           Len    : Integer;
-                           Status : Boolean;
-                        begin
-                           Prj.Env.Create_New_Path_File
-                             (In_Tree   => Project_Tree,
-                              Path_FD   => FD,
-                              Path_Name =>
-                                Project_Tree.Projects.Table
-                                  (Source_Project).Include_Path_File);
+                           declare
+                              FD     : File_Descriptor;
+                              Len    : Integer;
+                              Status : Boolean;
+                           begin
+                              Prj.Env.Create_New_Path_File
+                                (In_Tree   => Project_Tree,
+                                 Path_FD   => FD,
+                                 Path_Name =>
+                                   Project_Tree.Projects.Table
+                                     (Source_Project).Include_Path_File);
 
-                           for Index in 1 .. Directories.Last loop
-                              Get_Name_String
-                                (Directories.Table (Index));
-                              Name_Len := Name_Len + 1;
-                              Name_Buffer (Name_Len) := ASCII.LF;
+                              for Index in 1 .. Directories.Last loop
+                                 Get_Name_String
+                                   (Directories.Table (Index));
+                                 Name_Len := Name_Len + 1;
+                                 Name_Buffer (Name_Len) := ASCII.LF;
 
-                              Len :=
-                                Write (FD, Name_Buffer (1)'Address, Name_Len);
+                                 Len :=
+                                   Write
+                                     (FD, Name_Buffer (1)'Address, Name_Len);
 
-                              if Len /= Name_Len then
+                                 if Len /= Name_Len then
+                                    Fail_Program ("disk full");
+                                 end if;
+                              end loop;
+
+                              Close (FD, Status);
+
+                              if not Status then
                                  Fail_Program ("disk full");
                               end if;
+                           end;
+
+                        elsif Config.Include_Path /= No_Name then
+                           --  Get the value of Include_Path
+
+                           if Path_Buffer = null then
+                              Path_Buffer :=
+                                new String (1 .. Path_Buffer_Initial_Length);
+                           end if;
+
+                           Path_Last := 0;
+
+                           for Index in 1 .. Directories.Last loop
+                              if Path_Last /= 0 then
+                                 Add_To_Path (Path_Separator);
+                              end if;
+
+                              Get_Name_String (Directories.Table (Index));
+
+                              while Name_Len > 1 and then
+                                (Name_Buffer (Name_Len) = Directory_Separator
+                                 or else Name_Buffer (Name_Len) = '/')
+                              loop
+                                 Name_Len := Name_Len - 1;
+                              end loop;
+
+                              Add_To_Path (Name_Buffer (1 .. Name_Len));
                            end loop;
 
-                           Close (FD, Status);
-
-                           if not Status then
-                              Fail_Program ("disk full");
-                           end if;
-                        end;
-
-                     elsif Config.Include_Path /= No_Name then
-                        --  Get the value of Include_Path
-
-                        if Path_Buffer = null then
-                           Path_Buffer :=
-                             new String (1 .. Path_Buffer_Initial_Length);
+                           Project_Tree.Projects.Table
+                             (Source_Project).Include_Path :=
+                             new String'(Path_Buffer (1 .. Path_Last));
                         end if;
-
-                        Path_Last := 0;
-
-                        for Index in 1 .. Directories.Last loop
-                           if Path_Last /= 0 then
-                              Add_To_Path (Path_Separator);
-                           end if;
-
-                           Get_Name_String (Directories.Table (Index));
-
-                           while Name_Len > 1 and then
-                                 (Name_Buffer (Name_Len) = Directory_Separator
-                                  or else Name_Buffer (Name_Len) = '/')
-                           loop
-                              Name_Len := Name_Len - 1;
-                           end loop;
-
-                           Add_To_Path (Name_Buffer (1 .. Name_Len));
-                        end loop;
-
-                        Project_Tree.Projects.Table
-                          (Source_Project).Include_Path :=
-                          new String'(Path_Buffer (1 .. Path_Last));
                      end if;
-                  end if;
 
-                  if Config.Include_Path_File /= No_Name then
-                     Setenv (Get_Name_String (Config.Include_Path_File),
-                             Get_Name_String
-                               (Project_Tree.Projects.Table
+                     if Config.Include_Path_File /= No_Name then
+                        Setenv (Get_Name_String (Config.Include_Path_File),
+                          Get_Name_String
+                            (Project_Tree.Projects.Table
                                (Source_Project).Include_Path_File));
 
-                  elsif Config.Include_Path /= No_Name then
-                     Setenv (Get_Name_String (Config.Include_Path),
-                             Project_Tree.Projects.Table
-                               (Source_Project).Include_Path.all);
+                     elsif Config.Include_Path /= No_Name then
+                        Setenv (Get_Name_String (Config.Include_Path),
+                                Project_Tree.Projects.Table
+                                  (Source_Project).Include_Path.all);
 
-                     if Verbose_Mode then
-                        Write_Str (Get_Name_String (Config.Include_Path));
-                        Write_Str (" = ");
-                        Write_Line
-                          (Project_Tree.Projects.Table (Source_Project).
-                                                          Include_Path.all);
+                        if Verbose_Mode then
+                           Write_Str (Get_Name_String (Config.Include_Path));
+                           Write_Str (" = ");
+                           Write_Line
+                             (Project_Tree.Projects.Table (Source_Project).
+                                Include_Path.all);
+                        end if;
                      end if;
                   end if;
-               end if;
 
-               --  If Include_Option is specified, add the options for the
-               --  project.
+                  --  If Include_Option is specified, add the options for the
+                  --  project.
 
-               if Config.Include_Option /= No_Name_List then
-                  Add_Options
-                    (Project_Tree.Projects.Table
-                       (Source_Project).Imported_Directories_Switches.all,
-                     To   => Compilation_Options,
-                     Display_All   => Opt.Verbose_Mode,
-                     Display_First => False);
-               end if;
+                  if Config.Include_Option /= No_Name_List then
+                     Add_Options
+                       (Project_Tree.Projects.Table
+                          (Source_Project).Imported_Directories_Switches.all,
+                        To            => Compilation_Options,
+                        Display_All   => Opt.Verbose_Mode,
+                        Display_First => False);
+                  end if;
 
-               --  If Config_File_Switches is specified, check if a config
-               --  file need to be specified.
+                  --  If Config_File_Switches is specified, check if a config
+                  --  file need to be specified.
 
-               if Config.Config_File_Switches /= No_Name_List and then
-                 (Config.Config_Body         /= No_Name or else
-                  Config.Config_Spec         /= No_Name or else
-                  Config.Config_Body_Pattern /= No_Name or else
-                  Config.Config_Spec_Pattern /= No_Name)
-               then
-                  Create_Config_File
-                    (For_Project => Source_Project,
-                     Config      => Config,
-                     Language    => Language_Name);
-
-                  if Project_Tree.Projects.Table
-                       (Source_Project).Config_File_Name /= No_Path
+                  if Config.Config_File_Switches /= No_Name_List and then
+                    (Config.Config_Body         /= No_Name or else
+                       Config.Config_Spec         /= No_Name or else
+                         Config.Config_Body_Pattern /= No_Name or else
+                           Config.Config_Spec_Pattern /= No_Name)
                   then
-                     Add_Config_File_Switch
-                       (Config => Config,
-                        Path_Name =>
-                          Project_Tree.Projects.Table (Source_Project).
-                                                         Config_File_Name);
+                     Create_Config_File
+                       (For_Project => Source_Project,
+                        Config      => Config,
+                        Language    => Language_Name);
+
+                     if Project_Tree.Projects.Table
+                       (Source_Project).Config_File_Name /= No_Path
+                     then
+                        Add_Config_File_Switch
+                          (Config    => Config,
+                           Path_Name =>
+                             Project_Tree.Projects.Table (Source_Project).
+                             Config_File_Name);
+                     end if;
+
+                     if not Config.Config_File_Unique then
+                        declare
+                           Config_File_Path : Path_Name_Type;
+
+                        begin
+                           Config_File_Path :=
+                             Config_File_For
+                               (Project        => Main_Project,
+                                Package_Name   => Name_Builder,
+                                Attribute_Name => Name_Global_Config_File,
+                                Language       => Language_Name);
+
+                           if Config_File_Path /= No_Path then
+                              Add_Config_File_Switch
+                                (Config    => Config,
+                                 Path_Name => Config_File_Path);
+                           end if;
+
+                           Config_File_Path :=
+                             Config_File_For
+                               (Project        => Source_Project,
+                                Package_Name   => Name_Compiler,
+                                Attribute_Name => Name_Local_Config_File,
+                                Language       => Language_Name);
+
+                           if Config_File_Path /= No_Path then
+                              Add_Config_File_Switch
+                                (Config    => Config,
+                                 Path_Name => Config_File_Path);
+                           end if;
+                        end;
+                     end if;
                   end if;
 
-                  if not Config.Config_File_Unique then
+                  --  If the compiler supports mapping files, add the necessary
+                  --  switch.
+
+                  if Config.Mapping_File_Switches /= No_Name_List then
+                     Mapping_File_Path :=
+                       Mapping_Files_Htable.Get_First
+                         (Project_Tree.Languages_Data.Table
+                              (Language).Mapping_Files);
+
+                     if Mapping_File_Path /= No_Path then
+                        Mapping_Files_Htable.Remove
+                          (Project_Tree.Languages_Data.Table
+                             (Language).Mapping_Files,
+                           Mapping_File_Path);
+
+                     else
+                        Prj.Env.Create_Mapping_File
+                          (Project  => Source_Project,
+                           Language => Language_Name,
+                           In_Tree  => Project_Tree,
+                           Name     => Mapping_File_Path);
+                        Mapping_Files_Htable.Set
+                          (Project_Tree.Languages_Data.Table
+                             (Language).Mapping_Files,
+                           Mapping_File_Path,
+                           Mapping_File_Path);
+                     end if;
+
                      declare
-                        Config_File_Path : Path_Name_Type;
-
+                        List    : Name_List_Index :=
+                                    Config.Mapping_File_Switches;
+                        Nam_Nod : Name_Node;
                      begin
-                        Config_File_Path :=
-                          Config_File_For
-                            (Project        => Main_Project,
-                             Package_Name   => Name_Builder,
-                             Attribute_Name => Name_Global_Config_File,
-                             Language       => Language_Name);
+                        while List /= No_Name_List loop
+                           Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                           List := Nam_Nod.Next;
 
-                        if Config_File_Path /= No_Path then
-                           Add_Config_File_Switch
-                             (Config    => Config,
-                              Path_Name => Config_File_Path);
-                        end if;
+                           if List /= No_Name_List then
+                              Add_Option
+                                (Value   => Nam_Nod.Name,
+                                 To      => Compilation_Options,
+                                 Display => Opt.Verbose_Mode);
 
-                        Config_File_Path :=
-                          Config_File_For
-                            (Project        => Source_Project,
-                             Package_Name   => Name_Compiler,
-                             Attribute_Name => Name_Local_Config_File,
-                             Language       => Language_Name);
-
-                        if Config_File_Path /= No_Path then
-                           Add_Config_File_Switch
-                             (Config    => Config,
-                              Path_Name => Config_File_Path);
-                        end if;
+                           else
+                              Get_Name_String (Nam_Nod.Name);
+                              Add_Str_To_Name_Buffer
+                                (Get_Name_String (Mapping_File_Path));
+                              Add_Option
+                                (Name_Buffer (1 .. Name_Len),
+                                 To      => Compilation_Options,
+                                 Display => Opt.Verbose_Mode);
+                           end if;
+                        end loop;
                      end;
-                  end if;
-               end if;
-
-               --  If the compiler supports mapping files, add the necessary
-               --  switch.
-
-               if Config.Mapping_File_Switches /= No_Name_List then
-                  Mapping_File_Path :=
-                    Mapping_Files_Htable.Get_First
-                      (Project_Tree.Languages_Data.Table
-                           (Language).Mapping_Files);
-
-                  if Mapping_File_Path /= No_Path then
-                     Mapping_Files_Htable.Remove
-                       (Project_Tree.Languages_Data.Table
-                          (Language).Mapping_Files,
-                        Mapping_File_Path);
 
                   else
-                     Prj.Env.Create_Mapping_File
-                       (Project  => Source_Project,
-                        Language => Language_Name,
-                        In_Tree  => Project_Tree,
-                        Name     => Mapping_File_Path);
-                     Mapping_Files_Htable.Set
-                       (Project_Tree.Languages_Data.Table
-                          (Language).Mapping_Files,
-                        Mapping_File_Path,
-                        Mapping_File_Path);
+                     Mapping_File_Path := No_Path;
                   end if;
 
-                  declare
-                     List : Name_List_Index := Config.Mapping_File_Switches;
-                     Nam_Nod : Name_Node;
-                  begin
-                     while List /= No_Name_List loop
-                        Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                        List := Nam_Nod.Next;
+                  --  Display the command invoked if not in quiet output mode
 
-                        if List /= No_Name_List then
-                           Add_Option
-                             (Value   => Nam_Nod.Name,
-                              To      => Compilation_Options,
-                              Display => Opt.Verbose_Mode);
+                  if not Quiet_Output then
+                     if Verbose_Mode then
+                        Write_Str (Compiler_Path.all);
 
-                        else
-                           Get_Name_String (Nam_Nod.Name);
-                           Add_Str_To_Name_Buffer
-                             (Get_Name_String (Mapping_File_Path));
-                           Add_Option
-                             (Name_Buffer (1 .. Name_Len),
-                              To => Compilation_Options,
-                              Display => Opt.Verbose_Mode);
+                     else
+                        Name_Len := 0;
+                        Add_Str_To_Name_Buffer (Base_Name (Compiler_Path.all));
+
+                        if Executable_Suffix'Length /= 0 and then
+                          Name_Len > Executable_Suffix'Length and then
+                          Name_Buffer
+                            (Name_Len - Executable_Suffix'Length + 1 ..
+                                 Name_Len)
+                            = Executable_Suffix.all
+                        then
+                           Name_Len := Name_Len - Executable_Suffix'Length;
+                        end if;
+
+                        Write_Str (Name_Buffer (1 .. Name_Len));
+                     end if;
+
+                     for Option in 1 .. Compilation_Options.Last loop
+                        if Compilation_Options.Visible (Option) then
+                           Write_Char (' ');
+
+                           if Compilation_Options.Simple_Name (Option) then
+                              Write_Str
+                                (Base_Name
+                                   (Compilation_Options.Options (Option).all));
+
+                           else
+                              Write_Str
+                                (Compilation_Options.Options (Option).all);
+                           end if;
                         end if;
                      end loop;
+
+                     Write_Eol;
+                  end if;
+
+                  Pid := GNAT.OS_Lib.Non_Blocking_Spawn
+                    (Compiler_Path.all,
+                     Compilation_Options.Options
+                       (1 .. Compilation_Options.Last));
+
+                  declare
+                     Options : String_List_Access := null;
+                  begin
+                     if Last_Recorded_Option >= 0 then
+                        Options :=
+                          new String_List'
+                            (Compilation_Options.Options
+                                 (1 .. Last_Recorded_Option));
+                     end if;
+
+                     Add_Process
+                       (Pid,
+                        Source_Identity,
+                        Mapping_File_Path,
+                        Compilation,
+                        Options);
                   end;
 
-               else
-                  Mapping_File_Path := No_Path;
+                  Need_To_Rebuild_Global_Archives := True;
+
+               elsif Closure_Needed and then
+                 Project_Tree.Sources.Table
+                   (Source_Identity).Dependency = ALI_File
+               then
+                  Record_ALI_For (Source_Identity);
                end if;
-
-               --  Display the command invoked if not in quiet output mode
-
-               if not Quiet_Output then
-                  if Verbose_Mode then
-                     Write_Str (Compiler_Path.all);
-
-                  else
-                     Name_Len := 0;
-                     Add_Str_To_Name_Buffer (Base_Name (Compiler_Path.all));
-
-                     if Executable_Suffix'Length /= 0 and then
-                       Name_Len > Executable_Suffix'Length and then
-                       Name_Buffer
-                         (Name_Len - Executable_Suffix'Length + 1 .. Name_Len)
-                         = Executable_Suffix.all
-                     then
-                        Name_Len := Name_Len - Executable_Suffix'Length;
-                     end if;
-
-                     Write_Str (Name_Buffer (1 .. Name_Len));
-                  end if;
-
-                  for Option in 1 .. Compilation_Options.Last loop
-                     if Compilation_Options.Visible (Option) then
-                        Write_Char (' ');
-
-                        if Compilation_Options.Simple_Name (Option) then
-                           Write_Str
-                             (Base_Name
-                                (Compilation_Options.Options (Option).all));
-
-                        else
-                           Write_Str
-                             (Compilation_Options.Options (Option).all);
-                        end if;
-                     end if;
-                  end loop;
-
-                  Write_Eol;
-               end if;
-
-               Pid := GNAT.OS_Lib.Non_Blocking_Spawn
-                 (Compiler_Path.all,
-                  Compilation_Options.Options
-                    (1 .. Compilation_Options.Last));
-
-               declare
-                  Options : String_List_Access := null;
-               begin
-                  if Last_Recorded_Option >= 0 then
-                     Options :=
-                       new String_List'
-                         (Compilation_Options.Options
-                              (1 .. Last_Recorded_Option));
-                  end if;
-
-                  Add_Process
-                    (Pid,
-                     Source_Identity,
-                     Mapping_File_Path,
-                     Compilation,
-                     Options);
-               end;
-
-               Need_To_Rebuild_Global_Archives := True;
-
-            elsif Closure_Needed and then
-                  Project_Tree.Sources.Table
-                     (Source_Identity).Dependency = ALI_File
-            then
-               Record_ALI_For (Source_Identity);
             end if;
          end if;
 
