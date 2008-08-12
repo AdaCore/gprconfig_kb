@@ -1332,9 +1332,13 @@ package body GprConfig.Knowledge is
                   Extracted_From := Node.Var_Name;
 
                when Value_Constant =>
-                  Tmp_Result := To_Unbounded_String
-                    (Substitute_Variables
-                       (Get_Name_String (Node.Value), Comp));
+                  if Node.Value = No_Name then
+                     Tmp_Result := Null_Unbounded_String;
+                  else
+                     Tmp_Result := To_Unbounded_String
+                       (Substitute_Variables
+                          (Get_Name_String (Node.Value), Comp));
+                  end if;
                   From_Static := True;
                   Put_Verbose
                     (Attribute & ": constant := " & To_String (Tmp_Result));
