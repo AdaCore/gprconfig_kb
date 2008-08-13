@@ -605,6 +605,13 @@ package body Confgpr is
             Args     : Argument_List_Access := new Argument_List (1 .. 6);
             Arg_Last : Positive;
             Name     : Name_Id;
+            IDE      : constant Package_Id :=
+                         Value_Of
+                           (Name_Ide,
+                            Project_Tree.Projects.Table
+                              (Main_Project).Decl.Packages,
+                            Project_Tree);
+            Comp_Cmd : Variable_Value;
 
          begin
             Args (1) := new String'("--batch");
@@ -617,8 +624,12 @@ package body Confgpr is
                Args (Arg_Last) := new String'("-q");
             end if;
 
-            if Target_Name /= null then
-               Arg_Last := Arg_Last + 1;
+            Arg_Last := Arg_Last + 1;
+
+            if Target_Name = null then
+               Args (Arg_Last) :=
+                 new String'(Target_Project_Option & "all");
+            else
                Args (Arg_Last) :=
                  new String'(Target_Project_Option & Target_Name.all);
             end if;
@@ -636,8 +647,47 @@ package body Confgpr is
                end if;
 
                Arg_Last := Arg_Last + 1;
-               Args (Arg_Last) :=
-                 new String'("--config=" & Get_Name_String (Name));
+
+               --  Check if IDE'Compiler_Command is declared for the language.
+               --  If it is, use its value to invoke gprconfig.
+
+               Comp_Cmd :=
+                 Value_Of
+                   (Name, Attribute_Or_Array_Name => Name_Compiler_Command,
+                    In_Package                    => IDE,
+                    In_Tree                       => Project_Tree,
+                    Force_Lower_Case_Index        => True);
+
+               declare
+                  Config_Command : constant String :=
+                                     "--config=" & Get_Name_String (Name);
+
+               begin
+                  if Comp_Cmd = Nil_Variable_Value or else
+                    Length_Of_Name (Comp_Cmd.Value) = 0
+                  then
+                     Args (Arg_Last) := new String'(Config_Command);
+
+                  else
+                     declare
+                        Compiler_Command : constant String :=
+                                             Get_Name_String (Comp_Cmd.Value);
+
+                     begin
+                        if Is_Absolute_Path (Compiler_Command) then
+                           Args (Arg_Last) :=
+                             new String'
+                               (Config_Command & ",,," &
+                                Containing_Directory (Compiler_Command) & "," &
+                                Simple_Name (Compiler_Command));
+                        else
+                           Args (Arg_Last) :=
+                             new String'
+                               (Config_Command & ",,,," & Compiler_Command);
+                        end if;
+                     end;
+                  end if;
+               end;
 
                Name := Language_Htable.Get_Next;
             end loop;
