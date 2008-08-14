@@ -4,6 +4,11 @@ INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@
 HOST=@HOST@
 GNAT_SOURCE_DIR=gnat_src
+ifeq ($(OS),Windows_NT)
+LN=cp -p
+else
+LN=ln -s
+endif
 CP=cp -p
 MKDIR=mkdir -p
 BUILD=debug
@@ -46,10 +51,10 @@ all:
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
 copy_gnat_src: force
-	-@$(foreach f,$(shell cat gnat/MANIFEST.GPRBUILD), \
-	    $(CP) $(GNAT_SOURCE_DIR)/$(f) gnat ;\
+	-@cd gnat; $(foreach f,$(shell cat gnat/MANIFEST.GPRBUILD), \
+	    $(LN) ../$(GNAT_SOURCE_DIR)/$(f) . ;\
            )\
-	  cd gnat && patch < prj-gnat-6.0.1.diff
+	patch < prj-gnat-6.0.1.diff
 
 complete: copy_gnat_src install
 
