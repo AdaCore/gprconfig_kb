@@ -6501,7 +6501,15 @@ package body Buildgpr is
 
          else
             Closure_Needed := True;
-            Check_Mains;
+
+            if Project_Tree.Projects.Table (Main_Project).Library then
+               Fail_Program
+                 ("cannot specify a main program " &
+                  "on the command line for a library project file");
+
+            else
+               Check_Mains;
+            end if;
          end if;
 
          --  If we need the closures of Ada mains and roots, then if we need
