@@ -3158,7 +3158,7 @@ object search path. Example:
 
 @item Driver
 
-Specifies the name of the executable of the default linker. Example:
+Specifies the name of the executable of the linker. Example:
 
 @smallexample
    for Driver use "g++";
@@ -3166,7 +3166,9 @@ Specifies the name of the executable of the default linker. Example:
 
 @item Required_Switches
 
-Specifies the minimum options to be used when invoking the default linker.
+Specifies the minimum options to be used when invoking the linker. Those
+options are happened at the end of the link command so that potentially
+conflicting user options take precedence.
 
 @end itemize
 
