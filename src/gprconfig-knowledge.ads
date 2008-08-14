@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---                   Copyright (C) 2006-2007, AdaCore                       --
+--                   Copyright (C) 2006-2008, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -81,11 +81,20 @@ package GprConfig.Knowledge is
 
    type Compiler is record
       Name        : Namet.Name_Id := Namet.No_Name;
+      --  The name of the compiler, as specified in the <name> node of the
+      --  knowledge base. If Compiler represents a filter as defined on through
+      --  --config switch, then name can also be the base name of the
+      --  executable we are looking for. In such a case, it never includes the
+      --  exec suffix (.exe on Windows)
+
       Executable  : Namet.Name_Id := Namet.No_Name;
       Target      : Namet.Name_Id := Namet.No_Name;
       Targets_Set : Targets_Set_Id;
       Path        : Namet.Name_Id := Namet.No_Name;
+
       Base_Name   : Namet.Name_Id := Namet.No_Name;
+      --  Base name of the executable. This does not include the exec suffix
+
       Version     : Namet.Name_Id := Namet.No_Name;
       Variables   : Variables_Maps.Map;
       Prefix      : Namet.Name_Id := Namet.No_Name;
@@ -249,6 +258,10 @@ package GprConfig.Knowledge is
    type Compare_Type is (Before, Equal, After);
    function Compare (Name1, Name2 : Namet.Name_Id) return Compare_Type;
    --  Compare alphabetically two strings
+
+   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean;
+   --  Returns True if Comp match Filter (the latter corresponds to a --config
+   --  command line argument).
 
 private
    No_Compiler : constant Compiler :=

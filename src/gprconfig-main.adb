@@ -130,10 +130,6 @@ procedure GprConfig.Main is
    --  Changes some attributes of the compiler. This is used to update elements
    --  in a list.
 
-   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean;
-   --  Returns True if Comp match Filter (the latter corresponds to a --config
-   --  command line argument).
-
    type Boolean_Array  is array (Count_Type range <>) of Boolean;
    type Cursor_Array   is array (Count_Type range <>) of Compiler_Lists.Cursor;
 
@@ -176,6 +172,27 @@ procedure GprConfig.Main is
      (Filters : Compiler_Lists.List) return Unbounded_String;
    --  Compute the list of directories that should be prepended to the PATH
    --  when searching for compilers.
+
+   Base               : Knowledge_Base;
+   Filters            : Compiler_Lists.List;
+   Load_Standard_Base : Boolean := True;
+   Batch              : Boolean := False;
+   Show_Targets       : Boolean := False;
+
+   --  We need to add the executable suffix here, since on windows,
+   --  Locate_Exec_On_Path will also return directories with the name
+   --  "gprbuild" ie the current directory when gprconfig is run from the
+   --  current dir.
+   Exec_Suffix        : constant GNAT.Strings.String_Access :=
+     Get_Executable_Suffix;
+   Gprbuild_Path : GNAT.OS_Lib.String_Access :=
+     Locate_Exec_On_Path (Gprbuild & Exec_Suffix.all);
+
+   Compilers : Compiler_Lists.List;
+   package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
+
+   Valid_Switches : constant String :=
+     "-batch -config= -db: h o: v q -show-targets -target=";
 
    ---------
    -- "<" --
@@ -559,60 +576,6 @@ procedure GprConfig.Main is
       Put_Verbose ("", -1);
    end Filter_List;
 
-   ------------------
-   -- Filter_Match --
-   ------------------
-
-   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean is
-   begin
-      if Filter.Name /= No_Name
-        and then Comp.Name /= Filter.Name
-        and then Comp.Base_Name /= Filter.Name
-      then
-         if Verbose_Level > 0 then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
-                         & ": name does not match");
-         end if;
-         return False;
-      end if;
-
-      if Filter.Path /= No_Name and then Filter.Path /= Comp.Path then
-         if Verbose_Level > 0 then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
-                         & ": path does not match");
-         end if;
-         return False;
-      end if;
-
-      if Filter.Version /= No_Name and then Filter.Version /= Comp.Version then
-         if Verbose_Level > 0 then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
-                         & ": version does not match");
-         end if;
-         return False;
-      end if;
-
-      if Filter.Runtime /= No_Name and then Filter.Runtime /= Comp.Runtime then
-         if Verbose_Level > 0 then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
-                         & ": runtime does not match");
-         end if;
-         return False;
-      end if;
-
-      if Filter.Language_LC /= No_Name
-        and then Filter.Language_LC /= Comp.Language_LC
-      then
-         if Verbose_Level > 0 then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
-                         & ": language does not match");
-         end if;
-         return False;
-      end if;
-
-      return True;
-   end Filter_Match;
-
    ----------------------------
    -- Get_Database_Directory --
    ----------------------------
@@ -702,8 +665,16 @@ procedure GprConfig.Main is
                           (Normalize_Pathname (Element (C),
                            Case_Sensitive => False)));
                      Next (C);
+
                      if Has_Element (C) then
-                        Comp.Name := Get_String_Or_No_Name (Element (C));
+                        --  the name could be either a name as defined in the
+                        --  knowledge base, or the base name of the executable
+                        --  we are looking for. It must not include the exec
+                        --  suffix.
+
+                        Comp.Name := Get_String_Or_No_Name
+                          (GNAT.Directory_Operations.Base_Name
+                             (Element (C), Suffix => Exec_Suffix.all));
                      end if;
                   end if;
                end if;
@@ -826,27 +797,6 @@ procedure GprConfig.Main is
          New_Line;
       end if;
    end Show_Command_Line_Config;
-
-   Base               : Knowledge_Base;
-   Filters            : Compiler_Lists.List;
-   Load_Standard_Base : Boolean := True;
-   Batch              : Boolean := False;
-   Show_Targets       : Boolean := False;
-
-   --  We need to add the executable suffix here, since on windows,
-   --  Locate_Exec_On_Path will also return directories with the name
-   --  "gprbuild" ie the current directory when gprconfig is run from the
-   --  current dir.
-   Exec_Suffix        : constant GNAT.Strings.String_Access :=
-     Get_Executable_Suffix;
-   Gprbuild_Path : GNAT.OS_Lib.String_Access :=
-     Locate_Exec_On_Path (Gprbuild & Exec_Suffix.all);
-
-   Compilers : Compiler_Lists.List;
-   package Compiler_Sort is new Compiler_Lists.Generic_Sorting ("<");
-
-   Valid_Switches : constant String :=
-     "-batch -config= -db: h o: v q -show-targets -target=";
 
    ----------------------
    -- Toggle_Selection --

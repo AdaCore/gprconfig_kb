@@ -1624,7 +1624,8 @@ package body GprConfig.Knowledge is
         (Name_As_Directory
            (Normalize_Pathname (Directory, Case_Sensitive => False)));
       Comp.Base_Name  := Get_String
-        (GNAT.Directory_Operations.Base_Name (Get_Name_String (Executable)));
+        (GNAT.Directory_Operations.Base_Name
+           (Get_Name_String (Executable), Suffix => Exec_Suffix.all));
       Comp.Path_Order := Path_Order;
       Comp.Prefix     := Prefix;
       Comp.Executable := Executable;
@@ -2269,6 +2270,60 @@ package body GprConfig.Knowledge is
       end loop;
       Matched := Filter.Negate;
    end Match;
+
+   ------------------
+   -- Filter_Match --
+   ------------------
+
+   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean is
+   begin
+      if Filter.Name /= No_Name
+        and then Comp.Name /= Filter.Name
+        and then Comp.Base_Name /= Filter.Name
+      then
+         if Verbose_Level > 0 then
+            Put_Verbose ("Filter=" & To_String (Filter, True)
+                         & ": name does not match");
+         end if;
+         return False;
+      end if;
+
+      if Filter.Path /= No_Name and then Filter.Path /= Comp.Path then
+         if Verbose_Level > 0 then
+            Put_Verbose ("Filter=" & To_String (Filter, True)
+                         & ": path does not match");
+         end if;
+         return False;
+      end if;
+
+      if Filter.Version /= No_Name and then Filter.Version /= Comp.Version then
+         if Verbose_Level > 0 then
+            Put_Verbose ("Filter=" & To_String (Filter, True)
+                         & ": version does not match");
+         end if;
+         return False;
+      end if;
+
+      if Filter.Runtime /= No_Name and then Filter.Runtime /= Comp.Runtime then
+         if Verbose_Level > 0 then
+            Put_Verbose ("Filter=" & To_String (Filter, True)
+                         & ": runtime does not match");
+         end if;
+         return False;
+      end if;
+
+      if Filter.Language_LC /= No_Name
+        and then Filter.Language_LC /= Comp.Language_LC
+      then
+         if Verbose_Level > 0 then
+            Put_Verbose ("Filter=" & To_String (Filter, True)
+                         & ": language does not match");
+         end if;
+         return False;
+      end if;
+
+      return True;
+   end Filter_Match;
 
    -----------
    -- Match --
