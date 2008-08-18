@@ -10,7 +10,7 @@ GNAT_SOURCE_DIR=../gnat_src
 ifeq ($(OS),Windows_NT)
 LN=cp -p
 else
-LN=ln -s
+LN=ln -s -f
 endif
 CP=cp -p
 MKDIR=mkdir -p
