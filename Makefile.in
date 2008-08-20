@@ -54,7 +54,7 @@ all:
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
 copy_gnat_src: force
-	-@cd gnat; $(foreach f,$(shell cat MANIFEST.GPRBUILD), \
+	-@cd gnat; $(foreach f,$(shell cat gnat/MANIFEST.GPRBUILD), \
 	    $(LN) $(GNAT_SOURCE_DIR)/$(f) . ;\
            )\
 	patch < prj-gnat-6.0.1.diff
