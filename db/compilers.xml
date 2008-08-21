@@ -101,7 +101,7 @@
     </version>
     <languages>C++</languages>
     <target>
-      <external>g++ -dumpmachine</external>
+      <external>g++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
