@@ -94,9 +94,9 @@
   <!--  G++ compilers, including recent CodeSourcery compilers  -->
   <compiler_description>
     <name>G++</name>
-    <executable>g++</executable>
+    <executable prefix="1">g\+\+(-[\d.]+)?</executable>
     <version>
-      <external>g++ --version</external>
+      <external>g++${PREFIX} --version</external>
       <grep regexp="\([^)]+\) (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
