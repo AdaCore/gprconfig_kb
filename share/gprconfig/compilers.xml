@@ -94,14 +94,14 @@
   <!--  G++ compilers, including recent CodeSourcery compilers  -->
   <compiler_description>
     <name>G++</name>
-    <executable prefix="1">g\+\+(-[\d.]+)?</executable>
+    <executable>g++</executable>
     <version>
-      <external>g++${PREFIX} --version</external>
+      <external>g++ --version</external>
       <grep regexp="\([^)]+\) (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
-      <external>g++${PREFIX} -dumpmachine</external>
+      <external>g++ -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
   </compiler_description>
