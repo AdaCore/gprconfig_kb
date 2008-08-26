@@ -111,8 +111,6 @@ stand.adb
 stand.ads
 stringt.adb
 stringt.ads
-style.ads
-style.adb
 styleg.adb
 styleg.ads
 stylesw.adb
