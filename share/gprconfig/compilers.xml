@@ -228,4 +228,16 @@
     </target>
   </compiler_description>
 
+  <!-- Diab C Compiler -->
+  <compiler_description>
+    <name>DIABC-PPC</name>
+    <executable>dcc</executable>
+    <version>
+      <external>dcc -V</external>
+      <grep regexp="dcc Rel ([0-9.]*)" group="1"></grep>
+    </version>
+    <languages>C</languages>
+    <target>powerpc-elf</target>
+  </compiler_description>
+
 </gprconfig>
