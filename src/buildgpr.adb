@@ -5717,7 +5717,6 @@ package body Buildgpr is
       begin
          if File = Invalid_FD then
             Tempdir.Create_Temp_File (File, Name => File_Name);
-            Record_Temp_File (Path => File_Name);
 
             if File = Invalid_FD then
                Fail_Program
@@ -7125,9 +7124,6 @@ package body Buildgpr is
 
                --  Find the object file for that source. It could be either in
                --  the current project or in an extended project
-               --  ??? MANU: seems strange that we should check timestamps
-               --  ??? here, since the info on where the object file is should
-               --  ??? be known from analyzing the project
 
                Obj_Proj := Src_Data.Project;
                loop
