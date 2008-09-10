@@ -105,8 +105,9 @@ sinput-p.adb
 sinput-p.ads
 sinput.adb
 sinput.ads
-snames.adb
-snames.ads
+snames.adb-tmpl
+snames.ads-tmpl
+snames.h-tmpl
 stand.adb
 stand.ads
 stringt.adb
@@ -135,3 +136,4 @@ urealp.adb
 urealp.ads
 widechar.adb
 widechar.ads
+xsnamest.adb
