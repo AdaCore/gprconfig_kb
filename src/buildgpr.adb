@@ -1499,7 +1499,7 @@ package body Buildgpr is
                     File_Stamp
                       (Project_Tree.Sources.Table (Source).Dep_Path);
 
-                  if Comp_Data.Options /= null then
+                  if Comp_Data.Options /= null and then Check_Switches then
                      --  Write the switches file, now that we have the updated
                      --  time stamp for the object file.
 
