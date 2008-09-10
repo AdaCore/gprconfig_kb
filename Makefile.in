@@ -59,7 +59,7 @@ copy_gnat_src: force
            )\
 	patch < prj-gnat-6.0.1.diff; \
 	gnatmake -q xsnamest.adb; \
-	xsnamest; \
+	./xsnamest; \
 	$(CP) snames.ns snames.ads; \
 	$(CP) snames.nb snames.adb
 

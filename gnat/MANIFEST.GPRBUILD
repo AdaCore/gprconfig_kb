@@ -137,3 +137,5 @@ urealp.ads
 widechar.adb
 widechar.ads
 xsnamest.adb
+xutil.adb
+xutil.ads
