@@ -100,7 +100,11 @@ package Gprexch is
       Copy_Source_Dir,
       Sources,
       Generated_Object_Files,
-      Generated_Source_Files);
+      Generated_Source_Files,
+      Max_Command_Line_Length,
+      Response_File_Format,
+      Response_File_Switches,
+      Keep_Response_File);
 
    function Library_Label (Section : Library_Section) return String;
    --  Return the label for a section in a library exchange file

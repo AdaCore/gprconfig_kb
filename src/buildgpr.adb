@@ -3221,6 +3221,40 @@ package body Buildgpr is
 
          end if;
 
+         --  Response files
+
+         if Data.Config.Max_Command_Line_Length > 0
+           and then Data.Config.Resp_File_Format /= None then
+            Put_Line (Exchange_File, Library_Label (Max_Command_Line_Length));
+            Put_Line (Exchange_File, Data.Config.Max_Command_Line_Length'Img);
+
+            Put_Line
+              (Exchange_File, Library_Label (Gprexch.Response_File_Format));
+            Put_Line (Exchange_File, Data.Config.Resp_File_Format'Img);
+
+            if Data.Config.Resp_File_Options /= No_Name_List then
+               Put_Line
+                 (Exchange_File, Library_Label (Response_File_Switches));
+
+               declare
+                  List : Name_List_Index := Data.Config.Resp_File_Options;
+
+               begin
+                  while List /= No_Name_List loop
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String
+                          (Project_Tree.Name_Lists.Table (List).Name));
+                     List := Project_Tree.Name_Lists.Table (List).Next;
+                  end loop;
+               end;
+            end if;
+
+            if Debug.Debug_Flag_N then
+               Put_Line (Exchange_File, Library_Label (Keep_Response_File));
+            end if;
+         end if;
+
          Close (Exchange_File);
 
          declare

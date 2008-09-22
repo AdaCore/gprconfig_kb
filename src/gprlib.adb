@@ -44,7 +44,7 @@ with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Opt;              use Opt;
 with Osint;
-with Prj;
+with Prj;              use Prj;
 with Snames;
 with Switch;           use Switch;
 with System.Case_Util; use System.Case_Util;
@@ -66,7 +66,7 @@ procedure Gprlib is
 
    Partial_Number : Natural;
 
-   First_Object : Positive;
+   First_Object : Natural;
 
    Gcc_Name : constant String := "gcc";
 
@@ -353,6 +353,17 @@ procedure Gprlib is
 
    Arguments : String_List_Access := new String_List (1 .. 20);
    Last_Arg  : Natural := 0;
+   Argument_Length : Natural := 0;
+
+   --  Response Files
+
+   Max_Command_Line_Length : Natural := 0;
+
+   Resp_File_Format : Prj.Response_File_Format := Prj.None;
+
+   Response_File_Switches : String_List_Access := null;
+
+   Delete_Response_File : Boolean := True;
 
    procedure Add_Arg (Arg : String_Access);
    --  Add one argument to the Arguments list. Increase the size of the list
@@ -399,6 +410,7 @@ procedure Gprlib is
 
       Last_Arg := Last_Arg + 1;
       Arguments (Last_Arg) := Arg;
+      Argument_Length := Argument_Length + Arg'Length + 1;
    end Add_Arg;
 
    ---------------
@@ -849,12 +861,16 @@ begin
             when Gprexch.Major_Minor_Id_Supported =>
                Major_Minor_Id_Supported := True;
 
+            when Gprexch.Keep_Response_File =>
+               Delete_Response_File := False;
+
             when others =>
                null;
          end case;
 
       elsif Last > 0
         or else Current_Section = Gprexch.Shared_Lib_Prefix
+        or else Current_Section = Gprexch.Response_File_Switches
       then
          case Current_Section is
             when No_Library_Section =>
@@ -871,6 +887,9 @@ begin
 
             when Gprexch.Static =>
                Osint.Fail ("static section should be empty");
+
+            when Gprexch.Keep_Response_File =>
+               Osint.Fail ("keep response file section should be empty");
 
             when Gprexch.Object_Files =>
                Object_Files.Append (new String'(Line (1 .. Last)));
@@ -1106,6 +1125,50 @@ begin
             when Gprexch.Generated_Object_Files |
                  Gprexch.Generated_Source_Files =>
                null;
+
+            when Gprexch.Max_Command_Line_Length =>
+               begin
+                  Max_Command_Line_Length := Natural'Value (Line (1 .. Last));
+
+               exception
+                  when Constraint_Error =>
+                     Osint.Fail
+                       ("incorrect value for max command line length: " &
+                        Line (1 .. Last));
+               end;
+
+            when Gprexch.Response_File_Format =>
+               begin
+                  Resp_File_Format :=
+                    Prj.Response_File_Format'Value (Line (1 .. Last));
+
+               exception
+                  when Constraint_Error =>
+                     Osint.Fail
+                       ("incorrect value for response file format: " &
+                        Line (1 .. Last));
+               end;
+
+            when Gprexch.Response_File_Switches =>
+               if Response_File_Switches = null then
+                  Response_File_Switches := new String_List (1 .. 1);
+
+               else
+                  declare
+                     New_Switches : constant String_List_Access :=
+                                      new String_List
+                                        (1 .. Response_File_Switches'Last + 1);
+
+                  begin
+                     New_Switches (Response_File_Switches'Range) :=
+                       Response_File_Switches.all;
+                     Free (Response_File_Switches);
+                     Response_File_Switches := New_Switches;
+                  end;
+               end if;
+
+               Response_File_Switches (Response_File_Switches'Last) :=
+                 new String'(Line (1 .. Last));
          end case;
       end if;
    end loop;

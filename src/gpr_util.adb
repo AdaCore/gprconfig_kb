@@ -31,11 +31,17 @@ with Makeutl; use Makeutl;
 with Opt;     use Opt;
 with Osint;   use Osint;
 with Output;  use Output;
+with Tempdir;
 with Types;   use Types;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body Gpr_Util is
+
+   GNU_Header  : aliased constant String := "INPUT (";
+   GNU_Opening : aliased constant String := """";
+   GNU_Closing : aliased constant String := '"' & ASCII.LF;
+   GNU_Footer  : aliased constant String := ')' & ASCII.LF;
 
    -------------------------------
    -- Binder_Exchange_File_Name --
@@ -53,6 +59,55 @@ package body Gpr_Util is
       return new String'(Name_Buffer (1 .. Name_Len));
    end Binder_Exchange_File_Name;
 
+   --------------------------
+   -- Create_Response_File --
+   --------------------------
+
+   procedure Create_Response_File
+     (Format   : Response_File_Format;
+      Objects  : String_List;
+      Name     : out Path_Name_Type)
+   is
+      Resp_File : File_Descriptor;
+      Status    : Integer;
+      pragma Warnings (Off, Status);
+      Closing_Status : Boolean;
+      pragma Warnings (Off, Closing_Status);
+
+   begin
+      Tempdir.Create_Temp_File (Resp_File, Name => Name);
+      Record_Temp_File (Name);
+
+      if Format = GNU then
+         Status := Write (Resp_File, GNU_Header'Address, GNU_Header'Length);
+      end if;
+
+      for J in Objects'Range loop
+         if Format = GNU then
+            Status :=
+              Write (Resp_File, GNU_Opening'Address, GNU_Opening'Length);
+         end if;
+
+         Status :=
+           Write (Resp_File, Objects (J).all'Address, Objects (J)'Length);
+
+         if Format = GNU then
+            Status :=
+              Write (Resp_File, GNU_Closing'Address, GNU_Closing'Length);
+
+         else
+            Status :=
+              Write (Resp_File, ASCII.LF'Address, 1);
+         end if;
+      end loop;
+
+      if Format = GNU then
+         Status :=
+           Write (Resp_File, GNU_Footer'Address, GNU_Footer'Length);
+      end if;
+
+      Close (Resp_File, Closing_Status);
+   end Create_Response_File;
    ------------------
    -- Fail_Program --
    ------------------

@@ -125,6 +125,11 @@ package Gpr_Util is
    --  Returns the name of the binder exchange file corresponding to an
    --  object file and a language.
 
+   procedure Create_Response_File
+     (Format   : Response_File_Format;
+      Objects  : String_List;
+      Name     : out Path_Name_Type);
+
    procedure Find_Binding_Languages;
    --  Check if in the project tree there are sources of languages that have a
    --  binder driver. Populate table Binding_Languages and set variable

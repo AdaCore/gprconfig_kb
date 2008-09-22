@@ -66,7 +66,9 @@ procedure Build_Shared_Lib is
       Out_Opt : constant String_Access := new String'("-o");
       Out_V   : constant String_Access := new String'(Output_File);
 
-      Driver : String_Access;
+      Driver   : String_Access;
+
+      Response_File_Name : Path_Name_Type := No_Path;
 
    begin
       --  Get the executable to use, either the specified Driver, or "gcc"
@@ -87,6 +89,7 @@ procedure Build_Shared_Lib is
       end if;
 
       Last_Arg := 0;
+      Argument_Length := Driver'Length;
 
       --  The minimum arguments
 
@@ -129,7 +132,9 @@ procedure Build_Shared_Lib is
          end if;
       end if;
 
-      if Partial_Linker_Path /= null then
+      if Resp_File_Format = Prj.None
+        and then Partial_Linker_Path /= null
+      then
          --  If partial linker is used, do a partial link first
 
          Partial_Number := 0;
@@ -222,6 +227,8 @@ procedure Build_Shared_Lib is
 
       else
 
+         First_Object := Last_Arg + 1;
+
          for J in Ofiles'Range loop
             Add_Arg (Ofiles (J));
          end loop;
@@ -240,9 +247,65 @@ procedure Build_Shared_Lib is
          Write_Eol;
       end if;
 
+      --  Check if a response file is needed
+
+      if Max_Command_Line_Length > 0
+        and then Argument_Length > Max_Command_Line_Length
+        and then Resp_File_Format /= Prj.None
+      then
+         Create_Response_File
+           (Format  => Resp_File_Format,
+            Objects => Arguments (First_Object .. Last_Arg),
+            Name    => Response_File_Name);
+
+         Last_Arg := First_Object - 1;
+
+         if Response_File_Switches /= null then
+            for J in Response_File_Switches'First ..
+              Response_File_Switches'Last - 1
+            loop
+               Add_Arg (Response_File_Switches (J));
+            end loop;
+
+            Add_Arg
+              (new String'
+                 (Response_File_Switches (Response_File_Switches'Last).all &
+                  Get_Name_String (Response_File_Name)));
+
+         else
+            Add_Arg
+              (new String'(Get_Name_String (Response_File_Name)));
+         end if;
+
+         --  Display actual command if not in quiet mode
+
+         if not Opt.Quiet_Output then
+            Write_Str (Driver.all);
+
+            for J in 1 .. Last_Arg loop
+               Write_Char (' ');
+               Write_Str  (Arguments (J).all);
+            end loop;
+
+            Write_Eol;
+         end if;
+
+      end if;
+
       --  Finally spawn the library builder driver
 
       Spawn (Driver.all, Arguments (1 .. Last_Arg), Success);
+
+      --  Delete response file, if any, except when asked not to
+
+      if Response_File_Name /= No_Path and then Delete_Response_File then
+         declare
+            Dont_Care : Boolean;
+            pragma Warnings (Off, Dont_Care);
+         begin
+            Delete_File (Get_Name_String (Response_File_Name), Dont_Care);
+         end;
+      end if;
 
       if not Success then
          if Driver_Name = No_Name then
