@@ -10039,9 +10039,16 @@ package body Buildgpr is
                Imported := Element.Next;
             end loop;
 
+            --  For an extending project, process the project being extended
+
+            if Data.Extends /= No_Project then
+               Process_Project (Data.Extends);
+            end if;
+
             --  If it is a library project, add it to Library_Projs
 
             if (And_Project_Itself or (Project /= For_Project))
+              and then Data.Extends = No_Project
               and then Data.Library
             then
                Library_Projs.Increment_Last;
