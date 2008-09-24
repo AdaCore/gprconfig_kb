@@ -11,8 +11,8 @@
     <name>GCC</name>
     <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-).*)?gcc</executable>
     <version>
-      <external>${PREFIX}gcc --version</external>
-      <grep regexp="\(GCC\)( \(Sourcery[^)]+)?\s*(\S+)" group="2"></grep>
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^gcc version (\S+)" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
@@ -96,8 +96,8 @@
     <name>G++</name>
     <executable>g++</executable>
     <version>
-      <external>g++ --version</external>
-      <grep regexp="\([^)]+\) (\S+)" group="1"></grep>
+      <external>g++ -v</external>
+      <grep regexp="^gcc version (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
@@ -127,8 +127,8 @@
     <name>GCC-ASM</name>
     <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-).*)?gcc</executable>
     <version>
-      <external>${PREFIX}gcc --version</external>
-      <grep regexp="\(GCC\) (\S+)" group="1"></grep>
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^gcc version (\S+)" group="1"></grep>
     </version>
     <languages>Asm,Asm_Cpp,Asm2</languages>
     <target>
@@ -189,8 +189,8 @@
     <name>GFORTRAN</name>
     <executable>gfortran</executable>
     <version>
-      <external>gfortran --version</external>
-      <grep regexp="\((GCC|SUSE Linux)\) (\S+)" group="2"></grep>
+      <external>gfortran -v</external>
+      <grep regexp="^gcc version (\S+)" group="1"></grep>
     </version>
     <languages>Fortran</languages>
     <target>
