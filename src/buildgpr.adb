@@ -4401,11 +4401,18 @@ package body Buildgpr is
 
                Initialize_Source_Record (Source_Identity, Info => Object_Info);
 
-               Compilation_Needed := Need_To_Compile (Source_Identity);
+               Language :=
+                 Project_Tree.Sources.Table (Source_Identity).Language;
+               Config := Project_Tree.Languages_Data.Table (Language).Config;
+
+               if not Config.Object_Generated then
+                  Compilation_Needed := True;
+
+               else
+                  Compilation_Needed := Need_To_Compile (Source_Identity);
+               end if;
 
                if Compilation_Needed or Check_Switches then
-                  Language :=
-                    Project_Tree.Sources.Table (Source_Identity).Language;
                   Language_Name :=
                     Project_Tree.Sources.Table (Source_Identity).Language_Name;
 
@@ -5227,7 +5234,11 @@ package body Buildgpr is
                         Options);
                   end;
 
-                  Need_To_Rebuild_Global_Archives := True;
+                  if Project_Tree.Sources.Table
+                    (Source_Identity).Dependency /= ALI_File
+                  then
+                     Need_To_Rebuild_Global_Archives := True;
+                  end if;
 
                elsif Closure_Needed and then
                  Project_Tree.Sources.Table
@@ -7150,7 +7161,9 @@ package body Buildgpr is
                      end if;
                end case;
 
-               if not Src_Data.Get_Object then
+               if (not Src_Data.Get_Object) or
+                  (not Src_Data.Object_Exists)
+               then
                   --  The attributes were modified directly in the Sources
                   --  table through the pointer
                   return;
@@ -7739,13 +7752,6 @@ package body Buildgpr is
                end if;
             end loop;
 
-            --  Add the additional options, if any
-            --  ??? Shouldn't this be after the command line options?
-
-            for J in 1 .. Binding_Options.Last loop
-               Add_Argument (Binding_Options.Table (J), Verbose_Mode);
-            end loop;
-
             --  Add the run path option, if necessary
 
             if Data.Config.Run_Path_Option /= No_Name_List and then
@@ -7911,6 +7917,12 @@ package body Buildgpr is
             for J in 1 .. Command_Line_Linker_Options.Last loop
                Add_Argument
                  (Command_Line_Linker_Options.Table (J), Verbose_Mode);
+            end loop;
+
+            --  Then the binding options
+
+            for J in 1 .. Binding_Options.Last loop
+               Add_Argument (Binding_Options.Table (J), Verbose_Mode);
             end loop;
 
             --  Finally, the required switches, if any. These are put at the
@@ -8324,9 +8336,8 @@ package body Buildgpr is
                               Source_In_Dependencies := True;
                            end if;
 
-                           --  ??? MANU: there shouldn't be a need to compute
-                           --  the timestamp here, since we already have
-                           --  stamps for all source files
+                           --  Get the time stamp of the source, which is not
+                           --  necessarily a source of any project.
 
                            Name_Len := 0;
                            Add_Str_To_Name_Buffer (Src_Name);
@@ -10580,7 +10591,6 @@ package body Buildgpr is
 
          elsif Arg = "-f" then
             Force_Compilations := True;
-            Need_To_Rebuild_Global_Archives := True;
 
             if Command_Line then
                Register_Command_Line_Option (Force_Compilations_Option);
