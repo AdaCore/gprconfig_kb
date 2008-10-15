@@ -95,7 +95,7 @@ project Gprbuild is
 
    package Linker is
       Common_Switches := (project'Object_Dir & "/gprbuild_dummies.o",
-                          project'Object_Dir & "/link.o", "-static");
+                          project'Object_Dir & "/link.o");
       --  ??? We use project'Object_Dir here instead of GprBuild'Object_Dir
       --  for compatibility with GNAT Pro 6.0.2.
 
