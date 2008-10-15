@@ -811,85 +811,43 @@ begin
                      Put_Line (IO_File, Shared_Libgcc);
                   end if;
 
-               elsif Line (1 .. Last) = "-lgnat" then
-                  if Static_Libs then
-                     Put_Line (IO_File,
-                               Adalib_Dir.all & "libgnat.a");
+               elsif Line (1 .. Last) = "-lgnat" and then
+                     Static_Libs and then
+                     Adalib_Dir /= null
+               then
+                  Put_Line (IO_File, Adalib_Dir.all & "libgnat.a");
 
-                  else
-                     Put_Line (IO_File, Line (1 .. Last));
-                  end if;
+               elsif Line (1 .. Last) = "-lgnarl" and then
+                     Static_Libs and then
+                     Adalib_Dir /= null
+               then
+                  Put_Line (IO_File, Adalib_Dir.all & "libgnarl.a");
 
-                  --  Add -L switch for the GCC lib directory
+               elsif Line (1 .. Last) = "-laddr2line" and then
+                     Adalib_Dir /= null
+               then
+                  Put_Line (IO_File, Adalib_Dir.all & "../libaddr2line.a");
 
-                  --  Removed (temporarily?) for GB09-011
+               elsif Line (1 .. Last) = "-lbfd" and then
+                     Adalib_Dir /= null
+               then
+                  Put_Line (IO_File, Adalib_Dir.all & "../libbfd.a");
 
---                    declare
---                       L  : Natural := Adalib_Dir'Last;
---                       F : Natural;
---                       Found : Boolean;
---                    begin
---                       --  First, get the parent directory of adalib
---
---                       while L > Adalib_Dir'First + 1 and then
---                         (Adalib_Dir (L) = Directory_Separator or else
---                          Adalib_Dir (L) = '/')
---                       loop
---                          L := L - 1;
---                       end loop;
---
---                       Found := False;
---                       while (not Found) and then
---                             L > Adalib_Dir'First + 1
---                       loop
---                          if Adalib_Dir (L) = Directory_Separator or else
---                            Adalib_Dir (L) = '/'
---                          then
---                             Found := True;
---                          else
---                             L := L - 1;
---                          end if;
---                       end loop;
---
---                       if Found then
---                          --  If we are not in the default runtime, get the
---                          --  parent directory.
---
---                          L := L - 1;
---                          F := L;
---                          Found := False;
---                          while (not Found) and then
---                                 F > Adalib_Dir'First + 1
---                          loop
---                             if Adalib_Dir (F) = Directory_Separator or else
---                               Adalib_Dir (F) = '/'
---                             then
---                                Found := True;
---                             else
---                                F := F - 1;
---                             end if;
---                          end loop;
---
---                          if Found and then L > F + 4 and then
---                            Adalib_Dir (F + 1 .. F + 4) = "rts-"
---                          then
---                             L := F - 1;
---                          end if;
---
---                          Put_Line
---                            (IO_File,
---                             "-L" & Adalib_Dir (Adalib_Dir'First .. L));
---                       end if;
---                    end;
+               elsif Line (1 .. Last) = "-lgnalasup" and then
+                     Adalib_Dir /= null
+               then
+                  Put_Line (IO_File, Adalib_Dir.all & "../libgnalasup.a");
 
-               elsif Line (1 .. Last) = "-lgnarl" then
-                  if Static_Libs then
-                     Put_Line (IO_File,
-                               Adalib_Dir.all & "libgnarl.a");
+               elsif Line (1 .. Last) = "-lgnatmon" and then
+                     Adalib_Dir /= null
+               then
+                  Put_Line (IO_File, Adalib_Dir.all & "../libgnatmon.a");
 
-                  else
-                     Put_Line (IO_File, Line (1 .. Last));
-                  end if;
+               elsif Line (1 .. Last) = "-liberty" and then
+                     Adalib_Dir /= null
+               then
+                  Put_Line
+                    (IO_File, Adalib_Dir.all & "../../../../libiberty.a");
 
                else
                   Put_Line (IO_File, Line (1 .. Last));
