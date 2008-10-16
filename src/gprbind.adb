@@ -108,7 +108,10 @@ procedure Gprbind is
    Success     : Boolean := False;
    Return_Code : Integer;
 
-   Adalib_Dir  : String_Access;
+   Adalib_Dir        : String_Access;
+   Adalib_Parent_Dir : String_Access;
+   Prefix_Lib_Dir     : String_Access;
+
    Static_Libs : Boolean := True;
 
    Current_Section : Binding_Section := No_Binding_Section;
@@ -792,6 +795,61 @@ begin
                                       Directory_Separator & "libgnat.a")
                   then
                      Adalib_Dir := new String'(Line (3 .. Last));
+
+                     if Verbose_Mode then
+                        Put_Line ("Adalib_Dir = """ & Adalib_Dir.all & '"');
+                     end if;
+
+                     declare
+                        Dir_Last : Positive := Last;
+
+                     begin
+                        while Line (Dir_Last) = Directory_Separator or else
+                              Line (Dir_Last) = '/'
+                        loop
+                           Dir_Last := Dir_Last - 1;
+                        end loop;
+
+                        while Dir_Last > 3
+                             and then
+                              Line (Dir_Last) /= Directory_Separator
+                             and then
+                              Line (Dir_Last) /= '/'
+                        loop
+                           Dir_Last := Dir_Last - 1;
+                        end loop;
+
+                        Adalib_Parent_Dir :=
+                          new String'(Line (3 .. Dir_Last));
+
+                        if Verbose_Mode then
+                           Put_Line ("Adalib_Parent_Dir = """ &
+                                     Adalib_Parent_Dir.all & '"');
+                        end if;
+
+                        for J in reverse 3 .. Dir_Last - 4 loop
+                           if (Line (J) = Directory_Separator or else
+                                 Line (J) = '/')
+                             and then
+                               Line (J + 1 .. J + 3) = "lib"
+                             and then
+                               (Line (J + 4) = Directory_Separator or else
+                                  Line (J + 4) = '/')
+                           then
+                              Prefix_Lib_Dir := new String'(Line (3 .. J + 4));
+                              exit;
+                           end if;
+                        end loop;
+
+                        if Verbose_Mode then
+                           if Prefix_Lib_Dir = null then
+                              Put_Line ("no Prefix_Lib_Dir");
+                           else
+                              Put_Line ("Prefix_Lib_Dir = """ &
+                                        Prefix_Lib_Dir.all & '"');
+                           end if;
+                        end if;
+                     end;
                   end if;
                   Put_Line (IO_File, Line (1 .. Last));
 
@@ -811,11 +869,24 @@ begin
                      Put_Line (IO_File, Shared_Libgcc);
                   end if;
 
-               elsif Line (1 .. Last) = "-lgnat" and then
-                     Static_Libs and then
-                     Adalib_Dir /= null
-               then
-                  Put_Line (IO_File, Adalib_Dir.all & "libgnat.a");
+                  --  For a number of archives, we need to indicate the full
+                  --  path of the archive, if we find it, to be sure that the
+                  --  correct archive is used by the linker.
+
+               elsif Line (1 .. Last) = "-lgnat" then
+                  if Adalib_Dir = null then
+                     if Verbose_Mode then
+                        Put_Line ("No Adalib_Dir");
+                     end if;
+
+                     Put_Line (IO_File, "-lgnat");
+
+                  elsif Static_Libs then
+                     Put_Line (IO_File, Adalib_Dir.all & "libgnat.a");
+
+                  else
+                     Put_Line (IO_File, "-lgnat");
+                  end if;
 
                elsif Line (1 .. Last) = "-lgnarl" and then
                      Static_Libs and then
@@ -823,31 +894,64 @@ begin
                then
                   Put_Line (IO_File, Adalib_Dir.all & "libgnarl.a");
 
-               elsif Line (1 .. Last) = "-laddr2line" and then
-                     Adalib_Dir /= null
-               then
-                  Put_Line (IO_File, Adalib_Dir.all & "../libaddr2line.a");
+               elsif Line (1 .. Last) = "-laddr2line" then
+                  if
+                    Is_Regular_File (Adalib_Parent_Dir.all & "libaddr2line.a")
+                  then
+                     Put_Line
+                       (IO_File, Adalib_Parent_Dir.all & "libaddr2line.a");
 
-               elsif Line (1 .. Last) = "-lbfd" and then
-                     Adalib_Dir /= null
-               then
-                  Put_Line (IO_File, Adalib_Dir.all & "../libbfd.a");
+                  else
+                     Put_Line (IO_File, Line (1 .. Last));
+                  end if;
 
-               elsif Line (1 .. Last) = "-lgnalasup" and then
-                     Adalib_Dir /= null
-               then
-                  Put_Line (IO_File, Adalib_Dir.all & "../libgnalasup.a");
+               elsif Line (1 .. Last) = "-lbfd" then
+                  if Is_Regular_File (Adalib_Parent_Dir.all & "libbfd.a") then
+                     Put_Line
+                       (IO_File, Adalib_Parent_Dir.all & "libbfd.a");
 
-               elsif Line (1 .. Last) = "-lgnatmon" and then
-                     Adalib_Dir /= null
-               then
-                  Put_Line (IO_File, Adalib_Dir.all & "../libgnatmon.a");
+                  else
+                     Put_Line (IO_File, Line (1 .. Last));
+                  end if;
 
-               elsif Line (1 .. Last) = "-liberty" and then
-                     Adalib_Dir /= null
-               then
-                  Put_Line
-                    (IO_File, Adalib_Dir.all & "../../../../libiberty.a");
+               elsif Line (1 .. Last) = "-lgnalasup" then
+                  if
+                    Is_Regular_File (Adalib_Parent_Dir.all & "libgnalasup.a")
+                  then
+                     Put_Line
+                       (IO_File, Adalib_Parent_Dir.all & "libgnalasup.a");
+
+                  else
+                     Put_Line (IO_File, Line (1 .. Last));
+                  end if;
+
+               elsif Line (1 .. Last) = "-lgnatmon" then
+                  if
+                    Is_Regular_File (Adalib_Parent_Dir.all & "libgnatmon.a")
+                  then
+                     Put_Line
+                       (IO_File, Adalib_Parent_Dir.all & "libgnatmon.a");
+
+                  else
+                     Put_Line (IO_File, Line (1 .. Last));
+                  end if;
+
+               elsif Line (1 .. Last) = "-liberty" then
+                  if
+                    Is_Regular_File (Adalib_Parent_Dir.all & "libiberty.a")
+                  then
+                     Put_Line
+                       (IO_File, Adalib_Parent_Dir.all & "libiberty.a");
+
+                  elsif
+                    Is_Regular_File (Prefix_Lib_Dir.all & "libiberty.a")
+                  then
+                     Put_Line
+                       (IO_File, Prefix_Lib_Dir.all & "libiberty.a");
+
+                  else
+                     Put_Line (IO_File, Line (1 .. Last));
+                  end if;
 
                else
                   Put_Line (IO_File, Line (1 .. Last));
