@@ -3434,27 +3434,39 @@ package body Buildgpr is
             Display_Main : constant String := Mains.Next_Main;
             Main         : String := Display_Main;
             Main_Id      : File_Name_Type;
+            Base_Main_Id : File_Name_Type;
 
          begin
             exit when Display_Main'Length = 0;
 
             Canonical_Case_File_Name (Main);
 
-            if Base_Name (Main) /= Main then
-               Fail_Program
-                 ("mains cannot include directory information (""" &
-                  Display_Main &
-                  """)");
-            end if;
-
             Main_Id := Create_Name (Main);
+            Base_Main_Id := Main_Id;
+
+            if Base_Name (Main) /= Main then
+               if Is_Absolute_Path (Main) then
+                  Base_Main_Id := Create_Name (Base_Name (Main));
+
+               else
+                  Fail_Program
+                    ("mains cannot include directory information (""" &
+                     Display_Main &
+                     """)");
+               end if;
+            end if;
 
             Source := Project_Tree.First_Source;
             Nmb := 0;
 
             while Source /= No_Source loop
-               if Project_Tree.Sources.Table (Source).File = Main_Id then
-                  Main_Sources.Set (Main_Id, Source);
+               if Project_Tree.Sources.Table (Source).File = Base_Main_Id
+                 and then
+                 (Main_Id = Base_Main_Id or else
+                  File_Name_Type
+                    (Project_Tree.Sources.Table (Source).Path.Name) = Main_Id)
+               then
+                  Main_Sources.Set (Base_Main_Id, Source);
 
                   if
                     Project_Tree.Sources.Table (Source).Project = Main_Project
@@ -3510,7 +3522,7 @@ package body Buildgpr is
             exit when Display_Main'Length = 0;
 
             Canonical_Case_File_Name (Main);
-            Main_Id := Create_Name (Main);
+            Main_Id := Create_Name (Base_Name (Main));
             Source := Main_Sources.Get (Main_Id);
 
             if Source /= No_Source then
@@ -6626,7 +6638,7 @@ package body Buildgpr is
             Mains.Reset;
 
             for Index in 1 .. Mains.Number_Of_Mains loop
-               Source := Source_Of (Mains.Next_Main);
+               Source := Source_Of (Base_Name (Mains.Next_Main));
                if Source /= No_Source then
                   if Name = No_Name and then Lang = No_Name then
                      --  First main
@@ -7416,7 +7428,7 @@ package body Buildgpr is
 
             Canonical_Case_File_Name (Main);
 
-            Main_Id := Create_Name (Main);
+            Main_Id := Create_Name (Base_Name (Main));
             Main_Source_Id := Main_Sources.Get (Main_Id);
             Main_Source := Project_Tree.Sources.Table (Main_Source_Id);
             Main_Proj   := Ultimate_Extending_Project_Of (Main_Source.Project);
@@ -7434,7 +7446,7 @@ package body Buildgpr is
             --  Get the main base name
 
             Name_Len := 0;
-            Add_Str_To_Name_Buffer (Main);
+            Add_Str_To_Name_Buffer (Base_Name (Main));
 
             for J in reverse 2 .. Name_Len loop
                if Name_Buffer (J) = '.' then
@@ -9150,7 +9162,8 @@ package body Buildgpr is
             declare
                Main           : constant String :=
                                   Canonical_Cased_File_Name (Display_Main);
-               Main_Id        : constant File_Name_Type := Create_Name (Main);
+               Main_Id        : constant File_Name_Type :=
+                                  Create_Name (Base_Name (Main));
                Main_Source_Id : constant Source_Id :=
                                   Main_Sources.Get (Main_Id);
                Main_Source    : Source_Data renames
@@ -9176,7 +9189,7 @@ package body Buildgpr is
                --  Get the main base name
 
                Name_Len := 0;
-               Add_Str_To_Name_Buffer (Main);
+               Add_Str_To_Name_Buffer (Base_Name (Main));
 
                for J in reverse 2 .. Name_Len loop
                   if Name_Buffer (J) = '.' then
