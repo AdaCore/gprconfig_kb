@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2007, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -102,25 +102,29 @@ package body Gprexch is
 
 begin
    for J in Binding_Labels'Range loop
-      Binding_Labels (J) := new String'('[' & J'Img & ']');
+      if J /= No_Binding_Section then
+         Binding_Labels (J) := new String'('[' & J'Img & ']');
 
-      for K in Binding_Labels (J)'Range loop
-         if Binding_Labels (J) (K) = '_' then
-            Binding_Labels (J) (K) := ' ';
-         end if;
-      end loop;
+         for K in Binding_Labels (J)'Range loop
+            if Binding_Labels (J) (K) = '_' then
+               Binding_Labels (J) (K) := ' ';
+            end if;
+         end loop;
+      end if;
    end loop;
 
    Binding_Labels (No_Binding_Section) := null;
 
    for J in Library_Labels'Range loop
-      Library_Labels (J) := new String'('[' & J'Img & ']');
+      if J /= No_Library_Section then
+         Library_Labels (J) := new String'('[' & J'Img & ']');
 
-      for K in Library_Labels (J)'Range loop
-         if Library_Labels (J) (K) = '_' then
-            Library_Labels (J) (K) := ' ';
-         end if;
-      end loop;
+         for K in Library_Labels (J)'Range loop
+            if Library_Labels (J) (K) = '_' then
+               Library_Labels (J) (K) := ' ';
+            end if;
+         end loop;
+      end if;
    end loop;
 
    Library_Labels (No_Library_Section) := null;
