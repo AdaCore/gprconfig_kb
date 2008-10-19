@@ -3463,8 +3463,10 @@ package body Buildgpr is
                if Project_Tree.Sources.Table (Source).File = Base_Main_Id
                  and then
                  (Main_Id = Base_Main_Id or else
-                  File_Name_Type
-                    (Project_Tree.Sources.Table (Source).Path.Name) = Main_Id)
+                  Normalize_Pathname
+                    (Get_Name_String
+                       (Project_Tree.Sources.Table (Source).Path.Name)) =
+                  Normalize_Pathname (Get_Name_String (Main_Id)))
                then
                   Main_Sources.Set (Base_Main_Id, Source);
 
