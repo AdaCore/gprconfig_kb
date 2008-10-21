@@ -114,8 +114,6 @@ types.adb
 types.ads
 uintp.adb
 uintp.ads
-uname.adb
-uname.ads
 urealp.adb
 urealp.ads
 widechar.adb
