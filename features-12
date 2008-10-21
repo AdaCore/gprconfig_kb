@@ -18,6 +18,16 @@ NF-12-HA21-031 Support for -margs switch (2008-10-21)
   The -margs switch, equivalent to -gargs is now supported, for better
   compatibility with gnatmake.
 
+NF-12-H821-015 Use response files when available (2008-09-22)
+
+  When supported, and when the command line is too long, gprlib now uses
+  response files to link shared libraries.
+
+NF-12-H806-009 Switch files only created when -s is used (2008-09-10)
+
+  Switch files (with the .cswi suffix) are now only created when the
+  switch -s is used.
+
 NF-12-H712-006 Partial linker to link shared libraries (2008-07-18)
 
   The partial linker, when declared, is now used to build shared libraries,
