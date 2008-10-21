@@ -1123,6 +1123,11 @@ The arguments that follow up to the next command line separator are
 options for GPRbuild itself. Usually @option{-gargs} is specified after one or
 several other command line separators.
 
+@item @option{-margs}
+
+Equivalent to @option{-gargs}, provided for compatibility with
+@command{gnatmake}.
+
 @end itemize
 
 @node Switches

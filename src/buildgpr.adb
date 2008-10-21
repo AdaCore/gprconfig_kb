@@ -10448,9 +10448,12 @@ package body Buildgpr is
       elsif Arg = "-largs" then
          Current_Processor := Linker;
 
-         --  -gargs     options directly for gprbuild
+         --  -gargs/margs     options directly for gprbuild
+         --  support -margs for compatibility with gnatmake
 
-      elsif Arg = "-gargs" then
+      elsif Arg = "-gargs"
+        or else Arg = "-margs"
+      then
          Current_Processor := None;
 
          --  A special test is needed for the -o switch within a -largs since
@@ -11156,6 +11159,12 @@ package body Buildgpr is
 
          Write_Str ("  -gargs opts    opts directly interpreted by gprbuild");
          Write_Eol;
+
+         --  Line for -margs
+
+         Write_Str ("  -margs opts    equivalent to -gargs opts");
+         Write_Eol;
+
          Write_Eol;
 
       end if;
