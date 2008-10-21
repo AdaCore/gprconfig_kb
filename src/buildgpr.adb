@@ -33,7 +33,8 @@ with ALI;
 with Csets;
 with Confgpr;   use Confgpr;
 with Debug;     use Debug;
-with Errout;    use Errout;
+with Err_Vars;  use Err_Vars;
+with Errutil;   use Errutil;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_Tables;
@@ -3632,8 +3633,8 @@ package body Buildgpr is
 
                               exception
                                  when Error_In_Regexp =>
-                                    Error_Msg_Name_1 := Unit_Name;
-                                    Error_Msg
+                                    Err_Vars.Error_Msg_Name_1 := Unit_Name;
+                                    Errutil.Error_Msg
                                       ("invalid pattern %", Roots.Location);
                                     exit Pattern_Loop;
                               end;
@@ -3743,7 +3744,7 @@ package body Buildgpr is
          end;
       end loop;
 
-      if Total_Errors_Detected /= 0 then
+      if Err_Vars.Total_Errors_Detected /= 0 then
          Fail_Program ("cannot continue");
       end if;
    end Check_Mains;
@@ -6503,7 +6504,7 @@ package body Buildgpr is
           (Get_Name_String
              (Project_Tree.Projects.Table (Main_Project).Directory.Name));
 
-      if Warnings_Detected > 0 then
+      if Err_Vars.Warnings_Detected > 0 then
          Prj.Err.Finalize;
          Prj.Err.Initialize;
       end if;
@@ -6942,8 +6943,7 @@ package body Buildgpr is
       end if;
 
       if Warnings_Detected /= 0 then
-         Errout.Finalize (Last_Call => True);
-         Errout.Output_Messages;
+         Prj.Err.Finalize;
       end if;
 
       Finish_Program (Fatal => False);

@@ -26,7 +26,6 @@
 
 with Ada.Directories; use Ada.Directories;
 
-with Errout;   use Errout;
 with Gpr_Util; use Gpr_Util;
 with Makeutl;  use Makeutl;
 with Namet;    use Namet;

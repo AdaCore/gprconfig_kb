@@ -24,15 +24,15 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Debug;   use Debug;
-with Errout;  use Errout;
+with Debug;    use Debug;
+with Err_Vars; use Err_Vars;
 with Errutil;
-with Makeutl; use Makeutl;
-with Opt;     use Opt;
-with Osint;   use Osint;
-with Output;  use Output;
+with Makeutl;  use Makeutl;
+with Opt;      use Opt;
+with Osint;    use Osint;
+with Output;   use Output;
 with Tempdir;
-with Types;   use Types;
+with Types;    use Types;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
@@ -400,8 +400,8 @@ package body Gpr_Util is
                      Error_Msg_File_1 := Main_Id;
                      Error_Msg_Name_1 :=
                        Project_Tree.Projects.Table (Main_Project).Name;
-                     Error_Msg ("{ is not a source of project %%",
-                                Location);
+                     Errutil.Error_Msg ("{ is not a source of project %%",
+                                        Location);
                   end if;
                end if;
             end;
