@@ -1,8 +1,6 @@
 ali.adb
 ali.ads
 alloc.ads
-atree.adb
-atree.ads
 butil.adb
 butil.ads
 casing.adb
@@ -11,13 +9,7 @@ csets.adb
 csets.ads
 debug.adb
 debug.ads
-einfo.adb
-einfo.ads
-elists.adb
-elists.ads
 err_vars.ads
-errout.adb
-errout.ads
 erroutc.adb
 erroutc.ads
 errutil.adb
@@ -30,10 +22,6 @@ gnatvsn.adb
 gnatvsn.ads
 gnat_style.css
 hostparm.ads
-lib-list.adb
-lib-sort.adb
-lib.adb
-lib.ads
 link.c
 makeutl.adb
 makeutl.ads
@@ -53,8 +41,6 @@ mlib.adb
 mlib.ads
 namet.adb
 namet.ads
-nlists.adb
-nlists.ads
 opt.adb
 opt.ads
 osint.adb
@@ -97,8 +83,6 @@ scans.ads
 scng.adb
 scng.ads
 sdefault.ads
-sinfo.adb
-sinfo.ads
 sinput-c.adb
 sinput-c.ads
 sinput-p.adb
