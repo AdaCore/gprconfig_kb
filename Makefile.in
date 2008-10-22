@@ -42,7 +42,7 @@ endif
 
 dummy:=$(shell $(MKDIR) $(objdir))
 
-GNATMAKE=gnatmake -p
+GNATMAKE=gnatmake -p -m
 ifeq ($(strip $(filter-out %vms%,$(HOST))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
