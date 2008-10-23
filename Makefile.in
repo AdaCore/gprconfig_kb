@@ -107,7 +107,7 @@ install.data: force
 	-${MKDIR} ${datadir}/gprconfig
 	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
 
-install.bin: gprconfig gprbuild gprclean gprbind gprlib
+install.bin: force
 	-${MKDIR} ${bindir}
 	${INSTALL_PROGRAM} gprconfig ${bindir}
 	${INSTALL_PROGRAM} gprbuild ${bindir}
