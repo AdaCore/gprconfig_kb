@@ -60,7 +60,6 @@ prj-err.adb
 prj-err.ads
 prj-ext.adb
 prj-ext.ads
-prj-gnat-6.0.1.diff
 prj-nmsc.adb
 prj-nmsc.ads
 prj-pars.adb
