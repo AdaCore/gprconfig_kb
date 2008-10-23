@@ -57,6 +57,8 @@ with Prj.Err;
 with Prj.Ext;          use Prj.Ext;
 with Prj.Proc;         use Prj.Proc;
 with Prj.Util;         use Prj.Util;
+with Scans;
+with Sinput.C;
 with Sinput.P;
 with Snames;           use Snames;
 with Switch;           use Switch;
@@ -8611,6 +8613,57 @@ package body Buildgpr is
                        and then
                          Project_Tree.Sources.Table (Dep_Src).File = Sfile
                      then
+                        if Opt.Minimal_Recompilation
+                          and then ALI.Sdep.Table (D).Stamp /=
+                          Project_Tree.Sources.Table (Dep_Src).Source_TS
+                        then
+                           --  If minimal recompilation is in action, replace
+                           --  the stamp of the source file in the table if
+                           --  checksums match.
+
+                           declare
+                              Source_Index : Source_File_Index;
+                              use Prj.Err;
+                              use Scans;
+
+                           begin
+                              Source_Index :=
+                                Sinput.C.Load_File
+                                  (Get_Name_String
+                                       (Project_Tree.Sources.Table
+                                            (Dep_Src).Path.Name));
+
+                              if Source_Index /= No_Source_File then
+
+                                 Scanner.Initialize_Scanner (Source_Index);
+
+                                 --  Make sure that the project language
+                                 --  reserved words are not recognized as
+                                 --  reserved words, but as identifiers.
+
+                                 Set_Name_Table_Byte (Name_Project,  0);
+                                 Set_Name_Table_Byte (Name_Extends,  0);
+                                 Set_Name_Table_Byte (Name_External, 0);
+
+                                 --  Scan the complete file to compute its
+                                 --  checksum.
+
+                                 loop
+                                    Scanner.Scan;
+                                    exit when Token = Tok_EOF;
+                                 end loop;
+
+                                 if Scans.Checksum =
+                                   ALI.Sdep.Table (D).Checksum
+                                 then
+                                    ALI.Sdep.Table (D).Stamp :=
+                                      Project_Tree.Sources.Table
+                                        (Dep_Src).Source_TS;
+                                 end if;
+                              end if;
+                           end;
+                        end if;
+
                         if ALI.Sdep.Table (D).Stamp /=
                           Project_Tree.Sources.Table (Dep_Src).Source_TS
                         then
@@ -8710,7 +8763,9 @@ package body Buildgpr is
       --  If the object file has been created before the last modification
       --  of the source, the source need to be recompiled.
 
-      if Src_Data.Object_TS < Src_Data.Source_TS then
+      if not Opt.Minimal_Recompilation and then
+        Src_Data.Object_TS < Src_Data.Source_TS
+      then
          if Verbose_Mode then
             Write_Str  ("      -> object file ");
             Write_Str  (Object_Path);
@@ -8738,7 +8793,9 @@ package body Buildgpr is
          --  The source needs to be recompiled if the source has been modified
          --  after the dependency file has been created.
 
-         if Src_Data.Dep_TS < Src_Data.Source_TS then
+         if not Opt.Minimal_Recompilation and then
+           Src_Data.Dep_TS < Src_Data.Source_TS
+         then
             if Verbose_Mode then
                Write_Str  ("      -> dependency file ");
                Write_Str  (Get_Name_String (Src_Data.Dep_Path));
@@ -10607,6 +10664,11 @@ package body Buildgpr is
          elsif Command_Line and then Arg = "-eL" then
             Follow_Links_For_Files := True;
 
+         elsif Command_Line and then Arg = "-eS" then
+            --  Accept switch for compatibility with gnatmake
+
+            Commands_To_Stdout := True;
+
          elsif Arg = "-f" then
             Force_Compilations := True;
 
@@ -10663,6 +10725,9 @@ package body Buildgpr is
             if Compile_Only then
                Bind_Only := True;
             end if;
+
+         elsif Arg = "-m" then
+            Minimal_Recompilation := True;
 
          elsif Command_Line and then Arg = "-o" then
             if Output_File_Name /= null then
@@ -10767,6 +10832,49 @@ package body Buildgpr is
             --  Is_External_Assignment has side effects when it returns True
 
             null;
+
+         elsif Arg = "-nostdlib"
+           or else Arg = "-nostdinc"
+           or else Arg = "-fstack-check"
+           or else Arg = "-fno-inline"
+           or else
+             (Arg'Length >= 2 and then (Arg (2) = 'O' or else Arg (2) = 'g'))
+         then
+            --  For compatibility with gnatmake, use switch to compile Ada
+            --  code. For -nostdlib and -nostdinc, also use switch to bind Ada
+            --  code.
+
+            Current_Comp_Option_Table :=
+              Compiling_Options_HTable.Get (Name_Ada);
+
+            if Current_Comp_Option_Table = No_Comp_Option_Table then
+               Current_Comp_Option_Table := new Compiling_Options.Instance;
+               Compiling_Options_HTable.Set
+                 (Name_Ada, Current_Comp_Option_Table);
+               Compiling_Options.Init (Current_Comp_Option_Table.all);
+            end if;
+
+            Current_Processor := Compiler;
+
+            Add_Option (Arg, Command_Line);
+
+            if Arg = "-nostdlib" or else Arg = "nostdinc" then
+               Current_Bind_Option_Table :=
+                 Binder_Options_HTable.Get (Name_Ada);
+
+               if Current_Bind_Option_Table = No_Bind_Option_Table then
+                  Current_Bind_Option_Table := new Binder_Options.Instance;
+                  Binder_Options_HTable.Set
+                    (Name_Ada, Current_Bind_Option_Table);
+                  Binder_Options.Init (Current_Bind_Option_Table.all);
+               end if;
+
+               Current_Processor := Binder;
+
+               Add_Option (Arg, Command_Line);
+            end if;
+
+            Current_Processor := None;
 
          else
             Processed := False;
@@ -11029,6 +11137,12 @@ package body Buildgpr is
                     "Follow symbolic links when processing project files");
          Write_Eol;
 
+         --  Line for -eS
+
+         Write_Str ("  -eS      " &
+                    "(no action, for compatibility with gnatmake only)");
+         Write_Eol;
+
          --  Line for -f
 
          Write_Str ("  -f       Force recompilations");
@@ -11053,6 +11167,11 @@ package body Buildgpr is
          --  Line for -l
 
          Write_Str ("  -l       Link only");
+         Write_Eol;
+
+         --  Line for -m
+
+         Write_Str ("  -m       Minimum Ada recompilation");
          Write_Eol;
 
          --  Line for -o
@@ -11167,6 +11286,30 @@ package body Buildgpr is
 
          Write_Eol;
 
+         Write_Str
+           ("For compatibility with gnatmake, these switches are passed " &
+            "to the Ada compiler:");
+         Write_Eol;
+
+         Write_Str ("  -nostdlib");
+         Write_Eol;
+
+         Write_Str ("  -nostdinc");
+         Write_Eol;
+
+         Write_Str ("  -fstack-check");
+         Write_Eol;
+
+         Write_Str ("  -fno-inline");
+         Write_Eol;
+
+         Write_Str ("  -gxxx");
+         Write_Eol;
+
+         Write_Str ("  -Oxx");
+         Write_Eol;
+
+         Write_Eol;
       end if;
    end Usage;
 
