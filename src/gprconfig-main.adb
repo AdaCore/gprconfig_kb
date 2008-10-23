@@ -704,7 +704,8 @@ procedure GprConfig.Main is
       Compilers          : in out Compiler_Lists.List)
    is
       Comp            : Compiler_Lists.Cursor := First (Compilers);
-      Choice          : Character;
+      Choice          : Natural;
+      Max_Choice      : Natural;
       Tmp             : Natural;
       Line            : String (1 .. 1024);
 
@@ -713,16 +714,18 @@ procedure GprConfig.Main is
 
       procedure Update_Index (Comp : in out Compiler) is
       begin
-         Comp.Index_In_List := Choice;
-         Choice := Character'Succ (Choice);
+         Comp.Rank_In_List := Choice;
+         Choice := Choice + 1;
       end Update_Index;
 
    begin
-      Choice := 'A';
+      Choice := 1;
       while Has_Element (Comp) loop
          Update_Element (Compilers, Comp, Update_Index'Access);
          Next (Comp);
       end loop;
+
+      Max_Choice := Choice - 1;
 
       loop
          Filter_List (Base, Compilers);
@@ -741,22 +744,33 @@ procedure GprConfig.Main is
          Put
            ("Select or unselect the following compiler (or ""s"" to save): ");
          Get_Line (Line, Tmp);
+
+         exit when Tmp = 1 and then Line (1) = 's';
+
          if Tmp = 0 then
-            Choice := ASCII.NUL;
+            Choice := 0;
+
          else
-            Choice := Line (Line'First);
+            begin
+               Choice := Natural'Value (Line (1 .. Tmp));
+
+               if Choice > Max_Choice then
+                  Choice := 0;
+               end if;
+
+            exception
+               when Constraint_Error =>
+                  Choice := 0;
+            end;
          end if;
 
-         if Choice = 's' then
-            exit;
-
-         elsif Choice = ASCII.NUL then
-            null;
+         if Choice = 0 then
+            Put_Line ("Unrecognized choice");
 
          else
             Comp := First (Compilers);
             while Has_Element (Comp) loop
-               if Element (Comp).Index_In_List = Choice then
+               if Element (Comp).Rank_In_List = Choice then
                   Update_Element (Compilers, Comp, Toggle_Selection'Access);
                   exit;
                end if;

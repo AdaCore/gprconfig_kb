@@ -109,10 +109,10 @@ package GprConfig.Knowledge is
       Language_LC : Namet.Name_Id := Namet.No_Name;
       --  The supported language, always lower case
 
-      Selectable    : Boolean := True;
-      Selected      : Boolean := False;
-      Complete      : Boolean := True;
-      Index_In_List : Character := ASCII.NUL;
+      Selectable   : Boolean := True;
+      Selected     : Boolean := False;
+      Complete     : Boolean := True;
+      Rank_In_List : Natural := 0;
    end record;
    No_Compiler : constant Compiler;
    --  Describes one of the compilers found on the PATH.
@@ -281,7 +281,7 @@ private
       Selectable  => False,
       Selected    => False,
       Complete    => True,
-      Index_In_List => ASCII.NUL,
+      Rank_In_List => 0,
       Path_Order  => 0);
 
    type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;

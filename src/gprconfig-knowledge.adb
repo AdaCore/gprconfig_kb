@@ -1818,7 +1818,7 @@ package body GprConfig.Knowledge is
       Show_Target   : Boolean := False) return String
    is
       function Runtime_Or_Empty return String;
-      function Selected return String;
+      function Rank return String;
       function Target return String;
       --  Return various aspects of the compiler;
 
@@ -1831,14 +1831,18 @@ package body GprConfig.Knowledge is
          end if;
       end Runtime_Or_Empty;
 
-      function Selected return String is
+      function Rank return String is
+         Result : String (1 .. 4) := "    ";
+         Img : constant String := Comp.Rank_In_List'Img;
       begin
+         Result (4 - Img'Length + 1 .. 4) := Img;
+
          if Comp.Selected then
-            return "*";
-         else
-            return " ";
+            Result (1) := '*';
          end if;
-      end Selected;
+
+         return Result;
+      end Rank;
 
       function Target return String is
       begin
@@ -1860,14 +1864,14 @@ package body GprConfig.Knowledge is
       elsif Comp.Executable = No_Name then
          --  A language that requires no compiler
 
-         return Selected
-           & "(" & Comp.Index_In_List & ") "
+         return Rank
+           & ". "
            & Get_Name_String_Or_Null (Comp.Language_Case)
            & " (no compiler required)";
 
       else
-         return Selected
-           & "(" & Comp.Index_In_List & ") "
+         return Rank
+           & ". "
            & Get_Name_String_Or_Null (Comp.Name) & " for "
            & Get_Name_String_Or_Null (Comp.Language_Case)
            & " in " & Get_Name_String_Or_Null (Comp.Path)
