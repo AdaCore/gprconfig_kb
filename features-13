@@ -4,4 +4,12 @@ GPRBUILD 1.3 NEW FEATURES LIST Current as of Oct 24, 2008
 
 Copyright (c) 2008, AdaCore
 
+This file contains a complete list of new features in version 1.3 of GPRBUILD.
+A full description of all GPRBUILD features can be found in the GPRBUILD
+User's Guide.
+
+An ISO date (YYYY-MM-DD) appears in parentheses after the description line.
+This date shows the implementation date of the feature. Any 1.3.0w
+wavefront subsequent to this date will contain the indicated feature, as
+will any subsequent releases.
 
