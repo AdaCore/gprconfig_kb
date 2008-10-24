@@ -901,6 +901,7 @@ package body Buildgpr is
    procedure Scan_Arg
      (Arg          : String;
       Command_Line : Boolean;
+      Language     : Name_Id;
       Success      : out Boolean);
    --  Process one gprbuild argument Arg. Command_Line is True if the argument
    --  is specified on the command line. Optional parameter Additional gives
@@ -6792,6 +6793,7 @@ package body Buildgpr is
                            Scan_Arg
                              (Name_Buffer (1 .. Name_Len),
                               Command_Line => False,
+                              Language     => Lang,
                               Success      => Success);
                         end if;
 
@@ -7058,6 +7060,7 @@ package body Buildgpr is
             Scan_Arg
               (Argument (Next_Arg),
                Command_Line => True,
+               Language     => No_Name,
                Success      => Do_Not_Care);
          end loop Scan_Args;
       end;
@@ -10375,6 +10378,7 @@ package body Buildgpr is
    procedure Scan_Arg
      (Arg          : String;
       Command_Line : Boolean;
+      Language     : Name_Id;
       Success      : out Boolean)
    is
       Processed : Boolean := True;
@@ -10833,25 +10837,45 @@ package body Buildgpr is
 
             null;
 
-         elsif Arg = "-nostdlib"
-           or else Arg = "-nostdinc"
-           or else Arg = "-fstack-check"
-           or else Arg = "-fno-inline"
-           or else
-             (Arg'Length >= 2 and then (Arg (2) = 'O' or else Arg (2) = 'g'))
+         elsif (Language = No_Name or else Language = Name_Ada)
+            and then
+             (Arg = "-nostdlib"
+              or else Arg = "-nostdinc"
+              or else Arg = "-fstack-check"
+              or else Arg = "-fno-inline"
+              or else
+                (Arg'Length >= 2 and then
+                (Arg (2) = 'O' or else Arg (2) = 'g')))
          then
             --  For compatibility with gnatmake, use switch to compile Ada
             --  code. For -nostdlib and -nostdinc, also use switch to bind Ada
             --  code.
 
-            Current_Comp_Option_Table :=
-              Compiling_Options_HTable.Get (Name_Ada);
+            if Command_Line then
+               Current_Comp_Option_Table :=
+                 Compiling_Options_HTable.Get (Name_Ada);
 
-            if Current_Comp_Option_Table = No_Comp_Option_Table then
-               Current_Comp_Option_Table := new Compiling_Options.Instance;
-               Compiling_Options_HTable.Set
-                 (Name_Ada, Current_Comp_Option_Table);
-               Compiling_Options.Init (Current_Comp_Option_Table.all);
+               if Current_Comp_Option_Table = No_Comp_Option_Table then
+                  Current_Comp_Option_Table := new Compiling_Options.Instance;
+                  Compiling_Options_HTable.Set
+                    (Name_Ada, Current_Comp_Option_Table);
+                  Compiling_Options.Init (Current_Comp_Option_Table.all);
+               end if;
+
+            else
+               Current_Builder_Comp_Option_Table :=
+                 Builder_Compiling_Options_HTable.Get (Name_Ada);
+
+               if Current_Builder_Comp_Option_Table =
+                  No_Builder_Comp_Option_Table
+               then
+                  Current_Builder_Comp_Option_Table :=
+                    new Builder_Compiling_Options.Instance;
+                  Builder_Compiling_Options_HTable.Set
+                    (Name_Ada, Current_Builder_Comp_Option_Table);
+                  Builder_Compiling_Options.Init
+                    (Current_Builder_Comp_Option_Table.all);
+               end if;
             end if;
 
             Current_Processor := Compiler;
