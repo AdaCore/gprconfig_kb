@@ -69,6 +69,7 @@ procedure Gprbind is
    Dash_o         : constant String := "-o";
    Dash_shared    : constant String := "-shared";
    Dash_x         : constant String := "-x";
+   Dash_OO        : constant String := "-O";
 
    --  Minimum switches to be used to compile the binder generated file
 
@@ -123,6 +124,10 @@ procedure Gprbind is
    --  The version of GNAT, coming from the Toolchain_Version for Ada
 
    Delete_Temp_Files : Boolean := True;
+
+   FD_Objects   : File_Descriptor;
+   Objects_Path : Path_Name_Type;
+   Objects_File : File_Type;
 
    package Binding_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
@@ -329,6 +334,7 @@ begin
 
                when Generated_Object_File |
                     Generated_Source_Files |
+                    Bound_Object_Files |
                     Resulting_Options |
                     Run_Path_Option =>
                   null;
@@ -404,6 +410,8 @@ begin
       Add (No_Main_Option, Gnatbind_Options, Last_Gnatbind_Option);
    end if;
 
+   Add (Dash_OO, Gnatbind_Options, Last_Gnatbind_Option);
+
    if not Quiet_Output then
       if Verbose_Mode then
          Put (Gnatbind_Path.all);
@@ -454,6 +462,10 @@ begin
          Size := Size + Gnatbind_Options (J)'Length + 1;
       end loop;
 
+      --  Create temporary file to get the list of objects
+
+      Tempdir.Create_Temp_File (FD_Objects, Objects_Path);
+
       --  Invoke gnatbind with the arguments if the size is not too large or
       --  if the version of GNAT is not recent enough.
 
@@ -461,7 +473,8 @@ begin
          Spawn
            (Gnatbind_Path.all,
             Gnatbind_Options (1 .. Last_Gnatbind_Option),
-            Success);
+            FD_Objects,
+            Return_Code);
 
       else
          --  Otherwise create a temporary response file
@@ -547,7 +560,7 @@ begin
 
             --  And invoke gnatbind with this this response file
 
-            Spawn (Gnatbind_Path.all, Args, Success);
+            Spawn (Gnatbind_Path.all, Args, FD_Objects, Return_Code);
 
             if Delete_Temp_Files then
                Delete_File (Get_Name_String (Path), Succ);
@@ -561,7 +574,13 @@ begin
       end if;
    end;
 
-   if not Success then
+   Close (FD_Objects);
+
+   if Return_Code /= 0 then
+      if Delete_Temp_Files then
+         Delete_File (Get_Name_String (Objects_Path), Success);
+      end if;
+
       Osint.Fail ("invocation of gnatbind failed");
    end if;
 
@@ -730,14 +749,29 @@ begin
          Close (IO_File);
       end if;
 
-      Open (BG_File, In_File, Binder_Generated_File.all);
-
       Create (IO_File, Out_File, Exchange_File_Name.all);
 
       --  First, the generated object file
 
       Put_Line (IO_File, Binding_Label (Generated_Object_File));
       Put_Line (IO_File, Object);
+
+      --  Get the bound object files from the Object file
+
+      Open (Objects_File, In_File, Get_Name_String (Objects_Path));
+
+      Put_Line (IO_File, Binding_Label (Bound_Object_Files));
+
+      while not End_Of_File (Objects_File) loop
+         Get_Line (Objects_File, Line, Last);
+         Put_Line (IO_File, Line (1 .. Last));
+      end loop;
+
+      Close (Objects_File);
+
+      if Delete_Temp_Files then
+         Delete_File (Get_Name_String (Objects_Path), Success);
+      end if;
 
       --  Repeat the project paths with their time stamps
 
@@ -757,6 +791,8 @@ begin
       Put_Line (IO_File, "b__" & Main_Base_Name.all & ".ali");
 
       --  Get the options from the binder generated file
+
+      Open (BG_File, In_File, Binder_Generated_File.all);
 
       while not End_Of_File (BG_File) loop
          Get_Line (BG_File, Line, Last);
@@ -1005,6 +1041,8 @@ begin
             end if;
          end loop;
       end if;
+
+      Close (BG_File);
 
       if not Static_Libs then
          Put_Line (IO_File, Binding_Label (Run_Path_Option));
