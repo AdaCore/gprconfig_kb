@@ -756,6 +756,15 @@ begin
       Put_Line (IO_File, Binding_Label (Generated_Object_File));
       Put_Line (IO_File, Object);
 
+      --  Repeat the project paths with their time stamps
+
+      Put_Line (IO_File, Binding_Label (Project_Files));
+
+      for J in 1 .. Project_Paths.Last loop
+         Put_Line (IO_File, Project_Paths.Table (J).Path.all);
+         Put_Line (IO_File, Project_Paths.Table (J).Stamp.all);
+      end loop;
+
       --  Get the bound object files from the Object file
 
       Open (Objects_File, In_File, Get_Name_String (Objects_Path));
@@ -772,15 +781,6 @@ begin
       if Delete_Temp_Files then
          Delete_File (Get_Name_String (Objects_Path), Success);
       end if;
-
-      --  Repeat the project paths with their time stamps
-
-      Put_Line (IO_File, Binding_Label (Project_Files));
-
-      for J in 1 .. Project_Paths.Last loop
-         Put_Line (IO_File, Project_Paths.Table (J).Path.all);
-         Put_Line (IO_File, Project_Paths.Table (J).Stamp.all);
-      end loop;
 
       --  For the benefit of gprclean, the generated files other than the
       --  generated object file.
