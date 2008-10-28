@@ -7180,9 +7180,7 @@ package body Buildgpr is
                      end if;
                end case;
 
-               if (not Src_Data.Get_Object) or
-                  (not Src_Data.Object_Exists)
-               then
+               if not Src_Data.Object_Exists then
                   --  The attributes were modified directly in the Sources
                   --  table through the pointer
                   return;
