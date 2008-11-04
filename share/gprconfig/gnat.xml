@@ -4,10 +4,6 @@
 ] >
 
 <gprconfig>
-  <!--  A base configuration for any version of GNAT
-        That will need to be adjusted, and is provided mostly as
-        an example. Note that the value of
-        GNAT_Runtime_Dir and Toolchain_Version are currently incorrect -->
 
   <configuration>
    &filter_gnat;
@@ -41,6 +37,7 @@
 
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
    for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR}";
+   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR}/../adainclude";
    </config>
   </configuration>
 

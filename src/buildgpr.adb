@@ -8137,6 +8137,11 @@ package body Buildgpr is
 
       Object_Name   : constant String :=
                         Get_Name_String (Src_Data.Object);
+
+      Runtime_Source_Dir : constant Name_Id :=
+                              Project_Tree.Languages_Data.Table
+                                (Src_Data.Language).Config.Runtime_Source_Dir;
+
       C_Object_Name : String := Object_Name;
 
       Object_Path   : constant String :=
@@ -8518,6 +8523,9 @@ package body Buildgpr is
          Sfile    : File_Name_Type;
          Dep_Src  : Source_Id;
          Proj     : Project_Id;
+
+         Found : Boolean := False;
+
       begin
          if Text = null then
             if Verbose_Mode then
@@ -8657,6 +8665,7 @@ package body Buildgpr is
 
                if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
                   Dep_Src := Project_Tree.First_Source;
+                  Found := False;
 
                   while Dep_Src /= No_Source loop
                      if (not Project_Tree.Sources.Table
@@ -8666,6 +8675,8 @@ package body Buildgpr is
                        and then
                          Project_Tree.Sources.Table (Dep_Src).File = Sfile
                      then
+                        Found := True;
+
                         if Opt.Minimal_Recompilation
                           and then ALI.Sdep.Table (D).Stamp /=
                           Project_Tree.Sources.Table (Dep_Src).Source_TS
@@ -8760,9 +8771,46 @@ package body Buildgpr is
                        Project_Tree.Sources.Table
                          (Dep_Src).Next_In_Sources;
                   end loop;
+
+                  --  If the source was not found and the runtime source
+                  --  directory is defined, check if the file exists there, and
+                  --  if it does, check its timestamp.
+
+                  if not Found and then Runtime_Source_Dir /= No_Name then
+                     Get_Name_String (Runtime_Source_Dir);
+                     Add_Char_To_Name_Buffer (Directory_Separator);
+                     Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
+
+                     if Is_Regular_File (Name_Buffer (1 .. Name_Len)) then
+                        declare
+                           TS : constant Time_Stamp_Type :=
+                                  File_Stamp (Path_Name_Type'(Name_Find));
+
+                        begin
+                           if TS /= ALI.Sdep.Table (D).Stamp then
+                              if Verbose_Mode then
+                                 Write_Str
+                                   ("   -> different time stamp for ");
+                                 Write_Line (Get_Name_String (Sfile));
+
+                                 if Debug_Flag_T then
+                                    Write_Str ("   in ALI file: ");
+                                    Write_Line
+                                      (String (ALI.Sdep.Table (D).Stamp));
+                                    Write_Str ("   actual file: ");
+                                    Write_Line (String (TS));
+                                 end if;
+                              end if;
+
+                              return True;
+                           end if;
+                        end;
+                     end if;
+                  end if;
                end if;
             end loop;
          end;
+
          return False;
       end Process_ALI_Deps;
 
