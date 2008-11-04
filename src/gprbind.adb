@@ -158,6 +158,15 @@ procedure Gprbind is
       Table_Increment      => 100,
       Table_Name           => "Gprbind.Project_Paths");
 
+   type Bound_File;
+   type Bound_File_Access is access Bound_File;
+   type Bound_File is record
+      Name : String_Access;
+      Next : Bound_File_Access;
+   end record;
+
+   Bound_Files : Bound_File_Access;
+
 begin
    if Argument_Count /= 1 then
       Osint.Fail ("incorrect invocation");
@@ -774,6 +783,9 @@ begin
       while not End_Of_File (Objects_File) loop
          Get_Line (Objects_File, Line, Last);
          Put_Line (IO_File, Line (1 .. Last));
+
+         Bound_Files := new Bound_File'
+           (Name => new String'(Line (1 .. Last)), Next => Bound_Files);
       end loop;
 
       Close (Objects_File);
@@ -823,6 +835,25 @@ begin
               or else
               (Base_Name (Line (1 .. Last)) = "g-trasym.obj");
             --  g-trasym is a special case as it is not included in libgnat
+
+            --  Avoid duplication of object file
+
+            if Get_Option then
+               declare
+                  BF : Bound_File_Access := Bound_Files;
+
+               begin
+                  while BF /= null loop
+                     if BF.Name.all = Line (1 .. Last) then
+                        Get_Option := False;
+                        exit;
+
+                     else
+                        BF := BF.Next;
+                     end if;
+                  end loop;
+               end;
+            end if;
 
             if Get_Option then
                if Last >= 3 and then Line (1 .. 2) = "-L" then

@@ -451,16 +451,25 @@ package body Buildgpr is
    --  calling Change_Dir if the current working directory is already this
    --  directory.
 
+   type Archive_Data is record
+      Checked        : Boolean := False;
+      Has_Been_Built : Boolean := False;
+      Exists         : Boolean := False;
+   end record;
+
+   No_Archive_Data : constant Archive_Data :=
+                       (Checked        => False,
+                        Has_Been_Built => False,
+                        Exists         => False);
+
    package Global_Archives_Built is new GNAT.HTable.Simple_HTable
      (Header_Num => Prj.Header_Num,
-      Element    => Boolean,
-      No_Element => False,
+      Element    => Archive_Data,
+      No_Element => No_Archive_Data,
       Key        => Name_Id,
       Hash       => Prj.Hash,
       Equal      => "=");
    --  A hash table to record what global archives have been already built
-
-   Need_To_Rebuild_Global_Archives : Boolean := False;
 
    --  Archive builder name, path and options
 
@@ -637,6 +646,8 @@ package body Buildgpr is
          Source_Project   : Project_Id);
       --  Insert a new source in the the queue
 
+      procedure Insert_Withed_Sources_For (The_ALI : ALI.ALI_Id);
+
       function Is_Empty return Boolean;
       --  Returns True if the queue is empty
 
@@ -754,10 +765,11 @@ package body Buildgpr is
 
    procedure Build_Global_Archive
      (For_Project    : Project_Id;
-      Has_Been_Built : out Boolean);
+      Has_Been_Built : out Boolean;
+      Exists         : out Boolean);
    --  Build, if necessary, the global archive for a main project.
    --  Out parameter Has_Been_Built is True iff the global archive has been
-   --  built/rebuilt.
+   --  built/rebuilt. Exists is False if there is no need for a global archive.
 
    procedure Build_Library (For_Project : Project_Id);
    --  Build, if necessary, the library of a library project
@@ -849,14 +861,9 @@ package body Buildgpr is
    --  Do the necessary package intialization and process the command line
    --  arguments.
 
-   type Source_Info_Type is (Source_Info, Object_Info);
-   procedure Initialize_Source_Record
-     (Source      : Source_Id;
-      Info        : Source_Info_Type := Source_Info);
-   --  Get information either about the source file or the object and
+   procedure Initialize_Source_Record (Source      : Source_Id);
+   --  Get information either about the source file, the object and
    --  dependency file. This includes timestamps.
-   --  Updating source_info does nothing if the info was already computed
-   --  once. But computing object_info is redone every time
 
    function Is_Included_In_Global_Archive
      (Object_Name : File_Name_Type;
@@ -1665,7 +1672,8 @@ package body Buildgpr is
 
    procedure Build_Global_Archive
      (For_Project : Project_Id;
-      Has_Been_Built : out Boolean)
+      Has_Been_Built : out Boolean;
+      Exists         : out Boolean)
    is
       Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
 
@@ -1699,6 +1707,10 @@ package body Buildgpr is
 
       Size : Natural;
 
+      Global_Archive_Data : Archive_Data;
+
+      Need_To_Build : Boolean;
+
       procedure Add_Sources (Proj : Project_Id);
       --  Add all the sources of project Proj to Sources_Index
 
@@ -1725,29 +1737,12 @@ package body Buildgpr is
                   if (not Source.Locally_Removed)
                     and then
                       Source.Compiled
-                      and then
-                        (Source.Kind = Impl
-                         or else
-                           (Source.Unit /= No_Name
-                            and then
-                              Source.Kind = Spec
-                            and then
-                              Source.Other_Part = No_Source))
+                    and then
+                      Source.Kind = Impl
+                    and then
+                      Source.Unit = No_Name
                   then
-                     if Source.Unit = No_Name
-                       or else Source.Kind = Spec
-                       or else not Is_Subunit (Source)
-                     then
-                        --  Only include sources with object file names that
-                        --  have not been overriden in extending projects.
-
-                        if Source.Object /= No_File
-                          and then Is_Included_In_Global_Archive
-                            (Source.Object, Project)
-                        then
-                           Add_Source_Id (Proj, Id);
-                        end if;
-                     end if;
+                     Add_Source_Id (Proj, Id);
                   end if;
 
                   Id := Source.Next_In_Project;
@@ -1820,30 +1815,13 @@ package body Buildgpr is
                         if (not Source.Locally_Removed)
                           and then
                             Source.Compiled
-                            and then
-                              (Source.Kind = Impl
-                               or else
-                                 (Source.Unit /= No_Name
-                                  and then
-                                    Source.Kind = Spec
-                                  and then
-                                    Source.Other_Part = No_Source))
+                          and then
+                            Source.Get_Object
                         then
-                           if not Is_Subunit (Source) then
-                              --  Only include object file name that have not
-                              --  been overriden in extending projects.
-
-                              if Source.Object /= No_File
-                                and then
-                                  Is_Included_In_Global_Archive
-                                    (Source.Object, Project)
-                              then
-                                 Add_Argument
-                                   (Get_Name_String (Source.Object_Path),
-                                    Verbose_Mode,
-                                    Simple_Name => not Verbose_Mode);
-                              end if;
-                           end if;
+                           Add_Argument
+                             (Get_Name_String (Source.Object_Path),
+                              Verbose_Mode,
+                              Simple_Name => not Verbose_Mode);
                         end if;
 
                         Id := Source.Next_In_Project;
@@ -1859,60 +1837,67 @@ package body Buildgpr is
       end Add_Objects;
 
    begin
-      Has_Been_Built := Need_To_Rebuild_Global_Archives;
+      Exists := False;
+      Has_Been_Built := False;
 
       --  No need to build the global archive, if it has already been done
 
-      if Data.Object_Directory /= No_Path_Information and then
-        not Global_Archives_Built.Get (Data.Name)
-      then
-         Check_Archive_Builder;
+      if Data.Object_Directory /= No_Path_Information then
+         Global_Archive_Data := Global_Archives_Built.Get (Data.Name);
 
-         if Project_Of_Current_Object_Directory /= For_Project then
-            Project_Of_Current_Object_Directory := For_Project;
-            Change_Dir (Get_Name_String (Data.Object_Directory.Name));
+         if Global_Archive_Data.Checked then
+            Exists         := Global_Archive_Data.Exists;
+            Has_Been_Built := Global_Archive_Data.Has_Been_Built;
 
-            if Verbose_Mode then
-               Write_Str  ("Changing to object directory of """);
-               Write_Name (Data.Name);
-               Write_Str  (""": """);
-               Write_Name (Data.Object_Directory.Name);
-               Write_Line ("""");
-            end if;
-         end if;
+         else
+            Check_Archive_Builder;
 
-         --  Put all sources in the project tree in Source_Indexes
+            if Project_Of_Current_Object_Directory /= For_Project then
+               Project_Of_Current_Object_Directory := For_Project;
+               Change_Dir (Get_Name_String (Data.Object_Directory.Name));
 
-         Last_Source := 0;
-
-         Add_Sources (For_Project);
-
-         Proj_List := Data.All_Imported_Projects;
-
-         while Proj_List /= Empty_Project_List loop
-            Proj_Element :=
-              Project_Tree.Project_Lists.Table (Proj_List);
-
-            if not Project_Tree.Projects.Table
-              (Proj_Element.Project).Library
-            then
-               Add_Sources (Proj_Element.Project);
+               if Verbose_Mode then
+                  Write_Str  ("Changing to object directory of """);
+                  Write_Name (Data.Name);
+                  Write_Str  (""": """);
+                  Write_Name (Data.Object_Directory.Name);
+                  Write_Line ("""");
+               end if;
             end if;
 
-            Proj_List := Proj_Element.Next;
-         end loop;
+            --  Put all non Ada sources in the project tree in Source_Indexes
 
-         if not Has_Been_Built then
+            Last_Source := 0;
+
+            Add_Sources (For_Project);
+
+            Proj_List := Data.All_Imported_Projects;
+
+            while Proj_List /= Empty_Project_List loop
+               Proj_Element :=
+                 Project_Tree.Project_Lists.Table (Proj_List);
+
+               if not Project_Tree.Projects.Table
+                 (Proj_Element.Project).Library
+               then
+                  Add_Sources (Proj_Element.Project);
+               end if;
+
+               Proj_List := Proj_Element.Next;
+            end loop;
+
             if Verbose_Mode then
                Write_Str  ("   Checking ");
                Write_Str  (Archive_Name);
                Write_Line (" ...");
             end if;
 
+            Need_To_Build := False;
+
             --  If the archive does not exist, of course it needs to be built
 
             if not Is_Regular_File (Archive_Name) then
-               Has_Been_Built := True;
+               Need_To_Build := True;
 
                if Verbose_Mode then
                   Write_Line ("      -> archive does not exist");
@@ -1929,7 +1914,7 @@ package body Buildgpr is
                --  to rebuild the archive and to create its dependency file.
 
                if not Is_Valid (File) then
-                  Has_Been_Built := True;
+                  Need_To_Build := True;
 
                   if Verbose_Mode then
                      Write_Str  ("      -> archive dependency file ");
@@ -1975,7 +1960,7 @@ package body Buildgpr is
                      --  archive needs to be rebuilt.
 
                      if Src_Id = No_Source then
-                        Has_Been_Built := True;
+                        Need_To_Build := True;
                         if Verbose_Mode then
                            Write_Str  ("      -> ");
                            Write_Str  (Get_Name_String (Object_Path));
@@ -1990,7 +1975,7 @@ package body Buildgpr is
                      --  truncated, and the archive need to be rebuilt.
 
                      if End_Of_File (File) then
-                        Has_Been_Built := True;
+                        Need_To_Build := True;
 
                         if Verbose_Mode then
                            Write_Str  ("      -> archive dependency file ");
@@ -2007,7 +1992,7 @@ package body Buildgpr is
                      --  archive needs to be rebuilt.
 
                      if Name_Len /= Time_Stamp_Length then
-                        Has_Been_Built := True;
+                        Need_To_Build := True;
 
                         if Verbose_Mode then
                            Write_Str  ("      -> archive dependency file ");
@@ -2031,7 +2016,7 @@ package body Buildgpr is
                      if String (Time_Stamp) /=
                        String (Project_Tree.Sources.Table (Src_Id).Object_TS)
                      then
-                        Has_Been_Built := True;
+                        Need_To_Build := True;
 
                         if Verbose_Mode then
                            Write_Str  ("      -> time stamp of ");
@@ -2051,265 +2036,289 @@ package body Buildgpr is
 
                      elsif Debug_Flag_T then
                         Write_Str  ("      -> time stamp of ");
-                           Write_Str  (Get_Name_String (Object_Path));
-                           Write_Str  (" is correct in the archive");
-                           Write_Line (" dependency file");
-                           Write_Str  ("         recorded time stamp: ");
-                           Write_Line (String (Time_Stamp));
-                           Write_Str  ("           actual time stamp: ");
-                           Write_Line
-                             (String
-                                (Project_Tree.Sources.Table (Src_Id)
-                                 .Object_TS));
+                        Write_Str  (Get_Name_String (Object_Path));
+                        Write_Str  (" is correct in the archive");
+                        Write_Line (" dependency file");
+                        Write_Str  ("         recorded time stamp: ");
+                        Write_Line (String (Time_Stamp));
+                        Write_Str  ("           actual time stamp: ");
+                        Write_Line
+                          (String
+                             (Project_Tree.Sources.Table (Src_Id)
+                              .Object_TS));
                      end if;
                   end loop;
 
                   Close (File);
                end if;
             end if;
-         end if;
 
-         if not Has_Been_Built then
-            for S in 1 .. Last_Source loop
-               if not Source_Indexes (S).Found then
-                  Has_Been_Built := True;
+            if not Need_To_Build then
+               for S in 1 .. Last_Source loop
+                  if not Source_Indexes (S).Found then
+                     Need_To_Build := True;
 
-                  if Verbose_Mode then
-                     Write_Str ("      -> object file ");
-                     Write_Str (Get_Name_String (Project_Tree.Sources.Table
-                                  (Source_Indexes (S).Id).Object_Path));
-                     Write_Line (" is not in the dependency file");
+                     if Verbose_Mode then
+                        Write_Str ("      -> object file ");
+                        Write_Str (Get_Name_String (Project_Tree.Sources.Table
+                          (Source_Indexes (S).Id).Object_Path));
+                        Write_Line (" is not in the dependency file");
+                     end if;
+
+                     exit;
+                  end if;
+               end loop;
+            end if;
+
+            if not Need_To_Build then
+               if Verbose_Mode then
+                  Write_Line  ("      -> up to date");
+               end if;
+
+               Exists         := True;
+               Has_Been_Built := False;
+
+               --  Archive needs to be rebuilt
+
+            else
+               --  If archive already exists, first delete it, but if this is
+               --  not possible, continue: if archive cannot be built, we will
+               --  fail later on.
+
+               if Is_Regular_File (Archive_Name) then
+                  Delete_File (Archive_Name, Discard);
+               end if;
+
+               Last_Argument := 0;
+
+               --  Start with the minimal options
+
+               Add_Arguments
+                 (Archive_Builder_Opts.Options
+                    (1 .. Archive_Builder_Opts.Last),
+                  True);
+
+               --  Followed by the archive name
+
+               Add_Argument
+                 (Archive_Name, True, Simple_Name => not Verbose_Mode);
+
+               First_Object := Last_Argument + 1;
+
+               --  Followed by all the object files of the non library projects
+
+               Add_Objects (For_Project);
+
+               Proj_List := Data.All_Imported_Projects;
+
+               while Proj_List /= Empty_Project_List loop
+                  Proj_Element :=
+                    Project_Tree.Project_Lists.Table (Proj_List);
+
+                  if not Project_Tree.Projects.Table
+                    (Proj_Element.Project).Library
+                  then
+                     Add_Objects (Proj_Element.Project);
                   end if;
 
-                  exit;
-               end if;
-            end loop;
-         end if;
+                  Proj_List := Proj_Element.Next;
+               end loop;
 
-         if not Has_Been_Built then
-            if Verbose_Mode then
-               Write_Line  ("      -> up to date");
-            end if;
+               --  No global archive, if there is no object file to put into
 
-            --  Archive needs to be rebuilt
+               if Last_Argument < First_Object then
+                  Has_Been_Built := False;
+                  Exists         := False;
 
-         else
-            --  If archive already exists, first delete it, but if this is not
-            --  possible, continue: if archive cannot be built, we will fail
-            --  later on.
-
-            if Is_Regular_File (Archive_Name) then
-               Delete_File (Archive_Name, Discard);
-            end if;
-
-            Last_Argument := 0;
-
-            --  Start with the minimal options
-
-            Add_Arguments
-              (Archive_Builder_Opts.Options (1 .. Archive_Builder_Opts.Last),
-               True);
-
-            --  Followed by the archive name
-
-            Add_Argument (Archive_Name, True, Simple_Name => not Verbose_Mode);
-
-            First_Object := Last_Argument + 1;
-
-            --  Followed by all the object files of the non library projects
-
-            Add_Objects (For_Project);
-
-            Proj_List := Data.All_Imported_Projects;
-
-            while Proj_List /= Empty_Project_List loop
-               Proj_Element :=
-                 Project_Tree.Project_Lists.Table (Proj_List);
-
-               if not Project_Tree.Projects.Table
-                 (Proj_Element.Project).Library
-               then
-                  Add_Objects (Proj_Element.Project);
-               end if;
-
-               Proj_List := Proj_Element.Next;
-            end loop;
-
-            --  No need to create a global archive, if there is no object
-            --  file to put into.
-
-            if Last_Argument >= First_Object then
-
-               Real_Last_Argument := Last_Argument;
-
-               --  If there is an Archive_Builder_Append_Option, we may have to
-               --  build the archive in chuck.
-
-               if Archive_Builder_Append_Opts.Last = 0 then
-                  Current_Object_Pos := Real_Last_Argument + 1;
+                  if Verbose_Mode then
+                     Write_Line ("      -> there is no global archive");
+                  end if;
 
                else
-                  Size := 0;
-                  for J in 1 .. First_Object - 1 loop
-                     Size := Size + Arguments (J)'Length + 1;
-                  end loop;
+                  Real_Last_Argument := Last_Argument;
 
-                  Current_Object_Pos := First_Object;
-                  while Current_Object_Pos <= Real_Last_Argument loop
-                     Size := Size + Arguments (Current_Object_Pos)'Length + 1;
-                     exit when Size > Maximum_Size;
-                     Current_Object_Pos := Current_Object_Pos + 1;
-                  end loop;
+                  --  If there is an Archive_Builder_Append_Option, we may have
+                  --  to build the archive in chuck.
 
-                  Last_Argument := Current_Object_Pos - 1;
-               end if;
+                  if Archive_Builder_Append_Opts.Last = 0 then
+                     Current_Object_Pos := Real_Last_Argument + 1;
 
-               Display_Command
-                 (Archive_Builder_Name.all,
-                  Archive_Builder_Path,
-                  Ellipse => True);
-
-               Spawn
-                 (Archive_Builder_Path.all,
-                  Arguments (1 .. Last_Argument),
-                  Success);
-
-               --  If the archive has not been built completely, add the
-               --  remaining chunks.
-
-               if Success and then
-                 Current_Object_Pos <= Real_Last_Argument
-               then
-                  Last_Argument := 0;
-                  Add_Arguments
-                    (Archive_Builder_Append_Opts.Options
-                       (1 .. Archive_Builder_Append_Opts.Last),
-                     True);
-                  Add_Argument
-                    (Archive_Name, True, Simple_Name => not Verbose_Mode);
-                  First_Object := Last_Argument + 1;
-
-                  while Current_Object_Pos <= Real_Last_Argument loop
+                  else
                      Size := 0;
                      for J in 1 .. First_Object - 1 loop
                         Size := Size + Arguments (J)'Length + 1;
                      end loop;
 
-                     Last_Argument := First_Object - 1;
-
+                     Current_Object_Pos := First_Object;
                      while Current_Object_Pos <= Real_Last_Argument loop
                         Size :=
                           Size + Arguments (Current_Object_Pos)'Length + 1;
                         exit when Size > Maximum_Size;
-                        Last_Argument := Last_Argument + 1;
-                        Arguments (Last_Argument) :=
-                          Arguments (Current_Object_Pos);
                         Current_Object_Pos := Current_Object_Pos + 1;
                      end loop;
 
-                     Display_Command
-                       (Archive_Builder_Name.all,
-                        Archive_Builder_Path,
-                        Ellipse => True);
+                     Last_Argument := Current_Object_Pos - 1;
+                  end if;
 
-                     Spawn
-                       (Archive_Builder_Path.all,
-                        Arguments (1 .. Last_Argument),
-                        Success);
+                  Display_Command
+                    (Archive_Builder_Name.all,
+                     Archive_Builder_Path,
+                     Ellipse => True);
 
-                     exit when not Success;
-                  end loop;
-               end if;
+                  Spawn
+                    (Archive_Builder_Path.all,
+                     Arguments (1 .. Last_Argument),
+                     Success);
 
-               --  If the archive was built, run the archive indexer (ranlib)
-               --  if there is one.
+                  --  If the archive has not been built completely, add the
+                  --  remaining chunks.
 
-               if Success then
-
-                  --  If the archive was built, run the archive indexer
-                  --  (ranlib), if there is one.
-
-                  if Archive_Indexer_Path /= null then
+                  if Success and then
+                    Current_Object_Pos <= Real_Last_Argument
+                  then
                      Last_Argument := 0;
                      Add_Arguments
-                       (Archive_Indexer_Opts.Options
-                          (1 .. Archive_Indexer_Opts.Last),
+                       (Archive_Builder_Append_Opts.Options
+                          (1 .. Archive_Builder_Append_Opts.Last),
                         True);
                      Add_Argument
-                       (Archive_Name,
-                        True,
-                        Simple_Name => not Verbose_Mode);
+                       (Archive_Name, True, Simple_Name => not Verbose_Mode);
+                     First_Object := Last_Argument + 1;
 
-                     Display_Command
-                       (Archive_Indexer_Name.all, Archive_Indexer_Path);
+                     while Current_Object_Pos <= Real_Last_Argument loop
+                        Size := 0;
+                        for J in 1 .. First_Object - 1 loop
+                           Size := Size + Arguments (J)'Length + 1;
+                        end loop;
 
-                     Spawn
-                       (Archive_Indexer_Path.all,
-                        Arguments (1 .. Last_Argument),
-                        Success);
+                        Last_Argument := First_Object - 1;
 
-                     if not Success then
+                        while Current_Object_Pos <= Real_Last_Argument loop
+                           Size :=
+                             Size + Arguments (Current_Object_Pos)'Length + 1;
+                           exit when Size > Maximum_Size;
+                           Last_Argument := Last_Argument + 1;
+                           Arguments (Last_Argument) :=
+                             Arguments (Current_Object_Pos);
+                           Current_Object_Pos := Current_Object_Pos + 1;
+                        end loop;
 
-                        --  Running the archive indexer failed, delete the
-                        --  dependency file, if it exists.
+                        Display_Command
+                          (Archive_Builder_Name.all,
+                           Archive_Builder_Path,
+                           Ellipse => True);
 
-                        if Is_Regular_File (Archive_Dep_Name) then
-                           Delete_File (Archive_Dep_Name, Success);
-                        end if;
+                        Spawn
+                          (Archive_Builder_Path.all,
+                           Arguments (1 .. Last_Argument),
+                           Success);
 
-                        Fail_Program ("global archive could not be built");
-                        return;
-                     end if;
-                  end if;
-
-                  --  The archive was correctly built, create its dependency
-                  --  file.
-
-                  declare
-                     Dep_File  : Ada.Text_IO.File_Type;
-
-                  begin
-                     --  Create the file in Append mode, to avoid automatic
-                     --  insertion of an end of line if file is empty.
-
-                     Create (Dep_File, Append_File, Archive_Dep_Name);
-
-                     for S in 1 .. Last_Source loop
-                        Src_Id := Source_Indexes (S).Id;
-                        declare
-                           Source : Source_Data renames
-                             Project_Tree.Sources.Table (Src_Id);
-                        begin
-                           Put_Line
-                             (Dep_File, Get_Name_String (Source.Object_Path));
-                           Put_Line (Dep_File, String (Source.Object_TS));
-                        end;
+                        exit when not Success;
                      end loop;
-
-                     Close (Dep_File);
-
-                  exception
-                     when others =>
-                        if Is_Open (Dep_File) then
-                           Close (Dep_File);
-                        end if;
-                  end;
-
-               else
-                  --  Building the archive failed, delete dependency file if
-                  --  one exists.
-
-                  if Is_Regular_File (Archive_Dep_Name) then
-                     Delete_File (Archive_Dep_Name, Success);
                   end if;
 
-                  Fail_Program ("global archive could not be built");
-                  return;
+                  --  If the archive was built, run the archive indexer
+                  --  (ranlib) if there is one.
+
+                  if Success then
+
+                     --  If the archive was built, run the archive indexer
+                     --  (ranlib), if there is one.
+
+                     if Archive_Indexer_Path /= null then
+                        Last_Argument := 0;
+                        Add_Arguments
+                          (Archive_Indexer_Opts.Options
+                             (1 .. Archive_Indexer_Opts.Last),
+                           True);
+                        Add_Argument
+                          (Archive_Name,
+                           True,
+                           Simple_Name => not Verbose_Mode);
+
+                        Display_Command
+                          (Archive_Indexer_Name.all, Archive_Indexer_Path);
+
+                        Spawn
+                          (Archive_Indexer_Path.all,
+                           Arguments (1 .. Last_Argument),
+                           Success);
+
+                        if not Success then
+
+                           --  Running the archive indexer failed, delete the
+                           --  dependency file, if it exists.
+
+                           if Is_Regular_File (Archive_Dep_Name) then
+                              Delete_File (Archive_Dep_Name, Success);
+                           end if;
+
+                           Fail_Program ("global archive could not be built");
+                           return;
+                        end if;
+                     end if;
+
+                     --  The archive was correctly built, create its dependency
+                     --  file.
+
+                     declare
+                        Dep_File  : Ada.Text_IO.File_Type;
+
+                     begin
+                        --  Create the file in Append mode, to avoid automatic
+                        --  insertion of an end of line if file is empty.
+
+                        Create (Dep_File, Append_File, Archive_Dep_Name);
+
+                        for S in 1 .. Last_Source loop
+                           Src_Id := Source_Indexes (S).Id;
+                           declare
+                              Source : Source_Data renames
+                                Project_Tree.Sources.Table (Src_Id);
+                           begin
+                              Put_Line
+                                (Dep_File,
+                                 Get_Name_String (Source.Object_Path));
+                              Put_Line (Dep_File, String (Source.Object_TS));
+                           end;
+                        end loop;
+
+                        Close (Dep_File);
+
+                     exception
+                        when others =>
+                           if Is_Open (Dep_File) then
+                              Close (Dep_File);
+                           end if;
+                     end;
+
+                     Has_Been_Built := True;
+                     Exists         := True;
+
+                  else
+                     --  Building the archive failed, delete dependency file if
+                     --  one exists.
+
+                     if Is_Regular_File (Archive_Dep_Name) then
+                        Delete_File (Archive_Dep_Name, Success);
+                     end if;
+
+                     Fail_Program ("global archive could not be built");
+
+                     Has_Been_Built := False;
+                     Exists         := True;
+
+                     return;
+                  end if;
                end if;
             end if;
-         end if;
 
-         Global_Archives_Built.Set (Data.Name, True);
+            Global_Archives_Built.Set
+              (Data.Name,
+               (Checked        => True,
+                Has_Been_Built => Has_Been_Built,
+                Exists         => Exists));
+         end if;
       end if;
    end Build_Global_Archive;
 
@@ -3464,25 +3473,33 @@ package body Buildgpr is
             Nmb := 0;
 
             while Source /= No_Source loop
-               if Project_Tree.Sources.Table (Source).File = Base_Main_Id
-                 and then
-                 (Main_Id = Base_Main_Id or else
-                  Normalize_Pathname
-                    (Get_Name_String
-                       (Project_Tree.Sources.Table (Source).Path.Name)) =
-                  Normalize_Pathname (Get_Name_String (Main_Id)))
-               then
-                  Main_Sources.Set (Base_Main_Id, Source);
+               if Project_Tree.Sources.Table (Source).File = Base_Main_Id then
+                  declare
+                     Name_1 : constant String :=
+                                Normalize_Pathname
+                                  (Get_Name_String
+                                     (Project_Tree.Sources.Table
+                                        (Source).Path.Name));
+                     Name_2 : constant String :=
+                                Normalize_Pathname
+                                  (Get_Name_String (Main_Id));
 
-                  if
-                    Project_Tree.Sources.Table (Source).Project = Main_Project
-                  then
-                     Nmb := 1;
-                     exit;
+                  begin
 
-                  else
-                     Nmb := Nmb + 1;
-                  end if;
+                     if Main_Id = Base_Main_Id or else Name_1 = Name_2 then
+                        Main_Sources.Set (Base_Main_Id, Source);
+
+                        if Project_Tree.Sources.Table (Source).Project =
+                           Main_Project
+                        then
+                           Nmb := 1;
+                           exit;
+
+                        else
+                           Nmb := Nmb + 1;
+                        end if;
+                     end if;
+                  end;
                end if;
 
                Source := Project_Tree.Sources.Table (Source).Next_In_Sources;
@@ -3490,7 +3507,7 @@ package body Buildgpr is
 
             if Nmb = 0 then
                Fail_Program
-                 ("""" & Display_Main & """ is not a source of any project");
+                 ("""" & Display_Main & """ quit of any project");
 
             elsif Nmb > 1 then
                Fail_Program
@@ -4365,17 +4382,6 @@ package body Buildgpr is
    begin
       Outstanding_Compiles := 0;
 
-      --  Update info on all sources
-
-      declare
-         Dep_Src : Source_Id := Project_Tree.First_Source;
-      begin
-         while Dep_Src /= No_Source loop
-            Initialize_Source_Record (Dep_Src);
-            Dep_Src := Project_Tree.Sources.Table (Dep_Src).Next_In_Sources;
-         end loop;
-      end;
-
       --  Then process each files in the queue (new files might be added to
       --  the queue as a result)
 
@@ -4416,8 +4422,6 @@ package body Buildgpr is
 
             else
                Change_To_Object_Directory (Source_Project);
-
-               Initialize_Source_Record (Source_Identity, Info => Object_Info);
 
                Language :=
                  Project_Tree.Sources.Table (Source_Identity).Language;
@@ -5252,12 +5256,6 @@ package body Buildgpr is
                         Options);
                   end;
 
-                  if Project_Tree.Sources.Table
-                    (Source_Identity).Dependency /= ALI_File
-                  then
-                     Need_To_Rebuild_Global_Archives := True;
-                  end if;
-
                elsif Closure_Needed and then
                  Project_Tree.Sources.Table
                    (Source_Identity).Dependency = ALI_File
@@ -5337,72 +5335,12 @@ package body Buildgpr is
          --  compilation.
 
          declare
-            The_ALI : ALI.ALI_Id;
-            Sfile   : File_Name_Type;
-            Afile   : File_Name_Type;
-            Src_Id  : Source_Id;
+            The_ALI   : ALI.ALI_Id;
 
          begin
             while Good_ALI_Present loop
                The_ALI := Get_Next_Good_ALI;
-
-               --  Now insert in the Q the unmarked source files (i.e. those
-               --  which have never been inserted in the Q and hence never
-               --  considered).
-
-               for J in ALI.ALIs.Table (The_ALI).First_Unit ..
-                        ALI.ALIs.Table (The_ALI).Last_Unit
-               loop
-                  for K in ALI.Units.Table (J).First_With ..
-                           ALI.Units.Table (J).Last_With
-                  loop
-                     Sfile := ALI.Withs.Table (K).Sfile;
-
-                     --  Skip generics
-
-                     if Sfile /= No_File then
-                        Afile := ALI.Withs.Table (K).Afile;
-                        Src_Id := Project_Tree.First_Source;
-
-                        while Src_Id /= No_Source loop
-                           declare
-                              Source : Source_Data renames
-                                Project_Tree.Sources.Table (Src_Id);
-                           begin
-                              if Source.Compiled
-                                and then Source.Dep_Name = Afile
-                              then
-                                 case Source.Kind is
-                                    when Spec =>
-                                       if Source.Other_Part /= No_Source then
-                                          Src_Id := Source.Other_Part;
-                                       end if;
-
-                                    when Impl =>
-                                       if Is_Subunit (Source) then
-                                          Src_Id := No_Source;
-                                       end if;
-
-                                    when Sep =>
-                                       Src_Id := No_Source;
-                                 end case;
-
-                                 exit;
-                              end if;
-
-                              Src_Id := Source.Next_In_Sources;
-                           end;
-                        end loop;
-
-                        if Src_Id /= No_Source then
-                           Queue.Insert
-                             (Sfile,
-                              Src_Id,
-                              Project_Tree.Sources.Table (Src_Id).Project);
-                        end if;
-                     end if;
-                  end loop;
-               end loop;
+               Queue.Insert_Withed_Sources_For (The_ALI);
             end loop;
          end;
 
@@ -6516,6 +6454,17 @@ package body Buildgpr is
          Compute_All_Imported_Projects (Proj);
       end loop;
 
+      --  Update info on all sources
+
+      declare
+         Dep_Src : Source_Id := Project_Tree.First_Source;
+      begin
+         while Dep_Src /= No_Source loop
+            Initialize_Source_Record (Dep_Src);
+            Dep_Src := Project_Tree.Sources.Table (Dep_Src).Next_In_Sources;
+         end loop;
+      end;
+
       Queue.Init;
 
       --  If -u or -U is specified on the command line, disregard any -c, -b
@@ -6572,15 +6521,6 @@ package body Buildgpr is
             else
                Check_Mains;
             end if;
-         end if;
-
-         --  If we need the closures of Ada mains and roots, then if we need
-         --  to perform the binding phase, then we need first to execute the
-         --  compilation phase, otherwise we will not know what the content of
-         --  the global archive.
-
-         if Closure_Needed and then (not All_Phases) and then Bind_Only then
-            Compile_Only := True;
          end if;
 
          if All_Phases or Compile_Only then
@@ -7137,128 +7077,121 @@ package body Buildgpr is
    -- Initialize_Source_Record --
    ------------------------------
 
-   procedure Initialize_Source_Record
-     (Source      : Source_Id;
-      Info        : Source_Info_Type := Source_Info)
-   is
+   procedure Initialize_Source_Record (Source : Source_Id) is
       Src_Data : Source_Data renames
         Project_Tree.Sources.Table (Source);
       Obj_Proj : Project_Id;
    begin
-      case Info is
-         when Source_Info =>
-            --  Systematically recompute the time stamp. In fact, this function
-            --  is only called once per source file.
-            Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
+      --  Systematically recompute the time stamp. In fact, this function
+      --  is only called once per source file.
+      Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
 
-         when Object_Info =>
-            Src_Data.Get_Object := True;
+      Src_Data.Get_Object := Src_Data.Compiled;
 
-            if Src_Data.Compiled  then
+      if Src_Data.Compiled  then
 
-               --  Should the object file be included in the global archive ?
+         --  Should the object file be included in the global archive ?
 
-               case Src_Data.Lang_Kind is
-                  when Unit_Based =>
-                     if Src_Data.Kind = Impl
-                       and then Is_Subunit (Src_Data)
-                     then
-                        Src_Data.Kind := Sep;
-                        Src_Data.Get_Object := False;
-
-                     elsif Src_Data.Kind = Sep
-                       or else
-                         (Src_Data.Kind = Spec
-                          and then Src_Data.Other_Part /= No_Source)
-                     then
-                        Src_Data.Get_Object := False;
-                     end if;
-
-                  when File_Based =>
-                     if Src_Data.Kind = Spec then
-                        Src_Data.Get_Object := False;
-                     end if;
-               end case;
-
-               if not Src_Data.Object_Exists then
-                  --  The attributes were modified directly in the Sources
-                  --  table through the pointer
-                  return;
+         case Src_Data.Lang_Kind is
+            when Unit_Based =>
+               if Src_Data.Kind = Impl
+                 and then Is_Subunit (Src_Data)
+               then
+                  Src_Data.Kind := Sep;
                end if;
 
-               --  Find the object file for that source. It could be either in
-               --  the current project or in an extended project
+               Src_Data.Get_Object := False;
 
-               Obj_Proj := Src_Data.Project;
-               loop
+            when File_Based =>
+               if Src_Data.Kind = Spec then
+                  Src_Data.Get_Object := False;
+               end if;
+         end case;
+
+         if not Src_Data.Object_Exists then
+            --  The attributes were modified directly in the Sources
+            --  table through the pointer
+            return;
+         end if;
+
+         --  Find the object file for that source. It could be either in
+         --  the current project or in an extended project
+
+         Obj_Proj := Src_Data.Project;
+         loop
+            declare
+               Data : Project_Data renames
+                 Project_Tree.Projects.Table (Obj_Proj);
+
+               Dir  : constant String := Get_Name_String
+                 (Data.Object_Directory.Name);
+
+               Object_Path     : constant String :=
+                                   Normalize_Pathname
+                                     (Name          =>
+                                        Get_Name_String (Src_Data.Object),
+                                      Resolve_Links =>
+                                        Opt.Follow_Links_For_Files,
+                                      Directory     => Dir);
+
+            begin
+               Src_Data.Object_Path   := Create_Name (Object_Path);
+
+               Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
+               if Src_Data.Object_TS /= Empty_Time_Stamp then
+                  Src_Data.Object_Project := Obj_Proj;
+               end if;
+
+               --  Only compute the timestamp on the dep files if the
+               --  source is not overridden later, since otherwise we
+               --  will loop again here in any case
+
+               if Data.Extended_By = No_Project then
+
+                  if Src_Data.Dependency /= None then
+                     declare
+                        Dep_Path : constant String :=
+                                     Normalize_Pathname
+                                       (Name          =>
+                                          Get_Name_String (Src_Data.Dep_Name),
+                                        Resolve_Links =>
+                                          Opt.Follow_Links_For_Files,
+                                        Directory     => Dir);
+                     begin
+                        Src_Data.Dep_Path := Create_Name (Dep_Path);
+                        Src_Data.Dep_TS   :=
+                          File_Stamp (Src_Data.Dep_Path);
+                     end;
+                  end if;
+
+                  --  The switches file is always different from the
+                  --  dependency file, since it ends with .cswi
+
                   declare
-                     Data : Project_Data renames
-                       Project_Tree.Projects.Table (Obj_Proj);
-
-                     Dir  : constant String := Get_Name_String
-                       (Data.Object_Directory.Name);
-
-                     Object_Path     : constant String :=
-                       Normalize_Pathname
-                         (Name          => Get_Name_String (Src_Data.Object),
-                          Resolve_Links => Opt.Follow_Links_For_Files,
-                          Directory     => Dir);
-
+                     Switches_Path : constant String :=
+                                       Normalize_Pathname
+                                         (Name          =>
+                                            Get_Name_String
+                                              (Src_Data.Switches),
+                                          Resolve_Links =>
+                                            Opt.Follow_Links_For_Files,
+                                          Directory     => Dir);
                   begin
-                     Src_Data.Object_Path   := Create_Name (Object_Path);
-
-                     Src_Data.Object_TS := File_Stamp (Src_Data.Object_Path);
-                     if Src_Data.Object_TS /= Empty_Time_Stamp then
-                        Src_Data.Object_Project := Obj_Proj;
-                     end if;
-
-                     --  Only compute the timestamp on the dep files if the
-                     --  source is not overridden later, since otherwise we
-                     --  will loop again here in any case
-
-                     if Data.Extended_By = No_Project then
-
-                        if Src_Data.Dependency /= None then
-                           declare
-                              Dep_Path : constant String :=
-                                Normalize_Pathname
-                                  (Name => Get_Name_String (Src_Data.Dep_Name),
-                                   Resolve_Links => Opt.Follow_Links_For_Files,
-                                   Directory     => Dir);
-                           begin
-                              Src_Data.Dep_Path := Create_Name (Dep_Path);
-                              Src_Data.Dep_TS   :=
-                                File_Stamp (Src_Data.Dep_Path);
-                           end;
-                        end if;
-
-                        --  The switches file is always different from the
-                        --  dependency file, since it ends with .cswi
-
-                        declare
-                           Switches_Path : constant String :=
-                             Normalize_Pathname
-                               (Name   =>
-                                    Get_Name_String (Src_Data.Switches),
-                                Resolve_Links => Opt.Follow_Links_For_Files,
-                                Directory     => Dir);
-                        begin
-                           Src_Data.Switches_Path :=
-                             Create_Name (Switches_Path);
-                           Src_Data.Switches_TS :=
-                             File_Stamp (Src_Data.Switches_Path);
-                        end;
-
-                        exit;
-
-                     else
-                        --  We'll then examine the source that extends this one
-                        Obj_Proj := Data.Extended_By;
-                     end if;
+                     Src_Data.Switches_Path :=
+                       Create_Name (Switches_Path);
+                     Src_Data.Switches_TS :=
+                       File_Stamp (Src_Data.Switches_Path);
                   end;
-               end loop;
-            end if;
-      end case;
+
+                  exit;
+
+               else
+                  --  We'll then examine the source that extends this one
+                  Obj_Proj := Data.Extended_By;
+               end if;
+            end;
+         end loop;
+      end if;
    end Initialize_Source_Record;
 
    -----------------------------------
@@ -7290,16 +7223,7 @@ package body Buildgpr is
                   Src_Data : Source_Data renames
                     Project_Tree.Sources.Table (Source);
                begin
-                  if ((Src_Data.Lang_Kind = File_Based
-                       and then Src_Data.Kind = Impl)
-                      or else
-                        (Src_Data.Lang_Kind = Unit_Based
-                         and then
-                           (Src_Data.Kind = Impl
-                            or else
-                              (Src_Data.Kind = Spec
-                               and then
-                                 Src_Data.Other_Part = No_Source))))
+                  if Src_Data.Get_Object
                     and then Src_Data.Object = Object_Name
                   then
                      return False;
@@ -7320,20 +7244,10 @@ package body Buildgpr is
             Src_Data : Source_Data renames
               Project_Tree.Sources.Table (Source);
          begin
-            if ((Src_Data.Lang_Kind = File_Based and then Src_Data.Kind = Impl)
-                or else
-                  (Src_Data.Lang_Kind = Unit_Based
-                   and then
-                     (Src_Data.Kind = Impl
-                      or else
-                        (Src_Data.Kind = Spec
-                         and then Src_Data.Other_Part = No_Source))))
+            if Src_Data.Get_Object
               and then Src_Data.Object =  Object_Name
             then
-               return Src_Data.Object_Linked
-                 and then (Src_Data.Lang_Kind /= Unit_Based
-                           or else (not Closure_Needed)
-                           or else Src_Data.Get_Object);
+               return Src_Data.Object_Linked;
 
             else
                Source :=
@@ -7402,9 +7316,14 @@ package body Buildgpr is
 
       Global_Archive_TS  : Time_Stamp_Type;
 
-      Global_Archive_Has_Been_Built : Boolean := False;
+      Global_Archive_Has_Been_Built : Boolean;
+      Global_Archive_Exists         : Boolean;
 
    begin
+      if Mains.Number_Of_Mains = 0 then
+         return;
+      end if;
+
       Mains.Reset;
 
       loop
@@ -7424,8 +7343,6 @@ package body Buildgpr is
 
             Main_Base_Name : File_Name_Type;
 
-            Has_Been_Built : Boolean;
-
          begin
             exit when Display_Main'Length = 0;
 
@@ -7443,10 +7360,10 @@ package body Buildgpr is
 
             --  Build the global archive for this project, if needed
 
-            Build_Global_Archive (Main_Proj, Has_Been_Built);
-
-            Global_Archive_Has_Been_Built :=
-              Global_Archive_Has_Been_Built or Has_Been_Built;
+            Build_Global_Archive
+              (Main_Proj,
+               Global_Archive_Has_Been_Built,
+               Global_Archive_Exists);
 
             --  Get the main base name
 
@@ -7554,8 +7471,8 @@ package body Buildgpr is
                Add_Argument (Get_Name_String (Main_Source.Object_Path), True);
             end if;
 
-            if There_Are_Binder_Drivers
-              and then Binding_Languages.Last = 0
+            if (not There_Are_Binder_Drivers)
+              or else Binding_Languages.Last = 0
             then
                Find_Binding_Languages;
             end if;
@@ -7616,6 +7533,14 @@ package body Buildgpr is
                                     Add_Argument
                                       (Line (1 .. Last), Verbose_Mode);
 
+                                 when Bound_Object_Files =>
+                                    if Line (1 .. Last) /=
+                                      Get_Name_String (Main_Source.Object_Path)
+                                    then
+                                       Add_Argument
+                                         (Line (1 .. Last), Verbose_Mode);
+                                    end if;
+
                                  when Resulting_Options =>
                                     if Line (1 .. Last) /= "-static" and then
                                       Line (1 .. Last) /= "-shared"
@@ -7673,23 +7598,25 @@ package body Buildgpr is
                end loop;
             end if;
 
-            --  Add the global archive
+            --  Add the global archive, if there is one
 
-            Global_Archive_TS :=
-              File_Stamp
-                (Path_Name_Type'
-                   (Create_Name (Global_Archive_Name (Main_Proj))));
+            if Global_Archive_Exists then
+               Global_Archive_TS :=
+                 File_Stamp
+                   (Path_Name_Type'
+                        (Create_Name (Global_Archive_Name (Main_Proj))));
 
-            if Global_Archive_TS = Empty_Time_Stamp then
-               if (not Linker_Needs_To_Be_Called) and then Verbose_Mode then
-                  Write_Line ("      -> global archive does not exist");
+               if Global_Archive_TS = Empty_Time_Stamp then
+                  if (not Linker_Needs_To_Be_Called) and then Verbose_Mode then
+                     Write_Line ("      -> global archive does not exist");
+                  end if;
+
+                  Fail_Program
+                    ("global archive for project file " &
+                     Get_Name_String
+                       (Project_Tree.Projects.Table (Main_Proj).Name) &
+                     " does not exist");
                end if;
-
-               Fail_Program
-                 ("global archive for project file " &
-                  Get_Name_String
-                    (Project_Tree.Projects.Table (Main_Proj).Name) &
-                  " does not exist");
             end if;
 
             if (not Linker_Needs_To_Be_Called) and then
@@ -7702,8 +7629,9 @@ package body Buildgpr is
                end if;
             end if;
 
-            if (not Linker_Needs_To_Be_Called) and then
-              String (Global_Archive_TS) > String (Executable_TS)
+            if (not Linker_Needs_To_Be_Called)
+              and then Global_Archive_Exists
+              and then String (Global_Archive_TS) > String (Executable_TS)
             then
                Linker_Needs_To_Be_Called := True;
 
@@ -7713,187 +7641,315 @@ package body Buildgpr is
                end if;
             end if;
 
-            Add_Argument
-              (Global_Archive_Name (Main_Proj), Verbose_Mode);
-
-            --  Add the library switches, if there are libraries
-
-            Process_Imported_Libraries (Main_Proj);
-
-            for J in reverse 1 .. Library_Projs.Last loop
-               if Data.Config.Linker_Lib_Dir_Option = No_Name then
-                  Add_Argument
-                    ("-L" &
-                     Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Library_Projs.Table (J)).Library_Dir.Name),
-                    Verbose_Mode);
-
-               else
-                  Add_Argument
-                    (Get_Name_String
-                       (Data.Config.Linker_Lib_Dir_Option) &
-                     Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Library_Projs.Table (J)).Library_Dir.Name),
-                     Verbose_Mode);
-               end if;
-
-               if Data.Config.Run_Path_Option /= No_Name_List
-                 and then
-                   Project_Tree.Projects.Table
-                     (Library_Projs.Table (J)).Library_Kind /= Static
-               then
-                  Add_Rpath
-                    (Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Library_Projs.Table (J)).Library_Dir.Name));
-               end if;
-
-               if Data.Config.Linker_Lib_Name_Option = No_Name then
-                  Add_Argument
-                    ("-l" &
-                     Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Library_Projs.Table (J)).Library_Name),
-                    Verbose_Mode);
-
-               else
-                  Add_Argument
-                    (Get_Name_String
-                       (Data.Config.Linker_Lib_Name_Option) &
-                     Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Library_Projs.Table (J)).Library_Name),
-                     Verbose_Mode);
-               end if;
-            end loop;
-
-            --  Add the run path option, if necessary
-
-            if Data.Config.Run_Path_Option /= No_Name_List and then
-              Rpaths.Last > 0
-            then
-               declare
-                  Nam_Nod  : Name_Node :=
-                               Project_Tree.Name_Lists.Table
-                                 (Data.Config.Run_Path_Option);
-                  Length   : Natural := 0;
-                  Arg      : String_Access := null;
-               begin
-                  while Nam_Nod.Next /= No_Name_List loop
-                     Add_Argument (Get_Name_String (Nam_Nod.Name), True);
-                     Nam_Nod :=
-                       Project_Tree.Name_Lists.Table (Nam_Nod.Next);
-                  end loop;
-
-                  --  Compute the length of the argument
-
-                  Get_Name_String (Nam_Nod.Name);
-                  Length := Name_Len;
-
-                  for J in 1 .. Rpaths.Last loop
-                     Length := Length + Rpaths.Table (J)'Length + 1;
-                  end loop;
-
-                  Length := Length - 1;
-
-                  --  Create the argument
-
-                  Arg := new String (1 .. Length);
-                  Length := Name_Len;
-                  Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
-
-                  for J in 1 .. Rpaths.Last loop
-                     if J /= 1 then
-                        Length := Length + 1;
-                        Arg (Length) := Path_Separator;
-                     end if;
-
-                     Arg (Length + 1 .. Length + Rpaths.Table (J)'Length) :=
-                       Rpaths.Table (J).all;
-                     Length := Length + Rpaths.Table (J)'Length;
-                  end loop;
-
-                  Add_Argument (Arg, Verbose_Mode);
-               end;
-            end if;
-
-            --  Put the options in the project file, if any
+            --  Check if there are library files that are more recent than
+            --  executable.
 
             declare
-               The_Packages : constant Package_Id :=
-                                Project_Tree.Projects.Table
-                                  (Main_Proj).Decl.Packages;
+               List : Project_List := Data.All_Imported_Projects;
+               Proj : Project_Id;
 
-               Linker_Package : constant Prj.Package_Id :=
-                                  Prj.Util.Value_Of
-                                    (Name        => Name_Linker,
-                                     In_Packages => The_Packages,
-                                     In_Tree     => Project_Tree);
-
-               Switches     : Variable_Value;
-               Switch_List  : String_List_Id;
-               Element      : String_Element;
-
+               Current_Dir : constant String := Get_Current_Dir;
             begin
-               if Linker_Package /= No_Package then
-                  declare
-                     Defaults : constant Array_Element_Id :=
-                                  Prj.Util.Value_Of
-                                    (Name      => Name_Default_Switches,
-                                     In_Arrays =>
-                                       Project_Tree.Packages.Table
-                                         (Linker_Package).Decl.Arrays,
-                                     In_Tree   => Project_Tree);
+               while List /= Empty_Project_List loop
+                  Proj := Project_Tree.Project_Lists.Table (List).Project;
+                  List := Project_Tree.Project_Lists.Table (List).Next;
 
-                     Switches_Array : constant Array_Element_Id :=
-                                        Prj.Util.Value_Of
-                                          (Name      => Name_Switches,
-                                           In_Arrays =>
-                                             Project_Tree.Packages.Table
-                                               (Linker_Package).Decl.Arrays,
-                                           In_Tree   => Project_Tree);
-                     Option   : String_Access;
+                  declare
+                     Proj_Data : Project_Data renames
+                       Project_Tree.Projects.Table (Proj);
 
                   begin
-                     Switches :=
-                       Prj.Util.Value_Of
-                         (Index     => Name_Id (Main_Id),
-                          Src_Index => 0,
-                          In_Array  => Switches_Array,
-                          In_Tree   => Project_Tree);
+                     if Proj_Data.Extended_By = No_Project and then
+                       Proj_Data.Library
+                     then
+                        Change_Dir
+                          (Get_Name_String (Proj_Data.Object_Directory.Name));
+                        Get_Name_String (Proj_Data.Library_Name);
+                        Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
 
-                     if Switches = Nil_Variable_Value then
+                        declare
+                           Exchange_File : Ada.Text_IO.File_Type;
+                           Path_Name     : constant String :=
+                                             Name_Buffer (1 .. Name_Len);
+                           Lib_TS        : Time_Stamp_Type;
+
+                        begin
+                           begin
+                              Open (Exchange_File, In_File, Path_Name);
+
+                           exception
+                              when others =>
+                                 if Verbose_Mode then
+                                    Write_Str
+                                      ("      -> library exchange file """);
+                                    Write_Str (Path_Name);
+                                    Write_Line (""" does not exist");
+                                 end if;
+
+                                 Linker_Needs_To_Be_Called := True;
+                                 exit;
+                           end;
+
+                           if End_Of_File (Exchange_File) then
+                              if Verbose_Mode then
+                                 Write_Str
+                                   ("      -> library exchange file """);
+                                 Write_Str (Path_Name);
+                                 Write_Line (""" is empty");
+                              end if;
+
+                              Linker_Needs_To_Be_Called := True;
+                              Close (Exchange_File);
+                              exit;
+                           end if;
+
+                           Get_Line (Exchange_File, Name_Buffer, Name_Len);
+
+                           if Name_Buffer (1 .. Name_Len) /=
+                             Library_Label (Library_Path)
+                           then
+                              Linker_Needs_To_Be_Called := True;
+                              Close (Exchange_File);
+
+                              if Verbose_Mode then
+                                 Write_Str
+                                   ("      -> library exchange file """);
+                                 Write_Str (Path_Name);
+                                 Write_Line (""" has wrong format");
+                              end if;
+
+                              exit;
+                           end if;
+
+                           Get_Line (Exchange_File, Name_Buffer, Name_Len);
+                           Close (Exchange_File);
+
+                           Lib_TS := File_Stamp (File_Name_Type'(Name_Find));
+
+                           if Lib_TS = Empty_Time_Stamp then
+                              Linker_Needs_To_Be_Called := True;
+
+                              if Verbose_Mode then
+                                 Write_Str ("      -> library file """);
+                                 Write_Str (Name_Buffer (1 .. Name_Len));
+                                 Write_Line (""" not found");
+                              end if;
+
+                              exit;
+
+                           elsif String (Lib_TS) > String (Executable_TS) then
+                              Linker_Needs_To_Be_Called := True;
+
+                              if Verbose_Mode then
+                                 Write_Str ("      -> library file """);
+                                 Write_Str (Name_Buffer (1 .. Name_Len));
+                                 Write_Line
+                                   (""" is more recent than executable");
+                              end if;
+
+                              exit;
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end loop;
+
+               Change_Dir (Current_Dir);
+            end;
+
+            if not Linker_Needs_To_Be_Called then
+               if Verbose_Mode then
+                     Write_Line ("      -> up to date");
+
+               elsif not Quiet_Output then
+                  Inform (Exec_Name, "up to date");
+               end if;
+
+            else
+               if Global_Archive_Exists then
+                  Add_Argument
+                    (Global_Archive_Name (Main_Proj), Verbose_Mode);
+               end if;
+
+               --  Add the library switches, if there are libraries
+
+               Process_Imported_Libraries (Main_Proj);
+
+               for J in reverse 1 .. Library_Projs.Last loop
+                  if Data.Config.Linker_Lib_Dir_Option = No_Name then
+                     Add_Argument
+                       ("-L" &
+                        Get_Name_String
+                          (Project_Tree.Projects.Table
+                             (Library_Projs.Table (J)).Library_Dir.Name),
+                        Verbose_Mode);
+
+                  else
+                     Add_Argument
+                       (Get_Name_String
+                          (Data.Config.Linker_Lib_Dir_Option) &
+                        Get_Name_String
+                          (Project_Tree.Projects.Table
+                             (Library_Projs.Table (J)).Library_Dir.Name),
+                        Verbose_Mode);
+                  end if;
+
+                  if Data.Config.Run_Path_Option /= No_Name_List
+                    and then
+                      Project_Tree.Projects.Table
+                        (Library_Projs.Table (J)).Library_Kind /= Static
+                  then
+                     Add_Rpath
+                       (Get_Name_String
+                          (Project_Tree.Projects.Table
+                             (Library_Projs.Table (J)).Library_Dir.Name));
+                  end if;
+
+                  if Data.Config.Linker_Lib_Name_Option = No_Name then
+                     Add_Argument
+                       ("-l" &
+                        Get_Name_String
+                          (Project_Tree.Projects.Table
+                             (Library_Projs.Table (J)).Library_Name),
+                        Verbose_Mode);
+
+                  else
+                     Add_Argument
+                       (Get_Name_String
+                          (Data.Config.Linker_Lib_Name_Option) &
+                        Get_Name_String
+                          (Project_Tree.Projects.Table
+                             (Library_Projs.Table (J)).Library_Name),
+                        Verbose_Mode);
+                  end if;
+               end loop;
+
+               --  Add the run path option, if necessary
+
+               if Data.Config.Run_Path_Option /= No_Name_List and then
+                 Rpaths.Last > 0
+               then
+                  declare
+                     Nam_Nod  : Name_Node :=
+                                  Project_Tree.Name_Lists.Table
+                                    (Data.Config.Run_Path_Option);
+                     Length   : Natural := 0;
+                     Arg      : String_Access := null;
+                  begin
+                     while Nam_Nod.Next /= No_Name_List loop
+                        Add_Argument (Get_Name_String (Nam_Nod.Name), True);
+                        Nam_Nod :=
+                          Project_Tree.Name_Lists.Table (Nam_Nod.Next);
+                     end loop;
+
+                     --  Compute the length of the argument
+
+                     Get_Name_String (Nam_Nod.Name);
+                     Length := Name_Len;
+
+                     for J in 1 .. Rpaths.Last loop
+                        Length := Length + Rpaths.Table (J)'Length + 1;
+                     end loop;
+
+                     Length := Length - 1;
+
+                     --  Create the argument
+
+                     Arg := new String (1 .. Length);
+                     Length := Name_Len;
+                     Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
+
+                     for J in 1 .. Rpaths.Last loop
+                        if J /= 1 then
+                           Length := Length + 1;
+                           Arg (Length) := Path_Separator;
+                        end if;
+
+                        Arg (Length + 1 .. Length + Rpaths.Table (J)'Length) :=
+                          Rpaths.Table (J).all;
+                        Length := Length + Rpaths.Table (J)'Length;
+                     end loop;
+
+                     Add_Argument (Arg, Verbose_Mode);
+                  end;
+               end if;
+
+               --  Put the options in the project file, if any
+
+               declare
+                  The_Packages : constant Package_Id :=
+                                   Project_Tree.Projects.Table
+                                     (Main_Proj).Decl.Packages;
+
+                  Linker_Package : constant Prj.Package_Id :=
+                                     Prj.Util.Value_Of
+                                       (Name        => Name_Linker,
+                                        In_Packages => The_Packages,
+                                        In_Tree     => Project_Tree);
+
+                  Switches     : Variable_Value;
+                  Switch_List  : String_List_Id;
+                  Element      : String_Element;
+
+               begin
+                  if Linker_Package /= No_Package then
+                     declare
+                        Defaults : constant Array_Element_Id :=
+                                     Prj.Util.Value_Of
+                                       (Name      => Name_Default_Switches,
+                                        In_Arrays =>
+                                          Project_Tree.Packages.Table
+                                            (Linker_Package).Decl.Arrays,
+                                        In_Tree   => Project_Tree);
+
+                        Switches_Array : constant Array_Element_Id :=
+                                           Prj.Util.Value_Of
+                                             (Name      => Name_Switches,
+                                              In_Arrays =>
+                                                Project_Tree.Packages.Table
+                                                  (Linker_Package).Decl.Arrays,
+                                              In_Tree   => Project_Tree);
+                        Option   : String_Access;
+
+                     begin
                         Switches :=
                           Prj.Util.Value_Of
-                            (Index     => Main_Source.Language_Name,
+                            (Index     => Name_Id (Main_Id),
                              Src_Index => 0,
                              In_Array  => Switches_Array,
-                             In_Tree   => Project_Tree,
-                             Force_Lower_Case_Index => True);
-                     end if;
-
-                     if Switches = Nil_Variable_Value then
-                        Switches :=
-                          Prj.Util.Value_Of
-                            (Index     => All_Other_Names,
-                             Src_Index => 0,
-                             In_Array  => Switches_Array,
-                             In_Tree   => Project_Tree,
-                             Force_Lower_Case_Index => True);
-                     end if;
-
-                     if Switches = Nil_Variable_Value then
-                        Switches :=
-                          Prj.Util.Value_Of
-                            (Index     => Main_Source.Language_Name,
-                             Src_Index => 0,
-                             In_Array  => Defaults,
                              In_Tree   => Project_Tree);
-                     end if;
 
-                     case Switches.Kind is
+                        if Switches = Nil_Variable_Value then
+                           Switches :=
+                             Prj.Util.Value_Of
+                               (Index                  =>
+                                    Main_Source.Language_Name,
+                                Src_Index              => 0,
+                                In_Array               => Switches_Array,
+                                In_Tree                => Project_Tree,
+                                Force_Lower_Case_Index => True);
+                        end if;
+
+                        if Switches = Nil_Variable_Value then
+                           Switches :=
+                             Prj.Util.Value_Of
+                               (Index                  => All_Other_Names,
+                                Src_Index              => 0,
+                                In_Array               => Switches_Array,
+                                In_Tree                => Project_Tree,
+                                Force_Lower_Case_Index => True);
+                        end if;
+
+                        if Switches = Nil_Variable_Value then
+                           Switches :=
+                             Prj.Util.Value_Of
+                               (Index     => Main_Source.Language_Name,
+                                Src_Index => 0,
+                                In_Array  => Defaults,
+                                In_Tree   => Project_Tree);
+                        end if;
+
+                        case Switches.Kind is
                         when Undefined | Single =>
                            null;
 
@@ -7920,99 +7976,91 @@ package body Buildgpr is
 
                               Switch_List := Element.Next;
                            end loop;
-                     end case;
-                  end;
-               end if;
-            end;
+                        end case;
+                     end;
+                  end if;
+               end;
 
-            --  Get the Linker_Options, if any
+               --  Get the Linker_Options, if any
 
-            Get_Linker_Options (For_Project => Main_Proj);
+               Get_Linker_Options (For_Project => Main_Proj);
 
-            --  Add the linker switches specified on the command line
+               --  Add the linker switches specified on the command line
 
-            for J in 1 .. Command_Line_Linker_Options.Last loop
-               Add_Argument
-                 (Command_Line_Linker_Options.Table (J), Verbose_Mode);
-            end loop;
-
-            --  Then the binding options
-
-            for J in 1 .. Binding_Options.Last loop
-               Add_Argument (Binding_Options.Table (J), Verbose_Mode);
-            end loop;
-
-            --  Finally, the required switches, if any. These are put at the
-            --  end because, if they include -L switches for example, the link
-            --  may fail because the wrong objects or libraries are linked in.
-
-            Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
-            while Min_Linker_Opts /= No_Name_List loop
-               Add_Argument
-                 (Get_Name_String
-                    (Project_Tree.Name_Lists.Table (Min_Linker_Opts).Name),
-                  Verbose_Mode);
-               Min_Linker_Opts   :=
-                 Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
-            end loop;
-
-            --  Add the switch(es) to specify the name of the executable
-
-            declare
-               List : Name_List_Index :=
-                        Data.Config.Linker_Executable_Option;
-               Nam  : Name_Node;
-
-               procedure Add_Executable_Name;
-               --  Add the name of the executable to to current name buffer,
-               --  then the content of the name buffer as the next argument.
-
-               -------------------------
-               -- Add_Executable_Name --
-               -------------------------
-
-               procedure Add_Executable_Name is
-               begin
-                  Add_Str_To_Name_Buffer (Get_Name_String (Exec_Path_Name));
+               for J in 1 .. Command_Line_Linker_Options.Last loop
                   Add_Argument
-                    (Name_Buffer (1 .. Name_Len),
-                     True,
-                     Simple_Name => not Verbose_Mode);
-               end Add_Executable_Name;
+                    (Command_Line_Linker_Options.Table (J), Verbose_Mode);
+               end loop;
 
-            begin
-               if List /= No_Name_List then
-                  loop
-                     Nam := Project_Tree.Name_Lists.Table (List);
-                     Get_Name_String (Nam.Name);
+               --  Then the binding options
 
-                     if Nam.Next = No_Name_List then
-                        Add_Executable_Name;
-                        exit;
+               for J in 1 .. Binding_Options.Last loop
+                  Add_Argument (Binding_Options.Table (J), Verbose_Mode);
+               end loop;
 
-                     else
-                        Add_Argument (Name_Buffer (1 .. Name_Len), True);
-                     end if;
+               --  Finally, the required switches, if any. These are put at the
+               --  end because, if they include -L switches for example, the
+               --  link may fail because the wrong objects or libraries are
+               --  linked in.
 
-                     List := Nam.Next;
-                  end loop;
+               Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
+               while Min_Linker_Opts /= No_Name_List loop
+                  Add_Argument
+                    (Get_Name_String
+                       (Project_Tree.Name_Lists.Table (Min_Linker_Opts).Name),
+                     Verbose_Mode);
+                  Min_Linker_Opts   :=
+                    Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
+               end loop;
 
-               else
-                  Add_Argument ("-o", True);
-                  Name_Len := 0;
-                  Add_Executable_Name;
-               end if;
-            end;
+               --  Add the switch(es) to specify the name of the executable
 
-            if not Linker_Needs_To_Be_Called then
-               if Verbose_Mode then
-                     Write_Line ("      -> up to date");
+               declare
+                  List : Name_List_Index :=
+                           Data.Config.Linker_Executable_Option;
+                  Nam  : Name_Node;
 
-               elsif not Quiet_Output then
-                  Inform (Exec_Name, "up to date");
-               end if;
+                  procedure Add_Executable_Name;
+                  --  Add the name of the executable to to current name buffer,
+                  --  then the content of the name buffer as the next argument.
 
-            else
+                  -------------------------
+                  -- Add_Executable_Name --
+                  -------------------------
+
+                  procedure Add_Executable_Name is
+                  begin
+                     Add_Str_To_Name_Buffer (Get_Name_String (Exec_Path_Name));
+                     Add_Argument
+                       (Name_Buffer (1 .. Name_Len),
+                        True,
+                        Simple_Name => not Verbose_Mode);
+                  end Add_Executable_Name;
+
+               begin
+                  if List /= No_Name_List then
+                     loop
+                        Nam := Project_Tree.Name_Lists.Table (List);
+                        Get_Name_String (Nam.Name);
+
+                        if Nam.Next = No_Name_List then
+                           Add_Executable_Name;
+                           exit;
+
+                        else
+                           Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                        end if;
+
+                        List := Nam.Next;
+                     end loop;
+
+                  else
+                     Add_Argument ("-o", True);
+                     Name_Len := 0;
+                     Add_Executable_Name;
+                  end if;
+               end;
+
                Display_Command (Linker_Name.all, Linker_Path);
 
                Spawn
@@ -8968,10 +9016,6 @@ package body Buildgpr is
          Dep_Files   : out Boolean);
       --  Put the dependency files of the project in the binder exchange file
 
-      procedure Check_Dependency_Files
-        (For_Project  : Project_Id;
-         For_Language : Name_Id);
-
       --------------------------
       -- Add_Dependency_Files --
       --------------------------
@@ -9065,96 +9109,6 @@ package body Buildgpr is
          end if;
       end Add_Dependency_Files;
 
-      ----------------------------
-      -- Check_Dependency_Files --
-      ----------------------------
-
-      procedure Check_Dependency_Files
-        (For_Project  : Project_Id;
-         For_Language : Name_Id)
-      is
-         Src_Id  : Source_Id;
-         Dep_TS  : Time_Stamp_Type;
-
-      begin
-         if For_Project /= No_Project and then
-           (not Binder_Driver_Needs_To_Be_Called) and then
-           (not Project_Tree.Projects.Table (For_Project).Seen)
-         then
-            declare
-               Data : Project_Data renames
-                 Project_Tree.Projects.Table (For_Project);
-
-            begin
-               Data.Seen := True;
-
-               Src_Id := Data.First_Source;
-
-               while Src_Id /= No_Source loop
-                  declare
-                     Source : Source_Data renames
-                       Project_Tree.Sources.Table (Src_Id);
-                  begin
-                     if Source.Language_Name = For_Language
-                       and then
-                         Source.Unit /= No_Name
-                         and then
-                           (Source.Kind = Impl
-                            or else
-                              Source.Other_Part = No_Source)
-                       and then not Is_Subunit (Source)
-                       and then
-                         Is_Included_In_Global_Archive
-                           (Source.Object, Source.Project)
-                     then
-                        if (not Data.Library) or Source.Unit = No_Name then
-                           Dep_TS := Source.Dep_TS;
-
-                        else
-                           Get_Name_String (Data.Library_ALI_Dir.Name);
-                           Add_Char_To_Name_Buffer (Directory_Separator);
-                           Get_Name_String_And_Append (Source.Dep_Name);
-                           Dep_TS := File_Stamp (Path_Name_Type'(Name_Find));
-                        end if;
-
-                        if Dep_TS = Empty_Time_Stamp
-                          or else String (Dep_TS) > String (Bind_Exchange_TS)
-                          or else String (Dep_TS) > String (Bind_Object_TS)
-                        then
-                           Binder_Driver_Needs_To_Be_Called := True;
-
-                           if Verbose_Mode then
-                              Write_Str ("      -> ");
-                              Write_Str (Get_Name_String (Source.Dep_Name));
-
-                              if Dep_TS = Empty_Time_Stamp then
-                                 Write_Line (" does not exist");
-
-                              elsif
-                                String (Dep_TS) > String (Bind_Exchange_TS)
-                              then
-                                 Write_Line
-                                   (" is more recent than the binder exchange "
-                                    & "file");
-
-                              else
-                                 Write_Line
-                                   (" is more recent that the binder generated"
-                                    & " object file");
-                              end if;
-                           end if;
-
-                           exit;
-                        end if;
-                     end if;
-
-                     Src_Id := Source.Next_In_Project;
-                  end;
-               end loop;
-            end;
-         end if;
-      end Check_Dependency_Files;
-
    --  Start of processing for Post_Compilation_Phase
 
    begin
@@ -9199,18 +9153,24 @@ package body Buildgpr is
          end;
       end if;
 
-      --  Check if there is a need to call a binder driver
-
-      There_Are_Binder_Drivers := False;
-      Find_Binding_Languages;
-
-      Mains.Reset;
-
       --  If no main is specified, there is nothing else to do
 
       if Mains.Number_Of_Mains = 0 then
          return;
       end if;
+
+      --  Check if there is a need to call a binder driver
+
+      There_Are_Binder_Drivers := False;
+      Find_Binding_Languages;
+
+      if not There_Are_Binder_Drivers then
+         return;
+      end if;
+
+      --  Proceed to bind (or rebind if needed) for each main
+
+      Mains.Reset;
 
       loop
          declare
@@ -9262,85 +9222,68 @@ package body Buildgpr is
 
                Change_To_Object_Directory (Main_Proj);
 
-               if There_Are_Binder_Drivers then
-                  for B_Index in 1 .. Binding_Languages.Last loop
-                     B_Data := Binding_Languages.Table (B_Index);
+               for B_Index in 1 .. Binding_Languages.Last loop
+                  B_Data := Binding_Languages.Table (B_Index);
 
-                     Binder_Driver_Needs_To_Be_Called := Force_Compilations;
+                  Binder_Driver_Needs_To_Be_Called := Force_Compilations;
 
-                     --  First check if the binder driver needs to be called.
-                     --  It needs to be called if
-                     --    1) there is no existing binder exchange file
-                     --    2) there is no binder generated object file
-                     --    3) there is a dependency file of the language that
-                     --       is more recent than any of these two files
+                  --  First check if the binder driver needs to be called.
+                  --  It needs to be called if
+                  --    1) there is no existing binder exchange file
+                  --    2) there is no binder generated object file
+                  --    3) there is a dependency file of the language that
+                  --       is more recent than any of these two files
 
-                     if (not Binder_Driver_Needs_To_Be_Called) and then
-                       Verbose_Mode
-                     then
-                        Write_Line
-                          ("   Checking binder generated files for " &
-                           Display_Main &
-                           "...");
-                     end if;
+                  if (not Binder_Driver_Needs_To_Be_Called) and then
+                    Verbose_Mode
+                  then
+                     Write_Line
+                       ("   Checking binder generated files for " &
+                        Display_Main &
+                        "...");
+                  end if;
 
-                     Bind_Exchange :=
-                       Binder_Exchange_File_Name
-                         (Main_Base_Name, B_Data.Binder_Prefix);
-                     Bind_Exchange_TS :=
-                       File_Stamp
-                         (Path_Name_Type'(Create_Name (Bind_Exchange.all)));
+                  Bind_Exchange :=
+                    Binder_Exchange_File_Name
+                      (Main_Base_Name, B_Data.Binder_Prefix);
+                  Bind_Exchange_TS :=
+                    File_Stamp
+                      (Path_Name_Type'(Create_Name (Bind_Exchange.all)));
 
-                     if not Binder_Driver_Needs_To_Be_Called then
-                        if Bind_Exchange_TS = Empty_Time_Stamp then
-                           Binder_Driver_Needs_To_Be_Called := True;
+                  if not Binder_Driver_Needs_To_Be_Called then
+                     if Bind_Exchange_TS = Empty_Time_Stamp then
+                        Binder_Driver_Needs_To_Be_Called := True;
 
-                           if Verbose_Mode then
-                              Write_Line
-                                ("      -> binder exchange file " &
-                                 Bind_Exchange.all &
-                                 " does not exist");
-                           end if;
-
-                        else
-                           begin
-                              Open (Exchange_File, In_File, Bind_Exchange.all);
-
-                           exception
-                              when others =>
-                                 Binder_Driver_Needs_To_Be_Called := True;
-
-                                 if Verbose_Mode then
-                                    Write_Line
-                                      ("      -> could not open " &
-                                       "binder exchange file" &
-                                       Bind_Exchange.all);
-                                 end if;
-                           end;
+                        if Verbose_Mode then
+                           Write_Line
+                             ("      -> binder exchange file " &
+                              Bind_Exchange.all &
+                              " does not exist");
                         end if;
-                     end if;
 
-                     if not Binder_Driver_Needs_To_Be_Called then
+                     else
                         begin
-                           Get_Line (Exchange_File, Line, Last);
+                           Open (Exchange_File, In_File, Bind_Exchange.all);
+
                         exception
                            when others =>
                               Binder_Driver_Needs_To_Be_Called := True;
 
                               if Verbose_Mode then
                                  Write_Line
-                                   ("      -> previous gprbind failed, or " &
-                                    Bind_Exchange.all &
-                                    " corrupted");
+                                   ("      -> could not open " &
+                                    "binder exchange file" &
+                                    Bind_Exchange.all);
                               end if;
                         end;
                      end if;
+                  end if;
 
-                     if not Binder_Driver_Needs_To_Be_Called then
-                        if Line (1 .. Last) /=
-                          Binding_Label (Generated_Object_File)
-                          or else End_Of_File (Exchange_File)
-                        then
+                  if not Binder_Driver_Needs_To_Be_Called then
+                     begin
+                        Get_Line (Exchange_File, Line, Last);
+                     exception
+                        when others =>
                            Binder_Driver_Needs_To_Be_Called := True;
 
                            if Verbose_Mode then
@@ -9349,509 +9292,77 @@ package body Buildgpr is
                                  Bind_Exchange.all &
                                  " corrupted");
                            end if;
+                     end;
+                  end if;
 
-                        else
-                           Get_Line (Exchange_File, Line, Last);
-                           Bind_Object_TS :=
-                             File_Stamp
-                             (Path_Name_Type'(Create_Name (Line (1 .. Last))));
+                  if not Binder_Driver_Needs_To_Be_Called then
+                     if Line (1 .. Last) /=
+                       Binding_Label (Generated_Object_File)
+                       or else End_Of_File (Exchange_File)
+                     then
+                        Binder_Driver_Needs_To_Be_Called := True;
 
-                           if Bind_Object_TS = Empty_Time_Stamp then
-                              Binder_Driver_Needs_To_Be_Called := True;
-
-                              if Verbose_Mode then
-                                 Write_Line
-                                   ("      -> binder generated object " &
-                                    Line (1 .. Last) &
-                                    " does not exist");
-                              end if;
-                           end if;
-                        end if;
-                     end if;
-
-                     if not Binder_Driver_Needs_To_Be_Called then
-                        if End_Of_File (Exchange_File) then
-                           Binder_Driver_Needs_To_Be_Called := True;
-
-                        else
-                           Get_Line (Exchange_File, Line, Last);
-
-                           if Line (1 .. Last) /=
-                             Binding_Label (Project_Files)
-                             or else End_Of_File (Exchange_File)
-                           then
-                              Binder_Driver_Needs_To_Be_Called := True;
-                           end if;
-                        end if;
-
-                        if Binder_Driver_Needs_To_Be_Called then
-                           if Verbose_Mode then
-                              Write_Line
-                                ("      -> previous gprbind failed, or " &
-                                 Bind_Exchange.all &
-                                 " corrupted");
-                           end if;
-
-                        else
-
-                           --  Populate the hash table Project_File_Paths with
-                           --  the paths of all project files in the closure
-                           --  of the main project.
-
-                           Project_File_Paths.Reset;
-
-                           Project_File_Paths.Set
-                             (Name_Id (Project_Tree.Projects.Table
-                                         (Main_Proj).Path.Name),
-                              True);
-
-                           Proj_List :=
-                             Project_Tree.Projects.Table
-                               (Main_Proj).All_Imported_Projects;
-
-                           while Proj_List /= Empty_Project_List loop
-                              Proj_Element :=
-                                Project_Tree.Project_Lists.Table (Proj_List);
-                              Project_File_Paths.Set
-                                (Name_Id (Project_Tree.Projects.Table
-                                           (Proj_Element.Project).Path.Name),
-                                 True);
-                              Proj_List := Proj_Element.Next;
-                           end loop;
-
-                           --  Get the project file paths from the exchange
-                           --  file and check if they are the expected project
-                           --  files with the same time stamps.
-
-                           while not End_Of_File (Exchange_File) loop
-                              Get_Line (Exchange_File, Name_Buffer, Name_Len);
-                              exit when
-                                Name_Len > 0 and then Name_Buffer (1) = '[';
-
-                              if End_Of_File (Exchange_File) then
-                                 Binder_Driver_Needs_To_Be_Called := True;
-
-                                 if Verbose_Mode then
-                                    Write_Line
-                                      ("      -> previous gprbind failed, " &
-                                       "or " &
-                                       Bind_Exchange.all &
-                                       " corrupted");
-                                 end if;
-
-                                 exit;
-                              end if;
-
-                              Project_Path := Name_Find;
-
-                              if Project_File_Paths.Get (Project_Path) then
-                                 Project_File_Paths.Remove (Project_Path);
-                                 Get_Line
-                                   (Exchange_File, Line, Last);
-
-                                 Project_File_TS :=
-                                   File_Stamp (Path_Name_Type (Project_Path));
-
-                                 if String (Project_File_TS) /=
-                                   Line (1 .. Last)
-                                 then
-                                    Binder_Driver_Needs_To_Be_Called := True;
-
-                                    if Verbose_Mode then
-                                       Write_Line
-                                         ("      -> project file " &
-                                          Get_Name_String (Project_Path) &
-                                          " has been modified");
-                                    end if;
-
-                                    exit;
-                                 end if;
-
-                              else
-                                 Binder_Driver_Needs_To_Be_Called := True;
-
-                                 if Verbose_Mode then
-                                    Write_Line
-                                      ("      -> unknown project file " &
-                                       Get_Name_String (Project_Path));
-                                 end if;
-
-                                 exit;
-                              end if;
-                           end loop;
-
-                           --  Check if there are still project file paths in
-                           --  the has table.
-
-                           if (not Binder_Driver_Needs_To_Be_Called) and then
-                             Project_File_Paths.Get_First
-                           then
-                              Binder_Driver_Needs_To_Be_Called := True;
-
-                              if Verbose_Mode then
-                                 Write_Line
-                                   ("      -> more project files");
-                              end if;
-                           end if;
-                        end if;
-                     end if;
-
-                     if Is_Open (Exchange_File) then
-                        Close (Exchange_File);
-                     end if;
-
-                     if not Binder_Driver_Needs_To_Be_Called then
-
-                        --  Reset the Seen flag for all projects, so that all
-                        --  dependency files are check once.
-
-                        for Index in
-                          1 .. Project_Table.Last (Project_Tree.Projects)
-                        loop
-                           Project_Tree.Projects.Table (Index).Seen := False;
-                        end loop;
-
-                        Check_Dependency_Files
-                          (Main_Proj, B_Data.Language_Name);
-
-                        Proj_List :=
-                          Project_Tree.Projects.Table
-                            (Main_Proj).All_Imported_Projects;
-
-                        while (not Binder_Driver_Needs_To_Be_Called) and then
-                        Proj_List /= Empty_Project_List
-                        loop
-                           Proj_Element :=
-                             Project_Tree.Project_Lists.Table (Proj_List);
-                           Check_Dependency_Files
-                             (Proj_Element.Project, B_Data.Language_Name);
-                           Proj_List := Proj_Element.Next;
-                        end loop;
-                     end if;
-
-                     if not Binder_Driver_Needs_To_Be_Called then
                         if Verbose_Mode then
-                           Write_Line ("      -> up to date");
+                           Write_Line
+                             ("      -> previous gprbind failed, or " &
+                              Bind_Exchange.all &
+                              " corrupted");
                         end if;
 
                      else
-                        Create (Exchange_File, Out_File, Bind_Exchange.all);
+                        Get_Line (Exchange_File, Line, Last);
+                        Bind_Object_TS :=
+                          File_Stamp
+                            (Path_Name_Type'(Create_Name (Line (1 .. Last))));
 
-                        --  Optional line: Quiet or Verbose
+                        if Bind_Object_TS = Empty_Time_Stamp then
+                           Binder_Driver_Needs_To_Be_Called := True;
 
-                        if Quiet_Output then
-                           Put_Line (Exchange_File, Binding_Label (Quiet));
-
-                        elsif Verbose_Mode then
-                           Put_Line (Exchange_File, Binding_Label (Verbose));
-                        end if;
-
-                        --  If -dn was used, indicate to gprbind that the
-                        --  temporary response file, if created, should not
-                        --  deleted.
-
-                        if Debug_Flag_N then
-                           Put_Line
-                             (Exchange_File,
-                              Binding_Label (Delete_Temp_Files));
-                           Put_Line (Exchange_File, "False");
-                        end if;
-
-                        --  Send the Toolchain Versions of each language where
-                        --  they are declared.
-
-                        Lang_Index :=
-                          Project_Tree.Projects.Table
-                            (Main_Proj).First_Language_Processing;
-                        Toolchain_Version_Label_Written := False;
-
-                        while Lang_Index /= No_Language_Index loop
-                           Lang_Data :=
-                             Project_Tree.Languages_Data.Table (Lang_Index);
-
-                           if
-                             Lang_Data.Config.Toolchain_Version /= No_Name
-                           then
-                              if not Toolchain_Version_Label_Written then
-                                 Put_Line
-                                   (Exchange_File, Library_Label
-                                      (Toolchain_Version));
-                                 Toolchain_Version_Label_Written := True;
-                              end if;
-
-                              Put_Line
-                                (Exchange_File,
-                                 Get_Name_String (Lang_Data.Name));
-                              Put_Line
-                                (Exchange_File,
-                                 Get_Name_String
-                                   (Lang_Data.Config.Toolchain_Version));
+                           if Verbose_Mode then
+                              Write_Line
+                                ("      -> binder generated object " &
+                                 Line (1 .. Last) &
+                                 " does not exist");
                            end if;
+                        end if;
+                     end if;
+                  end if;
 
-                           Lang_Index := Lang_Data.Next;
-                        end loop;
+                  if not Binder_Driver_Needs_To_Be_Called then
+                     if End_Of_File (Exchange_File) then
+                        Binder_Driver_Needs_To_Be_Called := True;
 
-                        --  Optional line: shared libs
+                     else
+                        Get_Line (Exchange_File, Line, Last);
 
-                        if Shared_Libs then
-                           Put_Line
-                             (Exchange_File,
-                              Binding_Label (Gprexch.Shared_Libs));
+                        if Line (1 .. Last) /=
+                          Binding_Label (Project_Files)
+                          or else End_Of_File (Exchange_File)
+                        then
+                           Binder_Driver_Needs_To_Be_Called := True;
+                        end if;
+                     end if;
+
+                     if Binder_Driver_Needs_To_Be_Called then
+                        if Verbose_Mode then
+                           Write_Line
+                             ("      -> previous gprbind failed, or " &
+                              Bind_Exchange.all &
+                              " corrupted");
                         end if;
 
-                        --  First, the main base name
+                     else
 
-                        Put_Line
-                          (Exchange_File,
-                           Binding_Label (Gprexch.Main_Base_Name));
-                        Put_Line
-                          (Exchange_File, Get_Name_String (Main_Base_Name));
+                        --  Populate the hash table Project_File_Paths with
+                        --  the paths of all project files in the closure
+                        --  of the main project.
 
-                        --  Then, the compiler path
+                        Project_File_Paths.Reset;
 
-                        Put_Line
-                          (Exchange_File,
-                           Binding_Label (Gprexch.Compiler_Path));
-                        Put_Line
-                          (Exchange_File,
-                           Project_Tree.Languages_Data.Table
-                             (B_Data.Language).
-                                Config.Compiler_Driver_Path.all);
-
-                        --  Then, the Dependency files
-
-                        if Main_Source.Unit /= No_Name then
-                           Put_Line
-                             (Exchange_File,
-                              Binding_Label (Main_Dependency_File));
-                           Put_Line
-                             (Exchange_File,
-                              Get_Name_String (Main_Source.Dep_Path));
-                        end if;
-
-                        --  Add the relevant dependency files, either those in
-                        --  Roots (<main>) for the project, or all dependency
-                        --  files in the project tree, if Roots (<main>) is not
-                        --  specified .
-
-                        Put_Line
-                          (Exchange_File, Binding_Label (Dependency_Files));
-
-                        Add_Dependency_Files
-                          (Main_Proj,
-                           B_Data.Language,
-                           B_Data.Language_Name,
-                           Main_Source,
-                           Dep_Files);
-
-                        --  Put the options, if any
-
-                        declare
-                           The_Packages : constant Package_Id :=
-                                            Project_Tree.Projects.Table
-                                              (Main_Proj).Decl.Packages;
-
-                           Binder_Package : constant Prj.Package_Id :=
-                                              Prj.Util.Value_Of
-                                                (Name        => Name_Binder,
-                                                 In_Packages => The_Packages,
-                                                 In_Tree     => Project_Tree);
-
-                           Switches     : Variable_Value;
-                           Switch_List  : String_List_Id;
-                           Element      : String_Element;
-                           Config  : constant Language_Config :=
-                             Project_Tree.Languages_Data.Table
-                               (B_Data.Language).Config;
-
-                        begin
-                           --  First, check if there are binder options
-                           --  specified in the main project file.
-
-                           if Binder_Package /= No_Package then
-                              declare
-                                 Defaults : constant Array_Element_Id :=
-                                              Prj.Util.Value_Of
-                                                (Name      =>
-                                                   Name_Default_Switches,
-                                                 In_Arrays =>
-                                                   Project_Tree.Packages.Table
-                                                  (Binder_Package).Decl.Arrays,
-                                                 In_Tree   => Project_Tree);
-
-                                 Switches_Array : constant Array_Element_Id :=
-                                                    Prj.Util.Value_Of
-                                                      (Name      =>
-                                                         Name_Switches,
-                                                       In_Arrays =>
-                                                         Project_Tree.
-                                                           Packages.Table
-                                                         (Binder_Package)
-                                                       .Decl.Arrays,
-                                                       In_Tree   =>
-                                                         Project_Tree);
-
-                              begin
-                                 Switches :=
-                                   Prj.Util.Value_Of
-                                     (Index     => Name_Id (Main_Id),
-                                      Src_Index => 0,
-                                      In_Array  => Switches_Array,
-                                      In_Tree   => Project_Tree);
-
-                                 if Switches = Nil_Variable_Value then
-                                    Switches :=
-                                      Prj.Util.Value_Of
-                                        (Index     => B_Data.Language_Name,
-                                         Src_Index => 0,
-                                         In_Array  => Switches_Array,
-                                         In_Tree   => Project_Tree,
-                                         Force_Lower_Case_Index => True);
-                                 end if;
-
-                                 if Switches = Nil_Variable_Value then
-                                    Switches :=
-                                      Prj.Util.Value_Of
-                                        (Index     => All_Other_Names,
-                                         Src_Index => 0,
-                                         In_Array  => Switches_Array,
-                                         In_Tree   => Project_Tree,
-                                         Force_Lower_Case_Index => True);
-                                 end if;
-
-                                 if Switches = Nil_Variable_Value then
-                                    Switches :=
-                                      Prj.Util.Value_Of
-                                        (Index     => B_Data.Language_Name,
-                                         Src_Index => 0,
-                                         In_Array  => Defaults,
-                                         In_Tree   => Project_Tree);
-                                 end if;
-                              end;
-                           end if;
-
-                           --  If there are binder options, either minimum
-                           --  binder options, or in the main project file or
-                           --  on the command line, put them in the exchange
-                           --  file.
-
-                           Options_Instance :=
-                             Binder_Options_HTable.Get (B_Data.Language_Name);
-
-                           if Config.Binder_Required_Switches /= No_Name_List
-                             or else
-                              Switches.Kind = Prj.List
-                             or else
-                              All_Language_Binder_Options.Last > 0
-                             or else
-                              Options_Instance /= No_Bind_Option_Table
-                           then
-                              Put_Line
-                                (Exchange_File,
-                                 Binding_Label (Gprexch.Binding_Options));
-
-                              --  First, the required switches, if any
-
-                              declare
-                                 List : Name_List_Index :=
-                                   Config.Binder_Required_Switches;
-                                 Elem : Name_Node;
-
-                              begin
-                                 while List /= No_Name_List loop
-                                    Elem :=
-                                      Project_Tree.Name_Lists.Table (List);
-                                    Get_Name_String (Elem.Name);
-
-                                    if Name_Len > 0 then
-                                       Put_Line
-                                         (Exchange_File,
-                                          Name_Buffer (1 .. Name_Len));
-                                    end if;
-
-                                    List := Elem.Next;
-                                 end loop;
-                              end;
-
-                              --  Then, the eventual options in the main
-                              --  project file.
-
-                              if Switches.Kind = Prj.List then
-                                 declare
-                                    Option : String_Access;
-
-                                 begin
-                                    Switch_List := Switches.Values;
-
-                                    while Switch_List /= Nil_String loop
-                                       Element :=
-                                         Project_Tree.String_Elements.Table
-                                           (Switch_List);
-
-                                       Get_Name_String (Element.Value);
-
-                                       if Name_Len > 0 then
-                                          Option :=
-                                            new String'
-                                              (Name_Buffer (1 .. Name_Len));
-                                          Test_If_Relative_Path
-                                            (Option,
-                                             Main_Project_Dir.all,
-                                             No_Name);
-                                          Put_Line (Exchange_File, Option.all);
-                                       end if;
-
-                                       Switch_List := Element.Next;
-                                    end loop;
-                                 end;
-                              end if;
-
-                              --  Then those on the command line, for all
-                              --  binder drivers, if any.
-
-                              for
-                                J in 1 .. All_Language_Binder_Options.Last
-                              loop
-                                 Put_Line
-                                   (Exchange_File,
-                                    All_Language_Binder_Options.Table (J).all);
-                              end loop;
-
-                              --  Finally those on the command line for the
-                              --  binder driver of the language
-
-                              if Options_Instance /= No_Bind_Option_Table then
-                                 for Index in 1 .. Binder_Options.Last
-                                                     (Options_Instance.all)
-                                 loop
-                                    Put_Line
-                                      (Exchange_File,
-                                       Options_Instance.Table (Index).all);
-                                 end loop;
-                              end if;
-
-                           end if;
-                        end;
-
-                        --  Finally, the list of the project paths with their
-                        --  time stamps.
-
-                        Put_Line
-                          (Exchange_File,
-                           Binding_Label (Project_Files));
-
-                        Put_Line
-                          (Exchange_File,
-                           Get_Name_String
-                             (Project_Tree.Projects.Table
-                                (Main_Proj).Path.Name));
-
-                        Put_Line
-                          (Exchange_File,
-                           String
-                             (File_Stamp
-                                (Project_Tree.Projects.Table
-                                   (Main_Proj).Path.Name)));
+                        Project_File_Paths.Set
+                          (Name_Id (Project_Tree.Projects.Table
+                           (Main_Proj).Path.Name),
+                           True);
 
                         Proj_List :=
                           Project_Tree.Projects.Table
@@ -9860,221 +9371,873 @@ package body Buildgpr is
                         while Proj_List /= Empty_Project_List loop
                            Proj_Element :=
                              Project_Tree.Project_Lists.Table (Proj_List);
-                           Put_Line
-                             (Exchange_File,
-                              Get_Name_String
-                                (Project_Tree.Projects.Table
-                                   (Proj_Element.Project).Path.Name));
-
-                           Put_Line
-                             (Exchange_File,
-                              String
-                                (File_Stamp
-                                   (Project_Tree.Projects.Table
-                                      (Proj_Element.Project).Path.Name)));
-
+                           Project_File_Paths.Set
+                             (Name_Id (Project_Tree.Projects.Table
+                              (Proj_Element.Project).Path.Name),
+                              True);
                            Proj_List := Proj_Element.Next;
                         end loop;
 
-                        Close (Exchange_File);
+                        --  Get the project file paths from the exchange
+                        --  file and check if they are the expected project
+                        --  files with the same time stamps.
 
-                        if Main_Source.Unit = No_Name and then
-                          (not Dep_Files)
-                        then
-                           if Verbose_Mode then
-                              Write_Line ("      -> nothing to bind");
-                           end if;
+                        while not End_Of_File (Exchange_File) loop
+                           Get_Line (Exchange_File, Name_Buffer, Name_Len);
+                           exit when
+                             Name_Len > 0 and then Name_Buffer (1) = '[';
 
-                        else
-                           if Project_Tree.Languages_Data.Table
-                             (B_Data.Language).Config.Objects_Path /= No_Name
-                           then
-                              declare
-                                 Env_Var   : constant String :=
-                                        Get_Name_String
-                                          (Project_Tree.Languages_Data.Table
-                                            (B_Data.Language).Config.
-                                               Objects_Path);
-                                 Path_Name : String_Access :=
-                                               Project_Tree.Projects.Table
-                                                 (Main_Proj).Objects_Path;
-                              begin
-                                 if Path_Name = null then
-                                    if Current_Verbosity = High then
-                                       Put_Line (Env_Var & " :");
-                                    end if;
+                           if End_Of_File (Exchange_File) then
+                              Binder_Driver_Needs_To_Be_Called := True;
 
-                                    Get_Directories
-                                      (Main_Proj,
-                                       Sources   => False,
-                                       Languages => No_Names);
-
-                                    if Path_Buffer = null then
-                                       Path_Buffer :=
-                                         new String
-                                           (1 .. Path_Buffer_Initial_Length);
-                                    end if;
-
-                                    Path_Last := 0;
-
-                                    for Index in 1 .. Directories.Last loop
-                                       if Path_Last /= 0 then
-                                          Add_To_Path (Path_Separator);
-                                       end if;
-
-                                       Add_To_Path
-                                         (Get_Name_String
-                                            (Directories.Table (Index)));
-
-                                       if Current_Verbosity = High then
-                                          Put_Line
-                                            (Get_Name_String
-                                               (Directories.Table (Index)));
-                                       end if;
-                                    end loop;
-
-                                    Path_Name :=
-                                      new String'(Path_Buffer
-                                                  (1 .. Path_Last));
-                                    Project_Tree.Projects.Table
-                                      (Main_Proj).Objects_Path :=
-                                      Path_Name;
-                                 end if;
-
-                                 Setenv (Env_Var, Path_Name.all);
-
-                                 if Verbose_Mode then
-                                    Write_Str (Env_Var);
-                                    Write_Str (" = ");
-                                    Write_Line (Path_Name.all);
-                                 end if;
-                              end;
-
-                           elsif Project_Tree.Languages_Data.Table
-                             (B_Data.Language).Config.Objects_Path_File /=
-                             No_Name
-                           then
-                              declare
-                                 Env_Var   : constant String :=
-                                        Get_Name_String
-                                          (Project_Tree.Languages_Data.Table
-                                             (B_Data.Language).Config.
-                                                Objects_Path_File);
-                                 Path_Name : Path_Name_Type :=
-                                               Project_Tree.Projects.Table
-                                                 (Main_Proj).
-                                                Objects_Path_File_Without_Libs;
-                              begin
-                                 if Path_Name = No_Path then
-                                    if Current_Verbosity = High then
-                                       Put_Line (Env_Var & " :");
-                                    end if;
-
-                                    Get_Directories
-                                      (Main_Proj,
-                                       Sources   => False,
-                                       Languages => No_Names);
-
-                                    declare
-                                       FD     : File_Descriptor;
-                                       Len    : Integer;
-                                       Status : Boolean;
-                                    begin
-                                       Prj.Env.Create_New_Path_File
-                                         (In_Tree   => Project_Tree,
-                                          Path_FD   => FD,
-                                          Path_Name =>
-                                            Project_Tree.Projects.Table
-                                              (Main_Proj).
-                                              Objects_Path_File_Without_Libs);
-
-                                       Path_Name :=
-                                         Project_Tree.Projects.Table
-                                           (Main_Proj).
-                                           Objects_Path_File_Without_Libs;
-
-                                       for Index in 1 .. Directories.Last loop
-                                          Get_Name_String
-                                            (Directories.Table (Index));
-
-                                          if Current_Verbosity = High then
-                                             Put_Line
-                                               (Name_Buffer (1 .. Name_Len));
-                                          end if;
-
-                                          Name_Len := Name_Len + 1;
-                                          Name_Buffer (Name_Len) := ASCII.LF;
-
-                                          Len :=
-                                            Write
-                                              (FD,
-                                               Name_Buffer (1)'Address,
-                                               Name_Len);
-
-                                          if Len /= Name_Len then
-                                             Fail_Program ("disk full");
-                                          end if;
-                                       end loop;
-
-                                       Close (FD, Status);
-
-                                       if not Status then
-                                          Fail_Program ("disk full");
-                                       end if;
-                                    end;
-                                 end if;
-
-                                 Setenv (Env_Var, Get_Name_String (Path_Name));
-
-                                 if Verbose_Mode then
-                                    Write_Str (Env_Var);
-                                    Write_Str (" = ");
-                                    Write_Line (Get_Name_String (Path_Name));
-                                 end if;
-                              end;
-                           end if;
-
-                           if not Quiet_Output then
                               if Verbose_Mode then
-                                 Write_Str (B_Data.Binder_Driver_Path.all);
-
-                              else
-                                 Name_Len := 0;
-                                 Add_Str_To_Name_Buffer
-                                   (Base_Name
-                                      (Get_Name_String
-                                         (B_Data.Binder_Driver_Name)));
-
-                                 if Executable_Suffix'Length /= 0 and then
-                                   Name_Len > Executable_Suffix'Length and then
-                                   Name_Buffer
-                                     (Name_Len - Executable_Suffix'Length + 1
-                                      .. Name_Len)
-                                   = Executable_Suffix.all
-                                 then
-                                    Name_Len :=
-                                      Name_Len - Executable_Suffix'Length;
-                                 end if;
-
-                                 Write_Str (Name_Buffer (1 .. Name_Len));
+                                 Write_Line
+                                   ("      -> previous gprbind failed, " &
+                                    "or " &
+                                    Bind_Exchange.all &
+                                    " corrupted");
                               end if;
 
-                              Write_Char (' ');
-                              Write_Line (Bind_Exchange.all);
+                              exit;
                            end if;
 
-                           Spawn
-                             (B_Data.Binder_Driver_Path.all,
-                              (1 => Bind_Exchange),
-                              Success);
+                           Project_Path := Name_Find;
 
-                           if not Success then
-                              Fail_Program ("unable to bind " & Main);
+                           if Project_File_Paths.Get (Project_Path) then
+                              Project_File_Paths.Remove (Project_Path);
+                              Get_Line
+                                (Exchange_File, Line, Last);
+
+                              Project_File_TS :=
+                                File_Stamp (Path_Name_Type (Project_Path));
+
+                              if String (Project_File_TS) /=
+                                Line (1 .. Last)
+                              then
+                                 Binder_Driver_Needs_To_Be_Called := True;
+
+                                 if Verbose_Mode then
+                                    Write_Line
+                                      ("      -> project file " &
+                                       Get_Name_String (Project_Path) &
+                                       " has been modified");
+                                 end if;
+
+                                 exit;
+                              end if;
+
+                           else
+                              Binder_Driver_Needs_To_Be_Called := True;
+
+                              if Verbose_Mode then
+                                 Write_Line
+                                   ("      -> unknown project file " &
+                                    Get_Name_String (Project_Path));
+                              end if;
+
+                              exit;
+                           end if;
+                        end loop;
+
+                        --  Check if there are still project file paths in
+                        --  the has table.
+
+                        if (not Binder_Driver_Needs_To_Be_Called) and then
+                          Project_File_Paths.Get_First
+                        then
+                           Binder_Driver_Needs_To_Be_Called := True;
+
+                           if Verbose_Mode then
+                              Write_Line
+                                ("      -> more project files");
                            end if;
                         end if;
                      end if;
-                  end loop;
-               end if;
+                  end if;
+
+                  if Is_Open (Exchange_File) then
+                     Close (Exchange_File);
+                  end if;
+
+                  if not Binder_Driver_Needs_To_Be_Called then
+
+                     Queue.Init;
+
+                     declare
+                        Source_File_Name : File_Name_Type;
+                        Source_Identity  : Source_Id;
+                        Source_Project   : Project_Id;
+                        Roots            : Roots_Access;
+                        Src_Id           : Source_Id;
+                        Source           : Source_Data;
+                        Config           : constant Language_Config :=
+                                             Project_Tree.Languages_Data.Table
+                                               (B_Data.Language).Config;
+
+                     begin
+                        --  Put the root sources in the queue
+
+                        if Main_Source.Language_Name =
+                          B_Data.Language_Name
+                        then
+                           Queue.Insert
+                             (Source_File_Name => Main_Source.File,
+                              Source_Identity  => Main_Source_Id,
+                              Source_Project   => Main_Source.Project);
+                        end if;
+
+                        Roots := Root_Sources.Get (Main_Source.File);
+
+                        if Roots /= No_Roots then
+                           for J in Roots'Range loop
+                              Src_Id := Roots (J);
+                              Source := Project_Tree.Sources.Table (Src_Id);
+                              Queue.Insert
+                                (Source_File_Name => Source.File,
+                                 Source_Identity  => Src_Id,
+                                 Source_Project   => Source.Project);
+                           end loop;
+                        end if;
+
+                        --  If main is not unit base and there is no root,
+                        --  check all sources with the language name of the
+                        --  binder.
+
+                        if Queue.Is_Empty then
+                           Src_Id := Project_Tree.First_Source;
+
+                           Loop1 : while Src_Id /= No_Source loop
+                              Source := Project_Tree.Sources.Table (Src_Id);
+
+                              if Source.Language_Name = B_Data.Language_Name
+                                and then
+                                  not Source.Locally_Removed
+                                and then
+                                  Source.Compiled
+                                and then
+                                  ((Config.Kind = File_Based
+                                    and then Source.Kind = Impl)
+                                   or else
+                                     (Config.Kind = Unit_Based
+                                      and then
+                                        Source.Unit /= No_Name
+                                      and then
+                                        Source.Unit /= Main_Source.Unit
+                                      and then
+                                        (Source.Kind = Impl
+                                         or else
+                                           Source.Other_Part = No_Source)
+                                      and then not Is_Subunit (Source)))
+                              then
+                                 declare
+                                    Proj : Project_Id;
+                                    Src  : Source_Id;
+
+                                 begin
+                                    --  If a source is overriden in an
+                                    --  extending project, then the object file
+                                    --  is not included in the global archive.
+
+                                    Proj :=
+                                      Project_Tree.Projects.Table
+                                        (Source.Project).Extended_By;
+                                    Loop2 : while Proj /= No_Project loop
+                                       declare
+                                          Data : Project_Data
+                                          renames Project_Tree.Projects.Table
+                                            (Proj);
+
+                                       begin
+                                          Src := Data.First_Source;
+                                          while Src /= No_Source loop
+                                             declare
+                                                Src_Data : Source_Data renames
+                                                  Project_Tree.Sources.Table
+                                                    (Src);
+                                             begin
+                                                if Src_Data.Object =
+                                                    Source.Object
+                                                then
+                                                   exit Loop1;
+                                                else
+                                                   Src :=
+                                                     Project_Tree.Sources.Table
+                                                       (Src).Next_In_Project;
+                                                end if;
+                                             end;
+                                          end loop;
+                                          Proj := Data.Extended_By;
+                                       end;
+                                    end loop Loop2;
+                                 end;
+
+                                 Queue.Insert
+                                   (Source_File_Name => Source.File,
+                                    Source_Identity  => Src_Id,
+                                    Source_Project   => Source.Project);
+                              end if;
+
+                              Src_Id := Source.Next_In_Sources;
+                           end loop Loop1;
+
+                        end if;
+
+                        --  Get each file from the queue and check its
+                        --  dependency file.
+
+                        declare
+                           Dep_File  : File_Name_Type;
+                           Dep_Path  : Path_Name_Type;
+                           Dep_TS    : Time_Stamp_Type;
+                           The_ALI   : ALI.ALI_Id;
+                           Text      : Text_Buffer_Ptr;
+                        begin
+                           while not Queue.Is_Empty loop
+                              Queue.Extract
+                                (Source_File_Name,
+                                 Source_Identity,
+                                 Source_Project);
+
+                              Source :=
+                                Project_Tree.Sources.Table
+                                  (Source_Identity);
+
+                              --  Get the dependency file for this source
+
+                              Dep_File :=
+                                Project_Tree.Sources.Table
+                                  (Source_Identity).Dep_Name;
+                              Dep_Path :=
+                                Project_Tree.Sources.Table
+                                  (Source_Identity).Dep_Path;
+
+                              declare
+                                 Proj : Project_Id :=
+                                          Project_Tree.Projects.Table
+                                            (Source_Project).Extended_By;
+
+                              begin
+                                 while Proj /= No_Project loop
+                                    Name_Len := 0;
+                                    Add_Str_To_Name_Buffer
+                                      (Get_Name_String
+                                         (Project_Tree.Projects.Table
+                                            (Proj).Object_Directory.Name));
+                                    Add_Char_To_Name_Buffer
+                                      (Directory_Separator);
+                                    Add_Str_To_Name_Buffer
+                                      (Get_Name_String (Dep_File));
+                                    if Is_Regular_File
+                                      (Name_Buffer (1 .. Name_Len))
+                                    then
+                                       Dep_Path := Name_Find;
+                                    end if;
+
+                                    Proj :=
+                                      Project_Tree.Projects.Table
+                                        (Proj).Extended_By;
+                                 end loop;
+                              end;
+
+                              Dep_TS := File_Stamp (Dep_Path);
+
+                              --  Check the time stamp against the binder
+                              --  exchange file time stamp.
+
+                              if Dep_TS = Empty_Time_Stamp then
+                                 Binder_Driver_Needs_To_Be_Called := True;
+
+                                 if Verbose_Mode then
+                                    Write_Str ("      -> cannot find ");
+                                    Write_Line (Get_Name_String (Dep_Path));
+                                 end if;
+
+                                 exit;
+
+                              elsif Dep_TS > Bind_Exchange_TS then
+                                 Binder_Driver_Needs_To_Be_Called := True;
+
+                                 if Verbose_Mode then
+                                    Write_Str ("      -> ");
+                                    Write_Str (Get_Name_String (Dep_Path));
+                                    Write_Line
+                                      (" is more recent that the binder " &
+                                       "exchange file");
+                                 end if;
+
+                                 exit;
+                              else
+                                 Text := Read_Library_Info
+                                   (File_Name_Type (Dep_Path));
+
+                                 if Text /= null then
+                                    The_ALI :=
+                                      ALI.Scan_ALI
+                                        (File_Name_Type (Dep_Path),
+                                         Text,
+                                         Ignore_ED     => False,
+                                         Err           => True,
+                                         Read_Lines    => "W");
+                                    Free (Text);
+
+                                    Queue.Insert_Withed_Sources_For
+                                      (The_ALI);
+                                 end if;
+                              end if;
+                           end loop;
+                        end;
+                     end;
+                  end if;
+
+                  if not Binder_Driver_Needs_To_Be_Called then
+                     if Verbose_Mode then
+                        Write_Line ("      -> up to date");
+                     end if;
+
+                  else
+                     Create (Exchange_File, Out_File, Bind_Exchange.all);
+
+                     --  Optional line: Quiet or Verbose
+
+                     if Quiet_Output then
+                        Put_Line (Exchange_File, Binding_Label (Quiet));
+
+                     elsif Verbose_Mode then
+                        Put_Line (Exchange_File, Binding_Label (Verbose));
+                     end if;
+
+                     --  If -dn was used, indicate to gprbind that the
+                     --  temporary response file, if created, should not
+                     --  deleted.
+
+                     if Debug_Flag_N then
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label (Delete_Temp_Files));
+                        Put_Line (Exchange_File, "False");
+                     end if;
+
+                     --  Send the Toolchain Versions of each language where
+                     --  they are declared.
+
+                     Lang_Index :=
+                       Project_Tree.Projects.Table
+                         (Main_Proj).First_Language_Processing;
+                     Toolchain_Version_Label_Written := False;
+
+                     while Lang_Index /= No_Language_Index loop
+                        Lang_Data :=
+                          Project_Tree.Languages_Data.Table (Lang_Index);
+
+                        if
+                          Lang_Data.Config.Toolchain_Version /= No_Name
+                        then
+                           if not Toolchain_Version_Label_Written then
+                              Put_Line
+                                (Exchange_File, Library_Label
+                                   (Toolchain_Version));
+                              Toolchain_Version_Label_Written := True;
+                           end if;
+
+                           Put_Line
+                             (Exchange_File,
+                              Get_Name_String (Lang_Data.Name));
+                           Put_Line
+                             (Exchange_File,
+                              Get_Name_String
+                                (Lang_Data.Config.Toolchain_Version));
+                        end if;
+
+                        Lang_Index := Lang_Data.Next;
+                     end loop;
+
+                     --  Optional line: shared libs
+
+                     if Shared_Libs then
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label (Gprexch.Shared_Libs));
+                     end if;
+
+                     --  First, the main base name
+
+                     Put_Line
+                       (Exchange_File,
+                        Binding_Label (Gprexch.Main_Base_Name));
+                     Put_Line
+                       (Exchange_File, Get_Name_String (Main_Base_Name));
+
+                     --  Then, the compiler path
+
+                     Put_Line
+                       (Exchange_File,
+                        Binding_Label (Gprexch.Compiler_Path));
+                     Put_Line
+                       (Exchange_File,
+                        Project_Tree.Languages_Data.Table
+                          (B_Data.Language).
+                          Config.Compiler_Driver_Path.all);
+
+                     --  Then, the Dependency files
+
+                     if Main_Source.Unit /= No_Name then
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label (Main_Dependency_File));
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String (Main_Source.Dep_Path));
+                     end if;
+
+                     --  Add the relevant dependency files, either those in
+                     --  Roots (<main>) for the project, or all dependency
+                     --  files in the project tree, if Roots (<main>) is not
+                     --  specified .
+
+                     Put_Line
+                       (Exchange_File, Binding_Label (Dependency_Files));
+
+                     Add_Dependency_Files
+                       (Main_Proj,
+                        B_Data.Language,
+                        B_Data.Language_Name,
+                        Main_Source,
+                        Dep_Files);
+
+                     --  Put the options, if any
+
+                     declare
+                        The_Packages : constant Package_Id :=
+                                         Project_Tree.Projects.Table
+                                           (Main_Proj).Decl.Packages;
+
+                        Binder_Package : constant Prj.Package_Id :=
+                                           Prj.Util.Value_Of
+                                             (Name        => Name_Binder,
+                                              In_Packages => The_Packages,
+                                              In_Tree     => Project_Tree);
+
+                        Switches     : Variable_Value;
+                        Switch_List  : String_List_Id;
+                        Element      : String_Element;
+                        Config       : constant Language_Config :=
+                                         Project_Tree.Languages_Data.Table
+                                           (B_Data.Language).Config;
+
+                     begin
+                        --  First, check if there are binder options
+                        --  specified in the main project file.
+
+                        if Binder_Package /= No_Package then
+                           declare
+                              Defaults : constant Array_Element_Id :=
+                                           Prj.Util.Value_Of
+                                             (Name      =>
+                                                Name_Default_Switches,
+                                              In_Arrays =>
+                                                Project_Tree.Packages.Table
+                                                  (Binder_Package).Decl.Arrays,
+                                              In_Tree   => Project_Tree);
+
+                              Switches_Array : constant Array_Element_Id :=
+                                                 Prj.Util.Value_Of
+                                                   (Name      =>
+                                                      Name_Switches,
+                                                    In_Arrays =>
+                                                      Project_Tree.
+                                                        Packages.Table
+                                                      (Binder_Package)
+                                                    .Decl.Arrays,
+                                                    In_Tree   =>
+                                                      Project_Tree);
+
+                           begin
+                              Switches :=
+                                Prj.Util.Value_Of
+                                  (Index     => Name_Id (Main_Id),
+                                   Src_Index => 0,
+                                   In_Array  => Switches_Array,
+                                   In_Tree   => Project_Tree);
+
+                              if Switches = Nil_Variable_Value then
+                                 Switches :=
+                                   Prj.Util.Value_Of
+                                     (Index                  =>
+                                        B_Data.Language_Name,
+                                      Src_Index              => 0,
+                                      In_Array               => Switches_Array,
+                                      In_Tree                => Project_Tree,
+                                      Force_Lower_Case_Index => True);
+                              end if;
+
+                              if Switches = Nil_Variable_Value then
+                                 Switches :=
+                                   Prj.Util.Value_Of
+                                     (Index                  =>
+                                        All_Other_Names,
+                                      Src_Index              => 0,
+                                      In_Array               => Switches_Array,
+                                      In_Tree                => Project_Tree,
+                                      Force_Lower_Case_Index => True);
+                              end if;
+
+                              if Switches = Nil_Variable_Value then
+                                 Switches :=
+                                   Prj.Util.Value_Of
+                                     (Index     => B_Data.Language_Name,
+                                      Src_Index => 0,
+                                      In_Array  => Defaults,
+                                      In_Tree   => Project_Tree);
+                              end if;
+                           end;
+                        end if;
+
+                        --  If there are binder options, either minimum
+                        --  binder options, or in the main project file or
+                        --  on the command line, put them in the exchange
+                        --  file.
+
+                        Options_Instance :=
+                          Binder_Options_HTable.Get (B_Data.Language_Name);
+
+                        if Config.Binder_Required_Switches /= No_Name_List
+                          or else
+                            Switches.Kind = Prj.List
+                            or else
+                              All_Language_Binder_Options.Last > 0
+                              or else
+                                Options_Instance /= No_Bind_Option_Table
+                        then
+                           Put_Line
+                             (Exchange_File,
+                              Binding_Label (Gprexch.Binding_Options));
+
+                           --  First, the required switches, if any
+
+                           declare
+                              List : Name_List_Index :=
+                                       Config.Binder_Required_Switches;
+                              Elem : Name_Node;
+
+                           begin
+                              while List /= No_Name_List loop
+                                 Elem :=
+                                   Project_Tree.Name_Lists.Table (List);
+                                 Get_Name_String (Elem.Name);
+
+                                 if Name_Len > 0 then
+                                    Put_Line
+                                      (Exchange_File,
+                                       Name_Buffer (1 .. Name_Len));
+                                 end if;
+
+                                 List := Elem.Next;
+                              end loop;
+                           end;
+
+                           --  Then, the eventual options in the main
+                           --  project file.
+
+                           if Switches.Kind = Prj.List then
+                              declare
+                                 Option : String_Access;
+
+                              begin
+                                 Switch_List := Switches.Values;
+
+                                 while Switch_List /= Nil_String loop
+                                    Element :=
+                                      Project_Tree.String_Elements.Table
+                                        (Switch_List);
+
+                                    Get_Name_String (Element.Value);
+
+                                    if Name_Len > 0 then
+                                       Option :=
+                                         new String'
+                                           (Name_Buffer (1 .. Name_Len));
+                                       Test_If_Relative_Path
+                                         (Option,
+                                          Main_Project_Dir.all,
+                                          No_Name);
+                                       Put_Line (Exchange_File, Option.all);
+                                    end if;
+
+                                    Switch_List := Element.Next;
+                                 end loop;
+                              end;
+                           end if;
+
+                           --  Then those on the command line, for all
+                           --  binder drivers, if any.
+
+                           for
+                             J in 1 .. All_Language_Binder_Options.Last
+                           loop
+                              Put_Line
+                                (Exchange_File,
+                                 All_Language_Binder_Options.Table (J).all);
+                           end loop;
+
+                           --  Finally those on the command line for the
+                           --  binder driver of the language
+
+                           if Options_Instance /= No_Bind_Option_Table then
+                              for Index in 1 .. Binder_Options.Last
+                                (Options_Instance.all)
+                              loop
+                                 Put_Line
+                                   (Exchange_File,
+                                    Options_Instance.Table (Index).all);
+                              end loop;
+                           end if;
+
+                        end if;
+                     end;
+
+                     --  Finally, the list of the project paths with their
+                     --  time stamps.
+
+                     Put_Line
+                       (Exchange_File,
+                        Binding_Label (Project_Files));
+
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String
+                          (Project_Tree.Projects.Table
+                             (Main_Proj).Path.Name));
+
+                     Put_Line
+                       (Exchange_File,
+                        String
+                          (File_Stamp
+                             (Project_Tree.Projects.Table
+                                (Main_Proj).Path.Name)));
+
+                     Proj_List :=
+                       Project_Tree.Projects.Table
+                         (Main_Proj).All_Imported_Projects;
+
+                     while Proj_List /= Empty_Project_List loop
+                        Proj_Element :=
+                          Project_Tree.Project_Lists.Table (Proj_List);
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String
+                             (Project_Tree.Projects.Table
+                                (Proj_Element.Project).Path.Name));
+
+                        Put_Line
+                          (Exchange_File,
+                           String
+                             (File_Stamp
+                                (Project_Tree.Projects.Table
+                                   (Proj_Element.Project).Path.Name)));
+
+                        Proj_List := Proj_Element.Next;
+                     end loop;
+
+                     Close (Exchange_File);
+
+                     if Main_Source.Unit = No_Name and then
+                       (not Dep_Files)
+                     then
+                        if Verbose_Mode then
+                           Write_Line ("      -> nothing to bind");
+                        end if;
+
+                     else
+                        if Project_Tree.Languages_Data.Table
+                          (B_Data.Language).Config.Objects_Path /= No_Name
+                        then
+                           declare
+                              Env_Var   : constant String :=
+                                            Get_Name_String
+                                              (Project_Tree.
+                                                Languages_Data.Table
+                                                 (B_Data.Language).Config.
+                                                 Objects_Path);
+                              Path_Name : String_Access :=
+                                            Project_Tree.Projects.Table
+                                              (Main_Proj).Objects_Path;
+                           begin
+                              if Path_Name = null then
+                                 if Current_Verbosity = High then
+                                    Put_Line (Env_Var & " :");
+                                 end if;
+
+                                 Get_Directories
+                                   (Main_Proj,
+                                    Sources   => False,
+                                    Languages => No_Names);
+
+                                 if Path_Buffer = null then
+                                    Path_Buffer :=
+                                      new String
+                                        (1 .. Path_Buffer_Initial_Length);
+                                 end if;
+
+                                 Path_Last := 0;
+
+                                 for Index in 1 .. Directories.Last loop
+                                    if Path_Last /= 0 then
+                                       Add_To_Path (Path_Separator);
+                                    end if;
+
+                                    Add_To_Path
+                                      (Get_Name_String
+                                         (Directories.Table (Index)));
+
+                                    if Current_Verbosity = High then
+                                       Put_Line
+                                         (Get_Name_String
+                                            (Directories.Table (Index)));
+                                    end if;
+                                 end loop;
+
+                                 Path_Name :=
+                                   new String'(Path_Buffer
+                                               (1 .. Path_Last));
+                                 Project_Tree.Projects.Table
+                                   (Main_Proj).Objects_Path :=
+                                   Path_Name;
+                              end if;
+
+                              Setenv (Env_Var, Path_Name.all);
+
+                              if Verbose_Mode then
+                                 Write_Str (Env_Var);
+                                 Write_Str (" = ");
+                                 Write_Line (Path_Name.all);
+                              end if;
+                           end;
+
+                        elsif Project_Tree.Languages_Data.Table
+                          (B_Data.Language).Config.Objects_Path_File /=
+                          No_Name
+                        then
+                           declare
+                              Env_Var   : constant String :=
+                                            Get_Name_String
+                                              (Project_Tree.
+                                                Languages_Data.Table
+                                                 (B_Data.Language).Config.
+                                                 Objects_Path_File);
+                              Path_Name : Path_Name_Type :=
+                                            Project_Tree.Projects.Table
+                                              (Main_Proj).
+                                              Objects_Path_File_Without_Libs;
+                           begin
+                              if Path_Name = No_Path then
+                                 if Current_Verbosity = High then
+                                    Put_Line (Env_Var & " :");
+                                 end if;
+
+                                 Get_Directories
+                                   (Main_Proj,
+                                    Sources   => False,
+                                    Languages => No_Names);
+
+                                 declare
+                                    FD     : File_Descriptor;
+                                    Len    : Integer;
+                                    Status : Boolean;
+                                 begin
+                                    Prj.Env.Create_New_Path_File
+                                      (In_Tree   => Project_Tree,
+                                       Path_FD   => FD,
+                                       Path_Name =>
+                                         Project_Tree.Projects.Table
+                                           (Main_Proj).
+                                           Objects_Path_File_Without_Libs);
+
+                                    Path_Name :=
+                                      Project_Tree.Projects.Table
+                                        (Main_Proj).
+                                        Objects_Path_File_Without_Libs;
+
+                                    for Index in 1 .. Directories.Last loop
+                                       Get_Name_String
+                                         (Directories.Table (Index));
+
+                                       if Current_Verbosity = High then
+                                          Put_Line
+                                            (Name_Buffer (1 .. Name_Len));
+                                       end if;
+
+                                       Name_Len := Name_Len + 1;
+                                       Name_Buffer (Name_Len) := ASCII.LF;
+
+                                       Len :=
+                                         Write
+                                           (FD,
+                                            Name_Buffer (1)'Address,
+                                            Name_Len);
+
+                                       if Len /= Name_Len then
+                                          Fail_Program ("disk full");
+                                       end if;
+                                    end loop;
+
+                                    Close (FD, Status);
+
+                                    if not Status then
+                                       Fail_Program ("disk full");
+                                    end if;
+                                 end;
+                              end if;
+
+                              Setenv (Env_Var, Get_Name_String (Path_Name));
+
+                              if Verbose_Mode then
+                                 Write_Str (Env_Var);
+                                 Write_Str (" = ");
+                                 Write_Line (Get_Name_String (Path_Name));
+                              end if;
+                           end;
+                        end if;
+
+                        if not Quiet_Output then
+                           if Verbose_Mode then
+                              Write_Str (B_Data.Binder_Driver_Path.all);
+
+                           else
+                              Name_Len := 0;
+                              Add_Str_To_Name_Buffer
+                                (Base_Name
+                                   (Get_Name_String
+                                      (B_Data.Binder_Driver_Name)));
+
+                              if Executable_Suffix'Length /= 0 and then
+                                Name_Len > Executable_Suffix'Length and then
+                                Name_Buffer
+                                  (Name_Len - Executable_Suffix'Length + 1
+                                   .. Name_Len)
+                                = Executable_Suffix.all
+                              then
+                                 Name_Len :=
+                                   Name_Len - Executable_Suffix'Length;
+                              end if;
+
+                              Write_Str (Name_Buffer (1 .. Name_Len));
+                           end if;
+
+                           Write_Char (' ');
+                           Write_Line (Bind_Exchange.all);
+                        end if;
+
+                        Spawn
+                          (B_Data.Binder_Driver_Path.all,
+                           (1 => Bind_Exchange),
+                           Success);
+
+                        if not Success then
+                           Fail_Program ("unable to bind " & Main);
+                        end if;
+                     end if;
+                  end if;
+               end loop;
             end;
          end;
       end loop;
@@ -10258,6 +10421,70 @@ package body Buildgpr is
                Id   => Source_Identity,
                Proj => Source_Project));
       end Insert;
+
+      procedure Insert_Withed_Sources_For (The_ALI : ALI.ALI_Id) is
+         Sfile     : File_Name_Type;
+         Afile     : File_Name_Type;
+         Src_Id    : Source_Id;
+
+      begin
+         --  Insert in the Q the unmarked source files (i.e. those which have
+         --  never been inserted in the Q and hence never considered).
+
+         for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+                  ALI.ALIs.Table (The_ALI).Last_Unit
+         loop
+            for K in ALI.Units.Table (J).First_With ..
+              ALI.Units.Table (J).Last_With
+            loop
+               Sfile := ALI.Withs.Table (K).Sfile;
+
+               --  Skip generics
+
+               if Sfile /= No_File then
+                  Afile := ALI.Withs.Table (K).Afile;
+                  Src_Id := Project_Tree.First_Source;
+
+                  while Src_Id /= No_Source loop
+                     declare
+                        Source : Source_Data renames
+                          Project_Tree.Sources.Table (Src_Id);
+                     begin
+                        if Source.Compiled
+                          and then Source.Dep_Name = Afile
+                        then
+                           case Source.Kind is
+                              when Spec =>
+                                 if Source.Other_Part /= No_Source then
+                                    Src_Id := Source.Other_Part;
+                                 end if;
+
+                              when Impl =>
+                                 if Is_Subunit (Source) then
+                                    Src_Id := No_Source;
+                                 end if;
+
+                              when Sep =>
+                                 Src_Id := No_Source;
+                           end case;
+
+                           exit;
+                        end if;
+
+                        Src_Id := Source.Next_In_Sources;
+                     end;
+                  end loop;
+
+                  if Src_Id /= No_Source then
+                     Queue.Insert
+                       (Sfile,
+                        Src_Id,
+                        Project_Tree.Sources.Table (Src_Id).Project);
+                  end if;
+               end if;
+            end loop;
+         end loop;
+      end Insert_Withed_Sources_For;
 
       ----------------------------
       -- Insert_Project_Sources --
