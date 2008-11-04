@@ -1608,6 +1608,8 @@ package body GprConfig.Knowledge is
       C, C2     : External_Value_Lists.Cursor;
       CS        : String_Lists.Cursor;
    begin
+      Continue := True;
+
       --  verify that the compiler is indeed a real executable
       --  on Windows and not a cygwin symbolic link
 
