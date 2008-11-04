@@ -2055,7 +2055,10 @@ package body Buildgpr is
 
             if not Need_To_Build then
                for S in 1 .. Last_Source loop
-                  if not Source_Indexes (S).Found then
+                  if not Source_Indexes (S).Found and then
+                    Project_Tree.Sources.Table
+                      (Source_Indexes (S).Id).Get_Object
+                  then
                      Need_To_Build := True;
 
                      if Verbose_Mode then
@@ -2276,10 +2279,13 @@ package body Buildgpr is
                               Source : Source_Data renames
                                 Project_Tree.Sources.Table (Src_Id);
                            begin
-                              Put_Line
-                                (Dep_File,
-                                 Get_Name_String (Source.Object_Path));
-                              Put_Line (Dep_File, String (Source.Object_TS));
+                              if Source.Get_Object then
+                                 Put_Line
+                                   (Dep_File,
+                                    Get_Name_String (Source.Object_Path));
+                                 Put_Line
+                                   (Dep_File, String (Source.Object_TS));
+                              end if;
                            end;
                         end loop;
 
@@ -7086,9 +7092,9 @@ package body Buildgpr is
       --  is only called once per source file.
       Src_Data.Source_TS := File_Stamp (Src_Data.Path.Name);
 
-      Src_Data.Get_Object := Src_Data.Compiled;
+      Src_Data.Get_Object := Src_Data.Compiled and Src_Data.Object_Exists;
 
-      if Src_Data.Compiled  then
+      if Src_Data.Get_Object  then
 
          --  Should the object file be included in the global archive ?
 
@@ -7108,10 +7114,8 @@ package body Buildgpr is
                end if;
          end case;
 
-         if not Src_Data.Object_Exists then
-            --  The attributes were modified directly in the Sources
-            --  table through the pointer
-            return;
+         if not Src_Data.Object_Linked then
+            Src_Data.Get_Object := False;
          end if;
 
          --  Find the object file for that source. It could be either in
