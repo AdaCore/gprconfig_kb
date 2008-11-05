@@ -1886,142 +1886,163 @@ package body Buildgpr is
                Proj_List := Proj_Element.Next;
             end loop;
 
-            if Verbose_Mode then
-               Write_Str  ("   Checking ");
-               Write_Str  (Archive_Name);
-               Write_Line (" ...");
-            end if;
+            Need_To_Build := Force_Compilations;
 
-            Need_To_Build := False;
-
-            --  If the archive does not exist, of course it needs to be built
-
-            if not Is_Regular_File (Archive_Name) then
-               Need_To_Build := True;
-
+            if not Need_To_Build then
                if Verbose_Mode then
-                  Write_Line ("      -> archive does not exist");
+                  Write_Str  ("   Checking ");
+                  Write_Str  (Archive_Name);
+                  Write_Line (" ...");
                end if;
 
-            else
-               --  Archive does exist
+               --  If the archive does not exist, of course it needs to be
+               --  built.
 
-               --  Check the archive dependency file
-
-               Open (File, Archive_Dep_Name);
-
-               --  If the archive dependency file does not exist, we need to
-               --  to rebuild the archive and to create its dependency file.
-
-               if not Is_Valid (File) then
+               if not Is_Regular_File (Archive_Name) then
                   Need_To_Build := True;
 
                   if Verbose_Mode then
-                     Write_Str  ("      -> archive dependency file ");
-                     Write_Str  (Archive_Dep_Name);
-                     Write_Line (" does not exist");
+                     Write_Line ("      -> archive does not exist");
                   end if;
 
                else
-                  --  Read the dependency file, line by line
+                  --  Archive does exist
 
-                  while not End_Of_File (File) loop
-                     Get_Line (File, Name_Buffer, Name_Len);
+                  --  Check the archive dependency file
 
-                     --  First line is the path of the object file
+                  Open (File, Archive_Dep_Name);
 
-                     Object_Path := Name_Find;
-                     Src_Id := No_Source;
+                  --  If the archive dependency file does not exist, we need to
+                  --  to rebuild the archive and to create its dependency file.
 
-                     --  Check if this object file is for a source of this
-                     --  project.
+                  if not Is_Valid (File) then
+                     Need_To_Build := True;
 
-                     for S in 1 .. Last_Source loop
-                        S_Id := Source_Indexes (S).Id;
+                     if Verbose_Mode then
+                        Write_Str  ("      -> archive dependency file ");
+                        Write_Str  (Archive_Dep_Name);
+                        Write_Line (" does not exist");
+                     end if;
 
-                        declare
-                           Source : Source_Data renames
-                             Project_Tree.Sources.Table (S_Id);
-                        begin
-                           if (not Source_Indexes (S).Found)
-                             and then Source.Object_Path = Object_Path
-                           then
-                              --  We have found the object file: get the source
-                              --  data, and mark it as found.
+                  else
+                     --  Read the dependency file, line by line
 
-                              Src_Id := S_Id;
-                              Source_Indexes (S).Found := True;
-                              exit;
+                     while not End_Of_File (File) loop
+                        Get_Line (File, Name_Buffer, Name_Len);
+
+                        --  First line is the path of the object file
+
+                        Object_Path := Name_Find;
+                        Src_Id := No_Source;
+
+                        --  Check if this object file is for a source of this
+                        --  project.
+
+                        for S in 1 .. Last_Source loop
+                           S_Id := Source_Indexes (S).Id;
+
+                           declare
+                              Source : Source_Data renames
+                                Project_Tree.Sources.Table (S_Id);
+                           begin
+                              if (not Source_Indexes (S).Found)
+                                and then Source.Object_Path = Object_Path
+                              then
+                                 --  We have found the object file: get the
+                                 --  source data, and mark it as found.
+
+                                 Src_Id := S_Id;
+                                 Source_Indexes (S).Found := True;
+                                 exit;
+                              end if;
+                           end;
+                        end loop;
+
+                        --  If it is not for a source of this project, then the
+                        --  archive needs to be rebuilt.
+
+                        if Src_Id = No_Source then
+                           Need_To_Build := True;
+                           if Verbose_Mode then
+                              Write_Str  ("      -> ");
+                              Write_Str  (Get_Name_String (Object_Path));
+                              Write_Line (" is not an object of any project");
                            end if;
-                        end;
-                     end loop;
 
-                     --  If it is not for a source of this project, then the
-                     --  archive needs to be rebuilt.
-
-                     if Src_Id = No_Source then
-                        Need_To_Build := True;
-                        if Verbose_Mode then
-                           Write_Str  ("      -> ");
-                           Write_Str  (Get_Name_String (Object_Path));
-                           Write_Line (" is not an object of any project");
+                           exit;
                         end if;
 
-                        exit;
-                     end if;
+                        --  The second line is the time stamp of the object
+                        --  file. If there is no next line, then the dependency
+                        --  file is truncated, and the archive need to be
+                        --  rebuilt.
 
-                     --  The second line is the time stamp of the object file.
-                     --  If there is no next line, then the dependency file is
-                     --  truncated, and the archive need to be rebuilt.
+                        if End_Of_File (File) then
+                           Need_To_Build := True;
 
-                     if End_Of_File (File) then
-                        Need_To_Build := True;
+                           if Verbose_Mode then
+                              Write_Str  ("      -> archive dependency file ");
+                              Write_Line (" is truncated");
+                           end if;
 
-                        if Verbose_Mode then
-                           Write_Str  ("      -> archive dependency file ");
-                           Write_Line (" is truncated");
+                           exit;
                         end if;
 
-                        exit;
-                     end if;
+                        Get_Line (File, Name_Buffer, Name_Len);
 
-                     Get_Line (File, Name_Buffer, Name_Len);
+                        --  If the line has the wrong number of characters,
+                        --  then the dependency file is incorrectly formatted,
+                        --  and the archive needs to be rebuilt.
 
-                     --  If the line has the wrong number of characters, then
-                     --  the dependency file is incorrectly formatted, and the
-                     --  archive needs to be rebuilt.
+                        if Name_Len /= Time_Stamp_Length then
+                           Need_To_Build := True;
 
-                     if Name_Len /= Time_Stamp_Length then
-                        Need_To_Build := True;
+                           if Verbose_Mode then
+                              Write_Str  ("      -> archive dependency file ");
+                              Write_Line
+                                (" is incorrectly formatted (time stamp)");
+                           end if;
 
-                        if Verbose_Mode then
-                           Write_Str  ("      -> archive dependency file ");
-                           Write_Line
-                             (" is incorrectly formatted (time stamp)");
+                           exit;
                         end if;
 
-                        exit;
-                     end if;
+                        Time_Stamp :=
+                          Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
 
-                     Time_Stamp :=
-                       Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
+                        --  If the time stamp in the dependency file is
+                        --  different from the time stamp of the object file,
+                        --  then the archive needs to be rebuilt. The
+                        --  comparaison is done with String type values,
+                        --  because two values of type Time_Stamp_Type are
+                        --  equal if they differ by 2 seconds or less; here the
+                        --  check is for an exact match.
 
-                     --  If the time stamp in the dependency file is different
-                     --  from the time stamp of the object file, then the
-                     --  archive needs to be rebuilt. The comparaison is done
-                     --  with String type values, because two values of type
-                     --  Time_Stamp_Type are equal if they differ by 2 seconds
-                     --  or less; here the check is for an exact match.
+                        if String (Time_Stamp) /=
+                          String
+                            (Project_Tree.Sources.Table (Src_Id).Object_TS)
+                        then
+                           Need_To_Build := True;
 
-                     if String (Time_Stamp) /=
-                       String (Project_Tree.Sources.Table (Src_Id).Object_TS)
-                     then
-                        Need_To_Build := True;
+                           if Verbose_Mode then
+                              Write_Str  ("      -> time stamp of ");
+                              Write_Str  (Get_Name_String (Object_Path));
+                              Write_Str  (" is incorrect in the archive");
+                              Write_Line (" dependency file");
+                              Write_Str  ("         recorded time stamp: ");
+                              Write_Line (String (Time_Stamp));
+                              Write_Str  ("           actual time stamp: ");
+                              Write_Line
+                                (String
+                                   (Project_Tree.Sources.Table (Src_Id)
+                                    .Object_TS));
+                           end if;
 
-                        if Verbose_Mode then
+                           exit;
+
+                        elsif Debug_Flag_T then
                            Write_Str  ("      -> time stamp of ");
                            Write_Str  (Get_Name_String (Object_Path));
-                           Write_Str  (" is incorrect in the archive");
+                           Write_Str  (" is correct in the archive");
                            Write_Line (" dependency file");
                            Write_Str  ("         recorded time stamp: ");
                            Write_Line (String (Time_Stamp));
@@ -2031,25 +2052,10 @@ package body Buildgpr is
                                 (Project_Tree.Sources.Table (Src_Id)
                                  .Object_TS));
                         end if;
+                     end loop;
 
-                        exit;
-
-                     elsif Debug_Flag_T then
-                        Write_Str  ("      -> time stamp of ");
-                        Write_Str  (Get_Name_String (Object_Path));
-                        Write_Str  (" is correct in the archive");
-                        Write_Line (" dependency file");
-                        Write_Str  ("         recorded time stamp: ");
-                        Write_Line (String (Time_Stamp));
-                        Write_Str  ("           actual time stamp: ");
-                        Write_Line
-                          (String
-                             (Project_Tree.Sources.Table (Src_Id)
-                              .Object_TS));
-                     end if;
-                  end loop;
-
-                  Close (File);
+                     Close (File);
+                  end if;
                end if;
             end if;
 
