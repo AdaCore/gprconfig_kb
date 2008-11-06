@@ -1813,10 +1813,6 @@ begin
               ("-l" & Imported_Library_Names.Table (J).all));
       end loop;
 
-      for J in 1 .. Library_Options_Table.Last loop
-         Options_Table.Append (Library_Options_Table.Table (J));
-      end loop;
-
       --  If Ada is used and we don't already know yet that libgnarl is needed,
       --  look for s-osinte.ads in all the ALI files. If found in at least one,
       --  then libgnarl is needed.

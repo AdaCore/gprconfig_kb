@@ -118,10 +118,6 @@ procedure Build_Shared_Lib is
          end if;
       end loop;
 
-      for J in 1 .. Library_Options_Table.Last loop
-         Add_Arg (Library_Options_Table.Table (J));
-      end loop;
-
       --  The object files
 
       if Partial_Linker /= null then
@@ -233,6 +229,12 @@ procedure Build_Shared_Lib is
             Add_Arg (Ofiles (J));
          end loop;
       end if;
+
+      --  Finally the library options
+
+      for J in 1 .. Library_Options_Table.Last loop
+         Add_Arg (Library_Options_Table.Table (J));
+      end loop;
 
       --  Display command if not in quiet mode
 
