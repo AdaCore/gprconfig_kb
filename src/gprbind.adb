@@ -62,6 +62,10 @@ procedure Gprbind is
    Gnatbind_Prefix_Equal : constant String := "gnatbind_prefix=";
    --  Start of the option to specify a prefix for the gnatbind executable.
 
+   Ada_Binder_Equal : constant String := "ada_binder=";
+   --  Start of the option to specify the full name of the Ada binder
+   --  executable. Introduced for GNAAMP, where it is gnaambind.
+
    Quiet_Output : Boolean := False;
    Verbose_Mode : Boolean := False;
 
@@ -294,6 +298,13 @@ begin
                        (Line (Gnatbind_Prefix_Equal'Length + 1 .. Last) &
                         "gnatbind");
 
+                  elsif Last > Ada_Binder_Equal'Length
+                    and then Line (1 .. Ada_Binder_Equal'Length) =
+                             Ada_Binder_Equal
+                  then
+                     GNATBIND := new String'
+                       (Line (Ada_Binder_Equal'Length + 1 .. Last));
+
                   else
                      Binding_Options_Table.Append
                                              (new String'(Line (1 .. Last)));
@@ -483,7 +494,8 @@ begin
            (Gnatbind_Path.all,
             Gnatbind_Options (1 .. Last_Gnatbind_Option),
             FD_Objects,
-            Return_Code);
+            Return_Code,
+            Err_To_Out => False);
 
       else
          --  Otherwise create a temporary response file
@@ -569,7 +581,12 @@ begin
 
             --  And invoke gnatbind with this this response file
 
-            Spawn (Gnatbind_Path.all, Args, FD_Objects, Return_Code);
+            Spawn
+              (Gnatbind_Path.all,
+               Args,
+               FD_Objects,
+               Return_Code,
+               Err_To_Out => False);
 
             if Delete_Temp_Files then
                Delete_File (Get_Name_String (Path), Succ);
