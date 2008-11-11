@@ -426,6 +426,11 @@ begin
       Osint.Fail ("could not locate " & GNATBIND.all);
 
    else
+      --  Normalize the path, so that gnaampbind does not complain about not
+      --  being in a "bib" directory. But don't resolve symbolic links,
+      --  because in GNAT 5.01a1 and previous releases, gnatbind was a symbolic
+      --  link for .gnat_wrapper.
+
       Gnatbind_Path :=
         new String'
           (Normalize_Pathname (Gnatbind_Path.all, Resolve_Links => False));
