@@ -10885,6 +10885,66 @@ package body Buildgpr is
                    (Arg (Target_Project_Option'Length + 1 .. Arg'Last));
             end if;
 
+         elsif Arg'Length > RTS_Option'Length and then
+           Arg (1 .. RTS_Option'Length) = RTS_Option
+         then
+            if Command_Line and then RTS_Name /= null and then
+              Arg (RTS_Option'Length + 1 .. Arg'Last) /= RTS_Name.all
+            then
+               Fail_Program
+                 ("several run-times cannot be specified");
+
+            elsif Command_Line then
+               RTS_Name :=
+                 new String'(Arg (RTS_Option'Length + 1 .. Arg'Last));
+
+            elsif Warning_Mode /= Suppress then
+               if RTS_Name = null then
+                  Write_Line
+                    ("warning: --RTS should be specified on the command line");
+
+               elsif
+                 RTS_Name.all /= Arg (RTS_Option'Length + 1 .. Arg'Last)
+               then
+                  Write_Line
+                    ("warning: --RTS= specified in project file not " &
+                     "consistent with --RTS= specified on the command line");
+               end if;
+            end if;
+
+         elsif Command_Line and then
+           Arg'Length > RTS_Language_Option'Length and then
+           Arg (1 .. RTS_Language_Option'Length) = RTS_Language_Option
+         then
+            declare
+               Language_Name : Name_Id := No_Name;
+               Runtime_Name  : Name_Id := No_Name;
+
+            begin
+               for J in RTS_Language_Option'Length + 2 .. Arg'Last loop
+                  if Arg (J) = '=' then
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer
+                       (Arg (RTS_Language_Option'Length + 1 .. J - 1));
+                     To_Lower (Name_Buffer (1 .. Name_Len));
+                     Language_Name := Name_Find;
+
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Arg (J + 1 .. Arg'Last));
+                     Runtime_Name := Name_Find;
+
+                     exit;
+                  end if;
+               end loop;
+
+               if Language_Name = No_Name then
+                  Fail_Program ("illegal switch: " & Arg);
+
+               else
+                  RTS_Languages.Set (Language_Name, Runtime_Name);
+               end if;
+            end;
+
          elsif Command_Line and then
            Arg'Length > Subdirs_Option'Length and then
            Arg (1 .. Subdirs_Option'Length) =
@@ -11414,6 +11474,16 @@ package body Buildgpr is
          Write_Str
            ("           Sources can import from directly and indirectly " &
             "imported projects");
+         Write_Eol;
+
+         Write_Str ("  --RTS=<runtime>");
+         Write_Eol;
+         Write_Str ("           Use runtime <runtime> for language Ada");
+         Write_Eol;
+
+         Write_Str ("  --RTS:<lang>=<runtime>");
+         Write_Eol;
+         Write_Str ("           Use runtime <runtime> for language <lang>");
          Write_Eol;
 
          Write_Eol;

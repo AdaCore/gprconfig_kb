@@ -325,8 +325,17 @@ package body Confgpr is
       end;
 
       if Target_Name /= null then
-         Default_Config_Project_File_Name := new String'
-           (Target_Name.all & ".cgpr");
+         if RTS_Name /= null then
+            Default_Config_Project_File_Name := new String'
+              (Target_Name.all & '-' & RTS_Name.all & ".cgpr");
+         else
+            Default_Config_Project_File_Name := new String'
+              (Target_Name.all & ".cgpr");
+         end if;
+
+      elsif RTS_Name /= null then
+         Default_Config_Project_File_Name :=
+           new String'(RTS_Name.all & ".cgpr");
 
       else
          Default_Config_Project_File_Name := Getenv (Config_Project_Env_Var);
@@ -661,11 +670,15 @@ package body Confgpr is
                   Config_Command : constant String :=
                                      "--config=" & Get_Name_String (Name);
 
+                  Runtime_Name   : constant String :=
+                                     Runtime_Name_For (Name);
+
                begin
                   if Comp_Cmd = Nil_Variable_Value or else
                     Length_Of_Name (Comp_Cmd.Value) = 0
                   then
-                     Args (Arg_Last) := new String'(Config_Command);
+                     Args (Arg_Last) :=
+                       new String'(Config_Command & ",," & Runtime_Name);
 
                   else
                      declare
@@ -676,13 +689,14 @@ package body Confgpr is
                         if Is_Absolute_Path (Compiler_Command) then
                            Args (Arg_Last) :=
                              new String'
-                               (Config_Command & ",,," &
+                               (Config_Command & ",," & Runtime_Name & "," &
                                 Containing_Directory (Compiler_Command) & "," &
                                 Simple_Name (Compiler_Command));
                         else
                            Args (Arg_Last) :=
                              new String'
-                               (Config_Command & ",,,," & Compiler_Command);
+                               (Config_Command & ",," & Runtime_Name & ",," &
+                                Compiler_Command);
                         end if;
                      end;
                   end if;

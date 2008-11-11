@@ -31,6 +31,7 @@ with Makeutl;  use Makeutl;
 with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
+with Snames;   use Snames;
 with Tempdir;
 with Types;    use Types;
 
@@ -489,5 +490,22 @@ package body Gpr_Util is
         '_' & Img (Img'First + 1 .. Img'Last)
         & Object_Suffix;
    end Partial_Name;
+
+   ----------------------
+   -- Runtime_Name_For --
+   ----------------------
+
+   function Runtime_Name_For (Language : Name_Id) return String is
+   begin
+      if RTS_Languages.Get (Language) /= No_Name then
+         return Get_Name_String (RTS_Languages.Get (Language));
+
+      elsif RTS_Name /= null and then Language = Name_Ada then
+         return RTS_Name.all;
+
+      else
+         return "";
+      end if;
+   end Runtime_Name_For;
 
 end Gpr_Util;
