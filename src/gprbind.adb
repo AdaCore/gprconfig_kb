@@ -424,6 +424,11 @@ begin
 
    if Gnatbind_Path = null then
       Osint.Fail ("could not locate " & GNATBIND.all);
+
+   else
+      Gnatbind_Path :=
+        new String'
+          (Normalize_Pathname (Gnatbind_Path.all, Resolve_Links => False));
    end if;
 
    if Main_ALI = null then
