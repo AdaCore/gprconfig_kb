@@ -1850,8 +1850,6 @@ package body Buildgpr is
             Has_Been_Built := Global_Archive_Data.Has_Been_Built;
 
          else
-            Check_Archive_Builder;
-
             if Project_Of_Current_Object_Directory /= For_Project then
                Project_Of_Current_Object_Directory := For_Project;
                Change_Dir (Get_Name_String (Data.Object_Directory.Name));
@@ -2090,6 +2088,8 @@ package body Buildgpr is
                --  Archive needs to be rebuilt
 
             else
+               Check_Archive_Builder;
+
                --  If archive already exists, first delete it, but if this is
                --  not possible, continue: if archive cannot be built, we will
                --  fail later on.
