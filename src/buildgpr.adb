@@ -6850,10 +6850,12 @@ package body Buildgpr is
          if Total_Errors_Detected > 0
            or else Bad_Compilations.Last > 0
          then
-            --  If switch -k is used, output a summary of the sources that
-            --  could not be compiled.
+            --  If switch -k or -jnn (with nn > 1), output a summary of the
+            --  sources that could not be compiled.
 
-            if Keep_Going and then Bad_Compilations.Last > 0 then
+            if (Keep_Going or Maximum_Processes > 1)
+              and then Bad_Compilations.Last > 0
+            then
                declare
                   Source   : Source_Id;
                begin
