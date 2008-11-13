@@ -9258,6 +9258,7 @@ package body Buildgpr is
 
                Lang_Index     : Language_Index;
                Toolchain_Version_Label_Written : Boolean;
+               Object_File_Suffix_Label_Written : Boolean;
                Lang_Data      : Language_Data;
 
             begin
@@ -9792,7 +9793,7 @@ package body Buildgpr is
                         then
                            if not Toolchain_Version_Label_Written then
                               Put_Line
-                                (Exchange_File, Library_Label
+                                (Exchange_File, Binding_Label
                                    (Toolchain_Version));
                               Toolchain_Version_Label_Written := True;
                            end if;
@@ -9804,6 +9805,40 @@ package body Buildgpr is
                              (Exchange_File,
                               Get_Name_String
                                 (Lang_Data.Config.Toolchain_Version));
+                        end if;
+
+                        Lang_Index := Lang_Data.Next;
+                     end loop;
+
+                     --  Send the object file suffix for each language where it
+                     --  is declared.
+
+                     Lang_Index :=
+                       Project_Tree.Projects.Table
+                         (Main_Proj).First_Language_Processing;
+                     Object_File_Suffix_Label_Written := False;
+
+                     while Lang_Index /= No_Language_Index loop
+                        Lang_Data :=
+                          Project_Tree.Languages_Data.Table (Lang_Index);
+
+                        if
+                          Lang_Data.Config.Object_File_Suffix /= No_Name
+                        then
+                           if not Object_File_Suffix_Label_Written then
+                              Put_Line
+                                (Exchange_File, Binding_Label
+                                   (Gprexch.Object_File_Suffix));
+                              Object_File_Suffix_Label_Written := True;
+                           end if;
+
+                           Put_Line
+                             (Exchange_File,
+                              Get_Name_String (Lang_Data.Name));
+                           Put_Line
+                             (Exchange_File,
+                              Get_Name_String
+                                (Lang_Data.Config.Object_File_Suffix));
                         end if;
 
                         Lang_Index := Lang_Data.Next;

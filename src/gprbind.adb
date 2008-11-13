@@ -133,6 +133,8 @@ procedure Gprbind is
    Objects_Path : Path_Name_Type;
    Objects_File : File_Type;
 
+   Ada_Object_Suffix : String_Access := Get_Object_Suffix;
+
    package Binding_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -351,6 +353,20 @@ begin
                      when Constraint_Error =>
                         null;
                   end;
+
+               when Gprexch.Object_File_Suffix =>
+                  if End_Of_File (IO_File) then
+                     Osint.Fail
+                       ("no object file suffix for language " &
+                        Line (1 .. Last));
+
+                  elsif Line (1 .. Last) = "ada" then
+                     Get_Line (IO_File, Line, Last);
+                     Ada_Object_Suffix := new String'(Line (1 .. Last));
+
+                  else
+                     Skip_Line (IO_File);
+                  end if;
 
                when Generated_Object_File |
                     Generated_Source_Files |
@@ -696,7 +712,8 @@ begin
    Add (Binder_Generated_File, Compiler_Options, Last_Compiler_Option);
 
    declare
-      Object : constant String := "b__" & Main_Base_Name.all & ".o";
+      Object : constant String :=
+                 "b__" & Main_Base_Name.all & Ada_Object_Suffix.all;
    begin
       Add
         (Dash_o,

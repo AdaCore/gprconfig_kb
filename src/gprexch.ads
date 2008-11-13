@@ -51,7 +51,8 @@ package Gprexch is
       Run_Path_Option,
       Project_Files,
       Toolchain_Version,
-      Delete_Temp_Files);
+      Delete_Temp_Files,
+      Object_File_Suffix);
 
    function Binding_Label (Section : Binding_Section) return String;
    --  Return the label for a section in a binder exchange file
