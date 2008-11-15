@@ -7355,6 +7355,12 @@ package body Buildgpr is
 
             Main_Base_Name : File_Name_Type;
 
+            First_Object_Index : Natural := 0;
+            Last_Object_Index  : Natural := 0;
+
+            List           : Name_List_Index;
+            Nam_Nod        : Name_Node;
+
          begin
             exit when Display_Main'Length = 0;
 
@@ -7490,6 +7496,7 @@ package body Buildgpr is
             end if;
 
             if There_Are_Binder_Drivers then
+               First_Object_Index := Last_Argument + 1;
                Binding_Options.Init;
 
                for B_Index in 1 .. Binding_Languages.Last loop
@@ -7608,6 +7615,8 @@ package body Buildgpr is
                      end if;
                   end;
                end loop;
+
+               Last_Object_Index := Last_Argument;
             end if;
 
             --  Add the global archive, if there is one
@@ -8072,6 +8081,111 @@ package body Buildgpr is
                      Add_Executable_Name;
                   end if;
                end;
+
+               --  If response file are supported, check the length of the
+               --  command line and the number of object files, then create
+               --  a response file if needed.
+
+               if Data.Config.Max_Command_Line_Length > 0 and then
+                 Data.Config.Resp_File_Format /= Prj.None and then
+                 First_Object_Index > 0
+               then
+                  declare
+                     Arg_Length : Natural := 0;
+                     Min_Number_Of_Objects : Natural := 0;
+                     Response_File_Name : Path_Name_Type := No_Path;
+                  begin
+                     for J in 1 .. Last_Argument loop
+                        Arg_Length := Arg_Length + Arguments (J)'Length + 1;
+                     end loop;
+
+                     if Arg_Length > Data.Config.Max_Command_Line_Length then
+                        List := Data.Config.Resp_File_Options;
+
+                        if List /= No_Name_List then
+                           Min_Number_Of_Objects := 1;
+
+                        else
+                           Min_Number_Of_Objects := 0;
+
+                           while List /= No_Name_List loop
+                              Min_Number_Of_Objects :=
+                                Min_Number_Of_Objects + 1;
+                              List :=
+                                Project_Tree.Name_Lists.Table (List).Next;
+                           end loop;
+                        end if;
+
+                        --  Don't create a project file if there would not be
+                        --  a smaller number of arguments.
+
+                        if Last_Object_Index - First_Object_Index + 1 >
+                          Min_Number_Of_Objects
+                        then
+                           Create_Response_File
+                             (Format  => Data.Config.Resp_File_Format,
+                              Objects => Arguments
+                                (First_Object_Index .. Last_Object_Index),
+                              Name    => Response_File_Name);
+
+                           --  Replace the first object file arguments with
+                           --  the argument(s) specifying the response file.
+                           --  No need to update Arguments_Displayed, as the
+                           --  values are already correct (= Verbose_Mode).
+
+                           List := Data.Config.Resp_File_Options;
+
+                           if List = No_Name_List then
+                              Arguments (First_Object_Index) :=
+                                new String'(Get_Name_String
+                                            (Response_File_Name));
+                              First_Object_Index := First_Object_Index + 1;
+
+                           else
+                              loop
+                                 Nam_Nod :=
+                                   Project_Tree.Name_Lists.Table (List);
+                                 exit when Nam_Nod.Next = No_Name_List;
+                                 Arguments (First_Object_Index) :=
+                                   new String'(Get_Name_String
+                                               (Nam_Nod.Name));
+                                 First_Object_Index := First_Object_Index + 1;
+                                 List := Nam_Nod.Next;
+                              end loop;
+
+                              Arguments (First_Object_Index) :=
+                                   new String'(Get_Name_String
+                                                 (Nam_Nod.Name) &
+                                               Get_Name_String
+                                                 (Response_File_Name));
+                              First_Object_Index := First_Object_Index + 1;
+                           end if;
+
+                           --  And put the arguments following the object files
+                           --  immediately after the response file
+                           --  argument(s). Update Arguments_Displayed too.
+
+                           Arguments (First_Object_Index ..
+                                        Last_Argument -
+                                        Last_Object_Index +
+                                        First_Object_Index -
+                                        1) :=
+                             Arguments (Last_Object_Index + 1 ..
+                                                  Last_Argument);
+                           Arguments_Displayed (First_Object_Index ..
+                                                Last_Argument -
+                                                Last_Object_Index +
+                                                First_Object_Index -
+                                                1) :=
+                             Arguments_Displayed (Last_Object_Index + 1 ..
+                                                  Last_Argument);
+                           Last_Argument :=
+                             Last_Argument - Last_Object_Index +
+                               First_Object_Index - 1;
+                        end if;
+                     end if;
+                  end;
+               end if;
 
                Display_Command (Linker_Name.all, Linker_Path);
 
