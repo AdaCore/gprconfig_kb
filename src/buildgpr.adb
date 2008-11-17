@@ -8687,6 +8687,15 @@ package body Buildgpr is
             return True;
          end if;
 
+         if ALI.ALIs.Table (The_ALI).No_Object then
+            if Verbose_Mode then
+               Write_Line
+                 ("    -> no object generated during last compilation");
+            end if;
+
+            return True;
+         end if;
+
          --  Check that all dependent source file names do correspond to
          --  the mapping of units to file names.
 
