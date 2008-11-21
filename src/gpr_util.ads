@@ -102,6 +102,8 @@ package Gpr_Util is
 
    Autoconfiguration : Boolean := True;
 
+   Autoconf_Specified : Boolean := False;
+
    Delete_Autoconf_File : Boolean := False;
 
    Main_Config_Project : Project_Id;

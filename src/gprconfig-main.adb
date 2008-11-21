@@ -54,6 +54,8 @@ procedure GprConfig.Main is
    Selected_Target : Unbounded_String;
    --  Value of --target switch.
 
+   Target_Specified : Boolean := False;
+
    Selected_Targets_Set : Targets_Set_Id;
    --  Targets set id for the selected target.
 
@@ -882,6 +884,8 @@ begin
                   Load_Standard_Base := False;
                end if;
             elsif Full_Switch = "-target" then
+               Target_Specified := True;
+
                if Parameter = "all" then
                   Selected_Target := Null_Unbounded_String;
                else
@@ -1034,8 +1038,16 @@ begin
       Show_Command_Line_Config (Compilers);
    end if;
 
+   if not Target_Specified then
+      Selected_Target := Null_Unbounded_String;
+   end if;
+
    if Output_File /= Null_Unbounded_String then
-      Generate_Configuration (Base, Compilers, To_String (Output_File));
+      Generate_Configuration
+        (Base,
+         Compilers,
+         To_String (Output_File),
+         To_String (Selected_Target));
    end if;
 
 exception

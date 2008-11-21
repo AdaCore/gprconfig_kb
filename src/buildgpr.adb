@@ -10989,16 +10989,18 @@ package body Buildgpr is
            and then
          Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
          then
-            if Config_Project_File_Name /= null then
+            if Config_Project_File_Name /= null and then
+              (Autoconf_Specified or else
+               Config_Project_File_Name.all /=
+                 Arg (Config_Project_Option'Length + 1 .. Arg'Last))
+            then
                Fail_Program
-                 ("several configuration switches cannot be specified");
-
-            elsif Target_Name /= null then
-               Fail_Program
-                 ("configuration and target switches cannot be used together");
+                 ("several different configuration switches " &
+                  "cannot be specified");
 
             else
                Autoconfiguration := False;
+               Autoconf_Specified := False;
                Config_Project_File_Name :=
                  new String'
                    (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
@@ -11011,18 +11013,20 @@ package body Buildgpr is
             Arg (1 .. Autoconf_Project_Option'Length) =
               Autoconf_Project_Option
          then
-            if Config_Project_File_Name /= null then
+            if Config_Project_File_Name /= null and then
+              ((not Autoconf_Specified) or else
+                Config_Project_File_Name.all /=
+                  Arg (Autoconf_Project_Option'Length + 1 .. Arg'Last))
+            then
                Fail_Program
-                 ("several configuration switches cannot be specified");
-
-            elsif Target_Name /= null then
-               Fail_Program
-                 ("configuration and target switches cannot be used together");
+                 ("several different configuration switches " &
+                  "cannot be specified");
 
             else
                Config_Project_File_Name :=
                  new String'
                    (Arg (Autoconf_Project_Option'Length + 1 .. Arg'Last));
+               Autoconf_Specified := True;
             end if;
 
          elsif Command_Line
@@ -11032,12 +11036,12 @@ package body Buildgpr is
             Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
          then
             if Target_Name /= null then
-               Fail_Program
-                 ("several target switches cannot be specified");
-
-            elsif Config_Project_File_Name /= null then
-               Fail_Program
-                 ("configuration and target switches cannot be used together");
+               if Target_Name.all /=
+                 Arg (Target_Project_Option'Length + 1 .. Arg'Last)
+               then
+                  Fail_Program
+                    ("several different target switches cannot be specified");
+               end if;
 
             else
                Target_Name :=
@@ -11052,7 +11056,7 @@ package body Buildgpr is
               Arg (RTS_Option'Length + 1 .. Arg'Last) /= RTS_Name.all
             then
                Fail_Program
-                 ("several run-times cannot be specified");
+                 ("several different run-times cannot be specified");
 
             elsif Command_Line then
                RTS_Name :=

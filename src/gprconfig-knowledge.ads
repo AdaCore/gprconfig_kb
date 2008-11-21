@@ -190,7 +190,8 @@ package GprConfig.Knowledge is
    procedure Generate_Configuration
      (Base        : Knowledge_Base;
       Compilers   : Compiler_Lists.List;
-      Output_File : String);
+      Output_File : String;
+      Target      : String);
    --  Generate the configuration file for the list of selected compilers
 
    function Is_Supported_Config

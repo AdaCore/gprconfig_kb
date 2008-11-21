@@ -381,16 +381,6 @@ package body Confgpr is
          end if;
       end if;
 
-      --  If Autoconfiguration is True, then get the path of gprconfig
-
-      if Autoconfiguration then
-         Gprconfig_Path := Locate_Exec_On_Path (Gprconfig_Name);
-
-         if Gprconfig_Path = null then
-            Fail ("could not locate gprconfig for auto-configuration");
-         end if;
-      end if;
-
       --  Parse the user project tree
 
       Set_In_Configuration (False);
@@ -430,7 +420,16 @@ package body Confgpr is
       --  If Autoconfiguration is True, get the languages from the user project
       --  tree, call gprconfig and check that the config file exists.
 
+      <<Do_Autoconf>>
       if Autoconfiguration then
+
+         --  Get the path of gprconfig
+
+         Gprconfig_Path := Locate_Exec_On_Path (Gprconfig_Name);
+
+         if Gprconfig_Path = null then
+            Fail ("could not locate gprconfig for auto-configuration");
+         end if;
 
          --  First, find the object directory of the main project
 
@@ -771,6 +770,50 @@ package body Confgpr is
             From_Project_Node_Tree => Project_Node_Tree,
             Report_Error           => null,
             Reset_Tree             => False);
+      end if;
+
+      --  If not in auto configuration, check attribute Target
+
+      if not Autoconfiguration then
+         declare
+            Target : constant Variable_Value :=
+                       Value_Of
+                         (Name_Target,
+                          Project_Tree.Projects.Table
+                            (Main_Config_Project).Decl.Attributes,
+                          Project_Tree);
+            Tgt_Name : Name_Id := No_Name;
+
+            OK     : Boolean;
+
+         begin
+            if Target /= Nil_Variable_Value and then not Target.Default then
+               Tgt_Name := Target.Value;
+            end if;
+
+            if Target_Name = null then
+               OK := Tgt_Name = No_Name;
+
+            else
+               OK := (Tgt_Name /= No_Name) and then
+                     Target_Name.all = Get_Name_String (Tgt_Name);
+            end if;
+
+            if not OK then
+               if Autoconf_Specified then
+                  if Verbose_Mode then
+                     Write_Line
+                       ("inconsistent targets, performing auto configuration");
+                  end if;
+
+                  Autoconfiguration := True;
+                  goto Do_Autoconf;
+
+               else
+                  Osint.Fail ("invalid target name in configuration");
+               end if;
+            end if;
+         end;
       end if;
 
       if Config_Project_Node = Empty_Node or else

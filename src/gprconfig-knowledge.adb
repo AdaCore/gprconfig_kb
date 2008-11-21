@@ -2637,7 +2637,8 @@ package body GprConfig.Knowledge is
    procedure Generate_Configuration
      (Base        : Knowledge_Base;
       Compilers   : Compiler_Lists.List;
-      Output_File : String)
+      Output_File : String;
+      Target      : String)
    is
       Config   : Configuration_Lists.Cursor := First (Base.Configurations);
       Output            : File_Type;
@@ -2730,6 +2731,10 @@ package body GprConfig.Knowledge is
       New_Line (Output);
 
       Put_Line (Output, "configuration project " & Project_Name & " is");
+
+      if Target'Length > 0 and then Target /= "all" then
+         Put_Line (Output, "   for Target use """ & Target & """;");
+      end if;
 
       --  Generate known packages in order.  This takes care of possible
       --  dependencies.
