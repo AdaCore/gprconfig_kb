@@ -3519,7 +3519,7 @@ package body Buildgpr is
 
             if Nmb = 0 then
                Fail_Program
-                 ("""" & Display_Main & """ quit of any project");
+                 ("""" & Display_Main & """ is not a source of any project");
 
             elsif Nmb > 1 then
                Fail_Program
