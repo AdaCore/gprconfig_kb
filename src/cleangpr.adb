@@ -1179,23 +1179,23 @@ package body Cleangpr is
                           Arg (1 .. Config_Project_Option'Length) =
                           Config_Project_Option
                         then
-                           if Config_Project_File_Name /= null then
+                           if Config_Project_File_Name /= null and then
+                             (Autoconf_Specified or else
+                                Config_Project_File_Name.all /=
+                                  Arg (Config_Project_Option'Length + 1
+                                       .. Arg'Last))
+                           then
                               Fail_Program
                                 ("several configuration switches cannot " &
                                  "be specified");
-
-                           elsif Target_Name /= null then
-                              Fail_Program
-                                ("configuration and target switches cannot " &
-                                 "be used together");
 
                            else
 
                               Autoconfiguration := False;
                               Config_Project_File_Name :=
                                 new String'
-                                  (Arg (Config_Project_Option'Length + 1 ..
-                                     Arg'Last));
+                                  (Arg (Config_Project_Option'Length + 1
+                                        .. Arg'Last));
                            end if;
 
                         elsif Arg'Length > Autoconf_Project_Option'Length
@@ -1203,21 +1203,22 @@ package body Cleangpr is
                               Arg (1 .. Autoconf_Project_Option'Length) =
                                 Autoconf_Project_Option
                         then
-                           if Config_Project_File_Name /= null then
+                           if Config_Project_File_Name /= null and then
+                             ((not Autoconf_Specified) or else
+                                Config_Project_File_Name.all /=
+                                  Arg (Autoconf_Project_Option'Length + 1
+                                       .. Arg'Last))
+                           then
                               Fail_Program
                                 ("several configuration switches cannot " &
                                  "be specified");
 
-                           elsif Target_Name /= null then
-                              Fail_Program
-                                ("configuration and target switches cannot " &
-                                 "be used together");
-
                            else
                               Config_Project_File_Name :=
                                 new String'
-                                  (Arg (Autoconf_Project_Option'Length + 1 ..
-                                        Arg'Last));
+                                  (Arg (Autoconf_Project_Option'Length + 1
+                                        .. Arg'Last));
+                              Autoconf_Specified := True;
                            end if;
 
                         elsif
@@ -1227,19 +1228,20 @@ package body Cleangpr is
                              Target_Project_Option
                         then
                            if Target_Name /= null then
-                              Fail_Program
-                              ("several target switches cannot be specified");
-
-                           elsif Config_Project_File_Name /= null then
-                              Fail_Program
-                                ("configuration and target switches cannot " &
-                                 "be used together");
+                              if Target_Name.all /=
+                                Arg (Target_Project_Option'Length + 1
+                                     .. Arg'Last)
+                              then
+                                 Fail_Program
+                                   ("several target switches " &
+                                    "cannot be specified");
+                              end if;
 
                            else
                               Target_Name :=
                                 new String'
-                                  (Arg (Target_Project_Option'Length + 1 ..
-                                        Arg'Last));
+                                  (Arg (Target_Project_Option'Length + 1
+                                        .. Arg'Last));
                            end if;
 
                         elsif Arg'Length > Subdirs_Option'Length and then
