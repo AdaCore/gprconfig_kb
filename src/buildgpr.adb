@@ -871,6 +871,10 @@ package body Buildgpr is
    --  Return True if the object Object_Name is not overridden by a source
    --  in a project extending project Project.
 
+   function Is_In_Library_Project (Object_Path : String) return Boolean;
+   --  Return True if Object_Path is the path of an object file in a library
+   --  project.
+
    function Is_Subunit (Source : Source_Data) return Boolean;
    --  Return True if source is a subunit
 
@@ -7271,6 +7275,27 @@ package body Buildgpr is
       return True;
    end Is_Included_In_Global_Archive;
 
+   ---------------------------
+   -- Is_In_Library_Project --
+   ---------------------------
+
+   function Is_In_Library_Project (Object_Path : String) return Boolean is
+      Path_Id : constant Path_Name_Type := Create_Name (Object_Path);
+      Src_Data : Source_Data;
+
+   begin
+      for J in 1 .. Source_Data_Table.Last (Project_Tree.Sources) loop
+         Src_Data := Project_Tree.Sources.Table (J);
+
+         if Src_Data.Object_Path = Path_Id then
+            return
+              Project_Tree.Projects.Table (Src_Data.Project).Library;
+         end if;
+      end loop;
+
+      return False;
+   end Is_In_Library_Project;
+
    ----------------
    -- Is_Subunit --
    ----------------
@@ -7555,6 +7580,9 @@ package body Buildgpr is
                                  when Bound_Object_Files =>
                                     if Line (1 .. Last) /=
                                       Get_Name_String (Main_Source.Object_Path)
+                                      and then
+                                        not Is_In_Library_Project
+                                          (Line (1 .. Last))
                                     then
                                        Add_Argument
                                          (Line (1 .. Last), Verbose_Mode);
