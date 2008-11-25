@@ -772,6 +772,15 @@ package body Confgpr is
             Reset_Tree             => False);
       end if;
 
+      if Config_Project_Node = Empty_Node or else
+        Main_Config_Project = No_Project
+      then
+         Osint.Fail
+           ("processing of configuration project """ &
+            Configuration_Project_Path.all &
+            """ failed");
+      end if;
+
       --  If not in auto configuration, check attribute Target
 
       if not Autoconfiguration then
@@ -810,19 +819,17 @@ package body Confgpr is
                   goto Do_Autoconf;
 
                else
-                  Osint.Fail ("invalid target name in configuration");
+                  if Tgt_Name /= No_Name then
+                     Osint.Fail ("invalid target name """ &
+                                 Get_Name_String (Tgt_Name) &
+                                 """in configuration");
+
+                  else
+                     Osint.Fail ("no target specified in configuration");
+                  end if;
                end if;
             end if;
          end;
-      end if;
-
-      if Config_Project_Node = Empty_Node or else
-        Main_Config_Project = No_Project
-      then
-         Osint.Fail
-           ("processing of configuration project """ &
-            Configuration_Project_Path.all &
-            """ failed");
       end if;
 
       --  Add the configuration attributes to all user projects
