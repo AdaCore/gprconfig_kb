@@ -67,6 +67,7 @@ procedure Gprlib is
    Partial_Number : Natural;
 
    First_Object : Natural;
+   Last_Object  : Natural;
 
    Gcc_Name : constant String := "gcc";
 

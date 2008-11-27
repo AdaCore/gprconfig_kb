@@ -230,6 +230,8 @@ procedure Build_Shared_Lib is
          end loop;
       end if;
 
+      Last_Object := Last_Arg;
+
       --  Finally the library options
 
       for J in 1 .. Library_Options_Table.Last loop
@@ -257,27 +259,42 @@ procedure Build_Shared_Lib is
       then
          Create_Response_File
            (Format  => Resp_File_Format,
-            Objects => Arguments (First_Object .. Last_Arg),
+            Objects => Arguments (First_Object .. Last_Object),
             Name    => Response_File_Name);
 
-         Last_Arg := First_Object - 1;
+         declare
+            --  Preserve the options, if any
 
-         if Response_File_Switches /= null then
-            for J in Response_File_Switches'First ..
-              Response_File_Switches'Last - 1
-            loop
-               Add_Arg (Response_File_Switches (J));
+            Options : constant String_List :=
+                        Arguments (Last_Object + 1 .. Last_Arg);
+
+         begin
+
+            Last_Arg := First_Object - 1;
+
+            if Response_File_Switches /= null then
+               for J in Response_File_Switches'First ..
+                 Response_File_Switches'Last - 1
+               loop
+                  Add_Arg (Response_File_Switches (J));
+               end loop;
+
+               Add_Arg
+                 (new String'
+                    (Response_File_Switches (Response_File_Switches'Last).all &
+                     Get_Name_String (Response_File_Name)));
+
+            else
+               Add_Arg
+                 (new String'(Get_Name_String (Response_File_Name)));
+            end if;
+
+            --  Put back the options
+
+            for J in Options'Range loop
+               Add_Arg (Options (J));
             end loop;
-
-            Add_Arg
-              (new String'
-                 (Response_File_Switches (Response_File_Switches'Last).all &
-                  Get_Name_String (Response_File_Name)));
-
-         else
-            Add_Arg
-              (new String'(Get_Name_String (Response_File_Name)));
-         end if;
+         end;
 
          --  Display actual command if not in quiet mode
 
