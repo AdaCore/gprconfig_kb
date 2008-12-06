@@ -629,6 +629,10 @@ package body Buildgpr is
       Table_Increment      => 100,
       Table_Name           => "Makegpr.Included_Sources");
 
+   There_Are_Stand_Alone_Libraries : Boolean := False;
+   --  Set to True in Post_Compilation_Phase if there are SALS in the project
+   --  tree.
+
    -----------
    -- Queue --
    -----------
@@ -9929,6 +9933,15 @@ package body Buildgpr is
                         Put_Line (Exchange_File, "False");
                      end if;
 
+                     --  If there are Stand-Alone Libraries, tell it to gprbind
+
+                     if There_Are_Stand_Alone_Libraries then
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label
+                             (Gprexch.There_Are_Stand_Alone_Libraries));
+                     end if;
+
                      --  Send the Toolchain Versions of each language where
                      --  they are declared.
 
@@ -10544,6 +10557,10 @@ package body Buildgpr is
               and then Data.Extends = No_Project
               and then Data.Library
             then
+               if Data.Standalone_Library then
+                  There_Are_Stand_Alone_Libraries := True;
+               end if;
+
                Library_Projs.Increment_Last;
                Library_Projs.Table (Library_Projs.Last) := Project;
             end if;
@@ -10556,6 +10573,7 @@ package body Buildgpr is
    begin
       Processed_Projects.Reset;
       Library_Projs.Init;
+      There_Are_Stand_Alone_Libraries := False;
 
       Process_Project (For_Project);
    end Process_Imported_Libraries;

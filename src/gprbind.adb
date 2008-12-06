@@ -69,6 +69,9 @@ procedure Gprbind is
    Quiet_Output : Boolean := False;
    Verbose_Mode : Boolean := False;
 
+   There_Are_Stand_Alone_Libraries : Boolean := False;
+   --  Set to True if the corresponding label is in the exchange file
+
    No_Main_Option : constant String := "-n";
    Dash_o         : constant String := "-o";
    Dash_shared    : constant String := "-shared";
@@ -237,6 +240,9 @@ begin
                when Shared_Libs =>
                   Static_Libs := False;
 
+               when Gprexch.There_Are_Stand_Alone_Libraries =>
+                  There_Are_Stand_Alone_Libraries := True;
+
                when others =>
                   null;
             end case;
@@ -254,6 +260,9 @@ begin
 
                when Shared_Libs =>
                   Osint.Fail ("shared libs section should be empty");
+
+               when Gprexch.There_Are_Stand_Alone_Libraries =>
+                  Osint.Fail ("stand-alone libraries section should be empty");
 
                when Gprexch.Main_Base_Name =>
                   if Main_Base_Name /= null then
@@ -411,7 +420,10 @@ begin
       Add (Main_ALI.all, Gnatbind_Options, Last_Gnatbind_Option);
    end if;
 
-   if GNAT_Version.all >= "5.01" then
+   --  If there are Stand-Alone Libraries, invoke gnatbind with -F (generate
+   --  checks of elaboration flags) to avoid multiple elaborations.
+
+   if There_Are_Stand_Alone_Libraries and then GNAT_Version.all >= "5.01" then
       Add ("-F", Gnatbind_Options, Last_Gnatbind_Option);
    end if;
 
