@@ -173,7 +173,7 @@ procedure Gprlib is
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 100,
-      Table_Name           => "Gprlib.Imported_Librar_Names");
+      Table_Name           => "Gprlib.Imported_Library_Names");
    --  A table to store the names of the imported libraries
 
    package ALIs is new Table.Table
