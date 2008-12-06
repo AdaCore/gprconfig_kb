@@ -629,10 +629,6 @@ package body Buildgpr is
       Table_Increment      => 100,
       Table_Name           => "Makegpr.Included_Sources");
 
-   There_Are_Stand_Alone_Libraries : Boolean := False;
-   --  Set to True in Post_Compilation_Phase if there are SALS in the project
-   --  tree.
-
    -----------
    -- Queue --
    -----------
@@ -901,6 +897,7 @@ package body Buildgpr is
 
    procedure Process_Imported_Libraries
      (For_Project        : Project_Id;
+      There_Are_SALs     : out Boolean;
       And_Project_Itself : Boolean := False);
    --  Get the imported library project ids in table Library_Projs
 
@@ -2381,6 +2378,8 @@ package body Buildgpr is
 
       Unit_Based_Language_Name : Name_Id;
 
+      Disregard : Boolean;
+
       procedure Get_Objects;
       --  Get the paths of the object files of the library in table
       --  Library_Objs.
@@ -2956,7 +2955,8 @@ package body Buildgpr is
                  (Exchange_File, Library_Label (Major_Minor_Id_Supported));
             end if;
 
-            Process_Imported_Libraries (For_Project);
+            Process_Imported_Libraries
+              (For_Project, There_Are_SALs => Disregard);
 
             --  Check for runtime library dir
 
@@ -7360,6 +7360,8 @@ package body Buildgpr is
       Global_Archive_Has_Been_Built : Boolean;
       Global_Archive_Exists         : Boolean;
 
+      Disregard          : Boolean;
+
    begin
       if Mains.Number_Of_Mains = 0 then
          return;
@@ -7826,7 +7828,8 @@ package body Buildgpr is
 
                --  Add the library switches, if there are libraries
 
-               Process_Imported_Libraries (Main_Proj);
+               Process_Imported_Libraries
+                 (Main_Proj, There_Are_SALs => Disregard);
 
                for J in reverse 1 .. Library_Projs.Last loop
                   if Data.Config.Linker_Lib_Dir_Option = No_Name then
@@ -9223,6 +9226,9 @@ package body Buildgpr is
       Project_Path         : Name_Id;
       Project_File_TS      : Time_Stamp_Type;
 
+      There_Are_Stand_Alone_Libraries : Boolean := False;
+      --  Set to True if there are SALS in the project tree.
+
       procedure Add_Dependency_Files
         (For_Project : Project_Id;
          Language    : Language_Index;
@@ -9331,7 +9337,10 @@ package body Buildgpr is
 
       --  First, get the libraries in building order in table Library_Projs
 
-      Process_Imported_Libraries (Main_Project, And_Project_Itself => True);
+      Process_Imported_Libraries
+        (Main_Project,
+         There_Are_SALs => There_Are_Stand_Alone_Libraries,
+         And_Project_Itself => True);
 
       if Library_Projs.Last > 0 then
          declare
@@ -10508,6 +10517,7 @@ package body Buildgpr is
 
    procedure Process_Imported_Libraries
      (For_Project        : Project_Id;
+      There_Are_SALs     : out Boolean;
       And_Project_Itself : Boolean := False)
    is
 
@@ -10558,7 +10568,7 @@ package body Buildgpr is
               and then Data.Library
             then
                if Data.Standalone_Library then
-                  There_Are_Stand_Alone_Libraries := True;
+                  There_Are_SALs := True;
                end if;
 
                Library_Projs.Increment_Last;
@@ -10573,7 +10583,7 @@ package body Buildgpr is
    begin
       Processed_Projects.Reset;
       Library_Projs.Init;
-      There_Are_Stand_Alone_Libraries := False;
+      There_Are_SALs := False;
 
       Process_Project (For_Project);
    end Process_Imported_Libraries;
