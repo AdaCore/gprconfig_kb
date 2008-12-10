@@ -801,7 +801,7 @@ package body Confgpr is
             end if;
 
             if Target_Name = null then
-               OK := Tgt_Name = No_Name;
+               OK := (not Autoconf_Specified) or Tgt_Name = No_Name;
 
             else
                OK := (Tgt_Name /= No_Name) and then
@@ -822,7 +822,7 @@ package body Confgpr is
                   if Tgt_Name /= No_Name then
                      Osint.Fail ("invalid target name """ &
                                  Get_Name_String (Tgt_Name) &
-                                 """in configuration");
+                                 """ in configuration");
 
                   else
                      Osint.Fail ("no target specified in configuration");
