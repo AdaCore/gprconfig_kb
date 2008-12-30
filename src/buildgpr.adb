@@ -5156,28 +5156,32 @@ package body Buildgpr is
                   --  switch.
 
                   if Config.Mapping_File_Switches /= No_Name_List then
+
+                     --  Chek if there is a temporary mapping file we can use
                      Mapping_File_Path :=
                        Mapping_Files_Htable.Get_First
                          (Project_Tree.Languages_Data.Table
                               (Language).Mapping_Files);
 
                      if Mapping_File_Path /= No_Path then
+                        --  Reuse this temporary mapping file and remove its
+                        --  name from the HTable so that it is not reused
+                        --  before the compilation terminates.
+
                         Mapping_Files_Htable.Remove
                           (Project_Tree.Languages_Data.Table
                              (Language).Mapping_Files,
                            Mapping_File_Path);
 
                      else
+                        --  Create a new temporary mapping file, as there are
+                        --  none that can be reused.
+
                         Prj.Env.Create_Mapping_File
                           (Project  => Source_Project,
                            Language => Language_Name,
                            In_Tree  => Project_Tree,
                            Name     => Mapping_File_Path);
-                        Mapping_Files_Htable.Set
-                          (Project_Tree.Languages_Data.Table
-                             (Language).Mapping_Files,
-                           Mapping_File_Path,
-                           Mapping_File_Path);
                      end if;
 
                      declare
