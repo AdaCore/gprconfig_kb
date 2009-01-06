@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2004-2008, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2009, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -4447,12 +4447,7 @@ package body Buildgpr is
                  Project_Tree.Sources.Table (Source_Identity).Language;
                Config := Project_Tree.Languages_Data.Table (Language).Config;
 
-               if not Config.Object_Generated then
-                  Compilation_Needed := True;
-
-               else
-                  Compilation_Needed := Need_To_Compile (Source_Identity);
-               end if;
+               Compilation_Needed := Need_To_Compile (Source_Identity);
 
                if Compilation_Needed or Check_Switches then
                   Language_Name :=
@@ -7114,7 +7109,7 @@ package body Buildgpr is
 
       Src_Data.Get_Object := Src_Data.Compiled and Src_Data.Object_Exists;
 
-      if Src_Data.Get_Object  then
+      if Src_Data.Get_Object then
 
          --  Should the object file be included in the global archive ?
 
@@ -7215,6 +7210,24 @@ package body Buildgpr is
                end if;
             end;
          end loop;
+
+      elsif Src_Data.Dependency /= None then
+         declare
+            Object_Dir : constant String :=
+                           Get_Name_String
+                             (Project_Tree.Projects.Table
+                                (Src_Data.Project).Object_Directory.Name);
+            Dep_Path   : constant String :=
+                           Normalize_Pathname
+                             (Name          =>
+                                Get_Name_String (Src_Data.Dep_Name),
+                              Resolve_Links =>
+                                Opt.Follow_Links_For_Files,
+                              Directory     => Object_Dir);
+         begin
+            Src_Data.Dep_Path := Create_Name (Dep_Path);
+            Src_Data.Dep_TS   := File_Stamp (Src_Data.Dep_Path);
+         end;
       end if;
    end Initialize_Source_Record;
 
@@ -8289,6 +8302,11 @@ package body Buildgpr is
    -- Need_To_Compile --
    ---------------------
 
+   Object_Name   : String_Access := null;
+   C_Object_Name : String_Access := null;
+   Object_Path   : String_Access := null;
+   Switches_Name : String_Access := null;
+
    function Need_To_Compile (Source : Source_Id) return Boolean is
       Src_Data : Source_Data renames
         Project_Tree.Sources.Table (Source);
@@ -8296,20 +8314,9 @@ package body Buildgpr is
       Source_Path   : constant String :=
                         Get_Name_String (Src_Data.Path.Name);
 
-      Object_Name   : constant String :=
-                        Get_Name_String (Src_Data.Object);
-
       Runtime_Source_Dir : constant Name_Id :=
                               Project_Tree.Languages_Data.Table
                                 (Src_Data.Language).Config.Runtime_Source_Dir;
-
-      C_Object_Name : String := Object_Name;
-
-      Object_Path   : constant String :=
-                        Get_Name_String (Src_Data.Object_Path);
-
-      Switches_Name : constant String :=
-                        Get_Name_String (Src_Data.Switches_Path);
 
       Dep_File : Prj.Util.Text_File;
       Start    : Natural;
@@ -8450,7 +8457,8 @@ package body Buildgpr is
             --  colon.
 
             if Finish = 0 or else
-              Name_Buffer (Start .. Last_Obj) /= C_Object_Name
+              (C_Object_Name /= null
+               and then Name_Buffer (Start .. Last_Obj) /= C_Object_Name.all)
             then
                if Verbose_Mode then
                   Write_Str  ("      -> dependency file ");
@@ -8462,7 +8470,7 @@ package body Buildgpr is
 
                   else
                      Write_Str  ("         expected object file name ");
-                     Write_Str  (C_Object_Name);
+                     Write_Str  (C_Object_Name.all);
                      Write_Str  (", got ");
                      Write_Line (Name_Buffer (Start .. Last_Obj));
                   end if;
@@ -8594,7 +8602,9 @@ package body Buildgpr is
                               --  If the source has been modified after the
                               --  object file, we need to recompile.
 
-                           elsif Src_TS > Src_Data.Object_TS then
+                           elsif Src_Data.Get_Object
+                             and then Src_TS > Src_Data.Object_TS
+                           then
                               if Verbose_Mode then
                                  Write_Str  ("      -> source ");
                                  Write_Str  (Src_Name);
@@ -8989,7 +8999,21 @@ package body Buildgpr is
          return not Externally_Built;
       end if;
 
-      Canonical_Case_File_Name (C_Object_Name);
+      Free (Object_Name);
+      Free (C_Object_Name);
+      Free (Object_Path);
+      Free (Switches_Name);
+
+      if Project_Tree.Languages_Data.Table
+        (Src_Data.Language).Config.Object_Generated
+      then
+         Object_Name := new String'(Get_Name_String (Src_Data.Object));
+         C_Object_Name := new String'(Object_Name.all);
+         Canonical_Case_File_Name (C_Object_Name.all);
+         Object_Path := new String'(Get_Name_String (Src_Data.Object_Path));
+         Switches_Name :=
+           new String'(Get_Name_String (Src_Data.Switches_Path));
+      end if;
 
       if Verbose_Mode then
          Write_Str  ("   Checking ");
@@ -9007,43 +9031,48 @@ package body Buildgpr is
          return False;
       end if;
 
-      --  If no object file is generated, the "compiler" need to be invoked
-
       if not Project_Tree.Languages_Data.Table
-        (Src_Data.Language).Config.Object_Generated
+               (Src_Data.Language).Config.Object_Generated
       then
-         if Verbose_Mode then
-            Write_Line ("      -> no object file generated");
+      --  If no object file is generated, the "compiler" need to be invoked if
+      --  there is no dependency file.
+
+         if Src_Data.Dependency = None then
+            if Verbose_Mode then
+               Write_Line ("      -> no object file generated");
+            end if;
+
+            return True;
          end if;
 
-         return True;
-      end if;
+      else
+         --  If object file does not exist, of course source need to be
+         --  compiled.
 
-      --  If object file does not exist, of course source need to be compiled
+         if Src_Data.Object_TS = Empty_Time_Stamp then
+            if Verbose_Mode then
+               Write_Str  ("      -> object file ");
+               Write_Str  (Object_Path.all);
+               Write_Line (" does not exist");
+            end if;
 
-      if Src_Data.Object_TS = Empty_Time_Stamp then
-         if Verbose_Mode then
-            Write_Str  ("      -> object file ");
-            Write_Str  (Object_Path);
-            Write_Line (" does not exist");
+            return True;
          end if;
 
-         return True;
-      end if;
+         --  If the object file has been created before the last modification
+         --  of the source, the source need to be recompiled.
 
-      --  If the object file has been created before the last modification
-      --  of the source, the source need to be recompiled.
+         if not Opt.Minimal_Recompilation and then
+           Src_Data.Object_TS < Src_Data.Source_TS
+         then
+            if Verbose_Mode then
+               Write_Str  ("      -> object file ");
+               Write_Str  (Object_Path.all);
+               Write_Line (" has time stamp earlier than source");
+            end if;
 
-      if not Opt.Minimal_Recompilation and then
-        Src_Data.Object_TS < Src_Data.Source_TS
-      then
-         if Verbose_Mode then
-            Write_Str  ("      -> object file ");
-            Write_Str  (Object_Path);
-            Write_Line (" has time stamp earlier than source");
+            return True;
          end if;
-
-         return True;
       end if;
 
       if Src_Data.Dependency /= None then
@@ -9081,11 +9110,11 @@ package body Buildgpr is
       --  the source needs to be recompiled and the switches file need to be
       --  created.
 
-      if Check_Switches then
+      if Check_Switches and then Switches_Name /= null then
          if Src_Data.Switches_TS = Empty_Time_Stamp then
             if Verbose_Mode then
                Write_Str  ("      -> switches file ");
-               Write_Str  (Switches_Name);
+               Write_Str  (Switches_Name.all);
                Write_Line (" does not exist");
             end if;
 
@@ -9098,7 +9127,7 @@ package body Buildgpr is
          if Src_Data.Switches_TS < Src_Data.Source_TS then
             if Verbose_Mode then
                Write_Str  ("      -> switches file ");
-               Write_Str  (Switches_Name);
+               Write_Str  (Switches_Name.all);
                Write_Line (" has time stamp earlier than source");
             end if;
 
