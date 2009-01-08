@@ -10,6 +10,8 @@ project Gprbuild is
    type Build_Tool_Type is ("gnatmake", "gprbuild");
    Build_Tool : Build_Tool_Type := External ("BUILD_TOOL", "gnatmake");
 
+   Processors := External ("PROCESSORS", "1");
+
    for Main use
        ("gprconfig-main.adb",
         "gprbuild.adb",
@@ -49,7 +51,7 @@ project Gprbuild is
 
    package Builder is
       for Executable ("gprconfig-main.adb") use "gprconfig";
-      for Default_Switches ("Ada") use ("-m");
+      for Default_Switches ("Ada") use ("-m", "-j" & Processors);
       for Switches ("Ada") use ();
    end Builder;
 
