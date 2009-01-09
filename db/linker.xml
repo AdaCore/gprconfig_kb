@@ -145,6 +145,9 @@
    for Symbolic_Link_Supported use "true";
    for Library_Major_Minor_Id_Supported use "true";
 
+   for Run_Path_Option  use ("-Wl,-rpath,");
+   for Separate_Run_Path_Options use "true";
+
    for Shared_Library_Suffix use ".dylib";
    for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
    for Shared_Library_Minimum_Switches use
