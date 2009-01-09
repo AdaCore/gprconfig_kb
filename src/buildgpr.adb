@@ -7909,41 +7909,60 @@ package body Buildgpr is
                      Length   : Natural := 0;
                      Arg      : String_Access := null;
                   begin
-                     while Nam_Nod.Next /= No_Name_List loop
-                        Add_Argument (Get_Name_String (Nam_Nod.Name), True);
-                        Nam_Nod :=
-                          Project_Tree.Name_Lists.Table (Nam_Nod.Next);
-                     end loop;
+                     if Data.Config.Separate_Run_Path_Options then
+                        for J in 1 .. Rpaths.Last loop
+                           Nam_Nod := Project_Tree.Name_Lists.Table
+                                        (Data.Config.Run_Path_Option);
+                           while Nam_Nod.Next /= No_Name_List loop
+                              Add_Argument
+                                (Get_Name_String (Nam_Nod.Name), True);
+                              Nam_Nod :=
+                                Project_Tree.Name_Lists.Table (Nam_Nod.Next);
+                           end loop;
 
-                     --  Compute the length of the argument
+                           Get_Name_String (Nam_Nod.Name);
+                           Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
+                           Add_Argument
+                             (Name_Buffer (1 .. Name_Len), Verbose_Mode);
+                        end loop;
 
-                     Get_Name_String (Nam_Nod.Name);
-                     Length := Name_Len;
+                     else
+                        while Nam_Nod.Next /= No_Name_List loop
+                           Add_Argument (Get_Name_String (Nam_Nod.Name), True);
+                           Nam_Nod :=
+                             Project_Tree.Name_Lists.Table (Nam_Nod.Next);
+                        end loop;
 
-                     for J in 1 .. Rpaths.Last loop
-                        Length := Length + Rpaths.Table (J)'Length + 1;
-                     end loop;
+                        --  Compute the length of the argument
 
-                     Length := Length - 1;
+                        Get_Name_String (Nam_Nod.Name);
+                        Length := Name_Len;
 
-                     --  Create the argument
+                        for J in 1 .. Rpaths.Last loop
+                           Length := Length + Rpaths.Table (J)'Length + 1;
+                        end loop;
 
-                     Arg := new String (1 .. Length);
-                     Length := Name_Len;
-                     Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
+                        Length := Length - 1;
 
-                     for J in 1 .. Rpaths.Last loop
-                        if J /= 1 then
-                           Length := Length + 1;
-                           Arg (Length) := Path_Separator;
-                        end if;
+                        --  Create the argument
 
-                        Arg (Length + 1 .. Length + Rpaths.Table (J)'Length) :=
-                          Rpaths.Table (J).all;
-                        Length := Length + Rpaths.Table (J)'Length;
-                     end loop;
+                        Arg := new String (1 .. Length);
+                        Length := Name_Len;
+                        Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
 
-                     Add_Argument (Arg, Verbose_Mode);
+                        for J in 1 .. Rpaths.Last loop
+                           if J /= 1 then
+                              Length := Length + 1;
+                              Arg (Length) := Path_Separator;
+                           end if;
+
+                           Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
+                             := Rpaths.Table (J).all;
+                           Length := Length + Rpaths.Table (J)'Length;
+                        end loop;
+
+                        Add_Argument (Arg, Verbose_Mode);
+                     end if;
                   end;
                end if;
 
