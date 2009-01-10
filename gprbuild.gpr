@@ -10,6 +10,9 @@ project Gprbuild is
    type Build_Tool_Type is ("gnatmake", "gprbuild");
    Build_Tool : Build_Tool_Type := External ("BUILD_TOOL", "gnatmake");
 
+   type VCS_Type is ("Subversion", "Git", "auto");
+   VCS_Kind : VCS_Type := external ("PRJ_VCS", "Subversion");
+
    Processors := External ("PROCESSORS", "1");
 
    for Main use
@@ -184,7 +187,7 @@ project Gprbuild is
    end Naming;
 
    package IDE is
-      for VCS_Kind use "subversion";
+      for VCS_Kind use VCS_Kind;
    end IDE;
 
 end Gprbuild;
