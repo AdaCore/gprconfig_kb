@@ -148,7 +148,7 @@ tests: force
 test_names=
 tests_local: force
 	@make prefix=${shell pwd}/install install
-	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug ${test_names}
+	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug --hide-pass ${test_names}
 	@${RM} -rf install
 
 examples: force
