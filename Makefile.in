@@ -145,11 +145,11 @@ install-doc:
 tests: force
 	cd internal/gprtests; ./run-test
 
+test_names=
 tests_local: force
-	@mkdir -p libexec/gprbuild
-	@cd libexec/gprbuild; ${RM} gprlib gprbind; ${LN} ../../gprlib .; ${LN} ../../gprbind .
-	cd internal/gprtests; ./run-test --gprbuild=${shell pwd} --db=${shell pwd}/share/gprconfig --print-diffs --color --debug
-	@${RM} -rf libexec
+	@make prefix=${shell pwd}/install install
+	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug ${test_names}
+	@${RM} -rf install
 
 examples: force
 	make -C examples
