@@ -170,9 +170,16 @@
 
 Copyright @copyright{} 2007-2008, AdaCore
 
-Permission is granted to make and distribute verbatim copies of
-this manual provided the copyright notice and this permission notice
-are preserved on all copies.
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1
+or any later version published by the Free Software Foundation;
+with the Invariant Sections being ``GNU Free Documentation License'', with the
+Front-Cover Texts being
+``GPRbuild User's Guide'',
+and with no Back-Cover Texts.
+A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
 @end titlepage
 
 @ifnottex
@@ -180,6 +187,16 @@ are preserved on all copies.
 @top GPRBUILD User's Guide
 
 @noindent
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1
+or any later version published by the Free Software Foundation;
+with the Invariant Sections being ``GNU Free Documentation License'', with the
+Front-Cover Texts being
+``GPRbuild User's Guide'',
+and with no Back-Cover Texts.
+A copy of the license is included in the section entitled
+``GNU Free Documentation License''.
+
 @menu
 * Introduction::
 * Guided Tour::
@@ -188,6 +205,7 @@ are preserved on all copies.
 * Cleaning up with GPRclean::
 * Configuring with GPRconfig::
 * Configuration File Reference::
+* GNU Free Documentation License::
 @ifset useindex
 * Index::
 @end ifset
@@ -3204,6 +3222,12 @@ options are happened at the end of the link command so that potentially
 conflicting user options take precedence.
 
 @end itemize
+
+@c **********************************
+@c * GNU Free Documentation License *
+@c **********************************
+@include gfdl.texi
+@c GNU Free Documentation License
 
 @ifset useindex
 @c  --------------------------------------------------------------------------
