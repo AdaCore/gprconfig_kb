@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2006-2008, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2009, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -813,8 +813,9 @@ package body Cleangpr is
                        Main     => Main_Source_File,
                        Index    => 0,
                        Ada_Main =>
-                         Project_Tree.Sources.Table (Source).Language_Name =
-                         Snames.Name_Ada);
+                         Project_Tree.Languages_Data.Table
+                           (Project_Tree.Sources.Table (Source).Language)
+                           .Name = Snames.Name_Ada);
 
                   declare
                      Exec_File_Name : constant String :=

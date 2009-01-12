@@ -810,7 +810,7 @@ package body Buildgpr is
    procedure Create_Config_File
      (For_Project  : Project_Id;
       Config       : Language_Config;
-      Language     : Name_Id);
+      Language     : Language_Index);
    --  Create a new config file
 
    function Directly_Imports
@@ -1132,6 +1132,8 @@ package body Buildgpr is
 
    procedure Add_Compilation_Switches (Source : Source_Id) is
       Src_Data : constant Source_Data := Project_Tree.Sources.Table (Source);
+      Language_Name : constant Name_Id :=
+        Project_Tree.Languages_Data.Table (Src_Data.Language).Name;
       Package_Compiler : constant Package_Id :=
                            Value_Of
                              (Name        => Name_Compiler,
@@ -1151,7 +1153,7 @@ package body Buildgpr is
       if Options = Nil_Variable_Value then
          Options :=
            Value_Of
-             (Name                    => Src_Data.Language_Name,
+             (Name                    => Language_Name,
               Attribute_Or_Array_Name => Name_Switches,
               In_Package              => Package_Compiler,
               In_Tree                 => Project_Tree,
@@ -1171,7 +1173,7 @@ package body Buildgpr is
       if Options = Nil_Variable_Value then
          Options :=
            Value_Of
-             (Name                    => Src_Data.Language_Name,
+             (Name                    => Language_Name,
               Attribute_Or_Array_Name => Name_Default_Switches,
               In_Package              => Package_Compiler,
               In_Tree                 => Project_Tree);
@@ -2376,8 +2378,6 @@ package body Buildgpr is
       Source      : Source_Id;
       Project     : Project_Id;
 
-      Unit_Based_Language_Name : Name_Id;
-
       Disregard : Boolean;
 
       procedure Get_Objects;
@@ -3217,10 +3217,6 @@ package body Buildgpr is
 
                --  Copy the path of the sources
 
-               Unit_Based_Language_Name :=
-                 Project_Tree.Projects.Table
-                   (For_Project).Unit_Based_Language_Name;
-
                Project := For_Project;
 
                while Project /= No_Project loop
@@ -3232,7 +3228,8 @@ package body Buildgpr is
                         Src_Data : Source_Data renames
                           Project_Tree.Sources.Table (Source);
                      begin
-                        if  Src_Data.Language_Name = Unit_Based_Language_Name
+                        if Project_Tree.Languages_Data.Table
+                          (Src_Data.Language).Config.Kind = Unit_Based
                           and then
                             (not Src_Data.Locally_Removed)
                           and then
@@ -3606,7 +3603,9 @@ package body Buildgpr is
                      if Roots = Nil_Variable_Value then
                         Roots :=
                           Prj.Util.Value_Of
-                            (Index                  => Src_Data.Language_Name,
+                            (Index                  =>
+                                 Project_Tree.Languages_Data.Table
+                                    (Src_Data.Language).Name,
                              Src_Index              => 0,
                              In_Array               => Root_Arr,
                              In_Tree                => Project_Tree,
@@ -4451,7 +4450,9 @@ package body Buildgpr is
 
                if Compilation_Needed or Check_Switches then
                   Language_Name :=
-                    Project_Tree.Sources.Table (Source_Identity).Language_Name;
+                    Project_Tree.Languages_Data.Table
+                      (Project_Tree.Sources.Table
+                           (Source_Identity).Language).Name;
 
                   Config :=
                     Project_Tree.Languages_Data.Table (Language).Config;
@@ -5101,7 +5102,7 @@ package body Buildgpr is
                      Create_Config_File
                        (For_Project => Source_Project,
                         Config      => Config,
-                        Language    => Language_Name);
+                        Language    => Language);
 
                      if Project_Tree.Projects.Table
                        (Source_Project).Config_File_Name /= No_Path
@@ -5174,7 +5175,9 @@ package body Buildgpr is
 
                         Prj.Env.Create_Mapping_File
                           (Project  => Source_Project,
-                           Language => Language_Name,
+                           Language =>
+                             Project_Tree.Sources.Table
+                               (Source_Identity).Language,
                            In_Tree  => Project_Tree,
                            Name     => Mapping_File_Path);
                      end if;
@@ -5552,7 +5555,7 @@ package body Buildgpr is
    procedure Create_Config_File
      (For_Project  : Project_Id;
       Config       : Language_Config;
-      Language     : Name_Id)
+      Language     : Language_Index)
    is
 
       File_Name : Path_Name_Type  := No_Path;
@@ -5680,7 +5683,7 @@ package body Buildgpr is
 
          while Lang_Id /= No_Language_Index loop
             Lang_Data := Project_Tree.Languages_Data.Table (Lang_Id);
-            exit when Lang_Data.Name = Language;
+            exit when Lang_Id = Language;
             Lang_Id := Lang_Data.Next;
          end loop;
 
@@ -5838,12 +5841,14 @@ package body Buildgpr is
          --  Copy an eventual global config file
 
          Copy_Config_File
-           (Main_Project, Name_Builder, Name_Global_Config_File, Language);
+           (Main_Project, Name_Builder, Name_Global_Config_File,
+            Project_Tree.Languages_Data.Table (Language).Name);
 
          --  Copy an eventual local config file
 
          Copy_Config_File
-           (For_Project, Name_Compiler, Name_Local_Config_File, Language);
+           (For_Project, Name_Compiler, Name_Local_Config_File,
+            Project_Tree.Languages_Data.Table (Language).Name);
 
       end if;
 
@@ -5866,7 +5871,7 @@ package body Buildgpr is
          declare
             Src_Data : Source_Data renames Project_Tree.Sources.Table (Source);
          begin
-            if Src_Data.Language_Name = Language
+            if Src_Data.Language = Language
               and then Src_Data.Naming_Exception
               and then Src_Data.Unit /= No_Name
               and then not Src_Data.Locally_Removed
@@ -6610,10 +6615,12 @@ package body Buildgpr is
 
                      Name :=
                        Name_Id (Project_Tree.Sources.Table (Source).File);
-                     Lang := Project_Tree.Sources.Table (Source).Language_Name;
+                     Lang := Project_Tree.Languages_Data.Table
+                       (Project_Tree.Sources.Table (Source).Language).Name;
 
                   elsif Lang =
-                    Project_Tree.Sources.Table (Source).Language_Name
+                    Project_Tree.Languages_Data.Table
+                      (Project_Tree.Sources.Table (Source).Language).Name
                   then
                      --  Other mains. If they are of the same language, use
                      --  the language as the name.
@@ -7457,7 +7464,9 @@ package body Buildgpr is
                Main     => Main_Id,
                Index    => 0,
                Ada_Main => False,
-               Language => Get_Name_String (Main_Source.Language_Name));
+               Language => Get_Name_String
+                 (Project_Tree.Languages_Data.Table
+                    (Main_Source.Language).Name));
 
             if Data.Exec_Directory = Data.Object_Directory then
                Exec_Path_Name := Path_Name_Type (Exec_Name);
@@ -8015,7 +8024,8 @@ package body Buildgpr is
                            Switches :=
                              Prj.Util.Value_Of
                                (Index                  =>
-                                    Main_Source.Language_Name,
+                                    Project_Tree.Languages_Data.Table
+                                      (Main_Source.Language).Name,
                                 Src_Index              => 0,
                                 In_Array               => Switches_Array,
                                 In_Tree                => Project_Tree,
@@ -8035,7 +8045,9 @@ package body Buildgpr is
                         if Switches = Nil_Variable_Value then
                            Switches :=
                              Prj.Util.Value_Of
-                               (Index     => Main_Source.Language_Name,
+                               (Index     =>
+                                    Project_Tree.Languages_Data.Table
+                                      (Main_Source.Language).Name,
                                 Src_Index => 0,
                                 In_Array  => Defaults,
                                 In_Tree   => Project_Tree);
@@ -9284,7 +9296,6 @@ package body Buildgpr is
       procedure Add_Dependency_Files
         (For_Project : Project_Id;
          Language    : Language_Index;
-         Lang_Name   : Name_Id;
          Main_Source : Source_Data;
          Dep_Files   : out Boolean);
       --  Put the dependency files of the project in the binder exchange file
@@ -9296,7 +9307,6 @@ package body Buildgpr is
       procedure Add_Dependency_Files
         (For_Project : Project_Id;
          Language    : Language_Index;
-         Lang_Name   : Name_Id;
          Main_Source : Source_Data;
          Dep_Files   : out Boolean)
       is
@@ -9315,7 +9325,7 @@ package body Buildgpr is
 
          procedure Put_Dependency_File (Source : Source_Data) is
          begin
-            if Source.Language_Name = Lang_Name
+            if Source.Language = Language
               and then
                 ((Config.Kind = File_Based and then Source.Kind = Impl)
                  or else
@@ -9754,9 +9764,7 @@ package body Buildgpr is
                      begin
                         --  Put the root sources in the queue
 
-                        if Main_Source.Language_Name =
-                          B_Data.Language_Name
-                        then
+                        if Main_Source.Language = B_Data.Language then
                            Queue.Insert
                              (Source_File_Name => Main_Source.File,
                               Source_Identity  => Main_Source_Id,
@@ -9786,7 +9794,7 @@ package body Buildgpr is
                            Loop1 : while Src_Id /= No_Source loop
                               Source := Project_Tree.Sources.Table (Src_Id);
 
-                              if Source.Language_Name = B_Data.Language_Name
+                              if Source.Language = B_Data.Language
                                 and then
                                   not Source.Locally_Removed
                                 and then
@@ -10120,7 +10128,6 @@ package body Buildgpr is
                      Add_Dependency_Files
                        (Main_Proj,
                         B_Data.Language,
-                        B_Data.Language_Name,
                         Main_Source,
                         Dep_Files);
 
