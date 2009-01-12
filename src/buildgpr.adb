@@ -810,7 +810,7 @@ package body Buildgpr is
    procedure Create_Config_File
      (For_Project  : Project_Id;
       Config       : Language_Config;
-      Language     : Language_Index);
+      Language     : Name_Id);
    --  Create a new config file
 
    function Directly_Imports
@@ -3231,7 +3231,7 @@ package body Buildgpr is
                         if Project_Tree.Languages_Data.Table
                           (Src_Data.Language).Config.Kind = Unit_Based
                           and then
-                            (not Src_Data.Locally_Removed)
+                            not Src_Data.Locally_Removed
                           and then
                             Src_Data.Replaced_By = No_Source
                         then
@@ -5106,7 +5106,7 @@ package body Buildgpr is
                      Create_Config_File
                        (For_Project => Source_Project,
                         Config      => Config,
-                        Language    => Language);
+                        Language    => Language_Name);
 
                      if Project_Tree.Projects.Table
                        (Source_Project).Config_File_Name /= No_Path
@@ -5179,9 +5179,7 @@ package body Buildgpr is
 
                         Prj.Env.Create_Mapping_File
                           (Project  => Source_Project,
-                           Language =>
-                             Project_Tree.Sources.Table
-                               (Source_Identity).Language,
+                           Language => Language_Name,
                            In_Tree  => Project_Tree,
                            Name     => Mapping_File_Path);
                      end if;
@@ -5559,7 +5557,7 @@ package body Buildgpr is
    procedure Create_Config_File
      (For_Project  : Project_Id;
       Config       : Language_Config;
-      Language     : Language_Index)
+      Language     : Name_Id)
    is
 
       File_Name : Path_Name_Type  := No_Path;
@@ -5687,7 +5685,7 @@ package body Buildgpr is
 
          while Lang_Id /= No_Language_Index loop
             Lang_Data := Project_Tree.Languages_Data.Table (Lang_Id);
-            exit when Lang_Id = Language;
+            exit when Lang_Data.Name = Language;
             Lang_Id := Lang_Data.Next;
          end loop;
 
@@ -5845,15 +5843,12 @@ package body Buildgpr is
          --  Copy an eventual global config file
 
          Copy_Config_File
-           (Main_Project, Name_Builder, Name_Global_Config_File,
-            Project_Tree.Languages_Data.Table (Language).Name);
+           (Main_Project, Name_Builder, Name_Global_Config_File, Language);
 
          --  Copy an eventual local config file
 
          Copy_Config_File
-           (For_Project, Name_Compiler, Name_Local_Config_File,
-            Project_Tree.Languages_Data.Table (Language).Name);
-
+           (For_Project, Name_Compiler, Name_Local_Config_File, Language);
       end if;
 
       Project_Tree.Projects.Table (For_Project).Config_Checked := True;
@@ -5875,7 +5870,8 @@ package body Buildgpr is
          declare
             Src_Data : Source_Data renames Project_Tree.Sources.Table (Source);
          begin
-            if Src_Data.Language = Language
+            if Project_Tree.Languages_Data.Table (Src_Data.Language).Name =
+                 Language
               and then Src_Data.Naming_Exception
               and then Src_Data.Unit /= No_Name
               and then not Src_Data.Locally_Removed
@@ -9329,7 +9325,8 @@ package body Buildgpr is
 
          procedure Put_Dependency_File (Source : Source_Data) is
          begin
-            if Source.Language = Language
+            if Project_Tree.Languages_Data.Table (Source.Language).Name =
+              Project_Tree.Languages_Data.Table (Language).Name
               and then
                 ((Config.Kind = File_Based and then Source.Kind = Impl)
                  or else
@@ -9768,7 +9765,11 @@ package body Buildgpr is
                      begin
                         --  Put the root sources in the queue
 
-                        if Main_Source.Language = B_Data.Language then
+                        if Project_Tree.Languages_Data.Table
+                          (Main_Source.Language).Name =
+                          Project_Tree.Languages_Data.Table
+                            (B_Data.Language).Name
+                        then
                            Queue.Insert
                              (Source_File_Name => Main_Source.File,
                               Source_Identity  => Main_Source_Id,
@@ -9798,7 +9799,10 @@ package body Buildgpr is
                            Loop1 : while Src_Id /= No_Source loop
                               Source := Project_Tree.Sources.Table (Src_Id);
 
-                              if Source.Language = B_Data.Language
+                              if Project_Tree.Languages_Data.Table
+                                (Source.Language).Name =
+                                Project_Tree.Languages_Data.Table
+                                  (B_Data.Language).Name
                                 and then
                                   not Source.Locally_Removed
                                 and then
