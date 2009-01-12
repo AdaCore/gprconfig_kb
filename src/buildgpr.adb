@@ -5002,6 +5002,10 @@ package body Buildgpr is
                                    Project_Tree.Projects.Table
                                      (Source_Project).Include_Path_File);
 
+                              if FD = Invalid_FD then
+                                 Fail_Program ("could not create path file");
+                              end if;
+
                               for Index in 1 .. Directories.Last loop
                                  Get_Name_String
                                    (Directories.Table (Index));
@@ -10478,6 +10482,11 @@ package body Buildgpr is
                                          Project_Tree.Projects.Table
                                            (Main_Proj).
                                            Objects_Path_File_Without_Libs);
+
+                                    if FD = Invalid_FD then
+                                       Fail_Program
+                                         ("could not create path file");
+                                    end if;
 
                                     Path_Name :=
                                       Project_Tree.Projects.Table
