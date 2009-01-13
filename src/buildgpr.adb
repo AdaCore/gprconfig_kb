@@ -3793,6 +3793,21 @@ package body Buildgpr is
    -----------------------
 
    procedure Compilation_Phase is
+      type Local_Project_Data is record
+         Include_Language : Language_Index;
+      end record;
+      --  project-specific data required for this procedure. These are not
+      --  stored in the Project_Data record so that projects kept in memory do
+      --  not have to allocate space for these temporary data
+
+      package Local_Project_Table is new GNAT.Dynamic_Tables
+        (Table_Component_Type => Local_Project_Data,
+         Table_Index_Type     => Project_Id,
+         Table_Low_Bound      => 1,
+         Table_Initial        => 100,
+         Table_Increment      => 100);
+      Local_Projects : Local_Project_Table.Instance;
+
       Source_File_Name : File_Name_Type;
       Source_Identity  : Source_Id;
       Source_Project   : Project_Id;
@@ -4399,6 +4414,7 @@ package body Buildgpr is
    --  Start of processing for Compilation_Phase
 
    begin
+      Local_Project_Table.Init (Local_Projects);
       Outstanding_Compiles := 0;
 
       --  Then process each files in the queue (new files might be added to
@@ -4872,7 +4888,7 @@ package body Buildgpr is
                      Current_Project      := Source_Project;
                      Current_Language_Ind := Language;
 
-                     if Project_Tree.Projects.Table
+                     if Local_Projects.Table
                        (Source_Project).Include_Language /= Language
                        and then
                          (Config.Include_Option /= No_Name_List
@@ -4881,7 +4897,7 @@ package body Buildgpr is
                           or else
                             Config.Include_Path_File /= No_Name)
                      then
-                        Project_Tree.Projects.Table
+                        Local_Projects.Table
                           (Source_Project).Include_Language := Language;
 
                         declare
@@ -5157,7 +5173,7 @@ package body Buildgpr is
 
                   if Config.Mapping_File_Switches /= No_Name_List then
 
-                     --  Chek if there is a temporary mapping file we can use
+                     --  Check if there is a temporary mapping file we can use
                      Mapping_File_Path :=
                        Mapping_Files_Htable.Get_First
                          (Project_Tree.Languages_Data.Table
