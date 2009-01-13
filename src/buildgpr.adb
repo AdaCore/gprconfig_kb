@@ -3794,19 +3794,22 @@ package body Buildgpr is
 
    procedure Compilation_Phase is
       type Local_Project_Data is record
-         Include_Language : Language_Index;
+         Include_Language : Language_Index := No_Language_Index;
       end record;
       --  project-specific data required for this procedure. These are not
       --  stored in the Project_Data record so that projects kept in memory do
       --  not have to allocate space for these temporary data
 
-      package Local_Project_Table is new GNAT.Dynamic_Tables
+      No_Local_Project_Data : constant Local_Project_Data :=
+                                (Include_Language => No_Language_Index);
+
+      package Local_Projects is new Table.Table
         (Table_Component_Type => Local_Project_Data,
          Table_Index_Type     => Project_Id,
          Table_Low_Bound      => 1,
          Table_Initial        => 100,
-         Table_Increment      => 100);
-      Local_Projects : Local_Project_Table.Instance;
+         Table_Increment      => 100,
+         Table_Name           => "Buildgpr.Local_Projects");
 
       Source_File_Name : File_Name_Type;
       Source_Identity  : Source_Id;
@@ -4414,7 +4417,12 @@ package body Buildgpr is
    --  Start of processing for Compilation_Phase
 
    begin
-      Local_Project_Table.Init (Local_Projects);
+      Local_Projects.Init;
+
+      for J in 1 .. Project_Table.Last (Project_Tree.Projects) loop
+         Local_Projects.Append (No_Local_Project_Data);
+      end loop;
+
       Outstanding_Compiles := 0;
 
       --  Then process each files in the queue (new files might be added to
