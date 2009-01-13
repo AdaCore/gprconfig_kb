@@ -5019,7 +5019,8 @@ package body Buildgpr is
                                      (Source_Project).Include_Path_File);
 
                               if FD = Invalid_FD then
-                                 Fail_Program ("could not create path file");
+                                 Fail_Program
+                                   ("could not create temporary path file");
                               end if;
 
                               for Index in 1 .. Directories.Last loop
@@ -10505,7 +10506,8 @@ package body Buildgpr is
 
                                     if FD = Invalid_FD then
                                        Fail_Program
-                                         ("could not create path file");
+                                         ("could not create " &
+                                          "temporary path file");
                                     end if;
 
                                     Path_Name :=
