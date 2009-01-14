@@ -146,9 +146,27 @@ tests: force
 	cd internal/gprtests; ./run-test
 
 test_names=
+test_config=
+
+ifneq (${test_config},)
+test_config_switch:=--config=${test_config}
+else
+test_config_switch=
+endif
+
+## Run tests with the locally compiled gprbuild (no "make install" necessary)
+## You can set test_names and test_config from the command line to restrict
+## the tests that are run. When running all the tests, only show the failing
+## tests to make them more obvious. But when running a specific set of tests,
+## display all results
+
 tests_local: force
 	@make prefix=${shell pwd}/install install
-	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug --hide-pass ${test_names}
+ifeq (${test_names},)
+	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug --hide-pass ${test_config_switch}
+else
+	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug ${test_config_switch} ${test_names}
+endif
 	@${RM} -rf install
 
 examples: force
