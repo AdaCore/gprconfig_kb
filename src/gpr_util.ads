@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2007-2008, Free Software Foundation, Inc.       --
+--            Copyright (C) 2007-2009, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -57,7 +57,7 @@ package Gpr_Util is
    --  drivers.
 
    type Binding_Data is record
-      Language           : Language_Index;
+      Language           : Language_Ptr;
       Language_Name      : Name_Id;
       Binder_Driver_Name : File_Name_Type;
       Binder_Driver_Path : String_Access;

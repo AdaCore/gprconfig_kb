@@ -1484,7 +1484,7 @@ package body Buildgpr is
       Pid : Process_Id;
       Comp_Data : Process_Data;
 
-      Language  : Language_Index;
+      Language  : Language_Ptr;
 
       Config : Language_Config;
 
@@ -2363,7 +2363,7 @@ package body Buildgpr is
       Library_Builder      : String_Access;
 
       Toolchain_Version_Label_Written : Boolean;
-      Lang_Index : Language_Index;
+      Lang_Index : Language_Ptr;
 
       Library_Options : Variable_Value := Nil_Variable_Value;
 
@@ -2801,7 +2801,7 @@ package body Buildgpr is
          Put_Line (Exchange_File, Library_Label (Compilers));
 
          declare
-            Lang : Language_Index := Data.First_Language_Processing;
+            Lang : Language_Ptr := Data.Languages;
 
          begin
             while Lang /= No_Language_Index loop
@@ -2955,7 +2955,7 @@ package body Buildgpr is
             --  Check for runtime library dir
 
             declare
-               List : Language_Index := Data.First_Language_Processing;
+               List : Language_Ptr := Data.Languages;
                First : Boolean := True;
 
             begin
@@ -3157,7 +3157,7 @@ package body Buildgpr is
             end loop;
          end;
 
-         Lang_Index := Data.First_Language_Processing;
+         Lang_Index := Data.Languages;
          Toolchain_Version_Label_Written := False;
 
          while Lang_Index /= No_Language_Index loop
@@ -3780,7 +3780,7 @@ package body Buildgpr is
 
    procedure Compilation_Phase is
       type Local_Project_Data is record
-         Include_Language : Language_Index := No_Language_Index;
+         Include_Language : Language_Ptr := No_Language_Index;
       end record;
       --  project-specific data required for this procedure. These are not
       --  stored in the Project_Data record so that projects kept in memory do
@@ -3800,7 +3800,7 @@ package body Buildgpr is
       Source_File_Name : File_Name_Type;
       Source_Identity  : Source_Id;
       Source_Project   : Project_Id;
-      Language         : Language_Index;
+      Language         : Language_Ptr;
       Language_Name    : Name_Id;
       Config           : Language_Config;
       List             : Name_List_Index;
@@ -3816,7 +3816,7 @@ package body Buildgpr is
       Builder_Options_Instance : Builder_Comp_Option_Table_Ref;
 
       Current_Project      : Project_Id := No_Project;
-      Current_Language_Ind : Language_Index := No_Language_Index;
+      Current_Language_Ind : Language_Ptr := No_Language_Index;
       --  The project for which the include path environment has been set last,
       --  to avoid computing it several times.
 
@@ -5592,7 +5592,7 @@ package body Buildgpr is
       procedure Check (Project : Project_Id) is
          Data : Project_Data renames Project_Tree.Projects.Table (Project);
 
-         Lang_Id   : Language_Index := Data.First_Language_Processing;
+         Lang_Id   : Language_Ptr := Data.Languages;
          Lang_Data : Language_Data;
 
          Current_Naming : Positive := 1;
@@ -6336,7 +6336,7 @@ package body Buildgpr is
                  Project_Tree.Projects.Table (Project);
                List : Project_List := Data.Imported_Projects;
 
-               Lang_Proc : Language_Index := Data.First_Language_Processing;
+               Lang_Proc : Language_Ptr := Data.Languages;
                OK : Boolean;
 
             begin
@@ -9280,7 +9280,7 @@ package body Buildgpr is
 
       procedure Add_Dependency_Files
         (For_Project : Project_Id;
-         Language    : Language_Index;
+         Language    : Language_Ptr;
          Main_Source : Source_Data;
          Dep_Files   : out Boolean);
       --  Put the dependency files of the project in the binder exchange file
@@ -9291,7 +9291,7 @@ package body Buildgpr is
 
       procedure Add_Dependency_Files
         (For_Project : Project_Id;
-         Language    : Language_Index;
+         Language    : Language_Ptr;
          Main_Source : Source_Data;
          Dep_Files   : out Boolean)
       is
@@ -9468,7 +9468,7 @@ package body Buildgpr is
 
                Dep_Files      : Boolean;
 
-               Lang_Index     : Language_Index;
+               Lang_Index     : Language_Ptr;
                Toolchain_Version_Label_Written : Boolean;
                Object_File_Suffix_Label_Written : Boolean;
 
@@ -10001,7 +10001,7 @@ package body Buildgpr is
 
                      Lang_Index :=
                        Project_Tree.Projects.Table
-                         (Main_Proj).First_Language_Processing;
+                         (Main_Proj).Languages;
                      Toolchain_Version_Label_Written := False;
 
                      while Lang_Index /= No_Language_Index loop
@@ -10030,7 +10030,7 @@ package body Buildgpr is
 
                      Lang_Index :=
                        Project_Tree.Projects.Table
-                         (Main_Proj).First_Language_Processing;
+                         (Main_Proj).Languages;
                      Object_File_Suffix_Label_Written := False;
 
                      while Lang_Index /= No_Language_Index loop

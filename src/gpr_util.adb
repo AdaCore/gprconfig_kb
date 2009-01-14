@@ -135,7 +135,7 @@ package body Gpr_Util is
       Binder_Driver_Name : File_Name_Type := No_File;
       Binder_Driver_Path : String_Access;
       Binder_Prefix      : Name_Id;
-      Language           : Language_Index;
+      Language           : Language_Ptr;
 
       Config : Language_Config;
 
@@ -150,7 +150,7 @@ package body Gpr_Util is
         1 .. Project_Table.Last (Project_Tree.Projects)
       loop
          Language :=
-           Project_Tree.Projects.Table (Index).First_Language_Processing;
+           Project_Tree.Projects.Table (Index).Languages;
 
          while Language /= No_Language_Index loop
             Config := Language.Config;
