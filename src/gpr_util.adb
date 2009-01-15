@@ -319,6 +319,7 @@ package body Gpr_Util is
                Project  : Project_Id;
                Source   : Source_Id;
                Suffix   : File_Name_Type;
+               Iter     : Source_Iterator;
 
             begin
                --  First, look for the main as specified
@@ -329,24 +330,19 @@ package body Gpr_Util is
                Main_Id := Name_Find;
 
                Project := Main_Project;
-               loop
-                  Source :=
-                    Project_Tree.Projects.Table (Project).First_Source;
-
-                  while Source /= No_Source and then
-                  Project_Tree.Sources.Table (Source).File /= Main_Id
+               while Project /= No_Project loop
+                  Iter := For_Each_Source (Project_Tree, Project);
+                  while Prj.Element (Iter) /= No_Source
+                    and then Project_Tree.Sources.Table
+                      (Prj.Element (Iter)).File /= Main_Id
                   loop
-                     Source :=
-                       Project_Tree.Sources.Table
-                         (Source).Next_In_Project;
+                     Next (Iter);
                   end loop;
 
+                  Source := Prj.Element (Iter);
                   exit when Source /= No_Source;
 
-                  Project :=
-                    Project_Tree.Projects.Table (Project).Extends;
-
-                  exit when Project = No_Project;
+                  Project := Project_Tree.Projects.Table (Project).Extends;
                end loop;
 
                if Source = No_Source then
@@ -356,10 +352,11 @@ package body Gpr_Util is
 
                   Project := Main_Project;
                   loop
-                     Source :=
-                       Project_Tree.Projects.Table (Project).First_Source;
+                     Iter := For_Each_Source (Project_Tree, Project);
+                     loop
+                        Source := Prj.Element (Iter);
+                        exit when Source = No_Source;
 
-                     while Source /= No_Source loop
                         --  Only consider bodies
 
                         if Project_Tree.Sources.Table (Source).Kind = Impl then
@@ -379,8 +376,7 @@ package body Gpr_Util is
                            end if;
                         end if;
 
-                        Source :=
-                          Project_Tree.Sources.Table (Source).Next_In_Project;
+                        Next (Iter);
                      end loop;
 
                      exit when Source /= No_Source;

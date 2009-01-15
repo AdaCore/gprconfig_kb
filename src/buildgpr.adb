@@ -1729,12 +1729,15 @@ package body Buildgpr is
       procedure Add_Sources (Proj : Project_Id) is
          Project : Project_Id := Proj;
          Id : Source_Id;
+         Iter : Source_Iterator;
 
       begin
-         loop
-            Id := Project_Tree.Projects.Table (Project).First_Source;
+         while Project /= No_Project loop
+            Iter := For_Each_Source (Project_Tree, Project);
+            loop
+               Id := Prj.Element (Iter);
+               exit when Id = No_Source;
 
-            while Id /= No_Source loop
                declare
                   Source : Source_Data renames
                     Project_Tree.Sources.Table (Id);
@@ -1749,14 +1752,12 @@ package body Buildgpr is
                   then
                      Add_Source_Id (Proj, Id);
                   end if;
-
-                  Id := Source.Next_In_Project;
                end;
+
+               Next (Iter);
             end loop;
 
             Project := Project_Tree.Projects.Table (Project).Extends;
-
-            exit when Project = No_Project;
          end loop;
       end Add_Sources;
 
@@ -1767,6 +1768,7 @@ package body Buildgpr is
       procedure Add_Objects (Proj : Project_Id) is
          Project : Project_Id := Proj;
          Id : Source_Id;
+         Iter : Source_Iterator;
 
       begin
          loop
@@ -1810,9 +1812,11 @@ package body Buildgpr is
                   end;
 
                else
-                  Id := Project_Tree.Projects.Table (Project).First_Source;
+                  Iter := For_Each_Source (Project_Tree, Project);
+                  loop
+                     Id := Prj.Element (Iter);
+                     exit when Id = No_Source;
 
-                  while Id /= No_Source loop
                      declare
                         Source : Source_Data renames
                           Project_Tree.Sources.Table (Id);
@@ -1828,9 +1832,9 @@ package body Buildgpr is
                               Verbose_Mode,
                               Simple_Name => not Verbose_Mode);
                         end if;
-
-                        Id := Source.Next_In_Project;
                      end;
+
+                     Next (Iter);
                   end loop;
                end if;
             end if;
@@ -2377,6 +2381,8 @@ package body Buildgpr is
 
       Disregard : Boolean;
 
+      Iter      : Source_Iterator;
+
       procedure Get_Objects;
       --  Get the paths of the object files of the library in table
       --  Library_Objs.
@@ -2386,17 +2392,19 @@ package body Buildgpr is
       -----------------
 
       procedure Get_Objects is
-         Source   : Source_Id;
-
-         Proj : Project_Id := For_Project;
+         Source : Source_Id;
+         Iter   : Source_Iterator;
+         Proj   : Project_Id := For_Project;
 
       begin
          Library_Objs.Init;
 
          loop
-            Source := Project_Tree.Projects.Table (Proj).First_Source;
+            Iter := For_Each_Source (Project_Tree, Proj);
+            loop
+               Source := Prj.Element (Iter);
+               exit when Source = No_Source;
 
-            while Source /= No_Source loop
                declare
                   Src_Data : Source_Data renames
                     Project_Tree.Sources.Table (Source);
@@ -2439,9 +2447,9 @@ package body Buildgpr is
                         Latest_Object_TS := Src_Data.Object_TS;
                      end if;
                   end if;
-
-                  Source := Src_Data.Next_In_Project;
                end;
+
+               Next (Iter);
             end loop;
 
             Proj := Project_Tree.Projects.Table (Proj).Extends;
@@ -3123,10 +3131,13 @@ package body Buildgpr is
                declare
                   Proj_Data : Project_Data renames
                     Project_Tree.Projects.Table (Current_Proj);
+                  Iter      : Source_Iterator;
                begin
-                  Source := Proj_Data.First_Source;
+                  Iter := For_Each_Source (Project_Tree, Current_Proj);
+                  loop
+                     Source := Prj.Element (Iter);
+                     exit when Source = No_Source;
 
-                  while Source /= No_Source loop
                      declare
                         Src_Data : Source_Data renames
                           Project_Tree.Sources.Table (Source);
@@ -3147,9 +3158,9 @@ package body Buildgpr is
                                  Get_Name_String (Src_Data.Dep_Name));
                            end if;
                         end if;
-
-                        Source := Src_Data.Next_In_Project;
                      end;
+
+                     Next (Iter);
                   end loop;
 
                   Current_Proj := Proj_Data.Extends;
@@ -3208,10 +3219,12 @@ package body Buildgpr is
                Project := For_Project;
 
                while Project /= No_Project loop
+                  Iter := For_Each_Source (Project_Tree, Project);
 
-                  Source := Project_Tree.Projects.Table (Project).First_Source;
+                  loop
+                     Source := Prj.Element (Iter);
+                     exit when Source = No_Source;
 
-                  while Source /= No_Source loop
                      declare
                         Src_Data : Source_Data renames
                           Project_Tree.Sources.Table (Source);
@@ -3226,9 +3239,9 @@ package body Buildgpr is
                              (Exchange_File,
                               Get_Name_String (Src_Data.Path.Name));
                         end if;
-
-                        Source := Src_Data.Next_In_Project;
                      end;
+
+                     Next (Iter);
                   end loop;
 
                   Project := Project_Tree.Projects.Table (Project).Extends;
@@ -3452,6 +3465,7 @@ package body Buildgpr is
             Main         : String := Display_Main;
             Main_Id      : File_Name_Type;
             Base_Main_Id : File_Name_Type;
+            Iter         : Source_Iterator;
 
          begin
             exit when Display_Main'Length = 0;
@@ -3473,10 +3487,13 @@ package body Buildgpr is
                end if;
             end if;
 
-            Source := Project_Tree.First_Source;
+            Iter := For_Each_Source (Project_Tree);
             Nmb := 0;
 
-            while Source /= No_Source loop
+            loop
+               Source := Prj.Element (Iter);
+               exit when Source = No_Source;
+
                if Project_Tree.Sources.Table (Source).File = Base_Main_Id then
                   declare
                      Name_1 : constant String :=
@@ -3506,7 +3523,7 @@ package body Buildgpr is
                   end;
                end if;
 
-               Source := Project_Tree.Sources.Table (Source).Next_In_Sources;
+               Next (Iter);
             end loop;
 
             if Nmb = 0 then
@@ -3545,6 +3562,7 @@ package body Buildgpr is
             Elem         : String_Element;
             Unit_Name    : Name_Id;
             Root_Source  : Source_Id;
+            Iter         : Source_Iterator;
          begin
             exit when Display_Main'Length = 0;
 
@@ -3667,9 +3685,12 @@ package body Buildgpr is
 
                            Roots_Found := False;
 
-                           Root_Source := Project_Tree.First_Source;
+                           Iter := For_Each_Source (Project_Tree);
                            Source_Loop :
-                           while Root_Source /= No_Source loop
+                           loop
+                              Root_Source := Prj.Element (Iter);
+                              exit Source_Loop when Root_Source = No_Source;
+
                               Root_Found := False;
                               declare
                                  Src_Data2 : Source_Data renames
@@ -3734,7 +3755,7 @@ package body Buildgpr is
                                     exit Source_Loop when not Pat_Root;
                                  end if;
 
-                                 Root_Source := Src_Data2.Next_In_Sources;
+                                 Next (Iter);
                               end;
                            end loop Source_Loop;
 
@@ -4262,6 +4283,7 @@ package body Buildgpr is
          Sfile      : File_Name_Type;
          Afile      : File_Name_Type;
          Source_2   : Source_Id;
+         Iter       : Source_Iterator;
       begin
          if Text /= null then
             --  Read the ALI file but read only the necessary lines
@@ -4291,9 +4313,12 @@ package body Buildgpr is
                         --  Look for this source
 
                         Afile := ALI.Withs.Table (K).Afile;
-                        Source_2 := Project_Tree.First_Source;
+                        Iter  := For_Each_Source (Project_Tree);
 
-                        while Source_2 /= No_Source loop
+                        loop
+                           Source_2 := Prj.Element (Iter);
+                           exit when Source_2 = No_Source;
+
                            declare
                               Src_Data_2 : Source_Data renames
                                 Project_Tree.Sources.Table (Source_2);
@@ -4316,9 +4341,9 @@ package body Buildgpr is
 
                                  exit;
                               end if;
-
-                              Source_2 := Src_Data_2.Next_In_Sources;
                            end;
+
+                           Next (Iter);
                         end loop;
 
                         --  If it is the source of a project that is not the
@@ -5565,6 +5590,7 @@ package body Buildgpr is
       File      : File_Descriptor := Invalid_FD;
 
       Source   : Source_Id;
+      Iter     : Source_Iterator;
 
       procedure Check (Project : Project_Id);
       --  Check the naming schemes of the different projects of the project
@@ -5864,9 +5890,12 @@ package body Buildgpr is
       --  Visit all the units and issue the config declarations for those that
       --  need one.
 
-      Source := Project_Tree.First_Source;
+      Iter := For_Each_Source (Project_Tree);
 
-      while Source /= No_Source loop
+      loop
+         Source := Prj.Element (Iter);
+         exit when Source = No_Source;
+
          declare
             Src_Data : Source_Data renames Project_Tree.Sources.Table (Source);
          begin
@@ -5940,9 +5969,9 @@ package body Buildgpr is
                   end;
                end if;
             end if;
-
-            Source := Src_Data.Next_In_Sources;
          end;
+
+         Next (Iter);
       end loop;
 
       if File /= Invalid_FD then
@@ -6476,11 +6505,12 @@ package body Buildgpr is
       --  Update info on all sources
 
       declare
-         Dep_Src : Source_Id := Project_Tree.First_Source;
+         Iter    : Source_Iterator;
       begin
-         while Dep_Src /= No_Source loop
-            Initialize_Source_Record (Dep_Src);
-            Dep_Src := Project_Tree.Sources.Table (Dep_Src).Next_In_Sources;
+         Iter := For_Each_Source (Project_Tree);
+         while Prj.Element (Iter) /= No_Source loop
+            Initialize_Source_Record (Prj.Element (Iter));
+            Next (Iter);
          end loop;
       end;
 
@@ -7241,8 +7271,8 @@ package body Buildgpr is
       return Boolean
    is
       Proj     : Project_Id;
-      Data     : Project_Data := Project_Tree.Projects.Table (Project);
       Source   : Source_Id;
+      Iter     : Source_Iterator;
 
    begin
       --  If a source is overriden in an extending project, then the object
@@ -7254,8 +7284,11 @@ package body Buildgpr is
             Data : Project_Data renames Project_Tree.Projects.Table (Proj);
 
          begin
-            Source := Data.First_Source;
-            while Source /= No_Source loop
+            Iter := For_Each_Source (Project_Tree, Proj);
+            loop
+               Source := Prj.Element (Iter);
+               exit when Source = No_Source;
+
                declare
                   Src_Data : Source_Data renames
                     Project_Tree.Sources.Table (Source);
@@ -7264,19 +7297,21 @@ package body Buildgpr is
                     and then Src_Data.Object = Object_Name
                   then
                      return False;
-                  else
-                     Source :=
-                       Project_Tree.Sources.Table (Source).Next_In_Project;
                   end if;
                end;
+
+               Next (Iter);
             end loop;
             Proj := Data.Extended_By;
          end;
       end loop;
 
-      Data := Project_Tree.Projects.Table (Project);
-      Source := Data.First_Source;
-      while Source /= No_Source loop
+      Iter := For_Each_Source (Project_Tree, Project);
+
+      loop
+         Source := Prj.Element (Iter);
+         exit when Source = No_Source;
+
          declare
             Src_Data : Source_Data renames
               Project_Tree.Sources.Table (Source);
@@ -7285,12 +7320,10 @@ package body Buildgpr is
               and then Src_Data.Object =  Object_Name
             then
                return Src_Data.Object_Linked;
-
-            else
-               Source :=
-                 Project_Tree.Sources.Table (Source).Next_In_Project;
             end if;
          end;
+
+         Next (Iter);
       end loop;
 
       return True;
@@ -8851,6 +8884,7 @@ package body Buildgpr is
 
          declare
             Projects : array (1 .. Num_Ext) of Project_Id;
+            Iter     : Source_Iterator;
          begin
             Proj := ALI_Project;
             for J in Projects'Range loop
@@ -8864,10 +8898,13 @@ package body Buildgpr is
                Sfile := ALI.Sdep.Table (D).Sfile;
 
                if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
-                  Dep_Src := Project_Tree.First_Source;
+                  Iter := For_Each_Source (Project_Tree);
                   Found := False;
 
-                  while Dep_Src /= No_Source loop
+                  loop
+                     Dep_Src := Prj.Element (Iter);
+                     exit when Dep_Src = No_Source;
+
                      if (not Project_Tree.Sources.Table
                          (Dep_Src).Locally_Removed)
                        and then
@@ -8967,9 +9004,7 @@ package body Buildgpr is
                         end if;
                      end if;
 
-                     Dep_Src :=
-                       Project_Tree.Sources.Table
-                         (Dep_Src).Next_In_Sources;
+                     Next (Iter);
                   end loop;
 
                   --  If the source was not found and the runtime source
@@ -9295,11 +9330,11 @@ package body Buildgpr is
          Main_Source : Source_Data;
          Dep_Files   : out Boolean)
       is
-         Src_Id  : Source_Id;
          Config  : constant Language_Config := Language.Config;
          Roots   : Roots_Access;
+         Iter    : Source_Iterator;
 
-         procedure Put_Dependency_File (Source : Source_Data);
+         procedure Put_Dependency_File (Src_Id : Source_Id);
          --  Put in the exchange file the dependency file path name for source
          --  Source, if applicable.
 
@@ -9307,7 +9342,8 @@ package body Buildgpr is
          -- Put_Dependency_File --
          -------------------------
 
-         procedure Put_Dependency_File (Source : Source_Data) is
+         procedure Put_Dependency_File (Src_Id : Source_Id) is
+            Source : Source_Data renames Project_Tree.Sources.Table (Src_Id);
          begin
             if Source.Language.Name = Language.Name
               and then
@@ -9359,19 +9395,17 @@ package body Buildgpr is
 
          if Roots = No_Roots then
             if Main_Source.Unit = No_Name then
-               Src_Id := Project_Tree.First_Source;
-               while Src_Id /= No_Source loop
-                  Put_Dependency_File (Project_Tree.Sources.Table (Src_Id));
-                  Src_Id :=
-                    Project_Tree.Sources.Table (Src_Id).Next_In_Sources;
+               Iter := For_Each_Source (Project_Tree);
+               while Prj.Element (Iter) /= No_Source loop
+                  Put_Dependency_File (Prj.Element (Iter));
+                  Next (Iter);
                end loop;
             end if;
 
          else
             --  Put the Roots
             for J in Roots'Range loop
-               Src_Id := Roots (J);
-               Put_Dependency_File (Project_Tree.Sources.Table (Src_Id));
+               Put_Dependency_File (Roots (J));
             end loop;
          end if;
       end Add_Dependency_Files;
@@ -9740,6 +9774,7 @@ package body Buildgpr is
                         Roots            : Roots_Access;
                         Src_Id           : Source_Id;
                         Source           : Source_Data;
+                        Iter             : Source_Iterator;
                         Config           : constant Language_Config :=
                                              B_Data.Language.Config;
 
@@ -9773,9 +9808,12 @@ package body Buildgpr is
                         --  binder.
 
                         if Queue.Is_Empty then
-                           Src_Id := Project_Tree.First_Source;
+                           Iter := For_Each_Source (Project_Tree);
 
-                           Loop1 : while Src_Id /= No_Source loop
+                           Loop1 : loop
+                              Src_Id := Prj.Element (Iter);
+                              exit Loop1 when Src_Id = No_Source;
+
                               Source := Project_Tree.Sources.Table (Src_Id);
 
                               if Source.Language.Name =
@@ -9816,25 +9854,20 @@ package body Buildgpr is
                                           Data : Project_Data
                                           renames Project_Tree.Projects.Table
                                             (Proj);
+                                          Iter2 : Source_Iterator;
 
                                        begin
-                                          Src := Data.First_Source;
-                                          while Src /= No_Source loop
-                                             declare
-                                                Src_Data : Source_Data renames
-                                                  Project_Tree.Sources.Table
-                                                    (Src);
-                                             begin
-                                                if Src_Data.Object =
-                                                    Source.Object
-                                                then
-                                                   exit Loop1;
-                                                else
-                                                   Src :=
-                                                     Project_Tree.Sources.Table
-                                                       (Src).Next_In_Project;
-                                                end if;
-                                             end;
+                                          Iter2 := For_Each_Source
+                                            (Project_Tree, Proj);
+                                          loop
+                                             Src := Prj.Element (Iter2);
+                                             exit when Src = No_Source;
+
+                                             exit Loop1 when
+                                               Project_Tree.Sources.Table (Src)
+                                                 .Object = Source.Object;
+
+                                             Next (Iter2);
                                           end loop;
                                           Proj := Data.Extended_By;
                                        end;
@@ -9847,7 +9880,7 @@ package body Buildgpr is
                                     Source_Project   => Source.Project);
                               end if;
 
-                              Src_Id := Source.Next_In_Sources;
+                              Next (Iter);
                            end loop Loop1;
 
                         end if;
@@ -10732,6 +10765,7 @@ package body Buildgpr is
          Sfile     : File_Name_Type;
          Afile     : File_Name_Type;
          Src_Id    : Source_Id;
+         Iter      : Source_Iterator;
 
       begin
          --  Insert in the Q the unmarked source files (i.e. those which have
@@ -10749,9 +10783,12 @@ package body Buildgpr is
 
                if Sfile /= No_File then
                   Afile := ALI.Withs.Table (K).Afile;
-                  Src_Id := Project_Tree.First_Source;
+                  Iter := For_Each_Source (Project_Tree);
 
-                  while Src_Id /= No_Source loop
+                  loop
+                     Src_Id := Prj.Element (Iter);
+                     exit when Src_Id = No_Source;
+
                      declare
                         Source : Source_Data renames
                           Project_Tree.Sources.Table (Src_Id);
@@ -10776,9 +10813,9 @@ package body Buildgpr is
 
                            exit;
                         end if;
-
-                        Src_Id := Source.Next_In_Sources;
                      end;
+
+                     Next (Iter);
                   end loop;
 
                   if Src_Id /= No_Source then

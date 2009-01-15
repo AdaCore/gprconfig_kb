@@ -218,7 +218,8 @@ package body Cleangpr is
       if Data.Library and then Data.Library_Src_Dir /= No_Path_Information then
          declare
             Directory : constant String :=
-                          Get_Name_String (Data.Library_Src_Dir.Name);
+              Get_Name_String (Data.Library_Src_Dir.Name);
+            Iter : Source_Iterator;
 
          begin
             Change_Dir (Get_Name_String (Data.Library_Src_Dir.Name));
@@ -241,9 +242,12 @@ package body Cleangpr is
 
                   Delete_File := False;
 
-                  Source := Project_Tree.First_Source;
+                  Iter := For_Each_Source (Project_Tree);
 
                   loop
+                     Source := Prj.Element (Iter);
+                     exit when Source = No_Source;
+
                      Src_Data := Project_Tree.Sources.Table (Source);
 
                      if Src_Data.Unit /= No_Name
@@ -256,8 +260,7 @@ package body Cleangpr is
                         exit;
                      end if;
 
-                     Source := Src_Data.Next_In_Sources;
-                     exit when Source = No_Source;
+                     Next (Iter);
                   end loop;
 
                   if Delete_File then
@@ -515,13 +518,17 @@ package body Cleangpr is
                      declare
                         Source   : Prj.Source_Id;
                         Src_Data : Source_Data;
+                        Iter     : Source_Iterator;
                      begin
                         Data := Project_Tree.Projects.Table (Project);
 
                         Project_Loop : loop
-                           Source := Data.First_Source;
+                           Iter := For_Each_Source (Project_Tree, Project);
 
-                           while Source /= No_Source loop
+                           loop
+                              Source := Prj.Element (Iter);
+                              exit when Source = No_Source;
+
                               Src_Data :=
                                 Project_Tree.Sources.Table (Source);
 
@@ -534,7 +541,7 @@ package body Cleangpr is
                                  exit Project_Loop;
                               end if;
 
-                              Source := Src_Data.Next_In_Project;
+                              Next (Iter);
                            end loop;
 
                            exit Project_Loop when Data.Extends = No_Project;
@@ -578,6 +585,7 @@ package body Cleangpr is
 
       Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
       Data        : Project_Data := Project_Tree.Projects.Table (Project);
+      Project2    : Project_Id;
 
       Source_Id   : Prj.Source_Id;
       Source      : Source_Data;
@@ -619,7 +627,8 @@ package body Cleangpr is
          if Data.Object_Directory /= No_Path_Information then
             declare
                Obj_Dir : constant String :=
-                           Get_Name_String (Data.Object_Directory.Name);
+                 Get_Name_String (Data.Object_Directory.Name);
+               Iter    : Source_Iterator;
 
             begin
                Change_Dir (Obj_Dir);
@@ -659,12 +668,16 @@ package body Cleangpr is
                --  Check all the object file for the sources of the current
                --  project and all the projects it extends.
 
-               loop
+               Project2 := Project;
+               while Project2 /= No_Project loop
                   --  Delete the object files and the dependency files if they
                   --  exist.
 
-                  Source_Id := Data.First_Source;
-                  while Source_Id /= No_Source loop
+                  Iter := For_Each_Source (Project_Tree, Project2);
+                  loop
+                     Source_Id := Prj.Element (Iter);
+                     exit when Source_Id = No_Source;
+
                      Source := Project_Tree.Sources.Table (Source_Id);
 
                      if Source.Object /= No_File
@@ -688,12 +701,10 @@ package body Cleangpr is
                         Delete (Obj_Dir, Get_Name_String (Source.Switches));
                      end if;
 
-                     Source_Id := Source.Next_In_Project;
+                     Next (Iter);
                   end loop;
 
-                  exit when Data.Extends = No_Project;
-
-                  Data := Project_Tree.Projects.Table (Data.Extends);
+                  Project2 := Project_Tree.Projects.Table (Project2).Extends;
                end loop;
 
                --  Restore Data for the original project
@@ -778,6 +789,7 @@ package body Cleangpr is
             Exec_Dir : constant String :=
                          Get_Name_String (Data.Exec_Directory.Name);
             Source   : Prj.Source_Id;
+            Iter     : Source_Iterator;
 
          begin
             Change_Dir (Exec_Dir);
@@ -793,14 +805,15 @@ package body Cleangpr is
                   Main_Source_File := Create_Name (Main);
                end;
 
-               Source := Project_Tree.First_Source;
+               Iter := For_Each_Source (Project_Tree);
 
-               while Source /= No_Source loop
-                  exit when Project_Tree.Sources.Table (Source).File =
-                              Main_Source_File;
+               loop
+                  Source := Prj.Element (Iter);
+                  exit when Source = No_Source
+                    or else Project_Tree.Sources.Table (Source).File =
+                       Main_Source_File;
 
-                  Source :=
-                    Project_Tree.Sources.Table (Source).Next_In_Sources;
+                  Next (Iter);
                end loop;
 
                if not Compile_Only
