@@ -333,8 +333,7 @@ package body Gpr_Util is
                while Project /= No_Project loop
                   Iter := For_Each_Source (Project_Tree, Project);
                   while Prj.Element (Iter) /= No_Source
-                    and then Project_Tree.Sources.Table
-                      (Prj.Element (Iter)).File /= Main_Id
+                    and then Prj.Element (Iter).File /= Main_Id
                   loop
                      Next (Iter);
                   end loop;
@@ -359,15 +358,14 @@ package body Gpr_Util is
 
                         --  Only consider bodies
 
-                        if Project_Tree.Sources.Table (Source).Kind = Impl then
-                           Get_Name_String
-                             (Project_Tree.Sources.Table (Source).File);
+                        if Source.Kind = Impl then
+                           Get_Name_String (Source.File);
 
                            if Name_Len > Main'Length
                              and then Name_Buffer (1 .. Main'Length) = Main
                            then
                               Suffix :=
-                                Project_Tree.Sources.Table (Source).Language
+                                Source.Language
                                   .Config.Naming_Data.Body_Suffix;
 
                               exit when Suffix /= No_File and then

@@ -210,7 +210,6 @@ package body Cleangpr is
       Delete_File : Boolean;
 
       Source      : Prj.Source_Id;
-      Src_Data    : Source_Data;
 
       File_Name   : File_Name_Type;
 
@@ -248,13 +247,11 @@ package body Cleangpr is
                      Source := Prj.Element (Iter);
                      exit when Source = No_Source;
 
-                     Src_Data := Project_Tree.Sources.Table (Source);
-
-                     if Src_Data.Unit /= No_Name
+                     if Source.Unit /= No_Name
                        and then
-                         Ultimate_Extension_Of (Src_Data.Project) = Project
+                         Ultimate_Extension_Of (Source.Project) = Project
                        and then
-                         Src_Data.File = File_Name
+                         Source.File = File_Name
                      then
                         Delete_File := True;
                         exit;
@@ -517,7 +514,6 @@ package body Cleangpr is
                   if Last > 4 and then Name (Last - 3 .. Last) = ".ali" then
                      declare
                         Source   : Prj.Source_Id;
-                        Src_Data : Source_Data;
                         Iter     : Source_Iterator;
                      begin
                         Data := Project_Tree.Projects.Table (Project);
@@ -529,12 +525,9 @@ package body Cleangpr is
                               Source := Prj.Element (Iter);
                               exit when Source = No_Source;
 
-                              Src_Data :=
-                                Project_Tree.Sources.Table (Source);
-
-                              if Src_Data.Dep_Name /= No_File
+                              if Source.Dep_Name /= No_File
                                 and then
-                                  Get_Name_String (Src_Data.Dep_Name) =
+                                  Get_Name_String (Source.Dep_Name) =
                                   Name (1 .. Last)
                               then
                                  Delete_File := True;
@@ -588,7 +581,6 @@ package body Cleangpr is
       Project2    : Project_Id;
 
       Source_Id   : Prj.Source_Id;
-      Source      : Source_Data;
 
       Partial_Number : Natural;
    begin
@@ -678,27 +670,25 @@ package body Cleangpr is
                      Source_Id := Prj.Element (Iter);
                      exit when Source_Id = No_Source;
 
-                     Source := Project_Tree.Sources.Table (Source_Id);
-
-                     if Source.Object /= No_File
+                     if Source_Id.Object /= No_File
                        and then Is_Regular_File
-                         (Get_Name_String (Source.Object))
+                         (Get_Name_String (Source_Id.Object))
                      then
-                        Delete (Obj_Dir, Get_Name_String (Source.Object));
+                        Delete (Obj_Dir, Get_Name_String (Source_Id.Object));
                      end if;
 
-                     if Source.Dep_Name /= No_File
+                     if Source_Id.Dep_Name /= No_File
                        and then Is_Regular_File
-                         (Get_Name_String (Source.Dep_Name))
+                         (Get_Name_String (Source_Id.Dep_Name))
                      then
-                        Delete (Obj_Dir, Get_Name_String (Source.Dep_Name));
+                        Delete (Obj_Dir, Get_Name_String (Source_Id.Dep_Name));
                      end if;
 
-                     if Source.Switches /= No_File
+                     if Source_Id.Switches /= No_File
                        and then Is_Regular_File
-                         (Get_Name_String (Source.Switches))
+                         (Get_Name_String (Source_Id.Switches))
                      then
-                        Delete (Obj_Dir, Get_Name_String (Source.Switches));
+                        Delete (Obj_Dir, Get_Name_String (Source_Id.Switches));
                      end if;
 
                      Next (Iter);
@@ -810,9 +800,7 @@ package body Cleangpr is
                loop
                   Source := Prj.Element (Iter);
                   exit when Source = No_Source
-                    or else Project_Tree.Sources.Table (Source).File =
-                       Main_Source_File;
-
+                    or else Source.File = Main_Source_File;
                   Next (Iter);
                end loop;
 
@@ -825,9 +813,7 @@ package body Cleangpr is
                        In_Tree  => Project_Tree,
                        Main     => Main_Source_File,
                        Index    => 0,
-                       Ada_Main =>
-                         Project_Tree.Sources.Table (Source).Language.Name =
-                         Snames.Name_Ada);
+                       Ada_Main => Source.Language.Name = Snames.Name_Ada);
 
                   declare
                      Exec_File_Name : constant String :=
