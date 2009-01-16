@@ -11054,6 +11054,11 @@ package body Buildgpr is
          then
             Indirect_Imports := False;
 
+         elsif Command_Line
+               and then Arg = Gpr_Util.Unchecked_Shared_Lib_Imports
+         then
+            Opt.Unchecked_Shared_Lib_Imports := True;
+
          elsif Command_Line and then
            Arg'Length >= 3 and then
            Arg (1 .. 3) = "-aP"
@@ -11578,6 +11583,12 @@ package body Buildgpr is
          Write_Str ("  --RTS:<lang>=<runtime>");
          Write_Eol;
          Write_Str ("           Use runtime <runtime> for language <lang>");
+         Write_Eol;
+
+         Write_Str ("  ");
+         Write_Str (Gpr_Util.Unchecked_Shared_Lib_Imports);
+         Write_Eol;
+         Write_Str ("           Shared lib projects may import any project");
          Write_Eol;
 
          Write_Eol;

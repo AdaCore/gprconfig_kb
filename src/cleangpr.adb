@@ -1251,6 +1251,9 @@ package body Cleangpr is
                              new String'
                                (Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
+                        elsif Arg = Gpr_Util.Unchecked_Shared_Lib_Imports then
+                           Opt.Unchecked_Shared_Lib_Imports := True;
+
                         else
                            Bad_Argument;
                         end if;
@@ -1479,6 +1482,8 @@ package body Cleangpr is
          Put_Line ("           Specify a target for cross polatforms");
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
+         Put_Line ("  " & Gpr_Util.Unchecked_Shared_Lib_Imports);
+         Put_Line ("           Shared lib projects may import any project");
          New_Line;
 
          Put_Line ("  -aPdir   Add directory dir to project search path");

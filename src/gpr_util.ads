@@ -134,6 +134,11 @@ package Gpr_Util is
       Hash       => Prj.Hash,
       Equal      => "=");
 
+   Unchecked_Shared_Lib_Imports : constant String :=
+                                    "--unchecked-shared-lib-imports";
+   --  Command line switch of gprbuild and gprclean to allow shared library
+   --  projects to import projects that are not shared library projects.
+
    --  Local subprograms
 
    function Binder_Exchange_File_Name
