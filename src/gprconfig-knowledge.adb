@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                   Copyright (C) 2006-2008, AdaCore                       --
+--                   Copyright (C) 2006-2009, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1954,6 +1954,10 @@ package body GprConfig.Knowledge is
          exception
             when Ada.Directories.Name_Error =>
                Put_Verbose ("No such directory:" & Directory, -1);
+               Continue := True;
+               return;
+            when Ada.Directories.Use_Error =>
+               Put_Verbose ("Directory not readable:" & Directory, -1);
                Continue := True;
                return;
          end;
