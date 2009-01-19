@@ -791,10 +791,6 @@ package body Buildgpr is
    procedure Compilation_Phase;
    --  Perform compilations
 
-   procedure Compute_All_Imported_Projects (Project : Project_Id);
-   --  Compute, the list of the projects imported directly or indirectly by
-   --  project Project.
-
    function Config_File_For
      (Project        : Project_Id;
       Package_Name   : Name_Id;
@@ -935,11 +931,6 @@ package body Buildgpr is
      (Switch           : in out String_Access;
       Parent           : String;
       Including_Switch : Name_Id);
-
-   function Ultimate_Extending_Project_Of (Proj : Project_Id)
-                                           return Project_Id;
-   --  Returns the ultimate extending project of project Proj. If project Proj
-   --  is not extended, returns Proj.
 
    procedure Usage;
    --  Display the usage
@@ -4360,7 +4351,8 @@ package body Buildgpr is
          then
             Queue.Extract (Source_File_Name, Source_Identity, Source_Project);
 
-            Source_Project := Ultimate_Extending_Project_Of (Source_Project);
+            Source_Project := Ultimate_Extending_Project_Of
+              (Source_Project, Project_Tree);
 
             if
               Project_Tree.Projects.Table (Source_Project).Externally_Built
@@ -5274,91 +5266,6 @@ package body Buildgpr is
       end loop Compilation_Loop;
    end Compilation_Phase;
 
-   -----------------------------------
-   -- Compute_All_Imported_Projects --
-   -----------------------------------
-
-   procedure Compute_All_Imported_Projects (Project : Project_Id) is
-      procedure Add_To_List (Prj : Project_Id);
-      --  Add a project to the list All_Imported_Projects of project Project
-
-      procedure Recursive_Add_Imported (Project : Project_Id);
-      --  Recursively add the projects imported by project Project, but not
-      --  those that are extended.
-
-      -----------------
-      -- Add_To_List --
-      -----------------
-
-      procedure Add_To_List (Prj : Project_Id) is
-         Element : constant Project_Element :=
-           (Prj, Project_Tree.Projects.Table (Project).All_Imported_Projects);
-         List : Project_List;
-      begin
-         Project_List_Table.Increment_Last (Project_Tree.Project_Lists);
-         List := Project_List_Table.Last (Project_Tree.Project_Lists);
-         Project_Tree.Project_Lists.Table (List) := Element;
-         Project_Tree.Projects.Table (Project).All_Imported_Projects := List;
-      end Add_To_List;
-
-      ----------------------------
-      -- Recursive_Add_Imported --
-      ----------------------------
-
-      procedure Recursive_Add_Imported (Project : Project_Id) is
-         List    : Project_List;
-         Element : Project_Element;
-         Prj     : Project_Id;
-
-      begin
-         if Project /= No_Project then
-
-            --  For all the imported projects
-
-            List := Project_Tree.Projects.Table (Project).Imported_Projects;
-            while List /= Empty_Project_List loop
-               Element := Project_Tree.Project_Lists.Table (List);
-               Prj := Ultimate_Extending_Project_Of (Element.Project);
-
-               --  If project has not yet been visited, add to list and recurse
-
-               if not Project_Tree.Projects.Table (Prj).Seen then
-                  Project_Tree.Projects.Table (Prj).Seen := True;
-                  Add_To_List (Prj);
-                  Recursive_Add_Imported (Prj);
-               end if;
-
-               List := Element.Next;
-            end loop;
-
-            --  Recurse on projects being imported, if any
-
-            Recursive_Add_Imported
-              (Project_Tree.Projects.Table (Project).Extends);
-         end if;
-      end Recursive_Add_Imported;
-
-   begin
-      --  Reset the Seen flag for all projects
-
-      for Index in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-         Project_Tree.Projects.Table (Index).Seen := False;
-      end loop;
-
-      --  Make sure the list is empty
-
-      Project_Tree.Projects.Table (Project).All_Imported_Projects :=
-        Empty_Project_List;
-
-      --  Make sure Project is not importing itself
-
-      Project_Tree.Projects.Table (Project).Seen := True;
-
-      --  Add to the list all projects imported directly or indirectly
-
-      Recursive_Add_Imported (Project);
-   end Compute_All_Imported_Projects;
-
    ---------------------
    -- Config_File_For --
    ---------------------
@@ -5459,7 +5366,7 @@ package body Buildgpr is
       Source   : Source_Id;
       Iter     : Source_Iterator;
 
-      procedure Check (Project : Project_Id);
+      procedure Check (Project : Project_Id; Dummy : in out Boolean);
       --  Check the naming schemes of the different projects of the project
       --  tree. For each different naming scheme issue the pattern config
       --  declarations.
@@ -5482,7 +5389,8 @@ package body Buildgpr is
       -- Check --
       -----------
 
-      procedure Check (Project : Project_Id) is
+      procedure Check (Project : Project_Id; Dummy : in out Boolean) is
+         pragma Unreferenced (Dummy);
          Data : Project_Data renames Project_Tree.Projects.Table (Project);
 
          Lang_Id   : Language_Ptr := Data.Languages;
@@ -5561,15 +5469,6 @@ package body Buildgpr is
          end Replace;
 
       begin
-         --  Do not check the same project several times to avoid endless loops
-         --  with cycles that include limited withs.
-
-         if Data.Seen then
-            return;
-         end if;
-
-         Project_Tree.Projects.Table (Project).Seen := True;
-
          if Current_Verbosity = High then
             Write_Str ("Checking project file """);
             Write_Str (Namet.Get_Name_String (Data.Name));
@@ -5611,20 +5510,6 @@ package body Buildgpr is
                end if;
             end if;
          end if;
-
-         if Data.Extends /= No_Project then
-            Check (Data.Extends);
-         end if;
-
-         declare
-            Current : Project_List := Data.Imported_Projects;
-
-         begin
-            while Current /= Empty_Project_List loop
-               Check (Project_Tree.Project_Lists.Table (Current).Project);
-               Current := Project_Tree.Project_Lists.Table (Current).Next;
-            end loop;
-         end;
       end Check;
 
       ---------------------
@@ -5723,6 +5608,10 @@ package body Buildgpr is
          end if;
       end Put_Line;
 
+      procedure Check_All_Projects is
+        new For_Every_Project_Imported (Boolean, Check);
+      Dummy : Boolean := False;
+
    --  Start of processing for Create_Config_File
 
    begin
@@ -5748,11 +5637,7 @@ package body Buildgpr is
 
       Naming_Datas.Init;
 
-      for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-         Project_Tree.Projects.Table (Proj).Seen := False;
-      end loop;
-
-      Check (For_Project);
+      Check_All_Projects (For_Project, Project_Tree, Dummy);
 
       --  Visit all the units and issue the config declarations for those that
       --  need one.
@@ -5951,64 +5836,48 @@ package body Buildgpr is
 
       Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
 
-      procedure Recursive_Add_Linker_Options (Proj : Project_Id);
+      procedure Recursive_Add (Proj : Project_Id; Dummy : in out Boolean);
       --  The recursive routine used to add linker options
 
-      ----------------------------------
-      -- Recursive_Add_Linker_Options --
-      ----------------------------------
+      -------------------
+      -- Recursive_Add --
+      -------------------
 
-      procedure Recursive_Add_Linker_Options (Proj : Project_Id) is
+      procedure Recursive_Add (Proj : Project_Id; Dummy : in out Boolean) is
+         pragma Unreferenced (Dummy);
+         Data : Project_Data renames Project_Tree.Projects.Table (Proj);
          Linker_Package : Package_Id;
          Options        : Variable_Value;
-         Imported       : Project_List;
 
       begin
-         if Proj /= No_Project then
-            declare
+         if Proj /= For_Project then
+            Linker_Package :=
+              Prj.Util.Value_Of
+                (Name        => Name_Linker,
+                 In_Packages => Data.Decl.Packages,
+                 In_Tree     => Project_Tree);
+            Options :=
+              Prj.Util.Value_Of
+                (Name                    => Name_Ada,
+                 Index                   => 0,
+                 Attribute_Or_Array_Name => Name_Linker_Options,
+                 In_Package              => Linker_Package,
+                 In_Tree                 => Project_Tree);
 
-               Data : Project_Data renames Project_Tree.Projects.Table (Proj);
+            --  If attribute is present, add the project with
+            --  the attribute to table Linker_Opts.
 
-            begin
-               if not Data.Seen then
-                  Project_Tree.Projects.Table (Proj).Seen := True;
-                  Imported := Data.Imported_Projects;
-
-                  while Imported /= Empty_Project_List loop
-                     Recursive_Add_Linker_Options
-                       (Project_Tree.Project_Lists.Table
-                          (Imported).Project);
-                     Imported := Project_Tree.Project_Lists.Table
-                       (Imported).Next;
-                  end loop;
-
-                  if Proj /= For_Project then
-                     Linker_Package :=
-                       Prj.Util.Value_Of
-                         (Name        => Name_Linker,
-                          In_Packages => Data.Decl.Packages,
-                          In_Tree     => Project_Tree);
-                     Options :=
-                       Prj.Util.Value_Of
-                         (Name                    => Name_Ada,
-                          Index                   => 0,
-                          Attribute_Or_Array_Name => Name_Linker_Options,
-                          In_Package              => Linker_Package,
-                          In_Tree                 => Project_Tree);
-
-                     --  If attribute is present, add the project with
-                     --  the attribute to table Linker_Opts.
-
-                     if Options /= Nil_Variable_Value then
-                        Linker_Opts.Increment_Last;
-                        Linker_Opts.Table (Linker_Opts.Last) :=
-                          (Project => Proj, Options => Options.Values);
-                     end if;
-                  end if;
-               end if;
-            end;
+            if Options /= Nil_Variable_Value then
+               Linker_Opts.Increment_Last;
+               Linker_Opts.Table (Linker_Opts.Last) :=
+                 (Project => Proj, Options => Options.Values);
+            end if;
          end if;
-      end Recursive_Add_Linker_Options;
+      end Recursive_Add;
+
+      procedure For_All_Projects is
+        new For_Every_Project_Imported (Boolean, Recursive_Add);
+      Dummy : Boolean := False;
 
    --  Start of processing for Linker_Options_Switches
 
@@ -6033,13 +5902,7 @@ package body Buildgpr is
 
       Linker_Opts.Init;
 
-      for Index in Project_Table.First ..
-                   Project_Table.Last (Project_Tree.Projects)
-      loop
-         Project_Tree.Projects.Table (Index).Seen := False;
-      end loop;
-
-      Recursive_Add_Linker_Options (For_Project);
+      For_All_Projects (For_Project, Project_Tree, Dummy);
 
       for Index in reverse 1 .. Linker_Opts.Last loop
          declare
@@ -6177,122 +6040,90 @@ package body Buildgpr is
       Languages   : Name_Ids)
    is
 
-      procedure Recursive_Add (Project : Project_Id);
+      procedure Recursive_Add (Project : Project_Id; Dummy : in out Boolean);
       --  Add all the source directories of a project to the path only if
       --  this project has not been visited. Calls itself recursively for
       --  projects being extended, and imported projects.
+
+      procedure Add_Dir (Value : Path_Name_Type);
+      --  Add directory Value in table Directories, if it is defined and not
+      --  already there.
+
+      -------------
+      -- Add_Dir --
+      -------------
+
+      procedure Add_Dir (Value : Path_Name_Type) is
+         Add_It : Boolean := True;
+
+      begin
+         if Value /= No_Path then
+            for Index in 1 .. Directories.Last loop
+               if Directories.Table (Index) = Value then
+                  Add_It := False;
+                  exit;
+               end if;
+            end loop;
+
+            if Add_It then
+               Directories.Increment_Last;
+               Directories.Table (Directories.Last) := Value;
+            end if;
+         end if;
+      end Add_Dir;
 
       -------------------
       -- Recursive_Add --
       -------------------
 
-      procedure Recursive_Add (Project : Project_Id) is
-         Current    : String_List_Id;
-         Dir        : String_Element;
-
-         procedure Add_Dir (Value : Path_Name_Type);
-         --  Add directory Value in table Directories, if it is defined and not
-         --  already there.
-
-         -------------
-         -- Add_Dir --
-         -------------
-
-         procedure Add_Dir (Value : Path_Name_Type) is
-            Add_It : Boolean := True;
-
-         begin
-            if Value /= No_Path then
-               for Index in 1 .. Directories.Last loop
-                  if Directories.Table (Index) = Value then
-                     Add_It := False;
-                     exit;
-                  end if;
-               end loop;
-
-               if Add_It then
-                  Directories.Increment_Last;
-                  Directories.Table (Directories.Last) := Value;
-               end if;
-            end if;
-         end Add_Dir;
-
+      procedure Recursive_Add (Project : Project_Id; Dummy : in out Boolean) is
+         pragma Unreferenced (Dummy);
+         Current : String_List_Id;
+         Dir     : String_Element;
+         Data    : Project_Data renames Project_Tree.Projects.Table (Project);
+         OK      : Boolean := False;
+         Lang_Proc : Language_Ptr := Data.Languages;
       begin
-         --  If Seen is empty, then the project cannot have been visited
+         --  Add to path all directories of this project
 
-         if not Project_Tree.Projects.Table (Project).Seen then
-            Project_Tree.Projects.Table (Project).Seen := True;
-
-            declare
-               Data : Project_Data renames
-                 Project_Tree.Projects.Table (Project);
-               List : Project_List := Data.Imported_Projects;
-
-               Lang_Proc : Language_Ptr := Data.Languages;
-               OK : Boolean;
-
-            begin
-               --  Add to path all directories of this project
-
-               if Sources then
-                  OK := False;
-
-                  Lang_Loop :
-                  while Lang_Proc /= No_Language_Index loop
-                     for J in Languages'Range loop
-                        OK := Lang_Proc.Name = Languages (J);
-                        exit Lang_Loop when OK;
-                     end loop;
-
-                     Lang_Proc := Lang_Proc.Next;
-                  end loop Lang_Loop;
-
-                  if OK then
-                     Current := Data.Source_Dirs;
-
-                     while Current /= Nil_String loop
-                        Dir := Project_Tree.String_Elements.Table (Current);
-                        Add_Dir (Path_Name_Type (Dir.Value));
-                        Current := Dir.Next;
-                     end loop;
-                  end if;
-
-               elsif Data.Library then
-                  Add_Dir (Data.Library_ALI_Dir.Name);
-
-               else
-                  Add_Dir (Data.Object_Directory.Name);
-               end if;
-
-               --  Call Add to the project being extended, if any
-
-               if Data.Extends /= No_Project then
-                  Recursive_Add (Data.Extends);
-               end if;
-
-               --  Call Add for each imported project, if any
-
-               while List /= Empty_Project_List loop
-                  Recursive_Add
-                    (Project_Tree.Project_Lists.Table (List).Project);
-                  List := Project_Tree.Project_Lists.Table (List).Next;
+         if Sources then
+            Lang_Loop :
+            while Lang_Proc /= No_Language_Index loop
+               for J in Languages'Range loop
+                  OK := Lang_Proc.Name = Languages (J);
+                  exit Lang_Loop when OK;
                end loop;
-            end;
+
+               Lang_Proc := Lang_Proc.Next;
+            end loop Lang_Loop;
+
+            if OK then
+               Current := Data.Source_Dirs;
+
+               while Current /= Nil_String loop
+                  Dir := Project_Tree.String_Elements.Table (Current);
+                  Add_Dir (Path_Name_Type (Dir.Value));
+                  Current := Dir.Next;
+               end loop;
+            end if;
+
+         elsif Data.Library then
+            Add_Dir (Data.Library_ALI_Dir.Name);
+
+         else
+            Add_Dir (Data.Object_Directory.Name);
          end if;
       end Recursive_Add;
+
+      procedure For_All_Projects is
+        new For_Every_Project_Imported (Boolean, Recursive_Add);
+      Dummy : Boolean := False;
 
    --  Start of processing for Get_Directories
 
    begin
       Directories.Init;
-
-      for Index in Project_Table.First ..
-        Project_Table.Last (Project_Tree.Projects)
-      loop
-         Project_Tree.Projects.Table (Index).Seen := False;
-      end loop;
-
-      Recursive_Add (For_Project);
+      For_All_Projects (For_Project, Project_Tree, Dummy);
    end Get_Directories;
 
    -------------------------
@@ -6362,7 +6193,7 @@ package body Buildgpr is
       end if;
 
       for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-         Compute_All_Imported_Projects (Proj);
+         Compute_All_Imported_Projects (Proj, Project_Tree);
       end loop;
 
       --  Update info on all sources
@@ -7294,7 +7125,8 @@ package body Buildgpr is
 
             Main_Id := Create_Name (Base_Name (Main));
             Main_Source := Main_Sources.Get (Main_Id);
-            Main_Proj   := Ultimate_Extending_Project_Of (Main_Source.Project);
+            Main_Proj   := Ultimate_Extending_Project_Of
+              (Main_Source.Project, Project_Tree);
             Data        := Project_Tree.Projects.Table (Main_Proj);
 
             Change_To_Object_Directory (Main_Proj);
@@ -9323,8 +9155,8 @@ package body Buildgpr is
                Object_File_Suffix_Label_Written : Boolean;
 
             begin
-               Main_Proj   :=
-                 Ultimate_Extending_Project_Of (Main_Source.Project);
+               Main_Proj   := Ultimate_Extending_Project_Of
+                 (Main_Source.Project, Project_Tree);
 
                --  Get the main base name
 
@@ -10670,8 +10502,8 @@ package body Buildgpr is
                      Insert
                        (Source_File_Name => Source.File,
                         Source_Identity  => Source,
-                        Source_Project   =>
-                          Ultimate_Extending_Project_Of (Source.Project));
+                        Source_Project   => Ultimate_Extending_Project_Of
+                          (Source.Project, Project_Tree));
                   end if;
                end if;
             end if;
@@ -11479,25 +11311,6 @@ package body Buildgpr is
          Switch := new String'(Parent & Directory_Separator & Original);
       end if;
    end Test_If_Relative_Path;
-
-   -----------------------------------
-   -- Ultimate_Extending_Project_Of --
-   -----------------------------------
-
-   function Ultimate_Extending_Project_Of (Proj : Project_Id)
-                                           return Project_Id
-   is
-      Prj : Project_Id := Proj;
-
-   begin
-      while
-        Project_Tree.Projects.Table (Prj).Extended_By /= No_Project
-      loop
-         Prj := Project_Tree.Projects.Table (Prj).Extended_By;
-      end loop;
-
-      return Prj;
-   end Ultimate_Extending_Project_Of;
 
    -----------
    -- Usage --
