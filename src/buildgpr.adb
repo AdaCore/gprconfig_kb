@@ -5910,17 +5910,10 @@ package body Buildgpr is
             Proj    : constant Project_Id :=
               Linker_Opts.Table (Index).Project;
             Option  : Name_Id;
+            Dir_Path : constant String := Get_Name_String
+              (Project_Tree.Projects.Table (Proj).Directory.Name);
 
          begin
-            --  If Dir_Path has not been computed for this project, do it now
-
-            if Project_Tree.Projects.Table (Proj).Dir_Path = null then
-               Project_Tree.Projects.Table (Proj).Dir_Path :=
-                 new String'
-                   (Get_Name_String
-                        (Project_Tree.Projects.Table (Proj). Directory.Name));
-            end if;
-
             while Options /= Nil_String loop
                Option :=
                  Project_Tree.String_Elements.Table (Options).Value;
@@ -5948,7 +5941,7 @@ package body Buildgpr is
                      else
                         Add_Argument
                           (Linker_Lib_Dir_Option.all &
-                           Project_Tree.Projects.Table (Proj).Dir_Path.all &
+                           Dir_Path &
                            Directory_Separator &
                            Name_Buffer
                              (Linker_Lib_Dir_Option'Length + 1 .. Name_Len),
@@ -5968,7 +5961,7 @@ package body Buildgpr is
 
                   else
                      Add_Argument
-                       (Project_Tree.Projects.Table (Proj).Dir_Path.all &
+                       (Dir_Path &
                         Directory_Separator &
                         Name_Buffer (1 .. Name_Len),
                         True,
@@ -9069,7 +9062,7 @@ package body Buildgpr is
 
       Process_Imported_Libraries
         (Main_Project,
-         There_Are_SALs => There_Are_Stand_Alone_Libraries,
+         There_Are_SALs     => There_Are_Stand_Alone_Libraries,
          And_Project_Itself => True);
 
       if Library_Projs.Last > 0 then
