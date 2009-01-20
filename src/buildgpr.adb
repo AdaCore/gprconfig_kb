@@ -5906,7 +5906,8 @@ package body Buildgpr is
 
       Linker_Opts.Init;
 
-      For_All_Projects (For_Project, Project_Tree, Dummy);
+      For_All_Projects
+        (For_Project, Project_Tree, Dummy, Imported_First => True);
 
       for Index in reverse 1 .. Linker_Opts.Last loop
          declare
