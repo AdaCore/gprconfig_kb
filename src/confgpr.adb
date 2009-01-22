@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -303,7 +303,7 @@ package body Confgpr is
 
    procedure Get_Configuration (Packages_To_Check : String_List_Access) is
       Config_Path : String_Access;
-
+      Project     : Project_List;
       Main_Object_Dir : Path_Name_Type := No_Path;
 
    begin
@@ -437,13 +437,12 @@ package body Confgpr is
             Obj_Dir : constant Variable_Value :=
               Value_Of
                 (Name_Object_Dir,
-                 Project_Tree.Projects.Table (Main_Project).Decl.Attributes,
+                 Main_Project.Decl.Attributes,
                  Project_Tree);
 
          begin
             if Obj_Dir = Nil_Variable_Value or else Obj_Dir.Default then
-               Get_Name_String
-                 (Project_Tree.Projects.Table (Main_Project).Directory.Name);
+               Get_Name_String (Main_Project.Directory.Name);
 
             else
                if Is_Absolute_Path (Get_Name_String (Obj_Dir.Value)) then
@@ -452,9 +451,7 @@ package body Confgpr is
                else
                   Name_Len := 0;
                   Add_Str_To_Name_Buffer
-                    (Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Main_Project).Directory.Name));
+                    (Get_Name_String (Main_Project.Directory.Name));
                   Add_Char_To_Name_Buffer (Directory_Separator);
                   Add_Str_To_Name_Buffer (Get_Name_String (Obj_Dir.Value));
                end if;
@@ -507,10 +504,9 @@ package body Confgpr is
 
          --  Get the languages in the user project tree
 
-         for Project in 1 .. Project_Table.Last (Project_Tree.Projects) loop
+         Project := Project_Tree.Projects;
+         while Project /= null loop
             declare
-               Data : constant Project_Data :=
-                 Project_Tree.Projects.Table (Project);
                Search : Boolean := True;
                Variable : Variable_Value;
                List : String_List_Id;
@@ -521,7 +517,7 @@ package body Confgpr is
                Variable :=
                  Value_Of
                    (Name_Source_Dirs,
-                    Data.Decl.Attributes,
+                    Project.Project.Decl.Attributes,
                     Project_Tree);
                Search :=
                  Variable = Nil_Variable_Value or else
@@ -532,7 +528,7 @@ package body Confgpr is
                   Variable :=
                     Value_Of
                       (Name_Source_Files,
-                       Data.Decl.Attributes,
+                       Project.Project.Decl.Attributes,
                        Project_Tree);
                   Search :=
                     Variable = Nil_Variable_Value or else
@@ -544,7 +540,7 @@ package body Confgpr is
                   Variable :=
                     Value_Of
                       (Name_Languages,
-                       Data.Decl.Attributes,
+                       Project.Project.Decl.Attributes,
                        Project_Tree);
 
                   if Variable = Nil_Variable_Value or else
@@ -554,11 +550,11 @@ package body Confgpr is
                      --  Languages is not declared. If it is not an extending
                      --  project, check for Default_Language
 
-                     if Data.Extends = No_Project then
+                     if Project.Project.Extends = No_Project then
                         Variable :=
                           Value_Of
                             (Name_Default_Language,
-                             Data.Decl.Attributes,
+                             Project.Project.Decl.Attributes,
                              Project_Tree);
 
                         if Variable /= Nil_Variable_Value and then
@@ -595,6 +591,8 @@ package body Confgpr is
                   end if;
                end if;
             end;
+
+            Project := Project.Next;
          end loop;
 
          --  If no config file was specified, set the auto.cgpr one
@@ -615,8 +613,7 @@ package body Confgpr is
             IDE      : constant Package_Id :=
                          Value_Of
                            (Name_Ide,
-                            Project_Tree.Projects.Table
-                              (Main_Project).Decl.Packages,
+                            Main_Project.Decl.Packages,
                             Project_Tree);
             Comp_Cmd : Variable_Value;
 
@@ -788,8 +785,7 @@ package body Confgpr is
             Target : constant Variable_Value :=
                        Value_Of
                          (Name_Target,
-                          Project_Tree.Projects.Table
-                            (Main_Config_Project).Decl.Attributes,
+                          Main_Config_Project.Decl.Attributes,
                           Project_Tree);
             Tgt_Name : Name_Id := No_Name;
 
@@ -835,18 +831,19 @@ package body Confgpr is
       --  Add the configuration attributes to all user projects
 
       declare
-         Conf_Decl    : constant Declarations :=
-                        Project_Tree.Projects.Table (Main_Config_Project).Decl;
+         Conf_Decl    : constant Declarations := Main_Config_Project.Decl;
          Conf_Pack_Id : Package_Id;
          Conf_Pack    : Package_Element;
 
          User_Decl    : Declarations;
          User_Pack_Id : Package_Id;
          User_Pack    : Package_Element;
+         Proj         : Project_List;
       begin
-         for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-            if Proj /= Main_Config_Project then
-               User_Decl := Project_Tree.Projects.Table (Proj).Decl;
+         Proj := Project_Tree.Projects;
+         while Proj /= null loop
+            if Proj.Project /= Main_Config_Project then
+               User_Decl := Proj.Project.Decl;
                Add_Attributes
                  (Conf_Decl => Conf_Decl,
                   User_Decl => User_Decl);
@@ -875,14 +872,16 @@ package body Confgpr is
                      Add_Attributes
                        (Conf_Decl => Conf_Pack.Decl,
                         User_Decl => Project_Tree.Packages.Table
-                                       (User_Pack_Id).Decl);
+                          (User_Pack_Id).Decl);
                   end if;
 
                   Conf_Pack_Id := Conf_Pack.Next;
                end loop;
 
-               Project_Tree.Projects.Table (Proj).Decl := User_Decl;
+               Proj.Project.Decl := User_Decl;
             end if;
+
+            Proj := Proj.Next;
          end loop;
       end;
 

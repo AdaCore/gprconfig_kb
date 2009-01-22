@@ -140,17 +140,15 @@ package body Gpr_Util is
       Config : Language_Config;
 
       Compiler_Path : String_Access;
-
+      Project : Project_List;
       Found : Boolean;
 
    begin
       There_Are_Binder_Drivers := False;
 
-      for Index in
-        1 .. Project_Table.Last (Project_Tree.Projects)
-      loop
-         Language :=
-           Project_Tree.Projects.Table (Index).Languages;
+      Project := Project_Tree.Projects;
+      while Project /= null loop
+         Language := Project.Project.Languages;
 
          while Language /= No_Language_Index loop
             Config := Language.Config;
@@ -238,6 +236,8 @@ package body Gpr_Util is
 
             Language := Language.Next;
          end loop;
+
+         Project := Project.Next;
       end loop;
    end Find_Binding_Languages;
 
@@ -279,9 +279,7 @@ package body Gpr_Util is
 
       if Mains.Number_Of_Mains = 0 then
          declare
-            Data    : constant Project_Data :=
-                        Project_Tree.Projects.Table (Main_Project);
-            List    : String_List_Id := Data.Mains;
+            List    : String_List_Id := Main_Project.Mains;
             Element : String_Element;
 
          begin
@@ -341,7 +339,7 @@ package body Gpr_Util is
                   Source := Prj.Element (Iter);
                   exit when Source /= No_Source;
 
-                  Project := Project_Tree.Projects.Table (Project).Extends;
+                  Project := Project.Extends;
                end loop;
 
                if Source = No_Source then
@@ -379,8 +377,7 @@ package body Gpr_Util is
 
                      exit when Source /= No_Source;
 
-                     Project :=
-                       Project_Tree.Projects.Table (Project).Extends;
+                     Project := Project.Extends;
 
                      exit when Project = No_Project;
                   end loop;
@@ -396,8 +393,7 @@ package body Gpr_Util is
                      --  project, an error will be reported later.
 
                      Error_Msg_File_1 := Main_Id;
-                     Error_Msg_Name_1 :=
-                       Project_Tree.Projects.Table (Main_Project).Name;
+                     Error_Msg_Name_1 := Main_Project.Name;
                      Errutil.Error_Msg ("{ is not a source of project %%",
                                         Location);
                   end if;

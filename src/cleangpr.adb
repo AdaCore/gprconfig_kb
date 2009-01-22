@@ -164,21 +164,18 @@ package body Cleangpr is
    -------------------
 
    procedure Clean_Archive (Project : Project_Id) is
-      Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
-      Data        : constant Project_Data :=
-                      Project_Tree.Projects.Table (Project);
-
+      Current_Dir  : constant Dir_Name_Str := Get_Current_Dir;
       Archive_Name : constant String :=
-                       "lib" & Get_Name_String (Data.Name) &
-                       Get_Name_String (Data.Config.Archive_Suffix);
+                       "lib" & Get_Name_String (Project.Name) &
+                       Get_Name_String (Project.Config.Archive_Suffix);
       --  The name of the archive file for this project
 
       Archive_Dep_Name : constant String :=
-                           "lib" & Get_Name_String (Data.Name) & ".deps";
+                           "lib" & Get_Name_String (Project.Name) & ".deps";
       --  The name of the archive dependency file for this project
 
       Obj_Dir     : constant String :=
-                      Get_Name_String (Data.Object_Directory.Name);
+                      Get_Name_String (Project.Object_Directory.Name);
 
    begin
       Change_Dir (Obj_Dir);
@@ -200,7 +197,6 @@ package body Cleangpr is
 
    procedure Clean_Interface_Copy_Directory (Project : Project_Id) is
       Current : constant String := Get_Current_Dir;
-      Data    : constant Project_Data := Project_Tree.Projects.Table (Project);
 
       Direc : Dir_Type;
 
@@ -214,14 +210,16 @@ package body Cleangpr is
       File_Name   : File_Name_Type;
 
    begin
-      if Data.Library and then Data.Library_Src_Dir /= No_Path_Information then
+      if Project.Library
+        and then Project.Library_Src_Dir /= No_Path_Information
+      then
          declare
             Directory : constant String :=
-              Get_Name_String (Data.Library_Src_Dir.Name);
+              Get_Name_String (Project.Library_Src_Dir.Name);
             Iter : Source_Iterator;
 
          begin
-            Change_Dir (Get_Name_String (Data.Library_Src_Dir.Name));
+            Change_Dir (Get_Name_String (Project.Library_Src_Dir.Name));
             Open (Direc, ".");
 
             --  For each regular file in the directory, if switch -n has not
@@ -285,17 +283,16 @@ package body Cleangpr is
 
    procedure Clean_Library_Directory (Project : Project_Id) is
       Current : constant String := Get_Current_Dir;
-      Data    : Project_Data := Project_Tree.Projects.Table (Project);
 
-      Lib_Filename : constant String := Get_Name_String (Data.Library_Name);
+      Lib_Filename : constant String := Get_Name_String (Project.Library_Name);
       DLL_Name     : String :=
                        Get_Name_String
-                         (Data.Config.Shared_Lib_Prefix) &
+                         (Project.Config.Shared_Lib_Prefix) &
                        Lib_Filename &
-                       Get_Name_String (Data.Config.Shared_Lib_Suffix);
+                       Get_Name_String (Project.Config.Shared_Lib_Suffix);
       Archive_Name : String :=
                        "lib" & Lib_Filename &
-                       Get_Name_String (Data.Config.Archive_Suffix);
+                       Get_Name_String (Project.Config.Archive_Suffix);
       Library_Exchange_File_Name : constant String :=
                                      Lib_Filename & Library_Exchange_Suffix;
 
@@ -307,17 +304,17 @@ package body Cleangpr is
       Delete_File : Boolean;
 
    begin
-      if Data.Library then
+      if Project.Library then
          Osint.Canonical_Case_File_Name (DLL_Name);
          Osint.Canonical_Case_File_Name (Archive_Name);
 
          declare
             Obj_Directory     : constant String :=
-                                  Get_Name_String (Data.Object_Directory.Name);
+              Get_Name_String (Project.Object_Directory.Name);
             Lib_Directory     : constant String :=
-                                  Get_Name_String (Data.Library_Dir.Name);
+              Get_Name_String (Project.Library_Dir.Name);
             Lib_ALI_Directory : constant String :=
-                                  Get_Name_String (Data.Library_ALI_Dir.Name);
+              Get_Name_String (Project.Library_ALI_Dir.Name);
 
             Exchange_File : Ada.Text_IO.File_Type;
 
@@ -402,11 +399,11 @@ package body Cleangpr is
                then
                   Osint.Canonical_Case_File_Name (Name (1 .. Last));
 
-                  if (Data.Library_Kind = Static and then
+                  if (Project.Library_Kind = Static and then
                         Name (1 .. Last) =  Archive_Name)
                     or else
-                      ((Data.Library_Kind = Dynamic or else
-                          Data.Library_Kind = Relocatable)
+                      ((Project.Library_Kind = Dynamic or else
+                          Project.Library_Kind = Relocatable)
                        and then
                          Name (1 .. Last) = DLL_Name)
                   then
@@ -421,19 +418,19 @@ package body Cleangpr is
 
             Close (Direc);
 
-            if Data.Config.Symbolic_Link_Supported then
-               if (Data.Library_Kind = Dynamic
-                   or else Data.Library_Kind = Relocatable)
-                 and then Data.Lib_Internal_Name /= No_Name
+            if Project.Config.Symbolic_Link_Supported then
+               if (Project.Library_Kind = Dynamic
+                   or else Project.Library_Kind = Relocatable)
+                 and then Project.Lib_Internal_Name /= No_Name
                then
                   declare
                      Lib_Version : String :=
-                                     Get_Name_String (Data.Lib_Internal_Name);
+                                   Get_Name_String (Project.Lib_Internal_Name);
 
                   begin
                      Osint.Canonical_Case_File_Name (Lib_Version);
 
-                     if Data.Config.Lib_Maj_Min_Id_Supported then
+                     if Project.Config.Lib_Maj_Min_Id_Supported then
                         declare
                            Maj_Version : String :=
                                          Major_Id_Name (DLL_Name, Lib_Version);
@@ -515,11 +512,10 @@ package body Cleangpr is
                      declare
                         Source   : Prj.Source_Id;
                         Iter     : Source_Iterator;
+                        Proj     : Project_Id := Project;
                      begin
-                        Data := Project_Tree.Projects.Table (Project);
-
                         Project_Loop : loop
-                           Iter := For_Each_Source (Project_Tree, Project);
+                           Iter := For_Each_Source (Project_Tree, Proj);
 
                            loop
                               Source := Prj.Element (Iter);
@@ -537,10 +533,9 @@ package body Cleangpr is
                               Next (Iter);
                            end loop;
 
-                           exit Project_Loop when Data.Extends = No_Project;
+                           exit Project_Loop when Proj.Extends = No_Project;
 
-                           Data :=
-                             Project_Tree.Projects.Table (Data.Extends);
+                           Proj := Proj.Extends;
                         end loop Project_Loop;
                      end;
                   end if;
@@ -577,7 +572,6 @@ package body Cleangpr is
       --  Name of the executable file
 
       Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
-      Data        : Project_Data := Project_Tree.Projects.Table (Project);
       Project2    : Project_Id;
 
       Source_Id   : Prj.Source_Id;
@@ -589,7 +583,7 @@ package body Cleangpr is
 
       if Project = Main_Project
         and then Mains.Number_Of_Mains /= 0
-        and then Data.Library
+        and then Project.Library
       then
          Osint.Fail
            ("Cannot specify executable(s) for a Library Project File");
@@ -597,17 +591,17 @@ package body Cleangpr is
 
       --  Nothing to clean in an externally built project
 
-      if Data.Externally_Built then
+      if Project.Externally_Built then
          if Verbose_Mode then
             Put ("Nothing to do to clean externally built project """);
-            Put (Get_Name_String (Data.Name));
+            Put (Get_Name_String (Project.Name));
             Put_Line ("""");
          end if;
 
       else
          if Verbose_Mode then
             Put ("Cleaning project """);
-            Put (Get_Name_String (Data.Name));
+            Put (Get_Name_String (Project.Name));
             Put_Line ("""");
          end if;
 
@@ -616,10 +610,10 @@ package body Cleangpr is
          Processed_Projects.Increment_Last;
          Processed_Projects.Table (Processed_Projects.Last) := Project;
 
-         if Data.Object_Directory /= No_Path_Information then
+         if Project.Object_Directory /= No_Path_Information then
             declare
                Obj_Dir : constant String :=
-                 Get_Name_String (Data.Object_Directory.Name);
+                 Get_Name_String (Project.Object_Directory.Name);
                Iter    : Source_Iterator;
 
             begin
@@ -628,20 +622,20 @@ package body Cleangpr is
                --  For non library project, clean the global archive and its
                --  dependency file if they exist.
 
-               if not Data.Library then
+               if not Project.Library then
                   Clean_Archive (Project);
                end if;
 
                --  For a library project, clean the partially link objects, if
                --  there are some.
 
-               if Data.Library then
+               if Project.Library then
                   Partial_Number := 0;
                   loop
                      declare
                         Partial : constant String :=
                                     Partial_Name
-                                      (Get_Name_String (Data.Library_Name),
+                                      (Get_Name_String (Project.Library_Name),
                                        Partial_Number,
                                        Object_Suffix);
 
@@ -694,12 +688,8 @@ package body Cleangpr is
                      Next (Iter);
                   end loop;
 
-                  Project2 := Project_Tree.Projects.Table (Project2).Extends;
+                  Project2 := Project2.Extends;
                end loop;
-
-               --  Restore Data for the original project
-
-               Data := Project_Tree.Projects.Table (Project);
             end;
          end if;
 
@@ -709,11 +699,11 @@ package body Cleangpr is
 
          --  The directories are cleaned only if switch -c is not specified
 
-         if Data.Library then
+         if Project.Library then
             if not Compile_Only then
                Clean_Library_Directory (Project);
 
-               if Data.Library_Src_Dir /= No_Path_Information then
+               if Project.Library_Src_Dir /= No_Path_Information then
                   Clean_Interface_Copy_Directory (Project);
                end if;
             end if;
@@ -729,7 +719,7 @@ package body Cleangpr is
 
       if All_Projects then
          declare
-            Imported : Project_List := Data.Imported_Projects;
+            Imported : Project_List := Project.Imported_Projects;
             Process  : Boolean;
 
          begin
@@ -759,8 +749,8 @@ package body Cleangpr is
             --  called before, because no other project may import or extend
             --  this project.
 
-            if Data.Extends /= No_Project then
-               Clean_Project (Data.Extends);
+            if Project.Extends /= No_Project then
+               Clean_Project (Project.Extends);
             end if;
          end;
       end if;
@@ -771,11 +761,11 @@ package body Cleangpr is
       --  The executables are deleted only if switch -c is not specified
 
       if Project = Main_Project
-        and then Data.Exec_Directory /= No_Path_Information
+        and then Project.Exec_Directory /= No_Path_Information
       then
          declare
             Exec_Dir : constant String :=
-                         Get_Name_String (Data.Exec_Directory.Name);
+                         Get_Name_String (Project.Exec_Directory.Name);
             Source   : Prj.Source_Id;
             Iter     : Source_Iterator;
 
@@ -831,10 +821,10 @@ package body Cleangpr is
                   end;
                end if;
 
-               if Data.Object_Directory /= No_Path_Information then
+               if Project.Object_Directory /= No_Path_Information then
                   Delete_Binder_Generated_Files
                     (Get_Name_String
-                       (Data.Object_Directory.Name),
+                       (Project.Object_Directory.Name),
                      Main_Source_File);
                end if;
             end loop;
@@ -1441,14 +1431,12 @@ package body Cleangpr is
 
    function Ultimate_Extension_Of (Project : Project_Id) return Project_Id is
       Result : Project_Id := Project;
-      Data   : Project_Data;
 
    begin
       if Project /= No_Project then
          loop
-            Data := Project_Tree.Projects.Table (Result);
-            exit when Data.Extended_By = No_Project;
-            Result := Data.Extended_By;
+            exit when Result.Extended_By = No_Project;
+            Result := Result.Extended_By;
          end loop;
       end if;
 

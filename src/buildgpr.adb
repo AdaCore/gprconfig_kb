@@ -37,6 +37,7 @@ with Err_Vars;  use Err_Vars;
 with Errutil;   use Errutil;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 with GNAT.Dynamic_Tables;
 with GNAT.HTable;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
@@ -950,8 +951,7 @@ package body Buildgpr is
       Get_Name_String (Path);
 
       if not Is_Absolute_Path (Name_Buffer (1 .. Name_Len)) then
-         Get_Name_String
-           (Project_Tree.Projects.Table (Project).Directory.Display_Name);
+         Get_Name_String (Project.Directory.Display_Name);
          if Name_Buffer (Name_Len) /= Directory_Separator then
             Add_Char_To_Name_Buffer (Directory_Separator);
          end if;
@@ -1126,8 +1126,7 @@ package body Buildgpr is
       Package_Compiler : constant Package_Id :=
                            Value_Of
                              (Name        => Name_Compiler,
-                              In_Packages => Project_Tree.Projects.Table
-                                (Source.Project).Decl.Packages,
+                              In_Packages => Source.Project.Decl.Packages,
                               In_Tree     => Project_Tree);
 
       Options          : Variable_Value :=
@@ -1657,14 +1656,12 @@ package body Buildgpr is
       Has_Been_Built : out Boolean;
       Exists         : out Boolean)
    is
-      Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
-
       Archive_Name : constant String :=
-        "lib" & Get_Name_String (Data.Name) & ".a";
+        "lib" & Get_Name_String (For_Project.Name) & ".a";
       --  The name of the archive file for this project
 
       Archive_Dep_Name : constant String :=
-        "lib" & Get_Name_String (Data.Name) & ".deps";
+        "lib" & Get_Name_String (For_Project.Name) & ".deps";
       --  The name of the archive dependency file for this project
 
       File : Prj.Util.Text_File;
@@ -1725,7 +1722,7 @@ package body Buildgpr is
                Next (Iter);
             end loop;
 
-            Project := Project_Tree.Projects.Table (Project).Extends;
+            Project := Project.Extends;
          end loop;
       end Add_Sources;
 
@@ -1740,18 +1737,15 @@ package body Buildgpr is
 
       begin
          loop
-            if Project_Tree.Projects.Table (Project).Object_Directory /=
-              No_Path_Information
-            then
-               if Project_Tree.Projects.Table (Project).Externally_Built then
+            if Project.Object_Directory /= No_Path_Information then
+               if Project.Externally_Built then
                   --  If project is externally built, include all object files
                   --  in the object directory in the global archive.
 
                   declare
                      Obj_Dir : constant String :=
                                  Get_Name_String
-                                   (Project_Tree.Projects.Table (Project).
-                                      Object_Directory.Name);
+                                   (Project.Object_Directory.Name);
                      Dir_Obj : Dir_Type;
 
                   begin
@@ -1800,7 +1794,7 @@ package body Buildgpr is
                end if;
             end if;
 
-            Project := Project_Tree.Projects.Table (Project).Extends;
+            Project := Project.Extends;
 
             exit when Project = No_Project;
          end loop;
@@ -1812,8 +1806,8 @@ package body Buildgpr is
 
       --  No need to build the global archive, if it has already been done
 
-      if Data.Object_Directory /= No_Path_Information then
-         Global_Archive_Data := Global_Archives_Built.Get (Data.Name);
+      if For_Project.Object_Directory /= No_Path_Information then
+         Global_Archive_Data := Global_Archives_Built.Get (For_Project.Name);
 
          if Global_Archive_Data.Checked then
             Exists         := Global_Archive_Data.Exists;
@@ -1822,13 +1816,14 @@ package body Buildgpr is
          else
             if Project_Of_Current_Object_Directory /= For_Project then
                Project_Of_Current_Object_Directory := For_Project;
-               Change_Dir (Get_Name_String (Data.Object_Directory.Name));
+               Change_Dir
+                 (Get_Name_String (For_Project.Object_Directory.Name));
 
                if Verbose_Mode then
                   Write_Str  ("Changing to object directory of """);
-                  Write_Name (Data.Name);
+                  Write_Name (For_Project.Name);
                   Write_Str  (""": """);
-                  Write_Name (Data.Object_Directory.Name);
+                  Write_Name (For_Project.Object_Directory.Name);
                   Write_Line ("""");
                end if;
             end if;
@@ -1839,12 +1834,10 @@ package body Buildgpr is
 
             Add_Sources (For_Project);
 
-            Proj_List := Data.All_Imported_Projects;
+            Proj_List := For_Project.All_Imported_Projects;
 
             while Proj_List /= null loop
-               if not Project_Tree.Projects.Table
-                 (Proj_List.Project).Library
-               then
+               if not Proj_List.Project.Library then
                   Add_Sources (Proj_List.Project);
                end if;
 
@@ -2072,12 +2065,10 @@ package body Buildgpr is
 
                Add_Objects (For_Project);
 
-               Proj_List := Data.All_Imported_Projects;
+               Proj_List := For_Project.All_Imported_Projects;
 
                while Proj_List /= null loop
-                  if not Project_Tree.Projects.Table
-                    (Proj_List.Project).Library
-                  then
+                  if not Proj_List.Project.Library then
                      Add_Objects (Proj_List.Project);
                   end if;
 
@@ -2271,7 +2262,7 @@ package body Buildgpr is
             end if;
 
             Global_Archives_Built.Set
-              (Data.Name,
+              (For_Project.Name,
                (Checked        => True,
                 Has_Been_Built => Has_Been_Built,
                 Exists         => Exists));
@@ -2284,12 +2275,11 @@ package body Buildgpr is
    -------------------
 
    procedure Build_Library (For_Project : Project_Id) is
-      Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
-
       Object_Directory_Path : constant String :=
-                                Get_Name_String (Data.Object_Directory.Name);
+        Get_Name_String (For_Project.Object_Directory.Name);
 
-      Project_Name          : constant String := Get_Name_String (Data.Name);
+      Project_Name          : constant String :=
+        Get_Name_String (For_Project.Name);
 
       Current_Dir           : constant String := Get_Current_Dir;
 
@@ -2379,7 +2369,7 @@ package body Buildgpr is
                Next (Iter);
             end loop;
 
-            Proj := Project_Tree.Projects.Table (Proj).Extends;
+            Proj := Proj.Extends;
             exit when Proj = No_Project;
          end loop;
       end Get_Objects;
@@ -2387,28 +2377,28 @@ package body Buildgpr is
       --  Start of processing for Build_Library
 
    begin
-      if Data.Config.Lib_Support = None then
+      if For_Project.Config.Lib_Support = None then
          Fail_Program ("library projects not supported on this platform");
 
-      elsif Data.Library_Kind /= Static and then
-            Data.Config.Lib_Support /= Full
+      elsif For_Project.Library_Kind /= Static and then
+            For_Project.Config.Lib_Support /= Full
       then
          Fail_Program
            ("shared library projects not supported on this platform");
       end if;
 
-      if Data.Config.Library_Builder = No_Path then
+      if For_Project.Config.Library_Builder = No_Path then
          Fail_Program ("no library builder specified");
 
       else
          Library_Builder :=
            Locate_Exec_On_Path
-             (Get_Name_String (Data.Config.Library_Builder));
+             (Get_Name_String (For_Project.Config.Library_Builder));
 
          if Library_Builder = null then
             Fail_Program
               ("could not locate library builder """ &
-               Get_Name_String (Data.Config.Library_Builder) & '"');
+               Get_Name_String (For_Project.Config.Library_Builder) & '"');
 
          else
             Library_Builder_Name :=
@@ -2416,7 +2406,7 @@ package body Buildgpr is
          end if;
       end if;
 
-      if Data.Library_Kind = Static then
+      if For_Project.Library_Kind = Static then
          Check_Archive_Builder;
       end if;
 
@@ -2428,7 +2418,7 @@ package body Buildgpr is
 
          if Verbose_Mode then
             Write_Str  ("Changing to object directory of """);
-            Write_Name (Data.Name);
+            Write_Name (For_Project.Name);
             Write_Str  (""": """);
             Write_Str  (Object_Directory_Path);
             Write_Line ("""");
@@ -2439,7 +2429,7 @@ package body Buildgpr is
 
       if (not Library_Needs_To_Be_Built) and then Verbose_Mode then
          Write_Str ("   Checking library ");
-         Get_Name_String (Data.Library_Name);
+         Get_Name_String (For_Project.Library_Name);
          Write_Str (Name_Buffer (1 .. Name_Len));
          Write_Line (" ...");
       end if;
@@ -2448,7 +2438,7 @@ package body Buildgpr is
 
       --  Get the name of of the library exchange file
 
-      Get_Name_String (Data.Library_Name);
+      Get_Name_String (For_Project.Library_Name);
       Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
       Exchange_File_Name := new String'(Name_Buffer (1 .. Name_Len));
 
@@ -2660,23 +2650,26 @@ package body Buildgpr is
          end if;
 
          Put_Line (Exchange_File, Library_Label (Library_Name));
-         Put_Line (Exchange_File, Get_Name_String (Data.Library_Name));
+         Put_Line (Exchange_File, Get_Name_String (For_Project.Library_Name));
 
-         if Data.Lib_Internal_Name /= No_Name then
+         if For_Project.Lib_Internal_Name /= No_Name then
             Put_Line (Exchange_File, Library_Label (Library_Version));
-            Put_Line (Exchange_File, Get_Name_String (Data.Lib_Internal_Name));
+            Put_Line (Exchange_File,
+                      Get_Name_String (For_Project.Lib_Internal_Name));
          end if;
 
          Put_Line (Exchange_File, Library_Label (Library_Directory));
-         Put_Line (Exchange_File, Get_Name_String (Data.Library_Dir.Name));
+         Put_Line
+           (Exchange_File, Get_Name_String (For_Project.Library_Dir.Name));
 
-         if Data.Library_ALI_Dir /= No_Path_Information and then
-           Data.Library_ALI_Dir.Name /= Data.Library_Dir.Name
+         if For_Project.Library_ALI_Dir /= No_Path_Information and then
+           For_Project.Library_ALI_Dir.Name /= For_Project.Library_Dir.Name
          then
             Put_Line
               (Exchange_File, Library_Label (Library_Dependency_Directory));
             Put_Line
-              (Exchange_File, Get_Name_String (Data.Library_ALI_Dir.Name));
+              (Exchange_File,
+               Get_Name_String (For_Project.Library_ALI_Dir.Name));
          end if;
 
          Put_Line (Exchange_File, Library_Label (Object_Directory));
@@ -2685,46 +2678,36 @@ package body Buildgpr is
          --  Add object directory of project being extended, if any
 
          declare
-            Proj : Project_Id := Data.Extends;
+            Proj : Project_Id := For_Project.Extends;
 
          begin
             while Proj /= No_Project loop
-               if Project_Tree.Projects.Table (Proj).Object_Directory /=
-                    No_Path_Information
-               then
+               if Proj.Object_Directory /= No_Path_Information then
                   Put_Line
                     (Exchange_File,
-                     Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Proj).Object_Directory.Name));
+                     Get_Name_String (Proj.Object_Directory.Name));
                end if;
-               Proj := Project_Tree.Projects.Table (Proj).Extends;
+               Proj := Proj.Extends;
             end loop;
          end;
 
          --  Add ALI dir directories of imported projects
 
          declare
-            List : Project_List := Data.All_Imported_Projects;
+            List : Project_List := For_Project.All_Imported_Projects;
 
          begin
             while List /= null loop
-               declare
-                  Pdata : Project_Data renames
-                    Project_Tree.Projects.Table (List.Project);
-               begin
+               if List.Project.Library_ALI_Dir /= No_Path_Information then
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (List.Project.Library_ALI_Dir.Name));
 
-                  if Pdata.Library_ALI_Dir /= No_Path_Information then
-                     Put_Line
-                       (Exchange_File,
-                        Get_Name_String (Pdata.Library_ALI_Dir.Name));
-
-                  elsif Pdata.Library_Dir /= No_Path_Information then
-                     Put_Line
-                       (Exchange_File,
-                        Get_Name_String (Pdata.Library_Dir.Name));
-                  end if;
-               end;
+               elsif List.Project.Library_Dir /= No_Path_Information then
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (List.Project.Library_Dir.Name));
+               end if;
 
                List := List.Next;
             end loop;
@@ -2733,7 +2716,7 @@ package body Buildgpr is
          Put_Line (Exchange_File, Library_Label (Compilers));
 
          declare
-            Lang : Language_Ptr := Data.Languages;
+            Lang : Language_Ptr := For_Project.Languages;
 
          begin
             while Lang /= No_Language_Index loop
@@ -2753,12 +2736,12 @@ package body Buildgpr is
             end loop;
          end;
 
-         if Data.Config.Lib_Partial_Linker /= No_Name_List then
+         if For_Project.Config.Lib_Partial_Linker /= No_Name_List then
             Put_Line (Exchange_File, Library_Label (Partial_Linker));
 
             declare
                List    : Name_List_Index :=
-                           Data.Config.Lib_Partial_Linker;
+                           For_Project.Config.Lib_Partial_Linker;
                Nam_Nod : Name_Node;
 
             begin
@@ -2772,7 +2755,7 @@ package body Buildgpr is
             end;
          end if;
 
-         if Data.Library_Kind = Static then
+         if For_Project.Library_Kind = Static then
             Put_Line (Exchange_File, Library_Label (Static));
 
             Put_Line (Exchange_File, Library_Label (Archive_Builder));
@@ -2794,11 +2777,11 @@ package body Buildgpr is
                end loop;
             end if;
 
-            if Data.Config.Archive_Suffix /= No_File then
+            if For_Project.Config.Archive_Suffix /= No_File then
                Put_Line (Exchange_File, Library_Label (Archive_Suffix));
                Put_Line
                  (Exchange_File,
-                  Get_Name_String (Data.Config.Archive_Suffix));
+                  Get_Name_String (For_Project.Config.Archive_Suffix));
             end if;
 
             if Archive_Indexer_Path /= null then
@@ -2812,33 +2795,33 @@ package body Buildgpr is
             end if;
 
          else
-            if Data.Config.Shared_Lib_Driver /= No_File then
+            if For_Project.Config.Shared_Lib_Driver /= No_File then
                Put_Line (Exchange_File, Library_Label (Driver_Name));
                Put_Line
                  (Exchange_File,
-                  Get_Name_String (Data.Config.Shared_Lib_Driver));
+                  Get_Name_String (For_Project.Config.Shared_Lib_Driver));
             end if;
 
-            if Data.Config.Shared_Lib_Prefix /= No_File then
+            if For_Project.Config.Shared_Lib_Prefix /= No_File then
                Put_Line (Exchange_File, Library_Label (Shared_Lib_Prefix));
                Put_Line
                  (Exchange_File,
-                  Get_Name_String (Data.Config.Shared_Lib_Prefix));
+                  Get_Name_String (For_Project.Config.Shared_Lib_Prefix));
             end if;
 
-            if Data.Config.Shared_Lib_Suffix /= No_File then
+            if For_Project.Config.Shared_Lib_Suffix /= No_File then
                Put_Line (Exchange_File, Library_Label (Shared_Lib_Suffix));
                Put_Line
                  (Exchange_File,
-                  Get_Name_String (Data.Config.Shared_Lib_Suffix));
+                  Get_Name_String (For_Project.Config.Shared_Lib_Suffix));
             end if;
 
-            if Data.Config.Shared_Lib_Min_Options /= No_Name_List then
+            if For_Project.Config.Shared_Lib_Min_Options /= No_Name_List then
                Put_Line
                  (Exchange_File, Library_Label (Shared_Lib_Minimum_Options));
                declare
                   List : Name_List_Index :=
-                           Data.Config.Shared_Lib_Min_Options;
+                           For_Project.Config.Shared_Lib_Min_Options;
                   Nam_Nod : Name_Node;
 
                begin
@@ -2852,12 +2835,12 @@ package body Buildgpr is
                end;
             end if;
 
-            if Data.Config.Lib_Version_Options /= No_Name_List then
+            if For_Project.Config.Lib_Version_Options /= No_Name_List then
                Put_Line
                  (Exchange_File, Library_Label (Library_Version_Options));
                declare
                   List : Name_List_Index :=
-                           Data.Config.Lib_Version_Options;
+                           For_Project.Config.Lib_Version_Options;
                   Nam_Nod : Name_Node;
 
                begin
@@ -2871,12 +2854,12 @@ package body Buildgpr is
                end;
             end if;
 
-            if Data.Config.Symbolic_Link_Supported then
+            if For_Project.Config.Symbolic_Link_Supported then
                Put_Line
                  (Exchange_File, Library_Label (Symbolic_Link_Supported));
             end if;
 
-            if Data.Config.Lib_Maj_Min_Id_Supported then
+            if For_Project.Config.Lib_Maj_Min_Id_Supported then
                Put_Line
                  (Exchange_File, Library_Label (Major_Minor_Id_Supported));
             end if;
@@ -2887,7 +2870,7 @@ package body Buildgpr is
             --  Check for runtime library dir
 
             declare
-               List : Language_Ptr := Data.Languages;
+               List : Language_Ptr := For_Project.Languages;
                First : Boolean := True;
 
             begin
@@ -2909,12 +2892,12 @@ package body Buildgpr is
                end loop;
             end;
 
-            if Data.Library_Kind /= Static then
+            if For_Project.Library_Kind /= Static then
                Put_Line (Exchange_File, Library_Label (Relocatable));
             end if;
 
-            if Data.Standalone_Library then
-               if Data.Lib_Auto_Init then
+            if For_Project.Standalone_Library then
+               if For_Project.Lib_Auto_Init then
                   Put_Line (Exchange_File, Library_Label (Auto_Init));
                end if;
 
@@ -2922,7 +2905,8 @@ package body Buildgpr is
                   Binder_Package : constant Package_Id :=
                                      Value_Of
                                        (Name        => Name_Binder,
-                                        In_Packages => Data.Decl.Packages,
+                                        In_Packages =>
+                                          For_Project.Decl.Packages,
                                         In_Tree     => Project_Tree);
 
                begin
@@ -2971,13 +2955,13 @@ package body Buildgpr is
 
             end if;
 
-            if Data.Config.Run_Path_Option /= No_Name_List then
+            if For_Project.Config.Run_Path_Option /= No_Name_List then
                Put_Line
                  (Exchange_File, Library_Label (Gprexch.Run_Path_Option));
 
                declare
                   List : Name_List_Index :=
-                           Data.Config.Run_Path_Option;
+                           For_Project.Config.Run_Path_Option;
                   Nam  : Name_Node;
 
                begin
@@ -2994,7 +2978,8 @@ package body Buildgpr is
 
             Library_Options :=
               Value_Of
-                (Name_Library_Options, Data.Decl.Attributes, Project_Tree);
+                (Name_Library_Options,
+                 For_Project.Decl.Attributes, Project_Tree);
 
             if not Library_Options.Default then
                declare
@@ -3034,13 +3019,11 @@ package body Buildgpr is
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Library_Projs.Table (J)).Library_Dir.Name));
+                       (Library_Projs.Table (J).Library_Dir.Name));
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
-                       (Project_Tree.Projects.Table
-                          (Library_Projs.Table (J)).Library_Name));
+                       (Library_Projs.Table (J).Library_Name));
                end loop;
             end if;
          end if;
@@ -3053,8 +3036,6 @@ package body Buildgpr is
          begin
             while Current_Proj /= No_Project loop
                declare
-                  Proj_Data : Project_Data renames
-                    Project_Tree.Projects.Table (Current_Proj);
                   Iter      : Source_Iterator;
                begin
                   Iter := For_Each_Source (Project_Tree, Current_Proj);
@@ -3082,12 +3063,12 @@ package body Buildgpr is
                      Next (Iter);
                   end loop;
 
-                  Current_Proj := Proj_Data.Extends;
+                  Current_Proj := Current_Proj.Extends;
                end;
             end loop;
          end;
 
-         Lang_Index := Data.Languages;
+         Lang_Index := For_Project.Languages;
          Toolchain_Version_Label_Written := False;
 
          while Lang_Index /= No_Language_Index loop
@@ -3106,13 +3087,14 @@ package body Buildgpr is
             Lang_Index := Lang_Index.Next;
          end loop;
 
-         if Data.Standalone_Library then
-            if Data.Lib_Auto_Init then
+         if For_Project.Standalone_Library then
+            if For_Project.Lib_Auto_Init then
                Put_Line (Exchange_File, Library_Label (Auto_Init));
             end if;
 
             declare
-               Interface_ALIs : String_List_Id := Data.Lib_Interface_ALIs;
+               Interface_ALIs : String_List_Id :=
+                 For_Project.Lib_Interface_ALIs;
                Element        : String_Element;
 
             begin
@@ -3126,10 +3108,11 @@ package body Buildgpr is
                end loop;
             end;
 
-            if Data.Library_Src_Dir /= No_Path_Information then
+            if For_Project.Library_Src_Dir /= No_Path_Information then
                Put_Line (Exchange_File, Library_Label (Copy_Source_Dir));
                Put_Line
-                 (Exchange_File, Get_Name_String (Data.Library_Src_Dir.Name));
+                 (Exchange_File,
+                  Get_Name_String (For_Project.Library_Src_Dir.Name));
 
                Put_Line (Exchange_File, Library_Label (Sources));
 
@@ -3156,7 +3139,7 @@ package body Buildgpr is
                      Next (Iter);
                   end loop;
 
-                  Project := Project_Tree.Projects.Table (Project).Extends;
+                  Project := Project.Extends;
                end loop;
 
             end if;
@@ -3165,21 +3148,24 @@ package body Buildgpr is
 
          --  Response files
 
-         if Data.Config.Max_Command_Line_Length > 0
-           and then Data.Config.Resp_File_Format /= None then
+         if For_Project.Config.Max_Command_Line_Length > 0
+           and then For_Project.Config.Resp_File_Format /= None then
             Put_Line (Exchange_File, Library_Label (Max_Command_Line_Length));
-            Put_Line (Exchange_File, Data.Config.Max_Command_Line_Length'Img);
+            Put_Line
+              (Exchange_File, For_Project.Config.Max_Command_Line_Length'Img);
 
             Put_Line
               (Exchange_File, Library_Label (Gprexch.Response_File_Format));
-            Put_Line (Exchange_File, Data.Config.Resp_File_Format'Img);
+            Put_Line
+              (Exchange_File, For_Project.Config.Resp_File_Format'Img);
 
-            if Data.Config.Resp_File_Options /= No_Name_List then
+            if For_Project.Config.Resp_File_Options /= No_Name_List then
                Put_Line
                  (Exchange_File, Library_Label (Response_File_Switches));
 
                declare
-                  List : Name_List_Index := Data.Config.Resp_File_Options;
+                  List : Name_List_Index :=
+                    For_Project.Config.Resp_File_Options;
 
                begin
                   while List /= No_Name_List loop
@@ -3256,16 +3242,13 @@ package body Buildgpr is
          --  Set the working directory to the object directory of the actual
          --  project.
 
-         Change_Dir
-           (Get_Name_String
-              (Project_Tree.Projects.Table (Project).Object_Directory.Name));
+         Change_Dir (Get_Name_String (Project.Object_Directory.Name));
 
          if Verbose_Mode then
             Write_Str  ("Changing to object directory of """);
-            Write_Name (Project_Tree.Projects.Table (Project).Name);
+            Write_Name (Project.Name);
             Write_Str  (""": """);
-            Write_Name
-              (Project_Tree.Projects.Table (Project).Object_Directory.Name);
+            Write_Name (Project.Object_Directory.Name);
             Write_Line ("""");
          end if;
       end if;
@@ -3276,11 +3259,9 @@ package body Buildgpr is
       when Directory_Error =>
          Fail_Program
            ("unable to change to object directory """ &
-            Get_Name_String
-              (Project_Tree.Projects.Table (Project).Object_Directory.Name) &
+            Get_Name_String (Project.Object_Directory.Name) &
             """ of project " &
-            Get_Name_String
-              (Project_Tree.Projects.Table (Project).Display_Name));
+            Get_Name_String (Project.Display_Name));
    end Change_To_Object_Directory;
 
    ---------------------------
@@ -3288,14 +3269,12 @@ package body Buildgpr is
    ---------------------------
 
    procedure Check_Archive_Builder is
-      Data : Project_Data renames
-               Project_Tree.Projects.Table (Main_Project);
       List : Name_List_Index;
    begin
       --  First, make sure that the archive builder (ar) is on the path
 
       if Archive_Builder_Path = null then
-         List := Data.Config.Archive_Builder;
+         List := Main_Project.Config.Archive_Builder;
 
          if List = No_Name_List then
             Fail_Program ("no archive builder in configuration");
@@ -3323,7 +3302,7 @@ package body Buildgpr is
                   Display => True);
             end loop;
 
-            List := Data.Config.Archive_Builder_Append_Option;
+            List := Main_Project.Config.Archive_Builder_Append_Option;
             while List /= No_Name_List loop
                Add_Option
                  (Value   => Project_Tree.Name_Lists.Table (List).Name,
@@ -3335,7 +3314,7 @@ package body Buildgpr is
             --  If there is an archive indexer (ranlib), try to locate it on
             --  the path. Don't fail if it is not found.
 
-            List := Data.Config.Archive_Indexer;
+            List := Main_Project.Config.Archive_Indexer;
 
             if List /= No_Name_List then
                Archive_Indexer_Name :=
@@ -3496,8 +3475,7 @@ package body Buildgpr is
                   Root_Arr :=
                     Prj.Util.Value_Of
                       (Name      => Name_Roots,
-                       In_Arrays =>
-                         Project_Tree.Projects.Table (Project).Decl.Arrays,
+                       In_Arrays => Project.Decl.Arrays,
                        In_Tree   => Project_Tree);
                   Roots :=
                     Prj.Util.Value_Of
@@ -3706,14 +3684,15 @@ package body Buildgpr is
 
       No_Local_Project_Data : constant Local_Project_Data :=
                                 (Include_Language => No_Language_Index);
+      package Local_Projects_HT is new Simple_HTable
+        (Header_Num => Prj.Header_Num,
+         Element    => Local_Project_Data,
+         No_Element => No_Local_Project_Data,
+         Key        => Project_Id,
+         Hash       => Prj.Hash,
+         Equal      => "=");
 
-      package Local_Projects is new Table.Table
-        (Table_Component_Type => Local_Project_Data,
-         Table_Index_Type     => Project_Id,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 100,
-         Table_Increment      => 100,
-         Table_Name           => "Buildgpr.Local_Projects");
+      Local_Projects : Local_Projects_HT.Instance;
 
       Source_File_Name : File_Name_Type;
       Source_Identity  : Source_Id;
@@ -4059,9 +4038,7 @@ package body Buildgpr is
                                        "interfaces of its project """);
                                     Write_Str
                                       (Get_Name_String
-                                         (Project_Tree.Projects.Table
-                                            (Source_2.Project).
-                                            Display_Name));
+                                         (Source_2.Project.Display_Name));
                                     Write_Line ("""");
 
                                     Compilation_OK := False;
@@ -4096,9 +4073,7 @@ package body Buildgpr is
                --  other allowed imported sources.
 
                declare
-                  L : Project_List :=
-                    Project_Tree.Projects.Table
-                      (Src_Data.Project).Imported_Projects;
+                  L : Project_List := Src_Data.Project.Imported_Projects;
 
                begin
 
@@ -4137,15 +4112,11 @@ package body Buildgpr is
 
                            Write_Str ("  """);
                            Write_Str
-                             (Get_Name_String
-                                (Project_Tree.Projects.Table
-                                   (Src_Data.Project).Display_Name));
+                             (Get_Name_String (Src_Data.Project.Display_Name));
                            Write_Str
                              (""" does not directly import project """);
                            Write_Str
-                             (Get_Name_String
-                                (Project_Tree.Projects.Table
-                                   (Included.Project).Display_Name));
+                             (Get_Name_String (Included.Project.Display_Name));
                            Write_Line ("""");
 
                            Compilation_OK := False;
@@ -4253,15 +4224,13 @@ package body Buildgpr is
                                  Write_Str ("  """);
                                  Write_Str
                                    (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Src_Data.Project).Display_Name));
+                                      (Src_Data.Project.Display_Name));
                                  Write_Str
                                    (""" does not directly import " &
                                     "project """);
                                  Write_Str
                                    (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Source_2.Project).Display_Name));
+                                      (Source_2.Project.Display_Name));
                                  Write_Line ("""");
 
                                  Compilation_OK := False;
@@ -4283,8 +4252,7 @@ package body Buildgpr is
                                     "interfaces of its project """);
                                  Write_Str
                                    (Get_Name_String
-                                      (Project_Tree.Projects.Table
-                                         (Source_2.Project).Display_Name));
+                                      (Source_2.Project.Display_Name));
                                  Write_Line ("""");
                                  Compilation_OK := False;
                               end if;
@@ -4309,7 +4277,7 @@ package body Buildgpr is
          --  when compiling.
 
       begin
-         if Project_Tree.Projects.Table (Source_Project).Externally_Built then
+         if Source_Project.Externally_Built then
             Compilation_Needed := False;
 
          else
@@ -4425,12 +4393,9 @@ package body Buildgpr is
 
                --  4) The PIC option if it exists, for shared libraries
 
-               if Project_Tree.Projects.Table (Source_Project).Library
-                 and then
-                   Project_Tree.Projects.Table
-                     (Source_Project).Library_Kind /= Static
-                   and then
-                     Config.Compilation_PIC_Option /= No_Name_List
+               if Source_Project.Library
+                 and then Source_Project.Library_Kind /= Static
+                 and then Config.Compilation_PIC_Option /= No_Name_List
                then
                   declare
                      List    : Name_List_Index :=
@@ -4605,27 +4570,21 @@ package body Buildgpr is
                Source_Identity.Object_Project := Source_Project;
 
                if Source_Project /= Source_Identity.Project then
-                  Get_Name_String
-                    (Project_Tree.Projects.Table
-                       (Source_Project).Object_Directory.Name);
+                  Get_Name_String (Source_Project.Object_Directory.Name);
                   Name_Len := Name_Len + 1;
                   Name_Buffer (Name_Len) := Directory_Separator;
                   Add_Str_To_Name_Buffer
                     (Get_Name_String (Source_Identity.Object));
                   Source_Identity.Object_Path := Name_Find;
 
-                  Get_Name_String
-                    (Project_Tree.Projects.Table
-                       (Source_Project).Object_Directory.Name);
+                  Get_Name_String (Source_Project.Object_Directory.Name);
                   Name_Len := Name_Len + 1;
                   Name_Buffer (Name_Len) := Directory_Separator;
                   Add_Str_To_Name_Buffer
                     (Get_Name_String (Source_Identity.Dep_Name));
                   Source_Identity.Dep_Path := Name_Find;
 
-                  Get_Name_String
-                    (Project_Tree.Projects.Table
-                       (Source_Project).Object_Directory.Name);
+                  Get_Name_String (Source_Project.Object_Directory.Name);
                   Name_Len := Name_Len + 1;
                   Name_Buffer (Name_Len) := Directory_Separator;
                   Add_Str_To_Name_Buffer
@@ -4709,8 +4668,8 @@ package body Buildgpr is
                   Current_Project      := Source_Project;
                   Current_Language_Ind := Language;
 
-                  if Local_Projects.Table
-                    (Source_Project).Include_Language /= Language
+                  if Local_Projects_HT.Get (Local_Projects, Source_Project)
+                       .Include_Language /= Language
                     and then
                       (Config.Include_Option /= No_Name_List
                        or else
@@ -4718,8 +4677,9 @@ package body Buildgpr is
                        or else
                          Config.Include_Path_File /= No_Name)
                   then
-                     Local_Projects.Table
-                       (Source_Project).Include_Language := Language;
+                     Local_Projects_HT.Set
+                       (Local_Projects, Source_Project,
+                        (Include_Language => Language));
 
                      declare
                         Index : Positive;
@@ -4834,9 +4794,7 @@ package body Buildgpr is
                            Prj.Env.Create_New_Path_File
                              (In_Tree   => Project_Tree,
                               Path_FD   => FD,
-                              Path_Name =>
-                                Project_Tree.Projects.Table
-                                  (Source_Project).Include_Path_File);
+                              Path_Name => Source_Project.Include_Path_File);
 
                            if FD = Invalid_FD then
                               Fail_Program
@@ -4892,29 +4850,23 @@ package body Buildgpr is
                            Add_To_Path (Name_Buffer (1 .. Name_Len));
                         end loop;
 
-                        Project_Tree.Projects.Table
-                          (Source_Project).Include_Path :=
+                        Source_Project.Include_Path :=
                           new String'(Path_Buffer (1 .. Path_Last));
                      end if;
                   end if;
 
                   if Config.Include_Path_File /= No_Name then
                      Setenv (Get_Name_String (Config.Include_Path_File),
-                       Get_Name_String
-                         (Project_Tree.Projects.Table
-                            (Source_Project).Include_Path_File));
+                       Get_Name_String (Source_Project.Include_Path_File));
 
                   elsif Config.Include_Path /= No_Name then
                      Setenv (Get_Name_String (Config.Include_Path),
-                             Project_Tree.Projects.Table
-                               (Source_Project).Include_Path.all);
+                             Source_Project.Include_Path.all);
 
                      if Verbose_Mode then
                         Write_Str (Get_Name_String (Config.Include_Path));
                         Write_Str (" = ");
-                        Write_Line
-                          (Project_Tree.Projects.Table (Source_Project).
-                             Include_Path.all);
+                        Write_Line (Source_Project.Include_Path.all);
                      end if;
                   end if;
                end if;
@@ -4944,14 +4896,10 @@ package body Buildgpr is
                      Config      => Config,
                      Language    => Language_Name);
 
-                  if Project_Tree.Projects.Table
-                    (Source_Project).Config_File_Name /= No_Path
-                  then
+                  if Source_Project.Config_File_Name /= No_Path then
                      Add_Config_File_Switch
                        (Config    => Config,
-                        Path_Name =>
-                          Project_Tree.Projects.Table (Source_Project).
-                          Config_File_Name);
+                        Path_Name => Source_Project.Config_File_Name);
                   end if;
 
                   if not Config.Config_File_Unique then
@@ -5123,12 +5071,6 @@ package body Buildgpr is
    --  Start of processing for Compilation_Phase
 
    begin
-      Local_Projects.Init;
-
-      for J in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-         Local_Projects.Append (No_Local_Project_Data);
-      end loop;
-
       Outstanding_Compiles := 0;
 
       --  Then process each files in the queue (new files might be added to
@@ -5161,8 +5103,7 @@ package body Buildgpr is
          then
             Queue.Extract (Source_File_Name, Source_Identity, Source_Project);
             Process_Project_Phase_1
-              (Ultimate_Extending_Project_Of
-                 (Source_Project, Project_Tree));
+              (Ultimate_Extending_Project_Of (Source_Project));
          end if;
 
          --  PHASE 2: Now check if we should wait for a compilation to
@@ -5255,6 +5196,8 @@ package body Buildgpr is
             Write_Eol;
          end if;
       end loop Compilation_Loop;
+
+      Local_Projects_HT.Reset (Local_Projects);
    end Compilation_Phase;
 
    ---------------------
@@ -5268,12 +5211,10 @@ package body Buildgpr is
       Language       : Name_Id)
       return Path_Name_Type
    is
-      Config_Project_Data :  Project_Data renames
-        Project_Tree.Projects.Table (Project);
       Config_Package      : constant Package_Id :=
                           Value_Of
                             (Name        => Package_Name,
-                             In_Packages => Config_Project_Data.Decl.Packages,
+                             In_Packages => Project.Decl.Packages,
                              In_Tree     => Project_Tree);
       Config_Variable     : Variable_Value :=
                               Value_Of
@@ -5382,9 +5323,7 @@ package body Buildgpr is
 
       procedure Check (Project : Project_Id; Dummy : in out Boolean) is
          pragma Unreferenced (Dummy);
-         Data : Project_Data renames Project_Tree.Projects.Table (Project);
-
-         Lang_Id   : Language_Ptr := Data.Languages;
+         Lang_Id   : Language_Ptr := Project.Languages;
          Lang_Data : Language_Data;
 
          Current_Naming : Positive := 1;
@@ -5462,7 +5401,7 @@ package body Buildgpr is
       begin
          if Current_Verbosity = High then
             Write_Str ("Checking project file """);
-            Write_Str (Namet.Get_Name_String (Data.Name));
+            Write_Str (Namet.Get_Name_String (Project.Name));
             Write_Str (""".");
             Write_Eol;
          end if;
@@ -5608,7 +5547,7 @@ package body Buildgpr is
    begin
       --  Nothing to do if config has already been checked
 
-      if Project_Tree.Projects.Table (For_Project).Config_Checked then
+      if For_Project.Config_Checked then
          return;
       end if;
 
@@ -5624,11 +5563,11 @@ package body Buildgpr is
            (For_Project, Name_Compiler, Name_Local_Config_File, Language);
       end if;
 
-      Project_Tree.Projects.Table (For_Project).Config_Checked := True;
+      For_Project.Config_Checked := True;
 
       Naming_Datas.Init;
 
-      Check_All_Projects (For_Project, Project_Tree, Dummy);
+      Check_All_Projects (For_Project, Dummy);
 
       --  Visit all the units and issue the config declarations for those that
       --  need one.
@@ -5715,8 +5654,7 @@ package body Buildgpr is
 
       if File /= Invalid_FD then
          Close (File);
-         Project_Tree.Projects.Table (For_Project).Config_File_Name :=
-           File_Name;
+         For_Project.Config_File_Name := File_Name;
       end if;
 
    end Create_Config_File;
@@ -5729,8 +5667,7 @@ package body Buildgpr is
      (Project  : Project_Id;
       Imported : Project_Id) return Boolean
    is
-      L : Project_List :=
-            Project_Tree.Projects.Table (Project).Imported_Projects;
+      L : Project_List := Project.Imported_Projects;
       P : Project_Id;
 
    begin
@@ -5741,7 +5678,7 @@ package body Buildgpr is
                return True;
             end if;
 
-            P := Project_Tree.Projects.Table (P).Extends;
+            P := P.Extends;
          end loop;
 
          L := L.Next;
@@ -5822,8 +5759,6 @@ package body Buildgpr is
       Linker_Lib_Dir_Option  : String_Access;
       Linker_Lib_Name_Option : String_Access;
 
-      Data : Project_Data renames Project_Tree.Projects.Table (For_Project);
-
       procedure Recursive_Add (Proj : Project_Id; Dummy : in out Boolean);
       --  The recursive routine used to add linker options
 
@@ -5833,7 +5768,6 @@ package body Buildgpr is
 
       procedure Recursive_Add (Proj : Project_Id; Dummy : in out Boolean) is
          pragma Unreferenced (Dummy);
-         Data : Project_Data renames Project_Tree.Projects.Table (Proj);
          Linker_Package : Package_Id;
          Options        : Variable_Value;
 
@@ -5842,7 +5776,7 @@ package body Buildgpr is
             Linker_Package :=
               Prj.Util.Value_Of
                 (Name        => Name_Linker,
-                 In_Packages => Data.Decl.Packages,
+                 In_Packages => Proj.Decl.Packages,
                  In_Tree     => Project_Tree);
             Options :=
               Prj.Util.Value_Of
@@ -5867,31 +5801,30 @@ package body Buildgpr is
         new For_Every_Project_Imported (Boolean, Recursive_Add);
       Dummy : Boolean := False;
 
-   --  Start of processing for Linker_Options_Switches
+   --  Start of processing for Get_Linker_Options
 
    begin
-      if Data.Config.Linker_Lib_Dir_Option = No_Name then
+      if For_Project.Config.Linker_Lib_Dir_Option = No_Name then
          Linker_Lib_Dir_Option := new String'("-L");
 
       else
          Linker_Lib_Dir_Option :=
            new String'
-             (Get_Name_String (Data.Config.Linker_Lib_Dir_Option));
+             (Get_Name_String (For_Project.Config.Linker_Lib_Dir_Option));
       end if;
 
-      if Data.Config.Linker_Lib_Name_Option = No_Name then
+      if For_Project.Config.Linker_Lib_Name_Option = No_Name then
          Linker_Lib_Name_Option := new String'("-l");
 
       else
          Linker_Lib_Name_Option :=
            new String'
-             (Get_Name_String (Data.Config.Linker_Lib_Name_Option));
+             (Get_Name_String (For_Project.Config.Linker_Lib_Name_Option));
       end if;
 
       Linker_Opts.Init;
 
-      For_All_Projects
-        (For_Project, Project_Tree, Dummy, Imported_First => True);
+      For_All_Projects (For_Project, Dummy, Imported_First => True);
 
       for Index in reverse 1 .. Linker_Opts.Last loop
          declare
@@ -5899,8 +5832,8 @@ package body Buildgpr is
             Proj    : constant Project_Id :=
               Linker_Opts.Table (Index).Project;
             Option  : Name_Id;
-            Dir_Path : constant String := Get_Name_String
-              (Project_Tree.Projects.Table (Proj).Directory.Name);
+            Dir_Path : constant String :=
+              Get_Name_String (Proj.Directory.Name);
 
          begin
             while Options /= Nil_String loop
@@ -6062,9 +5995,8 @@ package body Buildgpr is
          pragma Unreferenced (Dummy);
          Current : String_List_Id;
          Dir     : String_Element;
-         Data    : Project_Data renames Project_Tree.Projects.Table (Project);
          OK      : Boolean := False;
-         Lang_Proc : Language_Ptr := Data.Languages;
+         Lang_Proc : Language_Ptr := Project.Languages;
       begin
          --  Add to path all directories of this project
 
@@ -6080,7 +6012,7 @@ package body Buildgpr is
             end loop Lang_Loop;
 
             if OK then
-               Current := Data.Source_Dirs;
+               Current := Project.Source_Dirs;
 
                while Current /= Nil_String loop
                   Dir := Project_Tree.String_Elements.Table (Current);
@@ -6089,11 +6021,11 @@ package body Buildgpr is
                end loop;
             end if;
 
-         elsif Data.Library then
-            Add_Dir (Data.Library_ALI_Dir.Name);
+         elsif Project.Library then
+            Add_Dir (Project.Library_ALI_Dir.Name);
 
          else
-            Add_Dir (Data.Object_Directory.Name);
+            Add_Dir (Project.Object_Directory.Name);
          end if;
       end Recursive_Add;
 
@@ -6105,7 +6037,7 @@ package body Buildgpr is
 
    begin
       Directories.Init;
-      For_All_Projects (For_Project, Project_Tree, Dummy);
+      For_All_Projects (For_Project, Dummy);
    end Get_Directories;
 
    -------------------------
@@ -6114,10 +6046,7 @@ package body Buildgpr is
 
    function Global_Archive_Name (For_Project : Project_Id) return String is
    begin
-      return
-        "lib" &
-        Get_Name_String (Project_Tree.Projects.Table (For_Project).Name) &
-        ".a";
+      return "lib" & Get_Name_String (For_Project.Name) & ".a";
    end Global_Archive_Name;
 
    --------------
@@ -6125,6 +6054,7 @@ package body Buildgpr is
    --------------
 
    procedure Gprbuild is
+      Proj : Project_List;
    begin
       --  First initialize and read the command line arguments
 
@@ -6165,17 +6095,17 @@ package body Buildgpr is
       end if;
 
       Main_Project_Dir :=
-        new String'
-          (Get_Name_String
-             (Project_Tree.Projects.Table (Main_Project).Directory.Name));
+        new String'(Get_Name_String (Main_Project.Directory.Name));
 
       if Err_Vars.Warnings_Detected > 0 then
          Prj.Err.Finalize;
          Prj.Err.Initialize;
       end if;
 
-      for Proj in 1 .. Project_Table.Last (Project_Tree.Projects) loop
-         Compute_All_Imported_Projects (Proj, Project_Tree);
+      Proj := Project_Tree.Projects;
+      while Proj /= null loop
+         Compute_All_Imported_Projects (Proj.Project);
+         Proj := Proj.Next;
       end loop;
 
       --  Update info on all sources
@@ -6238,7 +6168,7 @@ package body Buildgpr is
          else
             Closure_Needed := True;
 
-            if Project_Tree.Projects.Table (Main_Project).Library then
+            if Main_Project.Library then
                Fail_Program
                  ("cannot specify a main program " &
                   "on the command line for a library project file");
@@ -6264,9 +6194,8 @@ package body Buildgpr is
             --  If no sources to compile, then there is nothing to do
 
             if Queue.Size = 0 then
-               if (not Quiet_Output) and then
-                  (not Project_Tree.Projects.Table
-                        (Main_Project).Externally_Built)
+               if not Quiet_Output
+                 and then not Main_Project.Externally_Built
                then
                   Osint.Write_Program_Name;
                   Write_Line (": no sources to compile");
@@ -6284,8 +6213,7 @@ package body Buildgpr is
          declare
             Builder_Package  : constant Package_Id :=
                                  Value_Of (Name_Builder,
-                                           Project_Tree.Projects.Table
-                                             (Main_Project).Decl.Packages,
+                                           Main_Project.Decl.Packages,
                                            Project_Tree);
 
             Switches         : Variable_Value;
@@ -6837,11 +6765,8 @@ package body Buildgpr is
          Obj_Proj := Source.Project;
          loop
             declare
-               Data : Project_Data renames
-                 Project_Tree.Projects.Table (Obj_Proj);
-
                Dir  : constant String := Get_Name_String
-                 (Data.Object_Directory.Name);
+                 (Obj_Proj.Object_Directory.Name);
 
                Object_Path     : constant String :=
                                    Normalize_Pathname
@@ -6863,7 +6788,7 @@ package body Buildgpr is
                --  source is not overridden later, since otherwise we
                --  will loop again here in any case
 
-               if Data.Extended_By = No_Project then
+               if Obj_Proj.Extended_By = No_Project then
 
                   if Source.Dependency /= None then
                      declare
@@ -6901,7 +6826,7 @@ package body Buildgpr is
 
                else
                   --  We'll then examine the source that extends this one
-                  Obj_Proj := Data.Extended_By;
+                  Obj_Proj := Obj_Proj.Extended_By;
                end if;
             end;
          end loop;
@@ -6910,8 +6835,7 @@ package body Buildgpr is
          declare
             Object_Dir : constant String :=
                            Get_Name_String
-                             (Project_Tree.Projects.Table
-                                (Source.Project).Object_Directory.Name);
+                             (Source.Project.Object_Directory.Name);
             Dep_Path   : constant String :=
                            Normalize_Pathname
                              (Name        => Get_Name_String (Source.Dep_Name),
@@ -6942,27 +6866,22 @@ package body Buildgpr is
       --  If a source is overriden in an extending project, then the object
       --  file is not included in the global archive.
 
-      Proj := Project_Tree.Projects.Table (Project).Extended_By;
+      Proj := Project.Extended_By;
       while Proj /= No_Project loop
-         declare
-            Data : Project_Data renames Project_Tree.Projects.Table (Proj);
+         Iter := For_Each_Source (Project_Tree, Proj);
+         loop
+            Source := Prj.Element (Iter);
+            exit when Source = No_Source;
 
-         begin
-            Iter := For_Each_Source (Project_Tree, Proj);
-            loop
-               Source := Prj.Element (Iter);
-               exit when Source = No_Source;
+            if Source.Get_Object
+              and then Source.Object = Object_Name
+            then
+               return False;
+            end if;
 
-               if Source.Get_Object
-                 and then Source.Object = Object_Name
-               then
-                  return False;
-               end if;
-
-               Next (Iter);
-            end loop;
-            Proj := Data.Extended_By;
-         end;
+            Next (Iter);
+         end loop;
+         Proj := Proj.Extended_By;
       end loop;
 
       Iter := For_Each_Source (Project_Tree, Project);
@@ -6998,7 +6917,7 @@ package body Buildgpr is
          exit when Src = No_Source;
 
          if Src.Object_Path = Path_Id then
-            return Project_Tree.Projects.Table (Src.Project).Library;
+            return Src.Project.Library;
          end if;
 
          Next (Iter);
@@ -7107,9 +7026,7 @@ package body Buildgpr is
 
             Main_Id := Create_Name (Base_Name (Main));
             Main_Source := Main_Sources.Get (Main_Id);
-            Main_Proj   := Ultimate_Extending_Project_Of
-              (Main_Source.Project, Project_Tree);
-            Data        := Project_Tree.Projects.Table (Main_Proj);
+            Main_Proj   := Ultimate_Extending_Project_Of (Main_Source.Project);
 
             Change_To_Object_Directory (Main_Proj);
 
@@ -7148,11 +7065,11 @@ package body Buildgpr is
                Ada_Main => False,
                Language => Get_Name_String (Main_Source.Language.Name));
 
-            if Data.Exec_Directory = Data.Object_Directory then
+            if Main_Proj.Exec_Directory = Main_Proj.Object_Directory then
                Exec_Path_Name := Path_Name_Type (Exec_Name);
 
             else
-               Get_Name_String (Data.Exec_Directory.Name);
+               Get_Name_String (Main_Proj.Exec_Directory.Name);
                Name_Len := Name_Len + 1;
                Name_Buffer (Name_Len) := Directory_Separator;
                Add_Str_To_Name_Buffer (Get_Name_String (Exec_Name));
@@ -7173,10 +7090,9 @@ package body Buildgpr is
 
             --  Get the path of the linker driver
 
-            if Data.Config.Linker /= No_Path then
+            if Main_Proj.Config.Linker /= No_Path then
                Linker_Name :=
-                 new String'(Get_Name_String
-                             (Data.Config.Linker));
+                 new String'(Get_Name_String (Main_Proj.Config.Linker));
 
                Linker_Path := Locate_Exec_On_Path (Linker_Name.all);
 
@@ -7310,7 +7226,7 @@ package body Buildgpr is
                                     end if;
 
                                  when Gprexch.Run_Path_Option =>
-                                    if Data.Config.Run_Path_Option /=
+                                    if Main_Proj.Config.Run_Path_Option /=
                                       No_Name_List
                                     then
                                        Add_Rpath (Line (1 .. Last));
@@ -7375,8 +7291,7 @@ package body Buildgpr is
 
                   Fail_Program
                     ("global archive for project file " &
-                     Get_Name_String
-                       (Project_Tree.Projects.Table (Main_Proj).Name) &
+                     Get_Name_String (Main_Proj.Name) &
                      " does not exist");
                end if;
             end if;
@@ -7407,7 +7322,7 @@ package body Buildgpr is
             --  executable.
 
             declare
-               List : Project_List := Data.All_Imported_Projects;
+               List : Project_List := Main_Proj.All_Imported_Projects;
                Proj : Project_Id;
 
                Current_Dir : constant String := Get_Current_Dir;
@@ -7416,104 +7331,98 @@ package body Buildgpr is
                   Proj := List.Project;
                   List := List.Next;
 
-                  declare
-                     Proj_Data : Project_Data renames
-                       Project_Tree.Projects.Table (Proj);
+                  if Proj.Extended_By = No_Project
+                    and then Proj.Library
+                  then
+                     Change_Dir
+                       (Get_Name_String (Proj.Object_Directory.Name));
+                     Get_Name_String (Proj.Library_Name);
+                     Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
 
-                  begin
-                     if Proj_Data.Extended_By = No_Project and then
-                       Proj_Data.Library
-                     then
-                        Change_Dir
-                          (Get_Name_String (Proj_Data.Object_Directory.Name));
-                        Get_Name_String (Proj_Data.Library_Name);
-                        Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
+                     declare
+                        Exchange_File : Ada.Text_IO.File_Type;
+                        Path_Name     : constant String :=
+                          Name_Buffer (1 .. Name_Len);
+                        Lib_TS        : Time_Stamp_Type;
 
-                        declare
-                           Exchange_File : Ada.Text_IO.File_Type;
-                           Path_Name     : constant String :=
-                                             Name_Buffer (1 .. Name_Len);
-                           Lib_TS        : Time_Stamp_Type;
-
+                     begin
                         begin
-                           begin
-                              Open (Exchange_File, In_File, Path_Name);
+                           Open (Exchange_File, In_File, Path_Name);
 
-                           exception
-                              when others =>
-                                 if Verbose_Mode then
-                                    Write_Str
-                                      ("      -> library exchange file """);
-                                    Write_Str (Path_Name);
-                                    Write_Line (""" does not exist");
-                                 end if;
-
-                                 Linker_Needs_To_Be_Called := True;
-                                 exit;
-                           end;
-
-                           if End_Of_File (Exchange_File) then
+                        exception
+                           when others =>
                               if Verbose_Mode then
                                  Write_Str
                                    ("      -> library exchange file """);
                                  Write_Str (Path_Name);
-                                 Write_Line (""" is empty");
+                                 Write_Line (""" does not exist");
                               end if;
 
                               Linker_Needs_To_Be_Called := True;
-                              Close (Exchange_File);
                               exit;
+                        end;
+
+                        if End_Of_File (Exchange_File) then
+                           if Verbose_Mode then
+                              Write_Str
+                                ("      -> library exchange file """);
+                              Write_Str (Path_Name);
+                              Write_Line (""" is empty");
                            end if;
 
-                           Get_Line (Exchange_File, Name_Buffer, Name_Len);
+                           Linker_Needs_To_Be_Called := True;
+                           Close (Exchange_File);
+                           exit;
+                        end if;
 
-                           if Name_Buffer (1 .. Name_Len) /=
-                             Library_Label (Library_Path)
-                           then
-                              Linker_Needs_To_Be_Called := True;
-                              Close (Exchange_File);
+                        Get_Line (Exchange_File, Name_Buffer, Name_Len);
 
-                              if Verbose_Mode then
-                                 Write_Str
-                                   ("      -> library exchange file """);
-                                 Write_Str (Path_Name);
-                                 Write_Line (""" has wrong format");
-                              end if;
-
-                              exit;
-                           end if;
-
-                           Get_Line (Exchange_File, Name_Buffer, Name_Len);
+                        if Name_Buffer (1 .. Name_Len) /=
+                          Library_Label (Library_Path)
+                        then
+                           Linker_Needs_To_Be_Called := True;
                            Close (Exchange_File);
 
-                           Lib_TS := File_Stamp (File_Name_Type'(Name_Find));
-
-                           if Lib_TS = Empty_Time_Stamp then
-                              Linker_Needs_To_Be_Called := True;
-
-                              if Verbose_Mode then
-                                 Write_Str ("      -> library file """);
-                                 Write_Str (Name_Buffer (1 .. Name_Len));
-                                 Write_Line (""" not found");
-                              end if;
-
-                              exit;
-
-                           elsif String (Lib_TS) > String (Executable_TS) then
-                              Linker_Needs_To_Be_Called := True;
-
-                              if Verbose_Mode then
-                                 Write_Str ("      -> library file """);
-                                 Write_Str (Name_Buffer (1 .. Name_Len));
-                                 Write_Line
-                                   (""" is more recent than executable");
-                              end if;
-
-                              exit;
+                           if Verbose_Mode then
+                              Write_Str
+                                ("      -> library exchange file """);
+                              Write_Str (Path_Name);
+                              Write_Line (""" has wrong format");
                            end if;
-                        end;
-                     end if;
-                  end;
+
+                           exit;
+                        end if;
+
+                        Get_Line (Exchange_File, Name_Buffer, Name_Len);
+                        Close (Exchange_File);
+
+                        Lib_TS := File_Stamp (File_Name_Type'(Name_Find));
+
+                        if Lib_TS = Empty_Time_Stamp then
+                           Linker_Needs_To_Be_Called := True;
+
+                           if Verbose_Mode then
+                              Write_Str ("      -> library file """);
+                              Write_Str (Name_Buffer (1 .. Name_Len));
+                              Write_Line (""" not found");
+                           end if;
+
+                           exit;
+
+                        elsif String (Lib_TS) > String (Executable_TS) then
+                           Linker_Needs_To_Be_Called := True;
+
+                           if Verbose_Mode then
+                              Write_Str ("      -> library file """);
+                              Write_Str (Name_Buffer (1 .. Name_Len));
+                              Write_Line
+                                (""" is more recent than executable");
+                           end if;
+
+                           exit;
+                        end if;
+                     end;
+                  end if;
                end loop;
 
                Change_Dir (Current_Dir);
@@ -7539,70 +7448,64 @@ package body Buildgpr is
                  (Main_Proj, There_Are_SALs => Disregard);
 
                for J in reverse 1 .. Library_Projs.Last loop
-                  if Data.Config.Linker_Lib_Dir_Option = No_Name then
+                  if Main_Proj.Config.Linker_Lib_Dir_Option = No_Name then
                      Add_Argument
                        ("-L" &
                         Get_Name_String
-                          (Project_Tree.Projects.Table
-                             (Library_Projs.Table (J)).Library_Dir.Name),
+                          (Library_Projs.Table (J).Library_Dir.Name),
                         Verbose_Mode);
 
                   else
                      Add_Argument
                        (Get_Name_String
-                          (Data.Config.Linker_Lib_Dir_Option) &
+                          (Main_Proj.Config.Linker_Lib_Dir_Option) &
                         Get_Name_String
-                          (Project_Tree.Projects.Table
-                             (Library_Projs.Table (J)).Library_Dir.Name),
+                          (Library_Projs.Table (J).Library_Dir.Name),
                         Verbose_Mode);
                   end if;
 
-                  if Data.Config.Run_Path_Option /= No_Name_List
+                  if Main_Proj.Config.Run_Path_Option /= No_Name_List
                     and then
-                      Project_Tree.Projects.Table
-                        (Library_Projs.Table (J)).Library_Kind /= Static
+                      Library_Projs.Table (J).Library_Kind /= Static
                   then
                      Add_Rpath
                        (Get_Name_String
-                          (Project_Tree.Projects.Table
-                             (Library_Projs.Table (J)).Library_Dir.Name));
+                          (Library_Projs.Table (J).Library_Dir.Name));
                   end if;
 
-                  if Data.Config.Linker_Lib_Name_Option = No_Name then
+                  if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
                      Add_Argument
                        ("-l" &
                         Get_Name_String
-                          (Project_Tree.Projects.Table
-                             (Library_Projs.Table (J)).Library_Name),
+                          (Library_Projs.Table (J).Library_Name),
                         Verbose_Mode);
 
                   else
                      Add_Argument
                        (Get_Name_String
-                          (Data.Config.Linker_Lib_Name_Option) &
+                          (Main_Proj.Config.Linker_Lib_Name_Option) &
                         Get_Name_String
-                          (Project_Tree.Projects.Table
-                             (Library_Projs.Table (J)).Library_Name),
+                          (Library_Projs.Table (J).Library_Name),
                         Verbose_Mode);
                   end if;
                end loop;
 
                --  Add the run path option, if necessary
 
-               if Data.Config.Run_Path_Option /= No_Name_List and then
+               if Main_Proj.Config.Run_Path_Option /= No_Name_List and then
                  Rpaths.Last > 0
                then
                   declare
                      Nam_Nod  : Name_Node :=
                                   Project_Tree.Name_Lists.Table
-                                    (Data.Config.Run_Path_Option);
+                                    (Main_Proj.Config.Run_Path_Option);
                      Length   : Natural := 0;
                      Arg      : String_Access := null;
                   begin
-                     if Data.Config.Separate_Run_Path_Options then
+                     if Main_Proj.Config.Separate_Run_Path_Options then
                         for J in 1 .. Rpaths.Last loop
                            Nam_Nod := Project_Tree.Name_Lists.Table
-                                        (Data.Config.Run_Path_Option);
+                                        (Main_Proj.Config.Run_Path_Option);
                            while Nam_Nod.Next /= No_Name_List loop
                               Add_Argument
                                 (Get_Name_String (Nam_Nod.Name), True);
@@ -7660,8 +7563,7 @@ package body Buildgpr is
 
                declare
                   The_Packages : constant Package_Id :=
-                                   Project_Tree.Projects.Table
-                                     (Main_Proj).Decl.Packages;
+                                   Main_Proj.Decl.Packages;
 
                   Linker_Package : constant Prj.Package_Id :=
                                      Prj.Util.Value_Of
@@ -8038,8 +7940,7 @@ package body Buildgpr is
       --  the project id.
 
       Externally_Built : constant Boolean :=
-                           Project_Tree.Projects.Table
-                             (Source.Project).Externally_Built;
+                           Source.Project.Externally_Built;
       --  True if the project of the source is externally built
 
       function Process_Makefile_Deps (Dep_Name : String) return Boolean;
@@ -8523,7 +8424,7 @@ package body Buildgpr is
          Num_Ext := 0;
          Proj := ALI_Project;
          loop
-            Proj := Project_Tree.Projects.Table (Proj).Extended_By;
+            Proj := Proj.Extended_By;
             exit when Proj = No_Project;
             Num_Ext := Num_Ext + 1;
          end loop;
@@ -8534,7 +8435,7 @@ package body Buildgpr is
          begin
             Proj := ALI_Project;
             for J in Projects'Range loop
-               Proj := Project_Tree.Projects.Table (Proj).Extended_By;
+               Proj := Proj.Extended_By;
                Projects (J) := Proj;
             end loop;
 
@@ -8995,27 +8896,21 @@ package body Buildgpr is
               and then Is_Included_In_Global_Archive
                 (Source.Object, Source.Project)
             then
-               declare
-                  Local_Data : Project_Data renames
-                    Project_Tree.Projects.Table (Source.Project);
+               if Source.Project = For_Project
+                 or not Source.Project.Library
+                 or Config.Kind = File_Based
+               then
+                  Put_Line
+                    (Exchange_File, Get_Name_String (Source.Dep_Path));
+                  Dep_Files := True;
 
-               begin
-                  if Source.Project = For_Project
-                    or not Local_Data.Library
-                    or Config.Kind = File_Based
-                  then
-                     Put_Line
-                       (Exchange_File, Get_Name_String (Source.Dep_Path));
-                     Dep_Files := True;
-
-                  elsif not Local_Data.Standalone_Library then
-                     Get_Name_String (Local_Data.Library_ALI_Dir.Name);
-                     Add_Char_To_Name_Buffer (Directory_Separator);
-                     Get_Name_String_And_Append (Source.Dep_Name);
-                     Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
-                     Dep_Files := True;
-                  end if;
-               end;
+               elsif not Source.Project.Standalone_Library then
+                  Get_Name_String (Source.Project.Library_ALI_Dir.Name);
+                  Add_Char_To_Name_Buffer (Directory_Separator);
+                  Get_Name_String_And_Append (Source.Dep_Name);
+                  Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
+                  Dep_Files := True;
+               end if;
             end if;
          end Put_Dependency_File;
 
@@ -9069,18 +8964,12 @@ package body Buildgpr is
             for J in Lib_Projs'Range loop
                Proj := Lib_Projs (J);
 
-               if Project_Tree.Projects.Table
-                    (Proj).Extended_By = No_Project
-               then
-                  if not Project_Tree.Projects.Table
-                           (Proj).Externally_Built
-                  then
+               if Proj.Extended_By = No_Project then
+                  if not Proj.Externally_Built then
                      Build_Library (Proj);
                   end if;
 
-                  if Project_Tree.Projects.Table (Proj).Library_Kind /=
-                     Static
-                  then
+                  if Proj.Library_Kind /= Static then
                      Shared_Libs := True;
                   end if;
                end if;
@@ -9137,7 +9026,7 @@ package body Buildgpr is
 
             begin
                Main_Proj   := Ultimate_Extending_Project_Of
-                 (Main_Source.Project, Project_Tree);
+                 (Main_Source.Project);
 
                --  Get the main base name
 
@@ -9293,18 +9182,13 @@ package body Buildgpr is
                         Project_File_Paths.Reset;
 
                         Project_File_Paths.Set
-                          (Name_Id (Project_Tree.Projects.Table
-                           (Main_Proj).Path.Name),
-                           True);
+                          (Name_Id (Main_Proj.Path.Name), True);
 
-                        Proj_List :=
-                          Project_Tree.Projects.Table
-                            (Main_Proj).All_Imported_Projects;
+                        Proj_List := Main_Proj.All_Imported_Projects;
 
                         while Proj_List /= null loop
                            Project_File_Paths.Set
-                             (Name_Id (Project_Tree.Projects.Table
-                              (Proj_List.Project).Path.Name),
+                             (Name_Id (Proj_List.Project.Path.Name),
                               True);
                            Proj_List := Proj_List.Next;
                         end loop;
@@ -9461,38 +9345,29 @@ package body Buildgpr is
                                       and then not Is_Subunit (Source)))
                               then
                                  declare
-                                    Proj : Project_Id;
-                                    Src  : Source_Id;
+                                    Proj  : Project_Id;
+                                    Src   : Source_Id;
+                                    Iter2 : Source_Iterator;
 
                                  begin
                                     --  If a source is overriden in an
                                     --  extending project, then the object file
                                     --  is not included in the global archive.
 
-                                    Proj :=
-                                      Project_Tree.Projects.Table
-                                        (Source.Project).Extended_By;
+                                    Proj := Source.Project.Extended_By;
                                     Loop2 : while Proj /= No_Project loop
-                                       declare
-                                          Data : Project_Data
-                                          renames Project_Tree.Projects.Table
-                                            (Proj);
-                                          Iter2 : Source_Iterator;
+                                       Iter2 := For_Each_Source
+                                         (Project_Tree, Proj);
+                                       loop
+                                          Src := Prj.Element (Iter2);
+                                          exit when Src = No_Source;
 
-                                       begin
-                                          Iter2 := For_Each_Source
-                                            (Project_Tree, Proj);
-                                          loop
-                                             Src := Prj.Element (Iter2);
-                                             exit when Src = No_Source;
+                                          exit Loop1 when
+                                            Src.Object = Source.Object;
 
-                                             exit Loop1 when
-                                               Src.Object = Source.Object;
-
-                                             Next (Iter2);
-                                          end loop;
-                                          Proj := Data.Extended_By;
-                                       end;
+                                          Next (Iter2);
+                                       end loop;
+                                       Proj := Proj.Extended_By;
                                     end loop Loop2;
                                  end;
 
@@ -9530,16 +9405,14 @@ package body Buildgpr is
 
                               declare
                                  Proj : Project_Id :=
-                                          Project_Tree.Projects.Table
-                                            (Source_Project).Extended_By;
+                                          Source_Project.Extended_By;
 
                               begin
                                  while Proj /= No_Project loop
                                     Name_Len := 0;
                                     Add_Str_To_Name_Buffer
                                       (Get_Name_String
-                                         (Project_Tree.Projects.Table
-                                            (Proj).Object_Directory.Name));
+                                         (Proj.Object_Directory.Name));
                                     Add_Char_To_Name_Buffer
                                       (Directory_Separator);
                                     Add_Str_To_Name_Buffer
@@ -9550,9 +9423,7 @@ package body Buildgpr is
                                        Dep_Path := Name_Find;
                                     end if;
 
-                                    Proj :=
-                                      Project_Tree.Projects.Table
-                                        (Proj).Extended_By;
+                                    Proj := Proj.Extended_By;
                                  end loop;
                               end;
 
@@ -9646,9 +9517,7 @@ package body Buildgpr is
                      --  Send the Toolchain Versions of each language where
                      --  they are declared.
 
-                     Lang_Index :=
-                       Project_Tree.Projects.Table
-                         (Main_Proj).Languages;
+                     Lang_Index := Main_Proj.Languages;
                      Toolchain_Version_Label_Written := False;
 
                      while Lang_Index /= No_Language_Index loop
@@ -9675,9 +9544,7 @@ package body Buildgpr is
                      --  Send the object file suffix for each language where it
                      --  is declared.
 
-                     Lang_Index :=
-                       Project_Tree.Projects.Table
-                         (Main_Proj).Languages;
+                     Lang_Index := Main_Proj.Languages;
                      Object_File_Suffix_Label_Written := False;
 
                      while Lang_Index /= No_Language_Index loop
@@ -9757,8 +9624,7 @@ package body Buildgpr is
 
                      declare
                         The_Packages : constant Package_Id :=
-                                         Project_Tree.Projects.Table
-                                           (Main_Proj).Decl.Packages;
+                                         Main_Proj.Decl.Packages;
 
                         Binder_Package : constant Prj.Package_Id :=
                                            Prj.Util.Value_Of
@@ -9952,34 +9818,23 @@ package body Buildgpr is
 
                      Put_Line
                        (Exchange_File,
-                        Get_Name_String
-                          (Project_Tree.Projects.Table
-                             (Main_Proj).Path.Name));
+                        Get_Name_String (Main_Proj.Path.Name));
 
                      Put_Line
                        (Exchange_File,
-                        String
-                          (File_Stamp
-                             (Project_Tree.Projects.Table
-                                (Main_Proj).Path.Name)));
+                        String (File_Stamp (Main_Proj.Path.Name)));
 
-                     Proj_List :=
-                       Project_Tree.Projects.Table
-                         (Main_Proj).All_Imported_Projects;
+                     Proj_List := Main_Proj.All_Imported_Projects;
 
                      while Proj_List /= null loop
                         Put_Line
                           (Exchange_File,
-                           Get_Name_String
-                             (Project_Tree.Projects.Table
-                                (Proj_List.Project).Path.Name));
+                           Get_Name_String (Proj_List.Project.Path.Name));
 
                         Put_Line
                           (Exchange_File,
                            String
-                             (File_Stamp
-                                (Project_Tree.Projects.Table
-                                   (Proj_List.Project).Path.Name)));
+                             (File_Stamp (Proj_List.Project.Path.Name)));
 
                         Proj_List := Proj_List.Next;
                      end loop;
@@ -10001,8 +9856,7 @@ package body Buildgpr is
                                               (B_Data.Language.Config.
                                                  Objects_Path);
                               Path_Name : String_Access :=
-                                            Project_Tree.Projects.Table
-                                              (Main_Proj).Objects_Path;
+                                            Main_Proj.Objects_Path;
                            begin
                               if Path_Name = null then
                                  if Current_Verbosity = High then
@@ -10041,9 +9895,7 @@ package body Buildgpr is
                                  Path_Name :=
                                    new String'(Path_Buffer
                                                (1 .. Path_Last));
-                                 Project_Tree.Projects.Table
-                                   (Main_Proj).Objects_Path :=
-                                   Path_Name;
+                                 Main_Proj.Objects_Path := Path_Name;
                               end if;
 
                               Setenv (Env_Var, Path_Name.all);
@@ -10064,9 +9916,7 @@ package body Buildgpr is
                                               (B_Data.Language.Config.
                                                  Objects_Path_File);
                               Path_Name : Path_Name_Type :=
-                                            Project_Tree.Projects.Table
-                                              (Main_Proj).
-                                              Objects_Path_File_Without_Libs;
+                                Main_Proj.Objects_Path_File_Without_Libs;
                            begin
                               if Path_Name = No_Path then
                                  if Current_Verbosity = High then
@@ -10087,8 +9937,7 @@ package body Buildgpr is
                                       (In_Tree   => Project_Tree,
                                        Path_FD   => FD,
                                        Path_Name =>
-                                         Project_Tree.Projects.Table
-                                           (Main_Proj).
+                                         Main_Proj.
                                            Objects_Path_File_Without_Libs);
 
                                     if FD = Invalid_FD then
@@ -10098,8 +9947,7 @@ package body Buildgpr is
                                     end if;
 
                                     Path_Name :=
-                                      Project_Tree.Projects.Table
-                                        (Main_Proj).
+                                      Main_Proj.
                                         Objects_Path_File_Without_Libs;
 
                                     for Index in 1 .. Directories.Last loop
@@ -10207,14 +10055,13 @@ package body Buildgpr is
       ---------------------
 
       procedure Process_Project (Project : Project_Id) is
-         Data     : Project_Data renames Project_Tree.Projects.Table (Project);
-         Imported : Project_List := Data.Imported_Projects;
+         Imported : Project_List := Project.Imported_Projects;
 
       begin
          --  Nothing to do if process has already been processed
 
-         if not Processed_Projects.Get (Data.Name) then
-            Processed_Projects.Set (Data.Name, True);
+         if not Processed_Projects.Get (Project.Name) then
+            Processed_Projects.Set (Project.Name, True);
 
             --  Call Process_Project recursively for any imported project.
             --  We first process the imported projects to guarantee that
@@ -10230,17 +10077,17 @@ package body Buildgpr is
 
             --  For an extending project, process the project being extended
 
-            if Data.Extends /= No_Project then
-               Process_Project (Data.Extends);
+            if Project.Extends /= No_Project then
+               Process_Project (Project.Extends);
             end if;
 
             --  If it is a library project, add it to Library_Projs
 
             if (And_Project_Itself or (Project /= For_Project))
-              and then Data.Extends = No_Project
-              and then Data.Library
+              and then Project.Extends = No_Project
+              and then Project.Library
             then
-               if Data.Standalone_Library then
+               if Project.Standalone_Library then
                   There_Are_SALs := True;
                end if;
 
@@ -10279,7 +10126,7 @@ package body Buildgpr is
             return True;
          end if;
 
-         Current := Project_Tree.Projects.Table (Current).Extends;
+         Current := Current.Extends;
       end loop;
    end Project_Extends;
 
@@ -10452,12 +10299,10 @@ package body Buildgpr is
             if Source.Compiled
               and then
                 (All_Projects
-                 or else
-                   Is_Extending (The_Project, Source.Project, Project_Tree))
+                 or else Is_Extending (The_Project, Source.Project))
               and then not Source.Locally_Removed
               and then Source.Replaced_By = No_Source
-              and then not Project_Tree.Projects.Table
-                (Source.Project).Externally_Built
+              and then not Source.Project.Externally_Built
               and then Source.Kind /= Sep
               and then Source.Path /= No_Path_Information
             then
@@ -10468,15 +10313,14 @@ package body Buildgpr is
                then
                   if (Unit_Based
                       or else Source.Unit = No_Name
-                      or else
-                        Project_Tree.Projects.Table (Source.Project).Library)
+                      or else Source.Project.Library)
                     and then not Is_Subunit (Source)
                   then
                      Insert
                        (Source_File_Name => Source.File,
                         Source_Identity  => Source,
                         Source_Project   => Ultimate_Extending_Project_Of
-                          (Source.Project, Project_Tree));
+                          (Source.Project));
                   end if;
                end if;
             end if;
@@ -10520,10 +10364,8 @@ package body Buildgpr is
    ----------------------
 
    procedure Recursive_Import (Project : Project_Id) is
-      Ext : constant Project_Id :=
-              Project_Tree.Projects.Table (Project).Extends;
-      L   : Project_List :=
-              Project_Tree.Projects.Table (Project).Imported_Projects;
+      Ext : constant Project_Id := Project.Extends;
+      L   : Project_List := Project.Imported_Projects;
 
    begin
       if Ext /= No_Project and then
