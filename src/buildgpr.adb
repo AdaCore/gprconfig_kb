@@ -1676,7 +1676,6 @@ package body Buildgpr is
 
       Discard : Boolean;
 
-      Proj_Element : Project_Element;
       Proj_List    : Project_List;
 
       Src_Id       : Source_Id;
@@ -1842,17 +1841,14 @@ package body Buildgpr is
 
             Proj_List := Data.All_Imported_Projects;
 
-            while Proj_List /= Empty_Project_List loop
-               Proj_Element :=
-                 Project_Tree.Project_Lists.Table (Proj_List);
-
+            while Proj_List /= null loop
                if not Project_Tree.Projects.Table
-                 (Proj_Element.Project).Library
+                 (Proj_List.Project).Library
                then
-                  Add_Sources (Proj_Element.Project);
+                  Add_Sources (Proj_List.Project);
                end if;
 
-               Proj_List := Proj_Element.Next;
+               Proj_List := Proj_List.Next;
             end loop;
 
             Need_To_Build := Force_Compilations;
@@ -2078,17 +2074,14 @@ package body Buildgpr is
 
                Proj_List := Data.All_Imported_Projects;
 
-               while Proj_List /= Empty_Project_List loop
-                  Proj_Element :=
-                    Project_Tree.Project_Lists.Table (Proj_List);
-
+               while Proj_List /= null loop
                   if not Project_Tree.Projects.Table
-                    (Proj_Element.Project).Library
+                    (Proj_List.Project).Library
                   then
-                     Add_Objects (Proj_Element.Project);
+                     Add_Objects (Proj_List.Project);
                   end if;
 
-                  Proj_List := Proj_Element.Next;
+                  Proj_List := Proj_List.Next;
                end loop;
 
                --  No global archive, if there is no object file to put into
@@ -2713,15 +2706,12 @@ package body Buildgpr is
 
          declare
             List : Project_List := Data.All_Imported_Projects;
-            Elem : Project_Element;
 
          begin
-            while List /= Empty_Project_List loop
-               Elem := Project_Tree.Project_Lists.Table (List);
-
+            while List /= null loop
                declare
                   Pdata : Project_Data renames
-                    Project_Tree.Projects.Table (Elem.Project);
+                    Project_Tree.Projects.Table (List.Project);
                begin
 
                   if Pdata.Library_ALI_Dir /= No_Path_Information then
@@ -2736,7 +2726,7 @@ package body Buildgpr is
                   end if;
                end;
 
-               List := Elem.Next;
+               List := List.Next;
             end loop;
          end;
 
@@ -4109,7 +4099,6 @@ package body Buildgpr is
                   L : Project_List :=
                     Project_Tree.Projects.Table
                       (Src_Data.Project).Imported_Projects;
-                  E : Project_Element;
 
                begin
 
@@ -4117,14 +4106,12 @@ package body Buildgpr is
                   --  rooted at the projects that are already in
                   --  Imports.
 
-                  while L /= Empty_Project_List loop
-                     E := Project_Tree.Project_Lists.Table (L);
-
-                     if Imports.Get (E.Project) then
-                        Recursive_Import (E.Project);
+                  while L /= null loop
+                     if Imports.Get (L.Project) then
+                        Recursive_Import (L.Project);
                      end if;
 
-                     L := E.Next;
+                     L := L.Next;
                   end loop;
 
                   --  For all the imported sources from project not
@@ -5744,14 +5731,11 @@ package body Buildgpr is
    is
       L : Project_List :=
             Project_Tree.Projects.Table (Project).Imported_Projects;
-      E : Project_Element;
       P : Project_Id;
 
    begin
-      while L /= Empty_Project_List loop
-         E := Project_Tree.Project_Lists.Table (L);
-
-         P := E.Project;
+      while L /= null loop
+         P := L.Project;
          while P /= No_Project loop
             if Imported = P then
                return True;
@@ -5760,7 +5744,7 @@ package body Buildgpr is
             P := Project_Tree.Projects.Table (P).Extends;
          end loop;
 
-         L := E.Next;
+         L := L.Next;
       end loop;
 
       return False;
@@ -7428,9 +7412,9 @@ package body Buildgpr is
 
                Current_Dir : constant String := Get_Current_Dir;
             begin
-               while List /= Empty_Project_List loop
-                  Proj := Project_Tree.Project_Lists.Table (List).Project;
-                  List := Project_Tree.Project_Lists.Table (List).Next;
+               while List /= null loop
+                  Proj := List.Project;
+                  List := List.Next;
 
                   declare
                      Proj_Data : Project_Data renames
@@ -8950,7 +8934,6 @@ package body Buildgpr is
       Last                 : Natural;
 
       Proj_List            : Project_List;
-      Proj_Element         : Project_Element;
 
       Shared_Libs          : Boolean := False;
 
@@ -9318,14 +9301,12 @@ package body Buildgpr is
                           Project_Tree.Projects.Table
                             (Main_Proj).All_Imported_Projects;
 
-                        while Proj_List /= Empty_Project_List loop
-                           Proj_Element :=
-                             Project_Tree.Project_Lists.Table (Proj_List);
+                        while Proj_List /= null loop
                            Project_File_Paths.Set
                              (Name_Id (Project_Tree.Projects.Table
-                              (Proj_Element.Project).Path.Name),
+                              (Proj_List.Project).Path.Name),
                               True);
-                           Proj_List := Proj_Element.Next;
+                           Proj_List := Proj_List.Next;
                         end loop;
 
                         --  Get the project file paths from the exchange
@@ -9986,23 +9967,21 @@ package body Buildgpr is
                        Project_Tree.Projects.Table
                          (Main_Proj).All_Imported_Projects;
 
-                     while Proj_List /= Empty_Project_List loop
-                        Proj_Element :=
-                          Project_Tree.Project_Lists.Table (Proj_List);
+                     while Proj_List /= null loop
                         Put_Line
                           (Exchange_File,
                            Get_Name_String
                              (Project_Tree.Projects.Table
-                                (Proj_Element.Project).Path.Name));
+                                (Proj_List.Project).Path.Name));
 
                         Put_Line
                           (Exchange_File,
                            String
                              (File_Stamp
                                 (Project_Tree.Projects.Table
-                                   (Proj_Element.Project).Path.Name)));
+                                   (Proj_List.Project).Path.Name)));
 
-                        Proj_List := Proj_Element.Next;
+                        Proj_List := Proj_List.Next;
                      end loop;
 
                      Close (Exchange_File);
@@ -10230,7 +10209,6 @@ package body Buildgpr is
       procedure Process_Project (Project : Project_Id) is
          Data     : Project_Data renames Project_Tree.Projects.Table (Project);
          Imported : Project_List := Data.Imported_Projects;
-         Element  : Project_Element;
 
       begin
          --  Nothing to do if process has already been processed
@@ -10242,15 +10220,12 @@ package body Buildgpr is
             --  We first process the imported projects to guarantee that
             --  we have a proper reverse order for the libraries.
 
-            while Imported /= Empty_Project_List loop
-               Element :=
-                 Project_Tree.Project_Lists.Table (Imported);
-
-               if Element.Project /= No_Project then
-                  Process_Project (Element.Project);
+            while Imported /= null loop
+               if Imported.Project /= No_Project then
+                  Process_Project (Imported.Project);
                end if;
 
-               Imported := Element.Next;
+               Imported := Imported.Next;
             end loop;
 
             --  For an extending project, process the project being extended
@@ -10549,7 +10524,6 @@ package body Buildgpr is
               Project_Tree.Projects.Table (Project).Extends;
       L   : Project_List :=
               Project_Tree.Projects.Table (Project).Imported_Projects;
-      E   : Project_Element;
 
    begin
       if Ext /= No_Project and then
@@ -10559,15 +10533,13 @@ package body Buildgpr is
          Recursive_Import (Ext);
       end if;
 
-      while L /= Empty_Project_List loop
-         E := Project_Tree.Project_Lists.Table (L);
-
-         if not Imports.Get (E.Project) then
-            Imports.Set (E.Project, True);
-            Recursive_Import (E.Project);
+      while L /= null loop
+         if not Imports.Get (L.Project) then
+            Imports.Set (L.Project, True);
+            Recursive_Import (L.Project);
          end if;
 
-         L := E.Next;
+         L := L.Next;
       end loop;
    end Recursive_Import;
 
