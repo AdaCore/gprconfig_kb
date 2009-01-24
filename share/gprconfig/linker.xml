@@ -97,6 +97,18 @@
     </config>
   </configuration>
 
+  <!-- Do not run ranlib on IA64 HPUX -->
+  <configuration>
+    <targets>
+      <target name=".*ia64.*hpux.*" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
   <configuration>
     <targets negate="true">
       <target name=".*-wrs-vxworks.*" />
@@ -106,6 +118,7 @@
       <target name="erc32-elf"/>
       <target name="leon-elf"/>
       <target name=".*aix.*" />
+      <target name=".*ia64.*hpux.*" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
