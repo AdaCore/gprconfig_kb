@@ -7005,8 +7005,6 @@ package body Buildgpr is
             Exec_Name      : File_Name_Type;
             Exec_Path_Name : Path_Name_Type;
 
-            Data           : Project_Data;
-
             Main_Proj      : Project_Id;
 
             Main_Base_Name : File_Name_Type;
@@ -7688,7 +7686,7 @@ package body Buildgpr is
                --  link may fail because the wrong objects or libraries are
                --  linked in.
 
-               Min_Linker_Opts := Data.Config.Minimum_Linker_Options;
+               Min_Linker_Opts := Main_Proj.Config.Minimum_Linker_Options;
                while Min_Linker_Opts /= No_Name_List loop
                   Add_Argument
                     (Get_Name_String
@@ -7702,7 +7700,7 @@ package body Buildgpr is
 
                declare
                   List : Name_List_Index :=
-                           Data.Config.Linker_Executable_Option;
+                           Main_Proj.Config.Linker_Executable_Option;
                   Nam  : Name_Node;
 
                   procedure Add_Executable_Name;
@@ -7750,8 +7748,8 @@ package body Buildgpr is
                --  command line and the number of object files, then create
                --  a response file if needed.
 
-               if Data.Config.Max_Command_Line_Length > 0 and then
-                 Data.Config.Resp_File_Format /= Prj.None and then
+               if Main_Proj.Config.Max_Command_Line_Length > 0 and then
+                 Main_Proj.Config.Resp_File_Format /= Prj.None and then
                  First_Object_Index > 0
                then
                   declare
@@ -7763,8 +7761,10 @@ package body Buildgpr is
                         Arg_Length := Arg_Length + Arguments (J)'Length + 1;
                      end loop;
 
-                     if Arg_Length > Data.Config.Max_Command_Line_Length then
-                        List := Data.Config.Resp_File_Options;
+                     if
+                       Arg_Length > Main_Proj.Config.Max_Command_Line_Length
+                     then
+                        List := Main_Proj.Config.Resp_File_Options;
 
                         if List /= No_Name_List then
                            Min_Number_Of_Objects := 1;
@@ -7787,7 +7787,7 @@ package body Buildgpr is
                           Min_Number_Of_Objects
                         then
                            Create_Response_File
-                             (Format  => Data.Config.Resp_File_Format,
+                             (Format  => Main_Proj.Config.Resp_File_Format,
                               Objects => Arguments
                                 (First_Object_Index .. Last_Object_Index),
                               Name    => Response_File_Name);
@@ -7797,7 +7797,7 @@ package body Buildgpr is
                            --  No need to update Arguments_Displayed, as the
                            --  values are already correct (= Verbose_Mode).
 
-                           List := Data.Config.Resp_File_Options;
+                           List := Main_Proj.Config.Resp_File_Options;
 
                            if List = No_Name_List then
                               Arguments (First_Object_Index) :=
