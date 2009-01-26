@@ -2498,7 +2498,11 @@ node.
 The format of @code{<host>} is a node with a single mandatory attribute
 @var{name}, which is a regexp matched against the architecture on
 which @value{gprconfig} is running. The name of the architecture was
-computed by @code{configure} when @value{gprconfig} was built.
+computed by @code{configure} when @value{gprconfig} was built. Note that
+the regexp might match a substring of the host name, so you might want
+to surround it with "^" and "$" so that it only matches the whole host
+name (for instance, "elf" would match "powerpc-elf", but "^elf$" would
+not).
 
 If the @var{negate} attribute is @samp{true}, then the meaning of this
 filter is inverted, and it will match when none of its children matches.
