@@ -65,10 +65,10 @@
        <compiler name="G++" language="C++" />
      </compilers>
      <targets negate="true">
-       <target name=".*LynxOS.*" />
-       <target name=".*mingw.*" />
-       <target name=".*cygwin.*" />
-        <target name=".*tru64.*" />
+       <target name="^.*LynxOS.*$" />
+       <target name="^.*mingw.*$" />
+       <target name="^.*cygwin.*$" />
+       <target name="^.*tru64.*$" />
      </targets>
      <config>
    package Compiler is

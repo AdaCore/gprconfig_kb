@@ -9,7 +9,7 @@
   <!--  Archiver.  -->
   <configuration>
     <targets>
-      <target name="powerpc-elf" />
+      <target name="^powerpc-elf$" />
     </targets>
     <config>
    for Archive_Builder  use ("powerpc-elf-ar", "cr");
@@ -21,7 +21,7 @@
 
   <configuration>
     <targets>
-      <target name="powerpc-elf-lynxos" />
+      <target name="^powerpc-elf-lynxos$" />
     </targets>
     <config>
    for Archive_Builder  use ("powerpc-elf-lynxos-ar", "cr");
@@ -33,7 +33,7 @@
 
   <configuration>
     <targets>
-      <target name="powerpc-eabispe" />
+      <target name="^powerpc-eabispe$" />
     </targets>
     <config>
    for Archive_Builder  use ("powerpc-eabispe-ar", "cr");
@@ -45,7 +45,7 @@
 
   <configuration>
     <targets>
-      <target name="erc32-elf" />
+      <target name="^erc32-elf$" />
     </targets>
     <config>
    for Archive_Builder  use ("erc32-elf-ar", "cr");
@@ -57,7 +57,7 @@
 
   <configuration>
     <targets>
-      <target name="leon-elf" />
+      <target name="^leon-elf$" />
     </targets>
     <config>
    for Archive_Builder  use ("leon-elf-ar", "cr");
@@ -69,7 +69,7 @@
 
   <configuration>
     <targets>
-      <target name="avr" />
+      <target name="^avr$" />
     </targets>
     <config>
    for Archive_Builder  use ("avr-ar", "cr");
@@ -82,7 +82,7 @@
   <!-- Do not run ranlib on AIX -->
   <configuration>
     <targets>
-      <target name=".*aix.*" />
+      <target name="^.*aix.*$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
@@ -111,14 +111,14 @@
 
   <configuration>
     <targets negate="true">
-      <target name=".*-wrs-vxworks.*" />
-      <target name="powerpc-elf"/>
-      <target name="powerpc-eabispe"/>
-      <target name="avr"/>
-      <target name="erc32-elf"/>
-      <target name="leon-elf"/>
-      <target name=".*aix.*" />
-      <target name=".*ia64.*hpux.*" />
+      <target name="^.*-wrs-vxworks.*$" />
+      <target name="^powerpc-elf$"/>
+      <target name="^powerpc-eabispe$"/>
+      <target name="^avr$"/>
+      <target name="^erc32-elf$"/>
+      <target name="^leon-elf$"/>
+      <target name="^.*aix.*$" />
+      <target name="^.*ia64.*hpux.*$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
@@ -131,14 +131,14 @@
   <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
     <targets>
-       <target name=".*aix.*" />
-       <target name=".*lynxos.*" />
-       <target name="powerpc-elf" />
-       <target name="powerpc-eabispe" />
-       <target name="erc32-elf" />
-       <target name="leon-elf" />
-       <target name=".*wrs-vxworks.*" />
-       <target name="avr" />
+       <target name="^.*aix.*$" />
+       <target name="^.*lynxos.*$" />
+       <target name="^powerpc-elf$" />
+       <target name="^powerpc-eabispe$" />
+       <target name="^erc32-elf$" />
+       <target name="^leon-elf$" />
+       <target name="^.*wrs-vxworks.*$" />
+       <target name="^avr$" />
     </targets>
     <config>
    for Library_Support  use "static_only";
@@ -149,7 +149,7 @@
   <!--  Darwin -->
   <configuration>
     <targets>
-       <target name=".*darwin.*" />
+       <target name="^.*darwin.*$" />
     </targets>
     <config>
    for Library_Builder use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
@@ -171,7 +171,7 @@
   <!--  HPUX -->
   <configuration>
     <targets>
-       <target name=".*hpux.*" />
+       <target name="^.*hpux.*$" />
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
@@ -197,9 +197,9 @@
   <!-- linux, freebsd and Irix-->
   <configuration>
     <targets>
-       <target name=".*linux.*" />
-       <target name=".*freebsd.*" />
-       <target name=".*irix.*" />
+       <target name="^.*linux.*$" />
+       <target name="^.*freebsd.*$" />
+       <target name="^.*irix.*$" />
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
@@ -219,7 +219,7 @@
   <!-- linux -->
   <configuration>
     <targets>
-       <target name=".*linux.*" />
+       <target name="^.*linux.*$" />
     </targets>
     <config>
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
@@ -234,7 +234,7 @@
   <!-- freebsd -->
   <configuration>
     <targets>
-       <target name=".*freebsb.*" />
+       <target name="^.*freebsb.*$" />
     </targets>
     <config>
    package Linker is
@@ -247,7 +247,7 @@
   <!-- irix -->
   <configuration>
     <targets>
-       <target name=".*irix.*" />
+       <target name="^.*irix.*$" />
     </targets>
     <config>
    package Linker is
@@ -261,8 +261,8 @@
   <!--  Solaris -->
   <configuration>
     <targets>
-       <target name=".*sunos.*" />
-       <target name=".*solaris.*"/>
+       <target name="^.*sunos.*$" />
+       <target name="^.*solaris.*$"/>
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
@@ -284,7 +284,7 @@
   <!--  Windows -->
   <configuration>
     <targets>
-      <target name=".*mingw.*" />
+      <target name="^.*mingw.*$" />
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
@@ -308,7 +308,7 @@
   <!-- Tru64-->
   <configuration>
     <targets>
-       <target name=".*osf.*" />
+       <target name="^.*osf.*$" />
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprlib";
@@ -335,7 +335,7 @@
   <!--  VMS -->
   <configuration>
     <targets>
-      <target name=".*vms.*" />
+      <target name="^.*vms.*$" />
     </targets>
     <compilers><compiler name="GNAT" /></compilers>
     <config>
