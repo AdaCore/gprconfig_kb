@@ -4,9 +4,9 @@
    <!-- ppc-elf executables do not have any extension -->
    <configuration>
      <targets>
-       <target name="powerpc-elf" />
-       <target name="powerpc-eabispe" />
-       <target name="avr" />
+       <target name="^powerpc-elf$" />
+       <target name="^powerpc-eabispe$" />
+       <target name="^avr$" />
      </targets>
      <config>
    package Builder is
@@ -18,9 +18,9 @@
    <!-- Import WIND_BASE on VxWorks 5 & 6 targets.  -->
    <configuration>
      <targets>
-       <target name="powerpc-wrs-vxworks.*" />
-       <target name="ppc-vx6.*" />
-       <target name="i.86-wrs-vxworks.*" />
+       <target name="^powerpc-wrs-vxworks.*$" />
+       <target name="^ppc-vx6.*$" />
+       <target name="^i.86-wrs-vxworks.*$" />
      </targets>
      <config>
    Wind_Base := external ("WIND_BASE");
@@ -108,7 +108,7 @@
    <!-- vx653 executables have a .out extension.  -->
    <configuration>
      <targets>
-       <target name=".*-wrs-vxworksae" />
+       <target name="^.*-wrs-vxworksae$" />
      </targets>
      <config>
    package Builder is
@@ -120,7 +120,7 @@
    <!--  Use WindRiver archiver -->
    <configuration>
      <targets>
-       <target name="powerpc-wrs-vxworks.*" />
+       <target name="^powerpc-wrs-vxworks.*$" />
      </targets>
      <config>
    for Archive_Builder  use ("arppc", "cr");
@@ -132,7 +132,7 @@
 
    <configuration>
      <targets>
-       <target name="i586-wrs-vxworks.*" />
+       <target name="^i586-wrs-vxworks.*$" />
      </targets>
      <config>
    for Archive_Builder  use ("arpentium", "cr");
@@ -145,12 +145,12 @@
    <!--  Set prefix of gnatbind -->
    <configuration>
      <targets>
-       <target name=".*-wrs-vxworks.*" />
-       <target name="powerpc-elf" />
-       <target name="powerpc-eabispe" />
-       <target name="erc32-elf" />
-       <target name="leon-elf" />
-       <target name="avr" />
+       <target name="^.*-wrs-vxworks.*$" />
+       <target name="^powerpc-elf$" />
+       <target name="^powerpc-eabispe$" />
+       <target name="^erc32-elf$" />
+       <target name="^leon-elf$" />
+       <target name="^avr$" />
      </targets>
      <compilers>
        <compiler name="GNAT" />

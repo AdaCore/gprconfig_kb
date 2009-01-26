@@ -99,10 +99,10 @@
   <configuration>
    &filter_gnat;
    <targets negate="true">
-      <target name=".*lynxos.*" />
-      <target name=".*mingw.*" />
-      <target name=".*dec-osf.*" />
-      <target name=".*vms.*" />
+      <target name="^.*lynxos.*$" />
+      <target name="^.*mingw.*$" />
+      <target name="^.*dec-osf.*$" />
+      <target name="^.*vms.*$" />
    </targets>
    <config>
    package Compiler is

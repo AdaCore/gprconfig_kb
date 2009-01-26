@@ -106,10 +106,10 @@
        <compiler name="GCC-28" language="C" />
      </compilers>
      <targets negate="true">
-       <target name=".*LynxOS.*" />
-       <target name=".*mingw.*" />
-       <target name=".*cygwin.*" />
-       <target name=".*dec-osf.*" />
+       <target name="^.*LynxOS.*$" />
+       <target name="^.*mingw.*$" />
+       <target name="^.*cygwin.*$" />
+       <target name="^.*dec-osf.*$" />
      </targets>
      <config>
    package Compiler is
