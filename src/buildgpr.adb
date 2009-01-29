@@ -2471,18 +2471,24 @@ package body Buildgpr is
                   Open (Exchange_File, In_File, Exchange_File_Name.all);
 
                   if End_Of_File (Exchange_File) then
-                     Write_Str ("      -> library exchange file """);
-                     Write_Str (Exchange_File_Name.all);
-                     Write_Line (""" is empty");
+                     if Verbose_Mode then
+                        Write_Str ("      -> library exchange file """);
+                        Write_Str (Exchange_File_Name.all);
+                        Write_Line (""" is empty");
+                     end if;
+
                      Library_Needs_To_Be_Built := True;
                   end if;
 
                exception
                   when others =>
-                     Write_Str
-                       ("      -> library exchange file """);
-                     Write_Str (Exchange_File_Name.all);
-                     Write_Line (""" does not exist");
+                     if Verbose_Mode then
+                        Write_Str
+                          ("      -> library exchange file """);
+                        Write_Str (Exchange_File_Name.all);
+                        Write_Line (""" cannot be open");
+                     end if;
+
                      Library_Needs_To_Be_Built := True;
                end;
 
