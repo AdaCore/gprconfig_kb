@@ -194,6 +194,16 @@
     </config>
   </configuration>
 
+  <!-- On IA64 HPUX, the shared library suffix is .so -->
+   <configuration>
+    <targets>
+       <target name=".*ia64.*hpux.*" />
+    </targets>
+    <config>
+   for Shared_Library_Suffix use ".so";
+    </config>
+  </configuration>
+
   <!-- linux, freebsd and Irix-->
   <configuration>
     <targets>
