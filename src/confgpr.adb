@@ -789,8 +789,6 @@ package body Confgpr is
             Osint.Fail
               ("could not locate main configuration project " &
                Config_File_Name);
-         else
-            Osint.Fail ("No default configuration file found");
          end if;
       end if;
 
@@ -806,8 +804,8 @@ package body Confgpr is
       --  Parse the configuration file
 
       if Verbose_Mode then
-         Write_Line ("Checking configuration");
-         Write_Line (Configuration_Project_Path.all);
+         Write_Str  ("Checking configuration ");
+         Write_Line (Config_File_Path.all);
       end if;
 
       Prj.Part.Parse
