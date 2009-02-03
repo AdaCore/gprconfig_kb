@@ -751,7 +751,7 @@ package body Confgpr is
 
             elsif not Quiet_Output then
                Write_Str ("creating ");
-               Write_Str (Simple_Name (Config_File_Name));
+               Write_Str (Simple_Name (Args (3).all));
                Write_Eol;
             end if;
 
