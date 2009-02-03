@@ -383,7 +383,6 @@ package body Confgpr is
 
       --  Parse the user project tree
 
-      Set_In_Configuration (False);
       Prj.Initialize (Project_Tree);
       Prj.Tree.Initialize (Project_Node_Tree);
 
@@ -393,7 +392,8 @@ package body Confgpr is
          Project_File_Name      => Project_File_Name.all,
          Always_Errout_Finalize => False,
          Packages_To_Check      => Packages_To_Check,
-         Current_Directory      => Current_Directory);
+         Current_Directory      => Current_Directory,
+         Is_Config_File         => False);
 
       if User_Project_Node = Empty_Node then
          --  Don't flush messages. This has already been taken care of by the
@@ -731,8 +731,6 @@ package body Confgpr is
 
       --  Parse the configuration file
 
-      Set_In_Configuration (True);
-
       if Configuration_Project_Path = null then
          Configuration_Project_Path :=
            Locate_Regular_File
@@ -756,7 +754,8 @@ package body Confgpr is
          Project_File_Name      => Configuration_Project_Path.all,
          Always_Errout_Finalize => False,
          Packages_To_Check      => Packages_To_Check,
-         Current_Directory      => Current_Directory);
+         Current_Directory      => Current_Directory,
+         Is_Config_File         => True);
 
       if Config_Project_Node /= Empty_Node then
          Prj.Proc.Process_Project_Tree_Phase_1
@@ -884,8 +883,6 @@ package body Confgpr is
             Proj := Proj.Next;
          end loop;
       end;
-
-      Set_In_Configuration (False);
    end Get_Configuration;
 
 end Confgpr;

@@ -101,6 +101,7 @@ package Gpr_Util is
    Configuration_Project_Path : String_Access;
 
    Autoconfiguration : Boolean := True;
+   --  Whether we are using an automatically config (from gprconfig)
 
    Autoconf_Specified : Boolean := False;
 
