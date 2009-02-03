@@ -6395,6 +6395,13 @@ package body Buildgpr is
                         end if;
 
                         if not Success then
+                           for J in reverse 1 .. Name_Len loop
+                              Name_Buffer (J + J) := Name_Buffer (J);
+                              Name_Buffer (J + J - 1) := ''';
+                           end loop;
+
+                           Name_Len := Name_Len + Name_Len;
+
                            Error_Msg
                              ('"' & Name_Buffer (1 .. Name_Len) &
                               """ is not a gprbuild switch. Consider moving " &
