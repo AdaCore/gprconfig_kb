@@ -367,21 +367,38 @@ the desired configuration of toolsets. A tool, @value{gprconfig}, described in
 chapter most of the examples can use autoconfiguration.
 
 GPRbuild will start its build process by trying to locate a configuration
-file called @file{default.cgpr}.
-@CINDEX{@file{default.cgpr} configuration file}
-@CINDEX{@option{--autoconf} option (to GPRbuild)}
-If such a file is not available or if the option
-@code{--autoconf=xxx} is used, GPRbuild will create its own configuration
-file suitable for native development and assuming that there are known
-compilers on your path for each of the necessary languages. It is
-preferable and often necessary to manually generate your own
-configuration file when:
-@itemize
-@item using cross compilers (in which case you need to use gprconfig's
-@option{--target=}) option,
-@item using a specific Ada runtime (e.g. @option{--RTS=sjlj}),
-@item working with compilers not in the path or not first in the path, or
-@item autoconfiguration does not give the expected results.
+file. The following tests are performed in the specified order, and the
+first that matches provides the configuration file to use.
+
+@itemize @bullet
+@item If a file has a base names that matches @code{<target>-<rts>.cgpr},
+ @code{<target.cgpr}, @code{<rts>.cgpr} or @code{default.cgpr} is found in
+ the default configuration files directory, this file is used. The target
+ and rts parameters are specified via the @code{--target} and @code{--RTS}
+ switches of @code{gprbuild}. The default directory is is @file{share/gpr}
+ in the installation directory of @code{gprbuild}
+
+@item If not found, the environment variable @code{GPR_CONFIG} is tested
+ to check whether it contains the name of a valid configuration file. This
+ can either be an absolute path name or a base name that will be searched
+ in the same default directory as above.
+
+@item If still not found and you used the @code{--autoconf} switch, then
+ a new configuration file is automatically generated based on the specified
+ target and on the list of languages specified in your projects.
+
+ GPRbuild assumes that there are known compilers on your path for each of
+ the necessary languages. It is preferable and often necessary to manually
+ generate your own configuration file when:
+
+@itemize -
+  @item using cross compilers (in which case you need to use gprconfig's
+ @option{--target=}) option,
+  @item using a specific Ada runtime (e.g. @option{--RTS=sjlj}),
+  @item working with compilers not in the path or not first in the path, or
+  @item autoconfiguration does not give the expected results.
+@end itemize
+
 @end itemize
 
 @noindent

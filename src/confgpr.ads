@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2006, Free Software Foundation, Inc.            --
+--            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -28,10 +28,59 @@
 --  Manager. It is used by several tools, including gprmake and gprclean.
 
 with GNAT.OS_Lib; use GNAT.OS_Lib;
+with Prj.Tree;
+
 package Confgpr is
 
    procedure Get_Configuration (Packages_To_Check : String_List_Access);
    --  Find the main configuration project and parse the project tree rooted at
    --  this configuration project. Fails if there is an error.
+   --  This is a gprbuild-specific implementation that relies on several
+   --  global variables. Use the subprograms below in other contexts.
+
+   procedure Get_Or_Create_Configuration_File
+     (Project                    : Prj.Project_Id;
+      Project_Tree               : Prj.Project_Tree_Ref;
+      Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
+      Allow_Automatic_Generation : Boolean;
+      Config_File_Name           : String := "";
+      Target_Name                : String := "";
+      RTS_Name                   : String := "";
+      Packages_To_Check          : String_List_Access := null;
+      Config                     : out Prj.Project_Id;
+      Config_File_Path           : out String_Access;
+      Automatically_Generated    : out Boolean);
+   --  Compute the name of the configuration file that should be used. If no
+   --  default configuration file is found, a new one will be automatically
+   --  generated if Allow_Automatic_Generation is true (otherwise an error
+   --  reported to the user via Osint.Fail).
+   --  On exit, Configuration_Project_Path is never null (if none could be
+   --  found, Os.Fail was called and the program exited anyway).
+   --  The choice and generation of a configuration file depends on several
+   --  attributes of the user's project file (given by the Project argument),
+   --  like the list of languages that must be supported. Project must
+   --  therefore have been partially processed (phase one of the processing
+   --  only).
+   --  Config_File_Name should be set to the name of the config file specified
+   --  by the user. This name can either be an absolute path, or the a base
+   --  name that will be searched in the default config file directories (which
+   --  depends on the installation path for the tools).
+   --  (Target_Name, RTS_Name) is used to chose among several possibilities
+   --  the configuration file that will be used.
+   --
+   --  If a project file could be found, it is automatically parsed and
+   --  processed (and Packages_To_Check is used to indicate which packages
+   --  should be processed)
+
+   procedure Apply_Config_File
+     (Config_File  : Prj.Project_Id;
+      Project_Tree : Prj.Project_Tree_Ref);
+   --  Apply the configuration file settings to all the projects in the
+   --  project tree. The Project_Tree must have been parsed first, and
+   --  processed through the first phase so that all its projects are known.
+   --
+   --  Currently, this will add new attributes and packages in the various
+   --  projects, so that when the second phase of the processing is performed
+   --  these attributes are automatically taken into account.
 
 end Confgpr;

@@ -42,7 +42,6 @@ package Gpr_Util is
    Begin_Info : constant String := "--  BEGIN Object file/option list";
    End_Info   : constant String := "--  END Object file/option list   ";
 
-   Config_Project_Node : Project_Node_Id := Empty_Node;
    User_Project_Node   : Project_Node_Id := Empty_Node;
 
    Project_Node_Tree : constant Project_Node_Tree_Ref :=
@@ -88,26 +87,19 @@ package Gpr_Util is
 
    Config_Path : String_Access := null;
 
-   Default_Name : constant String := "default.cgpr";
-
-   Config_Project_Env_Var : constant String := "GPR_CONFIG";
-
    Target_Name : String_Access := null;
 
-   Config_Project_File_Name : String_Access := null;
-
-   Default_Config_Project_File_Name : String_Access := null;
-
-   Configuration_Project_Path : String_Access;
+   Config_Project_File_Name   : String_Access := null;
+   Configuration_Project_Path : String_Access := null;
+   --  Base name and full path to the configuration project file
 
    Autoconfiguration : Boolean := True;
    --  Whether we are using an automatically config (from gprconfig)
 
    Autoconf_Specified : Boolean := False;
+   --  Whether the user specified --autoconf on the gprbuild command line
 
    Delete_Autoconf_File : Boolean := False;
-
-   Main_Config_Project : Project_Id;
 
    --  Default project
 

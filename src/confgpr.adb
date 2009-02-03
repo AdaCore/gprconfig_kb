@@ -49,17 +49,14 @@ package body Confgpr is
 
    Auto_Cgpr : constant String := "auto.cgpr";
 
-   Gprconfig_Name : constant String := "gprconfig";
-   Gprconfig_Path : String_Access := null;
+   Default_Name : constant String := "default.cgpr";
+   --  Default configuration file that will be used if found
 
-   package Language_Htable is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
-      Element    => Name_Id,
-      No_Element => No_Name,
-      Key        => Name_Id,
-      Hash       => Prj.Hash,
-      Equal      => "=");
-   --  Hash table to keep the languages used in the project tree
+   Config_Project_Env_Var : constant String := "GPR_CONFIG";
+   --  Name of the environment variable that provides the name of the
+   --  configuration file to use.
+
+   Gprconfig_Name : constant String := "gprconfig";
 
    procedure Add_Attributes
      (Conf_Decl : Declarations;
@@ -69,6 +66,20 @@ package body Confgpr is
    --  declarations, declare it with the value in the config declarations.
    --  For string list values, prepend the value in the user declarations with
    --  the value in the config declarations.
+
+   function Locate_Config_File (Name : String) return String_Access;
+   --  Search for Name in the config files directory. Return full path if
+   --  found, or null otherwise
+
+   function Check_Target
+     (Config_File  : Prj.Project_Id;
+      Project_Tree : Prj.Project_Tree_Ref;
+      Target       : String := "") return Boolean;
+   --  Check that the config file's target matches Target.
+   --  Target should be set to the empty string when the user did not specify
+   --  a target.
+   --  If the target in the configuration file is invalid, this function will
+   --  call Osint.Fail to report a fatal error message and stop the program.
 
    --------------------
    -- Add_Attributes --
@@ -297,188 +308,383 @@ package body Confgpr is
       end loop;
    end Add_Attributes;
 
-   -----------------------
-   -- Get_Configuration --
-   -----------------------
+   ------------------------
+   -- Locate_Config_File --
+   ------------------------
 
-   procedure Get_Configuration (Packages_To_Check : String_List_Access) is
-      Config_Path : String_Access;
-      Project     : Project_List;
-      Main_Object_Dir : Path_Name_Type := No_Path;
-
+   function Locate_Config_File (Name : String) return String_Access is
+      Prefix_Path : constant String := Executable_Prefix_Path;
    begin
-      Configuration_Project_Path := null;
-      Delete_Autoconf_File := Autoconfiguration;
-
-      declare
-         Prefix_Path : constant String := Executable_Prefix_Path;
-
-      begin
-         if Prefix_Path'Length /= 0 then
-            Config_Path :=
-              new String'("." & Path_Separator &
-                          Prefix_Path & Directory_Separator &
-                          "share" & Directory_Separator & "gpr");
-         else
-            Config_Path := new String'(".");
-         end if;
-      end;
-
-      if Target_Name /= null then
-         if RTS_Name /= null then
-            Default_Config_Project_File_Name := new String'
-              (Target_Name.all & '-' & RTS_Name.all & ".cgpr");
-         else
-            Default_Config_Project_File_Name := new String'
-              (Target_Name.all & ".cgpr");
-         end if;
-
-      elsif RTS_Name /= null then
-         Default_Config_Project_File_Name :=
-           new String'(RTS_Name.all & ".cgpr");
+      if Prefix_Path'Length /= 0 then
+         return Locate_Regular_File
+           (Name,
+            "." & Path_Separator &
+            Prefix_Path & Directory_Separator &
+            "share" & Directory_Separator & "gpr");
 
       else
-         Default_Config_Project_File_Name := Getenv (Config_Project_Env_Var);
+         return Locate_Regular_File (Name, ".");
+      end if;
+   end Locate_Config_File;
+
+   ------------------
+   -- Check_Target --
+   ------------------
+
+   function Check_Target
+     (Config_File  : Project_Id;
+      Project_Tree : Prj.Project_Tree_Ref;
+      Target       : String := "") return Boolean
+   is
+      Variable   : constant Variable_Value :=
+        Value_Of (Name_Target, Config_File.Decl.Attributes, Project_Tree);
+      Tgt_Name : Name_Id := No_Name;
+      OK       : Boolean;
+   begin
+      if Variable /= Nil_Variable_Value and then not Variable.Default then
+         Tgt_Name := Variable.Value;
       end if;
 
-      if Default_Config_Project_File_Name'Length = 0 then
-         Default_Config_Project_File_Name := new String'(Default_Name);
+      if Target = "" then
+         OK := not Autoconf_Specified or Tgt_Name = No_Name;
+      else
+         OK := Tgt_Name /= No_Name
+           and then Target = Get_Name_String (Tgt_Name);
       end if;
 
-      --  If --config= or --autoconf= was specified, locate configuration
-      --  project file.
+      if not OK then
+         if Autoconf_Specified then
+            if Verbose_Mode then
+               Write_Line ("inconsistent targets, performing autoconf");
+            end if;
 
-      if Config_Project_File_Name /= null then
-         Configuration_Project_Path :=
-           Locate_Regular_File
-             (Config_Project_File_Name.all,
-              Config_Path.all);
+            return False;
 
-         if Autoconfiguration then
-            Autoconfiguration := Configuration_Project_Path = null;
+         else
+            if Tgt_Name /= No_Name then
+               Osint.Fail ("invalid target name """ &
+                           Get_Name_String (Tgt_Name) &
+                           """ in configuration");
 
-         elsif Configuration_Project_Path = null then
-            Osint.Fail
-              ("could not locate main configuration project " &
-               Config_Project_File_Name.all);
+            else
+               Osint.Fail ("no target specified in configuration file");
+            end if;
          end if;
       end if;
 
-      --  If no config file is specified, check if there is a default config
-      --  file. If there is, there will be no auto configuration.
+      return True;
+   end Check_Target;
 
-      if Config_Project_File_Name = null then
-         Configuration_Project_Path :=
-           Locate_Regular_File
-             (Default_Config_Project_File_Name.all,
-              Config_Path.all);
+   --------------------------------------
+   -- Get_Or_Create_Configuration_File --
+   --------------------------------------
 
-         if Configuration_Project_Path /= null then
-            Config_Project_File_Name :=
-              new String'(Default_Config_Project_File_Name.all);
-            Autoconfiguration := False;
-            Delete_Autoconf_File := False;
+   procedure Get_Or_Create_Configuration_File
+     (Project                    : Project_Id;
+      Project_Tree               : Project_Tree_Ref;
+      Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
+      Allow_Automatic_Generation : Boolean;
+      Config_File_Name           : String := "";
+      Target_Name                : String := "";
+      RTS_Name                   : String := "";
+      Packages_To_Check          : String_List_Access := null;
+      Config                     : out Prj.Project_Id;
+      Config_File_Path           : out String_Access;
+      Automatically_Generated    : out Boolean)
+   is
+      function Default_File_Name return String;
+      --  Return the name of the default config file that should be tested
+
+      procedure Do_Autoconf;
+      --  Generate a new config file through gprconfig
+
+      function Get_Config_Switches return Argument_List_Access;
+      --  Return the --config switches to use for gprconfig
+
+      function Might_Have_Sources (Project : Project_Id) return Boolean;
+      --  True if the specified project might have sources (ie the user has not
+      --  explicitly specified it. We haven't checked the file system, nor do
+      --  we need to at this stage.
+
+      -----------------------
+      -- Default_File_Name --
+      -----------------------
+
+      function Default_File_Name return String is
+         Tmp : String_Access;
+      begin
+         if Target_Name /= "" then
+            if RTS_Name /= "" then
+               return Target_Name & '-' & RTS_Name
+                 & Config_Project_File_Extension;
+            else
+               return Target_Name & Config_Project_File_Extension;
+            end if;
+
+         elsif RTS_Name /= "" then
+            return RTS_Name & Config_Project_File_Extension;
+
+         else
+            Tmp := Getenv (Config_Project_Env_Var);
+
+            declare
+               T : constant String := Tmp.all;
+            begin
+               Free (Tmp);
+
+               if T'Length = 0 then
+                  return Default_Name;
+               else
+                  return T;
+               end if;
+            end;
          end if;
-      end if;
+      end Default_File_Name;
 
-      --  Parse the user project tree
+      ------------------------
+      -- Might_Have_Sources --
+      ------------------------
 
-      Prj.Initialize (Project_Tree);
-      Prj.Tree.Initialize (Project_Node_Tree);
+      function Might_Have_Sources (Project : Project_Id) return Boolean is
+         Variable : Variable_Value;
+      begin
+         Variable :=
+           Value_Of
+             (Name_Source_Dirs,
+              Project.Decl.Attributes,
+              Project_Tree);
 
-      Prj.Part.Parse
-        (In_Tree                => Project_Node_Tree,
-         Project                => User_Project_Node,
-         Project_File_Name      => Project_File_Name.all,
-         Always_Errout_Finalize => False,
-         Packages_To_Check      => Packages_To_Check,
-         Current_Directory      => Current_Directory,
-         Is_Config_File         => False);
+         if Variable = Nil_Variable_Value
+           or else Variable.Default
+           or else Variable.Values /= Nil_String
+         then
+            Variable :=
+              Value_Of
+                (Name_Source_Files,
+                 Project.Decl.Attributes,
+                 Project_Tree);
+            return Variable = Nil_Variable_Value
+              or else Variable.Default
+              or else Variable.Values /= Nil_String;
+         else
+            return False;
+         end if;
+      end Might_Have_Sources;
 
-      if User_Project_Node = Empty_Node then
-         --  Don't flush messages. This has already been taken care of by the
-         --  above call. Oterwise, it results in se same message being
-         --  displayed twice.
+      -------------------------
+      -- Get_Config_Switches --
+      -------------------------
 
-         Fail_Program
-           ("""" & Project_File_Name.all & """ processing failed",
-            Flush_Messages => False);
-      end if;
+      function Get_Config_Switches return Argument_List_Access is
+         package Language_Htable is new GNAT.HTable.Simple_HTable
+           (Header_Num => Prj.Header_Num,
+            Element    => Name_Id,
+            No_Element => No_Name,
+            Key        => Name_Id,
+            Hash       => Prj.Hash,
+            Equal      => "=");
+         --  Hash table to keep the languages used in the project tree
 
-      Process_Project_Tree_Phase_1
-        (In_Tree                => Project_Tree,
-         Project                => Main_Project,
-         Success                => Success,
-         From_Project_Node      => User_Project_Node,
-         From_Project_Node_Tree => Project_Node_Tree,
-         Report_Error           => null);
+         IDE      : constant Package_Id :=
+           Value_Of
+             (Name_Ide,
+              Project.Decl.Packages,
+              Project_Tree);
 
-      if not Success then
-         Fail_Program ("""" & Project_File_Name.all & """ processing failed");
-      end if;
+         Prj_Iter : Project_List;
+         List     : String_List_Id;
+         Elem     : String_Element;
+         Lang     : Name_Id;
+         Variable : Variable_Value;
+         Name     : Name_Id;
+         Count    : Natural;
+         Result   : Argument_List_Access;
 
-      --  If Autoconfiguration is True, get the languages from the user project
-      --  tree, call gprconfig and check that the config file exists.
+      begin
+         Prj_Iter := Project_Tree.Projects;
+         while Prj_Iter /= null loop
+            if Might_Have_Sources (Prj_Iter.Project) then
+               Variable :=
+                 Value_Of
+                   (Name_Languages,
+                    Prj_Iter.Project.Decl.Attributes,
+                    Project_Tree);
 
-      <<Do_Autoconf>>
-      if Autoconfiguration then
+               if Variable = Nil_Variable_Value
+                 or else Variable.Default
+               then
+                  --  Languages is not declared. If it is not an extending
+                  --  project, check for Default_Language
 
-         --  Get the path of gprconfig
+                  if Prj_Iter.Project.Extends = No_Project then
+                     Variable :=
+                       Value_Of
+                         (Name_Default_Language,
+                          Prj_Iter.Project.Decl.Attributes,
+                          Project_Tree);
 
+                     if Variable /= Nil_Variable_Value and then
+                       not Variable.Default
+                     then
+                        Get_Name_String (Variable.Value);
+                        To_Lower (Name_Buffer (1 .. Name_Len));
+                        Lang := Name_Find;
+                        Language_Htable.Set (Lang, Lang);
+
+                     else
+                        --  If no language is declared, default to Ada
+
+                        Language_Htable.Set (Name_Ada, Name_Ada);
+                     end if;
+                  end if;
+
+               elsif Variable.Values /= Nil_String then
+
+                  --  Attribute Languages is declared with a non empty
+                  --  list: put all the languages in Language_HTable.
+
+                  List := Variable.Values;
+                  while List /= Nil_String loop
+                     Elem := Project_Tree.String_Elements.Table (List);
+
+                     Get_Name_String (Elem.Value);
+                     To_Lower (Name_Buffer (1 .. Name_Len));
+                     Lang := Name_Find;
+                     Language_Htable.Set (Lang, Lang);
+
+                     List := Elem.Next;
+                  end loop;
+               end if;
+            end if;
+
+            Prj_Iter := Prj_Iter.Next;
+         end loop;
+
+         Name  := Language_Htable.Get_First;
+         Count := 0;
+
+         while Name /= No_Name loop
+            Count := Count + 1;
+            Name := Language_Htable.Get_Next;
+         end loop;
+
+         Result := new String_List (1 .. Count);
+         Count  := 1;
+         Name   := Language_Htable.Get_First;
+
+         while Name /= No_Name loop
+            --  Check if IDE'Compiler_Command is declared for the language.
+            --  If it is, use its value to invoke gprconfig.
+
+            Variable :=
+              Value_Of
+                (Name,
+                 Attribute_Or_Array_Name => Name_Compiler_Command,
+                 In_Package              => IDE,
+                 In_Tree                 => Project_Tree,
+                 Force_Lower_Case_Index  => True);
+
+            declare
+               Config_Command : constant String :=
+                 "--config=" & Get_Name_String (Name);
+
+               Runtime_Name   : constant String :=
+                 Runtime_Name_For (Name);
+
+            begin
+               if Variable = Nil_Variable_Value
+                 or else Length_Of_Name (Variable.Value) = 0
+               then
+                  Result (Count) :=
+                    new String'(Config_Command & ",," & Runtime_Name);
+
+               else
+                  declare
+                     Compiler_Command : constant String :=
+                       Get_Name_String (Variable.Value);
+
+                  begin
+                     if Is_Absolute_Path (Compiler_Command) then
+                        Result (Count) :=
+                          new String'
+                            (Config_Command & ",," & Runtime_Name & "," &
+                             Containing_Directory (Compiler_Command) & "," &
+                             Simple_Name (Compiler_Command));
+                     else
+                        Result (Count) :=
+                          new String'
+                            (Config_Command & ",," & Runtime_Name & ",," &
+                             Compiler_Command);
+                     end if;
+                  end;
+               end if;
+            end;
+
+            Count := Count + 1;
+            Name  := Language_Htable.Get_Next;
+         end loop;
+
+         return Result;
+      end Get_Config_Switches;
+
+      -----------------
+      -- Do_Autoconf --
+      -----------------
+
+      procedure Do_Autoconf is
+         Obj_Dir : constant Variable_Value :=
+           Value_Of (Name_Object_Dir, Project.Decl.Attributes, Project_Tree);
+
+         Gprconfig_Path  : String_Access;
+         Success         : Boolean;
+      begin
          Gprconfig_Path := Locate_Exec_On_Path (Gprconfig_Name);
 
          if Gprconfig_Path = null then
             Fail ("could not locate gprconfig for auto-configuration");
          end if;
 
-         --  First, find the object directory of the main project
+         --  First, find the object directory of the user's project
 
-         declare
-            Obj_Dir : constant Variable_Value :=
-              Value_Of
-                (Name_Object_Dir,
-                 Main_Project.Decl.Attributes,
-                 Project_Tree);
+         if Obj_Dir = Nil_Variable_Value or else Obj_Dir.Default then
+            Get_Name_String (Project.Directory.Name);
 
-         begin
-            if Obj_Dir = Nil_Variable_Value or else Obj_Dir.Default then
-               Get_Name_String (Main_Project.Directory.Name);
+         else
+            if Is_Absolute_Path (Get_Name_String (Obj_Dir.Value)) then
+               Get_Name_String (Obj_Dir.Value);
 
             else
-               if Is_Absolute_Path (Get_Name_String (Obj_Dir.Value)) then
-                  Get_Name_String (Obj_Dir.Value);
-
-               else
-                  Name_Len := 0;
-                  Add_Str_To_Name_Buffer
-                    (Get_Name_String (Main_Project.Directory.Name));
-                  Add_Char_To_Name_Buffer (Directory_Separator);
-                  Add_Str_To_Name_Buffer (Get_Name_String (Obj_Dir.Value));
-               end if;
-            end if;
-
-            if Subdirs /= null then
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer
+                 (Get_Name_String (Project.Directory.Name));
                Add_Char_To_Name_Buffer (Directory_Separator);
-               Add_Str_To_Name_Buffer (Subdirs.all);
+               Add_Str_To_Name_Buffer (Get_Name_String (Obj_Dir.Value));
             end if;
+         end if;
 
-            for J in 1 .. Name_Len loop
-               if Name_Buffer (J) = '/' then
-                  Name_Buffer (J) := Directory_Separator;
-               end if;
-            end loop;
+         if Subdirs /= null then
+            Add_Char_To_Name_Buffer (Directory_Separator);
+            Add_Str_To_Name_Buffer (Subdirs.all);
+         end if;
 
-            Main_Object_Dir := Name_Find;
-         end;
-
-         --  Check if the object directory exists. If Setup_Projects is True
-         --  (-p) and directory does not exist, attempt to create it.
-         --  Otherwise, if directory does not exist, fail without calling
-         --  gprconfig.
+         for J in 1 .. Name_Len loop
+            if Name_Buffer (J) = '/' then
+               Name_Buffer (J) := Directory_Separator;
+            end if;
+         end loop;
 
          declare
-            Obj_Dir : constant String := Get_Name_String (Main_Object_Dir);
+            Obj_Dir  : constant String := Name_Buffer (1 .. Name_Len);
+            Switches : Argument_List_Access := Get_Config_Switches;
+            Args     : Argument_List (1 .. 5);
+            Arg_Last : Positive;
+
          begin
+            --  Check if the object directory exists. If Setup_Projects is True
+            --  (-p) and directory does not exist, attempt to create it.
+            --  Otherwise, if directory does not exist, fail without calling
+            --  gprconfig.
+
             if not Is_Directory (Obj_Dir)
               and then (Setup_Projects or Subdirs /= null)
             then
@@ -500,206 +706,33 @@ package body Confgpr is
             if not Is_Directory (Obj_Dir) then
                Fail ("object directory " & Obj_Dir & " does not exist");
             end if;
-         end;
 
-         --  Get the languages in the user project tree
+            --  Invoke gprconfig
 
-         Project := Project_Tree.Projects;
-         while Project /= null loop
-            declare
-               Search : Boolean := True;
-               Variable : Variable_Value;
-               List : String_List_Id;
-               Elem : String_Element;
-               Lang : Name_Id;
-
-            begin
-               Variable :=
-                 Value_Of
-                   (Name_Source_Dirs,
-                    Project.Project.Decl.Attributes,
-                    Project_Tree);
-               Search :=
-                 Variable = Nil_Variable_Value or else
-                 Variable.Default or else
-                 Variable.Values /= Nil_String;
-
-               if Search then
-                  Variable :=
-                    Value_Of
-                      (Name_Source_Files,
-                       Project.Project.Decl.Attributes,
-                       Project_Tree);
-                  Search :=
-                    Variable = Nil_Variable_Value or else
-                    Variable.Default or else
-                    Variable.Values /= Nil_String;
-               end if;
-
-               if Search then
-                  Variable :=
-                    Value_Of
-                      (Name_Languages,
-                       Project.Project.Decl.Attributes,
-                       Project_Tree);
-
-                  if Variable = Nil_Variable_Value or else
-                     Variable.Default
-                  then
-
-                     --  Languages is not declared. If it is not an extending
-                     --  project, check for Default_Language
-
-                     if Project.Project.Extends = No_Project then
-                        Variable :=
-                          Value_Of
-                            (Name_Default_Language,
-                             Project.Project.Decl.Attributes,
-                             Project_Tree);
-
-                        if Variable /= Nil_Variable_Value and then
-                           not Variable.Default
-                        then
-                           Get_Name_String (Variable.Value);
-                           To_Lower (Name_Buffer (1 .. Name_Len));
-                           Lang := Name_Find;
-                           Language_Htable.Set (Lang, Lang);
-
-                        else
-                           --  If no language is declared, default to Ada
-
-                           Language_Htable.Set (Name_Ada, Name_Ada);
-                        end if;
-                     end if;
-
-                  elsif Variable.Values /= Nil_String then
-
-                     --  Attribute Languages is declared with a non empty
-                     --  list: put all the languages in Language_HTable.
-
-                     List := Variable.Values;
-                     while List /= Nil_String loop
-                        Elem := Project_Tree.String_Elements.Table (List);
-
-                        Get_Name_String (Elem.Value);
-                        To_Lower (Name_Buffer (1 .. Name_Len));
-                        Lang := Name_Find;
-                        Language_Htable.Set (Lang, Lang);
-
-                        List := Elem.Next;
-                     end loop;
-                  end if;
-               end if;
-            end;
-
-            Project := Project.Next;
-         end loop;
-
-         --  If no config file was specified, set the auto.cgpr one
-
-         if Config_Project_File_Name = null then
-            Config_Project_File_Name :=
-              new String'(Get_Name_String (Main_Object_Dir) &
-                          Directory_Separator &
-                          Auto_Cgpr);
-         end if;
-
-         --  Invoke gprconfig
-
-         declare
-            Args     : Argument_List_Access := new Argument_List (1 .. 6);
-            Arg_Last : Positive;
-            Name     : Name_Id;
-            IDE      : constant Package_Id :=
-                         Value_Of
-                           (Name_Ide,
-                            Main_Project.Decl.Packages,
-                            Project_Tree);
-            Comp_Cmd : Variable_Value;
-
-         begin
             Args (1) := new String'("--batch");
             Args (2) := new String'("-o");
-            Args (3) := Config_Project_File_Name;
-            Arg_Last := 3;
+
+            --  If no config file was specified, set the auto.cgpr one
+
+            if Config_File_Name = "" then
+               Args (3) := new String'
+                 (Obj_Dir & Directory_Separator & Auto_Cgpr);
+            else
+               Args (3) := new String'(Config_File_Name);
+            end if;
+
+            if Target_Name = "" then
+               Args (4) := new String'(Target_Project_Option & "all");
+            else
+               Args (4) := new String'(Target_Project_Option & Target_Name);
+            end if;
+
+            Arg_Last := 4;
 
             if not Verbose_Mode then
                Arg_Last := Arg_Last + 1;
                Args (Arg_Last) := new String'("-q");
             end if;
-
-            Arg_Last := Arg_Last + 1;
-
-            if Target_Name = null then
-               Args (Arg_Last) :=
-                 new String'(Target_Project_Option & "all");
-            else
-               Args (Arg_Last) :=
-                 new String'(Target_Project_Option & Target_Name.all);
-            end if;
-
-            Name := Language_Htable.Get_First;
-            while Name /= No_Name loop
-               if Arg_Last = Args'Last then
-                  declare
-                     New_Args : constant String_List_Access :=
-                       new String_List (1 .. Arg_Last * 2);
-                  begin
-                     New_Args (Args'Range) := Args.all;
-                     Args := New_Args;
-                  end;
-               end if;
-
-               Arg_Last := Arg_Last + 1;
-
-               --  Check if IDE'Compiler_Command is declared for the language.
-               --  If it is, use its value to invoke gprconfig.
-
-               Comp_Cmd :=
-                 Value_Of
-                   (Name, Attribute_Or_Array_Name => Name_Compiler_Command,
-                    In_Package                    => IDE,
-                    In_Tree                       => Project_Tree,
-                    Force_Lower_Case_Index        => True);
-
-               declare
-                  Config_Command : constant String :=
-                                     "--config=" & Get_Name_String (Name);
-
-                  Runtime_Name   : constant String :=
-                                     Runtime_Name_For (Name);
-
-               begin
-                  if Comp_Cmd = Nil_Variable_Value or else
-                    Length_Of_Name (Comp_Cmd.Value) = 0
-                  then
-                     Args (Arg_Last) :=
-                       new String'(Config_Command & ",," & Runtime_Name);
-
-                  else
-                     declare
-                        Compiler_Command : constant String :=
-                                             Get_Name_String (Comp_Cmd.Value);
-
-                     begin
-                        if Is_Absolute_Path (Compiler_Command) then
-                           Args (Arg_Last) :=
-                             new String'
-                               (Config_Command & ",," & Runtime_Name & "," &
-                                Containing_Directory (Compiler_Command) & "," &
-                                Simple_Name (Compiler_Command));
-                        else
-                           Args (Arg_Last) :=
-                             new String'
-                               (Config_Command & ",," & Runtime_Name & ",," &
-                                Compiler_Command);
-                        end if;
-                     end;
-                  end if;
-               end;
-
-               Name := Language_Htable.Get_Next;
-            end loop;
 
             if Verbose_Mode then
                Write_Str (Gprconfig_Name);
@@ -709,39 +742,68 @@ package body Confgpr is
                   Write_Str (Args (J).all);
                end loop;
 
+               for J in Switches'Range loop
+                  Write_Char (' ');
+                  Write_Str (Switches (J).all);
+               end loop;
+
                Write_Eol;
 
             elsif not Quiet_Output then
                Write_Str ("creating ");
-               Write_Str (Simple_Name (Config_Project_File_Name.all));
+               Write_Str (Simple_Name (Config_File_Name));
                Write_Eol;
             end if;
 
-            Spawn (Gprconfig_Path.all, Args (1 .. Arg_Last), Success);
+            Spawn (Gprconfig_Path.all, Args (1 .. Arg_Last) & Switches.all,
+                   Success);
 
-            Configuration_Project_Path :=
-              Locate_Regular_File
-                (Config_Project_File_Name.all, Config_Path.all);
+            Free (Switches);
 
-            if Configuration_Project_Path = null then
-               Fail ("could not create " & Config_Project_File_Name.all);
+            Config_File_Path := Locate_Config_File (Args (3).all);
+
+            if Config_File_Path = null then
+               Fail ("could not create " & Args (3).all);
             end if;
+
+            for F in Args'Range loop
+               Free (Args (F));
+            end loop;
          end;
+      end Do_Autoconf;
+
+      Success             : Boolean;
+      Config_Project_Node : Project_Node_Id := Empty_Node;
+
+   begin
+      Free (Config_File_Path);
+
+      if Config_File_Name /= "" then
+         Config_File_Path := Locate_Config_File (Config_File_Name);
+      else
+         Config_File_Path := Locate_Config_File (Default_File_Name);
+      end if;
+
+      if Config_File_Path = null then
+         if Config_File_Name /= "" then
+            Osint.Fail
+              ("could not locate main configuration project " &
+               Config_File_Name);
+         else
+            Osint.Fail ("No default configuration file found");
+         end if;
+      end if;
+
+      Automatically_Generated :=
+        Allow_Automatic_Generation and then Config_File_Path = null;
+
+      <<Process_Config_File>>
+
+      if Automatically_Generated then
+         Do_Autoconf;
       end if;
 
       --  Parse the configuration file
-
-      if Configuration_Project_Path = null then
-         Configuration_Project_Path :=
-           Locate_Regular_File
-             (Config_Project_File_Name.all,
-              Config_Path.all);
-      end if;
-
-      if Configuration_Project_Path = null then
-         Fail
-           ("config file " & Config_Project_File_Name.all & " does not exist");
-      end if;
 
       if Verbose_Mode then
          Write_Line ("Checking configuration");
@@ -751,7 +813,7 @@ package body Confgpr is
       Prj.Part.Parse
         (In_Tree                => Project_Node_Tree,
          Project                => Config_Project_Node,
-         Project_File_Name      => Configuration_Project_Path.all,
+         Project_File_Name      => Config_File_Path.all,
          Always_Errout_Finalize => False,
          Packages_To_Check      => Packages_To_Check,
          Current_Directory      => Current_Directory,
@@ -760,7 +822,7 @@ package body Confgpr is
       if Config_Project_Node /= Empty_Node then
          Prj.Proc.Process_Project_Tree_Phase_1
            (In_Tree                => Project_Tree,
-            Project                => Main_Config_Project,
+            Project                => Config,
             Success                => Success,
             From_Project_Node      => Config_Project_Node,
             From_Project_Node_Tree => Project_Node_Tree,
@@ -768,121 +830,170 @@ package body Confgpr is
             Reset_Tree             => False);
       end if;
 
-      if Config_Project_Node = Empty_Node or else
-        Main_Config_Project = No_Project
+      if Config_Project_Node = Empty_Node
+        or else Config = No_Project
       then
          Osint.Fail
            ("processing of configuration project """ &
-            Configuration_Project_Path.all &
-            """ failed");
+            Config_File_Path.all & """ failed");
       end if;
 
-      --  If not in auto configuration, check attribute Target
+      --  Check that the target of the configuration file is the one the user
+      --  specified on the command line. We do not need to check that when in
+      --  auto-conf mode, since the appropriate target was passed to gprconfig.
 
-      if not Autoconfiguration then
-         declare
-            Target : constant Variable_Value :=
-                       Value_Of
-                         (Name_Target,
-                          Main_Config_Project.Decl.Attributes,
-                          Project_Tree);
-            Tgt_Name : Name_Id := No_Name;
-
-            OK     : Boolean;
-
-         begin
-            if Target /= Nil_Variable_Value and then not Target.Default then
-               Tgt_Name := Target.Value;
-            end if;
-
-            if Target_Name = null then
-               OK := (not Autoconf_Specified) or Tgt_Name = No_Name;
-
-            else
-               OK := (Tgt_Name /= No_Name) and then
-                     Target_Name.all = Get_Name_String (Tgt_Name);
-            end if;
-
-            if not OK then
-               if Autoconf_Specified then
-                  if Verbose_Mode then
-                     Write_Line
-                       ("inconsistent targets, performing auto configuration");
-                  end if;
-
-                  Autoconfiguration := True;
-                  goto Do_Autoconf;
-
-               else
-                  if Tgt_Name /= No_Name then
-                     Osint.Fail ("invalid target name """ &
-                                 Get_Name_String (Tgt_Name) &
-                                 """ in configuration");
-
-                  else
-                     Osint.Fail ("no target specified in configuration");
-                  end if;
-               end if;
-            end if;
-         end;
+      if not Automatically_Generated
+        and not Check_Target (Config, Project_Tree, Target_Name)
+      then
+         Automatically_Generated := True;
+         goto Process_Config_File;
       end if;
 
-      --  Add the configuration attributes to all user projects
+   end Get_Or_Create_Configuration_File;
 
-      declare
-         Conf_Decl    : constant Declarations := Main_Config_Project.Decl;
-         Conf_Pack_Id : Package_Id;
-         Conf_Pack    : Package_Element;
+   -----------------------
+   -- Get_Configuration --
+   -----------------------
 
-         User_Decl    : Declarations;
-         User_Pack_Id : Package_Id;
-         User_Pack    : Package_Element;
-         Proj         : Project_List;
-      begin
-         Proj := Project_Tree.Projects;
-         while Proj /= null loop
-            if Proj.Project /= Main_Config_Project then
-               User_Decl := Proj.Project.Decl;
-               Add_Attributes
-                 (Conf_Decl => Conf_Decl,
-                  User_Decl => User_Decl);
+   procedure Get_Configuration (Packages_To_Check : String_List_Access) is
+      Main_Config_Project : Project_Id;
 
-               Conf_Pack_Id := Conf_Decl.Packages;
-               while Conf_Pack_Id /= No_Package loop
-                  Conf_Pack := Project_Tree.Packages.Table (Conf_Pack_Id);
+   begin
+      --  Parse the user project tree
 
-                  User_Pack_Id := User_Decl.Packages;
-                  while User_Pack_Id /= No_Package loop
-                     User_Pack := Project_Tree.Packages.Table (User_Pack_Id);
-                     exit when User_Pack.Name = Conf_Pack.Name;
-                     User_Pack_Id := User_Pack.Next;
-                  end loop;
+      Prj.Initialize (Project_Tree);
+      Prj.Tree.Initialize (Project_Node_Tree);
 
-                  if User_Pack_Id = No_Package then
-                     Package_Table.Increment_Last (Project_Tree.Packages);
-                     User_Pack := Conf_Pack;
-                     User_Pack.Next := User_Decl.Packages;
-                     User_Decl.Packages :=
-                       Package_Table.Last (Project_Tree.Packages);
-                     Project_Tree.Packages.Table (User_Decl.Packages) :=
-                       User_Pack;
+      Prj.Part.Parse
+        (In_Tree                => Project_Node_Tree,
+         Project                => User_Project_Node,
+         Project_File_Name      => Project_File_Name.all,
+         Always_Errout_Finalize => False,
+         Packages_To_Check      => Packages_To_Check,
+         Current_Directory      => Current_Directory,
+         Is_Config_File         => False);
 
-                  else
-                     Add_Attributes
-                       (Conf_Decl => Conf_Pack.Decl,
-                        User_Decl => Project_Tree.Packages.Table
-                          (User_Pack_Id).Decl);
-                  end if;
+      if User_Project_Node = Empty_Node then
+         --  Don't flush messages. This has already been taken care of by the
+         --  above call. Otherwise, it results in se same message being
+         --  displayed twice.
 
-                  Conf_Pack_Id := Conf_Pack.Next;
+         Fail_Program
+           ("""" & Project_File_Name.all & """ processing failed",
+            Flush_Messages => False);
+      end if;
+
+      Process_Project_Tree_Phase_1
+        (In_Tree                => Project_Tree,
+         Project                => Main_Project,
+         Success                => Success,
+         From_Project_Node      => User_Project_Node,
+         From_Project_Node_Tree => Project_Node_Tree,
+         Report_Error           => null);
+
+      if not Success then
+         Fail_Program ("""" & Project_File_Name.all & """ processing failed");
+      end if;
+
+      --  Check command line arguments. These will be overridden when looking
+      --  for the configuration file
+
+      if Config_Project_File_Name = null then
+         Config_Project_File_Name := new String'("");
+      end if;
+
+      if Target_Name = null then
+         Target_Name := new String'("");
+      end if;
+
+      if RTS_Name = null then
+         RTS_Name := new String'("");
+      end if;
+
+      --  Find configuration file
+
+      Get_Or_Create_Configuration_File
+        (Config                     => Main_Config_Project,
+         Project                    => Main_Project,
+         Project_Tree               => Project_Tree,
+         Project_Node_Tree          => Project_Node_Tree,
+         Allow_Automatic_Generation => Autoconfiguration,
+         Config_File_Name           => Config_Project_File_Name.all,
+         Target_Name                => Target_Name.all,
+         RTS_Name                   => RTS_Name.all,
+         Packages_To_Check          => Packages_To_Check,
+         Config_File_Path           => Configuration_Project_Path,
+         Automatically_Generated    => Delete_Autoconf_File);
+
+      Free (Config_Project_File_Name);
+      Config_Project_File_Name := new String'
+        (Base_Name (Configuration_Project_Path.all));
+
+      Apply_Config_File (Main_Config_Project, Project_Tree);
+   end Get_Configuration;
+
+   -----------------------
+   -- Apply_Config_File --
+   -----------------------
+
+   procedure Apply_Config_File
+     (Config_File  : Prj.Project_Id;
+      Project_Tree : Prj.Project_Tree_Ref)
+   is
+      Conf_Decl    : constant Declarations := Config_File.Decl;
+      Conf_Pack_Id : Package_Id;
+      Conf_Pack    : Package_Element;
+
+      User_Decl    : Declarations;
+      User_Pack_Id : Package_Id;
+      User_Pack    : Package_Element;
+      Proj         : Project_List;
+
+   begin
+      Proj := Project_Tree.Projects;
+
+      while Proj /= null loop
+         if Proj.Project /= Config_File then
+            User_Decl := Proj.Project.Decl;
+            Add_Attributes
+              (Conf_Decl => Conf_Decl,
+               User_Decl => User_Decl);
+
+            Conf_Pack_Id := Conf_Decl.Packages;
+            while Conf_Pack_Id /= No_Package loop
+               Conf_Pack := Project_Tree.Packages.Table (Conf_Pack_Id);
+
+               User_Pack_Id := User_Decl.Packages;
+               while User_Pack_Id /= No_Package loop
+                  User_Pack := Project_Tree.Packages.Table (User_Pack_Id);
+                  exit when User_Pack.Name = Conf_Pack.Name;
+                  User_Pack_Id := User_Pack.Next;
                end loop;
 
-               Proj.Project.Decl := User_Decl;
-            end if;
+               if User_Pack_Id = No_Package then
+                  Package_Table.Increment_Last (Project_Tree.Packages);
+                  User_Pack := Conf_Pack;
+                  User_Pack.Next := User_Decl.Packages;
+                  User_Decl.Packages :=
+                    Package_Table.Last (Project_Tree.Packages);
+                  Project_Tree.Packages.Table (User_Decl.Packages) :=
+                    User_Pack;
 
-            Proj := Proj.Next;
-         end loop;
-      end;
-   end Get_Configuration;
+               else
+                  Add_Attributes
+                    (Conf_Decl => Conf_Pack.Decl,
+                     User_Decl => Project_Tree.Packages.Table
+                       (User_Pack_Id).Decl);
+               end if;
+
+               Conf_Pack_Id := Conf_Pack.Next;
+            end loop;
+
+            Proj.Project.Decl := User_Decl;
+         end if;
+
+         Proj := Proj.Next;
+      end loop;
+   end Apply_Config_File;
 
 end Confgpr;
