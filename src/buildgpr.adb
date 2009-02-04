@@ -8610,6 +8610,12 @@ package body Buildgpr is
       Free (Object_Path);
       Free (Switches_Name);
 
+      --  No need to compile if there is no "compiler"
+
+      if Length_Of_Name (Source.Language.Config.Compiler_Driver) = 0 then
+         return False;
+      end if;
+
       if Source.Language.Config.Object_Generated then
          Object_Name := new String'(Get_Name_String (Source.Object));
          C_Object_Name := new String'(Object_Name.all);
@@ -8635,8 +8641,8 @@ package body Buildgpr is
       end if;
 
       if not Source.Language.Config.Object_Generated then
-      --  If no object file is generated, the "compiler" need to be invoked if
-      --  there is no dependency file.
+         --  If no object file is generated, the "compiler" need to be invoked
+         --  if there is no dependency file.
 
          if Source.Dependency = None then
             if Verbose_Mode then
