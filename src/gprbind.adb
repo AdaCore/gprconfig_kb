@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -316,7 +316,9 @@ begin
                      GNATBIND := new String'
                        (Line (Ada_Binder_Equal'Length + 1 .. Last));
 
-                  else
+                  --  Do not use -v to avoid polluting the list of bound files
+
+                  elsif Line (1 .. Last) /= "-v" then
                      Binding_Options_Table.Append
                                              (new String'(Line (1 .. Last)));
                   end if;
