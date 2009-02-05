@@ -925,6 +925,8 @@ package body Confgpr is
          Config_File_Path           => Configuration_Project_Path,
          Automatically_Generated    => Delete_Autoconf_File);
 
+      Delete_Autoconf_File := Delete_Autoconf_File or Autoconf_Specified;
+
       Free (Config_Project_File_Name);
       Config_Project_File_Name := new String'
         (Base_Name (Configuration_Project_Path.all));
