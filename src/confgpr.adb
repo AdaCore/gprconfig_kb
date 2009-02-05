@@ -785,7 +785,9 @@ package body Confgpr is
       end if;
 
       if Config_File_Path = null then
-         if Config_File_Name /= "" then
+         if (not Allow_Automatic_Generation) and then
+            Config_File_Name /= ""
+         then
             Osint.Fail
               ("could not locate main configuration project " &
                Config_File_Name);
