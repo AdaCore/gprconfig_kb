@@ -5922,6 +5922,9 @@ package body Buildgpr is
          end if;
 
          Link_Only := False;
+
+      elsif Output_File_Name /= null and then Mains.Number_Of_Mains /= 1 then
+         Fail_Program ("cannot specify -o when there are several mains");
       end if;
    end Get_Mains;
 
@@ -7069,13 +7072,20 @@ package body Buildgpr is
                Write_Line (" ...");
             end if;
 
-            Exec_Name := Executable_Of
-              (Project  => Main_Proj,
-               In_Tree  => Project_Tree,
-               Main     => Main_Id,
-               Index    => 0,
-               Ada_Main => False,
-               Language => Get_Name_String (Main_Source.Language.Name));
+            if Output_File_Name /= null then
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Output_File_Name.all);
+               Exec_Name := Name_Find;
+
+            else
+               Exec_Name := Executable_Of
+                 (Project  => Main_Proj,
+                  In_Tree  => Project_Tree,
+                  Main     => Main_Id,
+                  Index    => 0,
+                  Ada_Main => False,
+                  Language => Get_Name_String (Main_Source.Language.Name));
+            end if;
 
             if Main_Proj.Exec_Directory = Main_Proj.Object_Directory then
                Exec_Path_Name := Path_Name_Type (Exec_Name);
