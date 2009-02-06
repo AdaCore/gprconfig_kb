@@ -69,8 +69,8 @@ project Gprbuild is
              -- , "-gnatwe"
              -- , "-gnatyg"
              );
-            --  ??? re-enable when gprbuild works with initialize_scalars
-            -- for Local_Configuration_Pragmas use "debug.adc";
+
+            for Local_Configuration_Pragmas use "debug.adc";
          when "coverage" =>
             for Default_Switches ("Ada") use common_switches &
               ("-ftest-coverage", "-fprofile-arcs");
