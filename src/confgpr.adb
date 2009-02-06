@@ -925,6 +925,10 @@ package body Confgpr is
          Config_File_Path           => Configuration_Project_Path,
          Automatically_Generated    => Delete_Autoconf_File);
 
+      --  Even if the config project file has not been automatically
+      --  generated, gprclean will delete it if it was specified using
+      --  --autoconf=.
+
       Delete_Autoconf_File := Delete_Autoconf_File or Autoconf_Specified;
 
       Free (Config_Project_File_Name);
