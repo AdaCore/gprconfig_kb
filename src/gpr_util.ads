@@ -100,6 +100,9 @@ package Gpr_Util is
    --  Whether the user specified --autoconf on the gprbuild command line
 
    Delete_Autoconf_File : Boolean := False;
+   --  This variable is used by gprclean to decide if the config project file
+   --  should be cleaned. It is set to True when the config project file is
+   --  automatically generated or --autoconf= is used.
 
    --  Default project
 
