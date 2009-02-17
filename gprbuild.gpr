@@ -2,18 +2,18 @@ with "xmlada";
 
 project Gprbuild is
    type OS_Type is ("unix", "avms", "ivms", "Windows_NT");
-   OS : OS_Type := External ("OS", "unix");
+   OS : OS_Type := external ("OS", "unix");
 
    type Build_Type is ("debug", "production", "coverage", "profiling");
-   Bld : Build_Type := External ("BUILD", "debug");
+   Bld : Build_Type := external ("BUILD", "debug");
 
    type Build_Tool_Type is ("gnatmake", "gprbuild");
-   Build_Tool : Build_Tool_Type := External ("BUILD_TOOL", "gnatmake");
+   Build_Tool : Build_Tool_Type := external ("BUILD_TOOL", "gnatmake");
 
    type VCS_Type is ("Subversion", "Git", "auto");
    VCS_Kind : VCS_Type := external ("PRJ_VCS", "Subversion");
 
-   Processors := External ("PROCESSORS", "1");
+   Processors := external ("PROCESSORS", "1");
 
    for Main use
        ("gprconfig-main.adb",
