@@ -172,7 +172,7 @@ package body Buildgpr is
      Table_Low_Bound      => 1,
      Table_Initial        => 20,
      Table_Increment      => 100,
-     Table_Name           => "Makegpr.Bad_Compilations");
+     Table_Name           => "Buildgpr.Bad_Compilations");
    --  Full name of all the source files for which compilation fails
 
    -------------------------------------------
@@ -189,7 +189,8 @@ package body Buildgpr is
          Verbose_Mode_Option,
          Warnings_Treat_As_Error,
          Warnings_Normal,
-         Warnings_Suppress);
+         Warnings_Suppress,
+         Indirect_Imports);
 
       All_Phases   : Boolean := True;
       --  True when all phases (compilation, binding and linking) are to be
@@ -8834,6 +8835,10 @@ package body Buildgpr is
 
                when Warnings_Suppress =>
                   Warning_Mode := Suppress;
+
+               when Indirect_Imports =>
+                  Buildgpr.Indirect_Imports :=
+                    Command_Line_Options.Table (Index).Value /= 0;
             end case;
          end loop;
       end Process_Command_Line_Options;
@@ -10718,15 +10723,22 @@ package body Buildgpr is
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
-         elsif Command_Line and then Arg = Indirect_Imports_Switch then
+         elsif Arg = Indirect_Imports_Switch then
             Indirect_Imports := True;
 
-         elsif Command_Line and then
-           (Arg = No_Indirect_Imports_Switch
-            or else
-            Arg = Direct_Import_Only_Switch)
+            if Command_Line then
+               Register_Command_Line_Option (Options.Indirect_Imports, 1);
+            end if;
+
+         elsif Arg = No_Indirect_Imports_Switch
+               or else
+               Arg = Direct_Import_Only_Switch
          then
             Indirect_Imports := False;
+
+            if Command_Line then
+               Register_Command_Line_Option (Options.Indirect_Imports, 0);
+            end if;
 
          elsif Command_Line
                and then Arg = Gpr_Util.Unchecked_Shared_Lib_Imports
