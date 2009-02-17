@@ -384,6 +384,23 @@
   </configuration>
 
   <configuration>
+    <targets>
+      <target name="^.*linux.*$" />
+      <target name="^.*sunos.*$" />
+      <target name="^.*solaris.*$" />
+    </targets>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
+    <config>
+   package Binder is
+      for Required_Switches ("Ada") use
+         Binder'Required_Switches ("Ada") &amp; "-shared";
+   end Binder;
+    </config>
+  </configuration>
+
+  <configuration>
     <compilers negate="true">
        <compiler language="C++" />
     </compilers>
