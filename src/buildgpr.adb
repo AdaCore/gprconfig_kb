@@ -56,7 +56,6 @@ with Prj;              use Prj;
 with Prj.Env;
 with Prj.Err;
 with Prj.Ext;          use Prj.Ext;
-with Prj.Proc;         use Prj.Proc;
 with Prj.Util;         use Prj.Util;
 with Scans;
 with Sinput.C;
@@ -6074,36 +6073,50 @@ package body Buildgpr is
 
       Install_Int_Handler (Sigint_Intercepted'Access);
 
+      --  Check command line arguments. These will be overridden when looking
+      --  for the configuration file
+
+      if Target_Name = null then
+         Target_Name := new String'("");
+      end if;
+
+      if RTS_Name = null then
+         RTS_Name := new String'("");
+      end if;
+
+      if Config_Project_File_Name = null then
+         Config_Project_File_Name := new String'("");
+      end if;
+
       --  Then, parse the user's project and the configuration file. Apply the
       --  configuration file to the project so that its settings are
       --  automatically inherited by the project.
+      --  If either the project or the configuration file contains errors, the
+      --  following call with call Osint.Fail and never return
 
-      Get_Configuration (Packages_To_Check);
+      Parse_Project_And_Apply_Config
+        (Main_Project               => Main_Project,
+         Config_File_Name           => Config_Project_File_Name.all,
+         Project_File_Name          => Project_File_Name.all,
+         Project_Tree               => Project_Tree,
+         Project_Node_Tree          => Project_Node_Tree,
+         Packages_To_Check          => Packages_To_Check,
+         Allow_Automatic_Generation => Autoconfiguration,
+         Automatically_Generated    => Delete_Autoconf_File,
+         Config_File_Path           => Configuration_Project_Path,
+         Target_Name                => Target_Name.all,
+         RTS_Name                   => RTS_Name.all);
+
+      if Configuration_Project_Path /= null then
+         Free (Config_Project_File_Name);
+         Config_Project_File_Name := new String'
+           (Base_Name (Configuration_Project_Path.all));
+      end if;
 
       if Total_Errors_Detected > 0 then
          Prj.Err.Finalize;
          Fail_Program
            ("problems while getting the configuration",
-            Flush_Messages => False);
-      end if;
-
-      --  Finish processing the main project
-
-      Prj.Proc.Process_Project_Tree_Phase_2
-        (In_Tree                => Project_Tree,
-         Project                => Main_Project,
-         Success                => Gpr_Util.Success,
-         From_Project_Node      => User_Project_Node,
-         From_Project_Node_Tree => Project_Node_Tree,
-         Report_Error           => null,
-         Current_Dir            => Get_Current_Dir,
-         When_No_Sources        => Warning,
-         Is_Config_File         => False);
-
-      if not Gpr_Util.Success then
-         Prj.Err.Finalize;
-         Fail_Program
-           ("""" & Project_File_Name.all & """ processing failed",
             Flush_Messages => False);
       end if;
 

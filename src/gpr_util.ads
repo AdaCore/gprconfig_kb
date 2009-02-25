@@ -42,7 +42,7 @@ package Gpr_Util is
    Begin_Info : constant String := "--  BEGIN Object file/option list";
    End_Info   : constant String := "--  END Object file/option list   ";
 
-   User_Project_Node   : Project_Node_Id := Empty_Node;
+--     User_Project_Node   : Project_Node_Id := Empty_Node;
 
    Project_Node_Tree : constant Project_Node_Tree_Ref :=
      new Project_Node_Tree_Data;

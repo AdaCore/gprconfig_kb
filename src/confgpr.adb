@@ -33,10 +33,12 @@ with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
 with Prj;      use Prj;
+with Prj.Err;  use Prj.Err;
 with Prj.Part;
 with Prj.Proc; use Prj.Proc;
 with Prj.Tree; use Prj.Tree;
 with Prj.Util; use Prj.Util;
+with Sinput.P;
 with Snames;   use Snames;
 with Types;    use Types;
 
@@ -59,8 +61,9 @@ package body Confgpr is
    Gprconfig_Name : constant String := "gprconfig";
 
    procedure Add_Attributes
-     (Conf_Decl : Declarations;
-      User_Decl : in out Declarations);
+     (Project_Tree : Project_Tree_Ref;
+      Conf_Decl    : Declarations;
+      User_Decl    : in out Declarations);
    --  Process the attributes in the config declarations.
    --  For single string values, if the attribute is not declared in the user
    --  declarations, declare it with the value in the config declarations.
@@ -86,8 +89,9 @@ package body Confgpr is
    --------------------
 
    procedure Add_Attributes
-     (Conf_Decl : Declarations;
-      User_Decl : in out Declarations)
+     (Project_Tree : Project_Tree_Ref;
+      Conf_Decl    : Declarations;
+      User_Decl    : in out Declarations)
    is
       Conf_Attr_Id       : Variable_Id;
       Conf_Attr          : Variable;
@@ -848,15 +852,28 @@ package body Confgpr is
          Automatically_Generated := True;
          goto Process_Config_File;
       end if;
-
    end Get_Or_Create_Configuration_File;
 
-   -----------------------
-   -- Get_Configuration --
-   -----------------------
+   ------------------------------------
+   -- Parse_Project_And_Apply_Config --
+   ------------------------------------
 
-   procedure Get_Configuration (Packages_To_Check : String_List_Access) is
+   procedure Parse_Project_And_Apply_Config
+     (Main_Project               : out Prj.Project_Id;
+      Config_File_Name           : String := "";
+      Project_File_Name          : String;
+      Project_Tree               : Prj.Project_Tree_Ref;
+      Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
+      Packages_To_Check          : String_List_Access;
+      Allow_Automatic_Generation : Boolean := True;
+      Automatically_Generated    : out Boolean;
+      Config_File_Path           : out String_Access;
+      Target_Name                : String := "";
+      RTS_Name                   : String := "")
+   is
+      User_Project_Node   : Project_Node_Id;
       Main_Config_Project : Project_Id;
+      Success : Boolean;
 
    begin
       --  Parse the user project tree
@@ -867,7 +884,7 @@ package body Confgpr is
       Prj.Part.Parse
         (In_Tree                => Project_Node_Tree,
          Project                => User_Project_Node,
-         Project_File_Name      => Project_File_Name.all,
+         Project_File_Name      => Project_File_Name,
          Always_Errout_Finalize => False,
          Packages_To_Check      => Packages_To_Check,
          Current_Directory      => Current_Directory,
@@ -879,7 +896,7 @@ package body Confgpr is
          --  displayed twice.
 
          Fail_Program
-           ("""" & Project_File_Name.all & """ processing failed",
+           ("""" & Project_File_Name & """ processing failed",
             Flush_Messages => False);
       end if;
 
@@ -892,22 +909,7 @@ package body Confgpr is
          Report_Error           => null);
 
       if not Success then
-         Fail_Program ("""" & Project_File_Name.all & """ processing failed");
-      end if;
-
-      --  Check command line arguments. These will be overridden when looking
-      --  for the configuration file
-
-      if Config_Project_File_Name = null then
-         Config_Project_File_Name := new String'("");
-      end if;
-
-      if Target_Name = null then
-         Target_Name := new String'("");
-      end if;
-
-      if RTS_Name = null then
-         RTS_Name := new String'("");
+         Fail_Program ("""" & Project_File_Name & """ processing failed");
       end if;
 
       --  Find configuration file
@@ -917,26 +919,36 @@ package body Confgpr is
          Project                    => Main_Project,
          Project_Tree               => Project_Tree,
          Project_Node_Tree          => Project_Node_Tree,
-         Allow_Automatic_Generation => Autoconfiguration,
-         Config_File_Name           => Config_Project_File_Name.all,
-         Target_Name                => Target_Name.all,
-         RTS_Name                   => RTS_Name.all,
+         Allow_Automatic_Generation => Allow_Automatic_Generation,
+         Config_File_Name           => Config_File_Name,
+         Target_Name                => Target_Name,
+         RTS_Name                   => RTS_Name,
          Packages_To_Check          => Packages_To_Check,
-         Config_File_Path           => Configuration_Project_Path,
-         Automatically_Generated    => Delete_Autoconf_File);
-
-      --  Even if the config project file has not been automatically
-      --  generated, gprclean will delete it if it was specified using
-      --  --autoconf=.
-
-      Delete_Autoconf_File := Delete_Autoconf_File or Autoconf_Specified;
-
-      Free (Config_Project_File_Name);
-      Config_Project_File_Name := new String'
-        (Base_Name (Configuration_Project_Path.all));
+         Config_File_Path           => Config_File_Path,
+         Automatically_Generated    => Automatically_Generated);
 
       Apply_Config_File (Main_Config_Project, Project_Tree);
-   end Get_Configuration;
+
+      --  Finish processing the user's project
+
+      Sinput.P.Reset_First;
+
+      Prj.Proc.Process_Project_Tree_Phase_2
+        (In_Tree                => Project_Tree,
+         Project                => Main_Project,
+         Success                => Success,
+         From_Project_Node      => User_Project_Node,
+         From_Project_Node_Tree => Project_Node_Tree,
+         Report_Error           => null,
+         Current_Dir            => Current_Directory,
+         When_No_Sources        => Silent,
+         Is_Config_File         => False);
+
+      if not Success then
+         Prj.Err.Finalize;
+         Osint.Fail ("""" & Project_File_Name & """ processing failed");
+      end if;
+   end Parse_Project_And_Apply_Config;
 
    -----------------------
    -- Apply_Config_File --
@@ -962,8 +974,9 @@ package body Confgpr is
          if Proj.Project /= Config_File then
             User_Decl := Proj.Project.Decl;
             Add_Attributes
-              (Conf_Decl => Conf_Decl,
-               User_Decl => User_Decl);
+              (Project_Tree => Project_Tree,
+               Conf_Decl    => Conf_Decl,
+               User_Decl    => User_Decl);
 
             Conf_Pack_Id := Conf_Decl.Packages;
             while Conf_Pack_Id /= No_Package loop
@@ -987,8 +1000,9 @@ package body Confgpr is
 
                else
                   Add_Attributes
-                    (Conf_Decl => Conf_Pack.Decl,
-                     User_Decl => Project_Tree.Packages.Table
+                    (Project_Tree => Project_Tree,
+                     Conf_Decl    => Conf_Pack.Decl,
+                     User_Decl    => Project_Tree.Packages.Table
                        (User_Pack_Id).Decl);
                end if;
 

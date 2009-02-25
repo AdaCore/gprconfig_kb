@@ -32,7 +32,18 @@ with Prj.Tree;
 
 package Confgpr is
 
-   procedure Get_Configuration (Packages_To_Check : String_List_Access);
+   procedure Parse_Project_And_Apply_Config
+     (Main_Project               : out Prj.Project_Id;
+      Config_File_Name           : String := "";
+      Project_File_Name          : String;
+      Project_Tree               : Prj.Project_Tree_Ref;
+      Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
+      Packages_To_Check          : String_List_Access;
+      Allow_Automatic_Generation : Boolean := True;
+      Automatically_Generated    : out Boolean;
+      Config_File_Path           : out String_Access;
+      Target_Name                : String := "";
+      RTS_Name                   : String := "");
    --  Find the main configuration project and parse the project tree rooted at
    --  this configuration project. Fails if there is an error.
    --  This is a gprbuild-specific implementation that relies on several

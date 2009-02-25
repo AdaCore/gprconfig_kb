@@ -42,11 +42,8 @@ with Namet;       use Namet;
 with Opt;         use Opt;
 with Osint;
 with Prj;         use Prj;
-with Prj.Err;
 with Prj.Ext;
-with Prj.Proc;    use Prj.Proc;
 with Prj.Util;    use Prj.Util;
-with Sinput.P;
 with Snames;
 with Switch;      use Switch;
 with Table;
@@ -1034,26 +1031,44 @@ package body Cleangpr is
          New_Line;
       end if;
 
-      Get_Configuration (Packages_To_Check);
+      --  Check command line arguments. These will be overridden when looking
+      --  for the configuration file
 
-      --  Finish processing the project file
+      if Target_Name = null then
+         Target_Name := new String'("");
+      end if;
 
-      Sinput.P.Reset_First;
+      if RTS_Name = null then
+         RTS_Name := new String'("");
+      end if;
 
-      Prj.Proc.Process_Project_Tree_Phase_2
-        (In_Tree                => Project_Tree,
-         Project                => Main_Project,
-         Success                => Gpr_Util.Success,
-         From_Project_Node      => User_Project_Node,
-         From_Project_Node_Tree => Project_Node_Tree,
-         Report_Error           => null,
-         Current_Dir            => Get_Current_Dir,
-         When_No_Sources        => Silent,
-         Is_Config_File         => False);
+      if Config_Project_File_Name = null then
+         Config_Project_File_Name := new String'("");
+      end if;
 
-      if not Gpr_Util.Success then
-         Prj.Err.Finalize;
-         Osint.Fail ("""" & Project_File_Name.all & """ processing failed");
+      Parse_Project_And_Apply_Config
+        (Main_Project               => Main_Project,
+         Config_File_Name           => Config_Project_File_Name.all,
+         Project_File_Name          => Project_File_Name.all,
+         Project_Tree               => Project_Tree,
+         Project_Node_Tree          => Project_Node_Tree,
+         Packages_To_Check          => Packages_To_Check,
+         Allow_Automatic_Generation => Autoconfiguration,
+         Automatically_Generated    => Delete_Autoconf_File,
+         Config_File_Path           => Configuration_Project_Path,
+         Target_Name                => Target_Name.all,
+         RTS_Name                   => RTS_Name.all);
+
+      --  Even if the config project file has not been automatically
+      --  generated, gprclean will delete it if it was specified using
+      --  --autoconf=.
+
+      Delete_Autoconf_File := Delete_Autoconf_File or Autoconf_Specified;
+
+      if Configuration_Project_Path /= null then
+         Free (Config_Project_File_Name);
+         Config_Project_File_Name := new String'
+           (Base_Name (Configuration_Project_Path.all));
       end if;
 
       if Opt.Verbose_Mode then
