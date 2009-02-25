@@ -6074,7 +6074,9 @@ package body Buildgpr is
 
       Install_Int_Handler (Sigint_Intercepted'Access);
 
-      --  Then, get the configuration
+      --  Then, parse the user's project and the configuration file. Apply the
+      --  configuration file to the project so that its settings are
+      --  automatically inherited by the project.
 
       Get_Configuration (Packages_To_Check);
 
