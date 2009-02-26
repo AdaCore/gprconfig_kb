@@ -941,7 +941,7 @@ package body Confgpr is
          From_Project_Node_Tree => Project_Node_Tree,
          Report_Error           => null,
          Current_Dir            => Current_Directory,
-         When_No_Sources        => Silent,
+         When_No_Sources        => Warning,
          Is_Config_File         => False);
 
       if not Success then
