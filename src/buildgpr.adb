@@ -7370,6 +7370,7 @@ package body Buildgpr is
 
                   if Proj.Extended_By = No_Project
                     and then Proj.Library
+                    and then Proj.Object_Directory /= No_Path_Information
                   then
                      Change_Dir
                        (Get_Name_String (Proj.Object_Directory.Name));
