@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---                   Copyright (C) 2006-2008, AdaCore                       --
+--                   Copyright (C) 2006-2009, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -36,13 +36,6 @@ with GNAT.Regpat;
 with Namet;
 
 package GprConfig.Knowledge is
-
-   Verbose_Level : Natural := 0;
-   --  What level of debug traces to display. The higher, the more messages
-   --  we show
-
-   Quiet_Output : Boolean := False;
-   --  Whether or not to display any message other than error messages
 
    Generate_Error : exception;
    --  To be raised when an error occurs during generation of config files.
@@ -213,10 +206,6 @@ package GprConfig.Knowledge is
    --  Get the target alias set id for a target.  If not already in the base,
    --  add it.
 
-   function TU (Str : String) return Ada.Strings.Unbounded.Unbounded_String;
-   --  returns an unbounded string for Str (or Null_Unbounded_String if
-   --  Str is the empty string)
-
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
      (String);
 
@@ -232,12 +221,6 @@ package GprConfig.Knowledge is
    --  runtimes
    --  If Allow_Empty_Elements is false, then empty strings are not stored in
    --  the list.
-
-   function Get_Program_Directory return String;
-   --  Get the directory in which the application is installed. For instance,
-   --  it would return /usr/local if the gprconfig executable is
-   --  /usr/local/bin/gprconfig.
-   --  The returned value always ends with a directory separator
 
    function Name_As_Directory (Dir : String) return String;
    --  Ensure that Dir ends with a directory separator

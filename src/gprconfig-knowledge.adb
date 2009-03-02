@@ -46,7 +46,10 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Regpat;               use GNAT.Regpat;
 with GNAT.Strings;              use GNAT.Strings;
 with GprConfig.Sdefault;        use GprConfig.Sdefault;
+with Makeutl;                   use Makeutl;
 with Namet;                     use Namet;
+with Opt;
+with Prj;                       use Prj;
 with Sax.Readers;               use Sax.Readers;
 
 package body GprConfig.Knowledge is
@@ -374,7 +377,7 @@ package body GprConfig.Knowledge is
 
    procedure Put_Verbose (Str : String; Indent_Delta : Integer := 0) is
    begin
-      if Verbose_Level > 0 then
+      if Current_Verbosity /= Default then
          if Indent_Delta < 0 then
             Indentation_Level := Indentation_Level - 2;
          end if;
@@ -404,66 +407,6 @@ package body GprConfig.Knowledge is
          return Dir & Directory_Separator;
       end if;
    end Name_As_Directory;
-
-   ---------------------------
-   -- Get_Program_Directory --
-   ---------------------------
-
-   function Get_Program_Directory return String is
-      function Get_Command return String;
-      --  Return the full path to the command being executed
-
-      function Get_Command return String is
-         Tmp : constant String := Dir_Name (Ada.Command_Line.Command_Name);
-         Tmp2 : GNAT.Strings.String_Access;
-      begin
-         --  On unix, command_name doesn't include the directory name when the
-         --  command was found on the PATH. In such a case, which check on the
-         --  PATH ourselves to find it.
-
-         if Tmp = "" or else Tmp = "./" or else Tmp = ".\" then
-            Tmp2 := Locate_Exec_On_Path (Ada.Command_Line.Command_Name);
-            if GNAT.Strings."=" (Tmp2, null) then
-               return Tmp;
-            else
-               declare
-                  S : constant String := Containing_Directory (Tmp2.all);
-               begin
-                  GNAT.Strings.Free (Tmp2);
-                  return S;
-               end;
-            end if;
-         else
-            return Containing_Directory (Ada.Command_Line.Command_Name);
-         end if;
-      end Get_Command;
-
-      Command : constant String := Name_As_Directory (Get_Command);
-      Normalized : constant String := Normalize_Pathname
-        (Command & "..", Resolve_Links => True);
-   begin
-      if Is_Regular_File (Command & "src/gprconfig.ads") then
-         --  Special case for gprconfig developers
-         if Is_Directory (Command & "share") then
-            return Command;
-         end if;
-      end if;
-
-      return Name_As_Directory (Normalized);
-   end Get_Program_Directory;
-
-   --------
-   -- TU --
-   --------
-
-   function TU (Str : String) return Unbounded_String is
-   begin
-      if Str = "" then
-         return Null_Unbounded_String;
-      else
-         return To_Unbounded_String (Str);
-      end if;
-   end TU;
 
    --------------------------
    -- Parse_External_Value --
@@ -1067,7 +1010,7 @@ package body GprConfig.Knowledge is
       elsif Name = "PATH" then
          return Get_Name_String (Comp.Path);
       elsif Name = "GPRCONFIG_PREFIX" then
-         return Get_Program_Directory;
+         return Executable_Prefix_Path;
       end if;
       Put_Line (Standard_Error, "variable '" & Name & "' is not defined");
       return "";
@@ -1217,7 +1160,7 @@ package body GprConfig.Knowledge is
                File   : Directory_Entry_Type;
                Filter : Ada.Directories.Filter_Type;
             begin
-               if Verbose_Level > 0 and then File_Re = ".." then
+               if Current_Verbosity /= Default and then File_Re = ".." then
                   Put_Verbose
                     ("Potential error: .. is generally not meant as a regexp,"
                      & " and should be quoted in this case, as in \.\.");
@@ -1367,10 +1310,10 @@ package body GprConfig.Knowledge is
                         Ada.Environment_Variables.Set ("PATH", Saved_Path);
                         Tmp_Result := To_Unbounded_String (Output);
 
-                        if Verbose_Level > 1 then
+                        if Current_Verbosity = High then
                            Put_Verbose (Attribute & ": executing """ & Command
                                         & """ output=""" & Output & """");
-                        elsif Verbose_Level > 0 then
+                        elsif Current_Verbosity = Medium then
                            Put_Verbose
                              (Attribute & ": executing """ & Command
                               & """ output=<use -v -v> no match");
@@ -1401,7 +1344,7 @@ package body GprConfig.Knowledge is
                            Value_If_Match  => Node.Dir_If_Match,
                            Group           => Node.Directory_Group);
                      else
-                        if Verbose_Level > 0 then
+                        if Current_Verbosity /= Default then
                            Put_Verbose
                              (Attribute & ": search directories matching "
                               & Search & ", starting from "
@@ -1442,7 +1385,7 @@ package body GprConfig.Knowledge is
                     (Expression => Get_Name_String (Node.Must_Match),
                      Data       => To_String (Tmp_Result))
                   then
-                     if Verbose_Level > 0 then
+                     if Current_Verbosity /= Default then
                         Put_Verbose
                           ("Ignore compiler since external value """
                            & To_String (Tmp_Result) & """ must match "
@@ -1692,7 +1635,7 @@ package body GprConfig.Knowledge is
                  External_Value_Lists.Element (C);
             begin
                if Ext.Value = No_Name then
-                  if Verbose_Level > 0 then
+                  if Current_Verbosity /= Default then
                      Put_Verbose
                        ("Ignore compiler since variable '"
                         & Get_Name_String (Ext.Extracted_From) & "' is empty");
@@ -1937,7 +1880,7 @@ package body GprConfig.Knowledge is
 
       Continue := True;
 
-      if Verbose_Level > 0 then
+      if Current_Verbosity /= Default then
          Put_Verbose ("Foreach compiler in "
                       & Directory & " regexp="
                       & Boolean'Image (Base.Check_Executable_Regexp)
@@ -2291,7 +2234,7 @@ package body GprConfig.Knowledge is
         and then Comp.Name /= Filter.Name
         and then Comp.Base_Name /= Filter.Name
       then
-         if Verbose_Level > 0 then
+         if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Filter, True)
                          & ": name does not match");
          end if;
@@ -2299,7 +2242,7 @@ package body GprConfig.Knowledge is
       end if;
 
       if Filter.Path /= No_Name and then Filter.Path /= Comp.Path then
-         if Verbose_Level > 0 then
+         if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Filter, True)
                          & ": path does not match");
          end if;
@@ -2307,7 +2250,7 @@ package body GprConfig.Knowledge is
       end if;
 
       if Filter.Version /= No_Name and then Filter.Version /= Comp.Version then
-         if Verbose_Level > 0 then
+         if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Filter, True)
                          & ": version does not match");
          end if;
@@ -2315,7 +2258,7 @@ package body GprConfig.Knowledge is
       end if;
 
       if Filter.Runtime /= No_Name and then Filter.Runtime /= Comp.Runtime then
-         if Verbose_Level > 0 then
+         if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Filter, True)
                          & ": runtime does not match");
          end if;
@@ -2325,7 +2268,7 @@ package body GprConfig.Knowledge is
       if Filter.Language_LC /= No_Name
         and then Filter.Language_LC /= Comp.Language_LC
       then
-         if Verbose_Level > 0 then
+         if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Filter, True)
                          & ": language does not match");
          end if;
@@ -2621,7 +2564,7 @@ package body GprConfig.Knowledge is
             Compilers)
          then
             if not Configuration_Lists.Element (Config).Supported then
-               if Verbose_Level > 0 then
+               if Current_Verbosity /= Default then
                   Put_Verbose
                     ("Selected compilers are not compatible, because of:");
                   Put_Verbose (Configuration_Lists.Element (Config));
@@ -2717,7 +2660,7 @@ package body GprConfig.Knowledge is
          raise Generate_Error;
       end if;
 
-      if not Quiet_Output then
+      if not Opt.Quiet_Output then
          Put_Line ("Creating configuration file: " & Output_File);
       end if;
 

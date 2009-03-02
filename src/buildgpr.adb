@@ -6627,8 +6627,7 @@ package body Buildgpr is
             if Prefix'Length > 0 then
                declare
                   PATH : constant String :=
-                           Prefix & Directory_Separator & "bin" &
-                           Path_Separator &
+                           Prefix & "bin" & Path_Separator &
                            Getenv ("PATH").all;
 
                begin
@@ -6700,9 +6699,9 @@ package body Buildgpr is
 
          begin
             if Prefix_Path'Length /= 0 then
+               --  ??? Same as Confgpr.Locate_Config_File
                Write_Char (Path_Separator);
                Write_Str (Prefix_Path);
-               Write_Char (Directory_Separator);
                Write_Str ("share");
                Write_Char (Directory_Separator);
                Write_Str ("gpr");

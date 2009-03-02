@@ -323,8 +323,7 @@ package body Confgpr is
          return Locate_Regular_File
            (Name,
             "." & Path_Separator &
-            Prefix_Path & Directory_Separator &
-            "share" & Directory_Separator & "gpr");
+            Prefix_Path & "share" & Directory_Separator & "gpr");
 
       else
          return Locate_Regular_File (Name, ".");

@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                   Copyright (C) 2006-2008, AdaCore                       --
+--                   Copyright (C) 2006-2009, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -38,7 +38,10 @@ with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
 with GPR_Version;
 with Hostparm;
+with Makeutl;                   use Makeutl;
 with Namet;                     use Namet;
+with Opt;
+with Prj;                       use Prj;
 with Switch;
 
 procedure GprConfig.Main is
@@ -250,7 +253,7 @@ procedure GprConfig.Main is
          then
             Append (Iterator.Compilers, Comp);
 
-            if Verbose_Level > 0 then
+            if Current_Verbosity /= Default then
                Put_Verbose
                  ("Saving compiler for possible backtracking: "
                   & To_String (Comp, As_Config_Arg => True)
@@ -378,7 +381,7 @@ procedure GprConfig.Main is
                Update_Element (Iter.Compilers, C, Toggle_Selection'Access);
 
                if Next (Filter) = No_Element then
-                  if Verbose_Level > 0 then
+                  if Current_Verbosity /= Default then
                      Put_Verbose ("Testing the following compiler set:", 1);
                      Put_Verbose
                        (To_String (Iter.Compilers, Selected_Only => True));
@@ -429,7 +432,7 @@ procedure GprConfig.Main is
       C := First (Filters);
       for F in Iter.Found_One'Range loop
          if not Iter.Found_One (F) then
-            if not Quiet_Output then
+            if not Opt.Quiet_Output then
                Put_Line
                  (Standard_Error,
                   "Error: no matching compiler found for --config="
@@ -526,7 +529,7 @@ procedure GprConfig.Main is
               and then Element (Comp).Targets_Set /= Selected_Targets_Set
             then
                Selectable := False;
-               if Verbose_Level > 0 then
+               if Current_Verbosity /= Default then
                   Put_Verbose ("Incompatible target for: "
                               & To_String (Element (Comp), False));
                end if;
@@ -540,7 +543,7 @@ procedure GprConfig.Main is
                       Element (Comp).Language_LC
                   then
                      Selectable := False;
-                     if Verbose_Level > 0 then
+                     if Current_Verbosity /= Default then
                         Put_Verbose ("Already selected language for "
                                      & To_String (Element (Comp), False));
                      end if;
@@ -557,7 +560,7 @@ procedure GprConfig.Main is
                Update_Element (Compilers, Comp, Toggle_Selection'Access);
                if not Is_Supported_Config (Base, Compilers) then
                   Selectable := False;
-                  if Verbose_Level > 0 then
+                  if Current_Verbosity /= Default then
                      Put_Verbose ("Unsupported config for: "
                                   & To_String (Element (Comp), False));
                   end if;
@@ -583,7 +586,7 @@ procedure GprConfig.Main is
    ----------------------------
 
    function Get_Database_Directory return String is
-      Prog_Dir : constant String := Get_Program_Directory;
+      Prog_Dir : constant String := Executable_Prefix_Path;
       Suffix : constant String := "share" & Directory_Separator & "gprconfig";
    begin
       return Prog_Dir & Suffix;
@@ -861,7 +864,7 @@ begin
    end if;
    Free (Gprbuild_Path);
 
-   Selected_Target := TU (Sdefault.Hostname);
+   Selected_Target := To_Unbounded_String (Sdefault.Hostname);
 
    --  First, check if --version or --help is used
 
@@ -898,12 +901,16 @@ begin
             end if;
 
          when 'q' =>
-            Quiet_Output := True;
-            Verbose_Level := 0;
+            Opt.Quiet_Output := True;
+            Current_Verbosity := Default;
 
          when 'v' =>
-            Verbose_Level := Verbose_Level + 1;
-            Quiet_Output := False;
+            case Current_Verbosity is
+               when Default => Current_Verbosity := Medium;
+               when others  => Current_Verbosity := High;
+            end case;
+
+            Opt.Quiet_Output := False;
 
          when ASCII.NUL =>
             exit;
@@ -980,7 +987,7 @@ begin
                  Source => Iter.Compilers);
       end;
 
-      if Show_Targets or else Verbose_Level > 0 then
+      if Show_Targets or else Current_Verbosity /= Default then
          declare
             use String_Lists;
             All_Target : String_Lists.List;
