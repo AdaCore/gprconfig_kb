@@ -40,28 +40,180 @@ package GprConfig.Knowledge is
    Generate_Error : exception;
    --  To be raised when an error occurs during generation of config files.
 
-   Invalid_Knowledge_Base : exception;
-   --  To be raised when an error occurred while parsing the knowledge base
+   --------------------
+   -- Knowledge base --
+   --------------------
+   --  The following types and subprograms manipulate the knowldge base. This
+   --  base is a set of XML files that describe how to find compilers that are
+   --  installed on the system and that match specific criterias.
 
    type Knowledge_Base is private;
 
+   function Default_Knowledge_Base_Directory return String;
+   --  Return the default location of the knowledge database. This is based on
+   --  the installation directory of the executable.
+
    procedure Parse_Knowledge_Base
-     (Base : out Knowledge_Base; Directory : String);
+     (Base                : out Knowledge_Base;
+      Directory           : String;
+      Parse_Compiler_Info : Boolean := True);
    --  Parse info from the knowledge base, and store it in memory.
    --  Only information relevant to the current host is parsed.
+   --  If Parse_Compiler_Info is False, then only the information about
+   --  target sets is parsed.
+   --  This procedure will raise Invalid_Knowledge_Base is the base contains
+   --  incorrect data.
 
-   type Targets_Set_Id is range -1 .. Natural'Last;
+   Invalid_Knowledge_Base : exception;
+   --  To be raised when an error occurred while parsing the knowledge base
+
+   -----------------
+   -- Target sets --
+   -----------------
+   --  One of the information pieces contain in the database is a way to
+   --  normalize target names, since various names are used in different
+   --  contexts thus making it harder to write project files depending on the
+   --  target.
+
+   type Targets_Set_Id is private;
    --  Identify a target aliases set.
 
-   All_Target_Sets     : constant Targets_Set_Id := -1;
+   All_Target_Sets     : constant Targets_Set_Id;
    --  Matches all target sets
 
-   Unknown_Targets_Set : constant Targets_Set_Id := 0;
+   Unknown_Targets_Set : constant Targets_Set_Id;
    --  Special target set when a target is not known.
 
-   subtype Known_Targets_Set_Id is Targets_Set_Id
-     range 1 .. Targets_Set_Id'Last;
-   --  Known targets set.  They are in the base.
+   procedure Get_Targets_Set
+     (Base   : in out Knowledge_Base;
+      Target : String;
+      Id     : out Targets_Set_Id);
+   --  Get the target alias set id for a target.  If not already in the base,
+   --  add it.
+
+   function Normalized_Target
+     (Base : Knowledge_Base;
+      Set  : Targets_Set_Id) return String;
+   --  Return the normalized name for a target set
+
+   ---------------
+   -- Compilers --
+   ---------------
+   --  Most of the information in the database relates to compilers. However,
+   --  you do not have direct access to the generic description that explains
+   --  how to find compilers on the PATH and how to compute their attributes
+   --  (version, runtimes,...) Instead, this package gives you access to the
+   --  list of compilers that were found. The package ensures that all
+   --  information is only computed at most once, to save on system calls and
+   --  provide better performance.
+
+   type Compiler is private;
+   type Compiler_Access is access all Compiler;
+
+   package Compiler_Lists
+      is new Ada.Containers.Indefinite_Doubly_Linked_Lists (Compiler_Access);
+   --  A list of compilers.
+
+   function Is_Selected (Comp : Compiler) return Boolean;
+   function Target      (Comp : Compiler) return Namet.Name_Id;
+
+   procedure Set_Selection
+     (Compilers : in out Compiler_Lists.List;
+      Cursor    : Compiler_Lists.Cursor;
+      Selected  : Boolean);
+   procedure Set_Selection
+     (Comp     : in out Compiler;
+      Selected : Boolean);
+   --  Toggle the selection status of a compiler in the list.
+   --  This does not check that the selection is consistent though (use
+   --  Is_Supported_Config to do this test)
+
+   function To_String
+     (Comp          : Compiler;
+      As_Config_Arg : Boolean;
+      Show_Target   : Boolean := False;
+      Rank_In_List  : Integer := -1) return String;
+   --  Return a string representing the compiler. It is either the --config
+   --  argument (if As_Config_Arg is true) or the string to use in the
+   --  interactive menu otherwise.
+   --  If Rank_In_List is specified, it is written at the beginning of the
+   --  line.
+
+   function To_String
+     (Compilers     : Compiler_Lists.List;
+      Selected_Only : Boolean;
+      Show_Target   : Boolean := False) return String;
+   --  Return the list of compilers.
+   --  Unselectable compilers are hidden. If Selected_Only is true, then only
+   --  compilers that are currently selected are displayed.
+
+   function Display_Before (Comp1, Comp2 : Compiler_Access) return Boolean;
+   --  Whether Comp1 should be displayed before Comp2 when displaying lists of
+   --  compilers. This ensures that similar languages are grouped, among othe
+   --  things.
+
+   procedure Filter_Compilers_List
+     (Base           : Knowledge_Base;
+      Compilers      : in out Compiler_Lists.List;
+      For_Target_Set : Targets_Set_Id);
+   --  Based on the currently selected compilers, check which other compilers
+   --  can or cannot be selected by the user.
+   --  This is not the case if the resulting selection in Compilers is not a
+   --  supported config (multiple compilers for the same language, set of
+   --  compilers explicitly marked as unsupported in the knowledge base,...).
+
+   ------------------
+   -- Command line --
+   ------------------
+   --  This package provides support for manipulating the --config command line
+   --  parameters. The intent is that they have the same form in all the tools
+   --  that support it. The information provides to --config might be partial
+   --  only, and this package provides support for completing it automatically
+   --  based on the knowledge base.
+
+   procedure Parse_Config_Parameter
+     (Base              : Knowledge_Base;
+      Config            : String;
+      Compiler          : out Compiler_Access;
+      Requires_Compiler : out Boolean);
+   --  Parse the --config parameter, and store the (partial) information
+   --  found in Compiler.
+   --  When a switch matches a language that requires no compiler,
+   --  Requires_Compiler is set to False.
+   --  Raises Invalid_Config if Config is invalid
+
+   Invalid_Config : exception;
+   --  Raised when the user has specified an invalid --config switch
+
+   procedure Complete_Command_Line_Compilers
+     (Base       : in out Knowledge_Base;
+      On_Target  : Targets_Set_Id;
+      Filters    : Compiler_Lists.List;
+      Compilers  : in out Compiler_Lists.List);
+   --  In batch mode, the --config parameters indicate what compilers should be
+   --  selected. Each of these switch selects the first matching compiler
+   --  available, and all --config switch must match a compiler.
+   --  The information provided by the user does not have to be complete, and
+   --  this procedure completes all missing information like version, runtime,
+   --  and so on.
+   --  In gprconfig, it should only be called in batch mode, since otherwise
+   --  --config only acts as a filter for the compilers that are found through
+   --  the knowledge base.
+   --  Filters is the list specified by the user as --config, and contains
+   --  potentially partial information for each compiler. On output, Compilers
+   --  is completed with the full information for all compilers in Filters. If
+   --  at least one of the compilers in Filters cannot be found, Invalid_Config
+   --  is raised.
+
+   function Extra_Dirs_From_Filters
+     (Filters : Compiler_Lists.List) return String;
+   --  Compute the list of directories that should be prepended to the PATH
+   --  when searching for compilers. These are all the directories that the
+   --  user has explicitly specified in his filters (aka --config)
+
+   -----------------------------
+   -- knowledge base contents --
+   -----------------------------
 
    function Hash_Case_Insensitive
      (Name : Namet.Name_Id) return Ada.Containers.Hash_Type;
@@ -72,41 +224,6 @@ package GprConfig.Knowledge is
       Equivalent_Keys => Namet."=",
       "="             => Namet."=");
 
-   type Compiler is record
-      Name        : Namet.Name_Id := Namet.No_Name;
-      --  The name of the compiler, as specified in the <name> node of the
-      --  knowledge base. If Compiler represents a filter as defined on through
-      --  --config switch, then name can also be the base name of the
-      --  executable we are looking for. In such a case, it never includes the
-      --  exec suffix (.exe on Windows)
-
-      Executable  : Namet.Name_Id := Namet.No_Name;
-      Target      : Namet.Name_Id := Namet.No_Name;
-      Targets_Set : Targets_Set_Id;
-      Path        : Namet.Name_Id := Namet.No_Name;
-
-      Base_Name   : Namet.Name_Id := Namet.No_Name;
-      --  Base name of the executable. This does not include the exec suffix
-
-      Version     : Namet.Name_Id := Namet.No_Name;
-      Variables   : Variables_Maps.Map;
-      Prefix      : Namet.Name_Id := Namet.No_Name;
-      Runtime     : Namet.Name_Id := Namet.No_Name;
-      Runtime_Dir : Namet.Name_Id := Namet.No_Name;
-      Path_Order  : Integer;
-
-      Language_Case : Namet.Name_Id := Namet.No_Name;
-      --  The supported language, with the casing read from the compiler. This
-      --  is for display purposes only
-
-      Language_LC : Namet.Name_Id := Namet.No_Name;
-      --  The supported language, always lower case
-
-      Selectable   : Boolean := True;
-      Selected     : Boolean := False;
-      Complete     : Boolean := True;
-      Rank_In_List : Natural := 0;
-   end record;
    No_Compiler : constant Compiler;
    --  Describes one of the compilers found on the PATH.
    --  Path is the directory that contains the compiler executable.
@@ -123,11 +240,8 @@ package GprConfig.Knowledge is
    --  Index_In_List is used for the interactive menu, and is initialized
    --  automatically.
 
-   package Compiler_Lists is new Ada.Containers.Doubly_Linked_Lists (Compiler);
-   --  A list of compilers.
-
    type Compiler_Iterator is abstract tagged null record;
-   --  An iterator for searches for all known compilers in a list of
+   --  An iterator that searches for all known compilers in a list of
    --  directories. Whenever a new compiler is found, the Callback primitive
    --  operation is called.
 
@@ -164,22 +278,6 @@ package GprConfig.Knowledge is
       List : out Ada.Strings.Unbounded.Unbounded_String);
    --  Set List to the comma-separated list of known compilers
 
-   function To_String
-     (Comp          : Compiler;
-      As_Config_Arg : Boolean;
-      Show_Target   : Boolean := False) return String;
-   --  Return a string representing the compiler. It is either the --config
-   --  argument (if As_Config_Arg is true) or the string to use in the
-   --  interactive menu otherwise.
-
-   function To_String
-     (Compilers     : Compiler_Lists.List;
-      Selected_Only : Boolean;
-      Show_Target   : Boolean := False) return String;
-   --  Return the list of compilers.
-   --  Unselectable compilers are hidden. If Selected_Only is true, then only
-   --  compilers that are currently selected are displayed.
-
    procedure Generate_Configuration
      (Base        : Knowledge_Base;
       Compilers   : Compiler_Lists.List;
@@ -198,13 +296,6 @@ package GprConfig.Knowledge is
       Language_LC : String) return Boolean;
    --  Given a language name (lower case), returns True if that language is
    --  known to require no compiler
-
-   procedure Get_Targets_Set
-     (Base   : in out Knowledge_Base;
-      Target : String;
-      Id     : out Targets_Set_Id);
-   --  Get the target alias set id for a target.  If not already in the base,
-   --  add it.
 
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
      (String);
@@ -239,15 +330,50 @@ package GprConfig.Knowledge is
    --  Name_Buffer manually.
    --  The second version returns No_Name is the string is empty
 
-   type Compare_Type is (Before, Equal, After);
-   function Compare (Name1, Name2 : Namet.Name_Id) return Compare_Type;
-   --  Compare alphabetically two strings
-
    function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean;
    --  Returns True if Comp match Filter (the latter corresponds to a --config
    --  command line argument).
 
 private
+   type Targets_Set_Id is range -1 .. Natural'Last;
+   All_Target_Sets     : constant Targets_Set_Id := -1;
+   Unknown_Targets_Set : constant Targets_Set_Id := 0;
+
+   type Compiler is record
+      Name        : Namet.Name_Id := Namet.No_Name;
+      --  The name of the compiler, as specified in the <name> node of the
+      --  knowledge base. If Compiler represents a filter as defined on through
+      --  --config switch, then name can also be the base name of the
+      --  executable we are looking for. In such a case, it never includes the
+      --  exec suffix (.exe on Windows)
+
+      Executable  : Namet.Name_Id := Namet.No_Name;
+      Target      : Namet.Name_Id := Namet.No_Name;
+      Targets_Set : Targets_Set_Id;
+      Path        : Namet.Name_Id := Namet.No_Name;
+
+      Base_Name   : Namet.Name_Id := Namet.No_Name;
+      --  Base name of the executable. This does not include the exec suffix
+
+      Version     : Namet.Name_Id := Namet.No_Name;
+      Variables   : Variables_Maps.Map;
+      Prefix      : Namet.Name_Id := Namet.No_Name;
+      Runtime     : Namet.Name_Id := Namet.No_Name;
+      Runtime_Dir : Namet.Name_Id := Namet.No_Name;
+      Path_Order  : Integer;
+
+      Language_Case : Namet.Name_Id := Namet.No_Name;
+      --  The supported language, with the casing read from the compiler. This
+      --  is for display purposes only
+
+      Language_LC : Namet.Name_Id := Namet.No_Name;
+      --  The supported language, always lower case
+
+      Selectable   : Boolean := True;
+      Selected     : Boolean := False;
+      Complete     : Boolean := True;
+   end record;
+
    No_Compiler : constant Compiler :=
      (Name        => Namet.No_Name,
       Target      => Namet.No_Name,
@@ -265,7 +391,6 @@ private
       Selectable  => False,
       Selected    => False,
       Complete    => True,
-      Rank_In_List => 0,
       Path_Order  => 0);
 
    type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
@@ -374,8 +499,17 @@ private
    package Target_Lists is new Ada.Containers.Doubly_Linked_Lists
      (Pattern_Matcher_Access);
 
+   type Target_Set_Description is record
+      Name     : Namet.Name_Id;
+      Patterns : Target_Lists.List;
+   end record;
+
+   subtype Known_Targets_Set_Id
+     is Targets_Set_Id range 1 .. Targets_Set_Id'Last;
+   --  Known targets set.  They are in the base.
+
    package Targets_Set_Vectors is new Ada.Containers.Vectors
-     (Known_Targets_Set_Id, Target_Lists.List, Target_Lists."=");
+     (Known_Targets_Set_Id, Target_Set_Description, "=");
 
    type Knowledge_Base is record
       Compilers               : Compiler_Description_Maps.Map;
