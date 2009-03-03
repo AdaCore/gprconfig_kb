@@ -285,36 +285,8 @@ package GprConfig.Knowledge is
       Target      : String);
    --  Generate the configuration file for the list of selected compilers
 
-   function Is_Supported_Config
-     (Base      : Knowledge_Base;
-      Compilers : Compiler_Lists.List) return Boolean;
-   --  Whether we know how to link code compiled with all the selected
-   --  compilers.
-
-   function Is_Language_With_No_Compiler
-     (Base        : Knowledge_Base;
-      Language_LC : String) return Boolean;
-   --  Given a language name (lower case), returns True if that language is
-   --  known to require no compiler
-
    package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
      (String);
-
-   procedure Get_Words
-     (Words  : String;
-      Filter : Namet.Name_Id;
-      Separator1 : Character;
-      Separator2 : Character;
-      Map    : out String_Lists.List;
-      Allow_Empty_Elements : Boolean);
-   --  Return the list of words in Words. Splitting is done on special
-   --  characters, so as to be compatible with a list of languages or a list of
-   --  runtimes
-   --  If Allow_Empty_Elements is false, then empty strings are not stored in
-   --  the list.
-
-   function Name_As_Directory (Dir : String) return String;
-   --  Ensure that Dir ends with a directory separator
 
    procedure Put_Verbose (Str : String; Indent_Delta : Integer := 0);
    --  Print Str if verbose mode is activated.
@@ -323,12 +295,6 @@ package GprConfig.Knowledge is
    --  Indent_Delta is taken into account.
    --  Nothing is printed if Str is the empty string, only the indentation is
    --  changed
-
-   function Get_String (Str : String) return Namet.Name_Id;
-   function Get_String_Or_No_Name (Str : String) return Namet.Name_Id;
-   --  Same as Name_Find, but does not require the user to modify
-   --  Name_Buffer manually.
-   --  The second version returns No_Name is the string is empty
 
    function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean;
    --  Returns True if Comp match Filter (the latter corresponds to a --config
