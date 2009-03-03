@@ -27,6 +27,8 @@
 with Ada.Directories; use Ada.Directories;
 
 with Gpr_Util; use Gpr_Util;
+with GprConfig.Knowledge; use GprConfig.Knowledge;
+with GprConfig.Sdefault;  use GprConfig.Sdefault;
 with Makeutl;  use Makeutl;
 with Namet;    use Namet;
 with Opt;      use Opt;
@@ -725,7 +727,16 @@ package body Confgpr is
             end if;
 
             if Target_Name = "" then
-               Args (4) := new String'(Target_Project_Option & "all");
+               declare
+                  Id : Targets_Set_Id;
+               begin
+                  Get_Targets_Set (Base, Hostname, Id);
+                  Args (4) :=
+                    new String'
+                      (Target_Project_Option &
+                       Normalized_Target (Base, Id));
+               end;
+
             else
                Args (4) := new String'(Target_Project_Option & Target_Name);
             end if;

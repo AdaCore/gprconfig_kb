@@ -34,6 +34,7 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with Csets;
 with Confgpr;     use Confgpr;
 with Gprexch;     use Gprexch;
+with GprConfig.Knowledge; use GprConfig.Knowledge;
 with GPR_Version; use GPR_Version;
 with Gpr_Util;    use Gpr_Util;
 with Makeutl;     use Makeutl;
@@ -1005,6 +1006,20 @@ package body Cleangpr is
 
       Parse_Cmd_Line;
 
+      if Load_Standard_Base then
+         begin
+            Parse_Knowledge_Base
+              (Base,
+               Default_Knowledge_Base_Directory,
+               Parse_Compiler_Info => False);
+
+         exception
+            when Invalid_Knowledge_Base =>
+               Fail_Program ("could not parse the XML files in " &
+                             Default_Knowledge_Base_Directory);
+         end;
+      end if;
+
       --  If no project file was specified, look first for a default
 
       if Project_File_Name = null then
@@ -1144,6 +1159,15 @@ package body Cleangpr is
       Last         : constant Natural := Argument_Count;
 
    begin
+      --  First deal with --version and --help
+
+      Check_Version_And_Help
+        ("GPRCLEAN",
+         "2006",
+         Version_String => Gpr_Version_String);
+
+      --  Now deal with the other options
+
       while Index <= Last loop
          declare
             Arg : constant String := Argument (Index);
@@ -1161,16 +1185,18 @@ package body Cleangpr is
             end Bad_Argument;
 
          begin
-            --  First deal with --version and --help
+            if Db_Directory_Expected then
+               begin
+                  Db_Directory_Expected := False;
+                  Parse_Knowledge_Base
+                    (Base, Arg, Parse_Compiler_Info => False);
 
-            Check_Version_And_Help
-              ("GPRCLEAN",
-               "2006",
-               Version_String => Gpr_Version_String);
+               exception
+                  when Invalid_Knowledge_Base =>
+                     Fail_Program ("could not parse the XML files in " & Arg);
+               end;
 
-            --  Now deal with the other options
-
-            if Arg'Length /= 0 then
+            elsif Arg'Length /= 0 then
                if Arg (1) = '-' then
                   if Arg'Length = 1 then
                      Bad_Argument;
@@ -1178,9 +1204,15 @@ package body Cleangpr is
 
                   case Arg (2) is
                      when '-' =>
-                        if Arg'Length > Config_Project_Option'Length and then
-                          Arg (1 .. Config_Project_Option'Length) =
-                          Config_Project_Option
+                        if Arg = "--db-" then
+                           Load_Standard_Base := False;
+
+                        elsif Arg = "--db" then
+                           Db_Directory_Expected := True;
+
+                        elsif Arg'Length > Config_Project_Option'Length
+                          and then Arg (1 .. Config_Project_Option'Length) =
+                                   Config_Project_Option
                         then
                            if Config_Project_File_Name /= null and then
                              (Autoconf_Specified or else
@@ -1482,6 +1514,8 @@ package body Cleangpr is
            ("           Specify/create the main config project file name");
          Put_Line ("  --target=targetname");
          Put_Line ("           Specify a target for cross polatforms");
+         Put_Line ("  --db dir Parse dir as an additional knowledge base");
+         Put_Line ("  --db-    Do not load the standard knowledge base");
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
          Put_Line ("  " & Gpr_Util.Unchecked_Shared_Lib_Imports);

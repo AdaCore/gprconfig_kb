@@ -30,6 +30,8 @@
 with GNAT.HTable; use GNAT.HTable;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
+with GprConfig.Knowledge; use GprConfig.Knowledge;
+
 with Namet;    use Namet;
 with Prj;      use Prj;
 with Prj.Tree; use Prj.Tree;
@@ -121,6 +123,15 @@ package Gpr_Util is
    RTS_Language_Option : constant String := "--RTS:";
 
    RTS_Name : String_Access := null;
+
+   Base : Knowledge_Base;
+   --  The knowledge base used to find the standard name of the native target
+
+   Db_Directory_Expected : Boolean := False;
+   --  True when last switch was --db
+
+   Load_Standard_Base : Boolean := True;
+   --  False when switch --db- is used
 
    package RTS_Languages is new Simple_HTable
      (Header_Num => Prj.Header_Num,

@@ -46,6 +46,7 @@ with GNAT.Regexp;               use GNAT.Regexp;
 with Gpr_Util;         use Gpr_Util;
 with GPR_Version;      use GPR_Version;
 with Gprexch;          use Gprexch;
+with GprConfig.Knowledge;  use GprConfig.Knowledge;
 with Hostparm;         use Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
@@ -6738,6 +6739,22 @@ package body Buildgpr is
 
       elsif Search_Project_Dir_Expected then
          Fail_Program ("directory name missing after -aP");
+
+      elsif Db_Directory_Expected then
+         Fail_Program ("directory name missing after --db");
+      end if;
+
+      if Load_Standard_Base then
+         begin
+            Parse_Knowledge_Base
+              (Base,
+               Default_Knowledge_Base_Directory,
+               Parse_Compiler_Info => False);
+         exception
+            when Invalid_Knowledge_Base =>
+               Fail_Program ("could not parse the XML files in " &
+                             Default_Knowledge_Base_Directory);
+         end;
       end if;
 
       --  If no project file was specified, look first for a default
@@ -10485,6 +10502,16 @@ package body Buildgpr is
             Add_Search_Project_Directory (Arg);
          end if;
 
+      elsif Db_Directory_Expected then
+         begin
+            Db_Directory_Expected := False;
+            Parse_Knowledge_Base (Base, Arg, Parse_Compiler_Info => False);
+
+         exception
+            when Invalid_Knowledge_Base =>
+               Fail_Program ("could not parse the XML files in " & Arg);
+         end;
+
          --  Set the processor/language for the following switches
 
          --  -cargs         all compiler arguments
@@ -10601,7 +10628,13 @@ package body Buildgpr is
 
       elsif Arg (1) = '-' then
 
-         if Command_Line and then Arg = "--display-paths" then
+         if Command_Line and then Arg = "--db-" then
+            Load_Standard_Base := False;
+
+         elsif Command_Line and then Arg = "--db" then
+            Db_Directory_Expected := True;
+
+         elsif Command_Line and then Arg = "--display-paths" then
             Display_Paths := True;
 
          elsif Command_Line
@@ -11235,6 +11268,18 @@ package body Buildgpr is
          Write_Str
            ("           Specify a target for cross platforms");
          Write_Eol;
+
+         --  Line for --db
+
+         Write_Str ("  --db dir Parse dir as an additional knowledge base");
+         Write_Eol;
+
+         --  Line for --db-
+
+         Write_Str ("  --db-    Do not load the standard knowledge base");
+         Write_Eol;
+
+         --  Line for --subdirs=
 
          Write_Str ("  --subdirs=dir");
          Write_Eol;
