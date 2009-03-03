@@ -54,14 +54,14 @@ package GprConfig.Knowledge is
    --  the installation directory of the executable.
 
    procedure Parse_Knowledge_Base
-     (Base                : out Knowledge_Base;
+     (Base                : in out Knowledge_Base;
       Directory           : String;
       Parse_Compiler_Info : Boolean := True);
    --  Parse info from the knowledge base, and store it in memory.
    --  Only information relevant to the current host is parsed.
    --  If Parse_Compiler_Info is False, then only the information about
    --  target sets is parsed.
-   --  This procedure will raise Invalid_Knowledge_Base is the base contains
+   --  This procedure will raise Invalid_Knowledge_Base if the base contains
    --  incorrect data.
 
    Invalid_Knowledge_Base : exception;

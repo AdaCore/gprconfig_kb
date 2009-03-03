@@ -936,7 +936,7 @@ package body GprConfig.Knowledge is
    --------------------------
 
    procedure Parse_Knowledge_Base
-     (Base                : out Knowledge_Base;
+     (Base                : in out Knowledge_Base;
       Directory           : String;
       Parse_Compiler_Info : Boolean := True)
    is
