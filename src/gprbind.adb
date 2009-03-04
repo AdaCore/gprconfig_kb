@@ -457,7 +457,7 @@ begin
 
    else
       --  Normalize the path, so that gnaampbind does not complain about not
-      --  being in a "bib" directory. But don't resolve symbolic links,
+      --  being in a "bin" directory. But don't resolve symbolic links,
       --  because in GNAT 5.01a1 and previous releases, gnatbind was a symbolic
       --  link for .gnat_wrapper.
 
