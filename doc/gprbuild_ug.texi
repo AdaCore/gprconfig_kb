@@ -1519,8 +1519,8 @@ on the command line, GPRbuild will compile or recompile all the sources of the
 @emph{main} project and then stop.
 
 In contrast, if GPRbuild is invoked with @option{-U}, and again no source file name is specified
-on the command line, GPRbuild will compile or recompile all the sources of @emph{all}
-the projects in the project tree and then stop.
+on the command line, GPRbuild will compile or recompile all the sources of @emph{all
+the projects in the project tree} and then stop.
 
 @node Compilation Phase
 @section Compilation Phase
