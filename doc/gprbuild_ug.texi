@@ -1514,13 +1514,13 @@ also specified. Then GPRbuild will stop its execution.
 The options/switches used to compile these sources are described in section
 @ref{Compilation Phase}.
 
-if GPRbuild is invoked with @option{-u}, but no source file name is specified
+If GPRbuild is invoked with @option{-u} and no source file name is specified
 on the command line, GPRbuild will compile or recompile all the sources of the
-main project, then stopped its execution.
+@emph{main} project and then stop.
 
-if GPRbuild is invoked with @option{-U}, but no source file name is specified
-on the command line, GPRbuild will compile or recompile all the sources of all
-the projects in the project tree, then stopped its execution.
+In contrast, if GPRbuild is invoked with @option{-U}, and again no source file name is specified
+on the command line, GPRbuild will compile or recompile all the sources of @emph{all}
+the projects in the project tree and then stop.
 
 @node Compilation Phase
 @section Compilation Phase
