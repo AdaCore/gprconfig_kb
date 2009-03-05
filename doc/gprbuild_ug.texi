@@ -1077,8 +1077,8 @@ gprbuild [<proj>.gpr] [switches] [names]
 
 @noindent
 GPRbuild requires a project file, which may be specified on the
-command line, either directly or through the @option{-P} switch. If not
-specified, then GPRbuild uses the project file @file{default.gpr} if there
+command line either directly or through the @option{-P} switch. If not
+specified, GPRbuild uses the project file @file{default.gpr} if there
 is one in the current working directory. Otherwise, if there is only
 one project file in the current working directory, GPRbuild uses this
 project file.
@@ -1097,7 +1097,7 @@ that are not up to date.
 If invoked without the @option{--config=} or
 @option{--autoconf=} options, then GPRbuild will look for a configuration
 project file @file{default.cgpr}, or @file{<targetname>.cgpr} if option
-@option{--terget=<targetname>} is used. If there is no such file in the default
+@option{--target=<targetname>} is used. If there is no such file in the default
 locations expected by GPRbuild (<install>/share/gpr and the current
 directory) then GPRbuild will invoke @value{gprconfig} with
 the languages from the project files, and create a configuration project
@@ -1846,7 +1846,7 @@ play no role for gprbuild itself.
 
 @item --batch
 @CINDEX{@option{--batch} for gprconfig}
-@TIPHTML{Use @option{--batch} to generate the configuration file with no use
+@TIPHTML{Use @option{--batch} to generate the configuration file with no user
 interaction}
 If this switch is specified, @value{gprconfig} automatically selects the first
 compiler matching each of the @code{--config} switches, and generates the
