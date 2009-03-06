@@ -1583,7 +1583,7 @@ created in the object directory of the project of the source:
 @end itemize
 
 @noindent
-The compiler for the language of the source is invoked with the following
+The compiler for the language corresponding to the source file name is invoked with the following
 switches/options:
 
 @itemize @bullet
