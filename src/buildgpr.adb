@@ -1124,10 +1124,12 @@ package body Buildgpr is
 
    procedure Add_Compilation_Switches (Source : Source_Id) is
       Language_Name : constant Name_Id := Source.Language.Name;
+      Project       : constant Project_Id :=
+        Ultimate_Extending_Project_Of (Source.Project);
       Package_Compiler : constant Package_Id :=
                            Value_Of
                              (Name        => Name_Compiler,
-                              In_Packages => Source.Project.Decl.Packages,
+                              In_Packages => Project.Decl.Packages,
                               In_Tree     => Project_Tree);
 
       Options          : Variable_Value :=
@@ -4577,26 +4579,32 @@ package body Buildgpr is
                Source_Identity.Object_Project := Source_Project;
 
                if Source_Project /= Source_Identity.Project then
-                  Get_Name_String (Source_Project.Object_Directory.Name);
-                  Name_Len := Name_Len + 1;
-                  Name_Buffer (Name_Len) := Directory_Separator;
-                  Add_Str_To_Name_Buffer
-                    (Get_Name_String (Source_Identity.Object));
-                  Source_Identity.Object_Path := Name_Find;
+                  if Source_Identity.Object /= No_File then
+                     Get_Name_String (Source_Project.Object_Directory.Name);
+                     Name_Len := Name_Len + 1;
+                     Name_Buffer (Name_Len) := Directory_Separator;
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Source_Identity.Object));
+                     Source_Identity.Object_Path := Name_Find;
+                  end if;
 
-                  Get_Name_String (Source_Project.Object_Directory.Name);
-                  Name_Len := Name_Len + 1;
-                  Name_Buffer (Name_Len) := Directory_Separator;
-                  Add_Str_To_Name_Buffer
-                    (Get_Name_String (Source_Identity.Dep_Name));
-                  Source_Identity.Dep_Path := Name_Find;
+                  if Source_Identity.Dep_Name /= No_File then
+                     Get_Name_String (Source_Project.Object_Directory.Name);
+                     Name_Len := Name_Len + 1;
+                     Name_Buffer (Name_Len) := Directory_Separator;
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Source_Identity.Dep_Name));
+                     Source_Identity.Dep_Path := Name_Find;
+                  end if;
 
-                  Get_Name_String (Source_Project.Object_Directory.Name);
-                  Name_Len := Name_Len + 1;
-                  Name_Buffer (Name_Len) := Directory_Separator;
-                  Add_Str_To_Name_Buffer
-                    (Get_Name_String (Source_Identity.Switches));
-                  Source_Identity.Switches_Path := Name_Find;
+                  if Source_Identity.Switches /= No_File then
+                     Get_Name_String (Source_Project.Object_Directory.Name);
+                     Name_Len := Name_Len + 1;
+                     Name_Buffer (Name_Len) := Directory_Separator;
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Source_Identity.Switches));
+                     Source_Identity.Switches_Path := Name_Find;
+                  end if;
                end if;
 
                --  Record the last recorded option index, to be able to
