@@ -146,22 +146,22 @@ package body GprConfig.Knowledge is
    --  Return the value of the node, concatenating all Text children
 
    procedure Foreach_Compiler_In_Dir
-     (Iterator   : in out Compiler_Iterator'Class;
-      Base       : in out Knowledge_Base;
-      Directory  : String;
+     (Iterator       : in out Compiler_Iterator'Class;
+      Base           : in out Knowledge_Base;
+      Directory      : String;
       From_Extra_Dir : Boolean;
-      On_Target  : Targets_Set_Id;
-      Path_Order : Integer;
-      Continue   : out Boolean);
+      On_Target      : Targets_Set_Id;
+      Path_Order     : Integer;
+      Continue       : out Boolean);
    --  Find all known compilers in Directory, and call Iterator.Callback as
    --  appropriate.
 
    procedure Get_Words
-     (Words  : String;
-      Filter : Namet.Name_Id;
-      Separator1 : Character;
-      Separator2 : Character;
-      Map    : out String_Lists.List;
+     (Words                : String;
+      Filter               : Namet.Name_Id;
+      Separator1           : Character;
+      Separator2           : Character;
+      Map                  : out String_Lists.List;
       Allow_Empty_Elements : Boolean);
    --  Return the list of words in Words. Splitting is done on special
    --  characters, so as to be compatible with a list of languages or a list of
@@ -197,17 +197,17 @@ package body GprConfig.Knowledge is
    --  languages, does not matter for versions, is not used for targets)
 
    procedure Foreach_Language_Runtime
-     (Iterator   : in out Compiler_Iterator'Class;
-      Base       : in out Knowledge_Base;
-      Name       : Name_Id;
-      Executable : Name_Id;
-      Directory  : String;
-      Prefix     : Name_Id;
+     (Iterator       : in out Compiler_Iterator'Class;
+      Base           : in out Knowledge_Base;
+      Name           : Name_Id;
+      Executable     : Name_Id;
+      Directory      : String;
+      Prefix         : Name_Id;
       From_Extra_Dir : Boolean;
-      On_Target  : Targets_Set_Id;
-      Descr      : Compiler_Description;
-      Path_Order : Integer;
-      Continue   : out Boolean);
+      On_Target      : Targets_Set_Id;
+      Descr          : Compiler_Description;
+      Path_Order     : Integer;
+      Continue       : out Boolean);
    --  For each language/runtime parsed in Languages/Runtimes, create a new
    --  compiler in the list, if it matches Matching.
    --  If Stop_At_First_Match is true, then only the first matching compiler is
@@ -217,15 +217,15 @@ package body GprConfig.Knowledge is
    --  Verify that a given filename is indeed an executable
 
    procedure Parse_All_Dirs
-     (Processed_Value  : out External_Value_Lists.List;
-      Current_Dir       : String;
-      Path_To_Check     : String;
-      Regexp            : Pattern_Matcher;
-      Regexp_Str        : String;
-      Value_If_Match    : Name_Id;
-      Group             : Integer;
-      Group_Match       : String := "";
-      Group_Count       : Natural := 0);
+     (Processed_Value : out External_Value_Lists.List;
+      Current_Dir     : String;
+      Path_To_Check   : String;
+      Regexp          : Pattern_Matcher;
+      Regexp_Str      : String;
+      Value_If_Match  : Name_Id;
+      Group           : Integer;
+      Group_Match     : String := "";
+      Group_Count     : Natural := 0);
    --  Parse all subdirectories of Current_Dir for those that match
    --  Path_To_Check (see description of <directory>). When a match is found,
    --  the regexp is evaluated against the current directory, and the matching
@@ -289,7 +289,7 @@ package body GprConfig.Knowledge is
    --  Whether Str is a regular expression
 
    Exec_Suffix : constant GNAT.Strings.String_Access :=
-     Get_Executable_Suffix;
+                   Get_Executable_Suffix;
 
    function Unquote
      (Str : String; Remove_Quoted : Boolean := False) return String;
@@ -322,7 +322,7 @@ package body GprConfig.Knowledge is
 
    function Node_Value_As_String (N : Node) return String is
       Result : Unbounded_String;
-      Child : Node := First_Child (N);
+      Child  : Node := First_Child (N);
    begin
       while Child /= null loop
          exit when Node_Type (Child) = Element_Node;
@@ -373,14 +373,16 @@ package body GprConfig.Knowledge is
 
       Windows_Pattern : constant Bytes := (77, 90, 144, 0);
 
-      Fd : constant File_Descriptor := Open_Read (Filename, Binary);
-      B  : Bytes (1 .. 4);
+      Fd     : constant File_Descriptor := Open_Read (Filename, Binary);
+      B      : Bytes (1 .. 4);
       N_Read : Integer;
    begin
       N_Read := Read (Fd, B'Address, 4);
       Close (Fd);
+
       if N_Read < 4 then
          return False;
+
       else
          if B = Windows_Pattern then
             return True;
@@ -447,9 +449,9 @@ package body GprConfig.Knowledge is
    --------------------------
 
    procedure Parse_External_Value
-     (Value         : out External_Value;
-      File          : String;
-      External      : Node)
+     (Value    : out External_Value;
+      File     : String;
+      External : Node)
    is
       Tmp           : Node := First_Child (External);
       External_Node : External_Value_Node;
@@ -735,14 +737,14 @@ package body GprConfig.Knowledge is
       File        : String;
       Description : Node)
    is
-      Config    : Configuration;
-      Chunk     : Unbounded_String;
-      N         : Node := First_Child (Description);
-      N2        : Node;
-      Compilers : Compilers_Filter;
+      Config        : Configuration;
+      Chunk         : Unbounded_String;
+      N             : Node := First_Child (Description);
+      N2            : Node;
+      Compilers     : Compilers_Filter;
       Ignore_Config : Boolean := False;
-      Negate    : Boolean;
-      Filter    : Compiler_Filter;
+      Negate        : Boolean;
+      Filter        : Compiler_Filter;
    begin
       Config.Supported := True;
 
@@ -888,10 +890,10 @@ package body GprConfig.Knowledge is
       File        : String;
       Description : Node)
    is
-      Name     : Name_Id := No_Name;
-      Set      : Target_Lists.List;
-      Pattern  : Pattern_Matcher_Access;
-      N        : Node := First_Child (Description);
+      Name    : Name_Id := No_Name;
+      Set     : Target_Lists.List;
+      Pattern : Pattern_Matcher_Access;
+      N       : Node := First_Child (Description);
    begin
       while N /= null loop
          if Node_Type (N) /= Element_Node then
@@ -914,7 +916,6 @@ package body GprConfig.Knowledge is
                     ("Invalid regular expression " & Val
                      & " found in the target-set while parsing " & File);
                   raise Invalid_Knowledge_Base;
-
             end;
 
          else
@@ -1066,13 +1067,13 @@ package body GprConfig.Knowledge is
    --------------------------
 
    function Substitute_Variables
-     (Str         : String;
-      Comp        : Compiler) return String
+     (Str  : String;
+      Comp : Compiler) return String
    is
-      Str_Len : constant Natural := Str'Last;
-      Pos    : Natural := Str'First;
-      Last   : Natural := Pos;
-      Result : Unbounded_String;
+      Str_Len                   : constant Natural := Str'Last;
+      Pos                       : Natural := Str'First;
+      Last                      : Natural := Pos;
+      Result                    : Unbounded_String;
       Word_Start, Word_End, Tmp : Natural;
    begin
       while Pos < Str_Len loop
@@ -1122,15 +1123,15 @@ package body GprConfig.Knowledge is
    --------------------
 
    procedure Parse_All_Dirs
-     (Processed_Value  : out External_Value_Lists.List;
-      Current_Dir       : String;
-      Path_To_Check     : String;
-      Regexp            : Pattern_Matcher;
-      Regexp_Str        : String;
-      Value_If_Match    : Name_Id;
-      Group             : Integer;
-      Group_Match       : String := "";
-      Group_Count       : Natural := 0)
+     (Processed_Value : out External_Value_Lists.List;
+      Current_Dir     : String;
+      Path_To_Check   : String;
+      Regexp          : Pattern_Matcher;
+      Regexp_Str      : String;
+      Value_If_Match  : Name_Id;
+      Group           : Integer;
+      Group_Match     : String := "";
+      Group_Count     : Natural := 0)
    is
       First : constant Integer := Path_To_Check'First;
       Last  : Integer;
@@ -1300,8 +1301,9 @@ package body GprConfig.Knowledge is
       Split_Into_Words : Boolean := True;
       Processed_Value  : out External_Value_Lists.List)
    is
-      Saved_Path : constant String := Ada.Environment_Variables.Value ("PATH");
-      Status     : aliased Integer;
+      Saved_Path     : constant String :=
+                         Ada.Environment_Variables.Value ("PATH");
+      Status         : aliased Integer;
       Extracted_From : Name_Id;
       Tmp_Result     : Unbounded_String;
       Node_Cursor    : External_Value_Nodes.Cursor := First (Value);
@@ -1517,11 +1519,11 @@ package body GprConfig.Knowledge is
    ---------------
 
    procedure Get_Words
-     (Words  : String;
-      Filter : Namet.Name_Id;
-      Separator1 : Character;
-      Separator2 : Character;
-      Map    : out String_Lists.List;
+     (Words                : String;
+      Filter               : Namet.Name_Id;
+      Separator1           : Character;
+      Separator2           : Character;
+      Map                  : out String_Lists.List;
       Allow_Empty_Elements : Boolean)
    is
       First      : Integer := Words'First;
@@ -1575,17 +1577,17 @@ package body GprConfig.Knowledge is
    ------------------------------
 
    procedure Foreach_Language_Runtime
-     (Iterator   : in out Compiler_Iterator'Class;
-      Base       : in out Knowledge_Base;
-      Name       : Name_Id;
-      Executable : Name_Id;
-      Directory  : String;
-      Prefix     : Name_Id;
+     (Iterator       : in out Compiler_Iterator'Class;
+      Base           : in out Knowledge_Base;
+      Name           : Name_Id;
+      Executable     : Name_Id;
+      Directory      : String;
+      Prefix         : Name_Id;
       From_Extra_Dir : Boolean;
-      On_Target  : Targets_Set_Id;
-      Descr      : Compiler_Description;
-      Path_Order : Integer;
-      Continue   : out Boolean)
+      On_Target      : Targets_Set_Id;
+      Descr          : Compiler_Description;
+      Path_Order     : Integer;
+      Continue       : out Boolean)
    is
       Target    : External_Value_Lists.List;
       Version   : External_Value_Lists.List;
@@ -1813,6 +1815,10 @@ package body GprConfig.Knowledge is
       function Target return String;
       --  Return various aspects of the compiler;
 
+      ----------------------
+      -- Runtime_Or_Empty --
+      ----------------------
+
       function Runtime_Or_Empty return String is
       begin
          if Comp.Runtime /= No_Name then
@@ -1821,6 +1827,10 @@ package body GprConfig.Knowledge is
             return "";
          end if;
       end Runtime_Or_Empty;
+
+      ----------
+      -- Rank --
+      ----------
 
       function Rank return String is
          Result : String (1 .. 4) := "    ";
@@ -1836,6 +1846,10 @@ package body GprConfig.Knowledge is
 
          return Result;
       end Rank;
+
+      ------------
+      -- Target --
+      ------------
 
       function Target return String is
       begin
@@ -1912,18 +1926,18 @@ package body GprConfig.Knowledge is
    -----------------------------
 
    procedure Foreach_Compiler_In_Dir
-     (Iterator   : in out Compiler_Iterator'Class;
-      Base       : in out Knowledge_Base;
-      Directory  : String;
+     (Iterator       : in out Compiler_Iterator'Class;
+      Base           : in out Knowledge_Base;
+      Directory      : String;
       From_Extra_Dir : Boolean;
-      On_Target  : Targets_Set_Id;
-      Path_Order : Integer;
-      Continue   : out Boolean)
+      On_Target      : Targets_Set_Id;
+      Path_Order     : Integer;
+      Continue       : out Boolean)
    is
       use CDM;
-      C            : CDM.Cursor;
-      Search       : Search_Type;
-      Dir          : Directory_Entry_Type;
+      C      : CDM.Cursor;
+      Search : Search_Type;
+      Dir    : Directory_Entry_Type;
    begin
       --  Since the name of an executable can be a regular expression, we need
       --  to look at all files in the directory to see if they match. This
@@ -2117,6 +2131,10 @@ package body GprConfig.Knowledge is
         (Path : String; Prefix : Character; Prepend_To_List : Boolean);
       --  Add a directory to the list of directories to examine
 
+      ------------------
+      -- Process_Path --
+      ------------------
+
       procedure Process_Path
         (Path : String; Prefix : Character; Prepend_To_List : Boolean)
       is
@@ -2215,13 +2233,13 @@ package body GprConfig.Knowledge is
             P : constant String := String_Lists.Element (Dir);
          begin
             Foreach_Compiler_In_Dir
-              (Iterator                => Iterator,
-               Base                    => Base,
-               Directory               => P (P'First + 1 .. P'Last),
-               From_Extra_Dir          => P (P'First) = 'E',
-               Path_Order              => Path_Order,
-               On_Target               => On_Target,
-               Continue                => Continue);
+              (Iterator       => Iterator,
+               Base           => Base,
+               Directory      => P (P'First + 1 .. P'Last),
+               From_Extra_Dir => P (P'First) = 'E',
+               Path_Order     => Path_Order,
+               On_Target      => On_Target,
+               Continue       => Continue);
             exit when not Continue;
          end;
 
@@ -2568,16 +2586,18 @@ package body GprConfig.Knowledge is
    -----------------
 
    procedure Put_Verbose (Config : Configuration) is
-      C : Compilers_Filter_Lists.Cursor := First (Config.Compilers_Filters);
+      C           : Compilers_Filter_Lists.Cursor :=
+                      First (Config.Compilers_Filters);
       Comp_Filter : Compilers_Filter;
-      Comp : Compiler_Filter_Lists.Cursor;
-      Filter : Compiler_Filter;
+      Comp        : Compiler_Filter_Lists.Cursor;
+      Filter      : Compiler_Filter;
    begin
       while Has_Element (C) loop
          Comp_Filter := Compilers_Filter_Lists.Element (C);
          Put_Verbose
            ("<compilers negate='" & Comp_Filter.Negate'Img & "'>", 1);
          Comp := First (Comp_Filter.Compiler);
+
          while Has_Element (Comp) loop
             Filter := Compiler_Filter_Lists.Element (Comp);
             Put_Verbose
@@ -2603,8 +2623,9 @@ package body GprConfig.Knowledge is
      (Base      : Knowledge_Base;
       Compilers : Compiler_Lists.List) return Boolean
    is
-      Config : Configuration_Lists.Cursor := First (Base.Configurations);
-      M      : Boolean;
+      Config            : Configuration_Lists.Cursor :=
+                            First (Base.Configurations);
+      M                 : Boolean;
       Matching_Compiler : Compiler_Access;
    begin
       while Has_Element (Config) loop
@@ -2655,6 +2676,10 @@ package body GprConfig.Knowledge is
       --  Generate the chunk of the config file corresponding to the
       --  package name and remove it from the map.
 
+      ---------
+      -- Gen --
+      ---------
+
       procedure Gen (C : String_Maps.Cursor) is
       begin
          if Key (C) /= "" then
@@ -2666,6 +2691,10 @@ package body GprConfig.Knowledge is
             Put_Line (Output, "   end " & Key (C) & ";");
          end if;
       end Gen;
+
+      --------------------
+      -- Gen_And_Remove --
+      --------------------
 
       procedure Gen_And_Remove (Name : String)
       is
@@ -2823,7 +2852,7 @@ package body GprConfig.Knowledge is
       Set  : Targets_Set_Id) return String
    is
       Result : constant Target_Set_Description :=
-        Targets_Set_Vectors.Element (Base.Targets_Sets, Set);
+                 Targets_Set_Vectors.Element (Base.Targets_Sets, Set);
    begin
       return Get_Name_String (Result.Name);
    end Normalized_Target;
@@ -3096,9 +3125,9 @@ package body GprConfig.Knowledge is
          return False;
       end Foreach_Nth_Compiler;
 
-      C     : Compiler_Lists.Cursor;
+      C          : Compiler_Lists.Cursor;
       Extra_Dirs : constant String := Extra_Dirs_From_Filters (Filters);
-      Found_All : Boolean := True;
+      Found_All  : Boolean := True;
    begin
       Iter.Filters   := Filters;
 
@@ -3340,10 +3369,18 @@ package body GprConfig.Knowledge is
       procedure Mark_As_Selectable (Comp : in out Compiler_Access);
       procedure Mark_As_Unselectable (Comp : in out Compiler_Access);
 
+      ------------------------
+      -- Mark_As_Selectable --
+      ------------------------
+
       procedure Mark_As_Selectable   (Comp : in out Compiler_Access) is
       begin
          Comp.Selectable := True;
       end Mark_As_Selectable;
+
+      --------------------------
+      -- Mark_As_Unselectable --
+      --------------------------
 
       procedure Mark_As_Unselectable (Comp : in out Compiler_Access) is
       begin
