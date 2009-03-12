@@ -5862,10 +5862,7 @@ package body Buildgpr is
                        (Name_Buffer
                           (Linker_Lib_Dir_Option'Length + 1 .. Name_Len))
                      then
-                        Add_Argument
-                          (Name_Buffer (1 .. Name_Len),
-                           True,
-                           Simple_Name => not Verbose_Mode);
+                        Add_Argument (Name_Buffer (1 .. Name_Len), True);
 
                      else
                         Add_Argument
@@ -5874,8 +5871,7 @@ package body Buildgpr is
                            Directory_Separator &
                            Name_Buffer
                              (Linker_Lib_Dir_Option'Length + 1 .. Name_Len),
-                           True,
-                           Simple_Name => not Verbose_Mode);
+                           True);
                      end if;
 
                   elsif (Name_Len > Linker_Lib_Name_Option'Length and then
