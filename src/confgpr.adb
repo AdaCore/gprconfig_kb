@@ -24,27 +24,23 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Directories; use Ada.Directories;
-
-with Gpr_Util; use Gpr_Util;
-with Makeutl;  use Makeutl;
-with Opt;      use Opt;
-with Osint;    use Osint;
-with Output;   use Output;
-with Prj;      use Prj;
-with Prj.Err;  use Prj.Err;
+with Ada.Directories;  use Ada.Directories;
+with GNAT.HTable;      use GNAT.HTable;
+with Makeutl;          use Makeutl;
+with Opt;              use Opt;
+with Osint;            use Osint;
+with Output;           use Output;
+with Prj.Err;          use Prj.Err;
 with Prj.Part;
-with Prj.Proc; use Prj.Proc;
-with Prj.Tree; use Prj.Tree;
-with Prj.Util; use Prj.Util;
+with Prj.Proc;         use Prj.Proc;
+with Prj.Tree;         use Prj.Tree;
+with Prj.Util;         use Prj.Util;
+with Prj;              use Prj;
 with Sinput.P;
-with Snames;   use Snames;
-with Types;    use Types;
-
-with GNAT.HTable; use GNAT.HTable;
-
-with System;
+with Snames;           use Snames;
 with System.Case_Util; use System.Case_Util;
+with System;
+with Types;            use Types;
 
 package body Confgpr is
 
@@ -874,6 +870,7 @@ package body Confgpr is
 
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out Prj.Project_Id;
+      User_Project_Node          : out Prj.Tree.Project_Node_Id;
       Config_File_Name           : String := "";
       Autoconf_Specified         : Boolean;
       Project_File_Name          : String;
@@ -886,7 +883,6 @@ package body Confgpr is
       Target_Name                : String := "";
       Normalized_Hostname        : String)
    is
-      User_Project_Node   : Project_Node_Id;
       Main_Config_Project : Project_Id;
       Success : Boolean;
 
@@ -895,6 +891,9 @@ package body Confgpr is
 
       Prj.Initialize (Project_Tree);
       Prj.Tree.Initialize (Project_Node_Tree);
+
+      Main_Project      := No_Project;
+      Automatically_Generated := False;
 
       Prj.Part.Parse
         (In_Tree                => Project_Node_Tree,
@@ -906,13 +905,8 @@ package body Confgpr is
          Is_Config_File         => False);
 
       if User_Project_Node = Empty_Node then
-         --  Don't flush messages. This has already been taken care of by the
-         --  above call. Otherwise, it results in the same message being
-         --  displayed twice.
-
-         Fail_Program
-           ("""" & Project_File_Name & """ processing failed",
-            Flush_Messages => False);
+         User_Project_Node := Empty_Node;
+         return;
       end if;
 
       Process_Project_Tree_Phase_1
@@ -924,7 +918,8 @@ package body Confgpr is
          Report_Error           => null);
 
       if not Success then
-         Fail_Program ("""" & Project_File_Name & """ processing failed");
+         Main_Project := No_Project;
+         return;
       end if;
 
       --  Find configuration file
@@ -1037,22 +1032,10 @@ package body Confgpr is
    ---------------------
 
    procedure Set_Runtime_For (Language : Name_Id; RTS_Name : String) is
-      Old : Name_Id;
-      Name : Name_Id;
    begin
-      Old := RTS_Languages.Get (Language);
-
       Name_Len := RTS_Name'Length;
       Name_Buffer (1 .. Name_Len) := RTS_Name;
-      Name := Name_Find;
-
-      if Old /= No_Name
-        and then Old /= Name
-      then
-         Fail_Program ("several different run-times cannot be specified");
-      end if;
-
-      RTS_Languages.Set (Language, Name);
+      RTS_Languages.Set (Language, Name_Find);
    end Set_Runtime_For;
 
    ----------------------

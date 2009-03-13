@@ -35,6 +35,7 @@ package Confgpr is
 
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out Prj.Project_Id;
+      User_Project_Node          : out Prj.Tree.Project_Node_Id;
       Config_File_Name           : String := "";
       Autoconf_Specified         : Boolean;
       Project_File_Name          : String;
@@ -47,7 +48,11 @@ package Confgpr is
       Target_Name                : String := "";
       Normalized_Hostname        : String);
    --  Find the main configuration project and parse the project tree rooted at
-   --  this configuration project. Fails if there is an error.
+   --  this configuration project.
+   --  If the processing fails, Main_Project is set to No_Project. If the error
+   --  happend while parsing the project itself (ie creating the tree),
+   --  User_Project_Node is also set to Empty_Node
+   --
    --  Autoconf_Specified indicates whether the user has specified --autoconf.
    --  If this is the case, the config file might be (re)generated, as
    --  appropriate, to match languages and target if the one specified doesn't
@@ -117,7 +122,6 @@ package Confgpr is
    --  own runtime. This is in general specified via the --RTS command line
    --  switch, and results in a specific component passed to gprconfig's
    --  --config switch then automatically generating a configuration file.
-   --  This subprogram can only be called once per language.
 
    function Runtime_Name_For (Language : Name_Id) return String;
    --  Returns the runtime name for a language. Returns an empty string if

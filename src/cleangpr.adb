@@ -44,6 +44,7 @@ with Opt;         use Opt;
 with Osint;
 with Prj;         use Prj;
 with Prj.Ext;
+with Prj.Tree;    use Prj.Tree;
 with Prj.Util;    use Prj.Util;
 with Snames;
 with Switch;      use Switch;
@@ -997,6 +998,7 @@ package body Cleangpr is
    --------------
 
    procedure Gprclean is
+      User_Project_Node : Project_Node_Id;
    begin
       --  Do the necessary initializations
 
@@ -1059,6 +1061,7 @@ package body Cleangpr is
 
       Parse_Project_And_Apply_Config
         (Main_Project               => Main_Project,
+         User_Project_Node          => User_Project_Node,
          Config_File_Name           => Config_Project_File_Name.all,
          Autoconf_Specified         => Autoconf_Specified,
          Project_File_Name          => Project_File_Name.all,
@@ -1070,6 +1073,16 @@ package body Cleangpr is
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
          Normalized_Hostname        => Normalized_Hostname);
+
+      if Main_Project = No_Project then
+         --  Don't flush messages in case of parsing error. This has already
+         --  been taken care when parsing the tree. Otherwise, it results in
+         --  the same message being displayed twice.
+
+         Fail_Program
+           ("""" & Project_File_Name.all & """ processing failed",
+            Flush_Messages => User_Project_Node /= Empty_Node);
+      end if;
 
       --  Even if the config project file has not been automatically
       --  generated, gprclean will delete it if it was specified using

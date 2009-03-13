@@ -57,6 +57,7 @@ with Prj;              use Prj;
 with Prj.Env;
 with Prj.Err;
 with Prj.Ext;          use Prj.Ext;
+with Prj.Tree;         use Prj.Tree;
 with Prj.Util;         use Prj.Util;
 with Scans;
 with Sinput.C;
@@ -6069,6 +6070,7 @@ package body Buildgpr is
 
    procedure Gprbuild is
       Proj : Project_List;
+      User_Project_Node : Project_Node_Id;
    begin
       --  First initialize and read the command line arguments
 
@@ -6097,6 +6099,7 @@ package body Buildgpr is
 
       Parse_Project_And_Apply_Config
         (Main_Project               => Main_Project,
+         User_Project_Node          => User_Project_Node,
          Config_File_Name           => Config_Project_File_Name.all,
          Autoconf_Specified         => Autoconf_Specified,
          Project_File_Name          => Project_File_Name.all,
@@ -6108,6 +6111,16 @@ package body Buildgpr is
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
          Normalized_Hostname        => Normalized_Hostname);
+
+      if Main_Project = No_Project then
+         --  Don't flush messages in case of parsing error. This has already
+         --  been taken care when parsing the tree. Otherwise, it results in
+         --  the same message being displayed twice.
+
+         Fail_Program
+           ("""" & Project_File_Name.all & """ processing failed",
+            Flush_Messages => User_Project_Node /= Empty_Node);
+      end if;
 
       if Configuration_Project_Path /= null then
          Free (Config_Project_File_Name);
@@ -10707,23 +10720,33 @@ package body Buildgpr is
          elsif Arg'Length > RTS_Option'Length and then
            Arg (1 .. RTS_Option'Length) = RTS_Option
          then
-            if Command_Line then
-               Set_Runtime_For
-                 (Name_Ada, Arg (RTS_Option'Length + 1 .. Arg'Last));
+            declare
+               Old : constant String := Runtime_Name_For (Name_Ada);
+               RTS : constant String :=
+                        Arg (RTS_Option'Length + 1 .. Arg'Last);
+            begin
+               if Command_Line then
+                  if Old /= "" and then Old /= RTS then
+                     Fail_Program
+                       ("several different run-times cannot be specified");
+                  end if;
 
-            elsif Warning_Mode /= Suppress then
-               if Runtime_Name_For (Name_Ada) = "" then
-                  Write_Line
-                    ("warning: --RTS should be specified on the command line");
+                  Set_Runtime_For (Name_Ada, RTS);
 
-               elsif Runtime_Name_For (Name_Ada) /=
-                 Arg (RTS_Option'Length + 1 .. Arg'Last)
-               then
-                  Write_Line
-                    ("warning: --RTS= specified in project file not " &
-                     "consistent with --RTS= specified on the command line");
+               elsif Warning_Mode /= Suppress then
+                  if Old = "" then
+                     Write_Line
+                       ("warning: --RTS should be specified on the command " &
+                        "line");
+
+                  elsif Old /= RTS then
+                     Write_Line
+                       ("warning: --RTS= specified in project file not " &
+                        "consistent with --RTS= specified on the command " &
+                        "line");
+                  end if;
                end if;
-            end if;
+            end;
 
          elsif Command_Line and then
            Arg'Length > RTS_Language_Option'Length and then
