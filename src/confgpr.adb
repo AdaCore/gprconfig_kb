@@ -881,7 +881,8 @@ package body Confgpr is
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
       Target_Name                : String := "";
-      Normalized_Hostname        : String)
+      Normalized_Hostname        : String;
+      On_Load_Config             : Config_File_Hook := null)
    is
       Main_Config_Project : Project_Id;
       Success : Boolean;
@@ -937,6 +938,12 @@ package body Confgpr is
          Packages_To_Check          => Packages_To_Check,
          Config_File_Path           => Config_File_Path,
          Automatically_Generated    => Automatically_Generated);
+
+      if On_Load_Config /= null then
+         On_Load_Config
+           (Config_File  => Main_Config_Project,
+            Project_Tree => Project_Tree);
+      end if;
 
       Apply_Config_File (Main_Config_Project, Project_Tree);
 

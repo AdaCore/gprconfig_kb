@@ -33,6 +33,14 @@ with Prj.Tree;
 
 package Confgpr is
 
+   type Config_File_Hook is access procedure
+     (Config_File  : Prj.Project_Id;
+      Project_Tree : Prj.Project_Tree_Ref);
+   --  Hook called after the config file has been parsed. This lets the
+   --  application do last minute changes to it (GPS uses this to add the
+   --  default naming schemes for instance). At that point, the config file has
+   --  not been applied to the project yet.
+
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out Prj.Project_Id;
       User_Project_Node          : out Prj.Tree.Project_Node_Id;
@@ -46,7 +54,8 @@ package Confgpr is
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
       Target_Name                : String := "";
-      Normalized_Hostname        : String);
+      Normalized_Hostname        : String;
+      On_Load_Config             : Config_File_Hook := null);
    --  Find the main configuration project and parse the project tree rooted at
    --  this configuration project.
    --  If the processing fails, Main_Project is set to No_Project. If the error
@@ -62,6 +71,10 @@ package Confgpr is
    --  configuration files. It is used when the target is unspecified, although
    --  we need to know the target specified by the user (Target_Name) when
    --  computing the name of the default config file that should be used.
+   --
+   --  If specified, On_Load_Config is called just after the config file has
+   --  been created/loaded. You can then modify it before it is later applied
+   --  to the project itself.
 
    procedure Get_Or_Create_Configuration_File
      (Project                    : Prj.Project_Id;
