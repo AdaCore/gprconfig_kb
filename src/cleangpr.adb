@@ -32,7 +32,6 @@ with GNAT.IO;                   use GNAT.IO;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Csets;
-with Confgpr;     use Confgpr;
 with Gprexch;     use Gprexch;
 with GprConfig.Knowledge; use GprConfig.Knowledge;
 with GPR_Version; use GPR_Version;
@@ -43,6 +42,7 @@ with Namet;       use Namet;
 with Opt;         use Opt;
 with Osint;
 with Prj;         use Prj;
+with Prj.Conf;    use Prj.Conf;
 with Prj.Ext;
 with Prj.Tree;    use Prj.Tree;
 with Prj.Util;    use Prj.Util;

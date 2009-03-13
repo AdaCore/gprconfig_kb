@@ -58,6 +58,8 @@ prj-attr-pm.adb
 prj-attr.adb
 prj-attr.ads
 prj-com.ads
+prj-conf.adb
+prj-conf.ads
 prj-dect.adb
 prj-dect.ads
 prj-env.adb

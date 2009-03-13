@@ -31,7 +31,6 @@ with Ada.Unchecked_Deallocation;
 
 with ALI;
 with Csets;
-with Confgpr;   use Confgpr;
 with Debug;     use Debug;
 with Err_Vars;  use Err_Vars;
 with Errutil;   use Errutil;
@@ -54,6 +53,7 @@ with Output;           use Output;
 with Opt;              use Opt;
 with Osint;            use Osint;
 with Prj;              use Prj;
+with Prj.Conf;         use Prj.Conf;
 with Prj.Env;
 with Prj.Err;
 with Prj.Ext;          use Prj.Ext;

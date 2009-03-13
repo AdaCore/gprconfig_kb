@@ -116,6 +116,8 @@
 /gnat/prj-attr-pm.adb
 /gnat/prj-attr-pm.ads
 /gnat/prj-com.ads
+/gnat/prj-conf.adb
+/gnat/prj-conf.ads
 /gnat/prj-dect.adb
 /gnat/prj-dect.ads
 /gnat/prj-env.adb
