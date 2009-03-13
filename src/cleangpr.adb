@@ -1053,10 +1053,6 @@ package body Cleangpr is
          Target_Name := new String'("");
       end if;
 
-      if RTS_Name = null then
-         RTS_Name := new String'("");
-      end if;
-
       if Config_Project_File_Name = null then
          Config_Project_File_Name := new String'("");
       end if;
@@ -1073,8 +1069,7 @@ package body Cleangpr is
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Normalized_Hostname,
-         RTS_Name                   => RTS_Name.all);
+         Normalized_Hostname        => Normalized_Hostname);
 
       --  Even if the config project file has not been automatically
       --  generated, gprclean will delete it if it was specified using

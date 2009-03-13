@@ -28,6 +28,7 @@
 --  Manager. It is used by several tools, including gprmake and gprclean.
 
 with GNAT.OS_Lib; use GNAT.OS_Lib;
+with Namet;       use Namet;
 with Prj.Tree;
 
 package Confgpr is
@@ -44,8 +45,7 @@ package Confgpr is
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
       Target_Name                : String := "";
-      Normalized_Hostname        : String;
-      RTS_Name                   : String := "");
+      Normalized_Hostname        : String);
    --  Find the main configuration project and parse the project tree rooted at
    --  this configuration project. Fails if there is an error.
    --  Autoconf_Specified indicates whether the user has specified --autoconf.
@@ -67,7 +67,6 @@ package Confgpr is
       Autoconf_Specified         : Boolean;
       Target_Name                : String := "";
       Normalized_Hostname        : String;
-      RTS_Name                   : String := "";
       Packages_To_Check          : String_List_Access := null;
       Config                     : out Prj.Project_Id;
       Config_File_Path           : out String_Access;
@@ -90,7 +89,7 @@ package Confgpr is
    --  and languages. This name can either be an absolute path, or the a base
    --  name that will be searched in the default config file directories (which
    --  depends on the installation path for the tools).
-   --  (Target_Name, RTS_Name) is used to chose among several possibilities
+   --  Target_Name is used to chose among several possibilities
    --  the configuration file that will be used.
    --
    --  If a project file could be found, it is automatically parsed and
@@ -107,5 +106,21 @@ package Confgpr is
    --  Currently, this will add new attributes and packages in the various
    --  projects, so that when the second phase of the processing is performed
    --  these attributes are automatically taken into account.
+
+   --------------
+   -- Runtimes --
+   --------------
+
+   procedure Set_Runtime_For (Language : Name_Id; RTS_Name : String);
+   --  Specifies the runtime to use for a specific language. Most of the time
+   --  this should be used for Ada, but other languages can also specify their
+   --  own runtime. This is in general specified via the --RTS command line
+   --  switch, and results in a specific component passed to gprconfig's
+   --  --config switch then automatically generating a configuration file.
+   --  This subprogram can only be called once per language.
+
+   function Runtime_Name_For (Language : Name_Id) return String;
+   --  Returns the runtime name for a language. Returns an empty string if
+   --  no runtime was specified for the language using option --RTS.
 
 end Confgpr;

@@ -28,7 +28,6 @@ with Ada.Directories; use Ada.Directories;
 
 with Gpr_Util; use Gpr_Util;
 with Makeutl;  use Makeutl;
-with Namet;    use Namet;
 with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
@@ -42,7 +41,7 @@ with Sinput.P;
 with Snames;   use Snames;
 with Types;    use Types;
 
-with GNAT.HTable;
+with GNAT.HTable; use GNAT.HTable;
 
 with System;
 with System.Case_Util; use System.Case_Util;
@@ -59,6 +58,16 @@ package body Confgpr is
    --  configuration file to use.
 
    Gprconfig_Name : constant String := "gprconfig";
+
+   package RTS_Languages is new Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Name_Id,
+      No_Element => No_Name,
+      Key        => Name_Id,
+      Hash       => Prj.Hash,
+      Equal      => "=");
+   --  Stores the runtime names for the various languages. This is in general
+   --  set from a --RTS command line option.
 
    procedure Add_Attributes
      (Project_Tree : Project_Tree_Ref;
@@ -394,7 +403,6 @@ package body Confgpr is
       Autoconf_Specified         : Boolean;
       Target_Name                : String := "";
       Normalized_Hostname        : String;
-      RTS_Name                   : String := "";
       Packages_To_Check          : String_List_Access := null;
       Config                     : out Prj.Project_Id;
       Config_File_Path           : out String_Access;
@@ -419,18 +427,19 @@ package body Confgpr is
       -----------------------
 
       function Default_File_Name return String is
+         Ada_RTS : constant String := Runtime_Name_For (Name_Ada);
          Tmp : String_Access;
       begin
          if Target_Name /= "" then
-            if RTS_Name /= "" then
-               return Target_Name & '-' & RTS_Name
+            if Ada_RTS /= "" then
+               return Target_Name & '-' & Ada_RTS
                  & Config_Project_File_Extension;
             else
                return Target_Name & Config_Project_File_Extension;
             end if;
 
-         elsif RTS_Name /= "" then
-            return RTS_Name & Config_Project_File_Extension;
+         elsif Ada_RTS /= "" then
+            return Ada_RTS & Config_Project_File_Extension;
 
          else
             Tmp := Getenv (Config_Project_Env_Var);
@@ -730,10 +739,9 @@ package body Confgpr is
             end if;
 
             if Target_Name = "" then
-               Args (4) :=
-                 new String'(Target_Project_Option & Normalized_Hostname);
+               Args (4) := new String'("--target=" & Normalized_Hostname);
             else
-               Args (4) := new String'(Target_Project_Option & Target_Name);
+               Args (4) := new String'("--target=" & Target_Name);
             end if;
 
             Arg_Last := 4;
@@ -876,8 +884,7 @@ package body Confgpr is
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
       Target_Name                : String := "";
-      Normalized_Hostname        : String;
-      RTS_Name                   : String := "")
+      Normalized_Hostname        : String)
    is
       User_Project_Node   : Project_Node_Id;
       Main_Config_Project : Project_Id;
@@ -932,7 +939,6 @@ package body Confgpr is
          Autoconf_Specified         => Autoconf_Specified,
          Target_Name                => Target_Name,
          Normalized_Hostname        => Normalized_Hostname,
-         RTS_Name                   => RTS_Name,
          Packages_To_Check          => Packages_To_Check,
          Config_File_Path           => Config_File_Path,
          Automatically_Generated    => Automatically_Generated);
@@ -1025,5 +1031,41 @@ package body Confgpr is
          Proj := Proj.Next;
       end loop;
    end Apply_Config_File;
+
+   ---------------------
+   -- Set_Runtime_For --
+   ---------------------
+
+   procedure Set_Runtime_For (Language : Name_Id; RTS_Name : String) is
+      Old : Name_Id;
+      Name : Name_Id;
+   begin
+      Old := RTS_Languages.Get (Language);
+
+      Name_Len := RTS_Name'Length;
+      Name_Buffer (1 .. Name_Len) := RTS_Name;
+      Name := Name_Find;
+
+      if Old /= No_Name
+        and then Old /= Name
+      then
+         Fail_Program ("several different run-times cannot be specified");
+      end if;
+
+      RTS_Languages.Set (Language, Name);
+   end Set_Runtime_For;
+
+   ----------------------
+   -- Runtime_Name_For --
+   ----------------------
+
+   function Runtime_Name_For (Language : Name_Id) return String is
+   begin
+      if RTS_Languages.Get (Language) /= No_Name then
+         return Get_Name_String (RTS_Languages.Get (Language));
+      else
+         return "";
+      end if;
+   end Runtime_Name_For;
 
 end Confgpr;

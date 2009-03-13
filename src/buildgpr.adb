@@ -6085,10 +6085,6 @@ package body Buildgpr is
          Target_Name := new String'("");
       end if;
 
-      if RTS_Name = null then
-         RTS_Name := new String'("");
-      end if;
-
       if Config_Project_File_Name = null then
          Config_Project_File_Name := new String'("");
       end if;
@@ -6111,8 +6107,7 @@ package body Buildgpr is
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Normalized_Hostname,
-         RTS_Name                   => RTS_Name.all);
+         Normalized_Hostname        => Normalized_Hostname);
 
       if Configuration_Project_Path /= null then
          Free (Config_Project_File_Name);
@@ -10712,23 +10707,17 @@ package body Buildgpr is
          elsif Arg'Length > RTS_Option'Length and then
            Arg (1 .. RTS_Option'Length) = RTS_Option
          then
-            if Command_Line and then RTS_Name /= null and then
-              Arg (RTS_Option'Length + 1 .. Arg'Last) /= RTS_Name.all
-            then
-               Fail_Program
-                 ("several different run-times cannot be specified");
-
-            elsif Command_Line then
-               RTS_Name :=
-                 new String'(Arg (RTS_Option'Length + 1 .. Arg'Last));
+            if Command_Line then
+               Set_Runtime_For
+                 (Name_Ada, Arg (RTS_Option'Length + 1 .. Arg'Last));
 
             elsif Warning_Mode /= Suppress then
-               if RTS_Name = null then
+               if Runtime_Name_For (Name_Ada) = "" then
                   Write_Line
                     ("warning: --RTS should be specified on the command line");
 
-               elsif
-                 RTS_Name.all /= Arg (RTS_Option'Length + 1 .. Arg'Last)
+               elsif Runtime_Name_For (Name_Ada) /=
+                 Arg (RTS_Option'Length + 1 .. Arg'Last)
                then
                   Write_Line
                     ("warning: --RTS= specified in project file not " &
@@ -10742,7 +10731,7 @@ package body Buildgpr is
          then
             declare
                Language_Name : Name_Id := No_Name;
-               Runtime_Name  : Name_Id := No_Name;
+               RTS_Start : Natural := Arg'Last + 1;
 
             begin
                for J in RTS_Language_Option'Length + 2 .. Arg'Last loop
@@ -10752,11 +10741,7 @@ package body Buildgpr is
                        (Arg (RTS_Language_Option'Length + 1 .. J - 1));
                      To_Lower (Name_Buffer (1 .. Name_Len));
                      Language_Name := Name_Find;
-
-                     Name_Len := 0;
-                     Add_Str_To_Name_Buffer (Arg (J + 1 .. Arg'Last));
-                     Runtime_Name := Name_Find;
-
+                     RTS_Start := J + 1;
                      exit;
                   end if;
                end loop;
@@ -10765,7 +10750,7 @@ package body Buildgpr is
                   Fail_Program ("illegal switch: " & Arg);
 
                else
-                  RTS_Languages.Set (Language_Name, Runtime_Name);
+                  Set_Runtime_For (Language_Name, Arg (RTS_Start .. Arg'Last));
                end if;
             end;
 

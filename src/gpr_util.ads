@@ -27,7 +27,6 @@
 --  This package contains constants, variable and subprograms used by gprbuild
 --  and gprclean.
 
-with GNAT.HTable; use GNAT.HTable;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
 with GprConfig.Knowledge; use GprConfig.Knowledge;
@@ -43,8 +42,6 @@ package Gpr_Util is
 
    Begin_Info : constant String := "--  BEGIN Object file/option list";
    End_Info   : constant String := "--  END Object file/option list   ";
-
---     User_Project_Node   : Project_Node_Id := Empty_Node;
 
    Project_Node_Tree : constant Project_Node_Tree_Ref :=
      new Project_Node_Tree_Data;
@@ -122,8 +119,6 @@ package Gpr_Util is
 
    RTS_Language_Option : constant String := "--RTS:";
 
-   RTS_Name : String_Access := null;
-
    Base : Knowledge_Base;
    --  The knowledge base used to find the standard name of the native target
 
@@ -132,14 +127,6 @@ package Gpr_Util is
 
    Load_Standard_Base : Boolean := True;
    --  False when switch --db- is used
-
-   package RTS_Languages is new Simple_HTable
-     (Header_Num => Prj.Header_Num,
-      Element    => Name_Id,
-      No_Element => No_Name,
-      Key        => Name_Id,
-      Hash       => Prj.Hash,
-      Equal      => "=");
 
    Unchecked_Shared_Lib_Imports : constant String :=
                                     "--unchecked-shared-lib-imports";
@@ -191,9 +178,5 @@ package Gpr_Util is
       Number        : Natural;
       Object_Suffix : String) return String;
    --  Returns the name of an object file created by the partial linker
-
-   function Runtime_Name_For (Language : Name_Id) return String;
-   --  Returns the runtime name for a language. Returns an empty string if
-   --  no runtime was specified for the language using option --RTS.
 
 end Gpr_Util;
