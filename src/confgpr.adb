@@ -27,8 +27,6 @@
 with Ada.Directories; use Ada.Directories;
 
 with Gpr_Util; use Gpr_Util;
-with GprConfig.Knowledge; use GprConfig.Knowledge;
-with GprConfig.Sdefault;  use GprConfig.Sdefault;
 with Makeutl;  use Makeutl;
 with Namet;    use Namet;
 with Opt;      use Opt;
@@ -78,6 +76,7 @@ package body Confgpr is
 
    function Check_Target
      (Config_File  : Prj.Project_Id;
+      Autoconf_Specified : Boolean;
       Project_Tree : Prj.Project_Tree_Ref;
       Target       : String := "") return Boolean;
    --  Check that the config file's target matches Target.
@@ -85,6 +84,7 @@ package body Confgpr is
    --  a target.
    --  If the target in the configuration file is invalid, this function will
    --  call Osint.Fail to report a fatal error message and stop the program.
+   --  Autoconf_Specified should be set to True if the user has used --autoconf
 
    --------------------
    -- Add_Attributes --
@@ -338,6 +338,7 @@ package body Confgpr is
 
    function Check_Target
      (Config_File  : Project_Id;
+      Autoconf_Specified : Boolean;
       Project_Tree : Prj.Project_Tree_Ref;
       Target       : String := "") return Boolean
    is
@@ -390,7 +391,9 @@ package body Confgpr is
       Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
       Allow_Automatic_Generation : Boolean;
       Config_File_Name           : String := "";
+      Autoconf_Specified         : Boolean;
       Target_Name                : String := "";
+      Normalized_Hostname        : String;
       RTS_Name                   : String := "";
       Packages_To_Check          : String_List_Access := null;
       Config                     : out Prj.Project_Id;
@@ -727,16 +730,8 @@ package body Confgpr is
             end if;
 
             if Target_Name = "" then
-               declare
-                  Id : Targets_Set_Id;
-               begin
-                  Get_Targets_Set (Base, Hostname, Id);
-                  Args (4) :=
-                    new String'
-                      (Target_Project_Option &
-                       Normalized_Target (Base, Id));
-               end;
-
+               Args (4) :=
+                 new String'(Target_Project_Option & Normalized_Hostname);
             else
                Args (4) := new String'(Target_Project_Option & Target_Name);
             end if;
@@ -857,7 +852,8 @@ package body Confgpr is
       --  auto-conf mode, since the appropriate target was passed to gprconfig.
 
       if not Automatically_Generated
-        and not Check_Target (Config, Project_Tree, Target_Name)
+        and not Check_Target
+          (Config, Autoconf_Specified, Project_Tree, Target_Name)
       then
          Automatically_Generated := True;
          goto Process_Config_File;
@@ -871,6 +867,7 @@ package body Confgpr is
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out Prj.Project_Id;
       Config_File_Name           : String := "";
+      Autoconf_Specified         : Boolean;
       Project_File_Name          : String;
       Project_Tree               : Prj.Project_Tree_Ref;
       Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
@@ -879,6 +876,7 @@ package body Confgpr is
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
       Target_Name                : String := "";
+      Normalized_Hostname        : String;
       RTS_Name                   : String := "")
    is
       User_Project_Node   : Project_Node_Id;
@@ -902,7 +900,7 @@ package body Confgpr is
 
       if User_Project_Node = Empty_Node then
          --  Don't flush messages. This has already been taken care of by the
-         --  above call. Otherwise, it results in se same message being
+         --  above call. Otherwise, it results in the same message being
          --  displayed twice.
 
          Fail_Program
@@ -931,7 +929,9 @@ package body Confgpr is
          Project_Node_Tree          => Project_Node_Tree,
          Allow_Automatic_Generation => Allow_Automatic_Generation,
          Config_File_Name           => Config_File_Name,
+         Autoconf_Specified         => Autoconf_Specified,
          Target_Name                => Target_Name,
+         Normalized_Hostname        => Normalized_Hostname,
          RTS_Name                   => RTS_Name,
          Packages_To_Check          => Packages_To_Check,
          Config_File_Path           => Config_File_Path,

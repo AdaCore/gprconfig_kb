@@ -35,6 +35,7 @@ package Confgpr is
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out Prj.Project_Id;
       Config_File_Name           : String := "";
+      Autoconf_Specified         : Boolean;
       Project_File_Name          : String;
       Project_Tree               : Prj.Project_Tree_Ref;
       Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
@@ -43,11 +44,19 @@ package Confgpr is
       Automatically_Generated    : out Boolean;
       Config_File_Path           : out String_Access;
       Target_Name                : String := "";
+      Normalized_Hostname        : String;
       RTS_Name                   : String := "");
    --  Find the main configuration project and parse the project tree rooted at
    --  this configuration project. Fails if there is an error.
-   --  This is a gprbuild-specific implementation that relies on several
-   --  global variables. Use the subprograms below in other contexts.
+   --  Autoconf_Specified indicates whether the user has specified --autoconf.
+   --  If this is the case, the config file might be (re)generated, as
+   --  appropriate, to match languages and target if the one specified doesn't
+   --  already match.
+   --  Normalized_Hostname is the host on which gprbuild is returned,
+   --  normalized so that we can more easily compare it with what is stored in
+   --  configuration files. It is used when the target is unspecified, although
+   --  we need to know the target specified by the user (Target_Name) when
+   --  computing the name of the default config file that should be used.
 
    procedure Get_Or_Create_Configuration_File
      (Project                    : Prj.Project_Id;
@@ -55,7 +64,9 @@ package Confgpr is
       Project_Node_Tree          : Prj.Tree.Project_Node_Tree_Ref;
       Allow_Automatic_Generation : Boolean;
       Config_File_Name           : String := "";
+      Autoconf_Specified         : Boolean;
       Target_Name                : String := "";
+      Normalized_Hostname        : String;
       RTS_Name                   : String := "";
       Packages_To_Check          : String_List_Access := null;
       Config                     : out Prj.Project_Id;
@@ -73,7 +84,10 @@ package Confgpr is
    --  therefore have been partially processed (phase one of the processing
    --  only).
    --  Config_File_Name should be set to the name of the config file specified
-   --  by the user. This name can either be an absolute path, or the a base
+   --  by the user (either through gprbuild's --config or --autoconf switches).
+   --  In the latter case, Autoconf_Specified should be set to true, to
+   --  indicate that the configuration file can be regenerated to match target
+   --  and languages. This name can either be an absolute path, or the a base
    --  name that will be searched in the default config file directories (which
    --  depends on the installation path for the tools).
    --  (Target_Name, RTS_Name) is used to chose among several possibilities

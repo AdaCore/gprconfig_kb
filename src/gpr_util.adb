@@ -34,7 +34,7 @@ with Output;   use Output;
 with Snames;   use Snames;
 with Tempdir;
 with Types;    use Types;
-
+with GprConfig.Sdefault;        use GprConfig.Sdefault;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body Gpr_Util is
@@ -109,6 +109,7 @@ package body Gpr_Util is
 
       Close (Resp_File, Closing_Status);
    end Create_Response_File;
+
    ------------------
    -- Fail_Program --
    ------------------
@@ -500,5 +501,16 @@ package body Gpr_Util is
          return "";
       end if;
    end Runtime_Name_For;
+
+   -------------------------
+   -- Normalized_Hostname --
+   -------------------------
+
+   function Normalized_Hostname return String is
+      Id : Targets_Set_Id;
+   begin
+      Get_Targets_Set (Base, Hostname, Id);
+      return Normalized_Target (Base, Id);
+   end Normalized_Hostname;
 
 end Gpr_Util;

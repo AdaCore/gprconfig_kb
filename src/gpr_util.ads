@@ -164,6 +164,10 @@ package Gpr_Util is
    --  binder driver. Populate table Binding_Languages and set variable
    --  There_Are_Binder_Drivers accordingly.
 
+   function Normalized_Hostname return String;
+   --  Return the normalized name of the host on which gprbuild is running. The
+   --  knowledge base must have been parsed first.
+
    procedure Fail_Program (S : String; Flush_Messages : Boolean := True);
    --  Terminate program with a message and a fatal status code
 

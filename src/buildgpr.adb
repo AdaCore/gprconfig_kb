@@ -6102,6 +6102,7 @@ package body Buildgpr is
       Parse_Project_And_Apply_Config
         (Main_Project               => Main_Project,
          Config_File_Name           => Config_Project_File_Name.all,
+         Autoconf_Specified         => Autoconf_Specified,
          Project_File_Name          => Project_File_Name.all,
          Project_Tree               => Project_Tree,
          Project_Node_Tree          => Project_Node_Tree,
@@ -6110,6 +6111,7 @@ package body Buildgpr is
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
+         Normalized_Hostname        => Normalized_Hostname,
          RTS_Name                   => RTS_Name.all);
 
       if Configuration_Project_Path /= null then
