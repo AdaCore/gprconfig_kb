@@ -9485,6 +9485,32 @@ package body Buildgpr is
                               Dep_File := Source_Identity.Dep_Name;
                               Dep_Path := Source_Identity.Dep_Path;
 
+                              --  For a library file, if there is no ALI file
+                              --  in the object directory, check in the Library
+                              --  ALI directory.
+
+                              if (not Is_Regular_File
+                                  (Get_Name_String (Dep_Path)))
+                                and then Source_Project.Library
+                                and then Source_Project.Library_ALI_Dir /=
+                                  No_Path_Information
+                              then
+                                 Name_Len := 0;
+                                 Add_Str_To_Name_Buffer
+                                   (Get_Name_String
+                                      (Source_Project.Library_ALI_Dir.Name));
+                                 Add_Char_To_Name_Buffer
+                                   (Directory_Separator);
+                                 Add_Str_To_Name_Buffer
+                                   (Get_Name_String (Dep_File));
+
+                                 if Is_Regular_File
+                                   (Name_Buffer (1 .. Name_Len))
+                                 then
+                                    Dep_Path := Name_Find;
+                                 end if;
+                              end if;
+
                               declare
                                  Proj : Project_Id :=
                                           Source_Project.Extended_By;
@@ -9492,13 +9518,26 @@ package body Buildgpr is
                               begin
                                  while Proj /= No_Project loop
                                     Name_Len := 0;
-                                    Add_Str_To_Name_Buffer
-                                      (Get_Name_String
-                                         (Proj.Object_Directory.Name));
+
+                                    if Proj.Library and then
+                                      Proj.Library_ALI_Dir /=
+                                        No_Path_Information
+                                    then
+                                       Add_Str_To_Name_Buffer
+                                         (Get_Name_String
+                                            (Proj.Library_ALI_Dir.Name));
+
+                                    else
+                                       Add_Str_To_Name_Buffer
+                                         (Get_Name_String
+                                            (Proj.Object_Directory.Name));
+                                    end if;
+
                                     Add_Char_To_Name_Buffer
                                       (Directory_Separator);
                                     Add_Str_To_Name_Buffer
                                       (Get_Name_String (Dep_File));
+
                                     if Is_Regular_File
                                       (Name_Buffer (1 .. Name_Len))
                                     then
