@@ -4329,11 +4329,11 @@ package body Buildgpr is
 
                Compilation_Options.Last := 0;
 
-               --  1) The required switches
+               --  1) The initial required switches
 
                declare
                   List    : Name_List_Index :=
-                    Config.Compiler_Required_Switches;
+                    Config.Compiler_Initial_Required_Switches;
                   Nam_Nod : Name_Node;
                   First   : Boolean;
 
@@ -4481,10 +4481,30 @@ package body Buildgpr is
                   --  Check switches
 
                   declare
-                     File : Ada.Text_IO.File_Type;
-                     Line : String (1 .. 1_000);
-                     Last : Natural;
+                     File         : Ada.Text_IO.File_Type;
+                     Line         : String (1 .. 1_000);
+                     Last         : Natural;
+                     Last_Option  : constant Natural :=
+                       Compilation_Options.Last;
                   begin
+                     --  Add temporarily the final required switches, if any
+
+                     declare
+                        List    : Name_List_Index :=
+                          Config.Compiler_Final_Required_Switches;
+                        Nam_Nod : Name_Node;
+
+                     begin
+                        while List /= No_Name_List loop
+                           Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                           Add_Option
+                             (Nam_Nod.Name,
+                              To      => Compilation_Options,
+                              Display => Verbose_Mode);
+                           List := Nam_Nod.Next;
+                        end loop;
+                     end;
+
                      Open
                        (File,
                         In_File,
@@ -4559,6 +4579,8 @@ package body Buildgpr is
                      end if;
 
                      Close (File);
+
+                     Compilation_Options.Last := Last_Option;
 
                   exception
                      when others =>
@@ -4651,29 +4673,6 @@ package body Buildgpr is
                      end if;
                   end loop;
                end if;
-
-               declare
-                  Source_Path : String_Access;
-
-               begin
-                  Get_Name_String (Source_Identity.Path.Name);
-
-                  case Config.Path_Syntax is
-                     when Canonical =>
-                        Source_Path :=
-                          new String'(Name_Buffer (1 .. Name_Len));
-
-                     when Host =>
-                        Source_Path :=
-                          To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
-                  end case;
-
-                  Add_Option
-                    (Source_Path,
-                     To          => Compilation_Options,
-                     Display     => True,
-                     Simple_Name => not Verbose_Mode);
-               end;
 
                --  Set the environment or additional switches for visibility
                --  on source directories.
@@ -5011,6 +5010,81 @@ package body Buildgpr is
                   Mapping_File_Path := No_Path;
                end if;
 
+               --  Add the final required switches, if any
+
+               declare
+                  List    : Name_List_Index :=
+                    Config.Compiler_Final_Required_Switches;
+                  Nam_Nod : Name_Node;
+
+               begin
+                  while List /= No_Name_List loop
+                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                     Add_Option
+                       (Nam_Nod.Name,
+                        To      => Compilation_Options,
+                        Display => Verbose_Mode);
+                     List := Nam_Nod.Next;
+                  end loop;
+               end;
+
+               --  Add the name of the source to be compiled
+
+               declare
+                  Source_Path : String_Access;
+
+               begin
+                  Get_Name_String (Source_Identity.Path.Name);
+
+                  case Config.Path_Syntax is
+                     when Canonical =>
+                        Source_Path :=
+                          new String'(Name_Buffer (1 .. Name_Len));
+
+                     when Host =>
+                        Source_Path :=
+                          To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
+                  end case;
+
+                  Add_Option
+                    (Source_Path,
+                     To          => Compilation_Options,
+                     Display     => True,
+                     Simple_Name => not Verbose_Mode);
+               end;
+
+               --  If there are switches to specify the name of the object
+               --  file, add them.
+
+               if Config.Object_File_Switches /= No_Name_List then
+                  declare
+                     List    : Name_List_Index := Config.Object_File_Switches;
+                     Nam_Nod : Name_Node;
+
+                  begin
+                     loop
+                        Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                        Get_Name_String (Nam_Nod.Name);
+
+                        exit when Nam_Nod.Next = No_Name_List;
+
+                        Add_Option
+                          (Nam_Nod.Name,
+                           To      => Compilation_Options,
+                           Display => Verbose_Mode);
+                        List := Nam_Nod.Next;
+                     end loop;
+
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Source_Identity.Object));
+
+                     Add_Option
+                       (Name_Buffer (1 .. Name_Len),
+                        To      => Compilation_Options,
+                        Display => Verbose_Mode);
+                  end;
+               end if;
+
                --  Display the command invoked if not in quiet output mode
 
                if not Quiet_Output then
@@ -5062,10 +5136,32 @@ package body Buildgpr is
                   Options : String_List_Access := null;
                begin
                   if Last_Recorded_Option >= 0 then
+
+                     Compilation_Options.Last := Last_Recorded_Option;
+
+                     --  Add the final required switches, if any, so that they
+                     --  will be put in the switches file.
+
+                     declare
+                        List    : Name_List_Index :=
+                          Config.Compiler_Final_Required_Switches;
+                        Nam_Nod : Name_Node;
+
+                     begin
+                        while List /= No_Name_List loop
+                           Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                           Add_Option
+                             (Nam_Nod.Name,
+                              To      => Compilation_Options,
+                              Display => Verbose_Mode);
+                           List := Nam_Nod.Next;
+                        end loop;
+                     end;
+
                      Options :=
                        new String_List'
                          (Compilation_Options.Options
-                              (1 .. Last_Recorded_Option));
+                              (1 .. Compilation_Options.Last));
                   end if;
 
                   Add_Process
