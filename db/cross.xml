@@ -67,8 +67,8 @@
      </compilers>
      <config>
    package Compiler is
-      for Required_Switches ("Ada") use
-        Compiler'Required_Switches ("Ada") &amp; ("-mrtp");
+      for Leading_Required_Switches ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("-mrtp");
    end Compiler;
 
    package Linker is
@@ -84,8 +84,8 @@
      </compilers>
      <config>
    package Compiler is
-      for Required_Switches ("C") use
-        Compiler'Required_Switches ("C") &amp; ("-mrtp")
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C") &amp; ("-mrtp")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h");
    end Compiler;
      </config>
@@ -98,8 +98,8 @@
      </compilers>
      <config>
    package Compiler is
-      for Required_Switches ("C") use
-        Compiler'Required_Switches ("C")
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/h");
    end Compiler;
      </config>
