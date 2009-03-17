@@ -4330,11 +4330,11 @@ package body Buildgpr is
 
                Compilation_Options.Last := 0;
 
-               --  1) The initial required switches
+               --  1) The leading required switches
 
                declare
                   List    : Name_List_Index :=
-                    Config.Compiler_Initial_Required_Switches;
+                    Config.Compiler_Leading_Required_Switches;
                   Nam_Nod : Name_Node;
                   First   : Boolean;
 
@@ -4488,11 +4488,11 @@ package body Buildgpr is
                      Last_Option  : constant Natural :=
                        Compilation_Options.Last;
                   begin
-                     --  Add temporarily the final required switches, if any
+                     --  Add temporarily the trailing required switches, if any
 
                      declare
                         List    : Name_List_Index :=
-                          Config.Compiler_Final_Required_Switches;
+                          Config.Compiler_Trailing_Required_Switches;
                         Nam_Nod : Name_Node;
 
                      begin
@@ -5011,11 +5011,11 @@ package body Buildgpr is
                   Mapping_File_Path := No_Path;
                end if;
 
-               --  Add the final required switches, if any
+               --  Add the trailing required switches, if any
 
                declare
                   List    : Name_List_Index :=
-                    Config.Compiler_Final_Required_Switches;
+                    Config.Compiler_Trailing_Required_Switches;
                   Nam_Nod : Name_Node;
 
                begin
@@ -5140,12 +5140,12 @@ package body Buildgpr is
 
                      Compilation_Options.Last := Last_Recorded_Option;
 
-                     --  Add the final required switches, if any, so that they
-                     --  will be put in the switches file.
+                     --  Add the trailing required switches, if any, so that
+                     --  they will be put in the switches file.
 
                      declare
                         List    : Name_List_Index :=
-                          Config.Compiler_Final_Required_Switches;
+                          Config.Compiler_Trailing_Required_Switches;
                         Nam_Nod : Name_Node;
 
                      begin
