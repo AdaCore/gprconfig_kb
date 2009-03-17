@@ -25,6 +25,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line;          use Ada.Command_Line;
+with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -1059,20 +1060,25 @@ package body Cleangpr is
          Config_Project_File_Name := new String'("");
       end if;
 
-      Parse_Project_And_Apply_Config
-        (Main_Project               => Main_Project,
-         User_Project_Node          => User_Project_Node,
-         Config_File_Name           => Config_Project_File_Name.all,
-         Autoconf_Specified         => Autoconf_Specified,
-         Project_File_Name          => Project_File_Name.all,
-         Project_Tree               => Project_Tree,
-         Project_Node_Tree          => Project_Node_Tree,
-         Packages_To_Check          => Packages_To_Check,
-         Allow_Automatic_Generation => Autoconfiguration,
-         Automatically_Generated    => Delete_Autoconf_File,
-         Config_File_Path           => Configuration_Project_Path,
-         Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Normalized_Hostname);
+      begin
+         Parse_Project_And_Apply_Config
+           (Main_Project               => Main_Project,
+            User_Project_Node          => User_Project_Node,
+            Config_File_Name           => Config_Project_File_Name.all,
+            Autoconf_Specified         => Autoconf_Specified,
+            Project_File_Name          => Project_File_Name.all,
+            Project_Tree               => Project_Tree,
+            Project_Node_Tree          => Project_Node_Tree,
+            Packages_To_Check          => Packages_To_Check,
+            Allow_Automatic_Generation => Autoconfiguration,
+            Automatically_Generated    => Delete_Autoconf_File,
+            Config_File_Path           => Configuration_Project_Path,
+            Target_Name                => Target_Name.all,
+            Normalized_Hostname        => Normalized_Hostname);
+      exception
+         when E : Prj.Conf.Invalid_Config =>
+            Osint.Fail (Exception_Message (E));
+      end;
 
       if Main_Project = No_Project then
          --  Don't flush messages in case of parsing error. This has already
