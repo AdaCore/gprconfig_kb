@@ -75,8 +75,8 @@
      </compilers>
      <config>
    package Compiler is
-      for Required_Switches   ("C") use
-         Compiler'Required_Switches ("C") &amp; ("-c", "-x", "c");
+      for Leading_Required_Switches   ("C") use
+         Compiler'Leading_Required_Switches ("C") &amp; ("-c", "-x", "c");
       for Dependency_Switches ("C") use ("-Wp,-MMD,");
       for Include_Path        ("C") use "CPATH";
    end Compiler;
@@ -89,8 +89,8 @@
      </compilers>
      <config>
    package Compiler is
-      for Required_Switches   ("C") use
-         Compiler'Required_Switches ("C") &amp; ("-tPPC750EH:cross", "-c");
+      for Leading_Required_Switches   ("C") use
+         Compiler'Leading_Required_Switches ("C") &amp; ("-tPPC750EH:cross", "-c");
       for Dependency_Switches ("C") use
          ("-Xmake-dependency=6", "-Xmake-dependency-savefile=");
       for Include_Path        ("C") use "CPATH";
@@ -125,8 +125,8 @@
      </compilers>
      <config>
    package Compiler is
-      for Required_Switches ("C") use
-        Compiler'Required_Switches ("C") &amp; ("-mno-cygwin");
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C") &amp; ("-mno-cygwin");
    end Compiler;
      </config>
    </configuration>
