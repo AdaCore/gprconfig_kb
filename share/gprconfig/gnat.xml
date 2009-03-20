@@ -126,6 +126,7 @@
      <compiler name="GNAT" runtime="soft-float" />
      <compiler name="GNAT" runtime="kernel" />
      <compiler name="GNAT" runtime="rtp" />
+     <compiler name="GNAT" runtime="xenomai" />
    </compilers>
    <config>
    package Compiler is

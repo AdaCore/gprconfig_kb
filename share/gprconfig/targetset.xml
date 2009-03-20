@@ -2,13 +2,27 @@
 
 <gprconfig>
 
+<!-- Add elinos ports *before* native ports to
+     be matched before native compiler -->
+ <!-- x86-elinos-.* -->
+ <targetset>
+    <target>x86-elinos-linux</target>
+    <target>i686-elinos-linux</target>
+ </targetset>
+
+ <!-- ppc-elinos-.* -->
+ <targetset>
+    <target>ppc-elinos-linux</target>
+    <target>powerpc-elinos-linux</target>
+ </targetset>
+
 <!-- Native ports -->
 <!-- ************ -->
 
   <!-- x86-linux -->
   <targetset>
     <target>x86-linux</target>
-    <target>i.86-.*linux.*</target>
+    <target>i.86-.*-linux.*</target>
   </targetset>
 
   <!-- x86_64-linux -->
@@ -192,4 +206,5 @@
     <target>avr-elf-windows</target>
     <target>avr</target>
  </targetset>
+
 </gprconfig>
