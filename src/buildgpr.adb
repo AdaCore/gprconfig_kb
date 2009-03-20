@@ -1719,7 +1719,7 @@ package body Buildgpr is
                if not Id.Locally_Removed
                  and then Is_Compilable (Id)
                  and then Id.Kind = Impl
-                 and then Id.Unit = No_Name
+                 and then Id.Unit = No_Unit_Index
                then
                   Add_Source_Id (Proj, Id);
                end if;
@@ -2340,10 +2340,10 @@ package body Buildgpr is
                  and then Is_Compilable (Source)
                  and then Source.Language.Config.Objects_Linked
                  and then
-                   ((Source.Unit = No_Name
+                   ((Source.Unit = No_Unit_Index
                      and then Source.Kind = Impl)
                     or else
-                      (Source.Unit /= No_Name
+                      (Source.Unit /= No_Unit_Index
                        and then (Source.Kind = Impl
                                  or else Source.Other_Part = No_Source)
                        and then not Is_Subunit (Source)))
@@ -3587,13 +3587,15 @@ package body Buildgpr is
                            Root_Found := False;
                            if Pat_Root then
                               Root_Found :=
-                                Root_Source.Unit /= No_Name and then
-                              Match
-                                (Get_Name_String (Root_Source.Unit),
-                                 Root_Pattern);
+                                Root_Source.Unit /= No_Unit_Index
+                                and then Match
+                                  (Get_Name_String (Root_Source.Unit.Name),
+                                   Root_Pattern);
 
                            else
-                              Root_Found := Root_Source.Unit = Unit_Name;
+                              Root_Found :=
+                                Root_Source.Unit /= No_Unit_Index
+                                and then Root_Source.Unit.Name = Unit_Name;
                            end if;
 
                            if Root_Found then
@@ -4227,9 +4229,10 @@ package body Buildgpr is
 
                                  Write_Str ("Unit """);
                                  Write_Str
-                                   (Get_Name_String (Src_Data.Unit));
+                                   (Get_Name_String (Src_Data.Unit.Name));
                                  Write_Str (""" cannot import unit """);
-                                 Write_Str (Get_Name_String (Source_2.Unit));
+                                 Write_Str
+                                   (Get_Name_String (Source_2.Unit.Name));
                                  Write_Line (""":");
 
                                  Write_Str ("  """);
@@ -4253,9 +4256,10 @@ package body Buildgpr is
 
                                  Write_Str ("Unit """);
                                  Write_Str
-                                   (Get_Name_String (Src_Data.Unit));
+                                   (Get_Name_String (Src_Data.Unit.Name));
                                  Write_Str (""" cannot import unit """);
-                                 Write_Str (Get_Name_String (Source_2.Unit));
+                                 Write_Str
+                                   (Get_Name_String (Source_2.Unit.Name));
                                  Write_Line (""":");
 
                                  Write_Str
@@ -5692,7 +5696,7 @@ package body Buildgpr is
 
          if Source.Language.Name = Language
            and then Source.Naming_Exception
-           and then Source.Unit /= No_Name
+           and then Source.Unit /= No_Unit_Index
            and then not Source.Locally_Removed
            and then Source.Replaced_By = No_Source
          then
@@ -5712,7 +5716,7 @@ package body Buildgpr is
             if Name_Len /= 0 then
                declare
                   Cur : Positive := 1;
-                  Unit : constant String := Get_Name_String (Source.Unit);
+                  Unit : constant String := Get_Name_String (Source.Unit.Name);
                   File_Name : constant String :=
                     Get_Name_String (Source.Display_File);
 
@@ -7105,7 +7109,7 @@ package body Buildgpr is
       --  a subunit.
 
       elsif Source.Kind = Spec or else
-        Source.Unit = No_Name or else
+        Source.Unit = No_Unit_Index or else
         Source.Other_Part /= No_Source
       then
          return False;
@@ -8627,7 +8631,7 @@ package body Buildgpr is
                      exit when Dep_Src = No_Source;
 
                      if not Dep_Src.Locally_Removed
-                       and then Dep_Src.Unit /= No_Name
+                       and then Dep_Src.Unit /= No_Unit_Index
                        and then Dep_Src.File = Sfile
                      then
                         Found := True;
@@ -9069,7 +9073,7 @@ package body Buildgpr is
                  or else
                    (Config.Kind = Unit_Based
                     and then
-                      Source.Unit /= No_Name
+                      Source.Unit /= No_Unit_Index
                     and then
                       Source.Unit /= Main_Source.Unit
                     and then
@@ -9104,7 +9108,7 @@ package body Buildgpr is
          Roots := Root_Sources.Get (Main_Source.File);
 
          if Roots = No_Roots then
-            if Main_Source.Unit = No_Name then
+            if Main_Source.Unit = No_Unit_Index then
                Iter := For_Each_Source (Project_Tree);
                while Prj.Element (Iter) /= No_Source loop
                   Put_Dependency_File (Prj.Element (Iter));
@@ -9518,7 +9522,7 @@ package body Buildgpr is
                                    or else
                                      (Config.Kind = Unit_Based
                                       and then
-                                        Source.Unit /= No_Name
+                                        Source.Unit /= No_Unit_Index
                                       and then
                                         Source.Unit /= Main_Source.Unit
                                       and then
@@ -9819,7 +9823,7 @@ package body Buildgpr is
 
                      --  Then, the Dependency files
 
-                     if Main_Source.Unit /= No_Name then
+                     if Main_Source.Unit /= No_Unit_Index then
                         Put_Line
                           (Exchange_File,
                            Binding_Label (Main_Dependency_File));
@@ -10063,7 +10067,7 @@ package body Buildgpr is
 
                      Close (Exchange_File);
 
-                     if Main_Source.Unit = No_Name and then
+                     if Main_Source.Unit = No_Unit_Index and then
                        (not Dep_Files)
                      then
                         if Verbose_Mode then
@@ -10529,12 +10533,12 @@ package body Buildgpr is
               and then Source.Path /= No_Path_Information
             then
                if Source.Kind = Impl
-                 or else (Source.Unit /= No_Name
+                 or else (Source.Unit /= No_Unit_Index
                           and then Source.Kind = Spec
                           and then Source.Other_Part = No_Source)
                then
                   if (Unit_Based
-                      or else Source.Unit = No_Name
+                      or else Source.Unit = No_Unit_Index
                       or else Source.Project.Library)
                     and then not Is_Subunit (Source)
                   then

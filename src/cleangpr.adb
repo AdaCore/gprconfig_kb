@@ -245,7 +245,7 @@ package body Cleangpr is
                      Source := Prj.Element (Iter);
                      exit when Source = No_Source;
 
-                     if Source.Unit /= No_Name
+                     if Source.Unit /= No_Unit_Index
                        and then
                          Ultimate_Extension_Of (Source.Project) = Project
                        and then
