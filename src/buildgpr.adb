@@ -5172,9 +5172,8 @@ package body Buildgpr is
                      Compilation,
                      Options);
                end;
-
             elsif Closure_Needed and then
-              Source_Identity.Dependency = ALI_File
+              Source_Identity.Language.Config.Dependency_Kind = ALI_File
             then
                Record_ALI_For (Source_Identity);
             end if;
@@ -5240,7 +5239,7 @@ package body Buildgpr is
                declare
                   No_Check : Boolean;
                begin
-                  case Source_Identity.Dependency is
+                  case Source_Identity.Language.Config.Dependency_Kind is
                      when None     => null;
                      when Makefile => Phase_2_Makefile (Source_Identity);
                      when ALI_File => Phase_2_ALI (Source_Identity);
@@ -5275,7 +5274,7 @@ package body Buildgpr is
                Record_Failure (Source_Identity);
 
             elsif Closure_Needed and then
-              Source_Identity.Dependency = ALI_File
+              Source_Identity.Language.Config.Dependency_Kind = ALI_File
             then
                Record_ALI_For (Source_Identity);
             end if;
@@ -6955,7 +6954,7 @@ package body Buildgpr is
 
                if Obj_Proj.Extended_By = No_Project then
 
-                  if Source.Dependency /= None then
+                  if Source.Language.Config.Dependency_Kind /= None then
                      declare
                         Dep_Path : constant String :=
                                      Normalize_Pathname
@@ -6996,7 +6995,7 @@ package body Buildgpr is
             end;
          end loop;
 
-      elsif Source.Dependency /= None then
+      elsif Source.Language.Config.Dependency_Kind /= None then
          declare
             Object_Dir : constant String :=
                            Get_Name_String
@@ -8804,7 +8803,7 @@ package body Buildgpr is
          --  If no object file is generated, the "compiler" need to be invoked
          --  if there is no dependency file.
 
-         if Source.Dependency = None then
+         if Source.Language.Config.Dependency_Kind = None then
             if Verbose_Mode then
                Write_Line ("      -> no object file generated");
             end if;
@@ -8842,7 +8841,7 @@ package body Buildgpr is
          end if;
       end if;
 
-      if Source.Dependency /= None then
+      if Source.Language.Config.Dependency_Kind /= None then
 
          --  If there is no dependency file, then the source needs to be
          --  recompiled and the dependency file need to be created.
@@ -8902,7 +8901,7 @@ package body Buildgpr is
          end if;
       end if;
 
-      case Source.Dependency is
+      case Source.Language.Config.Dependency_Kind is
          when None =>
             null;
 
