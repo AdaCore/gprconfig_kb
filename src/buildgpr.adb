@@ -1717,7 +1717,7 @@ package body Buildgpr is
                exit when Id = No_Source;
 
                if not Id.Locally_Removed
-                 and then Id.Compiled
+                 and then Is_Compilable (Id)
                  and then Id.Kind = Impl
                  and then Id.Unit = No_Name
                then
@@ -1785,7 +1785,7 @@ package body Buildgpr is
                      exit when Id = No_Source;
 
                      if not Id.Locally_Removed
-                       and then Id.Compiled
+                       and then Is_Compilable (Id)
                        and then Id.Get_Object
                      then
                         Add_Argument
@@ -2337,7 +2337,7 @@ package body Buildgpr is
                exit when Source = No_Source;
 
                if not Source.Locally_Removed
-                 and then Source.Compiled
+                 and then Is_Compilable (Source)
                  and then Source.Object_Linked
                  and then
                    ((Source.Unit = No_Name
@@ -4187,8 +4187,8 @@ package body Buildgpr is
                            Source_2 := Prj.Element (Iter);
                            exit when Source_2 = No_Source;
 
-                           if Source_2.Compiled and then
-                             Source_2.Dep_Name = Afile
+                           if Is_Compilable (Source_2)
+                             and then Source_2.Dep_Name = Afile
                            then
                               case Source_2.Kind is
                                  when Spec =>
@@ -6898,7 +6898,7 @@ package body Buildgpr is
       --  is only called once per source file.
       Source.Source_TS := File_Stamp (Source.Path.Name);
 
-      Source.Get_Object := Source.Compiled and Source.Object_Exists;
+      Source.Get_Object := Is_Compilable (Source) and Source.Object_Exists;
 
       if Source.Get_Object then
 
@@ -9511,8 +9511,7 @@ package body Buildgpr is
                                 B_Data.Language.Name
                                 and then
                                   not Source.Locally_Removed
-                                and then
-                                  Source.Compiled
+                                and then Is_Compilable (Source)
                                 and then
                                   ((Config.Kind = File_Based
                                     and then Source.Kind = Impl)
@@ -10467,7 +10466,7 @@ package body Buildgpr is
                      Src_Id := Prj.Element (Iter);
                      exit when Src_Id = No_Source;
 
-                     if Src_Id.Compiled
+                     if Is_Compilable (Src_Id)
                        and then Src_Id.Dep_Name = Afile
                      then
                         case Src_Id.Kind is
@@ -10519,7 +10518,7 @@ package body Buildgpr is
             Source := Prj.Element (Iter);
             exit when Source = No_Source;
 
-            if Source.Compiled
+            if Is_Compilable (Source)
               and then
                 (All_Projects
                  or else Is_Extending (The_Project, Source.Project))
