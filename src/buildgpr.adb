@@ -3530,7 +3530,7 @@ package body Buildgpr is
                      --  need to be compiled, so no need to check for
                      --  closure.
 
-                     if Source.Lang_Kind /= Unit_Based then
+                     if Source.Language.Config.Kind /= Unit_Based then
                         Closure_Needed := False;
                      end if;
 
@@ -6904,7 +6904,7 @@ package body Buildgpr is
 
          --  Should the object file be included in the global archive ?
 
-         case Source.Lang_Kind is
+         case Source.Language.Config.Kind is
             when Unit_Based =>
                if Source.Kind = Impl
                  and then Is_Subunit (Source)
