@@ -2338,7 +2338,7 @@ package body Buildgpr is
 
                if not Source.Locally_Removed
                  and then Is_Compilable (Source)
-                 and then Source.Object_Linked
+                 and then Source.Language.Config.Objects_Linked
                  and then
                    ((Source.Unit = No_Name
                      and then Source.Kind = Impl)
@@ -6897,7 +6897,8 @@ package body Buildgpr is
       --  is only called once per source file.
       Source.Source_TS := File_Stamp (Source.Path.Name);
 
-      Source.Get_Object := Is_Compilable (Source) and Source.Object_Exists;
+      Source.Get_Object := Is_Compilable (Source)
+        and Source.Language.Config.Object_Generated;
 
       if Source.Get_Object then
 
@@ -6919,7 +6920,7 @@ package body Buildgpr is
                end if;
          end case;
 
-         if not Source.Object_Linked then
+         if not Source.Language.Config.Objects_Linked then
             Source.Get_Object := False;
          end if;
 
@@ -7057,7 +7058,7 @@ package body Buildgpr is
          if Source.Get_Object
            and then Source.Object =  Object_Name
          then
-            return Source.Object_Linked;
+            return Source.Language.Config.Objects_Linked;
          end if;
 
          Next (Iter);
