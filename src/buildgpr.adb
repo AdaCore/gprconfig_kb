@@ -2345,7 +2345,7 @@ package body Buildgpr is
                     or else
                       (Source.Unit /= No_Unit_Index
                        and then (Source.Kind = Impl
-                                 or else Source.Other_Part = No_Source)
+                                 or else Other_Part (Source) = No_Source)
                        and then not Is_Subunit (Source)))
                then
                   Library_Objs.Append
@@ -3058,7 +3058,7 @@ package body Buildgpr is
                        and then Source.Dep_Name /= No_File
                      then
                         if Source.Kind = Spec then
-                           if Source.Other_Part = No_Source then
+                           if Other_Part (Source) = No_Source then
                               Put_Line
                                 (Exchange_File,
                                  Get_Name_String (Source.Dep_Name));
@@ -3605,7 +3605,7 @@ package body Buildgpr is
 
                                  when Spec =>
                                     Root_Found :=
-                                      Root_Source.Other_Part = No_Source;
+                                      Other_Part (Root_Source) = No_Source;
 
                                  when Sep =>
                                     Root_Found := False;
@@ -7110,7 +7110,7 @@ package body Buildgpr is
 
       elsif Source.Kind = Spec or else
         Source.Unit = No_Unit_Index or else
-        Source.Other_Part /= No_Source
+        Other_Part (Source) /= No_Source
       then
          return False;
       end if;
@@ -8057,10 +8057,10 @@ package body Buildgpr is
 
    begin
       if Src_Id /= No_Source then
-         if Src_Id.Other_Part = No_Source then
+         if Other_Part (Src_Id) = No_Source then
             Other_Part_File_Name := No_File;
          else
-            Other_Part_File_Name := Src_Id.Other_Part.File;
+            Other_Part_File_Name := Other_Part (Src_Id).File;
          end if;
 
          if Src_Id.File /= Sfile
@@ -9079,7 +9079,7 @@ package body Buildgpr is
                     and then
                       (Source.Kind = Impl
                        or else
-                         Source.Other_Part = No_Source)
+                         Other_Part (Source) = No_Source)
                     and then not Is_Subunit (Source)))
               and then Is_Included_In_Global_Archive
                 (Source.Object, Source.Project)
@@ -9528,7 +9528,7 @@ package body Buildgpr is
                                       and then
                                         (Source.Kind = Impl
                                          or else
-                                           Source.Other_Part = No_Source)
+                                           Other_Part (Source) = No_Source)
                                       and then not Is_Subunit (Source)))
                               then
                                  declare
@@ -10475,8 +10475,8 @@ package body Buildgpr is
                      then
                         case Src_Id.Kind is
                            when Spec =>
-                              if Src_Id.Other_Part /= No_Source then
-                                 Src_Id := Src_Id.Other_Part;
+                              if Other_Part (Src_Id) /= No_Source then
+                                 Src_Id := Other_Part (Src_Id);
                               end if;
 
                            when Impl =>
@@ -10535,7 +10535,7 @@ package body Buildgpr is
                if Source.Kind = Impl
                  or else (Source.Unit /= No_Unit_Index
                           and then Source.Kind = Spec
-                          and then Source.Other_Part = No_Source)
+                          and then Other_Part (Source) = No_Source)
                then
                   if (Unit_Based
                       or else Source.Unit = No_Unit_Index
