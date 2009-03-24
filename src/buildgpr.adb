@@ -1784,10 +1784,7 @@ package body Buildgpr is
                      Id := Prj.Element (Iter);
                      exit when Id = No_Source;
 
-                     if not Id.Locally_Removed
-                       and then Is_Compilable (Id)
-                       and then Id.Get_Object
-                     then
+                     if Object_To_Global_Archive (Id) then
                         Add_Argument
                           (Get_Name_String (Id.Object_Path),
                            Verbose_Mode,
@@ -2012,8 +2009,8 @@ package body Buildgpr is
 
             if not Need_To_Build then
                for S in 1 .. Last_Source loop
-                  if not Source_Indexes (S).Found and then
-                    Source_Indexes (S).Id.Get_Object
+                  if not Source_Indexes (S).Found
+                    and then Object_To_Global_Archive (Source_Indexes (S).Id)
                   then
                      Need_To_Build := True;
 
@@ -2228,7 +2225,7 @@ package body Buildgpr is
 
                         for S in 1 .. Last_Source loop
                            Src_Id := Source_Indexes (S).Id;
-                           if Src_Id.Get_Object then
+                           if Object_To_Global_Archive (Src_Id) then
                               Put_Line
                                 (Dep_File,
                                  Get_Name_String (Src_Id.Object_Path));
@@ -6901,33 +6898,16 @@ package body Buildgpr is
       --  is only called once per source file.
       Source.Source_TS := File_Stamp (Source.Path.Name);
 
-      Source.Get_Object := Is_Compilable (Source)
-        and Source.Language.Config.Object_Generated;
+      if Source.Language.Config.Kind = Unit_Based
+        and then Source.Kind = Impl
+        and then Is_Subunit (Source)
+      then
+         Source.Kind := Sep;
+      end if;
 
-      if Source.Get_Object then
-
-         --  Should the object file be included in the global archive ?
-
-         case Source.Language.Config.Kind is
-            when Unit_Based =>
-               if Source.Kind = Impl
-                 and then Is_Subunit (Source)
-               then
-                  Source.Kind := Sep;
-               end if;
-
-               Source.Get_Object := False;
-
-            when File_Based =>
-               if Source.Kind = Spec then
-                  Source.Get_Object := False;
-               end if;
-         end case;
-
-         if not Source.Language.Config.Objects_Linked then
-            Source.Get_Object := False;
-         end if;
-
+      if Is_Compilable (Source)
+        and Source.Language.Config.Object_Generated
+      then
          --  Find the object file for that source. It could be either in
          --  the current project or in an extended project
 
@@ -7042,7 +7022,7 @@ package body Buildgpr is
             Source := Prj.Element (Iter);
             exit when Source = No_Source;
 
-            if Source.Get_Object
+            if Object_To_Global_Archive (Source)
               and then Source.Object = Object_Name
             then
                return False;
@@ -7059,7 +7039,7 @@ package body Buildgpr is
          Source := Prj.Element (Iter);
          exit when Source = No_Source;
 
-         if Source.Get_Object
+         if Object_To_Global_Archive (Source)
            and then Source.Object =  Object_Name
          then
             return Source.Language.Config.Objects_Linked;
@@ -8382,7 +8362,7 @@ package body Buildgpr is
                               --  If the source has been modified after the
                               --  object file, we need to recompile.
 
-                           elsif Source.Get_Object
+                           elsif Object_To_Global_Archive (Source)
                              and then Src_TS > Source.Object_TS
                            then
                               if Verbose_Mode then
