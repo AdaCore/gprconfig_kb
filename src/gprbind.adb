@@ -60,7 +60,10 @@ procedure Gprbind is
    --  in the Minimum_Binder_Options.
 
    Gnatbind_Prefix_Equal : constant String := "gnatbind_prefix=";
-   --  Start of the option to specify a prefix for the gnatbind executable.
+   --  Start of the option to specify a prefix for the gnatbind executable
+
+   Gnatbind_Path_Equal : constant String := "--gnatbind_path=";
+   --  Start of the option to specify the absolute path of gnatbind
 
    Ada_Binder_Equal : constant String := "ada_binder=";
    --  Start of the option to specify the full name of the Ada binder
@@ -99,7 +102,9 @@ procedure Gprbind is
 
    Exchange_File_Name : String_Access;
    Ada_Compiler_Path  : String_Access;
+   FULL_GNATBIND      : String_Access;
    Gnatbind_Path      : String_Access;
+   Gnatbind_Path_Specified : Boolean := False;
 
    Compiler_Options     : String_List_Access := new String_List (1 .. 100);
    Last_Compiler_Option : Natural := 0;
@@ -291,9 +296,19 @@ begin
                   ALI_Files_Table.Append (new String'(Line (1 .. Last)));
 
                when Binding_Options =>
+                  --  Check if a gnatbind absolute is specified
+
+                  if Last > Gnatbind_Path_Equal'Length
+                    and then Line (1 .. Gnatbind_Path_Equal'Length) =
+                             Gnatbind_Path_Equal
+                  then
+                     Gnatbind_Path := new String'
+                       (Line (Gnatbind_Path_Equal'Length + 1 .. Last));
+                     Gnatbind_Path_Specified := True;
+
                   --  Check if a gnatbind prefix is specified
 
-                  if Last > Gnatbind_Prefix_Equal'Length
+                  elsif Last > Gnatbind_Prefix_Equal'Length
                     and then Line (1 .. Gnatbind_Prefix_Equal'Length) =
                              Gnatbind_Prefix_Equal
                   then
@@ -440,20 +455,43 @@ begin
          Last_Gnatbind_Option);
    end loop;
 
-   if Ada_Compiler_Path /= null and then
-      not Is_Absolute_Path (GNATBIND.all)
+   if Ada_Compiler_Path = null or else
+      Is_Absolute_Path (GNATBIND.all)
    then
-      GNATBIND :=
+      FULL_GNATBIND := GNATBIND;
+
+   else
+      FULL_GNATBIND :=
         new String'
               (Dir_Name (Ada_Compiler_Path.all) &
                Directory_Separator &
                GNATBIND.all);
    end if;
 
-   Gnatbind_Path := Locate_Exec_On_Path (GNATBIND.all);
+   if Gnatbind_Path_Specified then
+      FULL_GNATBIND := Gnatbind_Path;
+   end if;
+
+   Gnatbind_Path := Locate_Exec_On_Path (FULL_GNATBIND.all);
+
+   --  If gnatbind is not found and its full path was not specified, check for
+   --  gnatbind on the path.
+
+   if Gnatbind_Path = null and then not Gnatbind_Path_Specified then
+      Gnatbind_Path := Locate_Exec_On_Path (GNATBIND.all);
+   end if;
 
    if Gnatbind_Path = null then
-      Osint.Fail ("could not locate " & GNATBIND.all);
+      --  Make sure Namelen has a non negative value
+
+      Name_Len := 0;
+
+      if Gnatbind_Path_Specified then
+         Osint.Fail ("could not locate " & FULL_GNATBIND.all);
+
+      else
+         Osint.Fail ("could not locate " & GNATBIND.all);
+      end if;
 
    else
       --  Normalize the path, so that gnaampbind does not complain about not
