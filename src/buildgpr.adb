@@ -5437,7 +5437,6 @@ package body Buildgpr is
       procedure Check (Project : Project_Id; Dummy : in out Boolean) is
          pragma Unreferenced (Dummy);
          Lang_Id   : Language_Ptr := Project.Languages;
-         Lang_Data : Language_Data;
 
          Current_Naming : Positive := 1;
 
@@ -5482,18 +5481,18 @@ package body Buildgpr is
                if Name_Buffer (Cur) = '%' then
                   case Name_Buffer (Cur + 1) is
                      when 'b' =>
-                        Substitute (Lang_Data.Config.Naming_Data.Body_Suffix);
+                        Substitute (Lang_Id.Config.Naming_Data.Body_Suffix);
 
                      when 's' =>
-                        Substitute (Lang_Data.Config.Naming_Data.Spec_Suffix);
+                        Substitute (Lang_Id.Config.Naming_Data.Spec_Suffix);
 
                      when 'd' =>
                         Substitute
-                          (Lang_Data.Config.Naming_Data.Dot_Replacement);
+                          (Lang_Id.Config.Naming_Data.Dot_Replacement);
 
                      when 'c' =>
                         Substitute
-                          (Image (Lang_Data.Config.Naming_Data.Casing));
+                          (Image (Lang_Id.Config.Naming_Data.Casing));
 
                      when '%' =>
                         Name_Buffer (Cur .. Name_Len - 1) :=
@@ -5529,25 +5528,25 @@ package body Buildgpr is
 
             while Current_Naming <= Naming_Datas.Last loop
                exit when Naming_Datas.Table (Current_Naming) =
-                 Lang_Data.Config.Naming_Data;
+                 Lang_Id.Config.Naming_Data;
                Current_Naming := Current_Naming + 1;
             end loop;
 
             if Current_Naming > Naming_Datas.Last then
                Naming_Datas.Increment_Last;
                Naming_Datas.Table (Naming_Datas.Last) :=
-                 Lang_Data.Config.Naming_Data;
+                 Lang_Id.Config.Naming_Data;
 
                Check_Temp_File;
 
-               if Lang_Data.Config.Config_Spec_Pattern /= No_Name then
-                  Get_Name_String (Lang_Data.Config.Config_Spec_Pattern);
+               if Lang_Id.Config.Config_Spec_Pattern /= No_Name then
+                  Get_Name_String (Lang_Id.Config.Config_Spec_Pattern);
                   Replace;
                   Put_Line (File, Name_Buffer (1 .. Name_Len));
                end if;
 
-               if Lang_Data.Config.Config_Body_Pattern /= No_Name then
-                  Get_Name_String (Lang_Data.Config.Config_Body_Pattern);
+               if Lang_Id.Config.Config_Body_Pattern /= No_Name then
+                  Get_Name_String (Lang_Id.Config.Config_Body_Pattern);
                   Replace;
                   Put_Line (File, Name_Buffer (1 .. Name_Len));
                end if;
