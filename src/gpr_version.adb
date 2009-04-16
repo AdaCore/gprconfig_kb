@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 1992-2007, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2009, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -19,19 +19,13 @@
 -- to  the  Free Software Foundation,  51  Franklin  Street,  Fifth  Floor, --
 -- Boston, MA 02110-1301, USA.                                              --
 --                                                                          --
--- As a special exception,  if other files  instantiate  generics from this --
--- unit, or you link  this unit with other files  to produce an executable, --
--- this  unit  does not  by itself cause  the resulting  executable  to  be --
--- covered  by the  GNU  General  Public  License.  This exception does not --
--- however invalidate  any other reasons why  the executable file  might be --
--- covered by the  GNU Public License.                                      --
---                                                                          --
 -- GNAT was originally developed  by the GNAT team at  New York University. --
 -- Extensive contributions were provided by Ada Core Technologies Inc.      --
 --                                                                          --
 ------------------------------------------------------------------------------
 
 with Gnatvsn; use Gnatvsn;
+with GprConfig.Sdefault;
 
 package body GPR_Version is
 
@@ -40,15 +34,17 @@ package body GPR_Version is
    ------------------------
 
    function Gpr_Version_String return String is
-      Last  : Positive := Gnat_Static_Version_String'Last;
+      Last  : Positive;
       First : Positive;
 
       Date : String (1 .. 10) := "(unknown) ";
+      Host  : constant String := " (" & GprConfig.Sdefault.Hostname & ')';
 
    begin
       --  Find the beginning and the end of the current date, that is the last
       --  string with 8 consecutive digits in Gnat_Static_Version_String.
 
+      Last := Gnat_Static_Version_String'Last;
       Last_Loop :
       while Last - Gnat_Static_Version_String'First >= 9 loop
          if Gnat_Static_Version_String (Last) not in '0' .. '9' then
@@ -76,11 +72,11 @@ package body GPR_Version is
 
       case Build_Type is
          when Gnatpro =>
-            return "Pro " & Gpr_Version & " " & Date;
+            return "Pro " & Gpr_Version & " " & Date & Host;
          when GPL =>
-            return "GPL " & Gpr_Version & " " & Date;
+            return "GPL " & Gpr_Version & " " & Date & Host;
          when FSF =>
-            return Gpr_Version & " " & Date;
+            return Gpr_Version & " " & Date & Host;
       end case;
    end Gpr_Version_String;
 
