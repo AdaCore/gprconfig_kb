@@ -99,6 +99,8 @@ install: install.data install.bin
 	     ${CP} doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
 	     if [ $$format = html ] ; then \
 	        ${CP} doc/*.png ${datadir}/doc/gprbuild/html; \
+	        sed -e "s/<doc_path>.*//" doc/gprbuild_gps.xml \
+	           > ${datadir}/doc/gprbuild/html/gps_index.xml; \
 	     fi; \
 	  fi; \
 	done
