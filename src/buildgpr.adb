@@ -4606,8 +4606,6 @@ package body Buildgpr is
                if Source_Project /= Source_Identity.Project then
                   if Source_Identity.Object /= No_File then
                      Get_Name_String (Source_Project.Object_Directory.Name);
-                     Name_Len := Name_Len + 1;
-                     Name_Buffer (Name_Len) := Directory_Separator;
                      Add_Str_To_Name_Buffer
                        (Get_Name_String (Source_Identity.Object));
                      Source_Identity.Object_Path := Name_Find;
@@ -4615,8 +4613,6 @@ package body Buildgpr is
 
                   if Source_Identity.Dep_Name /= No_File then
                      Get_Name_String (Source_Project.Object_Directory.Name);
-                     Name_Len := Name_Len + 1;
-                     Name_Buffer (Name_Len) := Directory_Separator;
                      Add_Str_To_Name_Buffer
                        (Get_Name_String (Source_Identity.Dep_Name));
                      Source_Identity.Dep_Path := Name_Find;
@@ -4624,8 +4620,6 @@ package body Buildgpr is
 
                   if Source_Identity.Switches /= No_File then
                      Get_Name_String (Source_Project.Object_Directory.Name);
-                     Name_Len := Name_Len + 1;
-                     Name_Buffer (Name_Len) := Directory_Separator;
                      Add_Str_To_Name_Buffer
                        (Get_Name_String (Source_Identity.Switches));
                      Source_Identity.Switches_Path := Name_Find;
@@ -7291,7 +7285,6 @@ package body Buildgpr is
 
             if Main_Proj = Main_Source.Object_Project then
                Add_Argument (Get_Name_String (Main_Source.Object), True);
-
             else
                Add_Argument (Get_Name_String (Main_Source.Object_Path), True);
             end if;
