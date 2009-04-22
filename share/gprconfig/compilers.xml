@@ -60,9 +60,9 @@
     <name>GCC-WRS653</name>
     <executable prefix="1">cc(pentium|ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*(653).*" group="1"></grep>
-      <must_match>653</must_match>
+      <external>cc${PREFIX} -v</external>
+      <grep regexp=".*(vxworksae).*" group="1"></grep>
+      <must_match>vxworksae</must_match>
     </version>
     <languages>C</languages>
     <target>
@@ -111,9 +111,9 @@
     <name>G++-WRS653</name>
     <executable prefix="1">c\+\+(pentium|ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*(653).*" group="1"></grep>
-      <must_match>653</must_match>
+      <external>cc${PREFIX} -v</external>
+      <grep regexp=".*(vxworksae).*" group="1"></grep>
+      <must_match>vxworksae</must_match>
     </version>
     <languages>C++</languages>
     <target>
