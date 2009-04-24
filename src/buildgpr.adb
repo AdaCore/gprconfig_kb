@@ -6197,6 +6197,7 @@ package body Buildgpr is
             Project_Tree               => Project_Tree,
             Project_Node_Tree          => Project_Node_Tree,
             Packages_To_Check          => Packages_To_Check,
+            Flags                      => Gprbuild_Flags,
             Allow_Automatic_Generation => Autoconfiguration,
             Automatically_Generated    => Delete_Autoconf_File,
             Config_File_Path           => Configuration_Project_Path,
