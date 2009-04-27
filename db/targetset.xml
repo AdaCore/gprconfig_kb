@@ -72,6 +72,18 @@
     <target>powerpc.*darwin.*</target>
   </targetset>
 
+  <!-- x86-darwin -->
+  <targetset>
+    <target>x86-darwin</target>
+    <target>i.86-.*-darwin.*</target>
+  </targetset>
+
+  <!-- x86_64-darwin -->
+  <targetset>
+    <target>x86_64-darwin</target>
+    <target>x86_64-.*-darwin.*</target>
+  </targetset>
+
   <!-- pa-hpux -->
   <targetset>
     <target>pa-hpux</target>
