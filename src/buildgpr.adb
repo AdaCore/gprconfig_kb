@@ -5562,7 +5562,7 @@ package body Buildgpr is
                  ("unable to create temporary configuration pragmas file");
 
             else
-               Record_Temp_File (File_Name);
+               Record_Temp_File (Project_Tree, File_Name);
 
                if Opt.Verbose_Mode then
                   Write_Str ("Creating temp file """);
@@ -6708,7 +6708,6 @@ package body Buildgpr is
       Namet.Initialize;
       Snames.Initialize;
 
-      Prj.Set_Mode (Multi_Language);
       Prj.Initialize (Project_Tree);
       Mains.Delete;
 
@@ -11284,7 +11283,7 @@ package body Buildgpr is
    procedure Sigint_Intercepted is
    begin
       Write_Line ("*** Interrupted ***");
-      Delete_All_Temp_Files;
+      Delete_All_Temp_Files (Project_Tree);
       OS_Exit (1);
    end Sigint_Intercepted;
 

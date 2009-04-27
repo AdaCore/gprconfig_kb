@@ -78,7 +78,7 @@ package body Gpr_Util is
 
    begin
       Tempdir.Create_Temp_File (Resp_File, Name => Name);
-      Record_Temp_File (Name);
+      Record_Temp_File (Project_Tree, Name);
 
       if Format = GNU then
          Status := Write (Resp_File, GNU_Header'Address, GNU_Header'Length);
@@ -250,7 +250,7 @@ package body Gpr_Util is
    procedure Finish_Program (Fatal : Boolean; S : String := "") is
    begin
       if not Debug_Flag_N then
-         Delete_All_Temp_Files;
+         Delete_All_Temp_Files (Project_Tree);
       end if;
 
       if S'Length > 0 then
