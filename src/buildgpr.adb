@@ -8022,34 +8022,29 @@ package body Buildgpr is
      (Uname : Name_Id;
       Sfile : File_Name_Type) return Boolean
    is
-      Src_Id : constant Source_Id :=
-                 Unit_Sources_Htable.Get (Project_Tree.Unit_Sources_HT, Uname);
-
-      Other_Part_File_Name : File_Name_Type;
+      Unit : constant Unit_Index :=
+                Units_Htable.Get (Project_Tree.Units_HT, Uname);
 
    begin
-      if Src_Id /= No_Source then
-         if Other_Part (Src_Id) = No_Source then
-            Other_Part_File_Name := No_File;
-         else
-            Other_Part_File_Name := Other_Part (Src_Id).File;
-         end if;
-
-         if Src_Id.File /= Sfile
-           and then Other_Part_File_Name /= Sfile
-         then
-            if Verbose_Mode then
-               Write_Str ("   -> """);
-               Write_Str (Get_Name_String (Uname));
-               Write_Str
-                 (""" sources do not include """);
-               Write_Str (Get_Name_String (Sfile));
-               Write_Char ('"');
-               Write_Eol;
+      if Unit /= No_Unit_Index then
+         for F in Unit.File_Names'Range loop
+            if Unit.File_Names (F) /= null
+              and then Unit.File_Names (F).File = Sfile
+            then
+               return False;
             end if;
+         end loop;
 
-            return True;
+         if Verbose_Mode then
+            Write_Str  ("   -> """);
+            Write_Str  (Get_Name_String (Uname));
+            Write_Str  (""" sources do not include """);
+            Write_Str  (Get_Name_String (Sfile));
+            Write_Char ('"');
+            Write_Eol;
          end if;
+
+         return True;
       end if;
 
       return False;
