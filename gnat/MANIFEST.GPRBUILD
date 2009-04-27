@@ -70,10 +70,10 @@ prj-ext.adb
 prj-ext.ads
 prj-nmsc.adb
 prj-nmsc.ads
-prj-pars.adb
-prj-pars.ads
 prj-part.adb
 prj-part.ads
+prj-pp.adb
+prj-pp.ads
 prj-proc.adb
 prj-proc.ads
 prj-strt.adb
