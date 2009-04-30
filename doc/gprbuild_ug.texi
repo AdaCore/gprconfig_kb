@@ -282,21 +282,22 @@ such as Ada, C, C++ and Fortran.
 @itemize @bullet
 @item compilation phase:
 
-Each compilation unit of each subsystem is examined in turn, checked for
-consistency, and compiled or recompiled when necessary by the appropriate
-compiler.  The recompilation decision is based on dependency information
-that is typically produced by a previous compilation.
+  Each compilation unit of each subsystem is examined in turn, checked for
+  consistency, and compiled or recompiled when necessary by the appropriate
+  compiler.  The recompilation decision is based on dependency information
+  that is typically produced by a previous compilation.
 
 @item post-compilation phase (or binding):
 
-Compiled units from a given language are passed to a language-specific
-post-compilation tool if any. Also during this phase
-objects are grouped into static or dynamic libraries as specified.
+  Compiled units from a given language are passed to a language-specific
+  post-compilation tool if any. Also during this phase
+  objects are grouped into static or dynamic libraries as specified.
 
 @item linking phase:
 
-All units or libraries from all subsystems are passed to a linker tool
-specific to the set of toolchains being used.
+  All units or libraries from all subsystems are passed to a linker tool
+  specific to the set of toolchains being used.
+
 @end itemize
 
 @noindent
@@ -383,32 +384,32 @@ first that matches provides the configuration file to use.
 
 @itemize @bullet
 @item If a file has a base names that matches @code{<target>-<rts>.cgpr},
- @code{<target.cgpr}, @code{<rts>.cgpr} or @code{default.cgpr} is found in
- the default configuration files directory, this file is used. The target
- and rts parameters are specified via the @code{--target} and @code{--RTS}
- switches of @code{gprbuild}. The default directory is is @file{share/gpr}
- in the installation directory of @code{gprbuild}
+  @code{<target.cgpr}, @code{<rts>.cgpr} or @code{default.cgpr} is found in
+  the default configuration files directory, this file is used. The target
+  and rts parameters are specified via the @code{--target} and @code{--RTS}
+  switches of @code{gprbuild}. The default directory is is @file{share/gpr}
+  in the installation directory of @code{gprbuild}
 
 @item If not found, the environment variable @code{GPR_CONFIG} is tested
- to check whether it contains the name of a valid configuration file. This
- can either be an absolute path name or a base name that will be searched
- in the same default directory as above.
+  to check whether it contains the name of a valid configuration file. This
+  can either be an absolute path name or a base name that will be searched
+  in the same default directory as above.
 
 @item If still not found and you used the @code{--autoconf} switch, then
- a new configuration file is automatically generated based on the specified
- target and on the list of languages specified in your projects.
+  a new configuration file is automatically generated based on the specified
+  target and on the list of languages specified in your projects.
 
- GPRbuild assumes that there are known compilers on your path for each of
- the necessary languages. It is preferable and often necessary to manually
- generate your own configuration file when:
+  GPRbuild assumes that there are known compilers on your path for each of
+  the necessary languages. It is preferable and often necessary to manually
+  generate your own configuration file when:
 
-@itemize -
+  @itemize -
   @item using cross compilers (in which case you need to use gprconfig's
- @option{--target=}) option,
+    @option{--target=}) option,
   @item using a specific Ada runtime (e.g. @option{--RTS=sjlj}),
   @item working with compilers not in the path or not first in the path, or
   @item autoconfiguration does not give the expected results.
-@end itemize
+  @end itemize
 
 @end itemize
 
@@ -422,42 +423,47 @@ invocation:
 
 @itemize @bullet
 @item The following command triggers interactive mode. The configuration will be
-generated
-in GPRbuild's default location,
-@code{<gprbuild_install_root>/share/gpr/default.cgpr)}
-@smallexample
- gprconfig
-@end smallexample
+  generated in GPRbuild's default location,
+  @code{<gprbuild_install_root>/share/gpr/default.cgpr)}
+
+  @smallexample
+  gprconfig
+  @end smallexample
 
 @item The first command below also triggers interactive mode, but the resulting
-configuration
-file has the name and path selected by the user. The second command shows
-how GPRbuild can make use of this specific configuration file instead of
-the default one.
-@smallexample
- gprconfig -o path/my_config.cgpr
- gprbuild --config=path/my_config.cgpr
-@end smallexample
+  configuration
+  file has the name and path selected by the user. The second command shows
+  how GPRbuild can make use of this specific configuration file instead of
+  the default one.
+
+  @smallexample
+  gprconfig -o path/my_config.cgpr
+  gprbuild --config=path/my_config.cgpr
+  @end smallexample
 
 @item The following command again triggers interactive mode, and only the
-relevant cross compilers for target ppc-elf will be proposed.
-@smallexample
- gprconfig --target=ppc-elf
-@end smallexample
+  relevant cross compilers for target ppc-elf will be proposed.
+
+  @smallexample
+  gprconfig --target=ppc-elf
+  @end smallexample
 
 @item The next command triggers batch mode and generates at the default location
-a configuration file using the first native Ada and C compilers on the
-path.
-@smallexample
- gprconfig --config=Ada --config=C --batch
-@end smallexample
+  a configuration file using the first native Ada and C compilers on
+  the path.
+
+  @smallexample
+  gprconfig --config=Ada --config=C --batch
+  @end smallexample
 
 @item The next command, a combination of the previous examples, creates in
-batch mode a configuration file named @file{x.cgpr} for cross-compiling
-Ada with a run-time called @code{hi} and using C for the LEON processor.
-@smallexample
- gprconfig --target=leon-elf --config=Ada,,hi --config=C --batch -o x.cgpr
-@end smallexample
+  batch mode a configuration file named @file{x.cgpr} for cross-compiling
+  Ada with a run-time called @code{hi} and using C for the LEON
+  processor.
+
+  @smallexample
+  gprconfig --target=leon-elf --config=Ada,,hi --config=C --batch -o x.cgpr
+  @end smallexample
 @end itemize
 
 @c ---------------------------------------------
@@ -487,15 +493,15 @@ This project indicates that:
 @itemize @bullet
 @item the sources files of this subsystem are written in Ada and C.
 @item the directories containing the sources are @code{ada_src} and
-@code{util_src}.
+  @code{util_src}.
 @item the directory for the objects is @code{obj}.
 @item the directory for the executables is ``.''; i.e., the
-directory containing the project file itself.
+  directory containing the project file itself.
 @item the complete list of source files is @code{ada_main.adb},
-@code{c_lib.ads}, @code{lib.h}, @code{lib.c}. They can be found anywhere
-in the source directories mentioned above.
+  @code{c_lib.ads}, @code{lib.h}, @code{lib.c}. They can be found anywhere
+  in the source directories mentioned above.
 @item the main entry point of the system is in the source file
-@code{ada_main.adb}.
+  @code{ada_main.adb}.
 @end itemize
 
 @noindent
@@ -505,6 +511,7 @@ the various elements is given in the project file, which describes
 the project properties rather than a set of actions to
 be executed. Here is the invocation of
 @code{GPRbuild} that allows building the multi-language program:
+
 @smallexample
 $ gprbuild -Pada_main
 gcc -c ada_main.adb -o ada_main.o
@@ -713,7 +720,9 @@ end Ada_Main;
 or if other aspects of the @code{Compiler} package need to be defined locally,
 such as adding @code{-g} for the @file{c_main.c} source only, sharing can be
 done at the
-attribute level directly as in this new version of @code{C_Main.Compiler}:
+attribute level directly as in this new version of
+@code{C_Main.Compiler}:
+
 @smallexample @c projectfile
    package Compiler is
       for Default_Switches ("C") use
@@ -830,6 +839,7 @@ end Static_Lib;
 @noindent
 The library can be built on its own using standard GPRbuild commands,
 for example:
+
 @smallexample
 $gprbuild static_lib.gpr
 @end smallexample
@@ -837,6 +847,7 @@ $gprbuild static_lib.gpr
 @noindent
 It can also be built as a by product of building a main project using this
 library through a "with" as it was the case for simple subsystems:
+
 @smallexample @c projectfile
 with "static_lib.gpr";
 project Main is
@@ -854,7 +865,9 @@ $gprbuild main.gpr
 @noindent
 will rebuild the library @code{l1} if it is not up to date.
 
-To construct a dynamic library instead of a static library, simply replace
+To construct a dynamic library instead of a static library, simply
+replace
+
 @smallexample @c projectfile
    for Library_Kind use "static";
 @end smallexample
@@ -872,6 +885,7 @@ want to use but that, for some reason, cannot be rebuilt,
 for instance when the sources to rebuild the library are
 not available. Such library projects need simply to use the
 @code{Externally_Built} attribute as in the example below:
+
 @smallexample @c projectfile
 library project Extern_Lib is
    for Languages    use ("Ada", "C");
@@ -948,116 +962,117 @@ GNAT Project files and the GPRbuild process.
 
 @item Source files and source directories
 
-A source file is associated with a language through a naming convention.
-For instance, @code{foo.c} is typically
-the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are two
-common naming conventions for a file containing an Ada spec.
-A compilation unit is often composed of a main source file and potentially
-several auxiliary ones, such as header files in C.
-You can define or modify the naming conventions,
-which are used by
-@code{GPRbuild} to invoke the appropriate compiler.
-Source files are looked up in the source directories associated with the
-project through the @code{Source_Dirs} attribute. By default,
-all the files (in these source directories) following the naming conventions
-associated with the declared languages are
-considered to be part of the project. It is also possible to limit the
-list of source files using the @code{Source_Files} or
-@code{Source_List_File} attributes.
+  A source file is associated with a language through a naming convention.
+  For instance, @code{foo.c} is typically
+  the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are two
+  common naming conventions for a file containing an Ada spec.
+  A compilation unit is often composed of a main source file and potentially
+  several auxiliary ones, such as header files in C.
+  You can define or modify the naming conventions,
+  which are used by
+  @code{GPRbuild} to invoke the appropriate compiler.
+  Source files are looked up in the source directories associated with the
+  project through the @code{Source_Dirs} attribute. By default,
+  all the files (in these source directories) following the naming conventions
+  associated with the declared languages are
+  considered to be part of the project. It is also possible to limit the
+  list of source files using the @code{Source_Files} or
+  @code{Source_List_File} attributes.
 
 @item Object files and object directory
 
-An object file is an intermediate file produced by the compiler from a
-compilation unit. It is used by the post-compilation phase to produce
-final executables or libraries. The object files produced in the context of
-a given project are stored in a single directory, the @code{Object_Dir} that
-can be specified in the project file. If you want to store objects in
-two or more object directories, you must split the system into
-distinct subsystems.
+  An object file is an intermediate file produced by the compiler from a
+  compilation unit. It is used by the post-compilation phase to produce
+  final executables or libraries. The object files produced in the context of
+  a given project are stored in a single directory, the @code{Object_Dir} that
+  can be specified in the project file. If you want to store objects in
+  two or more object directories, you must split the system into
+  distinct subsystems.
 
 @item Project file
 
-A text file using an Ada-like syntax. It defines build-related
-characteristics of an application, or a part of it. The characteristics
-include the list of sources, the location of those sources, the location
-for the generated object files, the name of the main program,
-and the default options for the various tools involved in the build
-process. These characteristics can be conditionalized through scenario
-variables and case statements.
+  A text file using an Ada-like syntax. It defines build-related
+  characteristics of an application, or a part of it. The characteristics
+  include the list of sources, the location of those sources, the location
+  for the generated object files, the name of the main program,
+  and the default options for the various tools involved in the build
+  process. These characteristics can be conditionalized through scenario
+  variables and case statements.
 
 @item Configuration file
 
-A text file using the project file syntax. It defines languages and
-their characteristics as well as toolchains for those languages and their
-characteristics.
+  A text file using the project file syntax. It defines languages and
+  their characteristics as well as toolchains for those languages and their
+  characteristics.
 
 @item Project attribute
 
-A specific characteristic as defined by a project attribute clause. Its
-value is a string or a sequence of strings. For instance, the
-@code{Source_Dirs}
-attribute is a sequence of strings representing the actual names of the
-directories containing the sources of the project. The attribute itself can
-be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
-refers to the default compiler options for the Ada language.
+  A specific characteristic as defined by a project attribute clause. Its
+  value is a string or a sequence of strings. For instance, the
+  @code{Source_Dirs}
+  attribute is a sequence of strings representing the actual names of the
+  directories containing the sources of the project. The attribute itself can
+  be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
+  refers to the default compiler options for the Ada language.
 
 @item Project subpackage
 
-Global characteristics are defined at the top level of a project.
-Specific characteristics affecting a given tool are grouped in a
-subpackage with the same name as the tool. The most common
-subpackages are @code{Builder}, @code{Compiler}, @code{Binder},
-and @code{Linker}.
+  Global characteristics are defined at the top level of a project.
+  Specific characteristics affecting a given tool are grouped in a
+  subpackage with the same name as the tool. The most common
+  subpackages are @code{Builder}, @code{Compiler}, @code{Binder},
+  and @code{Linker}.
 
 @item Project variables
 
-Two kinds of variables are available with projects: simple variables and
-scenario variables. A simple variable can hold any string, or sequence of string
-values; this is useful as a shortcut for a complex expression. Scenario
-variables are a restricted version of simple variables; they can only take their
-values from a static enumeration of strings representing the various
-supported scenarios. These scenario variables are used in conjunction with
-the @code{case} construct to offer limited conditionalization of
-project characteristics. Both types of variables are local to the project
-defining them and can get initialized with an external value, such as
-an environment variable, through the @code{external} directive.
+  Two kinds of variables are available with projects: simple variables and
+  scenario variables. A simple variable can hold any string, or sequence of string
+  values; this is useful as a shortcut for a complex expression. Scenario
+  variables are a restricted version of simple variables; they can only take their
+  values from a static enumeration of strings representing the various
+  supported scenarios. These scenario variables are used in conjunction with
+  the @code{case} construct to offer limited conditionalization of
+  project characteristics. Both types of variables are local to the project
+  defining them and can get initialized with an external value, such as
+  an environment variable, through the @code{external} directive.
 
 @item Subsystem
 
-A subsystem is a coherent part of the complete system to be built. It
-is represented by a set of sources and one object directory. A simple
-system is composed of a single subsystem. Complex systems are usually
-composed of a graph of interdependent subsystems. A subsystem is
-dependent on another subsystem if knowledge of the other one is
-required to build it, and in particular if visibility on some of the
-sources of this other subsystem is required. A subsystem is usually
-represented by one project file. The subsystem dependency relationship
-is represented by the @code{with} clause between corresponding project
-files.
+  A subsystem is a coherent part of the complete system to be built. It
+  is represented by a set of sources and one object directory. A simple
+  system is composed of a single subsystem. Complex systems are usually
+  composed of a graph of interdependent subsystems. A subsystem is
+  dependent on another subsystem if knowledge of the other one is
+  required to build it, and in particular if visibility on some of the
+  sources of this other subsystem is required. A subsystem is usually
+  represented by one project file. The subsystem dependency relationship
+  is represented by the @code{with} clause between corresponding project
+  files.
 
 @item Library
 
-A library is a specific type of subsystem where, for convenience, you group
-the objects together using system-specific means.
-Project files are a system- and language-independent way of
-building both static and dynamic libraries. They also support the concept
-of standalone libraries (SAL) which offers two significant properties: the
-initialization of the library is either automatic or very simple; a
-change in the implementation part of the library implies minimal
-post-compilation actions on the complete system and potentially no
-action at all for dynamic SALs.
+  A library is a specific type of subsystem where, for convenience, you group
+  the objects together using system-specific means.
+  Project files are a system- and language-independent way of
+  building both static and dynamic libraries. They also support the concept
+  of standalone libraries (SAL) which offers two significant properties: the
+  initialization of the library is either automatic or very simple; a
+  change in the implementation part of the library implies minimal
+  post-compilation actions on the complete system and potentially no
+  action at all for dynamic SALs.
 
 @item Project extension
 
-A project extension is a project that represents an augmentation
-of the original project. Suppose for instance that a
-subsystem @code{S} is shared by two unrelated systems @code{S1} and @code{S2}.
-If @code{S1} requires a
-change in @code{S}, but this change would adversely affect @code{S2},
-then a modified version of @code{S} can be defined as an extension of
-@code{S}, a ``delta'' to the original
-version which only contains the new source files (those that have been
-changed) and the objects that are affected by these changes.
+  A project extension is a project that represents an augmentation
+  of the original project. Suppose for instance that a
+  subsystem @code{S} is shared by two unrelated systems @code{S1} and @code{S2}.
+  If @code{S1} requires a
+  change in @code{S}, but this change would adversely affect @code{S2},
+  then a modified version of @code{S} can be defined as an extension of
+  @code{S}, a ``delta'' to the original
+  version which only contains the new source files (those that have been
+  changed) and the objects that are affected by these changes.
+
 @end itemize
 
 @c ---------------------------------------------
@@ -1089,12 +1104,13 @@ Three elements can optionally be specified on GPRbuild's command line:
 @itemize @bullet
 @item the main project file,
 @item the switches for GPRbuild itself or for the tools it
-drives, and
+  drives, and
 @item the main source files.
 @end itemize
 
 @noindent
 The general syntax is thus:
+
 @smallexample
 gprbuild [<proj>.gpr] [switches] [names]
   @{[-cargs opts] [-cargs:lang opts] [-largs opts] [-gargs opts]@}
@@ -1141,54 +1157,54 @@ different command line separators are:
 
 @item @option{-cargs}
 
-The arguments that follow up to the next command line separator are
-options for all compilers for all languages.
-Example: @option{-cargs -g}
+  The arguments that follow up to the next command line separator are
+  options for all compilers for all languages.
+  Example: @option{-cargs -g}
 
 @item @option{-cargs:<language name>}
 
-The arguments that follow up to the next command line separator are
-options for the compiler of the specific language.
+  The arguments that follow up to the next command line separator are
+  options for the compiler of the specific language.
 
-Examples:
+  Examples:
 
-@itemize @bullet
-@item @option{-cargs:Ada -gnatf}
-@item @option{-cargs:C -E}
-@end itemize
+  @itemize -
+  @item @option{-cargs:Ada -gnatf}
+  @item @option{-cargs:C -E}
+  @end itemize
 
 @item @option{-bargs}
 
-The arguments that follow up to the next command line separator are
-options for all binder drivers.
+  The arguments that follow up to the next command line separator are
+  options for all binder drivers.
 
 @item @option{-bargs:<language name>}
 
-The arguments that follow up to the next command line separators are
-options for the binder driver of the specific language.
+  The arguments that follow up to the next command line separators are
+  options for the binder driver of the specific language.
 
-Examples:
+  Examples:
 
-@itemize @bullet
-@item @option{-bargs:Ada binder_prefix=ppc-elf}
-@item @option{-bargs:C++ c_compiler_name=ccppc}
-@end itemize
+  @itemize -
+  @item @option{-bargs:Ada binder_prefix=ppc-elf}
+  @item @option{-bargs:C++ c_compiler_name=ccppc}
+  @end itemize
 
 @item @option{-largs}
 
-The arguments that follow up to the next command line separator are
-options for the linker.
+  The arguments that follow up to the next command line separator are
+  options for the linker.
 
 @item @option{-gargs}
 
-The arguments that follow up to the next command line separator are
-options for GPRbuild itself. Usually @option{-gargs} is specified after one or
-several other command line separators.
+  The arguments that follow up to the next command line separator are
+  options for GPRbuild itself. Usually @option{-gargs} is specified after one or
+  several other command line separators.
 
 @item @option{-margs}
 
-Equivalent to @option{-gargs}, provided for compatibility with
-@command{gnatmake}.
+  Equivalent to @option{-gargs}, provided for compatibility with
+  @command{gnatmake}.
 
 @end itemize
 
@@ -1207,182 +1223,182 @@ package Builder of the main project:
 
 @item @option{--version}
 
-Display information about GPRbuild: version, origin and legal status, then
-exit successfully, ignoring other options.
+  Display information about GPRbuild: version, origin and legal status, then
+  exit successfully, ignoring other options.
 
 @item @option{--help}
 
-Display GPRbuild usage, then exit successfully, ignoring other options.
+  Display GPRbuild usage, then exit successfully, ignoring other options.
 
 @item @option{--display-paths}
 
-Display two lines: the configuration project file search path and the user
-project file search path, then exit successfully, ignoring other options.
+  Display two lines: the configuration project file search path and the user
+  project file search path, then exit successfully, ignoring other options.
 
 @item @option{--config=<config project file name>}
 
-This specifies the configuration project file name. By default, the
-configuration project file name is @file{default.cgpr}. Option @option{--config=}
-cannot be specified more than once. The configuration project file specified
-with @option{--config=} must exist.
+  This specifies the configuration project file name. By default, the
+  configuration project file name is @file{default.cgpr}. Option @option{--config=}
+  cannot be specified more than once. The configuration project file specified
+  with @option{--config=} must exist.
 
 @item @option{--autoconf=<config project file name>}
 
-This specifies a configuration project file name that already exists
-or will be created automatically. Option @option{--autoconf=} cannot
-be specified more than once. If the configuration project file
-specified with @option{--autoconf=} exists, then it is
-used. Otherwise, @value{gprconfig} is invoked to create it automatically.
+  This specifies a configuration project file name that already exists
+  or will be created automatically. Option @option{--autoconf=} cannot
+  be specified more than once. If the configuration project file
+  specified with @option{--autoconf=} exists, then it is
+  used. Otherwise, @value{gprconfig} is invoked to create it automatically.
 
 @item @option{--target=<targetname>}
 
-This specifies that the default configuration project file is
-@file{<targetname>.cgpr}. If no configuration project file with this name
-is found, then @value{gprconfig} is invoked with option
-@option{--target=<targetname>}to create a configuration project file
-@file{auto.cgpr}.
+  This specifies that the default configuration project file is
+  @file{<targetname>.cgpr}. If no configuration project file with this name
+  is found, then @value{gprconfig} is invoked with option
+  @option{--target=<targetname>}to create a configuration project file
+  @file{auto.cgpr}.
 
-Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
-can be specified.
+  Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
+  can be specified.
 
 @item @option{--subdirs=<subdir>}
 
-This indicates that the real directories (except the source directories) are
-subdirectories of the directories specified in the project files. This applies
-in particular to object directories, library directories and exec directories.
-If the directories do not exist, they are created automatically.
+  This indicates that the real directories (except the source directories) are
+  subdirectories of the directories specified in the project files. This applies
+  in particular to object directories, library directories and exec directories.
+  If the directories do not exist, they are created automatically.
 
 @item @option{--no-indirect-imports}
 
-This indicates that sources of a project should import only sources or
-header files from directly imported projects, that is those projects mentioned
-in a with clause and the projects they extend directly or indirectly.
-A check is done in the compilation phase, after a successful compilation, that
-the sources follow these restrictions. For Ada sources, the check is fully
-enforced. For non Ada sources, the check is partial, as in the dependency
-file there is no distinction between header files directly included and those
-indirectly included. The check will fail if there is no possibility that a
-header file in a non directly imported project could have been indirectly
-imported. If the check fails, the compilation artifacts (dependency file,
-object file, switches file) are deleted.
+  This indicates that sources of a project should import only sources or
+  header files from directly imported projects, that is those projects mentioned
+  in a with clause and the projects they extend directly or indirectly.
+  A check is done in the compilation phase, after a successful compilation, that
+  the sources follow these restrictions. For Ada sources, the check is fully
+  enforced. For non Ada sources, the check is partial, as in the dependency
+  file there is no distinction between header files directly included and those
+  indirectly included. The check will fail if there is no possibility that a
+  header file in a non directly imported project could have been indirectly
+  imported. If the check fails, the compilation artifacts (dependency file,
+  object file, switches file) are deleted.
 
 @item @option{--indirect-imports}
 
-This indicates that sources of a project can import sources or header files
-from directly or indirectly imported projects. This is the default behavior.
-This switch is provided to cancel a previous switch
-@option{--no-indirect-imports} on the command line.
+  This indicates that sources of a project can import sources or header files
+  from directly or indirectly imported projects. This is the default behavior.
+  This switch is provided to cancel a previous switch
+  @option{--no-indirect-imports} on the command line.
 
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 
-Specify to GPRbuild to add directory @file{dir} to the user project file search
-path, before the default directory.
+  Specify to GPRbuild to add directory @file{dir} to the user project file search
+  path, before the default directory.
 
 @item @option{-b} (Bind only)
 
-Specify to GPRbuild that the post-compilation (or binding) phase is to be
-performed, but not the other phases unless they are specified by appropriate
-switches.
+  Specify to GPRbuild that the post-compilation (or binding) phase is to be
+  performed, but not the other phases unless they are specified by appropriate
+  switches.
 
 @item @option{-c} (Compile only)
 
-Specify to GPRbuild that the compilation phase is to be performed, but not
-the other phases unless they are specified by appropriate switches.
+  Specify to GPRbuild that the compilation phase is to be performed, but not
+  the other phases unless they are specified by appropriate switches.
 
 @item @option{-d} (Display progress)
 
-Display progress for each source, up to date or not, as a single
-line @emph{completed x out of y (zz%)...}. If the file needs to be compiled
-this is displayed after the invocation of the compiler. These lines are
-displayed even in quiet output mode (switch @option{-q}).
+  Display progress for each source, up to date or not, as a single
+  line @emph{completed x out of y (zz%)...}. If the file needs to be compiled
+  this is displayed after the invocation of the compiler. These lines are
+  displayed even in quiet output mode (switch @option{-q}).
 
 @item @option{-eL} (Follow symbolic links when processing project files)
 
-By default, symbolic links on project files are not taken into account
-when processing project files. Switch @option{-eL} changes this default
-behavior.
+  By default, symbolic links on project files are not taken into account
+  when processing project files. Switch @option{-eL} changes this default
+  behavior.
 
 @item @option{-eS} (no effect)
 
-This switch is only accepted for compatibility with gnatmake, but it has
-no effect. For gnatmake, it means: echo commands to standdard output instead
-of standard error, but for gprbuild, commands are always echoed to standard
-output.
+  This switch is only accepted for compatibility with gnatmake, but it has
+  no effect. For gnatmake, it means: echo commands to standdard output instead
+  of standard error, but for gprbuild, commands are always echoed to standard
+  output.
 
 @item @option{-F} (Full project path name in brief error messages)
 
-By default, in non verbose mode, when an error occurs while processing
-a project file, only the simple name of the project file is displayed in the
-error message. When switch @option{-F} is used, the full path of the project
-file is used. This switch has no effect when switch @option{-v} is used.
+  By default, in non verbose mode, when an error occurs while processing
+  a project file, only the simple name of the project file is displayed in the
+  error message. When switch @option{-F} is used, the full path of the project
+  file is used. This switch has no effect when switch @option{-v} is used.
 
 @item @option{-l} (Link only)
 
-Specify to GPRbuild that the linking phase is to be performed, but not
-the other phases unless they are specified by appropriate switches.
+  Specify to GPRbuild that the linking phase is to be performed, but not
+  the other phases unless they are specified by appropriate switches.
 
 @item @option{-m} (Minimum Ada recompilation)
 
-Do not recompile Ada code if timestamps are different but checksums are the
-same.
+  Do not recompile Ada code if timestamps are different but checksums are the
+  same.
 
 @item @option{-o name} (Choose an alternate executable name)
 
-Specify the file name of the executable. Switch @option{-o} can
-be used only if there is exactly one executable being built;
-that is, there is exactly one main on the command line,
-or there are no mains on the command line and exactly one
-main in attribute @code{Main} of the main project.
+  Specify the file name of the executable. Switch @option{-o} can
+  be used only if there is exactly one executable being built;
+  that is, there is exactly one main on the command line,
+  or there are no mains on the command line and exactly one
+  main in attribute @code{Main} of the main project.
 
 @item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
 
-By default, GPRbuild checks that the object, library and exec directories
-specified in project files exist. Switch @option{-p} instructs GPRbuild to
-attempt to create missing directories.
+  By default, GPRbuild checks that the object, library and exec directories
+  specified in project files exist. Switch @option{-p} instructs GPRbuild to
+  attempt to create missing directories.
 
 @item @option{-P proj} (use Project file @emph{proj})
 
-Specify the path name of the main project file. The space between @option{-P}
-and the project file name is optional. Specifying a project file name (with
-suffix @file{.gpr}) may be used in place of option @option{-P}. Exactly one main
-project file can be specified.
+  Specify the path name of the main project file. The space between @option{-P}
+  and the project file name is optional. Specifying a project file name (with
+  suffix @file{.gpr}) may be used in place of option @option{-P}. Exactly one main
+  project file can be specified.
 
 @item @option{-r} (Recursive)
 
-This switch has an effect only when @option{-c} or @option{-u} is also
-specified and there are no mains: it means that all sources of all projects
-need to be compiled or recompiled.
+  This switch has an effect only when @option{-c} or @option{-u} is also
+  specified and there are no mains: it means that all sources of all projects
+  need to be compiled or recompiled.
 
 @item @option{-u} (Unique compilation, only compile the given files)
 
-If there are sources specified on the command line, only compile these
-sources. If there are no sources specified on the command line, compile
-all the sources of the main project.
+  If there are sources specified on the command line, only compile these
+  sources. If there are no sources specified on the command line, compile
+  all the sources of the main project.
 
-In both cases, do not attempt the binding and the linking phases.
+  In both cases, do not attempt the binding and the linking phases.
 
 @item @option{-U} (Compile all sources of all projects)
 
-If there are sources specified on the command line, only compile these
-sources. If there are no sources specified on the command line, compile
-all the sources of all the projects in the project tree.
+  If there are sources specified on the command line, only compile these
+  sources. If there are no sources specified on the command line, compile
+  all the sources of all the projects in the project tree.
 
-In both cases, do not attempt the binding and the linking phases.
+  In both cases, do not attempt the binding and the linking phases.
 
 @item @option{-vPx} (Specify verbosity when parsing Project Files)
 
-By default, GPRbuild does not display anything when processing project files,
-except when there are errors. This default behavior is obtained with switch
-@option{-vP0}. Switches @option{-vP1} and @option{-vP2} yield increasingly
-detailed output.
+  By default, GPRbuild does not display anything when processing project files,
+  except when there are errors. This default behavior is obtained with switch
+  @option{-vP0}. Switches @option{-vP1} and @option{-vP2} yield increasingly
+  detailed output.
 
 @item @option{-Xnm=val} (Specify an external reference for Project Files)
 
-Specify an external reference that may be queried inside the project files
-using built-in function @code{external}. For example, with
-@option{-XBUILD=DEBUG},
-@code{external("BUILD")} inside a project file will have the value
-@code{"DEBUG"}.
+  Specify an external reference that may be queried inside the project files
+  using built-in function @code{external}. For example, with
+  @option{-XBUILD=DEBUG},
+  @code{external("BUILD")} inside a project file will have the value
+  @code{"DEBUG"}.
 
 @end itemize
 
@@ -1394,59 +1410,59 @@ package Builder of the main project (attribute Switches):
 
 @item @option{-f} (Force recompilations)
 
-Force the complete processing of all phases (or of those explicitly specified)
-even when up to date.
+  Force the complete processing of all phases (or of those explicitly specified)
+  even when up to date.
 
 @item @option{-j<num>} (use @emph{num} simultaneous compilation jobs)
 
-By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
-it is possible to instruct GPRbuild to spawn several simultaneous compilation
-jobs if needed. For example, @option{-j2} for two simultaneous compilation
-jobs or @option{-j4} for four. On a multi-processor system,
-@option{-j<num>} can greatly speed up the build process.
+  By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
+  it is possible to instruct GPRbuild to spawn several simultaneous compilation
+  jobs if needed. For example, @option{-j2} for two simultaneous compilation
+  jobs or @option{-j4} for four. On a multi-processor system,
+  @option{-j<num>} can greatly speed up the build process.
 
 @item @option{-k} (Keep going after compilation errors)
 
-By default, GPRbuild stops spawning new compilation jobs at the first
-compilation failure. Using switch @option{-k}, it is possible to attempt to
-compile/recompile all the sources that are not up to date, even when some
-compilations failed. The post-compilation phase and the linking phase are never
-attempted if there are compilation failures, even when switch @option{-k} is
-used.
+  By default, GPRbuild stops spawning new compilation jobs at the first
+  compilation failure. Using switch @option{-k}, it is possible to attempt to
+  compile/recompile all the sources that are not up to date, even when some
+  compilations failed. The post-compilation phase and the linking phase are never
+  attempted if there are compilation failures, even when switch @option{-k} is
+  used.
 
 @item @option{-q} (Quiet output)
 
-Do not display anything except errors and progress (switch @option{-d}).
-Cancel any previous switch @option{-v}.
+  Do not display anything except errors and progress (switch @option{-d}).
+  Cancel any previous switch @option{-v}.
 
 @item @option{-s} (recompile if compilation switches have changed)
 
-By default, GPRbuild will not recompile a source if all dependencies are
-satisfied. Switch @option{-s} instructs GPRbuild to recompile sources when a
-different set of compilation switches has been used in the previous
-compilation, even if all dependencies are satisfied. Each time GPRbuild
-invokes a compiler, it writes a text file that lists the switches used in the
-invocation of the compiler, so that it can retrieve these switches if
-@option{-s} is used later.
+  By default, GPRbuild will not recompile a source if all dependencies are
+  satisfied. Switch @option{-s} instructs GPRbuild to recompile sources when a
+  different set of compilation switches has been used in the previous
+  compilation, even if all dependencies are satisfied. Each time GPRbuild
+  invokes a compiler, it writes a text file that lists the switches used in the
+  invocation of the compiler, so that it can retrieve these switches if
+  @option{-s} is used later.
 
 @item @option{-v} (Verbose output)
 
-Display full paths, all options used in spawned processes, and reasons why
-these processes are spawned. Cancel any previous switch @option{-q}.
+  Display full paths, all options used in spawned processes, and reasons why
+  these processes are spawned. Cancel any previous switch @option{-q}.
 
 @item @option{-we} (Treat all warnings as errors)
 
-When @option{-we} is used, any warning during the processing of the project
-files becomes an error and GPRbuild does not attempt any of the phases.
+  When @option{-we} is used, any warning during the processing of the project
+  files becomes an error and GPRbuild does not attempt any of the phases.
 
 @item @option{-wn} (Treat warnings as warnings)
 
-Switch @option{-wn} may be used to restore the default after @option{-we} or
-@option{-ws}.
+  Switch @option{-wn} may be used to restore the default after @option{-we} or
+  @option{-ws}.
 
 @item @option{-ws} (Suppress all warnings)
 
-Do not generate any warnings while processing the project files.
+  Do not generate any warnings while processing the project files.
 
 @end itemize
 
@@ -1577,13 +1593,13 @@ considered are:
 @item if there are no main specified, all the Ada sources
 
 @item if there is a non Ada main, but no attribute @code{Roots} specified for
-this main, all the Ada sources
+  this main, all the Ada sources
 
 @item if there is a main with an attribute @code{Roots} specified, all
-the Ada sources in the closures of these Roots.
+  the Ada sources in the closures of these Roots.
 
 @item if there is an Ada main specified, all the Ada sources in the closure
-of the main
+  of the main
 
 @end itemize
 
@@ -1635,7 +1651,7 @@ A source needs to be compiled in the following cases:
 @item A source listed in the dependency file has been replaced
 
 @item Switch @option{-s} is used and the source has been compiled with
-different switches or with the same switches in a different order
+  different switches or with the same switches in a different order
 
 @end itemize
 
@@ -1648,7 +1664,7 @@ created in the object directory of the project of the source:
 @item An object file
 
 @item A dependency file, except when the dependency kind for the language
-      is @code{none}
+  is @code{none}
 
 @item A switch file if switch @option{-s} is used
 
@@ -1663,18 +1679,18 @@ switches/options:
 @item The required compilation switches for the language
 
 @item The compilation switches coming from package @code{Compiler} of the
-project of the source
+  project of the source
 
 @item The compilation switches specified on the command line for all compilers,
-      after @option{-cargs}
+  after @option{-cargs}
 
 @item The compilation switches for the language of the source, specified
-      after @option{-cargs:<language>}
+  after @option{-cargs:<language>}
 
 @item Various other options including a switch to create the dependency file
-      while compiling, a switch to specify a configuration file, a switch
-      to specify a mapping file, and switches to indicate where to look for
-      other source or header files that are needed to compile the source.
+  while compiling, a switch to specify a configuration file, a switch
+  to specify a mapping file, and switches to indicate where to look for
+  other source or header files that are needed to compile the source.
 
 @end itemize
 
@@ -1803,43 +1819,43 @@ The switches for GPRclean are:
 
 @itemize @bullet
 
-@item  @option{--config=<main config project file name>} : Specify the
-       configuration project file name
+@item @option{--config=<main config project file name>} : Specify the
+  configuration project file name
 
 @item @option{--autoconf=<config project file name>}
 
-This specifies a configuration project file name that already exists or will
-be created automatically. Option @option{--autoconf=}
-cannot be specified more than once. If the configuration project file
-specified with @option{--autoconf=} exists, then it is used. Otherwise,
-@value{gprconfig} is invoked to create it automatically.
+  This specifies a configuration project file name that already exists or will
+  be created automatically. Option @option{--autoconf=}
+  cannot be specified more than once. If the configuration project file
+  specified with @option{--autoconf=} exists, then it is used. Otherwise,
+  @value{gprconfig} is invoked to create it automatically.
 
-@item  @option{-c} : Only delete compiler-generated files. Do not delete
-       executables and libraries.
+@item @option{-c} : Only delete compiler-generated files. Do not delete
+  executables and libraries.
 
-@item  @option{-f} : Force deletions of unwritable files
+@item @option{-f} : Force deletions of unwritable files
 
-@item  @option{-F} : Display full project path name in brief error messages
+@item @option{-F} : Display full project path name in brief error messages
 
-@item  @option{-h} : Display this message
+@item @option{-h} : Display this message
 
-@item  @option{-n} : Do not delete files, only list files to delete
+@item @option{-n} : Do not delete files, only list files to delete
 
-@item  @option{-P<proj>} : Use Project File @emph{<proj>}.
+@item @option{-P<proj>} : Use Project File @emph{<proj>}.
 
-@item  @option{-q} : Be quiet/terse. There is no output, except to report
-       problems.
+@item @option{-q} : Be quiet/terse. There is no output, except to report
+  problems.
 
-@item  @option{-r} : (recursive) Clean all projects referenced by the main
-       project directly or indirectly. Without this switch, GPRclean only
-       cleans the main project.
+@item @option{-r} : (recursive) Clean all projects referenced by the main
+  project directly or indirectly. Without this switch, GPRclean only
+  cleans the main project.
 
-@item  @option{-v}  : Verbose mode
+@item @option{-v}  : Verbose mode
 
-@item  @option{-vPx} : Specify verbosity when parsing Project Files.
-       x = 0 (default), 1 or 2.
+@item @option{-vPx} : Specify verbosity when parsing Project Files.
+  x = 0 (default), 1 or 2.
 
-@item  @option{-Xnm=val} : Specify an external reference for Project Files.
+@item @option{-Xnm=val} : Specify an external reference for Project Files.
 
 @end itemize
 
@@ -1881,105 +1897,105 @@ of @code{--config} and @code{--autoconf} switches.}
 
 @table @option
 @item --target=platform
-@CINDEX{@option{--target} for gprconfig}
-@TIPHTML{Use @option{--target} to specify on which machine your application will
-run}
+  @CINDEX{@option{--target} for gprconfig}
+  @TIPHTML{Use @option{--target} to specify on which machine your application will
+  run}
 
-This switch indicates the target computer on which your application will
-be run. It is mostly useful for cross configurations. Examples include
-@samp{ppc-elf}, @samp{ppc-vx6-windows}. It can also be used in native
-configurations and is useful when the same machine can run different kind
-of compilers such as mingw32 and cygwin on Windows or x86-32 and x86-64
-on GNU Linux. Since different compilers will often return a different
-name for those targets, @value{gprconfig} has an extensive knowledge of which
-targets are compatible, and will for example accept @samp{x86-linux} as
-an alias for @samp{i686-pc-linux-gnu}.
-The default target is the machine on which @value{gprconfig} is run.
+  This switch indicates the target computer on which your application will
+  be run. It is mostly useful for cross configurations. Examples include
+  @samp{ppc-elf}, @samp{ppc-vx6-windows}. It can also be used in native
+  configurations and is useful when the same machine can run different kind
+  of compilers such as mingw32 and cygwin on Windows or x86-32 and x86-64
+  on GNU Linux. Since different compilers will often return a different
+  name for those targets, @value{gprconfig} has an extensive knowledge of which
+  targets are compatible, and will for example accept @samp{x86-linux} as
+  an alias for @samp{i686-pc-linux-gnu}.
+  The default target is the machine on which @value{gprconfig} is run.
 
-If you enter the special target @samp{all}, then all compilers found on the
-@env{PATH} will be displayed.
+  If you enter the special target @samp{all}, then all compilers found on the
+  @env{PATH} will be displayed.
 
 @item --show-targets
-@CINDEX{@option{--show-target} for gprconfig}
-As mentioned above, @value{gprconfig} knows which targets are compatible. You
-can use this switch to find the list of targets that are compatible
-with @code{--target}.
+  @CINDEX{@option{--show-target} for gprconfig}
+  As mentioned above, @value{gprconfig} knows which targets are compatible. You
+  can use this switch to find the list of targets that are compatible
+  with @code{--target}.
 
 @item --config=language[,version[,runtime[,path[,name]]]]
-@CINDEX{@option{--config} for gprconfig}
-@TIPHTML{Use @option{--config} to automatically select the first matching
-compiler}
+  @CINDEX{@option{--config} for gprconfig}
+  @TIPHTML{Use @option{--config} to automatically select the first matching
+  compiler}
 
-The intent of this switch is to preselect one or more compilers directly
-from the command line. This switch takes several optional arguments, which
-you can omit simply by passing the empty string. When omitted, the arguments
-will be computed automatically by @value{gprconfig}.
+  The intent of this switch is to preselect one or more compilers directly
+  from the command line. This switch takes several optional arguments, which
+  you can omit simply by passing the empty string. When omitted, the arguments
+  will be computed automatically by @value{gprconfig}.
 
-In general, only @option{language} needs to be specified, and the first
-compiler on the @env{PATH} that can compile this language will be selected.
-As an example, for a multi-language application programmed in C and Ada,
-the command line would be:
+  In general, only @option{language} needs to be specified, and the first
+  compiler on the @env{PATH} that can compile this language will be selected.
+  As an example, for a multi-language application programmed in C and Ada,
+  the command line would be:
 
-@CODESAMPLE{--config=Ada --config=C}
+  @CODESAMPLE{--config=Ada --config=C}
 
-@noindent
-@option{path} is the directory that contains the compiler executable, for
-instance @file{/usr/bin} (and not the installation prefix @file{/usr}).
+  @noindent
+  @option{path} is the directory that contains the compiler executable, for
+  instance @file{/usr/bin} (and not the installation prefix @file{/usr}).
 
-@option{name} should be one of the compiler names defined in the @value{gprconfig}
-knowledge base. The list of supported names includes @samp{GNAT},
-@samp{GCC},@dots{}. This name is
-generally not needed, but can be used to distinguish among several compilers
-that could match the other arguments of @option{--config}.
+  @option{name} should be one of the compiler names defined in the @value{gprconfig}
+  knowledge base. The list of supported names includes @samp{GNAT},
+  @samp{GCC},@dots{}. This name is
+  generally not needed, but can be used to distinguish among several compilers
+  that could match the other arguments of @option{--config}.
 
-Another possible more frequent use of @option{name} is to specify the base
-name of an executable. For instance, if you prefer to use a diab C compiler
-(executable is called @file{dcc}) instead of @file{gcc}, even if the latter
-appears first in the path, you could specify @file{dcc} as the name parameter.
+  Another possible more frequent use of @option{name} is to specify the base
+  name of an executable. For instance, if you prefer to use a diab C compiler
+  (executable is called @file{dcc}) instead of @file{gcc}, even if the latter
+  appears first in the path, you could specify @file{dcc} as the name parameter.
 
-@CODESAMPLE{gprconfig --config Ada,,,/usr/bin       # automatic parameters@NL{}
-gprconfig --config C,,,/usr/bin,GCC     # automatic version@NL{}
-gprconfig --config C,,,/usr/bin,gcc     # same as above, with exec name}
+  @CODESAMPLE{gprconfig --config Ada,,,/usr/bin       # automatic parameters@NL{}
+  gprconfig --config C,,,/usr/bin,GCC     # automatic version@NL{}
+  gprconfig --config C,,,/usr/bin,gcc     # same as above, with exec name}
 
-@noindent
-This switch is also the only possibility to include in your project some
-languages that are not associated with a compiler. This is sometimes useful
-especially when you are using environments like GPS that support project files.
-For instance, if you select "Project file" as a language, the files matching
-the @file{.gpr} extension will be shown in the editor, although they of course
-play no role for gprbuild itself.
+  @noindent
+  This switch is also the only possibility to include in your project some
+  languages that are not associated with a compiler. This is sometimes useful
+  especially when you are using environments like GPS that support project files.
+  For instance, if you select "Project file" as a language, the files matching
+  the @file{.gpr} extension will be shown in the editor, although they of course
+  play no role for gprbuild itself.
 
 @item --batch
-@CINDEX{@option{--batch} for gprconfig}
-@TIPHTML{Use @option{--batch} to generate the configuration file with no user
-interaction}
-If this switch is specified, @value{gprconfig} automatically selects the first
-compiler matching each of the @code{--config} switches, and generates the
-configuration file immediately. It will not display an interactive menu.
+  @CINDEX{@option{--batch} for gprconfig}
+  @TIPHTML{Use @option{--batch} to generate the configuration file with no user
+  interaction}
+  If this switch is specified, @value{gprconfig} automatically selects the first
+  compiler matching each of the @code{--config} switches, and generates the
+  configuration file immediately. It will not display an interactive menu.
 
 @item -o file
-@CINDEX{@option{-o} for gprconfig}
-@TIPHTML{Use @option{-o} to specify the name of the configuration file to generate}
-This specifies the name of the configuration file that will be generated.
-If this switch is not specified, a default file is generated in the
-installation directory of GPRbuild (assuming you have write access to
-that directory), so that it is automatically picked up by GPRbuild later
-on. If you select a different output file, you will need to specify it
-to GPRbuild.
+  @CINDEX{@option{-o} for gprconfig}
+  @TIPHTML{Use @option{-o} to specify the name of the configuration file to generate}
+  This specifies the name of the configuration file that will be generated.
+  If this switch is not specified, a default file is generated in the
+  installation directory of GPRbuild (assuming you have write access to
+  that directory), so that it is automatically picked up by GPRbuild later
+  on. If you select a different output file, you will need to specify it
+  to GPRbuild.
 
 @item --db directory
 @itemx --db-
-@CINDEX{@option{--db} for gprconfig}
-Indicates another directory that should be parsed for @value{gprconfig}'s knowledge
-base. Most of the time this is only useful if you are creating your own
-XML description files locally. The second version of the switch prevents
-@value{gprconfig} from reading its default knowledge base.
+  @CINDEX{@option{--db} for gprconfig}
+  Indicates another directory that should be parsed for @value{gprconfig}'s knowledge
+  base. Most of the time this is only useful if you are creating your own
+  XML description files locally. The second version of the switch prevents
+  @value{gprconfig} from reading its default knowledge base.
 
 @item -h
-@CINDEX{@option{-h} for gprconfig}
-Generates a brief help message listing all GPRconfig switches and the
-default value for their arguments. This includes the location of the
-knowledge base, the default target,@dots{}
+  @CINDEX{@option{-h} for gprconfig}
+  Generates a brief help message listing all GPRconfig switches and the
+  default value for their arguments. This includes the location of the
+  knowledge base, the default target,@dots{}
 
 @end table
 
@@ -2058,38 +2074,38 @@ The knowledge base contains various kinds of information:
 @itemize @bullet
 @item Compiler description
 
-   When it is run interactively, @value{gprconfig} searches the user's
-   @env{PATH} for known compilers, and tries to deduce their
-   configuration (version, supported languages, supported targets, run-times,
-   @dots{}). From the knowledge base @value{gprconfig} knows how to extract the
-   relevant information about a compiler.
+  When it is run interactively, @value{gprconfig} searches the user's
+  @env{PATH} for known compilers, and tries to deduce their
+  configuration (version, supported languages, supported targets, run-times,
+  @dots{}). From the knowledge base @value{gprconfig} knows how to extract the
+  relevant information about a compiler.
 
-   This step is optional, since a user can also enter all the information
-   manually. However, it is recommended that the knowledge base explicitly
-   list its known compilers, to make configuration easier for end users.
+  This step is optional, since a user can also enter all the information
+  manually. However, it is recommended that the knowledge base explicitly
+  list its known compilers, to make configuration easier for end users.
 
 @item Specific compilation switches
 
-   When a compiler is used, depending on its version, target, run-time,@dots{},
-   some specific command line switches might have to be supplied. The
-   knowledge base is a good place to store such information.
+  When a compiler is used, depending on its version, target, run-time,@dots{},
+  some specific command line switches might have to be supplied. The
+  knowledge base is a good place to store such information.
 
-   For instance, with the GNAT compiler, using the soft-float runtime should
-   force @emph{gprbuild} to use the @option{-msoft-float} compilation switch.
+  For instance, with the GNAT compiler, using the soft-float runtime should
+  force @emph{gprbuild} to use the @option{-msoft-float} compilation switch.
 
 @item Linker options
 
-   Linking a multi-language application often has some subtleties,
-   and typically requires specific linker switches.
-   These switches depend on the list of languages, the list
-   of compilers,@dots{}.
+  Linking a multi-language application often has some subtleties,
+  and typically requires specific linker switches.
+  These switches depend on the list of languages, the list
+  of compilers,@dots{}.
 
 @item Unsupported compiler mix
 
-   It is sometimes not possible to link together code compiled with two
-   particular compilers. The knowledge base should store this information,
-   so that end users are informed immediately when attempting to
-   use such a compiler combination.
+  It is sometimes not possible to link together code compiled with two
+  particular compilers. The knowledge base should store this information,
+  so that end users are informed immediately when attempting to
+  use such a compiler combination.
 @end itemize
 
 @noindent
@@ -2156,101 +2172,102 @@ are evaluated (if necessary) in the same order as they are documented below.
 
 @table @code
 @item <name>
-This tag contains a simple string, which is the name of the compiler.
-This name must be unique across all the configuration files, and is used to
-identify that @code{compiler_description} node.
+  This tag contains a simple string, which is the name of the compiler.
+  This name must be unique across all the configuration files, and is used to
+  identify that @code{compiler_description} node.
 
-@CODESAMPLE{<compiler_description>@NL{}
-   <name>GNAT</name>@NL{}
-</compiler_description>}
+  @CODESAMPLE{<compiler_description>@NL{}
+    <name>GNAT</name>@NL{}
+  </compiler_description>}
 
 @item <executable>
-This tag contains a string, which is the name of an executable
-to search for on the PATH. Examples are @samp{gnatls}, @samp{gcc},@dots{}
+  This tag contains a string, which is the name of an executable
+  to search for on the PATH. Examples are @samp{gnatls}, @samp{gcc},@dots{}
 
-In some cases, the tools have a common suffix, but a prefix that might depend
-on the target. For instance, GNAT uses @samp{gnatmake} for native platforms,
-but @samp{powerpc-wrs-vxworks-gnatmake} for cross-compilers to VxWorks.
-Most of the compiler description is the same, however.
-For such cases, the value of the @code{executable} node is considered as
-beginning a regular expression. The tag also accepts an attribute @code{prefix},
-which is an integer indicating the parenthesis group that contains the prefix.
-In the following example, you obtain the version of the GNAT compiler by running
-either @command{gnatls} or @command{powerpc-wrs-vxworks-gnatls}, depending on
-the name of the executable that was found.
+  In some cases, the tools have a common suffix, but a prefix that might depend
+  on the target. For instance, GNAT uses @samp{gnatmake} for native platforms,
+  but @samp{powerpc-wrs-vxworks-gnatmake} for cross-compilers to VxWorks.
+  Most of the compiler description is the same, however.
+  For such cases, the value of the @code{executable} node is considered as
+  beginning a regular expression. The tag also accepts an attribute @code{prefix},
+  which is an integer indicating the parenthesis group that contains the prefix.
+  In the following example, you obtain the version of the GNAT compiler by running
+  either @command{gnatls} or @command{powerpc-wrs-vxworks-gnatls}, depending on
+  the name of the executable that was found.
 
-The regular expression needs to match the whole name of the file, i.e. it
-contains an implicit ``^'' at the start, and an implicit ``$'' at the end.
-Therefore if you specify @samp{.*gnatmake} as the regexp, it will not match
-@samp{gnatmake-debug}.
+  The regular expression needs to match the whole name of the file, i.e. it
+  contains an implicit ``^'' at the start, and an implicit ``$'' at the end.
+  Therefore if you specify @samp{.*gnatmake} as the regexp, it will not match
+  @samp{gnatmake-debug}.
 
-A special case is when this node is empty (but it must be specified!). In
-such a case, you must also specify the language (see <language> below) as a
-simple string. It is then assumed that the specified language does not
-require a compiler. In the configurations file (@pxref{Configurations}),
-you can test whether that language was specified on the command line by
-using a filter such as
-@smallexample
+  A special case is when this node is empty (but it must be specified!). In
+  such a case, you must also specify the language (see <language> below) as a
+  simple string. It is then assumed that the specified language does not
+  require a compiler. In the configurations file (@pxref{Configurations}),
+  you can test whether that language was specified on the command line by
+  using a filter such as
+
+  @smallexample
  <compilers>
   <compiler language="name"/>
  </compilers>
-@end smallexample
+  @end smallexample
 
-@noindent
-@smallexample
-<executable prefix="1">(powerpc-wrs-vxworks-)?gnatmake</executable>
-<version><external>$@{PREFIX@}gnatls -v</external></version>
-@end smallexample
+  @noindent
+  @smallexample
+  <executable prefix="1">(powerpc-wrs-vxworks-)?gnatmake</executable>
+  <version><external>$@{PREFIX@}gnatls -v</external></version>
+  @end smallexample
 
-@noindent
-@value{gprconfig} searches in all directories listed on the PATH for such
-an executable. When one is found, the rest of the @code{<compiler_description>}
-children are checked to know whether the compiler is valid. The directory
-in which the executable was found becomes the ``current directory'' for
-the remaining XML children.
+  @noindent
+  @value{gprconfig} searches in all directories listed on the PATH for such
+  an executable. When one is found, the rest of the @code{<compiler_description>}
+  children are checked to know whether the compiler is valid. The directory
+  in which the executable was found becomes the ``current directory'' for
+  the remaining XML children.
 
 @item <target>
 
-This node indicates how to query the target architecture for the compiler.
-See @ref{GPRconfig external values} for valid children.
+  This node indicates how to query the target architecture for the compiler.
+  See @ref{GPRconfig external values} for valid children.
 
 @item <version>
 
-This tag contains any of the nodes defined in @ref{GPRconfig external values} below.
-It shows how to query the version number of the compiler. If the version
-cannot be found, the executable will not be listed in the list of compilers.
+  This tag contains any of the nodes defined in @ref{GPRconfig external values} below.
+  It shows how to query the version number of the compiler. If the version
+  cannot be found, the executable will not be listed in the list of compilers.
 
 @item <variable name="varname">
 
-This node will define a user variable which may be later referenced.  The
-variables are evaluated just after the version but before the languages
-and the runtimes nodes.  See @ref{GPRconfig external values}
-below for valid children of
-this node.  If the evaluation of this variable is empty then the compiler
-is considered as invalid.
+  This node will define a user variable which may be later referenced.  The
+  variables are evaluated just after the version but before the languages
+  and the runtimes nodes.  See @ref{GPRconfig external values}
+  below for valid children of
+  this node.  If the evaluation of this variable is empty then the compiler
+  is considered as invalid.
 
 @item <languages>
 
-This node indicates how to query the list of languages. See
-@ref{GPRconfig external values}
-below for valid children of this node.
+  This node indicates how to query the list of languages. See
+  @ref{GPRconfig external values}
+  below for valid children of this node.
 
-The value returned by the system will be split into words. As a result, if
-the returned value is ``ada,c,c++'', there are three languages supported by the
-compiler (and three entries are added to the menu when using @value{gprconfig}
-interactively).
+  The value returned by the system will be split into words. As a result, if
+  the returned value is ``ada,c,c++'', there are three languages supported by the
+  compiler (and three entries are added to the menu when using @value{gprconfig}
+  interactively).
 
-If the value is a simple string, the words must be comma-separated, so that
-you can specify languages whose names include spaces. However, if the actual
-value is computed from the result of a command, the words can also be
-space-separated, to be compatible with more tools.
+  If the value is a simple string, the words must be comma-separated, so that
+  you can specify languages whose names include spaces. However, if the actual
+  value is computed from the result of a command, the words can also be
+  space-separated, to be compatible with more tools.
 
 @item <runtimes>
 
-This node indicates how to query the list of supported runtimes for the
-compiler. See @ref{GPRconfig external values}
-below for valid children. The returned value
-is split into words as for @code{<languages>}.
+  This node indicates how to query the list of supported runtimes for the
+  compiler. See @ref{GPRconfig external values}
+  below for valid children. The returned value
+  is split into words as for @code{<languages>}.
 
 @end table
 
@@ -2278,141 +2295,141 @@ of the @code{<directory>} and @code{<external>} nodes.
 @itemize @bullet
 @item A simple string
 
-A simple string given in the node indicates a constant. For
-instance, the list of supported languages might be defined as:
+  A simple string given in the node indicates a constant. For
+  instance, the list of supported languages might be defined as:
 
-@CODESAMPLE{<compiler_description>@NL{}
-   <name>GNAT</name>@NL{}
-   <executable>gnatmake</executable>@NL{}
-   <languages>Ada</languages>@NL{}
-</compiler_description>}
+  @CODESAMPLE{<compiler_description>@NL{}
+  <name>GNAT</name>@NL{}
+  <executable>gnatmake</executable>@NL{}
+  <languages>Ada</languages>@NL{}
+  </compiler_description>}
 
-@noindent
-for the GNAT compiler, since this is an Ada-only compiler.
+  @noindent
+  for the GNAT compiler, since this is an Ada-only compiler.
 
-Variables can be referenced in simple strings.
+  Variables can be referenced in simple strings.
 
 @item @code{<getenv name="variable" />}
 
-If the contents of the node is a @code{<getenv>} child, the value of
-the environment variable @env{variable} is returned. If the variable is
-not defined, this is an error and the compiler is ignored.
+  If the contents of the node is a @code{<getenv>} child, the value of
+  the environment variable @env{variable} is returned. If the variable is
+  not defined, this is an error and the compiler is ignored.
 
-@CODESAMPLE{<compiler_description>@NL{}
-  <name>GCC-WRS</name>@NL{}
-  <executable prefix="1">cc(arm|pentium)</executable>@NL{}
-  <version>@NL{}
-    <getenv name="WIND_BASE" />@NL{}
-  </version>@NL{}
-</compile_description>}
+  @CODESAMPLE{<compiler_description>@NL{}
+    <name>GCC-WRS</name>@NL{}
+    <executable prefix="1">cc(arm|pentium)</executable>@NL{}
+    <version>@NL{}
+      <getenv name="WIND_BASE" />@NL{}
+    </version>@NL{}
+  </compile_description>}
 
 @item @code{<external>command</external>}
 
-If the contents of the node is an @code{<external>} child, this indicates
-that a command should be run on the system.
-When the command is run, the current directory (i.e., the one that contains
-the executable found through the @code{<executable>} node), is placed first
-on the @env{PATH}. The output of the command is returned and may be later
-filtered. The command is not executed through a shell; therefore you cannot
-use output redirection, pipes, or other advanced features.
+  If the contents of the node is an @code{<external>} child, this indicates
+  that a command should be run on the system.
+  When the command is run, the current directory (i.e., the one that contains
+  the executable found through the @code{<executable>} node), is placed first
+  on the @env{PATH}. The output of the command is returned and may be later
+  filtered. The command is not executed through a shell; therefore you cannot
+  use output redirection, pipes, or other advanced features.
 
-For instance, extracting the target processor from @command{gcc} can be done
-with:
+  For instance, extracting the target processor from @command{gcc} can be done
+  with:
 
-@CODESAMPLE{<version>@NL{}
-  <external>gcc -dumpmachine</external>@NL{}
-</version>}
+  @CODESAMPLE{<version>@NL{}
+    <external>gcc -dumpmachine</external>@NL{}
+  </version>}
 
-@noindent
-Since the @env{PATH} has been modified, we know that the @command{gcc} command
-that is executed is the one from the same directory as the @code{<external>}
-node.
+  @noindent
+  Since the @env{PATH} has been modified, we know that the @command{gcc} command
+  that is executed is the one from the same directory as the @code{<external>}
+  node.
 
-Variables are substituted in @var{command}.
+  Variables are substituted in @var{command}.
 
 @item @code{<grep regexp="regexp" group="0" />}
 
-This node must come after the previously described ones. It is used to
-further filter the output. The previous output is matched against the regular
-expression @var{regexp} and the parenthesis group specified by
-@var{group} is returned. By default, group is 0, which indicates the
-whole output of the command.
+  This node must come after the previously described ones. It is used to
+  further filter the output. The previous output is matched against the regular
+  expression @var{regexp} and the parenthesis group specified by
+  @var{group} is returned. By default, group is 0, which indicates the
+  whole output of the command.
 
-For instance, extracting the version number from @command{gcc} can be done
-with:
+  For instance, extracting the version number from @command{gcc} can be done
+  with:
 
-@CODESAMPLE{<version>@NL{}
+  @CODESAMPLE{<version>@NL{}
    <external>gcc -v</external>@NL{}
    <grep regexp="^gcc version (\S+)" group="1" />@NL{}
-</version>}
+  </version>}
 
 @item @code{<directory group="0">regexp</directory>}
 
-If the contents of the node is a @code{<directory}> child, this
-indicates that @value{gprconfig} should find all the files matching the
-regular expression. Regexp is a path relative to the directory that contains
-the @code{<executable>} file, and should use unix directory separators
-(ie '/'), since the actual directory will be converted into this format
-before the match, for system independence of the knowledge base.
+  If the contents of the node is a @code{<directory}> child, this
+  indicates that @value{gprconfig} should find all the files matching the
+  regular expression. Regexp is a path relative to the directory that contains
+  the @code{<executable>} file, and should use unix directory separators
+  (ie '/'), since the actual directory will be converted into this format
+  before the match, for system independence of the knowledge base.
 
-The group attribute indicates which parenthesis group should be returned.
-It defaults to 0 which indicates the whole matched path. If this attribute is
-a string rather than an integer, then it is the value returned.
+  The group attribute indicates which parenthesis group should be returned.
+  It defaults to 0 which indicates the whole matched path. If this attribute is
+  a string rather than an integer, then it is the value returned.
 
-@var{regexp} can be any valid regular expression. This will only match
-a directory name, not a subdirectory. Remember to quote special characters,
-including ``.'', if you do not mean to use a regexp.
+  @var{regexp} can be any valid regular expression. This will only match
+  a directory name, not a subdirectory. Remember to quote special characters,
+  including ``.'', if you do not mean to use a regexp.
 
-For instance, finding the list of supported runtimes for the GNAT compiler
-is done with:
+  For instance, finding the list of supported runtimes for the GNAT compiler
+  is done with:
 
-@CODESAMPLE{<runtimes>@NL{}
- <directory group="1">@NL{}
-    \.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude@NL{}
- </directory>@NL{}
- <directory group="default">@NL{}
-   \.\./lib/gcc/$@{TARGET@}/.*/adainclude@NL{}
- </directory>@NL{}
-</runtimes>}
+  @CODESAMPLE{<runtimes>@NL{}
+  <directory group="1">@NL{}
+     \.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude@NL{}
+  </directory>@NL{}
+  <directory group="default">@NL{}
+    \.\./lib/gcc/$@{TARGET@}/.*/adainclude@NL{}
+  </directory>@NL{}
+  </runtimes>}
 
-@noindent
-Note the second node, which matches the default run-time, and displays it as
-such.
+  @noindent
+  Note the second node, which matches the default run-time, and displays it as
+  such.
 
 @item @code{<filter>value1,value2,...</filter>}
 
-This node must come after one the previously described ones. It is used to
-further filter the output. The previous output is split into words (it is
-considered as a comma-separated or space-separated list of words), and only
-those words in @samp{value1}, @samp{value2},@dots{} are kept.
+  This node must come after one the previously described ones. It is used to
+  further filter the output. The previous output is split into words (it is
+  considered as a comma-separated or space-separated list of words), and only
+  those words in @samp{value1}, @samp{value2},@dots{} are kept.
 
-For instance, the @command{gcc} compiler will return a variety of supported
-languages, including ``ada''. If we do not want to use it as an Ada
-compiler we can specify:
+  For instance, the @command{gcc} compiler will return a variety of supported
+  languages, including ``ada''. If we do not want to use it as an Ada
+  compiler we can specify:
 
-@CODESAMPLE{<languages>@NL{}
+  @CODESAMPLE{<languages>@NL{}
    <external regexp="languages=(\S+)" group="1">gcc -v</external>@NL{}
    <filter>c,c++,fortran</filter>@NL{}
-</languages>}
+  </languages>}
 
 @item @code{<must_match>regexp</must_match>}
 
-If this node is present, then the filtered output is compared with the
-specified regular expression. If no match is found, then the executable
-is not stored in the list of known compilers.
+  If this node is present, then the filtered output is compared with the
+  specified regular expression. If no match is found, then the executable
+  is not stored in the list of known compilers.
 
-For instance, if you want to have a @code{<compiler_description>} tag
-specific to an older version of GCC, you could write:
+  For instance, if you want to have a @code{<compiler_description>} tag
+  specific to an older version of GCC, you could write:
 
-@CODESAMPLE{<version>@NL{}
+  @CODESAMPLE{<version>@NL{}
    <external regexp="gcc version (\S+)"@NL{}
         group="1">gcc -v </external>@NL{}
    <must_match>2.8.1</must_match>@NL{}
-</version>}
+  </version>}
 
-@noindent
-Other versions of gcc will not match this @code{<compiler_description>}
-node.
+  @noindent
+  Other versions of gcc will not match this @code{<compiler_description>}
+  node.
 
 @end itemize
 
@@ -2728,50 +2745,50 @@ in the configuration project file.
 
 @item Default_Language
 
-Specifies the name of the language of the immediate sources of a project when
-attribute @code{Languages} is not declared in the project. If attribute
-@code{Default_Language} is not declared in the configuration file, then each user
-project file in the project tree must have an attribute @code{Languages} declared,
-unless it extends another project. Example:
+  Specifies the name of the language of the immediate sources of a project when
+  attribute @code{Languages} is not declared in the project. If attribute
+  @code{Default_Language} is not declared in the configuration file, then each user
+  project file in the project tree must have an attribute @code{Languages} declared,
+  unless it extends another project. Example:
 
-@smallexample
+  @smallexample
    for Default_Language use "ada";
-@end smallexample
+  @end smallexample
 
 @item Run_Path_Option
 
-Specifies a ``run path option''; i.e., an option to use when linking an
-executable or a shared library to indicate the path where to look for other
-libraries. The value of this attribute is a string list. When linking an
-executable or a shared library, the search path is concatenated with the last
-string in the list, which may be an empty string. Example:
+  Specifies a ``run path option''; i.e., an option to use when linking an
+  executable or a shared library to indicate the path where to look for other
+  libraries. The value of this attribute is a string list. When linking an
+  executable or a shared library, the search path is concatenated with the last
+  string in the list, which may be an empty string. Example:
 
-@smallexample
-   for Run_Path_Option  use ("-Wl,-rpath,");
-@end smallexample
+  @smallexample
+    for Run_Path_Option  use ("-Wl,-rpath,");
+  @end smallexample
 
 @item Toolchain_Version (<language>)
 
-Specifies a version for a toolchain, as a single string. This toolchain
-version is passed to the library builder. Example:
+  Specifies a version for a toolchain, as a single string. This toolchain
+  version is passed to the library builder. Example:
 
-@smallexample
-   for Toolchain_Version ("Ada") use "GNAT 6.1";
-@end smallexample
+  @smallexample
+    for Toolchain_Version ("Ada") use "GNAT 6.1";
+  @end smallexample
 
-@noindent
-This attribute is used by GPRbind to decide on the names of the shared GNAT
-runtime libraries.
+  @noindent
+  This attribute is used by GPRbind to decide on the names of the shared GNAT
+  runtime libraries.
 
 @item Toolchain_Description (<language>)
 
-Specifies as a single string a description of a toolchain. This attribute is
-not directly used by GPRbuild or its auxiliary tools (GPRbind and GPRlib) but
-may be used by other tools, for example GPS. Example:
+  Specifies as a single string a description of a toolchain. This attribute is
+  not directly used by GPRbuild or its auxiliary tools (GPRbind and GPRlib) but
+  may be used by other tools, for example GPS. Example:
 
-@smallexample
-   for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
-@end smallexample
+  @smallexample
+    for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
+  @end smallexample
 
 @end itemize
 
@@ -2785,21 +2802,21 @@ may be used by other tools, for example GPS. Example:
 
 @item Library_Support
 
-Specifies the level of support for library project. If this attribute is not
-specified, then library projects are not supported. The only potential values
-for this attribute are @code{none}, @code{static_only} and @code{full}. Example:
+  Specifies the level of support for library project. If this attribute is not
+  specified, then library projects are not supported. The only potential values
+  for this attribute are @code{none}, @code{static_only} and @code{full}. Example:
 
-@smallexample
+  @smallexample
    for Library_Support use "full";
-@end smallexample
+  @end smallexample
 
 @item Library_Builder
 
-Specifies the name of the executable for the library builder. Example:
+  Specifies the name of the executable for the library builder. Example:
 
-@smallexample
+  @smallexample
    for Library_Builder use "/.../gprlib";
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -2813,41 +2830,41 @@ Specifies the name of the executable for the library builder. Example:
 
 @item Archive_Builder
 
-Specifies the name of the executable of the archive builder with the minimum
-options, if any. Example:
+  Specifies the name of the executable of the archive builder with the minimum
+  options, if any. Example:
 
-@smallexample
+  @smallexample
    for Archive_Builder use ("ar", "cr");
-@end smallexample
+  @end smallexample
 
 @item Archive_Indexer
 
-Specifies the name of the executable of the archive indexer with the minimum
-options, if any. If this attribute is not specified, then there is no
-archive indexer. Example:
+  Specifies the name of the executable of the archive indexer with the minimum
+  options, if any. If this attribute is not specified, then there is no
+  archive indexer. Example:
 
-@smallexample
-   for Archive_Indexer use ("ranlib");
-@end smallexample
+  @smallexample
+    for Archive_Indexer use ("ranlib");
+  @end smallexample
 
 @item Archive_Suffix
 
-Specifies the suffix of the archives. If this attribute is not specified, then
-the suffix of the archives is defaulted to @file{.a}. Example:
+  Specifies the suffix of the archives. If this attribute is not specified, then
+  the suffix of the archives is defaulted to @file{.a}. Example:
 
-@smallexample
+  @smallexample
    for Archive_Suffix use ".olb"; --  for VMS
-@end smallexample
+  @end smallexample
 
 @item Library_Partial_Linker
 
-Specifies the name of the executable of the partial linker with the options
-to be used, if any. If this attribute is not specified, then there is no
-partial linking. Example:
+  Specifies the name of the executable of the partial linker with the options
+  to be used, if any. If this attribute is not specified, then there is no
+  partial linking. Example:
 
-@smallexample
+  @smallexample
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -2861,83 +2878,83 @@ partial linking. Example:
 
 @item Shared_Library_Prefix
 
-Specifies the prefix of the file names of shared libraries. When this attribute
-is not specified, the prefix is @code{lib}. Example:
+  Specifies the prefix of the file names of shared libraries. When this attribute
+  is not specified, the prefix is @code{lib}. Example:
 
-@smallexample
+  @smallexample
    for Shared_Library_Prefix use ""; --  for Windows, if needed
-@end smallexample
+  @end smallexample
 
 @item Shared_Library_Suffix
 
-Specifies the suffix of the file names of shared libraries. When this attribute
-is not specified, the suffix is @file{.so}. Example:
+  Specifies the suffix of the file names of shared libraries. When this attribute
+  is not specified, the suffix is @file{.so}. Example:
 
-@smallexample
+  @smallexample
    for Shared_Library_Suffix use ".dll"; --  for Windows
-@end smallexample
+  @end smallexample
 
 @item Symbolic_Link_Supported
 
-Specifies if symbolic links are supported by the platforms. The possible values
-of this attribute are @code{"false"} (the default) and @code{"true"}. When this attribute is
-not specified, symbolic links are not supported.
+  Specifies if symbolic links are supported by the platforms. The possible values
+  of this attribute are @code{"false"} (the default) and @code{"true"}. When this attribute is
+  not specified, symbolic links are not supported.
 
-@smallexample
+  @smallexample
    for Symbolic_Link_Supported use "true";
-@end smallexample
+  @end smallexample
 
 @item Library_Major_Minor_ID_Supported
 
-Specifies if major and minor IDs are supported for shared libraries.
-The possible values of this attribute are @code{"false"} (the default) and @code{"true"}.
-When this attribute is not specified, major and minor IDs are not supported.
+  Specifies if major and minor IDs are supported for shared libraries.
+  The possible values of this attribute are @code{"false"} (the default) and @code{"true"}.
+  When this attribute is not specified, major and minor IDs are not supported.
 
-@smallexample
+  @smallexample
    for Library_Major_Minor_ID_Supported use "True";
-@end smallexample
+  @end smallexample
 
 @item Library_Auto_Init_Supported
 
-Specifies if library auto initialization is supported. The possible values of
-this attribute are @code{"false"} (the default) and @code{"true"}. When this attribute is not
-specified, library auto initialization is not supported.
+  Specifies if library auto initialization is supported. The possible values of
+  this attribute are @code{"false"} (the default) and @code{"true"}. When this attribute is not
+  specified, library auto initialization is not supported.
 
-@smallexample
+  @smallexample
    for Library_Auto_Init_Supported use "true";
-@end smallexample
+  @end smallexample
 
 @item Shared_Library_Minimum_Switches
 
-Specifies the minimum options to be used when building a shared
-library. These options are put in the appropriate section in the
-library exchange file when the library builder is invoked. Example:
+  Specifies the minimum options to be used when building a shared
+  library. These options are put in the appropriate section in the
+  library exchange file when the library builder is invoked. Example:
 
-@smallexample
+  @smallexample
    for Shared_Library_Minimum_Switches use  ("-shared");
-@end smallexample
+  @end smallexample
 
 @item Library_Version_Switches
 
-Specifies the option or options to be used when a library version is used.
-These options are put in the appropriate section in the library exchange file
-when the library builder is invoked. Example:
+  Specifies the option or options to be used when a library version is used.
+  These options are put in the appropriate section in the library exchange file
+  when the library builder is invoked. Example:
 
-@smallexample
+  @smallexample
    for Library_Version_Switches use ("-Wl,-soname,");
-@end smallexample
+  @end smallexample
 
 @item Runtime_Library_Dir (<language>)
 
-Specifies the directory for the runtime libraries for the language.
-Example:
+  Specifies the directory for the runtime libraries for the language.
+  Example:
 
-@smallexample
+  @smallexample
    for Runtime_Library_Dir ("Ada") use "/path/to/adalib";
-@end smallexample
+  @end smallexample
 
-@noindent
-This attribute is used by GPRlib to link shared libraries with Ada code.
+  @noindent
+  This attribute is used by GPRlib to link shared libraries with Ada code.
 
 @end itemize
 
@@ -2956,54 +2973,54 @@ file:
 @itemize @bullet
 @item Spec_Suffix (<language>)
 
-Specifies the default suffix for a ``spec'' or header file. Examples:
+  Specifies the default suffix for a ``spec'' or header file. Examples:
 
-@smallexample
+  @smallexample
    for Spec_Suffix ("Ada") use ".ads";
    for Spec_Suffix ("C")   use ".h";
    for Spec_Suffix ("C++") use ".hh";
-@end smallexample
+  @end smallexample
 
 @item Body_Suffix (<language>)
 
-Specifies the default suffix for a ``body'' or a source file. Examples:
+  Specifies the default suffix for a ``body'' or a source file. Examples:
 
-@smallexample
+  @smallexample
    for Body_Suffix ("Ada") use ".adb";
    for Body_Suffix ("C")   use ".c";
    for Body_Suffix ("C++") use ".cpp";
-@end smallexample
+  @end smallexample
 
 @item Separate_Suffix
 
-Specifies the suffix for a subunit source file (separate) in Ada. If attribute
-@code{Separate_Suffix} is not specified, then the default suffix of subunit source
-files is the same as the default suffix for body source files. Example:
+  Specifies the suffix for a subunit source file (separate) in Ada. If attribute
+  @code{Separate_Suffix} is not specified, then the default suffix of subunit source
+  files is the same as the default suffix for body source files. Example:
 
-@smallexample
+  @smallexample
    for Separate_Suffix use ".sep";
-@end smallexample
+  @end smallexample
 
 @item Casing
 
-Specifies the casing of spec and body files in a unit based language
-(such as Ada) to know how to map a unit name to its file name. The values for
-this attribute may only be @code{"lowercase"}, @code{"UPPERCASE"} and @code{"Mixedcase"}.
-The default, when attribute @code{Casing} is not specified is lower case.
-This attribute rarely needs to be specified, since on
-platforms where file names are not case sensitive (such as Windows or VMS)
-the default (lower case) will suffice.
+  Specifies the casing of spec and body files in a unit based language
+  (such as Ada) to know how to map a unit name to its file name. The values for
+  this attribute may only be @code{"lowercase"}, @code{"UPPERCASE"} and @code{"Mixedcase"}.
+  The default, when attribute @code{Casing} is not specified is lower case.
+  This attribute rarely needs to be specified, since on
+  platforms where file names are not case sensitive (such as Windows or VMS)
+  the default (lower case) will suffice.
 
 @item Dot_Replacement
 
-Specifies the string to replace a dot (``.'') in unit names of a unit based
-language (such as Ada) to obtain its file name. If there is any unit based
-language in the configuration, attribute @code{Dot_Replacement} must be declared.
-Example:
+  Specifies the string to replace a dot (``.'') in unit names of a unit based
+  language (such as Ada) to obtain its file name. If there is any unit based
+  language in the configuration, attribute @code{Dot_Replacement} must be declared.
+  Example:
 
-@smallexample
+  @smallexample
    for Dot_Replacement use "-";
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -3017,13 +3034,13 @@ Example:
 
 @item Executable_Suffix
 
-Specifies the default executable suffix. If no attribute @code{Executable_Suffix} is
-declared, then the default executable suffix for the host platform is used.
-Example:
+  Specifies the default executable suffix. If no attribute @code{Executable_Suffix} is
+  declared, then the default executable suffix for the host platform is used.
+  Example:
 
-@smallexample
+  @smallexample
    for Executable_Suffix use ".exe";
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -3053,37 +3070,37 @@ Example:
 
 @item Driver (<language>)
 
-Specifies the name of the executable for the compiler of a language. The single
-string value of this attribute may be an absolute path or a relative path. If
-relative, then the execution path is searched. Specifying the empty string for
-this attribute indicates that there is no compiler for the language.
+  Specifies the name of the executable for the compiler of a language. The single
+  string value of this attribute may be an absolute path or a relative path. If
+  relative, then the execution path is searched. Specifying the empty string for
+  this attribute indicates that there is no compiler for the language.
 
-Examples:
+  Examples:
 
-@smallexample
+  @smallexample
    for Driver ("C++") use "g++";
    for Driver ("Ada") use "/.../bin/gcc";
    for Driver ("Project file") use "";
-@end smallexample
+  @end smallexample
 
 @item Required_Switches (<language>)
 
-Specifies the minimum options that must be used when invoking the compiler
-of a language. Examples:
+  Specifies the minimum options that must be used when invoking the compiler
+  of a language. Examples:
 
-@smallexample
+  @smallexample
    for Required_Switches ("C")   use ("-c", "-x", "c");
    for Required_Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
-@end smallexample
+  @end smallexample
 
 @item PIC_Option (<language>)
 
-Specifies the option or options that must be used when compiling a source of
-a language to be put in a shared library. Example:
+  Specifies the option or options that must be used when compiling a source of
+  a language to be put in a shared library. Example:
 
-@smallexample
+  @smallexample
    for PIC_Option ("C") use ("-fPIC");
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -3097,33 +3114,33 @@ a language to be put in a shared library. Example:
 
 @item Mapping_File_Switches (<language>)
 
-Specifies the switch or switches to be used to specify a mapping file to the
-compiler. When attribute @code{Mapping_File_Switches} is not declared, then no
-mapping file is specified to the compiler. The value of this attribute is a
-string list. The path name of the mapping file is concatenated with the last
-string in the string list, which may be empty. Example:
+  Specifies the switch or switches to be used to specify a mapping file to the
+  compiler. When attribute @code{Mapping_File_Switches} is not declared, then no
+  mapping file is specified to the compiler. The value of this attribute is a
+  string list. The path name of the mapping file is concatenated with the last
+  string in the string list, which may be empty. Example:
 
-@smallexample
+  @smallexample
    for Mapping_File_Switches ("Ada") use ("-gnatem=");
-@end smallexample
+  @end smallexample
 
 @item Mapping_Spec_Suffix (<language>)
 
-Specifies, for unit based languages that support mapping files, the suffix in
-the mapping file that needs to be added to the unit name for specs. Example:
+  Specifies, for unit based languages that support mapping files, the suffix in
+  the mapping file that needs to be added to the unit name for specs. Example:
 
-@smallexample
+  @smallexample
     for Mapping_Spec_Suffix ("Ada") use "%s";
-@end smallexample
+  @end smallexample
 
 @item Mapping_Body_Suffix (<language>)
 
-Specifies, for unit based languages that support mapping files, the suffix in
-the mapping file that needs to be added to the unit name for bodies. Example:
+  Specifies, for unit based languages that support mapping files, the suffix in
+  the mapping file that needs to be added to the unit name for bodies. Example:
 
-@smallexample
+  @smallexample
     for Mapping_Spec_Suffix ("Ada") use "%b";
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -3159,74 +3176,74 @@ Attributes:
 
 @item Config_File_Switches (<language>)
 
-Specifies the switch or switches to be used to specify a configuration file to
-the compiler. When attribute @code{Config_File_Switches} is not declared, then no
-config file is specified to the compiler. The value of this attribute is a
-string list. The path name of the config file is concatenated with the last
-string in the string list, which may be empty. Example:
+  Specifies the switch or switches to be used to specify a configuration file to
+  the compiler. When attribute @code{Config_File_Switches} is not declared, then no
+  config file is specified to the compiler. The value of this attribute is a
+  string list. The path name of the config file is concatenated with the last
+  string in the string list, which may be empty. Example:
 
-@smallexample
+  @smallexample
    for Config_File_Switches ("Ada") use ("-gnatec=");
-@end smallexample
+  @end smallexample
 
 @item Config_Body_File_Name (<language>)
 
-Specifies the line to be put in a config file to indicate the file name of a
-body. Example:
+  Specifies the line to be put in a config file to indicate the file name of a
+  body. Example:
 
-@smallexample
+  @smallexample
    for Config_Body_File_Name ("Ada") use
        "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
-@end smallexample
+  @end smallexample
 
 @item Config_Spec_File_Name (<language>)
 
-Specifies the line to be put in a config file to indicate the file name of a
-spec. Example:
+  Specifies the line to be put in a config file to indicate the file name of a
+  spec. Example:
 
-@smallexample
+  @smallexample
    for Config_Spec_File_Name ("Ada") use
        "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
-@end smallexample
+  @end smallexample
 
 @item Config_Body_File_Name_Pattern (<language>)
 
-Specifies the line to be put in a config file to indicate a body file name
-pattern. Example:
+  Specifies the line to be put in a config file to indicate a body file name
+  pattern. Example:
 
-@smallexample
+  @smallexample
    for Config_Body_File_Name_Pattern ("Ada") use
        "pragma Source_File_Name_Project " &
        "  (Body_File_Name  => ""*%b""," &
        "   Casing          => %c," &
        "   Dot_Replacement => ""%d"");";
-@end smallexample
+  @end smallexample
 
 @item Config_Spec_File_Name_Pattern (<language>)
 
-Specifies the line to be put in a config file to indicate a spec file name
-pattern. Example:
+  Specifies the line to be put in a config file to indicate a spec file name
+  pattern. Example:
 
-@smallexample
+  @smallexample
    for Config_Spec_File_Name_Pattern ("Ada") use
        "pragma Source_File_Name_Project " &
        "  (Spec_File_Name  => ""*%s""," &
        "   Casing          => %c," &
        "   Dot_Replacement => ""%d"");";
-@end smallexample
+  @end smallexample
 
 @item Config_File_Unique (<language>)
 
-Specifies, for languages that support config files, if several config files
-may be indicated to the compiler, or not. This attribute may have only two
-values: @code{"true"} or @code{"false"} (case insensitive). The default, when this attribute
-is not specified, is @code{"false"}. When the value @code{"true"} is specified for this
-attribute, GPRbuild will concatenate the config files, if there are more than
-one. Example:
+  Specifies, for languages that support config files, if several config files
+  may be indicated to the compiler, or not. This attribute may have only two
+  values: @code{"true"} or @code{"false"} (case insensitive). The default, when this attribute
+  is not specified, is @code{"false"}. When the value @code{"true"} is specified for this
+  attribute, GPRbuild will concatenate the config files, if there are more than
+  one. Example:
 
-@smallexample
+  @smallexample
    for Config_File_Unique ("Ada") use "True";
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -3246,33 +3263,33 @@ the object file or the switch file.
 
 @item Dependency_Switches (<language>)
 
-For languages other than Ada, attribute @code{Dependency_Switches} specifies
-the option or options to add to the compiler invocation so that it creates
-the dependency file at the same time. The value of attribute @code{Dependency_Option}
-is a string list. The name of the dependency file is added to the last string
-in the list, which may be empty. Example:
+  For languages other than Ada, attribute @code{Dependency_Switches} specifies
+  the option or options to add to the compiler invocation so that it creates
+  the dependency file at the same time. The value of attribute @code{Dependency_Option}
+  is a string list. The name of the dependency file is added to the last string
+  in the list, which may be empty. Example:
 
-@smallexample
+  @smallexample
    for Dependency_Switches ("C") use ("-Wp,-MD,");
-@end smallexample
+  @end smallexample
 
-@noindent
-With these @code{Dependency_Switches}, when compiling @file{file.c} the compiler will be
-invoked with the option @option{-Wp,-MD,file.d}.
+  @noindent
+  With these @code{Dependency_Switches}, when compiling @file{file.c} the compiler will be
+  invoked with the option @option{-Wp,-MD,file.d}.
 
 @item Dependency_Driver (<language>)
 
-Specifies the command and options to create a dependency file for a source.
-The full path name of the source is appended to the last string of the string
-list value. Example:
+  Specifies the command and options to create a dependency file for a source.
+  The full path name of the source is appended to the last string of the string
+  list value. Example:
 
-@smallexample
+  @smallexample
    for Dependency_Driver ("C") use ("gcc", "-E", "-Wp,-M", "");
-@end smallexample
+  @end smallexample
 
-@noindent
-Usually, attributes @code{Dependency_Switches} and @code{Dependency_Driver} are not both
-specified.
+  @noindent
+  Usually, attributes @code{Dependency_Switches} and @code{Dependency_Driver} are not both
+  specified.
 
 @end itemize
 
@@ -3286,44 +3303,44 @@ specified.
 
 @item Include_Switches (<language>)
 
-Specifies the option or options to use when invoking the compiler to indicate
-that a directory is part of the source search path. The value of this
-attribute is a string list. The full path name of the directory is concatenated
-with the last string in the string list, which may be empty. Example:
+  Specifies the option or options to use when invoking the compiler to indicate
+  that a directory is part of the source search path. The value of this
+  attribute is a string list. The full path name of the directory is concatenated
+  with the last string in the string list, which may be empty. Example:
 
-@smallexample
+  @smallexample
    for Include_Switches ("C") use ("-I");
-@end smallexample
+  @end smallexample
 
-@noindent
-Attribute @code{Include_Switches} is ignored if either one of the attributes
-@code{Include_Path} or @code{Include_Path_File} are specified.
+  @noindent
+  Attribute @code{Include_Switches} is ignored if either one of the attributes
+  @code{Include_Path} or @code{Include_Path_File} are specified.
 
 @item Include_Path (<language>)
 
-Specifies the name of an environment variable that is used by the compiler to
-get the source search path. The value of the environment variable is the source
-search path to be used by the compiler. Example:
+  Specifies the name of an environment variable that is used by the compiler to
+  get the source search path. The value of the environment variable is the source
+  search path to be used by the compiler. Example:
 
-@smallexample
+  @smallexample
    for Include_Path ("C")   use "CPATH";
    for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
-@end smallexample
+  @end smallexample
 
-@noindent
-Attribute @code{Include_Path} is ignored if attribute @code{Include_Path_File} is declared
-for the language.
+  @noindent
+  Attribute @code{Include_Path} is ignored if attribute @code{Include_Path_File} is declared
+  for the language.
 
 @item Include_Path_File (<language>)
 
-Specifies the name of an environment variable that is used by the compiler to
-get the source search path. The value of the environment variable is the path
-name of a text file that contains the path names of the directories of the
-source search path. Example:
+  Specifies the name of an environment variable that is used by the compiler to
+  get the source search path. The value of the environment variable is the path
+  name of a text file that contains the path names of the directories of the
+  source search path. Example:
 
-@smallexample
+  @smallexample
    for Include_Path_File ("Ada") use "ADA_PRJ_INCLUDE_FILE";
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -3337,52 +3354,52 @@ source search path. Example:
 
 @item Driver (<language>)
 
-Specifies the name of the executable of the binder driver. When this attribute
-is not specified, there is no binder for the language. Example:
+  Specifies the name of the executable of the binder driver. When this attribute
+  is not specified, there is no binder for the language. Example:
 
-@smallexample
+  @smallexample
    for Driver ("Ada") use "/.../gprbind";
-@end smallexample
+  @end smallexample
 
 @item Required_Switches (<language>)
 
-Specifies the minimum options to be used when invoking the binder driver.
-These options are put in the appropriate section in the binder exchange file,
-one option per line. Example:
+  Specifies the minimum options to be used when invoking the binder driver.
+  These options are put in the appropriate section in the binder exchange file,
+  one option per line. Example:
 
-@smallexample
+  @smallexample
    for Required_Switches ("Ada") use ("--prefix=<prefix>");
-@end smallexample
+  @end smallexample
 
 @item Prefix (<language>)
 
-Specifies the prefix to be used in the name of the binder exchange file.
-Example:
+  Specifies the prefix to be used in the name of the binder exchange file.
+  Example:
 
-@smallexample
+  @smallexample
    for Prefix ("C++") use ("c__");
-@end smallexample
+  @end smallexample
 
 @item Objects_Path (<language>)
 
-Specifies the name of an environment variable that is used by the compiler to
-get the object search path. The value of the environment variable is the object
-search path to be used by the compiler. Example:
+  Specifies the name of an environment variable that is used by the compiler to
+  get the object search path. The value of the environment variable is the object
+  search path to be used by the compiler. Example:
 
-@smallexample
+  @smallexample
    for Objects_Path ("Ada") use "ADA_OBJECTS_PATH";
-@end smallexample
+  @end smallexample
 
 @item Objects_Path_File (<language>)
 
-Specifies the name of an environment variable that is used by the compiler to
-get the object search path. The value of the environment variable is the path
-name of a text file that contains the path names of the directories of the
-object search path. Example:
+  Specifies the name of an environment variable that is used by the compiler to
+  get the object search path. The value of the environment variable is the path
+  name of a text file that contains the path names of the directories of the
+  object search path. Example:
 
-@smallexample
+  @smallexample
    for Objects_Path_File ("Ada") use "ADA_PRJ_OBJECTS_FILE";
-@end smallexample
+  @end smallexample
 
 @end itemize
 
@@ -3396,17 +3413,17 @@ object search path. Example:
 
 @item Driver
 
-Specifies the name of the executable of the linker. Example:
+  Specifies the name of the executable of the linker. Example:
 
-@smallexample
+  @smallexample
    for Driver use "g++";
-@end smallexample
+  @end smallexample
 
 @item Required_Switches
 
-Specifies the minimum options to be used when invoking the linker. Those
-options are happened at the end of the link command so that potentially
-conflicting user options take precedence.
+  Specifies the minimum options to be used when invoking the linker. Those
+  options are happened at the end of the link command so that potentially
+  conflicting user options take precedence.
 
 @end itemize
 
