@@ -18,10 +18,7 @@
 
 @set gprconfig GPRconfig
 
-@c Should be set if we want to generate an index
-@c @set useindex 1
-
-@c ------------------------------- macro
+@c --------------------------------------------- macro
 @c This macro can be used to insert code sample. Each line should end with
 @c @NL{}, since otherwise texinfo doesn't guarantee that newlines will be
 @c preserved
@@ -46,7 +43,7 @@
 @macro NL{}
 @end macro
 
-@c --------------------------- macro
+@c --------------------------------------------- macro
 @c This macro can be used to insert a "Tip" or "Did you know" box. In HTML,
 @c this box is displayed in the right margin of the text, and thus doesn't
 @c disturbs the normal reading flow, but provides additional useful
@@ -71,7 +68,7 @@
 @end ifnothtml
 @end macro
 
-@c -------------------------- macro
+@c --------------------------------------------- macro
 @c This macro is similar to TIP, but only has an effect in html output,
 @c and displayed a note in the margin. This can be used to highlight important
 @c points that are repeated in the text. In the other outputs, we do not
@@ -89,7 +86,7 @@
 @end ifhtml
 @end macro
 
-@c -------------------------- macro
+@c --------------------------------------------- macro
 @c This macro can be used to insert an "Important" box in the text.
 @c This box is displayed inline in the main body of the text, but is
 @c surrounded by a frame, and has a small icon on the left.
@@ -113,7 +110,7 @@
 @end ifnothtml
 @end macro
 
-@c ------------------------- macro
+@c --------------------------------------------- macro
 @c This macro can be used to insert a "Note" box in the text. It is
 @c displayed inline in the main body of the text, but has a different
 @c icon that the "Important" box
@@ -137,7 +134,7 @@
 @end ifnothtml
 @end macro
 
-@c -------------------------- macro
+@c --------------------------------------------- macro
 @c This macro creates index entries. Optionally, it can display that
 @c entry in the right-side margin of the text in HTML, to help people
 @c locate where exactly the index entry points to.
@@ -157,7 +154,7 @@
 @end ifset
 @end macro
 
-@c ---------------------------
+@c ---------------------------------------------
 
 @titlepage
 @title GPRbuild User's Guide
@@ -168,7 +165,7 @@
 @page
 @vskip 0pt plus 1filll
 
-Copyright @copyright{} 2007-2008, AdaCore
+Copyright @copyright{} 2007-2009, AdaCore
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.1
@@ -183,10 +180,11 @@ A copy of the license is included in the section entitled
 @end titlepage
 
 @ifnottex
-@node Top, Introduction, (dir), (dir)
+@node Top
 @top GPRBUILD User's Guide
 
 @noindent
+
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.1
 or any later version published by the Free Software Foundation;
@@ -206,14 +204,10 @@ A copy of the license is included in the section entitled
 * Configuring with GPRconfig::
 * Configuration File Reference::
 * GNU Free Documentation License::
-@ifset useindex
 * Index::
-@end ifset
 
 @detailmenu
  --- The Detailed Contents ---
-
-Introduction
 
 Guided Tour
 * Configuration::
@@ -222,8 +216,6 @@ Guided Tour
 * Project Extensions::
 * Libraries::
 * Scenarios and conditional source files::
-
-Important Concepts
 
 Building with GPRbuild
 * Command Line::
@@ -235,6 +227,7 @@ Building with GPRbuild
 * Linking Phase::
 
 Cleaning up with GPRclean
+* Switches for GPRclean::
 
 Configuring with GPRconfig
 * Using GPRconfig::
@@ -257,22 +250,33 @@ Configuration File Reference
 * Package Binder::
 * Package Linker::
 
-Index
+Project Level Attributes
+* General Attributes::
+* General Library Related Attributes::
+* Archive Related Attributes::
+* Shared Library Related Attributes::
+
+Package Compiler
+* General Compilation Attributes::
+* Mapping File Related Attributes::
+* Config File Related Attributes::
+* Dependency Related Attributes::
+* Search Path Related Attributes::
 @end detailmenu
 @end menu
 @end ifnottex
 
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Introduction
 @unnumbered Introduction
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
+@noindent
 
 @code{GPRbuild} is a generic build tool designed for the construction of
 large multi-language systems organized into subsystems and libraries.
 It is well-suited for compiled languages supporting separate compilation,
 such as Ada, C, C++ and Fortran.
 
-@noindent
 @code{GPRbuild} manages a three step build process
 @itemize @bullet
 @item compilation phase:
@@ -331,10 +335,17 @@ In such situations, @code{GPRbuild} can still
 be used to manage the appropriate part of the build. For
 instance it can be called from within a Makefile.
 
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Guided Tour
 @chapter Guided Tour
-@c  --------------------------------------------------------------------------
+@c ---------------------------------------------
+@noindent
+
+This chapter presents examples ranging from simple
+multi-language builds to some of the most advanced scenarios.
+All the examples shown in the text are included
+in the GPRbuild package, which is installed on your
+system in @file{<prefix>/share/examples/gprbuild/}.
 
 @menu
 * Configuration::
@@ -345,14 +356,11 @@ instance it can be called from within a Makefile.
 * Scenarios and conditional source files::
 @end menu
 
-This chapter presents examples ranging from simple
-multi-language builds to some of the most advanced scenarios.
-All the examples shown in the text are included
-in the GPRbuild package, which is installed on your
-system in @file{<prefix>/share/examples/gprbuild/}.
-
+@c ---------------------------------------------
 @node Configuration
 @section Configuration
+@c ---------------------------------------------
+@noindent
 
 GPRbuild requires one configuration file describing the languages and
 toolchains to be used, and project files describing the
@@ -417,6 +425,7 @@ in GPRbuild's default location,
 @smallexample
  gprconfig
 @end smallexample
+
 @item
 The first command below also triggers interactive mode, but the resulting
 configuration
@@ -452,9 +461,11 @@ Ada with a run-time called @code{hi} and using C for the LEON processor.
 @end smallexample
 @end itemize
 
-
+@c ---------------------------------------------
 @node First Steps
 @section First Steps
+@c ---------------------------------------------
+@noindent
 
 Assume a simple case of interfacing between Ada and C where the main
 program is first in Ada and then in C. For a main program in Ada the
@@ -613,8 +624,12 @@ avoid unnecessary recompilations when compilation units are
 used in several different projects, by splitting a system into
 subsystems.
 
+@c ---------------------------------------------
 @node Subsystems
 @section Subsystems
+@c ---------------------------------------------
+@noindent
+
 @c describe a bigger project with several source dirs and object dirs
 @c describe limited with & extended projects & source duplication.
 
@@ -717,8 +732,11 @@ In order to change the compilation options of all C files used for
 building both @code{C_Main} and @code{Ada_Main}, it is sufficient to edit a
 single project file.
 
+@c ---------------------------------------------
 @node Project Extensions
 @section Project Extensions
+@c ---------------------------------------------
+@noindent
 
 Previous sections have shown how to share both compilation units and project
 properties
@@ -784,8 +802,11 @@ project New_Ada_Main extends all "../subsystems/ada_main.gpr" is
 end New_Ada_Main;
 @end smallexample
 
+@c ---------------------------------------------
 @node Libraries
 @section Libraries
+@c ---------------------------------------------
+@noindent
 
 A library is a subsystem packaged in a specific way. There are two
 major kinds of libraries: @emph{static} and @emph{dynamic}. A project file
@@ -871,10 +892,12 @@ In the case of externally built libraries, the @code{Object_Dir}
 attribute does not need to be specified because it will never be
 used.
 
+@c ---------------------------------------------
 @node Scenarios and conditional source files
 @section Scenarios and conditional source files
-
+@c ---------------------------------------------
 @noindent
+
 In the previous section we have seen how to create libraries from
 simple subsystems by using specific attributes. Rather than having
 several almost identical project files defining a static or a dynamic
@@ -916,11 +939,11 @@ library project General_Lib is
 end General_Lib;
 @end smallexample
 
-
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Important Concepts
 @chapter Important Concepts
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
+@noindent
 
 The following concepts are the foundation of
 GNAT Project files and the GPRbuild process.
@@ -1041,10 +1064,13 @@ version which only contains the new source files (those that have been
 changed) and the objects that are affected by these changes.
 @end itemize
 
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Building with GPRbuild
 @chapter Building with GPRbuild
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
+@noindent
+
+
 
 @menu
 * Command Line::
@@ -1056,10 +1082,12 @@ changed) and the objects that are affected by these changes.
 * Linking Phase::
 @end menu
 
+@c ---------------------------------------------
 @node Command Line
 @section Command Line
-
+@c ---------------------------------------------
 @noindent
+
 Three elements can optionally be specified on GPRbuild's command line:
 @itemize
 @item the main project file,
@@ -1165,10 +1193,12 @@ Equivalent to @option{-gargs}, provided for compatibility with
 
 @end itemize
 
+@c ---------------------------------------------
 @node Switches
 @section Switches
-
+@c ---------------------------------------------
 @noindent
+
 The switches that are interpreted directly by GPRbuild are listed below.
 
 First, the switches that may be specified only on the command line, but not in
@@ -1357,6 +1387,7 @@ using built-in function @code{external}. For example, with
 
 @end itemize
 
+@noindent
 Then, the switches that may be specified on the command line as well as in
 package Builder of the main project (attribute Switches):
 
@@ -1420,6 +1451,7 @@ Do not generate any warnings while processing the project files.
 
 @end itemize
 
+@noindent
 Switches that are accepted for compatibility with gnatmake, either on the
 command line or in the Builder Ada switches in the main project file:
 
@@ -1434,12 +1466,15 @@ command line or in the Builder Ada switches in the main project file:
 
 @end itemize
 
+@noindent
 These switches are passed to the Ada compiler.
 
+@c ---------------------------------------------
 @node Initialization
 @section Initialization
-
+@c ---------------------------------------------
 @noindent
+
 Before performing one or several of its three phases, GPRbuild has to read the
 command line, obtain its configuration, and process the project files.
 
@@ -1503,8 +1538,11 @@ gprbuild: "my_project.gpr" processing failed
 Once the user project files have been dealt with successfully, GPRbuild
 will start its processing.
 
+@c ---------------------------------------------
 @node Compilation of one or several sources
 @section Compilation of one or several sources
+@c ---------------------------------------------
+@noindent
 
 If GPRbuild is invoked with @option{-u} or @option{-U} and there are one or
 several source file names specified on the command line, GPRbuild will compile
@@ -1522,8 +1560,11 @@ In contrast, if GPRbuild is invoked with @option{-U}, and again no source file n
 on the command line, GPRbuild will compile or recompile all the sources of @emph{all
 the projects in the project tree} and then stop.
 
+@c ---------------------------------------------
 @node Compilation Phase
 @section Compilation Phase
+@c ---------------------------------------------
+@noindent
 
 When switch @option{-c} is used or when switches @option{-b} or @option{-l}
 are not used, GPRbuild will first compile or recompile the sources that
@@ -1557,6 +1598,7 @@ Example:
    for Roots ("main.c") use ("pkga", "pkgb");
 @end smallexample
 
+@noindent
 Package PkgA and PkgB will be considered, and all the Ada units in their
 closure will also be considered.
 
@@ -1674,14 +1716,17 @@ Example:
    end Prj;
 @end smallexample
 
+@noindent
 If a source from a project importing project Prj imports sources from Prj other
 than package Pkg or includes header files from Prj other than "toto.h", then
 its compilation will be invalidated.
 
+@c ---------------------------------------------
 @node Post-Compilation Phase
 @section Post-Compilation Phase
-
+@c ---------------------------------------------
 @noindent
+
 The post-compilation phase has two parts: library building and program binding.
 
 If there are libraries that need to be built or rebuilt, @emph{gprbuild} will
@@ -1710,29 +1755,29 @@ Example:
    end Binder;
 @end smallexample
 
+@noindent
 If gprbuild can determine that the artifacts from a previous
 post-compilation phase are already up to date, the binder driver is not called.
 
 If there are no libraries and no binder drivers, then the post-compilation
 phase is empty.
 
+@c ---------------------------------------------
 @node Linking Phase
 @section Linking Phase
-
+@c ---------------------------------------------
 @noindent
+
 When there are mains specified, either in attribute Main or on the command
 line, and these mains are not up to date, the linker is invoked for each main,
 with all the specified or implied options, including the object files generated
 during the post-compilation phase by the binder drivers.
 
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Cleaning up with GPRclean
 @chapter Cleaning up with GPRclean
-@c  ------------------------------------------------------------------------
-
-@menu
-* Switches for GPRclean::
-@end menu
+@c ---------------------------------------------
+@noindent
 
 The GPRclean tool removes the files created by GPRbuild.
 At a minimum, to invoke GPRclean you must specify a main project file
@@ -1745,8 +1790,15 @@ Examples of invocation of GPRclean:
    gprclean -c -P prj2.gpr
 @end smallexample
 
+@menu
+* Switches for GPRclean::
+@end menu
+
+@c ---------------------------------------------
 @node Switches for GPRclean
 @section Switches for GPRclean
+@c ---------------------------------------------
+@noindent
 
 The switches for GPRclean are:
 
@@ -1792,24 +1844,28 @@ specified with @option{--autoconf=} exists, then it is used. Otherwise,
 
 @end itemize
 
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Configuring with GPRconfig
 @chapter Configuring with GPRconfig
-@c ----------------------------------------------------------------------
+@c ---------------------------------------------
+@noindent
+
+
 
 @menu
 * Using GPRconfig::
 * The GPRconfig knowledge base::
 @end menu
 
-@c ----------------------------------------------------------------------
+@c ---------------------------------------------
 @node Using GPRconfig
 @section Using GPRconfig
-@c ---------------------------------------------------------------------
+@c ---------------------------------------------
+@noindent
 
 @subsection Description
-
 @noindent
+
 The @value{gprconfig} tool helps you generate the configuration
 files for GPRbuild. It automatically detects the available compilers
 on your system and, after you have selected the one needed for your
@@ -1820,8 +1876,8 @@ explicitly. Instead, it is used implicitly by GPRbuild through the use
 of @code{--config} and @code{--autoconf} switches.}
 
 @subsection Command line arguments
-
 @noindent
+
 @value{gprconfig} supports the following command line switches:
 
 @table @option
@@ -1867,6 +1923,7 @@ the command line would be:
 
 @CODESAMPLE{--config=Ada --config=C}
 
+@noindent
 @option{path} is the directory that contains the compiler executable, for
 instance @file{/usr/bin} (and not the installation prefix @file{/usr}).
 
@@ -1885,6 +1942,7 @@ appears first in the path, you could specify @file{dcc} as the name parameter.
 gprconfig --config C,,,/usr/bin,GCC     # automatic version@NL{}
 gprconfig --config C,,,/usr/bin,gcc     # same as above, with exec name}
 
+@noindent
 This switch is also the only possibility to include in your project some
 languages that are not associated with a compiler. This is sometimes useful
 especially when you are using environments like GPS that support project files.
@@ -1927,8 +1985,8 @@ knowledge base, the default target,@dots{}
 @end table
 
 @subsection Interactive use
-
 @noindent
+
 When you launch @value{gprconfig}, it first searches for all compilers it
 can find on your @env{PATH}, that match the target specified by
 @option{--target}. It is recommended, although not
@@ -1977,12 +2035,12 @@ You can select as many compilers as are needed by your application. Once you
 have finished selecting the compilers, select @key{s}, and @value{gprconfig} will
 generate the configuration file.
 
-@c ----------------------------------------------------------------------
+@c ---------------------------------------------
 @node The GPRconfig knowledge base
 @section The GPRconfig knowledge base
-@c ----------------------------------------------------------------------
-
+@c ---------------------------------------------
 @noindent
+
 @value{gprconfig} itself has no hard-coded knowledge of compilers. Thus there
 is no need to recompile a new version of @value{gprconfig} when a new compiler
 is distributed.
@@ -1992,7 +2050,6 @@ of @value{gprconfig}, and are only needed when you need to add support for new
 compilers. You can skip this section if you only want to learn how to use
 @value{gprconfig}.}
 
-@noindent
 All knowledge of compilers is embedded in a set of XML files called the
 @emph{knowledge base}.
 Users can easily contribute to this general knowledge base, and have
@@ -2047,12 +2104,12 @@ and have @value{gprconfig} advantage of it.
 * Configurations::
 @end menu
 
-@c ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node General file format
 @subsection General file format
-@c ------------------------------------------------------------------------
-
+@c ---------------------------------------------
 @noindent
+
 The knowledge base is implemented as a set of XML files. None of these
 files has a special name, nor a special role. Instead, the user can
 freely create new files, and put them in the knowledge base directory,
@@ -2077,12 +2134,12 @@ The remaining sections in this chapter will list the valid XML tags that
 can be used to replace the ``@dots{}'' code above. These tags can either all be
 placed in a single XML file, or split across several files.
 
-@c ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Compiler description
 @subsection Compiler description
-@c ------------------------------------------------------------------------
-
+@c ---------------------------------------------
 @noindent
+
 One of the XML tags that can be specified as a child of @code{<gprconfig>} is
 @code{<compiler_description>}. This node and its children describe one of
 the compilers known to @value{gprconfig}. The tool uses them when it
@@ -2104,8 +2161,7 @@ This tag contains a simple string, which is the name of the compiler.
 This name must be unique across all the configuration files, and is used to
 identify that @code{compiler_description} node.
 
-@CODESAMPLE{
-<compiler_description>@NL{}
+@CODESAMPLE{<compiler_description>@NL{}
    <name>GNAT</name>@NL{}
 </compiler_description>}
 
@@ -2141,11 +2197,13 @@ using a filter such as
  </compilers>
 @end smallexample
 
+@noindent
 @smallexample
 <executable prefix="1">(powerpc-wrs-vxworks-)?gnatmake</executable>
 <version><external>$@{PREFIX@}gnatls -v</external></version>
 @end smallexample
 
+@noindent
 @value{gprconfig} searches in all directories listed on the PATH for such
 an executable. When one is found, the rest of the @code{<compiler_description>}
 children are checked to know whether the compiler is valid. The directory
@@ -2202,11 +2260,12 @@ is split into words as for @code{<languages>}.
 * GPRconfig variable substitution::
 @end menu
 
-@c --------------------------------------------------------------------
+@c ---------------------------------------------
 @node GPRconfig external values
 @subsubsection External values
-@c --------------------------------------------------------------------
+@c ---------------------------------------------
 @noindent
+
 A number of the XML nodes described above can contain one or more children,
 and specify how to query a value from an executable. Here is the list of
 valid contents for these nodes. The @code{<directory>} and @code{<external>}
@@ -2229,6 +2288,7 @@ instance, the list of supported languages might be defined as:
    <languages>Ada</languages>@NL{}
 </compiler_description>}
 
+@noindent
 for the GNAT compiler, since this is an Ada-only compiler.
 
 Variables can be referenced in simple strings.
@@ -2264,6 +2324,7 @@ with:
   <external>gcc -dumpmachine</external>@NL{}
 </version>}
 
+@noindent
 Since the @env{PATH} has been modified, we know that the @command{gcc} command
 that is executed is the one from the same directory as the @code{<external>}
 node.
@@ -2315,6 +2376,7 @@ is done with:
  </directory>@NL{}
 </runtimes>}
 
+@noindent
 Note the second node, which matches the default run-time, and displays it as
 such.
 
@@ -2349,16 +2411,18 @@ specific to an older version of GCC, you could write:
    <must_match>2.8.1</must_match>@NL{}
 </version>}
 
+@noindent
 Other versions of gcc will not match this @code{<compiler_description>}
 node.
 
 @end itemize
 
-@c --------------------------------------------------------------------
+@c ---------------------------------------------
 @node GPRconfig variable substitution
 @subsubsection Variable Substitution
-@c --------------------------------------------------------------------
+@c ---------------------------------------------
 @noindent
+
 The various compiler attributes defined above are made available as
 variables in the rest of the XML files. Each of these variables can be used
 in the value of the various nodes (for instance in @code{<directory>}),
@@ -2423,12 +2487,12 @@ used when substituting text in configuration chunks.
 If a variable is not defined, an error message is issued and the variable
 is substituted by an empty string.
 
-@c ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Configurations
 @subsection Configurations
-@c ------------------------------------------------------------------------
-
+@c ---------------------------------------------
 @noindent
+
 The second type of information stored in the knowledge base are the chunks
 of @emph{gprbuild} configuration files.
 
@@ -2592,23 +2656,15 @@ is inverted, and it will match when none of its children matches.
 @CODESAMPLE{<targets>@NL{}
   <target name="i.86-.*-linux(-gnu)?" />@NL{}
 </targets>}
+
 @end table
 
-@c  ------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Configuration File Reference
 @chapter Configuration File Reference
-@c  ------------------------------------------------------------------------
-
-@menu
-* Project Level Attributes::
-* Package Naming::
-* Package Builder::
-* Package Compiler::
-* Package Binder::
-* Package Linker::
-@end menu
-
+@c ---------------------------------------------
 @noindent
+
 GPRbuild needs to have a configuration file to know the different
 characteristics of the toolchains that can be used to compile sources and
 build libraries and executables.
@@ -2639,8 +2695,22 @@ a configuration project file are inherited by each user project file in the
 project tree. However, usually only the attributes listed below make sense
 in the configuration project file.
 
+@menu
+* Project Level Attributes::
+* Package Naming::
+* Package Builder::
+* Package Compiler::
+* Package Binder::
+* Package Linker::
+@end menu
+
+@c ---------------------------------------------
 @node Project Level Attributes
 @section Project Level Attributes
+@c ---------------------------------------------
+@noindent
+
+
 
 @menu
 * General Attributes::
@@ -2649,8 +2719,11 @@ in the configuration project file.
 * Shared Library Related Attributes::
 @end menu
 
+@c ---------------------------------------------
 @node General Attributes
 @subsection General Attributes
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -2687,6 +2760,7 @@ version is passed to the library builder. Example:
    for Toolchain_Version ("Ada") use "GNAT 6.1";
 @end smallexample
 
+@noindent
 This attribute is used by GPRbind to decide on the names of the shared GNAT
 runtime libraries.
 
@@ -2702,8 +2776,11 @@ may be used by other tools, for example GPS. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node General Library Related Attributes
 @subsection General Library Related Attributes
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -2727,8 +2804,11 @@ Specifies the name of the executable for the library builder. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Archive Related Attributes
 @subsection Archive Related Attributes
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -2772,8 +2852,11 @@ partial linking. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Shared Library Related Attributes
 @subsection Shared Library Related Attributes
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -2854,12 +2937,16 @@ Example:
    for Runtime_Library_Dir ("Ada") use "/path/to/adalib";
 @end smallexample
 
+@noindent
 This attribute is used by GPRlib to link shared libraries with Ada code.
 
 @end itemize
 
+@c ---------------------------------------------
 @node Package Naming
 @section Package Naming
+@c ---------------------------------------------
+@noindent
 
 Attributes in package @code{Naming} of a configuration file specify defaults. These
 attributes may be used in user project files to replace these defaults.
@@ -2921,8 +3008,11 @@ Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Package Builder
 @section Package Builder
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -2938,8 +3028,13 @@ Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Package Compiler
 @section Package Compiler
+@c ---------------------------------------------
+@noindent
+
+
 
 @menu
 * General Compilation Attributes::
@@ -2949,8 +3044,11 @@ Example:
 * Search Path Related Attributes::
 @end menu
 
+@c ---------------------------------------------
 @node General Compilation Attributes
 @subsection General Compilation Attributes
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -2990,8 +3088,11 @@ a language to be put in a shared library. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Mapping File Related Attributes
 @subsection Mapping File Related Attributes
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -3027,9 +3128,10 @@ the mapping file that needs to be added to the unit name for bodies. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Config File Related Attributes
 @subsection Config File Related Attributes
-
+@c ---------------------------------------------
 @noindent
 
 In the value of config file attributes defined below, there are some
@@ -3051,6 +3153,7 @@ placeholders that GPRbuild will replace. These placeholders are:
 
 @end itemize
 
+@noindent
 Attributes:
 
 @itemize @bullet
@@ -3128,8 +3231,11 @@ one. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Dependency Related Attributes
 @subsection Dependency Related Attributes
+@c ---------------------------------------------
+@noindent
 
 There are two dependency-related attributes: @code{Dependency_Switches} and
 @code{Dependency_Driver}. If neither of these two attributes are specified for
@@ -3151,6 +3257,7 @@ in the list, which may be empty. Example:
    for Dependency_Switches ("C") use ("-Wp,-MD,");
 @end smallexample
 
+@noindent
 With these @code{Dependency_Switches}, when compiling @file{file.c} the compiler will be
 invoked with the option @option{-Wp,-MD,file.d}.
 
@@ -3164,13 +3271,17 @@ list value. Example:
    for Dependency_Driver ("C") use ("gcc", "-E", "-Wp,-M", "");
 @end smallexample
 
+@noindent
 Usually, attributes @code{Dependency_Switches} and @code{Dependency_Driver} are not both
 specified.
 
 @end itemize
 
+@c ---------------------------------------------
 @node Search Path Related Attributes
 @subsection Search Path Related Attributes
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -3185,6 +3296,7 @@ with the last string in the string list, which may be empty. Example:
    for Include_Switches ("C") use ("-I");
 @end smallexample
 
+@noindent
 Attribute @code{Include_Switches} is ignored if either one of the attributes
 @code{Include_Path} or @code{Include_Path_File} are specified.
 
@@ -3199,6 +3311,7 @@ search path to be used by the compiler. Example:
    for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
 @end smallexample
 
+@noindent
 Attribute @code{Include_Path} is ignored if attribute @code{Include_Path_File} is declared
 for the language.
 
@@ -3215,8 +3328,11 @@ source search path. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Package Binder
 @section Package Binder
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -3271,8 +3387,11 @@ object search path. Example:
 
 @end itemize
 
+@c ---------------------------------------------
 @node Package Linker
 @section Package Linker
+@c ---------------------------------------------
+@noindent
 
 @itemize @bullet
 
@@ -3298,14 +3417,14 @@ conflicting user options take precedence.
 @include gfdl.texi
 @c GNU Free Documentation License
 
-@ifset useindex
-@c  --------------------------------------------------------------------------
+@c ---------------------------------------------
 @node Index
 @unnumbered Index
-@c  --------------------------------------------------------------------------
+@c ---------------------------------------------
+@noindent
 
 @printindex cp
-@end ifset
+
 
 @contents
 
