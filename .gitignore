@@ -86,6 +86,7 @@
 /gnat/mlib-tgt.ads
 /gnat/mlib-tgt-specific.adb
 /gnat/mlib-tgt-specific.ads
+/gnat/mlib-tgt-specific-linux.adb
 /gnat/mlib-tgt-specific-vms-alpha.adb
 /gnat/mlib-tgt-specific-vms-ia64.adb
 /gnat/mlib-tgt-vms.adb
@@ -133,6 +134,7 @@
 /gnat/prj-pars.ads
 /gnat/prj-part.adb
 /gnat/prj-part.ads
+/gnat/prj-pp.ad?
 /gnat/prj-proc.adb
 /gnat/prj-proc.ads
 /gnat/prj-strt.adb
