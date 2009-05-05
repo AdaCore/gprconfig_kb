@@ -6285,15 +6285,6 @@ package body Buildgpr is
                Unit_Based   => True);
          end if;
 
-      elsif Mains.Number_Of_Mains = 0 and then
-        not All_Phases and then
-        Compile_Only and then
-        not Bind_Only
-      then
-         Queue.Insert_Project_Sources
-           (Main_Project, All_Projects => Recursive, Unit_Based => True);
-         Closure_Needed := False;
-
       else
          Get_Mains;
 
@@ -6346,31 +6337,31 @@ package body Buildgpr is
 
       --  Get the builder switches in the main project, if any
 
-      if Mains.Number_Of_Mains > 0 then
-         declare
-            Builder_Package  : constant Package_Id :=
-                                 Value_Of (Name_Builder,
-                                           Main_Project.Decl.Packages,
-                                           Project_Tree);
+      declare
+         Builder_Package  : constant Package_Id :=
+           Value_Of (Name_Builder,
+                     Main_Project.Decl.Packages,
+                     Project_Tree);
 
-            Switches         : Variable_Value;
+         Switches         : Variable_Value;
 
-            Global_Compilation_Array    : Array_Element_Id;
-            Global_Compilation_Elem     : Array_Element;
-            Global_Compilation_Switches : Variable_Value;
+         Global_Compilation_Array    : Array_Element_Id;
+         Global_Compilation_Elem     : Array_Element;
+         Global_Compilation_Switches : Variable_Value;
 
-            Default_Switches_Array : Array_Id;
+         Default_Switches_Array : Array_Id;
 
-            List             : String_List_Id;
-            Element          : String_Element;
+         List             : String_List_Id;
+         Element          : String_Element;
 
-            Name             : Name_Id := No_Name;
-            Lang             : Name_Id := No_Name;
-            Source           : Source_Id;
+         Name             : Name_Id := No_Name;
+         Lang             : Name_Id := No_Name;
+         Source           : Source_Id;
 
-            Success          : Boolean := False;
+         Success          : Boolean := False;
 
-         begin
+      begin
+         if Builder_Package /= No_Package then
             Mains.Reset;
 
             for Index in 1 .. Mains.Number_Of_Mains loop
@@ -6398,226 +6389,224 @@ package body Buildgpr is
                end if;
             end loop;
 
-            if Builder_Package /= No_Package then
-               Global_Compilation_Array := Value_Of
-                 (Name      => Name_Global_Compilation_Switches,
-                  In_Arrays => Project_Tree.Packages.Table
-                    (Builder_Package).Decl.Arrays,
-                  In_Tree   => Project_Tree);
+            Global_Compilation_Array := Value_Of
+              (Name      => Name_Global_Compilation_Switches,
+               In_Arrays => Project_Tree.Packages.Table
+                 (Builder_Package).Decl.Arrays,
+               In_Tree   => Project_Tree);
 
+            Default_Switches_Array :=
+              Project_Tree.Packages.Table
+                (Builder_Package).Decl.Arrays;
+
+            while Default_Switches_Array /= No_Array and then
+            Project_Tree.Arrays.Table (Default_Switches_Array).Name /=
+              Name_Default_Switches
+            loop
                Default_Switches_Array :=
-                 Project_Tree.Packages.Table
-                   (Builder_Package).Decl.Arrays;
+                 Project_Tree.Arrays.Table (Default_Switches_Array).Next;
+            end loop;
 
-               while Default_Switches_Array /= No_Array and then
-               Project_Tree.Arrays.Table (Default_Switches_Array).Name /=
-                 Name_Default_Switches
-               loop
-                  Default_Switches_Array :=
-                    Project_Tree.Arrays.Table (Default_Switches_Array).Next;
-               end loop;
+            if Global_Compilation_Array /= No_Array_Element and then
+              Default_Switches_Array /= No_Array
+            then
+               Error_Msg
+                 ("Default_Switches forbidden in presence of " &
+                  "Global_Compilation_Switches. Use Switches instead.",
+                  Project_Tree.Arrays.Table
+                    (Default_Switches_Array).Location);
+               Fail_Program
+                 ("*** illegal combination of Builder attributes");
 
-               if Global_Compilation_Array /= No_Array_Element and then
-                  Default_Switches_Array /= No_Array
-               then
-                  Error_Msg
-                    ("Default_Switches forbidden in presence of " &
-                     "Global_Compilation_Switches. Use Switches instead.",
-                     Project_Tree.Arrays.Table
-                       (Default_Switches_Array).Location);
-                  Fail_Program
-                    ("*** illegal combination of Builder attributes");
+            elsif Name = No_Name then
+               Switches := Value_Of
+                 (Name                    => All_Other_Names,
+                  Attribute_Or_Array_Name => Name_Switches,
+                  In_Package              => Builder_Package,
+                  In_Tree                 => Project_Tree);
 
-               elsif Name = No_Name then
-                  Switches := Value_Of
-                    (Name                    => All_Other_Names,
-                     Attribute_Or_Array_Name => Name_Switches,
-                     In_Package              => Builder_Package,
-                     In_Tree                 => Project_Tree);
+            else
 
-               else
+               --  Get the switches for the single main or the language of
+               --  the mains.
 
-                  --  Get the switches for the single main or the language of
-                  --  the mains.
+               Switches := Value_Of
+                 (Name                    => Name,
+                  Attribute_Or_Array_Name => Name_Switches,
+                  In_Package              => Builder_Package,
+                  In_Tree                 => Project_Tree);
 
-                  Switches := Value_Of
-                    (Name                    => Name,
-                     Attribute_Or_Array_Name => Name_Switches,
-                     In_Package              => Builder_Package,
-                     In_Tree                 => Project_Tree);
+               if Name /= Lang then
+                  --  If specific switches for the main have been found, the
+                  --  switches that are not recognized by gprbuild will be
+                  --  global switches for the language of the main.
 
-                  if Name /= Lang then
-                     --  If specific switches for the main have been found, the
-                     --  switches that are not recognized by gprbuild will be
-                     --  global switches for the language of the main.
-
-                     if Switches /= Nil_Variable_Value and then
-                       not Switches.Default
-                     then
-                        if Global_Compilation_Array = No_Array_Element then
-                           Builder_Switches_Lang := Lang;
-                        end if;
-
-                     else
-                        --  If no specific switches for the main are declared,
-                        --  check for Switches (<language>).
-
-                        Switches := Value_Of
-                          (Name                    => Lang,
-                           Attribute_Or_Array_Name => Name_Switches,
-                           In_Package              => Builder_Package,
-                           In_Tree                 => Project_Tree,
-                           Force_Lower_Case_Index  => True);
-                     end if;
-                  end if;
-
-                  if Switches = Nil_Variable_Value
-                    or else Switches.Default
+                  if Switches /= Nil_Variable_Value and then
+                    not Switches.Default
                   then
+                     if Global_Compilation_Array = No_Array_Element then
+                        Builder_Switches_Lang := Lang;
+                     end if;
+
+                  else
+                     --  If no specific switches for the main are declared,
+                     --  check for Switches (<language>).
+
                      Switches := Value_Of
-                       (Name                    => All_Other_Names,
+                       (Name                    => Lang,
                         Attribute_Or_Array_Name => Name_Switches,
                         In_Package              => Builder_Package,
                         In_Tree                 => Project_Tree,
                         Force_Lower_Case_Index  => True);
                   end if;
+               end if;
 
-                  --  For backward compatibility with gnatmake, if no Switches
-                  --  are declared, check for Default_Switches (<language>).
+               if Switches = Nil_Variable_Value
+                 or else Switches.Default
+               then
+                  Switches := Value_Of
+                    (Name                    => All_Other_Names,
+                     Attribute_Or_Array_Name => Name_Switches,
+                     In_Package              => Builder_Package,
+                     In_Tree                 => Project_Tree,
+                     Force_Lower_Case_Index  => True);
+               end if;
 
-                  if Switches = Nil_Variable_Value
-                    or else Switches.Default
-                  then
-                     Switches := Value_Of
-                       (Name                    => Lang,
-                        Attribute_Or_Array_Name => Name_Default_Switches,
-                        In_Package              => Builder_Package,
-                        In_Tree                 => Project_Tree);
+               --  For backward compatibility with gnatmake, if no Switches
+               --  are declared, check for Default_Switches (<language>).
 
-                     --  Set the Builder Switches language, so that switches
-                     --  that are not recognized by gprbuild are passed to the
-                     --  compiler of the language.
+               if Switches = Nil_Variable_Value
+                 or else Switches.Default
+               then
+                  Switches := Value_Of
+                    (Name                    => Lang,
+                     Attribute_Or_Array_Name => Name_Default_Switches,
+                     In_Package              => Builder_Package,
+                     In_Tree                 => Project_Tree);
 
-                     if Switches /= Nil_Variable_Value and then
-                       (not Switches.Default)
-                     then
-                        Builder_Switches_Lang := Lang;
-                     end if;
-                  end if;
-
-                  --  If switches have been found, scan them
+                  --  Set the Builder Switches language, so that switches
+                  --  that are not recognized by gprbuild are passed to the
+                  --  compiler of the language.
 
                   if Switches /= Nil_Variable_Value and then
                     (not Switches.Default)
                   then
-                     List := Switches.Values;
-
-                     while List /= Nil_String loop
-                        Element := Project_Tree.String_Elements.Table (List);
-                        Get_Name_String (Element.Value);
-
-                        if Name_Len /= 0 then
-                           Scan_Arg
-                             (Name_Buffer (1 .. Name_Len),
-                              Command_Line => False,
-                              Language     => Lang,
-                              Success      => Success);
-                        end if;
-
-                        if not Success then
-                           for J in reverse 1 .. Name_Len loop
-                              Name_Buffer (J + J) := Name_Buffer (J);
-                              Name_Buffer (J + J - 1) := ''';
-                           end loop;
-
-                           Name_Len := Name_Len + Name_Len;
-
-                           Error_Msg
-                             ('"' & Name_Buffer (1 .. Name_Len) &
-                              """ is not a gprbuild switch. Consider moving " &
-                              "it to Global_Compilation_Switches.",
-                              Element.Location);
-                           Fail_Program
-                             ("*** illegal switch """ &
-                              Get_Name_String (Element.Value) & '"');
-                        end if;
-
-                        List := Element.Next;
-                     end loop;
+                     Builder_Switches_Lang := Lang;
                   end if;
                end if;
 
-               --  Reset the Builder Switches language
+               --  If switches have been found, scan them
 
-               Builder_Switches_Lang := No_Name;
+               if Switches /= Nil_Variable_Value and then
+                 (not Switches.Default)
+               then
+                  List := Switches.Values;
 
-               --  Take into account attributes Global_Compilation_Switches
+                  while List /= Nil_String loop
+                     Element := Project_Tree.String_Elements.Table (List);
+                     Get_Name_String (Element.Value);
 
-               while Global_Compilation_Array /= No_Array_Element loop
-                  Global_Compilation_Elem :=
-                    Project_Tree.Array_Elements.Table
-                      (Global_Compilation_Array);
+                     if Name_Len /= 0 then
+                        Scan_Arg
+                          (Name_Buffer (1 .. Name_Len),
+                           Command_Line => False,
+                           Language     => Lang,
+                           Success      => Success);
+                     end if;
 
-                  Global_Compilation_Switches :=
-                    Global_Compilation_Elem.Value;
+                     if not Success then
+                        for J in reverse 1 .. Name_Len loop
+                           Name_Buffer (J + J) := Name_Buffer (J);
+                           Name_Buffer (J + J - 1) := ''';
+                        end loop;
 
-                  if Global_Compilation_Switches /= Nil_Variable_Value
-                    and then not Global_Compilation_Switches.Default
-                  then
-                     --  We have found an attribute
-                     --  Global_Compilation_Switches for a language: put the
-                     --  switches in the appropriate table.
+                        Name_Len := Name_Len + Name_Len;
 
-                     Current_Processor := Compiler;
+                        Error_Msg
+                          ('"' & Name_Buffer (1 .. Name_Len) &
+                           """ is not a gprbuild switch. Consider moving " &
+                           "it to Global_Compilation_Switches.",
+                           Element.Location);
+                        Fail_Program
+                          ("*** illegal switch """ &
+                           Get_Name_String (Element.Value) & '"');
+                     end if;
 
-                     declare
-                        Index : Name_Id;
+                     List := Element.Next;
+                  end loop;
+               end if;
+            end if;
 
-                        List : String_List_Id :=
-                                 Global_Compilation_Switches.Values;
-                        Elem : String_Element;
+            --  Reset the Builder Switches language
 
-                     begin
-                        Get_Name_String (Global_Compilation_Elem.Index);
-                        To_Lower (Name_Buffer (1 .. Name_Len));
-                        Index := Name_Find;
+            Builder_Switches_Lang := No_Name;
 
+            --  Take into account attributes Global_Compilation_Switches
+
+            while Global_Compilation_Array /= No_Array_Element loop
+               Global_Compilation_Elem :=
+                 Project_Tree.Array_Elements.Table
+                   (Global_Compilation_Array);
+
+               Global_Compilation_Switches :=
+                 Global_Compilation_Elem.Value;
+
+               if Global_Compilation_Switches /= Nil_Variable_Value
+                 and then not Global_Compilation_Switches.Default
+               then
+                  --  We have found an attribute
+                  --  Global_Compilation_Switches for a language: put the
+                  --  switches in the appropriate table.
+
+                  Current_Processor := Compiler;
+
+                  declare
+                     Index : Name_Id;
+
+                     List  : String_List_Id :=
+                       Global_Compilation_Switches.Values;
+                     Elem  : String_Element;
+
+                  begin
+                     Get_Name_String (Global_Compilation_Elem.Index);
+                     To_Lower (Name_Buffer (1 .. Name_Len));
+                     Index := Name_Find;
+
+                     Current_Builder_Comp_Option_Table :=
+                       Builder_Compiling_Options_HTable.Get (Index);
+
+                     if Current_Builder_Comp_Option_Table =
+                       No_Builder_Comp_Option_Table
+                     then
                         Current_Builder_Comp_Option_Table :=
-                          Builder_Compiling_Options_HTable.Get (Index);
+                          new Builder_Compiling_Options.Instance;
+                        Builder_Compiling_Options_HTable.Set
+                          (Index, Current_Builder_Comp_Option_Table);
+                        Builder_Compiling_Options.Init
+                          (Current_Builder_Comp_Option_Table.all);
+                     end if;
 
-                        if Current_Builder_Comp_Option_Table =
-                          No_Builder_Comp_Option_Table
-                        then
-                           Current_Builder_Comp_Option_Table :=
-                             new Builder_Compiling_Options.Instance;
-                           Builder_Compiling_Options_HTable.Set
-                             (Index, Current_Builder_Comp_Option_Table);
-                           Builder_Compiling_Options.Init
-                             (Current_Builder_Comp_Option_Table.all);
+                     while List /= Nil_String loop
+                        Elem :=
+                          Project_Tree.String_Elements.Table (List);
+
+                        if Elem.Value /= No_Name then
+                           Add_Option
+                             (Get_Name_String (Elem.Value),
+                              Command_Line => False);
                         end if;
 
-                        while List /= Nil_String loop
-                           Elem :=
-                             Project_Tree.String_Elements.Table (List);
+                        List := Elem.Next;
+                     end loop;
+                  end;
 
-                           if Elem.Value /= No_Name then
-                              Add_Option
-                                (Get_Name_String (Elem.Value),
-                                 Command_Line => False);
-                           end if;
+                  Current_Processor := None;
+               end if;
 
-                           List := Elem.Next;
-                        end loop;
-                     end;
-
-                     Current_Processor := None;
-                  end if;
-
-                  Global_Compilation_Array := Global_Compilation_Elem.Next;
-               end loop;
-            end if;
-         end;
-      end if;
+               Global_Compilation_Array := Global_Compilation_Elem.Next;
+            end loop;
+         end if;
+      end;
 
       --  Reprocess recorded command line options that have priority over
       --  those in the main project file.
@@ -9779,14 +9768,58 @@ package body Buildgpr is
                      Put_Line
                        (Exchange_File, Get_Name_String (Main_Base_Name));
 
-                     --  Then, the compiler path
+                     --  Then, the compiler path and required switches
 
-                     Put_Line
-                       (Exchange_File,
-                        Binding_Label (Gprexch.Compiler_Path));
-                     Put_Line
-                       (Exchange_File,
-                        B_Data.Language.Config.Compiler_Driver_Path.all);
+                     declare
+                        Config : Language_Config renames
+                          B_Data.Language.Config;
+                        List   : Name_List_Index;
+                        Nam_Nod : Name_Node;
+                     begin
+                        --  Compiler path
+
+                        Put_Line
+                          (Exchange_File,
+                           Binding_Label (Gprexch.Compiler_Path));
+                        Put_Line
+                          (Exchange_File, Config.Compiler_Driver_Path.all);
+
+                        --  Leading required switches, if any
+
+                        List := Config.Compiler_Leading_Required_Switches;
+                        if List /= No_Name_List then
+                           Put_Line
+                             (Exchange_File,
+                              Binding_Label
+                                (Gprexch.Compiler_Leading_Switches));
+
+                           while List /= No_Name_List loop
+                              Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                              Put_Line
+                                (Exchange_File,
+                                 Get_Name_String (Nam_Nod.Name));
+                              List := Nam_Nod.Next;
+                           end loop;
+                        end if;
+
+                        --  Trailing required switches, if any
+
+                        List := Config.Compiler_Trailing_Required_Switches;
+                        if List /= No_Name_List then
+                           Put_Line
+                             (Exchange_File,
+                              Binding_Label
+                                (Gprexch.Compiler_Trailing_Switches));
+
+                           while List /= No_Name_List loop
+                              Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                              Put_Line
+                                (Exchange_File,
+                                 Get_Name_String (Nam_Nod.Name));
+                              List := Nam_Nod.Next;
+                           end loop;
+                        end if;
+                     end;
 
                      --  Then, the Dependency files
 
@@ -10277,7 +10310,7 @@ package body Buildgpr is
             --  If it is a library project, add it to Library_Projs
 
             if (And_Project_Itself or (Project /= For_Project))
-              and then Project.Extends = No_Project
+              and then Project.Extended_By = No_Project
               and then Project.Library
             then
                if Project.Standalone_Library then
