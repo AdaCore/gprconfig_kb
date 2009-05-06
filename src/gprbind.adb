@@ -108,6 +108,8 @@ procedure Gprbind is
 
    Compiler_Options     : String_List_Access := new String_List (1 .. 100);
    Last_Compiler_Option : Natural := 0;
+   Compiler_Trailing_Options : String_List_Access := new String_List (1 .. 10);
+   Last_Compiler_Trailing_Option : Natural := 0;
 
    Gnatbind_Options     : String_List_Access := new String_List (1 .. 100);
    Last_Gnatbind_Option : Natural := 0;
@@ -284,6 +286,16 @@ begin
                   end if;
 
                   Ada_Compiler_Path := new String'(Line (1 .. Last));
+
+               when Compiler_Leading_Switches =>
+                  Add
+                    (Line (1 .. Last),
+                     Compiler_Options, Last_Compiler_Option);
+
+               when Compiler_Trailing_Switches =>
+                  Add
+                    (Line (1 .. Last),
+                     Compiler_Trailing_Options, Last_Compiler_Trailing_Option);
 
                when Main_Dependency_File =>
                   if Main_ALI /= null then
@@ -818,6 +830,15 @@ begin
 
          New_Line;
       end if;
+
+      --  Add the trailing options, if any
+
+      for J in 1 .. Last_Compiler_Trailing_Option loop
+         Add
+           (Compiler_Trailing_Options (J),
+            Compiler_Options,
+            Last_Compiler_Option);
+      end loop;
 
       Spawn
         (Ada_Compiler_Path.all,

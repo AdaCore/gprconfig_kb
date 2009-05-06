@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -41,6 +41,8 @@ package Gprexch is
       Shared_Libs,
       Main_Base_Name,
       Compiler_Path,
+      Compiler_Leading_Switches,
+      Compiler_Trailing_Switches,
       Main_Dependency_File,
       Dependency_Files,
       Binding_Options,
