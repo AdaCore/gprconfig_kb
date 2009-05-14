@@ -106,12 +106,28 @@
     </target>
   </compiler_description>
 
+  <!-- G++ for VxWorks 5 -->
+  <compiler_description>
+    <name>G++-WRS5</name>
+    <executable prefix="1">c\+\+(arm|pentium|sh|mips|ppc|sparc)</executable>
+    <version>
+      <external>c++${PREFIX} -v</external>
+      <grep regexp="gcc.*(VxWorks 5).*" group="1"></grep>
+      <must_match>VxWorks 5</must_match>
+    </version>
+    <languages>C++</languages>
+    <target>
+      <external>c++${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
   <!-- G++ for VxWorks 653 -->
   <compiler_description>
     <name>G++-WRS653</name>
     <executable prefix="1">c\+\+(pentium|ppc)</executable>
     <version>
-      <external>cc${PREFIX} -v</external>
+      <external>c++${PREFIX} -v</external>
       <grep regexp=".*(vxworksae).*" group="1"></grep>
       <must_match>vxworksae</must_match>
     </version>
