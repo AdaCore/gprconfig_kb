@@ -10535,7 +10535,9 @@ package body Buildgpr is
                if Source.Kind = Impl
                  or else (Source.Unit /= No_Unit_Index
                           and then Source.Kind = Spec
-                          and then Other_Part (Source) = No_Source)
+                          and then (Other_Part (Source) = No_Source
+                                    or else
+                                    Other_Part (Source).Locally_Removed))
                then
                   if (Unit_Based
                       or else Source.Unit = No_Unit_Index
