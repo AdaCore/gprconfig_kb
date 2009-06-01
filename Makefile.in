@@ -47,20 +47,22 @@ ifeq ($(strip $(filter-out %vms%,$(HOST))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
 
+ADA_GEN_SUBDIR=gnat
+
 .PHONY: all gprbuild gprconfig gprclean copy_gnat_src complete bootstrap
-all:
+all: $(ADA_GEN_SUBDIR)/stamp-snames
 	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD}
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
+MOVE_IF_CHANGE=mv -f
+-include gnat/Make-generated.in
+
 copy_gnat_src: force
-	-@cd gnat; $(foreach f,$(shell cat gnat/MANIFEST.GPRBUILD), \
+	-cd $(ADA_GEN_SUBDIR); \
+	$(foreach f,$(shell cat $(ADA_GEN_SUBDIR)/MANIFEST.GPRBUILD), \
 	    $(LN) $(GNAT_SOURCE_DIR)/$(f) . ;\
-           )\
-	gnatmake -q xsnamest.adb; \
-	./xsnamest; \
-	$(CP) snames.ns snames.ads; \
-	$(CP) snames.nb snames.adb
+           )
 
 complete: copy_gnat_src all install
 
