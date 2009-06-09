@@ -186,6 +186,7 @@
    for Separate_Run_Path_Options use "true";
 
    for Shared_Library_Suffix use ".dylib";
+   for Library_Auto_Init_Supported use "true";
    for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
    for Shared_Library_Minimum_Switches use
          ("-dynamiclib", "-Wl,-flat_namespace", "-shared-libgcc");
