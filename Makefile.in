@@ -9,8 +9,10 @@ GNAT_SOURCE_DIR=../gnat_src
 
 ifeq ($(OS),Windows_NT)
 LN=cp -p
+EXEXT=.exe
 else
 LN=ln -s -f
+EXEXT=
 endif
 CP=cp -p
 MKDIR=mkdir -p
@@ -113,12 +115,12 @@ install.data: force
 
 install.bin: force
 	-${MKDIR} ${bindir}
-	${INSTALL_PROGRAM} gprconfig ${bindir}
-	${INSTALL_PROGRAM} gprbuild ${bindir}
-	${INSTALL_PROGRAM} gprclean ${bindir}
+	${INSTALL_PROGRAM} gprconfig${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} gprbuild${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} gprclean${EXEXT} ${bindir}
 	-${MKDIR} ${libexecdir}/gprbuild
-	${INSTALL_PROGRAM} gprbind ${libexecdir}/gprbuild/
-	${INSTALL_PROGRAM} gprlib ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} gprbind${EXEXT} ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} gprlib${EXEXT} ${libexecdir}/gprbuild/
 
 $(objdir)/gprbuild_dummies.o: src/gprbuild_dummies.c
 	gcc -c -o $@ $<
