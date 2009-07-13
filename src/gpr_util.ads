@@ -140,6 +140,7 @@ package Gpr_Util is
       return String_Access;
    --  Returns the name of the binder exchange file corresponding to an
    --  object file and a language.
+   --  Main_Base_Name must have no extension specified
 
    procedure Create_Response_File
      (Format   : Response_File_Format;

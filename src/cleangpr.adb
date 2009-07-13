@@ -916,7 +916,9 @@ package body Cleangpr is
          Get_Name_String (Source);
          Osint.Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
 
-         for J in reverse 4 .. Name_Len loop
+         --  ??? The constant "2" is magic here, it needs to be the same as
+         --  in buildgpr.linking_phase
+         for J in reverse 2 .. Name_Len loop
             if Name_Buffer (J) = '.' then
                Name_Len := J - 1;
                exit;
