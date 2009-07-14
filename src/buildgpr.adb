@@ -8013,16 +8013,25 @@ package body Buildgpr is
    is
       Unit : constant Unit_Index :=
                 Units_Htable.Get (Project_Tree.Units_HT, Uname);
-
+      At_Least_One_File : Boolean := False;
    begin
       if Unit /= No_Unit_Index then
          for F in Unit.File_Names'Range loop
-            if Unit.File_Names (F) /= null
-              and then Unit.File_Names (F).File = Sfile
-            then
-               return False;
+            if Unit.File_Names (F) /= null then
+               At_Least_One_File := True;
+               if Unit.File_Names (F).File = Sfile then
+                  return False;
+               end if;
             end if;
          end loop;
+
+         if not At_Least_One_File then
+            --  The unit was probably created initially for a separate unit.
+            --  (which are initially created as IMPL when both suffixes are the
+            --  same). Later on, Override_Kind changed the type of the file,
+            --  and the unit is no longer valid in fact.
+            return False;
+         end if;
 
          if Verbose_Mode then
             Write_Str  ("   -> """);
@@ -8538,6 +8547,14 @@ package body Buildgpr is
 
                   if Unit_Name /= No_Name then
                      if File_Not_A_Source_Of (Unit_Name, SD.Sfile) then
+                        if Verbose_Mode then
+                           Write_Line
+                             ("While parsing ALI file: Sdep associates "
+                              & Get_Name_String (SD.Sfile)
+                              & " with unit " & Get_Name_String (Unit_Name)
+                              & " but this does not match what was found while"
+                              & " parsing the project. Will recompile");
+                        end if;
                         return True;
                      end if;
                   end if;
