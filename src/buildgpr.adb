@@ -287,13 +287,6 @@ package body Buildgpr is
    --  languages, that is those after switch "-cargs:<lang>", on the command
    --  line.
 
-   function File_Not_A_Source_Of
-     (Uname : Name_Id;
-      Sfile : File_Name_Type) return Boolean;
-   --  Check that file name Sfile is one of the source of unit Uname.
-   --  Returns True if the unit is in one of the project file, but the file
-   --  name is not one of its source. Returns False otherwise.
-
    Builder_Switches_Lang : Name_Id := No_Name;
    --  Used to decide to what compiler the Builder'Default_Switches that
    --  are not recognized by gprbuild should be given.
@@ -8002,51 +7995,6 @@ package body Buildgpr is
          end;
       end loop;
    end Linking_Phase;
-
-   --------------------------
-   -- File_Not_A_Source_Of --
-   --------------------------
-
-   function File_Not_A_Source_Of
-     (Uname : Name_Id;
-      Sfile : File_Name_Type) return Boolean
-   is
-      Unit : constant Unit_Index :=
-                Units_Htable.Get (Project_Tree.Units_HT, Uname);
-      At_Least_One_File : Boolean := False;
-   begin
-      if Unit /= No_Unit_Index then
-         for F in Unit.File_Names'Range loop
-            if Unit.File_Names (F) /= null then
-               At_Least_One_File := True;
-               if Unit.File_Names (F).File = Sfile then
-                  return False;
-               end if;
-            end if;
-         end loop;
-
-         if not At_Least_One_File then
-            --  The unit was probably created initially for a separate unit.
-            --  (which are initially created as IMPL when both suffixes are the
-            --  same). Later on, Override_Kind changed the type of the file,
-            --  and the unit is no longer valid in fact.
-            return False;
-         end if;
-
-         if Verbose_Mode then
-            Write_Str  ("   -> """);
-            Write_Str  (Get_Name_String (Uname));
-            Write_Str  (""" sources do not include """);
-            Write_Str  (Get_Name_String (Sfile));
-            Write_Char ('"');
-            Write_Eol;
-         end if;
-
-         return True;
-      end if;
-
-      return False;
-   end File_Not_A_Source_Of;
 
    ---------------------
    -- Need_To_Compile --
