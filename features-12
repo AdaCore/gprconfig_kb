@@ -2,7 +2,7 @@
 GPRBUILD 1.2 NEW FEATURES LIST Current as of Oct 21, 2008
 =========================================================
 
-Copyright (c) 2008, AdaCore
+Copyright (C) 2008, AdaCore
 
 This file contains a complete list of new features in version 1.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
@@ -22,6 +22,18 @@ NF-12-H821-015 Use response files when available (2008-09-22)
 
   When supported, and when the command line is too long, gprlib now uses
   response files to link shared libraries.
+
+NF-12-H812-005 Support for Diab C compiler (2008-08-28)
+
+  The Diab C compiler is now supported for powerpc-elf (using the
+  ppc750 variant).
+
+NF-12-H808-006 Specifying executable name in gprconfig (2008-08-11)
+
+  The --config switch parameter to gprconfig can now be used to specify
+  the base name of the executable you want to use. This can be used to
+  easily select a type of compiler over another type, no matter whether it
+  appears first in the path or not.
 
 NF-12-H806-009 Switch files only created when -s is used (2008-09-10)
 
