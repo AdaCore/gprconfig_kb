@@ -44,6 +44,7 @@ with Opt;         use Opt;
 with Osint;
 with Prj;         use Prj;
 with Prj.Conf;    use Prj.Conf;
+with Prj.Err;
 with Prj.Ext;
 with Prj.Tree;    use Prj.Tree;
 with Prj.Util;    use Prj.Util;
@@ -610,7 +611,10 @@ package body Cleangpr is
          Processed_Projects.Increment_Last;
          Processed_Projects.Table (Processed_Projects.Last) := Project;
 
-         if Project.Object_Directory /= No_Path_Information then
+         if Project.Object_Directory /= No_Path_Information
+           and then Is_Directory
+             (Get_Name_String (Project.Object_Directory.Name))
+         then
             declare
                Obj_Dir : constant String :=
                  Get_Name_String (Project.Object_Directory.Name);
@@ -762,6 +766,7 @@ package body Cleangpr is
 
       if Project = Main_Project
         and then Project.Exec_Directory /= No_Path_Information
+        and then Is_Directory (Get_Name_String (Project.Exec_Directory.Name))
       then
          declare
             Exec_Dir : constant String :=
@@ -1072,12 +1077,19 @@ package body Cleangpr is
             Project_Tree               => Project_Tree,
             Project_Node_Tree          => Project_Node_Tree,
             Packages_To_Check          => Packages_To_Check,
-            Flags                      => Gprbuild_Flags,
+            Flags                      => Gprclean_Flags,
             Allow_Automatic_Generation => Autoconfiguration,
             Automatically_Generated    => Delete_Autoconf_File,
             Config_File_Path           => Configuration_Project_Path,
             Target_Name                => Target_Name.all,
             Normalized_Hostname        => Normalized_Hostname);
+
+         --  Print warnings that might have occurred while parsing the project
+         Prj.Err.Finalize;
+
+         --  But avoid duplicate warnings later on
+         Prj.Err.Initialize;
+
       exception
          when E : Prj.Conf.Invalid_Config =>
             Osint.Fail (Exception_Message (E));
