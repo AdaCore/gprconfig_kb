@@ -32,3 +32,11 @@ KP-130-I713-011 gprclean does not remove binder files
 
   Workaround: Remove the files manually.
 
+KLP-130-I525-017 gprbuild incompatible with option -r of gnatbind
+
+  Problem:    When a binder option such as -r that adds output to the
+              invocation of gnatbind is used, linking fails.
+
+  Status:     This was fixed in 1.4.0 on 2009-08-12
+
+  Workaround: Remove binder option -r
