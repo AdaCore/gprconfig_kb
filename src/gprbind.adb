@@ -899,10 +899,19 @@ begin
 
       while not End_Of_File (Objects_File) loop
          Get_Line (Objects_File, Line, Last);
-         Put_Line (IO_File, Line (1 .. Last));
 
-         Bound_Files := new Bound_File'
-           (Name => new String'(Line (1 .. Last)), Next => Bound_Files);
+         --  Only put in the exchange file the path of the object files.
+         --  Output anything else on standard output.
+
+         if Is_Regular_File (Line (1 .. Last)) then
+            Put_Line (IO_File, Line (1 .. Last));
+
+            Bound_Files := new Bound_File'
+              (Name => new String'(Line (1 .. Last)), Next => Bound_Files);
+
+         else
+            Put_Line (Line (1 .. Last));
+         end if;
       end loop;
 
       Close (Objects_File);
