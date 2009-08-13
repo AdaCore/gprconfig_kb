@@ -40,3 +40,12 @@ KP-130-I525-017 gprbuild incompatible with option -r of gnatbind
   Status:     This was fixed in 1.4.0 on 2009-08-12
 
   Workaround: Remove binder option -r
+
+KP-130-I505-015 Extending library project not built
+
+  Problem:    When gprbuild is invoked for a library project that extends
+              another one, the library may not be built.
+
+  Status:     This was fixed in 1.4.0 on 2009-05-06
+
+  Workaround: Use only non extending library projects
