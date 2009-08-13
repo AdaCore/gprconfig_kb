@@ -21,6 +21,16 @@ KP-120-I315-004 Unneeded recompilation with externally built library project
 
   Workaround: Make sure that there is a valid library exchange file
 
+KP-120-I312-021 Wrong compilation switches for inherited source
+
+  Problem:    When a source inherited from a project being extended is
+              recompiled in the extending project, the compilation switches
+              are not taklen in the extending project.
+
+  Status:     This was fixed in 1.3.0 on 2009-03-12
+
+  Workaround: Use the same switches in both projects
+
 KP-120-I302-001 Crash when library project has no object directory
 
   Problem:    gprbuild may crash if the object directory of a library project
