@@ -18,3 +18,8 @@ NF-14-I728-026 gprclean warns when object dir does not exist (2009-08-11)
   When the object dir of a project does not exist, gprclean used to exit
   with an error. Instead, it will now display a warning, and skip this
   project, but continue cleaning the other projects if required.
+
+NF-14-I415-016 binder generated file compiled with all options (2009-05-06)
+
+  gprbind now compiles the binder generated file with the required trailing
+  compilation switches specified in the configuration project file.
