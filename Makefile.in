@@ -149,7 +149,7 @@ install-doc:
 	${CP} doc/*.html ${docdir}/html
 
 tests: force
-	cd internal/gprtests; ./run-test
+	cd internal/gprtests_python; ./testsuite.py
 
 test_names=
 test_config=
@@ -168,11 +168,7 @@ endif
 
 tests_local: force
 	@make prefix=${shell pwd}/install install
-ifeq (${test_names},)
-	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug --hide-pass ${test_config_switch}
-else
-	cd internal/gprtests; ./run-test --gprbuild=${shell pwd}/install/bin --db=${shell pwd}/install/share/gprconfig --print-diffs --color --debug ${test_config_switch} ${test_names}
-endif
+	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./testsuite.py --diffs --enable-color --loglevel=ERROR ${test_config_switch} ${test_names}
 	@${RM} -rf install
 
 examples: force
