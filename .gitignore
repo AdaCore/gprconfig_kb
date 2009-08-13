@@ -1,4 +1,5 @@
 /*.ali
+*.pyc
 /CVS
 /Makefile
 /gprclean
@@ -30,12 +31,15 @@
 
 /internal/gprtests/gprtest
 /internal/gprtests/out
+/internal/gprtests_python/out
 /internal/gprtests/gprtest.conf
 /internal/gprtests/install
 
-/internal/gprtests/support/compilers.xml
-/internal/gprtests/support/targetset.xml
-/internal/gprtests/support/nocompiler.xml
+/internal/gprtests_python/support/compilers.xml
+/internal/gprtests_python/support/targetset.xml
+/internal/gprtests_python/support/nocompiler.xml
+/internal/gprtests_python/local_machines.py
+/internal/gprtests_python/test_config.py
 
 /gnat/*.ali
 /gnat/ali.adb
@@ -202,3 +206,7 @@
 /gnat/xutil.ads
 /gnat/widechar.adb
 /gnat/widechar.ads
+/gnat/Make-generated.in
+/gnat/bldtools/
+/gnat/snames.h
+/gnat/stamp-snames
