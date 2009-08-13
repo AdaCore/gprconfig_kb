@@ -1,6 +1,6 @@
-===========================================================
-Known problems in GPRBUILD version 1.2.0 as of Jan 19, 2009
-===========================================================
+========================================
+Known problems in GPRBUILD version 1.2.0
+========================================
 
 Copyright (c) 2008-2009, AdaCore
 
@@ -11,21 +11,30 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-120-I205-035 Gprbuild does not obey -o option
+
+  Problem:    gprbuild does not always use the spoecified executable file
+              name after the -o option.
+
+  Status:     This was fixed in 1.3.0 on 2009-04-21
+
+  Workaround: Indicate the executable file name in package Binder of the
+              project file.
+
 KP-120-I119-020 Gprconfig terminates when some directories are unreadable
 
-  Problem:   gprconfig will terminate when some directories on the PATH
-             are not readable.
+  Problem:    gprconfig will terminate when some directories on the PATH
+              are not readable.
 
-  Status:    This was fixed in 1.3.0 on 2009-01-19
+  Status:     This was fixed in 1.3.0 on 2009-01-19
 
   Workaround: Remove that directory from your PATH environment variable
 
-
 KP-120-HB17-004 No recompilation when ALI file created with -gnatc
 
-  Problem:   gprbuild does not detect that an ALI file has been created
-             with the switch -gnatc, so it does not systematically recompile,
-             but it should.
+  Problem:    gprbuild does not detect that an ALI file has been created
+              with the switch -gnatc, so it does not systematically recompile,
+              but it should.
 
   Status:     This was fixed in 1.3.0 on 2008-11-18
 
