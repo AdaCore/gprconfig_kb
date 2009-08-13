@@ -41,6 +41,15 @@ KP-130-I525-017 gprbuild incompatible with option -r of gnatbind
 
   Workaround: Remove binder option -r
 
+KP-130-I507-019 Spec not compiled when body has been excluded
+
+  Problem:    When the body of a spec has been locally removed, the spec that
+              does not need a completion is not compiled.
+
+  Status:     This was fixed in 1.4.0 on 2009-05-19
+
+  Workaround: Use a spec with a dummy completion and a dummy body
+
 KP-130-I505-015 Extending library project not built
 
   Problem:    When gprbuild is invoked for a library project that extends
