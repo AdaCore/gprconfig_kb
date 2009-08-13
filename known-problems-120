@@ -11,6 +11,15 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-120-I302-001 Crash when library project has no object directory
+
+  Problem:    gprbuild may crash if the object directory of a library project
+              does not exist.
+
+  Status:     This was fixed in 1.3.0 on 2009-03-03
+
+  Workaround: Create the object directory
+
 KP-120-I216-021 --no-indirect-imports not allowed in Builder switches
 
   Problem:    The gprbuild switch --no-indirect-imports is not allowed
