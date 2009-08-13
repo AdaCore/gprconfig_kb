@@ -11,12 +11,22 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-120-I216-021 --no-indirect-imports not allowed in Builder switches
+
+  Problem:    The gprbuild switch --no-indirect-imports is not allowed
+              in switches specified in package Builder. It is only allowed
+              on the command line.
+
+  Status:     This was fixed in 1.3.0 on 2009-02-17
+
+  Workaround: Use --no-indirect-imports on the command line
+
 KP-120-I205-035 Gprbuild does not obey -o option
 
   Problem:    gprbuild does not always use the spoecified executable file
               name after the -o option.
 
-  Status:     This was fixed in 1.3.0 on 2009-04-21
+  Status:     This was fixed in 1.3.0 on 2009-02-06
 
   Workaround: Indicate the executable file name in package Binder of the
               project file.
