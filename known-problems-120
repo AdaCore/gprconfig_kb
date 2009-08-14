@@ -60,6 +60,15 @@ KP-120-I205-035 Gprbuild does not obey -o option
   Workaround: Indicate the executable file name in package Binder of the
               project file.
 
+KP-120-I129-011 Crash when library exchange file does not exist
+
+  Problem:    gprbuild may crash if a library exchange file for a library
+              project does not exist.
+
+  Status:     This was fixed in 1.3.0 on 2009-01-30
+
+  Workaround: Create an empty library exchange file in the object directory
+
 KP-120-I119-020 Gprconfig terminates when some directories are unreadable
 
   Problem:    gprconfig will terminate when some directories on the PATH
