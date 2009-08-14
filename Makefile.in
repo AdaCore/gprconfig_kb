@@ -168,7 +168,12 @@ endif
 
 tests_local: force
 	@make prefix=${shell pwd}/install install
-	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./testsuite.py --diffs --enable-color --loglevel=ERROR ${test_config_switch} ${test_names}
+ifeq (${test_names},)
+	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./testsuite.py --diffs --enable-color --loglevel=ERROR ${test_config_switch}
+else
+	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./testsuite.py --diffs --enable-color --loglevel=INFO ${test_config_switch} ${test_names}
+
+endif
 	@${RM} -rf install
 
 examples: force
