@@ -60,7 +60,7 @@ KP-120-I205-035 Gprbuild does not obey -o option
   Workaround: Indicate the executable file name in package Binder of the
               project file.
 
-KP-120-I204-033 Failure to link when gprbuild invokled with -v
+KP-120-I204-033 Failure to link when gprbuild invoked with -v
 
   Problem:    When gprbuild is invoked with -v, linking the executable may
               fail.
