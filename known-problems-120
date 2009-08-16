@@ -91,7 +91,7 @@ KP-120-I107-025 Invalid diagnostic when temp path file cannot be created
 
   Problem:    When a directory is not writable and a temporary path file could
               not be created, an invalid diagnostic indicating that the disk
-              is ful is issued.
+              is full is issued.
 
   Status:     This was fixed in 1.3.0 on 2009-01-13
 
