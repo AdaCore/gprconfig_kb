@@ -1321,7 +1321,7 @@ package Builder of the main project:
 @item @option{-eS} (no effect)
 
   This switch is only accepted for compatibility with gnatmake, but it has
-  no effect. For gnatmake, it means: echo commands to standdard output instead
+  no effect. For gnatmake, it means: echo commands to standard output instead
   of standard error, but for gprbuild, commands are always echoed to standard
   output.
 
