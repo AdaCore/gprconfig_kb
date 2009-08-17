@@ -7164,6 +7164,9 @@ package body Buildgpr is
             Name_Len := 0;
             Add_Str_To_Name_Buffer (Base_Name (Main));
 
+            --  Remove the extension, if any, that is the last part of the base
+            --  name starting with a dot and following some characters.
+
             for J in reverse 2 .. Name_Len loop
                if Name_Buffer (J) = '.' then
                   Name_Len := J - 1;
