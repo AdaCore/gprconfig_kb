@@ -6690,6 +6690,8 @@ package body Buildgpr is
       Namet.Initialize;
       Snames.Initialize;
 
+      Prj.Tree.Initialize (Project_Node_Tree);
+
       Prj.Initialize (Project_Tree);
       Mains.Delete;
 
@@ -11063,7 +11065,7 @@ package body Buildgpr is
          elsif Command_Line
            and then Arg'Length >= 3
            and then Arg (2) = 'X'
-           and then Is_External_Assignment (Arg)
+           and then Is_External_Assignment (Project_Node_Tree, Arg)
          then
             --  Is_External_Assignment has side effects when it returns True
 

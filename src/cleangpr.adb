@@ -1167,6 +1167,8 @@ package body Cleangpr is
          Csets.Initialize;
          Namet.Initialize;
          Snames.Initialize;
+
+         Prj.Tree.Initialize (Project_Node_Tree);
       end if;
 
       --  Reset global variables
@@ -1451,7 +1453,8 @@ package body Cleangpr is
 
                            if OK then
                               Prj.Ext.Add
-                                (External_Name =>
+                                (Project_Node_Tree,
+                                 External_Name =>
                                    Ext_Asgn (Start .. Equal_Pos - 1),
                                  Value         =>
                                    Ext_Asgn (Equal_Pos + 1 .. Stop));

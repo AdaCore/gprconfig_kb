@@ -45,6 +45,7 @@ package Gpr_Util is
 
    Project_Node_Tree : constant Project_Node_Tree_Ref :=
      new Project_Node_Tree_Data;
+   --  This is also used to hold project path and scenario variables
 
    Success : Boolean := False;
 
