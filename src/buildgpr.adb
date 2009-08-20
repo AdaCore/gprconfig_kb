@@ -6804,7 +6804,7 @@ package body Buildgpr is
 
          Write_Eol;
 
-         Write_Line (Project_Path);
+         Write_Line (Project_Path (Project_Node_Tree));
 
          Exit_Program (E_Success);
       end if;
@@ -10560,7 +10560,7 @@ package body Buildgpr is
             Fail_Program ("directory name missing after -aP");
          else
             Search_Project_Dir_Expected := False;
-            Add_Search_Project_Directory (Arg);
+            Add_Search_Project_Directory (Project_Node_Tree, Arg);
          end if;
 
       elsif Db_Directory_Expected then
@@ -10862,7 +10862,8 @@ package body Buildgpr is
                Search_Project_Dir_Expected := True;
 
             else
-               Add_Search_Project_Directory (Arg (4 .. Arg'Last));
+               Add_Search_Project_Directory
+                 (Project_Node_Tree, Arg (4 .. Arg'Last));
             end if;
 
          elsif Command_Line and then Arg = "-b" then

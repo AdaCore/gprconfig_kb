@@ -1334,7 +1334,7 @@ package body Cleangpr is
 
                         if Arg (3) = 'P' then
                            Prj.Ext.Add_Search_Project_Directory
-                             (Arg (4 .. Arg'Last));
+                             (Project_Node_Tree, Arg (4 .. Arg'Last));
 
                         else
                            Bad_Argument;
