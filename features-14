@@ -13,6 +13,11 @@ This date shows the implementation date of the feature. Any 1.4.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-14-I814-016 gprbuild no longer outputs "creating auto.cgpr" (2009-08-20)
+
+  When running in the default auto configuration mode, gprbuild will no
+  longer display the message "creating auto.cgpr"
+
 NF-14-I728-026 gprclean warns when object dir does not exist (2009-08-11)
 
   When the object dir of a project does not exist, gprclean used to exit
