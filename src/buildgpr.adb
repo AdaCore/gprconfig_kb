@@ -6839,6 +6839,10 @@ package body Buildgpr is
 
       if Load_Standard_Base then
          begin
+            --  We need to parse the knowledge base so that we are able to
+            --  normalize the target names. Unfortunately, if we have to spawn
+            --  gprconfig, it will also have to parse that knowledge base on
+            --  its own.
             Parse_Knowledge_Base
               (Base,
                Default_Knowledge_Base_Directory,
