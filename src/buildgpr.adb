@@ -4277,10 +4277,6 @@ package body Buildgpr is
       procedure Process_Project_Phase_1 (Source_Project : Project_Id) is
          Compilation_Needed : Boolean;
 
-         Imported_Directories_Switches : Argument_List_Access := null;
-         --  List of the source search switches (-I<source dir>) to be used
-         --  when compiling.
-
       begin
          if Source_Project.Externally_Built then
             Compilation_Needed := False;
@@ -4781,7 +4777,7 @@ package body Buildgpr is
                            end loop;
                         end;
 
-                        Imported_Directories_Switches :=
+                        Source_Project.Imported_Directories_Switches :=
                           new String_List'
                             (Include_Options.Options
                                  (1 .. Include_Options.Last));
@@ -4880,7 +4876,7 @@ package body Buildgpr is
 
                if Config.Include_Option /= No_Name_List then
                   Add_Options
-                    (Imported_Directories_Switches.all,
+                    (Source_Project.Imported_Directories_Switches.all,
                      To            => Compilation_Options,
                      Display_All   => Opt.Verbose_Mode,
                      Display_First => False);
