@@ -11,16 +11,26 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-130-I828-007 Crash when using attribute Included_Switches
+
+  Problem:    When there are several languages in a project files and for
+              one of these languages attribute Included_Switches is declared,
+              gprbuild may crash.
+
+  Status:     This was fixed in 1.4.0 on 2009-07-29
+
+  Workaround: Use one project file for each language
+
 KP-130-I722-017 Systematic binding and linking when using extending projects
 
-  Problem:   If you are using extending projects, gprbuild will systematically
-             bind and link your application, even when everything is up to
-             date.
+  Problem:    If you are using extending projects, gprbuild will systematically
+              bind and link your application, even when everything is up to
+              date.
 
-  Status:    This was fixed in 1.4.0 on 2009-07-21
+  Status:     This was fixed in 1.4.0 on 2009-07-21
 
   Workaround: The compilation still performs correctly, and is just a bit
-             slower
+              slower
 
 KP-130-I713-011 gprclean does not remove binder files
 
