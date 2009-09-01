@@ -17,9 +17,19 @@ KP-130-I828-007 Crash when using attribute Included_Switches
               one of these languages attribute Included_Switches is declared,
               gprbuild may crash.
 
-  Status:     This was fixed in 1.4.0 on 2009-07-29
+  Status:     This was fixed in 1.4.0 on 2009-08-29
 
   Workaround: Use one project file for each language
+
+KP-130-I828-004 Failure to bind with a cross with no prefix
+
+  Problem:    When a cross-compiler with no prefix is used, gprbind fails as
+              it does not recognize "gnatbind_prefix=" as a special option.
+
+  Status:     This was fixed in 1.4.0 on 2009-09-01
+
+  Workaround: Remove the lines in packllage Binder of the configuration project
+              file that specify the option "gnatbind_prefix=".
 
 KP-130-I722-017 Systematic binding and linking when using extending projects
 
