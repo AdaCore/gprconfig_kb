@@ -32,7 +32,7 @@
       for Required_Switches     ("Ada") use
           Binder'Required_Switches ("Ada")  &amp; ("-I-");
       for Driver         ("Ada") use
-          "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
+          "${GPRCONFIG_PREFIX}libexec/gprbuild/gprbind";
    end Binder;
 
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";

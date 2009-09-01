@@ -320,21 +320,25 @@ begin
 
                   --  Check if a gnatbind prefix is specified
 
-                  elsif Last > Gnatbind_Prefix_Equal'Length
+                  elsif Last >= Gnatbind_Prefix_Equal'Length
                     and then Line (1 .. Gnatbind_Prefix_Equal'Length) =
                              Gnatbind_Prefix_Equal
                   then
-                     --  There is always a '-' between <prefix> and "gnatbind".
-                     --  Add one if not already in <prefix>.
+                     --  Ignore an empty prefix
 
-                     if Line (Last) /= '-' then
-                        Last := Last + 1;
-                        Line (Last) := '-';
+                     if Last > Gnatbind_Prefix_Equal'Length then
+                        --  There is always a '-' between <prefix> and
+                        --  "gnatbind". Add one if not already in <prefix>.
+
+                        if Line (Last) /= '-' then
+                           Last := Last + 1;
+                           Line (Last) := '-';
+                        end if;
+
+                        GNATBIND := new String'
+                          (Line (Gnatbind_Prefix_Equal'Length + 1 .. Last) &
+                           "gnatbind");
                      end if;
-
-                     GNATBIND := new String'
-                       (Line (Gnatbind_Prefix_Equal'Length + 1 .. Last) &
-                        "gnatbind");
 
                   elsif Last > Ada_Binder_Equal'Length
                     and then Line (1 .. Ada_Binder_Equal'Length) =
