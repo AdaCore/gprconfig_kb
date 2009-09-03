@@ -31,7 +31,7 @@ NF-14-I415-016 binder generated file compiled with all options (2009-05-06)
 
 NF-14-H828-007 compilers working on all targets (2009-09-03)
 
-  It is now possible, in the knowldge base for gprconfig, to specify
+  It is now possible in the knowledge base for gprconfig to specify
   compilers that work on all targets, by omitting the <target> node. In
   particular, you can add support for tools that generate code instead of
-  object code
+  object code.
