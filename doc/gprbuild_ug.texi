@@ -2231,6 +2231,9 @@ are evaluated (if necessary) in the same order as they are documented below.
   This node indicates how to query the target architecture for the compiler.
   See @ref{GPRconfig external values} for valid children.
 
+  If this isn't specified, the compiler will always be considered as matching
+  on the current target.
+
 @item <version>
 
   This tag contains any of the nodes defined in @ref{GPRconfig external values} below.

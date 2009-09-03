@@ -1626,27 +1626,38 @@ package body GprConfig.Knowledge is
       --  to compute other attributes.
 
       if Executable /= No_Name then
-         Get_External_Value
-           ("target",
-            Value            => Descr.Target,
-            Comp             => Comp,
-            Split_Into_Words => False,
-            Processed_Value  => Target);
-         if not Is_Empty (Target) then
-            Comp.Target := External_Value_Lists.Element (First (Target)).Value;
-            Get_Targets_Set
-              (Base, Get_Name_String (Comp.Target), Comp.Targets_Set);
-         else
-            Put_Verbose ("Target unknown for this compiler");
-            Comp.Targets_Set := Unknown_Targets_Set;
-         end if;
+         if not Is_Empty (Descr.Target) then
+            Get_External_Value
+              ("target",
+               Value            => Descr.Target,
+               Comp             => Comp,
+               Split_Into_Words => False,
+               Processed_Value  => Target);
 
-         if On_Target /= All_Target_Sets
-           and then Comp.Targets_Set /= On_Target
-         then
-            Put_Verbose ("Target for this compiler does not match --target");
-            Continue := True;
-            return;
+            if not Is_Empty (Target) then
+               Comp.Target :=
+                 External_Value_Lists.Element (First (Target)).Value;
+               Get_Targets_Set
+                 (Base, Get_Name_String (Comp.Target), Comp.Targets_Set);
+            else
+               Put_Verbose ("Target unknown for this compiler");
+               Comp.Targets_Set := Unknown_Targets_Set;
+            end if;
+
+            if On_Target /= All_Target_Sets
+              and then Comp.Targets_Set /= On_Target
+            then
+               Put_Verbose
+                 ("Target for this compiler does not match --target");
+               Put_Verbose ("MANU  on_target=" & On_Target'Img);
+               Put_Verbose ("MANU  got=" & Comp.Targets_Set'Img);
+               Continue := True;
+               return;
+            end if;
+
+         else
+            Put_Verbose ("Target unspecified, always match");
+            Comp.Targets_Set := All_Target_Sets;
          end if;
 
          --  Then get the value of the remaining attributes. For most of them,
