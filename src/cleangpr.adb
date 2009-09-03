@@ -1346,6 +1346,7 @@ package body Cleangpr is
                      when 'e' =>
                         if Arg = "-eL" then
                            Follow_Links_For_Files := True;
+                           Follow_Links_For_Dirs  := True;
 
                         else
                            Bad_Argument;

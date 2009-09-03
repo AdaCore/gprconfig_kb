@@ -10902,6 +10902,7 @@ package body Buildgpr is
 
          elsif Command_Line and then Arg = "-eL" then
             Follow_Links_For_Files := True;
+            Follow_Links_For_Dirs  := True;
 
          elsif Command_Line and then Arg = "-eS" then
             --  Accept switch for compatibility with gnatmake
