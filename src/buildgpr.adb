@@ -874,7 +874,8 @@ package body Buildgpr is
    procedure Linking_Phase;
    --  Perform linking, if necessary
 
-   function Need_To_Compile (Source : Source_Id) return Boolean;
+   function Need_To_Compile
+     (Source : Source_Id; In_Project : Project_Id) return Boolean;
    --  Check if a source need to be compiled.
    --  A source need to be compiled if:
    --    - Force_Compilations is True
@@ -4287,7 +4288,8 @@ package body Buildgpr is
             Language := Source_Identity.Language;
             Config := Language.Config;
 
-            Compilation_Needed := Need_To_Compile (Source_Identity);
+            Compilation_Needed :=
+              Need_To_Compile (Source_Identity, Source_Project);
 
             if Compilation_Needed or Check_Switches then
                Language_Name := Source_Identity.Language.Name;
@@ -6902,19 +6904,19 @@ package body Buildgpr is
                                         Opt.Follow_Links_For_Files,
                                       Directory     => Dir);
 
-            begin
-               Source.Object_Path   := Create_Name (Object_Path);
+               Obj_Path : constant Path_Name_Type := Create_Name (Object_Path);
 
-               Source.Object_TS := File_Stamp (Source.Object_Path);
-               if Source.Object_TS /= Empty_Time_Stamp then
+               procedure Set_Object_Project;
+
+               ------------------------
+               -- Set_Object_Project --
+               ------------------------
+
+               procedure Set_Object_Project is
+               begin
                   Source.Object_Project := Obj_Proj;
-               end if;
-
-               --  Only compute the timestamp on the dep files if the
-               --  source is not overridden later, since otherwise we
-               --  will loop again here in any case
-
-               if Obj_Proj.Extended_By = No_Project then
+                  Source.Object_Path    := Obj_Path;
+                  Source.Object_TS      := File_Stamp (Obj_Path);
 
                   if Source.Language.Config.Dependency_Kind /= None then
                      declare
@@ -6931,9 +6933,6 @@ package body Buildgpr is
                      end;
                   end if;
 
-                  --  The switches file is always different from the
-                  --  dependency file, since it ends with .cswi
-
                   declare
                      Switches_Path : constant String :=
                                        Normalize_Pathname
@@ -6947,11 +6946,25 @@ package body Buildgpr is
                      Source.Switches_Path := Create_Name (Switches_Path);
                      Source.Switches_TS := File_Stamp (Source.Switches_Path);
                   end;
+               end Set_Object_Project;
+
+            begin
+               if File_Stamp (Obj_Path) /= Empty_Time_Stamp then
+                  Set_Object_Project;
+               end if;
+
+               if Obj_Proj.Extended_By = No_Project then
+                  --  No project extends this one. We are then using the
+                  --  u;ltimate extending project.
+
+                  if Source.Object_Project = No_Project then
+                     Set_Object_Project;
+                  end if;
 
                   exit;
 
                else
-                  --  We'll then examine the source that extends this one
+                  --  We'll then examine the project that extends this one
                   Obj_Proj := Obj_Proj.Extended_By;
                end if;
             end;
@@ -8010,7 +8023,9 @@ package body Buildgpr is
    Object_Path   : String_Access := null;
    Switches_Name : String_Access := null;
 
-   function Need_To_Compile (Source : Source_Id) return Boolean is
+   function Need_To_Compile
+     (Source : Source_Id; In_Project : Project_Id) return Boolean
+   is
       Source_Path   : constant String :=
                         Get_Name_String (Source.Path.Name);
 
@@ -8035,8 +8050,7 @@ package body Buildgpr is
       --  If the ALI file is in the object directory of a project, this is
       --  the project id.
 
-      Externally_Built : constant Boolean :=
-                           Source.Project.Externally_Built;
+      Externally_Built : constant Boolean := In_Project.Externally_Built;
       --  True if the project of the source is externally built
 
       function Process_Makefile_Deps (Dep_Name : String) return Boolean;
@@ -10428,7 +10442,10 @@ package body Buildgpr is
                  or else Is_Extending (The_Project, Source.Project))
               and then not Source.Locally_Removed
               and then Source.Replaced_By = No_Source
-              and then not Source.Project.Externally_Built
+              and then
+                (not Source.Project.Externally_Built or else
+                 (Is_Extending (The_Project, Source.Project) and then
+                  not The_Project.Externally_Built))
               and then Source.Kind /= Sep
               and then Source.Path /= No_Path_Information
             then
