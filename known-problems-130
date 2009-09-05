@@ -11,6 +11,16 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-130-I904-011 Incorrect compilation in extending projects
+
+  Problem:    gprbuild incorrectly compiles up to date inherited sources
+              in extending projects and does not recompile non up-to-date
+              sources in projects extending externally built projects.
+
+  Status:     This was fixed in 1.4.0 on 2009-09-05
+
+  Workaround: Make the project being extended not externally built.
+
 KP-130-I828-007 Crash when using attribute Included_Switches
 
   Problem:    When there are several languages in a project files and for
@@ -28,7 +38,7 @@ KP-130-I828-004 Failure to bind with a cross with no prefix
 
   Status:     This was fixed in 1.4.0 on 2009-09-01
 
-  Workaround: Remove the lines in packllage Binder of the configuration project
+  Workaround: Remove the lines in package Binder of the configuration project
               file that specify the option "gnatbind_prefix=".
 
 KP-130-I722-017 Systematic binding and linking when using extending projects
