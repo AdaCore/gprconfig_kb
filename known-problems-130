@@ -88,3 +88,14 @@ KP-130-I505-015 Extending library project not built
   Status:     This was fixed in 1.4.0 on 2009-05-06
 
   Workaround: Use only non extending library projects
+
+KP-130-I421-020 First compiler on the path not automatically used
+
+  Problem:    If the directory where gprbuild resides is not first on the path,
+              compilers that are in front of this directory in the path will
+              not be chosen in autoconfiguration.
+
+  Status:     This was fixed in 1.4.0 on 2009-09-08
+
+  Workaround: Create a configuration project file using gprconfig before
+              invoking gprbuild.
