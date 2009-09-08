@@ -47,7 +47,6 @@ with Gpr_Util;         use Gpr_Util;
 with GPR_Version;      use GPR_Version;
 with Gprexch;          use Gprexch;
 with GprConfig.Knowledge;  use GprConfig.Knowledge;
-with Hostparm;         use Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Output;           use Output;
@@ -6709,56 +6708,9 @@ package body Buildgpr is
       Add_Str_To_Name_Buffer ("-L");
       Dash_L := Name_Find;
 
-      --  Add the directory where gprbuild is invoked in front of the path,
-      --  if gprbuild is invoked from a bin directory or with directory
-      --  information. Only do this if the platform is not VMS, where the
-      --  notion of path does not really exist.
-
-      if not OpenVMS then
-         declare
-            Prefix  : constant String := Executable_Prefix_Path;
-            Command : constant String := Command_Name;
-
-         begin
-            if Prefix'Length > 0 then
-               declare
-                  PATH : constant String :=
-                           Prefix & "bin" & Path_Separator &
-                           Getenv ("PATH").all;
-
-               begin
-                  Setenv ("PATH", PATH);
-               end;
-
-            else
-               for Index in reverse Command'Range loop
-                  if Command (Index) = Directory_Separator then
-                     declare
-                        Absolute_Dir : constant String :=
-                                         Normalize_Pathname
-                                           (Command (Command'First .. Index));
-
-                        PATH         : constant String :=
-                                         Absolute_Dir &
-                                         Path_Separator &
-                                         Getenv ("PATH").all;
-
-                     begin
-                        Setenv ("PATH", PATH);
-                     end;
-
-                     exit;
-                  end if;
-               end loop;
-            end if;
-         end;
-      end if;
-
-      --  Get the command line arguments
-
       All_Phases := True;
 
-      --  First check for --version or --help
+      --  Get the command line arguments, starting with --version and --help
 
       Check_Version_And_Help
         ("GPRBUILD",
