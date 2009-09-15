@@ -145,11 +145,23 @@
 <!-- Cross Ports -->
 <!-- *********** -->
 
+ <!-- ppc-lynx5-.* -->
+  <targetset>
+    <target>ppc-lynx5.*</target>
+    <target>powerpc-elf-lynxos5.*</target>
+  </targetset>
+
  <!-- ppc-lynx-.* -->
   <targetset>
     <target>ppc-lynx-solaris</target>
     <target>ppc-lynx-.*</target>
     <target>powerpc-elf-lynxos.*</target>
+  </targetset>
+
+ <!-- x86-lynx5-.* -->
+  <targetset>
+    <target>x86-lynx5.*</target>
+    <target>i386-elf-lynxos5.*</target>
   </targetset>
 
  <!-- x86-vx6-.* (vxworks 6) -->
