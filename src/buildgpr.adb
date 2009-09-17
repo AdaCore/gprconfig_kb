@@ -3819,9 +3819,11 @@ package body Buildgpr is
 
       procedure Record_ALI_For (Source_Identity : Source_Id) is
          The_ALI  : ALI.ALI_Id;
+         Attr     : aliased File_Attributes := Unknown_Attributes;
          Text     : Text_Buffer_Ptr :=
-                      Read_Library_Info
-                        (File_Name_Type (Source_Identity.Dep_Path));
+                      Read_Library_Info_From_Full
+                        (File_Name_Type (Source_Identity.Dep_Path),
+                         Attr'Access);
 
       begin
          if Text /= null then
@@ -4141,8 +4143,11 @@ package body Buildgpr is
 
       procedure Phase_2_ALI (Src_Data : Source_Id) is
          use type ALI.ALI_Id;
+         Attr       : aliased File_Attributes := Unknown_Attributes;
          Text       : Text_Buffer_Ptr :=
-           Read_Library_Info (File_Name_Type (Src_Data.Dep_Path));
+           Read_Library_Info_From_Full
+             (File_Name_Type (Src_Data.Dep_Path),
+              Attr'Access);
          The_ALI    : ALI.ALI_Id;
          Sfile      : File_Name_Type;
          Afile      : File_Name_Type;
@@ -8358,8 +8363,10 @@ package body Buildgpr is
 
       function Process_ALI_Deps return Boolean is
          use type ALI.ALI_Id;
+         Attr     : aliased File_Attributes := Unknown_Attributes;
          Text     : Text_Buffer_Ptr :=
-           Read_Library_Info (File_Name_Type (Source.Dep_Path));
+           Read_Library_Info_From_Full
+             (File_Name_Type (Source.Dep_Path), Attr'Access);
          The_ALI  : ALI.ALI_Id;
          Sfile    : File_Name_Type;
          Dep_Src  : Source_Id;
@@ -9449,7 +9456,6 @@ package body Buildgpr is
                               declare
                                  Proj : Project_Id :=
                                           Source_Project.Extended_By;
-
                               begin
                                  while Proj /= No_Project loop
                                     Name_Len := 0;
@@ -9511,8 +9517,14 @@ package body Buildgpr is
 
                                  exit;
                               else
-                                 Text := Read_Library_Info
-                                   (File_Name_Type (Dep_Path));
+                                 declare
+                                    Attr : aliased File_Attributes :=
+                                      Unknown_Attributes;
+                                 begin
+                                    Text := Read_Library_Info_From_Full
+                                      (File_Name_Type (Dep_Path),
+                                       Attr'Access);
+                                 end;
 
                                  if Text /= null then
                                     The_ALI :=
