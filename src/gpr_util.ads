@@ -153,6 +153,11 @@ package Gpr_Util is
    --  binder driver. Populate table Binding_Languages and set variable
    --  There_Are_Binder_Drivers accordingly.
 
+   function Get_Compiler_Driver_Path
+     (Lang : Language_Ptr) return String_Access;
+   --  Get, from the config, the path of the compiler driver. This is first
+   --  looked for on the PATH if needed.
+
    function Normalized_Hostname return String;
    --  Return the normalized name of the host on which gprbuild is running. The
    --  knowledge base must have been parsed first.

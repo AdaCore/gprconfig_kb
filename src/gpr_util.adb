@@ -126,6 +126,31 @@ package body Gpr_Util is
       Finish_Program (Fatal => True, S => S);
    end Fail_Program;
 
+   ------------------------------
+   -- Get_Compiler_Driver_Path --
+   ------------------------------
+
+   function Get_Compiler_Driver_Path
+     (Lang : Language_Ptr) return String_Access
+   is
+   begin
+      if Lang.Config.Compiler_Driver_Path = null then
+         declare
+            Compiler_Name : constant String :=
+              Get_Name_String (Lang.Config.Compiler_Driver);
+
+         begin
+            Lang.Config.Compiler_Driver_Path :=
+              Locate_Exec_On_Path (Compiler_Name);
+
+            if Lang.Config.Compiler_Driver_Path = null then
+               Fail_Program ("unable to locate """ & Compiler_Name & '"');
+            end if;
+         end;
+      end if;
+      return Lang.Config.Compiler_Driver_Path;
+   end Get_Compiler_Driver_Path;
+
    ----------------------------
    -- Find_Binding_Languages --
    ----------------------------
@@ -139,11 +164,9 @@ package body Gpr_Util is
       Binder_Prefix      : Name_Id;
       Language           : Language_Ptr;
 
-      Config : Language_Config;
-
-      Compiler_Path : String_Access;
-      Project : Project_List;
-      Found : Boolean;
+      Config        : Language_Config;
+      Project       : Project_List;
+      Found         : Boolean;
 
    begin
       There_Are_Binder_Drivers := False;
@@ -182,31 +205,6 @@ package body Gpr_Util is
                      Fail_Program
                        ("unable to find binder driver " &
                         Name_Buffer (1 .. Name_Len));
-                  end if;
-
-                  Compiler_Path := Config.Compiler_Driver_Path;
-
-                  --  If this is the first time we try this compiler, then get
-                  --  its path name.
-
-                  if Compiler_Path = null then
-                     declare
-                        Compiler_Name : constant String :=
-                          Get_Name_String
-                            (Language.Config.Compiler_Driver);
-
-                     begin
-                        Compiler_Path := Locate_Exec_On_Path (Compiler_Name);
-
-                        if Compiler_Path = null then
-                           Fail_Program
-                             ("unable to locate """ & Compiler_Name & '"');
-
-                        else
-                           Language.Config.Compiler_Driver_Path :=
-                             Compiler_Path;
-                        end if;
-                     end;
                   end if;
 
                   if Config.Binder_Prefix = No_Name then

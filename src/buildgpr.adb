@@ -295,7 +295,7 @@ package body Buildgpr is
 
    procedure Free is new Ada.Unchecked_Deallocation (Boolean_Array, Booleans);
 
-   Initial_Number_Of_Options : constant := 10;
+   Initial_Number_Of_Options : constant Natural := 10;
 
    type Options_Data is record
       Options     : String_List_Access :=
@@ -314,10 +314,6 @@ package body Buildgpr is
 
    Compilation_Options : Options_Data;
    --  The compilation options coming from package Compiler
-
-   Include_Options : Options_Data;
-   --  The options to indicate the directories where to find sources or
-   --  templates.
 
    type Comp_Option_Table_Ref is access Compiling_Options.Instance;
    No_Comp_Option_Table : constant Comp_Option_Table_Ref := null;
@@ -540,12 +536,6 @@ package body Buildgpr is
       Table_Name           => "Makegpr.Directories");
    --  Table of all the source directories
 
-   --  The buffer to build a path
-
-   Path_Buffer : String_Access := null;
-   Path_Buffer_Initial_Length : constant := 1_024;
-   Path_Last   : Natural := 0;
-
    --  Libraries
 
    type Library_Object is record
@@ -638,8 +628,7 @@ package body Buildgpr is
 
       procedure Insert
         (Source_File_Name : File_Name_Type;
-         Source_Identity  : Source_Id;
-         Source_Project   : Project_Id);
+         Source_Identity  : Source_Id);
       --  Insert a new source in the the queue
 
       procedure Insert_Withed_Sources_For (The_ALI : ALI.ALI_Id);
@@ -649,8 +638,7 @@ package body Buildgpr is
 
       procedure Extract
         (Source_File_Name : out File_Name_Type;
-         Source_Identity  : out Source_Id;
-         Source_Project   : out Project_Id);
+         Source_Identity  : out Source_Id);
       --  Get the first source from the queue
 
       procedure Insert_Project_Sources
@@ -729,12 +717,6 @@ package body Buildgpr is
       Display_All   : Boolean;
       Display_First : Boolean;
       Simple_Name   : Boolean := False);
-   procedure Add_Options
-     (Value         : String_List;
-      To            : in out Options_Data;
-      Display_All   : Boolean;
-      Display_First : Boolean;
-      Simple_Name   : Boolean := False);
    --  Add one or several options to a list of options. Increase the size
    --  of the list, if necessary.
 
@@ -752,9 +734,9 @@ package body Buildgpr is
    procedure Add_Source_Id (Project : Project_Id; Id : Source_Id);
    --  Add a source id to Source_Indexes, with Found set to False
 
-   procedure Add_To_Path (C : Character);
-   procedure Add_To_Path (S : String);
-   --  Add to Path_Buffer, incrementing Path_Last
+   function Create_Path_From_Dirs return String_Access;
+   --  Concatenate all directories in the Directories table into a path.
+   --  Caller is responsible for freeing the result
 
    procedure Await_Compile (Source : out Source_Id; OK : out Boolean);
    --  Wait for a compiling process to finish
@@ -1360,27 +1342,6 @@ package body Buildgpr is
       end loop;
    end Add_Options;
 
-   procedure Add_Options
-     (Value         : String_List;
-      To            : in out Options_Data;
-      Display_All   : Boolean;
-      Display_First : Boolean;
-      Simple_Name   : Boolean := False)
-   is
-      First_Display : Boolean := Display_First;
-   begin
-      for J in Value'Range loop
-         if Value (J)'Length > 0 then
-            Add_Option
-              (Value       => Value (J),
-               To          => To,
-               Display     => Display_All or else First_Display,
-               Simple_Name => Simple_Name);
-            First_Display := False;
-         end if;
-      end loop;
-   end Add_Options;
-
    -----------------
    -- Add_Process --
    -----------------
@@ -1439,33 +1400,52 @@ package body Buildgpr is
       Source_Indexes (Last_Source) := (Project, Id, False);
    end Add_Source_Id;
 
-   -----------------
-   -- Add_To_Path --
-   -----------------
+   ---------------------------
+   -- Create_Path_From_Dirs --
+   ---------------------------
 
-   procedure Add_To_Path (C : Character) is
+   function Create_Path_From_Dirs return String_Access is
+      Result    : String_Access;
+      Tmp       : String_Access;
+      Path_Last : Natural := 0;
    begin
-      if Path_Last = Path_Buffer'Last then
-         declare
-            New_Path_Buffer : constant String_Access :=
-                                new String (1 .. 2 * Path_Buffer'Last);
-         begin
-            New_Path_Buffer (Path_Buffer'Range) := Path_Buffer.all;
-            Free (Path_Buffer);
-            Path_Buffer := New_Path_Buffer;
-         end;
+      for Index in 1 .. Directories.Last loop
+         Get_Name_String (Directories.Table (Index));
+
+         while Name_Len > 1
+           and then (Name_Buffer (Name_Len) = Directory_Separator
+                     or else Name_Buffer (Name_Len) = '/')
+         loop
+            Name_Len := Name_Len - 1;
+         end loop;
+
+         if Result = null then
+            Result := new String (1 .. Name_Len);
+         else
+            while Path_Last + Name_Len + 1 > Result'Last loop
+               Tmp := new String (1 .. 2 * Result'Length);
+               Tmp (1 .. Path_Last) := Result (1 .. Path_Last);
+               Free (Result);
+               Result := Tmp;
+            end loop;
+
+            Path_Last := Path_Last + 1;
+            Result (Path_Last) := Path_Separator;
+         end if;
+
+         Result (Path_Last + 1 .. Path_Last + Name_Len) :=
+           Name_Buffer (1 .. Name_Len);
+         Path_Last := Path_Last + Name_Len;
+      end loop;
+
+      if Current_Verbosity = High and then Result /= null then
+         Put_Line ("Path=" & Result (1 .. Path_Last));
       end if;
 
-      Path_Last := Path_Last + 1;
-      Path_Buffer (Path_Last) := C;
-   end Add_To_Path;
-
-   procedure Add_To_Path (S : String) is
-   begin
-      for J in S'Range loop
-         Add_To_Path (S (J));
-      end loop;
-   end Add_To_Path;
+      Tmp := new String'(Result (1 .. Path_Last));
+      Free (Result);
+      return Tmp;
+   end Create_Path_From_Dirs;
 
    -------------------
    -- Await_Compile --
@@ -2722,13 +2702,14 @@ package body Buildgpr is
 
          declare
             Lang : Language_Ptr := For_Project.Languages;
+            Compiler : String_Access;
 
          begin
             while Lang /= No_Language_Index loop
-               if Lang.Config.Compiler_Driver_Path /= null then
+               Compiler := Get_Compiler_Driver_Path (Lang);
+               if Compiler /= null then
                   Put_Line (Exchange_File, Get_Name_String (Lang.Name));
-                  Put_Line
-                    (Exchange_File, Lang.Config.Compiler_Driver_Path.all);
+                  Put_Line (Exchange_File, Compiler.all);
 
                elsif Lang.Config.Compiler_Driver /= No_File then
                   Put_Line (Exchange_File, Get_Name_String (Lang.Name));
@@ -3441,7 +3422,6 @@ package body Buildgpr is
             Main_Id      : File_Name_Type;
             Source       : Source_Id;
 
-            Project      : Project_Id;
             Root_Arr     : Array_Element_Id;
             Roots        : Variable_Value;
             Root_List    : Roots_Access;
@@ -3463,11 +3443,9 @@ package body Buildgpr is
             Source := Main_Sources.Get (Main_Id);
 
             if Source /= No_Source then
-               Project := Source.Project;
                Queue.Insert
                  (Source_File_Name => Main_Id,
-                  Source_Identity  => Source,
-                  Source_Project   => Project);
+                  Source_Identity  => Source);
 
                --  Look for roots if closure is needed
 
@@ -3480,7 +3458,7 @@ package body Buildgpr is
                   Root_Arr :=
                     Prj.Util.Value_Of
                       (Name      => Name_Roots,
-                       In_Arrays => Project.Decl.Arrays,
+                       In_Arrays => Source.Project.Decl.Arrays,
                        In_Tree   => Project_Tree);
                   Roots :=
                     Prj.Util.Value_Of
@@ -3618,8 +3596,7 @@ package body Buildgpr is
 
                               Queue.Insert
                                 (Source_File_Name => Root_Source.File,
-                                 Source_Identity  => Root_Source,
-                                 Source_Project   => Root_Source.Project);
+                                 Source_Identity  => Root_Source);
 
                               if Nmb_Root = Roots_Buffer'Last then
                                  declare
@@ -3683,14 +3660,32 @@ package body Buildgpr is
 
    procedure Compilation_Phase is
       type Local_Project_Data is record
-         Include_Language : Language_Ptr := No_Language_Index;
+         Include_Language       : Language_Ptr := No_Language_Index;
+         --  Prepared arguments for "include" parameters (-I or include file).
+         --  These are specific to each language and project.
+
+         Include_Path_File      : Path_Name_Type;
+         --  The path name of the of the source search directory file
+
+         Imported_Dirs_Switches : Argument_List_Access;
+         --  List of the source search switches (-I<source dir>) to be used
+         --  when compiling.
+
+         Include_Path           : String_Access := null;
+         --  The search source path for the project. Used as the value for an
+         --  environment variable, specified by attribute Include_Path
+         --  (<langu>). The names of the environment variables are in component
+         --  Include_Path of the records Language_Config.
       end record;
       --  project-specific data required for this procedure. These are not
       --  stored in the Project_Data record so that projects kept in memory do
       --  not have to allocate space for these temporary data
 
       No_Local_Project_Data : constant Local_Project_Data :=
-                                (Include_Language => No_Language_Index);
+        (Include_Language       => No_Language_Index,
+         Include_Path           => null,
+         Imported_Dirs_Switches => null,
+         Include_Path_File      => No_Path);
       package Local_Projects_HT is new Simple_HTable
         (Header_Num => Prj.Header_Num,
          Element    => Local_Project_Data,
@@ -3700,22 +3695,6 @@ package body Buildgpr is
          Equal      => "=");
 
       Local_Projects : Local_Projects_HT.Instance;
-
-      Source_File_Name : File_Name_Type;
-      Source_Identity  : Source_Id;
-      Source_Project   : Project_Id;
-      Language         : Language_Ptr;
-      Language_Name    : Name_Id;
-      Config           : Language_Config;
-      List             : Name_List_Index;
-      Node             : Name_Node;
-      Compiler_Path    : String_Access;
-      Compiler_Name_Id : File_Name_Type;
-      Pid              : Process_Id;
-      Compilation_OK   : Boolean;
-
-      Options_Instance         : Comp_Option_Table_Ref;
-      Builder_Options_Instance : Builder_Comp_Option_Table_Ref;
 
       Current_Project      : Project_Id := No_Project;
       Current_Language_Ind : Language_Ptr := No_Language_Index;
@@ -3729,8 +3708,6 @@ package body Buildgpr is
       Start            : Natural;
       Finish           : Natural;
       Last_Obj         : Natural;
-
-      Last_Recorded_Option : Integer;
 
       package Good_ALI is new Table.Table
         (Table_Component_Type => ALI.ALI_Id,
@@ -3754,12 +3731,75 @@ package body Buildgpr is
       procedure Record_ALI_For (Source_Identity : Source_Id);
       --  Record the Id of an ALI file in Good_ALI table
 
-      procedure Phase_2_Makefile (Src_Data : Source_Id);
-      procedure Phase_2_ALI      (Src_Data : Source_Id);
-      --  Process the phase2, on Src_Data.Dependency type
+      function Phase_2_Makefile (Src_Data : Source_Id) return Boolean;
+      function Phase_2_ALI      (Src_Data : Source_Id) return Boolean;
+      --  Process Wait_For_Available_Slot depending on Src_Data.Dependency type
+      --  This returns whether the compilation is considered as successful or
+      --  not.
 
-      procedure Process_Project_Phase_1 (Source_Project : Project_Id);
+      procedure Set_Options_For_File (Id : Source_Id);
+      --  Prepare the compiler options to use when building Id
+
+      procedure Process_Project_Phase_1 (Id : Source_Id);
       --  If some compilation is needed for this project, perform it.
+
+      function Must_Exit_Because_Of_Error return Boolean;
+      --  Return True if there were errors and the user decided to exit in such
+      --  a case. This waits for any outstanding compilation.
+
+      function Check_Switches_File (Id : Source_Id) return Boolean;
+      --  Check in its switches file where Id was compiled with the same
+      --  switches
+
+      procedure Update_Object_Path (Id : Source_Id);
+      --  Update, if necessary, the path of the object file, of the dependency
+      --  file and of the switches file, in the case of the compilation of a
+      --  source in an extended project, when the source is in a project being
+      --  extended.
+
+      procedure Add_Dependency_Options (Id : Source_Id);
+      --  Add switches to the compilation command line to create the
+      --  dependency file
+
+      function Get_Compatible_Languages (Lang : Language_Ptr) return Name_Ids;
+      --  Return the list of languages that Id could potentially include (for
+      --  instance "C" if Id is a "C++" file. This also includes Id's own
+      --  language.
+
+      procedure Prepare_Imported_Dirs_Switches
+        (Data     : out Local_Project_Data;
+         Project  : Project_Id;
+         Lang     : Language_Ptr);
+      --  Add the switches for include directories to the command line (these
+      --  are the "-I" switches in the case of C for instance).
+
+      procedure Prepare_Include_Path_File
+        (Data     : out Local_Project_Data;
+         Project  : Project_Id;
+         Lang     : Language_Ptr);
+      --  Create a file to pass the include directories to the compiler
+
+      procedure Start_Compile_If_Possible;
+      --  Checks if there is more work that we can do (ie the Queue is non
+      --  empty). If there is, do it only if we have not yet used up all the
+      --  available processes.
+
+      procedure Wait_For_Available_Slot;
+      --  Check if we should wait for a compilation to finish. This is the case
+      --  if all the available processes are busy compiling sources or there is
+      --  nothing else to do (that is the Q is empty and there are outstanding
+      --  compilations).
+
+      procedure Fill_Queue_From_ALI_Files;
+      --  Check if we recorded good ALI files. If yes process them now in the
+      --  order in which they have been recorded. There are two occasions in
+      --  which we record good ali files. The first is in phase 1 when, after
+      --  scanning an existing ALI file we realize it is up-to-date, the second
+      --  instance is after a successful compilation.
+
+      procedure Set_Env_For_Include_Dirs (Id : Source_Id);
+      --  Set environment variables or switches to pass the include directories
+      --  to the compiler
 
       ----------------------------
       -- Add_Config_File_Switch --
@@ -3846,7 +3886,8 @@ package body Buildgpr is
       -- Phase_2_Makefile --
       ----------------------
 
-      procedure Phase_2_Makefile (Src_Data : Source_Id) is
+      function Phase_2_Makefile (Src_Data : Source_Id) return Boolean is
+         Compilation_OK : Boolean := True;
       begin
          Open (Dep_File, Get_Name_String (Src_Data.Dep_Path));
 
@@ -4135,14 +4176,16 @@ package body Buildgpr is
                end;
             end if;
          end if;
+         return Compilation_OK;
       end Phase_2_Makefile;
 
       -----------------
       -- Phase_2_ALI --
       -----------------
 
-      procedure Phase_2_ALI (Src_Data : Source_Id) is
+      function Phase_2_ALI (Src_Data : Source_Id) return Boolean is
          use type ALI.ALI_Id;
+         Compilation_OK : Boolean := True;
          Attr       : aliased File_Attributes := Unknown_Attributes;
          Text       : Text_Buffer_Ptr :=
            Read_Library_Info_From_Full
@@ -4277,14 +4320,475 @@ package body Buildgpr is
                end loop;
             end if;
          end if;
+         return Compilation_OK;
       end Phase_2_ALI;
+
+      --------------------------
+      -- Set_Options_For_File --
+      --------------------------
+
+      procedure Set_Options_For_File (Id : Source_Id) is
+         Config  : Language_Config renames Id.Language.Config;
+         Builder_Options_Instance : constant Builder_Comp_Option_Table_Ref :=
+           Builder_Compiling_Options_HTable.Get (Id.Language.Name);
+         Comp_Opt                 : constant Comp_Option_Table_Ref :=
+           Compiling_Options_HTable.Get (Id.Language.Name);
+
+         List    : Name_List_Index;
+         Nam_Nod : Name_Node;
+         First   : Boolean;
+      begin
+         Compilation_Options.Last := 0;
+
+         --  1) The leading required switches
+
+         List := Config.Compiler_Leading_Required_Switches;
+         First := True;
+         while List /= No_Name_List loop
+            Nam_Nod := Project_Tree.Name_Lists.Table (List);
+            Add_Option
+              (Value   => Nam_Nod.Name,
+               To      => Compilation_Options,
+               Display => First or Opt.Verbose_Mode);
+            First := False;
+            List := Nam_Nod.Next;
+         end loop;
+
+         --  2) the compilation switches specified in package Builder
+         --  for all compilers, following "-cargs", if any.
+
+         for Index in 1 .. All_Language_Builder_Compiling_Options.Last loop
+            Add_Option
+              (Value   => All_Language_Builder_Compiling_Options.Table (Index),
+               To      => Compilation_Options,
+               Display => True);
+         end loop;
+
+         --  3) the compilation switches specified in package Builder
+         --  for the compiler of the language, following
+         --  -cargs:<language>.
+
+         if Builder_Options_Instance /= null then
+            for Index in 1 ..
+              Builder_Compiling_Options.Last (Builder_Options_Instance.all)
+            loop
+               Add_Option
+                 (Value   => Builder_Options_Instance.Table (Index),
+                  To      => Compilation_Options,
+                  Display => True);
+            end loop;
+         end if;
+
+         --  4) The PIC option if it exists, for shared libraries
+
+         if Id.Project.Library
+           and then Id.Project.Library_Kind /= Static
+         then
+            List := Config.Compilation_PIC_Option;
+            while List /= No_Name_List loop
+               Nam_Nod := Project_Tree.Name_Lists.Table (List);
+               Add_Option
+                 (Value   => Nam_Nod.Name,
+                  To      => Compilation_Options,
+                  Display => True);
+               List := Nam_Nod.Next;
+            end loop;
+         end if;
+
+         --  5) Compiler'Switches(<source file name>), if it is
+         --  defined, otherwise Compiler'Switches (<language name>),
+         --  if defined.
+
+         Add_Compilation_Switches (Id);
+
+         --  4) the switches specified on the gprbuild command line
+         --  for all compilers, following "-cargs", if any.
+
+         for Index in 1 .. All_Language_Compiling_Options.Last loop
+            Add_Option
+              (Value   => All_Language_Compiling_Options.Table (Index),
+               To      => Compilation_Options,
+               Display => True);
+         end loop;
+
+         --  6) the switches specified on the gprbuild command line
+         --  for the compiler of the language, following
+         --  -cargs:<language>.
+
+         if Comp_Opt /= null then
+            for Index in 1 .. Compiling_Options.Last (Comp_Opt.all) loop
+               Add_Option
+                 (Value   => Comp_Opt.Table (Index),
+                  To      => Compilation_Options,
+                  Display => True);
+            end loop;
+         end if;
+      end Set_Options_For_File;
+
+      -----------------------
+      -- Check_Switch_File --
+      -----------------------
+
+      function Check_Switches_File (Id : Source_Id) return Boolean is
+         File    : Ada.Text_IO.File_Type;
+
+         function Assert_Line (Current : String) return Boolean;
+         --  Return False if Current is not the next line in the switches file
+
+         function Assert_Line (Current : String) return Boolean is
+            Line : String (1 .. 1_000);
+            Last : Natural;
+         begin
+            if End_Of_File (File) then
+               if Verbose_Mode then
+                  Write_Line ("    -> switches file has fewer switches");
+               end if;
+
+               Close (File);
+               return False;
+            end if;
+
+            Get_Line (File, Line, Last);
+
+            if Line (1 .. Last) /= Current then
+               if Verbose_Mode then
+                  Write_Line ("    -> switches file has different line");
+                  Write_Line ("       " & Line (1 .. Last));
+                  Write_Line ("       " & Current);
+               end if;
+
+               Close (File);
+               return False;
+            end if;
+            return True;
+         end Assert_Line;
+
+         List    : Name_List_Index;
+         Nam_Nod : Name_Node;
+      begin
+         Open (File, In_File, Get_Name_String (Id.Switches_Path));
+
+         if not Assert_Line (String (Id.Object_TS)) then
+            return True;
+         end if;
+
+         for Index in 1 .. Compilation_Options.Last loop
+            if not Assert_Line (Compilation_Options.Options (Index).all) then
+               return True;
+            end if;
+         end loop;
+
+         List := Id.Language.Config.Compiler_Trailing_Required_Switches;
+
+         while List /= No_Name_List loop
+            Nam_Nod := Project_Tree.Name_Lists.Table (List);
+
+            if not Assert_Line (Get_Name_String (Nam_Nod.Name)) then
+               return True;
+            end if;
+
+            List := Nam_Nod.Next;
+         end loop;
+
+         if not End_Of_File (File) then
+            if Verbose_Mode then
+               Write_Line ("    -> switches file has more switches");
+            end if;
+
+            Close (File);
+            return True;
+         end if;
+
+         Close (File);
+         return False;
+
+      exception
+         when others =>
+            if Verbose_Mode then
+               Write_Line ("    -> no switches file");
+            end if;
+            return True;
+      end Check_Switches_File;
+
+      ------------------------
+      -- Update_Object_Path --
+      ------------------------
+
+      procedure Update_Object_Path (Id : Source_Id) is
+      begin
+         Id.Object_Project :=
+           Ultimate_Extending_Project_Of (Id.Project);
+
+         if Id.Object_Project /= Id.Project then
+            if Id.Object /= No_File then
+               Get_Name_String (Id.Object_Project.Object_Directory.Name);
+               Add_Str_To_Name_Buffer (Get_Name_String (Id.Object));
+               Id.Object_Path := Name_Find;
+            end if;
+
+            if Id.Dep_Name /= No_File then
+               Get_Name_String (Id.Object_Project.Object_Directory.Name);
+               Add_Str_To_Name_Buffer (Get_Name_String (Id.Dep_Name));
+               Id.Dep_Path := Name_Find;
+            end if;
+
+            if Id.Switches /= No_File then
+               Get_Name_String (Id.Object_Project.Object_Directory.Name);
+               Add_Str_To_Name_Buffer (Get_Name_String (Id.Switches));
+               Id.Switches_Path := Name_Find;
+            end if;
+         end if;
+      end Update_Object_Path;
+
+      ----------------------------
+      -- Add_Dependency_Options --
+      ----------------------------
+
+      procedure Add_Dependency_Options (Id : Source_Id) is
+         List : Name_List_Index := Id.Language.Config.Dependency_Option;
+         Node : Name_Node;
+      begin
+         while List /= No_Name_List loop
+            Node := Project_Tree.Name_Lists.Table (List);
+            List := Node.Next;
+
+            if List = No_Name_List then
+               Add_Option
+                 (Value   => Get_Name_String (Node.Name)
+                    & Get_Name_String (Id.Dep_Name),
+                  To      => Compilation_Options,
+                  Display => Opt.Verbose_Mode);
+            else
+               Add_Option
+                 (Value   => Node.Name,
+                  To      => Compilation_Options,
+                  Display => Opt.Verbose_Mode);
+            end if;
+         end loop;
+      end Add_Dependency_Options;
+
+      ------------------------------
+      -- Get_Compatible_Languages --
+      ------------------------------
+
+      function Get_Compatible_Languages
+        (Lang : Language_Ptr) return Name_Ids
+      is
+         NL    : Name_List_Index := Lang.Config.Include_Compatible_Languages;
+         Languages : Name_Ids (1 .. 1 + Length (Project_Tree.Name_Lists, NL));
+         Index : Positive := 1;
+      begin
+         Languages (Index) := Lang.Name;
+
+         while NL /= No_Name_List loop
+            Index := Index + 1;
+            Languages (Index) := Project_Tree.Name_Lists.Table (NL).Name;
+            NL := Project_Tree.Name_Lists.Table (NL).Next;
+         end loop;
+
+         return Languages;
+      end Get_Compatible_Languages;
+
+      -------------------------------
+      -- Prepare_Include_Path_File --
+      -------------------------------
+
+      procedure Prepare_Include_Path_File
+        (Data     : out Local_Project_Data;
+         Project  : Project_Id;
+         Lang     : Language_Ptr)
+      is
+         FD     : File_Descriptor;
+         Status : Boolean;
+      begin
+         Get_Directories
+           (For_Project => Project,
+            Sources     => True,
+            Languages   => Get_Compatible_Languages (Lang));
+
+         Prj.Env.Create_New_Path_File
+           (In_Tree   => Project_Tree,
+            Path_FD   => FD,
+            Path_Name => Data.Include_Path_File);
+
+         if FD = Invalid_FD then
+            Fail_Program ("could not create temporary path file");
+         end if;
+
+         for Index in 1 .. Directories.Last loop
+            Get_Name_String (Directories.Table (Index));
+            Name_Len := Name_Len + 1;
+            Name_Buffer (Name_Len) := ASCII.LF;
+            if Write (FD, Name_Buffer (1)'Address, Name_Len) /= Name_Len then
+               Fail_Program ("disk full when writing include path file");
+            end if;
+         end loop;
+
+         Close (FD, Status);
+
+         if not Status then
+            Fail_Program ("disk full when writing include path file");
+         end if;
+      end Prepare_Include_Path_File;
+
+      ------------------------------------
+      -- Prepare_Imported_Dirs_Switches --
+      ------------------------------------
+
+      procedure Prepare_Imported_Dirs_Switches
+        (Data     : out Local_Project_Data;
+         Project  : Project_Id;
+         Lang     : Language_Ptr)
+      is
+         Len       : constant Natural := Length
+           (Project_Tree.Name_Lists, Lang.Config.Include_Option);
+         Host_Path : String_Access;
+         Last      : Natural := 0;
+         List      : Name_List_Index;
+         Nam       : Name_Node;
+      begin
+         Get_Directories
+           (Project,
+            Sources   => True,
+            Languages => Get_Compatible_Languages (Lang));
+
+         Free (Data.Imported_Dirs_Switches);
+         Data.Imported_Dirs_Switches :=
+           new String_List (1 .. Directories.Last * Len);
+
+         for Index in 1 .. Directories.Last loop
+            List := Lang.Config.Include_Option;
+            while List /= No_Name_List loop
+               Nam := Project_Tree.Name_Lists.Table (List);
+               exit when Nam.Next = No_Name_List;
+               Last := Last + 1;
+               Data.Imported_Dirs_Switches (Last) :=
+                 new String'(Get_Name_String (Nam.Name));
+               List := Nam.Next;
+            end loop;
+
+            Get_Name_String (Directories.Table (Index));
+
+            while Name_Len > 1
+              and then (Name_Buffer (Name_Len) = Directory_Separator
+                        or else Name_Buffer (Name_Len) = '/')
+            loop
+               Name_Len := Name_Len - 1;
+            end loop;
+
+            Last := Last + 1;
+
+            --  Concatenate the last switch and the path in a single option
+
+            case Lang.Config.Path_Syntax is
+               when Canonical =>
+                  Data.Imported_Dirs_Switches (Last) := new String'
+                    (Get_Name_String (Nam.Name) & Name_Buffer (1 .. Name_Len));
+
+               when Host =>
+                  Host_Path := To_Host_Dir_Spec
+                    (Name_Buffer (1 .. Name_Len), False);
+                  Data.Imported_Dirs_Switches (Last) := new String'
+                    (Get_Name_String (Nam.Name) & Host_Path.all);
+                  Free (Host_Path);
+            end case;
+         end loop;
+      end Prepare_Imported_Dirs_Switches;
+
+      ------------------------------
+      -- Set_Env_For_Include_Dirs --
+      ------------------------------
+
+      procedure Set_Env_For_Include_Dirs (Id : Source_Id) is
+         Data : Local_Project_Data :=
+           Local_Projects_HT.Get (Local_Projects, Id.Object_Project);
+      begin
+         --  Prepare (if not already done) the data for Project/Lang.
+         --  All files for a given language are processed sequentially, before
+         --  we switch to the next language, so we are only preparing once per
+         --  language here
+
+         if Data.Include_Language /= Id.Language then
+            Free (Data.Include_Path);
+            Free (Data.Imported_Dirs_Switches);
+            Data := No_Local_Project_Data;
+
+            if Id.Language.Config.Include_Option /= No_Name_List then
+               Prepare_Imported_Dirs_Switches
+                 (Data, Id.Object_Project, Id.Language);
+
+            elsif Id.Language.Config.Include_Path_File /= No_Name then
+               Prepare_Include_Path_File
+                 (Data, Id.Object_Project, Id.Language);
+
+            elsif Id.Language.Config.Include_Path /= No_Name then
+               Get_Directories
+                 (Id.Object_Project,
+                  Sources   => True,
+                  Languages => Get_Compatible_Languages (Id.Language));
+               Data.Include_Path := Create_Path_From_Dirs;
+            end if;
+
+            Data.Include_Language := Id.Language;
+
+            Local_Projects_HT.Set (Local_Projects, Id.Object_Project, Data);
+         end if;
+
+         --  Reset environment variables if they have changed
+         --  ??? Ideally, we should set them when spawning the process, in
+         --  which case it would be less expensive to set and could be set
+         --  every time
+
+         if Id.Object_Project /= Current_Project
+           or else Id.Language /= Current_Language_Ind
+         then
+            Current_Project      := Id.Object_Project;
+            Current_Language_Ind := Id.Language;
+
+            if Data.Include_Path_File /= No_Path then
+               Setenv (Get_Name_String (Id.Language.Config.Include_Path_File),
+                       Get_Name_String (Data.Include_Path_File));
+
+            elsif Data.Include_Path /= null then
+               Setenv (Get_Name_String (Id.Language.Config.Include_Path),
+                       Data.Include_Path.all);
+
+               if Verbose_Mode then
+                  Write_Str
+                    (Get_Name_String (Id.Language.Config.Include_Path));
+                  Write_Str (" = ");
+                  Write_Line (Data.Include_Path.all);
+               end if;
+            end if;
+         end if;
+
+         --  But always set the switches
+
+         if Data.Imported_Dirs_Switches /= null then
+            for J in Data.Imported_Dirs_Switches'Range loop
+               if Data.Imported_Dirs_Switches (J)'Length > 0 then
+                  Add_Option
+                    (Value   => Data.Imported_Dirs_Switches (J),
+                     To      => Compilation_Options,
+                     Display => Opt.Verbose_Mode);
+               end if;
+            end loop;
+         end if;
+      end Set_Env_For_Include_Dirs;
 
       -----------------------------
       -- Process_Project_Phase_1 --
       -----------------------------
 
-      procedure Process_Project_Phase_1 (Source_Project : Project_Id) is
+      procedure Process_Project_Phase_1 (Id : Source_Id) is
+         Source_Project     : constant Project_Id :=
+           Ultimate_Extending_Project_Of (Id.Project);
          Compilation_Needed : Boolean;
+         Pid                : Process_Id;
+         Language           : Language_Ptr;
+         Config             : Language_Config;
+         Compiler_Path      : String_Access;
+         Last_Recorded_Option : Integer;
 
       begin
          if Source_Project.Externally_Built then
@@ -4293,337 +4797,23 @@ package body Buildgpr is
          else
             Change_To_Object_Directory (Source_Project);
 
-            Language := Source_Identity.Language;
-            Config := Language.Config;
+            Language := Id.Language;
+            Config   := Language.Config;
 
-            Compilation_Needed :=
-              Need_To_Compile (Source_Identity, Source_Project);
+            Compilation_Needed := Need_To_Compile (Id, Source_Project);
 
             if Compilation_Needed or Check_Switches then
-               Language_Name := Source_Identity.Language.Name;
+               Compiler_Path := Get_Compiler_Driver_Path (Language);
 
-               Compiler_Name_Id :=  Config.Compiler_Driver;
-               Compiler_Path := Config.Compiler_Driver_Path;
-
-               --  If this is the first time we try this compiler, then get
-               --  its path name.
-
-               if Compiler_Path = null then
-                  declare
-                     Compiler_Name     : constant String :=
-                       Get_Name_String
-                         (Compiler_Name_Id);
-                  begin
-                     Compiler_Path := Locate_Exec_On_Path (Compiler_Name);
-
-                     if Compiler_Path = null then
-                        Fail_Program
-                          ("unable to locate """ & Compiler_Name & '"');
-
-                     else
-                        Language.Config.Compiler_Driver_Path := Compiler_Path;
-                     end if;
-                  end;
-               end if;
-
-               --  Compilation Switches
-
-               Compilation_Options.Last := 0;
-
-               --  1) The leading required switches
-
-               declare
-                  List    : Name_List_Index :=
-                    Config.Compiler_Leading_Required_Switches;
-                  Nam_Nod : Name_Node;
-                  First   : Boolean;
-
-               begin
-                  First := True;
-                  while List /= No_Name_List loop
-                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                     Add_Option
-                       (Nam_Nod.Name,
-                        To      => Compilation_Options,
-                        Display => First or Verbose_Mode);
-                     First := False;
-                     List := Nam_Nod.Next;
-                  end loop;
-               end;
-
-               --  2) the compilation switches specified in package Builder
-               --  for all compilers, following "-cargs", if any.
-
-               if All_Language_Builder_Compiling_Options.Last /= 0 then
-                  declare
-                     Options :
-                     String_List
-                       (1 .. All_Language_Builder_Compiling_Options.Last);
-
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) :=
-                          All_Language_Builder_Compiling_Options.Table
-                            (Index);
-                     end loop;
-
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
-
-               --  3) the compilation switches specified in package Builder
-               --  for the compiler of the language, following
-               --  -cargs:<language>.
-
-               Builder_Options_Instance :=
-                 Builder_Compiling_Options_HTable.Get (Language_Name);
-
-               if Builder_Options_Instance /= No_Builder_Comp_Option_Table then
-                  declare
-                     Options : String_List
-                       (1 .. Builder_Compiling_Options.Last
-                          (Builder_Options_Instance.all));
-
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) :=
-                          Builder_Options_Instance.Table (Index);
-                     end loop;
-
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
-
-               --  4) The PIC option if it exists, for shared libraries
-
-               if Source_Project.Library
-                 and then Source_Project.Library_Kind /= Static
-                 and then Config.Compilation_PIC_Option /= No_Name_List
-               then
-                  declare
-                     List    : Name_List_Index :=
-                       Config.Compilation_PIC_Option;
-                     Nam_Nod : Name_Node;
-
-                  begin
-                     while List /= No_Name_List loop
-                        Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                        Add_Option
-                          (Nam_Nod.Name,
-                           To      => Compilation_Options,
-                           Display => True);
-                        List := Nam_Nod.Next;
-                     end loop;
-                  end;
-               end if;
-
-               --  5) Compiler'Switches(<source file name>), if it is
-               --  defined, otherwise Compiler'Switches (<language name>),
-               --  if defined.
-
-               Add_Compilation_Switches (Source_Identity);
-
-               --  4) the switches specified on the gprbuild command line
-               --  for all compilers, following "-cargs", if any.
-
-               if All_Language_Compiling_Options.Last /= 0 then
-                  declare
-                     Options : String_List
-                       (1 .. All_Language_Compiling_Options.Last);
-
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) :=
-                          All_Language_Compiling_Options.Table (Index);
-                     end loop;
-
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
-
-               --  6) the switches specified on the gprbuild command line
-               --  for the compiler of the language, following
-               --  -cargs:<language>.
-
-               Options_Instance :=
-                 Compiling_Options_HTable.Get (Language_Name);
-
-               if Options_Instance /= No_Comp_Option_Table then
-                  declare
-                     Options : String_List
-                       (1 .. Compiling_Options.Last (Options_Instance.all));
-
-                  begin
-                     for Index in Options'Range loop
-                        Options (Index) := Options_Instance.Table (Index);
-                     end loop;
-
-                     Add_Options
-                       (Options,
-                        To            => Compilation_Options,
-                        Display_All   => True,
-                        Display_First => True);
-                  end;
-               end if;
+               Set_Options_For_File (Id);
 
                if Check_Switches and then not Compilation_Needed then
-                  --  Check switches
-
-                  declare
-                     File         : Ada.Text_IO.File_Type;
-                     Line         : String (1 .. 1_000);
-                     Last         : Natural;
-                     Last_Option  : constant Natural :=
-                       Compilation_Options.Last;
-                  begin
-                     --  Add temporarily the trailing required switches, if any
-
-                     declare
-                        List    : Name_List_Index :=
-                          Config.Compiler_Trailing_Required_Switches;
-                        Nam_Nod : Name_Node;
-
-                     begin
-                        while List /= No_Name_List loop
-                           Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                           Add_Option
-                             (Nam_Nod.Name,
-                              To      => Compilation_Options,
-                              Display => Verbose_Mode);
-                           List := Nam_Nod.Next;
-                        end loop;
-                     end;
-
-                     Open
-                       (File,
-                        In_File,
-                        Get_Name_String (Source_Identity.Switches_Path));
-
-                     if End_Of_File (File) then
-                        if Verbose_Mode then
-                           Write_Line
-                             ("    -> switches file is empty");
-                        end if;
-
-                        Compilation_Needed := True;
-
-                     else
-                        Get_Line (File, Line, Last);
-
-                        if Line (1 .. Last) /=
-                          String (Source_Identity.Object_TS)
-                        then
-                           if Verbose_Mode then
-                              Write_Line
-                                ("    -> different object file timestamp");
-                              Write_Line ("       " & Line (1 .. Last));
-                              Write_Line
-                                ("       " &
-                                 String (Source_Identity.Object_TS));
-                           end if;
-
-                           Compilation_Needed := True;
-                        end if;
-                     end if;
-
-                     if not Compilation_Needed then
-                        for Index in 1 .. Compilation_Options.Last loop
-                           if End_Of_File (File) then
-                              if Verbose_Mode then
-                                 Write_Line ("    -> more switches");
-                              end if;
-
-                              Compilation_Needed := True;
-                              exit;
-                           end if;
-
-                           Get_Line (File, Line, Last);
-
-                           if Line (1 .. Last) /=
-                             Compilation_Options.Options (Index).all
-                           then
-                              if Verbose_Mode then
-                                 Write_Line ("    -> different switches");
-                              end if;
-
-                              Compilation_Needed := True;
-                              exit;
-                           end if;
-                        end loop;
-                     end if;
-
-                     if not Compilation_Needed then
-                        if End_Of_File (File) then
-                           if Verbose_Mode then
-                              Write_Line ("    -> up to date");
-                           end if;
-
-                        else
-                           if Verbose_Mode then
-                              Write_Line ("    -> less switches");
-                           end if;
-
-                           Compilation_Needed := True;
-                        end if;
-                     end if;
-
-                     Close (File);
-
-                     Compilation_Options.Last := Last_Option;
-
-                  exception
-                     when others =>
-                        if Verbose_Mode then
-                           Write_Line ("    -> no switches file");
-                        end if;
-
-                        Compilation_Needed := True;
-                  end;
+                  Compilation_Needed := Check_Switches_File (Id);
                end if;
             end if;
 
             if Compilation_Needed then
-               --  Update, if necessary, the path of the object file, of the
-               --  dependency file and of the switches file, in the case of
-               --  the compilation of a source in an extended project, when
-               --  the source is in a project being extended.
-
-               Source_Identity.Object_Project := Source_Project;
-
-               if Source_Project /= Source_Identity.Project then
-                  if Source_Identity.Object /= No_File then
-                     Get_Name_String (Source_Project.Object_Directory.Name);
-                     Add_Str_To_Name_Buffer
-                       (Get_Name_String (Source_Identity.Object));
-                     Source_Identity.Object_Path := Name_Find;
-                  end if;
-
-                  if Source_Identity.Dep_Name /= No_File then
-                     Get_Name_String (Source_Project.Object_Directory.Name);
-                     Add_Str_To_Name_Buffer
-                       (Get_Name_String (Source_Identity.Dep_Name));
-                     Source_Identity.Dep_Path := Name_Find;
-                  end if;
-
-                  if Source_Identity.Switches /= No_File then
-                     Get_Name_String (Source_Project.Object_Directory.Name);
-                     Add_Str_To_Name_Buffer
-                       (Get_Name_String (Source_Identity.Switches));
-                     Source_Identity.Switches_Path := Name_Find;
-                  end if;
-               end if;
+               Update_Object_Path (Id);
 
                --  Record the last recorded option index, to be able to
                --  write the switches file later.
@@ -4635,262 +4825,8 @@ package body Buildgpr is
                   Last_Recorded_Option := -1;
                end if;
 
-               --  Add dependency option, if there is one
-
-               List := Language.Config.Dependency_Option;
-
-               if List /= No_Name_List then
-                  loop
-                     Node := Project_Tree.Name_Lists.Table (List);
-                     List := Node.Next;
-
-                     if List = No_Name_List then
-                        declare
-                           Dep_Name : constant File_Name_Type :=
-                             Source_Identity.Dep_Name;
-                           Switch   : constant String :=
-                             Get_Name_String (Node.Name) &
-                           Get_Name_String (Dep_Name);
-
-                        begin
-                           Add_Option
-                             (Switch,
-                              To      => Compilation_Options,
-                              Display => Opt.Verbose_Mode);
-                           exit;
-                        end;
-
-                     else
-                        Add_Option
-                          (Value   => Node.Name,
-                           To      => Compilation_Options,
-                           Display => Opt.Verbose_Mode);
-                     end if;
-                  end loop;
-               end if;
-
-               --  Set the environment or additional switches for visibility
-               --  on source directories.
-
-               if Source_Project /= Current_Project or else
-                 Language /= Current_Language_Ind
-               then
-                  Current_Project      := Source_Project;
-                  Current_Language_Ind := Language;
-
-                  if Local_Projects_HT.Get (Local_Projects, Source_Project)
-                       .Include_Language /= Language
-                    and then
-                      (Config.Include_Option /= No_Name_List
-                       or else
-                         Config.Include_Path /= No_Name
-                       or else
-                         Config.Include_Path_File /= No_Name)
-                  then
-                     Local_Projects_HT.Set
-                       (Local_Projects, Source_Project,
-                        (Include_Language => Language));
-
-                     declare
-                        Index : Positive;
-                        NL    : Name_List_Index;
-
-                     begin
-                        Index := 1;
-                        NL := Config.Include_Compatible_Languages;
-                        while NL /= No_Name_List loop
-                           Index := Index + 1;
-                           NL := Project_Tree.Name_Lists.Table (NL).Next;
-                        end loop;
-
-                        declare
-                           Languages : Name_Ids (1 .. Index);
-
-                        begin
-                           Index := 1;
-                           Languages (Index) := Language_Name;
-
-                           NL := Config.Include_Compatible_Languages;
-                           while NL /= No_Name_List loop
-                              Index := Index + 1;
-                              Languages (Index) :=
-                                Project_Tree.Name_Lists.Table (NL).Name;
-                              NL := Project_Tree.Name_Lists.Table (NL).Next;
-                           end loop;
-
-                           Get_Directories
-                             (Source_Project,
-                              Sources   => True,
-                              Languages => Languages);
-                        end;
-                     end;
-
-                     if Config.Include_Option /= No_Name_List then
-                        --  Get the value of Imported_Directories_Switches
-
-                        declare
-                           List : Name_List_Index;
-                           Nam  : Name_Node;
-
-                        begin
-                           Include_Options.Last := 0;
-
-                           for Index in 1 .. Directories.Last loop
-                              List := Config.Include_Option;
-
-                              loop
-                                 Nam :=
-                                   Project_Tree.Name_Lists.Table (List);
-                                 exit when Nam.Next = No_Name_List;
-
-                                 Add_Option
-                                   (Nam.Name,
-                                    To      => Include_Options,
-                                    Display => Opt.Verbose_Mode);
-                                 List := Nam.Next;
-                              end loop;
-
-                              Get_Name_String (Directories.Table (Index));
-
-                              while Name_Len > 1 and then
-                                (Name_Buffer (Name_Len) =
-                                   Directory_Separator
-                                 or else Name_Buffer (Name_Len) = '/')
-                              loop
-                                 Name_Len := Name_Len - 1;
-                              end loop;
-
-                              case Config.Path_Syntax is
-                                 when Canonical =>
-                                    Add_Option
-                                      (Get_Name_String (Nam.Name) &
-                                       Name_Buffer (1 .. Name_Len),
-                                       To      => Include_Options,
-                                       Display => Opt.Verbose_Mode);
-
-                                 when Host =>
-                                    declare
-                                       Host_Path : constant String_Access :=
-                                         To_Host_Dir_Spec
-                                           (Name_Buffer
-                                                (1 .. Name_Len),
-                                            False);
-
-                                    begin
-                                       Add_Option
-                                         (Get_Name_String (Nam.Name) &
-                                          Host_Path.all,
-                                          To      => Include_Options,
-                                          Display => Opt.Verbose_Mode);
-                                    end;
-                              end case;
-                           end loop;
-                        end;
-
-                        Source_Project.Imported_Directories_Switches :=
-                          new String_List'
-                            (Include_Options.Options
-                                 (1 .. Include_Options.Last));
-
-                     elsif Config.Include_Path_File /= No_Name then
-                        --  Create temp path file and store its name in
-                        --  Include_Path_File.
-
-                        declare
-                           FD     : File_Descriptor;
-                           Len    : Integer;
-                           Status : Boolean;
-                        begin
-                           Prj.Env.Create_New_Path_File
-                             (In_Tree   => Project_Tree,
-                              Path_FD   => FD,
-                              Path_Name => Source_Project.Include_Path_File);
-
-                           if FD = Invalid_FD then
-                              Fail_Program
-                                ("could not create temporary path file");
-                           end if;
-
-                           for Index in 1 .. Directories.Last loop
-                              Get_Name_String
-                                (Directories.Table (Index));
-                              Name_Len := Name_Len + 1;
-                              Name_Buffer (Name_Len) := ASCII.LF;
-
-                              Len :=
-                                Write
-                                  (FD, Name_Buffer (1)'Address, Name_Len);
-
-                              if Len /= Name_Len then
-                                 Fail_Program ("disk full");
-                              end if;
-                           end loop;
-
-                           Close (FD, Status);
-
-                           if not Status then
-                              Fail_Program ("disk full");
-                           end if;
-                        end;
-
-                     elsif Config.Include_Path /= No_Name then
-                        --  Get the value of Include_Path
-
-                        if Path_Buffer = null then
-                           Path_Buffer :=
-                             new String (1 .. Path_Buffer_Initial_Length);
-                        end if;
-
-                        Path_Last := 0;
-
-                        for Index in 1 .. Directories.Last loop
-                           if Path_Last /= 0 then
-                              Add_To_Path (Path_Separator);
-                           end if;
-
-                           Get_Name_String (Directories.Table (Index));
-
-                           while Name_Len > 1 and then
-                             (Name_Buffer (Name_Len) = Directory_Separator
-                              or else Name_Buffer (Name_Len) = '/')
-                           loop
-                              Name_Len := Name_Len - 1;
-                           end loop;
-
-                           Add_To_Path (Name_Buffer (1 .. Name_Len));
-                        end loop;
-
-                        Source_Project.Include_Path :=
-                          new String'(Path_Buffer (1 .. Path_Last));
-                     end if;
-                  end if;
-
-                  if Config.Include_Path_File /= No_Name then
-                     Setenv (Get_Name_String (Config.Include_Path_File),
-                       Get_Name_String (Source_Project.Include_Path_File));
-
-                  elsif Config.Include_Path /= No_Name then
-                     Setenv (Get_Name_String (Config.Include_Path),
-                             Source_Project.Include_Path.all);
-
-                     if Verbose_Mode then
-                        Write_Str (Get_Name_String (Config.Include_Path));
-                        Write_Str (" = ");
-                        Write_Line (Source_Project.Include_Path.all);
-                     end if;
-                  end if;
-               end if;
-
-               --  If Include_Option is specified, add the options for the
-               --  project.
-
-               if Config.Include_Option /= No_Name_List then
-                  Add_Options
-                    (Source_Project.Imported_Directories_Switches.all,
-                     To            => Compilation_Options,
-                     Display_All   => Opt.Verbose_Mode,
-                     Display_First => False);
-               end if;
+               Add_Dependency_Options (Id);
+               Set_Env_For_Include_Dirs (Id);
 
                --  If Config_File_Switches is specified, check if a config
                --  file need to be specified.
@@ -4904,7 +4840,7 @@ package body Buildgpr is
                   Create_Config_File
                     (For_Project => Source_Project,
                      Config      => Config,
-                     Language    => Language_Name);
+                     Language    => Id.Language.Name);
 
                   if Source_Project.Config_File_Name /= No_Path then
                      Add_Config_File_Switch
@@ -4922,7 +4858,7 @@ package body Buildgpr is
                             (Project        => Main_Project,
                              Package_Name   => Name_Builder,
                              Attribute_Name => Name_Global_Config_File,
-                             Language       => Language_Name);
+                             Language       => Id.Language.Name);
 
                         if Config_File_Path /= No_Path then
                            Add_Config_File_Switch
@@ -4935,7 +4871,7 @@ package body Buildgpr is
                             (Project        => Source_Project,
                              Package_Name   => Name_Compiler,
                              Attribute_Name => Name_Local_Config_File,
-                             Language       => Language_Name);
+                             Language       => Id.Language.Name);
 
                         if Config_File_Path /= No_Path then
                            Add_Config_File_Switch
@@ -4969,7 +4905,7 @@ package body Buildgpr is
 
                      Prj.Env.Create_Mapping_File
                        (Project  => Source_Project,
-                        Language => Language_Name,
+                        Language => Id.Language.Name,
                         In_Tree  => Project_Tree,
                         Name     => Mapping_File_Path);
                   end if;
@@ -5029,7 +4965,7 @@ package body Buildgpr is
                   Source_Path : String_Access;
 
                begin
-                  Get_Name_String (Source_Identity.Path.Name);
+                  Get_Name_String (Id.Path.Name);
 
                   case Config.Path_Syntax is
                      when Canonical =>
@@ -5071,7 +5007,7 @@ package body Buildgpr is
                      end loop;
 
                      Add_Str_To_Name_Buffer
-                       (Get_Name_String (Source_Identity.Object));
+                       (Get_Name_String (Id.Object));
 
                      Add_Option
                        (Name_Buffer (1 .. Name_Len),
@@ -5161,33 +5097,27 @@ package body Buildgpr is
 
                   Add_Process
                     (Pid,
-                     Source_Identity,
+                     Id,
                      Mapping_File_Path,
                      Compilation,
                      Options);
                end;
             elsif Closure_Needed and then
-              Source_Identity.Language.Config.Dependency_Kind = ALI_File
+              Id.Language.Config.Dependency_Kind = ALI_File
             then
-               Record_ALI_For (Source_Identity);
+               Record_ALI_For (Id);
             end if;
          end if;
       end Process_Project_Phase_1;
 
-   --  Start of processing for Compilation_Phase
+      --------------------------------
+      -- Must_Exit_Because_Of_Error --
+      --------------------------------
 
-   begin
-      Outstanding_Compiles := 0;
-
-      --  Then process each files in the queue (new files might be added to
-      --  the queue as a result)
-
-      Compilation_Loop :
-      while not Queue.Is_Empty or else Outstanding_Compiles > 0 loop
-
-         --  If the user does not want to keep going in case of errors then
-         --  wait for the remaining outstanding compiles and then exit.
-
+      function Must_Exit_Because_Of_Error return Boolean is
+         Source_Identity : Source_Id;
+         Compilation_OK  : Boolean;
+      begin
          if Bad_Compilations.Last > 0 and then not Keep_Going then
             while Outstanding_Compiles > 0 loop
                Await_Compile (Source_Identity, Compilation_OK);
@@ -5197,26 +5127,36 @@ package body Buildgpr is
                end if;
             end loop;
 
-            exit Compilation_Loop;
+            return True;
          end if;
+         return False;
+      end Must_Exit_Because_Of_Error;
 
-         --  PHASE 1: Check if there is more work that we can do (ie the Queue
-         --  is non empty). If there is, do it only if we have not yet used
-         --  up all the available processes.
+      -------------------------------
+      -- Start_Compile_If_Possible --
+      -------------------------------
 
-         if not Queue.Is_Empty and then
-           Outstanding_Compiles < Maximum_Processes
+      procedure Start_Compile_If_Possible is
+         Source_File_Name : File_Name_Type;
+         Source_Identity  : Source_Id;
+      begin
+         if not Queue.Is_Empty
+           and then Outstanding_Compiles < Maximum_Processes
          then
-            Queue.Extract (Source_File_Name, Source_Identity, Source_Project);
-            Process_Project_Phase_1
-              (Ultimate_Extending_Project_Of (Source_Project));
+            Queue.Extract (Source_File_Name, Source_Identity);
+            Process_Project_Phase_1 (Source_Identity);
          end if;
+      end Start_Compile_If_Possible;
 
-         --  PHASE 2: Now check if we should wait for a compilation to
-         --  finish. This is the case if all the available processes are
-         --  busy compiling sources or there is nothing else to do
-         --  (that is the Q is empty and there are outstanding compilations).
+      -----------------------------
+      -- Wait_For_Available_Slot --
+      -----------------------------
 
+      procedure Wait_For_Available_Slot is
+         Source_Identity : Source_Id;
+         Compilation_OK  : Boolean;
+         No_Check        : Boolean;
+      begin
          if Outstanding_Compiles = Maximum_Processes
            or else (Queue.Is_Empty and then Outstanding_Compiles > 0)
          then
@@ -5230,38 +5170,36 @@ package body Buildgpr is
                Imports.Reset;
                Included_Sources.Set_Last (0);
 
-               declare
-                  No_Check : Boolean;
-               begin
-                  case Source_Identity.Language.Config.Dependency_Kind is
-                     when None     => null;
-                     when Makefile => Phase_2_Makefile (Source_Identity);
-                     when ALI_File => Phase_2_ALI (Source_Identity);
-                  end case;
+               case Source_Identity.Language.Config.Dependency_Kind is
+                  when None     => null;
+                  when Makefile =>
+                     Compilation_OK := Phase_2_Makefile (Source_Identity);
+                  when ALI_File =>
+                     Compilation_OK := Phase_2_ALI (Source_Identity);
+               end case;
 
-                  --  If the compilation was invalidated, delete the
-                  --  compilation artifacts.
+               --  If the compilation was invalidated, delete the compilation
+               --  artifacts.
 
-                  if not Compilation_OK then
-                     if Source_Identity.Dep_Path /= No_Path then
-                        Delete_File
-                          (Get_Name_String (Source_Identity.Dep_Path),
-                           No_Check);
-                     end if;
-
-                     if Source_Identity.Object_Path /= No_Path then
-                        Delete_File
-                          (Get_Name_String (Source_Identity.Object_Path),
-                           No_Check);
-                     end if;
-
-                     if Source_Identity.Switches_Path /= No_Path then
-                        Delete_File
-                          (Get_Name_String (Source_Identity.Switches_Path),
-                           No_Check);
-                     end if;
+               if not Compilation_OK then
+                  if Source_Identity.Dep_Path /= No_Path then
+                     Delete_File
+                       (Get_Name_String (Source_Identity.Dep_Path),
+                        No_Check);
                   end if;
-               end;
+
+                  if Source_Identity.Object_Path /= No_Path then
+                     Delete_File
+                       (Get_Name_String (Source_Identity.Object_Path),
+                        No_Check);
+                  end if;
+
+                  if Source_Identity.Switches_Path /= No_Path then
+                     Delete_File
+                       (Get_Name_String (Source_Identity.Switches_Path),
+                        No_Check);
+                  end if;
+               end if;
             end if;
 
             if not Compilation_OK then
@@ -5273,23 +5211,35 @@ package body Buildgpr is
                Record_ALI_For (Source_Identity);
             end if;
          end if;
+      end Wait_For_Available_Slot;
 
-         --  Phase 3: Check if we recorded good ALI files. If yes process
-         --  them now in the order in which they have been recorded. There
-         --  are two occasions in which we record good ali files. The first is
-         --  in phase 1 when, after scanning an existing ALI file we realize
-         --  it is up-to-date, the second instance is after a successful
-         --  compilation.
+      -------------------------------
+      -- Fill_Queue_From_ALI_Files --
+      -------------------------------
 
-         declare
-            The_ALI   : ALI.ALI_Id;
+      procedure Fill_Queue_From_ALI_Files is
+         The_ALI   : ALI.ALI_Id;
+      begin
+         while Good_ALI_Present loop
+            The_ALI := Get_Next_Good_ALI;
+            Queue.Insert_Withed_Sources_For (The_ALI);
+         end loop;
+      end Fill_Queue_From_ALI_Files;
 
-         begin
-            while Good_ALI_Present loop
-               The_ALI := Get_Next_Good_ALI;
-               Queue.Insert_Withed_Sources_For (The_ALI);
-            end loop;
-         end;
+   --  Start of processing for Compilation_Phase
+
+   begin
+      Outstanding_Compiles := 0;
+
+      --  Then process each files in the queue (new files might be added to
+      --  the queue as a result)
+
+      Compilation_Loop :
+      while not Queue.Is_Empty or else Outstanding_Compiles > 0 loop
+         exit Compilation_Loop when Must_Exit_Because_Of_Error;
+         Start_Compile_If_Possible;
+         Wait_For_Available_Slot;
+         Fill_Queue_From_ALI_Files;
 
          if Display_Compilation_Progress then
             Write_Str ("completed ");
@@ -5303,7 +5253,18 @@ package body Buildgpr is
          end if;
       end loop Compilation_Loop;
 
-      Local_Projects_HT.Reset (Local_Projects);
+      declare
+         Data : Local_Project_Data :=
+           Local_Projects_HT.Get_First (Local_Projects);
+      begin
+         while Data /= No_Local_Project_Data loop
+            Free (Data.Include_Path);
+            Free (Data.Imported_Dirs_Switches);
+            Data := Local_Projects_HT.Get_Next (Local_Projects);
+         end loop;
+
+         Local_Projects_HT.Reset (Local_Projects);
+      end;
    end Compilation_Phase;
 
    ---------------------
@@ -6158,7 +6119,6 @@ package body Buildgpr is
    --------------
 
    procedure Gprbuild is
-      Proj : Project_List;
       User_Project_Node : Project_Node_Id;
    begin
       --  First initialize and read the command line arguments
@@ -6238,11 +6198,7 @@ package body Buildgpr is
          Prj.Err.Initialize;
       end if;
 
-      Proj := Project_Tree.Projects;
-      while Proj /= null loop
-         Compute_All_Imported_Projects (Proj.Project);
-         Proj := Proj.Next;
-      end loop;
+      Compute_All_Imported_Projects (Project_Tree);
 
       --  Update info on all sources
 
@@ -6331,7 +6287,6 @@ package body Buildgpr is
                Finish_Program (Fatal => False);
             end if;
          end if;
-
       end if;
 
       --  Get the builder switches in the main project, if any
@@ -6838,6 +6793,7 @@ package body Buildgpr is
    begin
       --  Systematically recompute the time stamp. In fact, this function
       --  is only called once per source file.
+      --  ??? System call
       Source.Source_TS := File_Stamp (Source.Path.Name);
 
       if Source.Language.Config.Kind = Unit_Based
@@ -6869,6 +6825,9 @@ package body Buildgpr is
 
                Obj_Path : constant Path_Name_Type := Create_Name (Object_Path);
 
+               --  ??? System call
+               Stamp : constant Time_Stamp_Type := File_Stamp (Obj_Path);
+
                procedure Set_Object_Project;
 
                ------------------------
@@ -6879,7 +6838,7 @@ package body Buildgpr is
                begin
                   Source.Object_Project := Obj_Proj;
                   Source.Object_Path    := Obj_Path;
-                  Source.Object_TS      := File_Stamp (Obj_Path);
+                  Source.Object_TS      := Stamp;
 
                   if Source.Language.Config.Dependency_Kind /= None then
                      declare
@@ -6892,6 +6851,8 @@ package body Buildgpr is
                                         Directory     => Dir);
                      begin
                         Source.Dep_Path := Create_Name (Dep_Path);
+
+                        --  ??? System call
                         Source.Dep_TS   := File_Stamp (Source.Dep_Path);
                      end;
                   end if;
@@ -6907,18 +6868,20 @@ package body Buildgpr is
                                           Directory     => Dir);
                   begin
                      Source.Switches_Path := Create_Name (Switches_Path);
+
+                     --  ??? System call
                      Source.Switches_TS := File_Stamp (Source.Switches_Path);
                   end;
                end Set_Object_Project;
 
             begin
-               if File_Stamp (Obj_Path) /= Empty_Time_Stamp then
+               if Stamp /= Empty_Time_Stamp then
                   Set_Object_Project;
                end if;
 
                if Obj_Proj.Extended_By = No_Project then
                   --  No project extends this one. We are then using the
-                  --  u;ltimate extending project.
+                  --  ultimate extending project.
 
                   if Source.Object_Project = No_Project then
                      Set_Object_Project;
@@ -6946,6 +6909,8 @@ package body Buildgpr is
                               Directory     => Object_Dir);
          begin
             Source.Dep_Path := Create_Name (Dep_Path);
+
+            --  ??? System call
             Source.Dep_TS   := File_Stamp (Source.Dep_Path);
          end;
       end if;
@@ -7879,20 +7844,12 @@ package body Buildgpr is
                      if
                        Arg_Length > Main_Proj.Config.Max_Command_Line_Length
                      then
-                        List := Main_Proj.Config.Resp_File_Options;
-
-                        if List /= No_Name_List then
-                           Min_Number_Of_Objects := 1;
-
-                        else
+                        if Main_Proj.Config.Resp_File_Options =
+                          No_Name_List
+                        then
                            Min_Number_Of_Objects := 0;
-
-                           while List /= No_Name_List loop
-                              Min_Number_Of_Objects :=
-                                Min_Number_Of_Objects + 1;
-                              List :=
-                                Project_Tree.Name_Lists.Table (List).Next;
-                           end loop;
+                        else
+                           Min_Number_Of_Objects := 1;
                         end if;
 
                         --  Don't create a project file if there would not be
@@ -9306,7 +9263,6 @@ package body Buildgpr is
                      declare
                         Source_File_Name : File_Name_Type;
                         Source_Identity  : Source_Id;
-                        Source_Project   : Project_Id;
                         Roots            : Roots_Access;
                         Source           : Source_Id;
                         Iter             : Source_Iterator;
@@ -9321,8 +9277,7 @@ package body Buildgpr is
                         then
                            Queue.Insert
                              (Source_File_Name => Main_Source.File,
-                              Source_Identity  => Main_Source,
-                              Source_Project   => Main_Source.Project);
+                              Source_Identity  => Main_Source);
                         end if;
 
                         Roots := Root_Sources.Get (Main_Source.File);
@@ -9332,8 +9287,7 @@ package body Buildgpr is
                               Source := Roots (J);
                               Queue.Insert
                                 (Source_File_Name => Source.File,
-                                 Source_Identity  => Source,
-                                 Source_Project   => Source.Project);
+                                 Source_Identity  => Source);
                            end loop;
                         end if;
 
@@ -9397,8 +9351,7 @@ package body Buildgpr is
 
                                  Queue.Insert
                                    (Source_File_Name => Source.File,
-                                    Source_Identity  => Source,
-                                    Source_Project   => Source.Project);
+                                    Source_Identity  => Source);
                               end if;
 
                               Next (Iter);
@@ -9419,8 +9372,7 @@ package body Buildgpr is
                            while not Queue.Is_Empty loop
                               Queue.Extract
                                 (Source_File_Name,
-                                 Source_Identity,
-                                 Source_Project);
+                                 Source_Identity);
 
                               --  Get the dependency file for this source
 
@@ -9433,14 +9385,16 @@ package body Buildgpr is
 
                               if (not Is_Regular_File
                                   (Get_Name_String (Dep_Path)))
-                                and then Source_Project.Library
-                                and then Source_Project.Library_ALI_Dir /=
-                                  No_Path_Information
+                                and then Source_Identity.Project.Library
+                                and then
+                                  Source_Identity.Project.Library_ALI_Dir /=
+                                    No_Path_Information
                               then
                                  Name_Len := 0;
                                  Add_Str_To_Name_Buffer
                                    (Get_Name_String
-                                      (Source_Project.Library_ALI_Dir.Name));
+                                      (Source_Identity.Project
+                                       .Library_ALI_Dir.Name));
                                  Add_Char_To_Name_Buffer
                                    (Directory_Separator);
                                  Add_Str_To_Name_Buffer
@@ -9455,7 +9409,7 @@ package body Buildgpr is
 
                               declare
                                  Proj : Project_Id :=
-                                          Source_Project.Extended_By;
+                                          Source_Identity.Project.Extended_By;
                               begin
                                  while Proj /= No_Project loop
                                     Name_Len := 0;
@@ -9668,7 +9622,8 @@ package body Buildgpr is
                           (Exchange_File,
                            Binding_Label (Gprexch.Compiler_Path));
                         Put_Line
-                          (Exchange_File, Config.Compiler_Driver_Path.all);
+                          (Exchange_File,
+                           Get_Compiler_Driver_Path (B_Data.Language).all);
 
                         --  Leading required switches, if any
 
@@ -9980,33 +9935,7 @@ package body Buildgpr is
                                     Sources   => False,
                                     Languages => No_Names);
 
-                                 if Path_Buffer = null then
-                                    Path_Buffer :=
-                                      new String
-                                        (1 .. Path_Buffer_Initial_Length);
-                                 end if;
-
-                                 Path_Last := 0;
-
-                                 for Index in 1 .. Directories.Last loop
-                                    if Path_Last /= 0 then
-                                       Add_To_Path (Path_Separator);
-                                    end if;
-
-                                    Add_To_Path
-                                      (Get_Name_String
-                                         (Directories.Table (Index)));
-
-                                    if Current_Verbosity = High then
-                                       Put_Line
-                                         (Get_Name_String
-                                            (Directories.Table (Index)));
-                                    end if;
-                                 end loop;
-
-                                 Path_Name :=
-                                   new String'(Path_Buffer
-                                               (1 .. Path_Last));
+                                 Path_Name := Create_Path_From_Dirs;
                                  Main_Proj.Objects_Path := Path_Name;
                               end if;
 
@@ -10250,7 +10179,6 @@ package body Buildgpr is
       type Q_Record is record
          Name : File_Name_Type;
          Id   : Source_Id;
-         Proj : Project_Id;
       end record;
 
       package Q is new Table.Table
@@ -10270,13 +10198,11 @@ package body Buildgpr is
 
       procedure Extract
         (Source_File_Name : out File_Name_Type;
-         Source_Identity  : out Source_Id;
-         Source_Project   : out Project_Id)
+         Source_Identity  : out Source_Id)
       is
       begin
          Source_File_Name := Q.Table (Q_Front).Name;
          Source_Identity  := Q.Table (Q_Front).Id;
-         Source_Project   := Q.Table (Q_Front).Proj;
          Q_Front := Q_Front + 1;
       end Extract;
 
@@ -10305,8 +10231,7 @@ package body Buildgpr is
 
       procedure Insert
         (Source_File_Name : File_Name_Type;
-         Source_Identity  : Source_Id;
-         Source_Project   : Project_Id)
+         Source_Identity  : Source_Id)
       is
       begin
          for Index in 1 .. Q.Last loop
@@ -10324,8 +10249,7 @@ package body Buildgpr is
          Q.Append
            (New_Val =>
               (Name => Source_File_Name,
-               Id   => Source_Identity,
-               Proj => Source_Project));
+               Id   => Source_Identity));
       end Insert;
 
       procedure Insert_Withed_Sources_For (The_ALI : ALI.ALI_Id) is
@@ -10381,10 +10305,7 @@ package body Buildgpr is
                   end loop;
 
                   if Src_Id /= No_Source then
-                     Queue.Insert
-                       (Sfile,
-                        Src_Id,
-                        Src_Id.Project);
+                     Queue.Insert (Sfile, Src_Id);
                   end if;
                end if;
             end loop;
@@ -10431,13 +10352,11 @@ package body Buildgpr is
                   if (Unit_Based
                       or else Source.Unit = No_Unit_Index
                       or else Source.Project.Library)
-                    and then not Is_Subunit (Source)
+                    and then not Is_Subunit (Source)  --  ??? System call here
                   then
                      Insert
                        (Source_File_Name => Source.File,
-                        Source_Identity  => Source,
-                        Source_Project   => Ultimate_Extending_Project_Of
-                          (Source.Project));
+                        Source_Identity  => Source);
                   end if;
                end if;
             end if;
