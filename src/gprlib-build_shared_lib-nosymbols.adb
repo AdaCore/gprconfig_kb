@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2008, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -124,7 +124,7 @@ procedure Build_Shared_Lib is
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
          if Partial_Linker_Path = null then
-            Osint.Fail ("unable to locate " & Partial_Linker.all);
+            Osint.Fail ("unable to locate linker " & Partial_Linker.all);
          end if;
       end if;
 

@@ -1234,7 +1234,7 @@ begin
          Gnatbind_Path := Locate_Exec_On_Path (Gnatbind_Name.all);
 
          if Gnatbind_Path = null then
-            Osint.Fail ("unable to locate " & Gnatbind_Name.all);
+            Osint.Fail ("unable to locate binder " & Gnatbind_Name.all);
          end if;
 
          Last_Bind_Option := 0;
@@ -1477,7 +1477,7 @@ begin
          Compiler_Path := Locate_Exec_On_Path (Compiler_Name.all);
 
          if Compiler_Path = null then
-            Osint.Fail ("unable to locate " & Compiler_Name.all);
+            Osint.Fail ("unable to locate compiler " & Compiler_Name.all);
          end if;
 
          Last_Bind_Option := 0;
@@ -1594,7 +1594,7 @@ begin
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
          if Partial_Linker_Path = null then
-            Osint.Fail ("unable to locate " & Partial_Linker.all);
+            Osint.Fail ("unable to locate linker " & Partial_Linker.all);
          end if;
       end if;
 

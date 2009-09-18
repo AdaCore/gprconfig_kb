@@ -157,6 +157,8 @@ package Gpr_Util is
      (Lang : Language_Ptr) return String_Access;
    --  Get, from the config, the path of the compiler driver. This is first
    --  looked for on the PATH if needed.
+   --  Returns "null" if no compiler driver was specified for the language, and
+   --  exit with an error if one was specified but not found.
 
    function Normalized_Hostname return String;
    --  Return the normalized name of the host on which gprbuild is running. The

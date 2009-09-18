@@ -131,8 +131,7 @@ package body Gpr_Util is
    ------------------------------
 
    function Get_Compiler_Driver_Path
-     (Lang : Language_Ptr) return String_Access
-   is
+     (Lang : Language_Ptr) return String_Access is
    begin
       if Lang.Config.Compiler_Driver_Path = null then
          declare
@@ -140,6 +139,10 @@ package body Gpr_Util is
               Get_Name_String (Lang.Config.Compiler_Driver);
 
          begin
+            if Compiler_Name = "" then
+               return null;
+            end if;
+
             Lang.Config.Compiler_Driver_Path :=
               Locate_Exec_On_Path (Compiler_Name);
 
@@ -148,6 +151,7 @@ package body Gpr_Util is
             end if;
          end;
       end if;
+
       return Lang.Config.Compiler_Driver_Path;
    end Get_Compiler_Driver_Path;
 
