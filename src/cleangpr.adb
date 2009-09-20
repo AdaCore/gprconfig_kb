@@ -51,6 +51,7 @@ with Prj.Util;    use Prj.Util;
 with Snames;
 with Switch;      use Switch;
 with Table;
+with Types;       use Types;
 
 package body Cleangpr is
 
@@ -125,7 +126,7 @@ package body Cleangpr is
    --  of a source of the project in a library ALI directory.
 
    procedure Clean_Project (Project : Project_Id);
-   --  Do the cleaning work when a project file is specified.
+   --  Do the cleaning work for Project.
    --  This procedure calls itself recursively when there are several
    --  project files in the tree rooted at the main project file and switch -r
    --  has been specified.
@@ -135,7 +136,7 @@ package body Cleangpr is
 
    procedure Delete_Binder_Generated_Files
      (Dir    : String;
-      Source : File_Name_Type);
+      Source : Source_Id);
    --  Delete the binder generated file in directory Dir for Source
 
    procedure Display_Copyright;
@@ -569,6 +570,9 @@ package body Cleangpr is
       Main_Source_File : File_Name_Type;
       --  Name of executable on the command line without directory info
 
+      Main_Index : Int;
+      --  The source index, if any, of the main source file
+
       Executable : File_Name_Type;
       --  Name of the executable file
 
@@ -788,12 +792,16 @@ package body Cleangpr is
                   Main_Source_File := Create_Name (Main);
                end;
 
+               Main_Index := Mains.Get_Index;
+
                Iter := For_Each_Source (Project_Tree);
 
                loop
                   Source := Prj.Element (Iter);
                   exit when Source = No_Source
-                    or else Source.File = Main_Source_File;
+                    or else
+                      (Source.File = Main_Source_File and then
+                       Source.Index = Main_Index);
                   Next (Iter);
                end loop;
 
@@ -805,7 +813,7 @@ package body Cleangpr is
                       (Project  => Main_Project,
                        In_Tree  => Project_Tree,
                        Main     => Main_Source_File,
-                       Index    => 0,
+                       Index    => Main_Index,
                        Ada_Main => Source.Language.Name = Snames.Name_Ada);
 
                   declare
@@ -830,7 +838,7 @@ package body Cleangpr is
                   Delete_Binder_Generated_Files
                     (Get_Name_String
                        (Project.Object_Directory.Name),
-                     Main_Source_File);
+                     Source);
                end if;
             end loop;
          end;
@@ -905,7 +913,7 @@ package body Cleangpr is
 
    procedure Delete_Binder_Generated_Files
      (Dir    : String;
-      Source : File_Name_Type)
+      Source : Source_Id)
    is
       Current     : constant String := Get_Current_Dir;
       B_Data      : Binding_Data;
@@ -918,20 +926,10 @@ package body Cleangpr is
       if There_Are_Binder_Drivers then
          --  Get the main base name
 
-         Get_Name_String (Source);
-         Osint.Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
-
-         --  Remove the extension, if any, that is the last part of the base
-         --  name starting with a dot and following some characters.
-
-         for J in reverse 2 .. Name_Len loop
-            if Name_Buffer (J) = '.' then
-               Name_Len := J - 1;
-               exit;
-            end if;
-         end loop;
-
-         Base_Name := Name_Find;
+         Base_Name := Base_Name_Index_For
+           (Get_Name_String (Source.File),
+            Source.Index,
+            '~');
 
          --  Work in the object directory
 
@@ -1105,6 +1103,18 @@ package body Cleangpr is
            ("""" & Project_File_Name.all & """ processing failed",
             Flush_Messages => User_Project_Node /= Empty_Node);
       end if;
+
+      --  Update info on all sources
+
+      declare
+         Iter    : Source_Iterator;
+      begin
+         Iter := For_Each_Source (Project_Tree);
+         while Prj.Element (Iter) /= No_Source loop
+            Initialize_Source_Record (Prj.Element (Iter));
+            Next (Iter);
+         end loop;
+      end;
 
       --  Even if the config project file has not been automatically
       --  generated, gprclean will delete it if it was specified using

@@ -31,6 +31,7 @@ with Makeutl;  use Makeutl;
 with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
+with Sinput.P;
 with Tempdir;
 with Types;    use Types;
 with GprConfig.Sdefault;        use GprConfig.Sdefault;
@@ -300,6 +301,7 @@ package body Gpr_Util is
                   Get_Name_String (Element.Value);
                   Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
                   Mains.Add_Main (Name_Buffer (1 .. Name_Len));
+                  Mains.Set_Index (Element.Index);
                   Mains.Set_Location (Element.Location);
 
                   List := Element.Next;
@@ -315,13 +317,14 @@ package body Gpr_Util is
 
          for J in 1 .. Mains.Number_Of_Mains loop
             declare
-               Main     : String := Mains.Next_Main;
-               Location : constant Source_Ptr := Mains.Get_Location;
-               Main_Id  : File_Name_Type;
-               Project  : Project_Id;
-               Source   : Source_Id;
-               Suffix   : File_Name_Type;
-               Iter     : Source_Iterator;
+               Main       : String := Mains.Next_Main;
+               Main_Index : constant Int := Mains.Get_Index;
+               Location   : constant Source_Ptr := Mains.Get_Location;
+               Main_Id    : File_Name_Type;
+               Project    : Project_Id;
+               Source     : Source_Id;
+               Suffix     : File_Name_Type;
+               Iter       : Source_Iterator;
 
             begin
                --  First, look for the main as specified
@@ -335,7 +338,9 @@ package body Gpr_Util is
                while Project /= No_Project loop
                   Iter := For_Each_Source (Project_Tree, Project);
                   while Prj.Element (Iter) /= No_Source
-                    and then Prj.Element (Iter).File /= Main_Id
+                    and then
+                     (Prj.Element (Iter).File /= Main_Id or else
+                      Prj.Element (Iter).Index /= Main_Index)
                   loop
                      Next (Iter);
                   end loop;
@@ -410,6 +415,189 @@ package body Gpr_Util is
          Fail_Program ("problems with main sources");
       end if;
    end Get_Mains;
+
+   ------------------------------
+   -- Initialize_Source_Record --
+   ------------------------------
+
+   procedure Initialize_Source_Record (Source : Source_Id) is
+      Obj_Proj : Project_Id;
+   begin
+      --  Systematically recompute the time stamp. In fact, this function
+      --  is only called once per source file.
+      --  ??? System call
+      Source.Source_TS := File_Stamp (Source.Path.Name);
+
+      if Source.Language.Config.Kind = Unit_Based
+        and then Source.Kind = Impl
+        and then Is_Subunit (Source)
+      then
+         Source.Kind := Sep;
+      end if;
+
+      if Is_Compilable (Source)
+        and Source.Language.Config.Object_Generated
+      then
+         --  First, get the correct object file name and dependency file name
+         --  if the source is in a multi-unit file.
+
+         if Source.Index /= 0 then
+            declare
+               Index_Separator : constant Character :=
+                 Source.Language.Config.Multi_Unit_Object_Separator;
+            begin
+               Source.Object :=
+                 Object_Name
+                   (Source_File_Name   => Source.File,
+                    Source_Index       => Source.Index,
+                    Index_Separator    => Index_Separator,
+                    Object_File_Suffix =>
+                                    Source.Language.Config.Object_File_Suffix);
+
+               Source.Dep_Name :=
+                 Dependency_Name
+                   (Source.Object, Source.Language.Config.Dependency_Kind);
+            end;
+         end if;
+
+         --  Find the object file for that source. It could be either in
+         --  the current project or in an extended project
+
+         Obj_Proj := Source.Project;
+         loop
+            declare
+               Dir  : constant String := Get_Name_String
+                 (Obj_Proj.Object_Directory.Name);
+
+               Object_Path     : constant String :=
+                                   Normalize_Pathname
+                                     (Name          =>
+                                        Get_Name_String (Source.Object),
+                                      Resolve_Links =>
+                                        Opt.Follow_Links_For_Files,
+                                      Directory     => Dir);
+
+               Obj_Path : constant Path_Name_Type := Create_Name (Object_Path);
+
+               --  ??? System call
+               Stamp : constant Time_Stamp_Type := File_Stamp (Obj_Path);
+
+               procedure Set_Object_Project;
+
+               ------------------------
+               -- Set_Object_Project --
+               ------------------------
+
+               procedure Set_Object_Project is
+               begin
+                  Source.Object_Project := Obj_Proj;
+                  Source.Object_Path    := Obj_Path;
+                  Source.Object_TS      := Stamp;
+
+                  if Source.Language.Config.Dependency_Kind /= None then
+                     declare
+                        Dep_Path : constant String :=
+                                     Normalize_Pathname
+                                       (Name          =>
+                                          Get_Name_String (Source.Dep_Name),
+                                        Resolve_Links =>
+                                          Opt.Follow_Links_For_Files,
+                                        Directory     => Dir);
+                     begin
+                        Source.Dep_Path := Create_Name (Dep_Path);
+
+                        --  ??? System call
+                        Source.Dep_TS   := File_Stamp (Source.Dep_Path);
+                     end;
+                  end if;
+
+                  declare
+                     Switches_Path : constant String :=
+                                       Normalize_Pathname
+                                         (Name          =>
+                                            Get_Name_String
+                                              (Source.Switches),
+                                          Resolve_Links =>
+                                            Opt.Follow_Links_For_Files,
+                                          Directory     => Dir);
+                  begin
+                     Source.Switches_Path := Create_Name (Switches_Path);
+
+                     --  ??? System call
+                     Source.Switches_TS := File_Stamp (Source.Switches_Path);
+                  end;
+               end Set_Object_Project;
+
+            begin
+               if Stamp /= Empty_Time_Stamp then
+                  Set_Object_Project;
+               end if;
+
+               if Obj_Proj.Extended_By = No_Project then
+                  --  No project extends this one. We are then using the
+                  --  ultimate extending project.
+
+                  if Source.Object_Project = No_Project then
+                     Set_Object_Project;
+                  end if;
+
+                  exit;
+
+               else
+                  --  We'll then examine the project that extends this one
+                  Obj_Proj := Obj_Proj.Extended_By;
+               end if;
+            end;
+         end loop;
+
+      elsif Source.Language.Config.Dependency_Kind /= None then
+         declare
+            Object_Dir : constant String :=
+                           Get_Name_String
+                             (Source.Project.Object_Directory.Name);
+            Dep_Path   : constant String :=
+                           Normalize_Pathname
+                             (Name        => Get_Name_String (Source.Dep_Name),
+                              Resolve_Links =>
+                                Opt.Follow_Links_For_Files,
+                              Directory     => Object_Dir);
+         begin
+            Source.Dep_Path := Create_Name (Dep_Path);
+
+            --  ??? System call
+            Source.Dep_TS   := File_Stamp (Source.Dep_Path);
+         end;
+      end if;
+   end Initialize_Source_Record;
+
+   ----------------
+   -- Is_Subunit --
+   ----------------
+
+   function Is_Subunit (Source : Source_Id) return Boolean is
+      Src_Ind : Source_File_Index;
+   begin
+      if Source.Kind = Sep then
+         return True;
+
+      --  A Spec, a file based language source or a body with a spec cannot be
+      --  a subunit.
+
+      elsif Source.Kind = Spec or else
+        Source.Unit = No_Unit_Index or else
+        Other_Part (Source) /= No_Source
+      then
+         return False;
+      end if;
+
+      --  Here, we are assuming that the language is Ada, as it is the only
+      --  unit based language that we know.
+
+      Src_Ind :=
+        Sinput.P.Load_Project_File (Get_Name_String (Source.Path.Name));
+
+      return Sinput.P.Source_File_Is_Subunit (Src_Ind);
+   end Is_Subunit;
 
    ------------------------------
    -- Look_For_Default_Project --

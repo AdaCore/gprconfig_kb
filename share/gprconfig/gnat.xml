@@ -46,13 +46,21 @@
    <compilers negate="true">
      <compiler version="3.16" />
      <compiler version="5.00" />
+     <compiler version="5.01" />
+     <compiler version="5.02" />
    </compilers>
    <config>
    package Compiler is
-      for Config_Body_File_Name    ("Ada") use
+      for Multi_Unit_Switches ("Ada") use ("-gnateI");
+      for Multi_Unit_Object_Separator ("Ada") use "~";
+      for Config_Body_File_Name ("Ada") use
            "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
-      for Config_Spec_File_Name    ("Ada") use
+      for Config_Spec_File_Name ("Ada") use
            "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
+      for Config_Body_File_Name_Index ("Ada") use
+           "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"", Index => %i);";
+      for Config_Spec_File_Name_Index ("Ada") use
+           "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"", Index => %i);";
       for Config_Body_File_Name_Pattern ("Ada") use
            "pragma Source_File_Name_Project " &amp;
            "  (Body_File_Name  => ""*%b""," &amp;
@@ -91,6 +99,33 @@
            "   Casing          => %c," &amp;
            "   Dot_Replacement => ""%d"");";
       for Config_File_Unique    ("Ada") use "True";
+   end Compiler;
+   </config>
+  </configuration>
+
+  <configuration>
+   &filter_gnat;
+   <compilers>
+     <compiler version="5.01" />
+     <compiler version="5.02" />
+   </compilers>
+   <config>
+   package Compiler is
+      for Config_Body_File_Name    ("Ada") use
+           "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
+      for Config_Spec_File_Name    ("Ada") use
+           "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
+      for Config_Body_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name_Project " &amp;
+           "  (Body_File_Name  => ""*%b""," &amp;
+           "   Casing          => %c," &amp;
+           "   Dot_Replacement => ""%d"");";
+      for Config_Spec_File_Name_Pattern ("Ada") use
+           "pragma Source_File_Name_Project " &amp;
+           "  (Spec_File_Name  => ""*%s""," &amp;
+           "   Casing          => %c," &amp;
+           "   Dot_Replacement => ""%d"");";
+      for Config_File_Unique    ("Ada") use "False";
    end Compiler;
    </config>
   </configuration>
@@ -141,7 +176,7 @@
    </config>
   </configuration>
 
-  <!-- add commpiler option -msoft-float when the runtime is soft-float -->
+  <!-- add compiler option -msoft-float when the runtime is soft-float -->
   <configuration>
    <compilers>
      <compiler name="GNAT" runtime="soft-float" />
