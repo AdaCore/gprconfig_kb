@@ -37,6 +37,10 @@ NF-14-I415-016 Binder generated file compiled with all options (2009-05-06)
   gprbind now compiles the binder generated file with the required trailing
   compilation switches specified in the configuration project file.
 
+NF-14-I401-028 Support for Ada multi-unit source files (2009-09-20)
+
+  gprbuild now supports Ada multi-unit source files
+
 NF-14-H828-007 Compilers working on all targets (2009-09-03)
 
   It is now possible in the knowledge base for gprconfig to specify
