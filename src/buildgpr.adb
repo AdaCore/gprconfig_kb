@@ -11285,6 +11285,10 @@ package body Buildgpr is
          Write_Str ("  -d       Display progress");
          Write_Eol;
 
+         --  Line for -eInn
+         Write_Str ("  -eInn    Index of main unit in multi-unit source file");
+         Write_Eol;
+
          --  Line for -eL
 
          Write_Str ("  -eL      " &
