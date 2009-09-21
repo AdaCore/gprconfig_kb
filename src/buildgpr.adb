@@ -5019,16 +5019,6 @@ package body Buildgpr is
                         To      => Compilation_Options,
                         Display => Verbose_Mode);
                   end;
-
-               else
-                  Add_Option
-                    ("-o",
-                     To      => Compilation_Options,
-                     Display => Verbose_Mode);
-                  Add_Option
-                    (Get_Name_String (Id.Object),
-                     To      => Compilation_Options,
-                     Display => Verbose_Mode);
                end if;
 
                if Id.Index /= 0 and then
@@ -11286,6 +11276,7 @@ package body Buildgpr is
          Write_Eol;
 
          --  Line for -eInn
+
          Write_Str ("  -eInn    Index of main unit in multi-unit source file");
          Write_Eol;
 
