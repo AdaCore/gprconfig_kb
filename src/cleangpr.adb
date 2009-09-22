@@ -834,7 +834,12 @@ package body Cleangpr is
                   end;
                end if;
 
-               if Project.Object_Directory /= No_Path_Information then
+               --  Delete the binder generated files only if the main source
+               --  has been found and if there is an object directory.
+
+               if Source /= No_Source and then
+                 Project.Object_Directory /= No_Path_Information
+               then
                   Delete_Binder_Generated_Files
                     (Get_Name_String
                        (Project.Object_Directory.Name),
