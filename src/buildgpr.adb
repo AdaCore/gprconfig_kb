@@ -5007,7 +5007,7 @@ package body Buildgpr is
                         Add_Option
                           (Nam_Nod.Name,
                            To      => Compilation_Options,
-                           Display => Verbose_Mode);
+                           Display => Verbose_Mode or else Id.Index /= 0);
                         List := Nam_Nod.Next;
                      end loop;
 
@@ -5017,8 +5017,21 @@ package body Buildgpr is
                      Add_Option
                        (Name_Buffer (1 .. Name_Len),
                         To      => Compilation_Options,
-                        Display => Verbose_Mode);
+                        Display => Verbose_Mode or else Id.Index /= 0);
                   end;
+
+               --  Always specify the object file name when the unit is in a
+               --  multi-unit source.
+
+               elsif Id.Index /= 0 then
+                  Add_Option
+                    ("-o",
+                     To      => Compilation_Options,
+                     Display => True);
+                  Add_Option
+                    (Get_Name_String (Id.Object),
+                     To      => Compilation_Options,
+                     Display => True);
                end if;
 
                if Id.Index /= 0 and then
