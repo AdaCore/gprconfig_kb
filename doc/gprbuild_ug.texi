@@ -225,6 +225,7 @@ Building with GPRbuild
 * Compilation Phase::
 * Post-Compilation Phase::
 * Linking Phase::
+* Incompatibilities with gnatmake::
 
 Cleaning up with GPRclean
 * Switches for GPRclean::
@@ -1091,6 +1092,7 @@ GNAT Project files and the GPRbuild process.
 * Compilation Phase::
 * Post-Compilation Phase::
 * Linking Phase::
+* Incompatibilities with gnatmake::
 @end menu
 
 @c ---------------------------------------------
@@ -1311,6 +1313,11 @@ package Builder of the main project:
   line @emph{completed x out of y (zz%)...}. If the file needs to be compiled
   this is displayed after the invocation of the compiler. These lines are
   displayed even in quiet output mode (switch @option{-q}).
+
+@item @option{-Inn} (Index of main unit in multi-unit source file)
+  Indicate the index of the main unit in a multi-unit source file.
+  The index must be a positive number and there should be one and only
+  one main source file name on the command line.
 
 @item @option{-eL} (Follow symbolic links when processing project files)
 
@@ -1787,6 +1794,58 @@ When there are mains specified, either in attribute Main or on the command
 line, and these mains are not up to date, the linker is invoked for each main,
 with all the specified or implied options, including the object files generated
 during the post-compilation phase by the binder drivers.
+
+
+@c ---------------------------------------------
+@node Incompatibilities with gnatmake
+@section Incompatibilities with gnatmake
+@c ---------------------------------------------
+
+Here is a list of incompatibilities between gnatmake invoked with a
+project file and gprbuild:
+
+@itemize @bullet
+
+@item gprbuild never recompiles the runtime sources.
+
+@item gnatmake switches that are not recognized by gprbuild:
+
+@itemize @bullet
+
+@item -a (Consider all files, even readonly ali files)
+@item -M (List object file dependences for Makefile)
+@item -n (Check objects up to date, output next file to compile if not)
+@item -R (Do not use a run_path_option when linking)
+@item -x (Allow compilation of needed units external to the projects)
+@item -z No main subprogram (zero main)
+@item --GCC=command
+@item --GNATBIND=command
+@item --GNATLINK=command
+@item -aLdir (Skip missing library sources if ali in dir)
+@item -Adir (like -aLdir -aIdir)
+@item -aOdir (Specify library/object files search path)
+@item -aIdir (Specify source files search path)
+@item -Idir (Like -aIdir -aOdir)
+@item -I- (Don't look for sources & library files in the default directory)
+@item -Ldir (Look for program libraries also in dir)
+
+@end itemize
+
+@item The switches that are not directly recognized by gprbuild and passed to
+the Ada compiler are only:
+
+@itemize @bullet
+
+@item -nostdlib
+@item -nostdinc
+@item -fstack-check
+@item -fno-inline
+@item -Oxxx (any switch starting with -O)
+@item -gxxx (any switch starting with -g)
+
+@end itemize
+
+@end itemize
 
 @c ---------------------------------------------
 @node Cleaning up with GPRclean
