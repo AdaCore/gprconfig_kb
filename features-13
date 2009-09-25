@@ -21,6 +21,12 @@ NF-13-I330-024 New gprbind switch --gnatbind_path= (2009-04-01)
   gnatbind is not found at the same location as the Ada compiler, gprbind
   now looks for gnatbind on the path.
 
+NF-13-HC19-013 New switch --unchecked-shared-lib-imports (2009-01-16)
+
+  A new gprbuild/gprclean switch --unchecked-shared-lib-imports is created.
+  When this switch is used (on the command line only), shared library
+  projects are not restricted to import only other shared library projects.
+
 NF-13-HB21-029 Detect incorrect targets (2008-11-25)
 
   Switch --target= can now be used with --config= or --autoconf=. The name
