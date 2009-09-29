@@ -48,6 +48,11 @@ with Types;
 
 procedure Gprbind is
 
+   Shared_Libgcc_Default : Character;
+   for Shared_Libgcc_Default'Size use Character'Size;
+   pragma Import
+     (C, Shared_Libgcc_Default, "__gnat_shared_libgcc_default");
+
    Preserve : Attribute := Time_Stamps;
    --  Used in calls to Copy_File. Changed to None for OpenVMS, because
    --  Copy_Attributes always fails on VMS.
@@ -1089,7 +1094,9 @@ begin
                   Static_Libs := True;
                   Put_Line (IO_File, Line (1 .. Last));
 
-                  if GCC_Version >= '3' then
+                  if Shared_Libgcc_Default = 'T' and then
+                     GCC_Version >= '3'
+                  then
                      Put_Line (IO_File, Static_Libgcc);
                   end if;
 
