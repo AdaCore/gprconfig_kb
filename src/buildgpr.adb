@@ -7057,24 +7057,7 @@ package body Buildgpr is
             if Output_File_Name /= null then
                Name_Len := 0;
                Add_Str_To_Name_Buffer (Output_File_Name.all);
-
-               --  Get the executable name. If Executable_Suffix is defined in
-               --  the configuration, make sure that it will be the extension
-               --  of the executable.
-
-               declare
-                  Saved_EEOT : constant Name_Id :=
-                                 Targparm.Executable_Extension_On_Target;
-
-               begin
-                  if Main_Proj.Config.Executable_Suffix /= No_Name then
-                     Targparm.Executable_Extension_On_Target :=
-                       Main_Proj.Config.Executable_Suffix;
-                  end if;
-
-                  Exec_Name := Executable_Name (Name_Find);
-                  Targparm.Executable_Extension_On_Target := Saved_EEOT;
-               end;
+               Exec_Name := Name_Find;
 
             else
                Exec_Name := Executable_Of
