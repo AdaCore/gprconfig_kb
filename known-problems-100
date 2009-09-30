@@ -40,7 +40,7 @@ KP-100-H208-029 -bargs and -largs not allowed in package Builder
 
   Status:     This was fixed in 1.1.0 on 2008-02-09
 
-  Workaround: Use these switches only on the command line
+  Workaround: Use these switches only on the command line.
 
 KP-100-H216-002 gprbuild crashes with limited with cycle
 
@@ -49,7 +49,7 @@ KP-100-H216-002 gprbuild crashes with limited with cycle
 
   Status:     This was fixed in 1.1.0 on 2008-02-17
 
-  Workaround: Do not use limited withs
+  Workaround: Do not use limited withs.
 
 KP-100-H226-027 Missing gprclean switch -eL
 
@@ -58,7 +58,7 @@ KP-100-H226-027 Missing gprclean switch -eL
 
   Status:     This was fixed in 1.1.0 on 2008-02-26
 
-  Workaround: Do not use symbolic links
+  Workaround: Do not use symbolic links.
 
 KP-100-H303-021 Linker switches not relative to project directory
 
@@ -68,5 +68,14 @@ KP-100-H303-021 Linker switches not relative to project directory
 
   Status:     This was fixed in 1.1.0 on 2008-03-04
 
-  Workaround: Use only absolute paths
+  Workaround: Use only absolute paths.
+
+KP-100-GC12-009 Autoconfiguration fails when object dir not present
+
+  Problem:    When the object dir of the main project file is not present
+              autoconfiguration fails, even when gprbuild is called with -p.
+
+  Status:     This was fixed in 1.1.0 on 2007-12-18
+
+  Workaround: Create manually the object dir of the main project.
 
