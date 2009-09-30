@@ -1,8 +1,8 @@
-===========================================================
-Known problems in GPRBUILD version 1.1.0 as of Aug 14, 2008
-===========================================================
+========================================
+Known problems in GPRBUILD version 1.1.0
+========================================
 
-Copyright (c) 2008, AdaCore
+Copyright (c) 2008, 2009 AdaCore
 
 The following is a listing of known problems in release 1.1.0. Except where
 specifically noted, all these problems have been corrected in the development
@@ -19,6 +19,15 @@ KP-110-H814-019 Main on the command line for a library project
   Status:     This was fixed in 1.2.0 on 2008-08-14
 
   Workaround: Avoid specifying mains on the command line for a library project
+
+KP-110-H702-026 Failure to find Ada source in MixedCase
+
+  Problem:    When the casing is specified as MixedCase, gprbuild fails to
+              find Ada sources with file names that include capital letters.
+
+  Status:     This was fixed in 1.2.0 on 2008-07-02
+
+  Workaround: Use only sources with small letters.
 
 KP-110-H513-007 Errors when testing for a subunit
 
