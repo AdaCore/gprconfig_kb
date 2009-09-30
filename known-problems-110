@@ -20,6 +20,15 @@ KP-110-H814-019 Main on the command line for a library project
 
   Workaround: Avoid specifying mains on the command line for a library project
 
+KP-110-H721-016 Externally built projects and switch -s
+
+  Problem:    When switch -s is used, gprbuild may attempt to compile
+              code from externally built projects.
+
+  Status:     This was fixed in 1.2.0 on 2008-07-21
+
+  Workaround: Do not use switch -s in this case.
+
 KP-110-H702-026 Failure to find Ada source in MixedCase
 
   Problem:    When the casing is specified as MixedCase, gprbuild fails to
