@@ -13,6 +13,11 @@ This date shows the implementation date of the feature. Any 1.4.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-14-I930-029 Ignore Builder switches -x for Ada (2009-09-30)
+
+  For better compatibility with gnatmake, switch -x is ignored when found
+  in the Builder switches for Ada.
+
 NF-14-I814-016 gprbuild no longer outputs "creating auto.cgpr" (2009-08-20)
 
   When running in the default auto configuration mode, gprbuild will no
