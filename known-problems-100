@@ -70,6 +70,15 @@ KP-100-H303-021 Linker switches not relative to project directory
 
   Workaround: Use only absolute paths.
 
+KP-100-GC12-012 Failure to build a library that imports other libraries
+
+  Problem:    When a library project imports several other library projects,
+              gprbuild will fail to build the library.
+
+  Status:     This was fixed in 1.1.0 on 2007-12-16
+
+  Workaround: Reduce the number of libraries.
+
 KP-100-GC12-009 Autoconfiguration fails when object dir not present
 
   Problem:    When the object dir of the main project file is not present
