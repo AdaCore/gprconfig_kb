@@ -70,6 +70,16 @@ KP-100-H303-021 Linker switches not relative to project directory
 
   Workaround: Use only absolute paths.
 
+KP-100-GC29-007 Importing an externally buit library with an empty object dir
+
+  Problem:    Building a Stand-Alone Library that imports an externally built
+              library where the object directory does not contain any ALI file
+              fails.
+
+  Status:     This was fixed in 1.1.0 on 2007-12-29
+
+  Workaround: Copy the ALI files in the object directory.
+
 KP-100-GC29-003 SALs with capital letter names on Windows
 
   Problem:    Stand-Alone Libraries with capital letters in their names are
