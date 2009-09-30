@@ -10942,6 +10942,15 @@ package body Buildgpr is
             null;
 
          elsif (Language = No_Name or else Language = Name_Ada)
+           and then (not Command_Line)
+           and then Arg = "-x"
+         then
+            --  For compatibility with gnatmake, ignore -x if found in the
+            --  Builder switches.
+
+            null;
+
+         elsif (Language = No_Name or else Language = Name_Ada)
             and then
              (Arg = "-nostdlib"
               or else Arg = "-nostdinc"
