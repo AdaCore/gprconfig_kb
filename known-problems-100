@@ -70,6 +70,15 @@ KP-100-H303-021 Linker switches not relative to project directory
 
   Workaround: Use only absolute paths.
 
+KP-100-GC29-003 SALs with capital letter names on Windows
+
+  Problem:    Stand-Alone Libraries with capital letters in their names are
+              not build correctly on Windows.
+
+  Status:     This was fixed in 1.1.0 on 2007-12-29
+
+  Workaround: Use only library names with small letters.
+
 KP-100-GC12-012 Failure to build a library that imports other libraries
 
   Problem:    When a library project imports several other library projects,
