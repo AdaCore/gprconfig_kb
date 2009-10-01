@@ -66,7 +66,6 @@ with Switch;           use Switch;
 with System;
 with System.Case_Util; use System.Case_Util;
 with Table;
-with Targparm;
 with Tempdir;
 with Types;            use Types;
 
@@ -640,7 +639,12 @@ package body Buildgpr is
          Source_Identity  : Source_Id);
       --  Insert a new source in the the queue
 
-      procedure Insert_Withed_Sources_For (The_ALI : ALI.ALI_Id);
+      procedure Insert_Withed_Sources_For
+                 (The_ALI         : ALI.ALI_Id;
+                  Only_Interfaces : Boolean := False);
+      --  Insert in the queue those sources withed by The_ALI, if there are not
+      --  already in the queue and Only_Interfaces is False or they are part
+      --  of the interfaces of their project.
 
       function Is_Empty return Boolean;
       --  Returns True if the queue is empty
@@ -7020,6 +7024,8 @@ package body Buildgpr is
 
             Index_Separator : Character;
 
+            Response_File_Name : Path_Name_Type := No_Path;
+
          begin
             exit when Display_Main'Length = 0;
 
@@ -7338,6 +7344,8 @@ package body Buildgpr is
                     and then Proj.Library
                     and then Proj.Object_Directory /= No_Path_Information
                     and then not Proj.Externally_Built
+                    and then (Proj.Library_Kind = Static or else
+                              not Proj.Standalone_Library)
                   then
                      Change_Dir
                        (Get_Name_String (Proj.Object_Directory.Name));
@@ -7762,7 +7770,6 @@ package body Buildgpr is
                   declare
                      Arg_Length : Natural := 0;
                      Min_Number_Of_Objects : Natural := 0;
-                     Response_File_Name : Path_Name_Type := No_Path;
                   begin
                      for J in 1 .. Last_Argument loop
                         Arg_Length := Arg_Length + Arguments (J)'Length + 1;
@@ -7865,6 +7872,19 @@ package body Buildgpr is
 
                Spawn
                  (Linker_Path.all, Arguments (1 .. Last_Argument), Success);
+
+               if Response_File_Name /= No_Path and then
+                  not Debug.Debug_Flag_N
+               then
+                  declare
+                     Dont_Care : Boolean;
+                     pragma Warnings (Off, Dont_Care);
+                  begin
+                     Delete_File
+                       (Get_Name_String (Response_File_Name),
+                        Dont_Care);
+                  end;
+               end if;
 
                if not Success then
                   Fail_Program ("link of " & Main & " failed");
@@ -9262,6 +9282,7 @@ package body Buildgpr is
                                          or else
                                            Other_Part (Source) = No_Source)
                                       and then not Is_Subunit (Source)))
+                                and then Source.In_Interfaces
                               then
                                  declare
                                     Proj  : Project_Id;
@@ -9432,7 +9453,8 @@ package body Buildgpr is
                                     Free (Text);
 
                                     Queue.Insert_Withed_Sources_For
-                                      (The_ALI);
+                                      (The_ALI,
+                                       Only_Interfaces => True);
                                  end if;
                               end if;
                            end loop;
@@ -9552,9 +9574,9 @@ package body Buildgpr is
                      --  Then, the compiler path and required switches
 
                      declare
-                        Config : Language_Config renames
+                        Config  : Language_Config renames
                           B_Data.Language.Config;
-                        List   : Name_List_Index;
+                        List    : Name_List_Index;
                         Nam_Nod : Name_Node;
                      begin
                         --  Compiler path
@@ -9653,25 +9675,25 @@ package body Buildgpr is
                         if Binder_Package /= No_Package then
                            declare
                               Defaults : constant Array_Element_Id :=
-                                           Prj.Util.Value_Of
-                                             (Name      =>
-                                                Name_Default_Switches,
-                                              In_Arrays =>
-                                                Project_Tree.Packages.Table
-                                                  (Binder_Package).Decl.Arrays,
-                                              In_Tree   => Project_Tree);
+                                Prj.Util.Value_Of
+                                  (Name      =>
+                                       Name_Default_Switches,
+                                   In_Arrays =>
+                                     Project_Tree.Packages.Table
+                                       (Binder_Package).Decl.Arrays,
+                                   In_Tree   => Project_Tree);
 
                               Switches_Array : constant Array_Element_Id :=
-                                                 Prj.Util.Value_Of
-                                                   (Name      =>
-                                                      Name_Switches,
-                                                    In_Arrays =>
-                                                      Project_Tree.
-                                                        Packages.Table
-                                                      (Binder_Package)
-                                                    .Decl.Arrays,
-                                                    In_Tree   =>
-                                                      Project_Tree);
+                                Prj.Util.Value_Of
+                                  (Name      =>
+                                       Name_Switches,
+                                   In_Arrays =>
+                                     Project_Tree.
+                                       Packages.Table
+                                     (Binder_Package)
+                                   .Decl.Arrays,
+                                   In_Tree   =>
+                                     Project_Tree);
 
                            begin
                               Switches :=
@@ -9685,7 +9707,7 @@ package body Buildgpr is
                                  Switches :=
                                    Prj.Util.Value_Of
                                      (Index                  =>
-                                        B_Data.Language_Name,
+                                          B_Data.Language_Name,
                                       Src_Index              => 0,
                                       In_Array               => Switches_Array,
                                       In_Tree                => Project_Tree,
@@ -9696,7 +9718,7 @@ package body Buildgpr is
                                  Switches :=
                                    Prj.Util.Value_Of
                                      (Index                  =>
-                                        All_Other_Names,
+                                          All_Other_Names,
                                       Src_Index              => 0,
                                       In_Array               => Switches_Array,
                                       In_Tree                => Project_Tree,
@@ -9738,7 +9760,7 @@ package body Buildgpr is
 
                            declare
                               List : Name_List_Index :=
-                                       Config.Binder_Required_Switches;
+                                Config.Binder_Required_Switches;
                               Elem : Name_Node;
 
                            begin
@@ -9860,11 +9882,11 @@ package body Buildgpr is
                         if B_Data.Language.Config.Objects_Path /= No_Name then
                            declare
                               Env_Var   : constant String :=
-                                            Get_Name_String
-                                              (B_Data.Language.Config.
-                                                 Objects_Path);
+                                Get_Name_String
+                                  (B_Data.Language.Config.
+                                       Objects_Path);
                               Path_Name : String_Access :=
-                                            Main_Proj.Objects_Path;
+                                Main_Proj.Objects_Path;
                            begin
                               if Path_Name = null then
                                  if Current_Verbosity = High then
@@ -9894,9 +9916,9 @@ package body Buildgpr is
                         then
                            declare
                               Env_Var   : constant String :=
-                                            Get_Name_String
-                                              (B_Data.Language.Config.
-                                                 Objects_Path_File);
+                                Get_Name_String
+                                  (B_Data.Language.Config.
+                                       Objects_Path_File);
                               Path_Name : Path_Name_Type :=
                                 Main_Proj.Objects_Path_File_Without_Libs;
                            begin
@@ -10200,7 +10222,14 @@ package body Buildgpr is
                Id   => Source_Identity));
       end Insert;
 
-      procedure Insert_Withed_Sources_For (The_ALI : ALI.ALI_Id) is
+      -------------------------------
+      -- Insert_Withed_Sources_For --
+      -------------------------------
+
+      procedure Insert_Withed_Sources_For
+        (The_ALI         : ALI.ALI_Id;
+         Only_Interfaces : Boolean := False)
+      is
          Sfile     : File_Name_Type;
          Afile     : File_Name_Type;
          Src_Id    : Source_Id;
@@ -10252,7 +10281,10 @@ package body Buildgpr is
                      Next (Iter);
                   end loop;
 
-                  if Src_Id /= No_Source then
+                  if Src_Id /= No_Source and then
+                     (not Only_Interfaces) and then
+                     Src_Id.In_Interfaces
+                  then
                      Queue.Insert (Sfile, Src_Id);
                   end if;
                end if;
