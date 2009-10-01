@@ -9254,7 +9254,8 @@ package body Buildgpr is
 
                         --  If main is not unit base and there is no root,
                         --  check all sources with the language name of the
-                        --  binder.
+                        --  binder, except those that are not interfaces of
+                        --  their project.
 
                         if Queue.Is_Empty then
                            Iter := For_Each_Source (Project_Tree);
@@ -10280,6 +10281,10 @@ package body Buildgpr is
 
                      Next (Iter);
                   end loop;
+
+                  --  If Only_In_Interfaces is True, do not insert in the queue
+                  --  the sources that are not part of the interfaces of their
+                  --  project.
 
                   if Src_Id /= No_Source and then
                      (not Only_Interfaces) and then
