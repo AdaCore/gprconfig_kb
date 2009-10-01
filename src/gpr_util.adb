@@ -79,7 +79,6 @@ package body Gpr_Util is
 
    begin
       Tempdir.Create_Temp_File (Resp_File, Name => Name);
-      Record_Temp_File (Project_Tree, Name);
 
       if Format = GNU then
          Status := Write (Resp_File, GNU_Header'Address, GNU_Header'Length);
