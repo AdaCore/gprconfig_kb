@@ -147,6 +147,9 @@ package Gpr_Util is
      (Format   : Response_File_Format;
       Objects  : String_List;
       Name     : out Path_Name_Type);
+   --  Create a temporary file as a response file that contains the list of
+   --  Objects in the correct Format. It is the responsibility of the caller
+   --  to delete this temporary file if needed.
 
    procedure Find_Binding_Languages;
    --  Check if in the project tree there are sources of languages that have a
