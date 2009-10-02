@@ -10287,8 +10287,8 @@ package body Buildgpr is
                   --  project.
 
                   if Src_Id /= No_Source and then
-                     (not Only_Interfaces) and then
-                     Src_Id.In_Interfaces
+                     (not Only_Interfaces or else
+                      Src_Id.In_Interfaces)
                   then
                      Queue.Insert (Sfile, Src_Id);
                   end if;
