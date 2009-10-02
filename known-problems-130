@@ -11,6 +11,16 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-130-IA01-027 Incorrect linking of shared library on Windows
+
+  Problem:    When gprbuild is invoked with --unchecked-shared-lib-imports
+              and a shared library imports a static ibrary, the linking of
+              the shared library may fail in Windows with undefined references.
+
+  Status:     This was fixed in 1.4.0 on 2009-10-02
+
+  Workaround: Add the necessary Library_Options
+
 KP-130-I904-011 Incorrect compilation in extending projects
 
   Problem:    gprbuild incorrectly compiles up to date inherited sources
