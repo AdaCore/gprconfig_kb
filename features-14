@@ -13,6 +13,12 @@ This date shows the implementation date of the feature. Any 1.4.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-14-IA01-036 No relink if non interfaces of shared SALs changed (2009-10-01)
+
+  When only non interface units are modified in a shared Stand-Alone Library,
+  the shared SAL needs to be rebuilt but the executable no longer needs to be
+  rebound and relinked.
+
 NF-14-I930-029 Ignore Builder switches -x for Ada (2009-09-30)
 
   For better compatibility with gnatmake, switch -x is ignored when found
