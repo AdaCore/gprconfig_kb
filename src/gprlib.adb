@@ -213,6 +213,15 @@ procedure Gprlib is
       Table_Name           => "Gprlib.Library_Options_Table");
    --  A table to store the library options
 
+   package Library_Switches_Table is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 5,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Library_Switches_Table");
+   --  A table to store the switches for the imported libraries
+
    package Object_Directories is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -1917,7 +1926,7 @@ begin
       end if;
 
       for J in 1 .. Imported_Library_Directories.Last loop
-         Options_Table.Append
+         Library_Switches_Table.Append
            (new String'
               ("-L" & Imported_Library_Directories.Table (J).all));
 
@@ -1925,7 +1934,7 @@ begin
             Add_Rpath (Imported_Library_Directories.Table (J).all);
          end if;
 
-         Options_Table.Append
+         Library_Switches_Table.Append
            (new String'
               ("-l" & Imported_Library_Names.Table (J).all));
       end loop;

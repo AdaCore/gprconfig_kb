@@ -232,7 +232,11 @@ procedure Build_Shared_Lib is
 
       Last_Object := Last_Arg;
 
-      --  Finally the library options
+      --  Finally the library switches and the library options
+
+      for J in 1 .. Library_Switches_Table.Last loop
+         Add_Arg (Library_Switches_Table.Table (J));
+      end loop;
 
       for J in 1 .. Library_Options_Table.Last loop
          Add_Arg (Library_Options_Table.Table (J));
