@@ -163,6 +163,12 @@ package body Buildgpr is
    Packages_To_Check : constant String_List_Access := List_Of_Packages'Access;
    --  List of the packages to be checked when parsing/processing project files
 
+   Object_Name   : String_Access := null;
+   C_Object_Name : String_Access := null;
+   Object_Path   : String_Access := null;
+   Switches_Name : String_Access := null;
+   --  ??? Missing doc for these
+
    type Processor is (None, Linker, Binder, Compiler);
    Current_Processor : Processor := None;
    --  This variable changes when switches -*args are used
@@ -711,7 +717,7 @@ package body Buildgpr is
    --  the linker. The table where this option is stored depends on the value
    --  of Current_Processor and other global variables.
 
-   procedure Add_Option
+   procedure Add_Option_Internal
      (Value       : String_Access;
       To          : in out Options_Data;
       Display     : Boolean;
@@ -1255,7 +1261,7 @@ package body Buildgpr is
       end case;
    end Add_Option;
 
-   procedure Add_Option
+   procedure Add_Option_Internal
      (Value       : String_Access;
       To          : in out Options_Data;
       Display     : Boolean;
@@ -1290,7 +1296,7 @@ package body Buildgpr is
       To.Options (To.Last)     := Value;
       To.Visible (To.Last)     := Display;
       To.Simple_Name (To.Last) := Simple_Name;
-   end Add_Option;
+   end Add_Option_Internal;
 
    procedure Add_Option
      (Value       : String;
@@ -1299,7 +1305,9 @@ package body Buildgpr is
       Simple_Name : Boolean := False)
    is
    begin
-      Add_Option (new String'(Value), To, Display, Simple_Name);
+      Name_Len := Value'Length;
+      Name_Buffer (1 .. Name_Len) := Value;
+      Add_Option_Internal (Get_Option (Name_Find), To, Display, Simple_Name);
    end Add_Option;
 
    procedure Add_Option
@@ -1309,8 +1317,7 @@ package body Buildgpr is
       Simple_Name : Boolean := False)
    is
    begin
-      Add_Option
-        (new String'(Get_Name_String (Value)), To, Display, Simple_Name);
+      Add_Option_Internal (Get_Option (Value), To, Display, Simple_Name);
    end Add_Option;
 
    -----------------
@@ -1333,14 +1340,12 @@ package body Buildgpr is
          Element := Project_Tree.String_Elements.Table (List);
          Option := Get_Option (Element.Value);
 
-         if Option'Length > 0 then
-            Add_Option
-              (Value       => Option,
-               To          => To,
-               Display     => Display_All or First_Display,
-               Simple_Name => Simple_Name);
-            First_Display := False;
-         end if;
+         Add_Option_Internal
+           (Value       => Option,
+            To          => To,
+            Display     => Display_All or First_Display,
+            Simple_Name => Simple_Name);
+         First_Display := False;
 
          List := Element.Next;
       end loop;
@@ -3710,8 +3715,6 @@ package body Buildgpr is
       --  The project for which the include path environment has been set last,
       --  to avoid computing it several times.
 
-      Mapping_File_Path : Path_Name_Type;
-
       Dep_File         : Text_File;
 
       Start            : Natural;
@@ -3763,7 +3766,8 @@ package body Buildgpr is
       --  Check in its switches file where Id was compiled with the same
       --  switches
 
-      procedure Update_Object_Path (Id : Source_Id);
+      procedure Update_Object_Path
+        (Id : Source_Id; Source_Project : Project_Id);
       --  Update, if necessary, the path of the object file, of the dependency
       --  file and of the switches file, in the case of the compilation of a
       --  source in an extended project, when the source is in a project being
@@ -3772,6 +3776,47 @@ package body Buildgpr is
       procedure Add_Dependency_Options (Id : Source_Id);
       --  Add switches to the compilation command line to create the
       --  dependency file
+
+      procedure Add_Object_File_Switches (Id : Source_Id);
+      --  If there are switches to specify the name of the object file, add
+      --  them.
+
+      procedure Add_Config_File_Switches
+        (Id             : Source_Id;
+         Source_Project : Project_Id);
+      --  If Config_File_Switches is specified, check if a config file need to
+      --  be specified. Return the path to the config file
+
+      procedure Add_Trailing_Switches (Id : Source_Id);
+      --  Add the trailing required switches, if any, so that they will be put
+      --  in the switches file.
+
+      procedure Add_Name_Of_Source_Switches (Id : Source_Id);
+      --  Add the name of the source to be compiled
+
+      function Add_Mapping_File_Switches
+        (Id             : Source_Id;
+         Source_Project : Project_Id) return Path_Name_Type;
+      --  If the compiler supports mapping files, add the necessary switch.
+      --  Returns the name of the mapping file to use (or No_File)
+
+      procedure Add_Multi_Unit_Switches (Id : Source_Id);
+      --  Add, if needed, the required switches to compile a multi-unit source
+      --  file
+
+      procedure Spawn_Compiler_And_Register
+        (Source            : Source_Id;
+         Source_Project    : Project_Id;
+         Compiler_Path     : String;
+         Mapping_File_Path : Path_Name_Type;
+         Last_Switches_For_File : Integer);
+      --  Spawn the compiler with the arguments currently set in
+      --  Compiler_Options. It registers the process we just spawned, so that
+      --  we start monitoring it.
+      --  This also displays on the output the command we are spawning.
+      --  Last_Switches_For_File is the index in Compilation_Options of the
+      --  last switch that should be written to the switches file. All
+      --  following switches are not output in that file.
 
       function Get_Compatible_Languages (Lang : Language_Ptr) return Name_Ids;
       --  Return the list of languages that Id could potentially include (for
@@ -4385,7 +4430,7 @@ package body Buildgpr is
          --  for all compilers, following "-cargs", if any.
 
          for Index in 1 .. All_Language_Builder_Compiling_Options.Last loop
-            Add_Option
+            Add_Option_Internal
               (Value   => All_Language_Builder_Compiling_Options.Table (Index),
                To      => Compilation_Options,
                Display => True);
@@ -4399,7 +4444,7 @@ package body Buildgpr is
             for Index in 1 ..
               Builder_Compiling_Options.Last (Builder_Options_Instance.all)
             loop
-               Add_Option
+               Add_Option_Internal
                  (Value   => Builder_Options_Instance.Table (Index),
                   To      => Compilation_Options,
                   Display => True);
@@ -4432,7 +4477,7 @@ package body Buildgpr is
          --  for all compilers, following "-cargs", if any.
 
          for Index in 1 .. All_Language_Compiling_Options.Last loop
-            Add_Option
+            Add_Option_Internal
               (Value   => All_Language_Compiling_Options.Table (Index),
                To      => Compilation_Options,
                Display => True);
@@ -4444,7 +4489,7 @@ package body Buildgpr is
 
          if Comp_Opt /= null then
             for Index in 1 .. Compiling_Options.Last (Comp_Opt.all) loop
-               Add_Option
+               Add_Option_Internal
                  (Value   => Comp_Opt.Table (Index),
                   To      => Compilation_Options,
                   Display => True);
@@ -4541,10 +4586,10 @@ package body Buildgpr is
       -- Update_Object_Path --
       ------------------------
 
-      procedure Update_Object_Path (Id : Source_Id) is
+      procedure Update_Object_Path
+        (Id : Source_Id; Source_Project : Project_Id) is
       begin
-         Id.Object_Project :=
-           Ultimate_Extending_Project_Of (Id.Project);
+         Id.Object_Project := Source_Project;
 
          if Id.Object_Project /= Id.Project then
             if Id.Object /= No_File then
@@ -4593,6 +4638,321 @@ package body Buildgpr is
             end if;
          end loop;
       end Add_Dependency_Options;
+
+      ------------------------------
+      -- Add_Object_File_Switches --
+      ------------------------------
+
+      procedure Add_Object_File_Switches (Id : Source_Id) is
+         List : Name_List_Index := Id.Language.Config.Object_File_Switches;
+         Node : Name_Node;
+      begin
+         if List /= No_Name_List then
+            loop
+               Node := Project_Tree.Name_Lists.Table (List);
+               exit when Node.Next = No_Name_List;
+
+               Add_Option
+                 (Node.Name,
+                  To      => Compilation_Options,
+                  Display => Verbose_Mode or else Id.Index /= 0);
+               List := Node.Next;
+            end loop;
+
+            Add_Str_To_Name_Buffer (Get_Name_String (Id.Object));
+
+            Add_Option
+              (Name_Buffer (1 .. Name_Len),
+               To      => Compilation_Options,
+               Display => Verbose_Mode or else Id.Index /= 0);
+
+         --  Always specify object-file for a multi-unit source file
+
+         elsif Id.Index /= 0 then
+            Add_Option
+              ("-o",
+               To      => Compilation_Options,
+               Display => True);
+            Add_Option
+              (Get_Name_String (Id.Object),
+               To      => Compilation_Options,
+               Display => True);
+         end if;
+      end Add_Object_File_Switches;
+
+      ------------------------------
+      -- Add_Config_File_Switches --
+      ------------------------------
+
+      procedure Add_Config_File_Switches
+        (Id             : Source_Id;
+         Source_Project : Project_Id)
+      is
+         Config : constant Language_Config := Id.Language.Config;
+         Config_File_Path : Path_Name_Type;
+      begin
+         if Config.Config_File_Switches /= No_Name_List
+           and then (Config.Config_Body /= No_Name
+                     or else Config.Config_Body_Index /= No_Name
+                     or else Config.Config_Body_Pattern /= No_Name
+                     or else Config.Config_Spec /= No_Name
+                     or else Config.Config_Spec_Index /= No_Name
+                     or else Config.Config_Spec_Pattern /= No_Name)
+         then
+            Create_Config_File
+              (For_Project => Source_Project,
+               Config      => Config,
+               Language    => Id.Language.Name);
+
+            if Source_Project.Config_File_Name /= No_Path then
+               Add_Config_File_Switch
+                 (Config    => Config,
+                  Path_Name => Source_Project.Config_File_Name);
+            end if;
+
+            if not Config.Config_File_Unique then
+               Config_File_Path :=
+                 Config_File_For
+                   (Project        => Main_Project,
+                    Package_Name   => Name_Builder,
+                    Attribute_Name => Name_Global_Config_File,
+                    Language       => Id.Language.Name);
+
+               if Config_File_Path /= No_Path then
+                  Add_Config_File_Switch
+                    (Config    => Config,
+                     Path_Name => Config_File_Path);
+               end if;
+
+               Config_File_Path :=
+                 Config_File_For
+                   (Project        => Source_Project,
+                    Package_Name   => Name_Compiler,
+                    Attribute_Name => Name_Local_Config_File,
+                    Language       => Id.Language.Name);
+
+               if Config_File_Path /= No_Path then
+                  Add_Config_File_Switch
+                    (Config    => Config,
+                     Path_Name => Config_File_Path);
+               end if;
+            end if;
+         end if;
+      end Add_Config_File_Switches;
+
+      -------------------------------
+      -- Add_Mapping_File_Switches --
+      -------------------------------
+
+      function Add_Mapping_File_Switches
+        (Id             : Source_Id;
+         Source_Project : Project_Id) return Path_Name_Type
+      is
+         List : Name_List_Index := Id.Language.Config.Mapping_File_Switches;
+         Node : Name_Node;
+         Mapping_File_Path : Path_Name_Type;
+      begin
+         if List /= No_Name_List then
+
+            --  Check if there is a temporary mapping file we can use
+
+            Mapping_File_Path :=
+              Mapping_Files_Htable.Get_First (Id.Language.Mapping_Files);
+
+            if Mapping_File_Path /= No_Path then
+               --  Reuse this temporary mapping file and remove its
+               --  name from the HTable so that it is not reused
+               --  before the compilation terminates.
+
+               Mapping_Files_Htable.Remove
+                 (Id.Language.Mapping_Files, Mapping_File_Path);
+
+            else
+               --  Create a new temporary mapping file, as there are
+               --  none that can be reused.
+
+               Prj.Env.Create_Mapping_File
+                 (Project  => Source_Project,
+                  Language => Id.Language.Name,
+                  In_Tree  => Project_Tree,
+                  Name     => Mapping_File_Path);
+            end if;
+
+            while List /= No_Name_List loop
+               Node := Project_Tree.Name_Lists.Table (List);
+               List := Node.Next;
+
+               if List /= No_Name_List then
+                  Add_Option
+                    (Value   => Node.Name,
+                     To      => Compilation_Options,
+                     Display => Opt.Verbose_Mode);
+
+               else
+                  Get_Name_String (Node.Name);
+                  Add_Str_To_Name_Buffer (Get_Name_String (Mapping_File_Path));
+                  Add_Option
+                    (Name_Buffer (1 .. Name_Len),
+                     To      => Compilation_Options,
+                     Display => Opt.Verbose_Mode);
+               end if;
+            end loop;
+
+            return Mapping_File_Path;
+         else
+            return No_Path;
+         end if;
+      end Add_Mapping_File_Switches;
+
+      -----------------------------
+      -- Add_Multi_Unit_Switches --
+      -----------------------------
+
+      procedure Add_Multi_Unit_Switches (Id : Source_Id) is
+         List : Name_List_Index := Id.Language.Config.Multi_Unit_Switches;
+      begin
+         if Id.Index /= 0
+           and then List /= No_Name_List
+         then
+            declare
+               Index_Img : constant String := Id.Index'Img;
+               Node      : Name_Node;
+
+            begin
+               loop
+                  Node := Project_Tree.Name_Lists.Table (List);
+                  exit when Node.Next = No_Name_List;
+
+                  Add_Option
+                    (Node.Name,
+                     To      => Compilation_Options,
+                     Display => True);
+                  List := Node.Next;
+               end loop;
+
+               Add_Str_To_Name_Buffer (Index_Img (2 .. Index_Img'Last));
+               Add_Option
+                 (Name_Buffer (1 .. Name_Len),
+                  To      => Compilation_Options,
+                  Display => True);
+            end;
+         end if;
+      end Add_Multi_Unit_Switches;
+
+      ---------------------------
+      -- Add_Trailing_Switches --
+      ---------------------------
+
+      procedure Add_Trailing_Switches (Id : Source_Id) is
+         List : Name_List_Index :=
+           Id.Language.Config.Compiler_Trailing_Required_Switches;
+         Node : Name_Node;
+      begin
+         while List /= No_Name_List loop
+            Node := Project_Tree.Name_Lists.Table (List);
+            Add_Option
+              (Node.Name,
+               To      => Compilation_Options,
+               Display => Verbose_Mode);
+            List := Node.Next;
+         end loop;
+      end Add_Trailing_Switches;
+
+      ---------------------------------
+      -- Add_Name_Of_Source_Switches --
+      ---------------------------------
+
+      procedure Add_Name_Of_Source_Switches (Id : Source_Id) is
+         Source_Path : String_Access;
+      begin
+         Get_Name_String (Id.Path.Name);
+
+         case Id.Language.Config.Path_Syntax is
+            when Canonical =>
+               Source_Path := new String'(Name_Buffer (1 .. Name_Len));
+
+            when Host =>
+               Source_Path := To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
+         end case;
+
+         Add_Option_Internal
+           (Source_Path,
+            To          => Compilation_Options,
+            Display     => True,
+            Simple_Name => not Verbose_Mode);
+      end Add_Name_Of_Source_Switches;
+
+      ---------------------------------
+      -- Spawn_Compiler_And_Register --
+      ---------------------------------
+
+      procedure Spawn_Compiler_And_Register
+        (Source            : Source_Id;
+         Source_Project    : Project_Id;
+         Compiler_Path     : String;
+         Mapping_File_Path : Path_Name_Type;
+         Last_Switches_For_File : Integer)
+      is
+         Pid     : Process_Id;
+         Options : String_List_Access;
+      begin
+         if not Quiet_Output then
+            if Verbose_Mode then
+               Write_Str (Compiler_Path);
+
+            else
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Base_Name (Compiler_Path));
+
+               if Executable_Suffix'Length /= 0 and then
+                 Name_Len > Executable_Suffix'Length and then
+                 Name_Buffer
+                   (Name_Len - Executable_Suffix'Length + 1 .. Name_Len)
+                   = Executable_Suffix.all
+               then
+                  Name_Len := Name_Len - Executable_Suffix'Length;
+               end if;
+
+               Write_Str (Name_Buffer (1 .. Name_Len));
+            end if;
+
+            for Option in 1 .. Compilation_Options.Last loop
+               if Compilation_Options.Visible (Option) then
+                  Write_Char (' ');
+
+                  if Compilation_Options.Simple_Name (Option) then
+                     Write_Str
+                       (Base_Name (Compilation_Options.Options (Option).all));
+
+                  else
+                     Write_Str (Compilation_Options.Options (Option).all);
+                  end if;
+               end if;
+            end loop;
+
+            Write_Eol;
+         end if;
+
+         Change_To_Object_Directory (Source_Project);
+         Pid := GNAT.OS_Lib.Non_Blocking_Spawn
+           (Compiler_Path,
+            Compilation_Options.Options (1 .. Compilation_Options.Last));
+
+         if Last_Switches_For_File >= 0 then
+            Compilation_Options.Last := Last_Switches_For_File;
+            Add_Trailing_Switches (Source);
+            Options :=
+              new String_List'
+                (Compilation_Options.Options (1 .. Compilation_Options.Last));
+         end if;
+
+         Add_Process
+           (Pid          => Pid,
+            Source       => Source,
+            Mapping_File => Mapping_File_Path,
+            Purpose      => Compilation,
+            Options      => Options);
+      end Spawn_Compiler_And_Register;
 
       ------------------------------
       -- Get_Compatible_Languages --
@@ -4794,7 +5154,7 @@ package body Buildgpr is
          if Data.Imported_Dirs_Switches /= null then
             for J in Data.Imported_Dirs_Switches'Range loop
                if Data.Imported_Dirs_Switches (J)'Length > 0 then
-                  Add_Option
+                  Add_Option_Internal
                     (Value   => Data.Imported_Dirs_Switches (J),
                      To      => Compilation_Options,
                      Display => Opt.Verbose_Mode);
@@ -4811,27 +5171,14 @@ package body Buildgpr is
          Source_Project     : constant Project_Id :=
            Ultimate_Extending_Project_Of (Id.Project);
          Compilation_Needed : Boolean;
-         Pid                : Process_Id;
-         Language           : Language_Ptr;
-         Config             : Language_Config;
-         Compiler_Path      : String_Access;
-         Last_Recorded_Option : Integer;
+         Last_Switches_For_File : Integer;
+         Mapping_File       : Path_Name_Type;
 
       begin
-         if Source_Project.Externally_Built then
-            Compilation_Needed := False;
-
-         else
-            Change_To_Object_Directory (Source_Project);
-
-            Language := Id.Language;
-            Config   := Language.Config;
-
+         if not Source_Project.Externally_Built then
             Compilation_Needed := Need_To_Compile (Id, Source_Project);
 
             if Compilation_Needed or Check_Switches then
-               Compiler_Path := Get_Compiler_Driver_Path (Language);
-
                Set_Options_For_File (Id);
 
                if Check_Switches and then not Compilation_Needed then
@@ -4840,343 +5187,35 @@ package body Buildgpr is
             end if;
 
             if Compilation_Needed then
-               Update_Object_Path (Id);
+               Update_Object_Path (Id, Source_Project);
 
                --  Record the last recorded option index, to be able to
                --  write the switches file later.
 
-               if Config.Object_Generated then
-                  Last_Recorded_Option := Compilation_Options.Last;
-
+               if Id.Language.Config.Object_Generated then
+                  Last_Switches_For_File := Compilation_Options.Last;
                else
-                  Last_Recorded_Option := -1;
+                  Last_Switches_For_File := -1;
                end if;
 
                Add_Dependency_Options (Id);
                Set_Env_For_Include_Dirs (Id);
+               Add_Config_File_Switches (Id, Source_Project);
+               Mapping_File := Add_Mapping_File_Switches (Id, Source_Project);
+               Add_Trailing_Switches (Id);
+               Add_Name_Of_Source_Switches (Id);
+               Add_Object_File_Switches (Id);
+               Add_Multi_Unit_Switches (Id);
 
-               --  If Config_File_Switches is specified, check if a config
-               --  file need to be specified.
+               Spawn_Compiler_And_Register
+                 (Source         => Id,
+                  Source_Project => Source_Project,
+                  Compiler_Path  => Get_Compiler_Driver_Path (Id.Language).all,
+                  Mapping_File_Path => Mapping_File,
+                  Last_Switches_For_File => Last_Switches_For_File);
 
-               if Config.Config_File_Switches /= No_Name_List and then
-                 (Config.Config_Body         /= No_Name or else
-                  Config.Config_Body_Index   /= No_Name or else
-                  Config.Config_Body_Pattern /= No_Name or else
-                  Config.Config_Spec         /= No_Name or else
-                  Config.Config_Spec_Index   /= No_Name or else
-                  Config.Config_Spec_Pattern /= No_Name)
-               then
-                  Create_Config_File
-                    (For_Project => Source_Project,
-                     Config      => Config,
-                     Language    => Id.Language.Name);
-
-                  if Source_Project.Config_File_Name /= No_Path then
-                     Add_Config_File_Switch
-                       (Config    => Config,
-                        Path_Name => Source_Project.Config_File_Name);
-                  end if;
-
-                  if not Config.Config_File_Unique then
-                     declare
-                        Config_File_Path : Path_Name_Type;
-
-                     begin
-                        Config_File_Path :=
-                          Config_File_For
-                            (Project        => Main_Project,
-                             Package_Name   => Name_Builder,
-                             Attribute_Name => Name_Global_Config_File,
-                             Language       => Id.Language.Name);
-
-                        if Config_File_Path /= No_Path then
-                           Add_Config_File_Switch
-                             (Config    => Config,
-                              Path_Name => Config_File_Path);
-                        end if;
-
-                        Config_File_Path :=
-                          Config_File_For
-                            (Project        => Source_Project,
-                             Package_Name   => Name_Compiler,
-                             Attribute_Name => Name_Local_Config_File,
-                             Language       => Id.Language.Name);
-
-                        if Config_File_Path /= No_Path then
-                           Add_Config_File_Switch
-                             (Config    => Config,
-                              Path_Name => Config_File_Path);
-                        end if;
-                     end;
-                  end if;
-               end if;
-
-               --  If the compiler supports mapping files, add the necessary
-               --  switch.
-
-               if Config.Mapping_File_Switches /= No_Name_List then
-
-                  --  Check if there is a temporary mapping file we can use
-                  Mapping_File_Path :=
-                    Mapping_Files_Htable.Get_First (Language.Mapping_Files);
-
-                  if Mapping_File_Path /= No_Path then
-                     --  Reuse this temporary mapping file and remove its
-                     --  name from the HTable so that it is not reused
-                     --  before the compilation terminates.
-
-                     Mapping_Files_Htable.Remove
-                       (Language.Mapping_Files, Mapping_File_Path);
-
-                  else
-                     --  Create a new temporary mapping file, as there are
-                     --  none that can be reused.
-
-                     Prj.Env.Create_Mapping_File
-                       (Project  => Source_Project,
-                        Language => Id.Language.Name,
-                        In_Tree  => Project_Tree,
-                        Name     => Mapping_File_Path);
-                  end if;
-
-                  declare
-                     List    : Name_List_Index :=
-                       Config.Mapping_File_Switches;
-                     Nam_Nod : Name_Node;
-                  begin
-                     while List /= No_Name_List loop
-                        Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                        List := Nam_Nod.Next;
-
-                        if List /= No_Name_List then
-                           Add_Option
-                             (Value   => Nam_Nod.Name,
-                              To      => Compilation_Options,
-                              Display => Opt.Verbose_Mode);
-
-                        else
-                           Get_Name_String (Nam_Nod.Name);
-                           Add_Str_To_Name_Buffer
-                             (Get_Name_String (Mapping_File_Path));
-                           Add_Option
-                             (Name_Buffer (1 .. Name_Len),
-                              To      => Compilation_Options,
-                              Display => Opt.Verbose_Mode);
-                        end if;
-                     end loop;
-                  end;
-
-               else
-                  Mapping_File_Path := No_Path;
-               end if;
-
-               --  Add the trailing required switches, if any
-
-               declare
-                  List    : Name_List_Index :=
-                    Config.Compiler_Trailing_Required_Switches;
-                  Nam_Nod : Name_Node;
-
-               begin
-                  while List /= No_Name_List loop
-                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                     Add_Option
-                       (Nam_Nod.Name,
-                        To      => Compilation_Options,
-                        Display => Verbose_Mode);
-                     List := Nam_Nod.Next;
-                  end loop;
-               end;
-
-               --  Add the name of the source to be compiled
-
-               declare
-                  Source_Path : String_Access;
-
-               begin
-                  Get_Name_String (Id.Path.Name);
-
-                  case Config.Path_Syntax is
-                     when Canonical =>
-                        Source_Path :=
-                          new String'(Name_Buffer (1 .. Name_Len));
-
-                     when Host =>
-                        Source_Path :=
-                          To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
-                  end case;
-
-                  Add_Option
-                    (Source_Path,
-                     To          => Compilation_Options,
-                     Display     => True,
-                     Simple_Name => not Verbose_Mode);
-               end;
-
-               --  If there are switches to specify the name of the object
-               --  file, add them.
-
-               if Config.Object_File_Switches /= No_Name_List then
-                  declare
-                     List    : Name_List_Index := Config.Object_File_Switches;
-                     Nam_Nod : Name_Node;
-
-                  begin
-                     loop
-                        Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                        Get_Name_String (Nam_Nod.Name);
-
-                        exit when Nam_Nod.Next = No_Name_List;
-
-                        Add_Option
-                          (Nam_Nod.Name,
-                           To      => Compilation_Options,
-                           Display => Verbose_Mode or else Id.Index /= 0);
-                        List := Nam_Nod.Next;
-                     end loop;
-
-                     Add_Str_To_Name_Buffer
-                       (Get_Name_String (Id.Object));
-
-                     Add_Option
-                       (Name_Buffer (1 .. Name_Len),
-                        To      => Compilation_Options,
-                        Display => Verbose_Mode or else Id.Index /= 0);
-                  end;
-
-               --  Always specify the object file name when the unit is in a
-               --  multi-unit source.
-
-               elsif Id.Index /= 0 then
-                  Add_Option
-                    ("-o",
-                     To      => Compilation_Options,
-                     Display => True);
-                  Add_Option
-                    (Get_Name_String (Id.Object),
-                     To      => Compilation_Options,
-                     Display => True);
-               end if;
-
-               if Id.Index /= 0 and then
-                 Config.Multi_Unit_Switches /= No_Name_List
-               then
-                  declare
-                     Index_Img : constant String := Id.Index'Img;
-                     List      : Name_List_Index := Config.Multi_Unit_Switches;
-                     Nam_Nod   : Name_Node;
-
-                  begin
-                     loop
-                        Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                        Get_Name_String (Nam_Nod.Name);
-
-                        exit when Nam_Nod.Next = No_Name_List;
-
-                        Add_Option
-                          (Name_Buffer (1 .. Name_Len),
-                           To      => Compilation_Options,
-                           Display => True);
-                        List := Nam_Nod.Next;
-                     end loop;
-
-                     Add_Str_To_Name_Buffer
-                       (Index_Img (2 .. Index_Img'Last));
-                     Add_Option
-                       (Name_Buffer (1 .. Name_Len),
-                        To      => Compilation_Options,
-                        Display => True);
-                  end;
-               end if;
-
-               --  Display the command invoked if not in quiet output mode
-
-               if not Quiet_Output then
-                  if Verbose_Mode then
-                     Write_Str (Compiler_Path.all);
-
-                  else
-                     Name_Len := 0;
-                     Add_Str_To_Name_Buffer (Base_Name (Compiler_Path.all));
-
-                     if Executable_Suffix'Length /= 0 and then
-                       Name_Len > Executable_Suffix'Length and then
-                       Name_Buffer
-                         (Name_Len - Executable_Suffix'Length + 1 ..
-                              Name_Len)
-                           = Executable_Suffix.all
-                     then
-                        Name_Len := Name_Len - Executable_Suffix'Length;
-                     end if;
-
-                     Write_Str (Name_Buffer (1 .. Name_Len));
-                  end if;
-
-                  for Option in 1 .. Compilation_Options.Last loop
-                     if Compilation_Options.Visible (Option) then
-                        Write_Char (' ');
-
-                        if Compilation_Options.Simple_Name (Option) then
-                           Write_Str
-                             (Base_Name
-                                (Compilation_Options.Options (Option).all));
-
-                        else
-                           Write_Str
-                             (Compilation_Options.Options (Option).all);
-                        end if;
-                     end if;
-                  end loop;
-
-                  Write_Eol;
-               end if;
-
-               Pid := GNAT.OS_Lib.Non_Blocking_Spawn
-                 (Compiler_Path.all,
-                  Compilation_Options.Options
-                    (1 .. Compilation_Options.Last));
-
-               declare
-                  Options : String_List_Access := null;
-               begin
-                  if Last_Recorded_Option >= 0 then
-
-                     Compilation_Options.Last := Last_Recorded_Option;
-
-                     --  Add the trailing required switches, if any, so that
-                     --  they will be put in the switches file.
-
-                     declare
-                        List    : Name_List_Index :=
-                          Config.Compiler_Trailing_Required_Switches;
-                        Nam_Nod : Name_Node;
-
-                     begin
-                        while List /= No_Name_List loop
-                           Nam_Nod := Project_Tree.Name_Lists.Table (List);
-                           Add_Option
-                             (Nam_Nod.Name,
-                              To      => Compilation_Options,
-                              Display => Verbose_Mode);
-                           List := Nam_Nod.Next;
-                        end loop;
-                     end;
-
-                     Options :=
-                       new String_List'
-                         (Compilation_Options.Options
-                              (1 .. Compilation_Options.Last));
-                  end if;
-
-                  Add_Process
-                    (Pid,
-                     Id,
-                     Mapping_File_Path,
-                     Compilation,
-                     Options);
-               end;
-            elsif Closure_Needed and then
-              Id.Language.Config.Dependency_Kind = ALI_File
+            elsif Closure_Needed
+              and then Id.Language.Config.Dependency_Kind = ALI_File
             then
                Record_ALI_For (Id);
             end if;
@@ -6099,8 +6138,8 @@ package body Buildgpr is
       --  Add the option to the All_Options cache, so that it will be found
       --  next time.
 
-      Add_Option
-        (Option_Name,
+      Add_Option_Internal
+        (new String'(Option_Name),
          To      => All_Options,
          Display => False);
 
@@ -7912,11 +7951,6 @@ package body Buildgpr is
    ---------------------
    -- Need_To_Compile --
    ---------------------
-
-   Object_Name   : String_Access := null;
-   C_Object_Name : String_Access := null;
-   Object_Path   : String_Access := null;
-   Switches_Name : String_Access := null;
 
    function Need_To_Compile
      (Source : Source_Id; In_Project : Project_Id) return Boolean
