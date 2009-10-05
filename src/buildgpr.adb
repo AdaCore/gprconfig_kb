@@ -71,6 +71,8 @@ with Types;            use Types;
 
 package body Buildgpr is
 
+   use type ALI.ALI_Id;
+
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
 
@@ -3735,8 +3737,11 @@ package body Buildgpr is
       function Good_ALI_Present return Boolean;
       --  Returns True if any ALI file was recorded in the previous set
 
-      procedure Record_ALI_For (Source_Identity : Source_Id);
-      --  Record the Id of an ALI file in Good_ALI table
+      procedure Record_ALI_For
+        (Source_Identity : Source_Id;
+         The_ALI         : ALI.ALI_Id := ALI.No_ALI_Id);
+      --  Record the Id of an ALI file in Good_ALI table.
+      --  The_ALI can contain the pre-parsed ali file, to save time
 
       function Phase_2_Makefile (Src_Data : Source_Id) return Boolean;
       function Phase_2_ALI      (Src_Data : Source_Id) return Boolean;
@@ -3864,28 +3869,37 @@ package body Buildgpr is
       -- Record_Good_ALI --
       ---------------------
 
-      procedure Record_ALI_For (Source_Identity : Source_Id) is
-         The_ALI  : ALI.ALI_Id;
+      procedure Record_ALI_For
+        (Source_Identity : Source_Id;
+         The_ALI         : ALI.ALI_Id := ALI.No_ALI_Id)
+      is
+         Local_ALI : ALI.ALI_Id := The_ALI;
          Attr     : aliased File_Attributes := Unknown_Attributes;
-         Text     : Text_Buffer_Ptr :=
-                      Read_Library_Info_From_Full
-                        (File_Name_Type (Source_Identity.Dep_Path),
-                         Attr'Access);
+         Text     : Text_Buffer_Ptr;
 
       begin
-         if Text /= null then
-            --  Read the ALI file but read only the necessary lines.
+         if The_ALI = ALI.No_ALI_Id then
+            Text := Read_Library_Info_From_Full
+              (File_Name_Type (Source_Identity.Dep_Path),
+               Attr'Access);
 
-            The_ALI :=
-              ALI.Scan_ALI
-                (File_Name_Type (Source_Identity.Dep_Path),
-                 Text,
-                 Ignore_ED     => False,
-                 Err           => True,
-                 Read_Lines    => "W");
-            Free (Text);
+            if Text /= null then
+               --  Read the ALI file but read only the necessary lines.
+
+               Local_ALI :=
+                 ALI.Scan_ALI
+                   (File_Name_Type (Source_Identity.Dep_Path),
+                    Text,
+                    Ignore_ED     => False,
+                    Err           => True,
+                    Read_Lines    => "W");
+               Free (Text);
+            end if;
+         end if;
+
+         if Local_ALI /= ALI.No_ALI_Id then
             Good_ALI.Increment_Last;
-            Good_ALI.Table (Good_ALI.Last) := The_ALI;
+            Good_ALI.Table (Good_ALI.Last) := Local_ALI;
          end if;
       end Record_ALI_For;
 
@@ -4191,14 +4205,13 @@ package body Buildgpr is
       -----------------
 
       function Phase_2_ALI (Src_Data : Source_Id) return Boolean is
-         use type ALI.ALI_Id;
          Compilation_OK : Boolean := True;
          Attr       : aliased File_Attributes := Unknown_Attributes;
          Text       : Text_Buffer_Ptr :=
            Read_Library_Info_From_Full
              (File_Name_Type (Src_Data.Dep_Path),
               Attr'Access);
-         The_ALI    : ALI.ALI_Id;
+         The_ALI    : ALI.ALI_Id := ALI.No_ALI_Id;
          Sfile      : File_Name_Type;
          Afile      : File_Name_Type;
          Source_2   : Source_Id;
@@ -4214,7 +4227,6 @@ package body Buildgpr is
                  Ignore_ED     => False,
                  Err           => True,
                  Read_Lines    => "W");
-            Free (Text);
 
             if The_ALI /= ALI.No_ALI_Id then
                for J in ALI.ALIs.Table (The_ALI).First_Unit ..
@@ -4325,7 +4337,15 @@ package body Buildgpr is
                      end if;
                   end loop;
                end loop;
+
+               if Compilation_OK
+                 and then Closure_Needed
+               then
+                  Record_ALI_For (Src_Data, The_ALI);
+               end if;
             end if;
+
+            Free (Text);
          end if;
          return Compilation_OK;
       end Phase_2_ALI;
@@ -5257,11 +5277,6 @@ package body Buildgpr is
 
             if not Compilation_OK then
                Record_Failure (Source_Identity);
-
-            elsif Closure_Needed and then
-              Source_Identity.Language.Config.Dependency_Kind = ALI_File
-            then
-               Record_ALI_For (Source_Identity);
             end if;
          end if;
       end Wait_For_Available_Slot;
@@ -8277,7 +8292,6 @@ package body Buildgpr is
       ----------------------
 
       function Process_ALI_Deps return Boolean is
-         use type ALI.ALI_Id;
          Attr     : aliased File_Attributes := Unknown_Attributes;
          Text     : Text_Buffer_Ptr :=
            Read_Library_Info_From_Full
