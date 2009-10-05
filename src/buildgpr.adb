@@ -640,8 +640,8 @@ package body Buildgpr is
       --  Insert a new source in the the queue
 
       procedure Insert_Withed_Sources_For
-                 (The_ALI         : ALI.ALI_Id;
-                  Only_Interfaces : Boolean := False);
+                 (The_ALI               : ALI.ALI_Id;
+                  Excluding_Shared_SALs : Boolean := False);
       --  Insert in the queue those sources withed by The_ALI, if there are not
       --  already in the queue and Only_Interfaces is False or they are part
       --  of the interfaces of their project.
@@ -9455,7 +9455,7 @@ package body Buildgpr is
 
                                     Queue.Insert_Withed_Sources_For
                                       (The_ALI,
-                                       Only_Interfaces => True);
+                                       Excluding_Shared_SALs => True);
                                  end if;
                               end if;
                            end loop;
@@ -10228,8 +10228,8 @@ package body Buildgpr is
       -------------------------------
 
       procedure Insert_Withed_Sources_For
-        (The_ALI         : ALI.ALI_Id;
-         Only_Interfaces : Boolean := False)
+        (The_ALI               : ALI.ALI_Id;
+         Excluding_Shared_SALs : Boolean := False)
       is
          Sfile     : File_Name_Type;
          Afile     : File_Name_Type;
@@ -10282,13 +10282,13 @@ package body Buildgpr is
                      Next (Iter);
                   end loop;
 
-                  --  If Only_In_Interfaces is True, do not insert in the queue
-                  --  the sources that are not part of the interfaces of their
-                  --  project.
+                  --  If Excluding_Shared_SALs is True, do not insert in the
+                  --  queue the sources of a shared Stand-Alone Library.
 
                   if Src_Id /= No_Source and then
-                     (not Only_Interfaces or else
-                      Src_Id.In_Interfaces)
+                     (not Excluding_Shared_SALs or else
+                      not Src_Id.Project.Standalone_Library or else
+                      Src_Id.Project.Library_Kind = Static)
                   then
                      Queue.Insert (Sfile, Src_Id);
                   end if;
