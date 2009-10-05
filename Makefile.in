@@ -90,8 +90,6 @@ bootstrap-clean:
 
 install: install.data install.bin
 	-${MKDIR} ${datadir}/gpr
-	-${MKDIR} ${datadir}/gps/plug-ins/
-	${INSTALL} doc/gprbuild_gps.xml ${datadir}/gps/plug-ins/
 	$(RM) -r ${datadir}/examples/gprbuild
 	-${MKDIR} ${datadir}/examples/gprbuild
 	${CP} -r examples/* ${datadir}/examples/gprbuild
