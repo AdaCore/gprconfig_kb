@@ -420,12 +420,66 @@ package body Gpr_Util is
    ------------------------------
 
    procedure Initialize_Source_Record (Source : Source_Id) is
+      procedure Set_Object_Project
+        (Obj_Dir : String; Obj_Proj : Project_Id; Obj_Path : Path_Name_Type;
+         Stamp   : Time_Stamp_Type);
+      --  Update information about object file, switches file,...
+
+      ------------------------
+      -- Set_Object_Project --
+      ------------------------
+
+      procedure Set_Object_Project
+        (Obj_Dir : String; Obj_Proj : Project_Id; Obj_Path : Path_Name_Type;
+         Stamp   : Time_Stamp_Type) is
+      begin
+         Source.Object_Project := Obj_Proj;
+         Source.Object_Path    := Obj_Path;
+         Source.Object_TS      := Stamp;
+
+         if Source.Language.Config.Dependency_Kind /= None then
+            declare
+               Dep_Path : constant String :=
+                 Normalize_Pathname
+                   (Name          => Get_Name_String (Source.Dep_Name),
+                    Resolve_Links => Opt.Follow_Links_For_Files,
+                    Directory     => Obj_Dir);
+            begin
+               Source.Dep_Path := Create_Name (Dep_Path);
+
+               --  If we don't know the timestamp of the .o file, we do not
+               --  need that of the ALI file either, so don't waste time
+
+               if Stamp /= Empty_Time_Stamp then
+                  Source.Dep_TS   := File_Stamp (Source.Dep_Path);
+               end if;
+            end;
+
+            if Source.Language.Config.Dependency_Kind = Makefile then
+               declare
+                  Switches_Path : constant String :=
+                    Normalize_Pathname
+                      (Name          => Get_Name_String (Source.Switches),
+                       Resolve_Links => Opt.Follow_Links_For_Files,
+                       Directory     => Obj_Dir);
+               begin
+                  Source.Switches_Path := Create_Name (Switches_Path);
+
+                  if Stamp /= Empty_Time_Stamp then
+                     Source.Switches_TS := File_Stamp (Source.Switches_Path);
+                  end if;
+               end;
+            end if;
+         end if;
+      end Set_Object_Project;
+
       Obj_Proj : Project_Id;
+      Compilable : Boolean;
    begin
-      --  Systematically recompute the time stamp. In fact, this function
-      --  is only called once per source file.
-      --  ??? System call
+      --  Systematically recompute the time stamp.
       Source.Source_TS := File_Stamp (Source.Path.Name);
+
+      --  Parse the source file to check whether we have a subunit
 
       if Source.Language.Config.Kind = Unit_Based
         and then Source.Kind = Impl
@@ -434,36 +488,41 @@ package body Gpr_Util is
          Source.Kind := Sep;
       end if;
 
-      if Is_Compilable (Source)
-        and Source.Language.Config.Object_Generated
-      then
+      --  For specs, we do not check object files if there is a body
+
+      if Source.Kind = Spec and then Source.Unit /= No_Unit_Index then
+         Compilable := Source.Unit.File_Names (Impl) = No_Source
+           and then Is_Compilable (Source);
+      else
+         Compilable := Is_Compilable (Source);
+      end if;
+
+      if Compilable and Source.Language.Config.Object_Generated then
          --  First, get the correct object file name and dependency file name
          --  if the source is in a multi-unit file.
 
          if Source.Index /= 0 then
-            declare
-               Index_Separator : constant Character :=
-                 Source.Language.Config.Multi_Unit_Object_Separator;
-            begin
-               Source.Object :=
-                 Object_Name
-                   (Source_File_Name   => Source.File,
-                    Source_Index       => Source.Index,
-                    Index_Separator    => Index_Separator,
-                    Object_File_Suffix =>
-                                    Source.Language.Config.Object_File_Suffix);
+            Source.Object :=
+              Object_Name
+                (Source_File_Name   => Source.File,
+                 Source_Index       => Source.Index,
+                 Index_Separator    =>
+                   Source.Language.Config.Multi_Unit_Object_Separator,
+                 Object_File_Suffix =>
+                   Source.Language.Config.Object_File_Suffix);
 
-               Source.Dep_Name :=
-                 Dependency_Name
-                   (Source.Object, Source.Language.Config.Dependency_Kind);
-            end;
+            Source.Dep_Name :=
+              Dependency_Name
+                (Source.Object, Source.Language.Config.Dependency_Kind);
          end if;
 
          --  Find the object file for that source. It could be either in
-         --  the current project or in an extended project
+         --  the current project or in an extended project (it might actually
+         --  not exist yet in the ultimate extending project, but if not found
+         --  elsewhere that's where we'll expect to find it).
 
          Obj_Proj := Source.Project;
-         loop
+         while Obj_Proj /= No_Project loop
             declare
                Dir  : constant String := Get_Name_String
                  (Obj_Proj.Object_Directory.Name);
@@ -477,79 +536,21 @@ package body Gpr_Util is
                                       Directory     => Dir);
 
                Obj_Path : constant Path_Name_Type := Create_Name (Object_Path);
-
-               --  ??? System call
                Stamp : constant Time_Stamp_Type := File_Stamp (Obj_Path);
 
-               procedure Set_Object_Project;
-
-               ------------------------
-               -- Set_Object_Project --
-               ------------------------
-
-               procedure Set_Object_Project is
-               begin
-                  Source.Object_Project := Obj_Proj;
-                  Source.Object_Path    := Obj_Path;
-                  Source.Object_TS      := Stamp;
-
-                  if Source.Language.Config.Dependency_Kind /= None then
-                     declare
-                        Dep_Path : constant String :=
-                                     Normalize_Pathname
-                                       (Name          =>
-                                          Get_Name_String (Source.Dep_Name),
-                                        Resolve_Links =>
-                                          Opt.Follow_Links_For_Files,
-                                        Directory     => Dir);
-                     begin
-                        Source.Dep_Path := Create_Name (Dep_Path);
-
-                        --  ??? System call
-                        Source.Dep_TS   := File_Stamp (Source.Dep_Path);
-                     end;
-                  end if;
-
-                  declare
-                     Switches_Path : constant String :=
-                                       Normalize_Pathname
-                                         (Name          =>
-                                            Get_Name_String
-                                              (Source.Switches),
-                                          Resolve_Links =>
-                                            Opt.Follow_Links_For_Files,
-                                          Directory     => Dir);
-                  begin
-                     Source.Switches_Path := Create_Name (Switches_Path);
-
-                     --  ??? System call
-                     Source.Switches_TS := File_Stamp (Source.Switches_Path);
-                  end;
-               end Set_Object_Project;
-
             begin
-               if Stamp /= Empty_Time_Stamp then
-                  Set_Object_Project;
+               if Stamp /= Empty_Time_Stamp
+                 or else (Obj_Proj.Extended_By = No_Project
+                          and then Source.Object_Project = No_Project)
+               then
+                  Set_Object_Project (Dir, Obj_Proj, Obj_Path, Stamp);
                end if;
 
-               if Obj_Proj.Extended_By = No_Project then
-                  --  No project extends this one. We are then using the
-                  --  ultimate extending project.
-
-                  if Source.Object_Project = No_Project then
-                     Set_Object_Project;
-                  end if;
-
-                  exit;
-
-               else
-                  --  We'll then examine the project that extends this one
-                  Obj_Proj := Obj_Proj.Extended_By;
-               end if;
+               Obj_Proj := Obj_Proj.Extended_By;
             end;
          end loop;
 
-      elsif Source.Language.Config.Dependency_Kind /= None then
+      elsif Source.Language.Config.Dependency_Kind = Makefile then
          declare
             Object_Dir : constant String :=
                            Get_Name_String
@@ -562,8 +563,6 @@ package body Gpr_Util is
                               Directory     => Object_Dir);
          begin
             Source.Dep_Path := Create_Name (Dep_Path);
-
-            --  ??? System call
             Source.Dep_TS   := File_Stamp (Source.Dep_Path);
          end;
       end if;

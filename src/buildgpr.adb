@@ -759,8 +759,13 @@ package body Buildgpr is
    --  Concatenate all directories in the Directories table into a path.
    --  Caller is responsible for freeing the result
 
-   procedure Await_Compile (Source : out Source_Id; OK : out Boolean);
-   --  Wait for a compiling process to finish
+   procedure Await_Compile
+     (Source        : out Source_Id;
+      OK            : out Boolean;
+      Dep_Path_Attr : access File_Attributes);
+   --  Wait for a compiling process to finish.
+   --  Dep_Path_Attr is initialized to the Source.Dep_Path file, and can be
+   --  used to retrieve length or timestamp
 
    procedure Build_Global_Archive
      (For_Project    : Project_Id;
@@ -869,8 +874,11 @@ package body Buildgpr is
    procedure Linking_Phase;
    --  Perform linking, if necessary
 
-   function Need_To_Compile
-     (Source : Source_Id; In_Project : Project_Id) return Boolean;
+   procedure Need_To_Compile
+     (Source       : Source_Id;
+      In_Project   : Project_Id;
+      Must_Compile : out Boolean;
+      The_ALI      : out ALI.ALI_Id);
    --  Check if a source need to be compiled.
    --  A source need to be compiled if:
    --    - Force_Compilations is True
@@ -880,6 +888,8 @@ package body Buildgpr is
    --    - Switches file does not exist
    --    - Either of these 3 files are older than the source or any source it
    --      depends on.
+   --  If an ALI file had to be parsed, it is returned as The_ALI, so that the
+   --  caller does not need to parse it again.
 
    procedure Post_Compilation_Phase;
    --  Build libraries, if needed, and perform binding, if needed
@@ -1460,15 +1470,19 @@ package body Buildgpr is
    -- Await_Compile --
    -------------------
 
-   procedure Await_Compile (Source : out Source_Id; OK : out Boolean) is
-      Pid : Process_Id;
+   procedure Await_Compile
+     (Source        : out Source_Id;
+      OK            : out Boolean;
+      Dep_Path_Attr : access File_Attributes)
+   is
+      Pid       : Process_Id;
       Comp_Data : Process_Data;
-
       Language  : Language_Ptr;
-
-      Config : Language_Config;
+      Config    : Language_Config;
 
    begin
+      Dep_Path_Attr.all := Unknown_Attributes;
+
       loop
          Source := No_Source;
 
@@ -1489,10 +1503,20 @@ package body Buildgpr is
                --  dependency file if the compilation was successful.
 
                if OK then
-                  Source.Object_TS := File_Stamp (Source.Object_Path);
-                  Source.Dep_TS    := File_Stamp (Source.Dep_Path);
+                  --  ??? Do we need to get the timestamp of the object file ?
+                  --  Not in the Ada case, maybe in the Makefile case
 
-                  if Comp_Data.Options /= null and then Check_Switches then
+                  if Source.Language.Config.Dependency_Kind = Makefile then
+                     Source.Object_TS := File_Stamp (Source.Object_Path);
+                  end if;
+
+                  Source.Dep_TS    := File_Time_Stamp
+                    (Source.Dep_Path, Dep_Path_Attr);
+
+                  if Comp_Data.Options /= null
+                    and then Source.Switches_Path /= No_Path
+                    and then Check_Switches
+                  then
                      --  Write the switches file, now that we have the updated
                      --  time stamp for the object file.
 
@@ -1553,6 +1577,8 @@ package body Buildgpr is
                      Comp_Data.Mapping_File := No_Path;
                      Comp_Data.Purpose := Dependency;
 
+                     --  ??? We search for it on the PATH for every file, this
+                     --  is very inefficient
                      Exec_Path := Locate_Exec_On_Path (Exec_Name);
 
                      if Exec_Path = null then
@@ -3747,7 +3773,10 @@ package body Buildgpr is
       --  The_ALI can contain the pre-parsed ali file, to save time
 
       function Phase_2_Makefile (Src_Data : Source_Id) return Boolean;
-      function Phase_2_ALI      (Src_Data : Source_Id) return Boolean;
+      function Phase_2_ALI
+        (Src_Data      : Source_Id;
+         Dep_Path_Attr : access File_Attributes)
+         return Boolean;
       --  Process Wait_For_Available_Slot depending on Src_Data.Dependency type
       --  This returns whether the compilation is considered as successful or
       --  not.
@@ -4249,13 +4278,15 @@ package body Buildgpr is
       -- Phase_2_ALI --
       -----------------
 
-      function Phase_2_ALI (Src_Data : Source_Id) return Boolean is
+      function Phase_2_ALI
+        (Src_Data      : Source_Id;
+         Dep_Path_Attr : access File_Attributes)
+         return Boolean
+      is
          Compilation_OK : Boolean := True;
-         Attr       : aliased File_Attributes := Unknown_Attributes;
          Text       : Text_Buffer_Ptr :=
            Read_Library_Info_From_Full
-             (File_Name_Type (Src_Data.Dep_Path),
-              Attr'Access);
+             (File_Name_Type (Src_Data.Dep_Path), Dep_Path_Attr);
          The_ALI    : ALI.ALI_Id := ALI.No_ALI_Id;
          Sfile      : File_Name_Type;
          Afile      : File_Name_Type;
@@ -5173,10 +5204,15 @@ package body Buildgpr is
          Compilation_Needed : Boolean;
          Last_Switches_For_File : Integer;
          Mapping_File       : Path_Name_Type;
+         The_ALI            : ALI.ALI_Id;
 
       begin
          if not Source_Project.Externally_Built then
-            Compilation_Needed := Need_To_Compile (Id, Source_Project);
+            Need_To_Compile
+              (Source       => Id,
+               In_Project   => Source_Project,
+               Must_Compile => Compilation_Needed,
+               The_ALI      => The_ALI);
 
             if Compilation_Needed or Check_Switches then
                Set_Options_For_File (Id);
@@ -5217,7 +5253,7 @@ package body Buildgpr is
             elsif Closure_Needed
               and then Id.Language.Config.Dependency_Kind = ALI_File
             then
-               Record_ALI_For (Id);
+               Record_ALI_For (Id, The_ALI);
             end if;
          end if;
       end Process_Project_Phase_1;
@@ -5229,10 +5265,12 @@ package body Buildgpr is
       function Must_Exit_Because_Of_Error return Boolean is
          Source_Identity : Source_Id;
          Compilation_OK  : Boolean;
+         Dep_Path_Attr   : aliased File_Attributes;
       begin
          if Bad_Compilations.Last > 0 and then not Keep_Going then
             while Outstanding_Compiles > 0 loop
-               Await_Compile (Source_Identity, Compilation_OK);
+               Await_Compile
+                 (Source_Identity, Compilation_OK, Dep_Path_Attr'Access);
 
                if not Compilation_OK then
                   Record_Failure (Source_Identity);
@@ -5268,11 +5306,13 @@ package body Buildgpr is
          Source_Identity : Source_Id;
          Compilation_OK  : Boolean;
          No_Check        : Boolean;
+         Dep_Path_Attr   : aliased File_Attributes;
       begin
          if Outstanding_Compiles = Maximum_Processes
            or else (Queue.Is_Empty and then Outstanding_Compiles > 0)
          then
-            Await_Compile (Source_Identity, Compilation_OK);
+            Await_Compile
+              (Source_Identity, Compilation_OK, Dep_Path_Attr'Access);
 
             if Compilation_OK then
                --  Check if dependencies are on sources in Interfaces and,
@@ -5287,7 +5327,8 @@ package body Buildgpr is
                   when Makefile =>
                      Compilation_OK := Phase_2_Makefile (Source_Identity);
                   when ALI_File =>
-                     Compilation_OK := Phase_2_ALI (Source_Identity);
+                     Compilation_OK :=
+                       Phase_2_ALI (Source_Identity, Dep_Path_Attr'Access);
                end case;
 
                --  If the compilation was invalidated, delete the compilation
@@ -7952,8 +7993,11 @@ package body Buildgpr is
    -- Need_To_Compile --
    ---------------------
 
-   function Need_To_Compile
-     (Source : Source_Id; In_Project : Project_Id) return Boolean
+   procedure Need_To_Compile
+     (Source       : Source_Id;
+      In_Project   : Project_Id;
+      Must_Compile : out Boolean;
+      The_ALI      : out ALI.ALI_Id)
    is
       Source_Path   : constant String :=
                         Get_Name_String (Source.Path.Name);
@@ -8330,7 +8374,6 @@ package body Buildgpr is
          Text     : Text_Buffer_Ptr :=
            Read_Library_Info_From_Full
              (File_Name_Type (Source.Dep_Path), Attr'Access);
-         The_ALI  : ALI.ALI_Id;
          Sfile    : File_Name_Type;
          Dep_Src  : Source_Id;
          Proj     : Project_Id;
@@ -8565,8 +8608,11 @@ package body Buildgpr is
       end Process_ALI_Deps;
 
    begin
+      The_ALI := ALI.No_ALI_Id;
+
       if Force_Compilations then
-         return not Externally_Built;
+         Must_Compile := not Externally_Built;
+         return;
       end if;
 
       Free (Object_Name);
@@ -8577,7 +8623,8 @@ package body Buildgpr is
       --  No need to compile if there is no "compiler"
 
       if Length_Of_Name (Source.Language.Config.Compiler_Driver) = 0 then
-         return False;
+         Must_Compile := False;
+         return;
       end if;
 
       if Source.Language.Config.Object_Generated then
@@ -8585,7 +8632,11 @@ package body Buildgpr is
          C_Object_Name := new String'(Object_Name.all);
          Canonical_Case_File_Name (C_Object_Name.all);
          Object_Path := new String'(Get_Name_String (Source.Object_Path));
-         Switches_Name := new String'(Get_Name_String (Source.Switches_Path));
+
+         if Source.Switches_Path /= No_Path then
+            Switches_Name :=
+              new String'(Get_Name_String (Source.Switches_Path));
+         end if;
       end if;
 
       if Verbose_Mode then
@@ -8607,7 +8658,8 @@ package body Buildgpr is
             Write_Line ("      project is externally built");
          end if;
 
-         return False;
+         Must_Compile := False;
+         return;
       end if;
 
       if not Source.Language.Config.Object_Generated then
@@ -8619,7 +8671,8 @@ package body Buildgpr is
                Write_Line ("      -> no object file generated");
             end if;
 
-            return True;
+            Must_Compile := True;
+            return;
          end if;
 
       else
@@ -8633,7 +8686,8 @@ package body Buildgpr is
                Write_Line (" does not exist");
             end if;
 
-            return True;
+            Must_Compile := True;
+            return;
          end if;
 
          --  If the object file has been created before the last modification
@@ -8648,7 +8702,8 @@ package body Buildgpr is
                Write_Line (" has time stamp earlier than source");
             end if;
 
-            return True;
+            Must_Compile := True;
+            return;
          end if;
       end if;
 
@@ -8664,7 +8719,8 @@ package body Buildgpr is
                Write_Line (" does not exist");
             end if;
 
-            return True;
+            Must_Compile := True;
+            return;
          end if;
 
          --  The source needs to be recompiled if the source has been modified
@@ -8679,7 +8735,8 @@ package body Buildgpr is
                Write_Line (" has time stamp earlier than source");
             end if;
 
-            return True;
+            Must_Compile := True;
+            return;
          end if;
       end if;
 
@@ -8695,7 +8752,8 @@ package body Buildgpr is
                Write_Line (" does not exist");
             end if;
 
-            return True;
+            Must_Compile := True;
+            return;
          end if;
 
          --  The source needs to be recompiled if the source has been modified
@@ -8708,7 +8766,8 @@ package body Buildgpr is
                Write_Line (" has time stamp earlier than source");
             end if;
 
-            return True;
+            Must_Compile := True;
+            return;
          end if;
       end if;
 
@@ -8718,12 +8777,14 @@ package body Buildgpr is
 
          when Makefile =>
             if Process_Makefile_Deps (Get_Name_String (Source.Dep_Path)) then
-               return True;
+               Must_Compile := True;
+               return;
             end if;
 
          when ALI_File =>
             if Process_ALI_Deps then
-               return True;
+               Must_Compile := True;
+               return;
             end if;
       end case;
 
@@ -8734,7 +8795,7 @@ package body Buildgpr is
          Write_Line ("      -> up to date");
       end if;
 
-      return False;
+      Must_Compile := False;
    end Need_To_Compile;
 
    -------------
