@@ -8573,13 +8573,18 @@ package body Buildgpr is
                      Get_Name_String (Runtime_Source_Dir);
                      Add_Char_To_Name_Buffer (Directory_Separator);
                      Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
+                     Name_Buffer (Name_Len + 1) := ASCII.NUL;
 
-                     if Is_Regular_File (Name_Buffer (1 .. Name_Len)) then
-                        declare
-                           TS : constant Time_Stamp_Type :=
-                                  File_Stamp (Path_Name_Type'(Name_Find));
+                     declare
+                        Attr : aliased File_Attributes;
+                        TS   : Time_Stamp_Type;
+                     begin
+                        if Is_Regular_File
+                          (Name_Buffer'Address, Attr'Access)
+                        then
+                           TS := File_Time_Stamp
+                             (Path_Name_Type'(Name_Find), Attr'Access);
 
-                        begin
                            if TS /= ALI.Sdep.Table (D).Stamp then
                               if Verbose_Mode then
                                  Write_Str
@@ -8597,8 +8602,8 @@ package body Buildgpr is
 
                               return True;
                            end if;
-                        end;
-                     end if;
+                        end if;
+                     end;
                   end if;
                end if;
             end loop;
