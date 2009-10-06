@@ -8576,7 +8576,7 @@ package body Buildgpr is
                      Name_Buffer (Name_Len + 1) := ASCII.NUL;
 
                      declare
-                        Attr : aliased File_Attributes;
+                        Attr : aliased File_Attributes := Unknown_Attributes;
                         TS   : Time_Stamp_Type;
                      begin
                         if Is_Regular_File
