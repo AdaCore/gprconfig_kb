@@ -455,7 +455,7 @@ package body Gpr_Util is
                end if;
             end;
 
-            if Source.Language.Config.Dependency_Kind = Makefile then
+            if Opt.Check_Switches then
                declare
                   Switches_Path : constant String :=
                     Normalize_Pathname
