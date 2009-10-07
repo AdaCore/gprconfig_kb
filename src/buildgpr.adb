@@ -631,6 +631,14 @@ package body Buildgpr is
       Table_Increment      => 100,
       Table_Name           => "Makegpr.Included_Sources");
 
+   package Subunits is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Integer,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Makegpr.Included_Sources");
+
    -----------
    -- Queue --
    -----------
@@ -4291,7 +4299,42 @@ package body Buildgpr is
          Sfile      : File_Name_Type;
          Afile      : File_Name_Type;
          Source_2   : Source_Id;
-         Iter       : Source_Iterator;
+         Iter           : Source_Iterator;
+
+         procedure Check_Source (Sfile : File_Name_Type);
+         --  Check if source Sfile is in the same project file as the Src_Data
+         --  source file. Invaidate the compilation if it is not.
+
+         ------------------
+         -- Check_Source --
+         ------------------
+
+         procedure Check_Source (Sfile : File_Name_Type) is
+            Source_3 : constant Source_Id :=
+              Find_Source (Project_Tree, No_Project, Base_Name => Sfile);
+
+         begin
+            if Source_3 = No_Source then
+               Write_Str ("source ");
+               Write_Str (Get_Name_String (Sfile));
+               Write_Line (" is not a source of a project");
+               Compilation_OK := False;
+
+            elsif Ultimate_Extending_Project_Of (Source_3.Project) /=
+              Ultimate_Extending_Project_Of (Src_Data.Project)
+            then
+               Write_Str ("sources ");
+               Write_Str (Get_Name_String (Source_3.File));
+               Write_Str (" and ");
+               Write_Str (Get_Name_String (Src_Data.File));
+               Write_Str (" belong to different projects: ");
+               Write_Str (Get_Name_String (Source_3.Project.Name));
+               Write_Str (" and ");
+               Write_Line (Get_Name_String (Src_Data.Project.Name));
+               Compilation_OK := False;
+            end if;
+         end Check_Source;
+
       begin
          if Text /= null then
             --  Read the ALI file but read only the necessary lines
@@ -4302,7 +4345,7 @@ package body Buildgpr is
                  Text,
                  Ignore_ED     => False,
                  Err           => True,
-                 Read_Lines    => "W");
+                 Read_Lines    => "DW");
 
             if The_ALI /= ALI.No_ALI_Id then
                for J in ALI.ALIs.Table (The_ALI).First_Unit ..
@@ -4413,6 +4456,89 @@ package body Buildgpr is
                      end if;
                   end loop;
                end loop;
+
+               if No_Split_Units then
+
+                  --  Initialized the list of subunits with the unit name
+
+                  Subunits.Init;
+                  Subunits.Append
+                    (new String'(Get_Name_String (Src_Data.Unit.Name)));
+
+                  --  First check that the spec and the body are in the same
+                  --  project.
+
+                  for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+                    ALI.ALIs.Table (The_ALI).Last_Unit
+                  loop
+                     Check_Source (ALI.Units.Table (J).Sfile);
+                  end loop;
+
+                  --  Next, check the subunits, if any
+
+                  declare
+                     Subunit_Found : Boolean;
+                     Already_Found : Boolean;
+                     Last          : Positive;
+                  begin
+                     --  Loop until we don't find new subunits
+
+                     loop
+                        Subunit_Found := False;
+
+                        for D in ALI.ALIs.Table (The_ALI).First_Sdep
+                          .. ALI.ALIs.Table (The_ALI).Last_Sdep
+                        loop
+                           if ALI.Sdep.Table (D).Subunit_Name /= No_Name then
+                              Get_Name_String
+                                (ALI.Sdep.Table (D).Subunit_Name);
+
+                              --  First check if we already found this subunit
+
+                              Already_Found := False;
+                              for K in 1 .. Subunits.Last loop
+                                 if Name_Buffer (1 .. Name_Len) =
+                                   Subunits.Table (K).all
+                                 then
+                                    Already_Found := True;
+                                    exit;
+                                 end if;
+                              end loop;
+
+                              if not Already_Found then
+                                 --  Find the name of the parent
+
+                                 Last := Name_Len - 1;
+                                 while Last > 1 and then
+                                       Name_Buffer (Last + 1) /= '.'
+                                 loop
+                                    Last := Last - 1;
+                                 end loop;
+
+                                 for J in 1 .. Subunits.Last loop
+                                    if Subunits.Table (J).all =
+                                      Name_Buffer (1 .. Last)
+                                    then
+                                       --  It is a new subunit, add it o the
+                                       --  list and check if it is in the right
+                                       --  project.
+
+                                       Subunits.Append
+                                         (new String'
+                                            (Name_Buffer (1 .. Name_Len)));
+                                       Subunit_Found := True;
+                                       Check_Source (ALI.Sdep.Table (D).Sfile);
+                                       exit;
+                                    end if;
+                                 end loop;
+                              end if;
+                           end if;
+                        end loop;
+
+                        exit when not Subunit_Found;
+                     end loop;
+                  end;
+               end if;
 
                if Compilation_OK
                  and then Closure_Needed
@@ -4964,7 +5090,6 @@ package body Buildgpr is
             Write_Eol;
          end if;
 
-         Change_To_Object_Directory (Source_Project);
          Pid := GNAT.OS_Lib.Non_Blocking_Spawn
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last));
@@ -5224,6 +5349,7 @@ package body Buildgpr is
 
             if Compilation_Needed then
                Update_Object_Path (Id, Source_Project);
+               Change_To_Object_Directory (Source_Project);
 
                --  Record the last recorded option index, to be able to
                --  write the switches file later.
@@ -10704,6 +10830,9 @@ package body Buildgpr is
 
          elsif Command_Line and then Arg = "--display-paths" then
             Display_Paths := True;
+
+         elsif Arg = "--no-split-units" then
+            No_Split_Units := True;
 
          elsif Command_Line
            and then
