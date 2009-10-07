@@ -60,6 +60,12 @@ NF-14-I401-028 Support for Ada multi-unit source files (2009-09-20)
 
   gprbuild now supports Ada multi-unit source files
 
+NF-14-HA27-001 New switch --no-split-units (2009-10-07)
+
+  A new switch --no-split-units is added. When this switch is specified, the
+  spec, body and subunits of an Ada unit must be sources of the same project
+  or of projects extending each others.
+
 NF-14-H828-007 Compilers working on all targets (2009-09-03)
 
   It is now possible in the knowledge base for gprconfig to specify
