@@ -1511,13 +1511,6 @@ package body Buildgpr is
                --  dependency file if the compilation was successful.
 
                if OK then
-                  --  ??? Do we need to get the timestamp of the object file ?
-                  --  Not in the Ada case, maybe in the Makefile case
-
-                  if Source.Language.Config.Dependency_Kind = Makefile then
-                     Source.Object_TS := File_Stamp (Source.Object_Path);
-                  end if;
-
                   Source.Dep_TS    := File_Time_Stamp
                     (Source.Dep_Path, Dep_Path_Attr);
 
@@ -1525,6 +1518,11 @@ package body Buildgpr is
                     and then Source.Switches_Path /= No_Path
                     and then Check_Switches
                   then
+                     --  First, update the time stamp of the object file that
+                     --  wil be written in the switches file.
+
+                     Source.Object_TS := File_Stamp (Source.Object_Path);
+
                      --  Write the switches file, now that we have the updated
                      --  time stamp for the object file.
 
@@ -4654,9 +4652,9 @@ package body Buildgpr is
          end if;
       end Set_Options_For_File;
 
-      -----------------------
-      -- Check_Switch_File --
-      -----------------------
+      -------------------------
+      -- Check_Switches_File --
+      -------------------------
 
       function Check_Switches_File (Id : Source_Id) return Boolean is
          File    : Ada.Text_IO.File_Type;
@@ -4816,6 +4814,7 @@ package body Buildgpr is
                List := Node.Next;
             end loop;
 
+            Get_Name_String (Node.Name);
             Add_Str_To_Name_Buffer (Get_Name_String (Id.Object));
 
             Add_Option
@@ -4987,6 +4986,7 @@ package body Buildgpr is
                   List := Node.Next;
                end loop;
 
+               Get_Name_String (Node.Name);
                Add_Str_To_Name_Buffer (Index_Img (2 .. Index_Img'Last));
                Add_Option
                  (Name_Buffer (1 .. Name_Len),

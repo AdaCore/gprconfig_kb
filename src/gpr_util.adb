@@ -454,22 +454,22 @@ package body Gpr_Util is
                   Source.Dep_TS   := File_Stamp (Source.Dep_Path);
                end if;
             end;
+         end if;
 
-            if Opt.Check_Switches then
-               declare
-                  Switches_Path : constant String :=
-                    Normalize_Pathname
-                      (Name          => Get_Name_String (Source.Switches),
-                       Resolve_Links => Opt.Follow_Links_For_Files,
-                       Directory     => Obj_Dir);
-               begin
-                  Source.Switches_Path := Create_Name (Switches_Path);
+         if Opt.Check_Switches then
+            declare
+               Switches_Path : constant String :=
+                 Normalize_Pathname
+                   (Name          => Get_Name_String (Source.Switches),
+                    Resolve_Links => Opt.Follow_Links_For_Files,
+                    Directory     => Obj_Dir);
+            begin
+               Source.Switches_Path := Create_Name (Switches_Path);
 
-                  if Stamp /= Empty_Time_Stamp then
-                     Source.Switches_TS := File_Stamp (Source.Switches_Path);
-                  end if;
-               end;
-            end if;
+               if Stamp /= Empty_Time_Stamp then
+                  Source.Switches_TS := File_Stamp (Source.Switches_Path);
+               end if;
+            end;
          end if;
       end Set_Object_Project;
 
