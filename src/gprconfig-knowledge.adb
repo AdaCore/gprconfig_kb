@@ -1649,8 +1649,6 @@ package body GprConfig.Knowledge is
             then
                Put_Verbose
                  ("Target for this compiler does not match --target");
-               Put_Verbose ("MANU  on_target=" & On_Target'Img);
-               Put_Verbose ("MANU  got=" & Comp.Targets_Set'Img);
                Continue := True;
                return;
             end if;
