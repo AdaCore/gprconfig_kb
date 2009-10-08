@@ -446,13 +446,7 @@ package body Gpr_Util is
                     Directory     => Obj_Dir);
             begin
                Source.Dep_Path := Create_Name (Dep_Path);
-
-               --  If we don't know the timestamp of the .o file, we do not
-               --  need that of the ALI file either, so don't waste time
-
-               if Stamp /= Empty_Time_Stamp then
-                  Source.Dep_TS   := File_Stamp (Source.Dep_Path);
-               end if;
+               Source.Dep_TS   := Osint.Unknown_Attributes;
             end;
          end if;
 
@@ -563,7 +557,7 @@ package body Gpr_Util is
                               Directory     => Object_Dir);
          begin
             Source.Dep_Path := Create_Name (Dep_Path);
-            Source.Dep_TS   := File_Stamp (Source.Dep_Path);
+            Source.Dep_TS   := Osint.Unknown_Attributes;
          end;
       end if;
    end Initialize_Source_Record;

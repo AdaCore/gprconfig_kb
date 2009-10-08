@@ -770,11 +770,8 @@ package body Buildgpr is
 
    procedure Await_Compile
      (Source        : out Source_Id;
-      OK            : out Boolean;
-      Dep_Path_Attr : access File_Attributes);
+      OK            : out Boolean);
    --  Wait for a compiling process to finish.
-   --  Dep_Path_Attr is initialized to the Source.Dep_Path file, and can be
-   --  used to retrieve length or timestamp
 
    procedure Build_Global_Archive
      (For_Project    : Project_Id;
@@ -1481,8 +1478,7 @@ package body Buildgpr is
 
    procedure Await_Compile
      (Source        : out Source_Id;
-      OK            : out Boolean;
-      Dep_Path_Attr : access File_Attributes)
+      OK            : out Boolean)
    is
       Pid       : Process_Id;
       Comp_Data : Process_Data;
@@ -1490,8 +1486,6 @@ package body Buildgpr is
       Config    : Language_Config;
 
    begin
-      Dep_Path_Attr.all := Unknown_Attributes;
-
       loop
          Source := No_Source;
 
@@ -1509,8 +1503,9 @@ package body Buildgpr is
             if Comp_Data.Purpose = Compilation then
 
                if OK then
-                  Source.Dep_TS    := File_Time_Stamp
-                    (Source.Dep_Path, Dep_Path_Attr);
+                  --  We created a new ALI file, to reset the attributes of the
+                  --  old one
+                  Source.Dep_TS    := Unknown_Attributes;
 
                   if Comp_Data.Options /= null
                     and then Source.Switches_Path /= No_Path
@@ -3784,10 +3779,7 @@ package body Buildgpr is
       --  The_ALI can contain the pre-parsed ali file, to save time
 
       function Phase_2_Makefile (Src_Data : Source_Id) return Boolean;
-      function Phase_2_ALI
-        (Src_Data      : Source_Id;
-         Dep_Path_Attr : access File_Attributes)
-         return Boolean;
+      function Phase_2_ALI (Src_Data : Source_Id) return Boolean;
       --  Process Wait_For_Available_Slot depending on Src_Data.Dependency type
       --  This returns whether the compilation is considered as successful or
       --  not.
@@ -3959,14 +3951,13 @@ package body Buildgpr is
          The_ALI         : ALI.ALI_Id := ALI.No_ALI_Id)
       is
          Local_ALI : ALI.ALI_Id := The_ALI;
-         Attr     : aliased File_Attributes := Unknown_Attributes;
          Text     : Text_Buffer_Ptr;
 
       begin
          if The_ALI = ALI.No_ALI_Id then
             Text := Read_Library_Info_From_Full
               (File_Name_Type (Source_Identity.Dep_Path),
-               Attr'Access);
+               Source_Identity.Dep_TS'Access);
 
             if Text /= null then
                --  Read the ALI file but read only the necessary lines.
@@ -4289,15 +4280,12 @@ package body Buildgpr is
       -- Phase_2_ALI --
       -----------------
 
-      function Phase_2_ALI
-        (Src_Data      : Source_Id;
-         Dep_Path_Attr : access File_Attributes)
-         return Boolean
-      is
+      function Phase_2_ALI (Src_Data : Source_Id) return Boolean is
          Compilation_OK : Boolean := True;
          Text       : Text_Buffer_Ptr :=
            Read_Library_Info_From_Full
-             (File_Name_Type (Src_Data.Dep_Path), Dep_Path_Attr);
+             (File_Name_Type (Src_Data.Dep_Path),
+              Src_Data.Dep_TS'Access);
          The_ALI    : ALI.ALI_Id := ALI.No_ALI_Id;
          Sfile      : File_Name_Type;
          Afile      : File_Name_Type;
@@ -5396,12 +5384,10 @@ package body Buildgpr is
       function Must_Exit_Because_Of_Error return Boolean is
          Source_Identity : Source_Id;
          Compilation_OK  : Boolean;
-         Dep_Path_Attr   : aliased File_Attributes;
       begin
          if Bad_Compilations.Last > 0 and then not Keep_Going then
             while Outstanding_Compiles > 0 loop
-               Await_Compile
-                 (Source_Identity, Compilation_OK, Dep_Path_Attr'Access);
+               Await_Compile (Source_Identity, Compilation_OK);
 
                if not Compilation_OK then
                   Record_Failure (Source_Identity);
@@ -5437,13 +5423,11 @@ package body Buildgpr is
          Source_Identity : Source_Id;
          Compilation_OK  : Boolean;
          No_Check        : Boolean;
-         Dep_Path_Attr   : aliased File_Attributes;
       begin
          if Outstanding_Compiles = Maximum_Processes
            or else (Queue.Is_Empty and then Outstanding_Compiles > 0)
          then
-            Await_Compile
-              (Source_Identity, Compilation_OK, Dep_Path_Attr'Access);
+            Await_Compile (Source_Identity, Compilation_OK);
 
             if Compilation_OK then
                --  Check if dependencies are on sources in Interfaces and,
@@ -5458,8 +5442,7 @@ package body Buildgpr is
                   when Makefile =>
                      Compilation_OK := Phase_2_Makefile (Source_Identity);
                   when ALI_File =>
-                     Compilation_OK :=
-                       Phase_2_ALI (Source_Identity, Dep_Path_Attr'Access);
+                     Compilation_OK := Phase_2_ALI (Source_Identity);
                end case;
 
                --  If the compilation was invalidated, delete the compilation
@@ -6875,6 +6858,11 @@ package body Buildgpr is
 
       Options.Process_Command_Line_Options;
 
+      --  Source file lookups should be cached for efficiency.
+      --  Source files are not supposed to change.
+
+      Osint.Source_File_Data (Cache => True);
+
       --  Compilation phase
 
       if All_Phases or Compile_Only then
@@ -8140,6 +8128,7 @@ package body Buildgpr is
       Start    : Natural;
       Finish   : Natural;
       Last_Obj : Natural;
+      Stamp    : Time_Stamp_Type;
 
       Looping : Boolean := False;
       --  Set to True at the end of the first Big_Loop for Makefile fragments
@@ -8501,10 +8490,10 @@ package body Buildgpr is
       ----------------------
 
       function Process_ALI_Deps return Boolean is
-         Attr     : aliased File_Attributes := Unknown_Attributes;
          Text     : Text_Buffer_Ptr :=
            Read_Library_Info_From_Full
-             (File_Name_Type (Source.Dep_Path), Attr'Access);
+             (File_Name_Type (Source.Dep_Path),
+              Source.Dep_TS'Access);
          Sfile    : File_Name_Type;
          Dep_Src  : Source_Id;
          Proj     : Project_Id;
@@ -8704,35 +8693,29 @@ package body Buildgpr is
                      Get_Name_String (Runtime_Source_Dir);
                      Add_Char_To_Name_Buffer (Directory_Separator);
                      Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
-                     Name_Buffer (Name_Len + 1) := ASCII.NUL;
 
                      declare
-                        Attr : aliased File_Attributes := Unknown_Attributes;
-                        TS   : Time_Stamp_Type;
+                        TS   : constant Time_Stamp_Type :=
+                          Source_File_Stamp (Name_Find);
                      begin
-                        if Is_Regular_File
-                          (Name_Buffer'Address, Attr'Access)
+                        if TS /= Empty_Time_Stamp
+                          and then TS /= ALI.Sdep.Table (D).Stamp
                         then
-                           TS := File_Time_Stamp
-                             (Path_Name_Type'(Name_Find), Attr'Access);
+                           if Verbose_Mode then
+                              Write_Str
+                                ("   -> different time stamp for ");
+                              Write_Line (Get_Name_String (Sfile));
 
-                           if TS /= ALI.Sdep.Table (D).Stamp then
-                              if Verbose_Mode then
-                                 Write_Str
-                                   ("   -> different time stamp for ");
-                                 Write_Line (Get_Name_String (Sfile));
-
-                                 if Debug_Flag_T then
-                                    Write_Str ("   in ALI file: ");
-                                    Write_Line
-                                      (String (ALI.Sdep.Table (D).Stamp));
-                                    Write_Str ("   actual file: ");
-                                    Write_Line (String (TS));
-                                 end if;
+                              if Debug_Flag_T then
+                                 Write_Str ("   in ALI file: ");
+                                 Write_Line
+                                   (String (ALI.Sdep.Table (D).Stamp));
+                                 Write_Str ("   actual file: ");
+                                 Write_Line (String (TS));
                               end if;
-
-                              return True;
                            end if;
+
+                           return True;
                         end if;
                      end;
                   end if;
@@ -8848,7 +8831,9 @@ package body Buildgpr is
          --  If there is no dependency file, then the source needs to be
          --  recompiled and the dependency file need to be created.
 
-         if Source.Dep_TS = Empty_Time_Stamp then
+         Stamp := File_Time_Stamp (Source.Dep_Path, Source.Dep_TS'Access);
+
+         if Stamp = Empty_Time_Stamp then
             if Verbose_Mode then
                Write_Str  ("      -> dependency file ");
                Write_Str  (Get_Name_String (Source.Dep_Path));
@@ -8862,8 +8847,8 @@ package body Buildgpr is
          --  The source needs to be recompiled if the source has been modified
          --  after the dependency file has been created.
 
-         if not Opt.Minimal_Recompilation and then
-           Source.Dep_TS < Source.Source_TS
+         if not Opt.Minimal_Recompilation
+           and then Stamp < Source.Source_TS
          then
             if Verbose_Mode then
                Write_Str  ("      -> dependency file ");
@@ -9573,7 +9558,9 @@ package body Buildgpr is
                         declare
                            Dep_File  : File_Name_Type;
                            Dep_Path  : Path_Name_Type;
-                           Dep_TS    : Time_Stamp_Type;
+                           Dep_TS    : aliased File_Attributes :=
+                             Unknown_Attributes;
+                           Stamp     : Time_Stamp_Type;
                            The_ALI   : ALI.ALI_Id;
                            Text      : Text_Buffer_Ptr;
                         begin
@@ -9586,6 +9573,7 @@ package body Buildgpr is
 
                               Dep_File := Source_Identity.Dep_Name;
                               Dep_Path := Source_Identity.Dep_Path;
+                              Dep_TS   := Source_Identity.Dep_TS;
 
                               --  For a library file, if there is no ALI file
                               --  in the object directory, check in the Library
@@ -9607,9 +9595,11 @@ package body Buildgpr is
                                    (Directory_Separator);
                                  Add_Str_To_Name_Buffer
                                    (Get_Name_String (Dep_File));
+                                 Name_Buffer (Name_Len + 1) := ASCII.NUL;
 
+                                 Dep_TS := Unknown_Attributes;
                                  if Is_Regular_File
-                                   (Name_Buffer (1 .. Name_Len))
+                                   (Name_Buffer'Address, Dep_TS'Access)
                                  then
                                     Dep_Path := Name_Find;
                                  end if;
@@ -9640,9 +9630,11 @@ package body Buildgpr is
                                       (Directory_Separator);
                                     Add_Str_To_Name_Buffer
                                       (Get_Name_String (Dep_File));
+                                    Name_Buffer (Name_Len + 1) := ASCII.NUL;
 
+                                    Dep_TS := Unknown_Attributes;
                                     if Is_Regular_File
-                                      (Name_Buffer (1 .. Name_Len))
+                                      (Name_Buffer'Address, Dep_TS'Access)
                                     then
                                        Dep_Path := Name_Find;
                                     end if;
@@ -9651,12 +9643,13 @@ package body Buildgpr is
                                  end loop;
                               end;
 
-                              Dep_TS := File_Stamp (Dep_Path);
+                              Stamp :=
+                                File_Time_Stamp (Dep_Path, Dep_TS'Access);
 
                               --  Check the time stamp against the binder
                               --  exchange file time stamp.
 
-                              if Dep_TS = Empty_Time_Stamp then
+                              if Stamp = Empty_Time_Stamp then
                                  Binder_Driver_Needs_To_Be_Called := True;
 
                                  if Verbose_Mode then
@@ -9666,7 +9659,7 @@ package body Buildgpr is
 
                                  exit;
 
-                              elsif Dep_TS > Bind_Exchange_TS then
+                              elsif Stamp > Bind_Exchange_TS then
                                  Binder_Driver_Needs_To_Be_Called := True;
 
                                  if Verbose_Mode then
@@ -9679,14 +9672,9 @@ package body Buildgpr is
 
                                  exit;
                               else
-                                 declare
-                                    Attr : aliased File_Attributes :=
-                                      Unknown_Attributes;
-                                 begin
-                                    Text := Read_Library_Info_From_Full
-                                      (File_Name_Type (Dep_Path),
-                                       Attr'Access);
-                                 end;
+                                 Text := Read_Library_Info_From_Full
+                                   (File_Name_Type (Dep_Path),
+                                    Dep_TS'Access);
 
                                  if Text /= null then
                                     The_ALI :=
