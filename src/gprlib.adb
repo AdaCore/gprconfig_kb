@@ -353,14 +353,19 @@ procedure Gprlib is
 
    Path_Option : String_Access := null;
 
-   Rpath : String_Access := null;
+   Separate_Run_Path_Options : Boolean := False;
+
+   Rpath : String_List_Access := null;
    --  Allocated only if Path Option is supported
 
-   Rpath_Last : Natural := 0;
-   --  Index of last valid character of Rpath
-
-   Initial_Rpath_Length : constant := 200;
+   Initial_Rpath_Length : constant := 4;
    --  Initial size of Rpath, when first allocated
+
+   Rpath_Last : Natural := 0;
+   --  Index of last directory in Rpath
+
+   Rpath_Length : Natural := 0;
+   --  Length of the full run path option
 
    Arguments : String_List_Access := new String_List (1 .. 20);
    Last_Arg  : Natural := 0;
@@ -380,7 +385,7 @@ procedure Gprlib is
    --  Add one argument to the Arguments list. Increase the size of the list
    --  if necessary.
 
-   procedure Add_Rpath (Path : String);
+   procedure Add_Rpath (Path : String_Access);
    --  Add a path name to Rpath
 
    procedure Copy_ALI_Files;
@@ -428,7 +433,7 @@ procedure Gprlib is
    -- Add_Rpath --
    ---------------
 
-   procedure Add_Rpath (Path : String) is
+   procedure Add_Rpath (Path : String_Access) is
 
       procedure Double;
       --  Double Rpath size
@@ -438,10 +443,15 @@ procedure Gprlib is
       ------------
 
       procedure Double is
-         New_Rpath : constant String_Access :=
-                       new String (1 .. 2 * Rpath'Length);
+         New_Rpath : constant String_List_Access :=
+                       new String_List (1 .. 2 * Rpath'Length);
       begin
          New_Rpath (1 .. Rpath_Last) := Rpath (1 .. Rpath_Last);
+
+         for J in 1 .. Rpath_Last loop
+            Rpath (J) := null;
+         end loop;
+
          Free (Rpath);
          Rpath := New_Rpath;
       end Double;
@@ -452,30 +462,25 @@ procedure Gprlib is
       --  If firt path, allocate initial Rpath
 
       if Rpath = null then
-         Rpath := new String (1 .. Initial_Rpath_Length);
-         Rpath_Last := 0;
+         Rpath := new String_List (1 .. Initial_Rpath_Length);
+         Rpath_Last := 1;
+         Rpath_Length := 0;
 
       else
-         --  Otherwise, add a path separator between two path names
+         --  Otherwise, double Rpath if it is full
 
          if Rpath_Last = Rpath'Last then
             Double;
          end if;
 
          Rpath_Last := Rpath_Last + 1;
-         Rpath (Rpath_Last) := Path_Separator;
+         Rpath_Length := Rpath_Length + 1;
       end if;
-
-      --  Increase Rpath size until it is large enough
-
-      while Rpath_Last + Path'Length > Rpath'Last loop
-         Double;
-      end loop;
 
       --  Add the path name
 
-      Rpath (Rpath_Last + 1 .. Rpath_Last + Path'Length) := Path;
-      Rpath_Last := Rpath_Last + Path'Length;
+      Rpath (Rpath_Last) := Path;
+      Rpath_Length := Rpath_Length + Path'Length;
    end Add_Rpath;
 
    --------------------
@@ -875,6 +880,9 @@ begin
             when Gprexch.Keep_Response_File =>
                Delete_Response_File := False;
 
+            when Gprexch.Separate_Run_Path_Options =>
+               Separate_Run_Path_Options := True;
+
             when others =>
                null;
          end case;
@@ -901,6 +909,9 @@ begin
 
             when Gprexch.Keep_Response_File =>
                Osint.Fail ("keep response file section should be empty");
+
+            when Gprexch.Separate_Run_Path_Options =>
+               Osint.Fail ("separate run path options should be empty");
 
             when Gprexch.Object_Files =>
                Object_Files.Append (new String'(Line (1 .. Last)));
@@ -1931,7 +1942,7 @@ begin
               ("-L" & Imported_Library_Directories.Table (J).all));
 
          if Path_Option /= null then
-            Add_Rpath (Imported_Library_Directories.Table (J).all);
+            Add_Rpath (Imported_Library_Directories.Table (J));
          end if;
 
          Library_Switches_Table.Append
@@ -1984,7 +1995,7 @@ begin
            (new String'("-L" & Runtime_Library_Dir.all));
 
          if Path_Option /= null then
-            Add_Rpath (Runtime_Library_Dir.all);
+            Add_Rpath (Runtime_Library_Dir);
          end if;
 
          if Libgnarl_Needed then
@@ -1995,8 +2006,34 @@ begin
       end if;
 
       if Path_Option /= null and then Rpath /= null then
-         Options_Table.Append
-           (new String'(Path_Option.all & Rpath (1 .. Rpath_Last)));
+         if Separate_Run_Path_Options then
+            for J in 1 .. Rpath_Last loop
+               Options_Table.Append
+                 (new String'(Path_Option.all & Rpath (J).all));
+            end loop;
+
+         else
+            declare
+               Option : constant String_Access :=
+                 new String (1 .. Path_Option'Length + Rpath_Length);
+               Cur    : Natural := 0;
+
+            begin
+               Option (Cur + 1 .. Cur + Path_Option'Length) := Path_Option.all;
+               Cur := Cur + Path_Option'Length;
+               Option (Cur + 1 .. Cur + Rpath (1)'Length) := Rpath (1).all;
+               Cur := Cur + Rpath (1)'Length;
+
+               for J in 2 .. Rpath_Last loop
+                  Cur := Cur + 1;
+                  Option (Cur) := Path_Separator;
+                  Option (Cur + 1 .. Cur + Rpath (J)'Length) := Rpath (J).all;
+                  Cur := Cur + Rpath (J)'Length;
+               end loop;
+
+               Options_Table.Append (Option);
+            end;
+         end if;
       end if;
 
       Build_Shared_Lib;

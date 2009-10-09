@@ -98,6 +98,7 @@ package Gprexch is
       Partial_Linker,
       Archive_Suffix,
       Run_Path_Option,
+      Separate_Run_Path_Options,
       Auto_Init,
       Interface_Dep_Files,
       Dependency_Files,

@@ -2998,6 +2998,12 @@ package body Buildgpr is
                      List := Nam.Next;
                   end loop;
                end;
+
+               if For_Project.Config.Separate_Run_Path_Options then
+                  Put_Line
+                    (Exchange_File,
+                     Library_Label (Gprexch.Separate_Run_Path_Options));
+               end if;
             end if;
 
             --  If attribute Library_Options was specified, add these
