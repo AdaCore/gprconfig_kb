@@ -468,7 +468,6 @@ package body Gpr_Util is
       end Set_Object_Project;
 
       Obj_Proj : Project_Id;
-      Compilable : Boolean;
    begin
       --  Systematically recompute the time stamp.
       Source.Source_TS := File_Stamp (Source.Path.Name);
@@ -482,16 +481,9 @@ package body Gpr_Util is
          Source.Kind := Sep;
       end if;
 
-      --  For specs, we do not check object files if there is a body
-
-      if Source.Kind = Spec and then Source.Unit /= No_Unit_Index then
-         Compilable := Source.Unit.File_Names (Impl) = No_Source
-           and then Is_Compilable (Source);
-      else
-         Compilable := Is_Compilable (Source);
-      end if;
-
-      if Compilable and Source.Language.Config.Object_Generated then
+      if Source.Language.Config.Object_Generated
+        and then Is_Compilable (Source)
+      then
          --  First, get the correct object file name and dependency file name
          --  if the source is in a multi-unit file.
 
@@ -530,14 +522,29 @@ package body Gpr_Util is
                                       Directory     => Dir);
 
                Obj_Path : constant Path_Name_Type := Create_Name (Object_Path);
-               Stamp : constant Time_Stamp_Type := File_Stamp (Obj_Path);
+               Stamp : Time_Stamp_Type;
 
             begin
-               if Stamp /= Empty_Time_Stamp
-                 or else (Obj_Proj.Extended_By = No_Project
-                          and then Source.Object_Project = No_Project)
+               --  For specs, we do not check object files if there is a body.
+               --  This saves a system call. On the other hand, we do need to
+               --  know the object_path, in case the user has passed the .ads
+               --  on the command line to compile the spec only
+
+               if Source.Kind /= Spec
+                 or else Source.Unit = No_Unit_Index
                then
-                  Set_Object_Project (Dir, Obj_Proj, Obj_Path, Stamp);
+                  Stamp := File_Stamp (Obj_Path);
+
+                  if Stamp /= Empty_Time_Stamp
+                    or else (Obj_Proj.Extended_By = No_Project
+                             and then Source.Object_Project = No_Project)
+                  then
+                     Set_Object_Project (Dir, Obj_Proj, Obj_Path, Stamp);
+                  end if;
+
+               else
+                  Set_Object_Project
+                    (Dir, Obj_Proj, Obj_Path, Empty_Time_Stamp);
                end if;
 
                Obj_Proj := Obj_Proj.Extended_By;
