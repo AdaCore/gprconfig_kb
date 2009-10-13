@@ -5021,7 +5021,7 @@ package body Buildgpr is
       procedure Add_Name_Of_Source_Switches (Id : Source_Id) is
          Source_Path : String_Access;
       begin
-         Get_Name_String (Id.Path.Name);
+         Get_Name_String (Id.Path.Display_Name);
 
          case Id.Language.Config.Path_Syntax is
             when Canonical =>
