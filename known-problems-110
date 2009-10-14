@@ -78,6 +78,24 @@ KP-110-H502-028 ALI files in extending library projects
 
   Workaround: Invoke gprbuild with -f
 
+KP-110-H429-018 Crash when building a library with assembler sources
+
+  Problem:    gprlib crashes when a library includes sources that have no
+              dependency files.
+
+  Status:     This was fixed in 1.2.0 on 2008-04-30
+
+  Workaround: Avoid sources with no dependency files in libraries
+
+KP-110-H424-029 gprbuild does not take into account Library_GCC
+
+  Problem:    gprbuild does not use the driver specified with attribute
+              Library_GCC to link shared libraries.
+
+  Status:     This was fixed in 1.2.0 on 2008-04-25
+
+  Workaround: Make shared libraries linkable using gcc.
+
 KP-110-H421-024 Find correctly all Ada sources
 
   Problem:    When the naming scheme is seemingly ambiguous such that the same
