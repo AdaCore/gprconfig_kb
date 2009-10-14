@@ -190,6 +190,10 @@
     <target>ppc-vx653-solaris</target>
     <target>ppc-vx653-windows</target>
     <target>powerpc-wrs-vxworksae</target>
+  </targetset>
+
+ <!-- ppc-vxmils-.*  (vxworks MILS) -->
+ <targetset>
     <target>ppc-vxmils-windows</target>
     <target>powerpc-wrs-vxworksmils</target>
   </targetset>

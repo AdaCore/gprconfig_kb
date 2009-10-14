@@ -33,6 +33,7 @@
      <compilers>
         <compiler name="G++-WRS653" language="C++" />
         <compiler name="G++-WRS5" language="C++" />
+        <compiler name="G++-WRSMILS" language="C++" />
      </compilers>
      <config>
    package Compiler is
@@ -45,6 +46,7 @@
      <compilers>
         <compiler name="G++" language="C++" />
         <compiler name="G++-WRS653" language="C++" />
+        <compiler name="G++-WRSMILS" language="C++" />
         <compiler name="G++-WRS5" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
        <compiler name="GCC-MINGW32" language="C++" />
