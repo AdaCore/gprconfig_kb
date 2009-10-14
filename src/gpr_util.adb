@@ -468,6 +468,7 @@ package body Gpr_Util is
       end Set_Object_Project;
 
       Obj_Proj : Project_Id;
+
    begin
       --  Systematically recompute the time stamp.
       Source.Source_TS := File_Stamp (Source.Path.Name);
@@ -522,7 +523,7 @@ package body Gpr_Util is
                                       Directory     => Dir);
 
                Obj_Path : constant Path_Name_Type := Create_Name (Object_Path);
-               Stamp : Time_Stamp_Type;
+               Stamp : Time_Stamp_Type := Empty_Time_Stamp;
 
             begin
                --  For specs, we do not check object files if there is a body.
@@ -532,19 +533,16 @@ package body Gpr_Util is
 
                if Source.Kind /= Spec
                  or else Source.Unit = No_Unit_Index
+                 or else Source.Unit.File_Names (Impl) = No_Source
                then
                   Stamp := File_Stamp (Obj_Path);
+               end if;
 
-                  if Stamp /= Empty_Time_Stamp
-                    or else (Obj_Proj.Extended_By = No_Project
-                             and then Source.Object_Project = No_Project)
-                  then
-                     Set_Object_Project (Dir, Obj_Proj, Obj_Path, Stamp);
-                  end if;
-
-               else
-                  Set_Object_Project
-                    (Dir, Obj_Proj, Obj_Path, Empty_Time_Stamp);
+               if Stamp /= Empty_Time_Stamp
+                 or else (Obj_Proj.Extended_By = No_Project
+                          and then Source.Object_Project = No_Project)
+               then
+                  Set_Object_Project (Dir, Obj_Proj, Obj_Path, Stamp);
                end if;
 
                Obj_Proj := Obj_Proj.Extended_By;
