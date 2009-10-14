@@ -18,6 +18,13 @@ NF-12-HA21-031 Support for -margs switch (2008-10-21)
   The -margs switch, equivalent to -gargs is now supported, for better
   compatibility with gnatmake.
 
+NF-12-H903-021 Better error messages for qualified lib projects (2008-09-04)
+
+  When a project qualified as a "library project" is not a library project
+  because one or both of the attributes Library_Dir and Library_Name is
+  missing, the error message will now indicate which attribute is not
+  declared.
+
 NF-12-H821-015 Use response files when available (2008-09-22)
 
   When supported, and when the command line is too long, gprlib now uses
