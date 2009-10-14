@@ -11,6 +11,16 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-110-H930-023 Wrong placement of linking options from the binding phase
+
+  Problem:    Linking options coming from the binding phase that may be needed
+              by object files are incorrectly placed before the object files in
+              the invocation of the linker.
+
+  Status:     This was fixed in 1.2.0 on 2008-10-13
+
+  Workaround: Repeat these linking options in the linker options.
+
 KP-110-H814-019 Main on the command line for a library project
 
   Problem:    gprbuild does not fail when a main is specified on the command
