@@ -39,6 +39,16 @@ KP-110-H721-016 Externally built projects and switch -s
 
   Workaround: Do not use switch -s in this case.
 
+KP-110-H708-011 Config file not searched in original project
+
+  Problem:    When a config file is specified in a project A without sources
+              and the package Builder or Compiler of project A is renamed in
+              another project B, the config file is not found for project B.
+
+  Status:     This was fixed in 1.2.0 on 2008-07-08
+
+  Workaround: Copy the config file in the relevant project.
+
 KP-110-H702-026 Failure to find Ada source in MixedCase
 
   Problem:    When the casing is specified as MixedCase, gprbuild fails to
