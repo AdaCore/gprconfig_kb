@@ -71,6 +71,18 @@
     </target>
   </compiler_description>
 
+  <!-- VxWorks MILS -->
+  <compiler_description>
+    <name>GCC-WRSMILS</name>
+    <executable prefix="1">cc(ppc)</executable>
+    <version>
+      <external>cc${PREFIX} -v</external>
+      <grep regexp=".*(vxworksae).*" group="1"></grep>
+      <must_match>vxworksae</must_match>
+    </version>
+    <languages>C</languages>
+  </compiler_description>
+
   <!--     GCC 2.8.1
     There is no switch, in such versions, to find out the list of languages,
     so we just assume there is only C.
@@ -136,6 +148,18 @@
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <!-- G++ for VxWorks MILS -->
+  <compiler_description>
+    <name>G++-WRSMILS</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <external>c++${PREFIX} -v</external>
+      <grep regexp=".*(vxworksae).*" group="1"></grep>
+      <must_match>vxworksae</must_match>
+    </version>
+    <languages>C++</languages>
   </compiler_description>
 
   <!--  Assembler -->

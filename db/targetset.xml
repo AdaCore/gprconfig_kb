@@ -192,6 +192,12 @@
     <target>powerpc-wrs-vxworksae</target>
   </targetset>
 
+ <!-- ppc-vxmils-.*  (vxworks MILS) -->
+ <targetset>
+    <target>ppc-vxmils-windows</target>
+    <target>powerpc-wrs-vxworksmils</target>
+  </targetset>
+
  <!-- x86-vx653-.*  (vxworks 653) -->
  <targetset>
     <target>x86-vx653-windows</target>
