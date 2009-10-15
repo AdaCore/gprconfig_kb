@@ -72,6 +72,7 @@
   </compiler_description>
 
   <!-- VxWorks MILS -->
+  <!-- ?? Will need to modify if we support pentium target -->
   <compiler_description>
     <name>GCC-WRSMILS</name>
     <executable prefix="1">cc(ppc)</executable>
@@ -151,6 +152,7 @@
   </compiler_description>
 
   <!-- G++ for VxWorks MILS -->
+  <!-- ?? Will need to modify if we support pentium target -->
   <compiler_description>
     <name>G++-WRSMILS</name>
     <executable prefix="1">c\+\+(ppc)</executable>
