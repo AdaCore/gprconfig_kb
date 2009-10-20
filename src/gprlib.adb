@@ -385,6 +385,7 @@ procedure Gprlib is
    --  Add one argument to the Arguments list. Increase the size of the list
    --  if necessary.
 
+   procedure Add_Rpath (Path : String);
    procedure Add_Rpath (Path : String_Access);
    --  Add a path name to Rpath
 
@@ -433,6 +434,13 @@ procedure Gprlib is
    -- Add_Rpath --
    ---------------
 
+   procedure Add_Rpath (Path : String) is
+   begin
+      if Path'Length /= 0 then
+         Add_Rpath (new String'(Path));
+      end if;
+   end Add_Rpath;
+
    procedure Add_Rpath (Path : String_Access) is
 
       procedure Double;
@@ -459,7 +467,7 @@ procedure Gprlib is
    --  Start of processing for Add_Rpath
 
    begin
-      --  If firt path, allocate initial Rpath
+      --  If first path, allocate initial Rpath
 
       if Rpath = null then
          Rpath := new String_List (1 .. Initial_Rpath_Length);
@@ -467,6 +475,15 @@ procedure Gprlib is
          Rpath_Length := 0;
 
       else
+         --  Check if the directory is already there
+
+         for J in 1 .. Rpath_Last loop
+            if Rpath (J).all = Path.all then
+               --  Nothing to do if the directory is already in Rpath
+               return;
+            end if;
+         end loop;
+
          --  Otherwise, double Rpath if it is full
 
          if Rpath_Last = Rpath'Last then
@@ -1996,6 +2013,11 @@ begin
 
          if Path_Option /= null then
             Add_Rpath (Runtime_Library_Dir);
+
+            --  Add to the Path Option the directory of the shared version of
+            --  libgcc.
+
+            Add_Rpath (Shared_Libgcc_Dir (Runtime_Library_Dir.all));
          end if;
 
          if Libgnarl_Needed then

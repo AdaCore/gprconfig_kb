@@ -174,6 +174,13 @@ package Gpr_Util is
    --  Terminate program, with or without a message, setting the status code
    --  according to Fatal.
 
+   procedure Get_Mains;
+   --  Get the mains. If no main is defined on the command line, take those
+   --  in attribute Main of the main project. If there are mains, check that
+   --  they are not truncated (no body suffix) and if they are put the complete
+   --  file names in the table. Fail if a main specified in attribute Main is
+   --  not a source of the main project.
+
    procedure Initialize_Source_Record (Source : Source_Id);
    --  Get information either about the source file, the object and
    --  dependency file. This includes timestamps.
@@ -185,17 +192,14 @@ package Gpr_Util is
    --  Check if default.gpr exists in the current directory. If it does, use
    --  it. Otherwise, if there is only one file ending with .gpr, use it.
 
-   procedure Get_Mains;
-   --  Get the mains. If no main is defined on the command line, take those
-   --  in attribute Main of the main project. If there are mains, check that
-   --  they are not truncated (no body suffix) and if they are put the complete
-   --  file names in the table. Fail if a main specified in attribute Main is
-   --  not a source of the main project.
-
    function Partial_Name
      (Lib_Name      : String;
       Number        : Natural;
       Object_Suffix : String) return String;
    --  Returns the name of an object file created by the partial linker
+
+   function Shared_Libgcc_Dir (Run_Time_Dir : String) return String;
+   --  Returns the directory of the shared version of libgcc, if it can be
+   --  found, otherwise returns an empty string.
 
 end Gpr_Util;

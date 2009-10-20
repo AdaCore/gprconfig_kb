@@ -24,6 +24,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Interfaces.C.Strings;
+
 with Debug;    use Debug;
 with Err_Vars; use Err_Vars;
 with Errutil;
@@ -38,6 +41,11 @@ with GprConfig.Sdefault;        use GprConfig.Sdefault;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body Gpr_Util is
+
+   Libgcc_Subdir_Ptr : Interfaces.C.Strings.chars_ptr;
+   pragma Import (C, Libgcc_Subdir_Ptr, "__gnat_default_libgcc_subdir");
+   --  Pointer to string indicating the installation subdirectory where a
+   --  default shared libgcc might be found.
 
    GNU_Header  : aliased constant String := "INPUT (";
    GNU_Opening : aliased constant String := """";
@@ -656,6 +664,17 @@ package body Gpr_Util is
       end if;
    end Look_For_Default_Project;
 
+   -------------------------
+   -- Normalized_Hostname --
+   -------------------------
+
+   function Normalized_Hostname return String is
+      Id : Targets_Set_Id;
+   begin
+      Get_Targets_Set (Base, Hostname, Id);
+      return Normalized_Target (Base, Id);
+   end Normalized_Hostname;
+
    ------------------
    -- Partial_Name --
    ------------------
@@ -673,15 +692,53 @@ package body Gpr_Util is
         & Object_Suffix;
    end Partial_Name;
 
-   -------------------------
-   -- Normalized_Hostname --
-   -------------------------
+   -----------------------
+   -- Shared_Libgcc_Dir --
+   -----------------------
 
-   function Normalized_Hostname return String is
-      Id : Targets_Set_Id;
+   function Shared_Libgcc_Dir (Run_Time_Dir : String) return String is
+      Path      : String (1 .. Run_Time_Dir'Length + 15);
+      Path_Last : constant Natural := Run_Time_Dir'Length;
+      GCC_Index : Natural := 0;
+
    begin
-      Get_Targets_Set (Base, Hostname, Id);
-      return Normalized_Target (Base, Id);
-   end Normalized_Hostname;
+      Path (1 .. Path_Last) := Run_Time_Dir;
+      GCC_Index := Index (Path (1 .. Path_Last), "gcc-lib");
+
+      if GCC_Index /= 0 then
+         --  This is gcc 2.8.2: the shared version of libgcc is
+         --  located in the parent directory of "gcc-lib".
+
+         GCC_Index := GCC_Index - 1;
+
+      else
+         GCC_Index := Index (Path (1 .. Path_Last), "/lib/");
+
+         if GCC_Index = 0 then
+            GCC_Index :=
+              Index
+                (Path (1 .. Path_Last),
+                 Directory_Separator & "lib" & Directory_Separator);
+         end if;
+
+         if GCC_Index /= 0 then
+            --  We have found "lib" as a subdirectory in the runtime dir path.
+            --  The
+            declare
+               Subdir : constant String :=
+                 Interfaces.C.Strings.Value (Libgcc_Subdir_Ptr);
+            begin
+               Path
+                 (GCC_Index + 1 ..
+                    GCC_Index + Subdir'Length) :=
+                   Subdir;
+               GCC_Index :=
+                 GCC_Index + Subdir'Length;
+            end;
+         end if;
+      end if;
+
+      return Path (1 .. GCC_Index);
+   end Shared_Libgcc_Dir;
 
 end Gpr_Util;
