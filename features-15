@@ -18,3 +18,9 @@ NF-15-IA18-001 No shared libgnat by default with C++ (2009-10-20)
   When Ada and C++ are used, the shared versions of the GNAT libraries
   are no longer used by default. However, the shared version of libgcc
   is always used.
+
+NF-15-I713-006 Reative paths in the run path option (2009-10-21)
+
+  For platforms where the linker support -z origin and $ORIGIN in the run
+  path option, use paths relative to the exec directory in the run path
+  option.
