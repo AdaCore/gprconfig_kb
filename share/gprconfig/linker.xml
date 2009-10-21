@@ -248,7 +248,8 @@
 
    for Shared_Library_Suffix use ".so";
    for Library_Auto_Init_Supported use "true";
-   for Run_Path_Option  use ("-Wl,-rpath,");
+   for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
+   for Run_Path_Origin_Supported use "True";
     </config>
   </configuration>
 
@@ -312,7 +313,8 @@
 
    for Shared_Library_Suffix use ".so";
    for Library_Auto_Init_Supported use "true";
-   for Run_Path_Option  use ("-Wl,-R,");
+   for Run_Path_Option  use ("-Wl,-z,origin,-R,");
+   for Run_Path_Origin_Supported use "True";
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>

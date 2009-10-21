@@ -912,6 +912,10 @@ package body Buildgpr is
    --  Returns True if Extending is Extended or is extending Extended directly
    --  or indirectly.
 
+   procedure Rpaths_Relative_To (Exec_Dir : Path_Name_Type);
+   --  Change all paths in table Rpaths to paths relative to Exec_Dir, if they
+   --  have at least one non root directory in common.
+
    procedure Record_Failure (Source : Source_Id);
    --  Record that compilation of a source failed
 
@@ -7935,6 +7939,10 @@ package body Buildgpr is
                      Length   : Natural := 0;
                      Arg      : String_Access := null;
                   begin
+                     if Main_Proj.Config.Run_Path_Origin_Supported then
+                        Rpaths_Relative_To (Main_Proj.Exec_Directory.Name);
+                     end if;
+
                      if Main_Proj.Config.Separate_Run_Path_Options then
                         for J in 1 .. Rpaths.Last loop
                            Nam_Nod := Project_Tree.Name_Lists.Table
@@ -10669,6 +10677,124 @@ package body Buildgpr is
       end Size;
 
    end Queue;
+
+   ------------------------
+   -- Rpaths_Relative_To --
+   ------------------------
+
+   procedure Rpaths_Relative_To (Exec_Dir : Path_Name_Type) is
+      Exec : String := Get_Name_String (Exec_Dir);
+      Last_Exec : Positive;
+      Curr_Exec : Positive;
+      Last_Path : Positive;
+      Curr_Path : Positive;
+      Nmb       : Natural;
+
+   begin
+      --  Replace all directory separators with '/' to ease search
+
+      if Directory_Separator /= '/' then
+         for J in Exec'Range loop
+            if Exec (J) = Directory_Separator then
+               Exec (J) := '/';
+            end if;
+         end loop;
+      end if;
+
+      for Npath in 1 .. Rpaths.Last loop
+         declare
+            Path : String := Rpaths.Table (Npath).all;
+
+         begin
+            --  Replace all directory separators with '/' to ease search
+
+            if Directory_Separator /= '/' then
+               for J in Path'Range loop
+                  if Path (J) = Directory_Separator then
+                     Path (J) := '/';
+                  end if;
+               end loop;
+            end if;
+
+            --  Find the number of common directories between the path and the
+            --  exec directory.
+
+            Nmb := 0;
+            Curr_Path := Path'First;
+            Curr_Exec := Exec'First;
+            loop
+               exit when
+                 Curr_Path > Path'Last or else
+                 Curr_Exec > Exec'Last or else
+                 Path (Curr_Path) /= Exec (Curr_Exec);
+
+               if Path (Curr_Path) = '/' then
+                  Nmb := Nmb + 1;
+                  Last_Path := Curr_Path;
+                  Last_Exec := Curr_Exec;
+
+               elsif Curr_Exec = Exec'Last and then Curr_Path > Path'Last then
+                  Nmb := Nmb + 1;
+                  Last_Path := Curr_Path + 1;
+                  Last_Exec := Curr_Exec + 1;
+                  exit;
+               end if;
+
+               Curr_Path := Curr_Path + 1;
+               Curr_Exec := Curr_Exec + 1;
+            end loop;
+
+            --  If there is more than one common directories (the root
+            --  directory does not count), then change the absolute path to a
+            --  relative path.
+
+            if Nmb > 1 then
+               Nmb := 0;
+
+               for J in Last_Exec .. Exec'Last - 1 loop
+                  if Exec (J) = '/' then
+                     Nmb := Nmb + 1;
+                  end if;
+               end loop;
+
+               if Nmb = 0 then
+                  if Last_Path >= Path'Last then
+                     --  Case of the path being the exec dir
+
+                     Rpaths.Table (Npath) := new String'("$ORIGIN");
+
+                  else
+                     --  Case of the path being a subdir of the exec dir
+
+                     Rpaths.Table (Npath) :=
+                       new String'
+                         ("$ORIGIN" & Directory_Separator &
+                          Rpaths.Table (Npath) (Last_Path + 1 .. Path'Last));
+                  end if;
+
+               else
+                  if Last_Path >= Path'Last then
+                     --  Case of the exec dir being a subdir of the path
+
+                     Rpaths.Table (Npath) :=
+                       new String'
+                         ("$ORIGIN" & Directory_Separator &
+                          (Nmb - 1) * (".." & Directory_Separator) & "..");
+
+                  else
+                     --  General case of path and exec dir having a common root
+
+                     Rpaths.Table (Npath) :=
+                       new String'
+                         ("$ORIGIN" & Directory_Separator &
+                          Nmb * (".." & Directory_Separator) &
+                          Rpaths.Table (Npath) (Last_Path + 1 .. Path'Last));
+                  end if;
+               end if;
+            end if;
+         end;
+      end loop;
+   end Rpaths_Relative_To;
 
    --------------------
    -- Record_Failure --
