@@ -248,8 +248,6 @@
 
    for Shared_Library_Suffix use ".so";
    for Library_Auto_Init_Supported use "true";
-   for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
-   for Run_Path_Origin_Supported use "True";
     </config>
   </configuration>
 
@@ -260,6 +258,8 @@
     </targets>
     <config>
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+   for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
+   for Run_Path_Origin_Supported use "True";
 
    package Linker is
       for Max_Command_Line_Length use "8192";
@@ -274,6 +274,9 @@
        <target name="^.*freebsb.*$" />
     </targets>
     <config>
+   for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
+   for Run_Path_Origin_Supported use "True";
+
    package Linker is
       for Max_Command_Line_Length use "8192";
       for Response_File_Format    use "GNU";
@@ -287,6 +290,8 @@
        <target name="^.*irix.*$" />
     </targets>
     <config>
+   for Run_Path_Option  use ("-Wl,-rpath,");
+
    package Linker is
       for Max_Command_Line_Length use "5000";
       for Response_File_Format    use "object_list";
