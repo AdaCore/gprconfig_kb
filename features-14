@@ -43,14 +43,6 @@ NF-14-I728-026 gprclean warns when object dir does not exist (2009-08-11)
   with an error. Instead, it will now display a warning, and skip this
   project, but continue cleaning the other projects if required.
 
-NF-14-I713-006 Relative paths in run path option (2009-09-06)
-
-  For platforms that support a run path option, the paths are made relative
-  to the exec directory, if they have more than the root directory in common
-  with the exec directory. This allows moving an executable with its shared
-  libraries to a different exec directory, as long as the relative paths
-  of the shared libraries are preserved.
-
 NF-14-I415-016 Binder generated file compiled with all options (2009-05-06)
 
   gprbind now compiles the binder generated file with the required trailing
