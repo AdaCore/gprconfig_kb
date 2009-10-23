@@ -1281,6 +1281,32 @@ package body Buildgpr is
       end case;
    end Add_Option;
 
+   procedure Add_Option
+     (Value       : String;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
+   is
+   begin
+      Name_Len := Value'Length;
+      Name_Buffer (1 .. Name_Len) := Value;
+      Add_Option_Internal (Get_Option (Name_Find), To, Display, Simple_Name);
+   end Add_Option;
+
+   procedure Add_Option
+     (Value       : Name_Id;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
+   is
+   begin
+      Add_Option_Internal (Get_Option (Value), To, Display, Simple_Name);
+   end Add_Option;
+
+   -------------------------
+   -- Add_Option_Internal --
+   -------------------------
+
    procedure Add_Option_Internal
      (Value       : String_Access;
       To          : in out Options_Data;
@@ -1288,6 +1314,12 @@ package body Buildgpr is
       Simple_Name : Boolean := False)
    is
    begin
+      --  For compatibility with gnatmake, do not consider empty options
+
+      if Value'Length = 0 then
+         return;
+      end if;
+
       To.Last := To.Last + 1;
 
       if To.Last > To.Options'Last then
@@ -1317,28 +1349,6 @@ package body Buildgpr is
       To.Visible (To.Last)     := Display;
       To.Simple_Name (To.Last) := Simple_Name;
    end Add_Option_Internal;
-
-   procedure Add_Option
-     (Value       : String;
-      To          : in out Options_Data;
-      Display     : Boolean;
-      Simple_Name : Boolean := False)
-   is
-   begin
-      Name_Len := Value'Length;
-      Name_Buffer (1 .. Name_Len) := Value;
-      Add_Option_Internal (Get_Option (Name_Find), To, Display, Simple_Name);
-   end Add_Option;
-
-   procedure Add_Option
-     (Value       : Name_Id;
-      To          : in out Options_Data;
-      Display     : Boolean;
-      Simple_Name : Boolean := False)
-   is
-   begin
-      Add_Option_Internal (Get_Option (Value), To, Display, Simple_Name);
-   end Add_Option;
 
    -----------------
    -- Add_Options --
