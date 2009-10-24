@@ -1,0 +1,24 @@
+========================================
+Known problems in GPRBUILD version 1.4.0
+========================================
+
+Copyright (c) 2009, AdaCore
+
+The following is a listing of known problems in release 1.4.0. Except where
+specifically noted, all these problems have been corrected in the development
+tree of the 1.5 technology. This means they are corrected in any 1.4.0w
+wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
+the status line. This can be used to determine if a given wavefront has the fix
+identified in the entry.
+
+KP-140-I925-022 No language detected when extending a project with no languages
+
+  Problem:    A project that extends another project with no languages may
+              not have a default language, as no languages were found during
+              auto configuration.
+
+  Status:     This was fixed in 1.5.0 on 2009-10-23
+
+  Workaround: Declare the Ada language in the extending project.
+
+
