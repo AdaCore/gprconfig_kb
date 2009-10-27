@@ -1763,6 +1763,13 @@ begin
          end loop;
       end if;
 
+      --  Delete the archive if it already exists, to avoid having duplicated
+      --  object files in the archive when it is built in chunks.
+
+      if Is_Regular_File (Library_Path_Name.all) then
+         Delete_File (Library_Path_Name.all, Success);
+      end if;
+
       if Last_AB_Append_Option = 0 then
          --  If there is no Archive_Builder_Append_Option, always build the
          --  archive in one chunk.
