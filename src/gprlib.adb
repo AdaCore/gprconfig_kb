@@ -367,6 +367,8 @@ procedure Gprlib is
    Rpath_Length : Natural := 0;
    --  Length of the full run path option
 
+   Install_Name : String_Access := null;
+
    Arguments : String_List_Access := new String_List (1 .. 20);
    Last_Arg  : Natural := 0;
    Argument_Length : Natural := 0;
@@ -1124,7 +1126,18 @@ begin
                Archive_Suffix := new String'(Line (1 .. Last));
 
             when Gprexch.Run_Path_Option =>
+               if Path_Option /= null then
+                  Osint.Fail ("multiple run path options");
+               end if;
+
                Path_Option := new String'(Line (1 .. Last));
+
+            when Gprexch.Install_Name =>
+               if Install_Name /= null then
+                  Osint.Fail ("multiple install names");
+               end if;
+
+               Install_Name := new String'(Line (1 .. Last));
 
             when Gprexch.Auto_Init =>
                Osint.Fail ("auto init section should be empty");
@@ -2025,6 +2038,16 @@ begin
          end if;
 
          Options_Table.Append (Libgnat);
+      end if;
+
+      if Install_Name /= null then
+         Options_Table.Append
+           (new String'
+              (Install_Name.all &
+               Directory_Separator &
+               Shared_Lib_Prefix.all &
+               Library_Name.all &
+               Shared_Lib_Suffix.all));
       end if;
 
       if Path_Option /= null and then Rpath /= null then

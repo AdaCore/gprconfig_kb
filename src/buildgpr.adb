@@ -912,7 +912,8 @@ package body Buildgpr is
    --  Returns True if Extending is Extended or is extending Extended directly
    --  or indirectly.
 
-   procedure Rpaths_Relative_To (Exec_Dir : Path_Name_Type);
+   procedure Rpaths_Relative_To
+     (Exec_Dir : Path_Name_Type; Origin : Name_Id);
    --  Change all paths in table Rpaths to paths relative to Exec_Dir, if they
    --  have at least one non root directory in common.
 
@@ -2999,6 +3000,16 @@ package body Buildgpr is
                   end if;
                end;
 
+            end if;
+
+            if
+              For_Project.Config.Library_Install_Name_Option /= No_Name
+            then
+               Put_Line (Exchange_File, Library_Label (Gprexch.Install_Name));
+               Put_Line
+                 (Exchange_File,
+                  Get_Name_String
+                    (For_Project.Config.Library_Install_Name_Option));
             end if;
 
             if For_Project.Config.Run_Path_Option /= No_Name_List then
@@ -7949,8 +7960,10 @@ package body Buildgpr is
                      Length   : Natural := 0;
                      Arg      : String_Access := null;
                   begin
-                     if Main_Proj.Config.Run_Path_Origin_Supported then
-                        Rpaths_Relative_To (Main_Proj.Exec_Directory.Name);
+                     if Main_Proj.Config.Run_Path_Origin /= No_Name then
+                        Rpaths_Relative_To
+                          (Main_Proj.Exec_Directory.Name,
+                           Main_Proj.Config.Run_Path_Origin);
                      end if;
 
                      if Main_Proj.Config.Separate_Run_Path_Options then
@@ -10692,13 +10705,18 @@ package body Buildgpr is
    -- Rpaths_Relative_To --
    ------------------------
 
-   procedure Rpaths_Relative_To (Exec_Dir : Path_Name_Type) is
+   procedure Rpaths_Relative_To
+     (Exec_Dir : Path_Name_Type;
+      Origin   : Name_Id)
+   is
       Exec : String := Get_Name_String (Exec_Dir);
       Last_Exec : Positive;
       Curr_Exec : Positive;
       Last_Path : Positive;
       Curr_Path : Positive;
       Nmb       : Natural;
+
+      Origin_Name : constant String := Get_Name_String (Origin);
 
    begin
       --  Replace all directory separators with '/' to ease search
@@ -10771,14 +10789,14 @@ package body Buildgpr is
                   if Last_Path >= Path'Last then
                      --  Case of the path being the exec dir
 
-                     Rpaths.Table (Npath) := new String'("$ORIGIN");
+                     Rpaths.Table (Npath) := new String'(Origin_Name);
 
                   else
                      --  Case of the path being a subdir of the exec dir
 
                      Rpaths.Table (Npath) :=
                        new String'
-                         ("$ORIGIN" & Directory_Separator &
+                         (Origin_Name & Directory_Separator &
                           Rpaths.Table (Npath) (Last_Path + 1 .. Path'Last));
                   end if;
 
@@ -10788,7 +10806,7 @@ package body Buildgpr is
 
                      Rpaths.Table (Npath) :=
                        new String'
-                         ("$ORIGIN" & Directory_Separator &
+                         (Origin_Name & Directory_Separator &
                           (Nmb - 1) * (".." & Directory_Separator) & "..");
 
                   else
@@ -10796,7 +10814,7 @@ package body Buildgpr is
 
                      Rpaths.Table (Npath) :=
                        new String'
-                         ("$ORIGIN" & Directory_Separator &
+                         (Origin_Name & Directory_Separator &
                           Nmb * (".." & Directory_Separator) &
                           Rpaths.Table (Npath) (Last_Path + 1 .. Path'Last));
                   end if;

@@ -184,6 +184,8 @@
 
    for Run_Path_Option  use ("-Wl,-rpath,");
    for Separate_Run_Path_Options use "true";
+   for Run_Path_Origin use "@executable_path";
+   for Library_Install_Name_Option use "-Wl,@install_name";
 
    for Shared_Library_Suffix use ".dylib";
    for Library_Auto_Init_Supported use "true";
@@ -259,7 +261,7 @@
     <config>
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
-   for Run_Path_Origin_Supported use "True";
+   for Run_Path_Origin use "$$ORIGIN";
 
    package Linker is
       for Max_Command_Line_Length use "8192";
@@ -275,7 +277,7 @@
     </targets>
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
-   for Run_Path_Origin_Supported use "True";
+   for Run_Path_Origin use "\$ORIGIN";
 
    package Linker is
       for Max_Command_Line_Length use "8192";
@@ -319,7 +321,7 @@
    for Shared_Library_Suffix use ".so";
    for Library_Auto_Init_Supported use "true";
    for Run_Path_Option  use ("-Wl,-z,origin,-R,");
-   for Run_Path_Origin_Supported use "True";
+   for Run_Path_Origin use "\$ORIGIN";
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>

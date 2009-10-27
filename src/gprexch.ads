@@ -99,6 +99,7 @@ package Gprexch is
       Archive_Suffix,
       Run_Path_Option,
       Separate_Run_Path_Options,
+      Install_Name,
       Auto_Init,
       Interface_Dep_Files,
       Dependency_Files,
