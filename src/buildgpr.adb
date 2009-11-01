@@ -7895,7 +7895,7 @@ package body Buildgpr is
                     Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
                end loop;
 
-               --  Look for the ast switch -shared-libgcc or -static-libgcc.
+               --  Look for the last switch -shared-libgcc or -static-libgcc.
                --  If -shared-libgcc was the last switch, then put in the
                --  run path option the shared libgcc dir.
 
@@ -10789,7 +10789,8 @@ package body Buildgpr is
                   if Last_Path >= Path'Last then
                      --  Case of the path being the exec dir
 
-                     Rpaths.Table (Npath) := new String'(Origin_Name);
+                     Rpaths.Table (Npath) :=
+                       new String'(Origin_Name & Directory_Separator & ".");
 
                   else
                      --  Case of the path being a subdir of the exec dir
