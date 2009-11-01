@@ -273,7 +273,7 @@
   <!-- freebsd -->
   <configuration>
     <targets>
-       <target name="^.*freebsb.*$" />
+       <target name="^.*freebsd.*$" />
     </targets>
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
