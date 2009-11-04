@@ -2347,7 +2347,9 @@ package body Buildgpr is
 
       Disregard : Boolean;
 
-      Iter      : Source_Iterator;
+      Path_Found : Boolean;
+
+      Iter : Source_Iterator;
 
       procedure Get_Objects;
       --  Get the paths of the object files of the library in table
@@ -2614,14 +2616,42 @@ package body Buildgpr is
                   Object_TS :=
                     Time_Stamp_Type (Name_Buffer (1 .. Name_Len));
 
+                  Path_Found := False;
                   for Index in 1 .. Library_Objs.Last loop
                      if Object_Path = Library_Objs.Table (Index).Path then
+                        Path_Found := True;
                         Library_Needs_To_Be_Built :=
                           Object_TS /= Library_Objs.Table (Index).TS;
                         Library_Objs.Table (Index).Known := True;
                         exit;
                      end if;
                   end loop;
+
+                  --  If the object file is not found, it may be that the path
+                  --  in the library is the same as the path of the object
+                  --  files, but with different symbolic links. So, we try
+                  --  again resolving the symbolic links.
+
+                  if not Path_Found then
+                     declare
+                        Norm_Path : constant String :=
+                          Normalize_Pathname (Get_Name_String (Object_Path));
+
+                     begin
+                        for Index in 1 .. Library_Objs.Last loop
+                           if Norm_Path =
+                             Normalize_Pathname
+                               (Get_Name_String
+                                    (Library_Objs.Table (Index).Path))
+                           then
+                              Library_Needs_To_Be_Built :=
+                                Object_TS /= Library_Objs.Table (Index).TS;
+                              Library_Objs.Table (Index).Known := True;
+                              exit;
+                           end if;
+                        end loop;
+                     end;
+                  end if;
 
                   if Library_Needs_To_Be_Built and then Verbose_Mode then
                      Write_Str ("      -> object file ");
