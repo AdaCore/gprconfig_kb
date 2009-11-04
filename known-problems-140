@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-140-IA29-033 Library built with different symbolic links
+
+  Problem:    When a library has been built in a setup where there are
+              symbolic links and it is part of another setup with different
+              or no symbolic links, gprbuild always attempts to rebuild
+              the library.
+
+  Status:     This was fixed in 1.5.0 on 2009-11-04
+
+  Workaround: Always invoke gprbuild with -eL.
+
 KP-140-IA27-015 Static library built in chunks contains duplicate object files
 
   Problem:    When static libraries (archives) are built in chunks and are
