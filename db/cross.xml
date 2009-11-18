@@ -7,6 +7,7 @@
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^avr$" />
+       <target name="^leon-elf$" />
        <target name="^.*-elinos-linux$" />
      </targets>
      <config>
