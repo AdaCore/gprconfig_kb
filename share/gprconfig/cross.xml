@@ -1,6 +1,19 @@
 <?xml version="1.0" ?>
 <gprconfig>
    <!--  This package provides adjustments for cross compilers -->
+
+   <!-- AAMP executable have extension .axe -->
+   <configuration>
+     <targets>
+       <target name="aamp" />
+     </targets>
+     <config>
+   package Builder is
+      for Executable_Suffix use ".axe";
+   end Builder;
+     </config>
+   </configuration>
+
    <!-- ppc-elf executables do not have any extension -->
    <configuration>
      <targets>
