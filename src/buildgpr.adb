@@ -130,6 +130,12 @@ package body Buildgpr is
    Search_Project_Dir_Expected : Boolean := False;
    --  True when last switch was -aP
 
+   No_Object_Check_Switch : constant String  := "--no-object-check";
+   Object_Checked : Boolean := True;
+   --  False when switch --no-object-check is used. When True, presence of
+   --  the object file and its time stamp are checked to decide if a file needs
+   --  to be compiled.
+
    Direct_Import_Only_Switch : constant String  := "--direct-import-only";
    Indirect_Imports_Switch : constant String    := "--indirect-imports";
    No_Indirect_Imports_Switch : constant String := "--no-indirect-imports";
@@ -6929,6 +6935,13 @@ package body Buildgpr is
 
       Osint.Source_File_Data (Cache => True);
 
+      --  If switch --no-object-check is used, then there is no check for the
+      --  switches.
+
+      if not Object_Checked then
+         Check_Switches := False;
+      end if;
+
       --  Compilation phase
 
       if All_Phases or Compile_Only then
@@ -8535,7 +8548,8 @@ package body Buildgpr is
                               --  If the source has been modified after the
                               --  object file, we need to recompile.
 
-                           elsif Object_To_Global_Archive (Source)
+                           elsif Object_Checked
+                             and then Object_To_Global_Archive (Source)
                              and then Src_TS > Source.Object_TS
                            then
                               if Verbose_Mode then
@@ -8667,7 +8681,7 @@ package body Buildgpr is
             return True;
          end if;
 
-         if ALI.ALIs.Table (The_ALI).No_Object then
+         if Object_Checked and then ALI.ALIs.Table (The_ALI).No_Object then
             if Verbose_Mode then
                Write_Line
                  ("    -> no object generated during last compilation");
@@ -8874,7 +8888,7 @@ package body Buildgpr is
          return;
       end if;
 
-      if Source.Language.Config.Object_Generated then
+      if Source.Language.Config.Object_Generated and then Object_Checked then
          Object_Name := new String'(Get_Name_String (Source.Object));
          C_Object_Name := new String'(Object_Name.all);
          Canonical_Case_File_Name (C_Object_Name.all);
@@ -8922,7 +8936,7 @@ package body Buildgpr is
             return;
          end if;
 
-      else
+      elsif Object_Checked then
          --  If object file does not exist, of course source need to be
          --  compiled.
 
@@ -9040,7 +9054,7 @@ package body Buildgpr is
       --  If we are here, then everything is OK, and we don't need
       --  to recompile.
 
-      if (not Check_Switches) and then Verbose_Mode then
+      if (not Object_Checked) and then Verbose_Mode then
          Write_Line ("      -> up to date");
       end if;
 
@@ -11235,6 +11249,10 @@ package body Buildgpr is
          then
             Opt.Unchecked_Shared_Lib_Imports := True;
 
+         elsif Command_Line and then Arg = No_Object_Check_Switch then
+            Object_Checked := False;
+            Unique_Compile := True;
+
          elsif Command_Line and then
            Arg'Length >= 3 and then
            Arg (1 .. 3) = "-aP"
@@ -11783,6 +11801,11 @@ package body Buildgpr is
          Write_Str ("           Shared lib projects may import any project");
          Write_Eol;
 
+         Write_Str ("  ");
+         Write_Str (No_Object_Check_Switch);
+         Write_Eol;
+         Write_Str ("           Do not check object files");
+         Write_Eol;
          Write_Eol;
 
          --  Line for -aP
