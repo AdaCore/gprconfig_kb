@@ -145,6 +145,12 @@
 <!-- Cross Ports -->
 <!-- *********** -->
 
+  <!-- aamp -->
+  <targetset>
+    <target>aamp</target>
+    <target>.*aamp.*</target>
+  </targetset>
+
  <!-- ppc-lynx5-.* -->
   <targetset>
     <target>ppc-lynx5.*</target>

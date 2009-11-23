@@ -170,6 +170,20 @@
     </config>
   </configuration>
 
+  <!-- GNAAMP -->
+  <configuration>
+    <targets>
+       <target name="aamp" />
+    </targets>
+    <config>
+   for Library_Support use "none";
+
+   package Linker is
+      for Driver use "aa_link";
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  Darwin -->
   <configuration>
     <targets>
@@ -449,6 +463,9 @@
   </configuration>
 
   <configuration>
+    <targets negate="true">
+       <target name="aamp" />
+    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
