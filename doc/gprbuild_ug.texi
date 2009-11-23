@@ -1291,6 +1291,15 @@ package Builder of the main project:
   This switch is provided to cancel a previous switch
   @option{--no-indirect-imports} on the command line.
 
+@item @option{--no-object-check}
+
+  This indicates that GPRbuild will not check for the presence of object files
+  and for the switches stored in switches file, even if switch -s is used.
+  If sources are specified on the command line, only these sources are
+  compiled. If no source is specified on the command line, all sources of the
+  main project are compiled. No binding, library buiding or linking is
+  performed.
+
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 
   Specify to GPRbuild to add directory @file{dir} to the user project file search
