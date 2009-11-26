@@ -3048,7 +3048,9 @@ package body Buildgpr is
                     (For_Project.Config.Library_Install_Name_Option));
             end if;
 
-            if For_Project.Config.Run_Path_Option /= No_Name_List then
+            if Opt.Run_Path_Option and then
+              For_Project.Config.Run_Path_Option /= No_Name_List
+            then
                Put_Line
                  (Exchange_File, Library_Label (Gprexch.Run_Path_Option));
 
@@ -7528,7 +7530,8 @@ package body Buildgpr is
                                     end if;
 
                                  when Gprexch.Run_Path_Option =>
-                                    if Main_Proj.Config.Run_Path_Option /=
+                                    if Opt.Run_Path_Option and then
+                                      Main_Proj.Config.Run_Path_Option /=
                                       No_Name_List
                                     then
                                        Add_Rpath (Line (1 .. Last));
@@ -7773,7 +7776,9 @@ package body Buildgpr is
                         Verbose_Mode);
                   end if;
 
-                  if Main_Proj.Config.Run_Path_Option /= No_Name_List
+                  if Opt.Run_Path_Option
+                    and then
+                      Main_Proj.Config.Run_Path_Option /= No_Name_List
                     and then
                       Library_Projs.Table (J).Library_Kind /= Static
                   then
@@ -7942,7 +7947,9 @@ package body Buildgpr is
                --  If -shared-libgcc was the last switch, then put in the
                --  run path option the shared libgcc dir.
 
-               if Main_Proj.Config.Run_Path_Option /= No_Name_List then
+               if Opt.Run_Path_Option and then
+                  Main_Proj.Config.Run_Path_Option /= No_Name_List
+               then
                   declare
                      Add_Shared_Libgcc_Dir : Boolean := False;
                   begin
@@ -7993,8 +8000,11 @@ package body Buildgpr is
 
                --  Add the run path option, if necessary
 
-               if Main_Proj.Config.Run_Path_Option /= No_Name_List and then
-                 Rpaths.Last > 0
+               if Opt.Run_Path_Option
+                  and then
+                    Main_Proj.Config.Run_Path_Option /= No_Name_List
+                  and then
+                    Rpaths.Last > 0
                then
                   declare
                      Nam_Nod  : Name_Node :=
@@ -11417,6 +11427,9 @@ package body Buildgpr is
          elsif Command_Line and then Arg = "-r" then
             Recursive := True;
 
+         elsif Command_Line and then Arg = "-R" then
+            Opt.Run_Path_Option := False;
+
          elsif Arg = "-s" then
             Check_Switches := True;
 
@@ -11899,6 +11912,11 @@ package body Buildgpr is
          --  Line for -r
 
          Write_Str ("  -r       Recursive (default except when using -c)");
+         Write_Eol;
+
+         --  Line for -R
+
+         Write_Str ("  -R       Do not use run path option");
          Write_Eol;
 
          --  Line for -s
