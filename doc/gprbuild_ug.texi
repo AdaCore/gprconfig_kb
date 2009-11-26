@@ -1385,6 +1385,11 @@ package Builder of the main project:
   specified and there are no mains: it means that all sources of all projects
   need to be compiled or recompiled.
 
+@item @option{-R} (Do not use run path option)
+
+  When this switch is used, linking executables and shared libraries is done
+  without any run path option (soname).
+
 @item @option{-u} (Unique compilation, only compile the given files)
 
   If there are sources specified on the command line, only compile these
