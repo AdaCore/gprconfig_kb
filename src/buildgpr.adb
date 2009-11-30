@@ -11427,7 +11427,7 @@ package body Buildgpr is
          elsif Command_Line and then Arg = "-r" then
             Recursive := True;
 
-         elsif Command_Line and then Arg = "-R" then
+         elsif Arg = "-R" then
             Opt.Run_Path_Option := False;
 
          elsif Arg = "-s" then
