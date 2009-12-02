@@ -1529,8 +1529,9 @@ package body Buildgpr is
             if Comp_Data.Purpose = Compilation then
 
                if OK then
-                  --  We created a new ALI file, to reset the attributes of the
-                  --  old one
+                  --  We created a new ALI file, so reset the attributes of the
+                  --  old one.
+
                   Source.Dep_TS    := Unknown_Attributes;
 
                   if Comp_Data.Options /= null
@@ -1573,9 +1574,13 @@ package body Buildgpr is
 
                   --  For all languages other than Ada, update the time stamp
                   --  of the object file as it is written in the global archive
-                  --  dependency file.
+                  --  dependency file. For all languages, update the time stamp
+                  --  of the object file if it is in a library project.
 
-                  elsif Source.Language.Config.Dependency_Kind /= ALI_File then
+                  elsif Source.Language.Config.Dependency_Kind /= ALI_File
+                        or else
+                        Source.Project.Library
+                  then
                      Source.Object_TS := File_Stamp (Source.Object_Path);
                   end if;
                end if;
