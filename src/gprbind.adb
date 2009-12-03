@@ -353,8 +353,12 @@ begin
                        (Line (Ada_Binder_Equal'Length + 1 .. Last));
 
                   --  Do not use -v to avoid polluting the list of bound files
+                  --  and ignore -C, as the generated sources are always in
+                  --  Ada.
 
-                  elsif Line (1 .. Last) /= "-v" then
+                  elsif Line (1 .. Last) /= "-v" and then
+                        Line (1 .. Last) /= "-C"
+                  then
                      Binding_Options_Table.Append
                                              (new String'(Line (1 .. Last)));
                   end if;
