@@ -5333,8 +5333,13 @@ package body Buildgpr is
                  (Data, Id.Object_Project, Id.Language);
 
             elsif Id.Language.Config.Include_Path_File /= No_Name then
-               Prepare_Include_Path_File
-                 (Data, Id.Object_Project, Id.Language);
+               if Id.Language.Config.Mapping_File_Switches = No_Name_List
+                 or else
+                  Use_Include_Path_File
+               then
+                  Prepare_Include_Path_File
+                    (Data, Id.Object_Project, Id.Language);
+               end if;
 
             elsif Id.Language.Config.Include_Path /= No_Name then
                Get_Directories
@@ -11493,6 +11498,9 @@ package body Buildgpr is
                Register_Command_Line_Option (Warnings_Suppress);
             end if;
 
+         elsif Arg = "-x" then
+            Use_Include_Path_File := True;
+
          elsif Command_Line
            and then Arg'Length >= 3
            and then Arg (2) = 'X'
@@ -11965,6 +11973,11 @@ package body Buildgpr is
          --  Line for -ws
 
          Write_Str ("  -ws      Suppress all warnings");
+         Write_Eol;
+
+         --  Line for -x
+
+         Write_Str ("  -x       Always create include path file");
          Write_Eol;
 
          --  Line for -X
