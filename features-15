@@ -13,6 +13,11 @@ This date shows the implementation date of the feature. Any 1.4.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-15-IC02-005 New switch -x (2009-12-07)
+
+  gprbuild no longer create an include path file to the compiler, except when
+  the new switch -x is used. This is to improve performances.
+
 NF-15-IB26-022 New switch -R (2009-11-26)
 
   gprbuid now recognizes the gnatmake switch -R. When this switch is specified,
