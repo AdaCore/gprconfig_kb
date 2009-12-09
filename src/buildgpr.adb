@@ -61,6 +61,7 @@ with Prj.Tree;         use Prj.Tree;
 with Prj.Util;         use Prj.Util;
 with Scans;
 with Sinput.C;
+with Sinput.P;
 with Snames;           use Snames;
 with Switch;           use Switch;
 with System;
@@ -8806,12 +8807,15 @@ package body Buildgpr is
                                       Dep_Src.Source_TS;
                                  end if;
                               end if;
+
+                              --  To avoid using too much memory, free the
+                              --  memory allocated.
+
+                              Sinput.P.Clear_Source_File_Table;
                            end;
                         end if;
 
-                        if ALI.Sdep.Table (D).Stamp /=
-                          Dep_Src.Source_TS
-                        then
+                        if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
                            if Verbose_Mode then
                               Write_Str
                                 ("   -> different time stamp for ");
@@ -8974,7 +8978,7 @@ package body Buildgpr is
          --  If the object file has been created before the last modification
          --  of the source, the source need to be recompiled.
 
-         if not Opt.Minimal_Recompilation and then
+         if (not Opt.Minimal_Recompilation) and then
            Source.Object_TS < Source.Source_TS
          then
             if Verbose_Mode then
