@@ -1376,14 +1376,19 @@ package body Buildgpr is
    begin
       while List /= Nil_String loop
          Element := Project_Tree.String_Elements.Table (List);
-         Option := Get_Option (Element.Value);
 
-         Add_Option_Internal
-           (Value       => Option,
-            To          => To,
-            Display     => Display_All or First_Display,
-            Simple_Name => Simple_Name);
-         First_Display := False;
+         --  Ignore empty options
+
+         if Element.Value /= Empty_String then
+            Option := Get_Option (Element.Value);
+
+            Add_Option_Internal
+              (Value       => Option,
+               To          => To,
+               Display     => Display_All or First_Display,
+               Simple_Name => Simple_Name);
+            First_Display := False;
+         end if;
 
          List := Element.Next;
       end loop;
