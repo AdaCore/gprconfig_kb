@@ -8808,6 +8808,17 @@ package body Buildgpr is
                                  if Scans.Checksum =
                                    ALI.Sdep.Table (D).Checksum
                                  then
+                                    if Verbose_Mode then
+                                       Write_Str ("   ");
+                                       Write_Str
+                                         (Get_Name_String
+                                            (ALI.Sdep.Table (D).Sfile));
+                                       Write_Str (": up to date, " &
+                                                  "different timestamps " &
+                                                  "but same checksum");
+                                       Write_Eol;
+                                    end if;
+
                                     ALI.Sdep.Table (D).Stamp :=
                                       Dep_Src.Source_TS;
                                  end if;
