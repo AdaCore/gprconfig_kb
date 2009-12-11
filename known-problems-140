@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-140-IC10-043 No switches file created when -s in Builder switches
+
+  Problem:    When gprbuild switch -s is specified in the Builder switches of
+              the main project, but not on the command line, no switches fie
+              is created, resulting in recompilation of all sources each time
+              gprbuild is invoked.
+
+  Status:     This was fixed in 1.5.0 on 2009-12-10
+
+  Workaround: Specify -s on the command line.
+
 KP-140-IC09-017 Bad compilation options
 
   Problem:    When there are empty compilation options, these options are
