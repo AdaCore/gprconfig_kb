@@ -20,6 +20,15 @@ KP-140-IC09-017 Bad compilation options
 
   Workaround: Avoid empty compilation options
 
+KP-622-IC03-003 gprbind cannot bind with Binder option -C
+
+  Problem:    When there is an option -C in the Binder package, the binding
+              of Ada executables fail.
+
+  Status:     This was fixed in 6.3 on 2009-12-03
+
+  Workaround: Do not specify Binder option -C.
+
 KP-140-IC02-002 Library not rebuilt when source is recompiled
 
   Problem:    When in a library project a modified source is recompiled, the
