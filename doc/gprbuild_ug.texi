@@ -7,7 +7,7 @@
 @c                                                                            o
 @c                  G P R B U I L D   U S E R ' S   G U I D E                 o
 @c                                                                            o
-@c                      Copyright (C) 2007-2008, AdaCore                      o
+@c                      Copyright (C) 2007-2009, AdaCore                      o
 @c                                                                            o
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
@@ -1456,6 +1456,10 @@ package Builder of the main project (attribute Switches):
   Do not display anything except errors and progress (switch @option{-d}).
   Cancel any previous switch @option{-v}.
 
+@item @option{-R} (Do not pass a run path option)
+
+  Do not link with a run path option for shared libraries and executables.
+
 @item @option{-s} (recompile if compilation switches have changed)
 
   By default, GPRbuild will not recompile a source if all dependencies are
@@ -1484,6 +1488,15 @@ package Builder of the main project (attribute Switches):
 @item @option{-ws} (Suppress all warnings)
 
   Do not generate any warnings while processing the project files.
+
+@item @option{-x} (Always create the include path file)
+
+  By default, gprbuild passes a mapping file to the Ada compiler, and no
+  source search path. However, there are cases when the source search path is
+  needed by the Ada compiler, for example when the compiler is invoked with
+  a preprocessing option @option{-gnatep=...}. When @option{-x} is used,
+  gprbuild will pass a source search path to the Ada compiler in a text file,
+  the incude path file.
 
 @end itemize
 
