@@ -116,7 +116,7 @@ package body Buildgpr is
    --  switches have been scanned.
 
    Display_Paths : Boolean := False;
-   --  Set by switch --display_paths: config project path and user project path
+   --  Set by switch --display-paths: config project path and user project path
    --  will be displayed after all command lines witches have been scanned.
 
    Output_File_Name           : String_Access := null;
