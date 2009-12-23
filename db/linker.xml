@@ -270,7 +270,7 @@
   <!-- freebsd -->
   <configuration>
     <targets>
-       <target name="^.*freebsb.*$" />
+       <target name="^.*freebsd.*$" />
     </targets>
     <config>
    package Linker is
