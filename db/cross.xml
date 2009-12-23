@@ -154,6 +154,7 @@
        <target name="^powerpc-eabispe$" />
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
+       <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
      </targets>
