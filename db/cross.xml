@@ -107,10 +107,11 @@
      </config>
    </configuration>
 
-   <!-- vx653 executables have a .out extension.  -->
+   <!-- vx653 & vxMILS executables have a .out extension.  -->
    <configuration>
      <targets>
        <target name="^.*-wrs-vxworksae$" />
+       <target name="^.powerpc-wrs-vxworksmils$" />
      </targets>
      <config>
    package Builder is
