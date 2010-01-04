@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2004-2009, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2010, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -153,6 +153,10 @@ package body Buildgpr is
 
    Unique_Compile_All_Projects : Boolean := False;
    --  Set to True if -U is used
+
+   Always_Compile : Boolean := False;
+   --  Set to True when gprbuid is called with -f -u and at least one source
+   --  on the command line.
 
    Naming_String                : aliased String := "naming";
    Builder_String               : aliased String := "builder";
@@ -5415,7 +5419,7 @@ package body Buildgpr is
          The_ALI            : ALI.ALI_Id;
 
       begin
-         if not Source_Project.Externally_Built then
+         if Always_Compile or else not Source_Project.Externally_Built then
             Need_To_Compile
               (Source       => Id,
                In_Project   => Source_Project,
@@ -6942,6 +6946,12 @@ package body Buildgpr is
             end loop;
          end if;
       end;
+
+      Always_Compile :=
+        Always_Compile and then
+        Force_Compilations and then
+        Unique_Compile and then
+        (not Unique_Compile_All_Projects);
 
       --  Reprocess recorded command line options that have priority over
       --  those in the main project file.
@@ -8912,7 +8922,7 @@ package body Buildgpr is
       The_ALI := ALI.No_ALI_Id;
 
       if Force_Compilations then
-         Must_Compile := not Externally_Built;
+         Must_Compile := Always_Compile or else (not Externally_Built);
          return;
       end if;
 
@@ -11632,6 +11642,7 @@ package body Buildgpr is
                --  Not a project file, then it is a main
 
                Mains.Add_Main (Arg);
+               Always_Compile := True;
             end if;
          end;
 
