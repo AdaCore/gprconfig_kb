@@ -419,10 +419,9 @@
        <compiler language="C++" />
     </compilers>
     <config>
-   package Binder is
-      for Required_Switches ("Ada") use
-         Binder'Required_Switches ("Ada") &amp; "-shared";
-   end Binder;
+     package Linker is
+        for Required_Switches use Linker'Required_Switches &amp; ("-shared-libgcc");
+     end Linker;
     </config>
   </configuration>
 
