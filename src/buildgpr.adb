@@ -9,7 +9,7 @@
 --          Copyright (C) 2004-2010, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- terms of the  Fixes GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 2,  or (at your option) any later ver- --
 -- sion.  GNAT is distributed in the hope that it will be useful, but WITH- --
 -- OUT ANY WARRANTY;  without even the  implied warranty of MERCHANTABILITY --
@@ -4230,7 +4230,10 @@ package body Buildgpr is
                               --  It is a source of a project
 
                               if not Project_Extends
-                                (Src_Data.Project, Source_2.Project)
+                                   (Src_Data.Project, Source_2.Project)
+                                and then
+                                  not Project_Extends
+                                   (Source_2.Project, Src_Data.Project)
                               then
                                  --  It is not a source of the same project
                                  --  as the source just compiled. Check if
@@ -4477,7 +4480,10 @@ package body Buildgpr is
 
                         if Source_2 /= No_Source then
                            if not Project_Extends
-                             (Src_Data.Project, Source_2.Project)
+                                (Src_Data.Project, Source_2.Project)
+                               and then
+                                not Project_Extends
+                               (Source_2.Project, Src_Data.Project)
                            then
                               if not Indirect_Imports and then
                                 not Directly_Imports
