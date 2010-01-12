@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2010, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -87,10 +87,6 @@ procedure Gprlib is
    Output_Switch_String : constant String := "-o";
    Output_Switch        : constant String_Access :=
                             new String'(Output_Switch_String);
-
-   Compile_Switch_String : constant String := "-c";
-   Compile_Switch        : constant String_Access :=
-                             new String'(Compile_Switch_String);
 
    Auto_Initialize_String : constant String := "-a";
    Auto_Initialize        : constant String_Access :=
@@ -255,6 +251,26 @@ procedure Gprlib is
       Table_Initial        => 2,
       Table_Increment      => 100,
       Table_Name           => "Gprlib.Generated_Objects");
+
+   package Ada_Leading_Switches is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 2,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Ada_Leading_Switches");
+
+   package Ada_Trailing_Switches is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 2,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Ada_Trailing_Switches");
+
+   Current_Language : Name_Id := No_Name;
+
+   Language_Equal : constant String := "language=";
 
    Auto_Init : Boolean := False;
    --  True when a SAL is auto initializable
@@ -902,6 +918,10 @@ begin
             when Gprexch.Separate_Run_Path_Options =>
                Separate_Run_Path_Options := True;
 
+            when Gprexch.Compiler_Leading_Switches |
+                 Gprexch.Compiler_Trailing_Switches =>
+               Current_Language := No_Name;
+
             when others =>
                null;
          end case;
@@ -1042,6 +1062,34 @@ begin
                   else
                      Skip_Line (IO_File);
                   end if;
+               end if;
+
+            when Gprexch.Compiler_Leading_Switches =>
+               if Last > Language_Equal'Length and then
+                 Line (1 .. Language_Equal'Length) = Language_Equal
+               then
+                  Name_Len := 0;
+                  Add_Str_To_Name_Buffer
+                    (Line (Language_Equal'Length + 1 .. Last));
+                  To_Lower (Name_Buffer (1 .. Name_Len));
+                  Current_Language := Name_Find;
+
+               elsif Current_Language = Snames.Name_Ada then
+                  Ada_Leading_Switches.Append (new String'(Line (1 .. Last)));
+               end if;
+
+            when Gprexch.Compiler_Trailing_Switches =>
+               if Last > Language_Equal'Length and then
+                 Line (1 .. Language_Equal'Length) = Language_Equal
+               then
+                  Name_Len := 0;
+                  Add_Str_To_Name_Buffer
+                    (Line (Language_Equal'Length + 1 .. Last));
+                  To_Lower (Name_Buffer (1 .. Name_Len));
+                  Current_Language := Name_Find;
+
+               elsif Current_Language = Snames.Name_Ada then
+                  Ada_Trailing_Switches.Append (new String'(Line (1 .. Last)));
                end if;
 
             when Toolchain_Version =>
@@ -1532,7 +1580,13 @@ begin
 
          Last_Bind_Option := 0;
 
-         Add (Compile_Switch, Bind_Options, Last_Bind_Option);
+         for J in 1 .. Ada_Leading_Switches.Last loop
+            Add
+              (Ada_Leading_Switches.Table (J),
+               Bind_Options,
+               Last_Bind_Option);
+         end loop;
+
          Add (Binder_Generated_File, Bind_Options, Last_Bind_Option);
          Add (Output_Switch, Bind_Options, Last_Bind_Option);
          Add (Binder_Generated_Object, Bind_Options, Last_Bind_Option);
@@ -1579,6 +1633,13 @@ begin
                end;
             end loop;
          end if;
+
+         for J in 1 .. Ada_Trailing_Switches.Last loop
+            Add
+              (Ada_Trailing_Switches.Table (J),
+               Bind_Options,
+               Last_Bind_Option);
+         end loop;
 
          if not Quiet_Output then
             if Verbose_Mode then

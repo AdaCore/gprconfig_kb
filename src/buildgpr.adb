@@ -2834,6 +2834,60 @@ package body Buildgpr is
             end loop;
          end;
 
+         Put_Line (Exchange_File, Library_Label (Compiler_Leading_Switches));
+
+         declare
+            Lang : Language_Ptr := For_Project.Languages;
+            Indx : Name_List_Index;
+            Node : Name_Node;
+
+         begin
+            while Lang /= No_Language_Index loop
+               Indx := Lang.Config.Compiler_Leading_Required_Switches;
+
+               if Indx /= No_Name_List then
+                  Put_Line
+                    (Exchange_File,
+                     "language=" & Get_Name_String (Lang.Name));
+
+                  while Indx /= No_Name_List loop
+                     Node := Project_Tree.Name_Lists.Table (Indx);
+                     Put_Line (Exchange_File, Get_Name_String (Node.Name));
+                     Indx := Node.Next;
+                  end loop;
+               end if;
+
+               Lang := Lang.Next;
+            end loop;
+         end;
+
+         Put_Line (Exchange_File, Library_Label (Compiler_Trailing_Switches));
+
+         declare
+            Lang : Language_Ptr := For_Project.Languages;
+            Indx : Name_List_Index;
+            Node : Name_Node;
+
+         begin
+            while Lang /= No_Language_Index loop
+               Indx := Lang.Config.Compiler_Trailing_Required_Switches;
+
+               if Indx /= No_Name_List then
+                  Put_Line
+                    (Exchange_File,
+                     "language=" & Get_Name_String (Lang.Name));
+
+                  while Indx /= No_Name_List loop
+                     Node := Project_Tree.Name_Lists.Table (Indx);
+                     Put_Line (Exchange_File, Get_Name_String (Node.Name));
+                     Indx := Node.Next;
+                  end loop;
+               end if;
+
+               Lang := Lang.Next;
+            end loop;
+         end;
+
          if For_Project.Config.Lib_Partial_Linker /= No_Name_List then
             Put_Line (Exchange_File, Library_Label (Partial_Linker));
 
