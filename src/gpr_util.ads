@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2007-2009, Free Software Foundation, Inc.       --
+--            Copyright (C) 2007-2010, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -144,12 +144,15 @@ package Gpr_Util is
    --  Main_Base_Name must have no extension specified
 
    procedure Create_Response_File
-     (Format   : Response_File_Format;
-      Objects  : String_List;
-      Name     : out Path_Name_Type);
-   --  Create a temporary file as a response file that contains the list of
-   --  Objects in the correct Format. It is the responsibility of the caller
-   --  to delete this temporary file if needed.
+     (Format          : Response_File_Format;
+      Objects         : String_List;
+      Other_Arguments : String_List;
+      Name_1          : out Path_Name_Type;
+      Name_2          : out Path_Name_Type);
+   --  Create a temporary file as a response file that contains either the list
+   --  of Objects in the correct Format, or for Format GCC the list of all
+   --  arguments. It is the responsibility of the caller to delete this
+   --  temporary file if needed.
 
    procedure Find_Binding_Languages;
    --  Check if in the project tree there are sources of languages that have a

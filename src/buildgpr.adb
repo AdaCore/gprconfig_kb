@@ -7406,6 +7406,7 @@ package body Buildgpr is
             Index_Separator : Character;
 
             Response_File_Name : Path_Name_Type := No_Path;
+            Response_2         : Path_Name_Type := No_Path;
 
          begin
             exit when Display_Main'Length = 0;
@@ -8247,62 +8248,77 @@ package body Buildgpr is
                              (Format  => Main_Proj.Config.Resp_File_Format,
                               Objects => Arguments
                                 (First_Object_Index .. Last_Object_Index),
-                              Name    => Response_File_Name);
+                              Other_Arguments =>
+                                Arguments (Last_Object_Index + 1 ..
+                                           Last_Argument),
+                              Name_1  => Response_File_Name,
+                              Name_2  => Response_2);
 
-                           --  Replace the first object file arguments with
-                           --  the argument(s) specifying the response file.
-                           --  No need to update Arguments_Displayed, as the
-                           --  values are already correct (= Verbose_Mode).
-
-                           List := Main_Proj.Config.Resp_File_Options;
-
-                           if List = No_Name_List then
+                           if Main_Proj.Config.Resp_File_Format = GCC then
                               Arguments (First_Object_Index) :=
-                                new String'(Get_Name_String
-                                            (Response_File_Name));
-                              First_Object_Index := First_Object_Index + 1;
+                                new String'("@" &
+                                            Get_Name_String
+                                              (Response_File_Name));
+                              Last_Argument := First_Object_Index;
 
                            else
-                              loop
-                                 Nam_Nod :=
-                                   Project_Tree.Name_Lists.Table (List);
-                                 exit when Nam_Nod.Next = No_Name_List;
+                              --  Replace the first object file arguments with
+                              --  the argument(s) specifying the response file.
+                              --  No need to update Arguments_Displayed, as the
+                              --  values are already correct (= Verbose_Mode).
+
+                              List := Main_Proj.Config.Resp_File_Options;
+
+                              if List = No_Name_List then
                                  Arguments (First_Object_Index) :=
                                    new String'(Get_Name_String
-                                               (Nam_Nod.Name));
+                                               (Response_File_Name));
                                  First_Object_Index := First_Object_Index + 1;
-                                 List := Nam_Nod.Next;
-                              end loop;
 
-                              Arguments (First_Object_Index) :=
+                              else
+                                 loop
+                                    Nam_Nod :=
+                                      Project_Tree.Name_Lists.Table (List);
+                                    exit when Nam_Nod.Next = No_Name_List;
+                                    Arguments (First_Object_Index) :=
+                                      new String'(Get_Name_String
+                                                  (Nam_Nod.Name));
+                                    First_Object_Index :=
+                                      First_Object_Index + 1;
+                                    List := Nam_Nod.Next;
+                                 end loop;
+
+                                 Arguments (First_Object_Index) :=
                                    new String'(Get_Name_String
-                                                 (Nam_Nod.Name) &
+                                               (Nam_Nod.Name) &
                                                Get_Name_String
                                                  (Response_File_Name));
-                              First_Object_Index := First_Object_Index + 1;
+                                 First_Object_Index := First_Object_Index + 1;
+                              end if;
+
+                              --  And put the arguments following the object
+                              --  files immediately after the response file
+                              --  argument(s). Update Arguments_Displayed too.
+
+                              Arguments (First_Object_Index ..
+                                           Last_Argument -
+                                             Last_Object_Index +
+                                               First_Object_Index -
+                                                 1) :=
+                                        Arguments (Last_Object_Index + 1 ..
+                                                             Last_Argument);
+                              Arguments_Displayed (First_Object_Index ..
+                                                     Last_Argument -
+                                                       Last_Object_Index +
+                                                         First_Object_Index -
+                                                           1) :=
+                                        Arguments_Displayed
+                                          (Last_Object_Index + 1 ..
+                                          Last_Argument);
+                              Last_Argument :=
+                                Last_Argument - Last_Object_Index +
+                                  First_Object_Index - 1;
                            end if;
-
-                           --  And put the arguments following the object files
-                           --  immediately after the response file
-                           --  argument(s). Update Arguments_Displayed too.
-
-                           Arguments (First_Object_Index ..
-                                        Last_Argument -
-                                        Last_Object_Index +
-                                        First_Object_Index -
-                                        1) :=
-                             Arguments (Last_Object_Index + 1 ..
-                                                  Last_Argument);
-                           Arguments_Displayed (First_Object_Index ..
-                                                Last_Argument -
-                                                Last_Object_Index +
-                                                First_Object_Index -
-                                                1) :=
-                             Arguments_Displayed (Last_Object_Index + 1 ..
-                                                  Last_Argument);
-                           Last_Argument :=
-                             Last_Argument - Last_Object_Index +
-                               First_Object_Index - 1;
                         end if;
                      end if;
                   end;
@@ -8332,8 +8348,12 @@ package body Buildgpr is
                      pragma Warnings (Off, Dont_Care);
                   begin
                      Delete_File
-                       (Get_Name_String (Response_File_Name),
-                        Dont_Care);
+                       (Get_Name_String (Response_File_Name), Dont_Care);
+
+                     if Response_2 /= No_Path then
+                        Delete_File
+                          (Get_Name_String (Response_2), Dont_Care);
+                     end if;
                   end;
                end if;
 

@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2007-2009, Free Software Foundation, Inc.       --
+--            Copyright (C) 2007-2010, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -75,9 +75,11 @@ package body Gpr_Util is
    --------------------------
 
    procedure Create_Response_File
-     (Format   : Response_File_Format;
-      Objects  : String_List;
-      Name     : out Path_Name_Type)
+     (Format          : Response_File_Format;
+      Objects         : String_List;
+      Other_Arguments : String_List;
+      Name_1          : out Path_Name_Type;
+      Name_2          : out Path_Name_Type)
    is
       Resp_File : File_Descriptor;
       Status    : Integer;
@@ -86,14 +88,15 @@ package body Gpr_Util is
       pragma Warnings (Off, Closing_Status);
 
    begin
-      Tempdir.Create_Temp_File (Resp_File, Name => Name);
+      Name_2 := No_Path;
+      Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
 
-      if Format = GNU then
+      if Format = GNU or else Format = GCC then
          Status := Write (Resp_File, GNU_Header'Address, GNU_Header'Length);
       end if;
 
       for J in Objects'Range loop
-         if Format = GNU then
+         if Format = GNU or else Format = GCC then
             Status :=
               Write (Resp_File, GNU_Opening'Address, GNU_Opening'Length);
          end if;
@@ -101,7 +104,7 @@ package body Gpr_Util is
          Status :=
            Write (Resp_File, Objects (J).all'Address, Objects (J)'Length);
 
-         if Format = GNU then
+         if Format = GNU or else Format = GCC then
             Status :=
               Write (Resp_File, GNU_Closing'Address, GNU_Closing'Length);
 
@@ -111,12 +114,37 @@ package body Gpr_Util is
          end if;
       end loop;
 
-      if Format = GNU then
+      if Format = GNU or else Format = GCC then
          Status :=
            Write (Resp_File, GNU_Footer'Address, GNU_Footer'Length);
       end if;
 
       Close (Resp_File, Closing_Status);
+
+      if Format = GCC then
+         Name_2 := Name_1;
+         Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
+         Get_Name_String (Name_2);
+         Status :=
+           Write
+             (Resp_File,
+              Name_Buffer (1)'Address,
+              Name_Len);
+         Status :=
+           Write (Resp_File, ASCII.LF'Address, 1);
+
+         for J in Other_Arguments'Range loop
+            Status :=
+              Write
+                (Resp_File,
+                 Other_Arguments (J).all'Address,
+                 Other_Arguments (J)'Length);
+            Status :=
+              Write (Resp_File, ASCII.LF'Address, 1);
+         end loop;
+
+         Close (Resp_File, Closing_Status);
+      end if;
    end Create_Response_File;
 
    ------------------

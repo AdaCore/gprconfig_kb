@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2010, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -69,6 +69,7 @@ procedure Build_Shared_Lib is
       Driver   : String_Access;
 
       Response_File_Name : Path_Name_Type := No_Path;
+      Response_2         : Path_Name_Type := No_Path;
 
    begin
       --  Get the executable to use, either the specified Driver, or "gcc"
@@ -261,11 +262,6 @@ procedure Build_Shared_Lib is
         and then Argument_Length > Max_Command_Line_Length
         and then Resp_File_Format /= Prj.None
       then
-         Create_Response_File
-           (Format  => Resp_File_Format,
-            Objects => Arguments (First_Object .. Last_Object),
-            Name    => Response_File_Name);
-
          declare
             --  Preserve the options, if any
 
@@ -273,31 +269,43 @@ procedure Build_Shared_Lib is
                         Arguments (Last_Object + 1 .. Last_Arg);
 
          begin
+            Create_Response_File
+              (Format          => Resp_File_Format,
+               Objects         => Arguments (First_Object .. Last_Object),
+               Other_Arguments => Options,
+               Name_1          => Response_File_Name,
+               Name_2          => Response_2);
 
             Last_Arg := First_Object - 1;
 
-            if Response_File_Switches /= null then
-               for J in Response_File_Switches'First ..
-                 Response_File_Switches'Last - 1
-               loop
-                  Add_Arg (Response_File_Switches (J));
-               end loop;
-
+            if Resp_File_Format = GCC then
                Add_Arg
-                 (new String'
-                    (Response_File_Switches (Response_File_Switches'Last).all &
-                     Get_Name_String (Response_File_Name)));
-
+                 (new String'("@" & Get_Name_String (Response_File_Name)));
             else
-               Add_Arg
-                 (new String'(Get_Name_String (Response_File_Name)));
+               if Response_File_Switches /= null then
+                  for J in Response_File_Switches'First ..
+                    Response_File_Switches'Last - 1
+                  loop
+                     Add_Arg (Response_File_Switches (J));
+                  end loop;
+
+                  Add_Arg
+                    (new String'
+                       (Response_File_Switches
+                          (Response_File_Switches'Last).all &
+                        Get_Name_String (Response_File_Name)));
+
+               else
+                  Add_Arg
+                    (new String'(Get_Name_String (Response_File_Name)));
+               end if;
+
+               --  Put back the options
+
+               for J in Options'Range loop
+                  Add_Arg (Options (J));
+               end loop;
             end if;
-
-            --  Put back the options
-
-            for J in Options'Range loop
-               Add_Arg (Options (J));
-            end loop;
          end;
 
          --  Display actual command if not in quiet mode
@@ -327,6 +335,10 @@ procedure Build_Shared_Lib is
             pragma Warnings (Off, Dont_Care);
          begin
             Delete_File (Get_Name_String (Response_File_Name), Dont_Care);
+
+            if Response_2 /= No_Path then
+               Delete_File (Get_Name_String (Response_2), Dont_Care);
+            end if;
          end;
       end if;
 
