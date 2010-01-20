@@ -419,7 +419,7 @@
     </config>
   </configuration>
 
-  <!--  use C++,Fortran, Ada or C driver to link in this order      -->
+  <!--  use C++, Fortran, Ada or C driver to link in this order      -->
 
   <configuration>
     <compilers>
@@ -479,6 +479,32 @@
     </config>
   </configuration>
   <configuration>
+    <targets negate="true">
+       <target name="aamp" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+    </compilers>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers negate="true">
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+    </compilers>
+    <config>
+   package Linker is
+      for Response_File_Format use "GCC";
+   end Linker;
+    </config>
+  </configuration>
+
+<configuration>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
