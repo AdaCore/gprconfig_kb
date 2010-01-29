@@ -42,6 +42,32 @@
      </config>
    </configuration>
 
+   <!-- Send normal output to stdout instead of stderr -->
+   <configuration>
+     <targets>
+       <target name="^i.86-wrs-vxworks.*$" />
+     </targets>
+     <compilers>
+       <compiler language="Ada" />
+     </compilers>
+	 <!-- Only versions >= 6.0 support the switch -->
+     <compilers negate="true">
+       <compiler version="3.16" />
+       <compiler version="5.00" />
+       <compiler version="5.01" />
+       <compiler version="5.02" />
+       <compiler version="5.03" />
+       <compiler version="5.04" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("-eS");
+   end Compiler;
+     </config>
+   </configuration>   
+   
+   
    <!-- Forbid mixing kernel and rtp.  -->
    <configuration>
      <compilers><compiler runtime="kernel" /></compilers>
