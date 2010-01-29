@@ -481,6 +481,7 @@
   <configuration>
     <targets negate="true">
        <target name="aamp" />
+       <target name="^.*mingw.*$" />
     </targets>
     <compilers negate="true">
        <compiler language="C++" />
