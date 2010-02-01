@@ -87,6 +87,38 @@ package body Gpr_Util is
       Closing_Status : Boolean;
       pragma Warnings (Off, Closing_Status);
 
+      function Modified_Argument (Arg : String) return String;
+      --  If the argument includes a space, a backslash, or a double quote,
+      --  escape the character with a preceding backsash.
+
+      -----------------------
+      -- Modified_Argument --
+      -----------------------
+
+      function Modified_Argument (Arg : String) return String is
+         Result : String (1 .. 2 * Arg'Length);
+         Last   : Natural := 0;
+
+         procedure Add (C : Character);
+
+         procedure Add (C : Character) is
+         begin
+            Last := Last + 1;
+            Result (Last) := C;
+         end Add;
+
+      begin
+         for J in Arg'Range loop
+            if Arg (J) = '\' or else Arg (J) = ' ' or else Arg (J) = '"' then
+               Add ('\');
+            end if;
+
+            Add (Arg (J));
+         end loop;
+
+         return Result (1 .. Last);
+      end Modified_Argument;
+
    begin
       Name_2 := No_Path;
       Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
@@ -124,21 +156,29 @@ package body Gpr_Util is
       if Format = GCC then
          Name_2 := Name_1;
          Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
-         Get_Name_String (Name_2);
-         Status :=
-           Write
-             (Resp_File,
-              Name_Buffer (1)'Address,
-              Name_Len);
+
+         declare
+            Arg : constant String :=
+              Modified_Argument (Get_Name_String (Name_2));
+
+         begin
+            Status :=
+              Write (Resp_File, Arg (1)'Address, Arg'Length);
+         end;
+
          Status :=
            Write (Resp_File, ASCII.LF'Address, 1);
 
          for J in Other_Arguments'Range loop
-            Status :=
-              Write
-                (Resp_File,
-                 Other_Arguments (J).all'Address,
-                 Other_Arguments (J)'Length);
+            declare
+               Arg : constant String :=
+                 Modified_Argument (Other_Arguments (J).all);
+
+            begin
+               Status :=
+                 Write (Resp_File, Arg (1)'Address, Arg'Length);
+            end;
+
             Status :=
               Write (Resp_File, ASCII.LF'Address, 1);
          end loop;
