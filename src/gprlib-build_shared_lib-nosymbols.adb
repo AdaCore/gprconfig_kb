@@ -45,8 +45,6 @@ procedure Build_Shared_Lib is
    Lib_Path : constant String :=
                 Library_Directory.all & Directory_Separator & Lib_File;
 
-   Symbolic_Link_Needed : Boolean := False;
-
    Maj_Version : String_Access := new String'("");
 
    Result  : Integer;
@@ -360,7 +358,7 @@ begin
       Write_Line (Lib_File);
    end if;
 
-   if Library_Version.all = "" then
+   if Library_Version.all = "" or else not Symbolic_Link_Supported then
       --  If no Library_Version specified, make sure the table is empty and
       --  call Build.
 
@@ -371,11 +369,9 @@ begin
       --  Put the necessary options corresponding to the Library_Version in the
       --  table.
 
-      if Symbolic_Link_Supported then
-         if Major_Minor_Id_Supported then
-            Maj_Version :=
-              new String'(Major_Id_Name (Lib_File, Library_Version.all));
-         end if;
+      if Major_Minor_Id_Supported then
+         Maj_Version :=
+           new String'(Major_Id_Name (Lib_File, Library_Version.all));
       end if;
 
       if Library_Version_Options.Last > 0 then
@@ -411,10 +407,7 @@ begin
 
       --  Create symbolic link, if appropriate
 
-      Symbolic_Link_Needed :=
-        Symbolic_Link_Supported and then Library_Version.all /= Lib_Path;
-
-      if Symbolic_Link_Needed then
+      if Library_Version.all /= Lib_Path then
          Create_Sym_Links
            (Lib_Path,
             Library_Version.all,
