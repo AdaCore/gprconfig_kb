@@ -47,6 +47,7 @@ with Gpr_Util;         use Gpr_Util;
 with GPR_Version;      use GPR_Version;
 with Gprexch;          use Gprexch;
 with GprConfig.Knowledge;  use GprConfig.Knowledge;
+with Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Output;           use Output;
@@ -11664,7 +11665,7 @@ package body Buildgpr is
          then
             --  For compatibility with gnatmake, use switch to compile Ada
             --  code. For -nostdlib and -nostdinc, also use switch to bind Ada
-            --  code.
+            --  code and for -nostdlib to link.
 
             if Command_Line then
                Current_Comp_Option_Table :=
@@ -11710,6 +11711,11 @@ package body Buildgpr is
 
                Current_Processor := Binder;
 
+               Add_Option (Arg, Command_Line);
+            end if;
+
+            if Arg = "-nostdlib" and then not Hostparm.OpenVMS then
+               Current_Processor := Linker;
                Add_Option (Arg, Command_Line);
             end if;
 
