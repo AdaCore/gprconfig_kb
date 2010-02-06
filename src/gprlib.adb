@@ -540,7 +540,7 @@ procedure Gprlib is
                                Library_Dependency_Directory.all &
                                Directory_Separator &
                                Base_Name (ALIs.Table (Index).all);
-               Disregard : Boolean;
+               Disregard   : Boolean;
             begin
                if Is_Regular_File (Destination) then
                   Set_Writable (Destination);
@@ -563,8 +563,8 @@ procedure Gprlib is
             for J in 1 .. Object_Directories.Last loop
                declare
                   ALI_File : constant String :=
-                    Object_Directories.Table (J).all &
-                    Directory_Separator &
+                               Object_Directories.Table (J).all &
+                                 Directory_Separator &
                    ALIs.Table (Index).all;
                begin
                   if Is_Regular_File (ALI_File) then
@@ -585,13 +585,13 @@ procedure Gprlib is
       else
          for Index in 1 .. Interface_ALIs.Last loop
             declare
-               File_Name : String :=
-                             Base_Name (Interface_ALIs.Table (Index).all);
+               File_Name   : String :=
+                               Base_Name (Interface_ALIs.Table (Index).all);
                Destination : constant String :=
                                Library_Dependency_Directory.all &
                                Directory_Separator &
                                File_Name;
-               Disregard : Boolean;
+               Disregard   : Boolean;
 
             begin
                if Is_Regular_File (Destination) then
@@ -907,7 +907,7 @@ begin
                Auto_Init := True;
 
             when Gprexch.Symbolic_Link_Supported =>
-               Symbolic_Link_Supported  := True;
+               Symbolic_Link_Supported := True;
 
             when Gprexch.Major_Minor_Id_Supported =>
                Major_Minor_Id_Supported := True;
@@ -1037,25 +1037,22 @@ begin
                      Get_Line (IO_File, Line, Last);
 
                      if Last = 0 then
-                        Osint.Fail
-                          ("Ada compiler name cannot be empty");
+                        Osint.Fail ("Ada compiler name cannot be empty");
 
                      else
-                        Compiler_Name :=
-                          new String'(Line (1 .. Last));
+                        Compiler_Name := new String'(Line (1 .. Last));
 
                         if Last > 3
                           and then Line (Last - 2 .. Last) = "gcc"
                         then
                            Gnatbind_Name :=
-                             new String'(Line (1 .. Last - 3) &
-                                         "gnatbind");
+                             new String'(Line (1 .. Last - 3) & "gnatbind");
+
                         elsif Last > 7
                           and then Line (Last - 6 .. Last) = "gcc.exe"
                         then
                            Gnatbind_Name :=
-                             new String'(Line (1 .. Last - 7) &
-                                         "gnatbind");
+                             new String'(Line (1 .. Last - 7) & "gnatbind");
                         end if;
                      end if;
 
@@ -1095,8 +1092,7 @@ begin
             when Toolchain_Version =>
                if End_Of_File (IO_File) then
                   Osint.Fail
-                    ("no toolchain version for language " &
-                     Line (1 .. Last));
+                    ("no toolchain version for language " & Line (1 .. Last));
 
                elsif Line (1 .. Last) = "ada" then
                   Get_Line (IO_File, Line, Last);
@@ -1315,9 +1311,9 @@ begin
 
    if Standalone then
       declare
-         Binder_Generated_File   :  String :=
+         Binder_Generated_File   : String :=
                                      "b__" & Library_Name.all & ".adb";
-         Binder_Generated_Object :  String :=
+         Binder_Generated_Object : String :=
                                      "b__" & Library_Name.all & Object_Suffix;
          ALI_First_Index         : Positive;
          First_ALI               : File_Name_Type;
@@ -1342,9 +1338,9 @@ begin
            ("b__" & Library_Name.all & ".adb", Bind_Options, Last_Bind_Option);
          Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
 
-         if Auto_Init and then
-           SALs_Use_Constructors and then
-           GNAT_Version.all >= "5.04"
+         if Auto_Init
+           and then SALs_Use_Constructors
+           and then GNAT_Version.all >= "5.04"
          then
             Add (Auto_Initialize, Bind_Options, Last_Bind_Option);
          end if;
@@ -1385,8 +1381,8 @@ begin
                declare
                   Arg : Types.String_Ptr renames Args.Table (Index);
                begin
-                  if Arg'Length >= 6 and then
-                    Arg (Arg'First + 2 .. Arg'First + 5) = "RTS="
+                  if Arg'Length >= 6
+                    and then Arg (Arg'First + 2 .. Arg'First + 5) = "RTS="
                   then
                      Add (Arg.all, Bind_Options, Last_Bind_Option);
                      exit;
@@ -1468,10 +1464,10 @@ begin
                --  Otherwise create a temporary response file
 
                declare
+                  EOL           : constant String (1 .. 1) := (1 => ASCII.LF);
                   FD            : File_Descriptor;
                   Path          : Path_Name_Type;
                   Args          : Argument_List (1 .. 1);
-                  EOL           : constant String (1 .. 1) := (1 => ASCII.LF);
                   Status        : Integer;
                   Succ          : Boolean;
                   Quotes_Needed : Boolean;
@@ -1672,8 +1668,8 @@ begin
          if Relocatable and then Runtime_Library_Dir /= null then
             declare
                BG_File : File_Type;
-               Line : String (1 .. 1_000);
-               Last : Natural;
+               Line    : String (1 .. 1_000);
+               Last    : Natural;
 
             begin
                Open (BG_File, In_File, Binder_Generated_File);
@@ -1769,9 +1765,10 @@ begin
                   Size := Size + 1 + PL_Options (Last_PL_Option)'Length;
 
                   First_Object := First_Object + 1;
+
                   exit when
-                    First_Object > Object_Files.Last or else
-                    Size >= Maximum_Size;
+                    First_Object > Object_Files.Last
+                    or else Size >= Maximum_Size;
                end loop;
 
                if not Quiet_Output then
@@ -1890,7 +1887,7 @@ begin
       end if;
 
       --  If the archive has not been created complete, add the remaining
-      --  chunks
+      --  chunks.
 
       if Next_AB_Object_Pos <= Last_AB_Option then
          First_AB_Object_Pos := Last_AB_Append_Option + 2;
@@ -2036,16 +2033,14 @@ begin
 
       for J in 1 .. Imported_Library_Directories.Last loop
          Library_Switches_Table.Append
-           (new String'
-              ("-L" & Imported_Library_Directories.Table (J).all));
+           (new String'("-L" & Imported_Library_Directories.Table (J).all));
 
          if Path_Option /= null then
             Add_Rpath (Imported_Library_Directories.Table (J));
          end if;
 
          Library_Switches_Table.Append
-           (new String'
-              ("-l" & Imported_Library_Names.Table (J).all));
+           (new String'("-l" & Imported_Library_Names.Table (J).all));
       end loop;
 
       --  If Ada is used and we don't already know yet that libgnarl is needed,
@@ -2066,7 +2061,7 @@ begin
                Lib_File := Name_Find;
                Text := Osint.Read_Library_Info (Lib_File, True);
 
-               Id  := ALI.Scan_ALI
+               Id := ALI.Scan_ALI
                  (F          => Lib_File,
                   T          => Text,
                   Ignore_ED  => False,
@@ -2089,8 +2084,7 @@ begin
       end if;
 
       if Runtime_Library_Dir /= null then
-         Options_Table.Append
-           (new String'("-L" & Runtime_Library_Dir.all));
+         Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
 
          if Path_Option /= null then
             Add_Rpath (Runtime_Library_Dir);
@@ -2128,7 +2122,7 @@ begin
          else
             declare
                Option : constant String_Access :=
-                 new String (1 .. Path_Option'Length + Rpath_Length);
+                          new String (1 .. Path_Option'Length + Rpath_Length);
                Cur    : Natural := 0;
 
             begin
