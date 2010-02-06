@@ -47,7 +47,6 @@ with Gpr_Util;         use Gpr_Util;
 with GPR_Version;      use GPR_Version;
 with Gprexch;          use Gprexch;
 with GprConfig.Knowledge;  use GprConfig.Knowledge;
-with Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Output;           use Output;
@@ -11655,17 +11654,14 @@ package body Buildgpr is
 
          elsif (Language = No_Name or else Language = Name_Ada)
             and then
-             (Arg = "-nostdlib"
-              or else Arg = "-nostdinc"
-              or else Arg = "-fstack-check"
+             (Arg = "-fstack-check"
               or else Arg = "-fno-inline"
               or else
                 (Arg'Length >= 2 and then
                 (Arg (2) = 'O' or else Arg (2) = 'g')))
          then
             --  For compatibility with gnatmake, use switch to compile Ada
-            --  code. For -nostdlib and -nostdinc, also use switch to bind Ada
-            --  code and for -nostdlib to link.
+            --  code.
 
             if Command_Line then
                Current_Comp_Option_Table :=
@@ -11695,26 +11691,33 @@ package body Buildgpr is
             end if;
 
             Current_Processor := Compiler;
-
             Add_Option (Arg, Command_Line);
+            Current_Processor := None;
 
-            if Arg = "-nostdlib" or else Arg = "nostdinc" then
-               Current_Bind_Option_Table :=
-                 Binder_Options_HTable.Get (Name_Ada);
+         elsif (Language = No_Name or else Language = Name_Ada)
+            and then
+             (Arg = "-nostdlib"
+              or else Arg = "-nostdinc")
+         then
+            --  For compatibility with gnatmake, use switch to bind Ada code
+            --  code and for -nostdlib to link.
 
-               if Current_Bind_Option_Table = No_Bind_Option_Table then
-                  Current_Bind_Option_Table := new Binder_Options.Instance;
-                  Binder_Options_HTable.Set
-                    (Name_Ada, Current_Bind_Option_Table);
-                  Binder_Options.Init (Current_Bind_Option_Table.all);
-               end if;
+            Current_Bind_Option_Table :=
+              Binder_Options_HTable.Get (Name_Ada);
 
-               Current_Processor := Binder;
-
-               Add_Option (Arg, Command_Line);
+            if Current_Bind_Option_Table = No_Bind_Option_Table then
+               Current_Bind_Option_Table := new Binder_Options.Instance;
+               Binder_Options_HTable.Set
+                 (Name_Ada, Current_Bind_Option_Table);
+               Binder_Options.Init (Current_Bind_Option_Table.all);
             end if;
 
-            if Arg = "-nostdlib" and then not Hostparm.OpenVMS then
+            Current_Processor := Binder;
+            Add_Option (Arg, Command_Line);
+
+            --  For -nostdlib, use the switch to link too
+
+            if Arg = "-nostdlib" then
                Current_Processor := Linker;
                Add_Option (Arg, Command_Line);
             end if;
