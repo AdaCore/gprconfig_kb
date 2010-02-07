@@ -36,6 +36,7 @@ with Csets;
 with Gprexch;     use Gprexch;
 with GPR_Version; use GPR_Version;
 with Gpr_Util;    use Gpr_Util;
+with Hostparm;
 with Makeutl;     use Makeutl;
 with MLib;        use MLib;
 with Namet;       use Namet;
@@ -1236,10 +1237,10 @@ package body Cleangpr is
 
                   case Arg (2) is
                      when '-' =>
-                        if Arg = "--db-" then
+                        if not Hostparm.OpenVMS and then Arg = "--db-" then
                            Load_Standard_Base := False;
 
-                        elsif Arg = "--db" then
+                        elsif not Hostparm.OpenVMS and then Arg = "--db" then
                            Db_Directory_Expected := True;
 
                         elsif Arg'Length > Config_Project_Option'Length
@@ -1265,9 +1266,11 @@ package body Cleangpr is
                                         .. Arg'Last));
                            end if;
 
-                        elsif Arg'Length > Autoconf_Project_Option'Length
+                        elsif not Hostparm.OpenVMS
                               and then
-                              Arg (1 .. Autoconf_Project_Option'Length) =
+                                Arg'Length > Autoconf_Project_Option'Length
+                              and then
+                                Arg (1 .. Autoconf_Project_Option'Length) =
                                 Autoconf_Project_Option
                         then
                            if Config_Project_File_Name /= null and then
@@ -1288,11 +1291,12 @@ package body Cleangpr is
                               Autoconf_Specified := True;
                            end if;
 
-                        elsif
-                          Arg'Length > Target_Project_Option'Length
+                        elsif not Hostparm.OpenVMS
                           and then
-                          Arg (1 .. Target_Project_Option'Length) =
-                             Target_Project_Option
+                            Arg'Length > Target_Project_Option'Length
+                          and then
+                            Arg (1 .. Target_Project_Option'Length) =
+                               Target_Project_Option
                         then
                            if Target_Name /= null then
                               if Target_Name.all /=
@@ -1543,13 +1547,26 @@ package body Cleangpr is
 
          Put_Line ("  --config=file.cgpr");
          Put_Line ("           Specify the configuration project file name");
-         Put_Line ("  --autoconf=file.cgpr");
-         Put_Line
-           ("           Specify/create the main config project file name");
-         Put_Line ("  --target=targetname");
-         Put_Line ("           Specify a target for cross polatforms");
-         Put_Line ("  --db dir Parse dir as an additional knowledge base");
-         Put_Line ("  --db-    Do not load the standard knowledge base");
+
+         if not Hostparm.OpenVMS then
+            Put_Line ("  --autoconf=file.cgpr");
+            Put_Line
+              ("           Specify/create the main config project file name");
+         end if;
+
+         if not Hostparm.OpenVMS then
+            Put_Line ("  --target=targetname");
+            Put_Line ("           Specify a target for cross polatforms");
+         end if;
+
+         if not Hostparm.OpenVMS then
+            Put_Line ("  --db dir Parse dir as an additional knowledge base");
+         end if;
+
+         if not Hostparm.OpenVMS then
+            Put_Line ("  --db-    Do not load the standard knowledge base");
+         end if;
+
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
          Put_Line ("  " & Gpr_Util.Unchecked_Shared_Lib_Imports);

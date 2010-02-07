@@ -46,6 +46,7 @@ with GNAT.Regexp;               use GNAT.Regexp;
 with Gpr_Util;         use Gpr_Util;
 with GPR_Version;      use GPR_Version;
 with Gprexch;          use Gprexch;
+with Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Output;           use Output;
@@ -11242,10 +11243,16 @@ package body Buildgpr is
 
       elsif Arg (1) = '-' then
 
-         if Command_Line and then Arg = "--db-" then
+         if not Hostparm.OpenVMS
+            and then Command_Line
+            and then Arg = "--db-"
+         then
             Load_Standard_Base := False;
 
-         elsif Command_Line and then Arg = "--db" then
+         elsif not Hostparm.OpenVMS
+               and then Command_Line
+               and then Arg = "--db"
+         then
             Db_Directory_Expected := True;
 
          elsif Command_Line and then Arg = "--display-paths" then
@@ -11256,9 +11263,9 @@ package body Buildgpr is
 
          elsif Command_Line
            and then
-         Arg'Length > Config_Project_Option'Length
+            Arg'Length > Config_Project_Option'Length
            and then
-         Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
+            Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
          then
             if Config_Project_File_Name /= null and then
               (Autoconf_Specified or else
@@ -11277,9 +11284,9 @@ package body Buildgpr is
                    (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
             end if;
 
-         elsif Command_Line
-           and then
-            Arg'Length > Autoconf_Project_Option'Length
+         elsif not Hostparm.OpenVMS
+           and then Command_Line
+           and then Arg'Length > Autoconf_Project_Option'Length
            and then
             Arg (1 .. Autoconf_Project_Option'Length) =
               Autoconf_Project_Option
@@ -11300,9 +11307,9 @@ package body Buildgpr is
                Autoconf_Specified := True;
             end if;
 
-         elsif Command_Line
-           and then
-            Arg'Length > Target_Project_Option'Length
+         elsif not Hostparm.OpenVMS
+           and then Command_Line
+           and then Arg'Length > Target_Project_Option'Length
            and then
             Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
          then
@@ -11911,33 +11918,41 @@ package body Buildgpr is
 
          --  Line for Autoconf_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Autoconf_Project_Option);
-         Write_Str ("file.cgpr");
-         Write_Eol;
-         Write_Str
-           ("           Specify/create the main config project file name");
-         Write_Eol;
+         if not Hostparm.OpenVMS then
+            Write_Str ("  ");
+            Write_Str (Autoconf_Project_Option);
+            Write_Str ("file.cgpr");
+            Write_Eol;
+            Write_Str
+              ("           Specify/create the main config project file name");
+            Write_Eol;
+         end if;
 
          --  Line for Target_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Target_Project_Option);
-         Write_Str ("targetname");
-         Write_Eol;
-         Write_Str
-           ("           Specify a target for cross platforms");
-         Write_Eol;
+         if not Hostparm.OpenVMS then
+            Write_Str ("  ");
+            Write_Str (Target_Project_Option);
+            Write_Str ("targetname");
+            Write_Eol;
+            Write_Str
+              ("           Specify a target for cross platforms");
+            Write_Eol;
+         end if;
 
          --  Line for --db
 
-         Write_Str ("  --db dir Parse dir as an additional knowledge base");
-         Write_Eol;
+         if not Hostparm.OpenVMS then
+            Write_Str ("  --db dir Parse dir as an additional knowledge base");
+            Write_Eol;
+         end if;
 
          --  Line for --db-
 
-         Write_Str ("  --db-    Do not load the standard knowledge base");
-         Write_Eol;
+         if not Hostparm.OpenVMS then
+            Write_Str ("  --db-    Do not load the standard knowledge base");
+            Write_Eol;
+         end if;
 
          --  Line for --subdirs=
 
