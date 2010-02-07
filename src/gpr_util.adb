@@ -37,7 +37,6 @@ with Output;   use Output;
 with Sinput.P;
 with Tempdir;
 with Types;    use Types;
-with GprConfig.Sdefault;        use GprConfig.Sdefault;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body Gpr_Util is
@@ -738,12 +737,12 @@ package body Gpr_Util is
    -- Normalized_Hostname --
    -------------------------
 
-   function Normalized_Hostname return String is
-      Id : Targets_Set_Id;
-   begin
-      Get_Targets_Set (Base, Hostname, Id);
-      return Normalized_Target (Base, Id);
-   end Normalized_Hostname;
+--     function Normalized_Hostname return String is
+--        Id : Targets_Set_Id;
+--     begin
+--        Get_Targets_Set (Base, Hostname, Id);
+--        return Normalized_Target (Base, Id);
+--     end Normalized_Hostname;
 
    ------------------
    -- Partial_Name --
@@ -810,5 +809,7 @@ package body Gpr_Util is
 
       return Path (1 .. GCC_Index);
    end Shared_Libgcc_Dir;
+
+   package body Knowledge is separate;
 
 end Gpr_Util;

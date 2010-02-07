@@ -29,6 +29,7 @@
 pragma Extend_System (Aux_DEC);
 
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Text_IO;      use Ada.Text_IO;
 with GNAT.OS_Lib;      use GNAT.OS_Lib;
 with Osint;            use Osint;
 with System;           use System;
@@ -56,12 +57,15 @@ procedure Ccomp is
    Success : constant Cond_Value_Type := 1;
 
    Command : constant String := "cc";
-   Len : Natural := Command'Length;
    Status : Cond_Value_Type;
 
    Include_Directory : constant String := "/INCLUDE_DIRECTORY=";
 
+   Mms_Dependencies  : constant String := "/MMS_DEPENDENCIES=FILE=";
+
    Output_File : constant String := "-o";
+
+   Verbose     : Boolean := False;
 
    procedure Add
      (S     : in out String_Access;
@@ -146,6 +150,18 @@ begin
                   end if;
                end;
 
+            elsif Arg'Length > Mms_Dependencies'Length and then
+              Arg (Arg'First .. Arg'First + Mms_Dependencies'Length - 1) =
+              Mms_Dependencies
+            then
+               Add (Command_String,
+                    Last_Command,
+                    " " & Mms_Dependencies &
+                    To_Host_File_Spec
+                      (Arg
+                        (Arg'First + Mms_Dependencies'Length ..
+                         Arg'Last)).all);
+
             --  If it is "-o", the next argument is the output file
 
             elsif Arg = Output_File then
@@ -154,6 +170,11 @@ begin
 
                   Output_File_Name := To_Host_File_Spec (Argument (Arg_Num));
                end if;
+
+            --  If it is "-v", skip the argument and set Verbose to True
+
+            elsif Arg = "-v" then
+               Verbose := True;
 
             --  Otherwise, add argument to the command string
 
@@ -191,10 +212,15 @@ begin
       end if;
 
       --  Invoke CC
+
       declare
          Cmd : constant String (1 .. Last_Command) :=
                  Command_String (1 .. Last_Command);
       begin
+         if Verbose then
+            Put_Line (Cmd);
+         end if;
+
          if Output_File_Name /= null then
             Spawn (Status, Cmd, Output_File => Output_File_Name.all);
          else

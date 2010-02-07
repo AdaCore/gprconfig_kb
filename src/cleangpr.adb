@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2006-2009, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2010, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -34,7 +34,6 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Csets;
 with Gprexch;     use Gprexch;
-with GprConfig.Knowledge; use GprConfig.Knowledge;
 with GPR_Version; use GPR_Version;
 with Gpr_Util;    use Gpr_Util;
 with Makeutl;     use Makeutl;
@@ -54,6 +53,8 @@ with Table;
 with Types;       use Types;
 
 package body Cleangpr is
+
+   use Knowledge;
 
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
@@ -1021,17 +1022,7 @@ package body Cleangpr is
       Parse_Cmd_Line;
 
       if Load_Standard_Base then
-         begin
-            Parse_Knowledge_Base
-              (Base,
-               Default_Knowledge_Base_Directory,
-               Parse_Compiler_Info => False);
-
-         exception
-            when Invalid_Knowledge_Base =>
-               Fail_Program ("could not parse the XML files in " &
-                             Default_Knowledge_Base_Directory);
-         end;
+         Parse_Knowledge_Base;
       end if;
 
       --  If no project file was specified, look first for a default
@@ -1234,15 +1225,8 @@ package body Cleangpr is
 
          begin
             if Db_Directory_Expected then
-               begin
-                  Db_Directory_Expected := False;
-                  Parse_Knowledge_Base
-                    (Base, Arg, Parse_Compiler_Info => False);
-
-               exception
-                  when Invalid_Knowledge_Base =>
-                     Fail_Program ("could not parse the XML files in " & Arg);
-               end;
+               Db_Directory_Expected := False;
+               Parse_Knowledge_Base (Arg);
 
             elsif Arg'Length /= 0 then
                if Arg (1) = '-' then

@@ -34,9 +34,7 @@ project VMS_Gprbuild is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches &
             ("-g", "-gnata", "-gnatVa", "-gnatwaCJI"
-             --  ??? warning as error should be considered back when
-             --  builgpr.adb line 7384 indentation is fixed
-             , "-gnatwe"
+--             , "-gnatwe"
              , "-gnatyg"
              );
 
@@ -90,6 +88,7 @@ project VMS_Gprbuild is
    package Naming is
       for Body ("gprlib.build_shared_lib")
         use "gprlib-build_shared_lib-vms.adb";
+      for Body ("gpr_util.knowledge") use "gpr_util-knowledge-vms.adb";
 
       case OS is
          when "avms" =>

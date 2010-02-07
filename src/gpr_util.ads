@@ -29,8 +29,6 @@
 
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
-with GprConfig.Knowledge; use GprConfig.Knowledge;
-
 with Namet;    use Namet;
 with Prj;      use Prj;
 with Prj.Tree; use Prj.Tree;
@@ -120,7 +118,7 @@ package Gpr_Util is
 
    RTS_Language_Option : constant String := "--RTS:";
 
-   Base : Knowledge_Base;
+--   Base : Knowledge_Base;
    --  The knowledge base used to find the standard name of the native target
 
    Db_Directory_Expected : Boolean := False;
@@ -166,10 +164,6 @@ package Gpr_Util is
    --  Returns "null" if no compiler driver was specified for the language, and
    --  exit with an error if one was specified but not found.
 
-   function Normalized_Hostname return String;
-   --  Return the normalized name of the host on which gprbuild is running. The
-   --  knowledge base must have been parsed first.
-
    procedure Fail_Program (S : String; Flush_Messages : Boolean := True);
    --  Terminate program with a message and a fatal status code
 
@@ -204,5 +198,14 @@ package Gpr_Util is
    function Shared_Libgcc_Dir (Run_Time_Dir : String) return String;
    --  Returns the directory of the shared version of libgcc, if it can be
    --  found, otherwise returns an empty string.
+
+   package Knowledge is
+      function Normalized_Hostname return String;
+      --  Return the normalized name of the host on which gprbuild is running.
+      --  The knowledge base must have been parsed first.
+
+      procedure Parse_Knowledge_Base (Directory : String := "");
+
+   end Knowledge;
 
 end Gpr_Util;

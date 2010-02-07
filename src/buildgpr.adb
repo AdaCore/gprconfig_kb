@@ -46,7 +46,6 @@ with GNAT.Regexp;               use GNAT.Regexp;
 with Gpr_Util;         use Gpr_Util;
 with GPR_Version;      use GPR_Version;
 with Gprexch;          use Gprexch;
-with GprConfig.Knowledge;  use GprConfig.Knowledge;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Output;           use Output;
@@ -72,6 +71,7 @@ with Types;            use Types;
 
 package body Buildgpr is
 
+   use Gpr_Util.Knowledge;
    use type ALI.ALI_Id;
 
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
@@ -785,9 +785,9 @@ package body Buildgpr is
    procedure Add_Source_Id (Project : Project_Id; Id : Source_Id);
    --  Add a source id to Source_Indexes, with Found set to False
 
-   function Create_Path_From_Dirs return String_Access;
-   --  Concatenate all directories in the Directories table into a path.
-   --  Caller is responsible for freeing the result
+   function Archive_Suffix (For_Project : Project_Id) return String;
+   --  Return the archive suffix for the project, if defined, otherwise
+   --  return ".a".
 
    procedure Await_Compile
      (Source        : out Source_Id;
@@ -839,6 +839,10 @@ package body Buildgpr is
       Config       : Language_Config;
       Language     : Name_Id);
    --  Create a new config file
+
+   function Create_Path_From_Dirs return String_Access;
+   --  Concatenate all directories in the Directories table into a path.
+   --  Caller is responsible for freeing the result
 
    function Directly_Imports
      (Project  : Project_Id;
@@ -1471,52 +1475,19 @@ package body Buildgpr is
       Source_Indexes (Last_Source) := (Project, Id, False);
    end Add_Source_Id;
 
-   ---------------------------
-   -- Create_Path_From_Dirs --
-   ---------------------------
+   --------------------
+   -- Archive_Suffix --
+   --------------------
 
-   function Create_Path_From_Dirs return String_Access is
-      Result    : String_Access;
-      Tmp       : String_Access;
-      Path_Last : Natural := 0;
+   function Archive_Suffix (For_Project : Project_Id) return String is
    begin
-      for Index in 1 .. Directories.Last loop
-         Get_Name_String (Directories.Table (Index));
+      if For_Project.Config.Archive_Suffix = No_File then
+         return ".a";
 
-         while Name_Len > 1
-           and then (Name_Buffer (Name_Len) = Directory_Separator
-                     or else Name_Buffer (Name_Len) = '/')
-         loop
-            Name_Len := Name_Len - 1;
-         end loop;
-
-         if Result = null then
-            Result := new String (1 .. Name_Len);
-         else
-            while Path_Last + Name_Len + 1 > Result'Last loop
-               Tmp := new String (1 .. 2 * Result'Length);
-               Tmp (1 .. Path_Last) := Result (1 .. Path_Last);
-               Free (Result);
-               Result := Tmp;
-            end loop;
-
-            Path_Last := Path_Last + 1;
-            Result (Path_Last) := Path_Separator;
-         end if;
-
-         Result (Path_Last + 1 .. Path_Last + Name_Len) :=
-           Name_Buffer (1 .. Name_Len);
-         Path_Last := Path_Last + Name_Len;
-      end loop;
-
-      if Current_Verbosity = High and then Result /= null then
-         Put_Line ("Path=" & Result (1 .. Path_Last));
+      else
+         return Get_Name_String (For_Project.Config.Archive_Suffix);
       end if;
-
-      Tmp := new String'(Result (1 .. Path_Last));
-      Free (Result);
-      return Tmp;
-   end Create_Path_From_Dirs;
+   end Archive_Suffix;
 
    -------------------
    -- Await_Compile --
@@ -1731,7 +1702,9 @@ package body Buildgpr is
       Exists         : out Boolean)
    is
       Archive_Name : constant String :=
-        "lib" & Get_Name_String (For_Project.Name) & ".a";
+                       "lib" &
+                       Get_Name_String (For_Project.Name) &
+                       Archive_Suffix (For_Project);
       --  The name of the archive file for this project
 
       Archive_Dep_Name : constant String :=
@@ -6180,6 +6153,53 @@ package body Buildgpr is
 
    end Create_Config_File;
 
+   ---------------------------
+   -- Create_Path_From_Dirs --
+   ---------------------------
+
+   function Create_Path_From_Dirs return String_Access is
+      Result    : String_Access;
+      Tmp       : String_Access;
+      Path_Last : Natural := 0;
+   begin
+      for Index in 1 .. Directories.Last loop
+         Get_Name_String (Directories.Table (Index));
+
+         while Name_Len > 1
+           and then (Name_Buffer (Name_Len) = Directory_Separator
+                     or else Name_Buffer (Name_Len) = '/')
+         loop
+            Name_Len := Name_Len - 1;
+         end loop;
+
+         if Result = null then
+            Result := new String (1 .. Name_Len);
+         else
+            while Path_Last + Name_Len + 1 > Result'Last loop
+               Tmp := new String (1 .. 2 * Result'Length);
+               Tmp (1 .. Path_Last) := Result (1 .. Path_Last);
+               Free (Result);
+               Result := Tmp;
+            end loop;
+
+            Path_Last := Path_Last + 1;
+            Result (Path_Last) := Path_Separator;
+         end if;
+
+         Result (Path_Last + 1 .. Path_Last + Name_Len) :=
+           Name_Buffer (1 .. Name_Len);
+         Path_Last := Path_Last + Name_Len;
+      end loop;
+
+      if Current_Verbosity = High and then Result /= null then
+         Put_Line ("Path=" & Result (1 .. Path_Last));
+      end if;
+
+      Tmp := new String'(Result (1 .. Path_Last));
+      Free (Result);
+      return Tmp;
+   end Create_Path_From_Dirs;
+
    ----------------------
    -- Directly_Imports --
    ----------------------
@@ -6566,7 +6586,10 @@ package body Buildgpr is
 
    function Global_Archive_Name (For_Project : Project_Id) return String is
    begin
-      return "lib" & Get_Name_String (For_Project.Name) & ".a";
+      return
+        "lib" &
+        Get_Name_String (For_Project.Name) &
+        Archive_Suffix (For_Project);
    end Global_Archive_Name;
 
    --------------
@@ -7245,20 +7268,11 @@ package body Buildgpr is
       end if;
 
       if Load_Standard_Base then
-         begin
-            --  We need to parse the knowledge base so that we are able to
-            --  normalize the target names. Unfortunately, if we have to spawn
-            --  gprconfig, it will also have to parse that knowledge base on
-            --  its own.
-            Parse_Knowledge_Base
-              (Base,
-               Default_Knowledge_Base_Directory,
-               Parse_Compiler_Info => False);
-         exception
-            when Invalid_Knowledge_Base =>
-               Fail_Program ("could not parse the XML files in " &
-                             Default_Knowledge_Base_Directory);
-         end;
+         --  We need to parse the knowledge base so that we are able to
+         --  normalize the target names. Unfortunately, if we have to spawn
+         --  gprconfig, it will also have to parse that knowledge base on
+         --  its own.
+         Parse_Knowledge_Base;
       end if;
 
       --  If no project file was specified, look first for a default
@@ -11109,14 +11123,8 @@ package body Buildgpr is
          end if;
 
       elsif Db_Directory_Expected then
-         begin
             Db_Directory_Expected := False;
-            Parse_Knowledge_Base (Base, Arg, Parse_Compiler_Info => False);
-
-         exception
-            when Invalid_Knowledge_Base =>
-               Fail_Program ("could not parse the XML files in " & Arg);
-         end;
+            Parse_Knowledge_Base (Arg);
 
          --  Set the processor/language for the following switches
 
