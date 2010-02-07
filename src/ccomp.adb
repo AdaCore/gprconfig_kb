@@ -27,13 +27,14 @@
 --  This program is used on VMS as a front end to invoke the DEC C compiler CC
 
 pragma Extend_System (Aux_DEC);
+
 with Ada.Command_Line; use Ada.Command_Line;
+with GNAT.OS_Lib;      use GNAT.OS_Lib;
+with Osint;            use Osint;
 with System;           use System;
 
 procedure Ccomp is
    subtype Cond_Value_Type is System.Unsigned_Longword;
-
-   type String_Access is access String;
 
    Output_File_Name : String_Access;
 
@@ -62,36 +63,45 @@ procedure Ccomp is
 
    Output_File : constant String := "-o";
 
-   procedure Add (S : in out String; Last : in out Natural; Value : String);
+   procedure Add
+     (S     : in out String_Access;
+      Last  : in out Natural;
+      Value : String);
    --  Add string Value to string variable S, updating Last
 
    ---------
    -- Add --
    ---------
 
-   procedure Add (S : in out String; Last : in out Natural; Value : String) is
+   procedure Add
+     (S     : in out String_Access;
+      Last  : in out Natural;
+      Value : String)
+   is
    begin
+      while S'Last < Last + Value'Length loop
+         declare
+            New_S : constant String_Access := new String (1 .. 2 * S'Last);
+
+         begin
+            New_S (1 .. Last) := S (1 .. Last);
+            Free (S);
+            S := New_S;
+         end;
+      end loop;
+
       S (Last + 1 .. Last + Value'Length) := Value;
       Last := Last + Value'Length;
    end Add;
 
 begin
-   --  All arguments are given to CC in one single string, so we need to
-   --  compute a maximum length for this string.
-
-   for J in 1 .. Argument_Count loop
-      Len := Len + 1 + Argument (J)'Length;
-   end loop;
-
-   Len := Len + 3;
-
    declare
-      Command_String : String (1 .. Len);
+      Command_String : String_Access := new String (1 .. 40);
       --  This is the command string that will be used to invoke CC
 
       Last_Command   : Natural := 0;
 
-      Includes       : String (1 .. Len);
+      Includes       : String_Access := new String (1 .. 40);
       --  As they can be only one /INCLUDE_DIRECTORY= option, we regroupe all
       --  directories in string Includes.
 
@@ -121,23 +131,51 @@ begin
                   Add (Includes, Last_Include, ",");
                end if;
 
-               Add
-                 (Includes,
-                  Last_Include,
-                  Arg (Arg'First + Include_Directory'Length .. Arg'Last));
+               declare
+                  Dir : constant String :=
+                    Arg (Arg'First + Include_Directory'Length .. Arg'Last);
+                  New_Dir : String_Access;
+
+               begin
+                  if Is_Directory (Dir) then
+                     New_Dir := To_Host_Dir_Spec (Dir, False);
+                     Add (Includes, Last_Include, New_Dir.all);
+
+                  else
+                     Add (Includes, Last_Include, Dir);
+                  end if;
+               end;
 
             --  If it is "-o", the next argument is the output file
 
             elsif Arg = Output_File then
                if Arg_Num < Argument_Count then
                   Arg_Num := Arg_Num + 1;
-                  Output_File_Name := new String'(Argument (Arg_Num));
+
+                  Output_File_Name := To_Host_File_Spec (Argument (Arg_Num));
                end if;
 
             --  Otherwise, add argument to the command string
 
             else
-               Add (Command_String, Last_Command, " " & Arg);
+               declare
+                  New_Arg : String_Access;
+
+               begin
+                  if Is_Regular_File (Arg) then
+                     New_Arg := To_Host_File_Spec (Arg);
+
+                  elsif Is_Directory (Arg) then
+                     New_Arg := To_Host_Dir_Spec (Arg, False);
+                  end if;
+
+                  if New_Arg /= null then
+                     Add (Command_String, Last_Command, " " & New_Arg.all);
+
+                  else
+                     Add (Command_String, Last_Command, " " & Arg);
+                  end if;
+               end;
             end if;
          end;
       end loop;
