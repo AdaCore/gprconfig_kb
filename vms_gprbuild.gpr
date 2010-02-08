@@ -13,7 +13,8 @@ project VMS_Gprbuild is
         "gprbind.adb",
         "gprlib.adb",
         "gprclean.adb",
-        "ccomp.adb");
+        "ccomp.adb",
+        "forcomp.adb");
 
    for Source_Dirs use ("src", "gnat");
 
