@@ -18,144 +18,6 @@
 
 @set gprconfig GPRconfig
 
-@c --------------------------------------------- macro
-@c This macro can be used to insert code sample. Each line should end with
-@c @NL{}, since otherwise texinfo doesn't guarantee that newlines will be
-@c preserved
-@macro CODESAMPLE{TXT}
-@ifhtml
-@smallexample
-@group
-\TXT\
-@end group
-@end smallexample
-@end ifhtml
-@ifnothtml
-@smallexample
-@group
-\TXT\
-@end group
-@end smallexample
-@end ifnothtml
-@end macro
-
-@c simulates a newline when in a @CODESAMPLE
-@macro NL{}
-@end macro
-
-@c --------------------------------------------- macro
-@c This macro can be used to insert a "Tip" or "Did you know" box. In HTML,
-@c this box is displayed in the right margin of the text, and thus doesn't
-@c disturbs the normal reading flow, but provides additional useful
-@c information. A small icon is displayed on the left of the box.
-@c Calls to this macro should be followed by @noindent for proper rendering
-@c in pdf
-@macro TIP{TXT}
-@ifhtml
-@html
-<div class="tip">
-@end html
-\TXT\
-@html
-</div>
-@end html
-@end ifhtml
-@ifnothtml
-@quotation
-@noindent
-@image{tip,15pt}  \TXT\
-@end quotation
-@end ifnothtml
-@end macro
-
-@c --------------------------------------------- macro
-@c This macro is similar to TIP, but only has an effect in html output,
-@c and displayed a note in the margin. This can be used to highlight important
-@c points that are repeated in the text. In the other outputs, we do not
-@c know how to create margin notes, and whether that would only duplicate
-@c information in the main text
-@macro TIPHTML{TXT}
-@ifhtml
-@html
-<div class="tip">
-@end html
-\TXT\
-@html
-</div>
-@end html
-@end ifhtml
-@end macro
-
-@c --------------------------------------------- macro
-@c This macro can be used to insert an "Important" box in the text.
-@c This box is displayed inline in the main body of the text, but is
-@c surrounded by a frame, and has a small icon on the left.
-@c Calls to this macro should be followed by @noindent for proper rendering
-@c in pdf
-@macro IMPORTANT{TXT}
-@ifhtml
-@html
-<div class="important">
-@end html
-\TXT\
-@html
-</div>
-@end html
-@end ifhtml
-@ifnothtml
-@quotation
-@noindent
-@image{important,15pt}  \TXT\
-@end quotation
-@end ifnothtml
-@end macro
-
-@c --------------------------------------------- macro
-@c This macro can be used to insert a "Note" box in the text. It is
-@c displayed inline in the main body of the text, but has a different
-@c icon that the "Important" box
-@c Calls to this macro should be followed by @noindent for proper rendering
-@c in pdf
-@macro NOTE{TXT}
-@ifhtml
-@html
-<div class="note">
-@end html
-\TXT\
-@html
-</div>
-@end html
-@end ifhtml
-@ifnothtml
-@quotation
-@noindent
-@image{note,15pt}  \TXT\
-@end quotation
-@end ifnothtml
-@end macro
-
-@c --------------------------------------------- macro
-@c This macro creates index entries. Optionally, it can display that
-@c entry in the right-side margin of the text in HTML, to help people
-@c locate where exactly the index entry points to.
-
-@macro CINDEX{TXT}
-@cindex \TXT\
-@ifset useindex
-@ifhtml
-@html
-<div class="side"><a href="#Index">
-@end html
-\TXT\
-@html
-</a></div>
-@end html
-@end ifhtml
-@end ifset
-@end macro
-
-@c ---------------------------------------------
-
 @titlepage
 @title GPRbuild User's Guide
 @subtitle Document identifier: $Rev::        $
@@ -196,26 +58,81 @@ A copy of the license is included in the section entitled
 ``GNU Free Documentation License''.
 
 @menu
-* Introduction::
-* Guided Tour::
-* Important Concepts::
-* Building with GPRbuild::
-* Cleaning up with GPRclean::
-* Configuring with GPRconfig::
-* Configuration File Reference::
+* GNAT Project Manager::
+* Tools Supporting Project Files::
+* Gprbuild::
 * GNU Free Documentation License::
 * Index::
 
 @detailmenu
- --- The Detailed Contents ---
+--- The Detailed Contents ---
 
-Guided Tour
-* Configuration::
-* First Steps::
-* Subsystems::
-* Project Extensions::
-* Libraries::
-* Scenarios and conditional source files::
+GNAT Project Manager
+* Introduction::
+* Building With Projects::
+* Organizing Projects into Subsystems::
+* Scenarios in Projects::
+* Library Projects::
+* Project Extension::
+* Project File Reference::
+
+Building With Projects
+* Source Files and Directories::
+* Object and Exec Directory::
+* Main Subprograms::
+* Tools Options in Project Files::
+* Compiling with Project Files::
+* Executable File Names::
+* Avoid Duplication With Variables::
+* Naming Schemes::
+
+Organizing Projects into Subsystems
+* Project Dependencies::
+* Cyclic Project Dependencies::
+* Sharing Between Projects::
+* Global Attributes::
+
+Library Projects
+* Building Libraries::
+* Using Library Projects::
+* Stand-alone Library Projects::
+* Installing a library with project files::
+
+Project Extension
+* Project Hierarchy Extension::
+
+Project File Reference
+* Project Declaration::
+* Qualified Projects::
+* Declarations::
+* Packages::
+* Expressions::
+* External Values::
+* Typed String Declaration::
+* Variables::
+* Attributes::
+* Case Statements::
+
+Tools Supporting Project Files
+* gnatmake and Project Files::
+* The GNAT Driver and Project Files::
+* The Development Environments::
+* Cleaning up with GPRclean::
+
+gnatmake and Project Files
+* Switches Related to Project Files::
+* Switches and Project Files::
+* Specifying Configuration Pragmas::
+* Project Files and Main Subprograms::
+* Library Project Files::
+
+Cleaning up with GPRclean
+* Switches for GPRclean::
+
+Gprbuild
+* Building with GPRbuild::
+* Configuring with GPRconfig::
+* Configuration File Reference::
 
 Building with GPRbuild
 * Command Line::
@@ -227,21 +144,17 @@ Building with GPRbuild
 * Linking Phase::
 * Incompatibilities with gnatmake::
 
-Cleaning up with GPRclean
-* Switches for GPRclean::
-
 Configuring with GPRconfig
+* Configuration::
 * Using GPRconfig::
 * The GPRconfig knowledge base::
 
 The GPRconfig knowledge base
 * General file format::
 * Compiler description::
-* Configurations::
-
-Compiler description
 * GPRconfig external values::
 * GPRconfig variable substitution::
+* Configurations::
 
 Configuration File Reference
 * Project Level Attributes::
@@ -267,9 +180,11 @@ Package Compiler
 @end menu
 @end ifnottex
 
+@include ../gnat/projects.texi
+
 @c ---------------------------------------------
-@node Introduction
-@unnumbered Introduction
+@node Gprbuild
+@chapter Gprbuild
 @c ---------------------------------------------
 
 @noindent
@@ -302,18 +217,6 @@ such as Ada, C, C++ and Fortran.
 @end itemize
 
 @noindent
-@code{GPRbuild} takes as its main input a project file @file{<file>.gpr}
-defining the build characteristics of the system under construction
-such as:
-
-@itemize @bullet
-@item which sources to use,
-@item where to find them,
-@item where to store the objects produced by the compiler,
-@item which options should be passed to the compiler.
-@end itemize
-
-@noindent
 The tool is generic in that it provides, when possible, equivalent
 build capabilities for all supported languages. For this, it uses a
 configuration file @file{<file>.cgpr} that has a syntax and structure very
@@ -328,6 +231,7 @@ information such as:
 @item how to build static or dynamic libraries,
 @item which post-compilation actions are needed,
 @item how to link together units from different languages.
+
 @end itemize
 
 @noindent
@@ -340,30 +244,789 @@ In such situations, @code{GPRbuild} can still
 be used to manage the appropriate part of the build. For
 instance it can be called from within a Makefile.
 
+@menu
+* Building with GPRbuild::
+* Configuring with GPRconfig::
+* Configuration File Reference::
+@end menu
+
 @c ---------------------------------------------
-@node Guided Tour
-@chapter Guided Tour
+@node Building with GPRbuild
+@section Building with GPRbuild
 @c ---------------------------------------------
 
 @noindent
-This chapter presents examples ranging from simple
-multi-language builds to some of the most advanced scenarios.
-All the examples shown in the text are included
-in the GPRbuild package, which is installed on your
-system in @file{<prefix>/share/examples/gprbuild/}.
+
+
+@menu
+* Command Line::
+* Switches::
+* Initialization::
+* Compilation of one or several sources::
+* Compilation Phase::
+* Post-Compilation Phase::
+* Linking Phase::
+* Incompatibilities with gnatmake::
+@end menu
+
+@c ---------------------------------------------
+@node Command Line
+@subsection Command Line
+@c ---------------------------------------------
+
+@noindent
+Three elements can optionally be specified on GPRbuild's command line:
+
+@itemize @bullet
+@item the main project file,
+@item the switches for GPRbuild itself or for the tools it
+  drives, and
+@item the main source files.
+@end itemize
+
+@noindent
+The general syntax is thus:
+
+@smallexample
+gprbuild [<proj>.gpr] [switches] [names]
+  @{[-cargs opts] [-cargs:lang opts] [-largs opts] [-gargs opts]@}
+@end smallexample
+
+@noindent
+GPRbuild requires a project file, which may be specified on the
+command line either directly or through the @option{-P} switch. If not
+specified, GPRbuild uses the project file @file{default.gpr} if there
+is one in the current working directory. Otherwise, if there is only
+one project file in the current working directory, GPRbuild uses this
+project file.
+
+Main source files represent the sources to be used as the main
+programs. If they are not specified on the command line, GPRbuild uses
+the source files specified with the @code{Main} attribute in the project
+file. If none exists, then no executable will be built.
+
+When source files are specified along with the option @option{-c}, then
+recompilation will be considered only for those source files. In all
+other cases, GPRbuild compiles or recompiles all sources in the
+project tree that are not up to date, and builds or rebuilds libraries
+that are not up to date.
+
+If invoked without the @option{--config=} or
+@option{--autoconf=} options, then GPRbuild will look for a configuration
+project file @file{default.cgpr}, or @file{<targetname>.cgpr} if option
+@option{--target=<targetname>} is used. If there is no such file in the default
+locations expected by GPRbuild (<install>/share/gpr and the current
+directory) then GPRbuild will invoke @value{gprconfig} with
+the languages from the project files, and create a configuration project
+file @file{auto.cgpr} in the object directory of the main project. The project
+@file{auto.cgpr} will be rebuilt at each GPRbuild invocation unless you use
+the switch @option{--autoconf=path/auto.cgpr}, which will use the configuration
+project file if it exists and create it otherwise.
+
+Options given on the GPRbuild command line may be passed along to
+individual tools by preceding them with one of the ``command line
+separators'' shown below. Options following the separator, up to the
+next separator (or end of the command line), are passed along.  The
+different command line separators are:
+
+@itemize @bullet
+@item @option{-cargs}
+
+  The arguments that follow up to the next command line separator are
+  options for all compilers for all languages.
+  Example: @option{-cargs -g}
+
+@item @option{-cargs:<language name>}
+
+  The arguments that follow up to the next command line separator are
+  options for the compiler of the specific language.
+
+  Examples:
+
+  @itemize -
+  @item @option{-cargs:Ada -gnatf}
+  @item @option{-cargs:C -E}
+  @end itemize
+
+@item @option{-bargs}
+
+  The arguments that follow up to the next command line separator are
+  options for all binder drivers.
+
+@item @option{-bargs:<language name>}
+
+  The arguments that follow up to the next command line separators are
+  options for the binder driver of the specific language.
+
+  Examples:
+
+  @itemize -
+  @item @option{-bargs:Ada binder_prefix=ppc-elf}
+  @item @option{-bargs:C++ c_compiler_name=ccppc}
+  @end itemize
+
+@item @option{-largs}
+
+  The arguments that follow up to the next command line separator are
+  options for the linker.
+
+@item @option{-gargs}
+
+  The arguments that follow up to the next command line separator are
+  options for GPRbuild itself. Usually @option{-gargs} is specified after one or
+  several other command line separators.
+
+@item @option{-margs}
+
+  Equivalent to @option{-gargs}, provided for compatibility with
+  @command{gnatmake}.
+@end itemize
+
+
+@c ---------------------------------------------
+@node Switches
+@subsection Switches
+@c ---------------------------------------------
+
+@noindent
+The switches that are interpreted directly by GPRbuild are listed below.
+
+First, the switches that may be specified only on the command line, but not in
+package Builder of the main project:
+
+@itemize @bullet
+@item @option{--version}
+
+  Display information about GPRbuild: version, origin and legal status, then
+  exit successfully, ignoring other options.
+
+@item @option{--help}
+
+  Display GPRbuild usage, then exit successfully, ignoring other options.
+
+@item @option{--display-paths}
+
+  Display two lines: the configuration project file search path and the user
+  project file search path, then exit successfully, ignoring other options.
+
+@item @option{--config=<config project file name>}
+
+  This specifies the configuration project file name. By default, the
+  configuration project file name is @file{default.cgpr}. Option @option{--config=}
+  cannot be specified more than once. The configuration project file specified
+  with @option{--config=} must exist.
+
+@item @option{--autoconf=<config project file name>}
+
+  This specifies a configuration project file name that already exists
+  or will be created automatically. Option @option{--autoconf=} cannot
+  be specified more than once. If the configuration project file
+  specified with @option{--autoconf=} exists, then it is
+  used. Otherwise, @value{gprconfig} is invoked to create it automatically.
+
+@item @option{--target=<targetname>}
+
+  This specifies that the default configuration project file is
+  @file{<targetname>.cgpr}. If no configuration project file with this name
+  is found, then @value{gprconfig} is invoked with option
+  @option{--target=<targetname>}to create a configuration project file
+  @file{auto.cgpr}.
+
+  Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
+  can be specified.
+
+@item @option{--subdirs=<subdir>}
+
+  This indicates that the real directories (except the source directories) are
+  subdirectories of the directories specified in the project files. This applies
+  in particular to object directories, library directories and exec directories.
+  If the directories do not exist, they are created automatically.
+
+@item @option{--no-indirect-imports}
+
+  This indicates that sources of a project should import only sources or
+  header files from directly imported projects, that is those projects mentioned
+  in a with clause and the projects they extend directly or indirectly.
+  A check is done in the compilation phase, after a successful compilation, that
+  the sources follow these restrictions. For Ada sources, the check is fully
+  enforced. For non Ada sources, the check is partial, as in the dependency
+  file there is no distinction between header files directly included and those
+  indirectly included. The check will fail if there is no possibility that a
+  header file in a non directly imported project could have been indirectly
+  imported. If the check fails, the compilation artifacts (dependency file,
+  object file, switches file) are deleted.
+
+@item @option{--indirect-imports}
+
+  This indicates that sources of a project can import sources or header files
+  from directly or indirectly imported projects. This is the default behavior.
+  This switch is provided to cancel a previous switch
+  @option{--no-indirect-imports} on the command line.
+
+@item @option{-aP dir} (Add directory @file{dir} to project search path)
+
+  Specify to GPRbuild to add directory @file{dir} to the user project file search
+  path, before the default directory.
+
+@item @option{-b} (Bind only)
+
+  Specify to GPRbuild that the post-compilation (or binding) phase is to be
+  performed, but not the other phases unless they are specified by appropriate
+  switches.
+
+@item @option{-c} (Compile only)
+
+  Specify to GPRbuild that the compilation phase is to be performed, but not
+  the other phases unless they are specified by appropriate switches.
+
+@item @option{-d} (Display progress)
+
+  Display progress for each source, up to date or not, as a single
+  line @emph{completed x out of y (zz%)...}. If the file needs to be compiled
+  this is displayed after the invocation of the compiler. These lines are
+  displayed even in quiet output mode (switch @option{-q}).
+
+@item @option{-Inn} (Index of main unit in multi-unit source file)
+  Indicate the index of the main unit in a multi-unit source file.
+  The index must be a positive number and there should be one and only
+  one main source file name on the command line.
+
+@item @option{-eL} (Follow symbolic links when processing project files)
+
+  By default, symbolic links on project files are not taken into account
+  when processing project files. Switch @option{-eL} changes this default
+  behavior.
+
+@item @option{-eS} (no effect)
+
+  This switch is only accepted for compatibility with gnatmake, but it has
+  no effect. For gnatmake, it means: echo commands to standard output instead
+  of standard error, but for gprbuild, commands are always echoed to standard
+  output.
+
+@item @option{-F} (Full project path name in brief error messages)
+
+  By default, in non verbose mode, when an error occurs while processing
+  a project file, only the simple name of the project file is displayed in the
+  error message. When switch @option{-F} is used, the full path of the project
+  file is used. This switch has no effect when switch @option{-v} is used.
+
+@item @option{-l} (Link only)
+
+  Specify to GPRbuild that the linking phase is to be performed, but not
+  the other phases unless they are specified by appropriate switches.
+
+@item @option{-m} (Minimum Ada recompilation)
+
+  Do not recompile Ada code if timestamps are different but checksums are the
+  same.
+
+@item @option{-o name} (Choose an alternate executable name)
+
+  Specify the file name of the executable. Switch @option{-o} can
+  be used only if there is exactly one executable being built;
+  that is, there is exactly one main on the command line,
+  or there are no mains on the command line and exactly one
+  main in attribute @code{Main} of the main project.
+
+@item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
+
+  By default, GPRbuild checks that the object, library and exec directories
+  specified in project files exist. Switch @option{-p} instructs GPRbuild to
+  attempt to create missing directories.
+
+@item @option{-P proj} (use Project file @emph{proj})
+
+  Specify the path name of the main project file. The space between @option{-P}
+  and the project file name is optional. Specifying a project file name (with
+  suffix @file{.gpr}) may be used in place of option @option{-P}. Exactly one main
+  project file can be specified.
+
+@item @option{-r} (Recursive)
+
+  This switch has an effect only when @option{-c} or @option{-u} is also
+  specified and there are no mains: it means that all sources of all projects
+  need to be compiled or recompiled.
+
+@item @option{-u} (Unique compilation, only compile the given files)
+
+  If there are sources specified on the command line, only compile these
+  sources. If there are no sources specified on the command line, compile
+  all the sources of the main project.
+
+  In both cases, do not attempt the binding and the linking phases.
+
+@item @option{-U} (Compile all sources of all projects)
+
+  If there are sources specified on the command line, only compile these
+  sources. If there are no sources specified on the command line, compile
+  all the sources of all the projects in the project tree.
+
+  In both cases, do not attempt the binding and the linking phases.
+
+@item @option{-vPx} (Specify verbosity when parsing Project Files)
+
+  By default, GPRbuild does not display anything when processing project files,
+  except when there are errors. This default behavior is obtained with switch
+  @option{-vP0}. Switches @option{-vP1} and @option{-vP2} yield increasingly
+  detailed output.
+
+@item @option{-Xnm=val} (Specify an external reference for Project Files)
+
+  Specify an external reference that may be queried inside the project files
+  using built-in function @code{external}. For example, with
+  @option{-XBUILD=DEBUG},
+  @code{external("BUILD")} inside a project file will have the value
+  @code{"DEBUG"}.
+
+@end itemize
+
+@noindent
+Then, the switches that may be specified on the command line as well as in
+package Builder of the main project (attribute Switches):
+
+@itemize @bullet
+@item @option{-f} (Force recompilations)
+
+  Force the complete processing of all phases (or of those explicitly specified)
+  even when up to date.
+
+@item @option{-j<num>} (use @emph{num} simultaneous compilation jobs)
+
+  By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
+  it is possible to instruct GPRbuild to spawn several simultaneous compilation
+  jobs if needed. For example, @option{-j2} for two simultaneous compilation
+  jobs or @option{-j4} for four. On a multi-processor system,
+  @option{-j<num>} can greatly speed up the build process.
+
+@item @option{-k} (Keep going after compilation errors)
+
+  By default, GPRbuild stops spawning new compilation jobs at the first
+  compilation failure. Using switch @option{-k}, it is possible to attempt to
+  compile/recompile all the sources that are not up to date, even when some
+  compilations failed. The post-compilation phase and the linking phase are never
+  attempted if there are compilation failures, even when switch @option{-k} is
+  used.
+
+@item @option{-q} (Quiet output)
+
+  Do not display anything except errors and progress (switch @option{-d}).
+  Cancel any previous switch @option{-v}.
+
+@item @option{-s} (recompile if compilation switches have changed)
+
+  By default, GPRbuild will not recompile a source if all dependencies are
+  satisfied. Switch @option{-s} instructs GPRbuild to recompile sources when a
+  different set of compilation switches has been used in the previous
+  compilation, even if all dependencies are satisfied. Each time GPRbuild
+  invokes a compiler, it writes a text file that lists the switches used in the
+  invocation of the compiler, so that it can retrieve these switches if
+  @option{-s} is used later.
+
+@item @option{-v} (Verbose output)
+
+  Display full paths, all options used in spawned processes, and reasons why
+  these processes are spawned. Cancel any previous switch @option{-q}.
+
+@item @option{-we} (Treat all warnings as errors)
+
+  When @option{-we} is used, any warning during the processing of the project
+  files becomes an error and GPRbuild does not attempt any of the phases.
+
+@item @option{-wn} (Treat warnings as warnings)
+
+  Switch @option{-wn} may be used to restore the default after @option{-we} or
+  @option{-ws}.
+
+@item @option{-ws} (Suppress all warnings)
+
+  Do not generate any warnings while processing the project files.
+
+@end itemize
+
+@noindent
+Switches that are accepted for compatibility with gnatmake, either on the
+command line or in the Builder Ada switches in the main project file:
+
+@itemize @bullet
+@item @option{-nostdinc}
+@item @option{-nostdlib}
+@item @option{-fstack-check}
+@item @option{-fno-inline}
+@item @option{-g*} Any switch starting with @option{-g}
+@item @option{-O*} Any switch starting with @option{-O}
+
+@end itemize
+
+@noindent
+These switches are passed to the Ada compiler.
+
+@c ---------------------------------------------
+@node Initialization
+@subsection Initialization
+@c ---------------------------------------------
+
+@noindent
+Before performing one or several of its three phases, GPRbuild has to read the
+command line, obtain its configuration, and process the project files.
+
+If GPRbuild is invoked with an invalid switch or without any project file on
+the command line, it will fail immediately.
+
+Examples:
+
+@smallexample
+$ gprbuild -P
+gprbuild: project file name missing after -P
+
+$ gprbuild -P c_main.gpr -WW
+gprbuild: illegal option "-WW"
+@end smallexample
+
+@noindent
+GPRbuild looks for the configuration project file first in the current
+working directory, then in the default configuration project directory.
+If the GPRbuild executable is located in a subdirectory @file{<prefix>/bin},
+then
+the default configuration project directory is @file{<prefix>/share/gpr},
+otherwise there is no default configuration project directory.
+
+When it has found its configuration project path, GPRbuild needs to obtain its
+configuration. By default, the file name of the main configuration project
+is @file{default.cgpr}. This default may be modified using the switch
+@option{--config=...}
+
+Example:
+
+@smallexample
+$ gprbuild --config=my_standard.cgpr -P my_project.gpr
+@end smallexample
+
+@noindent
+If GPRbuild cannot find the main configuration project on the configuration
+project path, then it will look for all the languages specified in the user
+project tree and invoke @value{gprconfig} to create a configuration project file
+named @file{auto.cgpr} that is located in the object directory of the main
+project file.
+
+Once it has found the configuration project, GPRbuild will process its
+configuration: if a single string attribute is specified in the configuration
+project and is not specified in a user project, then the attribute is added
+to the user project. If a string list attribute is specified in the
+configuration project then its value is prepended to the corresponding
+attribute in the user project.
+
+After GPRbuild has processed its configuration, it will
+process the user project file or files. If these user project files are
+incorrect then GPRbuild will fail with the appropriate error messages:
+
+@smallexample
+$ gprbuild -P my_project.gpr
+ada_main.gpr:3:26: "src" is not a valid directory
+gprbuild: "my_project.gpr" processing failed
+@end smallexample
+
+@noindent
+Once the user project files have been dealt with successfully, GPRbuild
+will start its processing.
+
+@c ---------------------------------------------
+@node Compilation of one or several sources
+@subsection Compilation of one or several sources
+@c ---------------------------------------------
+
+@noindent
+If GPRbuild is invoked with @option{-u} or @option{-U} and there are one or
+several source file names specified on the command line, GPRbuild will compile
+or recompile these sources, if they are not up to date or if @option{-f} is
+also specified. Then GPRbuild will stop its execution.
+
+The options/switches used to compile these sources are described in section
+@ref{Compilation Phase}.
+
+If GPRbuild is invoked with @option{-u} and no source file name is specified
+on the command line, GPRbuild will compile or recompile all the sources of the
+@emph{main} project and then stop.
+
+In contrast, if GPRbuild is invoked with @option{-U}, and again no source file name is specified
+on the command line, GPRbuild will compile or recompile all the sources of @emph{all
+the projects in the project tree} and then stop.
+
+@c ---------------------------------------------
+@node Compilation Phase
+@subsection Compilation Phase
+@c ---------------------------------------------
+
+@noindent
+When switch @option{-c} is used or when switches @option{-b} or @option{-l}
+are not used, GPRbuild will first compile or recompile the sources that
+are not up to date in all the projects in the project tree. The sources
+considered are:
+
+@itemize @bullet
+@item all the sources in languages other than Ada
+
+@item if there are no main specified, all the Ada sources
+
+@item if there is a non Ada main, but no attribute @code{Roots} specified for
+  this main, all the Ada sources
+
+@item if there is a main with an attribute @code{Roots} specified, all
+  the Ada sources in the closures of these Roots.
+
+@item if there is an Ada main specified, all the Ada sources in the closure
+  of the main
+
+@end itemize
+
+@noindent
+Attribute Roots takes as an index a main and a string list value. Each string
+in the list is the name of an Ada library unit.
+
+Example:
+
+@smallexample
+   for Roots ("main.c") use ("pkga", "pkgb");
+@end smallexample
+
+@noindent
+Package PkgA and PkgB will be considered, and all the Ada units in their
+closure will also be considered.
+
+GPRbuild will first consider each source and decide if it needs to be
+(re)compiled.
+
+A source needs to be compiled in the following cases:
+
+@itemize @bullet
+@item Switch @option{-f} (force recompilations) is used
+
+@item The object file does not exist
+
+@item The source is more recent than the object file
+
+@item The dependency file does not exist
+
+@item The source is more recent than the dependency file
+
+@item When @option{-s} is used: the switch file does not exist
+
+@item When @option{-s} is used: the source is more recent than the switch file
+
+@item The dependency file cannot be read
+
+@item The dependency file is empty
+
+@item The dependency file has a wrong format
+
+@item A source listed in the dependency file does not exist
+
+@item A source listed in the dependency file has an incompatible time stamp
+
+@item A source listed in the dependency file has been replaced
+
+@item Switch @option{-s} is used and the source has been compiled with
+  different switches or with the same switches in a different order
+
+@end itemize
+
+@noindent
+When a source is successfully compiled, the following files are normally
+created in the object directory of the project of the source:
+
+@itemize @bullet
+@item An object file
+
+@item A dependency file, except when the dependency kind for the language
+  is @code{none}
+
+@item A switch file if switch @option{-s} is used
+
+@end itemize
+
+@noindent
+The compiler for the language corresponding to the source file name is invoked with the following
+switches/options:
+
+@itemize @bullet
+@item The required compilation switches for the language
+
+@item The compilation switches coming from package @code{Compiler} of the
+  project of the source
+
+@item The compilation switches specified on the command line for all compilers,
+  after @option{-cargs}
+
+@item The compilation switches for the language of the source, specified
+  after @option{-cargs:<language>}
+
+@item Various other options including a switch to create the dependency file
+  while compiling, a switch to specify a configuration file, a switch
+  to specify a mapping file, and switches to indicate where to look for
+  other source or header files that are needed to compile the source.
+
+@end itemize
+
+@noindent
+If compilation is needed, then all the options/switches, except those
+described as ``Various other options'' are written to the switch file.
+The switch file is a text file. Its file name is obtained by replacing
+the suffix of the source with @file{.cswi}. For example, the switch file
+for source @file{main.adb} is @file{main.cswi} and for
+@file{toto.c} it is @file{toto.cswi}.
+
+If the compilation is successful, then if the creation of the dependency
+file is not done during compilation but after (see configuration attribute
+@code{Compute_Dependency}), then the process to create the dependency file is
+invoked.
+
+If GPRbuild is invoked with a switch @option{-j} specifying more than one
+compilation process, then several compilation processes for several sources of
+possibly different languages are spawned concurrently.
+
+For each project file, attribute Interfaces may be declared. Its value is a
+list of sources or header files of the project file. For a project file
+extending another one, directly or indirectly, inherited sources may be in
+the list. When Interfaces is not declared, all sources or header files are
+part of the interface of the project. When Interfaces is declared, only those
+sources or header files are part of the interface of the project file. After
+a successful compilation, gprbuild checks that all imported or included sources
+or header files that are from an imported project are part of the interface of
+the imported project. If this check fails, the compilation is invalidated and
+the compilation artifacts (dependency, object and switches files) are deleted.
+
+Example:
+
+@smallexample
+   project Prj is
+      for Languages use ("Ada", "C");
+      for Interfaces use ("pkg.ads", "toto.h");
+   end Prj;
+@end smallexample
+
+@noindent
+If a source from a project importing project Prj imports sources from Prj other
+than package Pkg or includes header files from Prj other than "toto.h", then
+its compilation will be invalidated.
+
+@c ---------------------------------------------
+@node Post-Compilation Phase
+@subsection Post-Compilation Phase
+@c ---------------------------------------------
+
+@noindent
+The post-compilation phase has two parts: library building and program binding.
+
+If there are libraries that need to be built or rebuilt, @emph{gprbuild} will
+call the library builder, specified by attribute @code{Library_Builder}.
+This is generally the tool @emph{gprlib}, provided with GPRbuild. If gprbuild
+can determine that a library is already up to date, then the library builder
+will not be called.
+
+If there are mains specified, and for these mains there are sources of
+languages with a binder driver (specified by attribute Binder'Driver
+(<language>), then the binder driver is called for each such main, but only
+if it needs to.
+
+For Ada, the binder driver is normally @emph{gprbind}, which will call
+the appropriate version of @emph{gnatbind}, that either the one in the same
+directory as the Ada compiler or the fist one found on the path.
+When neither of those is appropriate, it is possible to specify to
+@emph{gprbind} the full path of @emph{gnatbind}, using the Binder switch
+@code{--gnatbind_path=}.
+
+Example:
+
+@smallexample
+   package Binder is
+      for Switches ("Ada") use ("--gnatbind_path=/toto/gnatbind");
+   end Binder;
+@end smallexample
+
+@noindent
+If gprbuild can determine that the artifacts from a previous
+post-compilation phase are already up to date, the binder driver is not called.
+
+If there are no libraries and no binder drivers, then the post-compilation
+phase is empty.
+
+@c ---------------------------------------------
+@node Linking Phase
+@subsection Linking Phase
+@c ---------------------------------------------
+
+@noindent
+When there are mains specified, either in attribute Main or on the command
+line, and these mains are not up to date, the linker is invoked for each main,
+with all the specified or implied options, including the object files generated
+during the post-compilation phase by the binder drivers.
+
+@c ---------------------------------------------
+@node Incompatibilities with gnatmake
+@subsection Incompatibilities with gnatmake
+@c ---------------------------------------------
+
+@noindent
+Here is a list of incompatibilities between gnatmake invoked with a
+project file and gprbuild:
+
+@itemize @bullet
+@item gprbuild never recompiles the runtime sources.
+
+@item gnatmake switches that are not recognized by gprbuild:
+
+  @itemize -
+  @item -a (Consider all files, even readonly ali files)
+  @item -M (List object file dependences for Makefile)
+  @item -n (Check objects up to date, output next file to compile if not)
+  @item -R (Do not use a run_path_option when linking)
+  @item -x (Allow compilation of needed units external to the projects)
+  @item -z No main subprogram (zero main)
+  @item --GCC=command
+  @item --GNATBIND=command
+  @item --GNATLINK=command
+  @item -aLdir (Skip missing library sources if ali in dir)
+  @item -Adir (like -aLdir -aIdir)
+  @item -aOdir (Specify library/object files search path)
+  @item -aIdir (Specify source files search path)
+  @item -Idir (Like -aIdir -aOdir)
+  @item -I- (Don't look for sources & library files in the default directory)
+  @item -Ldir (Look for program libraries also in dir)
+
+  @end itemize
+
+@item The switches that are not directly recognized by gprbuild and passed to
+  the Ada compiler are only:
+
+  @itemize -
+  @item -nostdlib
+  @item -nostdinc
+  @item -fstack-check
+  @item -fno-inline
+  @item -Oxxx (any switch starting with -O)
+  @item -gxxx (any switch starting with -g)
+  @end itemize
+
+@end itemize
+
+
+@c ---------------------------------------------
+@node Configuring with GPRconfig
+@section Configuring with GPRconfig
+@c ---------------------------------------------
+
+@noindent
+
 
 @menu
 * Configuration::
-* First Steps::
-* Subsystems::
-* Project Extensions::
-* Libraries::
-* Scenarios and conditional source files::
+* Using GPRconfig::
+* The GPRconfig knowledge base::
 @end menu
 
 @c ---------------------------------------------
 @node Configuration
-@section Configuration
+@subsection Configuration
 @c ---------------------------------------------
 
 @noindent
@@ -467,1500 +1130,10 @@ invocation:
   @end smallexample
 @end itemize
 
-@c ---------------------------------------------
-@node First Steps
-@section First Steps
-@c ---------------------------------------------
-
-@noindent
-Assume a simple case of interfacing between Ada and C where the main
-program is first in Ada and then in C. For a main program in Ada the
-following project may be used:
-
-@smallexample @c projectfile
-project Ada_Main is
-   for Languages    use ("Ada", "C");
-   for Source_Dirs  use ("ada_src", "util_src");
-   for Object_Dir   use  "obj";
-   for Exec_Dir     use ".";
-   for Source_Files use ("ada_main.adb", "c_lib.ads", "lib.h", "lib.c");
-   for Main         use ("ada_main.adb");
-end Ada_Main;
-@end smallexample
-
-@noindent
-This project indicates that:
-
-@itemize @bullet
-@item the sources files of this subsystem are written in Ada and C.
-@item the directories containing the sources are @code{ada_src} and
-  @code{util_src}.
-@item the directory for the objects is @code{obj}.
-@item the directory for the executables is ``.''; i.e., the
-  directory containing the project file itself.
-@item the complete list of source files is @code{ada_main.adb},
-  @code{c_lib.ads}, @code{lib.h}, @code{lib.c}. They can be found anywhere
-  in the source directories mentioned above.
-@item the main entry point of the system is in the source file
-  @code{ada_main.adb}.
-@end itemize
-
-@noindent
-This information is sufficient for @code{GPRbuild} to build an executable
-program from the sources. Note that no direct indication on how to build
-the various elements is given in the project file, which describes
-the project properties rather than a set of actions to
-be executed. Here is the invocation of
-@code{GPRbuild} that allows building the multi-language program:
-
-@smallexample
-$ gprbuild -Pada_main
-gcc -c ada_main.adb -o ada_main.o
-gcc -c c_lib.ads -o c_lib.o
-gcc -c lib.c -o lib.o
-gprbind ada_main
-...
-gcc ada_main.o -o ada_main.exe
-@end smallexample
-
-@noindent
-Notice the three steps described in the @ref{Introduction}:
-
-@itemize @bullet
-@item The first three gcc commands correspond to the compilation phase.
-@item The gprbind command corresponds to the post-compilation phase.
-@item The last gcc command corresponds to the final link.
-@end itemize
-
-@noindent
-The default output of
-GPRbuild's execution is kept reasonably simple and easy to understand.
-In particular, some of the less frequently used commands
-are not shown, and some parameters are abbreviated. GPRbuild's option
-@code{-v}
-@CINDEX{@option{-v} option (for GPRbuild)}
-provides a much more verbose output which includes, among other
-information, more complete compilation, post-compilation and
-link commands.
-
-To illustrate some other GPRbuild capabilities, here is a slightly different
-project using similar sources and a main program in C:
-
-@smallexample @c projectfile
-project C_Main is
-   for Languages    use ("Ada", "C");
-   for Source_Dirs  use ("c_src", "util_src");
-   for Object_Dir   use  "obj1";
-   for Main         use ("c_main.c");
-   package Compiler is
-      C_Switches := ("-pedantic");
-      for Default_Switches ("C")   use C_Switches;
-      for Default_Switches ("Ada") use ("-gnaty");
-      for Switches ("c_main.c")    use C_Switches & ("-g");
-   end Compiler;
-end C_Main;
-@end smallexample
-
-@noindent
-This project has many similarities with the previous one, as evident in
-the @code{Languages},
-@code{Source_Dirs} and @code{Object_Dirs} attributes.
-As expected, its @code{Main} attribute
-now refers to a C source. The first noticeable difference is the lack of a
-@code{Source_Files} attribute. When not specified explicitly, this attribute
-has
-an implicit value which is the complete set of sources of the given
-@code{Languages} to
-be found in @code{Source_Dirs}. Many attributes can be left implicit and will
-be given
-reasonable default values. For instance, @code{Source_Dirs} and
-@code{Object_Dir}
-default to the current directory (where the project file resides). The
-@code{Exec_Dir} attribute defaults to the value of @code{Object_Dir}.
-
-The other notable difference in this new project is the presence of the
-package @code{Compiler}, which groups the attributes specific to
-the compilation phases. The @code{Default_Switches} attribute provides the
-list of compilation switches to be used for any source of a given
-@code{Languages} value unless the source has its own set of compilation
-switches
-specified by the attribute @code{Switches}. Note also the use of a the
-variable
-@code{C_Switches}. A project variable can be useful to avoid duplication of
-information and
-here ensures that the file @file{c_main.c} is always compiled
-with the default switches (whatever they may be), plus @option{-g}. In this
-specific
-situation the use of a variable could have been replaced by a reference
-to the @code{Default_Switches} attribute:
-
-@smallexample @c projectfile
-   for Switches ("c_main.c") use Compiler'Default_Switches ("C") & ("-g");
-@end smallexample
-
-@noindent
-Here is the output of the GPRbuild command using this project:
-
-@smallexample
-$gprbuild -Pc_main
-gcc -c -pedantic -g c_main.c -o c_main.o
-gcc -c -gnaty ada_lib.adb -o ada_lib.o
-gcc -c -gnaty c_lib.ads -o c_lib.o
-gcc -c -pedantic lib.c -o lib.o
-gprbind c_main
-...
-gcc c_main.o -o c_main.exe
-@end smallexample
-
-@noindent
-The switches for compiling Ada sources,
-the default switches for C sources in the compilation of @file{lib.c},
-and the specific switches for @file{c_main.c} have all been taken into
-account.
-When comparing this GPRbuild output with the previous one,
-notice that there are common sources between the two projects, namely
-@file{c_lib.ads} and @file{lib.c}. Those sources were compiled twice, once for
-each
-project. This is not surprising, since the two projects
-are independent and have different @code{Object_Dir}s even though they share
-some sources. It is possible to share more than the sources, and thus
-avoid unnecessary recompilations when compilation units are
-used in several different projects, by splitting a system into
-subsystems.
-
-@c ---------------------------------------------
-@node Subsystems
-@section Subsystems
-@c ---------------------------------------------
-
-@noindent
-@c describe a bigger project with several source dirs and object dirs
-@c describe limited with & extended projects & source duplication.
-
-The common compilation units may be grouped in a separate subsystem with
-its own project file and a specified @code{Object_Dir} attribute:
-
-@smallexample @c projectfile
-project Common_Subsystem is
-   for Source_Dirs  use ("util_src");
-   for Object_Dir   use  "obj_util";
-end Common_Subsystem;
-@end smallexample
-
-@noindent
-By default, all the sources in directory @code{util_src} belong to
-project @code{Common_Subsystem}, and when compiled, their objects go in
-@code{obj_dir}.
-Other projects, whose sources depend on sources in @code{util_src}, can create
-a dependency relationship using a project @code{with} clause:
-
-@smallexample @c projectfile
-with "Common_Subsystem";
-project Ada_Main is
-   for Languages    use ("Ada");
-   for Source_Dirs  use ("ada_src");
-   ...
-end Ada_Main;
-@end smallexample
-
-@noindent
-The @code{Ada_Main.Source_Dirs} no longer includes @code{util_src}. The
-main program in @code{ada_src} still needs sources from @code{util_src} to be
-compiled.
-It also needs those units built. Now they will be compiled using the build
-properties defined in @code{Common_Subsystem} instead of those of
-@code{Ada_Main}.
-
-The
-project's @code{with} clause has several effects. It provides visibility of
-sources during the compilation process as if the units from @code{Ada_Main}
-were
-compiled with an implicit @code{-Iutil_src} option. It also guarantees that the
-necessary units from @code{Common_Subsystem} are available for
-@code{Ada_Main}'s linking
-phase.
-
-It is also possible to use the @code{with} relationship to define a project
-file that allows sharing common attributes or packages. For instance, you
-can define a project whose only purpose is to centralize the default
-compilation options for various languages:
-
-@smallexample @c projectfile
-abstract project Attribute_Sharing is
-   for Source_Files use ();
-   package Compiler is
-      for Default_Switches ("C")   use ("-pedantic");
-      for Default_Switches ("Ada") use ("-gnaty");
-   end Compiler;
-end Attribute_Sharing;
-@end smallexample
-
-@noindent
-This package does not correspond to a subsystem with
-proper source files, and this is conveyed by the modifier @code{abstract}
-just before the keyword @code{project}. An abstract project cannot have
-associated sources, hence the definition of @code{Source_Files}
-as the empty list. It informs the build manager that no compilation is to
-take place directly from this project. Defining an empty list of sources is
-essential for such utility projects because otherwise the default rules
-would apply and all sources in the current directory would be associated
-with this project. Now other projects can share this project's attributes
-and packages. For instance, @code{Ada_Main} can share all the
-@code{Compiler} package's attributes at once using a renaming declaration:
-
-@smallexample @c projectfile
-with "Attribute_Sharing";
-...
-project Ada_Main is
-...
-   package Compiler renames Attribute_Sharing.Compiler;
-end Ada_Main;
-@end smallexample
-
-@noindent
-or if other aspects of the @code{Compiler} package need to be defined locally,
-such as adding @code{-g} for the @file{c_main.c} source only, sharing can be
-done at the
-attribute level directly as in this new version of
-@code{C_Main.Compiler}:
-
-@smallexample @c projectfile
-   package Compiler is
-      for Default_Switches ("C") use
-        Attribute_Sharing.Compiler'Default_Switches ("C");
-      for Switches ("c_main.c")  use
-        Compiler'Default_Switches ("C") & ("-g");
-   end Compiler;
-@end smallexample
-
-@noindent
-In order to change the compilation options of all C files used for
-building both @code{C_Main} and @code{Ada_Main}, it is sufficient to edit a
-single project file.
-
-@c ---------------------------------------------
-@node Project Extensions
-@section Project Extensions
-@c ---------------------------------------------
-
-@noindent
-Previous sections have shown how to share both compilation units and project
-properties
-among different systems. Sharing is an essential aspect of large system
-development since it avoids unnecessary duplication, reduces compilation time
-and
-lessens the maintenance burden. Unfortunately, it sometimes gets in the way.
-In the above example, @code{Ada_Main} and @code{C_Main} both depend on
-@code{Common_Subsystems} because they have precisely the same needs, but the
-requirements of the two systems can diverge over time in which case
-sharing becomes a problem rather than a solution. For instance,
-suppose that @code{C_Main} is now baselined and should not be changed,
-while @code{Ada_Main} is still under active development (which requires
-changes in the sources of the common subsystem). The issue is how to satisfy
-@code{Ada_Main}'s needs without taking any risk of perturbing @code{C_Main}.
-One
-possibility is to duplicate the common subsystem completely so that one
-version can evolve while the other one can remain frozen. That will force
-duplication and recompilation of the whole project. Extensions provide a
-more flexible mechanism, making it possible to provide a new version of
-a subsystem without having to duplicate the sources that do not change.
-A project extension inherits all the sources and objects from the project it
-extends and allows you to redefine some of the sources which hide the original
-versions. You can also add new sources or remove existing ones.
-Here is an example of extending project @code{Common_Subsystem}:
-
-@smallexample @c projectfile
-project New_Common_Subsystem
-        extends "../subsystems/common_subsystem.gpr" is
-   for Source_Dirs  use ("new_util_src");
-   for Object_Dir   use  "new_obj_util";
-end New_Common_Subsystem;
-@end smallexample
-
-@noindent
-The project sources are to be found in @code{Common_Subsystem.Source_Dirs}
-and @code{New_Common_Subsystem.Source_Dirs}, the latter hiding the former
-when the same source filenames are found in both. New sources can be
-added to the project extension by simply placing them in its
-@code{Source_Dirs}. Original sources can be removed, because of the attribute
-@code{Excluded_Source_Files}.
-When building a project extension, all units depending on new versions of
-sources are rebuilt in the extension's @code{Object_Dir}. Other objects
-remain in their original location and will be used by the builder whenever
-necessary.
-
-A project extension can
-be used in the context of a large program composed of many subsystems.
-Extending one subsystem may implicitly affect many other subsystems
-depending on it, even though there are no source changes in those
-dependent projects. In order to avoid the need  to generate a
-project extension for each of the affected subsystems, you can use the
-notion of ``extending all'', which basically means ``extend all the projects
-necessary so that this specific project extension can be used instead of
-its original version''. Here is an example of an extending-all project:
-
-@smallexample @c projectfile
-with "new_common_subsystem.gpr";
-project New_Ada_Main extends all "../subsystems/ada_main.gpr" is
-   for Source_Dirs  use ("new_ada_src");
-   for Object_Dir   use  "new_obj";
-   for Exec_Dir     use ".";
-end New_Ada_Main;
-@end smallexample
-
-@c ---------------------------------------------
-@node Libraries
-@section Libraries
-@c ---------------------------------------------
-
-@noindent
-A library is a subsystem packaged in a specific way. There are two
-major kinds of libraries: @emph{static} and @emph{dynamic}. A project file
-representing
-a library is very similar to a project file representing a subsystem. You
-just need to give the library a name, through the attribute
-@code{Library_Name}. It is also possible to define a @code{Library_Dir}
-which allows you to separate the final library components (e.g. archive files)
-from the compilation byproducts (e.g. object files) that may be needed
-to efficiently rebuild a new version of the library but which are not of any
-interest to library users. Here is a simple project file for a static
-library:
-
-@smallexample @c projectfile
-library project Static_Lib is
-   for Languages    use ("Ada", "C");
-   for Source_Dirs  use ("lib_src");
-   for Object_Dir   use "obj";
-   for Library_Dir  use "lib";
-   for Library_Kind use "static";
-   for Library_Name use "l1";
-end Static_Lib;
-@end smallexample
-
-@noindent
-The library can be built on its own using standard GPRbuild commands,
-for example:
-
-@smallexample
-$gprbuild static_lib.gpr
-@end smallexample
-
-@noindent
-It can also be built as a by product of building a main project using this
-library through a "with" as it was the case for simple subsystems:
-
-@smallexample @c projectfile
-with "static_lib.gpr";
-project Main is
-   for Main  use ("ada_main.adb");
-end Main;
-@end smallexample
-
-@noindent
-in which case
-
-@smallexample
-$gprbuild main.gpr
-@end smallexample
-
-@noindent
-will rebuild the library @code{l1} if it is not up to date.
-
-To construct a dynamic library instead of a static library, simply
-replace
-
-@smallexample @c projectfile
-   for Library_Kind use "static";
-@end smallexample
-
-@noindent
-by
-
-@smallexample @c projectfile
-   for Library_Kind use "dynamic";
-@end smallexample
-
-@noindent
-Library projects can also be useful to describe a library that you may
-want to use but that, for some reason, cannot be rebuilt,
-for instance when the sources to rebuild the library are
-not available. Such library projects need simply to use the
-@code{Externally_Built} attribute as in the example below:
-
-@smallexample @c projectfile
-library project Extern_Lib is
-   for Languages    use ("Ada", "C");
-   for Source_Dirs  use ("lib_src");
-   for Library_Dir  use "lib2";
-   for Library_Kind use "dynamic";
-   for Library_Name use "l2";
-   for Externally_Built use "true";
-end Extern_Lib;
-@end smallexample
-
-@noindent
-In the case of externally built libraries, the @code{Object_Dir}
-attribute does not need to be specified because it will never be
-used.
-
-@c ---------------------------------------------
-@node Scenarios and conditional source files
-@section Scenarios and conditional source files
-@c ---------------------------------------------
-
-@noindent
-In the previous section we have seen how to create libraries from
-simple subsystems by using specific attributes. Rather than having
-several almost identical project files defining a static or a dynamic
-version of the library representing a subsystem, one can write a more
-generic version of the project file thanks to the notion of scenarios.
-Scenarios are defined as types with a known set of string values as shown
-by the type @code{Lib_Kind} below. A scenario variable, @code{Kind} below
-can get its initial value from the environment thanks to an @code{external}
-call. This variable can then be used in a case statement as shown below.
-Note that only scenario variables can be used to control case statements.
-There is another kind of untyped string variables illustrated by
-@code{Prefix} below that can be used in general string expressions but
-cannot control case statements and thus are not scenarios variables.
-
-@smallexample @c projectfile
-library project General_Lib is
-   type Lib_Kind is ("static", "dynamic", "extern");
-   Kind : Lib_Kind := external ("LIB", "static");
-   Prefix := "../libraries/";
-   for Languages    use ("Ada", "C");
-   for Source_Dirs  use (Prefix & "lib_src");
-   case Kind is
-      when "static" =>
-         for Object_Dir   use  Prefix & "obj";
-         for Library_Dir  use  Prefix & "lib";
-         for Library_Kind use  "static";
-         for Library_Name use "l1";
-      when "dynamic" =>
-         for Object_Dir   use  Prefix & "obj2";
-         for Library_Dir  use  Prefix & "lib2";
-         for Library_Kind use  "dynamic";
-         for Library_Name use "l2";
-      when "extern" =>
-         for Library_Dir  use  Prefix & "lib2";
-         for Library_Kind use "dynamic";
-         for Library_Name use "l2";
-         for Externally_Built use "true";
-   end case;
-end General_Lib;
-@end smallexample
-
-@c ---------------------------------------------
-@node Important Concepts
-@chapter Important Concepts
-@c ---------------------------------------------
-
-@noindent
-The following concepts are the foundation of
-GNAT Project files and the GPRbuild process.
-
-@itemize @bullet
-
-@item Source files and source directories
-
-  A source file is associated with a language through a naming convention.
-  For instance, @code{foo.c} is typically
-  the name of a C source file; @code{bar.ads} or @code{bar.1.ada} are two
-  common naming conventions for a file containing an Ada spec.
-  A compilation unit is often composed of a main source file and potentially
-  several auxiliary ones, such as header files in C.
-  You can define or modify the naming conventions,
-  which are used by
-  @code{GPRbuild} to invoke the appropriate compiler.
-  Source files are looked up in the source directories associated with the
-  project through the @code{Source_Dirs} attribute. By default,
-  all the files (in these source directories) following the naming conventions
-  associated with the declared languages are
-  considered to be part of the project. It is also possible to limit the
-  list of source files using the @code{Source_Files} or
-  @code{Source_List_File} attributes.
-
-@item Object files and object directory
-
-  An object file is an intermediate file produced by the compiler from a
-  compilation unit. It is used by the post-compilation phase to produce
-  final executables or libraries. The object files produced in the context of
-  a given project are stored in a single directory, the @code{Object_Dir} that
-  can be specified in the project file. If you want to store objects in
-  two or more object directories, you must split the system into
-  distinct subsystems.
-
-@item Project file
-
-  A text file using an Ada-like syntax. It defines build-related
-  characteristics of an application, or a part of it. The characteristics
-  include the list of sources, the location of those sources, the location
-  for the generated object files, the name of the main program,
-  and the default options for the various tools involved in the build
-  process. These characteristics can be conditionalized through scenario
-  variables and case statements.
-
-@item Configuration file
-
-  A text file using the project file syntax. It defines languages and
-  their characteristics as well as toolchains for those languages and their
-  characteristics.
-
-@item Project attribute
-
-  A specific characteristic as defined by a project attribute clause. Its
-  value is a string or a sequence of strings. For instance, the
-  @code{Source_Dirs}
-  attribute is a sequence of strings representing the actual names of the
-  directories containing the sources of the project. The attribute itself can
-  be parameterized. For instance @code{Compiler'Default_Options ("Ada")}
-  refers to the default compiler options for the Ada language.
-
-@item Project subpackage
-
-  Global characteristics are defined at the top level of a project.
-  Specific characteristics affecting a given tool are grouped in a
-  subpackage with the same name as the tool. The most common
-  subpackages are @code{Builder}, @code{Compiler}, @code{Binder},
-  and @code{Linker}.
-
-@item Project variables
-
-  Two kinds of variables are available with projects: simple variables and
-  scenario variables. A simple variable can hold any string, or sequence of string
-  values; this is useful as a shortcut for a complex expression. Scenario
-  variables are a restricted version of simple variables; they can only take their
-  values from a static enumeration of strings representing the various
-  supported scenarios. These scenario variables are used in conjunction with
-  the @code{case} construct to offer limited conditionalization of
-  project characteristics. Both types of variables are local to the project
-  defining them and can get initialized with an external value, such as
-  an environment variable, through the @code{external} directive.
-
-@item Subsystem
-
-  A subsystem is a coherent part of the complete system to be built. It
-  is represented by a set of sources and one object directory. A simple
-  system is composed of a single subsystem. Complex systems are usually
-  composed of a graph of interdependent subsystems. A subsystem is
-  dependent on another subsystem if knowledge of the other one is
-  required to build it, and in particular if visibility on some of the
-  sources of this other subsystem is required. A subsystem is usually
-  represented by one project file. The subsystem dependency relationship
-  is represented by the @code{with} clause between corresponding project
-  files.
-
-@item Library
-
-  A library is a specific type of subsystem where, for convenience, you group
-  the objects together using system-specific means.
-  Project files are a system- and language-independent way of
-  building both static and dynamic libraries. They also support the concept
-  of standalone libraries (SAL) which offers two significant properties: the
-  initialization of the library is either automatic or very simple; a
-  change in the implementation part of the library implies minimal
-  post-compilation actions on the complete system and potentially no
-  action at all for dynamic SALs.
-
-@item Project extension
-
-  A project extension is a project that represents an augmentation
-  of the original project. Suppose for instance that a
-  subsystem @code{S} is shared by two unrelated systems @code{S1} and @code{S2}.
-  If @code{S1} requires a
-  change in @code{S}, but this change would adversely affect @code{S2},
-  then a modified version of @code{S} can be defined as an extension of
-  @code{S}, a ``delta'' to the original
-  version which only contains the new source files (those that have been
-  changed) and the objects that are affected by these changes.
-
-@end itemize
-
-@c ---------------------------------------------
-@node Building with GPRbuild
-@chapter Building with GPRbuild
-@c ---------------------------------------------
-
-@noindent
-
-
-@menu
-* Command Line::
-* Switches::
-* Initialization::
-* Compilation of one or several sources::
-* Compilation Phase::
-* Post-Compilation Phase::
-* Linking Phase::
-* Incompatibilities with gnatmake::
-@end menu
-
-@c ---------------------------------------------
-@node Command Line
-@section Command Line
-@c ---------------------------------------------
-
-@noindent
-Three elements can optionally be specified on GPRbuild's command line:
-
-@itemize @bullet
-@item the main project file,
-@item the switches for GPRbuild itself or for the tools it
-  drives, and
-@item the main source files.
-@end itemize
-
-@noindent
-The general syntax is thus:
-
-@smallexample
-gprbuild [<proj>.gpr] [switches] [names]
-  @{[-cargs opts] [-cargs:lang opts] [-largs opts] [-gargs opts]@}
-@end smallexample
-
-@noindent
-GPRbuild requires a project file, which may be specified on the
-command line either directly or through the @option{-P} switch. If not
-specified, GPRbuild uses the project file @file{default.gpr} if there
-is one in the current working directory. Otherwise, if there is only
-one project file in the current working directory, GPRbuild uses this
-project file.
-
-Main source files represent the sources to be used as the main
-programs. If they are not specified on the command line, GPRbuild uses
-the source files specified with the @code{Main} attribute in the project
-file. If none exists, then no executable will be built.
-
-When source files are specified along with the option @option{-c}, then
-recompilation will be considered only for those source files. In all
-other cases, GPRbuild compiles or recompiles all sources in the
-project tree that are not up to date, and builds or rebuilds libraries
-that are not up to date.
-
-If invoked without the @option{--config=} or
-@option{--autoconf=} options, then GPRbuild will look for a configuration
-project file @file{default.cgpr}, or @file{<targetname>.cgpr} if option
-@option{--target=<targetname>} is used. If there is no such file in the default
-locations expected by GPRbuild (<install>/share/gpr and the current
-directory) then GPRbuild will invoke @value{gprconfig} with
-the languages from the project files, and create a configuration project
-file @file{auto.cgpr} in the object directory of the main project. The project
-@file{auto.cgpr} will be rebuilt at each GPRbuild invocation unless you use
-the switch @option{--autoconf=path/auto.cgpr}, which will use the configuration
-project file if it exists and create it otherwise.
-
-Options given on the GPRbuild command line may be passed along to
-individual tools by preceding them with one of the ``command line
-separators'' shown below. Options following the separator, up to the
-next separator (or end of the command line), are passed along.  The
-different command line separators are:
-
-@itemize @bullet
-
-@item @option{-cargs}
-
-  The arguments that follow up to the next command line separator are
-  options for all compilers for all languages.
-  Example: @option{-cargs -g}
-
-@item @option{-cargs:<language name>}
-
-  The arguments that follow up to the next command line separator are
-  options for the compiler of the specific language.
-
-  Examples:
-
-  @itemize -
-  @item @option{-cargs:Ada -gnatf}
-  @item @option{-cargs:C -E}
-  @end itemize
-
-@item @option{-bargs}
-
-  The arguments that follow up to the next command line separator are
-  options for all binder drivers.
-
-@item @option{-bargs:<language name>}
-
-  The arguments that follow up to the next command line separators are
-  options for the binder driver of the specific language.
-
-  Examples:
-
-  @itemize -
-  @item @option{-bargs:Ada binder_prefix=ppc-elf}
-  @item @option{-bargs:C++ c_compiler_name=ccppc}
-  @end itemize
-
-@item @option{-largs}
-
-  The arguments that follow up to the next command line separator are
-  options for the linker.
-
-@item @option{-gargs}
-
-  The arguments that follow up to the next command line separator are
-  options for GPRbuild itself. Usually @option{-gargs} is specified after one or
-  several other command line separators.
-
-@item @option{-margs}
-
-  Equivalent to @option{-gargs}, provided for compatibility with
-  @command{gnatmake}.
-
-@end itemize
-
-@c ---------------------------------------------
-@node Switches
-@section Switches
-@c ---------------------------------------------
-
-@noindent
-The switches that are interpreted directly by GPRbuild are listed below.
-
-First, the switches that may be specified only on the command line, but not in
-package Builder of the main project:
-
-@itemize @bullet
-
-@item @option{--version}
-
-  Display information about GPRbuild: version, origin and legal status, then
-  exit successfully, ignoring other options.
-
-@item @option{--help}
-
-  Display GPRbuild usage, then exit successfully, ignoring other options.
-
-@item @option{--display-paths}
-
-  Display two lines: the configuration project file search path and the user
-  project file search path, then exit successfully, ignoring other options.
-
-@item @option{--config=<config project file name>}
-
-  This specifies the configuration project file name. By default, the
-  configuration project file name is @file{default.cgpr}. Option @option{--config=}
-  cannot be specified more than once. The configuration project file specified
-  with @option{--config=} must exist.
-
-@item @option{--autoconf=<config project file name>}
-
-  This specifies a configuration project file name that already exists
-  or will be created automatically. Option @option{--autoconf=} cannot
-  be specified more than once. If the configuration project file
-  specified with @option{--autoconf=} exists, then it is
-  used. Otherwise, @value{gprconfig} is invoked to create it automatically.
-
-@item @option{--target=<targetname>}
-
-  This specifies that the default configuration project file is
-  @file{<targetname>.cgpr}. If no configuration project file with this name
-  is found, then @value{gprconfig} is invoked with option
-  @option{--target=<targetname>}to create a configuration project file
-  @file{auto.cgpr}.
-
-  Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
-  can be specified.
-
-@item @option{--subdirs=<subdir>}
-
-  This indicates that the real directories (except the source directories) are
-  subdirectories of the directories specified in the project files. This applies
-  in particular to object directories, library directories and exec directories.
-  If the directories do not exist, they are created automatically.
-
-@item @option{--no-indirect-imports}
-
-  This indicates that sources of a project should import only sources or
-  header files from directly imported projects, that is those projects mentioned
-  in a with clause and the projects they extend directly or indirectly.
-  A check is done in the compilation phase, after a successful compilation, that
-  the sources follow these restrictions. For Ada sources, the check is fully
-  enforced. For non Ada sources, the check is partial, as in the dependency
-  file there is no distinction between header files directly included and those
-  indirectly included. The check will fail if there is no possibility that a
-  header file in a non directly imported project could have been indirectly
-  imported. If the check fails, the compilation artifacts (dependency file,
-  object file, switches file) are deleted.
-
-@item @option{--indirect-imports}
-
-  This indicates that sources of a project can import sources or header files
-  from directly or indirectly imported projects. This is the default behavior.
-  This switch is provided to cancel a previous switch
-  @option{--no-indirect-imports} on the command line.
-
-@item @option{--no-object-check}
-
-  This indicates that GPRbuild will not check for the presence of object files
-  and for the switches stored in switches file, even if switch -s is used.
-  If sources are specified on the command line, only these sources are
-  compiled. If no source is specified on the command line, all sources of the
-  main project are compiled. No binding, library buiding or linking is
-  performed.
-
-@item @option{-aP dir} (Add directory @file{dir} to project search path)
-
-  Specify to GPRbuild to add directory @file{dir} to the user project file search
-  path, before the default directory.
-
-@item @option{-b} (Bind only)
-
-  Specify to GPRbuild that the post-compilation (or binding) phase is to be
-  performed, but not the other phases unless they are specified by appropriate
-  switches.
-
-@item @option{-c} (Compile only)
-
-  Specify to GPRbuild that the compilation phase is to be performed, but not
-  the other phases unless they are specified by appropriate switches.
-
-@item @option{-d} (Display progress)
-
-  Display progress for each source, up to date or not, as a single
-  line @emph{completed x out of y (zz%)...}. If the file needs to be compiled
-  this is displayed after the invocation of the compiler. These lines are
-  displayed even in quiet output mode (switch @option{-q}).
-
-@item @option{-Inn} (Index of main unit in multi-unit source file)
-  Indicate the index of the main unit in a multi-unit source file.
-  The index must be a positive number and there should be one and only
-  one main source file name on the command line.
-
-@item @option{-eL} (Follow symbolic links when processing project files)
-
-  By default, symbolic links on project files are not taken into account
-  when processing project files. Switch @option{-eL} changes this default
-  behavior.
-
-@item @option{-eS} (no effect)
-
-  This switch is only accepted for compatibility with gnatmake, but it has
-  no effect. For gnatmake, it means: echo commands to standard output instead
-  of standard error, but for gprbuild, commands are always echoed to standard
-  output.
-
-@item @option{-F} (Full project path name in brief error messages)
-
-  By default, in non verbose mode, when an error occurs while processing
-  a project file, only the simple name of the project file is displayed in the
-  error message. When switch @option{-F} is used, the full path of the project
-  file is used. This switch has no effect when switch @option{-v} is used.
-
-@item @option{-l} (Link only)
-
-  Specify to GPRbuild that the linking phase is to be performed, but not
-  the other phases unless they are specified by appropriate switches.
-
-@item @option{-m} (Minimum Ada recompilation)
-
-  Do not recompile Ada code if timestamps are different but checksums are the
-  same.
-
-@item @option{-o name} (Choose an alternate executable name)
-
-  Specify the file name of the executable. Switch @option{-o} can
-  be used only if there is exactly one executable being built;
-  that is, there is exactly one main on the command line,
-  or there are no mains on the command line and exactly one
-  main in attribute @code{Main} of the main project.
-
-@item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
-
-  By default, GPRbuild checks that the object, library and exec directories
-  specified in project files exist. Switch @option{-p} instructs GPRbuild to
-  attempt to create missing directories.
-
-@item @option{-P proj} (use Project file @emph{proj})
-
-  Specify the path name of the main project file. The space between @option{-P}
-  and the project file name is optional. Specifying a project file name (with
-  suffix @file{.gpr}) may be used in place of option @option{-P}. Exactly one main
-  project file can be specified.
-
-@item @option{-r} (Recursive)
-
-  This switch has an effect only when @option{-c} or @option{-u} is also
-  specified and there are no mains: it means that all sources of all projects
-  need to be compiled or recompiled.
-
-@item @option{-R} (Do not use run path option)
-
-  When this switch is used, linking executables and shared libraries is done
-  without any run path option (soname).
-
-@item @option{-u} (Unique compilation, only compile the given files)
-
-  If there are sources specified on the command line, only compile these
-  sources. If there are no sources specified on the command line, compile
-  all the sources of the main project.
-
-  In both cases, do not attempt the binding and the linking phases.
-
-@item @option{-U} (Compile all sources of all projects)
-
-  If there are sources specified on the command line, only compile these
-  sources. If there are no sources specified on the command line, compile
-  all the sources of all the projects in the project tree.
-
-  In both cases, do not attempt the binding and the linking phases.
-
-@item @option{-vPx} (Specify verbosity when parsing Project Files)
-
-  By default, GPRbuild does not display anything when processing project files,
-  except when there are errors. This default behavior is obtained with switch
-  @option{-vP0}. Switches @option{-vP1} and @option{-vP2} yield increasingly
-  detailed output.
-
-@item @option{-Xnm=val} (Specify an external reference for Project Files)
-
-  Specify an external reference that may be queried inside the project files
-  using built-in function @code{external}. For example, with
-  @option{-XBUILD=DEBUG},
-  @code{external("BUILD")} inside a project file will have the value
-  @code{"DEBUG"}.
-
-@end itemize
-
-@noindent
-Then, the switches that may be specified on the command line as well as in
-package Builder of the main project (attribute Switches):
-
-@itemize @bullet
-
-@item @option{-f} (Force recompilations)
-
-  Force the complete processing of all phases (or of those explicitly specified)
-  even when up to date.
-
-@item @option{-j<num>} (use @emph{num} simultaneous compilation jobs)
-
-  By default, GPRbuild invokes one compiler at a time. With switch @option{-j},
-  it is possible to instruct GPRbuild to spawn several simultaneous compilation
-  jobs if needed. For example, @option{-j2} for two simultaneous compilation
-  jobs or @option{-j4} for four. On a multi-processor system,
-  @option{-j<num>} can greatly speed up the build process.
-
-@item @option{-k} (Keep going after compilation errors)
-
-  By default, GPRbuild stops spawning new compilation jobs at the first
-  compilation failure. Using switch @option{-k}, it is possible to attempt to
-  compile/recompile all the sources that are not up to date, even when some
-  compilations failed. The post-compilation phase and the linking phase are never
-  attempted if there are compilation failures, even when switch @option{-k} is
-  used.
-
-@item @option{-q} (Quiet output)
-
-  Do not display anything except errors and progress (switch @option{-d}).
-  Cancel any previous switch @option{-v}.
-
-@item @option{-R} (Do not pass a run path option)
-
-  Do not link with a run path option for shared libraries and executables.
-
-@item @option{-s} (recompile if compilation switches have changed)
-
-  By default, GPRbuild will not recompile a source if all dependencies are
-  satisfied. Switch @option{-s} instructs GPRbuild to recompile sources when a
-  different set of compilation switches has been used in the previous
-  compilation, even if all dependencies are satisfied. Each time GPRbuild
-  invokes a compiler, it writes a text file that lists the switches used in the
-  invocation of the compiler, so that it can retrieve these switches if
-  @option{-s} is used later.
-
-@item @option{-v} (Verbose output)
-
-  Display full paths, all options used in spawned processes, and reasons why
-  these processes are spawned. Cancel any previous switch @option{-q}.
-
-@item @option{-we} (Treat all warnings as errors)
-
-  When @option{-we} is used, any warning during the processing of the project
-  files becomes an error and GPRbuild does not attempt any of the phases.
-
-@item @option{-wn} (Treat warnings as warnings)
-
-  Switch @option{-wn} may be used to restore the default after @option{-we} or
-  @option{-ws}.
-
-@item @option{-ws} (Suppress all warnings)
-
-  Do not generate any warnings while processing the project files.
-
-@item @option{-x} (Always create the include path file)
-
-  By default, gprbuild passes a mapping file to the Ada compiler, and no
-  source search path. However, there are cases when the source search path is
-  needed by the Ada compiler, for example when the compiler is invoked with
-  a preprocessing option @option{-gnatep=...}. When @option{-x} is used,
-  gprbuild will pass a source search path to the Ada compiler in a text file,
-  the incude path file.
-
-@end itemize
-
-@noindent
-Switches that are accepted for compatibility with gnatmake, either on the
-command line or in the Builder Ada switches in the main project file:
-
-@itemize @bullet
-
-@item @option{-nostdinc}
-@item @option{-nostdlib}
-@item @option{-fstack-check}
-@item @option{-fno-inline}
-@item @option{-g*} Any switch starting with @option{-g}
-@item @option{-O*} Any switch starting with @option{-O}
-
-@end itemize
-
-@noindent
-These switches are passed to the Ada compiler.
-
-@c ---------------------------------------------
-@node Initialization
-@section Initialization
-@c ---------------------------------------------
-
-@noindent
-Before performing one or several of its three phases, GPRbuild has to read the
-command line, obtain its configuration, and process the project files.
-
-If GPRbuild is invoked with an invalid switch or without any project file on
-the command line, it will fail immediately.
-
-Examples:
-
-@smallexample
-$ gprbuild -P
-gprbuild: project file name missing after -P
-
-$ gprbuild -P c_main.gpr -WW
-gprbuild: illegal option "-WW"
-@end smallexample
-
-@noindent
-GPRbuild looks for the configuration project file first in the current
-working directory, then in the default configuration project directory.
-If the GPRbuild executable is located in a subdirectory @file{<prefix>/bin},
-then
-the default configuration project directory is @file{<prefix>/share/gpr},
-otherwise there is no default configuration project directory.
-
-When it has found its configuration project path, GPRbuild needs to obtain its
-configuration. By default, the file name of the main configuration project
-is @file{default.cgpr}. This default may be modified using the switch
-@option{--config=...}
-
-Example:
-
-@smallexample
-$ gprbuild --config=my_standard.cgpr -P my_project.gpr
-@end smallexample
-
-@noindent
-If GPRbuild cannot find the main configuration project on the configuration
-project path, then it will look for all the languages specified in the user
-project tree and invoke @value{gprconfig} to create a configuration project file
-named @file{auto.cgpr} that is located in the object directory of the main
-project file.
-
-Once it has found the configuration project, GPRbuild will process its
-configuration: if a single string attribute is specified in the configuration
-project and is not specified in a user project, then the attribute is added
-to the user project. If a string list attribute is specified in the
-configuration project then its value is prepended to the corresponding
-attribute in the user project.
-
-After GPRbuild has processed its configuration, it will
-process the user project file or files. If these user project files are
-incorrect then GPRbuild will fail with the appropriate error messages:
-
-@smallexample
-$ gprbuild -P my_project.gpr
-ada_main.gpr:3:26: "src" is not a valid directory
-gprbuild: "my_project.gpr" processing failed
-@end smallexample
-
-@noindent
-Once the user project files have been dealt with successfully, GPRbuild
-will start its processing.
-
-@c ---------------------------------------------
-@node Compilation of one or several sources
-@section Compilation of one or several sources
-@c ---------------------------------------------
-
-@noindent
-If GPRbuild is invoked with @option{-u} or @option{-U} and there are one or
-several source file names specified on the command line, GPRbuild will compile
-or recompile these sources, if they are not up to date or if @option{-f} is
-also specified. Then GPRbuild will stop its execution.
-
-The options/switches used to compile these sources are described in section
-@ref{Compilation Phase}.
-
-If GPRbuild is invoked with @option{-u} and no source file name is specified
-on the command line, GPRbuild will compile or recompile all the sources of the
-@emph{main} project and then stop.
-
-In contrast, if GPRbuild is invoked with @option{-U}, and again no source file name is specified
-on the command line, GPRbuild will compile or recompile all the sources of @emph{all
-the projects in the project tree} and then stop.
-
-@c ---------------------------------------------
-@node Compilation Phase
-@section Compilation Phase
-@c ---------------------------------------------
-
-@noindent
-When switch @option{-c} is used or when switches @option{-b} or @option{-l}
-are not used, GPRbuild will first compile or recompile the sources that
-are not up to date in all the projects in the project tree. The sources
-considered are:
-
-@itemize @bullet
-
-@item all the sources in languages other than Ada
-
-@item if there are no main specified, all the Ada sources
-
-@item if there is a non Ada main, but no attribute @code{Roots} specified for
-  this main, all the Ada sources
-
-@item if there is a main with an attribute @code{Roots} specified, all
-  the Ada sources in the closures of these Roots.
-
-@item if there is an Ada main specified, all the Ada sources in the closure
-  of the main
-
-@end itemize
-
-@noindent
-Attribute Roots takes as an index a main and a string list value. Each string
-in the list is the name of an Ada library unit.
-
-Example:
-
-@smallexample
-   for Roots ("main.c") use ("pkga", "pkgb");
-@end smallexample
-
-@noindent
-Package PkgA and PkgB will be considered, and all the Ada units in their
-closure will also be considered.
-
-GPRbuild will first consider each source and decide if it needs to be
-(re)compiled.
-
-A source needs to be compiled in the following cases:
-
-@itemize @bullet
-
-@item Switch @option{-f} (force recompilations) is used
-
-@item The object file does not exist
-
-@item The source is more recent than the object file
-
-@item The dependency file does not exist
-
-@item The source is more recent than the dependency file
-
-@item When @option{-s} is used: the switch file does not exist
-
-@item When @option{-s} is used: the source is more recent than the switch file
-
-@item The dependency file cannot be read
-
-@item The dependency file is empty
-
-@item The dependency file has a wrong format
-
-@item A source listed in the dependency file does not exist
-
-@item A source listed in the dependency file has an incompatible time stamp
-
-@item A source listed in the dependency file has been replaced
-
-@item Switch @option{-s} is used and the source has been compiled with
-  different switches or with the same switches in a different order
-
-@end itemize
-
-@noindent
-When a source is successfully compiled, the following files are normally
-created in the object directory of the project of the source:
-
-@itemize @bullet
-
-@item An object file
-
-@item A dependency file, except when the dependency kind for the language
-  is @code{none}
-
-@item A switch file if switch @option{-s} is used
-
-@end itemize
-
-@noindent
-The compiler for the language corresponding to the source file name is invoked with the following
-switches/options:
-
-@itemize @bullet
-
-@item The required compilation switches for the language
-
-@item The compilation switches coming from package @code{Compiler} of the
-  project of the source
-
-@item The compilation switches specified on the command line for all compilers,
-  after @option{-cargs}
-
-@item The compilation switches for the language of the source, specified
-  after @option{-cargs:<language>}
-
-@item Various other options including a switch to create the dependency file
-  while compiling, a switch to specify a configuration file, a switch
-  to specify a mapping file, and switches to indicate where to look for
-  other source or header files that are needed to compile the source.
-
-@end itemize
-
-@noindent
-If compilation is needed, then all the options/switches, except those
-described as ``Various other options'' are written to the switch file.
-The switch file is a text file. Its file name is obtained by replacing
-the suffix of the source with @file{.cswi}. For example, the switch file
-for source @file{main.adb} is @file{main.cswi} and for
-@file{toto.c} it is @file{toto.cswi}.
-
-If the compilation is successful, then if the creation of the dependency
-file is not done during compilation but after (see configuration attribute
-@code{Compute_Dependency}), then the process to create the dependency file is
-invoked.
-
-If GPRbuild is invoked with a switch @option{-j} specifying more than one
-compilation process, then several compilation processes for several sources of
-possibly different languages are spawned concurrently.
-
-For each project file, attribute Interfaces may be declared. Its value is a
-list of sources or header files of the project file. For a project file
-extending another one, directly or indirectly, inherited sources may be in
-the list. When Interfaces is not declared, all sources or header files are
-part of the interface of the project. When Interfaces is declared, only those
-sources or header files are part of the interface of the project file. After
-a successful compilation, gprbuild checks that all imported or included sources
-or header files that are from an imported project are part of the interface of
-the imported project. If this check fails, the compilation is invalidated and
-the compilation artifacts (dependency, object and switches files) are deleted.
-
-Example:
-
-@smallexample
-   project Prj is
-      for Languages use ("Ada", "C");
-      for Interfaces use ("pkg.ads", "toto.h");
-   end Prj;
-@end smallexample
-
-@noindent
-If a source from a project importing project Prj imports sources from Prj other
-than package Pkg or includes header files from Prj other than "toto.h", then
-its compilation will be invalidated.
-
-@c ---------------------------------------------
-@node Post-Compilation Phase
-@section Post-Compilation Phase
-@c ---------------------------------------------
-
-@noindent
-The post-compilation phase has two parts: library building and program binding.
-
-If there are libraries that need to be built or rebuilt, @emph{gprbuild} will
-call the library builder, specified by attribute @code{Library_Builder}.
-This is generally the tool @emph{gprlib}, provided with GPRbuild. If gprbuild
-can determine that a library is already up to date, then the library builder
-will not be called.
-
-If there are mains specified, and for these mains there are sources of
-languages with a binder driver (specified by attribute Binder'Driver
-(<language>), then the binder driver is called for each such main, but only
-if it needs to.
-
-For Ada, the binder driver is normally @emph{gprbind}, which will call
-the appropriate version of @emph{gnatbind}, that either the one in the same
-directory as the Ada compiler or the fist one found on the path.
-When neither of those is appropriate, it is possible to specify to
-@emph{gprbind} the full path of @emph{gnatbind}, using the Binder switch
-@code{--gnatbind_path=}.
-
-Example:
-
-@smallexample
-   package Binder is
-      for Switches ("Ada") use ("--gnatbind_path=/toto/gnatbind");
-   end Binder;
-@end smallexample
-
-@noindent
-If gprbuild can determine that the artifacts from a previous
-post-compilation phase are already up to date, the binder driver is not called.
-
-If there are no libraries and no binder drivers, then the post-compilation
-phase is empty.
-
-@c ---------------------------------------------
-@node Linking Phase
-@section Linking Phase
-@c ---------------------------------------------
-
-@noindent
-When there are mains specified, either in attribute Main or on the command
-line, and these mains are not up to date, the linker is invoked for each main,
-with all the specified or implied options, including the object files generated
-during the post-compilation phase by the binder drivers.
-
-
-@c ---------------------------------------------
-@node Incompatibilities with gnatmake
-@section Incompatibilities with gnatmake
-@c ---------------------------------------------
-
-Here is a list of incompatibilities between gnatmake invoked with a
-project file and gprbuild:
-
-@itemize @bullet
-
-@item gprbuild never recompiles the runtime sources.
-
-@item gnatmake switches that are not recognized by gprbuild:
-
-@itemize @bullet
-
-@item -a (Consider all files, even readonly ali files)
-@item -M (List object file dependences for Makefile)
-@item -n (Check objects up to date, output next file to compile if not)
-@item -R (Do not use a run_path_option when linking)
-@item -x (Allow compilation of needed units external to the projects)
-@item -z No main subprogram (zero main)
-@item --GCC=command
-@item --GNATBIND=command
-@item --GNATLINK=command
-@item -aLdir (Skip missing library sources if ali in dir)
-@item -Adir (like -aLdir -aIdir)
-@item -aOdir (Specify library/object files search path)
-@item -aIdir (Specify source files search path)
-@item -Idir (Like -aIdir -aOdir)
-@item -I- (Don't look for sources & library files in the default directory)
-@item -Ldir (Look for program libraries also in dir)
-
-@end itemize
-
-@item The switches that are not directly recognized by gprbuild and passed to
-the Ada compiler are only:
-
-@itemize @bullet
-
-@item -nostdlib
-@item -nostdinc
-@item -fstack-check
-@item -fno-inline
-@item -Oxxx (any switch starting with -O)
-@item -gxxx (any switch starting with -g)
-
-@end itemize
-
-@end itemize
-
-@c ---------------------------------------------
-@node Cleaning up with GPRclean
-@chapter Cleaning up with GPRclean
-@c ---------------------------------------------
-
-@noindent
-The GPRclean tool removes the files created by GPRbuild.
-At a minimum, to invoke GPRclean you must specify a main project file
-in a command such as @code{gprclean proj.gpr} or @code{gprclean -P proj.gpr}.
-
-Examples of invocation of GPRclean:
-
-@smallexample
-   gprclean -r prj1.gpr
-   gprclean -c -P prj2.gpr
-@end smallexample
-
-@menu
-* Switches for GPRclean::
-@end menu
-
-@c ---------------------------------------------
-@node Switches for GPRclean
-@section Switches for GPRclean
-@c ---------------------------------------------
-
-@noindent
-The switches for GPRclean are:
-
-@itemize @bullet
-
-@item @option{--config=<main config project file name>} : Specify the
-  configuration project file name
-
-@item @option{--autoconf=<config project file name>}
-
-  This specifies a configuration project file name that already exists or will
-  be created automatically. Option @option{--autoconf=}
-  cannot be specified more than once. If the configuration project file
-  specified with @option{--autoconf=} exists, then it is used. Otherwise,
-  @value{gprconfig} is invoked to create it automatically.
-
-@item @option{-c} : Only delete compiler-generated files. Do not delete
-  executables and libraries.
-
-@item @option{-f} : Force deletions of unwritable files
-
-@item @option{-F} : Display full project path name in brief error messages
-
-@item @option{-h} : Display this message
-
-@item @option{-n} : Do not delete files, only list files to delete
-
-@item @option{-P<proj>} : Use Project File @emph{<proj>}.
-
-@item @option{-q} : Be quiet/terse. There is no output, except to report
-  problems.
-
-@item @option{-r} : (recursive) Clean all projects referenced by the main
-  project directly or indirectly. Without this switch, GPRclean only
-  cleans the main project.
-
-@item @option{-v}  : Verbose mode
-
-@item @option{-vPx} : Specify verbosity when parsing Project Files.
-  x = 0 (default), 1 or 2.
-
-@item @option{-Xnm=val} : Specify an external reference for Project Files.
-
-@end itemize
-
-@c ---------------------------------------------
-@node Configuring with GPRconfig
-@chapter Configuring with GPRconfig
-@c ---------------------------------------------
-
-@noindent
-
-
-@menu
-* Using GPRconfig::
-* The GPRconfig knowledge base::
-@end menu
 
 @c ---------------------------------------------
 @node Using GPRconfig
-@section Using GPRconfig
+@subsection Using GPRconfig
 @c ---------------------------------------------
 
 @noindent
@@ -2138,7 +1311,7 @@ generate the configuration file.
 
 @c ---------------------------------------------
 @node The GPRconfig knowledge base
-@section The GPRconfig knowledge base
+@subsection The GPRconfig knowledge base
 @c ---------------------------------------------
 
 @noindent
@@ -2157,6 +1330,7 @@ Users can easily contribute to this general knowledge base, and have
 @value{gprconfig} immediately take advantage of any new data.
 
 The knowledge base contains various kinds of information:
+
 @itemize @bullet
 @item Compiler description
 
@@ -2202,12 +1376,14 @@ and have @value{gprconfig} advantage of it.
 @menu
 * General file format::
 * Compiler description::
+* GPRconfig external values::
+* GPRconfig variable substitution::
 * Configurations::
 @end menu
 
 @c ---------------------------------------------
 @node General file format
-@subsection General file format
+@subsubsection General file format
 @c ---------------------------------------------
 
 @noindent
@@ -2237,7 +1413,7 @@ placed in a single XML file, or split across several files.
 
 @c ---------------------------------------------
 @node Compiler description
-@subsection Compiler description
+@subsubsection Compiler description
 @c ---------------------------------------------
 
 @noindent
@@ -2265,7 +1441,6 @@ are evaluated (if necessary) in the same order as they are documented below.
   @CODESAMPLE{<compiler_description>@NL{}
     <name>GNAT</name>@NL{}
   </compiler_description>}
-
 @item <executable>
   This tag contains a string, which is the name of an executable
   to search for on the PATH. Examples are @samp{gnatls}, @samp{gcc},@dots{}
@@ -2360,14 +1535,9 @@ are evaluated (if necessary) in the same order as they are documented below.
 
 @end table
 
-@menu
-* GPRconfig external values::
-* GPRconfig variable substitution::
-@end menu
-
 @c ---------------------------------------------
 @node GPRconfig external values
-@subsubsection External values
+@subsubsection GPRconfig external values
 @c ---------------------------------------------
 
 @noindent
@@ -2405,13 +1575,12 @@ of the @code{<directory>} and @code{<external>} nodes.
   not defined, this is an error and the compiler is ignored.
 
   @CODESAMPLE{<compiler_description>@NL{}
-    <name>GCC-WRS</name>@NL{}
-    <executable prefix="1">cc(arm|pentium)</executable>@NL{}
-    <version>@NL{}
-      <getenv name="WIND_BASE" />@NL{}
-    </version>@NL{}
+  <name>GCC-WRS</name>@NL{}
+  <executable prefix="1">cc(arm|pentium)</executable>@NL{}
+  <version>@NL{}
+  <getenv name="WIND_BASE" />@NL{}
+  </version>@NL{}
   </compile_description>}
-
 @item @code{<external>command</external>}
 
   If the contents of the node is an @code{<external>} child, this indicates
@@ -2426,7 +1595,7 @@ of the @code{<directory>} and @code{<external>} nodes.
   with:
 
   @CODESAMPLE{<version>@NL{}
-    <external>gcc -dumpmachine</external>@NL{}
+  <external>gcc -dumpmachine</external>@NL{}
   </version>}
 
   @noindent
@@ -2448,10 +1617,9 @@ of the @code{<directory>} and @code{<external>} nodes.
   with:
 
   @CODESAMPLE{<version>@NL{}
-   <external>gcc -v</external>@NL{}
-   <grep regexp="^gcc version (\S+)" group="1" />@NL{}
+  <external>gcc -v</external>@NL{}
+  <grep regexp="^gcc version (\S+)" group="1" />@NL{}
   </version>}
-
 @item @code{<directory group="0">regexp</directory>}
 
   If the contents of the node is a @code{<directory}> child, this
@@ -2474,10 +1642,10 @@ of the @code{<directory>} and @code{<external>} nodes.
 
   @CODESAMPLE{<runtimes>@NL{}
   <directory group="1">@NL{}
-     \.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude@NL{}
+  \.\./lib/gcc/$@{TARGET@}/.*/rts-(.*)/adainclude@NL{}
   </directory>@NL{}
   <directory group="default">@NL{}
-    \.\./lib/gcc/$@{TARGET@}/.*/adainclude@NL{}
+  \.\./lib/gcc/$@{TARGET@}/.*/adainclude@NL{}
   </directory>@NL{}
   </runtimes>}
 
@@ -2497,10 +1665,9 @@ of the @code{<directory>} and @code{<external>} nodes.
   compiler we can specify:
 
   @CODESAMPLE{<languages>@NL{}
-   <external regexp="languages=(\S+)" group="1">gcc -v</external>@NL{}
-   <filter>c,c++,fortran</filter>@NL{}
+  <external regexp="languages=(\S+)" group="1">gcc -v</external>@NL{}
+  <filter>c,c++,fortran</filter>@NL{}
   </languages>}
-
 @item @code{<must_match>regexp</must_match>}
 
   If this node is present, then the filtered output is compared with the
@@ -2511,20 +1678,20 @@ of the @code{<directory>} and @code{<external>} nodes.
   specific to an older version of GCC, you could write:
 
   @CODESAMPLE{<version>@NL{}
-   <external regexp="gcc version (\S+)"@NL{}
-        group="1">gcc -v </external>@NL{}
-   <must_match>2.8.1</must_match>@NL{}
+  <external regexp="gcc version (\S+)"@NL{}
+  group="1">gcc -v </external>@NL{}
+  <must_match>2.8.1</must_match>@NL{}
   </version>}
 
   @noindent
   Other versions of gcc will not match this @code{<compiler_description>}
   node.
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node GPRconfig variable substitution
-@subsubsection Variable Substitution
+@subsubsection GPRconfig variable substitution
 @c ---------------------------------------------
 
 @noindent
@@ -2594,7 +1761,7 @@ is substituted by an empty string.
 
 @c ---------------------------------------------
 @node Configurations
-@subsection Configurations
+@subsubsection Configurations
 @c ---------------------------------------------
 
 @noindent
@@ -2723,7 +1890,6 @@ manner.
 For instance, to check a GNAT compiler in the 5.x family, use:
 
 @CODESAMPLE{<compiler name="GNAT" version="5.\d+" />}
-
 @item <hosts negate="false">
 
 This filter contains a list of @code{<host>} children. It matches when
@@ -2747,7 +1913,6 @@ intel linux machine, use:
 @CODESAMPLE{<hosts>@NL{}
   <host name="i.86-.*-linux(-gnu)?" />@NL{}
 </hosts>}
-
 @item <targets negate="false">
 
 This filter contains a list of @code{<target>} children. It behaves
@@ -2761,15 +1926,20 @@ is inverted, and it will match when none of its children matches.
 @CODESAMPLE{<targets>@NL{}
   <target name="i.86-.*-linux(-gnu)?" />@NL{}
 </targets>}
-
 @end table
 
 @c ---------------------------------------------
 @node Configuration File Reference
-@chapter Configuration File Reference
+@section Configuration File Reference
 @c ---------------------------------------------
 
 @noindent
+@c ??? From the "Important concepts" section
+  A text file using the project file syntax. It defines languages and
+  their characteristics as well as toolchains for those languages and their
+  characteristics.
+@c ??? end
+
 GPRbuild needs to have a configuration file to know the different
 characteristics of the toolchains that can be used to compile sources and
 build libraries and executables.
@@ -2811,7 +1981,7 @@ in the configuration project file.
 
 @c ---------------------------------------------
 @node Project Level Attributes
-@section Project Level Attributes
+@subsection Project Level Attributes
 @c ---------------------------------------------
 
 @noindent
@@ -2826,12 +1996,11 @@ in the configuration project file.
 
 @c ---------------------------------------------
 @node General Attributes
-@subsection General Attributes
+@subsubsection General Attributes
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Default_Language
 
   Specifies the name of the language of the immediate sources of a project when
@@ -2878,17 +2047,16 @@ in the configuration project file.
   @smallexample
     for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node General Library Related Attributes
-@subsection General Library Related Attributes
+@subsubsection General Library Related Attributes
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Library_Support
 
   Specifies the level of support for library project. If this attribute is not
@@ -2906,17 +2074,16 @@ in the configuration project file.
   @smallexample
    for Library_Builder use "/.../gprlib";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Archive Related Attributes
-@subsection Archive Related Attributes
+@subsubsection Archive Related Attributes
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Archive_Builder
 
   Specifies the name of the executable of the archive builder with the minimum
@@ -2954,17 +2121,16 @@ in the configuration project file.
   @smallexample
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Shared Library Related Attributes
-@subsection Shared Library Related Attributes
+@subsubsection Shared Library Related Attributes
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Shared_Library_Prefix
 
   Specifies the prefix of the file names of shared libraries. When this attribute
@@ -3044,12 +2210,12 @@ in the configuration project file.
 
   @noindent
   This attribute is used by GPRlib to link shared libraries with Ada code.
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Package Naming
-@section Package Naming
+@subsection Package Naming
 @c ---------------------------------------------
 
 @noindent
@@ -3110,17 +2276,16 @@ file:
   @smallexample
    for Dot_Replacement use "-";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Package Builder
-@section Package Builder
+@subsection Package Builder
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Executable_Suffix
 
   Specifies the default executable suffix. If no attribute @code{Executable_Suffix} is
@@ -3130,12 +2295,12 @@ file:
   @smallexample
    for Executable_Suffix use ".exe";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Package Compiler
-@section Package Compiler
+@subsection Package Compiler
 @c ---------------------------------------------
 
 @noindent
@@ -3151,12 +2316,11 @@ file:
 
 @c ---------------------------------------------
 @node General Compilation Attributes
-@subsection General Compilation Attributes
+@subsubsection General Compilation Attributes
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Driver (<language>)
 
   Specifies the name of the executable for the compiler of a language. The single
@@ -3190,17 +2354,16 @@ file:
   @smallexample
    for PIC_Option ("C") use ("-fPIC");
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Mapping File Related Attributes
-@subsection Mapping File Related Attributes
+@subsubsection Mapping File Related Attributes
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Mapping_File_Switches (<language>)
 
   Specifies the switch or switches to be used to specify a mapping file to the
@@ -3230,12 +2393,12 @@ file:
   @smallexample
     for Mapping_Spec_Suffix ("Ada") use "%b";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Config File Related Attributes
-@subsection Config File Related Attributes
+@subsubsection Config File Related Attributes
 @c ---------------------------------------------
 
 @noindent
@@ -3243,7 +2406,6 @@ In the value of config file attributes defined below, there are some
 placeholders that GPRbuild will replace. These placeholders are:
 
 @itemize @bullet
-
 @item %u : the unit name
 
 @item %f : the file name of the source
@@ -3262,7 +2424,6 @@ placeholders that GPRbuild will replace. These placeholders are:
 Attributes:
 
 @itemize @bullet
-
 @item Config_File_Switches (<language>)
 
   Specifies the switch or switches to be used to specify a configuration file to
@@ -3333,12 +2494,12 @@ Attributes:
   @smallexample
    for Config_File_Unique ("Ada") use "True";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Dependency Related Attributes
-@subsection Dependency Related Attributes
+@subsubsection Dependency Related Attributes
 @c ---------------------------------------------
 
 @noindent
@@ -3349,7 +2510,6 @@ the object file does not exist or the source file is more recent than
 the object file or the switch file.
 
 @itemize @bullet
-
 @item Dependency_Switches (<language>)
 
   For languages other than Ada, attribute @code{Dependency_Switches} specifies
@@ -3379,17 +2539,16 @@ the object file or the switch file.
   @noindent
   Usually, attributes @code{Dependency_Switches} and @code{Dependency_Driver} are not both
   specified.
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Search Path Related Attributes
-@subsection Search Path Related Attributes
+@subsubsection Search Path Related Attributes
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Include_Switches (<language>)
 
   Specifies the option or options to use when invoking the compiler to indicate
@@ -3430,17 +2589,16 @@ the object file or the switch file.
   @smallexample
    for Include_Path_File ("Ada") use "ADA_PRJ_INCLUDE_FILE";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Package Binder
-@section Package Binder
+@subsection Package Binder
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Driver (<language>)
 
   Specifies the name of the executable of the binder driver. When this attribute
@@ -3489,17 +2647,16 @@ the object file or the switch file.
   @smallexample
    for Objects_Path_File ("Ada") use "ADA_PRJ_OBJECTS_FILE";
   @end smallexample
-
 @end itemize
+
 
 @c ---------------------------------------------
 @node Package Linker
-@section Package Linker
+@subsection Package Linker
 @c ---------------------------------------------
 
 @noindent
 @itemize @bullet
-
 @item Driver
 
   Specifies the name of the executable of the linker. Example:
@@ -3511,16 +2668,12 @@ the object file or the switch file.
 @item Required_Switches
 
   Specifies the minimum options to be used when invoking the linker. Those
-  options are appended at the end of the link command so that potentially
+  options are happened at the end of the link command so that potentially
   conflicting user options take precedence.
-
 @end itemize
 
-@c **********************************
-@c * GNU Free Documentation License *
-@c **********************************
+
 @include gfdl.texi
-@c GNU Free Documentation License
 
 @c ---------------------------------------------
 @node Index

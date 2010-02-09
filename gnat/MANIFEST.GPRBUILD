@@ -54,6 +54,7 @@ osint.adb
 osint.ads
 output.adb
 output.ads
+projects.texi
 prj-attr-pm.ads
 prj-attr-pm.adb
 prj-attr.adb
