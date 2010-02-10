@@ -123,12 +123,14 @@ tree_io.adb
 tree_io.ads
 types.adb
 types.ads
+ug_words
 uintp.adb
 uintp.ads
 urealp.adb
 urealp.ads
 widechar.adb
 widechar.ads
+xgnatugn.adb
 xsnamest.adb
 xutil.adb
 xutil.ads

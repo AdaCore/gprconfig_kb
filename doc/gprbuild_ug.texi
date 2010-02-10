@@ -320,7 +320,7 @@ Package Compiler
 @end menu
 @end ifnottex
 
-@include ../gnat/projects.texi
+@include projects_unw.texi
 
 @c ---------------------------------------------
 @node Gprbuild

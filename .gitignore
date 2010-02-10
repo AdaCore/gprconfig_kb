@@ -28,6 +28,13 @@
 /doc/html
 /doc/info
 /doc/pdf
+/doc/projects_unw.texi
+/doc/xgnatugn
+/doc/xgnatugn.ali
+/doc/xgnatugn.o
+/gnat/projects.texi
+/gnat/ug_words
+/gnat/xgnatugn.adb
 
 /internal/gprtests/gprtest
 /internal/gprtests/out

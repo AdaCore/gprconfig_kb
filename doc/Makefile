@@ -10,6 +10,7 @@ MAKE_PDF=texi2pdf -q
 MKDIR=mkdir -p
 RMDIR=rmdir
 CP=cp
+EXE=
 
 .PHONY: all txt info html pdf clean
 
@@ -26,36 +27,41 @@ all: txt info html pdf
 # therefore, we do ${MKDIR} first -- hence we do ${MKDIR} twice, which is a bit
 # odd, but successfully works around the bug in $(MAKE_PDF) (i.e. texi2pdf).
 
-txt:
+txt: prepare
 	${MKDIR} txt
 	${RM} txt/*
 	${RMDIR} txt
 	${MKDIR} txt
 	$(MAKE_TXT) -o txt/$(DOC).txt $(DOC).texi
-info:
+info: prepare
 	${MKDIR} info
 	${RM} info/*
 	${RMDIR} info
 	${MKDIR} info
 	$(MAKE_INFO) -o info/$(DOC).info $(DOC).texi
-html:
+html: prepare
 	${MKDIR} html
 	${RM} html/*
 	${RMDIR} html
 	${MKDIR} html
 	$(MAKE_INFO) ${MAKEINFO_HTML_FLAGS} -o html/$(DOC).html $(DOC).texi
 	$(CP) important.png note.png tip.png html/
-pdf:
+pdf: prepare
 	${MKDIR} pdf
 	${RM} pdf/*
 	${RMDIR} pdf
 	${MKDIR} pdf
 	cd pdf; $(MAKE_PDF) -c ../$(DOC).texi
 
+prepare:
+	gnatmake ../gnat/xgnatugn
+	xgnatugn${EXE} unw ../gnat/projects.texi ../gnat/ug_words projects_unw.texi
+
 partial_clean:
 	${RM} ${DOC}.aux ${DOC}.cp ${DOC}.cps ${DOC}.cps ${DOC}.fn
 	${RM} ${DOC}.ky ${DOC}.log ${DOC}.pg ${DOC}.toc ${DOC}.tp
 	${RM} ${DOC}.vr
+	${RM} xgnatugn* projects_unw.texi
 
 clean: partial_clean
 	${MKDIR} txt html info pdf
