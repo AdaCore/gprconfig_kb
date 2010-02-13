@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2009, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2010, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -352,12 +352,14 @@ begin
                      GNATBIND := new String'
                        (Line (Ada_Binder_Equal'Length + 1 .. Last));
 
-                  --  Do not use -v to avoid polluting the list of bound files
-                  --  and ignore -C, as the generated sources are always in
-                  --  Ada.
+                  --  Ignore -C, as the generated sources are always in Ada
+                  --  When -O is used, instead of -O=file, also ignore -v to
+                  --  avoid polluting the output.
 
-                  elsif Line (1 .. Last) /= "-v" and then
-                        Line (1 .. Last) /= "-C"
+                  elsif Line (1 .. Last) /= "-C"
+                    and then
+                      (GNAT_Version.all >= "6.4"
+                       or else Line (1 .. Last) /= "-v")
                   then
                      Binding_Options_Table.Append
                                              (new String'(Line (1 .. Last)));
@@ -533,7 +535,20 @@ begin
       Add (No_Main_Option, Gnatbind_Options, Last_Gnatbind_Option);
    end if;
 
-   Add (Dash_OO, Gnatbind_Options, Last_Gnatbind_Option);
+   --  Create temporary file to get the list of objects
+
+   Tempdir.Create_Temp_File (FD_Objects, Objects_Path);
+
+   if GNAT_Version.all >= "6.4" then
+      Add
+        (Dash_OO & "=" & Get_Name_String (Objects_Path),
+         Gnatbind_Options,
+         Last_Gnatbind_Option);
+      Close (FD_Objects);
+
+   else
+      Add (Dash_OO, Gnatbind_Options, Last_Gnatbind_Option);
+   end if;
 
    if not Quiet_Output then
       if Verbose_Mode then
@@ -585,20 +600,25 @@ begin
          Size := Size + Gnatbind_Options (J)'Length + 1;
       end loop;
 
-      --  Create temporary file to get the list of objects
-
-      Tempdir.Create_Temp_File (FD_Objects, Objects_Path);
-
       --  Invoke gnatbind with the arguments if the size is not too large or
       --  if the version of GNAT is not recent enough.
 
       if GNAT_Version.all < "6" or else Size <= Maximum_Size then
-         Spawn
-           (Gnatbind_Path.all,
-            Gnatbind_Options (1 .. Last_Gnatbind_Option),
-            FD_Objects,
-            Return_Code,
-            Err_To_Out => False);
+         if GNAT_Version.all < "6.4" then
+            Spawn
+              (Gnatbind_Path.all,
+               Gnatbind_Options (1 .. Last_Gnatbind_Option),
+               FD_Objects,
+               Return_Code,
+               Err_To_Out => False);
+            Success := Return_Code = 0;
+
+         else
+            Return_Code :=
+              Spawn
+                (Gnatbind_Path.all,
+                 Gnatbind_Options (1 .. Last_Gnatbind_Option));
+         end if;
 
       else
          --  Otherwise create a temporary response file
@@ -684,12 +704,17 @@ begin
 
             --  And invoke gnatbind with this this response file
 
-            Spawn
-              (Gnatbind_Path.all,
-               Args,
-               FD_Objects,
-               Return_Code,
-               Err_To_Out => False);
+            if GNAT_Version.all < "6.4" then
+               Spawn
+                 (Gnatbind_Path.all,
+                  Args,
+                  FD_Objects,
+                  Return_Code,
+                  Err_To_Out => False);
+
+            else
+               Return_Code := Spawn (Gnatbind_Path.all, Args);
+            end if;
 
             if Delete_Temp_Files then
                Delete_File (Get_Name_String (Path), Succ);
@@ -703,7 +728,9 @@ begin
       end if;
    end;
 
-   Close (FD_Objects);
+   if GNAT_Version.all < "6.4" then
+      Close (FD_Objects);
+   end if;
 
    if Return_Code /= 0 then
       if Delete_Temp_Files then
