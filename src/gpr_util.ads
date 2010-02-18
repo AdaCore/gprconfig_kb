@@ -127,11 +127,6 @@ package Gpr_Util is
    Load_Standard_Base : Boolean := True;
    --  False when switch --db- is used
 
-   Unchecked_Shared_Lib_Imports : constant String :=
-                                    "--unchecked-shared-lib-imports";
-   --  Command line switch of gprbuild and gprclean to allow shared library
-   --  projects to import projects that are not shared library projects.
-
    --  Local subprograms
 
    function Binder_Exchange_File_Name

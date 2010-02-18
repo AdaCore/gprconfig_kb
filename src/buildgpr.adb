@@ -11412,8 +11412,8 @@ package body Buildgpr is
                Register_Command_Line_Option (Options.Indirect_Imports, 0);
             end if;
 
-         elsif Command_Line
-               and then Arg = Gpr_Util.Unchecked_Shared_Lib_Imports
+         elsif Command_Line and then
+               Arg = Makeutl.Unchecked_Shared_Lib_Imports
          then
             Opt.Unchecked_Shared_Lib_Imports := True;
 
@@ -11988,7 +11988,7 @@ package body Buildgpr is
          Write_Eol;
 
          Write_Str ("  ");
-         Write_Str (Gpr_Util.Unchecked_Shared_Lib_Imports);
+         Write_Str (Makeutl.Unchecked_Shared_Lib_Imports);
          Write_Eol;
          Write_Str ("           Shared lib projects may import any project");
          Write_Eol;
