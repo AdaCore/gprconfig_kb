@@ -1013,7 +1013,7 @@ package body Buildgpr is
    begin
       --  Nothing to do if no argument is specified or if argument is empty
 
-      if Arg /= null or else Arg'Length = 0 then
+      if Arg /= null and then Arg'Length /= 0 then
 
          --  Reallocate arrays if necessary
 
@@ -6945,24 +6945,24 @@ package body Buildgpr is
                            Command_Line => False,
                            Language     => Lang,
                            Success      => Success);
-                     end if;
 
-                     if not Success then
-                        for J in reverse 1 .. Name_Len loop
-                           Name_Buffer (J + J) := Name_Buffer (J);
-                           Name_Buffer (J + J - 1) := ''';
-                        end loop;
+                        if not Success then
+                           for J in reverse 1 .. Name_Len loop
+                              Name_Buffer (J + J) := Name_Buffer (J);
+                              Name_Buffer (J + J - 1) := ''';
+                           end loop;
 
-                        Name_Len := Name_Len + Name_Len;
+                           Name_Len := Name_Len + Name_Len;
 
-                        Error_Msg
-                          ('"' & Name_Buffer (1 .. Name_Len) &
-                           """ is not a gprbuild switch. Consider moving " &
-                           "it to Global_Compilation_Switches.",
-                           Element.Location);
-                        Fail_Program
-                          ("*** illegal switch """ &
-                           Get_Name_String (Element.Value) & '"');
+                           Error_Msg
+                             ('"' & Name_Buffer (1 .. Name_Len) &
+                              """ is not a gprbuild switch. Consider moving " &
+                              "it to Global_Compilation_Switches.",
+                              Element.Location);
+                           Fail_Program
+                             ("*** illegal switch """ &
+                              Get_Name_String (Element.Value) & '"');
+                        end if;
                      end if;
 
                      List := Element.Next;
