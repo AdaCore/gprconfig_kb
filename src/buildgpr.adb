@@ -11556,9 +11556,7 @@ package body Buildgpr is
                Output_File_Name_Expected := True;
             end if;
 
-         elsif Command_Line
-           and then (Arg = "-p" or else Arg = "--create-missing-dirs")
-         then
+         elsif Arg = "-p" or else Arg = "--create-missing-dirs" then
             Setup_Projects := True;
 
          elsif Command_Line
