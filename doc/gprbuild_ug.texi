@@ -669,12 +669,6 @@ package Builder of the main project:
   or there are no mains on the command line and exactly one
   main in attribute @code{Main} of the main project.
 
-@item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
-
-  By default, GPRbuild checks that the object, library and exec directories
-  specified in project files exist. Switch @option{-p} instructs GPRbuild to
-  attempt to create missing directories.
-
 @item @option{-P proj} (use Project file @emph{proj})
 
   Specify the path name of the main project file. The space between @option{-P}
@@ -747,6 +741,16 @@ package Builder of the main project (attribute Switches):
   compilations failed. The post-compilation phase and the linking phase are never
   attempted if there are compilation failures, even when switch @option{-k} is
   used.
+
+@item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
+
+  By default, GPRbuild checks that the object, library and exec directories
+  specified in project files exist. Switch @option{-p} instructs GPRbuild to
+  attempt to create missing directories. Note that these switches may be
+  specified in package Builder of the main project, but they are useless there
+  as either the directories already exist or the processing of the project
+  files has failed before the evaluation of the Builder switches, because there
+  is at least one missing directory.
 
 @item @option{-q} (Quiet output)
 
