@@ -4,31 +4,11 @@ Known problems in GPRBUILD version 1.4.0
 
 Copyright (c) 2009,2010 AdaCore
 
-The following is a listing of known problems in release 1.4.0. Except where
-specifically noted, all these problems have been corrected in the development
-tree of the 1.5 technology. This means they are corrected in any 1.4.0w
-wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
-the status line. This can be used to determine if a given wavefront has the fix
+The following is a listing of known problems in release 1.4.0. All these
+problems have been corrected in the release 1.4.1 and in any wavefront
+issued subsequent to the date specified (in ISO format YYYY-MM-DD) in the
+status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
-
-KP-140-J301-025 Builder switch -p passed to the compiler
-
-  Problem:    When gprbuild find the switch -p in package Builder of the
-              main project, it invoke the compiler with this switch.
-
-  Status:     This was fixed in 1.5.0 on 2010-03-02
-
-  Workaround: Remove switch -p from package Builder.
-
-KP-140-J107-023 Extending project and --no-indirect-imports
-
-  Problem:    gprbuild fails to compile a source in a project being extended
-              that imports from the extending project when invoked with
-              --no-indirect-imports.
-
-  Status:     This was fixed in 1.5.0 on 2010-01-07
-
-  Workaround: Invoke gprbuild without --no-indirect-imports.
 
 KP-140-IC10-043 No switches file created when -s in Builder switches
 
@@ -69,16 +49,6 @@ KP-140-IC02-002 Library not rebuilt when source is recompiled
   Workaround: Invoke gprbuild twice: the library will be rebuilt for the second
               invocation.
 
-KP-140-IB16-009 Language configuration redefined in extending project
-
-  Problem:    When the compiler of a language is defined as non existent and
-              an existing driver is declared in an extending project, the
-              the sources of the original project are not compiled.
-
-  Status:     This was fixed in 1.5.0 on 2009-11-25
-
-  Workaround: Avoid declaring non existent compiler if the project is extended.
-
 KP-140-IA29-033 Library built with different symbolic links
 
   Problem:    When a library has been built in a setup where there are
@@ -99,15 +69,3 @@ KP-140-IA27-015 Static library built in chunks contains duplicate object files
   Status:     This was fixed in 1.5.0 on 2009-10-27
 
   Workaround: Delete the archive before rebuilding it.
-
-KP-140-I925-022 No language detected when extending a project with no languages
-
-  Problem:    A project that extends another project with no languages may
-              not have a default language, as no languages were found during
-              auto configuration.
-
-  Status:     This was fixed in 1.5.0 on 2009-10-23
-
-  Workaround: Declare the Ada language in the extending project.
-
-
