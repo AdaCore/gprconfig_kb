@@ -11,7 +11,18 @@ issued subsequent to the date specified (in ISO format YYYY-MM-DD) in the
 status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
-KP-140-J301-025 Builder switch -p passed to the compiler
+KP-141-J305-007 gprbuild fails to scan properly ALI files
+
+  Problem:    When gprbuild is used with an Ada compiler with sources more
+              recent than those of gprbuild, it may happen that the compiler
+              put lines in the ALI files that are not known by gprbuild, and
+              then gprbuild fails to scan properly ALI files.
+
+  Status:     This was fixed in 1.5.0 on 2010-03-07
+
+  Workaround: Use a new version of gprbuild
+
+KP-141-J301-025 Builder switch -p passed to the compiler
 
   Problem:    When gprbuild find the switch -p in package Builder of the
               main project, it invoke the compiler with this switch.
@@ -20,7 +31,7 @@ KP-140-J301-025 Builder switch -p passed to the compiler
 
   Workaround: Remove switch -p from package Builder.
 
-KP-140-J107-023 Extending project and --no-indirect-imports
+KP-141-J107-023 Extending project and --no-indirect-imports
 
   Problem:    gprbuild fails to compile a source in a project being extended
               that imports from the extending project when invoked with
@@ -30,7 +41,7 @@ KP-140-J107-023 Extending project and --no-indirect-imports
 
   Workaround: Invoke gprbuild without --no-indirect-imports.
 
-KP-140-IB16-009 Language configuration redefined in extending project
+KP-141-IB16-009 Language configuration redefined in extending project
 
   Problem:    When the compiler of a language is defined as non existent and
               an existing driver is declared in an extending project, the
@@ -40,7 +51,7 @@ KP-140-IB16-009 Language configuration redefined in extending project
 
   Workaround: Avoid declaring non existent compiler if the project is extended.
 
-KP-140-I925-022 No language detected when extending a project with no languages
+KP-141-I925-022 No language detected when extending a project with no languages
 
   Problem:    A project that extends another project with no languages may
               not have a default language, as no languages were found during
