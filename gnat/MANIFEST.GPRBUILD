@@ -89,8 +89,6 @@ prj.ads
 rident.ads
 scans.adb
 scans.ads
-scil_ll.ads
-scil_ll.adb
 scng.adb
 scng.ads
 sdefault.ads
