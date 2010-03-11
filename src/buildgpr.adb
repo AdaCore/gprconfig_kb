@@ -6789,8 +6789,8 @@ package body Buildgpr is
          List             : String_List_Id;
          Element          : String_Element;
 
-         Name             : Name_Id := No_Name;
-         Lang             : Name_Id := No_Name;
+         Name             : Name_Id;
+         Lang             : Name_Id;
          Source           : Source_Id;
 
          Success          : Boolean := False;
@@ -6799,6 +6799,8 @@ package body Buildgpr is
          if Builder_Package /= No_Package then
             Mains.Reset;
 
+            Name := No_Name;
+            Lang := No_Name;
             for Index in 1 .. Mains.Number_Of_Mains loop
                Source := Source_Of (Base_Name (Mains.Next_Main));
                if Source /= No_Source then
@@ -6929,47 +6931,47 @@ package body Buildgpr is
                      Builder_Switches_Lang := Lang;
                   end if;
                end if;
+            end if;
 
-               --  If switches have been found, scan them
+            --  If switches have been found, scan them
 
-               if Switches /= Nil_Variable_Value and then
-                 (not Switches.Default)
-               then
-                  List := Switches.Values;
+            if Switches /= Nil_Variable_Value and then
+              (not Switches.Default)
+            then
+               List := Switches.Values;
 
-                  while List /= Nil_String loop
-                     Element := Project_Tree.String_Elements.Table (List);
-                     Get_Name_String (Element.Value);
+               while List /= Nil_String loop
+                  Element := Project_Tree.String_Elements.Table (List);
+                  Get_Name_String (Element.Value);
 
-                     if Name_Len /= 0 then
-                        Scan_Arg
-                          (Name_Buffer (1 .. Name_Len),
-                           Command_Line => False,
-                           Language     => Lang,
-                           Success      => Success);
+                  if Name_Len /= 0 then
+                     Scan_Arg
+                       (Name_Buffer (1 .. Name_Len),
+                        Command_Line => False,
+                        Language     => Lang,
+                        Success      => Success);
 
-                        if not Success then
-                           for J in reverse 1 .. Name_Len loop
-                              Name_Buffer (J + J) := Name_Buffer (J);
-                              Name_Buffer (J + J - 1) := ''';
-                           end loop;
+                     if not Success then
+                        for J in reverse 1 .. Name_Len loop
+                           Name_Buffer (J + J) := Name_Buffer (J);
+                           Name_Buffer (J + J - 1) := ''';
+                        end loop;
 
-                           Name_Len := Name_Len + Name_Len;
+                        Name_Len := Name_Len + Name_Len;
 
-                           Error_Msg
-                             ('"' & Name_Buffer (1 .. Name_Len) &
-                              """ is not a gprbuild switch. Consider moving " &
-                              "it to Global_Compilation_Switches.",
-                              Element.Location);
-                           Fail_Program
-                             ("*** illegal switch """ &
-                              Get_Name_String (Element.Value) & '"');
-                        end if;
+                        Error_Msg
+                          ('"' & Name_Buffer (1 .. Name_Len) &
+                           """ is not a gprbuild switch. Consider moving " &
+                           "it to Global_Compilation_Switches.",
+                           Element.Location);
+                        Fail_Program
+                          ("*** illegal switch """ &
+                           Get_Name_String (Element.Value) & '"');
                      end if;
+                  end if;
 
-                     List := Element.Next;
-                  end loop;
-               end if;
+                  List := Element.Next;
+               end loop;
             end if;
 
             --  Reset the Builder Switches language
