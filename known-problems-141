@@ -11,6 +11,16 @@ issued subsequent to the date specified (in ISO format YYYY-MM-DD) in the
 status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-141-J310-029 Builder'Switches (others) not taken into account
+
+  Problem:    When there are no mains (for example in a library project) or
+              several mains with different languages, the switches specified in
+              Builder'Switches (others) are not taken into account.
+
+  Status:     This was fixed in 1.5.0 on 2010-03-11
+
+  Workaround: Specify the switches on the command line.
+
 KP-141-J305-007 gprbuild fails to scan properly ALI files
 
   Problem:    When gprbuild is used with an Ada compiler with sources more
@@ -20,7 +30,7 @@ KP-141-J305-007 gprbuild fails to scan properly ALI files
 
   Status:     This was fixed in 1.5.0 on 2010-03-07
 
-  Workaround: Use a new version of gprbuild
+  Workaround: Use a new version of gprbuild.
 
 KP-141-J301-025 Builder switch -p passed to the compiler
 
