@@ -21,6 +21,15 @@ KP-141-J310-029 Builder'Switches (others) not taken into account
 
   Workaround: Specify the switches on the command line.
 
+KP-141-J309-023 Crash with pragma Restrictions (No_Dependence => ...)
+
+  Problem     gprbuild may crash when an ALI file contains R lines to record
+              pragmas Restrictions (No_Dependence => ...).
+
+  Status:     This was fixed in 1.5.0 on 2010-03-11
+
+  Workaround: Remove the pragmas Restrictions (No_Dependence => ...).
+
 KP-141-J305-007 gprbuild fails to scan properly ALI files
 
   Problem:    When gprbuild is used with an Ada compiler with sources more
