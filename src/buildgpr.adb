@@ -8445,7 +8445,10 @@ package body Buildgpr is
       Externally_Built : constant Boolean := In_Project.Externally_Built;
       --  True if the project of the source is externally built
 
-      function Process_Makefile_Deps (Dep_Name : String) return Boolean;
+      function Process_Makefile_Deps
+        (Dep_Name : String;
+         Obj_Dir  : String)
+         return Boolean;
       function Process_ALI_Deps return Boolean;
       --  Process the dependencies for the current source file for the various
       --  dependency modes.
@@ -8455,7 +8458,11 @@ package body Buildgpr is
       -- Process_Makefile_Deps --
       ---------------------------
 
-      function Process_Makefile_Deps (Dep_Name : String) return Boolean is
+      function Process_Makefile_Deps
+        (Dep_Name : String;
+         Obj_Dir  : String)
+         return Boolean
+      is
       begin
          Open (Dep_File, Dep_Name);
 
@@ -8670,6 +8677,7 @@ package body Buildgpr is
                            Src_Name : constant String :=
                              Normalize_Pathname
                                (Name           => Line (Start .. Finish),
+                                Directory      => Obj_Dir,
                                 Resolve_Links  => False,
                                 Case_Sensitive => False);
                            Src_TS   : Time_Stamp_Type;
@@ -9212,7 +9220,10 @@ package body Buildgpr is
             null;
 
          when Makefile =>
-            if Process_Makefile_Deps (Get_Name_String (Source.Dep_Path)) then
+            if Process_Makefile_Deps
+                 (Get_Name_String (Source.Dep_Path),
+                  Get_Name_String (Source.Project.Object_Directory.Name))
+            then
                Must_Compile := True;
                return;
             end if;
