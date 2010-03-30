@@ -11,6 +11,18 @@ issued subsequent to the date specified (in ISO format YYYY-MM-DD) in the
 status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-141-J325-035 Fake object files for header files in libraries
+
+  Problem:    When in a library project a header file has the same base name
+              as an Ada source in the main project and the library project has
+              the same object directory as the main project, linking
+              executables may fail, as the object files corresponding to the
+              Ada source is not specified to the linker.
+
+  Status:     This was fixed in 1.5.0 on 2010-03-30
+
+  Workaround: Specify a different object directory for the library project.
+
 KP-141-J316-017 Recompilation with switches -I in package Compiler
 
   Problem:    When switches -I are specified in package Compiler for languages
