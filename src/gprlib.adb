@@ -395,7 +395,7 @@ procedure Gprlib is
 
    Resp_File_Format : Prj.Response_File_Format := Prj.None;
 
-   Response_File_Switches : String_List_Access := null;
+   Response_File_Switches : String_List_Access := new String_List (1 .. 0);
 
    Delete_Response_File : Boolean := True;
 

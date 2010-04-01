@@ -271,16 +271,24 @@ procedure Build_Shared_Lib is
               (Format          => Resp_File_Format,
                Objects         => Arguments (First_Object .. Last_Object),
                Other_Arguments => Options,
+               Resp_File_Options => Response_File_Switches.all,
                Name_1          => Response_File_Name,
                Name_2          => Response_2);
 
             Last_Arg := First_Object - 1;
 
-            if Resp_File_Format = GCC then
+            if Resp_File_Format = GCC
+                 or else
+               Resp_File_Format = GCC_GNU
+                 or else
+               Resp_File_Format = GCC_Object_List
+                 or else
+               Resp_File_Format = GCC_Option_List
+            then
                Add_Arg
                  (new String'("@" & Get_Name_String (Response_File_Name)));
             else
-               if Response_File_Switches /= null then
+               if Response_File_Switches'Length /= 0 then
                   for J in Response_File_Switches'First ..
                     Response_File_Switches'Last - 1
                   loop

@@ -137,11 +137,12 @@ package Gpr_Util is
    --  Main_Base_Name must have no extension specified
 
    procedure Create_Response_File
-     (Format          : Response_File_Format;
-      Objects         : String_List;
-      Other_Arguments : String_List;
-      Name_1          : out Path_Name_Type;
-      Name_2          : out Path_Name_Type);
+     (Format            : Response_File_Format;
+      Objects           : String_List;
+      Other_Arguments   : String_List;
+      Resp_File_Options : String_List;
+      Name_1            : out Path_Name_Type;
+      Name_2            : out Path_Name_Type);
    --  Create a temporary file as a response file that contains either the list
    --  of Objects in the correct Format, or for Format GCC the list of all
    --  arguments. It is the responsibility of the caller to delete this

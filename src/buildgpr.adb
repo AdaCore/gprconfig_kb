@@ -7429,9 +7429,6 @@ package body Buildgpr is
             First_Object_Index : Natural := 0;
             Last_Object_Index  : Natural := 0;
 
-            List           : Name_List_Index;
-            Nam_Nod        : Name_Node;
-
             Index_Separator : Character;
 
             Response_File_Name : Path_Name_Type := No_Path;
@@ -8062,7 +8059,8 @@ package body Buildgpr is
                --  link may fail because the wrong objects or libraries are
                --  linked in.
 
-               Min_Linker_Opts := Main_Proj.Config.Minimum_Linker_Options;
+               Min_Linker_Opts :=
+                 Main_Proj.Config.Trailing_Linker_Required_Switches;
                while Min_Linker_Opts /= No_Name_List loop
                   Add_Argument
                     (Get_Name_String
@@ -8286,81 +8284,107 @@ package body Buildgpr is
                         if Last_Object_Index - First_Object_Index + 1 >
                           Min_Number_Of_Objects
                         then
-                           Create_Response_File
-                             (Format  => Main_Proj.Config.Resp_File_Format,
-                              Objects => Arguments
-                                (First_Object_Index .. Last_Object_Index),
-                              Other_Arguments =>
-                                Arguments (Last_Object_Index + 1 ..
-                                           Last_Argument),
-                              Name_1  => Response_File_Name,
-                              Name_2  => Response_2);
+                           declare
+                              Resp_File_Options : String_List_Access :=
+                                new String_List (1 .. 0);
+                              List             : Name_List_Index :=
+                                Main_Proj.Config.Resp_File_Options;
+                              Nam_Nod          : Name_Node;
 
-                           if Main_Proj.Config.Resp_File_Format = GCC then
-                              Arguments (First_Object_Index) :=
-                                new String'("@" &
-                                            Get_Name_String
-                                              (Response_File_Name));
-                              Last_Argument := First_Object_Index;
+                           begin
+                              while List /= No_Name_List loop
+                                 Nam_Nod :=
+                                   Project_Tree.Name_Lists.Table (List);
+                                 Resp_File_Options :=
+                                   new String_List'
+                                     (Resp_File_Options.all &
+                                      new String'
+                                        (Get_Name_String (Nam_Nod.Name)));
+                                 List := Nam_Nod.Next;
+                              end loop;
 
-                           else
-                              --  Replace the first object file arguments with
-                              --  the argument(s) specifying the response file.
-                              --  No need to update Arguments_Displayed, as the
-                              --  values are already correct (= Verbose_Mode).
+                              Create_Response_File
+                                (Format            =>
+                                   Main_Proj.Config.Resp_File_Format,
+                                 Objects           => Arguments
+                                   (First_Object_Index .. Last_Object_Index),
+                                 Other_Arguments   =>
+                                   Arguments (Last_Object_Index + 1 ..
+                                       Last_Argument),
+                                 Resp_File_Options => Resp_File_Options.all,
+                                 Name_1            => Response_File_Name,
+                                 Name_2            => Response_2);
 
-                              List := Main_Proj.Config.Resp_File_Options;
-
-                              if List = No_Name_List then
+                              if Main_Proj.Config.Resp_File_Format = GCC
+                                or else
+                                  Main_Proj.Config.Resp_File_Format = GCC_GNU
+                              then
                                  Arguments (First_Object_Index) :=
-                                   new String'(Get_Name_String
-                                               (Response_File_Name));
-                                 First_Object_Index := First_Object_Index + 1;
-
-                              else
-                                 loop
-                                    Nam_Nod :=
-                                      Project_Tree.Name_Lists.Table (List);
-                                    exit when Nam_Nod.Next = No_Name_List;
-                                    Arguments (First_Object_Index) :=
-                                      new String'(Get_Name_String
-                                                  (Nam_Nod.Name));
-                                    First_Object_Index :=
-                                      First_Object_Index + 1;
-                                    List := Nam_Nod.Next;
-                                 end loop;
-
-                                 Arguments (First_Object_Index) :=
-                                   new String'(Get_Name_String
-                                               (Nam_Nod.Name) &
+                                   new String'("@" &
                                                Get_Name_String
                                                  (Response_File_Name));
-                                 First_Object_Index := First_Object_Index + 1;
+                                 Last_Argument := First_Object_Index;
+
+                              else
+                                 --  Replace the first object file arguments
+                                 --  with the argument(s) specifying the
+                                 --  response file. No need to update
+                                 --  Arguments_Displayed, as the values are
+                                 --  already correct (= Verbose_Mode).
+
+                                 if Resp_File_Options'Length = 0 then
+                                    Arguments (First_Object_Index) :=
+                                      new String'(Get_Name_String
+                                                  (Response_File_Name));
+                                    First_Object_Index :=
+                                      First_Object_Index + 1;
+
+                                 else
+                                    for J in Resp_File_Options'First ..
+                                      Resp_File_Options'Last - 1
+                                    loop
+                                       Arguments (First_Object_Index) :=
+                                         Resp_File_Options (J);
+                                       First_Object_Index :=
+                                         First_Object_Index + 1;
+                                    end loop;
+
+                                    Arguments (First_Object_Index) :=
+                                      new String'(Resp_File_Options
+                                                  (Resp_File_Options'Last).all
+                                                  &
+                                                  Get_Name_String
+                                                    (Response_File_Name));
+                                    First_Object_Index :=
+                                      First_Object_Index + 1;
+                                 end if;
+
+                                 --  And put the arguments following the object
+                                 --  files immediately after the response file
+                                 --  argument(s). Update Arguments_Displayed
+                                 --  too.
+
+                                 Arguments (First_Object_Index ..
+                                              Last_Argument -
+                                                Last_Object_Index +
+                                                  First_Object_Index -
+                                                    1) :=
+                                           Arguments (Last_Object_Index + 1 ..
+                                                                Last_Argument);
+                                 Arguments_Displayed
+                                   (First_Object_Index ..
+                                      Last_Argument -
+                                        Last_Object_Index +
+                                          First_Object_Index -
+                                            1) :=
+                                           Arguments_Displayed
+                                             (Last_Object_Index + 1 ..
+                                                          Last_Argument);
+                                 Last_Argument :=
+                                   Last_Argument - Last_Object_Index +
+                                     First_Object_Index - 1;
                               end if;
-
-                              --  And put the arguments following the object
-                              --  files immediately after the response file
-                              --  argument(s). Update Arguments_Displayed too.
-
-                              Arguments (First_Object_Index ..
-                                           Last_Argument -
-                                             Last_Object_Index +
-                                               First_Object_Index -
-                                                 1) :=
-                                        Arguments (Last_Object_Index + 1 ..
-                                                             Last_Argument);
-                              Arguments_Displayed (First_Object_Index ..
-                                                     Last_Argument -
-                                                       Last_Object_Index +
-                                                         First_Object_Index -
-                                                           1) :=
-                                        Arguments_Displayed
-                                          (Last_Object_Index + 1 ..
-                                          Last_Argument);
-                              Last_Argument :=
-                                Last_Argument - Last_Object_Index +
-                                  First_Object_Index - 1;
-                           end if;
+                           end;
                         end if;
                      end if;
                   end;

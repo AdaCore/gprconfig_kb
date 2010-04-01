@@ -478,9 +478,74 @@
    end Linker;
     </config>
   </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^.*mingw.*$" />
+      <target name="^.*linux.*$" />
+      <target name="^.*freebsd.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+    </compilers>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers negate="true">
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+    </compilers>
+    <config>
+   package Linker is
+      for Response_File_Format use "GCC_GNU";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^.*aix.*$" />
+      <target name="^.*hpux.*$" />
+      <target name="^.*irix.*$" />
+      <target name="^.*osf.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+    </compilers>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers negate="true">
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+    </compilers>
+    <config>
+   package Linker is
+      for Response_File_Format use "GCC_Object_List";
+   end Linker;
+    </config>
+  </configuration>
+
   <configuration>
     <targets negate="true">
-       <target name="aamp" />
+      <target name="aamp" />
+      <target name="^.*mingw.*$" />
+      <target name="^.*linux.*$" />
+      <target name="^.*freebsd.*$" />
+      <target name="^.*aix.*$" />
+      <target name="^.*hpux.*$" />
+      <target name="^.*irix.*$" />
+      <target name="^.*osf.*$" />
     </targets>
     <compilers negate="true">
        <compiler language="C++" />

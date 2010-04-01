@@ -74,11 +74,12 @@ package body Gpr_Util is
    --------------------------
 
    procedure Create_Response_File
-     (Format          : Response_File_Format;
-      Objects         : String_List;
-      Other_Arguments : String_List;
-      Name_1          : out Path_Name_Type;
-      Name_2          : out Path_Name_Type)
+     (Format            : Response_File_Format;
+      Objects           : String_List;
+      Other_Arguments   : String_List;
+      Resp_File_Options : String_List;
+      Name_1            : out Path_Name_Type;
+      Name_2            : out Path_Name_Type)
    is
       Resp_File : File_Descriptor;
       Status    : Integer;
@@ -122,12 +123,12 @@ package body Gpr_Util is
       Name_2 := No_Path;
       Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
 
-      if Format = GNU or else Format = GCC then
+      if Format = GNU or else Format = GCC_GNU then
          Status := Write (Resp_File, GNU_Header'Address, GNU_Header'Length);
       end if;
 
       for J in Objects'Range loop
-         if Format = GNU or else Format = GCC then
+         if Format = GNU or else Format = GCC_GNU then
             Status :=
               Write (Resp_File, GNU_Opening'Address, GNU_Opening'Length);
          end if;
@@ -135,7 +136,7 @@ package body Gpr_Util is
          Status :=
            Write (Resp_File, Objects (J).all'Address, Objects (J)'Length);
 
-         if Format = GNU or else Format = GCC then
+         if Format = GNU or else Format = GCC_GNU then
             Status :=
               Write (Resp_File, GNU_Closing'Address, GNU_Closing'Length);
 
@@ -145,29 +146,47 @@ package body Gpr_Util is
          end if;
       end loop;
 
-      if Format = GNU or else Format = GCC then
+      if Format = GNU or else Format = GCC_GNU then
          Status :=
            Write (Resp_File, GNU_Footer'Address, GNU_Footer'Length);
       end if;
 
-      Close (Resp_File, Closing_Status);
+      case Format is
+         when GCC_GNU | GCC_Object_List | GCC_Option_List =>
+            Close (Resp_File, Closing_Status);
+            Name_2 := Name_1;
+            Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
 
-      if Format = GCC then
-         Name_2 := Name_1;
-         Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
+            declare
+               Arg      : constant String :=
+                 Modified_Argument (Get_Name_String (Name_2));
 
-         declare
-            Arg : constant String :=
-              Modified_Argument (Get_Name_String (Name_2));
+            begin
+               for J in Resp_File_Options'Range loop
+                  Status :=
+                    Write
+                      (Resp_File,
+                       Resp_File_Options (J) (1)'Address,
+                       Resp_File_Options (J)'Length);
 
-         begin
-            Status :=
-              Write (Resp_File, Arg (1)'Address, Arg'Length);
-         end;
+                  if J < Resp_File_Options'Last then
+                     Status := Write (Resp_File, ASCII.LF'Address, 1);
+                  end if;
+               end loop;
 
-         Status :=
-           Write (Resp_File, ASCII.LF'Address, 1);
+               Status := Write (Resp_File, Arg (1)'Address, Arg'Length);
+            end;
 
+            Status := Write (Resp_File, ASCII.LF'Address, 1);
+
+         when GCC =>
+            null;
+
+         when others =>
+            Close (Resp_File, Closing_Status);
+      end case;
+
+      if Format = GCC or else Format = GCC_GNU then
          for J in Other_Arguments'Range loop
             declare
                Arg : constant String :=
