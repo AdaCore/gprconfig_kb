@@ -8316,8 +8316,14 @@ package body Buildgpr is
                                  Name_2            => Response_2);
 
                               if Main_Proj.Config.Resp_File_Format = GCC
-                                or else
-                                  Main_Proj.Config.Resp_File_Format = GCC_GNU
+                                   or else
+                                 Main_Proj.Config.Resp_File_Format = GCC_GNU
+                                   or else
+                                 Main_Proj.Config.Resp_File_Format =
+                                                             GCC_Object_List
+                                   or else
+                                 Main_Proj.Config.Resp_File_Format =
+                                                             GCC_Option_List
                               then
                                  Arguments (First_Object_Index) :=
                                    new String'("@" &
