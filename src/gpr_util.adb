@@ -186,7 +186,11 @@ package body Gpr_Util is
             Close (Resp_File, Closing_Status);
       end case;
 
-      if Format = GCC or else Format = GCC_GNU then
+      if        Format = GCC
+        or else Format = GCC_GNU
+        or else Format = GCC_Object_List
+        or else Format = GCC_Option_List
+      then
          for J in Other_Arguments'Range loop
             declare
                Arg : constant String :=
