@@ -2340,6 +2340,7 @@ package body Buildgpr is
       Toolchain_Version_Label_Written : Boolean;
       Lang_Index : Language_Ptr;
 
+      Leading_Library_Options : Variable_Value := Nil_Variable_Value;
       Library_Options : Variable_Value := Nil_Variable_Value;
 
       Library_Needs_To_Be_Built : Boolean := False;
@@ -3125,6 +3126,43 @@ package body Buildgpr is
                     (Exchange_File,
                      Library_Label (Gprexch.Separate_Run_Path_Options));
                end if;
+            end if;
+
+            --  If attribute Leading_Library_Options was specified, add these
+            --  additional options.
+
+            Leading_Library_Options :=
+              Value_Of
+                (Name_Leading_Library_Options,
+                 For_Project.Decl.Attributes, Project_Tree);
+
+            if not Leading_Library_Options.Default then
+               declare
+                  Current      : String_List_Id :=
+                                   Leading_Library_Options.Values;
+                  Element      : String_Element;
+                  Output_Label : Boolean := True;
+
+               begin
+                  while Current /= Nil_String loop
+                     Element :=
+                       Project_Tree.String_Elements.Table (Current);
+                     Get_Name_String (Element.Value);
+
+                     if Name_Len /= 0 then
+                        if Output_Label then
+                           Put_Line
+                             (Exchange_File,
+                              Library_Label (Gprexch.Leading_Library_Options));
+                           Output_Label := False;
+                        end if;
+
+                        Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
+                     end if;
+
+                     Current := Element.Next;
+                  end loop;
+               end;
             end if;
 
             --  If attribute Library_Options was specified, add these
@@ -7559,6 +7597,89 @@ package body Buildgpr is
             else
                Add_Argument (Get_Name_String (Main_Source.Object_Path), True);
             end if;
+
+            --  Add the Leading_Switches if there are any in package Linker
+
+            declare
+               The_Packages : constant Package_Id :=
+                 Main_Proj.Decl.Packages;
+
+               Linker_Package : constant Prj.Package_Id :=
+                 Prj.Util.Value_Of
+                   (Name        => Name_Linker,
+                    In_Packages => The_Packages,
+                    In_Tree     => Project_Tree);
+
+               Switches     : Variable_Value;
+               Switch_List  : String_List_Id;
+               Element      : String_Element;
+
+            begin
+               if Linker_Package /= No_Package then
+                  declare
+                     Switches_Array : constant Array_Element_Id :=
+                       Prj.Util.Value_Of
+                         (Name      => Name_Leading_Switches,
+                          In_Arrays =>
+                            Project_Tree.Packages.Table
+                              (Linker_Package).Decl.Arrays,
+                          In_Tree   => Project_Tree);
+                     Option   : String_Access;
+
+                  begin
+                     Switches :=
+                       Prj.Util.Value_Of
+                         (Index     => Name_Id (Main_Id),
+                          Src_Index => 0,
+                          In_Array  => Switches_Array,
+                          In_Tree   => Project_Tree);
+
+                     if Switches = Nil_Variable_Value then
+                        Switches :=
+                          Prj.Util.Value_Of
+                            (Index                  =>
+                                 Main_Source.Language.Name,
+                             Src_Index              => 0,
+                             In_Array               => Switches_Array,
+                             In_Tree                => Project_Tree,
+                             Force_Lower_Case_Index => True);
+                     end if;
+
+                     if Switches = Nil_Variable_Value then
+                        Switches :=
+                          Prj.Util.Value_Of
+                            (Index                  => All_Other_Names,
+                             Src_Index              => 0,
+                             In_Array               => Switches_Array,
+                             In_Tree                => Project_Tree,
+                             Force_Lower_Case_Index => True);
+                     end if;
+
+                     case Switches.Kind is
+                        when Undefined | Single =>
+                           null;
+
+                        when Prj.List =>
+                           Switch_List := Switches.Values;
+
+                           while Switch_List /= Nil_String loop
+                              Element :=
+                                Project_Tree.String_Elements.Table
+                                  (Switch_List);
+                              Get_Name_String (Element.Value);
+
+                              if Name_Len > 0 then
+                                 Option :=
+                                   new String'(Name_Buffer (1 .. Name_Len));
+                                 Add_Argument (Option.all, True);
+                              end if;
+
+                              Switch_List := Element.Next;
+                           end loop;
+                     end case;
+                  end;
+               end if;
+            end;
 
             if (not There_Are_Binder_Drivers)
               or else Binding_Languages.Last = 0

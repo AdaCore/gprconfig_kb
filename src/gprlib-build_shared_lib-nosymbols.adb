@@ -96,6 +96,12 @@ procedure Build_Shared_Lib is
          Add_Arg (Shared_Lib_Minimum_Options.Table (J));
       end loop;
 
+      --  The leading library options, if any
+
+      for J in 1 .. Leading_Library_Options_Table.Last loop
+         Add_Arg (Leading_Library_Options_Table.Table (J));
+      end loop;
+
       --  -o <library file name>
 
       Add_Arg (Out_Opt);

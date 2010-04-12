@@ -200,6 +200,15 @@ procedure Gprlib is
       Table_Name           => "Gprlib.Binding_Options_Table");
    --  A table to store the binding options
 
+   package Leading_Library_Options_Table is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Leading_Library_Options_Table");
+   --  A table to store the leading library options from the exchange file
+
    package Library_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -973,6 +982,10 @@ begin
 
             when Gprexch.Library_Version =>
                Library_Version := new String'(Line (1 .. Last));
+
+            when Gprexch.Leading_Library_Options =>
+               Leading_Library_Options_Table.Append
+                                               (new String'(Line (1 .. Last)));
 
             when Gprexch.Library_Options =>
                Library_Options_Table.Append (new String'(Line (1 .. Last)));

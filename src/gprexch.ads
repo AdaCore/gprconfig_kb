@@ -106,6 +106,7 @@ package Gprexch is
       Interface_Dep_Files,
       Dependency_Files,
       Binding_Options,
+      Leading_Library_Options,
       Copy_Source_Dir,
       Sources,
       Generated_Object_Files,
