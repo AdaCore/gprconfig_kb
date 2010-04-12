@@ -27,6 +27,10 @@ gnatvsn.adb
 gnatvsn.ads
 gnat_style.css
 hostparm.ads
+lib.ads
+lib.adb
+lib-list.adb
+lib-sort.adb
 link.c
 makeutl.adb
 makeutl.ads
@@ -126,6 +130,8 @@ types.ads
 ug_words
 uintp.adb
 uintp.ads
+uname.ads
+uname.adb
 urealp.adb
 urealp.ads
 widechar.adb
