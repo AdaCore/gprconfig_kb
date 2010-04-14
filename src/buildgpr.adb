@@ -138,9 +138,9 @@ package body Buildgpr is
    --  the object file and its time stamp are checked to decide if a file needs
    --  to be compiled.
 
-   Direct_Import_Only_Switch : constant String  := "--direct-import-only";
-   Indirect_Imports_Switch : constant String    := "--indirect-imports";
-   No_Indirect_Imports_Switch : constant String := "--no-indirect-imports";
+   Direct_Import_Only_Switch :  constant String  := "--direct-import-only";
+   Indirect_Imports_Switch :    constant String  := "--indirect-imports";
+   No_Indirect_Imports_Switch : constant String  := "--no-indirect-imports";
    Indirect_Imports : Boolean := True;
    --  False when switch --no-indirect-imports is used. Sources are only
    --  allowed to import from the projects that are directly withed.
@@ -670,43 +670,38 @@ package body Buildgpr is
 
       --  The queue of sources to be checked for compilation
 
-      procedure Init;
+      procedure Initialize (Queue_Per_Obj_Dir : Boolean);
       --  Initialize the queue
-
-      procedure Insert
-        (Source_File_Name : File_Name_Type;
-         Source_Identity  : Source_Id);
-      --  Insert a new source in the the queue
-
-      procedure Insert_Withed_Sources_For
-                 (The_ALI               : ALI.ALI_Id;
-                  Excluding_Shared_SALs : Boolean := False);
-      --  Insert in the queue those sources withed by The_ALI, if there are not
-      --  already in the queue and Only_Interfaces is False or they are part
-      --  of the interfaces of their project.
 
       function Is_Empty return Boolean;
       --  Returns True if the queue is empty
 
+      function Is_Virtually_Empty return Boolean;
+      --  Returns True if the queue is empty or if all object directories are
+      --  busy.
+
+      procedure Insert
+        (Source_File_Name : File_Name_Type;
+         Source_Identity  : Source_Id);
+      --  Insert source in the queue
+
       procedure Extract
         (Source_File_Name : out File_Name_Type;
          Source_Identity  : out Source_Id);
-      --  Get the first source from the queue
-
-      procedure Insert_Project_Sources
-        (The_Project  : Project_Id;
-         All_Projects : Boolean;
-         Unit_Based   : Boolean);
-      --  Insert the sources from The_Project and, if All_Projects is True,
-      --  from all the projects it imports directly or indirectly.
+      --  Get the first source that can be compiled from the queue. If no
+      --  source may be compiled, return No_File/No_Source.
 
       function Size return Natural;
       --  Return the total size of the queue, including the sources already
       --  extracted.
 
-      function First return Natural;
-      --  Return the rank in the queue of the first source not already
-      --  extracted.
+      function Processed return Natural;
+      --  Return the number of source in the queue that have aready been
+      --  processed.
+
+      procedure Set_Obj_Dir_Busy (Obj_Dir : Path_Name_Type);
+
+      procedure Set_Obj_Dir_Free (Obj_Dir : Path_Name_Type);
 
    end Queue;
 
@@ -778,7 +773,7 @@ package body Buildgpr is
       Mapping_File : Path_Name_Type;
       Purpose      : Process_Purpose;
       Options      : String_List_Access);
-   --  Record a compiling process
+   --  Add compilation process and indicate that the object directory is busy
 
    procedure Add_Rpath (Path : String);
    --  Add a path name to Rpath
@@ -793,7 +788,8 @@ package body Buildgpr is
    procedure Await_Compile
      (Source        : out Source_Id;
       OK            : out Boolean);
-   --  Wait for a compiling process to finish.
+   --  Wait for the end of a compilation and indicate that the object directory
+   --  is free.
 
    procedure Build_Global_Archive
      (For_Project    : Project_Id;
@@ -892,6 +888,20 @@ package body Buildgpr is
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
    --  arguments.
+
+   procedure Insert_Project_Sources
+     (The_Project  : Project_Id;
+      All_Projects : Boolean;
+      Unit_Based   : Boolean);
+   --  Insert the sources from The_Project and, if All_Projects is True, from
+   --  all the projects it imports directly or indirectly.
+
+   procedure Insert_Withed_Sources_For
+     (The_ALI               : ALI.ALI_Id;
+      Excluding_Shared_SALs : Boolean := False);
+   --  Insert in the queue those sources withed by The_ALI, if there are not
+   --  already in the queue and Only_Interfaces is False or they are part of
+   --  the interfaces of their project.
 
    function Is_Included_In_Global_Archive
      (Object_Name : File_Name_Type;
@@ -1428,6 +1438,8 @@ package body Buildgpr is
       Compilation_Htable.Set
         (Pid, (Pid, Source, Mapping_File, Purpose, Options));
       Outstanding_Compiles := Outstanding_Compiles + 1;
+
+      Queue.Set_Obj_Dir_Busy (Source.Project.Object_Directory.Name);
    end Add_Process;
 
    ---------------
@@ -1518,11 +1530,13 @@ package body Buildgpr is
          if Comp_Data /= No_Process_Data then
             Source := Comp_Data.Source;
 
+            Queue.Set_Obj_Dir_Free (Source.Project.Object_Directory.Name);
+
             if Comp_Data.Purpose = Compilation then
 
                if OK then
-                  --  We created a new ALI file, so reset the attributes of the
-                  --  old one.
+                  --  We created a new ALI file, so reset the attributes of
+                  --  the old one.
 
                   Source.Dep_TS    := Unknown_Attributes;
 
@@ -1530,13 +1544,13 @@ package body Buildgpr is
                     and then Source.Switches_Path /= No_Path
                     and then Check_Switches
                   then
-                     --  First, update the time stamp of the object file that
-                     --  wil be written in the switches file.
+                     --  First, update the time stamp of the object file
+                     --  that wil be written in the switches file.
 
                      Source.Object_TS := File_Stamp (Source.Object_Path);
 
-                     --  Write the switches file, now that we have the updated
-                     --  time stamp for the object file.
+                     --  Write the switches file, now that we have the
+                     --  updated time stamp for the object file.
 
                      declare
                         File : Ada.Text_IO.File_Type;
@@ -1564,14 +1578,15 @@ package body Buildgpr is
                               Get_Name_String (Source.Switches_Path) & '"');
                      end;
 
-                  --  For all languages other than Ada, update the time stamp
-                  --  of the object file as it is written in the global archive
-                  --  dependency file. For all languages, update the time stamp
-                  --  of the object file if it is in a library project.
+                     --  For all languages other than Ada, update the time
+                     --  stamp of the object file as it is written in the
+                     --  global archive dependency file. For all languages,
+                     --  update the time stamp of the object file if it is
+                     --  in a library project.
 
                   elsif Source.Language.Config.Dependency_Kind /= ALI_File
-                        or else
-                        Source.Project.Library
+                    or else
+                      Source.Project.Library
                   then
                      Source.Object_TS := File_Stamp (Source.Object_Path);
                   end if;
@@ -1597,22 +1612,25 @@ package body Buildgpr is
                  Config.Compute_Dependency /= No_Name_List
                then
                   declare
-                     List : Name_List_Index := Config.Compute_Dependency;
-                     Nam : Name_Node :=
-                              Project_Tree.Name_Lists.Table (List);
-                     Exec_Name : constant String := Get_Name_String (Nam.Name);
+                     List      : Name_List_Index :=
+                       Config.Compute_Dependency;
+                     Nam       : Name_Node :=
+                       Project_Tree.Name_Lists.Table (List);
+                     Exec_Name : constant String :=
+                       Get_Name_String (Nam.Name);
                      Exec_Path : String_Access;
                   begin
                      Comp_Data.Mapping_File := No_Path;
                      Comp_Data.Purpose := Dependency;
 
-                     --  ??? We search for it on the PATH for every file, this
-                     --  is very inefficient
+                     --  ??? We search for it on the PATH for every file,
+                     --  this is very inefficient
                      Exec_Path := Locate_Exec_On_Path (Exec_Name);
 
                      if Exec_Path = null then
                         Fail_Program
-                          ("unable to find dependency builder " & Exec_Name);
+                          ("unable to find dependency builder " &
+                           Exec_Name);
                      end if;
 
                      List := Nam.Next;
@@ -1680,6 +1698,7 @@ package body Buildgpr is
 
                      Free (Exec_Path);
                   end;
+
                else
                   Outstanding_Compiles := Outstanding_Compiles - 1;
                   return;
@@ -4531,11 +4550,10 @@ package body Buildgpr is
                            exit when Source_2 = No_Source;
 
                            if Is_Compilable (Source_2)
-                             and then Source_2.Dep_Name = Afile
+                             and then  Source_2.Dep_Name = Afile
                            then
                               case Source_2.Kind is
-                                 when Spec =>
-                                    null;
+                                 when Spec => null;
 
                                  when Impl =>
                                     if Is_Subunit (Source_2) then
@@ -5589,7 +5607,10 @@ package body Buildgpr is
            and then Outstanding_Compiles < Maximum_Processes
          then
             Queue.Extract (Source_File_Name, Source_Identity);
-            Process_Project_Phase_1 (Source_Identity);
+
+            if Source_Identity /= No_Source then
+               Process_Project_Phase_1 (Source_Identity);
+            end if;
          end if;
       end Start_Compile_If_Possible;
 
@@ -5603,7 +5624,7 @@ package body Buildgpr is
          No_Check        : Boolean;
       begin
          if Outstanding_Compiles = Maximum_Processes
-           or else (Queue.Is_Empty and then Outstanding_Compiles > 0)
+           or else (Queue.Is_Virtually_Empty and then Outstanding_Compiles > 0)
          then
             Await_Compile (Source_Identity, Compilation_OK);
 
@@ -5662,7 +5683,7 @@ package body Buildgpr is
       begin
          while Good_ALI_Present loop
             The_ALI := Get_Next_Good_ALI;
-            Queue.Insert_Withed_Sources_For (The_ALI);
+            Insert_Withed_Sources_For (The_ALI);
          end loop;
       end Fill_Queue_From_ALI_Files;
 
@@ -5683,11 +5704,11 @@ package body Buildgpr is
 
          if Display_Compilation_Progress then
             Write_Str ("completed ");
-            Write_Int (Int (Queue.First - 1));
+            Write_Int (Int (Queue.Processed));
             Write_Str (" out of ");
             Write_Int (Int (Queue.Size));
             Write_Str (" (");
-            Write_Int (Int (((Queue.First - 1) * 100) / Queue.Size));
+            Write_Int (Int (((Queue.Processed) * 100) / Queue.Size));
             Write_Str ("%)...");
             Write_Eol;
          end if;
@@ -6731,7 +6752,7 @@ package body Buildgpr is
          end loop;
       end;
 
-      Queue.Init;
+      Queue.Initialize (One_Compilation_Per_Obj_Dir);
 
       --  If -u or -U is specified on the command line, disregard any -c, -b
       --  or -l switch: only perform compilation.
@@ -6753,7 +6774,7 @@ package body Buildgpr is
             --  all the sources of all projects (-U).
 
          else
-            Queue.Insert_Project_Sources
+            Insert_Project_Sources
               (Main_Project,
                All_Projects => Unique_Compile_All_Projects or Recursive,
                Unit_Based   => True);
@@ -6785,11 +6806,11 @@ package body Buildgpr is
             --  sources and all sources in library projects.
 
             if Closure_Needed then
-               Queue.Insert_Project_Sources
+               Insert_Project_Sources
                  (Main_Project, All_Projects => True, Unit_Based => False);
 
             else
-               Queue.Insert_Project_Sources
+               Insert_Project_Sources
                  (Main_Project, All_Projects => True, Unit_Based => True);
             end if;
 
@@ -7331,6 +7352,133 @@ package body Buildgpr is
            ("no project file specified and no default project file");
       end if;
    end Initialize;
+
+   -------------------------------
+   -- Insert_Withed_Sources_For --
+   -------------------------------
+
+   procedure Insert_Withed_Sources_For
+     (The_ALI               : ALI.ALI_Id;
+      Excluding_Shared_SALs : Boolean := False)
+   is
+      Sfile     : File_Name_Type;
+      Afile     : File_Name_Type;
+      Src_Id    : Source_Id;
+      Iter      : Source_Iterator;
+
+   begin
+      --  Insert in the queue the unmarked source files (i.e. those which have
+      --  never been inserted in the queue and hence never considered).
+
+      for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+        ALI.ALIs.Table (The_ALI).Last_Unit
+      loop
+         for K in ALI.Units.Table (J).First_With ..
+           ALI.Units.Table (J).Last_With
+         loop
+            Sfile := ALI.Withs.Table (K).Sfile;
+
+            --  Skip generics
+
+            if Sfile /= No_File then
+               Afile := ALI.Withs.Table (K).Afile;
+               Iter := For_Each_Source (Project_Tree);
+
+               loop
+                  Src_Id := Prj.Element (Iter);
+                  exit when Src_Id = No_Source;
+
+                  if Is_Compilable (Src_Id)
+                    and then Src_Id.Dep_Name = Afile
+                  then
+                     case Src_Id.Kind is
+                        when Spec =>
+                           if Other_Part (Src_Id) /= No_Source then
+                              Src_Id := Other_Part (Src_Id);
+                           end if;
+
+                        when Impl =>
+                           if Is_Subunit (Src_Id) then
+                              Src_Id := No_Source;
+                           end if;
+
+                        when Sep =>
+                           Src_Id := No_Source;
+                     end case;
+
+                     exit;
+                  end if;
+
+                  Next (Iter);
+               end loop;
+
+               --  If Excluding_Shared_SALs is True, do not insert in the
+               --  queue the sources of a shared Stand-Alone Library.
+
+               if Src_Id /= No_Source and then
+                 (not Excluding_Shared_SALs or else
+                    not Src_Id.Project.Standalone_Library or else
+                      Src_Id.Project.Library_Kind = Static)
+               then
+                  Queue.Insert (Sfile, Src_Id);
+               end if;
+            end if;
+         end loop;
+      end loop;
+   end Insert_Withed_Sources_For;
+
+   ----------------------------
+   -- Insert_Project_Sources --
+   ----------------------------
+
+   procedure Insert_Project_Sources
+     (The_Project  : Project_Id;
+      All_Projects : Boolean;
+      Unit_Based   : Boolean)
+   is
+      Iter   : Source_Iterator;
+      Source : Source_Id;
+   begin
+      Iter := For_Each_Source (Project_Tree);
+      loop
+         Source := Prj.Element (Iter);
+         exit when Source = No_Source;
+
+         if Is_Compilable (Source)
+           and then
+             (All_Projects
+              or else Is_Extending (The_Project, Source.Project))
+           and then not Source.Locally_Removed
+           and then Source.Replaced_By = No_Source
+           and then
+             (not Source.Project.Externally_Built or else
+                  (Is_Extending (The_Project, Source.Project) and then
+                     not The_Project.Externally_Built))
+           and then Source.Kind /= Sep
+           and then Source.Path /= No_Path_Information
+         then
+            if Source.Kind = Impl
+              or else (Source.Unit /= No_Unit_Index
+                       and then Source.Kind = Spec
+                       and then (Other_Part (Source) = No_Source
+                                 or else
+                                   Other_Part (Source).Locally_Removed))
+            then
+               if (Unit_Based
+                   or else Source.Unit = No_Unit_Index
+                   or else Source.Project.Library)
+                 and then not Is_Subunit (Source)
+               then
+                  Queue.Insert
+                    (Source_File_Name => Source.File,
+                     Source_Identity  => Source);
+               end if;
+            end if;
+         end if;
+
+         Next (Iter);
+      end loop;
+   end Insert_Project_Sources;
 
    -----------------------------------
    -- Is_Included_In_Global_Archive --
@@ -9926,7 +10074,7 @@ package body Buildgpr is
 
                   if not Binder_Driver_Needs_To_Be_Called then
 
-                     Queue.Init;
+                     Queue.Initialize (One_Compilation_Per_Obj_Dir);
 
                      declare
                         Source_File_Name : File_Name_Type;
@@ -10164,7 +10312,7 @@ package body Buildgpr is
                                          Read_Lines    => "W");
                                     Free (Text);
 
-                                    Queue.Insert_Withed_Sources_For
+                                    Insert_Withed_Sources_For
                                       (The_ALI,
                                        Excluding_Shared_SALs => True);
                                  end if;
@@ -10852,8 +11000,9 @@ package body Buildgpr is
 
    package body Queue is
       type Q_Record is record
-         Name : File_Name_Type;
-         Id   : Source_Id;
+         Name      : File_Name_Type;
+         Id        : Source_Id;
+         Processed : Boolean;
       end record;
 
       package Q is new Table.Table
@@ -10863,9 +11012,21 @@ package body Buildgpr is
          Table_Initial        => 1000,
          Table_Increment      => 100,
          Table_Name           => "Makegpr.Queue.Q");
-      --  This is the actual Q
+      --  This is the actual Queue
 
-      Q_Front : Natural := 0;
+      package Busy_Obj_Dirs is new GNAT.HTable.Simple_HTable
+        (Header_Num => Prj.Header_Num,
+         Element    => Boolean,
+         No_Element => False,
+         Key        => Path_Name_Type,
+         Hash       => Hash,
+         Equal      => "=");
+
+      Q_Processed : Natural := 0;
+
+      Q_First     : Natural := 1;
+
+      One_Queue_Per_Obj_Dir : Boolean := False;
 
       -------------
       -- Extract --
@@ -10875,30 +11036,89 @@ package body Buildgpr is
         (Source_File_Name : out File_Name_Type;
          Source_Identity  : out Source_Id)
       is
+         Found : Boolean := False;
       begin
-         Source_File_Name := Q.Table (Q_Front).Name;
-         Source_Identity  := Q.Table (Q_Front).Id;
-         Q_Front := Q_Front + 1;
+         if One_Queue_Per_Obj_Dir then
+            for J in Q_First .. Q.Last loop
+               if not Q.Table (J).Processed and then
+                 not Busy_Obj_Dirs.Get
+                   (Q.Table (J).Id.Project.Object_Directory.Name)
+               then
+                  Found := True;
+                  Source_File_Name := Q.Table (J).Name;
+                  Source_Identity  := Q.Table (J).Id;
+                  Q.Table (J).Processed := True;
+
+                  if J = Q_First then
+                     while Q_First <= Q.Last and then
+                           Q.Table (Q_First).Processed
+                     loop
+                        Q_First := Q_First + 1;
+                     end loop;
+                  end if;
+
+                  exit;
+               end if;
+            end loop;
+
+         elsif Q_First <= Q.Last then
+            Source_File_Name := Q.Table (Q_First).Name;
+            Source_Identity  := Q.Table (Q_First).Id;
+            Q.Table (Q_First).Processed := True;
+            Q_First := Q_First + 1;
+            Found := True;
+         end if;
+
+         if Found then
+            Q_Processed := Q_Processed + 1;
+
+         else
+            Source_File_Name := No_File;
+            Source_Identity  := No_Source;
+         end if;
+
+         if Found and then Debug.Debug_Flag_Q then
+            Write_Str ("   Q := Q - [ ");
+            Write_Name (Source_File_Name);
+
+            if Source_Identity.Index /= 0 then
+               Write_Str (", ");
+               Write_Int (Source_Identity.Index);
+            end if;
+
+            Write_Str (" ]");
+            Write_Eol;
+
+            Write_Str ("   Q_First =");
+            Write_Int (Int (Q_First));
+            Write_Eol;
+
+            Write_Str ("   Q.Last =");
+            Write_Int (Int (Q.Last));
+            Write_Eol;
+         end if;
       end Extract;
 
       -----------
       -- First --
       -----------
 
-      function First return Natural is
+      function Processed return Natural is
       begin
-         return Q_Front;
-      end First;
+         return Q_Processed;
+      end Processed;
 
-      ----------
-      -- Init --
-      ----------
+      ----------------
+      -- Initialize --
+      ----------------
 
-      procedure Init is
+      procedure Initialize (Queue_Per_Obj_Dir : Boolean) is
       begin
          Q.Init;
-         Q_Front := 1;
-      end Init;
+         Q_Processed := 0;
+         Q_First     := 1;
+         One_Queue_Per_Obj_Dir := Queue_Per_Obj_Dir;
+      end Initialize;
 
       ------------
       -- Insert --
@@ -10930,136 +11150,31 @@ package body Buildgpr is
 
          Q.Append
            (New_Val =>
-              (Name => Source_File_Name,
-               Id   => Source_Identity));
-      end Insert;
+              (Name      => Source_File_Name,
+               Id        => Source_Identity,
+               Processed => False));
 
-      -------------------------------
-      -- Insert_Withed_Sources_For --
-      -------------------------------
+         if Debug.Debug_Flag_Q then
+            Write_Str ("   Q := Q + [ ");
+            Write_Name (Source_File_Name);
 
-      procedure Insert_Withed_Sources_For
-        (The_ALI               : ALI.ALI_Id;
-         Excluding_Shared_SALs : Boolean := False)
-      is
-         Sfile     : File_Name_Type;
-         Afile     : File_Name_Type;
-         Src_Id    : Source_Id;
-         Iter      : Source_Iterator;
-
-      begin
-         --  Insert in the Q the unmarked source files (i.e. those which have
-         --  never been inserted in the Q and hence never considered).
-
-         for J in ALI.ALIs.Table (The_ALI).First_Unit ..
-                  ALI.ALIs.Table (The_ALI).Last_Unit
-         loop
-            for K in ALI.Units.Table (J).First_With ..
-              ALI.Units.Table (J).Last_With
-            loop
-               Sfile := ALI.Withs.Table (K).Sfile;
-
-               --  Skip generics
-
-               if Sfile /= No_File then
-                  Afile := ALI.Withs.Table (K).Afile;
-                  Iter := For_Each_Source (Project_Tree);
-
-                  loop
-                     Src_Id := Prj.Element (Iter);
-                     exit when Src_Id = No_Source;
-
-                     if Is_Compilable (Src_Id)
-                       and then Src_Id.Dep_Name = Afile
-                     then
-                        case Src_Id.Kind is
-                           when Spec =>
-                              if Other_Part (Src_Id) /= No_Source then
-                                 Src_Id := Other_Part (Src_Id);
-                              end if;
-
-                           when Impl =>
-                              if Is_Subunit (Src_Id) then
-                                 Src_Id := No_Source;
-                              end if;
-
-                           when Sep =>
-                              Src_Id := No_Source;
-                        end case;
-
-                        exit;
-                     end if;
-
-                     Next (Iter);
-                  end loop;
-
-                  --  If Excluding_Shared_SALs is True, do not insert in the
-                  --  queue the sources of a shared Stand-Alone Library.
-
-                  if Src_Id /= No_Source and then
-                     (not Excluding_Shared_SALs or else
-                      not Src_Id.Project.Standalone_Library or else
-                      Src_Id.Project.Library_Kind = Static)
-                  then
-                     Queue.Insert (Sfile, Src_Id);
-                  end if;
-               end if;
-            end loop;
-         end loop;
-      end Insert_Withed_Sources_For;
-
-      ----------------------------
-      -- Insert_Project_Sources --
-      ----------------------------
-
-      procedure Insert_Project_Sources
-        (The_Project  : Project_Id;
-         All_Projects : Boolean;
-         Unit_Based   : Boolean)
-      is
-         Iter : Source_Iterator;
-         Source : Source_Id;
-      begin
-         Iter := For_Each_Source (Project_Tree);
-         loop
-            Source := Prj.Element (Iter);
-            exit when Source = No_Source;
-
-            if Is_Compilable (Source)
-              and then
-                (All_Projects
-                 or else Is_Extending (The_Project, Source.Project))
-              and then not Source.Locally_Removed
-              and then Source.Replaced_By = No_Source
-              and then
-                (not Source.Project.Externally_Built or else
-                 (Is_Extending (The_Project, Source.Project) and then
-                  not The_Project.Externally_Built))
-              and then Source.Kind /= Sep
-              and then Source.Path /= No_Path_Information
-            then
-               if Source.Kind = Impl
-                 or else (Source.Unit /= No_Unit_Index
-                          and then Source.Kind = Spec
-                          and then (Other_Part (Source) = No_Source
-                                    or else
-                                    Other_Part (Source).Locally_Removed))
-               then
-                  if (Unit_Based
-                      or else Source.Unit = No_Unit_Index
-                      or else Source.Project.Library)
-                    and then not Is_Subunit (Source)  --  ??? System call here
-                  then
-                     Insert
-                       (Source_File_Name => Source.File,
-                        Source_Identity  => Source);
-                  end if;
-               end if;
+            if Source_Identity.Index /= 0 then
+               Write_Str (", ");
+               Write_Int (Source_Identity.Index);
             end if;
 
-            Next (Iter);
-         end loop;
-      end Insert_Project_Sources;
+            Write_Str (" ] ");
+            Write_Eol;
+
+            Write_Str ("   Q_First =");
+            Write_Int (Int (Q_First));
+            Write_Eol;
+
+            Write_Str ("   Q.Last =");
+            Write_Int (Int (Q.Last));
+            Write_Eol;
+         end if;
+      end Insert;
 
       --------------
       -- Is_Empty --
@@ -11067,8 +11182,53 @@ package body Buildgpr is
 
       function Is_Empty return Boolean is
       begin
-         return Q_Front > Q.Last;
+         return Q_Processed >= Q.Last;
       end Is_Empty;
+
+      ------------------------
+      -- Is_Virtually_Empty --
+      ------------------------
+
+      function Is_Virtually_Empty return Boolean is
+      begin
+         if One_Queue_Per_Obj_Dir then
+            for J in Q_First .. Q.Last loop
+               if not Q.Table (J).Processed and then
+                  not Busy_Obj_Dirs.Get
+                        (Q.Table (J).Id.Project.Object_Directory.Name)
+               then
+                  return False;
+               end if;
+            end loop;
+
+            return True;
+
+         else
+            return Q_Processed >= Q.Last;
+         end if;
+      end Is_Virtually_Empty;
+
+      ----------------------
+      -- Set_Obj_Dir_Busy --
+      ----------------------
+
+      procedure Set_Obj_Dir_Busy (Obj_Dir : Path_Name_Type) is
+      begin
+         if One_Queue_Per_Obj_Dir then
+            Busy_Obj_Dirs.Set (Obj_Dir, True);
+         end if;
+      end Set_Obj_Dir_Busy;
+
+      ----------------------
+      -- Set_Obj_Dir_Free --
+      ----------------------
+
+      procedure Set_Obj_Dir_Free (Obj_Dir : Path_Name_Type) is
+      begin
+         if One_Queue_Per_Obj_Dir then
+            Busy_Obj_Dirs.Set (Obj_Dir, False);
+         end if;
+      end Set_Obj_Dir_Free;
 
       ----------
       -- Size --
@@ -11428,6 +11588,9 @@ package body Buildgpr is
 
          elsif Arg = "--no-split-units" then
             No_Split_Units := True;
+
+         elsif Arg = Single_Compile_Per_Obj_Dir_Switch then
+            One_Compilation_Per_Obj_Dir := True;
 
          elsif Command_Line
            and then
@@ -12125,6 +12288,15 @@ package body Buildgpr is
          Write_Str ("  --subdirs=dir");
          Write_Eol;
          Write_Str ("           Real obj/lib/exec dirs are subdirs");
+         Write_Eol;
+
+         --  Line for --single-compile-per-obj-dir
+
+         Write_Str ("  ");
+         Write_Str (Single_Compile_Per_Obj_Dir_Switch);
+         Write_Eol;
+         Write_Str
+           ("           No simultaneous compilations for the same obj dir");
          Write_Eol;
 
          Write_Str ("  ");
