@@ -83,6 +83,16 @@ KP-141-J107-023 Extending project and --no-indirect-imports
 
   Workaround: Invoke gprbuild without --no-indirect-imports.
 
+KP-141-IC08-014 Duplicate Linker_Options for extending projects
+
+  Problem:    An project extending another project inherits
+              Linker'Linker_Options which may result in failure to link because
+              of duplicate inker options.
+
+  Status:     This was fixed in 1.5.0 on 2009-12-08
+
+  Workaround: Declare empty Linker_Options in the extending project
+
 KP-141-IB16-009 Language configuration redefined in extending project
 
   Problem:    When the compiler of a language is defined as non existent and
