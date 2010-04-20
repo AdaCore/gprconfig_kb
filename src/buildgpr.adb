@@ -7884,10 +7884,9 @@ package body Buildgpr is
 
                                     Binder_Object_TS :=
                                       File_Stamp
-                                        (Path_Name_Type
-                                             (Path_Name_Type'
-                                                  (Create_Name
-                                                       (Line (1 .. Last)))));
+                                        (Path_Name_Type'
+                                           (Create_Name
+                                              (Line (1 .. Last))));
 
                                     Add_Argument
                                       (Line (1 .. Last), Verbose_Mode);
