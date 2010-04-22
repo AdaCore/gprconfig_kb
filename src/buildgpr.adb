@@ -1812,7 +1812,7 @@ package body Buildgpr is
                   declare
                      Obj_Dir : constant String :=
                                  Get_Name_String
-                                   (Project.Object_Directory.Name);
+                                   (Project.Object_Directory.Display_Name);
                      Dir_Obj : Dir_Type;
 
                   begin
@@ -1881,13 +1881,14 @@ package body Buildgpr is
             if Project_Of_Current_Object_Directory /= For_Project then
                Project_Of_Current_Object_Directory := For_Project;
                Change_Dir
-                 (Get_Name_String (For_Project.Object_Directory.Name));
+                 (Get_Name_String
+                    (For_Project.Object_Directory.Display_Name));
 
                if Verbose_Mode then
                   Write_Str  ("Changing to object directory of """);
-                  Write_Name (For_Project.Name);
+                  Write_Name (For_Project.Display_Name);
                   Write_Str  (""": """);
-                  Write_Name (For_Project.Object_Directory.Name);
+                  Write_Name (For_Project.Object_Directory.Display_Name);
                   Write_Line ("""");
                end if;
             end if;
@@ -2340,7 +2341,7 @@ package body Buildgpr is
 
    procedure Build_Library (For_Project : Project_Id) is
       Object_Directory_Path : constant String :=
-        Get_Name_String (For_Project.Object_Directory.Name);
+        Get_Name_String (For_Project.Object_Directory.Display_Name);
 
       Project_Name          : constant String :=
         Get_Name_String (For_Project.Name);
@@ -2761,7 +2762,8 @@ package body Buildgpr is
 
          Put_Line (Exchange_File, Library_Label (Library_Directory));
          Put_Line
-           (Exchange_File, Get_Name_String (For_Project.Library_Dir.Name));
+           (Exchange_File,
+            Get_Name_String (For_Project.Library_Dir.Display_Name));
 
          if For_Project.Library_ALI_Dir /= No_Path_Information and then
            For_Project.Library_ALI_Dir.Name /= For_Project.Library_Dir.Name
@@ -2770,7 +2772,7 @@ package body Buildgpr is
               (Exchange_File, Library_Label (Library_Dependency_Directory));
             Put_Line
               (Exchange_File,
-               Get_Name_String (For_Project.Library_ALI_Dir.Name));
+               Get_Name_String (For_Project.Library_ALI_Dir.Display_Name));
          end if;
 
          Put_Line (Exchange_File, Library_Label (Object_Directory));
@@ -2786,7 +2788,7 @@ package body Buildgpr is
                if Proj.Object_Directory /= No_Path_Information then
                   Put_Line
                     (Exchange_File,
-                     Get_Name_String (Proj.Object_Directory.Name));
+                     Get_Name_String (Proj.Object_Directory.Display_Name));
                end if;
                Proj := Proj.Extends;
             end loop;
@@ -2802,12 +2804,13 @@ package body Buildgpr is
                if List.Project.Library_ALI_Dir /= No_Path_Information then
                   Put_Line
                     (Exchange_File,
-                     Get_Name_String (List.Project.Library_ALI_Dir.Name));
+                     Get_Name_String
+                       (List.Project.Library_ALI_Dir.Display_Name));
 
                elsif List.Project.Library_Dir /= No_Path_Information then
                   Put_Line
                     (Exchange_File,
-                     Get_Name_String (List.Project.Library_Dir.Name));
+                     Get_Name_String (List.Project.Library_Dir.Display_Name));
                end if;
 
                List := List.Next;
@@ -3230,7 +3233,7 @@ package body Buildgpr is
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
-                       (Library_Projs.Table (J).Library_Dir.Name));
+                       (Library_Projs.Table (J).Library_Dir.Display_Name));
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
@@ -3323,7 +3326,7 @@ package body Buildgpr is
                Put_Line (Exchange_File, Library_Label (Copy_Source_Dir));
                Put_Line
                  (Exchange_File,
-                  Get_Name_String (For_Project.Library_Src_Dir.Name));
+                  Get_Name_String (For_Project.Library_Src_Dir.Display_Name));
 
                Put_Line (Exchange_File, Library_Label (Sources));
 
@@ -3344,7 +3347,7 @@ package body Buildgpr is
                      then
                         Put_Line
                           (Exchange_File,
-                           Get_Name_String (Source.Path.Name));
+                           Get_Name_String (Source.Path.Display_Name));
                      end if;
 
                      Next (Iter);
@@ -3453,13 +3456,13 @@ package body Buildgpr is
          --  Set the working directory to the object directory of the actual
          --  project.
 
-         Change_Dir (Get_Name_String (Project.Object_Directory.Name));
+         Change_Dir (Get_Name_String (Project.Object_Directory.Display_Name));
 
          if Verbose_Mode then
             Write_Str  ("Changing to object directory of """);
-            Write_Name (Project.Name);
+            Write_Name (Project.Display_Name);
             Write_Str  (""": """);
-            Write_Name (Project.Object_Directory.Name);
+            Write_Name (Project.Object_Directory.Display_Name);
             Write_Line ("""");
          end if;
       end if;
@@ -3470,7 +3473,7 @@ package body Buildgpr is
       when Directory_Error =>
          Fail_Program
            ("unable to change to object directory """ &
-            Get_Name_String (Project.Object_Directory.Name) &
+            Get_Name_String (Project.Object_Directory.Display_Name) &
             """ of project " &
             Get_Name_String (Project.Display_Name));
    end Change_To_Object_Directory;
@@ -4363,7 +4366,7 @@ package body Buildgpr is
                                     Write_Char ('"');
                                     Write_Str
                                       (Get_Name_String
-                                         (Src_Data.Path.Name));
+                                         (Src_Data.Path.Display_Name));
                                     Write_Str (""" cannot import """);
                                     Write_Str (Src_Name);
                                     Write_Line (""":");
@@ -4440,9 +4443,11 @@ package body Buildgpr is
                            --  compilation.
 
                            Write_Char ('"');
-                           Write_Str (Get_Name_String (Src_Data.Path.Name));
+                           Write_Str
+                             (Get_Name_String (Src_Data.Path.Display_Name));
                            Write_Str (""" cannot import """);
-                           Write_Str (Get_Name_String (Included.Path.Name));
+                           Write_Str
+                             (Get_Name_String (Included.Path.Display_Name));
                            Write_Line (""":");
 
                            Write_Str ("  """);
@@ -4507,9 +4512,9 @@ package body Buildgpr is
                Write_Str (" and ");
                Write_Str (Get_Name_String (Src_Data.File));
                Write_Str (" belong to different projects: ");
-               Write_Str (Get_Name_String (Source_3.Project.Name));
+               Write_Str (Get_Name_String (Source_3.Project.Display_Name));
                Write_Str (" and ");
-               Write_Line (Get_Name_String (Src_Data.Project.Name));
+               Write_Line (Get_Name_String (Src_Data.Project.Display_Name));
                Compilation_OK := False;
             end if;
          end Check_Source;
@@ -4932,19 +4937,22 @@ package body Buildgpr is
 
          if Id.Object_Project /= Id.Project then
             if Id.Object /= No_File then
-               Get_Name_String (Id.Object_Project.Object_Directory.Name);
+               Get_Name_String
+                 (Id.Object_Project.Object_Directory.Display_Name);
                Add_Str_To_Name_Buffer (Get_Name_String (Id.Object));
                Id.Object_Path := Name_Find;
             end if;
 
             if Id.Dep_Name /= No_File then
-               Get_Name_String (Id.Object_Project.Object_Directory.Name);
+               Get_Name_String
+                 (Id.Object_Project.Object_Directory.Display_Name);
                Add_Str_To_Name_Buffer (Get_Name_String (Id.Dep_Name));
                Id.Dep_Path := Name_Find;
             end if;
 
             if Id.Switches /= No_File then
-               Get_Name_String (Id.Object_Project.Object_Directory.Name);
+               Get_Name_String
+                 (Id.Object_Project.Object_Directory.Display_Name);
                Add_Str_To_Name_Buffer (Get_Name_String (Id.Switches));
                Id.Switches_Path := Name_Find;
             end if;
@@ -6436,7 +6444,7 @@ package body Buildgpr is
               Linker_Opts.Table (Index).Project;
             Option   : Name_Id;
             Dir_Path : constant String :=
-              Get_Name_String (Proj.Directory.Name);
+              Get_Name_String (Proj.Directory.Display_Name);
 
          begin
             while Options /= Nil_String loop
@@ -6624,10 +6632,10 @@ package body Buildgpr is
             end if;
 
          elsif Project.Library then
-            Add_Dir (Project.Library_ALI_Dir.Name);
+            Add_Dir (Project.Library_ALI_Dir.Display_Name);
 
          else
-            Add_Dir (Project.Object_Directory.Name);
+            Add_Dir (Project.Object_Directory.Display_Name);
          end if;
       end Recursive_Add;
 
@@ -6731,7 +6739,7 @@ package body Buildgpr is
       end if;
 
       Main_Project_Dir :=
-        new String'(Get_Name_String (Main_Project.Directory.Name));
+        new String'(Get_Name_String (Main_Project.Directory.Display_Name));
 
       if Err_Vars.Warnings_Detected > 0 then
          Prj.Err.Finalize;
@@ -7673,7 +7681,7 @@ package body Buildgpr is
                Exec_Path_Name := Path_Name_Type (Exec_Name);
 
             else
-               Get_Name_String (Main_Proj.Exec_Directory.Name);
+               Get_Name_String (Main_Proj.Exec_Directory.Display_Name);
                Name_Len := Name_Len + 1;
                Name_Buffer (Name_Len) := Directory_Separator;
                Add_Str_To_Name_Buffer (Get_Name_String (Exec_Name));
@@ -8028,7 +8036,7 @@ package body Buildgpr is
                               not Proj.Standalone_Library)
                   then
                      Change_Dir
-                       (Get_Name_String (Proj.Object_Directory.Name));
+                       (Get_Name_String (Proj.Object_Directory.Display_Name));
                      Get_Name_String (Proj.Library_Name);
                      Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
 
@@ -8157,7 +8165,7 @@ package body Buildgpr is
                         Add_Argument
                           ("-L" &
                            Get_Name_String
-                             (Library_Projs.Table (J).Library_Dir.Name),
+                            (Library_Projs.Table (J).Library_Dir.Display_Name),
                            Verbose_Mode);
 
                      else
@@ -8165,7 +8173,7 @@ package body Buildgpr is
                           (Get_Name_String
                              (Main_Proj.Config.Linker_Lib_Dir_Option) &
                            Get_Name_String
-                             (Library_Projs.Table (J).Library_Dir.Name),
+                            (Library_Projs.Table (J).Library_Dir.Display_Name),
                            Verbose_Mode);
                      end if;
 
@@ -8177,7 +8185,7 @@ package body Buildgpr is
                      then
                         Add_Rpath
                           (Get_Name_String
-                             (Library_Projs.Table (J).Library_Dir.Name));
+                           (Library_Projs.Table (J).Library_Dir.Display_Name));
                      end if;
                   end if;
 
@@ -8410,7 +8418,7 @@ package body Buildgpr is
                   begin
                      if Main_Proj.Config.Run_Path_Origin /= No_Name then
                         Rpaths_Relative_To
-                          (Main_Proj.Exec_Directory.Name,
+                          (Main_Proj.Exec_Directory.Display_Name,
                            Main_Proj.Config.Run_Path_Origin);
                      end if;
 
@@ -8716,7 +8724,7 @@ package body Buildgpr is
       The_ALI      : out ALI.ALI_Id)
    is
       Source_Path   : constant String :=
-                        Get_Name_String (Source.Path.Name);
+                        Get_Name_String (Source.Path.Display_Name);
 
       Runtime_Source_Dir : constant Name_Id :=
                               Source.Language.Config.Runtime_Source_Dir;
@@ -9222,7 +9230,8 @@ package body Buildgpr is
                            begin
                               Source_Index :=
                                 Sinput.C.Load_File
-                                  (Get_Name_String (Dep_Src.Path.Name));
+                                  (Get_Name_String
+                                      (Dep_Src.Path.Display_Name));
 
                               if Source_Index /= No_Source_File then
 
@@ -9520,7 +9529,8 @@ package body Buildgpr is
          when Makefile =>
             if Process_Makefile_Deps
                  (Get_Name_String (Source.Dep_Path),
-                  Get_Name_String (Source.Project.Object_Directory.Name))
+                  Get_Name_String
+                    (Source.Project.Object_Directory.Display_Name))
             then
                Must_Compile := True;
                return;
@@ -9705,7 +9715,8 @@ package body Buildgpr is
                   Dep_Files := True;
 
                elsif not Source.Project.Standalone_Library then
-                  Get_Name_String (Source.Project.Library_ALI_Dir.Name);
+                  Get_Name_String
+                    (Source.Project.Library_ALI_Dir.Display_Name);
                   Add_Char_To_Name_Buffer (Directory_Separator);
                   Get_Name_String_And_Append (Source.Dep_Name);
                   Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
@@ -9979,13 +9990,13 @@ package body Buildgpr is
                         Project_File_Paths.Reset;
 
                         Project_File_Paths.Set
-                          (Name_Id (Main_Proj.Path.Name), True);
+                          (Name_Id (Main_Proj.Path.Display_Name), True);
 
                         Proj_List := Main_Proj.All_Imported_Projects;
 
                         while Proj_List /= null loop
                            Project_File_Paths.Set
-                             (Name_Id (Proj_List.Project.Path.Name),
+                             (Name_Id (Proj_List.Project.Path.Display_Name),
                               True);
                            Proj_List := Proj_List.Next;
                         end loop;
@@ -10214,7 +10225,7 @@ package body Buildgpr is
                                  Add_Str_To_Name_Buffer
                                    (Get_Name_String
                                       (Source_Identity.Project
-                                       .Library_ALI_Dir.Name));
+                                       .Library_ALI_Dir.Display_Name));
                                  Add_Char_To_Name_Buffer
                                    (Directory_Separator);
                                  Add_Str_To_Name_Buffer
@@ -10242,12 +10253,12 @@ package body Buildgpr is
                                     then
                                        Add_Str_To_Name_Buffer
                                          (Get_Name_String
-                                            (Proj.Library_ALI_Dir.Name));
+                                          (Proj.Library_ALI_Dir.Display_Name));
 
                                     else
                                        Add_Str_To_Name_Buffer
                                          (Get_Name_String
-                                            (Proj.Object_Directory.Name));
+                                         (Proj.Object_Directory.Display_Name));
                                     end if;
 
                                     Add_Char_To_Name_Buffer
@@ -10707,23 +10718,25 @@ package body Buildgpr is
 
                      Put_Line
                        (Exchange_File,
-                        Get_Name_String (Main_Proj.Path.Name));
+                        Get_Name_String (Main_Proj.Path.Display_Name));
 
                      Put_Line
                        (Exchange_File,
-                        String (File_Stamp (Main_Proj.Path.Name)));
+                        String (File_Stamp (Main_Proj.Path.Display_Name)));
 
                      Proj_List := Main_Proj.All_Imported_Projects;
 
                      while Proj_List /= null loop
                         Put_Line
                           (Exchange_File,
-                           Get_Name_String (Proj_List.Project.Path.Name));
+                           Get_Name_String
+                             (Proj_List.Project.Path.Display_Name));
 
                         Put_Line
                           (Exchange_File,
                            String
-                             (File_Stamp (Proj_List.Project.Path.Name)));
+                             (File_Stamp
+                                (Proj_List.Project.Path.Display_Name)));
 
                         Proj_List := Proj_List.Next;
                      end loop;

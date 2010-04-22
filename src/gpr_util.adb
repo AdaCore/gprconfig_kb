@@ -571,7 +571,7 @@ package body Gpr_Util is
 
    begin
       --  Systematically recompute the time stamp.
-      Source.Source_TS := File_Stamp (Source.Path.Name);
+      Source.Source_TS := File_Stamp (Source.Path.Display_Name);
 
       --  Parse the source file to check whether we have a subunit
 
@@ -612,7 +612,7 @@ package body Gpr_Util is
          while Obj_Proj /= No_Project loop
             declare
                Dir  : constant String := Get_Name_String
-                 (Obj_Proj.Object_Directory.Name);
+                 (Obj_Proj.Object_Directory.Display_Name);
 
                Object_Path     : constant String :=
                                    Normalize_Pathname
@@ -653,7 +653,7 @@ package body Gpr_Util is
          declare
             Object_Dir : constant String :=
                            Get_Name_String
-                             (Source.Project.Object_Directory.Name);
+                             (Source.Project.Object_Directory.Display_Name);
             Dep_Path   : constant String :=
                            Normalize_Pathname
                              (Name        => Get_Name_String (Source.Dep_Name),
@@ -691,7 +691,8 @@ package body Gpr_Util is
       --  unit based language that we know.
 
       Src_Ind :=
-        Sinput.P.Load_Project_File (Get_Name_String (Source.Path.Name));
+        Sinput.P.Load_Project_File
+          (Get_Name_String (Source.Path.Display_Name));
 
       return Sinput.P.Source_File_Is_Subunit (Src_Ind);
    end Is_Subunit;

@@ -179,7 +179,7 @@ package body Cleangpr is
       --  The name of the archive dependency file for this project
 
       Obj_Dir     : constant String :=
-                      Get_Name_String (Project.Object_Directory.Name);
+                      Get_Name_String (Project.Object_Directory.Display_Name);
 
    begin
       Change_Dir (Obj_Dir);
@@ -314,11 +314,11 @@ package body Cleangpr is
 
          declare
             Obj_Directory     : constant String :=
-              Get_Name_String (Project.Object_Directory.Name);
+              Get_Name_String (Project.Object_Directory.Display_Name);
             Lib_Directory     : constant String :=
-              Get_Name_String (Project.Library_Dir.Name);
+              Get_Name_String (Project.Library_Dir.Display_Name);
             Lib_ALI_Directory : constant String :=
-              Get_Name_String (Project.Library_ALI_Dir.Name);
+              Get_Name_String (Project.Library_ALI_Dir.Display_Name);
 
             Exchange_File : Ada.Text_IO.File_Type;
 
@@ -619,11 +619,11 @@ package body Cleangpr is
 
          if Project.Object_Directory /= No_Path_Information
            and then Is_Directory
-             (Get_Name_String (Project.Object_Directory.Name))
+             (Get_Name_String (Project.Object_Directory.Display_Name))
          then
             declare
                Obj_Dir : constant String :=
-                 Get_Name_String (Project.Object_Directory.Name);
+                 Get_Name_String (Project.Object_Directory.Display_Name);
                Iter    : Source_Iterator;
 
             begin
@@ -772,11 +772,12 @@ package body Cleangpr is
 
       if Project = Main_Project
         and then Project.Exec_Directory /= No_Path_Information
-        and then Is_Directory (Get_Name_String (Project.Exec_Directory.Name))
+        and then Is_Directory
+                   (Get_Name_String (Project.Exec_Directory.Display_Name))
       then
          declare
             Exec_Dir : constant String :=
-                         Get_Name_String (Project.Exec_Directory.Name);
+                         Get_Name_String (Project.Exec_Directory.Display_Name);
             Source   : Prj.Source_Id;
             Iter     : Source_Iterator;
 
@@ -844,7 +845,7 @@ package body Cleangpr is
                then
                   Delete_Binder_Generated_Files
                     (Get_Name_String
-                       (Project.Object_Directory.Name),
+                       (Project.Object_Directory.Display_Name),
                      Source);
                end if;
             end loop;
