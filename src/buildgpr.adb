@@ -8725,7 +8725,7 @@ package body Buildgpr is
    is
       Source_Path   : constant String :=
                         Get_Name_String (Source.Path.Display_Name);
-
+      C_Source_Path : constant String := Get_Name_String (Source.Path.Name);
       Runtime_Source_Dir : constant Name_Id :=
                               Source.Language.Config.Runtime_Source_Dir;
 
@@ -8984,16 +8984,18 @@ package body Buildgpr is
                              Normalize_Pathname
                                (Name           => Line (Start .. Finish),
                                 Directory      => Obj_Dir,
-                                Resolve_Links  => False,
-                                Case_Sensitive => False);
+                                Resolve_Links  => False);
+                           C_Src_Name : String := Src_Name;
                            Src_TS   : Time_Stamp_Type;
                            Source_2 : Source_Id;
 
                         begin
+                           Canonical_Case_File_Name (C_Src_Name);
+
                            --  If it is original source, set
                            --  Source_In_Dependencies.
 
-                           if Src_Name = Source_Path then
+                           if C_Src_Name = C_Source_Path then
                               Source_In_Dependencies := True;
                            end if;
 
