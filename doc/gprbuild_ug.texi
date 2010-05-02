@@ -575,6 +575,10 @@ package Builder of the main project:
   Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
   can be specified.
 
+@item @option{--no-object-check}
+
+  Do not check if an object has been created after compilation.
+
 @item @option{--subdirs=<subdir>}
 
   This indicates that the real directories (except the source directories) are
@@ -582,26 +586,10 @@ package Builder of the main project:
   in particular to object directories, library directories and exec directories.
   If the directories do not exist, they are created automatically.
 
-@item @option{--no-indirect-imports}
+@item @option{--unchecked-shared-lib-imports}
 
-  This indicates that sources of a project should import only sources or
-  header files from directly imported projects, that is those projects mentioned
-  in a with clause and the projects they extend directly or indirectly.
-  A check is done in the compilation phase, after a successful compilation, that
-  the sources follow these restrictions. For Ada sources, the check is fully
-  enforced. For non Ada sources, the check is partial, as in the dependency
-  file there is no distinction between header files directly included and those
-  indirectly included. The check will fail if there is no possibility that a
-  header file in a non directly imported project could have been indirectly
-  imported. If the check fails, the compilation artifacts (dependency file,
-  object file, switches file) are deleted.
-
-@item @option{--indirect-imports}
-
-  This indicates that sources of a project can import sources or header files
-  from directly or indirectly imported projects. This is the default behavior.
-  This switch is provided to cancel a previous switch
-  @option{--no-indirect-imports} on the command line.
+  Allow shared library projects to import projects that are not shared
+  library projects.
 
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 
@@ -720,6 +708,45 @@ Then, the switches that may be specified on the command line as well as in
 package Builder of the main project (attribute Switches):
 
 @itemize @bullet
+@item @option{--create-map-file}
+
+  When linking an executable, if supported by the platform, create a map file
+  with the same name as the executable, but with suffix @file{.map}.
+
+@item @option{--create-map-file=<map file>}
+
+  When linking an executable, if supported by the platform, create a map file
+  with file name @file{<map file>}.
+
+@item @option{--no-indirect-imports}
+
+  This indicates that sources of a project should import only sources or
+  header files from directly imported projects, that is those projects mentioned
+  in a with clause and the projects they extend directly or indirectly.
+  A check is done in the compilation phase, after a successful compilation, that
+  the sources follow these restrictions. For Ada sources, the check is fully
+  enforced. For non Ada sources, the check is partial, as in the dependency
+  file there is no distinction between header files directly included and those
+  indirectly included. The check will fail if there is no possibility that a
+  header file in a non directly imported project could have been indirectly
+  imported. If the check fails, the compilation artifacts (dependency file,
+  object file, switches file) are deleted.
+
+@item @option{--indirect-imports}
+
+  This indicates that sources of a project can import sources or header files
+  from directly or indirectly imported projects. This is the default behavior.
+  This switch is provided to cancel a previous switch
+  @option{--no-indirect-imports} on the command line.
+
+@item @option{--no-split-units}
+
+  Forbid the sources of the same Ada unit to be in different projects.
+
+@item @option{--single-compile-per-obj-dir}
+
+  Disallow several simultaneous compilations for the same object directory.
+
 @item @option{-f} (Force recompilations)
 
   Force the complete processing of all phases (or of those explicitly specified)
