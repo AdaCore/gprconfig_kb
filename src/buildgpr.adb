@@ -138,6 +138,9 @@ package body Buildgpr is
    --  the object file and its time stamp are checked to decide if a file needs
    --  to be compiled.
 
+   Map_File : String_Access := null;
+   --  Value of switch --create-map-file
+
    Direct_Import_Only_Switch :  constant String  := "--direct-import-only";
    Indirect_Imports_Switch :    constant String  := "--indirect-imports";
    No_Indirect_Imports_Switch : constant String  := "--no-indirect-imports";
@@ -8479,6 +8482,25 @@ package body Buildgpr is
                   end;
                end if;
 
+               --  Add the map file option, if supported and requested
+
+               if Map_File /= null and then
+                 Main_Proj.Config.Map_File_Option /= No_Name
+               then
+                  Get_Name_String (Main_Proj.Config.Map_File_Option);
+
+                  if Map_File'Length > 0 then
+                     Add_Str_To_Name_Buffer (Map_File.all);
+
+                  else
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Main_Base_Name_Index));
+                     Add_Str_To_Name_Buffer (".map");
+                  end if;
+
+                  Add_Argument (Name_Buffer (1 .. Name_Len), Verbose_Mode);
+               end if;
+
                --  Add the switch(es) to specify the name of the executable
 
                declare
@@ -11765,6 +11787,18 @@ package body Buildgpr is
          elsif Command_Line and then Arg = No_Object_Check_Switch then
             Object_Checked := False;
             Unique_Compile := True;
+
+         elsif Arg = Create_Map_File_Switch then
+            Map_File := new String'("");
+
+         elsif Arg'Length > Create_Map_File_Switch'Length + 1
+           and then
+             Arg (1 .. Create_Map_File_Switch'Length) = Create_Map_File_Switch
+           and then
+             Arg (Create_Map_File_Switch'Length + 1) = '='
+         then
+            Map_File :=
+              new String'(Arg (Create_Map_File_Switch'Length + 2 .. Arg'Last));
 
          elsif Command_Line and then
            Arg'Length >= 3 and then
