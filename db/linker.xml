@@ -116,6 +116,7 @@
       for Max_Command_Line_Length use "15000";
       for Response_File_Format    use "object_list";
       for Response_File_Switches  use ("-Wl,-f,");
+      for Map_File_Option         use "-Wl,-b,map:";
    end Linker;
     </config>
   </configuration>
@@ -280,6 +281,7 @@
    package Linker is
       for Max_Command_Line_Length use "8192";
       for Response_File_Format    use "GNU";
+      for Map_File_Option         use "-Wl,-Map,";
    end Linker;
     </config>
   </configuration>
@@ -360,6 +362,7 @@
    package Linker is
       for Max_Command_Line_Length use "30000";
       for Response_File_Format    use "GNU";
+      for Map_File_Option         use "-Wl,-Map,";
    end Linker;
     </config>
   </configuration>
