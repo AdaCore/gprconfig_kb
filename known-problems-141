@@ -60,7 +60,7 @@ KP-141-J305-007 gprbuild fails to scan properly ALI files
               put lines in the ALI files that are not known by gprbuild, and
               then gprbuild fails to scan properly ALI files.
 
-  Status:     This was fixed in 1.5.0 on 2010-03-07
+  Status:     This was fixed in 1.4.2 on 2010-03-07
 
   Workaround: Use a new version of gprbuild.
 
