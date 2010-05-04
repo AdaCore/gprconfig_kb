@@ -79,7 +79,7 @@ KP-141-J107-023 Extending project and --no-indirect-imports
               that imports from the extending project when invoked with
               --no-indirect-imports.
 
-  Status:     This was fixed in 1.5.0 on 2010-01-07
+  Status:     This was fixed in 1.4.2 on 2010-01-07
 
   Workaround: Invoke gprbuild without --no-indirect-imports.
 
