@@ -19,7 +19,7 @@ KP-141-J325-035 Fake object files for header files in libraries
               executables may fail, as the object files corresponding to the
               Ada source is not specified to the linker.
 
-  Status:     This was fixed in 1.5.0 on 2010-03-30
+  Status:     This was fixed in 1.4.2 on 2010-03-30
 
   Workaround: Specify a different object directory for the library project.
 
