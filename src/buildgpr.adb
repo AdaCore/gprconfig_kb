@@ -599,7 +599,7 @@ package body Buildgpr is
      Table_Low_Bound      => 1,
      Table_Initial        => 10,
      Table_Increment      => 10,
-     Table_Name           => "Make.Library_Projs");
+     Table_Name           => "Buildgpr.Library_Projs");
    --  Library projects imported directly or indirectly
 
    package Rpaths is new Table.Table
@@ -7298,7 +7298,6 @@ package body Buildgpr is
 
          begin
             if Prefix_Path'Length /= 0 then
-               --  ??? Same as Confgpr.Locate_Config_File
                Write_Char (Path_Separator);
                Write_Str (Prefix_Path);
                Write_Str ("share");
@@ -10991,8 +10990,7 @@ package body Buildgpr is
                   There_Are_SALs := True;
                end if;
 
-               Library_Projs.Increment_Last;
-               Library_Projs.Table (Library_Projs.Last) := Project;
+               Library_Projs.Append (Project);
             end if;
 
          end if;
@@ -11693,6 +11691,8 @@ package body Buildgpr is
                  new String'
                    (Arg (Target_Project_Option'Length + 1 .. Arg'Last));
             end if;
+
+            Project_Node_Tree.Target_Name := Target_Name;
 
          elsif Arg'Length > RTS_Option'Length and then
            Arg (1 .. RTS_Option'Length) = RTS_Option

@@ -1316,6 +1316,9 @@ package body Cleangpr is
                                         .. Arg'Last));
                            end if;
 
+                           Project_Node_Tree.Target_Name :=
+                             Target_Name;
+
                         elsif Arg'Length > Subdirs_Option'Length and then
                           Arg (1 .. Subdirs_Option'Length) =
                             Subdirs_Option
