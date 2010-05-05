@@ -11,6 +11,16 @@ issued subsequent to the date specified (in ISO format YYYY-MM-DD) in the
 status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-141-J504-020 Shared SAL cannot import non ibrary project
+
+  Problem:    When building a shared Stand-Alone Library project that imports
+              a non library project with switch --unchecked-shared-lib-imports,
+              the binding of the library fails.
+
+  Status:     This was fixed in 1.5.0 on 2010-05-05
+
+  Workaround: Do not import a non library project in a shared SAL
+
 KP-141-J325-035 Fake object files for header files in libraries
 
   Problem:    When in a library project a header file has the same base name
