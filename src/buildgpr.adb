@@ -602,6 +602,15 @@ package body Buildgpr is
      Table_Name           => "Buildgpr.Library_Projs");
    --  Library projects imported directly or indirectly
 
+   package Non_Library_Projs is new Table.Table (
+     Table_Component_Type => Project_Id,
+     Table_Index_Type     => Integer,
+     Table_Low_Bound      => 1,
+     Table_Initial        => 10,
+     Table_Increment      => 10,
+     Table_Name           => "Buildgpr.Non_Library_Projs");
+   --  Non library projects imported directly or indirectly
+
    package Rpaths is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Integer,
@@ -944,6 +953,9 @@ package body Buildgpr is
       There_Are_SALs     : out Boolean;
       And_Project_Itself : Boolean := False);
    --  Get the imported library project ids in table Library_Projs
+
+   procedure Process_Imported_Non_Libraries (For_Project : Project_Id);
+   --  Get the imported non library project ids in table Non_Library_Projs
 
    function Project_Extends
      (Extending : Project_Id;
@@ -2794,6 +2806,24 @@ package body Buildgpr is
                      Get_Name_String (Proj.Object_Directory.Display_Name));
                end if;
                Proj := Proj.Extends;
+            end loop;
+         end;
+
+         --  Add object directories of imported non library projects
+
+         Process_Imported_Non_Libraries (For_Project);
+
+         declare
+            Proj : Project_Id;
+         begin
+            for J in 1 .. Non_Library_Projs.Last loop
+               Proj := Non_Library_Projs.Table (J);
+
+               if Proj.Object_Directory /= No_Path_Information then
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (Proj.Object_Directory.Display_Name));
+               end if;
             end loop;
          end;
 
@@ -11005,6 +11035,68 @@ package body Buildgpr is
 
       Process_Project (For_Project);
    end Process_Imported_Libraries;
+
+   ------------------------------------
+   -- Process_Imported_Non_Libraries --
+   ------------------------------------
+
+   procedure Process_Imported_Non_Libraries (For_Project : Project_Id) is
+
+      procedure Process_Project (Project : Project_Id);
+      --  Process Project and its imported projects recursively.
+      --  Add any library projects to table Library_Projs.
+
+      ---------------------
+      -- Process_Project --
+      ---------------------
+
+      procedure Process_Project (Project : Project_Id) is
+         Imported : Project_List := Project.Imported_Projects;
+
+      begin
+         --  Nothing to do if process has already been processed
+
+         if not Processed_Projects.Get (Project.Name) then
+            Processed_Projects.Set (Project.Name, True);
+
+            --  Call Process_Project recursively for any imported project.
+            --  We first process the imported projects to guarantee that
+            --  we have a proper reverse order for the libraries.
+
+            while Imported /= null loop
+               if Imported.Project /= No_Project then
+                  Process_Project (Imported.Project);
+               end if;
+
+               Imported := Imported.Next;
+            end loop;
+
+            --  For an extending project, process the project being extended
+
+            if Project.Extends /= No_Project then
+               Process_Project (Project.Extends);
+            end if;
+
+            --  If it is not a library project, add it to Non_Library_Projs
+
+            if Project /= For_Project
+              and then Project.Extended_By = No_Project
+              and then not Project.Library
+            then
+               Non_Library_Projs.Append (Project);
+            end if;
+
+         end if;
+      end Process_Project;
+
+      --  Start of processing for Process_Imported_Libraries
+
+   begin
+      Processed_Projects.Reset;
+      Non_Library_Projs.Init;
+
+      Process_Project (For_Project);
+   end Process_Imported_Non_Libraries;
 
    ---------------------
    -- Project_Extends --
