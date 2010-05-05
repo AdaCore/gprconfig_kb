@@ -161,7 +161,7 @@ procedure Gprlib is
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 100,
-      Table_Name           => "Gprlib.Imported_Librar_Directories");
+      Table_Name           => "Gprlib.Imported_Library_Directories");
    --  A table to store the directories of the imported libraries
 
    package Imported_Library_Names is new Table.Table
