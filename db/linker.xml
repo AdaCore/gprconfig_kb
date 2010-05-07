@@ -171,6 +171,18 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+       <target name="^.*wrs-vxworks.*$" />
+    </targets>
+    <config>
+   package Linker is
+      for Max_Command_Line_Length use "8000";
+      for Response_File_Format    use "GCC_GNU";
+   end Linker;
+    </config>
+  </configuration>
+
   <!-- GNAAMP -->
   <configuration>
     <targets>
