@@ -11,6 +11,17 @@ issued subsequent to the date specified (in ISO format YYYY-MM-DD) in the
 status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-141-J506-012 Linking command line too long on VxWorks cross platforms
+
+  Problem:    On VxWorks cross platforms hosted on Windows, if the linking
+              command line is too long (>32K) because there are two many
+              Ada object files, the linking phase will fail.
+
+  Status:     This was fixed in 1.5.0 on 2010-05-07
+
+  Workaround: Reduce the linking command line length by changing some
+              project files to non shared library project files.
+
 KP-141-J504-020 Shared SAL cannot import non library project
 
   Problem:    When building a shared Stand-Alone Library project that imports
