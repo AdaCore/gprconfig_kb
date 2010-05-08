@@ -40,3 +40,8 @@ NF-15-I713-006 Relative paths in the run path option (2009-10-21)
   For platforms where the linker supports -z origin and $ORIGIN in the run
   path option, use paths relative to the exec directory in the run path
   option.
+
+NF-15-HA09-027 Gprbuild support for GNAAMP (2010-05-07)
+
+   Gprbuild has been adapted for use with GNAAMP and will now properly invoke
+   the gnaamp compiler and related tools.
