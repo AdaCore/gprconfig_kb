@@ -124,7 +124,7 @@
    <configuration>
      <targets>
        <target name="^.*-wrs-vxworksae$" />
-       <target name="^.powerpc-wrs-vxworksmils$" />
+       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    package Builder is
@@ -137,6 +137,7 @@
    <configuration>
      <targets>
        <target name="^powerpc-wrs-vxworks.*$" />
+       <target name="^e500v2-wrs-vxworks.*$" />
      </targets>
      <config>
    for Archive_Builder  use ("arppc", "cr");
