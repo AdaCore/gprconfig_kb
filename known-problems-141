@@ -11,6 +11,19 @@ issued subsequent to the date specified (in ISO format YYYY-MM-DD) in the
 status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-141-J512-013 gprconfig always appends .exe on Windows
+
+  Problem:    On windows, gprconfig will always add ".exe" to the executable
+              name specified in the XML files (node <executable>), even if
+              this extension is already specified.
+
+  Status:     This was fixed in 1.5.0 on 2010-05-12
+
+  Workaround: This is only a problem when trying to share the same XML file
+              on Unix and Windows systems, and naming the executables with
+              ".exe" on the unix platform. In such a case, use two different
+              XML files.
+
 KP-141-J506-012 Linking command line too long on VxWorks cross platforms
 
   Problem:    On VxWorks cross platforms hosted on Windows, if the linking
