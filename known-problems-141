@@ -16,7 +16,7 @@ KP-141-J513-012 Same source file name in different projects and languages
   Problem:    gprbuild does not accept an Ada source to have the same file name
               as the source of another language in another project.
 
-  Status:     This was fixed in 1.5.0 on 2010-05-13
+  Status:     This was fixed in 1.5.0 on 2010-05-17
 
   Workaround: Do not put the two projects in the same project tree.
 
