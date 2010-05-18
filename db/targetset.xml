@@ -185,6 +185,14 @@
     <target>ppc-vx6-linux</target>
   </targetset>
 
+  <targetset>
+ <!-- e500v2-vx6-.* -->
+    <target>e500v2-wrs-vxworks</target>
+    <target>e500v2-vx6-solaris</target>
+    <target>e500v2-vx6-windows</target>
+    <target>e500v2-vx6-linux</target>
+  </targetset>
+
  <!-- ppc-vx653-.*  (vxworks 653) -->
  <targetset>
     <target>ppc-vx653-solaris</target>
