@@ -84,6 +84,7 @@ procedure Gprbind is
    Dash_o         : constant String := "-o";
    Dash_shared    : constant String := "-shared";
    Dash_x         : constant String := "-x";
+   Dash_Fequal    : constant String := "-F=";
    Dash_OO        : constant String := "-O";
 
    --  Minimum switches to be used to compile the binder generated file
@@ -124,6 +125,8 @@ procedure Gprbind is
    Main_Base_Name        : String_Access := null;
    Binder_Generated_File : String_Access := null;
    BG_File               : File_Type;
+
+   Mapping_File : String_Access := null;
 
    Success     : Boolean := False;
    Return_Code : Integer;
@@ -283,6 +286,9 @@ begin
                   end if;
 
                   Main_Base_Name := new String'(Line (1 .. Last));
+
+               when Gprexch.Mapping_File =>
+                  Mapping_File := new String'(Line (1 .. Last));
 
                when Compiler_Path =>
                   if Ada_Compiler_Path /= null then
@@ -533,6 +539,15 @@ begin
 
    if Main_ALI = null then
       Add (No_Main_Option, Gnatbind_Options, Last_Gnatbind_Option);
+   end if;
+
+   --  Add the switch -F=<mapping file> if the mapping file was specified
+   --  and the version of GNAT is recent enough.
+
+   if Mapping_File /= null and then GNAT_Version.all >= "5" then
+      Add (Dash_Fequal & Mapping_File.all,
+           Gnatbind_Options,
+           Last_Gnatbind_Option);
    end if;
 
    --  Create temporary file to get the list of objects

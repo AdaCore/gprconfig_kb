@@ -40,6 +40,7 @@ package Gprexch is
       Verbose,
       Shared_Libs,
       Main_Base_Name,
+      Mapping_File,
       Compiler_Path,
       Compiler_Leading_Switches,
       Compiler_Trailing_Switches,

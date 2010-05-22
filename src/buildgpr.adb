@@ -10422,6 +10422,26 @@ package body Buildgpr is
                              (Gprexch.There_Are_Stand_Alone_Libraries));
                      end if;
 
+                     --  If the language is Ada, create a binder mapping file
+                     --  and pass it to gprbind.
+
+                     if B_Data.Language_Name = Name_Ada then
+                        declare
+                           Mapping_Path : constant Path_Name_Type :=
+                             Create_Binder_Mapping_File;
+
+                        begin
+                           if Mapping_Path /= No_Path then
+                              Put_Line
+                                (Exchange_File,
+                                 Binding_Label (Gprexch.Mapping_File));
+                              Put_Line
+                                (Exchange_File,
+                                 Get_Name_String (Mapping_Path));
+                           end if;
+                        end;
+                     end if;
+
                      --  Send the Toolchain Versions of each language where
                      --  they are declared.
 
