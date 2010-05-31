@@ -13,6 +13,11 @@ This date shows the implementation date of the feature. Any 1.4.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-15-J325-005 New attributes for leading options (2010-04-12)
+
+  New attributes Leading_Library_Options and Linker'Leading_Switches are
+  added.
+
 NF-15-IC02-005 New switch -x (2009-12-07)
 
   gprbuild no longer create an include path file to the compiler, except when
