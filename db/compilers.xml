@@ -72,14 +72,25 @@
   </compiler_description>
 
   <!-- VxWorks MILS -->
-  <!-- ?? Will need to modify if we support pentium target -->
   <compiler_description>
     <name>GCC-WRSMILS</name>
-    <executable prefix="1">cc(ppc)</executable>
+    <executable prefix="1">cc(pentium|ppc)</executable>
     <version>
-      <external>cc${PREFIX} -v</external>
-      <grep regexp=".*(vxworksae).*" group="1"></grep>
-      <must_match>vxworksae</must_match>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vthreads-2[0-9.]*).*" group="1"></grep>
+      <must_match>vthreads-2.*</must_match>
+    </version>
+    <languages>C</languages>
+  </compiler_description>
+
+  <!-- VxWorks MILS HAE -->
+  <compiler_description>
+    <name>GCC-WRSMILSHAE</name>
+    <executable prefix="1">cc(pentium|ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C</languages>
   </compiler_description>
@@ -180,14 +191,25 @@
   </compiler_description>
 
   <!-- G++ for VxWorks MILS -->
-  <!-- ?? Will need to modify if we support pentium target -->
   <compiler_description>
     <name>G++-WRSMILS</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
+    <executable prefix="1">c\+\+(ppc|pentium)</executable>
     <version>
-      <external>c++${PREFIX} -v</external>
-      <grep regexp=".*(vxworksmils).*" group="1"></grep>
-      <must_match>vxworksae</must_match>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vthreads-2[0-9.]*).*" group="1"></grep>
+      <must_match>vthreads-2.*</must_match>
+    </version>
+    <languages>C++</languages>
+  </compiler_description>
+
+  <!-- G++ for VxWorks MILS HAE -->
+  <compiler_description>
+    <name>G++-WRSMILSHAE</name>
+    <executable prefix="1">c\+\+(ppc|pentium)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C++</languages>
   </compiler_description>
