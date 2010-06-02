@@ -35,7 +35,8 @@
         <compiler name="G++-WRS5" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
-     </compilers>
+         <compiler name="G++-WRSMILSHAE" language="C++" />
+    </compilers>
      <config>
    package Compiler is
       for Driver              ("C++") use "${PATH}c++${PREFIX}";
@@ -48,6 +49,7 @@
         <compiler name="G++" language="C++" />
         <compiler name="G++-WRS653" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
+        <compiler name="G++-WRSMILSHAE" language="C++" />
         <compiler name="G++-WRS5" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
