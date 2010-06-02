@@ -46,6 +46,12 @@ NF-15-I713-006 Relative paths in the run path option (2009-10-21)
   path option, use paths relative to the exec directory in the run path
   option.
 
+NF-15-I416-017 Builder switches when there is no main (2010-06-02)
+
+  When there is no main specified and there is only one compiled language
+  in the main project, gprbuild now takes into account the builder switches
+  for this language in package Builder of the main project.
+
 NF-15-HA09-027 Gprbuild support for GNAAMP (2010-05-07)
 
    Gprbuild has been adapted for use with GNAAMP and will now properly invoke
