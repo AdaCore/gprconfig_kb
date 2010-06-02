@@ -6901,30 +6901,59 @@ package body Buildgpr is
 
             Name := No_Name;
             Lang := No_Name;
-            for Index in 1 .. Mains.Number_Of_Mains loop
-               Source := Source_Of (Base_Name (Mains.Next_Main));
-               if Source /= No_Source then
-                  if Name = No_Name and then Lang = No_Name then
-                     --  First main
 
-                     Name := Name_Id (Source.File);
-                     Lang := Source.Language.Name;
+            --  If there is no main, and there is only one compiled language,
+            --  use this language as the switches index.
 
-                  elsif Lang = Source.Language.Name then
-                     --  Other mains. If they are of the same language, use
-                     --  the language as the name.
+            if Mains.Number_Of_Mains = 0 then
+               declare
+                  Language : Language_Ptr := Main_Project.Languages;
 
-                     Name := Lang;
+               begin
+                  while Language /= No_Language_Index loop
+                     if Language.Config.Compiler_Driver /= No_File and then
+                        Language.Config.Compiler_Driver /= Empty_File
+                     then
+                        if Name /= No_Name then
+                           Name := No_Name;
+                           exit;
 
-                  else
-                     --  There are mains with different languages: no switches
-                     --  from package Builder.
+                        else
+                           Lang := Language.Name;
+                           Name := Lang;
+                        end if;
+                     end if;
 
-                     Name := No_Name;
-                     exit;
+                     Language := Language.Next;
+                  end loop;
+               end;
+
+            else
+               for Index in 1 .. Mains.Number_Of_Mains loop
+                  Source := Source_Of (Base_Name (Mains.Next_Main));
+                  if Source /= No_Source then
+                     if Name = No_Name and then Lang = No_Name then
+                        --  First main
+
+                        Name := Name_Id (Source.File);
+                        Lang := Source.Language.Name;
+
+                     elsif Lang = Source.Language.Name then
+                        --  Other mains. If they are of the same language, use
+                        --  the language as the name.
+
+                        Name := Lang;
+
+                     else
+                        --  There are mains with different languages: no
+                        --  switches from package Builder.
+
+                        Name := No_Name;
+                        exit;
+                     end if;
                   end if;
-               end if;
-            end loop;
+               end loop;
+            end if;
 
             Global_Compilation_Array := Value_Of
               (Name      => Name_Global_Compilation_Switches,
