@@ -55,6 +55,9 @@
      <compilers>
        <compiler name="GNAT" runtime="kernel" />
        <compiler name="GCC-WRS6" runtime="kernel" />
+       <compiler name="GCC-WRS6CERT" runtime="kernel" />
+       <compiler name="G++-WRS6" runtime="kernel" />
+       <compiler name="G++-WRS6CERT" runtime="kernel" />
        <compiler name="GCC-WRS5" />
      </compilers>
      <config>
@@ -69,6 +72,9 @@
      <compilers>
        <compiler name="GNAT" runtime="rtp" />
        <compiler name="GCC-WRS6" runtime="rtp" />
+       <compiler name="GCC-WRS6CERT" runtime="rtp" />
+       <compiler name="G++-WRS6" runtime="rtp" />
+       <compiler name="G++-WRS6CERT" runtime="rtp" />
      </compilers>
      <config>
    package Builder is
@@ -97,6 +103,9 @@
    <configuration>
      <compilers>
        <compiler name="GCC-WRS6" runtime="rtp" />
+       <compiler name="GCC-WRS6CERT" runtime="rtp" />
+       <compiler name="G++-WRS6" runtime="rtp" />
+       <compiler name="G++-WRS6CERT" runtime="rtp" />
      </compilers>
      <config>
    package Compiler is
@@ -111,6 +120,9 @@
      <compilers>
        <compiler name="GCC-WRS5" runtime="kernel" />
        <compiler name="GCC-WRS6" runtime="kernel" />
+       <compiler name="GCC-WRS6CERT" runtime="kernel" />
+       <compiler name="G++-WRS6" runtime="kernel" />
+       <compiler name="G++-WRS6CERT" runtime="kernel" />
      </compilers>
      <config>
    package Compiler is
