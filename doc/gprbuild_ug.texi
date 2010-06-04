@@ -528,6 +528,22 @@ different command line separators are:
 @subsection Switches
 @c ---------------------------------------------
 
+GPRbuild takes into account switches that may be specified on the command
+line or in attributes Switches(<main or language>) or Default_Switches
+(<language) in package Builder of the main project.
+
+When there are a single main (specified on the command line or in
+attribute Main in the main project), the switches that are taken into account
+in package Builder of the main project are Switches (<main>), if declared, or
+Switches (<language of main>), if declared.
+
+When there are several mains, if there are sources of the same language, then
+Switches (<language of main>) is taken into account, if specified.
+
+When there are no main specified, if there is only one compiled language
+(that is a language with a non empty Compiler Driver), then
+Switches (<single language>) is taken into account, if specified.
+
 @noindent
 The switches that are interpreted directly by GPRbuild are listed below.
 
