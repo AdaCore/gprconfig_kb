@@ -50,7 +50,7 @@ KP-141-J504-020 Shared SAL cannot import non library project
               a non library project with switch --unchecked-shared-lib-imports,
               the binding of the library fails.
 
-  Status:     This was fixed in 1.5.0 on 2010-05-05
+  Status:     This was fixed in 1.4.2 on 2010-05-05
 
   Workaround: Do not import a non library project in a shared SAL
 
