@@ -90,27 +90,31 @@
   </compiler_description>
 
   <!-- VxWorks MILS -->
+  <!-- All MILS entries will have to change if pentium is supported -->
   <compiler_description>
     <name>GCC-WRSMILS</name>
-    <executable prefix="1">cc(pentium|ppc)</executable>
+    <executable prefix="1">cc(ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vthreads-2[0-9.]*).*" group="1"></grep>
-      <must_match>vthreads-2.*</must_match>
+      <external>cc${PREFIX} -v</external>
+      <grep regexp=".*(vxworksae).*" group="1"></grep>
+      <must_match>vxworksae</must_match>
     </version>
     <languages>C</languages>
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!-- VxWorks MILS HAE -->
+  <!-- All MILS entries will have to change if pentium is supported -->
   <compiler_description>
     <name>GCC-WRSMILSHAE</name>
-    <executable prefix="1">cc(pentium|ppc)</executable>
+    <executable prefix="1">c\+\+(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
       <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C</languages>
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!--     GCC 2.8.1
@@ -227,27 +231,31 @@
   </compiler_description>
 
   <!-- G++ for VxWorks MILS -->
+  <!-- All MILS entries will have to change if pentium is supported -->
   <compiler_description>
     <name>G++-WRSMILS</name>
-    <executable prefix="1">c\+\+(ppc|pentium)</executable>
+    <executable prefix="1">c\+\+(ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vthreads-2[0-9.]*).*" group="1"></grep>
-      <must_match>vthreads-2.*</must_match>
+      <external>c++${PREFIX} -v</external>
+      <grep regexp=".*(vxworksae).*" group="1"></grep>
+      <must_match>vxworksae</must_match>
     </version>
     <languages>C++</languages>
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!-- G++ for VxWorks MILS HAE -->
+  <!-- All MILS entries will have to change if pentium is supported -->
   <compiler_description>
     <name>G++-WRSMILSHAE</name>
-    <executable prefix="1">c\+\+(ppc|pentium)</executable>
+    <executable prefix="1">c\+\+(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks-mils-hae-1[0-9.]*).*" group="1"></grep>
       <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C++</languages>
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!--  Assembler -->
