@@ -13,6 +13,12 @@ This date shows the implementation date of the feature. Any 1.4.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-15-J614-004 Recompilation if ALI file newer than object file (2010-06-15)
+
+  If the gprbuild finds that an ALI file is newer than the corresponding
+  object file, then the corresponding source is recompiled, as the object
+  file was not produced at the same time the ALI file was produced.
+
 NF-15-J325-005 New attributes for leading options (2010-04-12)
 
   New attributes Leading_Library_Options and Linker'Leading_Switches are
