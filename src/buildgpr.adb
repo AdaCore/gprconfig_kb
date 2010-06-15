@@ -9556,6 +9556,22 @@ package body Buildgpr is
             return;
          end if;
 
+         --  If the ALI file has been created after the object file, we need
+         --  to recompile.
+
+         if Source.Language.Config.Dependency_Kind = ALI_File and then
+            Source.Object_TS < Stamp
+         then
+            if Verbose_Mode then
+               Write_Str  ("      -> ALI file ");
+               Write_Str  (Get_Name_String (Source.Dep_Path));
+               Write_Line (" has timestamp earlier than object file");
+            end if;
+
+            Must_Compile := True;
+            return;
+         end if;
+
          --  The source needs to be recompiled if the source has been modified
          --  after the dependency file has been created.
 
