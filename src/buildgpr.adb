@@ -9559,7 +9559,8 @@ package body Buildgpr is
          --  If the ALI file has been created after the object file, we need
          --  to recompile.
 
-         if Source.Language.Config.Dependency_Kind = ALI_File and then
+         if Object_Checked and then
+            Source.Language.Config.Dependency_Kind = ALI_File and then
             Source.Object_TS < Stamp
          then
             if Verbose_Mode then
