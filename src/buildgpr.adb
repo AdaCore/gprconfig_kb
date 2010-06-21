@@ -7353,6 +7353,7 @@ package body Buildgpr is
 
          declare
             Prefix_Path : constant String := Executable_Prefix_Path;
+            P           : String_Access;
 
          begin
             if Prefix_Path'Length /= 0 then
@@ -7362,18 +7363,12 @@ package body Buildgpr is
                Write_Char (Directory_Separator);
                Write_Str ("gpr");
             end if;
+
+            Write_Eol;
+
+            Exit_Program (E_Success);
          end;
 
-         Write_Eol;
-
-         declare
-            P : String_Access;
-         begin
-            Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
-            Write_Line (P.all);
-         end;
-
-         Exit_Program (E_Success);
       end if;
 
       if Verbose_Mode then
