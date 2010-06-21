@@ -44,6 +44,7 @@ with Opt;         use Opt;
 with Osint;
 with Prj;         use Prj;
 with Prj.Conf;    use Prj.Conf;
+with Prj.Env;
 with Prj.Err;
 with Prj.Ext;
 with Prj.Tree;    use Prj.Tree;
@@ -1340,8 +1341,9 @@ package body Cleangpr is
                         end if;
 
                         if Arg (3) = 'P' then
-                           Prj.Ext.Add_Search_Project_Directory
-                             (Project_Node_Tree, Arg (4 .. Arg'Last));
+                           Prj.Env.Add_Directories
+                             (Project_Node_Tree.Project_Path,
+                              Arg (4 .. Arg'Last));
 
                         else
                            Bad_Argument;

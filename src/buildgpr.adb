@@ -56,7 +56,6 @@ with Prj;              use Prj;
 with Prj.Conf;         use Prj.Conf;
 with Prj.Env;
 with Prj.Err;
-with Prj.Ext;          use Prj.Ext;
 with Prj.Tree;         use Prj.Tree;
 with Prj.Util;         use Prj.Util;
 with Scans;
@@ -7367,7 +7366,12 @@ package body Buildgpr is
 
          Write_Eol;
 
-         Write_Line (Project_Path (Project_Node_Tree));
+         declare
+            P : String_Access;
+         begin
+            Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
+            Write_Line (P.all);
+         end;
 
          Exit_Program (E_Success);
       end if;
@@ -11640,7 +11644,7 @@ package body Buildgpr is
             Fail_Program ("directory name missing after -aP");
          else
             Search_Project_Dir_Expected := False;
-            Add_Search_Project_Directory (Project_Node_Tree, Arg);
+            Prj.Env.Add_Directories (Project_Node_Tree.Project_Path, Arg);
          end if;
 
       elsif Db_Directory_Expected then
@@ -11966,8 +11970,8 @@ package body Buildgpr is
                Search_Project_Dir_Expected := True;
 
             else
-               Add_Search_Project_Directory
-                 (Project_Node_Tree, Arg (4 .. Arg'Last));
+               Prj.Env.Add_Directories
+                 (Project_Node_Tree.Project_Path, Arg (4 .. Arg'Last));
             end if;
 
          elsif Command_Line and then Arg = "-b" then
