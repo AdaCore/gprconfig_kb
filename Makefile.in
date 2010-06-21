@@ -168,11 +168,11 @@ endif
 tests_local: force
 	@make prefix=${shell pwd}/install install
 ifeq (${test_names},)
-	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./run-gprconfig-test.py --diffs --enable-color --loglevel=ERROR ${test_config_switch}
-	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./run-gprbuild-test.py --diffs --enable-color --loglevel=ERROR ${test_config_switch}
+	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; python ./run-gprconfig-test.py --diffs --enable-color --loglevel=ERROR ${test_config_switch}
+	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; python ./run-gprbuild-test.py --diffs --enable-color --loglevel=ERROR ${test_config_switch}
 else
-	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./run-gprconfig-test.py --diffs --enable-color --loglevel=INFO ${test_config_switch} ${test_names}
-	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; ./run-gprbuild-test.py --diffs --enable-color --loglevel=INFO ${test_config_switch} ${test_names}
+	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; python ./run-gprconfig-test.py --diffs --enable-color --loglevel=INFO ${test_config_switch} ${test_names}
+	@cd internal/gprtests_python; PATH=${shell pwd}/install/bin:${PATH}; python ./run-gprbuild-test.py --diffs --enable-color --loglevel=INFO ${test_config_switch} ${test_names}
 
 endif
 	@${RM} -rf install
