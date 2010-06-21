@@ -7365,7 +7365,8 @@ package body Buildgpr is
             end if;
 
             Write_Eol;
-
+            Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
+            Write_Line (P.all);
             Exit_Program (E_Success);
          end;
 
