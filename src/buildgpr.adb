@@ -1200,7 +1200,8 @@ package body Buildgpr is
                                                      Name_Id (Source.File),
                               Attribute_Or_Array_Name => Name_Switches,
                               In_Package              => Package_Compiler,
-                              In_Tree                 => Project_Tree);
+                              In_Tree                 => Project_Tree,
+                              Allow_Wildcards         => True);
 
    begin
       if Options = Nil_Variable_Value then
@@ -6999,7 +7000,8 @@ package body Buildgpr is
                  (Name                    => Name,
                   Attribute_Or_Array_Name => Name_Switches,
                   In_Package              => Builder_Package,
-                  In_Tree                 => Project_Tree);
+                  In_Tree                 => Project_Tree,
+                  Allow_Wildcards         => True);
 
                if Name /= Lang then
                   --  If specific switches for the main have been found, the
@@ -8306,10 +8308,11 @@ package body Buildgpr is
                      begin
                         Switches :=
                           Prj.Util.Value_Of
-                            (Index     => Name_Id (Main_Id),
-                             Src_Index => 0,
-                             In_Array  => Switches_Array,
-                             In_Tree   => Project_Tree);
+                            (Index           => Name_Id (Main_Id),
+                             Src_Index       => 0,
+                             In_Array        => Switches_Array,
+                             In_Tree         => Project_Tree,
+                             Allow_Wildcards => True);
 
                         if Switches = Nil_Variable_Value then
                            Switches :=
@@ -10687,10 +10690,11 @@ package body Buildgpr is
                            begin
                               Switches :=
                                 Prj.Util.Value_Of
-                                  (Index     => Name_Id (Main_Id),
-                                   Src_Index => 0,
-                                   In_Array  => Switches_Array,
-                                   In_Tree   => Project_Tree);
+                                  (Index           => Name_Id (Main_Id),
+                                   Src_Index       => 0,
+                                   In_Array        => Switches_Array,
+                                   In_Tree         => Project_Tree,
+                                   Allow_Wildcards => True);
 
                               if Switches = Nil_Variable_Value then
                                  Switches :=
