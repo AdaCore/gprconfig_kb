@@ -11784,6 +11784,13 @@ package body Buildgpr is
          elsif Arg = Single_Compile_Per_Obj_Dir_Switch then
             One_Compilation_Per_Obj_Dir := True;
 
+         elsif Command_Line and then
+               Arg'Length > Source_Info_Option'Length and then
+               Arg (1 .. Source_Info_Option'Length) = Source_Info_Option
+         then
+            Project_Tree.Source_Info_File_Name :=
+              new String'(Arg (Source_Info_Option'Length + 1 .. Arg'Last));
+
          elsif Command_Line
            and then
             Arg'Length > Config_Project_Option'Length
