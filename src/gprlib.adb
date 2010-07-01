@@ -121,7 +121,7 @@ procedure Gprlib is
    --  True if libgnarl is needed
 
    Runtime_Library_Dir : String_Access := null;
-   --  Full path name of tha Ada runtime library
+   --  Full path name of the Ada runtime library
 
    Current_Section : Library_Section := No_Library_Section;
    --  The current section when reading the exchange file
@@ -2067,8 +2067,16 @@ begin
             Id       : ALI.ALI_Id;
 
          begin
+            if Verbose_Mode then
+               Put_Line ("Reading ALI files to decide for -lgnat");
+            end if;
+
             ALI_Loop :
             for Index in 1 .. ALIs.Last loop
+               if Verbose_Mode then
+                  Put_Line ("Reading " & ALIs.Table (Index).all);
+               end if;
+
                Name_Len := 0;
                Add_Str_To_Name_Buffer (ALIs.Table (Index).all);
                Lib_File := Name_Find;
@@ -2093,6 +2101,10 @@ begin
                   end if;
                end loop;
             end loop ALI_Loop;
+
+            if Verbose_Mode then
+               Put_Line ("End of ALI file reading");
+            end if;
          end;
       end if;
 
