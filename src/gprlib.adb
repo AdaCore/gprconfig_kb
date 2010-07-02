@@ -2065,6 +2065,7 @@ begin
             Lib_File : File_Name_Type;
             Text     : Text_Buffer_Ptr;
             Id       : ALI.ALI_Id;
+            use ALI;
 
          begin
             if Verbose_Mode then
@@ -2090,16 +2091,24 @@ begin
                   Read_Lines => "D");
                Free (Text);
 
-               --  Look for s-osinte.ads in the dependencies
+               if Id = No_ALI_Id then
+                  Put_Line
+                    ("warning: reading of " &
+                     ALIs.Table (Index).all &
+                     " failed");
 
-               for Index in ALI.ALIs.Table (Id).First_Sdep ..
-                 ALI.ALIs.Table (Id).Last_Sdep
-               loop
-                  if ALI.Sdep.Table (Index).Sfile = S_Osinte_Ads then
-                     Libgnarl_Needed := True;
-                     exit ALI_Loop;
-                  end if;
-               end loop;
+               else
+                  --  Look for s-osinte.ads in the dependencies
+
+                  for Index in ALI.ALIs.Table (Id).First_Sdep ..
+                    ALI.ALIs.Table (Id).Last_Sdep
+                  loop
+                     if ALI.Sdep.Table (Index).Sfile = S_Osinte_Ads then
+                        Libgnarl_Needed := True;
+                        exit ALI_Loop;
+                     end if;
+                  end loop;
+               end if;
             end loop ALI_Loop;
 
             if Verbose_Mode then
