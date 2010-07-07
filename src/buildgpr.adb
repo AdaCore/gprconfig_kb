@@ -9248,7 +9248,7 @@ package body Buildgpr is
             return True;
          end if;
 
-         if not Check_Source_Info_In_ALI (The_ALI) then
+         if not Check_Source_Info_In_ALI (The_ALI, Project_Tree) then
             return True;
          end if;
 
