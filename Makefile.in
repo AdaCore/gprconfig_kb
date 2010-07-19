@@ -147,8 +147,8 @@ install-doc:
 	${CP} doc/*.html ${docdir}/html
 
 tests: force
-	cd internal/gprtests_python; ./run-gprconfig-test.py
-	cd internal/gprtests_python; ./run-gprbuild-test.py
+	cd internal/gprtests_python; python ./run-gprconfig-test.py
+	cd internal/gprtests_python; python ./run-gprbuild-test.py
 
 test_names=
 test_config=
