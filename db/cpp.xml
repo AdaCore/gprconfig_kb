@@ -61,7 +61,7 @@
       for Leading_Required_Switches   ("C++") use
         Compiler'Leading_Required_Switches ("C++") &amp;
         ("-c", "-x", "c++");
-      for Dependency_Switches ("C++") use ("-Wp,-MMD,");
+      for Dependency_Switches ("C++") use ("-MMD", "-MF", "");
       for Include_Path        ("C++") use "CPATH";
    end Compiler;
      </config>

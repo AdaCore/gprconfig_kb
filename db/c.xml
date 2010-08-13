@@ -79,8 +79,39 @@
    package Compiler is
       for Leading_Required_Switches   ("C") use
          Compiler'Leading_Required_Switches ("C") &amp; ("-c", "-x", "c");
-      for Dependency_Switches ("C") use ("-Wp,-MMD,");
       for Include_Path        ("C") use "CPATH";
+   end Compiler;
+     </config>
+   </configuration>
+
+  <!--     GCC 2.8.1
+   Switch -MMD is not supported on GCC 2.8.1. So, we use an undocumented
+   switch.
+   -->
+   <configuration>
+     <compilers>
+       <compiler name="GCC-28" language="C" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Dependency_Switches ("C") use ("-Wp,-MMD,");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC" language="C" />
+       <compiler name="GCC-CYGMING" language="C" />
+       <compiler name="GCC-MINGW32" language="C" />
+       <compiler name="GCC-WRS5" language="C" />
+       <compiler name="GCC-WRS6" language="C" />
+       <compiler name="GCC-WRS653" language="C" />
+       <compiler name="GCC-WRSMILS" language="C" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Dependency_Switches ("C") use ("-MMD", "-MF", "");
    end Compiler;
      </config>
    </configuration>
