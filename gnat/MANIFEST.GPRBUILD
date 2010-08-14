@@ -2,6 +2,8 @@ Make-generated.in
 ali.adb
 ali.ads
 alloc.ads
+aspects.ads
+aspects.adb
 atree.adb
 atree.ads
 butil.adb
