@@ -64,10 +64,12 @@ with Sinput.P;
 with Snames;           use Snames;
 with Switch;           use Switch;
 with System;
-with System.Case_Util; use System.Case_Util;
 with Table;
 with Tempdir;
 with Types;            use Types;
+
+with System.Case_Util;       use System.Case_Util;
+with System.Multiprocessors; use System.Multiprocessors;
 
 package body Buildgpr is
 
@@ -10344,7 +10346,7 @@ package body Buildgpr is
 
                               declare
                                  Proj : Project_Id :=
-                                          Source_Identity.Project.Extended_By;
+                                   Source_Identity.Project.Extended_By;
                               begin
                                  while Proj /= No_Project loop
                                     Name_Len := 0;
@@ -10369,12 +10371,22 @@ package body Buildgpr is
                                       (Get_Name_String (Dep_File));
                                     Name_Buffer (Name_Len + 1) := ASCII.NUL;
 
-                                    Dep_TS := Unknown_Attributes;
-                                    if Is_Regular_File
-                                      (Name_Buffer'Address, Dep_TS'Access)
-                                    then
-                                       Dep_Path := Name_Find;
-                                    end if;
+                                    --  Check if the dependency file exists in
+                                    --  the extended project, and if it does,
+                                    --  replace both Dep_Path and Dep_TS with
+                                    --  the information for it.
+
+                                    declare
+                                       NDT : aliased File_Attributes :=
+                                                        Unknown_Attributes;
+                                    begin
+                                       if Is_Regular_File
+                                         (Name_Buffer'Address, NDT'Access)
+                                       then
+                                          Dep_Path := Name_Find;
+                                          Dep_TS := NDT;
+                                       end if;
+                                    end;
 
                                     Proj := Proj.Extended_By;
                                  end loop;
@@ -12064,12 +12076,12 @@ package body Buildgpr is
                   end if;
                end loop;
 
-               if Max_Proc = 0 then
-                  Processed := False;
-               end if;
-
                if Processed then
                   Maximum_Processes := Max_Proc;
+
+                  if Maximum_Processes = 0 then
+                     Maximum_Processes := Positive (Number_Of_CPUs);
+                  end if;
                end if;
             end;
 
