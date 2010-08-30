@@ -7188,6 +7188,11 @@ package body Buildgpr is
 
       Options.Process_Command_Line_Options;
 
+      if Debug.Debug_Flag_M then
+         Write_Line ("Maximum number of simultaneous compilations =" &
+                     Maximum_Processes'Img);
+      end if;
+
       --  Source file lookups should be cached for efficiency.
       --  Source files are not supposed to change.
 
@@ -12077,11 +12082,15 @@ package body Buildgpr is
                end loop;
 
                if Processed then
-                  Maximum_Processes := Max_Proc;
-
-                  if Maximum_Processes = 0 then
-                     Maximum_Processes := Positive (Number_Of_CPUs);
+                  if Max_Proc = 0 then
+                     Max_Proc := Natural (Number_Of_CPUs);
                   end if;
+
+                  if Max_Proc = 0 then
+                     Max_Proc := 1;
+                  end if;
+
+                  Maximum_Processes := Max_Proc;
                end if;
             end;
 
