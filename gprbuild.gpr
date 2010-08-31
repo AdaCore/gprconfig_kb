@@ -21,6 +21,7 @@ project Gprbuild is
         "gprbind.adb",
         "gprlib.adb",
         "gprclean.adb");
+
    for Source_Dirs use ("src", "gnat");
 
    case Build_Tool is
@@ -64,10 +65,8 @@ project Gprbuild is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches &
             ("-g", "-gnata", "-gnatVa", "-gnatwaCJI"
-             --  ??? warning as error should be considered back when
-             --  builgpr.adb line 7384 indentation is fixed
-             -- , "-gnatwe"
-             -- , "-gnatyg"
+             , "-gnatwe"
+             , "-gnatyg"
              );
 
             for Local_Configuration_Pragmas use "debug.adc";
@@ -88,9 +87,7 @@ project Gprbuild is
       case Bld is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches
-            --  ??? to be re-enabled with gprbuild can be built with
-            -- initialize_scalars
-            --  & ("-Sin")
+              & ("-Sin")
             ;
 
          when "coverage" | "profiling" | "production" =>
@@ -101,12 +98,12 @@ project Gprbuild is
    package Linker is
       Common_Switches := (project'Object_Dir & "/gprbuild_dummies.o",
                           project'Object_Dir & "/link.o");
-      --  ??? We use project'Object_Dir here instead of GprBuild'Object_Dir
+      --  We use project'Object_Dir here instead of GprBuild'Object_Dir
       --  for compatibility with GNAT Pro 6.0.2.
 
       Common_Switches_VMS :=
            (project'Object_Dir & "/gprbuild_dummies.obj",
-             project'Object_Dir & "/link.obj");
+            project'Object_Dir & "/link.obj");
 
       case Build_Tool is
          when "gnatmake" =>
@@ -144,7 +141,7 @@ project Gprbuild is
       ("gprlib-build_shared_lib.adb",
        "gprlib-build_shared_lib-nosymbols.adb",
        "gprlib-build_shared_lib-vms.adb",
---     "mlib-tgt-specific.adb",           ??? See GA05-023
+       "mlib-tgt-specific.adb",
        "mlib-tgt-vms-alpha.adb",
        "mlib-tgt-vms-ia64.adb");
 
