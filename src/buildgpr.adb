@@ -4518,7 +4518,6 @@ package body Buildgpr is
          Sfile      : File_Name_Type;
          Afile      : File_Name_Type;
          Source_2   : Source_Id;
-         Iter       : Source_Iterator;
 
          procedure Check_Source (Sfile : File_Name_Type);
          --  Check if source Sfile is in the same project file as the Src_Data
@@ -4583,12 +4582,10 @@ package body Buildgpr is
                         --  Look for this source
 
                         Afile := ALI.Withs.Table (K).Afile;
-                        Iter  := For_Each_Source (Project_Tree);
+                        Source_2 := Source_Files_Htable.Get
+                          (Project_Tree.Source_Files_HT, Sfile);
 
-                        loop
-                           Source_2 := Prj.Element (Iter);
-                           exit when Source_2 = No_Source;
-
+                        while Source_2 /= No_Source loop
                            if Is_Compilable (Source_2)
                              and then  Source_2.Dep_Name = Afile
                            then
@@ -4607,7 +4604,7 @@ package body Buildgpr is
                               exit;
                            end if;
 
-                           Next (Iter);
+                           Source_2 := Source_2.Next_With_File_Name;
                         end loop;
 
                         --  If it is the source of a project that is not the
@@ -9279,7 +9276,6 @@ package body Buildgpr is
 
          declare
             Projects : array (1 .. Num_Ext) of Project_Id;
-            Iter     : Source_Iterator;
          begin
             Proj := ALI_Project;
             for J in Projects'Range loop
@@ -9293,16 +9289,13 @@ package body Buildgpr is
                Sfile := ALI.Sdep.Table (D).Sfile;
 
                if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
-                  Iter := For_Each_Source (Project_Tree);
+                  Dep_Src := Source_Files_Htable.Get
+                    (Project_Tree.Source_Files_HT, Sfile);
                   Found := False;
 
-                  loop
-                     Dep_Src := Prj.Element (Iter);
-                     exit when Dep_Src = No_Source;
-
+                  while Dep_Src /= No_Source loop
                      if not Dep_Src.Locally_Removed
                        and then Dep_Src.Unit /= No_Unit_Index
-                       and then Dep_Src.File = Sfile
                      then
                         Found := True;
 
@@ -9404,7 +9397,7 @@ package body Buildgpr is
                         end if;
                      end if;
 
-                     Next (Iter);
+                     Dep_Src := Dep_Src.Next_With_File_Name;
                   end loop;
 
                   --  If the source was not found and the runtime source
