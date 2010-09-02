@@ -77,6 +77,9 @@ procedure Gprbind is
    Quiet_Output : Boolean := False;
    Verbose_Mode : Boolean := False;
 
+   Dash_O_Specified      : Boolean := False;
+   Dash_O_File_Specified : Boolean := False;
+
    There_Are_Stand_Alone_Libraries : Boolean := False;
    --  Set to True if the corresponding label is in the exchange file
 
@@ -486,6 +489,21 @@ begin
         (Binding_Options_Table.Table (J),
          Gnatbind_Options,
          Last_Gnatbind_Option);
+
+      if Binding_Options_Table.Table (J).all = Dash_OO then
+         Dash_O_Specified := True;
+
+      elsif Binding_Options_Table.Table (J)'Length >= 4 and then
+            Binding_Options_Table.Table (J) (1 .. 3) = Dash_OO & '='
+      then
+         Dash_O_Specified := True;
+         Dash_O_File_Specified := True;
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer
+           (Binding_Options_Table.Table (J)
+             (4 .. Binding_Options_Table.Table (J)'Last));
+         Objects_Path := Name_Find;
+      end if;
    end loop;
 
    if Ada_Compiler_Path = null or else
@@ -552,16 +570,20 @@ begin
 
    --  Create temporary file to get the list of objects
 
-   Tempdir.Create_Temp_File (FD_Objects, Objects_Path);
+   if not Dash_O_File_Specified then
+      Tempdir.Create_Temp_File (FD_Objects, Objects_Path);
+   end if;
 
    if GNAT_Version.all >= "6.4" then
-      Add
-        (Dash_OO & "=" & Get_Name_String (Objects_Path),
-         Gnatbind_Options,
-         Last_Gnatbind_Option);
-      Close (FD_Objects);
+      if not Dash_O_File_Specified then
+         Add
+           (Dash_OO & "=" & Get_Name_String (Objects_Path),
+            Gnatbind_Options,
+            Last_Gnatbind_Option);
+         Close (FD_Objects);
+      end if;
 
-   else
+   elsif not Dash_O_Specified then
       Add (Dash_OO, Gnatbind_Options, Last_Gnatbind_Option);
    end if;
 
@@ -743,12 +765,12 @@ begin
       end if;
    end;
 
-   if GNAT_Version.all < "6.4" then
+   if GNAT_Version.all < "6.4" and then not Dash_O_File_Specified then
       Close (FD_Objects);
    end if;
 
    if Return_Code /= 0 then
-      if Delete_Temp_Files then
+      if Delete_Temp_Files and not Dash_O_File_Specified then
          Delete_File (Get_Name_String (Objects_Path), Success);
       end if;
 
@@ -964,14 +986,18 @@ begin
             Bound_Files := new Bound_File'
               (Name => new String'(Line (1 .. Last)), Next => Bound_Files);
 
-         else
+            if Dash_O_Specified and then not Dash_O_File_Specified then
+               Put_Line (Line (1 .. Last));
+            end if;
+
+         elsif not Dash_O_File_Specified then
             Put_Line (Line (1 .. Last));
          end if;
       end loop;
 
       Close (Objects_File);
 
-      if Delete_Temp_Files then
+      if Delete_Temp_Files and then not Dash_O_File_Specified then
          Delete_File (Get_Name_String (Objects_Path), Success);
       end if;
 
