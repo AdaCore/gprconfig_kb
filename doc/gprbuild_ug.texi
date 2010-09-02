@@ -815,6 +815,11 @@ package Builder of the main project (attribute Switches):
   Do not display anything except errors and progress (switch @option{-d}).
   Cancel any previous switch @option{-v}.
 
+@item @option{-R} (no run path option)
+
+  Do not use a run path option to link executables or shared libraries,
+  even when attribute Run_Path_Option is specified.
+
 @item @option{-s} (recompile if compilation switches have changed)
 
   By default, GPRbuild will not recompile a source if all dependencies are
@@ -1181,7 +1186,6 @@ project file and gprbuild:
   @item -a (Consider all files, even readonly ali files)
   @item -M (List object file dependences for Makefile)
   @item -n (Check objects up to date, output next file to compile if not)
-  @item -R (Do not use a run_path_option when linking)
   @item -x (Allow compilation of needed units external to the projects)
   @item -z No main subprogram (zero main)
   @item --GCC=command
