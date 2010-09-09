@@ -1795,8 +1795,7 @@ package body Buildgpr is
                Id := Prj.Element (Iter);
                exit when Id = No_Source;
 
-               if not Id.Locally_Removed
-                 and then Is_Compilable (Id)
+               if Is_Compilable (Id)
                  and then Id.Kind = Impl
                  and then Id.Unit = No_Unit_Index
                then
@@ -2416,8 +2415,7 @@ package body Buildgpr is
                Source := Prj.Element (Iter);
                exit when Source = No_Source;
 
-               if not Source.Locally_Removed
-                 and then Is_Compilable (Source)
+               if Is_Compilable (Source)
                  and then Source.Language.Config.Objects_Linked
                  and then
                    ((Source.Unit = No_Unit_Index
@@ -7439,7 +7437,6 @@ package body Buildgpr is
       Sfile     : File_Name_Type;
       Afile     : File_Name_Type;
       Src_Id    : Source_Id;
-      Iter      : Source_Iterator;
 
    begin
       --  Insert in the queue the unmarked source files (i.e. those which have
@@ -7457,12 +7454,10 @@ package body Buildgpr is
 
             if Sfile /= No_File then
                Afile := ALI.Withs.Table (K).Afile;
-               Iter := For_Each_Source (Project_Tree);
+               Src_Id := Source_Files_Htable.Get
+                          (Project_Tree.Source_Files_HT, Sfile);
 
-               loop
-                  Src_Id := Prj.Element (Iter);
-                  exit when Src_Id = No_Source;
-
+               while Src_Id /= No_Source loop
                   if Is_Compilable (Src_Id)
                     and then Src_Id.Dep_Name = Afile
                   then
@@ -7484,7 +7479,7 @@ package body Buildgpr is
                      exit;
                   end if;
 
-                  Next (Iter);
+                  Src_Id := Src_Id.Next_With_File_Name;
                end loop;
 
                --  If Excluding_Shared_SALs is True, do not insert in the
