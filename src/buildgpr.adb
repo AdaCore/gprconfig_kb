@@ -11315,6 +11315,10 @@ package body Buildgpr is
 
       procedure Initialize (Queue_Per_Obj_Dir : Boolean) is
       begin
+         for J in 1 .. Q.Last loop
+            Q.Table (J).Id.In_The_Queue := False;
+         end loop;
+
          Q.Init;
          Q_Processed := 0;
          Q_First     := 1;
@@ -11330,11 +11334,11 @@ package body Buildgpr is
          Source_Identity  : Source_Id)
       is
       begin
-         for Index in 1 .. Q.Last loop
-            if Q.Table (Index).Id = Source_Identity then
-               return;
-            end if;
-         end loop;
+         if Source_Identity.In_The_Queue then
+            return;
+         end if;
+
+         Source_Identity.In_The_Queue := True;
 
          if Current_Verbosity = High then
             Write_Str ("Adding """);
