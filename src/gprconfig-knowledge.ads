@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---                   Copyright (C) 2006-2009, AdaCore                       --
+--                   Copyright (C) 2006-2010, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -129,23 +129,29 @@ package GprConfig.Knowledge is
    --  Is_Supported_Config to do this test)
 
    function To_String
-     (Comp          : Compiler;
-      As_Config_Arg : Boolean;
-      Show_Target   : Boolean := False;
-      Rank_In_List  : Integer := -1) return String;
+     (Comp            : Compiler;
+      As_Config_Arg   : Boolean;
+      Show_Target     : Boolean := False;
+      Rank_In_List    : Integer := -1;
+      Parser_Friendly : Boolean := False) return String;
    --  Return a string representing the compiler. It is either the --config
    --  argument (if As_Config_Arg is true) or the string to use in the
    --  interactive menu otherwise.
    --  If Rank_In_List is specified, it is written at the beginning of the
    --  line.
+   --  If Parser_Friendly is set, then the list is displayed in a way that can
+   --  be easily parsed automatically
 
    function To_String
-     (Compilers     : Compiler_Lists.List;
-      Selected_Only : Boolean;
-      Show_Target   : Boolean := False) return String;
+     (Compilers       : Compiler_Lists.List;
+      Selected_Only   : Boolean;
+      Show_Target     : Boolean := False;
+      Parser_Friendly : Boolean := False) return String;
    --  Return the list of compilers.
    --  Unselectable compilers are hidden. If Selected_Only is true, then only
    --  compilers that are currently selected are displayed.
+   --  If Parser_Friendly is set, then the list is displayed in a way that can
+   --  be easily parsed automatically
 
    function Display_Before (Comp1, Comp2 : Compiler_Access) return Boolean;
    --  Whether Comp1 should be displayed before Comp2 when displaying lists of

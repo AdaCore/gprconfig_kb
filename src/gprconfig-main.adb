@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                   Copyright (C) 2006-2009, AdaCore                       --
+--                   Copyright (C) 2006-2010, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -73,6 +73,11 @@ procedure GprConfig.Main is
    procedure Check_Version_And_Help is new
      Switch.Check_Version_And_Help_G (Usage);
 
+   procedure Display_Compilers_For_Parser
+     (Base               : in out Knowledge_Base;
+      Compilers          : in out Compiler_Lists.List);
+   --  Display the list of found compilers for use by an external parser
+
    procedure Select_Compilers_Interactively
      (Base               : in out Knowledge_Base;
       Compilers          : in out Compiler_Lists.List);
@@ -105,6 +110,7 @@ procedure GprConfig.Main is
    Load_Standard_Base : Boolean := True;
    Batch              : Boolean := False;
    Show_Targets       : Boolean := False;
+   Show_Compilers     : Boolean := False;
 
    --  We need to add the executable suffix here, since on windows,
    --  Locate_Exec_On_Path will also return directories with the name
@@ -120,7 +126,7 @@ procedure GprConfig.Main is
       is new Compiler_Lists.Generic_Sorting (Display_Before);
 
    Valid_Switches : constant String :=
-     "-batch -config= -db: h o: v q -show-targets -target=";
+     "-batch -config= -db: h o: v q -show-targets -mi-show-compilers -target=";
 
    --------------
    -- Callback --
@@ -183,6 +189,35 @@ procedure GprConfig.Main is
       Usage;
       Put_Line ("            The known compilers are: " & To_String (Known));
    end Help;
+
+   ----------------------------------
+   -- Display_Compilers_For_Parser --
+   ----------------------------------
+
+   procedure Display_Compilers_For_Parser
+     (Base               : in out Knowledge_Base;
+      Compilers          : in out Compiler_Lists.List)
+   is
+      Comp            : Compiler_Lists.Cursor := First (Compilers);
+
+      Count : constant Integer := Integer (Length (Compilers));
+      Choices : array (1 .. Count) of Compiler_Lists.Cursor;
+
+   begin
+      for C in Choices'Range loop
+         Choices (C) := Comp;
+         Next (Comp);
+      end loop;
+
+      Filter_Compilers_List (Base, Compilers, Selected_Targets_Set);
+
+      Put
+        (To_String
+           (Compilers,
+            Selected_Only   => False,
+            Show_Target     => True,
+            Parser_Friendly => True));
+   end Display_Compilers_For_Parser;
 
    ------------------------------------
    -- Select_Compilers_Interactively --
@@ -411,6 +446,8 @@ begin
 
             elsif Full_Switch = "-batch" then
                Batch := True;
+            elsif Full_Switch = "-mi-show-compilers" then
+               Show_Compilers := True;
             elsif Full_Switch = "-show-targets" then
                Show_Targets := True;
             elsif Full_Switch = "-db" then
@@ -518,8 +555,13 @@ begin
 
       Compiler_Sort.Sort (Compilers);
 
-      Select_Compilers_Interactively (Base, Compilers);
-      Show_Command_Line_Config (Compilers);
+      if Show_Compilers then
+         Display_Compilers_For_Parser (Base, Compilers);
+         return;
+      else
+         Select_Compilers_Interactively (Base, Compilers);
+         Show_Command_Line_Config (Compilers);
+      end if;
    end if;
 
    if not Target_Specified then

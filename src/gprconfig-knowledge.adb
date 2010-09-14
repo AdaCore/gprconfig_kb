@@ -1835,10 +1835,11 @@ package body GprConfig.Knowledge is
    ---------------
 
    function To_String
-     (Comp          : Compiler;
-      As_Config_Arg : Boolean;
-      Show_Target   : Boolean := False;
-      Rank_In_List  : Integer := -1) return String
+     (Comp            : Compiler;
+      As_Config_Arg   : Boolean;
+      Show_Target     : Boolean := False;
+      Rank_In_List    : Integer := -1;
+      Parser_Friendly : Boolean := False) return String
    is
       function Runtime_Or_Empty return String;
       function Rank return String;
@@ -1898,6 +1899,22 @@ package body GprConfig.Knowledge is
            & ',' & Get_Name_String_Or_Null (Comp.Path)
            & ',' & Get_Name_String_Or_Null (Comp.Name);
 
+      elsif Parser_Friendly then
+         return Rank & " target:"
+           & Get_Name_String_Or_Null (Comp.Target) & ASCII.LF
+           & Rank & " executable:"
+           & Get_Name_String_Or_Null (Comp.Executable) & ASCII.LF
+           & Rank & " path:"
+           & Get_Name_String_Or_Null (Comp.Path) & ASCII.LF
+           & Rank & " lang:"
+           & Get_Name_String_Or_Null (Comp.Language_Case) & ASCII.LF
+           & Rank & " name:"
+           & Get_Name_String_Or_Null (Comp.Name) & ASCII.LF
+           & Rank & " version:"
+           & Get_Name_String_Or_Null (Comp.Version) & ASCII.LF
+           & Rank & " runtime:"
+           & Get_Name_String_Or_Null (Comp.Runtime);
+
       elsif Comp.Executable = No_Name then
          --  A language that requires no compiler
 
@@ -1923,9 +1940,10 @@ package body GprConfig.Knowledge is
    ---------------
 
    function To_String
-     (Compilers     : Compiler_Lists.List;
-      Selected_Only : Boolean;
-      Show_Target   : Boolean := False) return String
+     (Compilers       : Compiler_Lists.List;
+      Selected_Only   : Boolean;
+      Show_Target     : Boolean := False;
+      Parser_Friendly : Boolean := False) return String
    is
       Comp   : Compiler_Lists.Cursor := First (Compilers);
       Result : Unbounded_String;
@@ -1940,8 +1958,9 @@ package body GprConfig.Knowledge is
               (Result,
                To_String
                  (Compiler_Lists.Element (Comp).all, False,
-                  Show_Target  => Show_Target,
-                  Rank_In_List => Rank));
+                  Show_Target     => Show_Target,
+                  Rank_In_List    => Rank,
+                  Parser_Friendly => Parser_Friendly));
             Append (Result, ASCII.LF);
          end if;
 
