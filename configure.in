@@ -2,6 +2,7 @@ AC_INIT(gprbuild,1.0,report@adacore.com,gprbuild)
 AC_CANONICAL_SYSTEM
 AC_PREFIX_PROGRAM(gnatmake)
 AC_PROG_INSTALL
-HOST=$host
-AC_SUBST(HOST)
+objdir=`pwd`
+AC_SUBST(objdir)
+AM_CHECK_XMLADA
 AC_OUTPUT(src/gprconfig-sdefault.ads Makefile)

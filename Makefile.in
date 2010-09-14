@@ -2,7 +2,9 @@ SHELL=/bin/sh
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@
-HOST=@HOST@
+host=@host@
+target=@target@
+build=@build@
 
 # Relative to the gnat/ subdirectory (or absolute path)
 GNAT_SOURCE_DIR=../gnat_src
@@ -19,6 +21,8 @@ MKDIR=mkdir -p
 BUILD=debug
 
 prefix=@prefix@
+srcdir=@srcdir@
+root_objdir=@objdir@
 exec_prefix=@exec_prefix@
 datarootdir=@datarootdir@
 datadir=@datadir@
@@ -26,6 +30,10 @@ bindir=@bindir@
 libdir=@libdir@
 libexecdir=@libexecdir@
 docdir=${datadir}/doc/@PACKAGE_TARNAME@
+
+# Are xmlada sources in our source tree
+xmlada_build_target=@xmlada_build_target@
+xmlada_prj_flags=@xmlada_prj_flags@
 
 # How do we want to use XML/Ada ?
 LIBRARY_TYPE=static
@@ -45,20 +53,20 @@ endif
 dummy:=$(shell $(MKDIR) $(objdir))
 
 GNATMAKE=gnatmake -p -m
-ifeq ($(strip $(filter-out %vms%,$(HOST))),)
+ifeq ($(strip $(filter-out %vms%,$(host))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
 
 ADA_GEN_SUBDIR=gnat
 
 .PHONY: all gprbuild gprconfig gprclean copy_gnat_src complete bootstrap
-all: $(ADA_GEN_SUBDIR)/stamp-snames
-	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD}
+all: $(xmlada_build_target) $(ADA_GEN_SUBDIR)/stamp-snames
+	${GNATMAKE} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
 MOVE_IF_CHANGE=mv -f
--include gnat/Make-generated.in
+-include $(srcdir)/gnat/Make-generated.in
 
 copy_gnat_src: force
 	-cd $(ADA_GEN_SUBDIR); \
@@ -125,6 +133,12 @@ $(objdir)/gprbuild_dummies.o: src/gprbuild_dummies.c
 
 $(objdir)/link.o: gnat/link.c
 	gcc -c -o $@ $<
+
+.PHONY: build_xmlada
+build_xmlada:
+	cd $(srcdir)/xmlada && ./configure --build=$(build) \
+	  --prefix=$(root_objdir)/xmlada/install 
+	cd $(srcdir)/xmlada && make LIBRARY_TYPE=static static install_static
 
 clean:
 	gnat clean -q -r -Pgprbuild
