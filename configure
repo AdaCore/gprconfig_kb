@@ -632,6 +632,7 @@ INSTALL_PROGRAM
 INSTALL_SCRIPT
 INSTALL_DATA
 objdir
+is_windows
 xmlada_build_target
 xmlada_prj_flags
 LIBOBJS
@@ -1971,6 +1972,11 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
 objdir=`pwd`
 
+case $host in
+   *mingw*|*cygwin*) is_windows="true";;
+                  *) is_windows="false";;
+esac
+
 
   { echo "$as_me:$LINENO: checking for xmlada" >&5
 echo $ECHO_N "checking for xmlada... $ECHO_C" >&6; }
@@ -2703,13 +2709,14 @@ INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
 INSTALL_SCRIPT!$INSTALL_SCRIPT$ac_delim
 INSTALL_DATA!$INSTALL_DATA$ac_delim
 objdir!$objdir$ac_delim
+is_windows!$is_windows$ac_delim
 xmlada_build_target!$xmlada_build_target$ac_delim
 xmlada_prj_flags!$xmlada_prj_flags$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 58; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 59; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

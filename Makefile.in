@@ -5,11 +5,12 @@ INSTALL_DATA=@INSTALL_DATA@
 host=@host@
 target=@target@
 build=@build@
+IS_WINDOWS=@is_windows@
 
 # Relative to the gnat/ subdirectory (or absolute path)
 GNAT_SOURCE_DIR=../gnat_src
 
-ifeq ($(OS),Windows_NT)
+ifeq ($(IS_WINDOWS),true)
 LN=cp -p
 EXEXT=.exe
 else
@@ -39,6 +40,9 @@ xmlada_prj_flags=@xmlada_prj_flags@
 LIBRARY_TYPE=static
 export LIBRARY_TYPE
 
+# What is the default debug mode ?
+DEBUG_MODE=debug
+
 objdir=obj
 ifeq ($(BUILD), debug)
 objdir=obj-debug
@@ -59,9 +63,27 @@ endif
 
 ADA_GEN_SUBDIR=gnat
 
-.PHONY: all gprbuild gprconfig gprclean copy_gnat_src complete bootstrap
+.PHONY: all distall gprbuild gprconfig gprclean copy_gnat_src complete bootstrap
 all: $(xmlada_build_target) $(ADA_GEN_SUBDIR)/stamp-snames
 	${GNATMAKE} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
+
+distall:
+	make GNATMAKE="$(GNATMAKE)" BUILD="$(DEBUG_MODE)"
+	make BUILD="$(DEBUG_MODE)" install
+	mv $(prefix)/bin/gprconfig$(EXEEXT) $(prefix)/bin/gprconfig_debug$(EXEEXT)
+	mv $(prefix)/bin/gprclean$(EXEEXT) $(prefix)/bin/gprclean_debug$(EXEEXT)
+	mv $(prefix)/bin/gprbuild$(EXEEXT) $(prefix)/bin/gprbuild_debug$(EXEEXT)
+	make GNATMAKE="$(GNATMAKE)" BUILD=production
+	make BUILD=production install
+	if [ "$(IS_WINDOWS)" = "false" ]; then \
+	  $(CP) $(srcdir)/doinstall $(prefix) && \
+	  chmod a+x $(prefix)/doinstall; \
+	fi
+	strip $(prefix)/bin/gprbuild$(EXEEXT)
+	strip $(prefix)/bin/gprbuild$(EXEEXT)
+	strip $(prefix)/bin/gprbuild$(EXEEXT)
+	strip $(prefix)/bin/gprbuild$(EXEEXT)
+	strip $(prefix)/bin/gprbuild$(EXEEXT)
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 

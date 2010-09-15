@@ -4,5 +4,10 @@ AC_PREFIX_PROGRAM(gnatmake)
 AC_PROG_INSTALL
 objdir=`pwd`
 AC_SUBST(objdir)
+case $host in
+   *mingw*|*cygwin*) is_windows="true";;
+                  *) is_windows="false";;
+esac
+AC_SUBST(is_windows)
 AM_CHECK_XMLADA
 AC_OUTPUT(src/gprconfig-sdefault.ads Makefile)
