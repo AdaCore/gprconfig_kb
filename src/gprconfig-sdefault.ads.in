@@ -26,5 +26,5 @@
 
 package GprConfig.Sdefault is
    pragma Warnings (Off);
-   Hostname           : constant String := "@HOST@";
+   Hostname           : constant String := "@host@";
 end GprConfig.Sdefault;
