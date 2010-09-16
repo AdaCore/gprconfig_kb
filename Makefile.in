@@ -70,20 +70,20 @@ all: $(xmlada_build_target) $(ADA_GEN_SUBDIR)/stamp-snames
 distall:
 	make GNATMAKE="$(GNATMAKE)" BUILD="$(DEBUG_MODE)"
 	make BUILD="$(DEBUG_MODE)" install
-	mv $(prefix)/bin/gprconfig$(EXEEXT) $(prefix)/bin/gprconfig_debug$(EXEEXT)
-	mv $(prefix)/bin/gprclean$(EXEEXT) $(prefix)/bin/gprclean_debug$(EXEEXT)
-	mv $(prefix)/bin/gprbuild$(EXEEXT) $(prefix)/bin/gprbuild_debug$(EXEEXT)
+	mv $(prefix)/bin/gprconfig$(EXEXT) $(prefix)/bin/gprconfig_debug$(EXEXT)
+	mv $(prefix)/bin/gprclean$(EXEXT) $(prefix)/bin/gprclean_debug$(EXEXT)
+	mv $(prefix)/bin/gprbuild$(EXEXT) $(prefix)/bin/gprbuild_debug$(EXEXT)
 	make GNATMAKE="$(GNATMAKE)" BUILD=production
 	make BUILD=production install
 	if [ "$(IS_WINDOWS)" = "false" ]; then \
 	  $(CP) $(srcdir)/doinstall $(prefix) && \
 	  chmod a+x $(prefix)/doinstall; \
 	fi
-	strip $(prefix)/bin/gprbuild$(EXEEXT)
-	strip $(prefix)/bin/gprbuild$(EXEEXT)
-	strip $(prefix)/bin/gprbuild$(EXEEXT)
-	strip $(prefix)/bin/gprbuild$(EXEEXT)
-	strip $(prefix)/bin/gprbuild$(EXEEXT)
+	strip $(prefix)/bin/gprbuild$(EXEXT)
+	strip $(prefix)/bin/gprbuild$(EXEXT)
+	strip $(prefix)/bin/gprbuild$(EXEXT)
+	strip $(prefix)/bin/gprbuild$(EXEXT)
+	strip $(prefix)/bin/gprbuild$(EXEXT)
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
