@@ -126,6 +126,11 @@ procedure Gprlib is
    Current_Section : Library_Section := No_Library_Section;
    --  The current section when reading the exchange file
 
+   No_Std_Lib_String : constant String := "-nostdlib";
+   Use_GNAT_Lib : Boolean := True;
+   --  Set to False when "-nostdlib" is in the library options. When False,
+   --  a shared library is not linked with the GNAT libraries.
+
    Standalone : Boolean := False;
    --  True when building a stand-alone library
 
@@ -984,10 +989,18 @@ begin
                Library_Version := new String'(Line (1 .. Last));
 
             when Gprexch.Leading_Library_Options =>
+               if Line (1 .. Last) = No_Std_Lib_String then
+                  Use_GNAT_Lib := False;
+               end if;
+
                Leading_Library_Options_Table.Append
-                                               (new String'(Line (1 .. Last)));
+                 (new String'(Line (1 .. Last)));
 
             when Gprexch.Library_Options =>
+               if Line (1 .. Last) = No_Std_Lib_String then
+                  Use_GNAT_Lib := False;
+               end if;
+
                Library_Options_Table.Append (new String'(Line (1 .. Last)));
 
             when Library_Path =>
@@ -1678,7 +1691,10 @@ begin
 
          --  For shared libraries, check if libgnarl is needed
 
-         if Relocatable and then Runtime_Library_Dir /= null then
+         if Relocatable
+           and then Use_GNAT_Lib
+           and then Runtime_Library_Dir /= null
+         then
             declare
                BG_File : File_Type;
                Line    : String (1 .. 1_000);
@@ -2060,7 +2076,10 @@ begin
       --  look for s-osinte.ads in all the ALI files. If found in at least one,
       --  then libgnarl is needed.
 
-      if Runtime_Library_Dir /= null and then not Libgnarl_Needed then
+      if Use_GNAT_Lib
+        and then Runtime_Library_Dir /= null
+        and then not Libgnarl_Needed
+      then
          declare
             Lib_File : File_Name_Type;
             Text     : Text_Buffer_Ptr;
@@ -2069,7 +2088,7 @@ begin
 
          begin
             if Verbose_Mode then
-               Put_Line ("Reading ALI files to decide for -lgnat");
+               Put_Line ("Reading ALI files to decide for -lgnarl");
             end if;
 
             ALI_Loop :
@@ -2117,7 +2136,7 @@ begin
          end;
       end if;
 
-      if Runtime_Library_Dir /= null then
+      if Use_GNAT_Lib and then Runtime_Library_Dir /= null then
          Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
 
          if Path_Option /= null then
