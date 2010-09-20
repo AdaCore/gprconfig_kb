@@ -80,10 +80,8 @@ distall:
 	  chmod a+x $(prefix)/doinstall; \
 	fi
 	strip $(prefix)/bin/gprbuild$(EXEXT)
-	strip $(prefix)/bin/gprbuild$(EXEXT)
-	strip $(prefix)/bin/gprbuild$(EXEXT)
-	strip $(prefix)/bin/gprbuild$(EXEXT)
-	strip $(prefix)/bin/gprbuild$(EXEXT)
+	strip $(prefix)/bin/gprclean$(EXEXT)
+	strip $(prefix)/bin/gprconfig$(EXEXT)
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
