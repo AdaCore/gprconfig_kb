@@ -82,6 +82,8 @@ distall:
 	strip $(prefix)/bin/gprbuild$(EXEXT)
 	strip $(prefix)/bin/gprclean$(EXEXT)
 	strip $(prefix)/bin/gprconfig$(EXEXT)
+	strip $(prefix)/libexec/gprbuild/gprbind$(EXEXT)
+	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
