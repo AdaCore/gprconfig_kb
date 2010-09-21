@@ -365,7 +365,7 @@
    for Shared_Library_Prefix use "lib";
    for Symbolic_Link_Supported use "false";
    for Library_Major_Minor_Id_Supported use "false";
-   for Shared_Library_Minimum_Switches use ("-shared");
+   for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
    for Library_Version_Switches use ("-Wl,-soname,");
    for Shared_Library_Suffix use ".dll";
    for Library_Auto_Init_Supported use "true";
