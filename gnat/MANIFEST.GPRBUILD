@@ -1,11 +1,15 @@
 Make-generated.in
 ali.adb
 ali.ads
+ali-util.adb
+ali-util.ads
 alloc.ads
 aspects.ads
 aspects.adb
 atree.adb
 atree.ads
+binderr.adb
+binderr.ads
 butil.adb
 butil.ads
 casing.adb
