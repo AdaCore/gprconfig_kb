@@ -31,6 +31,7 @@ with Ada.Text_IO;       use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 
 with ALI;
+with ALI.Util;
 with Csets;
 with Debug;     use Debug;
 with Err_Vars;  use Err_Vars;
@@ -3973,24 +3974,9 @@ package body Buildgpr is
       Finish           : Natural;
       Last_Obj         : Natural;
 
-      package Good_ALI is new Table.Table
-        (Table_Component_Type => ALI.ALI_Id,
-         Table_Index_Type     => Natural,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 50,
-         Table_Increment      => 100,
-         Table_Name           => "Buildgpr.Good_ALI");
-      --  Contains the set of valid ALI files that have not yet been scanned
-
       procedure Add_Config_File_Switch
         (Config    : Language_Config;
          Path_Name : Path_Name_Type);
-
-      function Get_Next_Good_ALI return ALI.ALI_Id;
-      --  Returns the next good ALI_Id record
-
-      function Good_ALI_Present return Boolean;
-      --  Returns True if any ALI file was recorded in the previous set
 
       procedure Record_ALI_For
         (Source_Identity : Source_Id;
@@ -4099,13 +4085,6 @@ package body Buildgpr is
       --  nothing else to do (that is the Q is empty and there are outstanding
       --  compilations).
 
-      procedure Fill_Queue_From_ALI_Files;
-      --  Check if we recorded good ALI files. If yes process them now in the
-      --  order in which they have been recorded. There are two occasions in
-      --  which we record good ali files. The first is in phase 1 when, after
-      --  scanning an existing ALI file we realize it is up-to-date, the second
-      --  instance is after a successful compilation.
-
       procedure Set_Env_For_Include_Dirs (Id : Source_Id);
       --  Set environment variables or switches to pass the include directories
       --  to the compiler
@@ -4139,32 +4118,9 @@ package body Buildgpr is
          end loop;
       end Add_Config_File_Switch;
 
-      -----------------------
-      -- Get_Next_Good_ALI --
-      -----------------------
-
-      function Get_Next_Good_ALI return ALI.ALI_Id is
-         Result : ALI.ALI_Id;
-
-      begin
-         pragma Assert (Good_ALI_Present);
-         Result := Good_ALI.Table (Good_ALI.Last);
-         Good_ALI.Decrement_Last;
-         return Result;
-      end Get_Next_Good_ALI;
-
-      ----------------------
-      -- Good_ALI_Present --
-      ----------------------
-
-      function Good_ALI_Present return Boolean is
-      begin
-         return Good_ALI.First <= Good_ALI.Last;
-      end Good_ALI_Present;
-
-      ---------------------
-      -- Record_Good_ALI --
-      ---------------------
+      --------------------
+      -- Record_ALI_For --
+      --------------------
 
       procedure Record_ALI_For
         (Source_Identity : Source_Id;
@@ -4195,8 +4151,10 @@ package body Buildgpr is
          end if;
 
          if Local_ALI /= ALI.No_ALI_Id then
-            Good_ALI.Increment_Last;
-            Good_ALI.Table (Good_ALI.Last) := Local_ALI;
+            Insert_Withed_Sources_For (Local_ALI);
+
+            ALI.Initialize_ALI;
+            ALI.Util.Initialize_ALI_Source;
          end if;
       end Record_ALI_For;
 
@@ -5607,6 +5565,10 @@ package body Buildgpr is
               and then Id.Language.Config.Dependency_Kind = ALI_File
             then
                Record_ALI_For (Id, The_ALI);
+
+            else
+               ALI.Initialize_ALI;
+               ALI.Util.Initialize_ALI_Source;
             end if;
          end if;
       end Process_Project_Phase_1;
@@ -5712,19 +5674,6 @@ package body Buildgpr is
          end if;
       end Wait_For_Available_Slot;
 
-      -------------------------------
-      -- Fill_Queue_From_ALI_Files --
-      -------------------------------
-
-      procedure Fill_Queue_From_ALI_Files is
-         The_ALI   : ALI.ALI_Id;
-      begin
-         while Good_ALI_Present loop
-            The_ALI := Get_Next_Good_ALI;
-            Insert_Withed_Sources_For (The_ALI);
-         end loop;
-      end Fill_Queue_From_ALI_Files;
-
    --  Start of processing for Compilation_Phase
 
    begin
@@ -5738,7 +5687,6 @@ package body Buildgpr is
          exit Compilation_Loop when Must_Exit_Because_Of_Error;
          Start_Compile_If_Possible;
          Wait_For_Available_Slot;
-         Fill_Queue_From_ALI_Files;
 
          if Display_Compilation_Progress then
             Write_Str ("completed ");
