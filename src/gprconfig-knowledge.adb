@@ -1913,7 +1913,10 @@ package body GprConfig.Knowledge is
            & Rank & " version:"
            & Get_Name_String_Or_Null (Comp.Version) & ASCII.LF
            & Rank & " runtime:"
-           & Get_Name_String_Or_Null (Comp.Runtime);
+           & Get_Name_String_Or_Null (Comp.Runtime) & ASCII.LF
+           & Rank & " native:"
+           & Boolean'Image
+               (Get_Name_String_Or_Null (Comp.Target) = Sdefault.Hostname);
 
       elsif Comp.Executable = No_Name then
          --  A language that requires no compiler
