@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE gprconfig [
-  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /></compilers>'>
+  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /><compiler name="GNAT_DOTNET"/></compilers>'>
 ] >
 
 <gprconfig>
@@ -186,6 +186,18 @@
    </config>
   </configuration>
 
+  <!-- DOTNET -->
+  <configuration>
+   <compilers>
+     <compiler name="GNAT" target="dotnet"/>
+   </compilers>
+   <config>
+   package Compiler is
+      for Object_File_Suffix       ("Ada") use ".il";
+   end Compiler;
+   </config>
+  </configuration>
+
   <!--  Whether -fPIC is needed -->
   <configuration>
    &filter_gnat;
@@ -194,6 +206,7 @@
       <target name="^.*mingw.*$" />
       <target name="^.*dec-osf.*$" />
       <target name="^.*vms.*$" />
+      <target name="^.*dotnet.*$" />
    </targets>
    <config>
    package Compiler is
@@ -218,6 +231,8 @@
      <compiler name="GNAT" runtime="kernel" />
      <compiler name="GNAT" runtime="rtp" />
      <compiler name="GNAT" runtime="xenomai" />
+     <compiler name="GNAT" runtime="compact" />
+     <compiler name="GNAT" runtime="silverlight" />
    </compilers>
    <config>
    package Compiler is

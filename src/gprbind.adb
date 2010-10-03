@@ -1284,7 +1284,9 @@ begin
 
       Close (BG_File);
 
-      if not Static_Libs then
+      if not Static_Libs
+        and then Adalib_Dir /= null
+      then
          Put_Line (IO_File, Binding_Label (Run_Path_Option));
          Put_Line (IO_File, Adalib_Dir.all);
          Name_Len := Adalib_Dir'Length;
