@@ -188,9 +188,9 @@
 
   <!-- DOTNET -->
   <configuration>
-   <compilers>
-     <compiler name="GNAT" target="dotnet"/>
-   </compilers>
+   <targets>
+    <target name="^.*dotnet.*$" />
+   </targets>
    <config>
    package Compiler is
       for Object_File_Suffix       ("Ada") use ".il";
