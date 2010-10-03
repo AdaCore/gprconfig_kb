@@ -96,6 +96,7 @@ procedure Gprbind is
    Dash_gnatA  : constant String := "-gnatA";
    Dash_gnatWb : constant String := "-gnatWb";
    Dash_gnatiw : constant String := "-gnatiw";
+   Dash_gnatws : constant String := "-gnatws";
 
    GCC_Version : Character := '0';
    Gcc_Version_String : constant String := "gcc version ";
@@ -781,6 +782,7 @@ begin
    Add (Dash_gnatA, Compiler_Options, Last_Compiler_Option);
    Add (Dash_gnatWb, Compiler_Options, Last_Compiler_Option);
    Add (Dash_gnatiw, Compiler_Options, Last_Compiler_Option);
+   Add (Dash_gnatws, Compiler_Options, Last_Compiler_Option);
 
    --  Read the ALI file of the first ALI file. Fetch the back end switches
    --  from this ALI file and use these switches to compile the binder
