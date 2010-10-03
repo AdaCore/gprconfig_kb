@@ -14,6 +14,17 @@
      </config>
    </configuration>
 
+   <configuration>
+     <targets>
+       <target name="dotnet" />
+     </targets>
+     <config>
+   package Builder is
+      for Executable_Suffix use ".exe";
+   end Builder;
+     </config>
+   </configuration>
+
    <!-- ppc-elf executables do not have any extension -->
    <configuration>
      <targets>
@@ -220,6 +231,7 @@
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^dotnet$" />
      </targets>
      <compilers>
        <compiler name="GNAT" />
