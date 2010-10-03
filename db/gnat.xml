@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE gprconfig [
-  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /><compiler name="GNAT_DOTNET"/></compilers>'>
+  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /></compilers>'>
 ] >
 
 <gprconfig>
