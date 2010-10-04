@@ -494,6 +494,7 @@
   <configuration>
     <targets negate="true">
        <target name="aamp" />
+       <target name="dotnet" />
     </targets>
     <compilers negate="true">
        <compiler language="C++" />

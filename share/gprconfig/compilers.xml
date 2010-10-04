@@ -285,7 +285,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|elinos-linux|dotnet-).*)?gnatmake</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|elinos-linux).*)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
@@ -298,13 +298,28 @@
     <runtimes default="default,kernel">
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/adalib/</directory>
        <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/rts-(.*)/adalib/</directory>
-       <directory group="default" >\.\./lib/dotgnat/adalib/</directory>
-       <directory group="2" >\.\./lib/dotgnat/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>
       <external>${PREFIX}gcc -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <!--  GNAT_DOTNET -->
+
+  <compiler_description>
+    <name>GNAT_DOTNET</name>
+    <executable prefix="1">(.*dotnet-)gnatmake</executable>
+    <version>
+      <external>${PREFIX}gnatls -v</external>
+      <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <runtimes default="default,kernel">
+       <directory group="default" >\.\./lib/dotgnat/adalib/</directory>
+       <directory group="1" >\.\./lib/dotgnat/rts-(.*)/adalib/</directory>
+    </runtimes>
+    <target>dotnet</target>
   </compiler_description>
 
   <!--    G77  -->

@@ -235,6 +235,7 @@
      </targets>
      <compilers>
        <compiler name="GNAT" />
+       <compiler name="GNAT_DOTNET" />
      </compilers>
      <config>
    package Binder is
