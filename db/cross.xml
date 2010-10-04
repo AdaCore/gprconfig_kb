@@ -241,7 +241,7 @@
    package Binder is
       for Required_Switches ("Ada") use
           Binder'Required_Switches ("Ada") &amp;
-          ("gnatbind_prefix=${PREFIX}");
+          ("gnatbind_prefix=${PREFIX(ada)}");
    end Binder;
      </config>
    </configuration>

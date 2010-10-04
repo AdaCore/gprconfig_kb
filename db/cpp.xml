@@ -24,7 +24,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C++") use "${PATH}g++${PREFIX}";
+      for Driver              ("C++") use "${PATH(c++)}g++${PREFIX(c++)}";
    end Compiler;
      </config>
    </configuration>
@@ -40,7 +40,7 @@
     </compilers>
      <config>
    package Compiler is
-      for Driver              ("C++") use "${PATH}c++${PREFIX}";
+      for Driver              ("C++") use "${PATH(c++)}c++${PREFIX(c++)}";
    end Compiler;
      </config>
    </configuration>

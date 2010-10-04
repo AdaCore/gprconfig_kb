@@ -23,7 +23,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C") use "${PATH}${PREFIX}gcc";
+      for Driver              ("C") use "${PATH(c)}${PREFIX(c)}gcc";
    end Compiler;
      </config>
    </configuration>
@@ -34,7 +34,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C") use "${PATH}gcc${PREFIX}";
+      for Driver              ("C") use "${PATH(c)}gcc${PREFIX(c)}";
    end Compiler;
      </config>
    </configuration>
@@ -48,7 +48,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C") use "${PATH}cc${PREFIX}";
+      for Driver              ("C") use "${PATH(c)}cc${PREFIX(c)}";
    end Compiler;
      </config>
    </configuration>
@@ -59,7 +59,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C") use "${PATH}dcc";
+      for Driver              ("C") use "${PATH(c)}dcc";
    end Compiler;
      </config>
    </configuration>
