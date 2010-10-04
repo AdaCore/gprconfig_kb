@@ -1914,6 +1914,41 @@ underscores.  Finally @code{$$} is replaced by a simple @code{$}.
 User variables are defined by @code{<variable>} nodes and may override
 predefined variables.  To avoid a possible override use lower case names.
 
+The variables are used in two contexts: either in a
+@code{<compiler_description>} node, in which case the variable refers to
+the compiler we are describing, or within a @code{<configuration>} node.
+In the latter case, and since there might be several compilers selected,
+you need to further specify the variable by adding in parenthesis the
+language of the compiler you are interested in.
+
+For instance, the following is invalid:
+
+@CODESAMPLE{
+ <configuration>
+  <compilers>
+   <compiler name="GNAT" />
+  </compilers>
+  <targets negate="true">
+    <target name="^powerpc-elf$"/>
+  </targets>
+  <config>
+    package Compiler is
+       for Driver ("Ada") use "$@{PATH@}gcc";   --  Invalid !
+    end Compiler;
+  </config>
+ </configuration>
+}
+
+The trouble with the above is that if you are using multiple languages
+like C and Ada, both compilers will match the "negate" part, and therefore
+there is an ambiguity for the value of @code{$@{PATH@}}. To prevent such
+issues, you need to use the following syntax instead when inside a
+@code{<configuration>} node:
+
+@CODESAMPLE{
+    for Driver ("Ada") use "$@{PATH(ada)@}gcc";   --  Correct
+}
+
 Predefined variables are always in upper case.  Here is the list of
 predefined variables
 
@@ -1944,11 +1979,6 @@ is replaced by the prefix to the executable name, as defined by the
 is the current directory, i.e. the one containing the executable found through
 @code{<executable>}. It always ends with a directory separator.
 
-@item $@{GPRCONFIG_PREFIX@}
-is the directory in which @value{gprconfig} was installed (e.g
-@file{"/usr/local/"} if the executable is @file{"/usr/local/bin/gprconfig"}.
-This directory always ends with a directory separator.
-
 @item $@{LANGUAGE@}
 is the language supported by the compiler, always folded to lower-case
 
@@ -1959,6 +1989,13 @@ value of the external value is computed. These are special strings
 used when substituting text in configuration chunks.
 
 @var{RUNTIME_DIR} always end with a directory separator.
+
+@item $@{GPRCONFIG_PREFIX@}
+is the directory in which @value{gprconfig} was installed (e.g
+@file{"/usr/local/"} if the executable is @file{"/usr/local/bin/gprconfig"}.
+This directory always ends with a directory separator.
+This variable never takes a language in parameter, even within a
+@code{<configuration>} node.
 
 @end table
 

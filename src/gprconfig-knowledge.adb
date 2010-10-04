@@ -199,6 +199,8 @@ package body GprConfig.Knowledge is
    --  separated string, and split.
    --  Comparisong with Matching is case-insensitive (this is needed for
    --  languages, does not matter for versions, is not used for targets)
+   --
+   --  This is only for use within a <compiler_description> context.
 
    procedure Foreach_Language_Runtime
      (Iterator       : in out Compiler_Iterator'Class;
@@ -242,10 +244,18 @@ package body GprConfig.Knowledge is
    --  go, since the regexp might no longer match in the end, if for instance
    --  it includes ".." directories.
 
-   function Substitute_Variables
-     (Str         : String;
-      Comp        : Compiler) return String;
+   generic
+      with function Callback (Var_Name, Index : String) return String;
+   function Substitute_Variables (Str : String) return String;
+   --  Substitute variables in Str (their value is computed through Callback).
+
+   function Substitute_Variables_In_Compiler_Description
+     (Str : String; Comp : Compiler) return String;
+   function Substitute_Variables_In_Configuration
+     (Str : String; Comps : Compiler_Lists.List) return String;
    --  Substitute the special "$..." names.
+   --  Depending on the XML nodes we are in (specified by the context) the list
+   --  of variables might be different.
 
    procedure Match
      (Filter            : Compilers_Filter_Lists.List;
@@ -273,9 +283,9 @@ package body GprConfig.Knowledge is
    --  Return True if Filter matches the list of selected configurations
 
    procedure Merge_Config
-     (Packages          : in out String_Maps.Map;
-      Selected_Compiler : Compiler;
-      Config            : String);
+     (Packages  : in out String_Maps.Map;
+      Compilers : Compiler_Lists.List;
+      Config    : String);
    --  Merge the contents of Config into Packages, so that each attributes ends
    --  up in the right package, and the packages are not duplicated.
    --  Selected_Compiler is the compiler that made the chunk match the filters.
@@ -1079,23 +1089,22 @@ package body GprConfig.Knowledge is
       elsif Name = "GPRCONFIG_PREFIX" then
          return Executable_Prefix_Path;
       end if;
-      Put_Line (Standard_Error, "variable '" & Name & "' is not defined");
-      return "";
+
+      raise Invalid_Knowledge_Base
+        with "variable '" & Name & "' is not defined";
    end Get_Variable_Value;
 
    --------------------------
    -- Substitute_Variables --
    --------------------------
 
-   function Substitute_Variables
-     (Str  : String;
-      Comp : Compiler) return String
-   is
+   function Substitute_Variables (Str : String) return String is
       Str_Len                   : constant Natural := Str'Last;
       Pos                       : Natural := Str'First;
       Last                      : Natural := Pos;
       Result                    : Unbounded_String;
       Word_Start, Word_End, Tmp : Natural;
+      Has_Index                 : Boolean;
    begin
       while Pos < Str_Len loop
          if Str (Pos) = '$' and then Str (Pos + 1) = '$' then
@@ -1126,8 +1135,32 @@ package body GprConfig.Knowledge is
 
             Append (Result, Str (Last ..  Pos - 1));
 
-            Append (Result,
-                    Get_Variable_Value (Comp, Str (Word_Start .. Word_End)));
+            Has_Index := False;
+
+            for W in Word_Start .. Word_End loop
+               if Str (W) = '(' then
+                  Has_Index := True;
+
+                  if Str (Word_End) /= ')' then
+                     Put_Line
+                       (Standard_Error,
+                         "Missing closing parenthesis in variable name: "
+                         & Str (Word_Start .. Word_End));
+                     raise Invalid_Knowledge_Base;
+                  else
+                     Append
+                       (Result,
+                        Callback
+                          (Var_Name => Str (Word_Start .. W - 1),
+                           Index    => Str (W + 1 .. Word_End - 1)));
+                  end if;
+                  exit;
+               end if;
+            end loop;
+
+            if not Has_Index then
+               Append (Result, Callback (Str (Word_Start .. Word_End), ""));
+            end if;
 
             Last := Tmp;
             Pos  := Last;
@@ -1138,6 +1171,80 @@ package body GprConfig.Knowledge is
       Append (Result, Str (Last .. Str_Len));
       return To_String (Result);
    end Substitute_Variables;
+
+   --------------------------------------------------
+   -- Substitute_Variables_In_Compiler_Description --
+   --------------------------------------------------
+
+   function Substitute_Variables_In_Compiler_Description
+     (Str  : String;
+      Comp : Compiler) return String
+   is
+      function Callback (Var_Name, Index : String) return String;
+      function Callback (Var_Name, Index : String) return String is
+      begin
+         if Index /= "" then
+            Put_Line
+              (Standard_Error,
+               "Indexed variables only allowed in <configuration> (in "
+                & Var_Name & "(" & Index & ")");
+            raise Invalid_Knowledge_Base;
+         end if;
+
+         return Get_Variable_Value (Comp, Var_Name);
+      end Callback;
+
+      function Do_Substitute is new Substitute_Variables (Callback);
+   begin
+      return Do_Substitute (Str);
+   end Substitute_Variables_In_Compiler_Description;
+
+   -------------------------------------------
+   -- Substitute_Variables_In_Configuration --
+   -------------------------------------------
+
+   function Substitute_Variables_In_Configuration
+     (Str   : String;
+      Comps : Compiler_Lists.List) return String
+   is
+      function Callback (Var_Name, Index : String) return String;
+      function Callback (Var_Name, Index : String) return String is
+         C    : Compiler_Lists.Cursor;
+         Comp : Compiler_Access;
+         Idx  : constant Name_Id := Get_String_Or_No_Name (To_Lower (Index));
+      begin
+         if Var_Name = "GPRCONFIG_PREFIX" then
+            return Executable_Prefix_Path;
+
+         elsif Index = "" then
+            Put_Line
+              (Standard_Error,
+               "Ambiguous variable substitution, need to specify the"
+               & " language (in " & Var_Name & ")");
+            raise Invalid_Knowledge_Base;
+
+         else
+            C := First (Comps);
+            while Has_Element (C) loop
+               Comp := Compiler_Lists.Element (C);
+
+               if Comp.Selected
+                 and then Comp.Language_LC = Idx
+               then
+                  return Get_Variable_Value (Comp.all, Var_Name);
+               end if;
+
+               Next (C);
+            end loop;
+         end if;
+
+         return "";
+      end Callback;
+
+      function Do_Substitute is new Substitute_Variables (Callback);
+   begin
+      return Do_Substitute (Str);
+   end Substitute_Variables_In_Configuration;
 
    --------------------
    -- Parse_All_Dirs --
@@ -1347,7 +1454,7 @@ package body GprConfig.Knowledge is
                      Tmp_Result := Null_Unbounded_String;
                   else
                      Tmp_Result := To_Unbounded_String
-                       (Substitute_Variables
+                       (Substitute_Variables_In_Compiler_Description
                           (Get_Name_String (Node.Value), Comp));
                   end if;
                   From_Static := True;
@@ -1360,7 +1467,8 @@ package body GprConfig.Knowledge is
                      Get_Name_String (Comp.Path)
                      & Path_Separator & Saved_Path);
                   declare
-                     Command : constant String := Substitute_Variables
+                     Command : constant String :=
+                       Substitute_Variables_In_Compiler_Description
                        (Get_Name_String (Node.Command), Comp);
                   begin
                      Tmp_Result     := Null_Unbounded_String;
@@ -1394,8 +1502,9 @@ package body GprConfig.Knowledge is
 
                when Value_Directory =>
                   declare
-                     Search : constant String := Substitute_Variables
-                       (Get_Name_String (Node.Directory), Comp);
+                     Search : constant String :=
+                       Substitute_Variables_In_Compiler_Description
+                         (Get_Name_String (Node.Directory), Comp);
                   begin
                      if Search (Search'First) = '/' then
                         Put_Verbose
@@ -1751,8 +1860,7 @@ package body GprConfig.Knowledge is
 
       if Executable /= No_Name then
          Get_External_Value
-           ("runtimes",
-            Value            => Descr.Runtimes,
+           ("runtimes",            Value            => Descr.Runtimes,
             Comp             => Comp,
             Split_Into_Words => True,
             Processed_Value  => Runtimes);
@@ -2545,9 +2653,9 @@ package body GprConfig.Knowledge is
    ------------------
 
    procedure Merge_Config
-     (Packages          : in out String_Maps.Map;
-      Selected_Compiler : Compiler;
-      Config            : String)
+     (Packages  : in out String_Maps.Map;
+      Compilers : Compiler_Lists.List;
+      Config    : String)
    is
       procedure Add_Package
         (Name : String; Chunk : String; Prefix : String := "      ");
@@ -2557,8 +2665,8 @@ package body GprConfig.Knowledge is
         (Name : String; Chunk : String; Prefix : String := "      ")
       is
          C : constant String_Maps.Cursor := Find (Packages, Name);
-         Replaced : constant String := Substitute_Variables
-           (Chunk, Selected_Compiler);
+         Replaced : constant String := Substitute_Variables_In_Configuration
+           (Chunk, Compilers);
       begin
          if Replaced /= "" then
             if Has_Element (C) then
@@ -2779,19 +2887,24 @@ package body GprConfig.Knowledge is
                return;
             end if;
 
-            if Selected_Compiler /= null then
-               Merge_Config
-                 (Packages,
-                  Selected_Compiler.all,
-                  Get_Name_String
-                    (Configuration_Lists.Element (Config).Config));
-            else
-               Merge_Config
-                 (Packages,
-                  No_Compiler,
-                  Get_Name_String
-                    (Configuration_Lists.Element (Config).Config));
-            end if;
+            Merge_Config
+              (Packages,
+               Compilers,
+               Get_Name_String (Configuration_Lists.Element (Config).Config));
+
+--              if Selected_Compiler /= null then
+--                 Merge_Config
+--                   (Packages,
+--                    Selected_Compiler.all,
+--                    Get_Name_String
+--                      (Configuration_Lists.Element (Config).Config));
+--              else
+--                 Merge_Config
+--                   (Packages,
+--                    No_Compiler,
+--                    Get_Name_String
+--                      (Configuration_Lists.Element (Config).Config));
+--              end if;
          end if;
 
          Next (Config);

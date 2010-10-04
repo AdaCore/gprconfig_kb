@@ -13,6 +13,12 @@ This date shows the implementation date of the feature. Any 1.4.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-15-J928-007 Indexed variables in knowledge base (2010-10-04)
+
+  To avoid an ambiguity in the <configuration> nodes when multiple
+  compilers are selected, the substitution variables need to be indexed by
+  the language of the corresponding compiler.
+
 NF-15-J915-016 No linking with GNAT libs with -nostdlib (2010-09-17)
 
   When a shared library is linked and -nostdlib is in the library options, then
