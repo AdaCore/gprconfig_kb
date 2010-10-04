@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---          Copyright (C) 1992-2009, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2010, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -36,7 +36,7 @@
 
 package GPR_Version is
 
-   Gpr_Version : constant String := "1.5.0w";
+   Gpr_Version : constant String := "1.6.0w";
    --  Static string identifying this version
 
    function Gpr_Version_String return String;
