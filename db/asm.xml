@@ -13,7 +13,7 @@
    end Naming;
 
    package Compiler is
-      for Driver            ("Asm_Cpp") use "${PATH}${PREFIX}gcc";
+      for Driver            ("Asm_Cpp") use "${PATH(asm_cppPREFIX(asm_cpp)}gcc";
       for Leading_Required_Switches ("Asm_Cpp") use
          Compiler'Leading_Required_Switches ("Asm_Cpp") &amp;
          ("-c", "-x", "assembler-with-cpp");
@@ -33,7 +33,7 @@
    end Naming;
 
    package Compiler is
-      for Driver            ("Asm") use "${PATH}${PREFIX}gcc";
+      for Driver            ("Asm") use "${PATH(asm)}${PREFIX(asm)}gcc";
       for Leading_Required_Switches ("Asm") use
         Compiler'Leading_Required_Switches ("Asm") &amp;
         ("-c", "-x", "assembler");
@@ -53,7 +53,7 @@
    end Naming;
 
    package Compiler is
-      for Driver            ("Asm2") use "${PATH}${PREFIX}gcc";
+      for Driver            ("Asm2") use "${PATH(asm2)}${PREFIX(asm2)}gcc";
       for Leading_Required_Switches ("Asm2") use
         Compiler'Leading_Required_Switches ("Asm2") &amp;
         ("-c", "-x", "assembler");

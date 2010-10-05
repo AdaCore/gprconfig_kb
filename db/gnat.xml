@@ -55,9 +55,9 @@
           "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
    end Binder;
 
-   for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
-   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR}";
-   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR}/../adainclude";
+   for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
+   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}";
+   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/../adainclude";
    </config>
   </configuration>
 
@@ -72,7 +72,7 @@
    end Naming;
 
    package Compiler is
-      for Driver                   ("Ada") use "${PATH}${PREFIX}gcc";
+      for Driver                   ("Ada") use "${PATH(ada)}${PREFIX(ada)}gcc";
       for Leading_Required_Switches        ("Ada") use
           Compiler'Leading_Required_Switches ("Ada")
 	     &amp; ("-c", "-x", "ada", "-gnatA");
@@ -91,9 +91,9 @@
           "${GPRCONFIG_PREFIX}libexec/gprbuild/gprbind";
    end Binder;
 
-   for Toolchain_Version     ("Ada") use "GNAT ${VERSION}";
-   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR}";
-   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR}/../adainclude";
+   for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
+   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}";
+   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/../adainclude";
    </config>
   </configuration>
 
@@ -222,12 +222,12 @@
    <config>
    package Compiler is
       for Leading_Required_Switches ("Ada") use
-        Compiler'Leading_Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}");
    end Compiler;
 
    package Binder is
       for Required_Switches ("Ada") use
-        Binder'Required_Switches ("Ada") &amp; ("--RTS=$RUNTIME");
+        Binder'Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}");
    end Binder;
    </config>
   </configuration>
