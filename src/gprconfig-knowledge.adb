@@ -86,31 +86,6 @@ package body GprConfig.Knowledge is
    Indentation_Level : Integer := 0;
    --  Current indentation level for traces
 
-   procedure Parse_Compiler_Description
-     (Base        : in out Knowledge_Base;
-      File        : String;
-      Description : Node);
-   --  Parse a compiler description described by N. Appends the result to
-   --  Base.Compilers or Base.No_Compilers
-
-   procedure Parse_Configuration
-     (Append_To   : in out Configuration_Lists.List;
-      File        : String;
-      Description : Node);
-   --  Parse a configuration node
-
-   procedure Parse_Targets_Set
-     (Append_To   : in out Targets_Set_Vectors.Vector;
-      File        : String;
-      Description : Node);
-   --  Parse a targets set node
-
-   procedure Parse_External_Value
-     (Value    : out External_Value;
-      File     : String;
-      External : Node);
-   --  Parse an XML node that describes an external value
-
    function Get_Variable_Value
      (Comp : Compiler;
       Name : String) return String;
@@ -470,276 +445,6 @@ package body GprConfig.Knowledge is
       end if;
    end Name_As_Directory;
 
-   --------------------------
-   -- Parse_External_Value --
-   --------------------------
-
-   procedure Parse_External_Value
-     (Value    : out External_Value;
-      File     : String;
-      External : Node)
-   is
-      Tmp           : Node := First_Child (External);
-      External_Node : External_Value_Node;
-      Is_Done       : Boolean := True;
-      Static_Value  : constant String := Node_Value_As_String (External);
-      Has_Static    : Boolean := False;
-   begin
-      for S in Static_Value'Range loop
-         if Static_Value (S) /= ' '
-           and then Static_Value (S) /= ASCII.LF
-         then
-            Has_Static := True;
-            exit;
-         end if;
-      end loop;
-
-      --  Constant value is not within a nested node.
-      if Has_Static then
-         External_Node :=
-           (Typ        => Value_Constant,
-            Value      => Get_String (Static_Value));
-         Append (Value, External_Node);
-         Is_Done := False;
-      end if;
-
-      while Tmp /= null loop
-         if Node_Type (Tmp) /= Element_Node then
-            null;
-
-         elsif Node_Name (Tmp) = "external" then
-            if not Is_Done then
-               Append (Value, (Typ => Value_Done));
-            end if;
-
-            External_Node :=
-              (Typ        => Value_Shell,
-               Command    => Get_String (Node_Value_As_String (Tmp)));
-            Append (Value, External_Node);
-            Is_Done := False;
-
-         elsif Node_Name (Tmp) = "directory" then
-            External_Node :=
-              (Typ         => Value_Directory,
-               Directory   => Get_String (Node_Value_As_String (Tmp)),
-               Dir_If_Match => No_Name,
-               Directory_Group => 0);
-            begin
-               External_Node.Directory_Group := Integer'Value
-                 (Get_Attribute (Tmp, "group", "0"));
-            exception
-               when Constraint_Error =>
-                  External_Node.Directory_Group := -1;
-                  External_Node.Dir_If_Match :=
-                    Get_String (Get_Attribute (Tmp, "group", "0"));
-            end;
-            Append (Value, External_Node);
-            Is_Done := True;
-
-         elsif Node_Name (Tmp) = "getenv" then
-            if not Is_Done then
-               Append (Value, (Typ => Value_Done));
-            end if;
-
-            declare
-               Name : constant String := Get_Attribute (Tmp, "name", "");
-            begin
-               if Ada.Environment_Variables.Exists (Name) then
-                  External_Node :=
-                    (Typ        => Value_Constant,
-                     Value      => Get_String
-                       (Ada.Environment_Variables.Value (Name)));
-               else
-                  Put_Verbose ("warning: environment variable '" & Name
-                               & "' is not defined");
-                  External_Node :=
-                    (Typ        => Value_Constant,
-                     Value      => No_Name);
-               end if;
-            end;
-            Append (Value, External_Node);
-            Is_Done := False;
-
-         elsif Node_Name (Tmp) = "filter" then
-            External_Node :=
-              (Typ        => Value_Filter,
-               Filter    => Get_String (Node_Value_As_String (Tmp)));
-            Append (Value, External_Node);
-            Is_Done := True;
-
-         elsif Node_Name (Tmp) = "must_match" then
-            External_Node :=
-              (Typ        => Value_Must_Match,
-               Must_Match => Get_String (Node_Value_As_String (Tmp)));
-            Append (Value, External_Node);
-            Is_Done := True;
-
-         elsif Node_Name (Tmp) = "grep" then
-            External_Node :=
-              (Typ        => Value_Grep,
-               Regexp_Re  => new Pattern_Matcher'
-                 (Compile (Get_Attribute (Tmp, "regexp", ".*"),
-                           Multiple_Lines)),
-               Group      => Integer'Value
-                 (Get_Attribute (Tmp, "group", "0")));
-            Append (Value, External_Node);
-
-         else
-            Put_Line (Standard_Error, "Invalid XML description for "
-                      & Node_Name (External) & " in file " & File);
-            Put_Line (Standard_Error, "    Invalid tag: " & Node_Name (Tmp));
-            Value := Null_External_Value;
-         end if;
-
-         Tmp := Next_Sibling (Tmp);
-      end  loop;
-
-      if not Is_Done then
-         Append (Value, (Typ => Value_Done));
-      end if;
-
-   exception
-      when Constraint_Error =>
-         Put_Line (Standard_Error, "Invalid group number for "
-                   & Node_Name (External)
-                   & " in file " & File);
-         Value := Null_External_Value;
-   end Parse_External_Value;
-
-   --------------------------------
-   -- Parse_Compiler_Description --
-   --------------------------------
-
-   procedure Parse_Compiler_Description
-     (Base        : in out Knowledge_Base;
-      File        : String;
-      Description : Node)
-   is
-      Compiler : Compiler_Description;
-      N        : Node := First_Child (Description);
-      Lang     : External_Value_Lists.List;
-      C        : External_Value_Lists.Cursor;
-   begin
-      while N /= null loop
-         if Node_Type (N) /= Element_Node then
-            null;
-
-         elsif Node_Name (N) = "executable" then
-            declare
-               Prefix : constant String := Get_Attribute (N, "prefix", "@@");
-               Val    : constant String := Node_Value_As_String (N);
-            begin
-               if Val = "" then
-                  --  A special language that requires no executable. We do
-                  --  not store it in the list of compilers, since these should
-                  --  not be detected on the PATH anyway.
-
-                  Compiler.Executable := No_Name;
-
-               else
-                  Compiler.Executable := Get_String (Val);
-                  Compiler.Prefix_Index := Integer'Value (Prefix);
-                  if not Ends_With (Val, Exec_Suffix.all) then
-                     Compiler.Executable_Re := new Pattern_Matcher'
-                       (Compile ("^" & Val & Exec_Suffix.all & "$"));
-                  else
-                     Compiler.Executable_Re := new Pattern_Matcher'
-                       (Compile ("^" & Val & "$"));
-                  end if;
-                  Base.Check_Executable_Regexp := True;
-               end if;
-
-            exception
-               when Expression_Error =>
-                  Put_Line
-                    (Standard_Error,
-                     "Invalid regular expression found in the configuration"
-                     & " files: " & Val
-                     & " while parsing " & File);
-                  raise Invalid_Knowledge_Base;
-
-               when Constraint_Error =>
-                  Compiler.Prefix_Index := -1;
-                  null;
-            end;
-
-         elsif Node_Name (N) = "name" then
-            Compiler.Name := Get_String (Node_Value_As_String (N));
-
-         elsif Node_Name (N) = "version" then
-            Parse_External_Value
-              (Value    => Compiler.Version,
-               File     => File,
-               External => N);
-
-         elsif Node_Name (N) = "variable" then
-            declare
-               Name   : constant String := Get_Attribute (N, "name", "@@");
-            begin
-               Append (Compiler.Variables, (Typ      => Value_Variable,
-                                            Var_Name => Get_String (Name)));
-               Parse_External_Value
-                 (Value    => Compiler.Variables,
-                  File     => File,
-                  External => N);
-            end;
-
-         elsif Node_Name (N) = "languages" then
-            Parse_External_Value
-              (Value    => Compiler.Languages,
-               File     => File,
-               External => N);
-
-         elsif Node_Name (N) = "runtimes" then
-            declare
-               Defaults : constant String := Get_Attribute (N, "default", "");
-            begin
-               if Defaults /= "" then
-                  Get_Words (Defaults, No_Name, ' ', ',',
-                             Compiler.Default_Runtimes, False);
-               end if;
-               Parse_External_Value
-                 (Value    => Compiler.Runtimes,
-                  File     => File,
-                  External => N);
-            end;
-
-         elsif Node_Name (N) = "target" then
-            Parse_External_Value
-              (Value    => Compiler.Target,
-               File     => File,
-               External => N);
-
-         else
-            Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                      & Node_Name (N));
-            raise Invalid_Knowledge_Base;
-         end if;
-
-         N := Next_Sibling (N);
-      end loop;
-
-      if Compiler.Executable = No_Name then
-         Get_External_Value
-           (Attribute        => "languages",
-            Value            => Compiler.Languages,
-            Comp             => No_Compiler,
-            Split_Into_Words => True,
-            Processed_Value  => Lang);
-         C := First (Lang);
-         while Has_Element (C) loop
-            String_Lists.Append
-              (Base.No_Compilers,
-               To_Lower
-                 (Get_Name_String (External_Value_Lists.Element (C).Value)));
-            Next (C);
-         end loop;
-
-      elsif Compiler.Name /= No_Name then
-         CDM.Include (Base.Compilers, Compiler.Name, Compiler);
-      end if;
-   end Parse_Compiler_Description;
-
    ----------------------------------
    -- Is_Language_With_No_Compiler --
    ----------------------------------
@@ -759,210 +464,6 @@ package body GprConfig.Knowledge is
       return False;
    end Is_Language_With_No_Compiler;
 
-   -------------------------
-   -- Parse_Configuration --
-   -------------------------
-
-   procedure Parse_Configuration
-     (Append_To   : in out Configuration_Lists.List;
-      File        : String;
-      Description : Node)
-   is
-      Config        : Configuration;
-      Chunk         : Unbounded_String;
-      N             : Node := First_Child (Description);
-      N2            : Node;
-      Compilers     : Compilers_Filter;
-      Ignore_Config : Boolean := False;
-      Negate        : Boolean;
-      Filter        : Compiler_Filter;
-   begin
-      Config.Supported := True;
-
-      while N /= null loop
-         if Node_Type (N) /= Element_Node then
-            null;
-
-         elsif Node_Name (N) = "compilers" then
-            Compilers := No_Compilers_Filter;
-            N2 := First_Child (N);
-            while N2 /= null loop
-               if Node_Type (N2) /= Element_Node then
-                  null;
-
-               elsif Node_Name (N2) = "compiler" then
-                  declare
-                     Version : constant String :=
-                       Get_Attribute (N2, "version", "");
-                     Runtime : constant String :=
-                       Get_Attribute (N2, "runtime", "");
-                  begin
-                     Filter := Compiler_Filter'
-                       (Name       => Get_String_Or_No_Name
-                          (Get_Attribute (N2, "name", "")),
-                        Version    => Get_String_Or_No_Name (Version),
-                        Version_Re => null,
-                        Runtime    => Get_String_Or_No_Name (Runtime),
-                        Runtime_Re => null,
-                        Language_LC   => Get_String_Or_No_Name
-                          (To_Lower (Get_Attribute (N2, "language", ""))));
-
-                     if Version /= "" then
-                        Filter.Version_Re := new Pattern_Matcher'
-                          (Compile (Version, Case_Insensitive));
-                     end if;
-
-                     if Runtime /= "" then
-                        Filter.Runtime_Re := new Pattern_Matcher'
-                          (Compile (Runtime, Case_Insensitive));
-                     end if;
-                  end;
-
-                  Append (Compilers.Compiler, Filter);
-
-               else
-                  Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                            & Node_Name (N2));
-                  raise Invalid_Knowledge_Base;
-               end if;
-
-               N2 := Next_Sibling (N2);
-            end loop;
-
-            Compilers.Negate := Boolean'Value
-              (Get_Attribute (N, "negate", "False"));
-            Append (Config.Compilers_Filters, Compilers);
-
-         elsif Node_Name (N) = "targets" then
-            if not Is_Empty (Config.Targets_Filters) then
-               Put_Line (Standard_Error,
-                         "Can have a single <targets> filter in " & File);
-            else
-               N2 := First_Child (N);
-               while N2 /= null loop
-                  if Node_Type (N2) /= Element_Node then
-                     null;
-
-                  elsif Node_Name (N2) = "target" then
-                     Append (Config.Targets_Filters,
-                             Get_Attribute (N2, "name", ""));
-                  else
-                     Put_Line
-                       (Standard_Error, "Unknown XML tag in " & File & ": "
-                        & Node_Name (N2));
-                     raise Invalid_Knowledge_Base;
-                  end if;
-
-                  N2 := Next_Sibling (N2);
-               end loop;
-               Config.Negate_Targets := Boolean'Value
-                 (Get_Attribute (N, "negate", "False"));
-            end if;
-
-         elsif Node_Name (N) = "hosts" then
-            --  Resolve this filter immediately. This saves memory, since we
-            --  don't need to store it in memory if we know it won't apply.
-            N2 := First_Child (N);
-            Negate := Boolean'Value
-              (Get_Attribute (N, "negate", "False"));
-
-            Ignore_Config := not Negate;
-            while N2 /= null loop
-               if Node_Type (N2) /= Element_Node then
-                  null;
-
-               elsif Node_Name (N2) = "host" then
-                  if Match
-                    (Get_Attribute (N2, "name", ""), Sdefault.Hostname)
-                  then
-                     Ignore_Config := Negate;
-                     exit;
-                  end if;
-
-               else
-                  Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                            & Node_Name (N2));
-                  raise Invalid_Knowledge_Base;
-               end if;
-
-               N2 := Next_Sibling (N2);
-            end loop;
-
-            exit when Ignore_Config;
-
-         elsif Node_Name (N) = "config" then
-            if Node_Value_As_String (N) = "" then
-               Config.Supported := False;
-            else
-               Append (Chunk, Node_Value_As_String (N));
-            end if;
-
-         else
-            Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                      & Node_Name (N));
-            raise Invalid_Knowledge_Base;
-         end if;
-
-         N := Next_Sibling (N);
-      end loop;
-
-      if not Ignore_Config then
-         Config.Config := Get_String (To_String (Chunk));
-         Append (Append_To, Config);
-      end if;
-   end Parse_Configuration;
-
-   -----------------------
-   -- Parse_Targets_Set --
-   -----------------------
-
-   procedure Parse_Targets_Set
-     (Append_To   : in out Targets_Set_Vectors.Vector;
-      File        : String;
-      Description : Node)
-   is
-      Name    : Name_Id := No_Name;
-      Set     : Target_Lists.List;
-      Pattern : Pattern_Matcher_Access;
-      N       : Node := First_Child (Description);
-   begin
-      while N /= null loop
-         if Node_Type (N) /= Element_Node then
-            null;
-
-         elsif Node_Name (N) = "target" then
-            declare
-               Val    : constant String := Node_Value_As_String (N);
-            begin
-               Pattern := new Pattern_Matcher'(Compile ("^" & Val & "$"));
-               Target_Lists.Append (Set, Pattern);
-
-               if Name = No_Name then
-                  Name := Get_String (Val);
-               end if;
-
-            exception
-               when Expression_Error =>
-                  Put_Line
-                    ("Invalid regular expression " & Val
-                     & " found in the target-set while parsing " & File);
-                  raise Invalid_Knowledge_Base;
-            end;
-
-         else
-            Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
-                      & Node_Name (N));
-            raise Invalid_Knowledge_Base;
-         end if;
-
-         N := Next_Sibling (N);
-      end loop;
-
-      if not Target_Lists.Is_Empty (Set) then
-         Targets_Set_Vectors.Append (Append_To, (Name, Set));
-      end if;
-   end Parse_Targets_Set;
-
    --------------------------
    -- Parse_Knowledge_Base --
    --------------------------
@@ -972,6 +473,514 @@ package body GprConfig.Knowledge is
       Directory           : String;
       Parse_Compiler_Info : Boolean := True)
    is
+
+      procedure Parse_Compiler_Description
+        (Base        : in out Knowledge_Base;
+         File        : String;
+         Description : Node);
+      --  Parse a compiler description described by N. Appends the result to
+      --  Base.Compilers or Base.No_Compilers
+
+      procedure Parse_Configuration
+        (Append_To   : in out Configuration_Lists.List;
+         File        : String;
+         Description : Node);
+      --  Parse a configuration node
+
+      procedure Parse_Targets_Set
+        (Append_To   : in out Targets_Set_Vectors.Vector;
+         File        : String;
+         Description : Node);
+      --  Parse a targets set node
+
+      --------------------------------
+      -- Parse_Compiler_Description --
+      --------------------------------
+
+      procedure Parse_Compiler_Description
+        (Base        : in out Knowledge_Base;
+         File        : String;
+         Description : Node)
+      is
+         procedure Parse_External_Value
+           (Value    : out External_Value;
+            File     : String;
+            External : Node);
+         --  Parse an XML node that describes an external value
+
+         --------------------------
+         -- Parse_External_Value --
+         --------------------------
+
+         procedure Parse_External_Value
+           (Value    : out External_Value;
+            File     : String;
+            External : Node)
+         is
+            Tmp           : Node := First_Child (External);
+            External_Node : External_Value_Node;
+            Is_Done       : Boolean := True;
+            Static_Value  : constant String := Node_Value_As_String (External);
+            Has_Static    : Boolean := False;
+         begin
+            for S in Static_Value'Range loop
+               if Static_Value (S) /= ' '
+                 and then Static_Value (S) /= ASCII.LF
+               then
+                  Has_Static := True;
+                  exit;
+               end if;
+            end loop;
+
+            --  Constant value is not within a nested node.
+            if Has_Static then
+               External_Node :=
+                 (Typ        => Value_Constant,
+                  Value      => Get_String (Static_Value));
+               Append (Value, External_Node);
+               Is_Done := False;
+            end if;
+
+            while Tmp /= null loop
+               if Node_Type (Tmp) /= Element_Node then
+                  null;
+
+               elsif Node_Name (Tmp) = "external" then
+                  if not Is_Done then
+                     Append (Value, (Typ => Value_Done));
+                  end if;
+
+                  External_Node :=
+                    (Typ        => Value_Shell,
+                     Command    => Get_String (Node_Value_As_String (Tmp)));
+                  Append (Value, External_Node);
+                  Is_Done := False;
+
+               elsif Node_Name (Tmp) = "directory" then
+                  External_Node :=
+                    (Typ             => Value_Directory,
+                     Directory       => Get_String
+                       (Node_Value_As_String (Tmp)),
+                     Dir_If_Match    => No_Name,
+                     Directory_Group => 0);
+                  begin
+                     External_Node.Directory_Group := Integer'Value
+                       (Get_Attribute (Tmp, "group", "0"));
+                  exception
+                     when Constraint_Error =>
+                        External_Node.Directory_Group := -1;
+                        External_Node.Dir_If_Match :=
+                          Get_String (Get_Attribute (Tmp, "group", "0"));
+                  end;
+                  Append (Value, External_Node);
+                  Is_Done := True;
+
+               elsif Node_Name (Tmp) = "getenv" then
+                  if not Is_Done then
+                     Append (Value, (Typ => Value_Done));
+                  end if;
+
+                  declare
+                     Name : constant String := Get_Attribute (Tmp, "name", "");
+                  begin
+                     if Ada.Environment_Variables.Exists (Name) then
+                        External_Node :=
+                          (Typ        => Value_Constant,
+                           Value      => Get_String
+                             (Ada.Environment_Variables.Value (Name)));
+                     else
+                        Put_Verbose ("warning: environment variable '" & Name
+                                     & "' is not defined");
+                        External_Node :=
+                          (Typ        => Value_Constant,
+                           Value      => No_Name);
+                     end if;
+                  end;
+                  Append (Value, External_Node);
+                  Is_Done := False;
+
+               elsif Node_Name (Tmp) = "filter" then
+                  External_Node :=
+                    (Typ        => Value_Filter,
+                     Filter     => Get_String (Node_Value_As_String (Tmp)));
+                  Append (Value, External_Node);
+                  Is_Done := True;
+
+               elsif Node_Name (Tmp) = "must_match" then
+                  External_Node :=
+                    (Typ        => Value_Must_Match,
+                     Must_Match => Get_String (Node_Value_As_String (Tmp)));
+                  Append (Value, External_Node);
+                  Is_Done := True;
+
+               elsif Node_Name (Tmp) = "grep" then
+                  External_Node :=
+                    (Typ        => Value_Grep,
+                     Regexp_Re  => new Pattern_Matcher'
+                       (Compile (Get_Attribute (Tmp, "regexp", ".*"),
+                        Multiple_Lines)),
+                     Group      => Integer'Value
+                       (Get_Attribute (Tmp, "group", "0")));
+                  Append (Value, External_Node);
+
+               else
+                  Put_Line (Standard_Error, "Invalid XML description for "
+                            & Node_Name (External) & " in file " & File);
+                  Put_Line
+                    (Standard_Error, "    Invalid tag: " & Node_Name (Tmp));
+                  Value := Null_External_Value;
+               end if;
+
+               Tmp := Next_Sibling (Tmp);
+            end  loop;
+
+            if not Is_Done then
+               Append (Value, (Typ => Value_Done));
+            end if;
+
+         exception
+            when Constraint_Error =>
+               Put_Line (Standard_Error, "Invalid group number for "
+                         & Node_Name (External)
+                         & " in file " & File);
+               Value := Null_External_Value;
+         end Parse_External_Value;
+
+         Compiler : Compiler_Description;
+         N        : Node := First_Child (Description);
+         Lang     : External_Value_Lists.List;
+         C        : External_Value_Lists.Cursor;
+      begin
+         while N /= null loop
+            if Node_Type (N) /= Element_Node then
+               null;
+
+            elsif Node_Name (N) = "executable" then
+               declare
+                  Prefix : constant String :=
+                             Get_Attribute (N, "prefix", "@@");
+                  Val    : constant String := Node_Value_As_String (N);
+               begin
+                  if Val = "" then
+                     --  A special language that requires no executable. We do
+                     --  not store it in the list of compilers, since these
+                     --  should not be detected on the PATH anyway.
+
+                     Compiler.Executable := No_Name;
+
+                  else
+                     Compiler.Executable := Get_String (Val);
+                     Compiler.Prefix_Index := Integer'Value (Prefix);
+                     if not Ends_With (Val, Exec_Suffix.all) then
+                        Compiler.Executable_Re := new Pattern_Matcher'
+                          (Compile ("^" & Val & Exec_Suffix.all & "$"));
+                     else
+                        Compiler.Executable_Re := new Pattern_Matcher'
+                          (Compile ("^" & Val & "$"));
+                     end if;
+                     Base.Check_Executable_Regexp := True;
+                  end if;
+
+               exception
+                  when Expression_Error =>
+                     Put_Line
+                       (Standard_Error,
+                        "Invalid regular expression found in the configuration"
+                        & " files: " & Val
+                        & " while parsing " & File);
+                     raise Invalid_Knowledge_Base;
+
+                  when Constraint_Error =>
+                     Compiler.Prefix_Index := -1;
+                     null;
+               end;
+
+            elsif Node_Name (N) = "name" then
+               Compiler.Name := Get_String (Node_Value_As_String (N));
+
+            elsif Node_Name (N) = "version" then
+               Parse_External_Value
+                 (Value    => Compiler.Version,
+                  File     => File,
+                  External => N);
+
+            elsif Node_Name (N) = "variable" then
+               declare
+                  Name   : constant String := Get_Attribute (N, "name", "@@");
+               begin
+                  Append (Compiler.Variables, (Typ      => Value_Variable,
+                                               Var_Name => Get_String (Name)));
+                  Parse_External_Value
+                    (Value    => Compiler.Variables,
+                     File     => File,
+                     External => N);
+               end;
+
+            elsif Node_Name (N) = "languages" then
+               Parse_External_Value
+                 (Value    => Compiler.Languages,
+                  File     => File,
+                  External => N);
+
+            elsif Node_Name (N) = "runtimes" then
+               declare
+                  Defaults : constant String :=
+                               Get_Attribute (N, "default", "");
+               begin
+                  if Defaults /= "" then
+                     Get_Words (Defaults, No_Name, ' ', ',',
+                                Compiler.Default_Runtimes, False);
+                  end if;
+                  Parse_External_Value
+                    (Value    => Compiler.Runtimes,
+                     File     => File,
+                     External => N);
+               end;
+
+            elsif Node_Name (N) = "target" then
+               Parse_External_Value
+                 (Value    => Compiler.Target,
+                  File     => File,
+                  External => N);
+
+            else
+               Put_Line
+                 (Standard_Error, "Unknown XML tag in " & File & ": "
+                  & Node_Name (N));
+               raise Invalid_Knowledge_Base;
+            end if;
+
+            N := Next_Sibling (N);
+         end loop;
+
+         if Compiler.Executable = No_Name then
+            Get_External_Value
+              (Attribute        => "languages",
+               Value            => Compiler.Languages,
+               Comp             => No_Compiler,
+               Split_Into_Words => True,
+               Processed_Value  => Lang);
+            C := First (Lang);
+            while Has_Element (C) loop
+               String_Lists.Append
+                 (Base.No_Compilers,
+                  To_Lower
+                    (Get_Name_String
+                       (External_Value_Lists.Element (C).Value)));
+               Next (C);
+            end loop;
+
+         elsif Compiler.Name /= No_Name then
+            CDM.Include (Base.Compilers, Compiler.Name, Compiler);
+         end if;
+      end Parse_Compiler_Description;
+
+      -------------------------
+      -- Parse_Configuration --
+      -------------------------
+
+      procedure Parse_Configuration
+        (Append_To   : in out Configuration_Lists.List;
+         File        : String;
+         Description : Node)
+      is
+         Config        : Configuration;
+         Chunk         : Unbounded_String;
+         N             : Node := First_Child (Description);
+         N2            : Node;
+         Compilers     : Compilers_Filter;
+         Ignore_Config : Boolean := False;
+         Negate        : Boolean;
+         Filter        : Compiler_Filter;
+      begin
+         Config.Supported := True;
+
+         while N /= null loop
+            if Node_Type (N) /= Element_Node then
+               null;
+
+            elsif Node_Name (N) = "compilers" then
+               Compilers := No_Compilers_Filter;
+               N2 := First_Child (N);
+               while N2 /= null loop
+                  if Node_Type (N2) /= Element_Node then
+                     null;
+
+                  elsif Node_Name (N2) = "compiler" then
+                     declare
+                        Version : constant String :=
+                                    Get_Attribute (N2, "version", "");
+                        Runtime : constant String :=
+                                    Get_Attribute (N2, "runtime", "");
+                     begin
+                        Filter := Compiler_Filter'
+                          (Name          => Get_String_Or_No_Name
+                             (Get_Attribute (N2, "name", "")),
+                           Version       => Get_String_Or_No_Name (Version),
+                           Version_Re    => null,
+                           Runtime       => Get_String_Or_No_Name (Runtime),
+                           Runtime_Re    => null,
+                           Language_LC   => Get_String_Or_No_Name
+                             (To_Lower (Get_Attribute (N2, "language", ""))));
+
+                        if Version /= "" then
+                           Filter.Version_Re := new Pattern_Matcher'
+                             (Compile (Version, Case_Insensitive));
+                        end if;
+
+                        if Runtime /= "" then
+                           Filter.Runtime_Re := new Pattern_Matcher'
+                             (Compile (Runtime, Case_Insensitive));
+                        end if;
+                     end;
+
+                     Append (Compilers.Compiler, Filter);
+
+                  else
+                     Put_Line
+                       (Standard_Error, "Unknown XML tag in " & File & ": "
+                        & Node_Name (N2));
+                     raise Invalid_Knowledge_Base;
+                  end if;
+
+                  N2 := Next_Sibling (N2);
+               end loop;
+
+               Compilers.Negate := Boolean'Value
+                 (Get_Attribute (N, "negate", "False"));
+               Append (Config.Compilers_Filters, Compilers);
+
+            elsif Node_Name (N) = "targets" then
+               if not Is_Empty (Config.Targets_Filters) then
+                  Put_Line (Standard_Error,
+                            "Can have a single <targets> filter in " & File);
+               else
+                  N2 := First_Child (N);
+                  while N2 /= null loop
+                     if Node_Type (N2) /= Element_Node then
+                        null;
+
+                     elsif Node_Name (N2) = "target" then
+                        Append (Config.Targets_Filters,
+                                Get_Attribute (N2, "name", ""));
+                     else
+                        Put_Line
+                          (Standard_Error, "Unknown XML tag in " & File & ": "
+                           & Node_Name (N2));
+                        raise Invalid_Knowledge_Base;
+                     end if;
+
+                     N2 := Next_Sibling (N2);
+                  end loop;
+                  Config.Negate_Targets := Boolean'Value
+                    (Get_Attribute (N, "negate", "False"));
+               end if;
+
+            elsif Node_Name (N) = "hosts" then
+               --  Resolve this filter immediately. This saves memory, since we
+               --  don't need to store it in memory if we know it won't apply.
+               N2 := First_Child (N);
+               Negate := Boolean'Value
+                 (Get_Attribute (N, "negate", "False"));
+
+               Ignore_Config := not Negate;
+               while N2 /= null loop
+                  if Node_Type (N2) /= Element_Node then
+                     null;
+
+                  elsif Node_Name (N2) = "host" then
+                     if Match
+                       (Get_Attribute (N2, "name", ""), Sdefault.Hostname)
+                     then
+                        Ignore_Config := Negate;
+                        exit;
+                     end if;
+
+                  else
+                     Put_Line
+                       (Standard_Error, "Unknown XML tag in " & File & ": "
+                        & Node_Name (N2));
+                     raise Invalid_Knowledge_Base;
+                  end if;
+
+                  N2 := Next_Sibling (N2);
+               end loop;
+
+               exit when Ignore_Config;
+
+            elsif Node_Name (N) = "config" then
+               if Node_Value_As_String (N) = "" then
+                  Config.Supported := False;
+               else
+                  Append (Chunk, Node_Value_As_String (N));
+               end if;
+
+            else
+               Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
+                         & Node_Name (N));
+               raise Invalid_Knowledge_Base;
+            end if;
+
+            N := Next_Sibling (N);
+         end loop;
+
+         if not Ignore_Config then
+            Config.Config := Get_String (To_String (Chunk));
+            Append (Append_To, Config);
+         end if;
+      end Parse_Configuration;
+
+      -----------------------
+      -- Parse_Targets_Set --
+      -----------------------
+
+      procedure Parse_Targets_Set
+        (Append_To   : in out Targets_Set_Vectors.Vector;
+         File        : String;
+         Description : Node)
+      is
+         Name    : Name_Id := No_Name;
+         Set     : Target_Lists.List;
+         Pattern : Pattern_Matcher_Access;
+         N       : Node := First_Child (Description);
+      begin
+         while N /= null loop
+            if Node_Type (N) /= Element_Node then
+               null;
+
+            elsif Node_Name (N) = "target" then
+               declare
+                  Val    : constant String := Node_Value_As_String (N);
+               begin
+                  Pattern := new Pattern_Matcher'(Compile ("^" & Val & "$"));
+                  Target_Lists.Append (Set, Pattern);
+
+                  if Name = No_Name then
+                     Name := Get_String (Val);
+                  end if;
+
+               exception
+                  when Expression_Error =>
+                     Put_Line
+                       ("Invalid regular expression " & Val
+                        & " found in the target-set while parsing " & File);
+                     raise Invalid_Knowledge_Base;
+               end;
+
+            else
+               Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
+                         & Node_Name (N));
+               raise Invalid_Knowledge_Base;
+            end if;
+
+            N := Next_Sibling (N);
+         end loop;
+
+         if not Target_Lists.Is_Empty (Set) then
+            Targets_Set_Vectors.Append (Append_To, (Name, Set));
+         end if;
+      end Parse_Targets_Set;
+
       Search    : Search_Type;
       File      : Directory_Entry_Type;
       File_Node : Node;
