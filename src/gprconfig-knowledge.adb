@@ -2103,6 +2103,24 @@ package body GprConfig.Knowledge is
       Continue       : out Boolean)
    is
       use CDM;
+
+      function Executable_Pattern return String;
+      pragma Inline (Executable_Pattern);
+      --  Returns a pattern which matchs executable
+
+      ------------------------
+      -- Executable_Pattern --
+      ------------------------
+
+      function Executable_Pattern return String is
+      begin
+         if On_Windows then
+            return "*.{exe,bat,cmd}";
+         else
+            return "";
+         end if;
+      end Executable_Pattern;
+
       C      : CDM.Cursor;
       Search : Search_Type;
       Dir    : Directory_Entry_Type;
@@ -2127,7 +2145,7 @@ package body GprConfig.Knowledge is
             Start_Search
               (Search    => Search,
                Directory => Directory,
-               Pattern   => "");
+               Pattern   => Executable_Pattern);
          exception
             when Ada.Directories.Name_Error =>
                Put_Verbose ("No such directory:" & Directory, -1);
