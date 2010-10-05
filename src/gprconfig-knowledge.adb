@@ -2373,13 +2373,24 @@ package body GprConfig.Knowledge is
                                           Resolve_Links  => False,
                                           Case_Sensitive => False);
                      begin
-                        Put_Verbose ("Will examine "
-                                     & Prefix & " " & Final_Path);
+                        --  Windows is somewhat slow at parsing directories, do
+                        --  not look into any directory under C:\windows as
+                        --  there is no compiler to be found there anyway.
 
-                        if Prepend_To_List then
-                           Prepend (Dirs, Prefix & Final_Path);
-                        else
-                           Append (Dirs, Prefix & Final_Path);
+                        if On_Windows
+                          and then Final_Path'Length > 10
+                          and then To_Lower (Final_Path
+                            (Final_Path'First .. Final_Path'First + 9)) /=
+                            "c:\windows"
+                        then
+                           Put_Verbose ("Will examine "
+                                        & Prefix & " " & Final_Path);
+
+                           if Prepend_To_List then
+                              Prepend (Dirs, Prefix & Final_Path);
+                           else
+                              Append (Dirs, Prefix & Final_Path);
+                           end if;
                         end if;
                      end;
                   end if;
