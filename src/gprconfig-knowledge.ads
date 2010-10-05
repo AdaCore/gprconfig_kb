@@ -24,7 +24,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This unit is responsible for parsing the gprconfig knowledge base.
+--  This unit is responsible for parsing the gprconfig knowledge base
 
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Doubly_Linked_Lists;
@@ -38,7 +38,7 @@ with Namet;
 package GprConfig.Knowledge is
 
    Generate_Error : exception;
-   --  To be raised when an error occurs during generation of config files.
+   --  To be raised when an error occurs during generation of config files
 
    --------------------
    -- Knowledge base --
@@ -76,13 +76,13 @@ package GprConfig.Knowledge is
    --  target.
 
    type Targets_Set_Id is private;
-   --  Identify a target aliases set.
+   --  Identify a target aliases set
 
    All_Target_Sets     : constant Targets_Set_Id;
    --  Matches all target sets
 
    Unknown_Targets_Set : constant Targets_Set_Id;
-   --  Special target set when a target is not known.
+   --  Special target set when a target is not known
 
    procedure Get_Targets_Set
      (Base   : in out Knowledge_Base;
@@ -112,7 +112,7 @@ package GprConfig.Knowledge is
 
    package Compiler_Lists
       is new Ada.Containers.Indefinite_Doubly_Linked_Lists (Compiler_Access);
-   --  A list of compilers.
+   --  A list of compilers
 
    function Is_Selected (Comp : Compiler) return Boolean;
    function Target      (Comp : Compiler) return Namet.Name_Id;
@@ -192,10 +192,10 @@ package GprConfig.Knowledge is
    --  Raised when the user has specified an invalid --config switch
 
    procedure Complete_Command_Line_Compilers
-     (Base       : in out Knowledge_Base;
-      On_Target  : Targets_Set_Id;
-      Filters    : Compiler_Lists.List;
-      Compilers  : in out Compiler_Lists.List);
+     (Base      : in out Knowledge_Base;
+      On_Target : Targets_Set_Id;
+      Filters   : Compiler_Lists.List;
+      Compilers : in out Compiler_Lists.List);
    --  In batch mode, the --config parameters indicate what compilers should be
    --  selected. Each of these switch selects the first matching compiler
    --  available, and all --config switch must match a compiler.
@@ -268,10 +268,10 @@ package GprConfig.Knowledge is
    --  search at the same point later on).
 
    procedure Foreach_Compiler_In_Path
-     (Iterator            : in out Compiler_Iterator;
-      Base                : in out Knowledge_Base;
-      On_Target           : Targets_Set_Id;
-      Extra_Dirs          : String := "");
+     (Iterator   : in out Compiler_Iterator;
+      Base       : in out Knowledge_Base;
+      On_Target  : Targets_Set_Id;
+      Extra_Dirs : String := "");
    --  Find all compilers in "Extra_Dirs & $PATH".
    --  Extra_Dirs should typically be the list of directories found in
    --  --config command line arguments.
@@ -291,8 +291,8 @@ package GprConfig.Knowledge is
       Target      : String);
    --  Generate the configuration file for the list of selected compilers
 
-   package String_Lists is new Ada.Containers.Indefinite_Doubly_Linked_Lists
-     (String);
+   package String_Lists is
+     new Ada.Containers.Indefinite_Doubly_Linked_Lists (String);
 
    procedure Put_Verbose (Str : String; Indent_Delta : Integer := 0);
    --  Print Str if verbose mode is activated.
@@ -308,6 +308,7 @@ package GprConfig.Knowledge is
 
 private
    type Targets_Set_Id is range -1 .. Natural'Last;
+
    All_Target_Sets     : constant Targets_Set_Id := -1;
    Unknown_Targets_Set : constant Targets_Set_Id := 0;
 
@@ -347,23 +348,23 @@ private
    end record;
 
    No_Compiler : constant Compiler :=
-     (Name        => Namet.No_Name,
-      Target      => Namet.No_Name,
-      Targets_Set => Unknown_Targets_Set,
-      Executable  => Namet.No_Name,
-      Base_Name   => Namet.No_Name,
-      Path        => Namet.No_Name,
-      Variables   => Variables_Maps.Empty_Map,
-      Version     => Namet.No_Name,
-      Prefix      => Namet.No_Name,
-      Runtime     => Namet.No_Name,
-      Runtime_Dir => Namet.No_Name,
-      Language_Case => Namet.No_Name,
-      Language_LC => Namet.No_Name,
-      Selectable  => False,
-      Selected    => False,
-      Complete    => True,
-      Path_Order  => 0);
+                   (Name          => Namet.No_Name,
+                    Target        => Namet.No_Name,
+                    Targets_Set   => Unknown_Targets_Set,
+                    Executable    => Namet.No_Name,
+                    Base_Name     => Namet.No_Name,
+                    Path          => Namet.No_Name,
+                    Variables     => Variables_Maps.Empty_Map,
+                    Version       => Namet.No_Name,
+                    Prefix        => Namet.No_Name,
+                    Runtime       => Namet.No_Name,
+                    Runtime_Dir   => Namet.No_Name,
+                    Language_Case => Namet.No_Name,
+                    Language_LC   => Namet.No_Name,
+                    Selectable    => False,
+                    Selected      => False,
+                    Complete      => True,
+                    Path_Order    => 0);
 
    type Pattern_Matcher_Access is access all GNAT.Regpat.Pattern_Matcher;
 
@@ -401,13 +402,13 @@ private
          end case;
       end record;
 
-   package External_Value_Nodes is new Ada.Containers.Doubly_Linked_Lists
-     (External_Value_Node);
+   package External_Value_Nodes is
+     new Ada.Containers.Doubly_Linked_Lists (External_Value_Node);
 
    subtype External_Value is External_Value_Nodes.List;
 
    Null_External_Value : constant External_Value :=
-     External_Value_Nodes.Empty_List;
+                           External_Value_Nodes.Empty_List;
 
    type Compiler_Description is record
       Name             : Namet.Name_Id := Namet.No_Name;
@@ -446,9 +447,10 @@ private
       Compiler : Compiler_Filter_Lists.List;
       Negate   : Boolean := False;
    end record;
+
    No_Compilers_Filter : constant Compilers_Filter :=
-     (Compiler => Compiler_Filter_Lists.Empty_List,
-      Negate   => False);
+                           (Compiler => Compiler_Filter_Lists.Empty_List,
+                            Negate   => False);
    --  a <compilers> filter, that matches if any of its <compiler> child
    --  matches.
 
@@ -478,7 +480,7 @@ private
 
    subtype Known_Targets_Set_Id
      is Targets_Set_Id range 1 .. Targets_Set_Id'Last;
-   --  Known targets set.  They are in the base.
+   --  Known targets set.  They are in the base
 
    package Targets_Set_Vectors is new Ada.Containers.Vectors
      (Known_Targets_Set_Id, Target_Set_Description, "=");

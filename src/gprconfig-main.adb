@@ -54,12 +54,12 @@ procedure GprConfig.Main is
    Output_File : Unbounded_String;
 
    Selected_Target : Unbounded_String;
-   --  Value of --target switch.
+   --  Value of --target switch
 
    Target_Specified : Boolean := False;
 
    Selected_Targets_Set : Targets_Set_Id;
-   --  Targets set id for the selected target.
+   --  Targets set id for the selected target
 
    use Compiler_Lists;
 
@@ -70,17 +70,17 @@ procedure GprConfig.Main is
    --  Display list of options, no specific to current invocation, to be used
    --  when switch --help is used.
 
-   procedure Check_Version_And_Help is new
-     Switch.Check_Version_And_Help_G (Usage);
+   procedure Check_Version_And_Help is
+     new Switch.Check_Version_And_Help_G (Usage);
 
    procedure Display_Compilers_For_Parser
-     (Base               : in out Knowledge_Base;
-      Compilers          : in out Compiler_Lists.List);
+     (Base      : in out Knowledge_Base;
+      Compilers : in out Compiler_Lists.List);
    --  Display the list of found compilers for use by an external parser
 
    procedure Select_Compilers_Interactively
-     (Base               : in out Knowledge_Base;
-      Compilers          : in out Compiler_Lists.List);
+     (Base      : in out Knowledge_Base;
+      Compilers : in out Compiler_Lists.List);
    --  Ask the user for compilers to be selected
 
    procedure Show_Command_Line_Config (Compilers : Compiler_Lists.List);
@@ -116,17 +116,18 @@ procedure GprConfig.Main is
    --  Locate_Exec_On_Path will also return directories with the name
    --  "gprbuild" ie the current directory when gprconfig is run from the
    --  current dir.
-   Exec_Suffix        : constant GNAT.Strings.String_Access :=
-     Get_Executable_Suffix;
+   Exec_Suffix   : constant GNAT.Strings.String_Access :=
+                     Get_Executable_Suffix;
    Gprbuild_Path : GNAT.OS_Lib.String_Access :=
-     Locate_Exec_On_Path (Gprbuild & Exec_Suffix.all);
+                     Locate_Exec_On_Path (Gprbuild & Exec_Suffix.all);
 
    Compilers : Compiler_Lists.List;
-   package Compiler_Sort
-      is new Compiler_Lists.Generic_Sorting (Display_Before);
+   package Compiler_Sort is
+     new Compiler_Lists.Generic_Sorting (Display_Before);
 
    Valid_Switches : constant String :=
-     "-batch -config= -db: h o: v q -show-targets -mi-show-compilers -target=";
+                      "-batch -config= -db: h o: v q -show-targets"
+                        & " -mi-show-compilers -target=";
 
    --------------
    -- Callback --
@@ -195,12 +196,12 @@ procedure GprConfig.Main is
    ----------------------------------
 
    procedure Display_Compilers_For_Parser
-     (Base               : in out Knowledge_Base;
-      Compilers          : in out Compiler_Lists.List)
+     (Base      : in out Knowledge_Base;
+      Compilers : in out Compiler_Lists.List)
    is
-      Comp            : Compiler_Lists.Cursor := First (Compilers);
+      Comp    : Compiler_Lists.Cursor := First (Compilers);
 
-      Count : constant Integer := Integer (Length (Compilers));
+      Count   : constant Integer := Integer (Length (Compilers));
       Choices : array (1 .. Count) of Compiler_Lists.Cursor;
 
    begin
@@ -224,15 +225,15 @@ procedure GprConfig.Main is
    ------------------------------------
 
    procedure Select_Compilers_Interactively
-     (Base               : in out Knowledge_Base;
-      Compilers          : in out Compiler_Lists.List)
+     (Base      : in out Knowledge_Base;
+      Compilers : in out Compiler_Lists.List)
    is
-      Comp            : Compiler_Lists.Cursor := First (Compilers);
-      Tmp             : Natural;
-      Choice          : Natural;
-      Line            : String (1 .. 1024);
+      Comp   : Compiler_Lists.Cursor := First (Compilers);
+      Tmp    : Natural;
+      Choice : Natural;
+      Line   : String (1 .. 1024);
 
-      Count : constant Integer := Integer (Length (Compilers));
+      Count   : constant Integer := Integer (Length (Compilers));
       Choices : array (1 .. Count) of Compiler_Lists.Cursor;
 
    begin
@@ -372,7 +373,7 @@ begin
 
    --  Now check whether we should parse the default knownledge base.
    --  This needs to be done first, since that influences --config and -h
-   --  at least
+   --  at least.
 
    Initialize_Option_Scan;
 
@@ -383,6 +384,7 @@ begin
                if Parameter = "-" then
                   Load_Standard_Base := False;
                end if;
+
             elsif Full_Switch = "-target" then
                Target_Specified := True;
 
@@ -392,6 +394,7 @@ begin
                   Selected_Target := To_Unbounded_String (Parameter);
                   Output_File := To_Unbounded_String (Parameter & ".cgpr");
                end if;
+
             elsif Full_Switch = "-show-targets" then
                --  By default, display all targets available
                Selected_Target := Null_Unbounded_String;
@@ -446,10 +449,13 @@ begin
 
             elsif Full_Switch = "-batch" then
                Batch := True;
+
             elsif Full_Switch = "-mi-show-compilers" then
                Show_Compilers := True;
+
             elsif Full_Switch = "-show-targets" then
                Show_Targets := True;
+
             elsif Full_Switch = "-db" then
                if Parameter = "-" then
                   null;  --  already processed
@@ -505,7 +511,7 @@ begin
          declare
             use String_Lists;
             All_Target : String_Lists.List;
-            C : Compiler_Lists.Cursor := First (Compilers);
+            C          : Compiler_Lists.Cursor := First (Compilers);
          begin
             Put_Line ("List of targets supported by a compiler:");
             while Has_Element (C) loop
@@ -523,6 +529,7 @@ begin
                         end if;
                         Next (T);
                      end loop;
+
                      if not Dup then
                         Put (Cur_Target);
                         if Cur_Target = Sdefault.Hostname then
