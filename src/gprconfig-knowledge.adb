@@ -2386,11 +2386,13 @@ package body GprConfig.Knowledge is
                         --  not look into any directory under C:\windows as
                         --  there is no compiler to be found there anyway.
 
-                        if On_Windows
-                          and then Final_Path'Length > 10
-                          and then To_Lower (Final_Path
-                            (Final_Path'First .. Final_Path'First + 9)) /=
-                            "c:\windows"
+                        if not On_Windows
+                          or else
+                            (Final_Path'Length > 10
+                             and then
+                             To_Lower (Final_Path
+                               (Final_Path'First .. Final_Path'First + 9)) /=
+                             "c:\windows")
                         then
                            Put_Verbose ("Will examine "
                                         & Prefix & " " & Final_Path);
