@@ -127,6 +127,9 @@ package Gpr_Util is
    Load_Standard_Base : Boolean := True;
    --  False when switch --db- is used
 
+   On_Windows : constant Boolean := Directory_Separator = '\';
+   --  True when on Windows
+
    --  Local subprograms
 
    function Binder_Exchange_File_Name

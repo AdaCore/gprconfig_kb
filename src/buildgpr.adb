@@ -103,10 +103,6 @@ package body Buildgpr is
 
    Main_Index : Int := 0;
 
-   On_Windows : constant Boolean := Directory_Separator = '\';
-   --  True when on Windows. Used in Check_Compilation_Needed when processing
-   --  C/C++ dependency files for backslash handling.
-
    Never : constant Time_Stamp_Type := (others => '9');
    --  A time stamp that is greater than any real one
 
