@@ -1191,6 +1191,11 @@ package body GprConfig.Knowledge is
       Comp : Compiler) return String
    is
       function Callback (Var_Name, Index : String) return String;
+
+      --------------
+      -- Callback --
+      --------------
+
       function Callback (Var_Name, Index : String) return String is
       begin
          if Index /= "" then
@@ -1218,6 +1223,11 @@ package body GprConfig.Knowledge is
       Comps : Compiler_Lists.List) return String
    is
       function Callback (Var_Name, Index : String) return String;
+
+      --------------
+      -- Callback --
+      --------------
+
       function Callback (Var_Name, Index : String) return String is
          C    : Compiler_Lists.Cursor;
          Comp : Compiler_Access;
