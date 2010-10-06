@@ -7595,7 +7595,7 @@ package body Buildgpr is
 
       Binder_Exchange_TS : Time_Stamp_Type;
 
-      Binder_Object_TS   : Time_Stamp_Type;
+      Binder_Object_TS   : Time_Stamp_Type := Dummy_Time_Stamp;
 
       Global_Archive_TS  : Time_Stamp_Type;
 
