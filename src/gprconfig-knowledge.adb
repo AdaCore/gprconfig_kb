@@ -1970,7 +1970,8 @@ package body GprConfig.Knowledge is
    ---------------
 
    function To_String
-     (Comp            : Compiler;
+     (Base            : Knowledge_Base;
+      Comp            : Compiler;
       As_Config_Arg   : Boolean;
       Show_Target     : Boolean := False;
       Rank_In_List    : Integer := -1;
@@ -2037,6 +2038,8 @@ package body GprConfig.Knowledge is
       elsif Parser_Friendly then
          return Rank & " target:"
            & Get_Name_String_Or_Null (Comp.Target) & ASCII.LF
+           & Rank & " normalized_target:"
+           & Normalized_Target (Base, Comp.Targets_Set) & ASCII.LF
            & Rank & " executable:"
            & Get_Name_String_Or_Null (Comp.Executable) & ASCII.LF
            & Rank & " path:"
@@ -2051,7 +2054,7 @@ package body GprConfig.Knowledge is
            & Get_Name_String_Or_Null (Comp.Runtime) & ASCII.LF
            & Rank & " native:"
            & Boolean'Image
-               (Get_Name_String_Or_Null (Comp.Target) = Sdefault.Hostname);
+               (Query_Targets_Set (Base, Hostname) = Comp.Targets_Set);
 
       elsif Comp.Executable = No_Name then
          --  A language that requires no compiler
@@ -2078,7 +2081,8 @@ package body GprConfig.Knowledge is
    ---------------
 
    function To_String
-     (Compilers       : Compiler_Lists.List;
+     (Base            : Knowledge_Base;
+      Compilers       : Compiler_Lists.List;
       Selected_Only   : Boolean;
       Show_Target     : Boolean := False;
       Parser_Friendly : Boolean := False) return String
@@ -2095,7 +2099,8 @@ package body GprConfig.Knowledge is
             Append
               (Result,
                To_String
-                 (Compiler_Lists.Element (Comp).all, False,
+                 (Base,
+                  Compiler_Lists.Element (Comp).all, False,
                   Show_Target     => Show_Target,
                   Rank_In_List    => Rank,
                   Parser_Friendly => Parser_Friendly));
@@ -2522,14 +2527,19 @@ package body GprConfig.Knowledge is
    -- Filter_Match --
    ------------------
 
-   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean is
+   function Filter_Match
+     (Base : Knowledge_Base;
+      Comp   : Compiler;
+      Filter : Compiler)
+      return Boolean
+   is
    begin
       if Filter.Name /= No_Name
         and then Comp.Name /= Filter.Name
         and then Comp.Base_Name /= Filter.Name
       then
          if Current_Verbosity /= Default then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
+            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": name does not match");
          end if;
          return False;
@@ -2537,7 +2547,7 @@ package body GprConfig.Knowledge is
 
       if Filter.Path /= No_Name and then Filter.Path /= Comp.Path then
          if Current_Verbosity /= Default then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
+            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": path does not match");
          end if;
          return False;
@@ -2545,7 +2555,7 @@ package body GprConfig.Knowledge is
 
       if Filter.Version /= No_Name and then Filter.Version /= Comp.Version then
          if Current_Verbosity /= Default then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
+            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": version does not match");
          end if;
          return False;
@@ -2553,7 +2563,7 @@ package body GprConfig.Knowledge is
 
       if Filter.Runtime /= No_Name and then Filter.Runtime /= Comp.Runtime then
          if Current_Verbosity /= Default then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
+            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": runtime does not match");
          end if;
          return False;
@@ -2563,7 +2573,7 @@ package body GprConfig.Knowledge is
         and then Filter.Language_LC /= Comp.Language_LC
       then
          if Current_Verbosity /= Default then
-            Put_Verbose ("Filter=" & To_String (Filter, True)
+            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": language does not match");
          end if;
          return False;
@@ -3032,21 +3042,19 @@ package body GprConfig.Knowledge is
          raise Generate_Error;
    end Generate_Configuration;
 
-   ----------------------
-   --  Get_Targets_Set --
-   ----------------------
+   -----------------------
+   -- Query_Targets_Set --
+   -----------------------
 
-   procedure Get_Targets_Set
-     (Base   : in out Knowledge_Base;
-      Target : String;
-      Id     : out Targets_Set_Id)
+   function Query_Targets_Set
+     (Base   : Knowledge_Base;
+      Target : String) return Targets_Set_Id
    is
       use Targets_Set_Vectors;
       use Target_Lists;
    begin
       if Target = "" then
-         Id := All_Target_Sets;
-         return;
+         return All_Target_Sets;
       end if;
 
       for I in First_Index (Base.Targets_Sets)
@@ -3062,22 +3070,41 @@ package body GprConfig.Knowledge is
                if GNAT.Regpat.Match
                  (Target_Lists.Element (C).all, Target) > 0
                then
-                  Id := I;
-                  return;
+                  return I;
                end if;
+
                Next (C);
             end loop;
          end;
       end loop;
+
+      return Unknown_Targets_Set;
+   end Query_Targets_Set;
+
+   ----------------------
+   --  Get_Targets_Set --
+   ----------------------
+
+   procedure Get_Targets_Set
+     (Base   : in out Knowledge_Base;
+      Target : String;
+      Id     : out Targets_Set_Id)
+   is
+   begin
+      Id := Query_Targets_Set (Base, Target);
+
+      if Id /= Unknown_Targets_Set then
+         return;
+      end if;
 
       --  Create a new set.
       declare
          Set : Target_Lists.List;
       begin
          Put_Verbose ("create a new target set for " & Target);
-         Append (Set, new Pattern_Matcher'(Compile ("^" & Target & "$")));
-         Append (Base.Targets_Sets, (Get_String (Target), Set));
-         Id := Last_Index (Base.Targets_Sets);
+         Set.Append (new Pattern_Matcher'(Compile ("^" & Target & "$")));
+         Base.Targets_Sets.Append ((Get_String (Target), Set));
+         Id := Base.Targets_Sets.Last_Index;
       end;
    end Get_Targets_Set;
 
@@ -3259,17 +3286,18 @@ package body GprConfig.Knowledge is
             if (not From_Extra_Dir
                 or else Compiler_Lists.Element (C).Path = Comp.Path)
               and then Filter_Match
-                (Comp => Comp, Filter => Compiler_Lists.Element (C).all)
+                (Base, Comp => Comp, Filter => Compiler_Lists.Element (C).all)
             then
                Append (Iterator.Compilers, new Compiler'(Comp));
 
                if Current_Verbosity /= Default then
                   Put_Verbose
                     ("Saving compiler for possible backtracking: "
-                     & To_String (Comp, As_Config_Arg => True)
+                     & To_String (Base, Comp, As_Config_Arg => True)
                      & " (matches --config "
                      & To_String
-                       (Compiler_Lists.Element (C).all, As_Config_Arg => True)
+                       (Base,
+                        Compiler_Lists.Element (C).all, As_Config_Arg => True)
                      & ")");
                end if;
 
@@ -3336,7 +3364,7 @@ package body GprConfig.Knowledge is
       begin
          while Has_Element (C) loop
             if Filter_Match
-              (Compiler_Lists.Element (C).all, Filter => Comp_Filter.all)
+              (Base, Compiler_Lists.Element (C).all, Filter => Comp_Filter.all)
             then
                Set_Selection (Iter.Compilers, C, True);
 
@@ -3344,7 +3372,8 @@ package body GprConfig.Knowledge is
                   if Current_Verbosity /= Default then
                      Put_Verbose ("Testing the following compiler set:", 1);
                      Put_Verbose
-                       (To_String (Iter.Compilers, Selected_Only => True));
+                       (To_String
+                          (Base, Iter.Compilers, Selected_Only => True));
                   end if;
 
                   if Is_Supported_Config (Base, Iter.Compilers) then
@@ -3396,7 +3425,8 @@ package body GprConfig.Knowledge is
                  (Standard_Error,
                   "Error: no matching compiler found for --config="
                   & To_String
-                    (Compiler_Lists.Element (C).all, As_Config_Arg => True));
+                    (Base, Compiler_Lists.Element (C).all,
+                     As_Config_Arg => True));
             end if;
             Ada.Command_Line.Set_Exit_Status (1);
             Found_All := False;
@@ -3659,7 +3689,8 @@ package body GprConfig.Knowledge is
                if Current_Verbosity /= Default then
                   Put_Verbose
                     ("Incompatible target for: "
-                     & To_String (Compiler_Lists.Element (Comp).all, False));
+                     & To_String
+                       (Base, Compiler_Lists.Element (Comp).all, False));
                end if;
             end if;
 
@@ -3675,7 +3706,7 @@ package body GprConfig.Knowledge is
                         Put_Verbose
                           ("Already selected language for "
                            & To_String
-                             (Compiler_Lists.Element (Comp).all, False));
+                             (Base, Compiler_Lists.Element (Comp).all, False));
                      end if;
                      exit;
                   end if;
@@ -3688,13 +3719,15 @@ package body GprConfig.Knowledge is
                --  up with an unsupported config ?
 
                Set_Selection (Compilers, Comp, True);
+
                if not Is_Supported_Config (Base, Compilers) then
                   Selectable := False;
+
                   if Current_Verbosity /= Default then
                      Put_Verbose
                        ("Unsupported config for: "
                         & To_String
-                          (Compiler_Lists.Element (Comp).all, False));
+                          (Base, Compiler_Lists.Element (Comp).all, False));
                   end if;
                end if;
                Set_Selection (Compilers, Comp, False);

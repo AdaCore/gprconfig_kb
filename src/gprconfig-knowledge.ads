@@ -84,6 +84,12 @@ package GprConfig.Knowledge is
    Unknown_Targets_Set : constant Targets_Set_Id;
    --  Special target set when a target is not known
 
+   function Query_Targets_Set
+     (Base   : Knowledge_Base;
+      Target : String) return Targets_Set_Id;
+   --  Get the target alias set id for a target, or Unknown_Targets_Set if
+   --  no such target is in the base.
+
    procedure Get_Targets_Set
      (Base   : in out Knowledge_Base;
       Target : String;
@@ -129,7 +135,8 @@ package GprConfig.Knowledge is
    --  Is_Supported_Config to do this test)
 
    function To_String
-     (Comp            : Compiler;
+     (Base            : Knowledge_Base;
+      Comp            : Compiler;
       As_Config_Arg   : Boolean;
       Show_Target     : Boolean := False;
       Rank_In_List    : Integer := -1;
@@ -143,7 +150,8 @@ package GprConfig.Knowledge is
    --  be easily parsed automatically
 
    function To_String
-     (Compilers       : Compiler_Lists.List;
+     (Base            : Knowledge_Base;
+      Compilers       : Compiler_Lists.List;
       Selected_Only   : Boolean;
       Show_Target     : Boolean := False;
       Parser_Friendly : Boolean := False) return String;
@@ -302,7 +310,11 @@ package GprConfig.Knowledge is
    --  Nothing is printed if Str is the empty string, only the indentation is
    --  changed
 
-   function Filter_Match (Comp : Compiler; Filter : Compiler) return Boolean;
+   function Filter_Match
+     (Base : Knowledge_Base;
+      Comp   : Compiler;
+      Filter : Compiler)
+      return Boolean;
    --  Returns True if Comp match Filter (the latter corresponds to a --config
    --  command line argument).
 
