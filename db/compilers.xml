@@ -305,6 +305,23 @@
     </target>
   </compiler_description>
 
+  <!--  GNAT_DOTNET -->
+
+  <compiler_description>
+    <name>GNAT_DOTNET</name>
+    <executable prefix="1">(.*dotnet-)gnatmake</executable>
+    <version>
+      <external>${PREFIX}gnatls -v</external>
+      <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
+    </version>
+    <languages>Ada</languages>
+    <runtimes default="default,kernel">
+       <directory group="default" >\.\./lib/dotgnat/adalib/</directory>
+       <directory group="1" >\.\./lib/dotgnat/rts-(.*)/adalib/</directory>
+    </runtimes>
+    <target>dotnet</target>
+  </compiler_description>
+
   <!--    G77  -->
   <compiler_description>
     <name>G77</name>

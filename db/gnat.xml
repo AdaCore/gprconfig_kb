@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE gprconfig [
-  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /></compilers>'>
+  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /><compiler name="GNAT_DOTNET" /></compilers>'>
 ] >
 
 <gprconfig>
@@ -61,6 +61,7 @@
    </config>
   </configuration>
 
+  <!-- GNAT -->
   <configuration>
    &filter_gnat;
    <config>
@@ -94,6 +95,19 @@
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
    for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}";
    for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/../adainclude";
+   </config>
+  </configuration>
+
+  <!-- DOTNET -->
+  <configuration>
+   <compilers>
+    <compiler name="GNAT_DOTNET"/>
+   </compilers>
+   <config>
+   package Compiler is
+      for Object_File_Suffix ("Ada") use ".il";
+      for Driver ("Ada") use "${PATH(ada)}${PREFIX(ada)}gnatcompile";
+   end Compiler;
    </config>
   </configuration>
 
@@ -194,6 +208,7 @@
       <target name="^.*mingw.*$" />
       <target name="^.*dec-osf.*$" />
       <target name="^.*vms.*$" />
+      <target name="^.*dotnet.*$" />
    </targets>
    <config>
    package Compiler is
@@ -218,6 +233,8 @@
      <compiler name="GNAT" runtime="kernel" />
      <compiler name="GNAT" runtime="rtp" />
      <compiler name="GNAT" runtime="xenomai" />
+     <compiler name="GNAT_DOTNET" runtime="compact" />
+     <compiler name="GNAT_DOTNET" runtime="silverlight" />
    </compilers>
    <config>
    package Compiler is

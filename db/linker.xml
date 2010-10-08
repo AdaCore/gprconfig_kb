@@ -197,6 +197,20 @@
     </config>
   </configuration>
 
+  <!-- DOTNET -->
+  <configuration>
+    <targets>
+       <target name="dotnet" />
+    </targets>
+    <config>
+   for Library_Support use "none";
+
+   package Linker is
+      for Driver use "dotnet-ld";
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  Darwin -->
   <configuration>
     <targets>
@@ -480,6 +494,7 @@
   <configuration>
     <targets negate="true">
        <target name="aamp" />
+       <target name="dotnet" />
     </targets>
     <compilers negate="true">
        <compiler language="C++" />
@@ -554,6 +569,7 @@
   <configuration>
     <targets negate="true">
       <target name="aamp" />
+      <target name="dotnet" />
       <target name="^.*mingw.*$" />
       <target name="^.*linux.*$" />
       <target name="^.*freebsd.*$" />
