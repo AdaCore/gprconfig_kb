@@ -843,7 +843,7 @@ package Builder of the main project (attribute Switches):
 
   Verbose output. Some verbose messages may not be displayed.
 
-@item @option{-vm} (Verbose output, high level)
+@item @option{-vh} (Verbose output, high level)
 
   Equivalent to @option (-v).
 
