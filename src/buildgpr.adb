@@ -210,6 +210,8 @@ package body Buildgpr is
          Quiet_Output_Option,
          Check_Switches_Option,
          Verbose_Mode_Option,
+         Verbose_Low_Mode_Option,
+         Verbose_Medium_Mode_Option,
          Warnings_Treat_As_Error,
          Warnings_Normal,
          Warnings_Suppress,
@@ -1891,20 +1893,7 @@ package body Buildgpr is
             Has_Been_Built := Global_Archive_Data.Has_Been_Built;
 
          else
-            if Project_Of_Current_Object_Directory /= For_Project then
-               Project_Of_Current_Object_Directory := For_Project;
-               Change_Dir
-                 (Get_Name_String
-                    (For_Project.Object_Directory.Display_Name));
-
-               if Verbose_Mode then
-                  Write_Str  ("Changing to object directory of """);
-                  Write_Name (For_Project.Display_Name);
-                  Write_Str  (""": """);
-                  Write_Name (For_Project.Object_Directory.Display_Name);
-                  Write_Line ("""");
-               end if;
-            end if;
+            Change_To_Object_Directory (For_Project);
 
             --  Put all non Ada sources in the project tree in Source_Indexes
 
@@ -2492,18 +2481,7 @@ package body Buildgpr is
 
       --  Work occurs in the object directory
 
-      if Project_Of_Current_Object_Directory /= For_Project then
-         Project_Of_Current_Object_Directory := For_Project;
-         Change_Dir (Object_Directory_Path);
-
-         if Verbose_Mode then
-            Write_Str  ("Changing to object directory of """);
-            Write_Name (For_Project.Name);
-            Write_Str  (""": """);
-            Write_Str  (Object_Directory_Path);
-            Write_Line ("""");
-         end if;
-      end if;
+      Change_To_Object_Directory (For_Project);
 
       Library_Needs_To_Be_Built := Force_Compilations;
 
@@ -3488,7 +3466,7 @@ package body Buildgpr is
 
          Change_Dir (Get_Name_String (Project.Object_Directory.Display_Name));
 
-         if Verbose_Mode then
+         if Verbose_Mode and then Verbosity_Level > Opt.Low then
             Write_Str  ("Changing to object directory of """);
             Write_Name (Project.Display_Name);
             Write_Str  (""": """);
@@ -5967,7 +5945,7 @@ package body Buildgpr is
             else
                Record_Temp_File (Project_Tree, File_Name);
 
-               if Opt.Verbose_Mode then
+               if Opt.Verbose_Mode and then Verbosity_Level > Opt.Low then
                   Write_Str ("Creating temp file """);
                   Write_Str (Get_Name_String (File_Name));
                   Write_Line ("""");
@@ -9412,7 +9390,7 @@ package body Buildgpr is
          end if;
       end if;
 
-      if Verbose_Mode then
+      if Verbose_Mode and then Verbosity_Level > Opt.Low then
          Write_Str  ("   Checking ");
          Write_Str  (Source_Path);
 
@@ -9640,8 +9618,19 @@ package body Buildgpr is
                   Check_Switches := True;
 
                when Verbose_Mode_Option =>
-                  Verbose_Mode := True;
-                  Quiet_Output := False;
+                  Verbose_Mode    := True;
+                  Verbosity_Level := High;
+                  Quiet_Output    := False;
+
+               when Verbose_Low_Mode_Option =>
+                  Verbose_Mode    := True;
+                  Verbosity_Level := Low;
+                  Quiet_Output    := False;
+
+               when Verbose_Medium_Mode_Option =>
+                  Verbose_Mode    := True;
+                  Verbosity_Level := Medium;
+                  Quiet_Output    := False;
 
                when Warnings_Treat_As_Error =>
                   Warning_Mode := Treat_As_Error;
@@ -12105,12 +12094,31 @@ package body Buildgpr is
             Unique_Compile_All_Projects := True;
             Unique_Compile := True;
 
-         elsif Arg = "-v" then
-            Verbose_Mode := True;
-            Quiet_Output := False;
+         elsif Arg = "-v" or else Arg = "-vh" then
+            Verbose_Mode    := True;
+            Verbosity_Level := High;
+            Quiet_Output    := False;
 
             if Command_Line then
                Register_Command_Line_Option (Verbose_Mode_Option);
+            end if;
+
+         elsif Arg = "-vl" then
+            Verbose_Mode    := True;
+            Verbosity_Level := Low;
+            Quiet_Output    := False;
+
+            if Command_Line then
+               Register_Command_Line_Option (Verbose_Low_Mode_Option);
+            end if;
+
+         elsif Arg = "-vm" then
+            Verbose_Mode    := True;
+            Verbosity_Level := Medium;
+            Quiet_Output    := False;
+
+            if Command_Line then
+               Register_Command_Line_Option (Verbose_Medium_Mode_Option);
             end if;
 
          elsif Command_Line
@@ -12630,6 +12638,21 @@ package body Buildgpr is
          --  Line for -v
 
          Write_Str ("  -v       Verbose output");
+         Write_Eol;
+
+         --  Line for -vl
+
+         Write_Str ("  -vl      Verbose output (low verbosity)");
+         Write_Eol;
+
+         --  Line for -vm
+
+         Write_Str ("  -vm      Verbose output (medium verbosity)");
+         Write_Eol;
+
+         --  Line for -vh
+
+         Write_Str ("  -vh      Verbose output (high verbosity)");
          Write_Eol;
 
          --  Line for -vPx
