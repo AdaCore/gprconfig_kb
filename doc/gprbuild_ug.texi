@@ -835,6 +835,18 @@ package Builder of the main project (attribute Switches):
   Display full paths, all options used in spawned processes, and reasons why
   these processes are spawned. Cancel any previous switch @option{-q}.
 
+@item @option{-vl} (Verbose output, low level)
+
+  Verbose output. Some verbose messages are not displayed.
+
+@item @option{-vm} (Verbose output, medium level)
+
+  Verbose output. Some verbose messages may not be displayed.
+
+@item @option{-vm} (Verbose output, high level)
+
+  Equivalent to @option (-v).
+
 @item @option{-we} (Treat all warnings as errors)
 
   When @option{-we} is used, any warning during the processing of the project
