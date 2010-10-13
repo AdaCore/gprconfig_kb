@@ -845,7 +845,7 @@ package Builder of the main project (attribute Switches):
 
 @item @option{-vh} (Verbose output, high level)
 
-  Equivalent to @option {-v}.
+  Equivalent to @option{-v}.
 
 @item @option{-we} (Treat all warnings as errors)
 
