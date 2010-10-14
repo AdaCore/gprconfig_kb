@@ -570,7 +570,14 @@ package body Gpr_Util is
       Obj_Proj : Project_Id;
 
    begin
-      --  Systematically recompute the time stamp.
+      --  Nothing to do if source record has already been fully initialized
+
+      if Source.Initialized then
+         return;
+      end if;
+
+      --  Systematically recompute the time stamp
+
       Source.Source_TS := File_Stamp (Source.Path.Display_Name);
 
       --  Parse the source file to check whether we have a subunit
@@ -665,6 +672,8 @@ package body Gpr_Util is
             Source.Dep_TS   := Osint.Unknown_Attributes;
          end;
       end if;
+
+      Source.Initialized := True;
    end Initialize_Source_Record;
 
    ----------------

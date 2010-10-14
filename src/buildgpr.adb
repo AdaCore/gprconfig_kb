@@ -3839,6 +3839,13 @@ package body Buildgpr is
                                 (Source_File_Name => Root_Source.File,
                                  Source_Identity  => Root_Source);
 
+                              Initialize_Source_Record (Root_Source);
+
+                              if Other_Part (Root_Source) /= No_Source then
+                                 Initialize_Source_Record
+                                   (Other_Part (Root_Source));
+                              end if;
+
                               if Nmb_Root = Roots_Buffer'Last then
                                  declare
                                     New_Roots : constant Roots_Access :=
@@ -5583,6 +5590,7 @@ package body Buildgpr is
             Queue.Extract (Source_File_Name, Source_Identity);
 
             if Source_Identity /= No_Source then
+               Initialize_Source_Record (Source_Identity);
                Process_Project_Phase_1 (Source_Identity);
             end if;
          end if;
@@ -6700,18 +6708,6 @@ package body Buildgpr is
 
       Compute_All_Imported_Projects (Project_Tree);
 
-      --  Update info on all sources
-
-      declare
-         Iter    : Source_Iterator;
-      begin
-         Iter := For_Each_Source (Project_Tree);
-         while Prj.Element (Iter) /= No_Source loop
-            Initialize_Source_Record (Prj.Element (Iter));
-            Next (Iter);
-         end loop;
-      end;
-
       Queue.Initialize (One_Compilation_Per_Obj_Dir);
 
       --  If -u or -U is specified on the command line, disregard any -c, -b
@@ -7380,6 +7376,8 @@ package body Buildgpr is
                           (Project_Tree.Source_Files_HT, Sfile);
 
                while Src_Id /= No_Source loop
+                  Initialize_Source_Record (Src_Id);
+
                   if Is_Compilable (Src_Id)
                     and then Src_Id.Dep_Name = Afile
                   then
@@ -7703,6 +7701,8 @@ package body Buildgpr is
             end if;
 
             Last_Argument := 0;
+
+            Initialize_Source_Record (Main_Source);
 
             Main_Object_TS :=
               File_Stamp (File_Name_Type (Main_Source.Object_Path));
@@ -9211,6 +9211,8 @@ package body Buildgpr is
                   Found := False;
 
                   while Dep_Src /= No_Source loop
+                     Initialize_Source_Record (Dep_Src);
+
                      if not Dep_Src.Locally_Removed
                        and then Dep_Src.Unit /= No_Unit_Index
                      then
@@ -9764,6 +9766,7 @@ package body Buildgpr is
             if Main_Source.Unit = No_Unit_Index then
                Iter := For_Each_Source (Project_Tree);
                while Prj.Element (Iter) /= No_Source loop
+                  Initialize_Source_Record (Prj.Element (Iter));
                   Put_Dependency_File (Prj.Element (Iter));
                   Next (Iter);
                end loop;
@@ -10234,6 +10237,8 @@ package body Buildgpr is
                                 (Source_File_Name,
                                  Source_Identity);
 
+                              Initialize_Source_Record (Source_Identity);
+
                               --  Get the dependency file for this source
 
                               Dep_File := Source_Identity.Dep_Name;
@@ -10558,6 +10563,7 @@ package body Buildgpr is
                      --  Then, the Dependency files
 
                      if Main_Source.Unit /= No_Unit_Index then
+                        Initialize_Source_Record (Main_Source);
                         Put_Line
                           (Exchange_File,
                            Binding_Label (Main_Dependency_File));
