@@ -1965,44 +1965,44 @@ Predefined variables are always in upper case.  Here is the list of
 predefined variables
 
 @table @var
-@item $@{EXEC@}
+@item EXEC
 is the name of the executable that was found through @code{<executable>}. It
 only contains the basename, not the directory information.
 
-@item $@{HOST@}
+@item HOST
 is replaced by the architecture of the host on which @value{gprconfig} is
 running. This name is hard-coded in @value{gprconfig} itself, and is generated
 by @command{configure} when @value{gprconfig} was built.
 
-@item $@{TARGET@}
+@item TARGET
 is replaced by the target architecture of the compiler, as returned by the
 @code{<target>} node. This is of course not available when computing the
 target itself.
 
-@item $@{VERSION@}
+@item VERSION
 is replaced by the version of the compiler. This is not available when
 computing the target or, of course, the version itself.
 
-@item $@{PREFIX@}
+@item PREFIX
 is replaced by the prefix to the executable name, as defined by the
 @code{<executable>} node.
 
-@item $@{PATH@}
+@item PATH
 is the current directory, i.e. the one containing the executable found through
 @code{<executable>}. It always ends with a directory separator.
 
-@item $@{LANGUAGE@}
+@item LANGUAGE
 is the language supported by the compiler, always folded to lower-case
 
-@item $@{RUNTIME@}
-@itemx $@{RUNTIME_DIR@}
+@item RUNTIME
+@itemx RUNTIME_DIR
 This string will always be substituted by the empty string when the
 value of the external value is computed. These are special strings
 used when substituting text in configuration chunks.
 
 @var{RUNTIME_DIR} always end with a directory separator.
 
-@item $@{GPRCONFIG_PREFIX@}
+@item GPRCONFIG_PREFIX
 is the directory in which @value{gprconfig} was installed (e.g
 @file{"/usr/local/"} if the executable is @file{"/usr/local/bin/gprconfig"}.
 This directory always ends with a directory separator.
