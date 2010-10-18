@@ -1979,6 +1979,12 @@ is replaced by the target architecture of the compiler, as returned by the
 @code{<target>} node. This is of course not available when computing the
 target itself.
 
+This variable takes the language of the compiler as an optional index when
+in a @code{<configuration>} block: if the language is specified, the target
+returned by that specific compiler is used; otherwise, the normalized target
+common to all the selected compilers will be returned (target normalization
+is also described in the knowledge base's XML files).
+
 @item VERSION
 is replaced by the version of the compiler. This is not available when
 computing the target or, of course, the version itself.
