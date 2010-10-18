@@ -100,7 +100,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C</languages>
-    <target>powerpc-wrs-vxworksmils</target>
+    <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 
   <!-- VxWorks MILS HAE -->
@@ -114,7 +114,7 @@
       <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C</languages>
-    <target>powerpc-wrs-vxworksmils</target>
+    <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 
   <!--     GCC 2.8.1
@@ -241,7 +241,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C++</languages>
-    <target>powerpc-wrs-vxworksmils</target>
+    <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 
   <!-- G++ for VxWorks MILS HAE -->
@@ -255,7 +255,7 @@
       <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C++</languages>
-    <target>powerpc-wrs-vxworksmils</target>
+    <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 
   <!--  Assembler -->
