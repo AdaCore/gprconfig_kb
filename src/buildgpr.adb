@@ -7177,6 +7177,8 @@ package body Buildgpr is
          Prj.Err.Finalize;
       end if;
 
+      Namet.Finalize;
+
       Finish_Program (Fatal => False);
    end Gprbuild;
 
