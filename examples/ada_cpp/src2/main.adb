@@ -1,6 +1,7 @@
 with Ada.Text_IO;          use Ada.Text_IO;
 with Animals;              use Animals;
 with Interfaces.C.Strings; use Interfaces.C.Strings;
+with Animals_Interfaces;   use Animals_Interfaces;
 
 procedure Main is
    procedure Check_Carnivore (Obj : Carnivore'Class) is
