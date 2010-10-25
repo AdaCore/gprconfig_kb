@@ -14,7 +14,7 @@ class Animal {
 public:
   int Age_Count;
   virtual void Set_Age (int New_Age);
-  virtual int Age () = 0;
+  virtual int Age ();
 };
 
 class Dog : Animal, Carnivore, Domestic {
