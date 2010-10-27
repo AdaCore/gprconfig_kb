@@ -1362,7 +1362,14 @@ begin
          Add (Output_Switch, Bind_Options, Last_Bind_Option);
          Add
            ("b__" & Library_Name.all & ".adb", Bind_Options, Last_Bind_Option);
-         Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
+
+         --  Make sure that the init procedure is never "adainit"
+
+         if Library_Name.all = "ada" then
+            Add ("-Lada_", Bind_Options, Last_Bind_Option);
+         else
+            Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
+         end if;
 
          if Auto_Init
            and then SALs_Use_Constructors
