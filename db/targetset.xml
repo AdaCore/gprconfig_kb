@@ -251,6 +251,12 @@
     <target>leon-elf.*</target>
  </targetset>
 
+ <!-- leon3-elf-.*  -->
+ <targetset>
+    <target>leon3-elf-linux</target>
+    <target>leon3-elf.*</target>
+ </targetset>
+
  <!-- avr -->
  <targetset>
     <target>avr-elf-windows</target>
