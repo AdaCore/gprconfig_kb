@@ -3,7 +3,7 @@ all: default.cgpr
 	gprbuild except.gpr
 
 default.cgpr:
-	gprconfig --batch --config Ada,,sjlj  --config C++ -o $@
+	gprconfig --batch --config Ada  --config C++ -o $@
 
 clean: force
 	gprclean -r -Panimals
