@@ -614,7 +614,7 @@
     </config>
   </configuration>
 
-<configuration>
+  <configuration>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -664,6 +664,7 @@
    for Default_Language use "Fortran";
     </config>
   </configuration>
+
   <configuration>
     <compilers negate="true">
        <compiler language="C" />
