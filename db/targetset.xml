@@ -63,7 +63,13 @@
     <target>mingw32</target>
     <target>i.86-.*mingw32.*</target>
     <target>pentium-.*mingw32.*</target>
-    <target>mingw32</target>
+  </targetset>
+
+  <!-- x86_64-windows (mingw) -->
+  <targetset>
+    <!--  known targets: x86_64-pc-mingw32 -->
+    <target>x86_64-windows</target>
+    <target>x86_64-.*mingw32.*</target>
   </targetset>
 
   <!-- ppc-darwin -->
