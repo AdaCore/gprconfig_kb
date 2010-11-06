@@ -9,7 +9,7 @@
   <!--    GCC 3.x & 4.x -->
   <compiler_description>
     <name>GCC</name>
-    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|-elinos-linux).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|-elinos-linux|-pc).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^gcc version (\S+)" group="1"></grep>
@@ -285,7 +285,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|elinos-linux).*)?gnatmake</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|elinos-linux|pc-).*)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>

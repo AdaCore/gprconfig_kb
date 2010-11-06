@@ -234,6 +234,7 @@
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
        <target name="^dotnet$" />
+       <target name="^.*-pc-mingw32$" />
      </targets>
      <compilers>
        <compiler name="GNAT" />
