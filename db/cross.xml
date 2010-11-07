@@ -17,6 +17,7 @@
    <configuration>
      <targets>
        <target name="dotnet" />
+       <target name="^.*-pc-mingw32$" />
      </targets>
      <config>
    package Builder is
