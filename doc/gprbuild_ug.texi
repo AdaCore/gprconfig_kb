@@ -1852,7 +1852,8 @@ of the @code{<directory>} and @code{<external>} nodes.
   a string rather than an integer, then it is the value returned.
 
   @var{regexp} can be any valid regular expression. This will only match
-  a directory name, not a subdirectory. Remember to quote special characters,
+  a directory or file name, not a subdirectory. Remember to quote special
+  characters,
   including ``.'', if you do not mean to use a regexp.
 
   For instance, finding the list of supported runtimes for the GNAT compiler
