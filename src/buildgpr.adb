@@ -7385,9 +7385,15 @@ package body Buildgpr is
                   then
                      case Src_Id.Kind is
                         when Spec =>
-                           if Other_Part (Src_Id) /= No_Source then
-                              Src_Id := Other_Part (Src_Id);
-                           end if;
+                           declare
+                              Bdy : constant Source_Id := Other_Part (Src_Id);
+                           begin
+                              if Bdy /= No_Source and then not
+                                Bdy.Locally_Removed
+                              then
+                                 Src_Id := Other_Part (Src_Id);
+                              end if;
+                           end;
 
                         when Impl =>
                            if Is_Subunit (Src_Id) then
