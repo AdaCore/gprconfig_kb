@@ -1642,20 +1642,22 @@ package body GprConfig.Knowledge is
                      --  the only valid separator is ','. When computed
                      --  however, we also allow space as a separator
                      if From_Static then
-                        Get_Words (Words  => To_String (Tmp_Result),
-                                   Filter => Filter,
-                                   Separator1 => ',',
-                                   Separator2 => ',',
-                                   Map    => Split,
-                                   Allow_Empty_Elements => False);
+                        Get_Words
+                          (Words                => To_String (Tmp_Result),
+                           Filter               => Filter,
+                           Separator1           => ',',
+                           Separator2           => ',',
+                           Map                  => Split,
+                           Allow_Empty_Elements => False);
 
                      else
-                        Get_Words (Words  => To_String (Tmp_Result),
-                                   Filter => Filter,
-                                   Separator1 => ' ',
-                                   Separator2 => ',',
-                                   Map    => Split,
-                                   Allow_Empty_Elements => False);
+                        Get_Words
+                          (Words                => To_String (Tmp_Result),
+                           Filter               => Filter,
+                           Separator1           => ' ',
+                           Separator2           => ',',
+                           Map                  => Split,
+                           Allow_Empty_Elements => False);
                      end if;
 
                      C := First (Split);
@@ -1904,7 +1906,8 @@ package body GprConfig.Knowledge is
 
       if Executable /= No_Name then
          Get_External_Value
-           ("runtimes",            Value            => Descr.Runtimes,
+           ("runtimes",
+            Value            => Descr.Runtimes,
             Comp             => Comp,
             Split_Into_Words => True,
             Processed_Value  => Runtimes);
@@ -2317,17 +2320,17 @@ package body GprConfig.Knowledge is
                     ("Processing "
                      & Get_Name_String (Config.Name) & " in " & Directory);
                   Foreach_Language_Runtime
-                    (Iterator   => Iterator,
-                     Base       => Base,
-                     Name       => Key (C),
-                     Executable => Config.Executable,
-                     Prefix     => No_Name,
+                    (Iterator       => Iterator,
+                     Base           => Base,
+                     Name           => Key (C),
+                     Executable     => Config.Executable,
+                     Prefix         => No_Name,
                      From_Extra_Dir => From_Extra_Dir,
-                     On_Target  => On_Target,
-                     Directory  => Directory,
-                     Descr      => Config,
-                     Path_Order => Path_Order,
-                     Continue   => Continue);
+                     On_Target      => On_Target,
+                     Directory      => Directory,
+                     Descr          => Config,
+                     Path_Order     => Path_Order,
+                     Continue       => Continue);
                   exit when not Continue;
                end if;
             exception
@@ -2548,9 +2551,7 @@ package body GprConfig.Knowledge is
    function Filter_Match
      (Base : Knowledge_Base;
       Comp   : Compiler;
-      Filter : Compiler)
-      return Boolean
-   is
+      Filter : Compiler) return Boolean is
    begin
       if Filter.Name /= No_Name
         and then Comp.Name /= Filter.Name
@@ -2762,17 +2763,17 @@ package body GprConfig.Knowledge is
       procedure Add_Package
         (Name : String; Chunk : String; Prefix : String := "      ")
       is
-         C : constant String_Maps.Cursor := Find (Packages, Name);
-         Replaced : constant String := Substitute_Variables_In_Configuration
-           (Base, Chunk, Compilers);
+         C        : constant String_Maps.Cursor := Find (Packages, Name);
+         Replaced : constant String :=
+                      Substitute_Variables_In_Configuration
+                        (Base, Chunk, Compilers);
       begin
          if Replaced /= "" then
             if Has_Element (C) then
                Replace_Element
                  (Packages,
                   C,
-                  String_Maps.Element (C) & ASCII.LF & Prefix
-                  & Replaced);
+                  String_Maps.Element (C) & ASCII.LF & Prefix & Replaced);
             else
                Insert
                  (Packages,
@@ -2781,10 +2782,10 @@ package body GprConfig.Knowledge is
          end if;
       end Add_Package;
 
-      First : Integer := Config'First;
+      First                         : Integer := Config'First;
       Pkg_Name_First, Pkg_Name_Last : Integer;
-      Pkg_Content_First : Integer;
-      Last  : Integer;
+      Pkg_Content_First             : Integer;
+      Last                          : Integer;
 
    begin
       while First /= 0 and then First <= Config'Last loop
@@ -2920,7 +2921,8 @@ package body GprConfig.Knowledge is
       Output_File : String;
       Target      : String)
    is
-      Config   : Configuration_Lists.Cursor := First (Base.Configurations);
+      Config            : Configuration_Lists.Cursor :=
+                            First (Base.Configurations);
       Output            : File_Type;
       Packages          : String_Maps.Map;
       Selected_Compiler : Compiler_Access;
@@ -3484,7 +3486,8 @@ package body GprConfig.Knowledge is
 
    function Default_Knowledge_Base_Directory return String is
       Prog_Dir : constant String := Executable_Prefix_Path;
-      Suffix : constant String := "share" & Directory_Separator & "gprconfig";
+      Suffix   : constant String :=
+                   "share" & Directory_Separator & "gprconfig";
    begin
       return Prog_Dir & Suffix;
    end Default_Knowledge_Base_Directory;
@@ -3571,13 +3574,16 @@ package body GprConfig.Knowledge is
       Compiler          : out Compiler_Access;
       Requires_Compiler : out Boolean)
    is
-      Map  : String_Lists.List;
-      C    : String_Lists.Cursor;
+      Map : String_Lists.List;
+      C   : String_Lists.Cursor;
    begin
       --  Only valid separator is ',', not spaces
-      Get_Words (Config, Filter => No_Name, Map => Map,
-                 Separator1 => ',', Separator2 => ',',
-                 Allow_Empty_Elements => True);
+      Get_Words
+        (Config, Filter       => No_Name,
+         Map                  => Map,
+         Separator1           => ',',
+         Separator2           => ',',
+         Allow_Empty_Elements => True);
 
       Compiler := new GprConfig.Knowledge.Compiler;
 
@@ -3674,8 +3680,8 @@ package body GprConfig.Knowledge is
          Comp.Selectable := False;
       end Mark_As_Unselectable;
 
-      Comp, Comp2          : Compiler_Lists.Cursor;
-      Selectable           : Boolean;
+      Comp, Comp2 : Compiler_Lists.Cursor;
+      Selectable  : Boolean;
 
    begin
       Put_Verbose ("Filtering the list of compilers", 1);

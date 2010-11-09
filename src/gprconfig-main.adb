@@ -522,9 +522,9 @@ begin
                if Target (Element (C).all) /= No_Name then
                   declare
                      Cur_Target : constant String :=
-                       Get_Name_String (Target (Element (C).all));
-                     T : String_Lists.Cursor := First (All_Target);
-                     Dup : Boolean := False;
+                                    Get_Name_String (Target (Element (C).all));
+                     T          : String_Lists.Cursor := First (All_Target);
+                     Dup        : Boolean := False;
                   begin
                      while Has_Element (T) loop
                         if Element (T) = Cur_Target then

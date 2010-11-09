@@ -313,8 +313,7 @@ package GprConfig.Knowledge is
    function Filter_Match
      (Base : Knowledge_Base;
       Comp   : Compiler;
-      Filter : Compiler)
-      return Boolean;
+      Filter : Compiler) return Boolean;
    --  Returns True if Comp match Filter (the latter corresponds to a --config
    --  command line argument).
 
