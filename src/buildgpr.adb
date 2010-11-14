@@ -7939,8 +7939,8 @@ package body Buildgpr is
                         Close (Exchange_File);
 
                         if Binder_Object_TS = Empty_Time_Stamp then
-                           if (not Linker_Needs_To_Be_Called) and then
-                             Verbose_Mode
+                           if (not Linker_Needs_To_Be_Called)
+                             and then Verbose_Mode
                            then
                               Write_Line
                                 ("      -> no binder generated object file");
@@ -7949,8 +7949,9 @@ package body Buildgpr is
                            Fail_Program
                              ("no binder generated object file");
 
-                        elsif (not Linker_Needs_To_Be_Called) and then
-                        String (Binder_Object_TS) > String (Executable_TS)
+                        elsif (not Linker_Needs_To_Be_Called)
+                          and then
+                            String (Binder_Object_TS) > String (Executable_TS)
                         then
                            Linker_Needs_To_Be_Called := True;
 
@@ -7993,8 +7994,8 @@ package body Buildgpr is
                end if;
             end if;
 
-            if (not Linker_Needs_To_Be_Called) and then
-              Global_Archive_Has_Been_Built
+            if (not Linker_Needs_To_Be_Called)
+              and then Global_Archive_Has_Been_Built
             then
                Linker_Needs_To_Be_Called := True;
 
@@ -8043,7 +8044,7 @@ package body Buildgpr is
                      declare
                         Exchange_File : Ada.Text_IO.File_Type;
                         Path_Name     : constant String :=
-                          Name_Buffer (1 .. Name_Len);
+                                          Name_Buffer (1 .. Name_Len);
                         Lib_TS        : Time_Stamp_Type;
 
                      begin
