@@ -7289,11 +7289,19 @@ package body Buildgpr is
             end if;
 
             Write_Eol;
-            Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
+
+            if Target_Name = null then
+               Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
+            else
+               Prj.Env.Get_Path
+                 (Project_Node_Tree.Project_Path,
+                  Path        => P,
+                  Target_Name => Target_Name.all);
+            end if;
+
             Write_Line (P.all);
             Exit_Program (E_Success);
          end;
-
       end if;
 
       if Verbose_Mode then
