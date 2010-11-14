@@ -56,6 +56,30 @@
 
   <configuration>
     <targets>
+      <target name="^i686-pc-mingw32$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("i686-pc-mingw32-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("i686-pc-mingw32-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^x86_64-pc-mingw32$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("x86_64-pc-mingw32-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("x86_64-pc-mingw32-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^powerpc-elinos-linux$" />
     </targets>
     <config>
@@ -157,6 +181,7 @@
       <target name="^leon3-elf$"/>
       <target name="^.*aix.*$" />
       <target name="^.*ia64.*hpux.*$" />
+      <target name="^.*pc-mingw32$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
