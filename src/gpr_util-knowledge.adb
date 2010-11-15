@@ -25,7 +25,7 @@
 ------------------------------------------------------------------------------
 
 with GprConfig.Knowledge; use GprConfig.Knowledge;
-with GprConfig.Sdefault;  use  GprConfig.Sdefault;
+with GprConfig.Sdefault;  use GprConfig.Sdefault;
 separate (Gpr_Util)
 
 package body Knowledge is
