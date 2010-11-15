@@ -48,18 +48,29 @@ package body Knowledge is
    --------------------------
 
    procedure Parse_Knowledge_Base (Directory : String := "") is
-      Dir : String_Access;
-   begin
-      if Directory'Length = 0 then
-         Dir := new String'(Default_Knowledge_Base_Directory);
-      else
-         Dir := new String'(Directory);
-      end if;
 
-      Parse_Knowledge_Base (Base, Dir.all, Parse_Compiler_Info => False);
+      function Dir return String;
+      --  Returns Directory or if empty Default_Knowledge_Base_Directory
+      pragma Inline (Dir);
+
+      ---------
+      -- Dir --
+      ---------
+
+      function Dir return String is
+      begin
+         if Directory'Length = 0 then
+            return Default_Knowledge_Base_Directory;
+         else
+            return Directory;
+         end if;
+      end Dir;
+
+   begin
+      Parse_Knowledge_Base (Base, Dir, Parse_Compiler_Info => False);
    exception
       when Invalid_Knowledge_Base =>
-         Fail_Program ("could not parse the XML files in " & Dir.all);
+         Fail_Program ("could not parse the XML files in " & Dir);
    end Parse_Knowledge_Base;
 
 end Knowledge;
