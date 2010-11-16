@@ -58,6 +58,9 @@
     <targets>
       <target name="^i686-pc-mingw32$" />
     </targets>
+    <hosts negate="true">
+      <host name="^i686-pc-mingw32$" />
+    </hosts>
     <config>
    for Archive_Builder  use ("i686-pc-mingw32-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -68,12 +71,45 @@
 
   <configuration>
     <targets>
+      <target name="^i686-pc-mingw32$" />
+    </targets>
+    <hosts>
+      <host name="^i686-pc-mingw32$" />
+    </hosts>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^x86_64-pc-mingw32$" />
     </targets>
+    <hosts negate="true">
+      <host name="^x86_64-pc-mingw32$" />
+    </hosts>
     <config>
    for Archive_Builder  use ("x86_64-pc-mingw32-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("x86_64-pc-mingw32-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^x86_64-pc-mingw32$" />
+    </targets>
+    <hosts>
+      <host name="^x86_64-pc-mingw32$" />
+    </hosts>
+    <config>
+   for Archive_Builder  use ("ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
