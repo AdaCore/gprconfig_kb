@@ -8152,58 +8152,76 @@ package body Buildgpr is
                Library_Dirs.Reset;
 
                for J in reverse 1 .. Library_Projs.Last loop
+                  if Library_Projs.Table (J).Library_Kind = Static then
+                     Add_Argument
+                       (Get_Name_String
+                          (Library_Projs.Table (J).Library_Dir.Display_Name) &
+                        Directory_Separator &
+                        "lib" &
+                        Get_Name_String
+                          (Library_Projs.Table (J).Library_Name) &
+                        Archive_Suffix (Library_Projs.Table (J)),
+                        Verbose_Mode);
 
-                  --  Do not issue several time the same -L switch if several
-                  --  library projects share the same library directory.
+                  else
+                     --  Do not issue several time the same -L switch if
+                     --  several library projects share the same library
+                     --  directory.
 
-                  if not Library_Dirs.Get
-                    (Library_Projs.Table (J).Library_Dir.Name)
-                  then
-                     Library_Dirs.Set
-                       (Library_Projs.Table (J).Library_Dir.Name, True);
+                     if not Library_Dirs.Get
+                       (Library_Projs.Table (J).Library_Dir.Name)
+                     then
+                        Library_Dirs.Set
+                          (Library_Projs.Table (J).Library_Dir.Name, True);
 
-                     if Main_Proj.Config.Linker_Lib_Dir_Option = No_Name then
+                        if
+                          Main_Proj.Config.Linker_Lib_Dir_Option = No_Name
+                        then
+                           Add_Argument
+                             ("-L" &
+                              Get_Name_String
+                                (Library_Projs.Table
+                                   (J).Library_Dir.Display_Name),
+                              Verbose_Mode);
+
+                        else
+                           Add_Argument
+                             (Get_Name_String
+                                (Main_Proj.Config.Linker_Lib_Dir_Option) &
+                              Get_Name_String
+                                (Library_Projs.Table
+                                   (J).Library_Dir.Display_Name),
+                              Verbose_Mode);
+                        end if;
+
+                        if Opt.Run_Path_Option
+                          and then
+                            Main_Proj.Config.Run_Path_Option /= No_Name_List
+                            and then
+                              Library_Projs.Table (J).Library_Kind /= Static
+                        then
+                           Add_Rpath
+                             (Get_Name_String
+                                (Library_Projs.Table
+                                   (J).Library_Dir.Display_Name));
+                        end if;
+                     end if;
+
+                     if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
                         Add_Argument
-                          ("-L" &
+                          ("-l" &
                            Get_Name_String
-                            (Library_Projs.Table (J).Library_Dir.Display_Name),
+                             (Library_Projs.Table (J).Library_Name),
                            Verbose_Mode);
 
                      else
                         Add_Argument
                           (Get_Name_String
-                             (Main_Proj.Config.Linker_Lib_Dir_Option) &
+                             (Main_Proj.Config.Linker_Lib_Name_Option) &
                            Get_Name_String
-                            (Library_Projs.Table (J).Library_Dir.Display_Name),
+                             (Library_Projs.Table (J).Library_Name),
                            Verbose_Mode);
                      end if;
-
-                     if Opt.Run_Path_Option
-                       and then
-                         Main_Proj.Config.Run_Path_Option /= No_Name_List
-                         and then
-                           Library_Projs.Table (J).Library_Kind /= Static
-                     then
-                        Add_Rpath
-                          (Get_Name_String
-                           (Library_Projs.Table (J).Library_Dir.Display_Name));
-                     end if;
-                  end if;
-
-                  if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
-                     Add_Argument
-                       ("-l" &
-                        Get_Name_String
-                          (Library_Projs.Table (J).Library_Name),
-                        Verbose_Mode);
-
-                  else
-                     Add_Argument
-                       (Get_Name_String
-                          (Main_Proj.Config.Linker_Lib_Name_Option) &
-                        Get_Name_String
-                          (Library_Projs.Table (J).Library_Name),
-                        Verbose_Mode);
                   end if;
                end loop;
 
