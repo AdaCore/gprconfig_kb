@@ -253,7 +253,6 @@
     <config>
    package Linker is
       for Max_Command_Line_Length use "8000";
-      for Response_File_Format    use "GCC_GNU";
    end Linker;
     </config>
   </configuration>
@@ -590,6 +589,7 @@
       <target name="^.*mingw.*$" />
       <target name="^.*linux.*$" />
       <target name="^.*freebsd.*$" />
+      <target name="^.*wrs-vxworks.*$" />
     </targets>
     <compilers negate="true">
        <compiler language="C++" />
@@ -649,6 +649,7 @@
       <target name="^.*mingw.*$" />
       <target name="^.*linux.*$" />
       <target name="^.*freebsd.*$" />
+      <target name="^.*wrs-vxworks.*$" />
       <target name="^.*aix.*$" />
       <target name="^.*hpux.*$" />
       <target name="^.*irix.*$" />
