@@ -88,6 +88,9 @@ procedure Gprlib is
    Output_Switch        : constant String_Access :=
                             new String'(Output_Switch_String);
 
+   No_Warning_String : constant String := "-gnatws";
+   No_Warning : constant String_Access := new String'(No_Warning_String);
+
    Auto_Initialize_String : constant String := "-a";
    Auto_Initialize        : constant String_Access :=
                               new String'(Auto_Initialize_String);
@@ -1616,6 +1619,7 @@ begin
                Last_Bind_Option);
          end loop;
 
+         Add (No_Warning, Bind_Options, Last_Bind_Option);
          Add (Binder_Generated_File, Bind_Options, Last_Bind_Option);
          Add (Output_Switch, Bind_Options, Last_Bind_Option);
          Add (Binder_Generated_Object, Bind_Options, Last_Bind_Option);
