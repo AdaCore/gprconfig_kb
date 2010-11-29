@@ -67,6 +67,7 @@
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="kernel" />
+       <compiler name="GNAT" runtime="default" />
        <compiler name="GCC-WRS6" runtime="kernel" />
        <compiler name="GCC-WRS6CERT" runtime="kernel" />
        <compiler name="G++-WRS6" runtime="kernel" />
