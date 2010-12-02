@@ -480,6 +480,7 @@
       <target name="^.*linux.*$" />
       <target name="^.*sunos.*$" />
       <target name="^.*solaris.*$" />
+      <target name="^.*mingw.*$" />
     </targets>
     <compilers>
        <compiler language="C++" />
