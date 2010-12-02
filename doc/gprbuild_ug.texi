@@ -1668,7 +1668,8 @@ are evaluated (if necessary) in the same order as they are documented below.
   but @samp{powerpc-wrs-vxworks-gnatmake} for cross-compilers to VxWorks.
   Most of the compiler description is the same, however.
   For such cases, the value of the @code{executable} node is considered as
-  beginning a regular expression. The tag also accepts an attribute @code{prefix},
+  beginning a regular expression. The tag also accepts an optional
+  attribute @code{prefix},
   which is an integer indicating the parenthesis group that contains the prefix.
   In the following example, you obtain the version of the GNAT compiler by running
   either @command{gnatls} or @command{powerpc-wrs-vxworks-gnatls}, depending on

@@ -673,7 +673,14 @@ package body GprConfig.Knowledge is
 
                   else
                      Compiler.Executable := Get_String (Val);
-                     Compiler.Prefix_Index := Integer'Value (Prefix);
+
+                     begin
+                        Compiler.Prefix_Index := Integer'Value (Prefix);
+                     exception
+                        when Constraint_Error =>
+                           Compiler.Prefix_Index := -1;
+                     end;
+
                      if not Ends_With (Val, Exec_Suffix.all) then
                         Compiler.Executable_Re := new Pattern_Matcher'
                           (Compile ("^" & Val & Exec_Suffix.all & "$"));
@@ -692,10 +699,6 @@ package body GprConfig.Knowledge is
                         & " files: " & Val
                         & " while parsing " & File);
                      raise Invalid_Knowledge_Base;
-
-                  when Constraint_Error =>
-                     Compiler.Prefix_Index := -1;
-                     null;
                end;
 
             elsif Node_Name (N) = "name" then
