@@ -24,6 +24,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Unchecked_Deallocation;
 with Ada.Characters.Handling;   use Ada.Characters.Handling;
 with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
@@ -56,6 +57,9 @@ package body GprConfig.Knowledge is
 
    package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
      (String, Unbounded_String, Ada.Strings.Hash_Case_Insensitive, "=");
+
+   procedure Unchecked_Free is new Ada.Unchecked_Deallocation
+     (Pattern_Matcher, Pattern_Matcher_Access);
 
    type External_Value_Item is record
       Value          : Name_Id;
@@ -698,7 +702,7 @@ package body GprConfig.Knowledge is
                         "Invalid regular expression found in the configuration"
                         & " files: " & Val
                         & " while parsing " & File);
-                     raise Invalid_Knowledge_Base;
+                     Unchecked_Free (Compiler.Executable_Re);
                end;
 
             elsif Node_Name (N) = "name" then

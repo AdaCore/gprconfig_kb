@@ -152,7 +152,7 @@
   <!--  G++ compilers, including recent CodeSourcery compilers  -->
   <compiler_description>
     <name>G++</name>
-    <executable>g++</executable>
+    <executable>g\+\+</executable>
     <version>
       <external>g++ -v</external>
       <grep regexp="^gcc version (\S+)" group="1"></grep>
