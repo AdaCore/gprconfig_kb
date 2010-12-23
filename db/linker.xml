@@ -314,7 +314,7 @@
        <target name="^.*linux.*$" />
     </targets>
     <config>
-   for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+   for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
 
