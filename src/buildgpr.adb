@@ -2401,6 +2401,8 @@ package body Buildgpr is
                Source := Prj.Element (Iter);
                exit when Source = No_Source;
 
+               Initialize_Source_Record (Source);
+
                if Is_Compilable (Source)
                  and then Source.Language.Config.Objects_Linked
                  and then
@@ -7628,6 +7630,11 @@ package body Buildgpr is
 
          begin
             exit when Display_Main'Length = 0;
+
+            --  Make sure that the table Rpaths is emptied after each main, so
+            --  that the same rpaths are not duplicated.
+
+            Rpaths.Set_Last (0);
 
             Linker_Needs_To_Be_Called := Force_Compilations;
 
