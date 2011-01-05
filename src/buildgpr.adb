@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2004-2010, Free Software Foundation, Inc.         --
+--          Copyright (C) 2004-2011, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -7907,8 +7907,13 @@ package body Buildgpr is
                                       (Line (1 .. Last), Verbose_Mode);
 
                                  when Bound_Object_Files =>
-                                    if Line (1 .. Last) /=
-                                      Get_Name_String (Main_Source.Object_Path)
+                                    if Normalize_Pathname
+                                      (Line (1 .. Last),
+                                       Case_Sensitive => True) /=
+                                      Normalize_Pathname
+                                        (Get_Name_String
+                                             (Main_Source.Object_Path),
+                                         Case_Sensitive => True)
                                       and then
                                         not Is_In_Library_Project
                                           (Line (1 .. Last))
