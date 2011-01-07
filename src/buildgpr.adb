@@ -7909,11 +7909,11 @@ package body Buildgpr is
                                  when Bound_Object_Files =>
                                     if Normalize_Pathname
                                       (Line (1 .. Last),
-                                       Case_Sensitive => True) /=
+                                       Case_Sensitive => False) /=
                                       Normalize_Pathname
                                         (Get_Name_String
                                              (Main_Source.Object_Path),
-                                         Case_Sensitive => True)
+                                         Case_Sensitive => False)
                                       and then
                                         not Is_In_Library_Project
                                           (Line (1 .. Last))
