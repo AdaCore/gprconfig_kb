@@ -21,7 +21,7 @@ KP-150-JC22-022 Duplicate rpaths when there are several mains
 
   Workaround: Invoke gprbuild to link one main at a time.
 
-KP-150-JB09-027 Main in mixed cases on Windows
+KP-150-JC09-012 Main in mixed cases on Windows
 
   Problem:    On Windows, if the mains in attributes Mains contain capital
               letters, linking executables may fail.
