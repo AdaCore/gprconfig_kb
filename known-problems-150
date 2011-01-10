@@ -2,7 +2,7 @@
 Known problems in GPRBUILD version 1.5.0
 ========================================
 
-Copyright (c) 2010, AdaCore
+Copyright (c) 2010-2011, AdaCore
 
 The following is a listing of known problems in release 1.5.0. Except where
 specifically noted, all these problems have been corrected in the development
@@ -20,6 +20,15 @@ KP-150-JC22-022 Duplicate rpaths when there are several mains
   Status      This was fixed in 1.6.0 on 2010-12-29
 
   Workaround: Invoke gprbuild to link one main at a time.
+
+KP-150-JB09-027 Main in mixed cases on Windows
+
+  Problem:    On Windows, if the mains in attributes Mains contain capital
+              letters, linking executables may fail.
+
+  Status:     This was fixed in 1.6.0 on 2011-01-07
+
+  Workaround: Use only small letters in attribute Main.
 
 KP-150-JB09-027 Improper attempt to compile locally removed body
 
