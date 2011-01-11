@@ -172,6 +172,7 @@
 
  <!-- x86-vx6-.* (vxworks 6) -->
   <targetset>
+    <target>x86-wrs-vxworks</target>
     <target>x86-vx6-windows</target>
     <target>x86-vx6-linux</target>
     <target>i.86-wrs-vxworks</target>
