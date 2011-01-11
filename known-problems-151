@@ -21,11 +21,3 @@ KP-151-JC22-022 Duplicate rpaths when there are several mains
 
   Workaround: Invoke gprbuild to link one main at a time.
 
-KP-151-JC09-012 Main in mixed cases on Windows
-
-  Problem:    On Windows, if the mains in attributes Mains contain capital
-              letters, linking executables may fail.
-
-  Status:     This was fixed in 1.6.0 on 2011-01-07
-
-  Workaround: Use only small letters in attribute Main.

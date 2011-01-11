@@ -27,3 +27,12 @@ KP-150-J512-013 gprconfig's <executable> requires a prefix
   Status:     This was fixed in 1.5.1 on 2010-12-01
 
   Workaround: Add prefix="-1" to <executable>
+
+KP-150-JC09-012 Main in mixed cases on Windows
+
+  Problem:    On Windows, if the mains in attributes Mains contain capital
+              letters, linking executables may fail.
+
+  Status:     This was fixed in 1.5.1 on 2011-01-07
+
+  Workaround: Use only small letters in attribute Main.
