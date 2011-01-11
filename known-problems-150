@@ -19,3 +19,11 @@ KP-150-JB09-027 Improper attempt to compile locally removed body
 
   Workaround: Make sure the spec needs a body.
 
+KP-150-J512-013 gprconfig's <executable> requires a prefix
+
+  Problem:    In its knowledge base, gprconfig requires a valid prefix
+              attribute for <executable> nodes.
+
+  Status:     This was fixed in 1.5.1 on 2010-12-01
+
+  Workaround: Add prefix="-1" to <executable>
