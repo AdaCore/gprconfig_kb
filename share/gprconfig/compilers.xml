@@ -32,11 +32,26 @@
       <must_match>vxworks-6.*</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>kernel,rtp</runtimes>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
     <target>
       <external>cc${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <!-- VxWorks 6 e500v2-->
+  <!-- We need to distinguish version to correctly report runtimes.  -->
+  <compiler_description>
+    <name>GCC-WRS6E500V2</name>
+    <executable prefix="1">cc(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-6.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
+    <target name="^.*e500v2-wrs-vxworks$" />
   </compiler_description>
 
   <!-- VxWorks 6 Cert -->
@@ -50,7 +65,7 @@
       <must_match>vxworks-cert-6.*</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>kernel,rtp</runtimes>
+    <runtimes>kernel,ravenscar-cert,zfp</runtimes>
     <target>
       <external>cc${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -83,6 +98,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>
       <external>cc${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -100,6 +116,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C</languages>
+    <runtimes>full,ravenscar-cert,zfp</runtimes>
     <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 
@@ -114,6 +131,7 @@
       <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C</languages>
+    <runtimes>zfp</runtimes>
     <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 
@@ -190,11 +208,25 @@
       <must_match>vxworks-6.*</must_match>
     </version>
     <languages>C++</languages>
-    <runtimes>kernel,rtp</runtimes>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
     <target>
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <!-- G++ for VxWorks 6 e500v2-->
+  <compiler_description>
+    <name>G++-WRS6E500V2</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-6.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
+    <target name="^.*e500v2-wrs-vxworks$" />
   </compiler_description>
 
   <!-- G++ for VxWorks 6 Cert -->
@@ -207,7 +239,7 @@
       <must_match>vxworks-cert-6.*</must_match>
     </version>
     <languages>C++</languages>
-    <runtimes>kernel,rtp</runtimes>
+    <runtimes>kernel,ravenscar-cert,zfp</runtimes>
     <target>
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -224,6 +256,7 @@
       <must_match>vxworks653.*</must_match>
     </version>
     <languages>C++</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -241,6 +274,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C++</languages>
+    <runtimes>full,ravenscar-cert,zfp</runtimes>
     <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 
@@ -255,6 +289,7 @@
       <must_match>vxworks-mils-hae-1.*</must_match>
     </version>
     <languages>C++</languages>
+    <runtimes>zfp</runtimes>
     <target name="^.*-wrs-vxworksmils$" />
   </compiler_description>
 

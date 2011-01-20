@@ -43,8 +43,11 @@
      <compilers>
        <compiler name="GCC-WRS5" language="C" />
        <compiler name="GCC-WRS6" language="C" />
+       <compiler name="GCC-WRS6CERT" language="C" />
+       <compiler name="GCC-WRS6E500V2" language="C" />
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
+       <compiler name="GCC-WRSMILSHAE" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -72,8 +75,11 @@
        <compiler name="GCC-MINGW32" language="C" />
        <compiler name="GCC-WRS5" language="C" />
        <compiler name="GCC-WRS6" language="C" />
+       <compiler name="GCC-WRS6E500V2" language="C" />
+       <compiler name="GCC-WRS6CERT" language="C" />
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
+       <compiler name="GCC-WRSMILSHAE" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -106,8 +112,11 @@
        <compiler name="GCC-MINGW32" language="C" />
        <compiler name="GCC-WRS5" language="C" />
        <compiler name="GCC-WRS6" language="C" />
+       <compiler name="GCC-WRS6E500V2" language="C" />
+       <compiler name="GCC-WRS6CERT" language="C" />
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
+       <compiler name="GCC-WRSMILSHAE" language="C" />
      </compilers>
      <config>
    package Compiler is
