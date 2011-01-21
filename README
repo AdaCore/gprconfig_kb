@@ -8,11 +8,43 @@ makes it simpler to build gprbuild but is not required to use it.
 Using alternate GNAT Sources
 ============================
 
-Gprbuild uses some sources of the GNAT package. They are found by default in
-the gnat subdirectory. In order to use GNAT sources from another location,
-create a link called gnat_src and call the Makefile target copy_gnat_src:
+Gprbuild uses some sources of the GNAT package. They are expected by default
+to be located in the gnat/ subdirectory of Gprbuild. Only some of the GNAT 
+sources are required, but note that having all of the GNAT sources present 
+in the gnat/ subdirectory will result in build failure.
+
+In order to use GNAT sources from another location, create a link named 
+gnat_src and call the Makefile target copy_gnat_src:
+
    ln -s <path_to_gnat_sources> gnat_src
    make copy_gnat_src -f Makefile.in
+   
+That will place links into the gnat/ subdirectory for each of the required 
+GNAT source files.
+   
+On Windows with Cygwin, the files must be copied because symbolic 
+links do not work.  You can modify the definition of GNAT_SOURCE_DIR in the 
+makefile so that it specifies the path to the GNAT sources you intend to
+use, and then call the Makefile target copy_gnat_src:
+
+   make copy_gnat_src -f Makefile.in
+   
+The makefile will recognize the use of Windows and will therefore place a 
+copy of the required files into the gnat/ subdirectory.  
+
+Alternatively you can specify GNAT_SOURCE_DIR on the command line when invoking
+the makefile target:
+
+   make copy_gnat_src -f Makefile.in GNAT_SOURCE_DIR=<path/to/gnat/sources>
+
+Finally, another alternative would be to check out the GNAT sources into a dedicated
+copy for the sake of building Gprbuild. To do so, create a directory named gnat_src/
+under the Gprbuild root directory and check out the GNAT sources into that directory.
+Then invoke the Makefile target as before:
+
+   make copy_gnat_src -f Makefile.in
+
+Note that copy_gnat_src can be invoked automatically by other targets.
 
 Configuring
 ===========
