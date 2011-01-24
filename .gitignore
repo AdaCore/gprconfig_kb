@@ -47,6 +47,7 @@
 /internal/gprtests_python/support/nocompiler.xml
 /internal/gprtests_python/local_machines.py
 /internal/gprtests_python/test_config.py
+internal/gprtests_python/env.dump
 
 /gnat/*.ali
 /gnat/ali.ad?

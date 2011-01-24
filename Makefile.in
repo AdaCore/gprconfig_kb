@@ -186,6 +186,17 @@ tests: force
 	cd internal/gprtests_python; python ./run-gprconfig-test.py
 	cd internal/gprtests_python; python ./run-gprbuild-test.py
 
+######################
+# Running tests locally
+# Run tests with the locally compiled gprbuild (no "make install" necessary)
+# You can set test_names and test_config from the command line to restrict
+# the tests that are run. When running all the tests, only show the failing
+# tests to make them more obvious. But when running a specific set of tests,
+# display all results.
+# Adds "~/.local/bin" to the PATH, in case gnatpython was installed with --user.
+# Adds "." to the PATH, since some of the tests expect it.
+######################
+
 test_names=
 test_config=
 
@@ -195,21 +206,22 @@ else
 test_config_switch=
 endif
 
-## Run tests with the locally compiled gprbuild (no "make install" necessary)
-## You can set test_names and test_config from the command line to restrict
-## the tests that are run. When running all the tests, only show the failing
-## tests to make them more obvious. But when running a specific set of tests,
-## display all results
+PROCESSORS ?= 1
+
+LOCAL_SETUP = cd internal/gprtests_python; PATH=${HOME}/.local/bin:${shell pwd}/install/bin:${PATH}:.
+
+LOCAL_GPRCONFIG_TEST=${LOCAL_SETUP}; python ./run-gprconfig-test.py --diffs --enable-color -j${PROCESSORS} ${test_config_switch}
+
+LOCAL_GPRBUILD_TEST=${LOCAL_SETUP}; python ./run-gprbuild-test.py --diffs --enable-color -j${PROCESSORS} ${test_config_switch}
 
 tests_local: force
 	@make prefix=${shell pwd}/install install
 ifeq (${test_names},)
-	@cd internal/gprtests_python; PATH=${HOME}/.local/bin:${shell pwd}/install/bin:${PATH}; python ./run-gprconfig-test.py --diffs --enable-color --loglevel=ERROR ${test_config_switch}
-	@cd internal/gprtests_python; PATH=${HOME}/.local/bin:${shell pwd}/install/bin:${PATH}; python ./run-gprbuild-test.py --diffs --enable-color --loglevel=ERROR ${test_config_switch}
+	@${LOCAL_GPRCONFIG_TEST} --loglevel=ERROR
+	@${LOCAL_GPRBUILD_TEST} --loglevel=ERROR
 else
-	@cd internal/gprtests_python; PATH=${HOME}/.local/bin:${shell pwd}/install/bin:${PATH};  python ./run-gprconfig-test.py --diffs --enable-color --loglevel=INFO ${test_config_switch} ${test_names}
-	@cd internal/gprtests_python; PATH=${HOME}/.local/bin:${shell pwd}/install/bin:${PATH}; python ./run-gprbuild-test.py --diffs --enable-color --loglevel=INFO ${test_config_switch} ${test_names}
-
+	@${LOCAL_GPRCONFIG_TEST} --loglevel=INFO -v ${test_names}
+	@${LOCAL_GPRBUILD_TEST} --loglevel=INFO -v ${test_names}
 endif
 	@${RM} -rf install
 
