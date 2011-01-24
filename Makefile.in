@@ -220,8 +220,8 @@ ifeq (${test_names},)
 	@${LOCAL_GPRCONFIG_TEST} --loglevel=ERROR
 	@${LOCAL_GPRBUILD_TEST} --loglevel=ERROR
 else
-	@${LOCAL_GPRCONFIG_TEST} --loglevel=INFO -v ${test_names}
-	@${LOCAL_GPRBUILD_TEST} --loglevel=INFO -v ${test_names}
+	@${LOCAL_GPRCONFIG_TEST} --loglevel=INFO ${test_names}
+	@${LOCAL_GPRBUILD_TEST} --loglevel=INFO ${test_names}
 endif
 	@${RM} -rf install
 
