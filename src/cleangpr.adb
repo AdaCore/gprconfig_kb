@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2006-2010, Free Software Foundation, Inc.         --
+--          Copyright (C) 2006-2011, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1023,6 +1023,17 @@ package body Cleangpr is
       --  Parse the command line, getting the switches and the executable names
 
       Parse_Cmd_Line;
+
+      --  Once we have parsed the command line, we might know the target, and
+      --  thus can initialize the default project path.
+
+      if Target_Name = null then
+         Prj.Env.Initialize_Default_Project_Path
+           (Project_Node_Tree.Project_Path, Target_Name => "");
+      else
+         Prj.Env.Initialize_Default_Project_Path
+           (Project_Node_Tree.Project_Path, Target_Name.all);
+      end if;
 
       if Load_Standard_Base then
          Parse_Knowledge_Base;

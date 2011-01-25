@@ -7271,6 +7271,18 @@ package body Buildgpr is
 
       Current_Processor := None;
 
+      --  Target_Name has potentially been set when calling Scan_Arg, so we can
+      --  only initialize the project path after parsing the command line
+      --  arguments.
+
+      if Target_Name = null then
+         Prj.Env.Initialize_Default_Project_Path
+           (Project_Node_Tree.Project_Path, Target_Name => "");
+      else
+         Prj.Env.Initialize_Default_Project_Path
+           (Project_Node_Tree.Project_Path, Target_Name.all);
+      end if;
+
       --  If --display-paths was specified, display the config and the user
       --  project paths and exit.
 
@@ -7292,15 +7304,7 @@ package body Buildgpr is
 
             Write_Eol;
 
-            if Target_Name = null then
-               Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
-            else
-               Prj.Env.Get_Path
-                 (Project_Node_Tree.Project_Path,
-                  Path        => P,
-                  Target_Name => Target_Name.all);
-            end if;
-
+            Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
             Write_Line (P.all);
             Exit_Program (E_Success);
          end;
