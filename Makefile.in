@@ -56,7 +56,9 @@ endif
 
 dummy:=$(shell $(MKDIR) $(objdir))
 
-GNATMAKE=gnatmake -p -m
+PROCESSORS ?= 1
+
+GNATMAKE=gnatmake -p -m -j${PROCESSORS}
 ifeq ($(strip $(filter-out %vms%,$(host))),)
 GNATMAKE=${GNATMAKE} -XOS=vms
 endif
@@ -205,8 +207,6 @@ test_config_switch:=--config=${test_config}
 else
 test_config_switch=
 endif
-
-PROCESSORS ?= 1
 
 LOCAL_SETUP = cd internal/gprtests_python; PATH=${HOME}/.local/bin:${shell pwd}/install/bin:${PATH}:.
 
