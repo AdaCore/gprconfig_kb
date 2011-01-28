@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2007-2010, Free Software Foundation, Inc.       --
+--            Copyright (C) 2007-2011, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -44,6 +44,14 @@ package Gpr_Util is
    Project_Node_Tree : constant Project_Node_Tree_Ref :=
      new Project_Node_Tree_Data;
    --  This is also used to hold project path and scenario variables
+
+   Root_Environment : Prj.Tree.Environment;
+   --  The environment coming from environment variables and command line
+   --  switches. When we do not have an aggregate project, this is used for
+   --  parsing the project tree. When we have an aggregate project, this is
+   --  used to parse the aggregate project; the latter then generates another
+   --  environment (with additional external values and project path) to parse
+   --  the aggregated projects.
 
    Success : Boolean := False;
 

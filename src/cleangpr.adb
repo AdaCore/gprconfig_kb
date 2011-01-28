@@ -1029,10 +1029,10 @@ package body Cleangpr is
 
       if Target_Name = null then
          Prj.Env.Initialize_Default_Project_Path
-           (Project_Node_Tree.Project_Path, Target_Name => "");
+           (Root_Environment.Project_Path, Target_Name => "");
       else
          Prj.Env.Initialize_Default_Project_Path
-           (Project_Node_Tree.Project_Path, Target_Name.all);
+           (Root_Environment.Project_Path, Target_Name.all);
       end if;
 
       if Load_Standard_Base then
@@ -1086,7 +1086,7 @@ package body Cleangpr is
             Project_Tree               => Project_Tree,
             Project_Node_Tree          => Project_Node_Tree,
             Packages_To_Check          => Packages_To_Check,
-            Flags                      => Gprclean_Flags,
+            Env                        => Root_Environment,
             Allow_Automatic_Generation => Autoconfiguration,
             Automatically_Generated    => Delete_Autoconf_File,
             Config_File_Path           => Configuration_Project_Path,
@@ -1188,6 +1188,7 @@ package body Cleangpr is
          Namet.Initialize;
          Snames.Initialize;
 
+         Prj.Tree.Initialize (Root_Environment, Gprclean_Flags);
          Prj.Tree.Initialize (Project_Node_Tree);
       end if;
 
@@ -1350,7 +1351,7 @@ package body Cleangpr is
 
                         if Arg (3) = 'P' then
                            Prj.Env.Add_Directories
-                             (Project_Node_Tree.Project_Path,
+                             (Root_Environment.Project_Path,
                               Arg (4 .. Arg'Last));
 
                         else
@@ -1443,7 +1444,6 @@ package body Cleangpr is
                            Ext_Asgn  : constant String := Arg (3 .. Arg'Last);
                            Start     : Positive := Ext_Asgn'First;
                            Stop      : Natural  := Ext_Asgn'Last;
-                           Equal_Pos : Natural;
                            OK        : Boolean  := True;
 
                         begin
@@ -1451,33 +1451,16 @@ package body Cleangpr is
                               if Ext_Asgn (Stop) = '"' then
                                  Start := Start + 1;
                                  Stop  := Stop - 1;
-
                               else
                                  OK := False;
                               end if;
                            end if;
 
-                           Equal_Pos := Start;
-
-                           while Equal_Pos <= Stop
-                             and then Ext_Asgn (Equal_Pos) /= '='
-                           loop
-                              Equal_Pos := Equal_Pos + 1;
-                           end loop;
-
-                           if Equal_Pos = Start or else Equal_Pos > Stop then
-                              OK := False;
-                           end if;
-
-                           if OK then
-                              Prj.Ext.Add
-                                (Project_Node_Tree.External,
-                                 External_Name =>
-                                   Ext_Asgn (Start .. Equal_Pos - 1),
-                                 Value         =>
-                                   Ext_Asgn (Equal_Pos + 1 .. Stop));
-
-                           else
+                           if not OK
+                             or else not Prj.Ext.Check
+                               (Root_Environment.External,
+                                Declaration => Ext_Asgn (Start .. Stop))
+                           then
                               Osint.Fail
                                 ("illegal external assignment '" &
                                  Ext_Asgn & ''');

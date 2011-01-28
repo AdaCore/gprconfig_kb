@@ -6664,9 +6664,9 @@ package body Buildgpr is
             Autoconf_Specified         => Autoconf_Specified,
             Project_File_Name          => Project_File_Name.all,
             Project_Tree               => Project_Tree,
+            Env                        => Root_Environment,
             Project_Node_Tree          => Project_Node_Tree,
             Packages_To_Check          => Packages_To_Check,
-            Flags                      => Gprbuild_Flags,
             Allow_Automatic_Generation => Autoconfiguration,
             Automatically_Generated    => Delete_Autoconf_File,
             Config_File_Path           => Configuration_Project_Path,
@@ -7212,6 +7212,7 @@ package body Buildgpr is
       Namet.Initialize;
       Snames.Initialize;
 
+      Prj.Tree.Initialize (Root_Environment, Gprbuild_Flags);
       Prj.Tree.Initialize (Project_Node_Tree);
 
       Prj.Initialize (Project_Tree);
@@ -7277,10 +7278,10 @@ package body Buildgpr is
 
       if Target_Name = null then
          Prj.Env.Initialize_Default_Project_Path
-           (Project_Node_Tree.Project_Path, Target_Name => "");
+           (Root_Environment.Project_Path, Target_Name => "");
       else
          Prj.Env.Initialize_Default_Project_Path
-           (Project_Node_Tree.Project_Path, Target_Name.all);
+           (Root_Environment.Project_Path, Target_Name.all);
       end if;
 
       --  If --display-paths was specified, display the config and the user
@@ -7304,7 +7305,7 @@ package body Buildgpr is
 
             Write_Eol;
 
-            Prj.Env.Get_Path (Project_Node_Tree.Project_Path, Path => P);
+            Prj.Env.Get_Path (Root_Environment.Project_Path, Path => P);
             Write_Line (P.all);
             Exit_Program (E_Success);
          end;
@@ -11643,7 +11644,7 @@ package body Buildgpr is
             Fail_Program ("directory name missing after -aP");
          else
             Search_Project_Dir_Expected := False;
-            Prj.Env.Add_Directories (Project_Node_Tree.Project_Path, Arg);
+            Prj.Env.Add_Directories (Root_Environment.Project_Path, Arg);
          end if;
 
       elsif Db_Directory_Expected then
@@ -11975,7 +11976,7 @@ package body Buildgpr is
 
             else
                Prj.Env.Add_Directories
-                 (Project_Node_Tree.Project_Path, Arg (4 .. Arg'Last));
+                 (Root_Environment.Project_Path, Arg (4 .. Arg'Last));
             end if;
 
          elsif Command_Line and then Arg = "-b" then
@@ -12218,7 +12219,7 @@ package body Buildgpr is
          elsif Command_Line
            and then Arg'Length >= 3
            and then Arg (2) = 'X'
-           and then Is_External_Assignment (Project_Node_Tree, Arg)
+           and then Is_External_Assignment (Root_Environment, Arg)
          then
             --  Is_External_Assignment has side effects when it returns True
 
