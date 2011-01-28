@@ -1186,54 +1186,11 @@ package body Buildgpr is
    ------------------------------
 
    procedure Add_Compilation_Switches (Source : Source_Id) is
-      Language_Name : constant Name_Id := Source.Language.Name;
-      Project       : constant Project_Id :=
-        Ultimate_Extending_Project_Of (Source.Project);
-      Package_Compiler : constant Package_Id :=
-                           Value_Of
-                             (Name        => Name_Compiler,
-                              In_Packages => Project.Decl.Packages,
-                              In_Tree     => Project_Tree);
-
-      Options          : Variable_Value :=
-                           Value_Of
-                             (Name                    =>
-                                                     Name_Id (Source.File),
-                              Attribute_Or_Array_Name => Name_Switches,
-                              In_Package              => Package_Compiler,
-                              In_Tree                 => Project_Tree,
-                              Allow_Wildcards         => True);
-
+      Options : Variable_Value;
+      Is_Default : Boolean;
    begin
-      if Options = Nil_Variable_Value then
-         Options :=
-           Value_Of
-             (Name                    => Language_Name,
-              Attribute_Or_Array_Name => Name_Switches,
-              In_Package              => Package_Compiler,
-              In_Tree                 => Project_Tree,
-              Force_Lower_Case_Index  => True);
-      end if;
-
-      if Options = Nil_Variable_Value then
-         Options :=
-           Value_Of
-             (Name                    => All_Other_Names,
-              Attribute_Or_Array_Name => Name_Switches,
-              In_Package              => Package_Compiler,
-              In_Tree                 => Project_Tree,
-              Force_Lower_Case_Index  => True);
-      end if;
-
-      if Options = Nil_Variable_Value then
-         Options :=
-           Value_Of
-             (Name                    => Language_Name,
-              Attribute_Or_Array_Name => Name_Default_Switches,
-              In_Package              => Package_Compiler,
-              In_Tree                 => Project_Tree);
-      end if;
-
+      Makeutl.Get_Switches
+        (Source, Name_Compiler, Project_Tree, Options, Is_Default);
       if Options /= Nil_Variable_Value then
          Add_Options
            (Options.Values,
