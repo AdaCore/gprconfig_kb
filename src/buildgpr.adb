@@ -11860,8 +11860,6 @@ package body Buildgpr is
                    (Arg (Target_Project_Option'Length + 1 .. Arg'Last));
             end if;
 
-            Project_Node_Tree.Target_Name := Target_Name;
-
          elsif Arg'Length > RTS_Option'Length and then
            Arg (1 .. RTS_Option'Length) = RTS_Option
          then
