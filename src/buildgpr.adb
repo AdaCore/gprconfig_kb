@@ -9776,7 +9776,14 @@ package body Buildgpr is
                Iter := For_Each_Source (Project_Tree);
                while Prj.Element (Iter) /= No_Source loop
                   Initialize_Source_Record (Prj.Element (Iter));
-                  Put_Dependency_File (Prj.Element (Iter));
+
+                  --  Do not bind the non compilable sources, such as those
+                  --  that have been locally removed.
+
+                  if Is_Compilable (Prj.Element (Iter)) then
+                     Put_Dependency_File (Prj.Element (Iter));
+                  end if;
+
                   Next (Iter);
                end loop;
             end if;
