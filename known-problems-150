@@ -2,7 +2,7 @@
 Known problems in GPRBUILD version 1.5.0
 ========================================
 
-Copyright (c) 2010-2011, AdaCore
+Copyright (C) 2010-2011, AdaCore
 
 The following is a listing of known problems in release 1.5.0. All these
 problems have been corrected in the release 1.5.1 and in any wavefront
@@ -16,7 +16,7 @@ KP-150-JC22-022 Duplicate rpaths when there are several mains
               another main. That may leads to reach a limit in some platforms,
               and the link may then fail.
 
-  Status      This was fixed in 1.5.1 on 2010-12-29
+  Status:     This was fixed in 1.5.1 on 2010-12-29
 
   Workaround: Invoke gprbuild to link one main at a time.
 
