@@ -1377,7 +1377,7 @@ package body Buildgpr is
       First_Display   : Boolean := Display_First;
    begin
       while List /= Nil_String loop
-         Element := Project_Tree.String_Elements.Table (List);
+         Element := Project_Tree.Shared.String_Elements.Table (List);
 
          --  Ignore empty options
 
@@ -1588,7 +1588,7 @@ package body Buildgpr is
                      List      : Name_List_Index :=
                        Config.Compute_Dependency;
                      Nam       : Name_Node :=
-                       Project_Tree.Name_Lists.Table (List);
+                       Project_Tree.Shared.Name_Lists.Table (List);
                      Exec_Name : constant String :=
                        Get_Name_String (Nam.Name);
                      Exec_Path : String_Access;
@@ -1614,7 +1614,7 @@ package body Buildgpr is
 
                      else
                         loop
-                           Nam := Project_Tree.Name_Lists.Table (List);
+                           Nam := Project_Tree.Shared.Name_Lists.Table (List);
                            List := Nam.Next;
 
                            if List = No_Name_List then
@@ -2825,7 +2825,7 @@ package body Buildgpr is
                      "language=" & Get_Name_String (Lang.Name));
 
                   while Indx /= No_Name_List loop
-                     Node := Project_Tree.Name_Lists.Table (Indx);
+                     Node := Project_Tree.Shared.Name_Lists.Table (Indx);
                      Put_Line (Exchange_File, Get_Name_String (Node.Name));
                      Indx := Node.Next;
                   end loop;
@@ -2852,7 +2852,7 @@ package body Buildgpr is
                      "language=" & Get_Name_String (Lang.Name));
 
                   while Indx /= No_Name_List loop
-                     Node := Project_Tree.Name_Lists.Table (Indx);
+                     Node := Project_Tree.Shared.Name_Lists.Table (Indx);
                      Put_Line (Exchange_File, Get_Name_String (Node.Name));
                      Indx := Node.Next;
                   end loop;
@@ -2872,7 +2872,7 @@ package body Buildgpr is
 
             begin
                while List /= No_Name_List loop
-                  Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                  Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
                   Put_Line
                     (Exchange_File,
                      Get_Name_String (Nam_Nod.Name));
@@ -2952,7 +2952,7 @@ package body Buildgpr is
 
                begin
                   while List /= No_Name_List loop
-                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                     Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
                      Put_Line
                        (Exchange_File,
                         Get_Name_String (Nam_Nod.Name));
@@ -2971,7 +2971,7 @@ package body Buildgpr is
 
                begin
                   while List /= No_Name_List loop
-                     Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                     Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
                      Put_Line
                        (Exchange_File,
                         Get_Name_String (Nam_Nod.Name));
@@ -3033,7 +3033,7 @@ package body Buildgpr is
                                        (Name        => Name_Binder,
                                         In_Packages =>
                                           For_Project.Decl.Packages,
-                                        In_Tree     => Project_Tree);
+                                        Shared      => Project_Tree.Shared);
 
                begin
                   if Binder_Package /= No_Package then
@@ -3042,9 +3042,9 @@ package body Buildgpr is
                                      Value_Of
                                        (Name      => Name_Default_Switches,
                                         In_Arrays =>
-                                          Project_Tree.Packages.Table
+                                          Project_Tree.Shared.Packages.Table
                                             (Binder_Package).Decl.Arrays,
-                                        In_Tree   => Project_Tree);
+                                        Shared    => Project_Tree.Shared);
                         Switches : Variable_Value := Nil_Variable_Value;
 
                         Switch   : String_List_Id := Nil_String;
@@ -3056,7 +3056,7 @@ package body Buildgpr is
                                (Index     => Name_Ada,
                                 Src_Index => 0,
                                 In_Array  => Defaults,
-                                In_Tree   => Project_Tree);
+                                Shared    => Project_Tree.Shared);
 
                            if not Switches.Default then
                               Put_Line
@@ -3068,9 +3068,9 @@ package body Buildgpr is
                                  Put_Line
                                    (Exchange_File,
                                     Get_Name_String
-                                      (Project_Tree.String_Elements.Table
-                                         (Switch).Value));
-                                 Switch := Project_Tree.String_Elements.
+                                      (Project_Tree.Shared.String_Elements
+                                        .Table (Switch).Value));
+                                 Switch := Project_Tree.Shared.String_Elements.
                                    Table (Switch).Next;
                               end loop;
                            end if;
@@ -3104,7 +3104,7 @@ package body Buildgpr is
 
                begin
                   while List /= No_Name_List loop
-                     Nam := Project_Tree.Name_Lists.Table (List);
+                     Nam := Project_Tree.Shared.Name_Lists.Table (List);
                      Put_Line (Exchange_File, Get_Name_String (Nam.Name));
                      List := Nam.Next;
                   end loop;
@@ -3123,7 +3123,7 @@ package body Buildgpr is
             Leading_Library_Options :=
               Value_Of
                 (Name_Leading_Library_Options,
-                 For_Project.Decl.Attributes, Project_Tree);
+                 For_Project.Decl.Attributes, Project_Tree.Shared);
 
             if not Leading_Library_Options.Default then
                declare
@@ -3135,7 +3135,7 @@ package body Buildgpr is
                begin
                   while Current /= Nil_String loop
                      Element :=
-                       Project_Tree.String_Elements.Table (Current);
+                       Project_Tree.Shared.String_Elements.Table (Current);
                      Get_Name_String (Element.Value);
 
                      if Name_Len /= 0 then
@@ -3160,7 +3160,7 @@ package body Buildgpr is
             Library_Options :=
               Value_Of
                 (Name_Library_Options,
-                 For_Project.Decl.Attributes, Project_Tree);
+                 For_Project.Decl.Attributes, Project_Tree.Shared);
 
             if not Library_Options.Default then
                declare
@@ -3171,7 +3171,7 @@ package body Buildgpr is
                begin
                   while Current /= Nil_String loop
                      Element :=
-                       Project_Tree.String_Elements.Table (Current);
+                       Project_Tree.Shared.String_Elements.Table (Current);
                      Get_Name_String (Element.Value);
 
                      if Name_Len /= 0 then
@@ -3283,7 +3283,7 @@ package body Buildgpr is
 
                while Interface_ALIs /= Nil_String loop
                   Element :=
-                    Project_Tree.String_Elements.Table (Interface_ALIs);
+                    Project_Tree.Shared.String_Elements.Table (Interface_ALIs);
                   Put_Line (Exchange_File, Get_Name_String (Element.Value));
                   Interface_ALIs := Element.Next;
                end loop;
@@ -3353,8 +3353,8 @@ package body Buildgpr is
                      Put_Line
                        (Exchange_File,
                         Get_Name_String
-                          (Project_Tree.Name_Lists.Table (List).Name));
-                     List := Project_Tree.Name_Lists.Table (List).Next;
+                          (Project_Tree.Shared.Name_Lists.Table (List).Name));
+                     List := Project_Tree.Shared.Name_Lists.Table (List).Next;
                   end loop;
                end;
             end if;
@@ -3463,7 +3463,7 @@ package body Buildgpr is
          else
             Archive_Builder_Name :=
               new String'(Get_Name_String
-                                     (Project_Tree.Name_Lists.Table
+                                     (Project_Tree.Shared.Name_Lists.Table
                                         (List).Name));
             Archive_Builder_Path :=
               Locate_Exec_On_Path (Archive_Builder_Name.all);
@@ -3475,10 +3475,10 @@ package body Buildgpr is
             end if;
 
             loop
-               List := Project_Tree.Name_Lists.Table (List).Next;
+               List := Project_Tree.Shared.Name_Lists.Table (List).Next;
                exit when List = No_Name_List;
                Add_Option
-                 (Value   => Project_Tree.Name_Lists.Table (List).Name,
+                 (Value   => Project_Tree.Shared.Name_Lists.Table (List).Name,
                   To      => Archive_Builder_Opts,
                   Display => True);
             end loop;
@@ -3486,10 +3486,10 @@ package body Buildgpr is
             List := Main_Project.Config.Archive_Builder_Append_Option;
             while List /= No_Name_List loop
                Add_Option
-                 (Value   => Project_Tree.Name_Lists.Table (List).Name,
+                 (Value   => Project_Tree.Shared.Name_Lists.Table (List).Name,
                   To      => Archive_Builder_Append_Opts,
                   Display => True);
-               List := Project_Tree.Name_Lists.Table (List).Next;
+               List := Project_Tree.Shared.Name_Lists.Table (List).Next;
             end loop;
 
             --  If there is an archive indexer (ranlib), try to locate it on
@@ -3500,17 +3500,17 @@ package body Buildgpr is
             if List /= No_Name_List then
                Archive_Indexer_Name :=
                  new String'(Get_Name_String
-                   (Project_Tree.Name_Lists.Table
-                      (List).Name));
+                   (Project_Tree.Shared.Name_Lists.Table (List).Name));
                Archive_Indexer_Path :=
                  Locate_Exec_On_Path (Archive_Indexer_Name.all);
 
                if Archive_Builder_Path /= null then
                   loop
-                     List := Project_Tree.Name_Lists.Table (List).Next;
+                     List := Project_Tree.Shared.Name_Lists.Table (List).Next;
                      exit when List = No_Name_List;
                      Add_Option
-                       (Value   => Project_Tree.Name_Lists.Table (List).Name,
+                       (Value   =>
+                          Project_Tree.Shared.Name_Lists.Table (List).Name,
                         To      => Archive_Indexer_Opts,
                         Display => True);
                   end loop;
@@ -3659,13 +3659,13 @@ package body Buildgpr is
                     Prj.Util.Value_Of
                       (Name      => Name_Roots,
                        In_Arrays => Source.Project.Decl.Arrays,
-                       In_Tree   => Project_Tree);
+                       Shared    => Project_Tree.Shared);
                   Roots :=
                     Prj.Util.Value_Of
                       (Index     => Name_Id (Main_Id),
                        Src_Index => 0,
                        In_Array  => Root_Arr,
-                       In_Tree   => Project_Tree);
+                       Shared    => Project_Tree.Shared);
 
                   --  If there is no roots for the specific main, try the
                   --  language.
@@ -3677,7 +3677,7 @@ package body Buildgpr is
                               Source.Language.Name,
                           Src_Index              => 0,
                           In_Array               => Root_Arr,
-                          In_Tree                => Project_Tree,
+                          Shared                 => Project_Tree.Shared,
                           Force_Lower_Case_Index => True);
                   end if;
 
@@ -3689,7 +3689,7 @@ package body Buildgpr is
                          (Index                  => Name_Star,
                           Src_Index              => 0,
                           In_Array               => Root_Arr,
-                          In_Tree                => Project_Tree,
+                          Shared                 => Project_Tree.Shared,
                           Force_Lower_Case_Index => True);
                   end if;
 
@@ -3712,7 +3712,8 @@ package body Buildgpr is
 
                      Pattern_Loop :
                      while List /= Nil_String loop
-                        Elem := Project_Tree.String_Elements.Table (List);
+                        Elem :=
+                          Project_Tree.Shared.String_Elements.Table (List);
                         Get_Name_String (Elem.Value);
                         To_Lower (Name_Buffer (1 .. Name_Len));
                         Unit_Name := Name_Find;
@@ -4042,7 +4043,7 @@ package body Buildgpr is
 
       begin
          while List /= No_Name_List loop
-            Nam := Project_Tree.Name_Lists.Table (List);
+            Nam := Project_Tree.Shared.Name_Lists.Table (List);
             Get_Name_String (Nam.Name);
 
             if Nam.Next = No_Name_List then
@@ -4689,7 +4690,7 @@ package body Buildgpr is
          List := Config.Compiler_Leading_Required_Switches;
          First := True;
          while List /= No_Name_List loop
-            Nam_Nod := Project_Tree.Name_Lists.Table (List);
+            Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
             Add_Option
               (Value   => Nam_Nod.Name,
                To      => Compilation_Options,
@@ -4730,7 +4731,7 @@ package body Buildgpr is
          then
             List := Config.Compilation_PIC_Option;
             while List /= No_Name_List loop
-               Nam_Nod := Project_Tree.Name_Lists.Table (List);
+               Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
                Add_Option
                  (Value   => Nam_Nod.Name,
                   To      => Compilation_Options,
@@ -4825,7 +4826,7 @@ package body Buildgpr is
          List := Id.Language.Config.Compiler_Trailing_Required_Switches;
 
          while List /= No_Name_List loop
-            Nam_Nod := Project_Tree.Name_Lists.Table (List);
+            Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
 
             if not Assert_Line (Get_Name_String (Nam_Nod.Name)) then
                return True;
@@ -4896,7 +4897,7 @@ package body Buildgpr is
          Node : Name_Node;
       begin
          while List /= No_Name_List loop
-            Node := Project_Tree.Name_Lists.Table (List);
+            Node := Project_Tree.Shared.Name_Lists.Table (List);
             List := Node.Next;
 
             if List = No_Name_List then
@@ -4924,7 +4925,7 @@ package body Buildgpr is
       begin
          if List /= No_Name_List then
             loop
-               Node := Project_Tree.Name_Lists.Table (List);
+               Node := Project_Tree.Shared.Name_Lists.Table (List);
                exit when Node.Next = No_Name_List;
 
                Add_Option
@@ -5055,7 +5056,7 @@ package body Buildgpr is
             end if;
 
             while List /= No_Name_List loop
-               Node := Project_Tree.Name_Lists.Table (List);
+               Node := Project_Tree.Shared.Name_Lists.Table (List);
                List := Node.Next;
 
                if List /= No_Name_List then
@@ -5096,7 +5097,7 @@ package body Buildgpr is
 
             begin
                loop
-                  Node := Project_Tree.Name_Lists.Table (List);
+                  Node := Project_Tree.Shared.Name_Lists.Table (List);
                   exit when Node.Next = No_Name_List;
 
                   Add_Option
@@ -5126,7 +5127,7 @@ package body Buildgpr is
          Node : Name_Node;
       begin
          while List /= No_Name_List loop
-            Node := Project_Tree.Name_Lists.Table (List);
+            Node := Project_Tree.Shared.Name_Lists.Table (List);
             Add_Option
               (Node.Name,
                To      => Compilation_Options,
@@ -5238,15 +5239,17 @@ package body Buildgpr is
         (Lang : Language_Ptr) return Name_Ids
       is
          NL    : Name_List_Index := Lang.Config.Include_Compatible_Languages;
-         Languages : Name_Ids (1 .. 1 + Length (Project_Tree.Name_Lists, NL));
+         Languages : Name_Ids
+           (1 .. 1 + Length (Project_Tree.Shared.Name_Lists, NL));
          Index : Positive := 1;
       begin
          Languages (Index) := Lang.Name;
 
          while NL /= No_Name_List loop
             Index := Index + 1;
-            Languages (Index) := Project_Tree.Name_Lists.Table (NL).Name;
-            NL := Project_Tree.Name_Lists.Table (NL).Next;
+            Languages (Index) :=
+              Project_Tree.Shared.Name_Lists.Table (NL).Name;
+            NL := Project_Tree.Shared.Name_Lists.Table (NL).Next;
          end loop;
 
          return Languages;
@@ -5304,7 +5307,7 @@ package body Buildgpr is
          Lang     : Language_Ptr)
       is
          Len       : constant Natural := Length
-           (Project_Tree.Name_Lists, Lang.Config.Include_Option);
+           (Project_Tree.Shared.Name_Lists, Lang.Config.Include_Option);
          Host_Path : String_Access;
          Last      : Natural := 0;
          List      : Name_List_Index;
@@ -5322,7 +5325,7 @@ package body Buildgpr is
          for Index in 1 .. Directories.Last loop
             List := Lang.Config.Include_Option;
             while List /= No_Name_List loop
-               Nam := Project_Tree.Name_Lists.Table (List);
+               Nam := Project_Tree.Shared.Name_Lists.Table (List);
                exit when Nam.Next = No_Name_List;
                Last := Last + 1;
                Data.Imported_Dirs_Switches (Last) :=
@@ -5670,13 +5673,13 @@ package body Buildgpr is
         Value_Of
           (Name        => Package_Name,
            In_Packages => Project.Decl.Packages,
-           In_Tree     => Project_Tree);
+           Shared      => Project_Tree.Shared);
       Config_Variable     : Variable_Value :=
         Value_Of
           (Name                    => Language,
            Attribute_Or_Array_Name => Attribute_Name,
            In_Package              => Config_Package,
-           In_Tree                 => Project_Tree);
+           Shared                  => Project_Tree.Shared);
 
    begin
       --  Get the config pragma attribute when the language is Ada and the
@@ -5690,17 +5693,17 @@ package body Buildgpr is
             Config_Variable :=
               Value_Of
                 (Variable_Name => Name_Global_Configuration_Pragmas,
-                 In_Variables  => Project_Tree.Packages.Table
+                 In_Variables  => Project_Tree.Shared.Packages.Table
                    (Config_Package).Decl.Attributes,
-                 In_Tree       => Project_Tree);
+                 Shared        => Project_Tree.Shared);
 
          elsif Attribute_Name = Name_Local_Config_File then
             Config_Variable :=
               Value_Of
                 (Variable_Name => Name_Local_Configuration_Pragmas,
-                 In_Variables  => Project_Tree.Packages.Table
+                 In_Variables  => Project_Tree.Shared.Packages.Table
                    (Config_Package).Decl.Attributes,
-                 In_Tree       => Project_Tree);
+                 Shared        => Project_Tree.Shared);
          end if;
       end if;
 
@@ -5753,7 +5756,10 @@ package body Buildgpr is
       Source   : Source_Id;
       Iter     : Source_Iterator;
 
-      procedure Check (Project : Project_Id; Dummy : in out Boolean);
+      procedure Check
+        (Project : Project_Id;
+         Tree    : Project_Tree_Ref;
+         Dummy   : in out Boolean);
       --  Check the naming schemes of the different projects of the project
       --  tree. For each different naming scheme issue the pattern config
       --  declarations.
@@ -5776,8 +5782,12 @@ package body Buildgpr is
       -- Check --
       -----------
 
-      procedure Check (Project : Project_Id; Dummy : in out Boolean) is
-         pragma Unreferenced (Dummy);
+      procedure Check
+        (Project : Project_Id;
+         Tree    : Project_Tree_Ref;
+         Dummy   : in out Boolean)
+      is
+         pragma Unreferenced (Dummy, Tree);
          Lang_Id   : Language_Ptr := Project.Languages;
 
          Current_Naming : Positive := 1;
@@ -6021,7 +6031,7 @@ package body Buildgpr is
 
       Naming_Datas.Init;
 
-      Check_All_Projects (For_Project, Dummy);
+      Check_All_Projects (For_Project, Project_Tree, Dummy);
 
       --  Visit all the units and issue the config declarations for those that
       --  need one.
@@ -6289,14 +6299,21 @@ package body Buildgpr is
       Linker_Lib_Dir_Option  : String_Access;
       Linker_Lib_Name_Option : String_Access;
 
-      procedure Recursive_Add (Proj : Project_Id; Dummy : in out Boolean);
+      procedure Recursive_Add
+        (Proj   : Project_Id;
+         Tree  : Project_Tree_Ref;
+         Dummy : in out Boolean);
       --  The recursive routine used to add linker options
 
       -------------------
       -- Recursive_Add --
       -------------------
 
-      procedure Recursive_Add (Proj : Project_Id; Dummy : in out Boolean) is
+      procedure Recursive_Add
+        (Proj   : Project_Id;
+         Tree  : Project_Tree_Ref;
+         Dummy : in out Boolean)
+      is
          pragma Unreferenced (Dummy);
          Linker_Package : Package_Id;
          Options        : Variable_Value;
@@ -6307,14 +6324,14 @@ package body Buildgpr is
               Prj.Util.Value_Of
                 (Name        => Name_Linker,
                  In_Packages => Proj.Decl.Packages,
-                 In_Tree     => Project_Tree);
+                 Shared      => Tree.Shared);
             Options :=
               Prj.Util.Value_Of
                 (Name                    => Name_Ada,
                  Index                   => 0,
                  Attribute_Or_Array_Name => Name_Linker_Options,
                  In_Package              => Linker_Package,
-                 In_Tree                 => Project_Tree);
+                 Shared                  => Tree.Shared);
 
             --  If attribute is present, add the project with
             --  the attribute to table Linker_Opts.
@@ -6354,7 +6371,8 @@ package body Buildgpr is
 
       Linker_Opts.Init;
 
-      For_All_Projects (For_Project, Dummy, Imported_First => True);
+      For_All_Projects
+        (For_Project, Project_Tree, Dummy, Imported_First => True);
 
       for Index in reverse 1 .. Linker_Opts.Last loop
          declare
@@ -6368,7 +6386,7 @@ package body Buildgpr is
          begin
             while Options /= Nil_String loop
                Option :=
-                 Project_Tree.String_Elements.Table (Options).Value;
+                 Project_Tree.Shared.String_Elements.Table (Options).Value;
                Get_Name_String (Option);
 
                --  Do not consider empty linker options
@@ -6418,7 +6436,7 @@ package body Buildgpr is
                end if;
 
                Options :=
-                 Project_Tree.String_Elements.Table (Options).Next;
+                 Project_Tree.Shared.String_Elements.Table (Options).Next;
             end loop;
          end;
       end loop;
@@ -6484,7 +6502,10 @@ package body Buildgpr is
       Languages   : Name_Ids)
    is
 
-      procedure Recursive_Add (Project : Project_Id; Dummy : in out Boolean);
+      procedure Recursive_Add
+        (Project : Project_Id;
+         Tree    : Project_Tree_Ref;
+         Dummy   : in out Boolean);
       --  Add all the source directories of a project to the path only if
       --  this project has not been visited. Calls itself recursively for
       --  projects being extended, and imported projects.
@@ -6520,7 +6541,11 @@ package body Buildgpr is
       -- Recursive_Add --
       -------------------
 
-      procedure Recursive_Add (Project : Project_Id; Dummy : in out Boolean) is
+      procedure Recursive_Add
+        (Project : Project_Id;
+         Tree    : Project_Tree_Ref;
+         Dummy   : in out Boolean)
+      is
          pragma Unreferenced (Dummy);
          Current   : String_List_Id;
          Dir       : String_Element;
@@ -6544,7 +6569,7 @@ package body Buildgpr is
                Current := Project.Source_Dirs;
 
                while Current /= Nil_String loop
-                  Dir := Project_Tree.String_Elements.Table (Current);
+                  Dir := Tree.Shared.String_Elements.Table (Current);
                   Add_Dir (Path_Name_Type (Dir.Value));
                   Current := Dir.Next;
                end loop;
@@ -6566,7 +6591,7 @@ package body Buildgpr is
 
    begin
       Directories.Init;
-      For_All_Projects (For_Project, Dummy);
+      For_All_Projects (For_Project, Project_Tree, Dummy);
    end Get_Directories;
 
    -------------------------
@@ -6748,9 +6773,8 @@ package body Buildgpr is
 
       declare
          Builder_Package  : constant Package_Id :=
-           Value_Of (Name_Builder,
-                     Main_Project.Decl.Packages,
-                     Project_Tree);
+           Value_Of (Name_Builder, Main_Project.Decl.Packages,
+                     Project_Tree.Shared);
 
          Switches         : Variable_Value;
 
@@ -6831,20 +6855,21 @@ package body Buildgpr is
 
             Global_Compilation_Array := Value_Of
               (Name      => Name_Global_Compilation_Switches,
-               In_Arrays => Project_Tree.Packages.Table
+               In_Arrays => Project_Tree.Shared.Packages.Table
                  (Builder_Package).Decl.Arrays,
-               In_Tree   => Project_Tree);
+               Shared    => Project_Tree.Shared);
 
             Default_Switches_Array :=
-              Project_Tree.Packages.Table
+              Project_Tree.Shared.Packages.Table
                 (Builder_Package).Decl.Arrays;
 
             while Default_Switches_Array /= No_Array and then
-            Project_Tree.Arrays.Table (Default_Switches_Array).Name /=
+            Project_Tree.Shared.Arrays.Table (Default_Switches_Array).Name /=
               Name_Default_Switches
             loop
                Default_Switches_Array :=
-                 Project_Tree.Arrays.Table (Default_Switches_Array).Next;
+                 Project_Tree.Shared.Arrays.Table
+                   (Default_Switches_Array).Next;
             end loop;
 
             if Global_Compilation_Array /= No_Array_Element and then
@@ -6853,7 +6878,7 @@ package body Buildgpr is
                Error_Msg
                  ("Default_Switches forbidden in presence of " &
                   "Global_Compilation_Switches. Use Switches instead.",
-                  Project_Tree.Arrays.Table
+                  Project_Tree.Shared.Arrays.Table
                     (Default_Switches_Array).Location);
                Fail_Program
                  ("*** illegal combination of Builder attributes");
@@ -6863,7 +6888,7 @@ package body Buildgpr is
                  (Name                    => All_Other_Names,
                   Attribute_Or_Array_Name => Name_Switches,
                   In_Package              => Builder_Package,
-                  In_Tree                 => Project_Tree);
+                  Shared                  => Project_Tree.Shared);
 
             else
 
@@ -6874,7 +6899,7 @@ package body Buildgpr is
                  (Name                    => Name,
                   Attribute_Or_Array_Name => Name_Switches,
                   In_Package              => Builder_Package,
-                  In_Tree                 => Project_Tree,
+                  Shared                  => Project_Tree.Shared,
                   Allow_Wildcards         => True);
 
                if Name /= Lang then
@@ -6897,7 +6922,7 @@ package body Buildgpr is
                        (Name                    => Lang,
                         Attribute_Or_Array_Name => Name_Switches,
                         In_Package              => Builder_Package,
-                        In_Tree                 => Project_Tree,
+                        Shared                  => Project_Tree.Shared,
                         Force_Lower_Case_Index  => True);
                   end if;
                end if;
@@ -6909,7 +6934,7 @@ package body Buildgpr is
                     (Name                    => All_Other_Names,
                      Attribute_Or_Array_Name => Name_Switches,
                      In_Package              => Builder_Package,
-                     In_Tree                 => Project_Tree,
+                     Shared                  => Project_Tree.Shared,
                      Force_Lower_Case_Index  => True);
                end if;
 
@@ -6923,7 +6948,7 @@ package body Buildgpr is
                     (Name                    => Lang,
                      Attribute_Or_Array_Name => Name_Default_Switches,
                      In_Package              => Builder_Package,
-                     In_Tree                 => Project_Tree);
+                     Shared                  => Project_Tree.Shared);
 
                   --  Set the Builder Switches language, so that switches
                   --  that are not recognized by gprbuild are passed to the
@@ -6945,7 +6970,7 @@ package body Buildgpr is
                List := Switches.Values;
 
                while List /= Nil_String loop
-                  Element := Project_Tree.String_Elements.Table (List);
+                  Element := Project_Tree.Shared.String_Elements.Table (List);
                   Get_Name_String (Element.Value);
 
                   if Name_Len /= 0 then
@@ -6986,7 +7011,7 @@ package body Buildgpr is
 
             while Global_Compilation_Array /= No_Array_Element loop
                Global_Compilation_Elem :=
-                 Project_Tree.Array_Elements.Table
+                 Project_Tree.Shared.Array_Elements.Table
                    (Global_Compilation_Array);
 
                Global_Compilation_Switches :=
@@ -7029,7 +7054,7 @@ package body Buildgpr is
 
                      while List /= Nil_String loop
                         Elem :=
-                          Project_Tree.String_Elements.Table (List);
+                          Project_Tree.Shared.String_Elements.Table (List);
 
                         if Elem.Value /= No_Name then
                            Add_Option
@@ -7637,7 +7662,7 @@ package body Buildgpr is
             else
                Exec_Name := Executable_Of
                  (Project  => Main_Proj,
-                  In_Tree  => Project_Tree,
+                  Shared   => Project_Tree.Shared,
                   Main     => Main_Id,
                   Index    => Main_Source.Index,
                   Ada_Main => False,
@@ -7733,7 +7758,7 @@ package body Buildgpr is
                  Prj.Util.Value_Of
                    (Name        => Name_Linker,
                     In_Packages => The_Packages,
-                    In_Tree     => Project_Tree);
+                    Shared      => Project_Tree.Shared);
 
                Switches     : Variable_Value;
                Switch_List  : String_List_Id;
@@ -7746,9 +7771,9 @@ package body Buildgpr is
                        Prj.Util.Value_Of
                          (Name      => Name_Leading_Switches,
                           In_Arrays =>
-                            Project_Tree.Packages.Table
+                            Project_Tree.Shared.Packages.Table
                               (Linker_Package).Decl.Arrays,
-                          In_Tree   => Project_Tree);
+                          Shared    => Project_Tree.Shared);
                      Option   : String_Access;
 
                   begin
@@ -7757,7 +7782,7 @@ package body Buildgpr is
                          (Index     => Name_Id (Main_Id),
                           Src_Index => 0,
                           In_Array  => Switches_Array,
-                          In_Tree   => Project_Tree);
+                          Shared    => Project_Tree.Shared);
 
                      if Switches = Nil_Variable_Value then
                         Switches :=
@@ -7766,7 +7791,7 @@ package body Buildgpr is
                                  Main_Source.Language.Name,
                              Src_Index              => 0,
                              In_Array               => Switches_Array,
-                             In_Tree                => Project_Tree,
+                             Shared                 => Project_Tree.Shared,
                              Force_Lower_Case_Index => True);
                      end if;
 
@@ -7776,7 +7801,7 @@ package body Buildgpr is
                             (Index                  => All_Other_Names,
                              Src_Index              => 0,
                              In_Array               => Switches_Array,
-                             In_Tree                => Project_Tree,
+                             Shared                 => Project_Tree.Shared,
                              Force_Lower_Case_Index => True);
                      end if;
 
@@ -7789,7 +7814,7 @@ package body Buildgpr is
 
                            while Switch_List /= Nil_String loop
                               Element :=
-                                Project_Tree.String_Elements.Table
+                                Project_Tree.Shared.String_Elements.Table
                                   (Switch_List);
                               Get_Name_String (Element.Value);
 
@@ -8209,7 +8234,7 @@ package body Buildgpr is
                                      Prj.Util.Value_Of
                                        (Name        => Name_Linker,
                                         In_Packages => The_Packages,
-                                        In_Tree     => Project_Tree);
+                                        Shared      => Project_Tree.Shared);
 
                   Switches     : Variable_Value;
                   Switch_List  : String_List_Id;
@@ -8222,17 +8247,17 @@ package body Buildgpr is
                                      Prj.Util.Value_Of
                                        (Name      => Name_Default_Switches,
                                         In_Arrays =>
-                                          Project_Tree.Packages.Table
+                                          Project_Tree.Shared.Packages.Table
                                             (Linker_Package).Decl.Arrays,
-                                        In_Tree   => Project_Tree);
+                                        Shared    => Project_Tree.Shared);
 
                         Switches_Array : constant Array_Element_Id :=
-                                           Prj.Util.Value_Of
-                                             (Name      => Name_Switches,
-                                              In_Arrays =>
-                                                Project_Tree.Packages.Table
-                                                  (Linker_Package).Decl.Arrays,
-                                              In_Tree   => Project_Tree);
+                                        Prj.Util.Value_Of
+                                          (Name      => Name_Switches,
+                                           In_Arrays =>
+                                             Project_Tree.Shared.Packages.Table
+                                               (Linker_Package).Decl.Arrays,
+                                              Shared => Project_Tree.Shared);
                         Option   : String_Access;
 
                      begin
@@ -8241,7 +8266,7 @@ package body Buildgpr is
                             (Index           => Name_Id (Main_Id),
                              Src_Index       => 0,
                              In_Array        => Switches_Array,
-                             In_Tree         => Project_Tree,
+                             Shared          => Project_Tree.Shared,
                              Allow_Wildcards => True);
 
                         if Switches = Nil_Variable_Value then
@@ -8251,7 +8276,7 @@ package body Buildgpr is
                                     Main_Source.Language.Name,
                                 Src_Index              => 0,
                                 In_Array               => Switches_Array,
-                                In_Tree                => Project_Tree,
+                                Shared                 => Project_Tree.Shared,
                                 Force_Lower_Case_Index => True);
                         end if;
 
@@ -8261,7 +8286,7 @@ package body Buildgpr is
                                (Index                  => All_Other_Names,
                                 Src_Index              => 0,
                                 In_Array               => Switches_Array,
-                                In_Tree                => Project_Tree,
+                                Shared                 => Project_Tree.Shared,
                                 Force_Lower_Case_Index => True);
                         end if;
 
@@ -8272,7 +8297,7 @@ package body Buildgpr is
                                     Main_Source.Language.Name,
                                 Src_Index => 0,
                                 In_Array  => Defaults,
-                                In_Tree   => Project_Tree);
+                                Shared    => Project_Tree.Shared);
                         end if;
 
                         case Switches.Kind is
@@ -8284,7 +8309,7 @@ package body Buildgpr is
 
                            while Switch_List /= Nil_String loop
                               Element :=
-                                Project_Tree.String_Elements.Table
+                                Project_Tree.Shared.String_Elements.Table
                                   (Switch_List);
                               Get_Name_String (Element.Value);
 
@@ -8334,10 +8359,11 @@ package body Buildgpr is
                while Min_Linker_Opts /= No_Name_List loop
                   Add_Argument
                     (Get_Name_String
-                       (Project_Tree.Name_Lists.Table (Min_Linker_Opts).Name),
+                       (Project_Tree.Shared.Name_Lists.Table
+                          (Min_Linker_Opts).Name),
                      Verbose_Mode);
-                  Min_Linker_Opts   :=
-                    Project_Tree.Name_Lists.Table (Min_Linker_Opts).Next;
+                  Min_Linker_Opts   := Project_Tree.Shared.Name_Lists.Table
+                    (Min_Linker_Opts).Next;
                end loop;
 
                --  Look for the last switch -shared-libgcc or -static-libgcc.
@@ -8405,7 +8431,7 @@ package body Buildgpr is
                then
                   declare
                      Nam_Nod  : Name_Node :=
-                                  Project_Tree.Name_Lists.Table
+                                  Project_Tree.Shared.Name_Lists.Table
                                     (Main_Proj.Config.Run_Path_Option);
                      Length   : Natural := 0;
                      Arg      : String_Access := null;
@@ -8418,13 +8444,13 @@ package body Buildgpr is
 
                      if Main_Proj.Config.Separate_Run_Path_Options then
                         for J in 1 .. Rpaths.Last loop
-                           Nam_Nod := Project_Tree.Name_Lists.Table
+                           Nam_Nod := Project_Tree.Shared.Name_Lists.Table
                                         (Main_Proj.Config.Run_Path_Option);
                            while Nam_Nod.Next /= No_Name_List loop
                               Add_Argument
                                 (Get_Name_String (Nam_Nod.Name), True);
-                              Nam_Nod :=
-                                Project_Tree.Name_Lists.Table (Nam_Nod.Next);
+                              Nam_Nod := Project_Tree.Shared.Name_Lists.Table
+                                (Nam_Nod.Next);
                            end loop;
 
                            Get_Name_String (Nam_Nod.Name);
@@ -8436,8 +8462,8 @@ package body Buildgpr is
                      else
                         while Nam_Nod.Next /= No_Name_List loop
                            Add_Argument (Get_Name_String (Nam_Nod.Name), True);
-                           Nam_Nod :=
-                             Project_Tree.Name_Lists.Table (Nam_Nod.Next);
+                           Nam_Nod := Project_Tree.Shared.Name_Lists.Table
+                             (Nam_Nod.Next);
                         end loop;
 
                         --  Compute the length of the argument
@@ -8519,7 +8545,7 @@ package body Buildgpr is
                begin
                   if List /= No_Name_List then
                      loop
-                        Nam := Project_Tree.Name_Lists.Table (List);
+                        Nam := Project_Tree.Shared.Name_Lists.Table (List);
                         Get_Name_String (Nam.Name);
 
                         if Nam.Next = No_Name_List then
@@ -8583,7 +8609,7 @@ package body Buildgpr is
                            begin
                               while List /= No_Name_List loop
                                  Nam_Nod :=
-                                   Project_Tree.Name_Lists.Table (List);
+                                   Project_Tree.Shared.Name_Lists.Table (List);
                                  Resp_File_Options :=
                                    new String_List'
                                      (Resp_File_Options.all &
@@ -10549,7 +10575,8 @@ package body Buildgpr is
                                 (Gprexch.Compiler_Leading_Switches));
 
                            while List /= No_Name_List loop
-                              Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                              Nam_Nod :=
+                                Project_Tree.Shared.Name_Lists.Table (List);
                               Put_Line
                                 (Exchange_File,
                                  Get_Name_String (Nam_Nod.Name));
@@ -10567,7 +10594,8 @@ package body Buildgpr is
                                 (Gprexch.Compiler_Trailing_Switches));
 
                            while List /= No_Name_List loop
-                              Nam_Nod := Project_Tree.Name_Lists.Table (List);
+                              Nam_Nod :=
+                                Project_Tree.Shared.Name_Lists.Table (List);
                               Put_Line
                                 (Exchange_File,
                                  Get_Name_String (Nam_Nod.Name));
@@ -10609,10 +10637,10 @@ package body Buildgpr is
                                          Main_Proj.Decl.Packages;
 
                         Binder_Package : constant Prj.Package_Id :=
-                                           Prj.Util.Value_Of
-                                             (Name        => Name_Binder,
-                                              In_Packages => The_Packages,
-                                              In_Tree     => Project_Tree);
+                                        Prj.Util.Value_Of
+                                          (Name        => Name_Binder,
+                                           In_Packages => The_Packages,
+                                           Shared      => Project_Tree.Shared);
 
                         Switches     : Variable_Value;
                         Switch_List  : String_List_Id;
@@ -10631,21 +10659,17 @@ package body Buildgpr is
                                   (Name      =>
                                        Name_Default_Switches,
                                    In_Arrays =>
-                                     Project_Tree.Packages.Table
+                                     Project_Tree.Shared.Packages.Table
                                        (Binder_Package).Decl.Arrays,
-                                   In_Tree   => Project_Tree);
+                                   Shared    => Project_Tree.Shared);
 
                               Switches_Array : constant Array_Element_Id :=
                                 Prj.Util.Value_Of
-                                  (Name      =>
-                                       Name_Switches,
+                                  (Name      => Name_Switches,
                                    In_Arrays =>
-                                     Project_Tree.
-                                       Packages.Table
-                                     (Binder_Package)
-                                   .Decl.Arrays,
-                                   In_Tree   =>
-                                     Project_Tree);
+                                     Project_Tree.Shared.Packages.Table
+                                     (Binder_Package).Decl.Arrays,
+                                   Shared   => Project_Tree.Shared);
 
                            begin
                               Switches :=
@@ -10653,7 +10677,7 @@ package body Buildgpr is
                                   (Index           => Name_Id (Main_Id),
                                    Src_Index       => 0,
                                    In_Array        => Switches_Array,
-                                   In_Tree         => Project_Tree,
+                                   Shared          => Project_Tree.Shared,
                                    Allow_Wildcards => True);
 
                               if Switches = Nil_Variable_Value then
@@ -10663,7 +10687,7 @@ package body Buildgpr is
                                           B_Data.Language_Name,
                                       Src_Index              => 0,
                                       In_Array               => Switches_Array,
-                                      In_Tree                => Project_Tree,
+                                      Shared            => Project_Tree.Shared,
                                       Force_Lower_Case_Index => True);
                               end if;
 
@@ -10674,7 +10698,7 @@ package body Buildgpr is
                                           All_Other_Names,
                                       Src_Index              => 0,
                                       In_Array               => Switches_Array,
-                                      In_Tree                => Project_Tree,
+                                      Shared            => Project_Tree.Shared,
                                       Force_Lower_Case_Index => True);
                               end if;
 
@@ -10684,7 +10708,7 @@ package body Buildgpr is
                                      (Index     => B_Data.Language_Name,
                                       Src_Index => 0,
                                       In_Array  => Defaults,
-                                      In_Tree   => Project_Tree);
+                                      Shared    => Project_Tree.Shared);
                               end if;
                            end;
                         end if;
@@ -10719,7 +10743,7 @@ package body Buildgpr is
                            begin
                               while List /= No_Name_List loop
                                  Elem :=
-                                   Project_Tree.Name_Lists.Table (List);
+                                   Project_Tree.Shared.Name_Lists.Table (List);
                                  Get_Name_String (Elem.Name);
 
                                  if Name_Len > 0 then
@@ -10744,7 +10768,7 @@ package body Buildgpr is
 
                                  while Switch_List /= Nil_String loop
                                     Element :=
-                                      Project_Tree.String_Elements.Table
+                                      Project_Tree.Shared.String_Elements.Table
                                         (Switch_List);
 
                                     Get_Name_String (Element.Value);

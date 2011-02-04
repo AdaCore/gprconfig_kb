@@ -815,7 +815,7 @@ package body Cleangpr is
                   Executable :=
                     Executable_Of
                       (Project  => Main_Project,
-                       In_Tree  => Project_Tree,
+                       Shared   => Project_Tree.Shared,
                        Main     => Main_Source_File,
                        Index    => Main_Index,
                        Ada_Main => Source.Language.Name = Snames.Name_Ada);

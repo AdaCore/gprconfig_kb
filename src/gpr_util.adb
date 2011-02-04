@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2007-2010, Free Software Foundation, Inc.       --
+--            Copyright (C) 2007-2011, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -393,7 +393,7 @@ package body Gpr_Util is
                --  Get the mains in the list
 
                while List /= Prj.Nil_String loop
-                  Element := Project_Tree.String_Elements.Table (List);
+                  Element := Project_Tree.Shared.String_Elements.Table (List);
 
                   Get_Name_String (Element.Value);
                   Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
