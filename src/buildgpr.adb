@@ -678,49 +678,6 @@ package body Buildgpr is
    --  A hash table to store the library dirs, to avoid repeating uselessly
    --  the same switch when linking executables.
 
-   -----------
-   -- Queue --
-   -----------
-
-   package Queue is
-
-      --  The queue of sources to be checked for compilation
-
-      procedure Initialize (Queue_Per_Obj_Dir : Boolean);
-      --  Initialize the queue
-
-      function Is_Empty return Boolean;
-      --  Returns True if the queue is empty
-
-      function Is_Virtually_Empty return Boolean;
-      --  Returns True if the queue is empty or if all object directories are
-      --  busy.
-
-      procedure Insert
-        (Source_File_Name : File_Name_Type;
-         Source_Identity  : Source_Id);
-      --  Insert source in the queue
-
-      procedure Extract
-        (Source_File_Name : out File_Name_Type;
-         Source_Identity  : out Source_Id);
-      --  Get the first source that can be compiled from the queue. If no
-      --  source may be compiled, return No_File/No_Source.
-
-      function Size return Natural;
-      --  Return the total size of the queue, including the sources already
-      --  extracted.
-
-      function Processed return Natural;
-      --  Return the number of source in the queue that have aready been
-      --  processed.
-
-      procedure Set_Obj_Dir_Busy (Obj_Dir : Path_Name_Type);
-
-      procedure Set_Obj_Dir_Free (Obj_Dir : Path_Name_Type);
-
-   end Queue;
-
    type Sigint_Handler is access procedure;
    pragma Convention (C, Sigint_Handler);
 
@@ -3665,9 +3622,8 @@ package body Buildgpr is
             Source := Main_Sources.Get ((Main_Id, Main_Index));
 
             if Source /= No_Source then
-               Queue.Insert
-                 (Source_File_Name => Main_Id,
-                  Source_Identity  => Source);
+               Queue.Insert (Source => (Format => Format_Gprbuild,
+                                        Id     => Source));
 
                --  Look for roots if closure is needed
 
@@ -3818,8 +3774,8 @@ package body Buildgpr is
                               end if;
 
                               Queue.Insert
-                                (Source_File_Name => Root_Source.File,
-                                 Source_Identity  => Root_Source);
+                                (Source => (Format => Format_Gprbuild,
+                                            Id     => Root_Source));
 
                               Initialize_Source_Record (Root_Source);
 
@@ -5571,17 +5527,16 @@ package body Buildgpr is
       -------------------------------
 
       procedure Start_Compile_If_Possible is
-         Source_File_Name : File_Name_Type;
-         Source_Identity  : Source_Id;
+         Found  : Boolean;
+         Source : Queue.Source_Info;
       begin
          if not Queue.Is_Empty
            and then Outstanding_Compiles < Maximum_Processes
          then
-            Queue.Extract (Source_File_Name, Source_Identity);
-
-            if Source_Identity /= No_Source then
-               Initialize_Source_Record (Source_Identity);
-               Process_Project_Phase_1 (Source_Identity);
+            Queue.Extract (Found, Source);
+            if Found then
+               Initialize_Source_Record (Source.Id);
+               Process_Project_Phase_1 (Source.Id);
             end if;
          end if;
       end Start_Compile_If_Possible;
@@ -7461,7 +7416,9 @@ package body Buildgpr is
                     not Src_Id.Project.Standalone_Library or else
                       Src_Id.Project.Library_Kind = Static)
                then
-                  Queue.Insert (Sfile, Src_Id);
+                  Queue.Insert
+                    (Source => (Format => Format_Gprbuild,
+                                Id     => Src_Id));
                end if;
             end if;
          end loop;
@@ -7511,8 +7468,8 @@ package body Buildgpr is
                  and then not Is_Subunit (Source)
                then
                   Queue.Insert
-                    (Source_File_Name => Source.File,
-                     Source_Identity  => Source);
+                    (Source => (Format => Format_Gprbuild,
+                                Id     => Source));
                end if;
             end if;
          end if;
@@ -10213,10 +10170,10 @@ package body Buildgpr is
 
                   if not Binder_Driver_Needs_To_Be_Called then
 
-                     Queue.Initialize (One_Compilation_Per_Obj_Dir);
+                     Queue.Initialize
+                       (One_Compilation_Per_Obj_Dir, Force => True);
 
                      declare
-                        Source_File_Name : File_Name_Type;
                         Source_Identity  : Source_Id;
                         Roots            : Roots_Access;
                         Source           : Source_Id;
@@ -10231,8 +10188,8 @@ package body Buildgpr is
                           B_Data.Language.Name
                         then
                            Queue.Insert
-                             (Source_File_Name => Main_Source.File,
-                              Source_Identity  => Main_Source);
+                             (Source => (Format => Format_Gprbuild,
+                                         Id     => Main_Source));
                         end if;
 
                         Roots := Root_Sources.Get (Main_Source.File);
@@ -10241,8 +10198,8 @@ package body Buildgpr is
                            for J in Roots'Range loop
                               Source := Roots (J);
                               Queue.Insert
-                                (Source_File_Name => Source.File,
-                                 Source_Identity  => Source);
+                                (Source => (Format => Format_Gprbuild,
+                                            Id     => Source));
                            end loop;
                         end if;
 
@@ -10307,8 +10264,8 @@ package body Buildgpr is
                                  end;
 
                                  Queue.Insert
-                                   (Source_File_Name => Source.File,
-                                    Source_Identity  => Source);
+                                   (Source => (Format => Format_Gprbuild,
+                                               Id     => Source));
                               end if;
 
                               Next (Iter);
@@ -10327,11 +10284,12 @@ package body Buildgpr is
                            Stamp     : Time_Stamp_Type;
                            The_ALI   : ALI.ALI_Id;
                            Text      : Text_Buffer_Ptr;
+                           Found     : Boolean;
+                           Source    : Queue.Source_Info;
                         begin
                            while not Queue.Is_Empty loop
-                              Queue.Extract
-                                (Source_File_Name,
-                                 Source_Identity);
+                              Queue.Extract (Found, Source);
+                              Source_Identity := Source.Id;
 
                               Initialize_Source_Record (Source_Identity);
 
@@ -11232,257 +11190,6 @@ package body Buildgpr is
          Current := Current.Extends;
       end loop;
    end Project_Extends;
-
-   -----------
-   -- Queue --
-   -----------
-
-   package body Queue is
-      type Q_Record is record
-         Name      : File_Name_Type;
-         Id        : Source_Id;
-         Processed : Boolean;
-      end record;
-
-      package Q is new Table.Table
-        (Table_Component_Type => Q_Record,
-         Table_Index_Type     => Natural,
-         Table_Low_Bound      => 1,
-         Table_Initial        => 1000,
-         Table_Increment      => 100,
-         Table_Name           => "Makegpr.Queue.Q");
-      --  This is the actual Queue
-
-      package Busy_Obj_Dirs is new GNAT.HTable.Simple_HTable
-        (Header_Num => Prj.Header_Num,
-         Element    => Boolean,
-         No_Element => False,
-         Key        => Path_Name_Type,
-         Hash       => Hash,
-         Equal      => "=");
-
-      Q_Processed : Natural := 0;
-
-      Q_First     : Natural := 1;
-
-      One_Queue_Per_Obj_Dir : Boolean := False;
-
-      -------------
-      -- Extract --
-      -------------
-
-      procedure Extract
-        (Source_File_Name : out File_Name_Type;
-         Source_Identity  : out Source_Id)
-      is
-         Found : Boolean := False;
-      begin
-         if One_Queue_Per_Obj_Dir then
-            for J in Q_First .. Q.Last loop
-               if not Q.Table (J).Processed and then
-                 not Busy_Obj_Dirs.Get
-                   (Q.Table (J).Id.Project.Object_Directory.Name)
-               then
-                  Found := True;
-                  Source_File_Name := Q.Table (J).Name;
-                  Source_Identity  := Q.Table (J).Id;
-                  Q.Table (J).Processed := True;
-
-                  if J = Q_First then
-                     while Q_First <= Q.Last and then
-                           Q.Table (Q_First).Processed
-                     loop
-                        Q_First := Q_First + 1;
-                     end loop;
-                  end if;
-
-                  exit;
-               end if;
-            end loop;
-
-         elsif Q_First <= Q.Last then
-            Source_File_Name := Q.Table (Q_First).Name;
-            Source_Identity  := Q.Table (Q_First).Id;
-            Q.Table (Q_First).Processed := True;
-            Q_First := Q_First + 1;
-            Found := True;
-         end if;
-
-         if Found then
-            Q_Processed := Q_Processed + 1;
-
-         else
-            Source_File_Name := No_File;
-            Source_Identity  := No_Source;
-         end if;
-
-         if Found and then Debug.Debug_Flag_Q then
-            Write_Str ("   Q := Q - [ ");
-            Write_Name (Source_File_Name);
-
-            if Source_Identity.Index /= 0 then
-               Write_Str (", ");
-               Write_Int (Source_Identity.Index);
-            end if;
-
-            Write_Str (" ]");
-            Write_Eol;
-
-            Write_Str ("   Q_First =");
-            Write_Int (Int (Q_First));
-            Write_Eol;
-
-            Write_Str ("   Q.Last =");
-            Write_Int (Int (Q.Last));
-            Write_Eol;
-         end if;
-      end Extract;
-
-      -----------
-      -- First --
-      -----------
-
-      function Processed return Natural is
-      begin
-         return Q_Processed;
-      end Processed;
-
-      ----------------
-      -- Initialize --
-      ----------------
-
-      procedure Initialize (Queue_Per_Obj_Dir : Boolean) is
-      begin
-         for J in 1 .. Q.Last loop
-            Q.Table (J).Id.In_The_Queue := False;
-         end loop;
-
-         Q.Init;
-         Q_Processed := 0;
-         Q_First     := 1;
-         One_Queue_Per_Obj_Dir := Queue_Per_Obj_Dir;
-      end Initialize;
-
-      ------------
-      -- Insert --
-      ------------
-
-      procedure Insert
-        (Source_File_Name : File_Name_Type;
-         Source_Identity  : Source_Id)
-      is
-      begin
-         if Source_Identity.In_The_Queue then
-            return;
-         end if;
-
-         Source_Identity.In_The_Queue := True;
-
-         if Current_Verbosity = High then
-            Write_Str ("Adding """);
-            Write_Str (Get_Name_String (Source_File_Name));
-            Write_Char ('"');
-
-            if Source_Identity.Index > 0 then
-               Write_Str (" at ");
-               Write_Int (Source_Identity.Index);
-            end if;
-
-            Write_Line (" to the queue");
-         end if;
-
-         Q.Append
-           (New_Val =>
-              (Name      => Source_File_Name,
-               Id        => Source_Identity,
-               Processed => False));
-
-         if Debug.Debug_Flag_Q then
-            Write_Str ("   Q := Q + [ ");
-            Write_Name (Source_File_Name);
-
-            if Source_Identity.Index /= 0 then
-               Write_Str (", ");
-               Write_Int (Source_Identity.Index);
-            end if;
-
-            Write_Str (" ] ");
-            Write_Eol;
-
-            Write_Str ("   Q_First =");
-            Write_Int (Int (Q_First));
-            Write_Eol;
-
-            Write_Str ("   Q.Last =");
-            Write_Int (Int (Q.Last));
-            Write_Eol;
-         end if;
-      end Insert;
-
-      --------------
-      -- Is_Empty --
-      --------------
-
-      function Is_Empty return Boolean is
-      begin
-         return Q_Processed >= Q.Last;
-      end Is_Empty;
-
-      ------------------------
-      -- Is_Virtually_Empty --
-      ------------------------
-
-      function Is_Virtually_Empty return Boolean is
-      begin
-         if One_Queue_Per_Obj_Dir then
-            for J in Q_First .. Q.Last loop
-               if not Q.Table (J).Processed and then
-                  not Busy_Obj_Dirs.Get
-                        (Q.Table (J).Id.Project.Object_Directory.Name)
-               then
-                  return False;
-               end if;
-            end loop;
-
-            return True;
-
-         else
-            return Q_Processed >= Q.Last;
-         end if;
-      end Is_Virtually_Empty;
-
-      ----------------------
-      -- Set_Obj_Dir_Busy --
-      ----------------------
-
-      procedure Set_Obj_Dir_Busy (Obj_Dir : Path_Name_Type) is
-      begin
-         if One_Queue_Per_Obj_Dir then
-            Busy_Obj_Dirs.Set (Obj_Dir, True);
-         end if;
-      end Set_Obj_Dir_Busy;
-
-      ----------------------
-      -- Set_Obj_Dir_Free --
-      ----------------------
-
-      procedure Set_Obj_Dir_Free (Obj_Dir : Path_Name_Type) is
-      begin
-         if One_Queue_Per_Obj_Dir then
-            Busy_Obj_Dirs.Set (Obj_Dir, False);
-         end if;
-      end Set_Obj_Dir_Free;
-
-      ----------
-      -- Size --
-      ----------
-
-      function Size return Natural is
-      begin
-         return Q.Last;
-      end Size;
-
-   end Queue;
 
    ------------------------
    -- Rpaths_Relative_To --
