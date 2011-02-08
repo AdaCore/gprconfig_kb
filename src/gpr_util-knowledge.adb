@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2010, Free Software Foundation, Inc.            --
+--            Copyright (C) 2010-2011, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -47,7 +47,10 @@ package body Knowledge is
    -- Parse_Knowledge_Base --
    --------------------------
 
-   procedure Parse_Knowledge_Base (Directory : String := "") is
+   procedure Parse_Knowledge_Base
+     (Shared    : Shared_Project_Tree_Data_Access;
+      Directory : String := "")
+   is
 
       function Dir return String;
       --  Returns Directory or if empty Default_Knowledge_Base_Directory
@@ -70,7 +73,8 @@ package body Knowledge is
       Parse_Knowledge_Base (Base, Dir, Parse_Compiler_Info => False);
    exception
       when Invalid_Knowledge_Base =>
-         Fail_Program ("could not parse the XML files in " & Dir);
+         Fail_Program
+           (Shared, "could not parse the XML files in " & Dir);
    end Parse_Knowledge_Base;
 
 end Knowledge;

@@ -213,7 +213,11 @@ package body Gpr_Util is
    -- Fail_Program --
    ------------------
 
-   procedure Fail_Program (S : String; Flush_Messages : Boolean := True) is
+   procedure Fail_Program
+     (Shared         : Shared_Project_Tree_Data_Access;
+      S              : String;
+      Flush_Messages : Boolean := True)
+   is
    begin
       if Flush_Messages then
          if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
@@ -221,7 +225,7 @@ package body Gpr_Util is
          end if;
       end if;
 
-      Finish_Program (Fatal => True, S => S);
+      Finish_Program (Shared, Fatal => True, S => S);
    end Fail_Program;
 
    ------------------------------
@@ -229,7 +233,8 @@ package body Gpr_Util is
    ------------------------------
 
    function Get_Compiler_Driver_Path
-     (Lang : Language_Ptr) return String_Access is
+     (Shared       : Shared_Project_Tree_Data_Access;
+      Lang         : Language_Ptr) return String_Access is
    begin
       if Lang.Config.Compiler_Driver_Path = null then
          declare
@@ -245,7 +250,8 @@ package body Gpr_Util is
               Locate_Exec_On_Path (Compiler_Name);
 
             if Lang.Config.Compiler_Driver_Path = null then
-               Fail_Program ("unable to locate """ & Compiler_Name & '"');
+               Fail_Program
+                 (Shared, "unable to locate """ & Compiler_Name & '"');
             end if;
          end;
       end if;
@@ -257,7 +263,9 @@ package body Gpr_Util is
    -- Find_Binding_Languages --
    ----------------------------
 
-   procedure Find_Binding_Languages is
+   procedure Find_Binding_Languages
+     (Project_Tree : Project_Tree_Ref)
+   is
       B_Data : Binding_Data;
 
       Language_Name      : Name_Id;
@@ -305,7 +313,8 @@ package body Gpr_Util is
 
                   if Binder_Driver_Path = null then
                      Fail_Program
-                       ("unable to find binder driver " &
+                       (Project_Tree.Shared,
+                        "unable to find binder driver " &
                         Name_Buffer (1 .. Name_Len));
                   end if;
 
@@ -321,7 +330,8 @@ package body Gpr_Util is
                        Binding_Languages.Table (B_Index).Binder_Prefix
                      then
                         Fail_Program
-                          ("binding prefix cannot be the same for"
+                          (Project_Tree.Shared,
+                           "binding prefix cannot be the same for"
                            & " two languages");
                      end if;
                   end loop;
@@ -347,10 +357,14 @@ package body Gpr_Util is
    -- Finish_Program --
    --------------------
 
-   procedure Finish_Program (Fatal : Boolean; S : String := "") is
+   procedure Finish_Program
+     (Shared       : Shared_Project_Tree_Data_Access;
+      Fatal        : Boolean;
+      S            : String := "")
+   is
    begin
       if not Debug_Flag_N then
-         Delete_All_Temp_Files (Project_Tree);
+         Delete_All_Temp_Files (Shared);
       end if;
 
       if S'Length > 0 then
@@ -374,7 +388,7 @@ package body Gpr_Util is
    -- Get_Mains --
    ---------------
 
-   procedure Get_Mains is
+   procedure Get_Mains (Project_Tree : Project_Tree_Ref) is
    begin
       --  If no mains are specified on the command line, check attribute
       --  Main in the main project.
@@ -509,7 +523,7 @@ package body Gpr_Util is
       end if;
 
       if Total_Errors_Detected > 0 then
-         Fail_Program ("problems with main sources");
+         Fail_Program (Project_Tree.Shared, "problems with main sources");
       end if;
    end Get_Mains;
 

@@ -159,26 +159,34 @@ package Gpr_Util is
    --  arguments. It is the responsibility of the caller to delete this
    --  temporary file if needed.
 
-   procedure Find_Binding_Languages;
+   procedure Find_Binding_Languages
+     (Project_Tree : Project_Tree_Ref);
    --  Check if in the project tree there are sources of languages that have a
    --  binder driver. Populate table Binding_Languages and set variable
    --  There_Are_Binder_Drivers accordingly.
 
    function Get_Compiler_Driver_Path
-     (Lang : Language_Ptr) return String_Access;
+     (Shared       : Shared_Project_Tree_Data_Access;
+      Lang         : Language_Ptr) return String_Access;
    --  Get, from the config, the path of the compiler driver. This is first
    --  looked for on the PATH if needed.
    --  Returns "null" if no compiler driver was specified for the language, and
    --  exit with an error if one was specified but not found.
 
-   procedure Fail_Program (S : String; Flush_Messages : Boolean := True);
+   procedure Fail_Program
+     (Shared         : Shared_Project_Tree_Data_Access;
+      S              : String;
+      Flush_Messages : Boolean := True);
    --  Terminate program with a message and a fatal status code
 
-   procedure Finish_Program (Fatal : Boolean; S : String := "");
+   procedure Finish_Program
+     (Shared       : Shared_Project_Tree_Data_Access;
+      Fatal        : Boolean;
+      S            : String := "");
    --  Terminate program, with or without a message, setting the status code
    --  according to Fatal.
 
-   procedure Get_Mains;
+   procedure Get_Mains (Project_Tree : Project_Tree_Ref);
    --  Get the mains. If no main is defined on the command line, take those
    --  in attribute Main of the main project. If there are mains, check that
    --  they are not truncated (no body suffix) and if they are put the complete
@@ -211,7 +219,9 @@ package Gpr_Util is
       --  Return the normalized name of the host on which gprbuild is running.
       --  The knowledge base must have been parsed first.
 
-      procedure Parse_Knowledge_Base (Directory : String := "");
+      procedure Parse_Knowledge_Base
+        (Shared    : Shared_Project_Tree_Data_Access;
+         Directory : String := "");
 
    end Knowledge;
 

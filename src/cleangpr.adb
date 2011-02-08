@@ -65,6 +65,10 @@ package body Cleangpr is
    --  Set to True by the first call to Initialize.
    --  To avoid reinitialization of some packages.
 
+   Project_Tree : constant Project_Tree_Ref :=
+                    new Project_Tree_Data (Is_Root_Tree => True);
+   --  The project tree
+
    Force_Deletions : Boolean := False;
    --  Set to True by switch -f. When True, attempts to delete non writable
    --  files will be done.
@@ -930,7 +934,7 @@ package body Cleangpr is
 
    begin
       There_Are_Binder_Drivers := False;
-      Find_Binding_Languages;
+      Find_Binding_Languages (Project_Tree);
 
       if There_Are_Binder_Drivers then
          --  Get the main base name
@@ -1036,7 +1040,7 @@ package body Cleangpr is
       end if;
 
       if Load_Standard_Base then
-         Parse_Knowledge_Base;
+         Parse_Knowledge_Base (Project_Tree.Shared);
       end if;
 
       --  If no project file was specified, look first for a default
@@ -1110,7 +1114,8 @@ package body Cleangpr is
          --  the same message being displayed twice.
 
          Fail_Program
-           ("""" & Project_File_Name.all & """ processing failed",
+           (Project_Tree.Shared,
+            """" & Project_File_Name.all & """ processing failed",
             Flush_Messages => User_Project_Node /= Empty_Node);
       end if;
 
@@ -1146,7 +1151,7 @@ package body Cleangpr is
          New_Line;
       end if;
 
-      Gpr_Util.Get_Mains;
+      Gpr_Util.Get_Mains (Project_Tree);
 
       if Verbose_Mode then
          New_Line;
@@ -1241,7 +1246,7 @@ package body Cleangpr is
          begin
             if Db_Directory_Expected then
                Db_Directory_Expected := False;
-               Parse_Knowledge_Base (Arg);
+               Parse_Knowledge_Base (Project_Tree.Shared, Arg);
 
             elsif Arg'Length /= 0 then
                if Arg (1) = '-' then
@@ -1268,7 +1273,8 @@ package body Cleangpr is
                                        .. Arg'Last))
                            then
                               Fail_Program
-                                ("several configuration switches cannot " &
+                                (Project_Tree.Shared,
+                                 "several configuration switches cannot " &
                                  "be specified");
 
                            else
@@ -1294,7 +1300,8 @@ package body Cleangpr is
                                        .. Arg'Last))
                            then
                               Fail_Program
-                                ("several configuration switches cannot " &
+                                (Project_Tree.Shared,
+                                 "several configuration switches cannot " &
                                  "be specified");
 
                            else
@@ -1318,7 +1325,8 @@ package body Cleangpr is
                                      .. Arg'Last)
                               then
                                  Fail_Program
-                                   ("several target switches " &
+                                   (Project_Tree.Shared,
+                                    "several target switches " &
                                     "cannot be specified");
                               end if;
 
