@@ -3622,6 +3622,16 @@ package body Buildgpr is
             Source := Main_Sources.Get ((Main_Id, Main_Index));
 
             if Source /= No_Source then
+               --  Fail if any main is declared as an excluded source file
+
+               if Source.Locally_Removed then
+                  Fail_Program
+                    (Project_Tree.Shared,
+                     "main """ &
+                     Display_Main &
+                     """ cannot also be an excluded file");
+               end if;
+
                Queue.Insert (Source => (Format => Format_Gprbuild,
                                         Id     => Source));
 
