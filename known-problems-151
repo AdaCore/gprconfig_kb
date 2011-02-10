@@ -11,6 +11,16 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-151-K209-050 Crash when main is an excluded file
+
+  Problem:    When one of the main is also an excluded source file, gprbuild
+              crashes when attempting to check if the main needs to be
+              compiled.
+
+  Status:     This was fixed in 1.6.0 on 2011-02-10
+
+  Workaround: Remove the main from the list of excluded source files.
+
 KP-151-K125-041 No binding of locally removed sources
 
   Problem:    When the main is not in Ada and there are no Roots specified,
