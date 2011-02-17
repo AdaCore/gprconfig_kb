@@ -12,7 +12,7 @@
     <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|-elinos-linux|-pc).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^gcc version (\S+)" group="1"></grep>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
@@ -145,7 +145,7 @@
     <executable>gcc</executable>
     <version>
       <external>gcc -v</external>
-      <grep regexp="^gcc version (\S+)" group="1"></grep>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
       <must_match>2\.8\.</must_match>
     </version>
     <languages>C</languages>
@@ -173,7 +173,7 @@
     <executable>g\+\+</executable>
     <version>
       <external>g++ -v</external>
-      <grep regexp="^gcc version (\S+)" group="1"></grep>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
@@ -299,7 +299,7 @@
     <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|elinos-linux).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^gcc version (\S+)" group="1"></grep>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>Asm,Asm_Cpp,Asm2</languages>
     <target>
@@ -327,7 +327,7 @@
     </version>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^.*gcc version (\S+)" group="1"></grep>
+      <grep regexp="^.*gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <languages>Ada</languages>
     <runtimes default="default,kernel">
@@ -379,7 +379,7 @@
     <executable>gfortran</executable>
     <version>
       <external>gfortran -v</external>
-      <grep regexp="^gcc version (\S+)" group="1"></grep>
+      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </version>
     <languages>Fortran</languages>
     <target>
