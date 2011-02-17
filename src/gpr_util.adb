@@ -25,7 +25,6 @@
 ------------------------------------------------------------------------------
 
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
-with Ada.Unchecked_Deallocation;
 with ALI;      use ALI;
 with Debug;
 with Interfaces.C.Strings;
@@ -1373,38 +1372,6 @@ package body Gpr_Util is
       Must_Compile := False;
       Cleanup;
    end Need_To_Compile;
-
-   ----------
-   -- Free --
-   ----------
-
-   overriding procedure Free (Data : in out Builder_Project_Tree_Data) is
-      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
-        (Binding_Data_Record, Binding_Data);
-
-      TmpB, Binding : Binding_Data := Data.Binding;
-   begin
-      while Binding /= null loop
-         TmpB := Binding.Next;
-         Unchecked_Free (Binding);
-         Binding := TmpB;
-      end loop;
-   end Free;
-
-   ------------------
-   -- Builder_Data --
-   ------------------
-
-   function Builder_Data
-     (Tree : Project_Tree_Ref) return Builder_Data_Access
-   is
-   begin
-      if Tree.Appdata = null then
-         Tree.Appdata := new Builder_Project_Tree_Data;
-      end if;
-
-      return Builder_Data_Access (Tree.Appdata);
-   end Builder_Data;
 
    ---------------
    -- Knowledge --

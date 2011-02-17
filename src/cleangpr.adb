@@ -588,7 +588,7 @@ package body Cleangpr is
       --  a main library project.
 
       if Project = Main_Project
-        and then Mains.Number_Of_Mains /= 0
+        and then Mains.Number_Of_Mains (null) /= 0
         and then Project.Library
       then
          Osint.Fail
@@ -787,7 +787,7 @@ package body Cleangpr is
 
             Mains.Reset;
 
-            for N_File in 1 .. Mains.Number_Of_Mains loop
+            for N_File in 1 .. Mains.Number_Of_Mains (Project_Tree) loop
                Main_File := Mains.Next_Main;
 
                Iter := For_Each_Source (Project_Tree);
@@ -1141,6 +1141,7 @@ package body Cleangpr is
       end if;
 
       Mains.Fill_From_Project (Main_Project, Project_Tree);
+      Mains.Complete_Mains (Main_Project, Project_Tree);
 
       if Verbose_Mode then
          New_Line;

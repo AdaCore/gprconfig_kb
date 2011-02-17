@@ -50,7 +50,7 @@ with Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Output;           use Output;
-with Opt;              use Opt;
+with Opt;
 with Osint;            use Osint;
 with Prj;              use Prj;
 with Prj.Conf;         use Prj.Conf;
@@ -71,7 +71,7 @@ with System.Multiprocessors; use System.Multiprocessors;
 package body Buildgpr is
 
    use Gpr_Util.Knowledge;
-   use type ALI.ALI_Id;
+   use type ALI.ALI_Id, Opt.Verbosity_Level_Type, Opt.Warning_Mode_Type;
 
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
@@ -145,8 +145,6 @@ package body Buildgpr is
 
    Recursive : Boolean := False;
 
-   Closure_Needed : Boolean := False;
-
    Unique_Compile : Boolean := False;
    --  Set to True if -u or -U or a project file with no main is used
 
@@ -207,10 +205,6 @@ package body Buildgpr is
          Warnings_Normal,
          Warnings_Suppress,
          Indirect_Imports);
-
-      All_Phases   : Boolean := True;
-      --  True when all phases (compilation, binding and linking) are to be
-      --  performed.
 
       procedure Register_Command_Line_Option
         (Option : Option_Type; Value : Natural := 0);
@@ -738,12 +732,18 @@ package body Buildgpr is
    procedure Check_Archive_Builder;
    --  Check if the archive builder (ar) is there
 
-   procedure Check_Mains;
+   procedure Add_Mains_To_Queue;
    --  Check that each main is a single file name and that it is a source
    --  of a project from the tree.
 
+   procedure Compilation_Phase
+     (Main_Project : Project_Id;
+      Project_Tree : Project_Tree_Ref);
    procedure Compilation_Phase;
-   --  Perform compilations
+   --  The first version compilations for a specific project tree. This needs
+   --  to be called one for each aggregated projects, too.
+   --  The second version will process all the main root project and all
+   --  aggregated projects.
 
    function Config_File_For
      (Project        : Project_Id;
@@ -784,11 +784,6 @@ package body Buildgpr is
    procedure Get_Linker_Options (For_Project : Project_Id);
    --  Get the Linker_Options from a project
 
-   procedure Get_Mains;
-   --  If no mains were specified on the command line, get the mains specified
-   --  by attribute Mains in the main project and check if they are sources of
-   --  the main project.
-
    function Get_Option (Option : Name_Id) return String_Access;
    --  Get a string access corresponding to Option. Either find the string
    --  access in the All_Options cache, or create a new entry in All_Options.
@@ -825,11 +820,19 @@ package body Buildgpr is
    --  Return True if Object_Path is the path of an object file in a library
    --  project.
 
+   procedure Linking_Phase
+     (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref);
    procedure Linking_Phase;
-   --  Perform linking, if necessary
+   --  Perform linking, if necessary.
+   --  This is either for a specific project tree, or for the root project and
+   --  all its aggregated projects.
 
+   procedure Post_Compilation_Phase
+     (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref);
    procedure Post_Compilation_Phase;
-   --  Build libraries, if needed, and perform binding, if needed
+   --  Build libraries, if needed, and perform binding, if needed.
+   --  This is either for a specific project tree, or for the root project and
+   --  all its aggregated projects.
 
    procedure Process_Imported_Libraries
      (For_Project        : Project_Id;
@@ -1398,7 +1401,7 @@ package body Buildgpr is
 
                   if Comp_Data.Options /= null
                     and then Source.Id.Switches_Path /= No_Path
-                    and then Check_Switches
+                    and then Opt.Check_Switches
                   then
                      --  First, update the time stamp of the object file
                      --  that wil be written in the switches file.
@@ -1517,10 +1520,10 @@ package body Buildgpr is
                        (Name_Buffer (1 .. Name_Len),
                         Compilation_Options,
                         Opt.Verbose_Mode,
-                        Simple_Name => not Verbose_Mode);
+                        Simple_Name => not Opt.Verbose_Mode);
 
-                     if not Quiet_Output then
-                        if Verbose_Mode then
+                     if not Opt.Quiet_Output then
+                        if Opt.Verbose_Mode then
                            Write_Str (Exec_Path.all);
                         else
                            Write_Str (Exec_Name);
@@ -1686,8 +1689,8 @@ package body Buildgpr is
                            Add_Argument
                              (Obj_Dir & Directory_Separator &
                               Name_Buffer (1 .. Name_Len),
-                              Verbose_Mode,
-                              Simple_Name => not Verbose_Mode);
+                              Opt.Verbose_Mode,
+                              Simple_Name => not Opt.Verbose_Mode);
                         end if;
                      end loop;
 
@@ -1703,8 +1706,8 @@ package body Buildgpr is
                      if Object_To_Global_Archive (Id) then
                         Add_Argument
                           (Get_Name_String (Id.Object_Path),
-                           Verbose_Mode,
-                           Simple_Name => not Verbose_Mode);
+                           Opt.Verbose_Mode,
+                           Simple_Name => not Opt.Verbose_Mode);
                      end if;
 
                      Next (Iter);
@@ -1750,10 +1753,10 @@ package body Buildgpr is
                Proj_List := Proj_List.Next;
             end loop;
 
-            Need_To_Build := Force_Compilations;
+            Need_To_Build := Opt.Force_Compilations;
 
             if not Need_To_Build then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Str  ("   Checking ");
                   Write_Str  (Archive_Name);
                   Write_Line (" ...");
@@ -1765,7 +1768,7 @@ package body Buildgpr is
                if not Is_Regular_File (Archive_Name) then
                   Need_To_Build := True;
 
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line ("      -> archive does not exist");
                   end if;
 
@@ -1782,7 +1785,7 @@ package body Buildgpr is
                   if not Is_Valid (File) then
                      Need_To_Build := True;
 
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Str  ("      -> archive dependency file ");
                         Write_Str  (Archive_Dep_Name);
                         Write_Line (" does not exist");
@@ -1822,7 +1825,7 @@ package body Buildgpr is
 
                         if Src_Id = No_Source then
                            Need_To_Build := True;
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str  ("      -> ");
                               Write_Str  (Get_Name_String (Object_Path));
                               Write_Line (" is not an object of any project");
@@ -1839,7 +1842,7 @@ package body Buildgpr is
                         if End_Of_File (File) then
                            Need_To_Build := True;
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str  ("      -> archive dependency file ");
                               Write_Line (" is truncated");
                            end if;
@@ -1856,7 +1859,7 @@ package body Buildgpr is
                         if Name_Len /= Time_Stamp_Length then
                            Need_To_Build := True;
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str  ("      -> archive dependency file ");
                               Write_Line
                                 (" is incorrectly formatted (time stamp)");
@@ -1881,7 +1884,7 @@ package body Buildgpr is
                         then
                            Need_To_Build := True;
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str  ("      -> time stamp of ");
                               Write_Str  (Get_Name_String (Object_Path));
                               Write_Str  (" is incorrect in the archive");
@@ -1918,7 +1921,7 @@ package body Buildgpr is
                   then
                      Need_To_Build := True;
 
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Str ("      -> object file ");
                         Write_Str (Get_Name_String
                                    (Source_Indexes (S).Id.Object_Path));
@@ -1931,7 +1934,7 @@ package body Buildgpr is
             end if;
 
             if not Need_To_Build then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line  ("      -> up to date");
                end if;
 
@@ -1963,7 +1966,7 @@ package body Buildgpr is
                --  Followed by the archive name
 
                Add_Argument
-                 (Archive_Name, True, Simple_Name => not Verbose_Mode);
+                 (Archive_Name, True, Simple_Name => not Opt.Verbose_Mode);
 
                First_Object := Last_Argument + 1;
 
@@ -1987,7 +1990,7 @@ package body Buildgpr is
                   Has_Been_Built := False;
                   Exists         := False;
 
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line ("      -> there is no global archive");
                   end if;
 
@@ -2039,7 +2042,8 @@ package body Buildgpr is
                           (1 .. Archive_Builder_Append_Opts.Last),
                         True);
                      Add_Argument
-                       (Archive_Name, True, Simple_Name => not Verbose_Mode);
+                       (Archive_Name, True,
+                        Simple_Name => not Opt.Verbose_Mode);
                      First_Object := Last_Argument + 1;
 
                      while Current_Object_Pos <= Real_Last_Argument loop
@@ -2091,7 +2095,7 @@ package body Buildgpr is
                         Add_Argument
                           (Archive_Name,
                            True,
-                           Simple_Name => not Verbose_Mode);
+                           Simple_Name => not Opt.Verbose_Mode);
 
                         Display_Command
                           (Archive_Indexer_Name.all, Archive_Indexer_Path);
@@ -2268,7 +2272,7 @@ package body Buildgpr is
                      if not Library_Needs_To_Be_Built then
                         Library_Needs_To_Be_Built := True;
 
-                        if Verbose_Mode then
+                        if Opt.Verbose_Mode then
                            Write_Str ("      -> missing object file: ");
                            Get_Name_String (Source.Object);
                            Write_Line (Name_Buffer (1 .. Name_Len));
@@ -2331,9 +2335,9 @@ package body Buildgpr is
 
       Change_To_Object_Directory (For_Project);
 
-      Library_Needs_To_Be_Built := Force_Compilations;
+      Library_Needs_To_Be_Built := Opt.Force_Compilations;
 
-      if (not Library_Needs_To_Be_Built) and then Verbose_Mode then
+      if (not Library_Needs_To_Be_Built) and then Opt.Verbose_Mode then
          Write_Str ("   Checking library ");
          Get_Name_String (For_Project.Library_Name);
          Write_Str (Name_Buffer (1 .. Name_Len));
@@ -2357,7 +2361,7 @@ package body Buildgpr is
             if String (TS) < String (Latest_Object_TS) then
                Library_Needs_To_Be_Built := True;
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   if TS = Empty_Time_Stamp then
                      Write_Line
                        ("      -> library exchange file " &
@@ -2377,7 +2381,7 @@ package body Buildgpr is
                   Open (Exchange_File, In_File, Exchange_File_Name.all);
 
                   if End_Of_File (Exchange_File) then
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Str ("      -> library exchange file """);
                         Write_Str (Exchange_File_Name.all);
                         Write_Line (""" is empty");
@@ -2388,7 +2392,7 @@ package body Buildgpr is
 
                exception
                   when others =>
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Str
                           ("      -> library exchange file """);
                         Write_Str (Exchange_File_Name.all);
@@ -2413,7 +2417,7 @@ package body Buildgpr is
             Library_Needs_To_Be_Built := True;
             Close (Exchange_File);
 
-            if Verbose_Mode then
+            if Opt.Verbose_Mode then
                Write_Line ("      -> library exchange file " &
                            Exchange_File_Name.all &
                            " has wrong format");
@@ -2428,7 +2432,7 @@ package body Buildgpr is
                Library_Needs_To_Be_Built := True;
                Close (Exchange_File);
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line
                     ("      -> object file(s) more recent than library file " &
                      Exchange_File_Name.all);
@@ -2447,7 +2451,7 @@ package body Buildgpr is
          if Name_Buffer (1 .. Name_Len) /= Library_Label (Object_Files) then
             Library_Needs_To_Be_Built := True;
 
-            if Verbose_Mode then
+            if Opt.Verbose_Mode then
                Write_Line ("      -> library exchange file " &
                            Exchange_File_Name.all &
                            " has wrong format");
@@ -2466,7 +2470,7 @@ package body Buildgpr is
             Library_Needs_To_Be_Built := True;
 
             if End_Of_File (Exchange_File) then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line
                     ("      -> library exchange file " &
                      Exchange_File_Name.all &
@@ -2517,7 +2521,7 @@ package body Buildgpr is
                      end;
                   end if;
 
-                  if Library_Needs_To_Be_Built and then Verbose_Mode then
+                  if Library_Needs_To_Be_Built and then Opt.Verbose_Mode then
                      Write_Str ("      -> object file ");
                      Write_Str (Get_Name_String (Object_Path));
                      Write_Line
@@ -2525,7 +2529,7 @@ package body Buildgpr is
                   end if;
 
                else
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line
                        ("      -> library exchange file " &
                         Exchange_File_Name.all &
@@ -2542,7 +2546,7 @@ package body Buildgpr is
                if not Library_Objs.Table (Index).Known then
                   Library_Needs_To_Be_Built := True;
 
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Str
                        ("      -> library was built without object file ");
                      Write_Line
@@ -2556,7 +2560,7 @@ package body Buildgpr is
       end if;
 
       if not Library_Needs_To_Be_Built then
-         if Verbose_Mode then
+         if Opt.Verbose_Mode then
             Write_Line ("      -> up to date");
          end if;
 
@@ -2573,10 +2577,10 @@ package body Buildgpr is
                   Exchange_File_Name.all);
          end;
 
-         if Quiet_Output then
+         if Opt.Quiet_Output then
             Put_Line (Exchange_File, Library_Label (Quiet));
 
-         elsif Verbose_Mode then
+         elsif Opt.Verbose_Mode then
             Put_Line (Exchange_File, Library_Label (Verbose));
          end if;
 
@@ -3262,8 +3266,8 @@ package body Buildgpr is
             Success   : Boolean;
 
          begin
-            if not Quiet_Output then
-               if Verbose_Mode then
+            if not Opt.Quiet_Output then
+               if Opt.Verbose_Mode then
                   Write_Str (Library_Builder.all);
 
                else
@@ -3306,7 +3310,7 @@ package body Buildgpr is
 
          Change_Dir (Get_Name_String (Project.Object_Directory.Display_Name));
 
-         if Verbose_Mode and then Verbosity_Level > Opt.Low then
+         if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
             Write_Str  ("Changing to object directory of """);
             Write_Name (Project.Display_Name);
             Write_Str  (""": """);
@@ -3404,14 +3408,22 @@ package body Buildgpr is
       end if;
    end Check_Archive_Builder;
 
-   -----------------
-   -- Check_Mains --
-   -----------------
+   ------------------------
+   -- Add_Mains_To_Queue --
+   ------------------------
 
-   procedure Check_Mains is
+   procedure Add_Mains_To_Queue is
       Main_Id      : Main_Info;
 
    begin
+      Compute_Compilation_Phases
+        (Project_Tree,
+         Main_Project,
+         Option_Unique_Compile => Unique_Compile,
+         Option_Compile_Only   => Opt.Compile_Only,
+         Option_Bind_Only      => Opt.Bind_Only,
+         Option_Link_Only      => Opt.Link_Only);
+
       Mains.Reset;
 
       loop
@@ -3433,7 +3445,7 @@ package body Buildgpr is
               (Source     => (Format => Format_Gprbuild,
                               Tree   => Main_Id.Tree,
                               Id     => Main_Id.Source),
-               With_Roots => Closure_Needed);
+               With_Roots => Builder_Data (Main_Id.Tree).Closure_Needed);
 
             --  If a non Ada main has no roots, then all sources need to be
             --  compiled, so no need to check for closure.
@@ -3441,7 +3453,7 @@ package body Buildgpr is
             if Main_Id.Source.Language.Config.Kind /= Unit_Based
               and then Main_Id.Source.Roots = null
             then
-               Closure_Needed := False;
+               Builder_Data (Main_Id.Tree).Closure_Needed := False;
             end if;
          end if;
       end loop;
@@ -3449,13 +3461,65 @@ package body Buildgpr is
       if Err_Vars.Total_Errors_Detected /= 0 then
          Fail_Program (Project_Tree, "cannot continue");
       end if;
-   end Check_Mains;
+   end Add_Mains_To_Queue;
 
    -----------------------
    -- Compilation_Phase --
    -----------------------
 
    procedure Compilation_Phase is
+      procedure Do_Compile (Project : Project_Id; Tree : Project_Tree_Ref);
+      procedure Do_Compile (Project : Project_Id; Tree : Project_Tree_Ref) is
+      begin
+         if Builder_Data (Tree).Need_Compilation then
+            Compilation_Phase (Project, Tree);
+
+            if Total_Errors_Detected > 0
+              or else Bad_Compilations.Last > 0
+            then
+               --  If switch -k or -jnn (with nn > 1), output a summary of the
+               --  sources that could not be compiled.
+
+               if (Opt.Keep_Going or Opt.Maximum_Processes > 1)
+                 and then Bad_Compilations.Last > 0
+               then
+                  declare
+                     Source   : Source_Id;
+                  begin
+                     Write_Eol;
+
+                     for Index in 1 .. Bad_Compilations.Last loop
+                        Source := Bad_Compilations.Table (Index);
+
+                        if Source /= No_Source then
+                           Write_Str ("   compilation of ");
+                           Write_Str (Get_Name_String (Source.Display_File));
+                           Write_Line (" failed");
+                        end if;
+                     end loop;
+
+                     Write_Eol;
+                  end;
+               end if;
+
+               Fail_Program (Tree, "*** compilation phase failed");
+            end if;
+         end if;
+      end Do_Compile;
+
+      procedure Compile_All is new For_Project_And_Aggregated (Do_Compile);
+   begin
+      Compile_All (Main_Project, Project_Tree);
+   end Compilation_Phase;
+
+   -----------------------
+   -- Compilation_Phase --
+   -----------------------
+
+   procedure Compilation_Phase
+     (Main_Project : Project_Id;
+      Project_Tree : Project_Tree_Ref)
+   is
       type Local_Project_Data is record
          Include_Language       : Language_Ptr := No_Language_Index;
          --  Prepared arguments for "include" parameters (-I or include file).
@@ -4166,7 +4230,7 @@ package body Buildgpr is
                   end loop;
                end loop;
 
-               if No_Split_Units then
+               if Opt.No_Split_Units then
 
                   --  Initialized the list of subunits with the unit name
 
@@ -4250,7 +4314,7 @@ package body Buildgpr is
                end if;
 
                if Compilation_OK
-                 and then Closure_Needed
+                 and then Builder_Data (Src_Data.Tree).Closure_Needed
                then
                   Record_ALI_For (Src_Data, The_ALI);
                end if;
@@ -4378,7 +4442,7 @@ package body Buildgpr is
             Last : Natural;
          begin
             if End_Of_File (File) then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line ("    -> switches file has fewer switches");
                end if;
 
@@ -4389,7 +4453,7 @@ package body Buildgpr is
             Get_Line (File, Line, Last);
 
             if Line (1 .. Last) /= Current then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line ("    -> switches file has different line");
                   Write_Line ("       " & Line (1 .. Last));
                   Write_Line ("       " & Current);
@@ -4429,7 +4493,7 @@ package body Buildgpr is
          end loop;
 
          if not End_Of_File (File) then
-            if Verbose_Mode then
+            if Opt.Verbose_Mode then
                Write_Line ("    -> switches file has more switches");
             end if;
 
@@ -4442,7 +4506,7 @@ package body Buildgpr is
 
       exception
          when others =>
-            if Verbose_Mode then
+            if Opt.Verbose_Mode then
                Write_Line ("    -> no switches file");
             end if;
             return True;
@@ -4524,7 +4588,7 @@ package body Buildgpr is
                Add_Option
                  (Node.Name,
                   To      => Compilation_Options,
-                  Display => Verbose_Mode or else Id.Index /= 0);
+                  Display => Opt.Verbose_Mode or else Id.Index /= 0);
                List := Node.Next;
             end loop;
 
@@ -4534,7 +4598,7 @@ package body Buildgpr is
             Add_Option
               (Name_Buffer (1 .. Name_Len),
                To      => Compilation_Options,
-               Display => Verbose_Mode or else Id.Index /= 0);
+               Display => Opt.Verbose_Mode or else Id.Index /= 0);
 
          --  Always specify object-file for a multi-unit source file
 
@@ -4725,7 +4789,7 @@ package body Buildgpr is
             Add_Option
               (Node.Name,
                To      => Compilation_Options,
-               Display => Verbose_Mode);
+               Display => Opt.Verbose_Mode);
             List := Node.Next;
          end loop;
       end Add_Trailing_Switches;
@@ -4751,7 +4815,7 @@ package body Buildgpr is
            (Source_Path,
             To          => Compilation_Options,
             Display     => True,
-            Simple_Name => not Verbose_Mode);
+            Simple_Name => not Opt.Verbose_Mode);
       end Add_Name_Of_Source_Switches;
 
       ---------------------------------
@@ -4768,8 +4832,8 @@ package body Buildgpr is
          Pid     : Process_Id;
          Options : String_List_Access;
       begin
-         if not Quiet_Output then
-            if Verbose_Mode then
+         if not Opt.Quiet_Output then
+            if Opt.Verbose_Mode then
                Write_Str (Compiler_Path);
 
             else
@@ -4985,7 +5049,7 @@ package body Buildgpr is
             elsif Id.Language.Config.Include_Path_File /= No_Name then
                if Id.Language.Config.Mapping_File_Switches = No_Name_List
                  or else
-                  Use_Include_Path_File
+                  Opt.Use_Include_Path_File
                then
                   Prepare_Include_Path_File
                     (Data, Id.Object_Project, Id.Language);
@@ -5023,7 +5087,7 @@ package body Buildgpr is
                Setenv (Get_Name_String (Id.Language.Config.Include_Path),
                        Data.Include_Path.all);
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Str
                     (Get_Name_String (Id.Language.Config.Include_Path));
                   Write_Str (" = ");
@@ -5071,10 +5135,10 @@ package body Buildgpr is
                Object_Check   => Object_Checked,
                Always_Compile => Always_Compile);
 
-            if Compilation_Needed or Check_Switches then
+            if Compilation_Needed or Opt.Check_Switches then
                Set_Options_For_File (Source.Id);
 
-               if Check_Switches and then not Compilation_Needed then
+               if Opt.Check_Switches and then not Compilation_Needed then
                   Compilation_Needed := Check_Switches_File (Source.Id);
                end if;
             end if;
@@ -5110,7 +5174,7 @@ package body Buildgpr is
                   Mapping_File_Path => Mapping_File,
                   Last_Switches_For_File => Last_Switches_For_File);
 
-            elsif Closure_Needed
+            elsif Builder_Data (Source.Tree).Closure_Needed
               and then Id.Language.Config.Dependency_Kind = ALI_File
             then
                Record_ALI_For (Source, The_ALI);
@@ -5130,7 +5194,7 @@ package body Buildgpr is
          Source_Identity : Queue.Source_Info;
          Compilation_OK  : Boolean;
       begin
-         if Bad_Compilations.Last > 0 and then not Keep_Going then
+         if Bad_Compilations.Last > 0 and then not Opt.Keep_Going then
             while Outstanding_Compiles > 0 loop
                Await_Compile (Source_Identity, Compilation_OK);
 
@@ -5153,7 +5217,7 @@ package body Buildgpr is
          Source : Queue.Source_Info;
       begin
          if not Queue.Is_Empty
-           and then Outstanding_Compiles < Maximum_Processes
+           and then Outstanding_Compiles < Opt.Maximum_Processes
          then
             Queue.Extract (Found, Source);
             if Found then
@@ -5172,7 +5236,7 @@ package body Buildgpr is
          Compilation_OK  : Boolean;
          No_Check        : Boolean;
       begin
-         if Outstanding_Compiles = Maximum_Processes
+         if Outstanding_Compiles = Opt.Maximum_Processes
            or else (Queue.Is_Virtually_Empty and then Outstanding_Compiles > 0)
          then
             Await_Compile (Source_Identity, Compilation_OK);
@@ -5237,7 +5301,7 @@ package body Buildgpr is
          Start_Compile_If_Possible;
          Wait_For_Available_Slot;
 
-         if Display_Compilation_Progress then
+         if Opt.Display_Compilation_Progress then
             Write_Str ("completed ");
             Write_Int (Int (Queue.Processed));
             Write_Str (" out of ");
@@ -5528,7 +5592,7 @@ package body Buildgpr is
             else
                Record_Temp_File (Project_Tree.Shared, File_Name);
 
-               if Opt.Verbose_Mode and then Verbosity_Level > Opt.Low then
+               if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
                   Write_Str ("Creating temp file """);
                   Write_Str (Get_Name_String (File_Name));
                   Write_Line ("""");
@@ -5848,11 +5912,11 @@ package body Buildgpr is
       --  Only display the command in Verbose Mode (-v) or when
       --  not in Quiet Output (no -q).
 
-      if not Quiet_Output then
+      if not Opt.Quiet_Output then
 
          --  In Verbose Mode output the full path of the spawned process
 
-         if Verbose_Mode then
+         if Opt.Verbose_Mode then
             Write_Str (Path.all);
 
          elsif Executable_Suffix'Length > 0 and then
@@ -6048,32 +6112,6 @@ package body Buildgpr is
          end;
       end loop;
    end Get_Linker_Options;
-
-   ---------------
-   -- Get_Mains --
-   ---------------
-
-   procedure Get_Mains is
-   begin
-      Mains.Fill_From_Project (Main_Project, Project_Tree);
-
-      if Mains.Number_Of_Mains = 0 then
-         --  Do not link, as there is no main.
-
-         if All_Phases then
-            All_Phases   := False;
-            Compile_Only := True;
-            Bind_Only    := True;
-         end if;
-
-         Link_Only := False;
-
-      elsif Output_File_Name /= null and then Mains.Number_Of_Mains /= 1 then
-         Fail_Program
-           (Project_Tree,
-            "cannot specify -o when there are several mains");
-      end if;
-   end Get_Mains;
 
    ----------------
    -- Get_Option --
@@ -6303,30 +6341,44 @@ package body Buildgpr is
 
       Compute_All_Imported_Projects (Project_Tree);
 
-      Queue.Initialize (One_Compilation_Per_Obj_Dir);
+      Queue.Initialize (Opt.One_Compilation_Per_Obj_Dir);
 
-      --  If -u or -U is specified on the command line, disregard any -c, -b
-      --  or -l switch: only perform compilation.
+      if Mains.Number_Of_Mains (Project_Tree) = 0
+        and then not Unique_Compile
+      then
+         --  Register the Main units from the projects.
+         --  No need to waste time when we are going to compile all files
+         ---  anyway (Unique_Compile).
+         Mains.Fill_From_Project (Main_Project, Project_Tree);
+      end if;
+
+      Mains.Complete_Mains (Main_Project, Project_Tree);
+
+      if not Unique_Compile
+        and then Output_File_Name /= null
+        and then Mains.Number_Of_Mains (null) > 1
+      then
+         Fail_Program
+           (Project_Tree, "cannot specify -o when there are several mains");
+      end if;
+
+      if Mains.Number_Of_Mains (Project_Tree) > 0
+        and then Main_Project.Library
+      then
+         Fail_Program
+           (Project_Tree,
+            "cannot specify a main program " &
+            "on the command line for a library project file");
+      end if;
+
+      Add_Mains_To_Queue;
 
       if Unique_Compile then
-         All_Phases := False;
-         Compile_Only := True;
-         Bind_Only := False;
-         Link_Only := False;
-         Closure_Needed := False;
+         --  If there are no mains specified on the command line, compile all
+         --  the sources of the main project (-u) or all the sources of all
+         --  projects (-U).
 
-         --  If there are mains specified on the command line, only compile
-         --  these sources.
-
-         if Mains.Number_Of_Mains > 0 then
-            Mains.Fill_From_Project (Main_Project, Project_Tree);
-
-            Check_Mains;
-
-            --  Otherwise compile all the sources of the main project (-u) or
-            --  all the sources of all projects (-U).
-
-         else
+         if Mains.Number_Of_Mains (Project_Tree) = 0 then
             Queue.Insert_Project_Sources
               (Main_Project,
                Project_Tree => Project_Tree,
@@ -6335,46 +6387,16 @@ package body Buildgpr is
          end if;
 
       else
-         Get_Mains;
-
-         if Mains.Number_Of_Mains = 0 then
-            --  Compile everything if there is no main
-
-            Closure_Needed := False;
-
-         else
-            Closure_Needed := True;
-
-            if Main_Project.Library then
-               Fail_Program
-                 (Project_Tree,
-                  "cannot specify a main program " &
-                  "on the command line for a library project file");
-
-            else
-               Check_Mains;
-            end if;
-         end if;
-
-         if All_Phases or Compile_Only then
-            --  If the closure is needed, we put in the queue all file based
-            --  sources and all sources in library projects.
-
-            if Closure_Needed then
-               Queue.Insert_Project_Sources
-                 (Main_Project, Project_Tree,
-                  All_Projects => True, Unit_Based => False);
-
-            else
-               Queue.Insert_Project_Sources
-                 (Main_Project, Project_Tree,
-                  All_Projects => True, Unit_Based => True);
-            end if;
+         if Builder_Data (Project_Tree).Need_Compilation then
+            Queue.Insert_Project_Sources
+              (Main_Project, Project_Tree,
+               All_Projects => True,
+               Unit_Based => not Builder_Data (Project_Tree).Closure_Needed);
 
             --  If no sources to compile, then there is nothing to do
 
             if Queue.Size = 0 then
-               if not Quiet_Output
+               if not Opt.Quiet_Output
                  and then not Main_Project.Externally_Built
                then
                   Osint.Write_Program_Name;
@@ -6420,7 +6442,7 @@ package body Buildgpr is
             --  If there is no main, and there is only one compiled language,
             --  use this language as the switches index.
 
-            if Mains.Number_Of_Mains = 0 then
+            if Mains.Number_Of_Mains (Project_Tree) = 0 then
                declare
                   Language : Language_Ptr := Main_Project.Languages;
 
@@ -6444,7 +6466,7 @@ package body Buildgpr is
                end;
 
             else
-               for Index in 1 .. Mains.Number_Of_Mains loop
+               for Index in 1 .. Mains.Number_Of_Mains (Project_Tree) loop
                   Source := Source_Of (Base_Name (Mains.Next_Main));
                   if Source /= No_Source then
                      if Name = No_Name and then Lang = No_Name then
@@ -6695,7 +6717,7 @@ package body Buildgpr is
 
       Always_Compile :=
         Always_Compile and then
-        Force_Compilations and then
+        Opt.Force_Compilations and then
         Unique_Compile and then
         (not Unique_Compile_All_Projects);
 
@@ -6706,7 +6728,7 @@ package body Buildgpr is
 
       if Debug.Debug_Flag_M then
          Write_Line ("Maximum number of simultaneous compilations =" &
-                     Maximum_Processes'Img);
+                     Opt.Maximum_Processes'Img);
       end if;
 
       --  Source file lookups should be cached for efficiency.
@@ -6718,64 +6740,12 @@ package body Buildgpr is
       --  switches.
 
       if not Object_Checked then
-         Check_Switches := False;
+         Opt.Check_Switches := False;
       end if;
 
-      --  Compilation phase
-
-      if All_Phases or Compile_Only then
-         Compilation_Phase;
-
-         if Total_Errors_Detected > 0
-           or else Bad_Compilations.Last > 0
-         then
-            --  If switch -k or -jnn (with nn > 1), output a summary of the
-            --  sources that could not be compiled.
-
-            if (Keep_Going or Maximum_Processes > 1)
-              and then Bad_Compilations.Last > 0
-            then
-               declare
-                  Source   : Source_Id;
-               begin
-                  Write_Eol;
-
-                  for Index in 1 .. Bad_Compilations.Last loop
-                     Source := Bad_Compilations.Table (Index);
-
-                     if Source /= No_Source then
-                        Write_Str ("   compilation of ");
-                        Write_Str (Get_Name_String (Source.Display_File));
-                        Write_Line (" failed");
-                     end if;
-                  end loop;
-
-                  Write_Eol;
-               end;
-            end if;
-
-            Fail_Program
-              (Project_Tree, "*** compilation phase failed");
-         end if;
-      end if;
-
-      --  Binding phase
-
-      if All_Phases or Bind_Only then
-         Post_Compilation_Phase;
-
-         if Total_Errors_Detected > 0 then
-            Fail_Program (Project_Tree, "*** bind failed");
-         end if;
-      end if;
-
-      if All_Phases or Link_Only then
-         Linking_Phase;
-
-         if Total_Errors_Detected > 0 then
-            Fail_Program (Project_Tree, "*** link failed");
-         end if;
-      end if;
+      Compilation_Phase;
+      Post_Compilation_Phase;
+      Linking_Phase;
 
       if Warnings_Detected /= 0 then
          Prj.Err.Finalize;
@@ -6819,8 +6789,6 @@ package body Buildgpr is
       Name_Len := 0;
       Add_Str_To_Name_Buffer ("-L");
       Dash_L := Name_Find;
-
-      All_Phases := True;
 
       --  Get the command line arguments, starting with --version and --help
 
@@ -6889,7 +6857,7 @@ package body Buildgpr is
          end;
       end if;
 
-      if Verbose_Mode then
+      if Opt.Verbose_Mode then
          Copyright;
       end if;
 
@@ -7026,6 +6994,29 @@ package body Buildgpr is
    -------------------
 
    procedure Linking_Phase is
+      procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref);
+      procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref) is
+      begin
+         if Builder_Data (Tree).Need_Linking then
+            Linking_Phase (Project, Tree);
+            if Total_Errors_Detected > 0 then
+               Fail_Program (Tree, "*** link failed");
+            end if;
+         end if;
+      end Do_Link;
+
+      procedure Link_All is new For_Project_And_Aggregated (Do_Link);
+   begin
+      Link_All (Main_Project, Project_Tree);
+   end Linking_Phase;
+
+   -------------------
+   -- Linking_Phase --
+   -------------------
+
+   procedure Linking_Phase
+     (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref)
+   is
       Linker_Name        : String_Access := null;
       Linker_Path        : String_Access;
       Min_Linker_Opts    : Name_List_Index;
@@ -7060,10 +7051,6 @@ package body Buildgpr is
       B_Data : Binding_Data;
 
    begin
-      if Mains.Number_Of_Mains = 0 then
-         return;
-      end if;
-
       Mains.Reset;
 
       loop
@@ -7100,10 +7087,10 @@ package body Buildgpr is
 
             Rpaths.Set_Last (0);
 
-            Linker_Needs_To_Be_Called := Force_Compilations;
+            Linker_Needs_To_Be_Called := Opt.Force_Compilations;
 
             Main_Id := Create_Name (Base_Name (Main));
-            Main_Proj   := Ultimate_Extending_Project_Of (Main_Source.Project);
+            Main_Proj := Ultimate_Extending_Project_Of (Main_Source.Project);
 
             Change_To_Object_Directory (Main_Proj);
 
@@ -7123,7 +7110,7 @@ package body Buildgpr is
             Main_Base_Name_Index :=
               Base_Name_Index_For (Main, Main_Index, Index_Separator);
 
-            if (not Linker_Needs_To_Be_Called) and then Verbose_Mode then
+            if (not Linker_Needs_To_Be_Called) and then Opt.Verbose_Mode then
                Write_Str ("   Checking executable for ");
                Write_Str (Get_Name_String (Main_Source.File));
                Write_Line (" ...");
@@ -7162,7 +7149,7 @@ package body Buildgpr is
             then
                Linker_Needs_To_Be_Called := True;
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line ("      -> executable does not exist");
                end if;
             end if;
@@ -7197,14 +7184,14 @@ package body Buildgpr is
 
             if not Linker_Needs_To_Be_Called then
                if Main_Object_TS = Empty_Time_Stamp then
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line ("      -> main object does not exist");
                   end if;
 
                   Linker_Needs_To_Be_Called := True;
 
                elsif String (Main_Object_TS) > String (Executable_TS) then
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line
                        ("      -> main object more recent than executable");
                   end if;
@@ -7337,7 +7324,7 @@ package body Buildgpr is
                         then
                            Linker_Needs_To_Be_Called := True;
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str ("      -> binder exchange file """);
                               Write_Str (Exchange_File_Name);
                               Write_Line (""" is more recent than executable");
@@ -7365,7 +7352,7 @@ package body Buildgpr is
                                               (Line (1 .. Last))));
 
                                     Add_Argument
-                                      (Line (1 .. Last), Verbose_Mode);
+                                      (Line (1 .. Last), Opt.Verbose_Mode);
 
                                  when Bound_Object_Files =>
                                     if Normalize_Pathname
@@ -7380,7 +7367,7 @@ package body Buildgpr is
                                           (Line (1 .. Last))
                                     then
                                        Add_Argument
-                                         (Line (1 .. Last), Verbose_Mode);
+                                         (Line (1 .. Last), Opt.Verbose_Mode);
                                     end if;
 
                                  when Resulting_Options =>
@@ -7413,7 +7400,7 @@ package body Buildgpr is
 
                         if Binder_Object_TS = Empty_Time_Stamp then
                            if (not Linker_Needs_To_Be_Called)
-                             and then Verbose_Mode
+                             and then Opt.Verbose_Mode
                            then
                               Write_Line
                                 ("      -> no binder generated object file");
@@ -7429,7 +7416,7 @@ package body Buildgpr is
                         then
                            Linker_Needs_To_Be_Called := True;
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Line
                                 ("      -> binder generated object is more " &
                                  "recent than executable");
@@ -7460,7 +7447,9 @@ package body Buildgpr is
                         (Create_Name (Global_Archive_Name (Main_Proj))));
 
                if Global_Archive_TS = Empty_Time_Stamp then
-                  if (not Linker_Needs_To_Be_Called) and then Verbose_Mode then
+                  if not Linker_Needs_To_Be_Called
+                    and then Opt.Verbose_Mode
+                  then
                      Write_Line ("      -> global archive does not exist");
                   end if;
 
@@ -7477,7 +7466,7 @@ package body Buildgpr is
             then
                Linker_Needs_To_Be_Called := True;
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line ("      -> global archive has just been built");
                end if;
             end if;
@@ -7488,7 +7477,7 @@ package body Buildgpr is
             then
                Linker_Needs_To_Be_Called := True;
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line ("      -> global archive is more recent than " &
                             "executable");
                end if;
@@ -7531,7 +7520,7 @@ package body Buildgpr is
 
                         exception
                            when others =>
-                              if Verbose_Mode then
+                              if Opt.Verbose_Mode then
                                  Write_Str
                                    ("      -> library exchange file """);
                                  Write_Str (Path_Name);
@@ -7543,7 +7532,7 @@ package body Buildgpr is
                         end;
 
                         if End_Of_File (Exchange_File) then
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str
                                 ("      -> library exchange file """);
                               Write_Str (Path_Name);
@@ -7563,7 +7552,7 @@ package body Buildgpr is
                            Linker_Needs_To_Be_Called := True;
                            Close (Exchange_File);
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str
                                 ("      -> library exchange file """);
                               Write_Str (Path_Name);
@@ -7581,7 +7570,7 @@ package body Buildgpr is
                         if Lib_TS = Empty_Time_Stamp then
                            Linker_Needs_To_Be_Called := True;
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str ("      -> library file """);
                               Write_Str (Name_Buffer (1 .. Name_Len));
                               Write_Line (""" not found");
@@ -7592,7 +7581,7 @@ package body Buildgpr is
                         elsif String (Lib_TS) > String (Executable_TS) then
                            Linker_Needs_To_Be_Called := True;
 
-                           if Verbose_Mode then
+                           if Opt.Verbose_Mode then
                               Write_Str ("      -> library file """);
                               Write_Str (Name_Buffer (1 .. Name_Len));
                               Write_Line
@@ -7609,17 +7598,17 @@ package body Buildgpr is
             end;
 
             if not Linker_Needs_To_Be_Called then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                      Write_Line ("      -> up to date");
 
-               elsif not Quiet_Output then
+               elsif not Opt.Quiet_Output then
                   Inform (Exec_Name, "up to date");
                end if;
 
             else
                if Global_Archive_Exists then
                   Add_Argument
-                    (Global_Archive_Name (Main_Proj), Verbose_Mode);
+                    (Global_Archive_Name (Main_Proj), Opt.Verbose_Mode);
                end if;
 
                --  Add the library switches, if there are libraries
@@ -7639,7 +7628,7 @@ package body Buildgpr is
                         Get_Name_String
                           (Library_Projs.Table (J).Library_Name) &
                         Archive_Suffix (Library_Projs.Table (J)),
-                        Verbose_Mode);
+                        Opt.Verbose_Mode);
 
                   else
                      --  Do not issue several time the same -L switch if
@@ -7660,7 +7649,7 @@ package body Buildgpr is
                               Get_Name_String
                                 (Library_Projs.Table
                                    (J).Library_Dir.Display_Name),
-                              Verbose_Mode);
+                              Opt.Verbose_Mode);
 
                         else
                            Add_Argument
@@ -7669,7 +7658,7 @@ package body Buildgpr is
                               Get_Name_String
                                 (Library_Projs.Table
                                    (J).Library_Dir.Display_Name),
-                              Verbose_Mode);
+                              Opt.Verbose_Mode);
                         end if;
 
                         if Opt.Run_Path_Option
@@ -7690,7 +7679,7 @@ package body Buildgpr is
                           ("-l" &
                            Get_Name_String
                              (Library_Projs.Table (J).Library_Name),
-                           Verbose_Mode);
+                           Opt.Verbose_Mode);
 
                      else
                         Add_Argument
@@ -7698,7 +7687,7 @@ package body Buildgpr is
                              (Main_Proj.Config.Linker_Lib_Name_Option) &
                            Get_Name_String
                              (Library_Projs.Table (J).Library_Name),
-                           Verbose_Mode);
+                           Opt.Verbose_Mode);
                      end if;
                   end if;
                end loop;
@@ -7819,13 +7808,13 @@ package body Buildgpr is
 
                for J in 1 .. Command_Line_Linker_Options.Last loop
                   Add_Argument
-                    (Command_Line_Linker_Options.Table (J), Verbose_Mode);
+                    (Command_Line_Linker_Options.Table (J), Opt.Verbose_Mode);
                end loop;
 
                --  Then the binding options
 
                for J in 1 .. Binding_Options.Last loop
-                  Add_Argument (Binding_Options.Table (J), Verbose_Mode);
+                  Add_Argument (Binding_Options.Table (J), Opt.Verbose_Mode);
                end loop;
 
                --  Finally, the required switches, if any. These are put at the
@@ -7840,7 +7829,7 @@ package body Buildgpr is
                     (Get_Name_String
                        (Project_Tree.Shared.Name_Lists.Table
                           (Min_Linker_Opts).Name),
-                     Verbose_Mode);
+                     Opt.Verbose_Mode);
                   Min_Linker_Opts   := Project_Tree.Shared.Name_Lists.Table
                     (Min_Linker_Opts).Next;
                end loop;
@@ -7935,7 +7924,7 @@ package body Buildgpr is
                            Get_Name_String (Nam_Nod.Name);
                            Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
                            Add_Argument
-                             (Name_Buffer (1 .. Name_Len), Verbose_Mode);
+                             (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
                         end loop;
 
                      else
@@ -7973,7 +7962,7 @@ package body Buildgpr is
                            Length := Length + Rpaths.Table (J)'Length;
                         end loop;
 
-                        Add_Argument (Arg, Verbose_Mode);
+                        Add_Argument (Arg, Opt.Verbose_Mode);
                      end if;
                   end;
                end if;
@@ -7994,7 +7983,7 @@ package body Buildgpr is
                      Add_Str_To_Name_Buffer (".map");
                   end if;
 
-                  Add_Argument (Name_Buffer (1 .. Name_Len), Verbose_Mode);
+                  Add_Argument (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
                end if;
 
                --  Add the switch(es) to specify the name of the executable
@@ -8018,7 +8007,7 @@ package body Buildgpr is
                      Add_Argument
                        (Name_Buffer (1 .. Name_Len),
                         True,
-                        Simple_Name => not Verbose_Mode);
+                        Simple_Name => not Opt.Verbose_Mode);
                   end Add_Executable_Name;
 
                begin
@@ -8261,45 +8250,45 @@ package body Buildgpr is
          for Index in 1 .. Command_Line_Options.Last loop
             case Command_Line_Options.Table (Index).Option is
                when Force_Compilations_Option =>
-                  Force_Compilations := True;
+                  Opt.Force_Compilations := True;
 
                when Keep_Going_Option =>
-                  Keep_Going := True;
+                  Opt.Keep_Going := True;
 
                when Maximum_Processes_Option =>
-                  Maximum_Processes :=
+                  Opt.Maximum_Processes :=
                     Command_Line_Options.Table (Index).Value;
 
                when Quiet_Output_Option =>
-                  Quiet_Output := True;
-                  Verbose_Mode := False;
+                  Opt.Quiet_Output := True;
+                  Opt.Verbose_Mode := False;
 
                when Check_Switches_Option =>
-                  Check_Switches := True;
+                  Opt.Check_Switches := True;
 
                when Verbose_Mode_Option =>
-                  Verbose_Mode    := True;
-                  Verbosity_Level := High;
-                  Quiet_Output    := False;
+                  Opt.Verbose_Mode    := True;
+                  Opt.Verbosity_Level := Opt.High;
+                  Opt.Quiet_Output    := False;
 
                when Verbose_Low_Mode_Option =>
-                  Verbose_Mode    := True;
-                  Verbosity_Level := Low;
-                  Quiet_Output    := False;
+                  Opt.Verbose_Mode    := True;
+                  Opt.Verbosity_Level := Opt.Low;
+                  Opt.Quiet_Output    := False;
 
                when Verbose_Medium_Mode_Option =>
-                  Verbose_Mode    := True;
-                  Verbosity_Level := Medium;
-                  Quiet_Output    := False;
+                  Opt.Verbose_Mode    := True;
+                  Opt.Verbosity_Level := Opt.Medium;
+                  Opt.Quiet_Output    := False;
 
                when Warnings_Treat_As_Error =>
-                  Warning_Mode := Treat_As_Error;
+                  Opt.Warning_Mode := Opt.Treat_As_Error;
 
                when Warnings_Normal =>
-                  Warning_Mode := Normal;
+                  Opt.Warning_Mode := Opt.Normal;
 
                when Warnings_Suppress =>
-                  Warning_Mode := Suppress;
+                  Opt.Warning_Mode := Opt.Suppress;
 
                when Indirect_Imports =>
                   Buildgpr.Indirect_Imports :=
@@ -8328,6 +8317,30 @@ package body Buildgpr is
    ----------------------------
 
    procedure Post_Compilation_Phase is
+      procedure Do_Post (Project : Project_Id; Tree : Project_Tree_Ref);
+      procedure Do_Post (Project : Project_Id; Tree : Project_Tree_Ref) is
+      begin
+         if Builder_Data (Tree).Need_Binding then
+            Post_Compilation_Phase (Project, Tree);
+
+            if Total_Errors_Detected > 0 then
+               Fail_Program (Tree, "*** bind failed");
+            end if;
+         end if;
+      end Do_Post;
+
+      procedure Post_Compile_All is new For_Project_And_Aggregated (Do_Post);
+   begin
+      Post_Compile_All (Main_Project, Project_Tree);
+   end Post_Compilation_Phase;
+
+   ----------------------------
+   -- Post_Compilation_Phase --
+   ----------------------------
+
+   procedure Post_Compilation_Phase
+     (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref)
+   is
       Success              : Boolean;
 
       Exchange_File        : Ada.Text_IO.File_Type;
@@ -8477,7 +8490,7 @@ package body Buildgpr is
          Object_File_Suffix_Label_Written : Boolean;
 
       begin
-         Binder_Driver_Needs_To_Be_Called := Force_Compilations;
+         Binder_Driver_Needs_To_Be_Called := Opt.Force_Compilations;
 
          --  First check if the binder driver needs to be called.
          --  It needs to be called if
@@ -8487,7 +8500,7 @@ package body Buildgpr is
          --       is more recent than any of these two files
 
          if not Binder_Driver_Needs_To_Be_Called
-           and then Verbose_Mode
+           and then Opt.Verbose_Mode
          then
             Write_Line
               ("   Checking binder generated files for " &
@@ -8505,7 +8518,7 @@ package body Buildgpr is
             if Bind_Exchange_TS = Empty_Time_Stamp then
                Binder_Driver_Needs_To_Be_Called := True;
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line
                     ("      -> binder exchange file " &
                      Bind_Exchange.all &
@@ -8520,7 +8533,7 @@ package body Buildgpr is
                   when others =>
                      Binder_Driver_Needs_To_Be_Called := True;
 
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Line
                           ("      -> could not open " &
                            "binder exchange file" &
@@ -8537,7 +8550,7 @@ package body Buildgpr is
                when others =>
                   Binder_Driver_Needs_To_Be_Called := True;
 
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line
                        ("      -> previous gprbind failed, or " &
                         Bind_Exchange.all &
@@ -8553,7 +8566,7 @@ package body Buildgpr is
             then
                Binder_Driver_Needs_To_Be_Called := True;
 
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line
                     ("      -> previous gprbind failed, or " &
                      Bind_Exchange.all &
@@ -8569,7 +8582,7 @@ package body Buildgpr is
                if Bind_Object_TS = Empty_Time_Stamp then
                   Binder_Driver_Needs_To_Be_Called := True;
 
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line
                        ("      -> binder generated object " &
                         Line (1 .. Last) &
@@ -8595,7 +8608,7 @@ package body Buildgpr is
             end if;
 
             if Binder_Driver_Needs_To_Be_Called then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line
                     ("      -> previous gprbind failed, or " &
                      Bind_Exchange.all &
@@ -8634,7 +8647,7 @@ package body Buildgpr is
                   if End_Of_File (Exchange_File) then
                      Binder_Driver_Needs_To_Be_Called := True;
 
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Line
                           ("      -> previous gprbind failed, " &
                            "or " &
@@ -8660,7 +8673,7 @@ package body Buildgpr is
                      then
                         Binder_Driver_Needs_To_Be_Called := True;
 
-                        if Verbose_Mode then
+                        if Opt.Verbose_Mode then
                            Write_Line
                              ("      -> project file " &
                               Get_Name_String (Project_Path) &
@@ -8673,7 +8686,7 @@ package body Buildgpr is
                   else
                      Binder_Driver_Needs_To_Be_Called := True;
 
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Line
                           ("      -> unknown project file " &
                            Get_Name_String (Project_Path));
@@ -8691,7 +8704,7 @@ package body Buildgpr is
                then
                   Binder_Driver_Needs_To_Be_Called := True;
 
-                  if Verbose_Mode then
+                  if Opt.Verbose_Mode then
                      Write_Line
                        ("      -> more project files");
                   end if;
@@ -8706,7 +8719,7 @@ package body Buildgpr is
          if not Binder_Driver_Needs_To_Be_Called then
 
             Queue.Initialize
-              (One_Compilation_Per_Obj_Dir, Force => True);
+              (Opt.One_Compilation_Per_Obj_Dir, Force => True);
 
             declare
                Source_Identity  : Source_Id;
@@ -8922,7 +8935,7 @@ package body Buildgpr is
                      if Stamp = Empty_Time_Stamp then
                         Binder_Driver_Needs_To_Be_Called := True;
 
-                        if Verbose_Mode then
+                        if Opt.Verbose_Mode then
                            Write_Str ("      -> cannot find ");
                            Write_Line (Get_Name_String (Dep_Path));
                         end if;
@@ -8932,7 +8945,7 @@ package body Buildgpr is
                      elsif Stamp > Bind_Exchange_TS then
                         Binder_Driver_Needs_To_Be_Called := True;
 
-                        if Verbose_Mode then
+                        if Opt.Verbose_Mode then
                            Write_Str ("      -> ");
                            Write_Str (Get_Name_String (Dep_Path));
                            Write_Line
@@ -8969,7 +8982,7 @@ package body Buildgpr is
          end if;
 
          if not Binder_Driver_Needs_To_Be_Called then
-            if Verbose_Mode then
+            if Opt.Verbose_Mode then
                Write_Line ("      -> up to date");
             end if;
 
@@ -8978,10 +8991,10 @@ package body Buildgpr is
 
             --  Optional line: Quiet or Verbose
 
-            if Quiet_Output then
+            if Opt.Quiet_Output then
                Put_Line (Exchange_File, Binding_Label (Quiet));
 
-            elsif Verbose_Mode then
+            elsif Opt.Verbose_Mode then
                Put_Line (Exchange_File, Binding_Label (Verbose));
             end if;
 
@@ -9403,7 +9416,7 @@ package body Buildgpr is
             if Main_Source.Unit = No_Unit_Index and then
               (not Dep_Files)
             then
-               if Verbose_Mode then
+               if Opt.Verbose_Mode then
                   Write_Line ("      -> nothing to bind");
                end if;
 
@@ -9433,7 +9446,7 @@ package body Buildgpr is
 
                      Setenv (Env_Var, Path_Name.all);
 
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Str (Env_Var);
                         Write_Str (" = ");
                         Write_Line (Path_Name.all);
@@ -9519,7 +9532,7 @@ package body Buildgpr is
 
                      Setenv (Env_Var, Get_Name_String (Path_Name));
 
-                     if Verbose_Mode then
+                     if Opt.Verbose_Mode then
                         Write_Str (Env_Var);
                         Write_Str (" = ");
                         Write_Line (Get_Name_String (Path_Name));
@@ -9527,8 +9540,8 @@ package body Buildgpr is
                   end;
                end if;
 
-               if not Quiet_Output then
-                  if Verbose_Mode then
+               if not Opt.Quiet_Output then
+                  if Opt.Verbose_Mode then
                      Write_Str (B_Data.Binder_Driver_Path.all);
 
                   else
@@ -9612,7 +9625,7 @@ package body Buildgpr is
 
       --  If no main is specified, there is nothing else to do
 
-      if Mains.Number_Of_Mains = 0 then
+      if Mains.Number_Of_Mains (Project_Tree) = 0 then
          return;
       end if;
 
@@ -9630,6 +9643,11 @@ package body Buildgpr is
          begin
             Main_File := Mains.Next_Main;
             exit when Main_File = No_Main_Info;
+
+            if Main_File.Tree = null then
+               Debug_Output ("MANU !!! No tree for",
+                             Name_Id (Main_File.File));
+            end if;
 
             if not Builder_Data (Main_File.Tree).There_Are_Binder_Drivers then
                if Current_Verbosity = High then
@@ -10182,10 +10200,10 @@ package body Buildgpr is
             Display_Paths := True;
 
          elsif Arg = "--no-split-units" then
-            No_Split_Units := True;
+            Opt.No_Split_Units := True;
 
          elsif Arg = Single_Compile_Per_Obj_Dir_Switch then
-            One_Compilation_Per_Obj_Dir := True;
+            Opt.One_Compilation_Per_Obj_Dir := True;
 
          elsif Command_Line and then
                Arg'Length > Source_Info_Option'Length and then
@@ -10280,7 +10298,7 @@ package body Buildgpr is
 
                   Set_Runtime_For (Name_Ada, RTS);
 
-               elsif Warning_Mode /= Suppress then
+               elsif Opt.Warning_Mode /= Opt.Suppress then
                   if Old = "" then
                      Write_Line
                        ("warning: --RTS should be specified on the command " &
@@ -10383,15 +10401,13 @@ package body Buildgpr is
             end if;
 
          elsif Command_Line and then Arg = "-b" then
-            Bind_Only  := True;
-            All_Phases := False;
+            Opt.Bind_Only  := True;
 
          elsif Command_Line and then Arg = "-c" then
-            Compile_Only := True;
-            All_Phases   := False;
+            Opt.Compile_Only := True;
 
-            if Link_Only then
-               Bind_Only := True;
+            if Opt.Link_Only then
+               Opt.Bind_Only := True;
             end if;
 
          elsif Arg = "-C" then
@@ -10400,7 +10416,7 @@ package body Buildgpr is
             null;
 
          elsif Command_Line and then Arg = "-d" then
-            Display_Compilation_Progress := True;
+            Opt.Display_Compilation_Progress := True;
 
          elsif Command_Line
            and then Arg'Length = 3
@@ -10430,23 +10446,23 @@ package body Buildgpr is
             end;
 
          elsif Command_Line and then Arg = "-eL" then
-            Follow_Links_For_Files := True;
-            Follow_Links_For_Dirs  := True;
+            Opt.Follow_Links_For_Files := True;
+            Opt.Follow_Links_For_Dirs  := True;
 
          elsif Command_Line and then Arg = "-eS" then
             --  Accept switch for compatibility with gnatmake
 
-            Commands_To_Stdout := True;
+            Opt.Commands_To_Stdout := True;
 
          elsif Arg = "-f" then
-            Force_Compilations := True;
+            Opt.Force_Compilations := True;
 
             if Command_Line then
                Register_Command_Line_Option (Force_Compilations_Option);
             end if;
 
          elsif Command_Line and then Arg = "-F" then
-            Full_Path_Name_For_Brief_Errors := True;
+            Opt.Full_Path_Name_For_Brief_Errors := True;
 
          elsif Command_Line and then Arg = "-h" then
             Usage_Needed := True;
@@ -10475,32 +10491,31 @@ package body Buildgpr is
                      Max_Proc := 1;
                   end if;
 
-                  Maximum_Processes := Max_Proc;
+                  Opt.Maximum_Processes := Max_Proc;
                end if;
             end;
 
             if Processed and then Command_Line then
                Register_Command_Line_Option
-                 (Maximum_Processes_Option, Maximum_Processes);
+                 (Maximum_Processes_Option, Opt.Maximum_Processes);
             end if;
 
          elsif Arg = "-k" then
-            Keep_Going := True;
+            Opt.Keep_Going := True;
 
             if Command_Line then
                Register_Command_Line_Option (Keep_Going_Option);
             end if;
 
          elsif Command_Line and then Arg = "-l" then
-            Link_Only  := True;
-            All_Phases := False;
+            Opt.Link_Only  := True;
 
-            if Compile_Only then
-               Bind_Only := True;
+            if Opt.Compile_Only then
+               Opt.Bind_Only := True;
             end if;
 
          elsif Arg = "-m" then
-            Minimal_Recompilation := True;
+            Opt.Minimal_Recompilation := True;
 
          elsif Command_Line and then Arg = "-o" then
             if Output_File_Name /= null then
@@ -10512,7 +10527,7 @@ package body Buildgpr is
             end if;
 
          elsif Arg = "-p" or else Arg = "--create-missing-dirs" then
-            Setup_Projects := True;
+            Opt.Setup_Projects := True;
 
          elsif Command_Line
            and then Arg'Length >= 2 and then Arg (2) = 'P'
@@ -10530,8 +10545,8 @@ package body Buildgpr is
             end if;
 
          elsif Arg = "-q" then
-            Quiet_Output := True;
-            Verbose_Mode := False;
+            Opt.Quiet_Output := True;
+            Opt.Verbose_Mode := False;
 
             if Command_Line then
                Register_Command_Line_Option (Quiet_Output_Option);
@@ -10544,7 +10559,7 @@ package body Buildgpr is
             Opt.Run_Path_Option := False;
 
          elsif Arg = "-s" then
-            Check_Switches := True;
+            Opt.Check_Switches := True;
 
             if Command_Line then
                Register_Command_Line_Option (Check_Switches_Option);
@@ -10558,27 +10573,27 @@ package body Buildgpr is
             Unique_Compile := True;
 
          elsif Arg = "-v" or else Arg = "-vh" then
-            Verbose_Mode    := True;
-            Verbosity_Level := High;
-            Quiet_Output    := False;
+            Opt.Verbose_Mode    := True;
+            Opt.Verbosity_Level := Opt.High;
+            Opt.Quiet_Output    := False;
 
             if Command_Line then
                Register_Command_Line_Option (Verbose_Mode_Option);
             end if;
 
          elsif Arg = "-vl" then
-            Verbose_Mode    := True;
-            Verbosity_Level := Low;
-            Quiet_Output    := False;
+            Opt.Verbose_Mode    := True;
+            Opt.Verbosity_Level := Opt.Low;
+            Opt.Quiet_Output    := False;
 
             if Command_Line then
                Register_Command_Line_Option (Verbose_Low_Mode_Option);
             end if;
 
          elsif Arg = "-vm" then
-            Verbose_Mode    := True;
-            Verbosity_Level := Medium;
-            Quiet_Output    := False;
+            Opt.Verbose_Mode    := True;
+            Opt.Verbosity_Level := Opt.Medium;
+            Opt.Quiet_Output    := False;
 
             if Command_Line then
                Register_Command_Line_Option (Verbose_Medium_Mode_Option);
@@ -10600,28 +10615,28 @@ package body Buildgpr is
             end case;
 
          elsif Arg = "-we" then
-            Warning_Mode := Treat_As_Error;
+            Opt.Warning_Mode := Opt.Treat_As_Error;
 
             if Command_Line then
                Register_Command_Line_Option (Warnings_Treat_As_Error);
             end if;
 
          elsif Arg = "-wn" then
-            Warning_Mode := Normal;
+            Opt.Warning_Mode := Opt.Normal;
 
             if Command_Line then
                Register_Command_Line_Option (Warnings_Normal);
             end if;
 
          elsif Arg = "-ws" then
-            Warning_Mode  := Suppress;
+            Opt.Warning_Mode  := Opt.Suppress;
 
             if Command_Line then
                Register_Command_Line_Option (Warnings_Suppress);
             end if;
 
          elsif Arg = "-x" then
-            Use_Include_Path_File := True;
+            Opt.Use_Include_Path_File := True;
 
          elsif Command_Line
            and then Arg'Length >= 3
