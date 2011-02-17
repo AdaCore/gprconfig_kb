@@ -29,10 +29,10 @@
 
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
+with ALI;
 with Namet;    use Namet;
 with Prj;      use Prj;
 with Prj.Tree; use Prj.Tree;
-with Table;
 
 package Gpr_Util is
 
@@ -54,30 +54,6 @@ package Gpr_Util is
    --  the aggregated projects.
 
    Success : Boolean := False;
-
-   There_Are_Binder_Drivers   : Boolean := False;
-   --  True when there is a binder driver. Set by Get_Configuration when
-   --  an attribute Language_Processing'Binder_Driver is declared.
-   --  Reset to False if there are no sources of the languages with binder
-   --  drivers.
-
-   type Binding_Data is record
-      Language           : Language_Ptr;
-      Language_Name      : Name_Id;
-      Binder_Driver_Name : File_Name_Type;
-      Binder_Driver_Path : String_Access;
-      Binder_Prefix      : Name_Id;
-   end record;
-   --  Data for a language that have a binder driver
-
-   package Binding_Languages is new Table.Table
-     (Table_Component_Type => Binding_Data,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 4,
-      Table_Increment      => 100,
-      Table_Name           => "Gpr_Util.Binding_Languages");
-   --  Table for binding data for languages that have a binder driver
 
    --  Config project
 
@@ -126,17 +102,11 @@ package Gpr_Util is
 
    RTS_Language_Option : constant String := "--RTS:";
 
---   Base : Knowledge_Base;
-   --  The knowledge base used to find the standard name of the native target
-
    Db_Directory_Expected : Boolean := False;
    --  True when last switch was --db
 
    Load_Standard_Base : Boolean := True;
    --  False when switch --db- is used
-
-   On_Windows : constant Boolean := Directory_Separator = '\';
-   --  True when on Windows
 
    --  Local subprograms
 
@@ -159,11 +129,54 @@ package Gpr_Util is
    --  arguments. It is the responsibility of the caller to delete this
    --  temporary file if needed.
 
+   -----------------------
+   -- Project_Tree data --
+   -----------------------
+   --  The following types are specific to builders, and associated with each
+   --  of the loaded project trees.
+
+   type Binding_Data_Record;
+   type Binding_Data is access Binding_Data_Record;
+   type Binding_Data_Record is record
+      Language           : Language_Ptr;
+      Language_Name      : Name_Id;
+      Binder_Driver_Name : File_Name_Type;
+      Binder_Driver_Path : String_Access;
+      Binder_Prefix      : Name_Id;
+      Next               : Binding_Data;
+   end record;
+   --  Data for a language that have a binder driver
+
+   type Builder_Project_Tree_Data is new Project_Tree_Appdata with record
+      Binding : Binding_Data;
+
+      There_Are_Binder_Drivers : Boolean := False;
+      --  True when there is a binder driver. Set by Get_Configuration when
+      --  an attribute Language_Processing'Binder_Driver is declared.
+      --  Reset to False if there are no sources of the languages with binder
+      --  drivers.
+   end record;
+   type Builder_Data_Access is access all Builder_Project_Tree_Data;
+
+   overriding procedure Free (Data : in out Builder_Project_Tree_Data);
+   --  Free all memory allocated for Data
+
+   function Builder_Data (Tree : Project_Tree_Ref) return Builder_Data_Access;
+   --  Return (allocate if needed) tree-specific data
+
+   ----------
+   -- Misc --
+   ----------
+
    procedure Find_Binding_Languages
-     (Project_Tree : Project_Tree_Ref);
-   --  Check if in the project tree there are sources of languages that have a
-   --  binder driver. Populate table Binding_Languages and set variable
-   --  There_Are_Binder_Drivers accordingly.
+     (Tree         : Project_Tree_Ref;
+      Root_Project : Project_Id);
+   --  Check if in the project tree there are sources of languages that have
+   --  a binder driver.
+   --  Populates Tree's appdata (Binding and There_Are_Binder_Drivers).
+   --  Nothing is done if the binding languages were already searched for
+   --  this Tree.
+   --  This also performs the check for aggregated project trees.
 
    function Get_Compiler_Driver_Path
      (Project_Tree : Project_Tree_Ref;
@@ -197,5 +210,35 @@ package Gpr_Util is
          Directory : String := "");
 
    end Knowledge;
+
+   procedure Need_To_Compile
+     (Source         : Prj.Source_Id;
+      Tree           : Prj.Project_Tree_Ref;
+      In_Project     : Prj.Project_Id;
+      Must_Compile   : out Boolean;
+      The_ALI        : out ALI.ALI_Id;
+      Object_Check   : Boolean;
+      Always_Compile : Boolean);
+   --  Check if a source need to be compiled.
+   --  A source need to be compiled if:
+   --    - Force_Compilations is True
+   --    - No object file generated for the language
+   --    - Object file does not exist
+   --    - Dependency file does not exist
+   --    - Switches file does not exist
+   --    - Either of these 3 files are older than the source or any source it
+   --      depends on.
+   --  If an ALI file had to be parsed, it is returned as The_ALI, so that the
+   --  caller does not need to parse it again.
+   --
+   --  Object_Check should be False when switch --no-object-check is used. When
+   --  True, presence of the object file and its time stamp are checked to
+   --  decide if a file needs to be compiled.
+   --
+   --  Tree is the project tree in which Source is found (or the root tree when
+   --  not using aggregate projects).
+   --
+   --  Always_Compile should be True when gprbuid is called with -f -u and at
+   --  least one source on the command line.
 
 end Gpr_Util;

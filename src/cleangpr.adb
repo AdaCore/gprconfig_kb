@@ -916,15 +916,15 @@ package body Cleangpr is
      (Dir    : String;
       Source : Source_Id)
    is
+      Data  : constant Builder_Data_Access := Builder_Data (Project_Tree);
       Current     : constant String := Get_Current_Dir;
       B_Data      : Binding_Data;
       Base_Name   : File_Name_Type;
 
    begin
-      There_Are_Binder_Drivers := False;
-      Find_Binding_Languages (Project_Tree);
+      Find_Binding_Languages (Project_Tree, Main_Project);
 
-      if There_Are_Binder_Drivers then
+      if Data.There_Are_Binder_Drivers then
          --  Get the main base name
 
          Base_Name := Base_Name_Index_For
@@ -936,9 +936,8 @@ package body Cleangpr is
 
          Change_Dir (Dir);
 
-         for B_Index in 1 .. Binding_Languages.Last loop
-            B_Data := Binding_Languages.Table (B_Index);
-
+         B_Data := Data.Binding;
+         while B_Data /= null loop
             declare
                File_Name : constant String :=
                              Binder_Exchange_File_Name
@@ -980,6 +979,8 @@ package body Cleangpr is
                   Delete (Dir, File_Name);
                end if;
             end;
+
+            B_Data := B_Data.Next;
          end loop;
 
          --  Change back to previous directory
