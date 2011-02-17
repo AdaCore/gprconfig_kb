@@ -42,7 +42,6 @@ with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 with GNAT.Dynamic_Tables;
 with GNAT.HTable;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
-with GNAT.Regexp;               use GNAT.Regexp;
 
 with Gpr_Util;         use Gpr_Util;
 with GPR_Version;      use GPR_Version;
@@ -84,9 +83,6 @@ package body Buildgpr is
    pragma Import (C, Maximum_Size, "__gnat_link_max");
    --  Maximum number of bytes to put in an invocation of the
    --  Archive_Builder.
-
-   Name_Star : Name_Id;
-   --  The character '*', initialized in procedure Initialize
 
    Dash_L : Name_Id;
    --  "-L", initialized in procedure Initialize
@@ -440,22 +436,6 @@ package body Buildgpr is
       Table_Increment      => 100,
       Table_Name           => "Makegpr.Linker_Opts");
    --  Table to store the Linker'Linker_Options in the project files
-
-   type Root_Array is array (Positive range <>) of Source_Id;
-   type Roots_Access is access Root_Array;
-   No_Roots : constant Roots_Access := null;
-
-   Roots_Buffer : Roots_Access := new Root_Array (1 .. 4);
-   --  An extensible array to store the roots when they are computed
-
-   package Root_Sources is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
-      Element    => Roots_Access,
-      No_Element => No_Roots,
-      Key        => File_Name_Type,
-      Hash       => Prj.Hash,
-      Equal      => "=");
-   --  A hash table to store the Roots of the mains, if any.
 
    Project_Of_Current_Object_Directory : Project_Id := No_Project;
    --  The object directory of the project for the last binding. Avoid
@@ -3466,249 +3446,32 @@ package body Buildgpr is
          Main_Id := Mains.Next_Main;
          exit when Main_Id = No_Main_Info;
 
-         declare
-            Main         : constant String := Get_Name_String (Main_Id.File);
-            Base_Main_Id : File_Name_Type;
-            Source       : constant Source_Id := Main_Id.Source;
+         if Main_Id.Source /= No_Source then
+            --  Fail if any main is declared as an excluded source file
 
-            Root_Arr     : Array_Element_Id;
-            Roots        : Variable_Value;
-            Root_List    : Roots_Access;
-            Nmb_Root     : Natural;
-            Pat_Root     : Boolean;
-            Root_Pattern : Regexp;
-            Root_Found   : Boolean;
-            Roots_Found  : Boolean;
-            List         : String_List_Id;
-            Elem         : String_Element;
-            Unit_Name    : Name_Id;
-            Root_Source  : Source_Id;
-            Iter         : Source_Iterator;
-         begin
-            Base_Main_Id := Create_Name (Base_Name (Main));
-
-            if Source /= No_Source then
-               --  Fail if any main is declared as an excluded source file
-
-               if Source.Locally_Removed then
-                  Fail_Program
-                    (Project_Tree.Shared,
-                     "main """ &
-                     Display_Main &
-                     """ cannot also be an excluded file");
-               end if;
-
-               Queue.Insert (Source => (Format => Format_Gprbuild,
-                                        Id     => Source));
-
-               --  Look for roots if closure is needed
-
-               if Closure_Needed then
-                  if Current_Verbosity = High then
-                     Debug_Output
-                       ("Looking for roots for", Name_Id (Main_Id.File));
-                  end if;
-
-                  Root_Arr :=
-                    Prj.Util.Value_Of
-                      (Name      => Name_Roots,
-                       In_Arrays => Source.Project.Decl.Arrays,
-                       Shared    => Project_Tree.Shared);
-                  Roots :=
-                    Prj.Util.Value_Of
-                      (Index     => Name_Id (Base_Main_Id),
-                       Src_Index => 0,
-                       In_Array  => Root_Arr,
-                       Shared    => Project_Tree.Shared);
-
-                  --  If there is no roots for the specific main, try the
-                  --  language.
-
-                  if Roots = Nil_Variable_Value then
-                     Roots :=
-                       Prj.Util.Value_Of
-                         (Index                  =>
-                              Source.Language.Name,
-                          Src_Index              => 0,
-                          In_Array               => Root_Arr,
-                          Shared                 => Project_Tree.Shared,
-                          Force_Lower_Case_Index => True);
-                  end if;
-
-                  --  Then try "*"
-
-                  if Roots = Nil_Variable_Value then
-                     Roots :=
-                       Prj.Util.Value_Of
-                         (Index                  => Name_Star,
-                          Src_Index              => 0,
-                          In_Array               => Root_Arr,
-                          Shared                 => Project_Tree.Shared,
-                          Force_Lower_Case_Index => True);
-                  end if;
-
-                  if Roots = Nil_Variable_Value then
-                     if Current_Verbosity = High then
-                        Write_Line ("   -> no roots declared");
-                     end if;
-
-                     --  If a non Ada main has no roots, then all sources
-                     --  need to be compiled, so no need to check for
-                     --  closure.
-
-                     if Source.Language.Config.Kind /= Unit_Based then
-                        Closure_Needed := False;
-                     end if;
-
-                  else
-                     List := Roots.Values;
-                     Nmb_Root := 0;
-
-                     Pattern_Loop :
-                     while List /= Nil_String loop
-                        Elem :=
-                          Project_Tree.Shared.String_Elements.Table (List);
-                        Get_Name_String (Elem.Value);
-                        To_Lower (Name_Buffer (1 .. Name_Len));
-                        Unit_Name := Name_Find;
-
-                        --  Check if it is a unit name or a pattern
-
-                        Pat_Root := False;
-
-                        for J in 1 .. Name_Len loop
-                           if (Name_Buffer (J) not in 'a' .. 'z') and then
-                             (Name_Buffer (J) not in '0' .. '9') and then
-                             (Name_Buffer (J) /= '_') and then
-                             (Name_Buffer (J) /= '.')
-                           then
-                              Pat_Root := True;
-                              exit;
-                           end if;
-                        end loop;
-
-                        if Pat_Root then
-                           begin
-                              Root_Pattern :=
-                                Compile
-                                  (Pattern => Name_Buffer (1 .. Name_Len),
-                                   Glob    => True);
-
-                           exception
-                              when Error_In_Regexp =>
-                                 Err_Vars.Error_Msg_Name_1 := Unit_Name;
-                                 Errutil.Error_Msg
-                                   ("invalid pattern %", Roots.Location);
-                                 exit Pattern_Loop;
-                           end;
-                        end if;
-
-                        Roots_Found := False;
-
-                        Iter := For_Each_Source (Project_Tree);
-                        Source_Loop :
-                        loop
-                           Root_Source := Prj.Element (Iter);
-                           exit Source_Loop when Root_Source = No_Source;
-
-                           Root_Found := False;
-                           if Pat_Root then
-                              Root_Found :=
-                                Root_Source.Unit /= No_Unit_Index
-                                and then Match
-                                  (Get_Name_String (Root_Source.Unit.Name),
-                                   Root_Pattern);
-
-                           else
-                              Root_Found :=
-                                Root_Source.Unit /= No_Unit_Index
-                                and then Root_Source.Unit.Name = Unit_Name;
-                           end if;
-
-                           if Root_Found then
-                              case Root_Source.Kind is
-                                 when Impl =>
-                                    null;
-
-                                 when Spec =>
-                                    Root_Found :=
-                                      Other_Part (Root_Source) = No_Source;
-
-                                 when Sep =>
-                                    Root_Found := False;
-                              end case;
-                           end if;
-
-                           if Root_Found then
-                              Roots_Found := True;
-
-                              if Current_Verbosity = High then
-                                 Write_Str ("   -> ");
-                                 Write_Line
-                                   (Get_Name_String
-                                      (Root_Source.Display_File));
-                              end if;
-
-                              Queue.Insert
-                                (Source => (Format => Format_Gprbuild,
-                                            Id     => Root_Source));
-
-                              Initialize_Source_Record (Root_Source);
-
-                              if Other_Part (Root_Source) /= No_Source then
-                                 Initialize_Source_Record
-                                   (Other_Part (Root_Source));
-                              end if;
-
-                              if Nmb_Root = Roots_Buffer'Last then
-                                 declare
-                                    New_Roots : constant Roots_Access :=
-                                      new Root_Array
-                                        (1 .. 2 * Roots_Buffer'Last);
-
-                                 begin
-                                    New_Roots (Roots_Buffer'Range) :=
-                                      Roots_Buffer.all;
-                                    Roots_Buffer := New_Roots;
-                                 end;
-                              end if;
-
-                              Nmb_Root := Nmb_Root + 1;
-                              Roots_Buffer (Nmb_Root) := Root_Source;
-                              exit Source_Loop when not Pat_Root;
-                           end if;
-
-                           Next (Iter);
-                        end loop Source_Loop;
-
-                        if not Roots_Found then
-                           if Pat_Root then
-                              if not Quiet_Output then
-                                 Error_Msg_Name_1 := Unit_Name;
-                                 Error_Msg
-                                   ("?no unit matches pattern %",
-                                    Roots.Location);
-                              end if;
-
-                           else
-                              --  report error
-                              Error_Msg
-                                ("Unit " & Get_Name_String (Unit_Name) &
-                                 " does not exist",
-                                 Roots.Location);
-                           end if;
-                        end if;
-
-                        List := Elem.Next;
-                     end loop Pattern_Loop;
-
-                     Root_List :=
-                       new Root_Array'(Roots_Buffer (1 .. Nmb_Root));
-                     Root_Sources.Set (Base_Main_Id, Root_List);
-                  end if;
-               end if;
+            if Main_Id.Source.Locally_Removed then
+               Fail_Program
+                 (Project_Tree,
+                  "main """ &
+                  Get_Name_String (Main_Id.Source.File) &
+                  """ cannot also be an excluded file");
             end if;
-         end;
+
+            Queue.Insert
+              (Source     => (Format => Format_Gprbuild,
+                              Tree   => Project_Tree,
+                              Id     => Main_Id.Source),
+               With_Roots => Closure_Needed);
+
+            --  If a non Ada main has no roots, then all sources need to be
+            --  compiled, so no need to check for closure.
+
+            if Main_Id.Source.Language.Config.Kind /= Unit_Based
+              and then Main_Id.Source.Roots = null
+            then
+               Closure_Needed := False;
+            end if;
+         end if;
       end loop;
 
       if Err_Vars.Total_Errors_Detected /= 0 then
@@ -7068,12 +6831,6 @@ package body Buildgpr is
       Prj.Initialize (Project_Tree);
       Mains.Delete;
 
-      --  Get the name id for '*'
-
-      Name_Len := 1;
-      Name_Buffer (1) := '*';
-      Name_Star := Name_Find;
-
       --  Get the name id for "-L";
 
       Name_Len := 0;
@@ -9535,9 +9292,9 @@ package body Buildgpr is
       begin
          Dep_Files := False;
 
-         Roots := Root_Sources.Get (Main_Source.File);
+         Roots := Main_Source.Roots;
 
-         if Roots = No_Roots then
+         if Roots = null then
             if Main_Source.Unit = No_Unit_Index then
                Iter := For_Each_Source (Project_Tree);
                while Prj.Element (Iter) /= No_Source loop
@@ -9556,8 +9313,9 @@ package body Buildgpr is
 
          else
             --  Put the Roots
-            for J in Roots'Range loop
-               Put_Dependency_File (Roots (J));
+            while Roots /= null loop
+               Put_Dependency_File (Roots.Root);
+               Roots := Roots.Next;
             end loop;
          end if;
       end Add_Dependency_Files;
@@ -9916,19 +9674,19 @@ package body Buildgpr is
                         then
                            Queue.Insert
                              (Source => (Format => Format_Gprbuild,
+                                         Tree   => Main_File.Tree,
                                          Id     => Main_Source));
                         end if;
 
-                        Roots := Root_Sources.Get (Main_Source.File);
+                        Roots := Main_Source.Roots;
 
-                        if Roots /= No_Roots then
-                           for J in Roots'Range loop
-                              Source := Roots (J);
-                              Queue.Insert
-                                (Source => (Format => Format_Gprbuild,
-                                            Id     => Source));
-                           end loop;
-                        end if;
+                        while Roots /= null loop
+                           Queue.Insert
+                             (Source => (Format => Format_Gprbuild,
+                                         Tree   => Main_File.Tree,
+                                         Id     => Roots.Root));
+                           Roots := Roots.Next;
+                        end loop;
 
                         --  If main is not unit base and there is no root,
                         --  check all sources with the language name of the
@@ -9992,6 +9750,7 @@ package body Buildgpr is
 
                                  Queue.Insert
                                    (Source => (Format => Format_Gprbuild,
+                                               Tree   => Main_File.Tree,
                                                Id     => Source));
                               end if;
 
