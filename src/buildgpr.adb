@@ -6372,40 +6372,25 @@ package body Buildgpr is
       end if;
 
       Add_Mains_To_Queue;
+      Queue.Insert_Project_Sources
+        (Project        => Main_Project,
+         Project_Tree   => Project_Tree,
+         Unique_Compile => Unique_Compile,
+         All_Projects =>
+            not Unique_Compile
+            or else (Unique_Compile_All_Projects or Recursive));
 
-      if Unique_Compile then
-         --  If there are no mains specified on the command line, compile all
-         --  the sources of the main project (-u) or all the sources of all
-         --  projects (-U).
+      --  If no sources to compile, then there is nothing to do
 
-         if Mains.Number_Of_Mains (Project_Tree) = 0 then
-            Queue.Insert_Project_Sources
-              (Main_Project,
-               Project_Tree => Project_Tree,
-               All_Projects => Unique_Compile_All_Projects or Recursive,
-               Unit_Based   => True);
+      if Queue.Size = 0 then
+         if not Opt.Quiet_Output
+           and then not Main_Project.Externally_Built
+         then
+            Osint.Write_Program_Name;
+            Write_Line (": no sources to compile");
          end if;
 
-      else
-         if Builder_Data (Project_Tree).Need_Compilation then
-            Queue.Insert_Project_Sources
-              (Main_Project, Project_Tree,
-               All_Projects => True,
-               Unit_Based => not Builder_Data (Project_Tree).Closure_Needed);
-
-            --  If no sources to compile, then there is nothing to do
-
-            if Queue.Size = 0 then
-               if not Opt.Quiet_Output
-                 and then not Main_Project.Externally_Built
-               then
-                  Osint.Write_Program_Name;
-                  Write_Line (": no sources to compile");
-               end if;
-
-               Finish_Program (Project_Tree, E_Success);
-            end if;
-         end if;
+         Finish_Program (Project_Tree, E_Success);
       end if;
 
       --  Get the builder switches in the main project, if any
