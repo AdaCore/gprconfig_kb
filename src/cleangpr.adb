@@ -577,9 +577,6 @@ package body Cleangpr is
       Main_Source_File : File_Name_Type;
       --  Name of executable on the command line without directory info
 
-      Main_Index : Int;
-      --  The source index, if any, of the main source file
-
       Executable : File_Name_Type;
       --  Name of the executable file
 
@@ -786,21 +783,24 @@ package body Cleangpr is
             Source   : Prj.Source_Id;
             Iter     : Source_Iterator;
 
+            Main_File     : File_Name_Type;
+            Main_Index    : Int;
+            Main_Location : Source_Ptr;
+
          begin
             Change_Dir (Exec_Dir);
 
             Mains.Reset;
 
             for N_File in 1 .. Mains.Number_Of_Mains loop
+               Mains.Next_Main (Main_File, Main_Index, Main_Location);
+
                declare
-                  Display_Main : constant String := Mains.Next_Main;
-                  Main         : String := Display_Main;
+                  --  Main already has a canonical casing
+                  Main : constant String := Get_Name_String (Main_File);
                begin
-                  Osint.Canonical_Case_File_Name (Main);
                   Main_Source_File := Create_Name (Main);
                end;
-
-               Main_Index := Mains.Get_Index;
 
                Iter := For_Each_Source (Project_Tree);
 
@@ -1040,7 +1040,7 @@ package body Cleangpr is
       end if;
 
       if Load_Standard_Base then
-         Parse_Knowledge_Base (Project_Tree.Shared);
+         Parse_Knowledge_Base (Project_Tree);
       end if;
 
       --  If no project file was specified, look first for a default
@@ -1114,7 +1114,7 @@ package body Cleangpr is
          --  the same message being displayed twice.
 
          Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             """" & Project_File_Name.all & """ processing failed",
             Flush_Messages => User_Project_Node /= Empty_Node);
       end if;
@@ -1151,7 +1151,7 @@ package body Cleangpr is
          New_Line;
       end if;
 
-      Gpr_Util.Get_Mains (Project_Tree);
+      Mains.Fill_From_Project (Main_Project, Project_Tree);
 
       if Verbose_Mode then
          New_Line;
@@ -1246,7 +1246,7 @@ package body Cleangpr is
          begin
             if Db_Directory_Expected then
                Db_Directory_Expected := False;
-               Parse_Knowledge_Base (Project_Tree.Shared, Arg);
+               Parse_Knowledge_Base (Project_Tree, Arg);
 
             elsif Arg'Length /= 0 then
                if Arg (1) = '-' then
@@ -1273,7 +1273,7 @@ package body Cleangpr is
                                        .. Arg'Last))
                            then
                               Fail_Program
-                                (Project_Tree.Shared,
+                                (Project_Tree,
                                  "several configuration switches cannot " &
                                  "be specified");
 
@@ -1300,7 +1300,7 @@ package body Cleangpr is
                                        .. Arg'Last))
                            then
                               Fail_Program
-                                (Project_Tree.Shared,
+                                (Project_Tree,
                                  "several configuration switches cannot " &
                                  "be specified");
 
@@ -1325,7 +1325,7 @@ package body Cleangpr is
                                      .. Arg'Last)
                               then
                                  Fail_Program
-                                   (Project_Tree.Shared,
+                                   (Project_Tree,
                                     "several target switches " &
                                     "cannot be specified");
                               end if;

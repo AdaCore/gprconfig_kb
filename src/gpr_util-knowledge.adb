@@ -48,7 +48,7 @@ package body Knowledge is
    --------------------------
 
    procedure Parse_Knowledge_Base
-     (Shared    : Shared_Project_Tree_Data_Access;
+     (Project_Tree : Project_Tree_Ref;
       Directory : String := "")
    is
 
@@ -74,7 +74,7 @@ package body Knowledge is
    exception
       when Invalid_Knowledge_Base =>
          Fail_Program
-           (Shared, "could not parse the XML files in " & Dir);
+           (Project_Tree, "could not parse the XML files in " & Dir);
    end Parse_Knowledge_Base;
 
 end Knowledge;

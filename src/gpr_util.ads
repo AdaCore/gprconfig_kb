@@ -166,39 +166,12 @@ package Gpr_Util is
    --  There_Are_Binder_Drivers accordingly.
 
    function Get_Compiler_Driver_Path
-     (Shared       : Shared_Project_Tree_Data_Access;
+     (Project_Tree : Project_Tree_Ref;
       Lang         : Language_Ptr) return String_Access;
    --  Get, from the config, the path of the compiler driver. This is first
    --  looked for on the PATH if needed.
    --  Returns "null" if no compiler driver was specified for the language, and
    --  exit with an error if one was specified but not found.
-
-   procedure Fail_Program
-     (Shared         : Shared_Project_Tree_Data_Access;
-      S              : String;
-      Flush_Messages : Boolean := True);
-   --  Terminate program with a message and a fatal status code
-
-   procedure Finish_Program
-     (Shared       : Shared_Project_Tree_Data_Access;
-      Fatal        : Boolean;
-      S            : String := "");
-   --  Terminate program, with or without a message, setting the status code
-   --  according to Fatal.
-
-   procedure Get_Mains (Project_Tree : Project_Tree_Ref);
-   --  Get the mains. If no main is defined on the command line, take those
-   --  in attribute Main of the main project. If there are mains, check that
-   --  they are not truncated (no body suffix) and if they are put the complete
-   --  file names in the table. Fail if a main specified in attribute Main is
-   --  not a source of the main project.
-
-   procedure Initialize_Source_Record (Source : Source_Id);
-   --  Get information either about the source file, the object and
-   --  dependency file. This includes timestamps.
-
-   function Is_Subunit (Source : Source_Id) return Boolean;
-   --  Return True if source is a subunit
 
    procedure Look_For_Default_Project;
    --  Check if default.gpr exists in the current directory. If it does, use
@@ -220,7 +193,7 @@ package Gpr_Util is
       --  The knowledge base must have been parsed first.
 
       procedure Parse_Knowledge_Base
-        (Shared    : Shared_Project_Tree_Data_Access;
+        (Project_Tree : Project_Tree_Ref;
          Directory : String := "");
 
    end Knowledge;

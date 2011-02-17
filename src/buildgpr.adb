@@ -775,9 +775,6 @@ package body Buildgpr is
    procedure Build_Library (For_Project : Project_Id);
    --  Build, if necessary, the library of a library project
 
-   function Canonical_Cased_File_Name (Name : String) return String;
-   --  Returns its parameter in canonical case
-
    procedure Change_To_Object_Directory (Project : Project_Id);
    --  Change to the object directory of project Project, if this is not
    --  already the current working directory.
@@ -861,20 +858,6 @@ package body Buildgpr is
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
    --  arguments.
-
-   procedure Insert_Project_Sources
-     (The_Project  : Project_Id;
-      All_Projects : Boolean;
-      Unit_Based   : Boolean);
-   --  Insert the sources from The_Project and, if All_Projects is True, from
-   --  all the projects it imports directly or indirectly.
-
-   procedure Insert_Withed_Sources_For
-     (The_ALI               : ALI.ALI_Id;
-      Excluding_Shared_SALs : Boolean := False);
-   --  Insert in the queue those sources withed by The_ALI, if there are not
-   --  already in the queue and Only_Interfaces is False or they are part of
-   --  the interfaces of their project.
 
    function Is_Included_In_Global_Archive
      (Object_Name : File_Name_Type;
@@ -1508,7 +1491,7 @@ package body Buildgpr is
                      exception
                         when others =>
                            Fail_Program
-                             (Project_Tree.Shared,
+                             (Project_Tree,
                               "could not create switches file """ &
                               Get_Name_String (Source.Switches_Path) & '"');
                      end;
@@ -1564,7 +1547,7 @@ package body Buildgpr is
 
                      if Exec_Path = null then
                         Fail_Program
-                          (Project_Tree.Shared,
+                          (Project_Tree,
                            "unable to find dependency builder " &
                            Exec_Name);
                      end if;
@@ -2192,7 +2175,7 @@ package body Buildgpr is
                            end if;
 
                            Fail_Program
-                             (Project_Tree.Shared,
+                             (Project_Tree,
                               "global archive could not be built");
                            return;
                         end if;
@@ -2241,7 +2224,7 @@ package body Buildgpr is
                      end if;
 
                      Fail_Program
-                       (Project_Tree.Shared,
+                       (Project_Tree,
                         "global archive could not be built");
 
                      Has_Been_Built := False;
@@ -2373,19 +2356,19 @@ package body Buildgpr is
 
    begin
       if For_Project.Config.Lib_Support = None then
-         Fail_Program (Project_Tree.Shared,
+         Fail_Program (Project_Tree,
                        "library projects not supported on this platform");
 
       elsif For_Project.Library_Kind /= Static and then
             For_Project.Config.Lib_Support /= Full
       then
          Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             "shared library projects not supported on this platform");
       end if;
 
       if For_Project.Config.Library_Builder = No_Path then
-         Fail_Program (Project_Tree.Shared, "no library builder specified");
+         Fail_Program (Project_Tree, "no library builder specified");
 
       else
          Library_Builder :=
@@ -2394,7 +2377,7 @@ package body Buildgpr is
 
          if Library_Builder = null then
             Fail_Program
-              (Project_Tree.Shared,
+              (Project_Tree,
                "could not locate library builder """ &
                Get_Name_String (For_Project.Config.Library_Builder) & '"');
 
@@ -2649,7 +2632,7 @@ package body Buildgpr is
          exception
             when others =>
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "unable to create library exchange file " &
                   Exchange_File_Name.all);
          end;
@@ -2764,7 +2747,7 @@ package body Buildgpr is
          begin
             while Lang /= No_Language_Index loop
                Compiler := Get_Compiler_Driver_Path
-                 (Project_Tree.Shared, Lang);
+                 (Project_Tree, Lang);
                if Compiler /= null then
                   Put_Line (Exchange_File, Get_Name_String (Lang.Name));
                   Put_Line (Exchange_File, Compiler.all);
@@ -3359,7 +3342,7 @@ package body Buildgpr is
 
             if not Success then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "could not build library for project " & Project_Name);
             end if;
          end;
@@ -3369,17 +3352,6 @@ package body Buildgpr is
 
       Change_Dir (Current_Dir);
    end Build_Library;
-
-   -------------------------------
-   -- Canonical_Cased_File_Name --
-   -------------------------------
-
-   function Canonical_Cased_File_Name (Name : String) return String is
-      Result : String := Name;
-   begin
-      Canonical_Case_File_Name (Result);
-      return Result;
-   end Canonical_Cased_File_Name;
 
    --------------------------------
    -- Change_To_Object_Directory --
@@ -3412,7 +3384,7 @@ package body Buildgpr is
 
       when Directory_Error =>
          Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             "unable to change to object directory """ &
             Get_Name_String (Project.Object_Directory.Display_Name) &
             """ of project " &
@@ -3433,7 +3405,7 @@ package body Buildgpr is
 
          if List = No_Name_List then
             Fail_Program
-              (Project_Tree.Shared, "no archive builder in configuration");
+              (Project_Tree, "no archive builder in configuration");
 
          else
             Archive_Builder_Name :=
@@ -3445,7 +3417,7 @@ package body Buildgpr is
 
             if Archive_Builder_Path = null then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "unable to locate archive builder """ &
                   Archive_Builder_Name.all & '"');
             end if;
@@ -3502,38 +3474,39 @@ package body Buildgpr is
 
    procedure Check_Mains is
       Source       : Source_Id;
-      Nmb          : Natural := 0;
+      Main_Id      : File_Name_Type;
+      Main_Index   : Int;
+      Main_Loc     : Source_Ptr;
 
    begin
       Mains.Reset;
 
       loop
+         Mains.Next_Main
+           (File     => Main_Id,
+            Index    => Main_Index,
+            Location => Main_Loc);
+         exit when Main_Id = No_File;
+
          declare
-            Display_Main : constant String := Mains.Next_Main;
-            Main         : String := Display_Main;
-            Main_Index   : constant Int := Mains.Get_Index;
-            Main_Id      : File_Name_Type;
-            Base_Main_Id : File_Name_Type;
+            --  Main already has the canonical casing
+            Main         : constant String := Get_Name_String (Main_Id);
+            Name_2       : constant String :=
+                               Normalize_Pathname (Get_Name_String (Main_Id));
+            Base_Main_Id : File_Name_Type := Main_Id;
             Iter         : Source_Iterator;
+            Nmb          : Natural := 0;
 
          begin
-            exit when Display_Main'Length = 0;
-
-            Canonical_Case_File_Name (Main);
-
-            Main_Id := Create_Name (Main);
-            Base_Main_Id := Main_Id;
-
             if Base_Name (Main) /= Main then
                if Is_Absolute_Path (Main) then
                   Base_Main_Id := Create_Name (Base_Name (Main));
 
                else
                   Fail_Program
-                    (Project_Tree.Shared,
+                    (Project_Tree,
                      "mains cannot include directory information (""" &
-                     Display_Main &
-                     """)");
+                     Main & """)");
                end if;
             end if;
 
@@ -3544,32 +3517,22 @@ package body Buildgpr is
                Source := Prj.Element (Iter);
                exit when Source = No_Source;
 
-               if Source.File = Base_Main_Id and then
-                  Main_Index = Source.Index
+               if Source.File = Base_Main_Id
+                 and then Main_Index = Source.Index
+                 and then
+                   (Main_Id = Base_Main_Id
+                    or else Name_2 =
+                      Normalize_Pathname (Get_Name_String (Source.Path.Name)))
                then
-                  declare
-                     Name_1 : constant String :=
-                                Normalize_Pathname
-                                  (Get_Name_String (Source.Path.Name));
-                     Name_2 : constant String :=
-                                Normalize_Pathname
-                                  (Get_Name_String (Main_Id));
+                  Main_Sources.Set ((Base_Main_Id, Main_Index), Source);
 
-                  begin
+                  if Source.Project = Main_Project then
+                     Nmb := 1;
+                     exit;
 
-                     if Main_Id = Base_Main_Id or else Name_1 = Name_2 then
-                        Main_Sources.Set
-                          ((Base_Main_Id, Main_Index), Source);
-
-                        if Source.Project = Main_Project then
-                           Nmb := 1;
-                           exit;
-
-                        else
-                           Nmb := Nmb + 1;
-                        end if;
-                     end if;
-                  end;
+                  else
+                     Nmb := Nmb + 1;
+                  end if;
                end if;
 
                Next (Iter);
@@ -3577,14 +3540,13 @@ package body Buildgpr is
 
             if Nmb = 0 then
                Fail_Program
-                 (Project_Tree.Shared,
-                  """" & Display_Main & """ is not a source of any project");
+                 (Project_Tree,
+                  """" & Main & """ is not a source of any project");
 
             elsif Nmb > 1 then
                Fail_Program
-                 (Project_Tree.Shared,
-                  """" &
-                  Display_Main &
+                 (Project_Tree,
+                  """" & Main &
                   """ is a source of several projects, but not of " &
                   "the main project");
             end if;
@@ -3594,11 +3556,15 @@ package body Buildgpr is
       Mains.Reset;
 
       loop
+         Mains.Next_Main
+           (File     => Main_Id,
+            Index    => Main_Index,
+            Location => Main_Loc);
+         exit when Main_Id = No_File;
+
          declare
-            Display_Main : constant String := Mains.Next_Main;
-            Main         : String := Display_Main;
-            Main_Index   : constant Int := Mains.Get_Index;
-            Main_Id      : File_Name_Type;
+            Main         : constant String := Get_Name_String (Main_Id);
+            Base_Main_Id : File_Name_Type;
             Source       : Source_Id;
 
             Root_Arr     : Array_Element_Id;
@@ -3615,10 +3581,7 @@ package body Buildgpr is
             Root_Source  : Source_Id;
             Iter         : Source_Iterator;
          begin
-            exit when Display_Main'Length = 0;
-
-            Canonical_Case_File_Name (Main);
-            Main_Id := Create_Name (Base_Name (Main));
+            Base_Main_Id := Create_Name (Base_Name (Main));
             Source := Main_Sources.Get ((Main_Id, Main_Index));
 
             if Source /= No_Source then
@@ -3639,8 +3602,8 @@ package body Buildgpr is
 
                if Closure_Needed then
                   if Current_Verbosity = High then
-                     Write_Str ("Looking for roots for ");
-                     Write_Line (Display_Main);
+                     Debug_Output
+                       ("Looking for roots for", Name_Id (Main_Id));
                   end if;
 
                   Root_Arr :=
@@ -3650,7 +3613,7 @@ package body Buildgpr is
                        Shared    => Project_Tree.Shared);
                   Roots :=
                     Prj.Util.Value_Of
-                      (Index     => Name_Id (Main_Id),
+                      (Index     => Name_Id (Base_Main_Id),
                        Src_Index => 0,
                        In_Array  => Root_Arr,
                        Shared    => Project_Tree.Shared);
@@ -3838,7 +3801,7 @@ package body Buildgpr is
 
                      Root_List :=
                        new Root_Array'(Roots_Buffer (1 .. Nmb_Root));
-                     Root_Sources.Set (Main_Id, Root_List);
+                     Root_Sources.Set (Base_Main_Id, Root_List);
                   end if;
                end if;
             end if;
@@ -3846,7 +3809,7 @@ package body Buildgpr is
       end loop;
 
       if Err_Vars.Total_Errors_Detected /= 0 then
-         Fail_Program (Project_Tree.Shared, "cannot continue");
+         Fail_Program (Project_Tree, "cannot continue");
       end if;
    end Check_Mains;
 
@@ -4080,7 +4043,7 @@ package body Buildgpr is
          end if;
 
          if Local_ALI /= ALI.No_ALI_Id then
-            Insert_Withed_Sources_For (Local_ALI);
+            Queue.Insert_Withed_Sources_For (Local_ALI, Project_Tree);
 
             ALI.Initialize_ALI;
             ALI.Util.Initialize_ALI_Source;
@@ -5267,7 +5230,7 @@ package body Buildgpr is
 
          if FD = Invalid_FD then
             Fail_Program
-              (Project_Tree.Shared, "could not create temporary path file");
+              (Project_Tree, "could not create temporary path file");
          end if;
 
          for Index in 1 .. Directories.Last loop
@@ -5276,7 +5239,7 @@ package body Buildgpr is
             Name_Buffer (Name_Len) := ASCII.LF;
             if Write (FD, Name_Buffer (1)'Address, Name_Len) /= Name_Len then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "disk full when writing include path file");
             end if;
          end loop;
@@ -5285,7 +5248,7 @@ package body Buildgpr is
 
          if not Status then
             Fail_Program
-              (Project_Tree.Shared,
+              (Project_Tree,
                "disk full when writing include path file");
          end if;
       end Prepare_Include_Path_File;
@@ -5494,7 +5457,7 @@ package body Buildgpr is
                  (Source         => Id,
                   Source_Project => Source_Project,
                   Compiler_Path  => Get_Compiler_Driver_Path
-                    (Project_Tree.Shared, Id.Language).all,
+                    (Project_Tree, Id.Language).all,
                   Mapping_File_Path => Mapping_File,
                   Last_Switches_For_File => Last_Switches_For_File);
 
@@ -5910,7 +5873,7 @@ package body Buildgpr is
 
             if File = Invalid_FD then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "unable to create temporary configuration pragmas file");
 
             else
@@ -5953,7 +5916,7 @@ package body Buildgpr is
             exception
                when others =>
                   Fail_Program
-                    (Project_Tree.Shared,
+                    (Project_Tree,
                      "unable to open config file " &
                      Get_Name_String (Config_File_Path));
             end;
@@ -5989,7 +5952,7 @@ package body Buildgpr is
          Last := Write (File, S0'Address, S0'Length);
 
          if Last /= S'Length + 1 then
-            Fail_Program (Project_Tree.Shared, "Disk full");
+            Fail_Program (Project_Tree, "Disk full");
          end if;
 
          if Current_Verbosity = High then
@@ -6443,7 +6406,7 @@ package body Buildgpr is
 
    procedure Get_Mains is
    begin
-      Gpr_Util.Get_Mains (Project_Tree);
+      Mains.Fill_From_Project (Main_Project, Project_Tree);
 
       if Mains.Number_Of_Mains = 0 then
          --  Do not link, as there is no main.
@@ -6458,7 +6421,7 @@ package body Buildgpr is
 
       elsif Output_File_Name /= null and then Mains.Number_Of_Mains /= 1 then
          Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             "cannot specify -o when there are several mains");
       end if;
    end Get_Mains;
@@ -6662,7 +6625,7 @@ package body Buildgpr is
          --  the same message being displayed twice.
 
          Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             """" & Project_File_Name.all & """ processing failed",
             Flush_Messages => User_Project_Node /= Empty_Node);
       end if;
@@ -6676,7 +6639,7 @@ package body Buildgpr is
       if Total_Errors_Detected > 0 then
          Prj.Err.Finalize;
          Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             "problems while getting the configuration",
             Flush_Messages => False);
       end if;
@@ -6713,8 +6676,9 @@ package body Buildgpr is
             --  all the sources of all projects (-U).
 
          else
-            Insert_Project_Sources
+            Queue.Insert_Project_Sources
               (Main_Project,
+               Project_Tree => Project_Tree,
                All_Projects => Unique_Compile_All_Projects or Recursive,
                Unit_Based   => True);
          end if;
@@ -6732,7 +6696,7 @@ package body Buildgpr is
 
             if Main_Project.Library then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "cannot specify a main program " &
                   "on the command line for a library project file");
 
@@ -6746,12 +6710,14 @@ package body Buildgpr is
             --  sources and all sources in library projects.
 
             if Closure_Needed then
-               Insert_Project_Sources
-                 (Main_Project, All_Projects => True, Unit_Based => False);
+               Queue.Insert_Project_Sources
+                 (Main_Project, Project_Tree,
+                  All_Projects => True, Unit_Based => False);
 
             else
-               Insert_Project_Sources
-                 (Main_Project, All_Projects => True, Unit_Based => True);
+               Queue.Insert_Project_Sources
+                 (Main_Project, Project_Tree,
+                  All_Projects => True, Unit_Based => True);
             end if;
 
             --  If no sources to compile, then there is nothing to do
@@ -6764,7 +6730,7 @@ package body Buildgpr is
                   Write_Line (": no sources to compile");
                end if;
 
-               Finish_Program (Project_Tree.Shared, Fatal => False);
+               Finish_Program (Project_Tree, E_Success);
             end if;
          end if;
       end if;
@@ -6881,7 +6847,7 @@ package body Buildgpr is
                   Project_Tree.Shared.Arrays.Table
                     (Default_Switches_Array).Location);
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "*** illegal combination of Builder attributes");
 
             elsif Name = No_Name then
@@ -6995,7 +6961,7 @@ package body Buildgpr is
                            "it to Global_Compilation_Switches.",
                            Element.Location);
                         Fail_Program
-                          (Project_Tree.Shared,
+                          (Project_Tree,
                            "*** illegal switch """ &
                            Get_Name_String (Element.Value) & '"');
                      end if;
@@ -7138,7 +7104,7 @@ package body Buildgpr is
             end if;
 
             Fail_Program
-              (Project_Tree.Shared, "*** compilation phase failed");
+              (Project_Tree, "*** compilation phase failed");
          end if;
       end if;
 
@@ -7148,7 +7114,7 @@ package body Buildgpr is
          Post_Compilation_Phase;
 
          if Total_Errors_Detected > 0 then
-            Fail_Program (Project_Tree.Shared, "*** bind failed");
+            Fail_Program (Project_Tree, "*** bind failed");
          end if;
       end if;
 
@@ -7156,7 +7122,7 @@ package body Buildgpr is
          Linking_Phase;
 
          if Total_Errors_Detected > 0 then
-            Fail_Program (Project_Tree.Shared, "*** link failed");
+            Fail_Program (Project_Tree, "*** link failed");
          end if;
       end if;
 
@@ -7166,7 +7132,7 @@ package body Buildgpr is
 
       Namet.Finalize;
 
-      Finish_Program (Project_Tree.Shared, Fatal => False);
+      Finish_Program (Project_Tree, E_Success);
    end Gprbuild;
 
    ----------
@@ -7241,22 +7207,7 @@ package body Buildgpr is
          end loop Scan_Args;
       end;
 
-      if Main_Index /= 0 then
-         if Mains.Number_Of_Mains = 0 then
-            Fail_Program
-              (Project_Tree.Shared,
-               "cannot specify a multi-unit index but no main " &
-               "on the command line");
-
-         elsif Mains.Number_Of_Mains > 1 then
-            Fail_Program
-              (Project_Tree.Shared,
-               "cannot specify several mains with a multi-unit index");
-
-         else
-            Mains.Set_Index (Main_Index);
-         end if;
-      end if;
+      Mains.Set_Multi_Unit_Index (Project_Tree, Main_Index);
 
       Current_Processor := None;
 
@@ -7312,23 +7263,23 @@ package body Buildgpr is
 
       if Project_File_Name_Expected then
          Fail_Program
-           (Project_Tree.Shared, "project file name missing after -P");
+           (Project_Tree, "project file name missing after -P");
 
          --  Or if it ended with "-o"
 
       elsif Output_File_Name_Expected then
          Fail_Program
-           (Project_Tree.Shared, "output file name missing after -o");
+           (Project_Tree, "output file name missing after -o");
 
          --  Or if it ended with "-aP"
 
       elsif Search_Project_Dir_Expected then
          Fail_Program
-           (Project_Tree.Shared, "directory name missing after -aP");
+           (Project_Tree, "directory name missing after -aP");
 
       elsif Db_Directory_Expected then
          Fail_Program
-           (Project_Tree.Shared, "directory name missing after --db");
+           (Project_Tree, "directory name missing after --db");
       end if;
 
       if Load_Standard_Base then
@@ -7336,7 +7287,7 @@ package body Buildgpr is
          --  normalize the target names. Unfortunately, if we have to spawn
          --  gprconfig, it will also have to parse that knowledge base on
          --  its own.
-         Parse_Knowledge_Base (Project_Tree.Shared);
+         Parse_Knowledge_Base (Project_Tree);
       end if;
 
       --  If no project file was specified, look first for a default
@@ -7349,144 +7300,10 @@ package body Buildgpr is
          Copyright;
          Usage;
          Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             "no project file specified and no default project file");
       end if;
    end Initialize;
-
-   -------------------------------
-   -- Insert_Withed_Sources_For --
-   -------------------------------
-
-   procedure Insert_Withed_Sources_For
-     (The_ALI               : ALI.ALI_Id;
-      Excluding_Shared_SALs : Boolean := False)
-   is
-      Sfile     : File_Name_Type;
-      Afile     : File_Name_Type;
-      Src_Id    : Source_Id;
-
-   begin
-      --  Insert in the queue the unmarked source files (i.e. those which have
-      --  never been inserted in the queue and hence never considered).
-
-      for J in ALI.ALIs.Table (The_ALI).First_Unit ..
-        ALI.ALIs.Table (The_ALI).Last_Unit
-      loop
-         for K in ALI.Units.Table (J).First_With ..
-           ALI.Units.Table (J).Last_With
-         loop
-            Sfile := ALI.Withs.Table (K).Sfile;
-
-            --  Skip generics
-
-            if Sfile /= No_File then
-               Afile := ALI.Withs.Table (K).Afile;
-               Src_Id := Source_Files_Htable.Get
-                          (Project_Tree.Source_Files_HT, Sfile);
-
-               while Src_Id /= No_Source loop
-                  Initialize_Source_Record (Src_Id);
-
-                  if Is_Compilable (Src_Id)
-                    and then Src_Id.Dep_Name = Afile
-                  then
-                     case Src_Id.Kind is
-                        when Spec =>
-                           declare
-                              Bdy : constant Source_Id := Other_Part (Src_Id);
-                           begin
-                              if Bdy /= No_Source and then not
-                                Bdy.Locally_Removed
-                              then
-                                 Src_Id := Other_Part (Src_Id);
-                              end if;
-                           end;
-
-                        when Impl =>
-                           if Is_Subunit (Src_Id) then
-                              Src_Id := No_Source;
-                           end if;
-
-                        when Sep =>
-                           Src_Id := No_Source;
-                     end case;
-
-                     exit;
-                  end if;
-
-                  Src_Id := Src_Id.Next_With_File_Name;
-               end loop;
-
-               --  If Excluding_Shared_SALs is True, do not insert in the
-               --  queue the sources of a shared Stand-Alone Library.
-
-               if Src_Id /= No_Source and then
-                 (not Excluding_Shared_SALs or else
-                    not Src_Id.Project.Standalone_Library or else
-                      Src_Id.Project.Library_Kind = Static)
-               then
-                  Queue.Insert
-                    (Source => (Format => Format_Gprbuild,
-                                Id     => Src_Id));
-               end if;
-            end if;
-         end loop;
-      end loop;
-   end Insert_Withed_Sources_For;
-
-   ----------------------------
-   -- Insert_Project_Sources --
-   ----------------------------
-
-   procedure Insert_Project_Sources
-     (The_Project  : Project_Id;
-      All_Projects : Boolean;
-      Unit_Based   : Boolean)
-   is
-      Iter   : Source_Iterator;
-      Source : Source_Id;
-   begin
-      Iter := For_Each_Source (Project_Tree);
-      loop
-         Source := Prj.Element (Iter);
-         exit when Source = No_Source;
-
-         if Is_Compilable (Source)
-           and then
-             (All_Projects
-              or else Is_Extending (The_Project, Source.Project))
-           and then not Source.Locally_Removed
-           and then Source.Replaced_By = No_Source
-           and then
-             (not Source.Project.Externally_Built or else
-                  (Is_Extending (The_Project, Source.Project) and then
-                     not The_Project.Externally_Built))
-           and then Source.Kind /= Sep
-           and then Source.Path /= No_Path_Information
-         then
-            if Source.Kind = Impl
-              or else (Source.Unit /= No_Unit_Index
-                       and then Source.Kind = Spec
-                       and then (Other_Part (Source) = No_Source
-                                 or else
-                                   Other_Part (Source).Locally_Removed))
-            then
-               if (Unit_Based
-                   or else Source.Unit = No_Unit_Index
-                   or else Source.Project.Library)
-                 and then not Is_Subunit (Source)
-               then
-                  Queue.Insert
-                    (Source => (Format => Format_Gprbuild,
-                                Id     => Source));
-               end if;
-            end if;
-         end if;
-
-         Next (Iter);
-      end loop;
-   end Insert_Project_Sources;
 
    -----------------------------------
    -- Is_Included_In_Global_Archive --
@@ -7598,6 +7415,10 @@ package body Buildgpr is
 
       Disregard          : Boolean;
 
+      Main_File  : File_Name_Type;
+      Main_Index : Int;
+      Main_Loc   : Source_Ptr;
+
    begin
       if Mains.Number_Of_Mains = 0 then
          return;
@@ -7606,10 +7427,13 @@ package body Buildgpr is
       Mains.Reset;
 
       loop
+         Mains.Next_Main (Main_File, Main_Index, Main_Loc);
+         exit when Main_File = No_File;
+
          declare
-            Display_Main   : constant String := Mains.Next_Main;
-            Main           : String := Display_Main;
-            Main_Index     : constant Int := Mains.Get_Index;
+            --  Main already has the right canonical casing
+            Main           : constant String := Get_Name_String (Main_File);
+
             Main_Id        : File_Name_Type;
             Main_Source    : Source_Id;
 
@@ -7629,16 +7453,12 @@ package body Buildgpr is
             Response_2         : Path_Name_Type := No_Path;
 
          begin
-            exit when Display_Main'Length = 0;
-
             --  Make sure that the table Rpaths is emptied after each main, so
             --  that the same rpaths are not duplicated.
 
             Rpaths.Set_Last (0);
 
             Linker_Needs_To_Be_Called := Force_Compilations;
-
-            Canonical_Case_File_Name (Main);
 
             Main_Id := Create_Name (Base_Name (Main));
             Main_Source := Main_Sources.Get ((Main_Id, Main_Index));
@@ -7715,13 +7535,13 @@ package body Buildgpr is
 
                if Linker_Path = null then
                   Fail_Program
-                    (Project_Tree.Shared,
+                    (Project_Tree,
                      "unable to find linker " & Linker_Name.all);
                end if;
 
             else
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "no linker specified and " &
                   "no default linker in the configuration");
             end if;
@@ -7753,7 +7573,7 @@ package body Buildgpr is
 
             if Main_Object_TS = Empty_Time_Stamp then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "main object for " &
                   Get_Name_String (Main_Source.File) &
                   " does not exist");
@@ -7963,7 +7783,7 @@ package body Buildgpr is
                            end if;
 
                            Fail_Program
-                             (Project_Tree.Shared,
+                             (Project_Tree,
                               "no binder generated object file");
 
                         elsif (not Linker_Needs_To_Be_Called)
@@ -7981,7 +7801,7 @@ package body Buildgpr is
 
                      else
                         Fail_Program
-                          (Project_Tree.Shared,
+                          (Project_Tree,
                            "binder exchange file " &
                            Exchange_File_Name &
                            " does not exist");
@@ -8006,7 +7826,7 @@ package body Buildgpr is
                   end if;
 
                   Fail_Program
-                    (Project_Tree.Shared,
+                    (Project_Tree,
                      "global archive for project file " &
                      Get_Name_String (Main_Proj.Name) &
                      " does not exist");
@@ -8766,7 +8586,7 @@ package body Buildgpr is
 
                if not Success then
                   Fail_Program
-                    (Project_Tree.Shared, "link of " & Main & " failed");
+                    (Project_Tree, "link of " & Main & " failed");
                end if;
             end if;
          end;
@@ -9905,17 +9725,18 @@ package body Buildgpr is
 
       loop
          declare
-            Display_Main   : constant String := Mains.Next_Main;
-
+            Main_File : File_Name_Type;
+            Main_Index : Int;
+            Main_Loc   : Source_Ptr;
          begin
-            exit when Display_Main'Length = 0;
+            Mains.Next_Main (Main_File, Main_Index, Main_Loc);
+            exit when Main_File = No_File;
 
             declare
                Main           : constant String :=
-                                  Canonical_Cased_File_Name (Display_Main);
+                    Get_Name_String (Main_File);
                Main_Id        : constant File_Name_Type :=
                                   Create_Name (Base_Name (Main));
-               Main_Index     : constant Int := Mains.Get_Index;
                Main_Source    : constant Source_Id :=
                                   Main_Sources.Get ((Main_Id, Main_Index));
                Bind_Exchange  : String_Access;
@@ -9965,8 +9786,7 @@ package body Buildgpr is
                   then
                      Write_Line
                        ("   Checking binder generated files for " &
-                        Display_Main &
-                        "...");
+                        Main & "...");
                   end if;
 
                   Bind_Exchange :=
@@ -10431,8 +10251,9 @@ package body Buildgpr is
                                          Read_Lines    => "W");
                                     Free (Text);
 
-                                    Insert_Withed_Sources_For
+                                    Queue.Insert_Withed_Sources_For
                                       (The_ALI,
+                                       Project_Tree,
                                        Excluding_Shared_SALs => True);
                                  end if;
                               end if;
@@ -10586,7 +10407,7 @@ package body Buildgpr is
                         Put_Line
                           (Exchange_File,
                            Get_Compiler_Driver_Path
-                             (Project_Tree.Shared, B_Data.Language).all);
+                             (Project_Tree, B_Data.Language).all);
 
                         --  Leading required switches, if any
 
@@ -10948,7 +10769,7 @@ package body Buildgpr is
 
                                     if FD = Invalid_FD then
                                        Fail_Program
-                                         (Project_Tree.Shared,
+                                         (Project_Tree,
                                           "could not create " &
                                           "temporary path file");
                                     end if;
@@ -10977,7 +10798,7 @@ package body Buildgpr is
 
                                        if Len /= Name_Len then
                                           Fail_Program
-                                            (Project_Tree.Shared, "disk full");
+                                            (Project_Tree, "disk full");
                                        end if;
                                     end loop;
 
@@ -10985,7 +10806,7 @@ package body Buildgpr is
 
                                     if not Status then
                                        Fail_Program
-                                         (Project_Tree.Shared, "disk full");
+                                         (Project_Tree, "disk full");
                                     end if;
                                  end;
                               end if;
@@ -11036,7 +10857,7 @@ package body Buildgpr is
 
                         if not Success then
                            Fail_Program
-                             (Project_Tree.Shared, "unable to bind " & Main);
+                             (Project_Tree, "unable to bind " & Main);
                         end if;
                      end if;
                   end if;
@@ -11387,7 +11208,7 @@ package body Buildgpr is
       if Project_File_Name_Expected then
          if Arg (1) = '-' then
             Fail_Program
-              (Project_Tree.Shared, "project file name missing after -P");
+              (Project_Tree, "project file name missing after -P");
          else
             Project_File_Name_Expected := False;
             Project_File_Name := new String'(Arg);
@@ -11399,7 +11220,7 @@ package body Buildgpr is
       elsif Output_File_Name_Expected then
          if Arg (1) = '-' then
             Fail_Program
-              (Project_Tree.Shared, "output file name missing after -o");
+              (Project_Tree, "output file name missing after -o");
          else
             Output_File_Name_Expected := False;
             Output_File_Name := new String'(Arg);
@@ -11408,7 +11229,7 @@ package body Buildgpr is
       elsif Search_Project_Dir_Expected then
          if Arg (1) = '-' then
             Fail_Program
-              (Project_Tree.Shared, "directory name missing after -aP");
+              (Project_Tree, "directory name missing after -aP");
          else
             Search_Project_Dir_Expected := False;
             Prj.Env.Add_Directories (Root_Environment.Project_Path, Arg);
@@ -11416,7 +11237,7 @@ package body Buildgpr is
 
       elsif Db_Directory_Expected then
             Db_Directory_Expected := False;
-            Parse_Knowledge_Base (Project_Tree.Shared, Arg);
+            Parse_Knowledge_Base (Project_Tree, Arg);
 
          --  Set the processor/language for the following switches
 
@@ -11522,7 +11343,7 @@ package body Buildgpr is
             and then Arg = "-o"
       then
             Fail_Program
-           (Project_Tree.Shared,
+           (Project_Tree,
             "switch -o not allowed within a -largs. Use -o directly.");
 
          --  If current processor is not gprbuild directly, store the option
@@ -11575,7 +11396,7 @@ package body Buildgpr is
                  Arg (Config_Project_Option'Length + 1 .. Arg'Last))
             then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "several different configuration switches " &
                   "cannot be specified");
 
@@ -11600,7 +11421,7 @@ package body Buildgpr is
                   Arg (Autoconf_Project_Option'Length + 1 .. Arg'Last))
             then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "several different configuration switches " &
                   "cannot be specified");
 
@@ -11622,7 +11443,7 @@ package body Buildgpr is
                  Arg (Target_Project_Option'Length + 1 .. Arg'Last)
                then
                   Fail_Program
-                    (Project_Tree.Shared,
+                    (Project_Tree,
                      "several different target switches cannot be specified");
                end if;
 
@@ -11643,7 +11464,7 @@ package body Buildgpr is
                if Command_Line then
                   if Old /= "" and then Old /= RTS then
                      Fail_Program
-                       (Project_Tree.Shared,
+                       (Project_Tree,
                         "several different run-times cannot be specified");
                   end if;
 
@@ -11686,7 +11507,7 @@ package body Buildgpr is
                end loop;
 
                if Language_Name = No_Name then
-                  Fail_Program (Project_Tree.Shared, "illegal switch: " & Arg);
+                  Fail_Program (Project_Tree, "illegal switch: " & Arg);
 
                else
                   Set_Runtime_For (Language_Name, Arg (RTS_Start .. Arg'Last));
@@ -11783,7 +11604,7 @@ package body Buildgpr is
 
             else
                Fail_Program
-                 (Project_Tree.Shared, "illegal debug switch " & Arg);
+                 (Project_Tree, "illegal debug switch " & Arg);
             end if;
 
          elsif Command_Line and then
@@ -11795,7 +11616,7 @@ package body Buildgpr is
 
             exception
                when Constraint_Error =>
-                  Fail_Program (Project_Tree.Shared, "invalid switch " & Arg);
+                  Fail_Program (Project_Tree, "invalid switch " & Arg);
             end;
 
          elsif Command_Line and then Arg = "-eL" then
@@ -11874,7 +11695,7 @@ package body Buildgpr is
          elsif Command_Line and then Arg = "-o" then
             if Output_File_Name /= null then
                Fail_Program
-                 (Project_Tree.Shared, "cannot specify several -o switches");
+                 (Project_Tree, "cannot specify several -o switches");
 
             else
                Output_File_Name_Expected := True;
@@ -11888,7 +11709,7 @@ package body Buildgpr is
          then
             if Project_File_Name /= null then
                Fail_Program
-                 (Project_Tree.Shared,
+                 (Project_Tree,
                   "cannot have several project files specified");
 
             elsif Arg'Length = 2 then
@@ -12102,7 +11923,7 @@ package body Buildgpr is
             then
                if Project_File_Name /= null then
                   Fail_Program
-                    (Project_Tree.Shared,
+                    (Project_Tree,
                      "cannot have several project files specified");
 
                else
@@ -12123,9 +11944,9 @@ package body Buildgpr is
 
       if not Processed then
          if Command_Line then
-            Finish_Program
-              (Project_Tree.Shared,
-               True, "illegal option """ & Arg & """ on the command line");
+            Fail_Program
+              (Project_Tree,
+               "illegal option """ & Arg & """ on the command line");
 
          else
             --  If we have a switch and there is a Builder Switches language

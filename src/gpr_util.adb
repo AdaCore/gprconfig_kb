@@ -26,17 +26,11 @@
 
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Interfaces.C.Strings;
-
-with Debug;    use Debug;
-with Err_Vars; use Err_Vars;
-with Errutil;
 with Makeutl;  use Makeutl;
 with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
-with Sinput.P;
 with Tempdir;
-with Types;    use Types;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body Gpr_Util is
@@ -209,31 +203,12 @@ package body Gpr_Util is
       end if;
    end Create_Response_File;
 
-   ------------------
-   -- Fail_Program --
-   ------------------
-
-   procedure Fail_Program
-     (Shared         : Shared_Project_Tree_Data_Access;
-      S              : String;
-      Flush_Messages : Boolean := True)
-   is
-   begin
-      if Flush_Messages then
-         if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
-            Errutil.Finalize;
-         end if;
-      end if;
-
-      Finish_Program (Shared, Fatal => True, S => S);
-   end Fail_Program;
-
    ------------------------------
    -- Get_Compiler_Driver_Path --
    ------------------------------
 
    function Get_Compiler_Driver_Path
-     (Shared       : Shared_Project_Tree_Data_Access;
+     (Project_Tree : Project_Tree_Ref;
       Lang         : Language_Ptr) return String_Access is
    begin
       if Lang.Config.Compiler_Driver_Path = null then
@@ -251,7 +226,7 @@ package body Gpr_Util is
 
             if Lang.Config.Compiler_Driver_Path = null then
                Fail_Program
-                 (Shared, "unable to locate """ & Compiler_Name & '"');
+                 (Project_Tree, "unable to locate """ & Compiler_Name & '"');
             end if;
          end;
       end if;
@@ -313,7 +288,7 @@ package body Gpr_Util is
 
                   if Binder_Driver_Path = null then
                      Fail_Program
-                       (Project_Tree.Shared,
+                       (Project_Tree,
                         "unable to find binder driver " &
                         Name_Buffer (1 .. Name_Len));
                   end if;
@@ -330,7 +305,7 @@ package body Gpr_Util is
                        Binding_Languages.Table (B_Index).Binder_Prefix
                      then
                         Fail_Program
-                          (Project_Tree.Shared,
+                          (Project_Tree,
                            "binding prefix cannot be the same for"
                            & " two languages");
                      end if;
@@ -352,373 +327,6 @@ package body Gpr_Util is
          Project := Project.Next;
       end loop;
    end Find_Binding_Languages;
-
-   --------------------
-   -- Finish_Program --
-   --------------------
-
-   procedure Finish_Program
-     (Shared       : Shared_Project_Tree_Data_Access;
-      Fatal        : Boolean;
-      S            : String := "")
-   is
-   begin
-      if not Debug_Flag_N then
-         Delete_All_Temp_Files (Shared);
-      end if;
-
-      if S'Length > 0 then
-         if Fatal then
-            Osint.Fail (S);
-
-         else
-            Write_Str (S);
-         end if;
-      end if;
-
-      if Fatal then
-         Exit_Program (E_Fatal);
-
-      else
-         Exit_Program (E_Success);
-      end if;
-   end Finish_Program;
-
-   ---------------
-   -- Get_Mains --
-   ---------------
-
-   procedure Get_Mains (Project_Tree : Project_Tree_Ref) is
-   begin
-      --  If no mains are specified on the command line, check attribute
-      --  Main in the main project.
-
-      if Mains.Number_Of_Mains = 0 then
-         declare
-            List    : String_List_Id := Main_Project.Mains;
-            Element : String_Element;
-
-         begin
-            --  The attribute Main is an empty list, so compile all the
-            --  sources of the main project.
-
-            if List /= Prj.Nil_String then
-               --  The attribute Main is not an empty list.
-               --  Get the mains in the list
-
-               while List /= Prj.Nil_String loop
-                  Element := Project_Tree.Shared.String_Elements.Table (List);
-
-                  Get_Name_String (Element.Value);
-                  Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
-                  Mains.Add_Main (Name_Buffer (1 .. Name_Len));
-                  Mains.Set_Index (Element.Index);
-                  Mains.Set_Location (Element.Location);
-
-                  List := Element.Next;
-               end loop;
-            end if;
-         end;
-      end if;
-
-      --  If there are mains, check that they are sources of the main project
-
-      if Mains.Number_Of_Mains > 0 then
-         Mains.Reset;
-
-         for J in 1 .. Mains.Number_Of_Mains loop
-            declare
-               Main       : String := Mains.Next_Main;
-               Main_Index : constant Int := Mains.Get_Index;
-               Location   : constant Source_Ptr := Mains.Get_Location;
-               Main_Id    : File_Name_Type;
-               Project    : Project_Id;
-               Source     : Source_Id;
-               Suffix     : File_Name_Type;
-               Iter       : Source_Iterator;
-
-            begin
-               --  First, look for the main as specified
-
-               Name_Len := 0;
-               Add_Str_To_Name_Buffer (Main);
-               Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
-               Main_Id := Name_Find;
-
-               Project := Main_Project;
-               while Project /= No_Project loop
-                  Iter := For_Each_Source (Project_Tree, Project);
-                  while Prj.Element (Iter) /= No_Source
-                    and then
-                     (Prj.Element (Iter).File /= Main_Id or else
-                      Prj.Element (Iter).Index /= Main_Index)
-                  loop
-                     Next (Iter);
-                  end loop;
-
-                  Source := Prj.Element (Iter);
-                  exit when Source /= No_Source;
-
-                  Project := Project.Extends;
-               end loop;
-
-               if Source = No_Source then
-                  --  Now look for the main with a body suffix
-
-                  Canonical_Case_File_Name (Main);
-
-                  Project := Main_Project;
-                  loop
-                     Iter := For_Each_Source (Project_Tree, Project);
-                     loop
-                        Source := Prj.Element (Iter);
-                        exit when Source = No_Source;
-
-                        --  Only consider bodies
-
-                        if Source.Kind = Impl then
-                           Get_Name_String (Source.File);
-
-                           if Name_Len > Main'Length
-                             and then Name_Buffer (1 .. Main'Length) = Main
-                           then
-                              Suffix :=
-                                Source.Language
-                                  .Config.Naming_Data.Body_Suffix;
-
-                              exit when Suffix /= No_File and then
-                              Name_Buffer (Main'Length + 1 .. Name_Len) =
-                                Get_Name_String (Suffix);
-                           end if;
-                        end if;
-
-                        Next (Iter);
-                     end loop;
-
-                     exit when Source /= No_Source;
-
-                     Project := Project.Extends;
-
-                     exit when Project = No_Project;
-                  end loop;
-
-                  if Source /= No_Source then
-                     Mains.Update_Main (Name_Buffer (1 .. Name_Len));
-
-                  elsif Location /= No_Location then
-                     --  If the main is declared in package Builder of the
-                     --  main project, report an error. If the main is on the
-                     --  command line, it may be a main from another project,
-                     --  so do nothing: if the main does not exist in another
-                     --  project, an error will be reported later.
-
-                     Error_Msg_File_1 := Main_Id;
-                     Error_Msg_Name_1 := Main_Project.Name;
-                     Errutil.Error_Msg ("{ is not a source of project %%",
-                                        Location);
-                  end if;
-               end if;
-            end;
-         end loop;
-      end if;
-
-      if Total_Errors_Detected > 0 then
-         Fail_Program (Project_Tree.Shared, "problems with main sources");
-      end if;
-   end Get_Mains;
-
-   ------------------------------
-   -- Initialize_Source_Record --
-   ------------------------------
-
-   procedure Initialize_Source_Record (Source : Source_Id) is
-      procedure Set_Object_Project
-        (Obj_Dir : String; Obj_Proj : Project_Id; Obj_Path : Path_Name_Type;
-         Stamp   : Time_Stamp_Type);
-      --  Update information about object file, switches file,...
-
-      ------------------------
-      -- Set_Object_Project --
-      ------------------------
-
-      procedure Set_Object_Project
-        (Obj_Dir : String; Obj_Proj : Project_Id; Obj_Path : Path_Name_Type;
-         Stamp   : Time_Stamp_Type) is
-      begin
-         Source.Object_Project := Obj_Proj;
-         Source.Object_Path    := Obj_Path;
-         Source.Object_TS      := Stamp;
-
-         if Source.Language.Config.Dependency_Kind /= None then
-            declare
-               Dep_Path : constant String :=
-                 Normalize_Pathname
-                   (Name          => Get_Name_String (Source.Dep_Name),
-                    Resolve_Links => Opt.Follow_Links_For_Files,
-                    Directory     => Obj_Dir);
-            begin
-               Source.Dep_Path := Create_Name (Dep_Path);
-               Source.Dep_TS   := Osint.Unknown_Attributes;
-            end;
-         end if;
-
-         --  Get the path of the switches file, even if Opt.Check_Switches is
-         --  not set, as switch -s may be in the Builder switches that have not
-         --  been scanned yet.
-
-         declare
-            Switches_Path : constant String :=
-              Normalize_Pathname
-                (Name          => Get_Name_String (Source.Switches),
-                 Resolve_Links => Opt.Follow_Links_For_Files,
-                 Directory     => Obj_Dir);
-         begin
-            Source.Switches_Path := Create_Name (Switches_Path);
-
-            if Stamp /= Empty_Time_Stamp then
-               Source.Switches_TS := File_Stamp (Source.Switches_Path);
-            end if;
-         end;
-      end Set_Object_Project;
-
-      Obj_Proj : Project_Id;
-
-   begin
-      --  Nothing to do if source record has already been fully initialized
-
-      if Source.Initialized then
-         return;
-      end if;
-
-      --  Systematically recompute the time stamp
-
-      Source.Source_TS := File_Stamp (Source.Path.Display_Name);
-
-      --  Parse the source file to check whether we have a subunit
-
-      if Source.Language.Config.Kind = Unit_Based
-        and then Source.Kind = Impl
-        and then Is_Subunit (Source)
-      then
-         Source.Kind := Sep;
-      end if;
-
-      if Source.Language.Config.Object_Generated
-        and then Is_Compilable (Source)
-      then
-         --  First, get the correct object file name and dependency file name
-         --  if the source is in a multi-unit file.
-
-         if Source.Index /= 0 then
-            Source.Object :=
-              Object_Name
-                (Source_File_Name   => Source.File,
-                 Source_Index       => Source.Index,
-                 Index_Separator    =>
-                   Source.Language.Config.Multi_Unit_Object_Separator,
-                 Object_File_Suffix =>
-                   Source.Language.Config.Object_File_Suffix);
-
-            Source.Dep_Name :=
-              Dependency_Name
-                (Source.Object, Source.Language.Config.Dependency_Kind);
-         end if;
-
-         --  Find the object file for that source. It could be either in
-         --  the current project or in an extended project (it might actually
-         --  not exist yet in the ultimate extending project, but if not found
-         --  elsewhere that's where we'll expect to find it).
-
-         Obj_Proj := Source.Project;
-         while Obj_Proj /= No_Project loop
-            declare
-               Dir  : constant String := Get_Name_String
-                 (Obj_Proj.Object_Directory.Display_Name);
-
-               Object_Path     : constant String :=
-                                   Normalize_Pathname
-                                     (Name          =>
-                                        Get_Name_String (Source.Object),
-                                      Resolve_Links =>
-                                        Opt.Follow_Links_For_Files,
-                                      Directory     => Dir);
-
-               Obj_Path : constant Path_Name_Type := Create_Name (Object_Path);
-               Stamp : Time_Stamp_Type := Empty_Time_Stamp;
-
-            begin
-               --  For specs, we do not check object files if there is a body.
-               --  This saves a system call. On the other hand, we do need to
-               --  know the object_path, in case the user has passed the .ads
-               --  on the command line to compile the spec only
-
-               if Source.Kind /= Spec
-                 or else Source.Unit = No_Unit_Index
-                 or else Source.Unit.File_Names (Impl) = No_Source
-               then
-                  Stamp := File_Stamp (Obj_Path);
-               end if;
-
-               if Stamp /= Empty_Time_Stamp
-                 or else (Obj_Proj.Extended_By = No_Project
-                          and then Source.Object_Project = No_Project)
-               then
-                  Set_Object_Project (Dir, Obj_Proj, Obj_Path, Stamp);
-               end if;
-
-               Obj_Proj := Obj_Proj.Extended_By;
-            end;
-         end loop;
-
-      elsif Source.Language.Config.Dependency_Kind = Makefile then
-         declare
-            Object_Dir : constant String :=
-                           Get_Name_String
-                             (Source.Project.Object_Directory.Display_Name);
-            Dep_Path   : constant String :=
-                           Normalize_Pathname
-                             (Name        => Get_Name_String (Source.Dep_Name),
-                              Resolve_Links =>
-                                Opt.Follow_Links_For_Files,
-                              Directory     => Object_Dir);
-         begin
-            Source.Dep_Path := Create_Name (Dep_Path);
-            Source.Dep_TS   := Osint.Unknown_Attributes;
-         end;
-      end if;
-
-      Source.Initialized := True;
-   end Initialize_Source_Record;
-
-   ----------------
-   -- Is_Subunit --
-   ----------------
-
-   function Is_Subunit (Source : Source_Id) return Boolean is
-      Src_Ind : Source_File_Index;
-   begin
-      if Source.Kind = Sep then
-         return True;
-
-      --  A Spec, a file based language source or a body with a spec cannot be
-      --  a subunit.
-
-      elsif Source.Kind = Spec or else
-        Source.Unit = No_Unit_Index or else
-        Other_Part (Source) /= No_Source
-      then
-         return False;
-      end if;
-
-      --  Here, we are assuming that the language is Ada, as it is the only
-      --  unit based language that we know.
-
-      Src_Ind :=
-        Sinput.P.Load_Project_File
-          (Get_Name_String (Source.Path.Display_Name));
-
-      return Sinput.P.Source_File_Is_Subunit (Src_Ind);
-   end Is_Subunit;
 
    ------------------------------
    -- Look_For_Default_Project --
