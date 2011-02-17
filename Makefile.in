@@ -214,8 +214,10 @@ LOCAL_GPRCONFIG_TEST=${LOCAL_SETUP}; python ./run-gprconfig-test.py --diffs --en
 
 LOCAL_GPRBUILD_TEST=${LOCAL_SETUP}; python ./run-gprbuild-test.py --diffs --enable-color -j${PROCESSORS} ${test_config_switch}
 
-tests_local: force
+install_local: force
 	@make prefix=${shell pwd}/install install
+
+tests_local: install_local
 ifeq (${test_names},)
 	@${LOCAL_GPRCONFIG_TEST} --loglevel=ERROR
 	@${LOCAL_GPRBUILD_TEST} --loglevel=ERROR
@@ -223,7 +225,6 @@ else
 	@${LOCAL_GPRCONFIG_TEST} --loglevel=INFO ${test_names}
 	@${LOCAL_GPRBUILD_TEST} --loglevel=INFO ${test_names}
 endif
-	@${RM} -rf install
 
 examples: force
 	make -C examples
