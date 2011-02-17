@@ -574,9 +574,6 @@ package body Cleangpr is
    -------------------
 
    procedure Clean_Project (Project : Project_Id) is
-      Main_Source_File : File_Name_Type;
-      --  Name of executable on the command line without directory info
-
       Executable : File_Name_Type;
       --  Name of the executable file
 
@@ -783,9 +780,7 @@ package body Cleangpr is
             Source   : Prj.Source_Id;
             Iter     : Source_Iterator;
 
-            Main_File     : File_Name_Type;
-            Main_Index    : Int;
-            Main_Location : Source_Ptr;
+            Main_File     : Main_Info;
 
          begin
             Change_Dir (Exec_Dir);
@@ -793,14 +788,7 @@ package body Cleangpr is
             Mains.Reset;
 
             for N_File in 1 .. Mains.Number_Of_Mains loop
-               Mains.Next_Main (Main_File, Main_Index, Main_Location);
-
-               declare
-                  --  Main already has a canonical casing
-                  Main : constant String := Get_Name_String (Main_File);
-               begin
-                  Main_Source_File := Create_Name (Main);
-               end;
+               Main_File := Mains.Next_Main;
 
                Iter := For_Each_Source (Project_Tree);
 
@@ -808,8 +796,8 @@ package body Cleangpr is
                   Source := Prj.Element (Iter);
                   exit when Source = No_Source
                     or else
-                      (Source.File = Main_Source_File and then
-                       Source.Index = Main_Index);
+                      (Source.File = Main_File.File and then
+                       Source.Index = Main_File.Index);
                   Next (Iter);
                end loop;
 
@@ -820,8 +808,8 @@ package body Cleangpr is
                     Executable_Of
                       (Project  => Main_Project,
                        Shared   => Project_Tree.Shared,
-                       Main     => Main_Source_File,
-                       Index    => Main_Index,
+                       Main     => Main_File.File,
+                       Index    => Main_File.Index,
                        Ada_Main => Source.Language.Name = Snames.Name_Ada);
 
                   declare

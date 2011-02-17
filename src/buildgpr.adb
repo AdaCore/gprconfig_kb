@@ -441,22 +441,6 @@ package body Buildgpr is
       Table_Name           => "Makegpr.Linker_Opts");
    --  Table to store the Linker'Linker_Options in the project files
 
-   type File_Index is record
-      File  : File_Name_Type;
-      Index : Int;
-   end record;
-
-   function Hash (Fil_Ind : File_Index) return Prj.Header_Num;
-
-   package Main_Sources is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
-      Element    => Source_Id,
-      No_Element => No_Source,
-      Key        => File_Index,
-      Hash       => Hash,
-      Equal      => "=");
-   --  A hash table to store the Source_Id of the mains.
-
    type Root_Array is array (Positive range <>) of Source_Id;
    type Roots_Access is access Root_Array;
    No_Roots : constant Roots_Access := null;
@@ -3473,99 +3457,19 @@ package body Buildgpr is
    -----------------
 
    procedure Check_Mains is
-      Source       : Source_Id;
-      Main_Id      : File_Name_Type;
-      Main_Index   : Int;
-      Main_Loc     : Source_Ptr;
+      Main_Id      : Main_Info;
 
    begin
       Mains.Reset;
 
       loop
-         Mains.Next_Main
-           (File     => Main_Id,
-            Index    => Main_Index,
-            Location => Main_Loc);
-         exit when Main_Id = No_File;
+         Main_Id := Mains.Next_Main;
+         exit when Main_Id = No_Main_Info;
 
          declare
-            --  Main already has the canonical casing
-            Main         : constant String := Get_Name_String (Main_Id);
-            Name_2       : constant String :=
-                               Normalize_Pathname (Get_Name_String (Main_Id));
-            Base_Main_Id : File_Name_Type := Main_Id;
-            Iter         : Source_Iterator;
-            Nmb          : Natural := 0;
-
-         begin
-            if Base_Name (Main) /= Main then
-               if Is_Absolute_Path (Main) then
-                  Base_Main_Id := Create_Name (Base_Name (Main));
-
-               else
-                  Fail_Program
-                    (Project_Tree,
-                     "mains cannot include directory information (""" &
-                     Main & """)");
-               end if;
-            end if;
-
-            Iter := For_Each_Source (Project_Tree);
-            Nmb := 0;
-
-            loop
-               Source := Prj.Element (Iter);
-               exit when Source = No_Source;
-
-               if Source.File = Base_Main_Id
-                 and then Main_Index = Source.Index
-                 and then
-                   (Main_Id = Base_Main_Id
-                    or else Name_2 =
-                      Normalize_Pathname (Get_Name_String (Source.Path.Name)))
-               then
-                  Main_Sources.Set ((Base_Main_Id, Main_Index), Source);
-
-                  if Source.Project = Main_Project then
-                     Nmb := 1;
-                     exit;
-
-                  else
-                     Nmb := Nmb + 1;
-                  end if;
-               end if;
-
-               Next (Iter);
-            end loop;
-
-            if Nmb = 0 then
-               Fail_Program
-                 (Project_Tree,
-                  """" & Main & """ is not a source of any project");
-
-            elsif Nmb > 1 then
-               Fail_Program
-                 (Project_Tree,
-                  """" & Main &
-                  """ is a source of several projects, but not of " &
-                  "the main project");
-            end if;
-         end;
-      end loop;
-
-      Mains.Reset;
-
-      loop
-         Mains.Next_Main
-           (File     => Main_Id,
-            Index    => Main_Index,
-            Location => Main_Loc);
-         exit when Main_Id = No_File;
-
-         declare
-            Main         : constant String := Get_Name_String (Main_Id);
+            Main         : constant String := Get_Name_String (Main_Id.File);
             Base_Main_Id : File_Name_Type;
-            Source       : Source_Id;
+            Source       : constant Source_Id := Main_Id.Source;
 
             Root_Arr     : Array_Element_Id;
             Roots        : Variable_Value;
@@ -3582,7 +3486,6 @@ package body Buildgpr is
             Iter         : Source_Iterator;
          begin
             Base_Main_Id := Create_Name (Base_Name (Main));
-            Source := Main_Sources.Get ((Main_Id, Main_Index));
 
             if Source /= No_Source then
                --  Fail if any main is declared as an excluded source file
@@ -3603,7 +3506,7 @@ package body Buildgpr is
                if Closure_Needed then
                   if Current_Verbosity = High then
                      Debug_Output
-                       ("Looking for roots for", Name_Id (Main_Id));
+                       ("Looking for roots for", Name_Id (Main_Id.File));
                   end if;
 
                   Root_Arr :=
@@ -6670,6 +6573,8 @@ package body Buildgpr is
          --  these sources.
 
          if Mains.Number_Of_Mains > 0 then
+            Mains.Fill_From_Project (Main_Project, Project_Tree);
+
             Check_Mains;
 
             --  Otherwise compile all the sources of the main project (-u) or
@@ -7139,12 +7044,6 @@ package body Buildgpr is
    -- Hash --
    ----------
 
-   function Hash (Fil_Ind : File_Index) return Prj.Header_Num is
-   begin
-      return (Prj.Hash (Fil_Ind.File) + Prj.Header_Num (Fil_Ind.Index))
-               mod Prj.Max_Header_Num;
-   end Hash;
-
    function Hash (Pid : Process_Id) return Header_Num is
       Modulo : constant Integer := Integer (Header_Num'Last) + 1;
    begin
@@ -7415,9 +7314,8 @@ package body Buildgpr is
 
       Disregard          : Boolean;
 
-      Main_File  : File_Name_Type;
+      Main_File  : Main_Info;
       Main_Index : Int;
-      Main_Loc   : Source_Ptr;
 
    begin
       if Mains.Number_Of_Mains = 0 then
@@ -7427,15 +7325,17 @@ package body Buildgpr is
       Mains.Reset;
 
       loop
-         Mains.Next_Main (Main_File, Main_Index, Main_Loc);
-         exit when Main_File = No_File;
+         Main_File := Mains.Next_Main;
+         exit when Main_File = No_Main_Info;
+
+         Main_Index := Main_File.Index;
 
          declare
             --  Main already has the right canonical casing
-            Main           : constant String := Get_Name_String (Main_File);
+            Main         : constant String := Get_Name_String (Main_File.File);
+            Main_Source  : constant Source_Id := Main_File.Source;
 
             Main_Id        : File_Name_Type;
-            Main_Source    : Source_Id;
 
             Exec_Name      : File_Name_Type;
             Exec_Path_Name : Path_Name_Type;
@@ -7461,7 +7361,6 @@ package body Buildgpr is
             Linker_Needs_To_Be_Called := Force_Compilations;
 
             Main_Id := Create_Name (Base_Name (Main));
-            Main_Source := Main_Sources.Get ((Main_Id, Main_Index));
             Main_Proj   := Ultimate_Extending_Project_Of (Main_Source.Project);
 
             Change_To_Object_Directory (Main_Proj);
@@ -9725,20 +9624,18 @@ package body Buildgpr is
 
       loop
          declare
-            Main_File : File_Name_Type;
-            Main_Index : Int;
-            Main_Loc   : Source_Ptr;
+            Main_File : Main_Info;
          begin
-            Mains.Next_Main (Main_File, Main_Index, Main_Loc);
-            exit when Main_File = No_File;
+            Main_File := Mains.Next_Main;
+            exit when Main_File = No_Main_Info;
 
             declare
                Main           : constant String :=
-                    Get_Name_String (Main_File);
+                    Get_Name_String (Main_File.File);
                Main_Id        : constant File_Name_Type :=
-                                  Create_Name (Base_Name (Main));
-               Main_Source    : constant Source_Id :=
-                                  Main_Sources.Get ((Main_Id, Main_Index));
+                 Create_Name (Base_Name (Main));
+               Main_Index     : constant Int := Main_File.Index;
+               Main_Source    : constant Source_Id := Main_File.Source;
                Bind_Exchange  : String_Access;
                Main_Proj      : Project_Id;
                B_Data         : Binding_Data;
