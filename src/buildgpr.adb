@@ -722,7 +722,9 @@ package body Buildgpr is
    --  Out parameter Has_Been_Built is True iff the global archive has been
    --  built/rebuilt. Exists is False if there is no need for a global archive.
 
-   procedure Build_Library (For_Project : Project_Id);
+   procedure Build_Library
+     (For_Project  : Project_Id;
+      Project_Tree : Project_Tree_Ref);
    --  Build, if necessary, the library of a library project
 
    procedure Change_To_Object_Directory (Project : Project_Id);
@@ -2188,7 +2190,10 @@ package body Buildgpr is
    -- Build_Library --
    -------------------
 
-   procedure Build_Library (For_Project : Project_Id) is
+   procedure Build_Library
+     (For_Project  : Project_Id;
+      Project_Tree : Project_Tree_Ref)
+   is
       Object_Directory_Path : constant String :=
         Get_Name_String (For_Project.Object_Directory.Display_Name);
 
@@ -9597,7 +9602,7 @@ package body Buildgpr is
 
                if Proj.Extended_By = No_Project then
                   if not Proj.Externally_Built then
-                     Build_Library (Proj);
+                     Build_Library (Proj, Project_Tree);
                   end if;
 
                   if Proj.Library_Kind /= Static then
