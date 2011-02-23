@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2010, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2011, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -145,6 +145,8 @@ procedure Gprbind is
 
    All_Binding_Options : Boolean;
    Get_Option          : Boolean;
+   Xlinker_Seen        : Boolean;
+   Stack_Equal_Seen    : Boolean;
 
    GNAT_Version : String_Access := new String'("000");
    --  The version of GNAT, coming from the Toolchain_Version for Ada
@@ -1024,6 +1026,8 @@ begin
          Put_Line (IO_File, Binding_Label (Resulting_Options));
 
          All_Binding_Options := False;
+         Xlinker_Seen        := False;
+         Stack_Equal_Seen    := False;
          loop
             Get_Line (BG_File, Line, Last);
             exit when Line (1 .. Last) = End_Info;
@@ -1065,7 +1069,32 @@ begin
             end if;
 
             if Get_Option then
-               if Last >= 3 and then Line (1 .. 2) = "-L" then
+               if Line (1 .. Last) = "-Xlinker" then
+                  Xlinker_Seen := True;
+
+               elsif Xlinker_Seen then
+                  Xlinker_Seen := False;
+
+                  --  Make sure that only the first switch --stack= is put in
+                  --  the exchange file.
+
+                  if Last > 8 and then Line (1 .. 8) = "--stack=" then
+                     if not Stack_Equal_Seen then
+                        Stack_Equal_Seen := True;
+                        Put_Line (IO_File, "-Wl," & Line (1 .. Last));
+                     end if;
+
+                  else
+                     Put_Line (IO_File, Line (1 .. Last));
+                  end if;
+
+               elsif Last > 12 and then Line (1 .. 12) = "-Wl,--stack=" then
+                  if not Stack_Equal_Seen then
+                     Stack_Equal_Seen := True;
+                     Put_Line (IO_File, Line (1 .. Last));
+                  end if;
+
+               elsif Last >= 3 and then Line (1 .. 2) = "-L" then
                   --  Set Adalib_Dir only if libgnat is found inside.
                   if Is_Regular_File (Line (3 .. Last) &
                                       Directory_Separator & "libgnat.a")
