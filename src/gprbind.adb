@@ -1081,10 +1081,12 @@ begin
                   if Last > 8 and then Line (1 .. 8) = "--stack=" then
                      if not Stack_Equal_Seen then
                         Stack_Equal_Seen := True;
-                        Put_Line (IO_File, "-Wl," & Line (1 .. Last));
+                        Put_Line (IO_File, "-Xlinker");
+                        Put_Line (IO_File, Line (1 .. Last));
                      end if;
 
                   else
+                     Put_Line (IO_File, "-Xlinker");
                      Put_Line (IO_File, Line (1 .. Last));
                   end if;
 
