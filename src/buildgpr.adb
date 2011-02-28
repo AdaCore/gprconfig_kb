@@ -6530,6 +6530,7 @@ package body Buildgpr is
                   Attribute_Or_Array_Name => Name_Switches,
                   In_Package              => Builder_Package,
                   Shared                  => Project_Tree.Shared,
+                  Force_Lower_Case_Index  => Name = Lang,
                   Allow_Wildcards         => True);
 
                if Name /= Lang then
@@ -6578,7 +6579,8 @@ package body Buildgpr is
                     (Name                    => Lang,
                      Attribute_Or_Array_Name => Name_Default_Switches,
                      In_Package              => Builder_Package,
-                     Shared                  => Project_Tree.Shared);
+                     Shared                  => Project_Tree.Shared,
+                     Force_Lower_Case_Index  => True);
 
                   --  Set the Builder Switches language, so that switches
                   --  that are not recognized by gprbuild are passed to the
