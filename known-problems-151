@@ -11,6 +11,15 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-151-K309-002 Multi-unit file on command line should compile all units
+
+  Problem:    If you specify a multi-unit source file on the command line,
+              only one of the units within that file is compiled.
+
+  Status:     This was fixed in 1.6.0 on 2011-03-09
+
+  Workaround: Use the switch -eI.. to specify each of the units to compile.
+
 KP-151-K228-036 Builder'Switches ("Ada") not taken into account
 
   Problem:    If the name of the language is not in lower case in
