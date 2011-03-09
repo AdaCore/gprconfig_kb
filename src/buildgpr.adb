@@ -6357,7 +6357,8 @@ package body Buildgpr is
          Mains.Fill_From_Project (Main_Project, Project_Tree);
       end if;
 
-      Mains.Complete_Mains (Main_Project, Project_Tree);
+      Mains.Complete_Mains
+        (Root_Environment.Flags, Main_Project, Project_Tree);
 
       if not Unique_Compile
         and then Output_File_Name /= null
@@ -9635,11 +9636,6 @@ package body Buildgpr is
          begin
             Main_File := Mains.Next_Main;
             exit when Main_File = No_Main_Info;
-
-            if Main_File.Tree = null then
-               Debug_Output ("MANU !!! No tree for",
-                             Name_Id (Main_File.File));
-            end if;
 
             if not Builder_Data (Main_File.Tree).There_Are_Binder_Drivers then
                if Current_Verbosity = High then

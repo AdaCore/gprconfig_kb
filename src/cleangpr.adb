@@ -1141,7 +1141,8 @@ package body Cleangpr is
       end if;
 
       Mains.Fill_From_Project (Main_Project, Project_Tree);
-      Mains.Complete_Mains (Main_Project, Project_Tree);
+      Mains.Complete_Mains
+        (Root_Environment.Flags, Main_Project, Project_Tree);
 
       if Verbose_Mode then
          New_Line;
