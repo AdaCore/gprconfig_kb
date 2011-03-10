@@ -78,8 +78,8 @@
     <executable prefix="1">cc(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
       <external>cc${PREFIX} -v</external>
-      <grep regexp=".*(VxWorks 5).*" group="1"></grep>
-      <must_match>VxWorks 5</must_match>
+      <grep regexp=".*(tornado 2|VxWorks 5).*" group="1"></grep>
+      <must_match>(tornado 2|VxWorks 5)</must_match>
     </version>
     <languages>C</languages>
     <target>
@@ -188,8 +188,8 @@
     <executable prefix="1">c\+\+(arm|pentium|sh|mips|ppc|sparc)</executable>
     <version>
       <external>c++${PREFIX} -v</external>
-      <grep regexp="gcc.*(VxWorks 5).*" group="1"></grep>
-      <must_match>VxWorks 5</must_match>
+      <grep regexp=".*(tornado 2|VxWorks 5).*" group="1"></grep>
+      <must_match>tornado 2|VxWorks 5</must_match>
     </version>
     <languages>C++</languages>
     <target>
