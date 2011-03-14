@@ -307,6 +307,10 @@
    for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
    for Shared_Library_Minimum_Switches use
          ("-dynamiclib", "-Wl,-flat_namespace", "-shared-libgcc");
+
+   package Linker is
+      for Map_File_Option         use "-Wl,-map,";
+   end Linker;
     </config>
   </configuration>
 
