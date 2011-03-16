@@ -246,17 +246,6 @@
     </config>
   </configuration>
 
-  <configuration>
-    <targets>
-       <target name="^.*wrs-vxworks.*$" />
-    </targets>
-    <config>
-   package Linker is
-      for Max_Command_Line_Length use "8000";
-   end Linker;
-    </config>
-  </configuration>
-
   <!-- GNAAMP -->
   <configuration>
     <targets>
@@ -383,8 +372,6 @@
    for Run_Path_Origin use "$$ORIGIN";
 
    package Linker is
-      for Max_Command_Line_Length use "8192";
-      for Response_File_Format    use "GNU";
       for Map_File_Option         use "-Wl,-Map,";
    end Linker;
     </config>
@@ -398,11 +385,6 @@
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
-
-   package Linker is
-      for Max_Command_Line_Length use "8192";
-      for Response_File_Format    use "GNU";
-   end Linker;
     </config>
   </configuration>
 
@@ -464,8 +446,6 @@
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
 
    package Linker is
-      for Max_Command_Line_Length use "30000";
-      for Response_File_Format    use "GNU";
       for Map_File_Option         use "-Wl,-Map,";
    end Linker;
     </config>
@@ -588,13 +568,31 @@
     </config>
   </configuration>
 
-  <configuration>
-    <targets>
-      <target name="^.*mingw.*$" />
-      <target name="^.*linux.*$" />
-      <target name="^.*freebsd.*$" />
-      <target name="^.*wrs-vxworks.*$" />
-    </targets>
+  <!--  Define the right response file mechanism for linking
+        when possible use both the GCC @response file (available starting with
+        GNAT Pro 6) and the GNU linker mechanism. The latter can be used with
+        all cross since they rely and on GNU ld and some of the major natives.
+        Max_Command_Line could be made different for different hosts but we
+        use the smallest value of all the hosts instead for uniformity.
+  -->
+
+   <configuration>
+     <targets>
+       <target name="^.*-wrs-vxworks.*$" />
+       <target name="^.*-elf-lynx.*$" />
+       <target name="^powerpc-elf$" />
+       <target name="^powerpc-eabispe$" />
+       <target name="^erc32-elf$" />
+       <target name="^leon-elf$" />
+       <target name="^leon3-elf$" />
+       <target name="^arm-elf$" />
+       <target name="^avr$" />
+       <target name="^.*wrs-vxworks.*$" />
+       <target name="^.*-elinos-linux$" />
+       <target name="^.*mingw.*$" />
+       <target name="^.*linux.*$" />
+       <target name="^.*freebsd.*$" />
+     </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -613,9 +611,52 @@
     <config>
    package Linker is
       for Response_File_Format use "GCC_GNU";
+      for Max_Command_Line_Length use "8192";
    end Linker;
     </config>
   </configuration>
+
+   <configuration>
+     <targets>
+       <target name="^.*-wrs-vxworks.*$" />
+       <target name="^.*-elf-lynx.*$" />
+       <target name="^powerpc-elf$" />
+       <target name="^powerpc-eabispe$" />
+       <target name="^erc32-elf$" />
+       <target name="^leon-elf$" />
+       <target name="^leon3-elf$" />
+       <target name="^arm-elf$" />
+       <target name="^avr$" />
+       <target name="^.*wrs-vxworks.*$" />
+       <target name="^.*-elinos-linux$" />
+       <target name="^.*mingw.*$" />
+       <target name="^.*linux.*$" />
+       <target name="^.*freebsd.*$" />
+     </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+    </compilers>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+    </compilers>
+    <config>
+   package Linker is
+      for Response_File_Format use "GNU";
+      for Max_Command_Line_Length use "8192";
+   end Linker;
+    </config>
+  </configuration>
+
+
 
   <configuration>
     <targets>
@@ -646,40 +687,6 @@
     </config>
   </configuration>
 
-  <configuration>
-    <targets negate="true">
-      <target name="aamp" />
-      <target name="^dotnet$" />
-      <target name="^.*mingw.*$" />
-      <target name="^.*linux.*$" />
-      <target name="^.*freebsd.*$" />
-      <target name="^.*wrs-vxworks.*$" />
-      <target name="^.*aix.*$" />
-      <target name="^.*hpux.*$" />
-      <target name="^.*irix.*$" />
-      <target name="^.*osf.*$" />
-    </targets>
-    <compilers negate="true">
-       <compiler language="C++" />
-       <compiler language="Fortran" />
-    </compilers>
-    <compilers>
-       <compiler language="Ada" />
-    </compilers>
-    <compilers negate="true">
-      <compiler version="3.16" />
-      <compiler version="5.00" />
-      <compiler version="5.01" />
-      <compiler version="5.02" />
-      <compiler version="5.03" />
-      <compiler version="5.04" />
-    </compilers>
-    <config>
-   package Linker is
-      for Response_File_Format use "GCC";
-   end Linker;
-    </config>
-  </configuration>
 
   <configuration>
     <compilers negate="true">
