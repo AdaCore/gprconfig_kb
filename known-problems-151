@@ -58,3 +58,16 @@ KP-151-K125-041 No binding of locally removed sources
   Status:     This was fixed in 1.6.0 on 2011-02-02
 
   Workaround: Remove the sources instead of declaring them locally removed.
+
+KP-151-JC23-006 Link time error on big projects with powerpc-elf
+
+  Problem:    When linking projects with a sufficiently big number of units the
+              link phase fails with missing symbol errors. This is a command
+              line limitation error when gprbuild calls the linker.
+
+  Status:     This was fixed in 1.6.0 on 2011-03-16
+
+  Workaround: force the use of a response file by using the following
+              attributes in package Linker:
+                for Max_Command_Line_Length use "8000";
+                for Response_File_Format use "GNU";
