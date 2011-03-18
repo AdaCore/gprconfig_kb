@@ -52,7 +52,6 @@
         <compiler name="G++-WRS653" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
         <compiler name="G++-WRSMILSHAE" language="C++" />
-        <compiler name="G++-WRS5" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
         <compiler name="G++-WRS6E500V2" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
@@ -65,6 +64,23 @@
         Compiler'Leading_Required_Switches ("C++") &amp;
         ("-c", "-x", "c++");
       for Dependency_Switches ("C++") use ("-MMD", "-MF", "");
+      for Include_Path        ("C++") use "CPATH";
+   end Compiler;
+     </config>
+   </configuration>
+
+
+   <!-- G++-WRS5 does not support -MF switch -->
+   <configuration>
+     <compilers>
+        <compiler name="G++-WRS5" language="C++" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C++") use
+        Compiler'Leading_Required_Switches ("C++") &amp;
+        ("-c", "-x", "c++");
+      for Dependency_Switches ("C++") use ("-Wp,-MMD,");
       for Include_Path        ("C++") use "CPATH";
    end Compiler;
      </config>
