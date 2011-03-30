@@ -2937,6 +2937,62 @@ the object file or the switch file.
   Specifies the minimum options to be used when invoking the linker. Those
   options are happened at the end of the link command so that potentially
   conflicting user options take precedence.
+
+@item Map_File_Option
+
+  Specifies the option to be used when the linker is asked to produce
+  a map file.
+
+  @smallexample
+   for Map_File_Option use "-Wl,-Map,";
+  @end smallexample
+
+@item Max_Command_Line_Length
+
+  Specifies the maximum length of the command line to invoke the linker.
+  If this maximum length is reached, a response file will be used to shorten
+  the length of the command line. This is only taken into account when
+  attribute Response_File_Format is specified.
+
+  @smallexample
+   for Max_Command_Line_Length use "8000";
+  @end smallexample
+
+@item Response_File_Format
+
+  Specifies the format of the response file to be generated when the maximum
+  length of the command line to invoke the linker is reached. This is only
+  taken into account when attribute Max_Command_Line_Length is specified.
+
+  The allowed case-insensitive values are:
+
+    @itemize @bullet
+
+    @item "GNU"
+     Used when the underlying linker is gnu ld.
+
+    @item "Object_List"
+     Used when the response file is a list of object files, one per line.
+
+    @item "GCC_GNU"
+     Used with recent version of gcc when the underlined linker is gnu ld.
+
+    @item "GCC_Object_List"
+     Used with recent version of gcc when the underlying linker is not gnu ld.
+    @end itemize
+
+  @smallexample
+   for Response_File_Format use "GCC_GNU";
+  @end smallexample
+
+@item Response_File_Switches
+  Specifies the option(s) that must precede the response file name when
+  when invoking the linker. This is only taken into account when both
+  attributes Max_Command_Line_Length and Response_File_Format are specified.
+
+  @smallexample
+    for Response_File_Switches  use ("-Wl,-f,");
+  @end smallexample
 @end itemize
 
 
