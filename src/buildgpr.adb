@@ -10027,36 +10027,27 @@ package body Buildgpr is
            Arg (1 .. RTS_Option'Length) = RTS_Option
          then
             declare
+               Set : constant Boolean := Runtime_Name_Set_For (Name_Ada);
                Old : constant String := Runtime_Name_For (Name_Ada);
                RTS : constant String :=
                         Arg (RTS_Option'Length + 1 .. Arg'Last);
             begin
                if Command_Line then
-                  if Old /= "" and then Old /= RTS then
+                  if Set and then Old /= RTS then
                      Fail_Program
                        (Project_Tree,
                         "several different run-times cannot be specified");
                   end if;
 
                   Set_Runtime_For (Name_Ada, RTS);
-
-               elsif Opt.Warning_Mode /= Opt.Suppress then
-                  if Old = "" then
-                     Write_Line
-                       ("warning: --RTS should be specified on the command " &
-                        "line");
-
-                  elsif Old /= RTS then
-                     Write_Line
-                       ("warning: --RTS= specified in project file not " &
-                        "consistent with --RTS= specified on the command " &
-                        "line");
-                  end if;
                end if;
+
+               --  Ignore any --RTS= switch in package Builder. These are only
+               --  taken into account to create the config file in
+               --  auto-configuration.
             end;
 
-         elsif Command_Line and then
-           Arg'Length > RTS_Language_Option'Length and then
+         elsif Arg'Length > RTS_Language_Option'Length and then
            Arg (1 .. RTS_Language_Option'Length) = RTS_Language_Option
          then
             declare
@@ -10079,8 +10070,28 @@ package body Buildgpr is
                if Language_Name = No_Name then
                   Fail_Program (Project_Tree, "illegal switch: " & Arg);
 
-               else
-                  Set_Runtime_For (Language_Name, Arg (RTS_Start .. Arg'Last));
+               elsif Command_Line then
+                  --  Ignore any --RTS:<lang>= switch in package Builder. These
+                  --  are only taken into account to create the config file in
+                  --  auto-configuration.
+
+                  declare
+                     RTS : constant String := Arg (RTS_Start .. Arg'Last);
+                     Set : constant Boolean :=
+                       Runtime_Name_Set_For (Language_Name);
+                     Old : constant String := Runtime_Name_For (Language_Name);
+
+                  begin
+                     if Set and then Old /= RTS then
+                        Fail_Program
+                          (Project_Tree,
+                           "several different run-times cannot be specified" &
+                           " for the same language");
+
+                     else
+                        Set_Runtime_For (Language_Name, RTS);
+                     end if;
+                  end;
                end if;
             end;
 
