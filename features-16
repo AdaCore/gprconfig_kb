@@ -30,6 +30,13 @@ NF-16-K310-021 Allow unit names on the gprbuild command line (2011-03-10)
   For compatibility with gnatmake, gprbuild now accepts unit names on the
   command line.
 
+NF-16-K223-006 --RTS switches in package Builder (2011-04-01)
+
+  When configuration project file is auro-generated and there are no switches
+  --RTS on the command line, the switches --RTS found in package Builder of the
+  main project are taken into account to invoke gprconfig and produce the
+  configuration project file.
+
 NF-16-JA11-035 New gprbuild switches -vl, -vm and -vh (2010-10-12)
 
   Three new switches are added to gprbuild: -vl, -vm and -vh, similar to
