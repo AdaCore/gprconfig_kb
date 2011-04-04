@@ -3851,7 +3851,7 @@ package body Buildgpr is
                         --  Find the beginning of the next source path
                         --  name.
 
-                        while Finish < Last and then
+                        while Start < Last and then
                         Line (Start) = ' '
                         loop
                            Start := Start + 1;
