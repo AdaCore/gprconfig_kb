@@ -9763,6 +9763,23 @@ package body Buildgpr is
       Success      : out Boolean)
    is
       Processed : Boolean := True;
+
+      procedure Forbidden_In_Package_Builder;
+      --  Fail if switch Arg is found in package Builder
+
+      ----------------------------------
+      -- Forbidden_In_Package_Builder --
+      ----------------------------------
+
+      procedure Forbidden_In_Package_Builder is
+      begin
+         if not Command_Line then
+            Fail_Program
+              (Project_Tree,
+               Arg & " can only be used on the command line");
+         end if;
+      end Forbidden_In_Package_Builder;
+
    begin
       pragma Assert (Arg'First = 1);
 
@@ -9926,19 +9943,30 @@ package body Buildgpr is
 
       elsif Arg (1) = '-' then
 
-         if not Hostparm.OpenVMS
-            and then Command_Line
-            and then Arg = "--db-"
-         then
+         if Arg = "--db-" then
+            if Hostparm.OpenVMS then
+               Fail_Program
+                 (Project_Tree,
+                  "--db- cannot be used on VMS");
+            end if;
+
+            Forbidden_In_Package_Builder;
+
             Load_Standard_Base := False;
 
-         elsif not Hostparm.OpenVMS
-               and then Command_Line
-               and then Arg = "--db"
-         then
+         elsif Arg = "--db" then
+            if Hostparm.OpenVMS then
+               Fail_Program
+                 (Project_Tree,
+                  "--db cannot be used on VMS");
+            end if;
+
+            Forbidden_In_Package_Builder;
+
             Db_Directory_Expected := True;
 
-         elsif Command_Line and then Arg = "--display-paths" then
+         elsif Arg = "--display-paths" then
+            Forbidden_In_Package_Builder;
             Display_Paths := True;
 
          elsif Arg = "--no-split-units" then
@@ -9947,19 +9975,19 @@ package body Buildgpr is
          elsif Arg = Single_Compile_Per_Obj_Dir_Switch then
             Opt.One_Compilation_Per_Obj_Dir := True;
 
-         elsif Command_Line and then
-               Arg'Length > Source_Info_Option'Length and then
+         elsif Arg'Length > Source_Info_Option'Length and then
                Arg (1 .. Source_Info_Option'Length) = Source_Info_Option
          then
+            Forbidden_In_Package_Builder;
             Project_Tree.Source_Info_File_Name :=
-              new String'(Arg (Source_Info_Option'Length + 1 .. Arg'Last));
+               new String'(Arg (Source_Info_Option'Length + 1 .. Arg'Last));
 
-         elsif Command_Line
+         elsif Arg'Length > Config_Project_Option'Length
            and then
-            Arg'Length > Config_Project_Option'Length
-           and then
-            Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
+               Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
          then
+            Forbidden_In_Package_Builder;
+
             if Config_Project_File_Name /= null and then
               (Autoconf_Specified or else
                Config_Project_File_Name.all /=
@@ -9978,13 +10006,19 @@ package body Buildgpr is
                    (Arg (Config_Project_Option'Length + 1 .. Arg'Last));
             end if;
 
-         elsif not Hostparm.OpenVMS
-           and then Command_Line
-           and then Arg'Length > Autoconf_Project_Option'Length
+         elsif Arg'Length > Autoconf_Project_Option'Length
            and then
             Arg (1 .. Autoconf_Project_Option'Length) =
               Autoconf_Project_Option
          then
+            if Hostparm.OpenVMS then
+               Fail_Program
+                 (Project_Tree,
+                  Autoconf_Project_Option & " cannot be used on VMS");
+            end if;
+
+            Forbidden_In_Package_Builder;
+
             if Config_Project_File_Name /= null and then
               ((not Autoconf_Specified) or else
                 Config_Project_File_Name.all /=
@@ -10002,12 +10036,18 @@ package body Buildgpr is
                Autoconf_Specified := True;
             end if;
 
-         elsif not Hostparm.OpenVMS
-           and then Command_Line
-           and then Arg'Length > Target_Project_Option'Length
+         elsif Arg'Length > Target_Project_Option'Length
            and then
             Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
          then
+            if Hostparm.OpenVMS then
+               Fail_Program
+                 (Project_Tree,
+                  Target_Project_Option & " cannot be used on VMS");
+            end if;
+
+            Forbidden_In_Package_Builder;
+
             if Target_Name /= null then
                if Target_Name.all /=
                  Arg (Target_Project_Option'Length + 1 .. Arg'Last)
@@ -10095,11 +10135,10 @@ package body Buildgpr is
                end if;
             end;
 
-         elsif Command_Line and then
-           Arg'Length > Subdirs_Option'Length and then
-           Arg (1 .. Subdirs_Option'Length) =
-           Subdirs_Option
+         elsif Arg'Length > Subdirs_Option'Length and then
+               Arg (1 .. Subdirs_Option'Length) = Subdirs_Option
          then
+            Forbidden_In_Package_Builder;
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
@@ -10120,12 +10159,12 @@ package body Buildgpr is
                Register_Command_Line_Option (Options.Indirect_Imports, 0);
             end if;
 
-         elsif Command_Line and then
-               Arg = Makeutl.Unchecked_Shared_Lib_Imports
-         then
+         elsif Arg = Makeutl.Unchecked_Shared_Lib_Imports then
+            Forbidden_In_Package_Builder;
             Opt.Unchecked_Shared_Lib_Imports := True;
 
-         elsif Command_Line and then Arg = No_Object_Check_Switch then
+         elsif Arg = No_Object_Check_Switch then
+            Forbidden_In_Package_Builder;
             Object_Checked := False;
             Unique_Compile := True;
 
@@ -10141,10 +10180,9 @@ package body Buildgpr is
             Map_File :=
               new String'(Arg (Create_Map_File_Switch'Length + 2 .. Arg'Last));
 
-         elsif Command_Line and then
-           Arg'Length >= 3 and then
-           Arg (1 .. 3) = "-aP"
-         then
+         elsif Arg'Length >= 3 and then Arg (1 .. 3) = "-aP" then
+            Forbidden_In_Package_Builder;
+
             if Arg'Length = 3 then
                Search_Project_Dir_Expected := True;
 
@@ -10153,10 +10191,12 @@ package body Buildgpr is
                  (Root_Environment.Project_Path, Arg (4 .. Arg'Last));
             end if;
 
-         elsif Command_Line and then Arg = "-b" then
+         elsif Arg = "-b" then
+            Forbidden_In_Package_Builder;
             Opt.Bind_Only  := True;
 
-         elsif Command_Line and then Arg = "-c" then
+         elsif Arg = "-c" then
+            Forbidden_In_Package_Builder;
             Opt.Compile_Only := True;
 
             if Opt.Link_Only then
@@ -10168,13 +10208,10 @@ package body Buildgpr is
 
             null;
 
-         elsif Command_Line and then Arg = "-d" then
+         elsif Arg = "-d" then
             Opt.Display_Compilation_Progress := True;
 
-         elsif Command_Line
-           and then Arg'Length = 3
-           and then Arg (2) = 'd'
-         then
+         elsif Arg'Length = 3 and then Arg (2) = 'd' then
             if Arg (3) in '1' .. '9' or else
               Arg (3) in 'a' .. 'z' or else
               Arg (3) in 'A' .. 'Z'
@@ -10186,10 +10223,9 @@ package body Buildgpr is
                  (Project_Tree, "illegal debug switch " & Arg);
             end if;
 
-         elsif Command_Line and then
-               Arg'Length > 3 and then
-               Arg (1 .. 3) = "-eI"
-         then
+         elsif Arg'Length > 3 and then Arg (1 .. 3) = "-eI" then
+            Forbidden_In_Package_Builder;
+
             begin
                Main_Index := Int'Value (Arg (4 .. Arg'Last));
 
@@ -10198,11 +10234,14 @@ package body Buildgpr is
                   Fail_Program (Project_Tree, "invalid switch " & Arg);
             end;
 
-         elsif Command_Line and then Arg = "-eL" then
+         elsif Arg = "-eL" then
+            Forbidden_In_Package_Builder;
             Opt.Follow_Links_For_Files := True;
             Opt.Follow_Links_For_Dirs  := True;
 
-         elsif Command_Line and then Arg = "-eS" then
+         elsif Arg = "-eS" then
+            Forbidden_In_Package_Builder;
+
             --  Accept switch for compatibility with gnatmake
 
             Opt.Commands_To_Stdout := True;
@@ -10214,10 +10253,12 @@ package body Buildgpr is
                Register_Command_Line_Option (Force_Compilations_Option);
             end if;
 
-         elsif Command_Line and then Arg = "-F" then
+         elsif Arg = "-F" then
+            Forbidden_In_Package_Builder;
             Opt.Full_Path_Name_For_Brief_Errors := True;
 
-         elsif Command_Line and then Arg = "-h" then
+         elsif Arg = "-h" then
+            Forbidden_In_Package_Builder;
             Usage_Needed := True;
 
          elsif Arg'Length > 2 and then Arg (2) = 'j' then
@@ -10260,7 +10301,8 @@ package body Buildgpr is
                Register_Command_Line_Option (Keep_Going_Option);
             end if;
 
-         elsif Command_Line and then Arg = "-l" then
+         elsif Arg = "-l" then
+            Forbidden_In_Package_Builder;
             Opt.Link_Only  := True;
 
             if Opt.Compile_Only then
@@ -10270,7 +10312,9 @@ package body Buildgpr is
          elsif Arg = "-m" then
             Opt.Minimal_Recompilation := True;
 
-         elsif Command_Line and then Arg = "-o" then
+         elsif Arg = "-o" then
+            Forbidden_In_Package_Builder;
+
             if Output_File_Name /= null then
                Fail_Program
                  (Project_Tree, "cannot specify several -o switches");
@@ -10280,11 +10324,12 @@ package body Buildgpr is
             end if;
 
          elsif Arg = "-p" or else Arg = "--create-missing-dirs" then
+            Forbidden_In_Package_Builder;
             Opt.Setup_Projects := True;
 
-         elsif Command_Line
-           and then Arg'Length >= 2 and then Arg (2) = 'P'
-         then
+         elsif Arg'Length >= 2 and then Arg (2) = 'P' then
+            Forbidden_In_Package_Builder;
+
             if Project_File_Name /= null then
                Fail_Program
                  (Project_Tree,
@@ -10305,7 +10350,8 @@ package body Buildgpr is
                Register_Command_Line_Option (Quiet_Output_Option);
             end if;
 
-         elsif Command_Line and then Arg = "-r" then
+         elsif Arg = "-r" then
+            Forbidden_In_Package_Builder;
             Recursive := True;
 
          elsif Arg = "-R" then
@@ -10318,10 +10364,12 @@ package body Buildgpr is
                Register_Command_Line_Option (Check_Switches_Option);
             end if;
 
-         elsif Command_Line and then Arg = "-u" then
+         elsif Arg = "-u" then
+            Forbidden_In_Package_Builder;
             Unique_Compile := True;
 
-         elsif Command_Line and then Arg = "-U" then
+         elsif Arg = "-U" then
+            Forbidden_In_Package_Builder;
             Unique_Compile_All_Projects := True;
             Unique_Compile := True;
 
@@ -10352,10 +10400,10 @@ package body Buildgpr is
                Register_Command_Line_Option (Verbose_Medium_Mode_Option);
             end if;
 
-         elsif Command_Line
-           and then Arg'Length = 4 and then Arg (1 .. 3) = "-vP"
-           and then Arg (4) in '0' .. '2'
+         elsif Arg'Length = 4 and then Arg (1 .. 3) = "-vP" and then
+               Arg (4) in '0' .. '2'
          then
+            Forbidden_In_Package_Builder;
             case Arg (4) is
                when '0' =>
                   Current_Verbosity := Prj.Default;
@@ -10391,11 +10439,12 @@ package body Buildgpr is
          elsif Arg = "-x" then
             Opt.Use_Include_Path_File := True;
 
-         elsif Command_Line
-           and then Arg'Length >= 3
+         elsif Arg'Length >= 3
            and then Arg (2) = 'X'
            and then Is_External_Assignment (Root_Environment, Arg)
          then
+            Forbidden_In_Package_Builder;
+
             --  Is_External_Assignment has side effects when it returns True
 
             null;
