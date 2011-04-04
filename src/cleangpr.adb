@@ -110,7 +110,7 @@ package body Cleangpr is
    package Processed_Projects is new Table.Table
      (Table_Component_Type => Project_Id,
       Table_Index_Type     => Natural,
-      Table_Low_Bound      => 0,
+      Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 100,
       Table_Name           => "Cleangpr.Processed_Projects");
