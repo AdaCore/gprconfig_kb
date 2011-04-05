@@ -43,6 +43,13 @@ NF-16-K223-006 --RTS switches in package Builder (2011-04-01)
   main project are taken into account to invoke gprconfig and produce the
   configuration project file.
 
+NF-16-K103-005 Duplicate source file names when no compiler (2011-04-05)
+
+  When the compiler driver for a language is empty (""), it is now allowed
+  to have duplicat source file names in any source directory of a project,
+  even if they are in the same subdirectory tree specified with the ".../**"
+  notation.
+
 NF-16-JA11-035 New gprbuild switches -vl, -vm and -vh (2010-10-12)
 
   Three new switches are added to gprbuild: -vl, -vm and -vh, similar to
