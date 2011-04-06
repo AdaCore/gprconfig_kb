@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                   Copyright (C) 2006-2010, AdaCore                       --
+--                   Copyright (C) 2006-2011, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -3618,8 +3618,25 @@ package body GprConfig.Knowledge is
                  Get_String_Or_No_Name (String_Lists.Element (C));
                Next (C);
                if Has_Element (C) then
-                  Compiler.Runtime :=
-                    Get_String_Or_No_Name (String_Lists.Element (C));
+                  declare
+                     Rts : constant String := String_Lists.Element (C);
+                  begin
+                     --  If the runtime is a full path, we'd better to
+                     --  discard it as we will never find it.
+                     --  ??? To be reworked.
+                     if Rts'Length > 0
+                       and then Rts (Rts'First) = Directory_Separator
+                     then
+                        Put_Line
+                          (Standard_Error,
+                           "warning: RTS for language " &
+                             Get_Name_String (Compiler.Language_Case) &
+                             " is discarded (full path)");
+                        Compiler.Runtime := No_Name;
+                     else
+                        Compiler.Runtime := Get_String_Or_No_Name (Rts);
+                     end if;
+                  end;
                   Next (C);
                   if Has_Element (C) then
                      Compiler.Path := Get_String_Or_No_Name
