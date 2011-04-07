@@ -68,11 +68,17 @@
      <config></config>
    </configuration>
 
-   <!-- vx6/kernel executables have a .out extension -->
+   <!-- vxworks kernel executables have a .out extension -->
    <configuration>
      <compilers>
-       <compiler name="GNAT" runtime="kernel" />
        <compiler name="GNAT" runtime="default" />
+       <compiler name="GNAT" runtime="kernel" />
+       <compiler name="GNAT" runtime="kernel-sjlj" />
+       <compiler name="GNAT" runtime="kernel-smp" />
+       <compiler name="GCC" runtime="default" />
+       <compiler name="GCC" runtime="kernel" />
+       <compiler name="GCC" runtime="kernel-sjlj" />
+       <compiler name="GCC" runtime="kernel-smp" />
        <compiler name="GCC-WRS6" runtime="kernel" />
        <compiler name="GCC-WRS6" runtime="kernel-sjlj" />
        <compiler name="GCC-WRS6" runtime="kernel-smp" />
@@ -101,10 +107,13 @@
      </config>
    </configuration>
 
-   <!-- vx6/rtp executables have a .vxe extension and need -mrtp -->
+   <!-- vx6/rtp executables have a .vxe extension -->
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="rtp" />
+       <compiler name="GNAT" runtime="rtp-smp" />
+       <compiler name="GCC" runtime="rtp" />
+       <compiler name="GCC" runtime="rtp-smp" />
        <compiler name="GCC-WRS6" runtime="rtp" />
        <compiler name="GCC-WRS6E500V2" runtime="rtp" />
        <compiler name="GCC-WRS6" runtime="rtp-smp" />
@@ -114,10 +123,18 @@
        <compiler name="G++-WRS6" runtime="rtp-smp" />
        <compiler name="G++-WRS6E500V2" runtime="rtp-smp" />
      </compilers>
+     <targets>
+       <target name=".*-wrs-vxworks" />
+     </targets>
      <config>
    package Builder is
       for Executable_Suffix use ".vxe";
    end Builder;
+
+   package Linker is
+      for Required_Switches use
+	Linker'Required_Switches &amp; ("-mrtp");
+   end Linker;
      </config>
    </configuration>
 
@@ -141,11 +158,16 @@
 
    <configuration>
      <compilers>
+       <compiler name="GCC" runtime="rtp" />
+       <compiler name="GCC" runtime="rtp-smp" />
        <compiler name="GCC-WRS6" runtime="rtp" />
        <compiler name="GCC-WRS6E500V2" runtime="rtp" />
        <compiler name="GCC-WRS6" runtime="rtp-smp" />
        <compiler name="GCC-WRS6E500V2" runtime="rtp-smp" />
      </compilers>
+     <targets>
+       <target name=".*-wrs-vxworks" />
+     </targets>
      <config>
    package Compiler is
       for Leading_Required_Switches ("C") use
@@ -173,6 +195,12 @@
 
    <configuration>
      <compilers>
+       <compiler name="GCC" runtime="default" />
+       <compiler name="GCC" runtime="kernel" />
+       <compiler name="GCC" runtime="kernel-sjlj" />
+       <compiler name="GCC" runtime="kernel-smp" />
+       <compiler name="GCC" runtime="ravenscar-cert" />
+       <compiler name="GCC-WRS5" runtime="default" />
        <compiler name="GCC-WRS6" runtime="kernel" />
        <compiler name="GCC-WRS6" runtime="kernel-sjlj" />
        <compiler name="GCC-WRS6" runtime="kernel-smp" />
@@ -182,6 +210,9 @@
        <compiler name="GCC-WRS6CERT" runtime="kernel" />
        <compiler name="GCC-WRS6CERT" runtime="ravenscar-cert" />
      </compilers>
+     <targets>
+       <target name=".*-wrs-vxworks" />
+     </targets>
      <config>
    package Compiler is
       for Leading_Required_Switches ("C") use
@@ -206,19 +237,6 @@
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/h");
-   end Compiler;
-     </config>
-   </configuration>
-
-   <configuration>
-     <compilers>
-       <compiler name="GCC-WRS5" runtime="kernel" />
-     </compilers>
-     <config>
-   package Compiler is
-      for Leading_Required_Switches ("C") use
-        Compiler'Leading_Required_Switches ("C")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/h");
    end Compiler;
      </config>

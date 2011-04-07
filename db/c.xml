@@ -152,6 +152,7 @@
        <target name="^.*mingw.*$" />
        <target name="^.*cygwin.*$" />
        <target name="^.*dec-osf.*$" />
+       <target name="^.*wrs-vxworks.*$" />
      </targets>
      <config>
    package Compiler is
