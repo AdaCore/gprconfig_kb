@@ -29,6 +29,7 @@
    <configuration>
      <targets>
        <target name="^powerpc-elf$" />
+       <target name="^powerpc-elf-lynxos5$" />
        <target name="^powerpc-eabispe$" />
        <target name="^avr$" />
        <target name="^leon-elf$" />
