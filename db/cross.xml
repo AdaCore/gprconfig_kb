@@ -46,6 +46,7 @@
    <configuration>
      <targets>
        <target name="^powerpc-wrs-vxworks.*$" />
+       <target name="^e500v2-wrs-vxworks.*$" />
        <target name="^ppc-vx6.*$" />
        <target name="^e500v2-vx6.*$" />
        <target name="^i.86-wrs-vxworks.*$" />
