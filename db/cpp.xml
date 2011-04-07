@@ -34,9 +34,10 @@
         <compiler name="G++-WRS653" language="C++" />
         <compiler name="G++-WRS5" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
+        <compiler name="G++-WRS6E500V2" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
-         <compiler name="G++-WRSMILSHAE" language="C++" />
+        <compiler name="G++-WRSMILSHAE" language="C++" />
     </compilers>
      <config>
    package Compiler is
@@ -53,6 +54,8 @@
         <compiler name="G++-WRSMILSHAE" language="C++" />
         <compiler name="G++-WRS5" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
+        <compiler name="G++-WRS6E500V2" language="C++" />
+        <compiler name="G++-WRS6CERT" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
        <compiler name="GCC-MINGW32" language="C++" />
      </compilers>

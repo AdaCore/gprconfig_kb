@@ -58,7 +58,11 @@
    <!-- Forbid mixing kernel and rtp.  -->
    <configuration>
      <compilers><compiler runtime="kernel" /></compilers>
+     <compilers><compiler runtime="kernel-smp" /></compilers>
+     <compilers><compiler runtime="kernel-sjlj" /></compilers>
      <compilers><compiler runtime="rtp" /></compilers>
+     <compilers><compiler runtime="rtp-smp" /></compilers>
+     <compilers><compiler runtime="ravenscar-cert" /></compilers>
      <config></config>
    </configuration>
 
@@ -68,9 +72,21 @@
        <compiler name="GNAT" runtime="kernel" />
        <compiler name="GNAT" runtime="default" />
        <compiler name="GCC-WRS6" runtime="kernel" />
+       <compiler name="GCC-WRS6" runtime="kernel-sjlj" />
+       <compiler name="GCC-WRS6" runtime="kernel-smp" />
+       <compiler name="GCC-WRS6E500V2" runtime="kernel" />
+       <compiler name="GCC-WRS6E500V2" runtime="kernel-sjlj" />
+       <compiler name="GCC-WRS6E500V2" runtime="kernel-smp" />
        <compiler name="GCC-WRS6CERT" runtime="kernel" />
+       <compiler name="GCC-WRS6CERT" runtime="ravenscar-cert" />
        <compiler name="G++-WRS6" runtime="kernel" />
+       <compiler name="G++-WRS6" runtime="kernel-sjlj" />
+       <compiler name="G++-WRS6" runtime="kernel-smp" />
+       <compiler name="G++-WRS6E500V2" runtime="kernel" />
+       <compiler name="G++-WRS6E500V2" runtime="kernel-sjlj" />
+       <compiler name="G++-WRS6E500V2" runtime="kernel-smp" />
        <compiler name="G++-WRS6CERT" runtime="kernel" />
+       <compiler name="G++-WRS6CERT" runtime="ravenscar-cert" />
        <compiler name="GCC-WRS5" />
      </compilers>
      <targets>
@@ -88,9 +104,13 @@
      <compilers>
        <compiler name="GNAT" runtime="rtp" />
        <compiler name="GCC-WRS6" runtime="rtp" />
-       <compiler name="GCC-WRS6CERT" runtime="rtp" />
+       <compiler name="GCC-WRS6E500V2" runtime="rtp" />
+       <compiler name="GCC-WRS6" runtime="rtp-smp" />
+       <compiler name="GCC-WRS6E500V2" runtime="rtp-smp" />
        <compiler name="G++-WRS6" runtime="rtp" />
-       <compiler name="G++-WRS6CERT" runtime="rtp" />
+       <compiler name="G++-WRS6E500V2" runtime="rtp" />
+       <compiler name="G++-WRS6" runtime="rtp-smp" />
+       <compiler name="G++-WRS6E500V2" runtime="rtp-smp" />
      </compilers>
      <config>
    package Builder is
@@ -102,6 +122,7 @@
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="rtp" />
+       <compiler name="GNAT" runtime="rtp-smp" />
      </compilers>
      <config>
    package Compiler is
@@ -119,7 +140,9 @@
    <configuration>
      <compilers>
        <compiler name="GCC-WRS6" runtime="rtp" />
-       <compiler name="GCC-WRS6CERT" runtime="rtp" />
+       <compiler name="GCC-WRS6E500V2" runtime="rtp" />
+       <compiler name="GCC-WRS6" runtime="rtp-smp" />
+       <compiler name="GCC-WRS6E500V2" runtime="rtp-smp" />
      </compilers>
      <config>
    package Compiler is
@@ -133,7 +156,9 @@
    <configuration>
      <compilers>
        <compiler name="G++-WRS6" runtime="rtp" />
-       <compiler name="G++-WRS6CERT" runtime="rtp" />
+       <compiler name="G++-WRS6E500V2" runtime="rtp" />
+       <compiler name="G++-WRS6" runtime="rtp-smp" />
+       <compiler name="G++-WRS6E500V2" runtime="rtp-smp" />
      </compilers>
      <config>
    package Compiler is
@@ -147,7 +172,13 @@
    <configuration>
      <compilers>
        <compiler name="GCC-WRS6" runtime="kernel" />
+       <compiler name="GCC-WRS6" runtime="kernel-sjlj" />
+       <compiler name="GCC-WRS6" runtime="kernel-mp" />
+       <compiler name="GCC-WRS6E500V2" runtime="kernel" />
+       <compiler name="GCC-WRS6E500V2" runtime="kernel-sjlj" />
+       <compiler name="GCC-WRS6E500V2" runtime="kernel-mp" />
        <compiler name="GCC-WRS6CERT" runtime="kernel" />
+       <compiler name="GCC-WRS6CERT" runtime="ravenscar-cert" />
      </compilers>
      <config>
    package Compiler is
@@ -161,7 +192,13 @@
    <configuration>
      <compilers>
        <compiler name="G++-WRS6" runtime="kernel" />
+       <compiler name="G++-WRS6" runtime="kernel-smp" />
+       <compiler name="G++-WRS6" runtime="kernel-sjlj" />
+       <compiler name="G++-WRS6E500V2" runtime="kernel" />
+       <compiler name="G++-WRS6E500V2" runtime="kernel-smp" />
+       <compiler name="G++-WRS6E500V2" runtime="kernel-sjlj" />
        <compiler name="G++-WRS6CERT" runtime="kernel" />
+       <compiler name="G++-WRS6CERT" runtime="ravenscar-cert" />
      </compilers>
      <config>
    package Compiler is
