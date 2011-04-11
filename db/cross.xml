@@ -58,6 +58,7 @@
 
    <!-- Forbid mixing kernel and rtp.  -->
    <configuration>
+     <compilers><compiler /></compilers>
      <compilers><compiler runtime="kernel" /></compilers>
      <compilers><compiler runtime="kernel-smp" /></compilers>
      <compilers><compiler runtime="kernel-sjlj" /></compilers>
@@ -70,34 +71,42 @@
    <!-- vxworks kernel executables have a .out extension -->
    <configuration>
      <compilers>
+       <compiler name="GNAT" />
        <compiler name="GNAT" runtime="default" />
        <compiler name="GNAT" runtime="kernel" />
        <compiler name="GNAT" runtime="kernel-sjlj" />
        <compiler name="GNAT" runtime="kernel-smp" />
+       <compiler name="GCC" />
        <compiler name="GCC" runtime="default" />
        <compiler name="GCC" runtime="kernel" />
        <compiler name="GCC" runtime="kernel-sjlj" />
        <compiler name="GCC" runtime="kernel-smp" />
+       <compiler name="GCC-WRS6" />
        <compiler name="GCC-WRS6" runtime="kernel" />
        <compiler name="GCC-WRS6" runtime="kernel-sjlj" />
        <compiler name="GCC-WRS6" runtime="kernel-smp" />
+       <compiler name="GCC-WRS6E500V2" />
        <compiler name="GCC-WRS6E500V2" runtime="kernel" />
        <compiler name="GCC-WRS6E500V2" runtime="kernel-sjlj" />
        <compiler name="GCC-WRS6E500V2" runtime="kernel-smp" />
+       <compiler name="GCC-WRS6CERT" />
        <compiler name="GCC-WRS6CERT" runtime="kernel" />
        <compiler name="GCC-WRS6CERT" runtime="ravenscar-cert" />
+       <compiler name="G++-WRS6" />
        <compiler name="G++-WRS6" runtime="kernel" />
        <compiler name="G++-WRS6" runtime="kernel-sjlj" />
        <compiler name="G++-WRS6" runtime="kernel-smp" />
+       <compiler name="G++-WRS6E500V2" />
        <compiler name="G++-WRS6E500V2" runtime="kernel" />
        <compiler name="G++-WRS6E500V2" runtime="kernel-sjlj" />
        <compiler name="G++-WRS6E500V2" runtime="kernel-smp" />
+       <compiler name="G++-WRS6CERT" />
        <compiler name="G++-WRS6CERT" runtime="kernel" />
        <compiler name="G++-WRS6CERT" runtime="ravenscar-cert" />
        <compiler name="GCC-WRS5" />
      </compilers>
      <targets>
-       <target name=".*-wrs-vxworks" />
+       <target name="^.*-wrs-vxworks$" />
      </targets>
      <config>
    package Builder is
@@ -123,7 +132,7 @@
        <compiler name="G++-WRS6E500V2" runtime="rtp-smp" />
      </compilers>
      <targets>
-       <target name=".*-wrs-vxworks" />
+       <target name="^.*-wrs-vxworks$" />
      </targets>
      <config>
    package Builder is
@@ -143,7 +152,7 @@
        <compiler name="GNAT" runtime="rtp-smp" />
      </compilers>
      <targets>
-       <target name=".*-wrs-vxworks" />
+       <target name="^.*-wrs-vxworks$" />
      </targets>
      <config>
    package Compiler is
@@ -168,7 +177,7 @@
        <compiler name="GCC-WRS6E500V2" runtime="rtp-smp" />
      </compilers>
      <targets>
-       <target name=".*-wrs-vxworks" />
+       <target name="^.*-wrs-vxworks$" />
      </targets>
      <config>
    package Compiler is
@@ -219,21 +228,25 @@
 
    <configuration>
      <compilers>
+       <compiler name="GCC" />
        <compiler name="GCC" runtime="kernel" />
        <compiler name="GCC" runtime="kernel-sjlj" />
        <compiler name="GCC" runtime="kernel-smp" />
        <compiler name="GCC" runtime="ravenscar-cert" />
+       <compiler name="GCC-WRS6" />
        <compiler name="GCC-WRS6" runtime="kernel" />
        <compiler name="GCC-WRS6" runtime="kernel-sjlj" />
        <compiler name="GCC-WRS6" runtime="kernel-smp" />
+       <compiler name="GCC-WRS6E500V2" />
        <compiler name="GCC-WRS6E500V2" runtime="kernel" />
        <compiler name="GCC-WRS6E500V2" runtime="kernel-sjlj" />
        <compiler name="GCC-WRS6E500V2" runtime="kernel-smp" />
+       <compiler name="GCC-WRS6CERT" />
        <compiler name="GCC-WRS6CERT" runtime="kernel" />
        <compiler name="GCC-WRS6CERT" runtime="ravenscar-cert" />
      </compilers>
      <targets>
-       <target name=".*-wrs-vxworks" />
+       <target name="^.*-wrs-vxworks$" />
      </targets>
      <config>
    package Compiler is
@@ -245,13 +258,15 @@
      </config>
    </configuration>
 
+   <!-- require specification of run-time for VxWorks 5 using GNAT for C -->
    <configuration>
      <compilers>
        <compiler name="GCC" runtime="default" />
+       <compiler name="GCC-WRS5" />
        <compiler name="GCC-WRS5" runtime="default" />
      </compilers>
      <targets>
-       <target name=".*-wrs-vxworks" />
+       <target name="^.*-wrs-vxworks$" />
      </targets>
      <config>
    package Compiler is
