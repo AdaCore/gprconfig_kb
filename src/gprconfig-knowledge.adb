@@ -3624,9 +3624,8 @@ package body GprConfig.Knowledge is
                      --  If the runtime is a full path, we'd better to
                      --  discard it as we will never find it.
                      --  ??? To be reworked.
-                     if Rts'Length > 0
-                       and then Rts (Rts'First) = Directory_Separator
-                     then
+
+                     if Rts'Length > 0 and then Is_Absolute_Path (Rts) then
                         Put_Line
                           (Standard_Error,
                            "warning: RTS for language " &
