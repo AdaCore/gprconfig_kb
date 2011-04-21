@@ -13,6 +13,15 @@ This date shows the implementation date of the feature. Any 1.6.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-16-K408-001 New attributes Dependency_Kind and Language_Kind (2011-04-21)
+
+  Two new configuration attributes are added in package Compiler:
+  Dependency_Kind and Language_Kind. By default, for Ada, language kind
+  is unit based and dependency kind is ALI file. For other languages,
+  language kind is file based and dependency kind is Makefile.
+  These attributes may be overriden in user projects.
+  No change of functionality if they are not overriden.
+
 NF-16-K331-022 Clear message for command line switch in Builder (2011-04-04)
 
   When a gprbuild switch that is only valid on the command line is found in
