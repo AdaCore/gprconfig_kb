@@ -20,6 +20,8 @@
 
    package Compiler is
       for Driver                   ("Ada") use "gnaamp";
+      for Language_Kind            ("Ada") use "unit_based";
+      for Dependency_Kind          ("Ada") use "ALI_File";
       for Required_Switches        ("Ada") use
           Compiler'Required_Switches ("Ada")
              &amp; ("-gnatA");
@@ -74,6 +76,8 @@
 
    package Compiler is
       for Driver                   ("Ada") use "${PATH(ada)}${PREFIX(ada)}gcc";
+      for Language_Kind            ("Ada") use "unit_based";
+      for Dependency_Kind          ("Ada") use "ALI_File";
       for Leading_Required_Switches        ("Ada") use
           Compiler'Leading_Required_Switches ("Ada")
 	     &amp; ("-c", "-x", "ada", "-gnatA");
