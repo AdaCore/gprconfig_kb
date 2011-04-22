@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2010, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2011, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1374,11 +1374,32 @@ begin
             Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
          end if;
 
-         if Auto_Init
-           and then SALs_Use_Constructors
-           and then GNAT_Version.all >= "5.04"
-         then
-            Add (Auto_Initialize, Bind_Options, Last_Bind_Option);
+         if Auto_Init and then SALs_Use_Constructors then
+            --  Check that pragma Linker_Constructor is supported
+
+            if GNAT_Version'Length > 2
+              and then GNAT_Version
+                (GNAT_Version'First .. GNAT_Version'First + 1) = "3."
+            then
+               --  GNAT version 3.xx
+
+               null;
+
+            elsif GNAT_Version'Length > 2
+              and then GNAT_Version
+                (GNAT_Version'First .. GNAT_Version'First + 1) = "5."
+              and then GNAT_Version.all < "5.04"
+            then
+               --  GNAT versions 5.00, 5.01, 5.02 or 5.03
+
+               null;
+
+            else
+               --  Any other supported GNAT version should support pragma
+               --  Linker_Constructor. So, invoke gnatbind with -a.
+
+               Add (Auto_Initialize, Bind_Options, Last_Bind_Option);
+            end if;
          end if;
 
          for J in 1 .. Binding_Options_Table.Last loop
