@@ -167,6 +167,16 @@ procedure Gprbind is
       Table_Increment      => 100,
       Table_Name           => "Gprbind.Binding_Options_Table");
 
+   Binding_Option_Dash_V_Specified : Boolean := False;
+   --  Set to True if -v is specified in the binding options
+
+   GNAT_6_Or_Higher   : Boolean := False;
+   --  Set to True when GNAT version is neither 3.xx nor 5.xx
+
+   GNAT_6_4_Or_Higher : Boolean := False;
+   --  Set to True when GNAT_6_Or_Higher is True and if GNAT version is 6.xy
+   --  with x >= 4.
+
    package ALI_Files_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -364,15 +374,16 @@ begin
                      GNATBIND := new String'
                        (Line (Ada_Binder_Equal'Length + 1 .. Last));
 
-                  --  Ignore -C, as the generated sources are always in Ada
-                  --  When -O is used, instead of -O=file, also ignore -v to
-                  --  avoid polluting the output.
+                  --  When -O is used, instead of -O=file, -v is ignored to
+                  --  avoid polluting the output. Record occurence of -v and
+                  --  check the GNAT version later.
 
-                  elsif Line (1 .. Last) /= "-C"
-                    and then
-                      (GNAT_Version.all >= "6.4"
-                       or else Line (1 .. Last) /= "-v")
-                  then
+                  elsif Line (1 .. Last) = "-v" then
+                     Binding_Option_Dash_V_Specified := True;
+
+                  --  Ignore -C, as the generated sources are always in Ada
+
+                  elsif  Line (1 .. Last) /= "-C" then
                      Binding_Options_Table.Append
                                              (new String'(Line (1 .. Last)));
                   end if;
@@ -453,6 +464,32 @@ begin
    end if;
 
    Close (IO_File);
+
+   --  Check if GNAT version is 6.4 or higher
+
+   if GNAT_Version'Length > 2 then
+      if GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "3."
+         and then
+         GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "5."
+      then
+         GNAT_6_Or_Higher := True;
+
+         if GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "6."
+            or else
+            GNAT_Version.all >= "6.4"
+         then
+            GNAT_6_4_Or_Higher := True;
+         end if;
+      end if;
+   end if;
+
+   --  Check if binding option -v was specified and issue it only if the GNAT
+   --  version is 6.4 or higher, otherwise the output of gnatbind -O will be
+   --  polluted.
+
+   if Binding_Option_Dash_V_Specified and then GNAT_6_4_Or_Higher then
+      Binding_Options_Table.Append (new String'("-v"));
+   end if;
 
    Add (Dash_x, Gnatbind_Options, Last_Gnatbind_Option);
 
@@ -577,7 +614,7 @@ begin
       Tempdir.Create_Temp_File (FD_Objects, Objects_Path);
    end if;
 
-   if GNAT_Version.all >= "6.4" then
+   if GNAT_6_4_Or_Higher then
       if not Dash_O_File_Specified then
          Add
            (Dash_OO & "=" & Get_Name_String (Objects_Path),
@@ -643,8 +680,8 @@ begin
       --  Invoke gnatbind with the arguments if the size is not too large or
       --  if the version of GNAT is not recent enough.
 
-      if GNAT_Version.all < "6" or else Size <= Maximum_Size then
-         if GNAT_Version.all < "6.4" then
+      if not GNAT_6_Or_Higher or else Size <= Maximum_Size then
+         if not GNAT_6_4_Or_Higher then
             Spawn
               (Gnatbind_Path.all,
                Gnatbind_Options (1 .. Last_Gnatbind_Option),
@@ -744,7 +781,7 @@ begin
 
             --  And invoke gnatbind with this this response file
 
-            if GNAT_Version.all < "6.4" then
+            if not GNAT_6_4_Or_Higher then
                Spawn
                  (Gnatbind_Path.all,
                   Args,
@@ -768,7 +805,7 @@ begin
       end if;
    end;
 
-   if GNAT_Version.all < "6.4" and then not Dash_O_File_Specified then
+   if not GNAT_6_4_Or_Higher and then not Dash_O_File_Specified then
       Close (FD_Objects);
    end if;
 
