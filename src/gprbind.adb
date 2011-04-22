@@ -516,7 +516,11 @@ begin
    --  If there are Stand-Alone Libraries, invoke gnatbind with -F (generate
    --  checks of elaboration flags) to avoid multiple elaborations.
 
-   if There_Are_Stand_Alone_Libraries and then GNAT_Version.all >= "5.01" then
+   if There_Are_Stand_Alone_Libraries
+     and then GNAT_Version'Length > 2
+     and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
+                "3."
+   then
       Add ("-F", Gnatbind_Options, Last_Gnatbind_Option);
    end if;
 
@@ -602,7 +606,11 @@ begin
    --  Add the switch -F=<mapping file> if the mapping file was specified
    --  and the version of GNAT is recent enough.
 
-   if Mapping_File /= null and then GNAT_Version.all >= "5" then
+   if Mapping_File /= null
+     and then GNAT_Version'Length > 2
+     and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
+                "3."
+   then
       Add (Dash_Fequal & Mapping_File.all,
            Gnatbind_Options,
            Last_Gnatbind_Option);
