@@ -107,6 +107,9 @@ procedure Gprlib is
    GNAT_Version : String_Access := new String'("000");
    --  The version of GNAT, coming from the Toolchain_Version for Ada
 
+   GNAT_Version_Set : Boolean := False;
+   --  True when the toolchain version is in the input exchange file
+
    S_Osinte_Ads : File_Name_Type := No_File;
    --  Name_Id for "s-osinte.ads"
 
@@ -1128,6 +1131,7 @@ begin
 
                   if Last > 5 and then Line (1 .. 5) = "GNAT " then
                      GNAT_Version := new String'(Line (6 .. Last));
+                     GNAT_Version_Set := True;
 
                      --  On VMS, replace all '.' with '_', to avoid names with
                      --  several dots.
@@ -1377,11 +1381,13 @@ begin
          if Auto_Init and then SALs_Use_Constructors then
             --  Check that pragma Linker_Constructor is supported
 
-            if GNAT_Version'Length > 2
-              and then GNAT_Version
-                (GNAT_Version'First .. GNAT_Version'First + 1) = "3."
+            if not GNAT_Version_Set
+              or else
+                 (GNAT_Version'Length > 2
+                and then GNAT_Version
+                 (GNAT_Version'First .. GNAT_Version'First + 1) = "3.")
             then
-               --  GNAT version 3.xx
+               --  GNAT version 3.xx or unknown
 
                null;
 
@@ -1511,7 +1517,18 @@ begin
             --  Invoke gnatbind with the arguments if the size is not too large
             --  or if the version of GNAT is not recent enough.
 
-            if GNAT_Version.all < "6" or else Size <= Maximum_Size then
+            if  Size <= Maximum_Size
+              or else
+                not GNAT_Version_Set
+              or else
+                (GNAT_Version'Length > 2
+                 and then
+                 (GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) =
+                    "3."
+                  or else
+                  GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) =
+                    "5."))
+            then
                Spawn
                  (Gnatbind_Path.all,
                   Bind_Options (1 .. Last_Bind_Option),

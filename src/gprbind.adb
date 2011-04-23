@@ -151,6 +151,9 @@ procedure Gprbind is
    GNAT_Version : String_Access := new String'("000");
    --  The version of GNAT, coming from the Toolchain_Version for Ada
 
+   GNAT_Version_Set : Boolean := False;
+   --  True when the toolchain version is in the input exchange file
+
    Delete_Temp_Files : Boolean := True;
 
    FD_Objects   : File_Descriptor;
@@ -415,6 +418,7 @@ begin
 
                      if Last > 5 and then Line (1 .. 5) = "GNAT " then
                         GNAT_Version := new String'(Line (6 .. Last));
+                        GNAT_Version_Set := True;
                      end if;
 
                   else
@@ -467,19 +471,23 @@ begin
 
    --  Check if GNAT version is 6.4 or higher
 
-   if GNAT_Version'Length > 2 then
-      if GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "3."
-         and then
-         GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "5."
-      then
-         GNAT_6_Or_Higher := True;
+   if  GNAT_Version_Set
+      and then
+       GNAT_Version'Length > 2
+      and then
+       GNAT_Version.all /= "000"
+      and then
+       GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "3."
+      and then
+       GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "5."
+   then
+      GNAT_6_Or_Higher := True;
 
-         if GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "6."
-            or else
-            GNAT_Version.all >= "6.4"
-         then
-            GNAT_6_4_Or_Higher := True;
-         end if;
+      if  GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /= "6."
+         or else
+          GNAT_Version.all >= "6.4"
+      then
+         GNAT_6_4_Or_Higher := True;
       end if;
    end if;
 
@@ -517,6 +525,7 @@ begin
    --  checks of elaboration flags) to avoid multiple elaborations.
 
    if There_Are_Stand_Alone_Libraries
+     and then GNAT_Version_Set
      and then GNAT_Version'Length > 2
      and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
                 "3."
@@ -607,6 +616,7 @@ begin
    --  and the version of GNAT is recent enough.
 
    if Mapping_File /= null
+     and then GNAT_Version_Set
      and then GNAT_Version'Length > 2
      and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
                 "3."

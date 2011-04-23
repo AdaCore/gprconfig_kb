@@ -8233,7 +8233,6 @@ package body Buildgpr is
          Options_Instance : Bind_Option_Table_Ref := No_Bind_Option_Table;
          Dep_Files        : Boolean;
          Lang_Index       : Language_Ptr;
-         Toolchain_Version_Label_Written  : Boolean;
          Object_File_Suffix_Label_Written : Boolean;
 
       begin
@@ -8785,32 +8784,17 @@ package body Buildgpr is
                end;
             end if;
 
-            --  Send the Toolchain Versions of each language where
-            --  they are declared.
+            --  Send the Toolchain Version if there is one for the language
 
-            Lang_Index := Main_Proj.Languages;
-            Toolchain_Version_Label_Written := False;
-
-            while Lang_Index /= No_Language_Index loop
-               if Lang_Index.Config.Toolchain_Version /= No_Name then
-                  if not Toolchain_Version_Label_Written then
-                     Put_Line
-                       (Exchange_File, Binding_Label
-                          (Toolchain_Version));
-                     Toolchain_Version_Label_Written := True;
-                  end if;
-
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (Lang_Index.Name));
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String
-                       (Lang_Index.Config.Toolchain_Version));
-               end if;
-
-               Lang_Index := Lang_Index.Next;
-            end loop;
+            if B_Data.Language.Config.Toolchain_Version /= No_Name then
+               Put_Line (Exchange_File, Binding_Label (Toolchain_Version));
+               Put_Line
+                 (Exchange_File,
+                  Get_Name_String (B_Data.Language.Name));
+               Put_Line
+                 (Exchange_File,
+                  Get_Name_String (B_Data.Language.Config.Toolchain_Version));
+            end if;
 
             --  Send the object file suffix for each language where it
             --  is declared.
