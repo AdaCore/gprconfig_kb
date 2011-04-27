@@ -574,30 +574,21 @@ procedure Gprlib is
                Put_Line (" to library dependency directory");
             end if;
 
-            Success := False;
+            declare
+               ALI_File : constant String := ALIs.Table (Index).all;
+            begin
+               if Is_Regular_File (ALI_File) then
+                  Copy_File
+                    (ALI_File,
+                     Library_Dependency_Directory.all,
+                     Success,
+                     Mode     => Overwrite,
+                     Preserve => Preserve);
 
-            --  Look in the object directories for the ALI files, starting
-            --  with the object directory of the projects, then those of the
-            --  projects it extends, if any.
-
-            for J in 1 .. Object_Directories.Last loop
-               declare
-                  ALI_File : constant String :=
-                               Object_Directories.Table (J).all &
-                                 Directory_Separator &
-                   ALIs.Table (Index).all;
-               begin
-                  if Is_Regular_File (ALI_File) then
-                     Copy_File
-                       (ALI_File,
-                        Library_Dependency_Directory.all,
-                        Success,
-                        Mode     => Overwrite,
-                        Preserve => Preserve);
-                     exit;
-                  end if;
-               end;
-            end loop;
+               else
+                  Success := False;
+               end if;
+            end;
 
             exit when not Success;
          end loop;

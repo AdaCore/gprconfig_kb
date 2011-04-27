@@ -3129,19 +3129,19 @@ package body Buildgpr is
                      exit when Source = No_Source;
 
                      if not Source.Locally_Removed
-                       and then Source.Dep_Name /= No_File
+                       and then Source.Dep_Path /= No_Path
                      then
                         if Source.Kind = Spec then
                            if Other_Part (Source) = No_Source then
                               Put_Line
                                 (Exchange_File,
-                                 Get_Name_String (Source.Dep_Name));
+                                 Get_Name_String (Source.Dep_Path));
                            end if;
 
                         elsif not Is_Subunit (Source) then
                            Put_Line
                              (Exchange_File,
-                              Get_Name_String (Source.Dep_Name));
+                              Get_Name_String (Source.Dep_Path));
                         end if;
                      end if;
 
@@ -3188,7 +3188,60 @@ package body Buildgpr is
                while Interface_ALIs /= Nil_String loop
                   Element :=
                     Project_Tree.Shared.String_Elements.Table (Interface_ALIs);
-                  Put_Line (Exchange_File, Get_Name_String (Element.Value));
+
+                  --  Find the source to get the absolute path of the ALI file
+
+                  declare
+                     Next_Proj : Project_Id;
+                     Iter      : Source_Iterator;
+                  begin
+                     Next_Proj := For_Project.Extends;
+                     Iter := For_Each_Source (Project_Tree, For_Project);
+                     loop
+                        while Prj.Element (Iter) /= No_Source
+                          and then
+                            (Prj.Element (Iter).Unit = null
+                             or else Prj.Element (Iter).Dep_Name /=
+                                      File_Name_Type (Element.Value))
+                        loop
+                           Next (Iter);
+                        end loop;
+
+                        Source := Prj.Element (Iter);
+                        exit when Source /= No_Source
+                          or else Next_Proj = No_Project;
+
+                        Iter := For_Each_Source (Project_Tree, Next_Proj);
+                        Next_Proj := Next_Proj.Extends;
+                     end loop;
+
+                     if Source /= No_Source then
+                        if Source.Kind = Sep then
+                           Source := No_Source;
+
+                        elsif Source.Kind = Spec
+                          and then Other_Part (Source) /= No_Source
+                        then
+                           Source := Other_Part (Source);
+                        end if;
+                     end if;
+
+                     if Source /= No_Source then
+                        if Source.Project /= Project
+                          and then
+                            not Is_Extending (For_Project, Source.Project)
+                        then
+                           Source := No_Source;
+                        end if;
+                     end if;
+
+                     if Source /= No_Source then
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String (Source.Dep_Path));
+                     end if;
+                  end;
+
                   Interface_ALIs := Element.Next;
                end loop;
             end;
