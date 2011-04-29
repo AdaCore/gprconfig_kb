@@ -505,19 +505,10 @@ package body Buildgpr is
       Table_Low_Bound      => 1,
       Table_Initial        => 200,
       Table_Increment      => 100,
-      Table_Name           => "Makegpr.Cache_Args");
+      Table_Name           => "Buildgpr.Cache_Args");
    --  A table to cache arguments, to avoid multiple allocation of the same
    --  strings. It is not possible to use a hash table, because String is
    --  an unconstrained type.
-
-   package Directories is new Table.Table
-     (Table_Component_Type => Path_Name_Type,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 200,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.Directories");
-   --  Table of all the source directories
 
    --  Libraries
 
@@ -533,7 +524,7 @@ package body Buildgpr is
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 10,
-      Table_Name           => "Make.Library_Objs");
+      Table_Name           => "Buildgpr.Library_Objs");
    --  Library objects with their time stamps
 
    package Processed_Projects is new GNAT.HTable.Simple_HTable
@@ -796,21 +787,6 @@ package body Buildgpr is
    function Get_Option (Option : Name_Id) return String_Access;
    --  Get a string access corresponding to Option. Either find the string
    --  access in the All_Options cache, or create a new entry in All_Options.
-
-   type Name_Ids is array (Positive range <>) of Name_Id;
-   No_Names : constant Name_Ids := (1 .. 0 => No_Name);
-   --  Name_Ids is used for list of language names in procedure Get_Directories
-   --  below.
-
-   procedure Get_Directories
-     (For_Project : Project_Id;
-      Sources     : Boolean;
-      Languages   : Name_Ids);
-   --  Put in table Directories the source (when Sources is True) or
-   --  object/library (when Sources is False) directories of project
-   --  For_Project and of all the project it imports directly or indirectly.
-   --  The source directories of imported projects are only included if one
-   --  of the declared languages is in the list Languages.
 
    function Global_Archive_Name (For_Project : Project_Id) return String;
    --  Returns the name of the global archive for a project
@@ -4996,9 +4972,10 @@ package body Buildgpr is
          Status : Boolean;
       begin
          Get_Directories
-           (For_Project => Project,
-            Sources     => True,
-            Languages   => Get_Compatible_Languages (Lang));
+           (Project_Tree => Project_Tree,
+            For_Project  => Project,
+            Activity     => Compilation,
+            Languages    => Get_Compatible_Languages (Lang));
 
          Prj.Env.Create_New_Path_File
            (Shared    => Project_Tree.Shared,
@@ -5047,9 +5024,10 @@ package body Buildgpr is
          Nam       : Name_Node;
       begin
          Get_Directories
-           (Project,
-            Sources   => True,
-            Languages => Get_Compatible_Languages (Lang));
+           (Project_Tree => Project_Tree,
+            For_Project  => Project,
+            Activity     => Compilation,
+            Languages    => Get_Compatible_Languages (Lang));
 
          Free (Data.Imported_Dirs_Switches);
          Data.Imported_Dirs_Switches :=
@@ -5127,9 +5105,10 @@ package body Buildgpr is
 
             elsif Id.Language.Config.Include_Path /= No_Name then
                Get_Directories
-                 (Id.Object_Project,
-                  Sources   => True,
-                  Languages => Get_Compatible_Languages (Id.Language));
+                 (Project_Tree => Project_Tree,
+                  For_Project  => Id.Object_Project,
+                  Activity     => Compilation,
+                  Languages    => Get_Compatible_Languages (Id.Language));
                Data.Include_Path := Create_Path_From_Dirs;
             end if;
 
@@ -6208,108 +6187,6 @@ package body Buildgpr is
 
       return All_Options.Options (All_Options.Last);
    end Get_Option;
-
-   ---------------------
-   -- Get_Directories --
-   ---------------------
-
-   procedure Get_Directories
-     (For_Project : Project_Id;
-      Sources     : Boolean;
-      Languages   : Name_Ids)
-   is
-
-      procedure Recursive_Add
-        (Project : Project_Id;
-         Tree    : Project_Tree_Ref;
-         Dummy   : in out Boolean);
-      --  Add all the source directories of a project to the path only if
-      --  this project has not been visited. Calls itself recursively for
-      --  projects being extended, and imported projects.
-
-      procedure Add_Dir (Value : Path_Name_Type);
-      --  Add directory Value in table Directories, if it is defined and not
-      --  already there.
-
-      -------------
-      -- Add_Dir --
-      -------------
-
-      procedure Add_Dir (Value : Path_Name_Type) is
-         Add_It : Boolean := True;
-
-      begin
-         if Value /= No_Path then
-            for Index in 1 .. Directories.Last loop
-               if Directories.Table (Index) = Value then
-                  Add_It := False;
-                  exit;
-               end if;
-            end loop;
-
-            if Add_It then
-               Directories.Increment_Last;
-               Directories.Table (Directories.Last) := Value;
-            end if;
-         end if;
-      end Add_Dir;
-
-      -------------------
-      -- Recursive_Add --
-      -------------------
-
-      procedure Recursive_Add
-        (Project : Project_Id;
-         Tree    : Project_Tree_Ref;
-         Dummy   : in out Boolean)
-      is
-         pragma Unreferenced (Dummy);
-         Current   : String_List_Id;
-         Dir       : String_Element;
-         OK        : Boolean := False;
-         Lang_Proc : Language_Ptr := Project.Languages;
-      begin
-         --  Add to path all directories of this project
-
-         if Sources then
-            Lang_Loop :
-            while Lang_Proc /= No_Language_Index loop
-               for J in Languages'Range loop
-                  OK := Lang_Proc.Name = Languages (J);
-                  exit Lang_Loop when OK;
-               end loop;
-
-               Lang_Proc := Lang_Proc.Next;
-            end loop Lang_Loop;
-
-            if OK then
-               Current := Project.Source_Dirs;
-
-               while Current /= Nil_String loop
-                  Dir := Tree.Shared.String_Elements.Table (Current);
-                  Add_Dir (Path_Name_Type (Dir.Value));
-                  Current := Dir.Next;
-               end loop;
-            end if;
-
-         elsif Project.Library then
-            Add_Dir (Project.Library_ALI_Dir.Display_Name);
-
-         else
-            Add_Dir (Project.Object_Directory.Display_Name);
-         end if;
-      end Recursive_Add;
-
-      procedure For_All_Projects is
-        new For_Every_Project_Imported (Boolean, Recursive_Add);
-      Dummy : Boolean := False;
-
-      --  Start of processing for Get_Directories
-
-   begin
-      Directories.Init;
-      For_All_Projects (For_Project, Project_Tree, Dummy);
-   end Get_Directories;
 
    -------------------------
    -- Global_Archive_Name --
@@ -9220,9 +9097,10 @@ package body Buildgpr is
                         end if;
 
                         Get_Directories
-                          (Main_Proj,
-                           Sources   => False,
-                           Languages => No_Names);
+                          (Project_Tree => Project_Tree,
+                           For_Project  => Main_Proj,
+                           Activity     => Executable_Binding,
+                           Languages    => No_Names);
 
                         Path_Name := Create_Path_From_Dirs;
                         Main_Proj.Objects_Path := Path_Name;
@@ -9254,9 +9132,10 @@ package body Buildgpr is
                         end if;
 
                         Get_Directories
-                          (Main_Proj,
-                           Sources   => False,
-                           Languages => No_Names);
+                          (Project_Tree => Project_Tree,
+                           For_Project  => Main_Proj,
+                           Activity     => Executable_Binding,
+                           Languages    => No_Names);
 
                         declare
                            FD     : File_Descriptor;
