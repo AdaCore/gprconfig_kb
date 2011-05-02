@@ -3799,4 +3799,18 @@ package body GprConfig.Knowledge is
       return Comp.Target;
    end Target;
 
+   --------------------
+   -- Runtime_Dir_Of --
+   --------------------
+
+   function Runtime_Dir_Of (Comp : Compiler_Access) return Namet.Name_Id is
+   begin
+      if Comp = null then
+         return Namet.No_Name;
+
+      else
+         return Comp.Runtime_Dir;
+      end if;
+   end Runtime_Dir_Of;
+
 end GprConfig.Knowledge;

@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                   Copyright (C) 2006-2010, AdaCore                       --
+--                   Copyright (C) 2006-2011, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -580,6 +580,29 @@ begin
    end if;
 
    if Output_File /= Null_Unbounded_String then
+
+      --  Look for runtime directories XML files
+
+      declare
+         Cursor : Compiler_Lists.Cursor;
+         Comp   : Compiler_Access;
+
+      begin
+         Cursor := Compiler_Lists.First (Compilers);
+
+         while Compiler_Lists.Has_Element (Cursor) loop
+            Comp := Compiler_Lists.Element (Cursor);
+
+            if Runtime_Dir_Of (Comp) /= No_Name then
+               Parse_Knowledge_Base
+                 (Base,
+                  Get_Name_String (Runtime_Dir_Of (Comp)));
+            end if;
+
+            Compiler_Lists.Next (Cursor);
+         end loop;
+      end;
+
       Generate_Configuration
         (Base,
          Compilers,

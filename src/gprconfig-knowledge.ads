@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---                   Copyright (C) 2006-2010, AdaCore                       --
+--                   Copyright (C) 2006-2011, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -115,6 +115,10 @@ package GprConfig.Knowledge is
 
    type Compiler is private;
    type Compiler_Access is access all Compiler;
+
+   function Runtime_Dir_Of (Comp : Compiler_Access) return Namet.Name_Id;
+   --  Return the name of the runtime directory for the compiler. Returns
+   --  No_Name if Comp is null.
 
    package Compiler_Lists
       is new Ada.Containers.Indefinite_Doubly_Linked_Lists (Compiler_Access);
