@@ -1071,8 +1071,10 @@ package body GprConfig.Knowledge is
          raise Invalid_Knowledge_Base;
 
       when E : others =>
-         Put_Verbose ("Unexpected exception while parsing knowledge base: "
-                      & Exception_Information (E));
+         Put_Line
+           (Standard_Error,
+            "Unexpected exception while parsing knowledge base: "
+            & Exception_Information (E));
          raise Invalid_Knowledge_Base;
    end Parse_Knowledge_Base;
 
