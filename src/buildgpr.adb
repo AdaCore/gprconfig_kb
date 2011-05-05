@@ -3454,14 +3454,6 @@ package body Buildgpr is
       Main_Id      : Main_Info;
 
    begin
-      Compute_Compilation_Phases
-        (Project_Tree,
-         Main_Project,
-         Option_Unique_Compile => Unique_Compile,
-         Option_Compile_Only   => Opt.Compile_Only,
-         Option_Bind_Only      => Opt.Bind_Only,
-         Option_Link_Only      => Opt.Link_Only);
-
       Mains.Reset;
 
       loop
@@ -6363,8 +6355,17 @@ package body Buildgpr is
            (Project_Tree, "cannot specify -o when there are several mains");
       end if;
 
+      Compute_Compilation_Phases
+        (Project_Tree,
+         Main_Project,
+         Option_Unique_Compile => Unique_Compile,
+         Option_Compile_Only   => Opt.Compile_Only,
+         Option_Bind_Only      => Opt.Bind_Only,
+         Option_Link_Only      => Opt.Link_Only);
+
       if Mains.Number_Of_Mains (Project_Tree) > 0
         and then Main_Project.Library
+        and then Builder_Data (Project_Tree).Need_Binding
       then
          Fail_Program
            (Project_Tree,
