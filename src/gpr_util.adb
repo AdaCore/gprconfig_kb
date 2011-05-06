@@ -806,9 +806,9 @@ package body Gpr_Util is
                               --  If the source has been modified after the
                               --  object file, we need to recompile.
 
-                           elsif Object_Check
-                             and then Object_To_Global_Archive (Source)
-                             and then Src_TS > Source.Object_TS
+                           elsif Src_TS > Source.Object_TS
+                             and then Object_Check
+                             and then Source.Language.Config.Object_Generated
                            then
                               if Verbose_Mode then
                                  Write_Str  ("      -> source ");
