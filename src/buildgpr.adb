@@ -6331,7 +6331,7 @@ package body Buildgpr is
          Prj.Err.Initialize;
       end if;
 
-      Compute_All_Imported_Projects (Project_Tree);
+      Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
       Queue.Initialize (Opt.One_Compilation_Per_Obj_Dir);
 
