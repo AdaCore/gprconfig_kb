@@ -90,13 +90,14 @@
      </config>
    </configuration>
 
-  <!--     GCC 2.8.1
+  <!--     GCC 2.8.1 & VxWorks 5
    Switch -MMD is not supported on GCC 2.8.1. So, we use an undocumented
-   switch.
+   switch. -MF is not supported by the VxWorks 5 gcc
    -->
    <configuration>
      <compilers>
        <compiler name="GCC-28" language="C" />
+       <compiler name="GCC-WRS5" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -110,7 +111,6 @@
        <compiler name="GCC" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-MINGW32" language="C" />
-       <compiler name="GCC-WRS5" language="C" />
        <compiler name="GCC-WRS6" language="C" />
        <compiler name="GCC-WRS6E500V2" language="C" />
        <compiler name="GCC-WRS6CERT" language="C" />
