@@ -55,7 +55,7 @@ KP-151-K125-041 No binding of locally removed sources
               an attempt is made to bind locally removed Ada sources, resulting
               in a gprbuild crash.
 
-  Status:     This was fixed in 1.6.0 on 2011-02-02
+  Status:     This was fixed in 1.5.2 on 2011-02-02
 
   Workaround: Remove the sources instead of declaring them locally removed.
 
