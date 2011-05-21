@@ -1064,7 +1064,7 @@ package body GprConfig.Knowledge is
 
    exception
       when Ada.Directories.Name_Error =>
-         Put_Line (Standard_Error, "Directory not found: " & Directory);
+         Put_Verbose ("Directory not found: " & Directory);
 
       when Invalid_Knowledge_Base =>
          raise;
