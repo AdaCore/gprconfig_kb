@@ -805,12 +805,12 @@ package body Buildgpr is
    --  Return True if Object_Path is the path of an object file in a library
    --  project.
 
-   procedure Linking_Phase
-     (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref);
    procedure Linking_Phase;
-   --  Perform linking, if necessary.
-   --  This is either for a specific project tree, or for the root project and
-   --  all its aggregated projects.
+   --  Perform linking, if necessary, for all registered mains: main project,
+   --  aggregated projects,...
+
+   procedure Link_Main (Main_File  : Main_Info);
+   --  Link a specific main unit
 
    procedure Post_Compilation_Phase
      (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref);
@@ -6674,9 +6674,20 @@ package body Buildgpr is
    procedure Linking_Phase is
       procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref);
       procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref) is
+         pragma Unreferenced (Project);
+         Main_File  : Main_Info;
       begin
          if Builder_Data (Tree).Need_Linking then
-            Linking_Phase (Project, Tree);
+            Mains.Reset;
+            loop
+               Main_File := Mains.Next_Main;
+               exit when Main_File = No_Main_Info;
+
+               if Main_File.Tree = Tree then
+                  Link_Main (Main_File);
+               end if;
+            end loop;
+
             if Total_Errors_Detected > 0 then
                Fail_Program (Tree, "*** link failed");
             end if;
@@ -6688,13 +6699,11 @@ package body Buildgpr is
       Link_All (Main_Project, Project_Tree);
    end Linking_Phase;
 
-   -------------------
-   -- Linking_Phase --
-   -------------------
+   ---------------
+   -- Link_Main --
+   ---------------
 
-   procedure Linking_Phase
-     (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref)
-   is
+   procedure Link_Main (Main_File  : Main_Info) is
       Linker_Name        : String_Access := null;
       Linker_Path        : String_Access;
       Min_Linker_Opts    : Name_List_Index;
@@ -6709,13 +6718,9 @@ package body Buildgpr is
       Linker_Needs_To_Be_Called : Boolean;
 
       Executable_TS      : Time_Stamp_Type;
-
       Main_Object_TS     : Time_Stamp_Type;
-
       Binder_Exchange_TS : Time_Stamp_Type;
-
       Binder_Object_TS   : Time_Stamp_Type := Dummy_Time_Stamp;
-
       Global_Archive_TS  : Time_Stamp_Type;
 
       Global_Archive_Has_Been_Built : Boolean;
@@ -6723,1181 +6728,1166 @@ package body Buildgpr is
 
       Disregard          : Boolean;
 
-      Main_File  : Main_Info;
-      Main_Index : Int;
-
       B_Data : Binding_Data;
 
+      --  Main already has the right canonical casing
+      Main         : constant String := Get_Name_String (Main_File.File);
+      Main_Source  : constant Source_Id := Main_File.Source;
+
+      Main_Id        : File_Name_Type;
+
+      Exec_Name      : File_Name_Type;
+      Exec_Path_Name : Path_Name_Type;
+
+      Main_Proj      : Project_Id;
+
+      Main_Base_Name_Index : File_Name_Type;
+
+      First_Object_Index : Natural := 0;
+      Last_Object_Index  : Natural := 0;
+
+      Index_Separator : Character;
+
+      Response_File_Name : Path_Name_Type := No_Path;
+      Response_2         : Path_Name_Type := No_Path;
+
    begin
-      Mains.Reset;
+      --  Make sure that the table Rpaths is emptied after each main, so
+      --  that the same rpaths are not duplicated.
 
-      loop
-         Main_File := Mains.Next_Main;
-         exit when Main_File = No_Main_Info;
+      Rpaths.Set_Last (0);
 
-         Main_Index := Main_File.Index;
+      Linker_Needs_To_Be_Called := Opt.Force_Compilations;
 
-         declare
-            --  Main already has the right canonical casing
-            Main         : constant String := Get_Name_String (Main_File.File);
-            Main_Source  : constant Source_Id := Main_File.Source;
+      Main_Id := Create_Name (Base_Name (Main));
+      Main_Proj := Ultimate_Extending_Project_Of (Main_Source.Project);
 
-            Main_Id        : File_Name_Type;
+      Change_To_Object_Directory (Main_Proj);
 
-            Exec_Name      : File_Name_Type;
-            Exec_Path_Name : Path_Name_Type;
+      --  Build the global archive for this project, if needed
 
-            Main_Proj      : Project_Id;
+      Build_Global_Archive
+        (Main_Proj,
+         Main_File.Tree,
+         Global_Archive_Has_Been_Built,
+         Global_Archive_Exists);
 
-            Main_Base_Name_Index : File_Name_Type;
+      --  Get the main base name
 
-            First_Object_Index : Natural := 0;
-            Last_Object_Index  : Natural := 0;
+      Index_Separator :=
+        Main_Source.Language.Config.Multi_Unit_Object_Separator;
 
-            Index_Separator : Character;
+      Main_Base_Name_Index :=
+        Base_Name_Index_For (Main, Main_File.Index, Index_Separator);
 
-            Response_File_Name : Path_Name_Type := No_Path;
-            Response_2         : Path_Name_Type := No_Path;
+      if (not Linker_Needs_To_Be_Called) and then Opt.Verbose_Mode then
+         Write_Str ("   Checking executable for ");
+         Write_Str (Get_Name_String (Main_Source.File));
+         Write_Line (" ...");
+      end if;
 
-         begin
-            --  Make sure that the table Rpaths is emptied after each main, so
-            --  that the same rpaths are not duplicated.
+      if Output_File_Name /= null then
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (Output_File_Name.all);
+         Exec_Name := Name_Find;
 
-            Rpaths.Set_Last (0);
+      else
+         Exec_Name := Executable_Of
+           (Project  => Main_Proj,
+            Shared   => Main_File.Tree.Shared,
+            Main     => Main_Id,
+            Index    => Main_Source.Index,
+            Ada_Main => False,
+            Language => Get_Name_String (Main_Source.Language.Name));
+      end if;
 
-            Linker_Needs_To_Be_Called := Opt.Force_Compilations;
+      if Main_Proj.Exec_Directory = Main_Proj.Object_Directory then
+         Exec_Path_Name := Path_Name_Type (Exec_Name);
 
-            Main_Id := Create_Name (Base_Name (Main));
-            Main_Proj := Ultimate_Extending_Project_Of (Main_Source.Project);
+      else
+         Get_Name_String (Main_Proj.Exec_Directory.Display_Name);
+         Name_Len := Name_Len + 1;
+         Name_Buffer (Name_Len) := Directory_Separator;
+         Add_Str_To_Name_Buffer (Get_Name_String (Exec_Name));
+         Exec_Path_Name := Name_Find;
+      end if;
 
-            Change_To_Object_Directory (Main_Proj);
+      Executable_TS := File_Stamp (Exec_Path_Name);
 
-            --  Build the global archive for this project, if needed
+      if (not Linker_Needs_To_Be_Called) and then
+        Executable_TS = Empty_Time_Stamp
+      then
+         Linker_Needs_To_Be_Called := True;
 
-            Build_Global_Archive
-              (Main_Proj,
-               Main_File.Tree,
-               Global_Archive_Has_Been_Built,
-               Global_Archive_Exists);
+         if Opt.Verbose_Mode then
+            Write_Line ("      -> executable does not exist");
+         end if;
+      end if;
 
-            --  Get the main base name
+      --  Get the path of the linker driver
 
-            Index_Separator :=
-              Main_Source.Language.Config.Multi_Unit_Object_Separator;
+      if Main_Proj.Config.Linker /= No_Path then
+         Linker_Name :=
+           new String'(Get_Name_String (Main_Proj.Config.Linker));
 
-            Main_Base_Name_Index :=
-              Base_Name_Index_For (Main, Main_Index, Index_Separator);
+         Linker_Path := Locate_Exec_On_Path (Linker_Name.all);
 
-            if (not Linker_Needs_To_Be_Called) and then Opt.Verbose_Mode then
-               Write_Str ("   Checking executable for ");
-               Write_Str (Get_Name_String (Main_Source.File));
-               Write_Line (" ...");
+         if Linker_Path = null then
+            Fail_Program
+              (Main_File.Tree,
+               "unable to find linker " & Linker_Name.all);
+         end if;
+
+      else
+         Fail_Program
+           (Main_File.Tree,
+            "no linker specified and " &
+              "no default linker in the configuration");
+      end if;
+
+      Last_Argument := 0;
+
+      Initialize_Source_Record (Main_Source);
+
+      Main_Object_TS :=
+        File_Stamp (File_Name_Type (Main_Source.Object_Path));
+
+      if not Linker_Needs_To_Be_Called then
+         if Main_Object_TS = Empty_Time_Stamp then
+            if Opt.Verbose_Mode then
+               Write_Line ("      -> main object does not exist");
             end if;
 
-            if Output_File_Name /= null then
-               Name_Len := 0;
-               Add_Str_To_Name_Buffer (Output_File_Name.all);
-               Exec_Name := Name_Find;
+            Linker_Needs_To_Be_Called := True;
 
-            else
-               Exec_Name := Executable_Of
-                 (Project  => Main_Proj,
-                  Shared   => Project_Tree.Shared,
-                  Main     => Main_Id,
-                  Index    => Main_Source.Index,
-                  Ada_Main => False,
-                  Language => Get_Name_String (Main_Source.Language.Name));
+         elsif String (Main_Object_TS) > String (Executable_TS) then
+            if Opt.Verbose_Mode then
+               Write_Line
+                 ("      -> main object more recent than executable");
             end if;
 
-            if Main_Proj.Exec_Directory = Main_Proj.Object_Directory then
-               Exec_Path_Name := Path_Name_Type (Exec_Name);
+            Linker_Needs_To_Be_Called := True;
+         end if;
+      end if;
 
-            else
-               Get_Name_String (Main_Proj.Exec_Directory.Display_Name);
-               Name_Len := Name_Len + 1;
-               Name_Buffer (Name_Len) := Directory_Separator;
-               Add_Str_To_Name_Buffer (Get_Name_String (Exec_Name));
-               Exec_Path_Name := Name_Find;
-            end if;
+      if Main_Object_TS = Empty_Time_Stamp then
+         Fail_Program
+           (Main_File.Tree,
+            "main object for " &
+              Get_Name_String (Main_Source.File) &
+              " does not exist");
+      end if;
 
-            Executable_TS := File_Stamp (Exec_Path_Name);
+      if Main_Proj = Main_Source.Object_Project then
+         Add_Argument (Get_Name_String (Main_Source.Object), True);
+      else
+         Add_Argument (Get_Name_String (Main_Source.Object_Path), True);
+      end if;
 
-            if (not Linker_Needs_To_Be_Called) and then
-              Executable_TS = Empty_Time_Stamp
-            then
-               Linker_Needs_To_Be_Called := True;
+      --  Add the Leading_Switches if there are any in package Linker
 
-               if Opt.Verbose_Mode then
-                  Write_Line ("      -> executable does not exist");
-               end if;
-            end if;
+      declare
+         The_Packages : constant Package_Id :=
+           Main_Proj.Decl.Packages;
 
-            --  Get the path of the linker driver
+         Linker_Package : constant Prj.Package_Id :=
+           Prj.Util.Value_Of
+             (Name        => Name_Linker,
+              In_Packages => The_Packages,
+              Shared      => Main_File.Tree.Shared);
 
-            if Main_Proj.Config.Linker /= No_Path then
-               Linker_Name :=
-                 new String'(Get_Name_String (Main_Proj.Config.Linker));
+         Switches     : Variable_Value;
+         Switch_List  : String_List_Id;
+         Element      : String_Element;
 
-               Linker_Path := Locate_Exec_On_Path (Linker_Name.all);
-
-               if Linker_Path = null then
-                  Fail_Program
-                    (Project_Tree,
-                     "unable to find linker " & Linker_Name.all);
-               end if;
-
-            else
-               Fail_Program
-                 (Project_Tree,
-                  "no linker specified and " &
-                  "no default linker in the configuration");
-            end if;
-
-            Last_Argument := 0;
-
-            Initialize_Source_Record (Main_Source);
-
-            Main_Object_TS :=
-              File_Stamp (File_Name_Type (Main_Source.Object_Path));
-
-            if not Linker_Needs_To_Be_Called then
-               if Main_Object_TS = Empty_Time_Stamp then
-                  if Opt.Verbose_Mode then
-                     Write_Line ("      -> main object does not exist");
-                  end if;
-
-                  Linker_Needs_To_Be_Called := True;
-
-               elsif String (Main_Object_TS) > String (Executable_TS) then
-                  if Opt.Verbose_Mode then
-                     Write_Line
-                       ("      -> main object more recent than executable");
-                  end if;
-
-                  Linker_Needs_To_Be_Called := True;
-               end if;
-            end if;
-
-            if Main_Object_TS = Empty_Time_Stamp then
-               Fail_Program
-                 (Project_Tree,
-                  "main object for " &
-                  Get_Name_String (Main_Source.File) &
-                  " does not exist");
-            end if;
-
-            if Main_Proj = Main_Source.Object_Project then
-               Add_Argument (Get_Name_String (Main_Source.Object), True);
-            else
-               Add_Argument (Get_Name_String (Main_Source.Object_Path), True);
-            end if;
-
-            --  Add the Leading_Switches if there are any in package Linker
-
+      begin
+         if Linker_Package /= No_Package then
             declare
-               The_Packages : constant Package_Id :=
-                 Main_Proj.Decl.Packages;
-
-               Linker_Package : constant Prj.Package_Id :=
+               Switches_Array : constant Array_Element_Id :=
                  Prj.Util.Value_Of
-                   (Name        => Name_Linker,
-                    In_Packages => The_Packages,
-                    Shared      => Project_Tree.Shared);
-
-               Switches     : Variable_Value;
-               Switch_List  : String_List_Id;
-               Element      : String_Element;
+                   (Name      => Name_Leading_Switches,
+                    In_Arrays =>
+                      Main_File.Tree.Shared.Packages.Table
+                        (Linker_Package).Decl.Arrays,
+                    Shared    => Main_File.Tree.Shared);
+               Option   : String_Access;
 
             begin
-               if Linker_Package /= No_Package then
-                  declare
-                     Switches_Array : constant Array_Element_Id :=
-                       Prj.Util.Value_Of
-                         (Name      => Name_Leading_Switches,
-                          In_Arrays =>
-                            Project_Tree.Shared.Packages.Table
-                              (Linker_Package).Decl.Arrays,
-                          Shared    => Project_Tree.Shared);
-                     Option   : String_Access;
+               Switches :=
+                 Prj.Util.Value_Of
+                   (Index     => Name_Id (Main_Id),
+                    Src_Index => 0,
+                    In_Array  => Switches_Array,
+                    Shared    => Main_File.Tree.Shared);
 
-                  begin
-                     Switches :=
-                       Prj.Util.Value_Of
-                         (Index     => Name_Id (Main_Id),
-                          Src_Index => 0,
-                          In_Array  => Switches_Array,
-                          Shared    => Project_Tree.Shared);
-
-                     if Switches = Nil_Variable_Value then
-                        Switches :=
-                          Prj.Util.Value_Of
-                            (Index                  =>
-                                 Main_Source.Language.Name,
-                             Src_Index              => 0,
-                             In_Array               => Switches_Array,
-                             Shared                 => Project_Tree.Shared,
-                             Force_Lower_Case_Index => True);
-                     end if;
-
-                     if Switches = Nil_Variable_Value then
-                        Switches :=
-                          Prj.Util.Value_Of
-                            (Index                  => All_Other_Names,
-                             Src_Index              => 0,
-                             In_Array               => Switches_Array,
-                             Shared                 => Project_Tree.Shared,
-                             Force_Lower_Case_Index => True);
-                     end if;
-
-                     case Switches.Kind is
-                        when Undefined | Single =>
-                           null;
-
-                        when Prj.List =>
-                           Switch_List := Switches.Values;
-
-                           while Switch_List /= Nil_String loop
-                              Element :=
-                                Project_Tree.Shared.String_Elements.Table
-                                  (Switch_List);
-                              Get_Name_String (Element.Value);
-
-                              if Name_Len > 0 then
-                                 Option :=
-                                   new String'(Name_Buffer (1 .. Name_Len));
-                                 Add_Argument (Option.all, True);
-                              end if;
-
-                              Switch_List := Element.Next;
-                           end loop;
-                     end case;
-                  end;
+               if Switches = Nil_Variable_Value then
+                  Switches :=
+                    Prj.Util.Value_Of
+                      (Index                  =>
+                           Main_Source.Language.Name,
+                       Src_Index              => 0,
+                       In_Array               => Switches_Array,
+                       Shared                 => Main_File.Tree.Shared,
+                       Force_Lower_Case_Index => True);
                end if;
-            end;
 
-            Find_Binding_Languages (Project_Tree, Main_Project);
+               if Switches = Nil_Variable_Value then
+                  Switches :=
+                    Prj.Util.Value_Of
+                      (Index                  => All_Other_Names,
+                       Src_Index              => 0,
+                       In_Array               => Switches_Array,
+                       Shared                 => Main_File.Tree.Shared,
+                       Force_Lower_Case_Index => True);
+               end if;
 
-            if Builder_Data (Main_File.Tree).There_Are_Binder_Drivers then
-               First_Object_Index := Last_Argument + 1;
-               Binding_Options.Init;
+               case Switches.Kind is
+                  when Undefined | Single =>
+                     null;
 
-               B_Data := Builder_Data (Main_File.Tree).Binding;
-               while B_Data /= null loop
-                  declare
-                     Exchange_File_Name : constant String :=
-                                            Binder_Exchange_File_Name
-                                              (Main_Base_Name_Index,
-                                               B_Data.Binder_Prefix).all;
+                  when Prj.List =>
+                     Switch_List := Switches.Values;
 
-                  begin
-                     if Is_Regular_File (Exchange_File_Name) then
+                     while Switch_List /= Nil_String loop
+                        Element :=
+                          Main_File.Tree.Shared.String_Elements.Table
+                            (Switch_List);
+                        Get_Name_String (Element.Value);
 
-                        Binder_Exchange_TS :=
-                          File_Stamp
-                            (Path_Name_Type'(Create_Name
-                                               (Exchange_File_Name)));
-
-                        if (not Linker_Needs_To_Be_Called) and then
-                          String (Binder_Exchange_TS) > String (Executable_TS)
-                        then
-                           Linker_Needs_To_Be_Called := True;
-
-                           if Opt.Verbose_Mode then
-                              Write_Str ("      -> binder exchange file """);
-                              Write_Str (Exchange_File_Name);
-                              Write_Line (""" is more recent than executable");
-                           end if;
+                        if Name_Len > 0 then
+                           Option :=
+                             new String'(Name_Buffer (1 .. Name_Len));
+                           Add_Argument (Option.all, True);
                         end if;
 
-                        Open (Exchange_File, In_File, Exchange_File_Name);
+                        Switch_List := Element.Next;
+                     end loop;
+               end case;
+            end;
+         end if;
+      end;
 
-                        while not End_Of_File (Exchange_File) loop
-                           Get_Line (Exchange_File, Line, Last);
+      Find_Binding_Languages (Main_File.Tree, Main_File.Project);
 
-                           if Last > 0 then
-                              if Line (1) = '[' then
-                                 Section :=
-                                   Get_Binding_Section (Line (1 .. Last));
+      if Builder_Data (Main_File.Tree).There_Are_Binder_Drivers then
+         First_Object_Index := Last_Argument + 1;
+         Binding_Options.Init;
 
-                              else
-                                 case Section is
-                                 when Generated_Object_File =>
+         B_Data := Builder_Data (Main_File.Tree).Binding;
+         while B_Data /= null loop
+            declare
+               Exchange_File_Name : constant String :=
+                 Binder_Exchange_File_Name
+                   (Main_Base_Name_Index,
+                    B_Data.Binder_Prefix).all;
 
-                                    Binder_Object_TS :=
-                                      File_Stamp
-                                        (Path_Name_Type'
-                                           (Create_Name
-                                              (Line (1 .. Last))));
+            begin
+               if Is_Regular_File (Exchange_File_Name) then
 
+                  Binder_Exchange_TS :=
+                    File_Stamp
+                      (Path_Name_Type'(Create_Name
+                       (Exchange_File_Name)));
+
+                  if (not Linker_Needs_To_Be_Called) and then
+                    String (Binder_Exchange_TS) > String (Executable_TS)
+                  then
+                     Linker_Needs_To_Be_Called := True;
+
+                     if Opt.Verbose_Mode then
+                        Write_Str ("      -> binder exchange file """);
+                        Write_Str (Exchange_File_Name);
+                        Write_Line (""" is more recent than executable");
+                     end if;
+                  end if;
+
+                  Open (Exchange_File, In_File, Exchange_File_Name);
+
+                  while not End_Of_File (Exchange_File) loop
+                     Get_Line (Exchange_File, Line, Last);
+
+                     if Last > 0 then
+                        if Line (1) = '[' then
+                           Section :=
+                             Get_Binding_Section (Line (1 .. Last));
+
+                        else
+                           case Section is
+                              when Generated_Object_File =>
+
+                                 Binder_Object_TS :=
+                                   File_Stamp
+                                     (Path_Name_Type'
+                                          (Create_Name
+                                               (Line (1 .. Last))));
+
+                                 Add_Argument
+                                   (Line (1 .. Last), Opt.Verbose_Mode);
+
+                              when Bound_Object_Files =>
+                                 if Normalize_Pathname
+                                   (Line (1 .. Last),
+                                    Case_Sensitive => False) /=
+                                   Normalize_Pathname
+                                     (Get_Name_String
+                                          (Main_Source.Object_Path),
+                                      Case_Sensitive => False)
+                                   and then
+                                     not Is_In_Library_Project
+                                       (Line (1 .. Last))
+                                 then
                                     Add_Argument
                                       (Line (1 .. Last), Opt.Verbose_Mode);
+                                 end if;
 
-                                 when Bound_Object_Files =>
-                                    if Normalize_Pathname
-                                      (Line (1 .. Last),
-                                       Case_Sensitive => False) /=
-                                      Normalize_Pathname
-                                        (Get_Name_String
-                                             (Main_Source.Object_Path),
-                                         Case_Sensitive => False)
-                                      and then
-                                        not Is_In_Library_Project
-                                          (Line (1 .. Last))
-                                    then
-                                       Add_Argument
-                                         (Line (1 .. Last), Opt.Verbose_Mode);
-                                    end if;
+                              when Resulting_Options =>
+                                 if Line (1 .. Last) /= "-static" and then
+                                   Line (1 .. Last) /= "-shared"
+                                 then
+                                    Binding_Options.Append
+                                      (new String'(Line (1 .. Last)));
+                                 end if;
 
-                                 when Resulting_Options =>
-                                    if Line (1 .. Last) /= "-static" and then
-                                      Line (1 .. Last) /= "-shared"
-                                    then
-                                       Binding_Options.Append
-                                         (new String'(Line (1 .. Last)));
-                                    end if;
+                              when Gprexch.Run_Path_Option =>
+                                 if Opt.Run_Path_Option and then
+                                   Main_Proj.Config.Run_Path_Option /=
+                                     No_Name_List
+                                 then
+                                    Add_Rpath (Line (1 .. Last));
+                                    Add_Rpath
+                                      (Shared_Libgcc_Dir
+                                         (Line (1 .. Last)));
+                                 end if;
 
-                                 when Gprexch.Run_Path_Option =>
-                                    if Opt.Run_Path_Option and then
-                                      Main_Proj.Config.Run_Path_Option /=
-                                      No_Name_List
-                                    then
-                                       Add_Rpath (Line (1 .. Last));
-                                       Add_Rpath
-                                         (Shared_Libgcc_Dir
-                                            (Line (1 .. Last)));
-                                    end if;
-
-                                 when others =>
-                                    null;
-                                 end case;
-                              end if;
-                           end if;
-                        end loop;
-
-                        Close (Exchange_File);
-
-                        if Binder_Object_TS = Empty_Time_Stamp then
-                           if (not Linker_Needs_To_Be_Called)
-                             and then Opt.Verbose_Mode
-                           then
-                              Write_Line
-                                ("      -> no binder generated object file");
-                           end if;
-
-                           Fail_Program
-                             (Main_File.Tree,
-                              "no binder generated object file");
-
-                        elsif (not Linker_Needs_To_Be_Called)
-                          and then
-                            String (Binder_Object_TS) > String (Executable_TS)
-                        then
-                           Linker_Needs_To_Be_Called := True;
-
-                           if Opt.Verbose_Mode then
-                              Write_Line
-                                ("      -> binder generated object is more " &
-                                 "recent than executable");
-                           end if;
+                              when others =>
+                                 null;
+                           end case;
                         end if;
-
-                     else
-                        Fail_Program
-                          (Main_File.Tree,
-                           "binder exchange file " &
-                           Exchange_File_Name &
-                           " does not exist");
                      end if;
-                  end;
+                  end loop;
 
-                  B_Data := B_Data.Next;
-               end loop;
+                  Close (Exchange_File);
 
-               Last_Object_Index := Last_Argument;
-            end if;
+                  if Binder_Object_TS = Empty_Time_Stamp then
+                     if (not Linker_Needs_To_Be_Called)
+                       and then Opt.Verbose_Mode
+                     then
+                        Write_Line
+                          ("      -> no binder generated object file");
+                     end if;
 
-            --  Add the global archive, if there is one
+                     Fail_Program
+                       (Main_File.Tree,
+                        "no binder generated object file");
 
-            if Global_Archive_Exists then
-               Global_Archive_TS :=
-                 File_Stamp
-                   (Path_Name_Type'
-                        (Create_Name (Global_Archive_Name (Main_Proj))));
-
-               if Global_Archive_TS = Empty_Time_Stamp then
-                  if not Linker_Needs_To_Be_Called
-                    and then Opt.Verbose_Mode
+                  elsif (not Linker_Needs_To_Be_Called)
+                    and then
+                      String (Binder_Object_TS) > String (Executable_TS)
                   then
-                     Write_Line ("      -> global archive does not exist");
+                     Linker_Needs_To_Be_Called := True;
+
+                     if Opt.Verbose_Mode then
+                        Write_Line
+                          ("      -> binder generated object is more " &
+                             "recent than executable");
+                     end if;
                   end if;
 
+               else
                   Fail_Program
                     (Main_File.Tree,
-                     "global archive for project file " &
-                     Get_Name_String (Main_Proj.Name) &
-                     " does not exist");
+                     "binder exchange file " &
+                       Exchange_File_Name &
+                       " does not exist");
                end if;
-            end if;
-
-            if (not Linker_Needs_To_Be_Called)
-              and then Global_Archive_Has_Been_Built
-            then
-               Linker_Needs_To_Be_Called := True;
-
-               if Opt.Verbose_Mode then
-                  Write_Line ("      -> global archive has just been built");
-               end if;
-            end if;
-
-            if (not Linker_Needs_To_Be_Called)
-              and then Global_Archive_Exists
-              and then String (Global_Archive_TS) > String (Executable_TS)
-            then
-               Linker_Needs_To_Be_Called := True;
-
-               if Opt.Verbose_Mode then
-                  Write_Line ("      -> global archive is more recent than " &
-                            "executable");
-               end if;
-            end if;
-
-            --  Check if there are library files that are more recent than
-            --  executable.
-
-            declare
-               List : Project_List := Main_Proj.All_Imported_Projects;
-               Proj : Project_Id;
-
-               Current_Dir : constant String := Get_Current_Dir;
-            begin
-               while List /= null loop
-                  Proj := List.Project;
-                  List := List.Next;
-
-                  if Proj.Extended_By = No_Project
-                    and then Proj.Library
-                    and then Proj.Object_Directory /= No_Path_Information
-                    and then not Proj.Externally_Built
-                    and then (Proj.Library_Kind = Static or else
-                              not Proj.Standalone_Library)
-                  then
-                     Change_Dir
-                       (Get_Name_String (Proj.Object_Directory.Display_Name));
-                     Get_Name_String (Proj.Library_Name);
-                     Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
-
-                     declare
-                        Exchange_File : Ada.Text_IO.File_Type;
-                        Path_Name     : constant String :=
-                                          Name_Buffer (1 .. Name_Len);
-                        Lib_TS        : Time_Stamp_Type;
-
-                     begin
-                        begin
-                           Open (Exchange_File, In_File, Path_Name);
-
-                        exception
-                           when others =>
-                              if Opt.Verbose_Mode then
-                                 Write_Str
-                                   ("      -> library exchange file """);
-                                 Write_Str (Path_Name);
-                                 Write_Line (""" does not exist");
-                              end if;
-
-                              Linker_Needs_To_Be_Called := True;
-                              exit;
-                        end;
-
-                        if End_Of_File (Exchange_File) then
-                           if Opt.Verbose_Mode then
-                              Write_Str
-                                ("      -> library exchange file """);
-                              Write_Str (Path_Name);
-                              Write_Line (""" is empty");
-                           end if;
-
-                           Linker_Needs_To_Be_Called := True;
-                           Close (Exchange_File);
-                           exit;
-                        end if;
-
-                        Get_Line (Exchange_File, Name_Buffer, Name_Len);
-
-                        if Name_Buffer (1 .. Name_Len) /=
-                          Library_Label (Library_Path)
-                        then
-                           Linker_Needs_To_Be_Called := True;
-                           Close (Exchange_File);
-
-                           if Opt.Verbose_Mode then
-                              Write_Str
-                                ("      -> library exchange file """);
-                              Write_Str (Path_Name);
-                              Write_Line (""" has wrong format");
-                           end if;
-
-                           exit;
-                        end if;
-
-                        Get_Line (Exchange_File, Name_Buffer, Name_Len);
-                        Close (Exchange_File);
-
-                        Lib_TS := File_Stamp (File_Name_Type'(Name_Find));
-
-                        if Lib_TS = Empty_Time_Stamp then
-                           Linker_Needs_To_Be_Called := True;
-
-                           if Opt.Verbose_Mode then
-                              Write_Str ("      -> library file """);
-                              Write_Str (Name_Buffer (1 .. Name_Len));
-                              Write_Line (""" not found");
-                           end if;
-
-                           exit;
-
-                        elsif String (Lib_TS) > String (Executable_TS) then
-                           Linker_Needs_To_Be_Called := True;
-
-                           if Opt.Verbose_Mode then
-                              Write_Str ("      -> library file """);
-                              Write_Str (Name_Buffer (1 .. Name_Len));
-                              Write_Line
-                                (""" is more recent than executable");
-                           end if;
-
-                           exit;
-                        end if;
-                     end;
-                  end if;
-               end loop;
-
-               Change_Dir (Current_Dir);
             end;
 
-            if not Linker_Needs_To_Be_Called then
-               if Opt.Verbose_Mode then
-                     Write_Line ("      -> up to date");
+            B_Data := B_Data.Next;
+         end loop;
 
-               elsif not Opt.Quiet_Output then
-                  Inform (Exec_Name, "up to date");
-               end if;
+         Last_Object_Index := Last_Argument;
+      end if;
+
+      --  Add the global archive, if there is one
+
+      if Global_Archive_Exists then
+         Global_Archive_TS :=
+           File_Stamp
+             (Path_Name_Type'
+                  (Create_Name (Global_Archive_Name (Main_Proj))));
+
+         if Global_Archive_TS = Empty_Time_Stamp then
+            if not Linker_Needs_To_Be_Called
+              and then Opt.Verbose_Mode
+            then
+               Write_Line ("      -> global archive does not exist");
+            end if;
+
+            Fail_Program
+              (Main_File.Tree,
+               "global archive for project file " &
+                 Get_Name_String (Main_Proj.Name) &
+                 " does not exist");
+         end if;
+      end if;
+
+      if (not Linker_Needs_To_Be_Called)
+        and then Global_Archive_Has_Been_Built
+      then
+         Linker_Needs_To_Be_Called := True;
+
+         if Opt.Verbose_Mode then
+            Write_Line ("      -> global archive has just been built");
+         end if;
+      end if;
+
+      if (not Linker_Needs_To_Be_Called)
+        and then Global_Archive_Exists
+        and then String (Global_Archive_TS) > String (Executable_TS)
+      then
+         Linker_Needs_To_Be_Called := True;
+
+         if Opt.Verbose_Mode then
+            Write_Line ("      -> global archive is more recent than " &
+                          "executable");
+         end if;
+      end if;
+
+      --  Check if there are library files that are more recent than
+      --  executable.
+
+      declare
+         List : Project_List := Main_Proj.All_Imported_Projects;
+         Proj : Project_Id;
+
+         Current_Dir : constant String := Get_Current_Dir;
+      begin
+         while List /= null loop
+            Proj := List.Project;
+            List := List.Next;
+
+            if Proj.Extended_By = No_Project
+              and then Proj.Library
+              and then Proj.Object_Directory /= No_Path_Information
+              and then not Proj.Externally_Built
+              and then (Proj.Library_Kind = Static or else
+                          not Proj.Standalone_Library)
+            then
+               Change_Dir
+                 (Get_Name_String (Proj.Object_Directory.Display_Name));
+               Get_Name_String (Proj.Library_Name);
+               Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
+
+               declare
+                  Exchange_File : Ada.Text_IO.File_Type;
+                  Path_Name     : constant String :=
+                    Name_Buffer (1 .. Name_Len);
+                  Lib_TS        : Time_Stamp_Type;
+
+               begin
+                  begin
+                     Open (Exchange_File, In_File, Path_Name);
+
+                  exception
+                     when others =>
+                        if Opt.Verbose_Mode then
+                           Write_Str
+                             ("      -> library exchange file """);
+                           Write_Str (Path_Name);
+                           Write_Line (""" does not exist");
+                        end if;
+
+                        Linker_Needs_To_Be_Called := True;
+                        exit;
+                  end;
+
+                  if End_Of_File (Exchange_File) then
+                     if Opt.Verbose_Mode then
+                        Write_Str
+                          ("      -> library exchange file """);
+                        Write_Str (Path_Name);
+                        Write_Line (""" is empty");
+                     end if;
+
+                     Linker_Needs_To_Be_Called := True;
+                     Close (Exchange_File);
+                     exit;
+                  end if;
+
+                  Get_Line (Exchange_File, Name_Buffer, Name_Len);
+
+                  if Name_Buffer (1 .. Name_Len) /=
+                    Library_Label (Library_Path)
+                  then
+                     Linker_Needs_To_Be_Called := True;
+                     Close (Exchange_File);
+
+                     if Opt.Verbose_Mode then
+                        Write_Str
+                          ("      -> library exchange file """);
+                        Write_Str (Path_Name);
+                        Write_Line (""" has wrong format");
+                     end if;
+
+                     exit;
+                  end if;
+
+                  Get_Line (Exchange_File, Name_Buffer, Name_Len);
+                  Close (Exchange_File);
+
+                  Lib_TS := File_Stamp (File_Name_Type'(Name_Find));
+
+                  if Lib_TS = Empty_Time_Stamp then
+                     Linker_Needs_To_Be_Called := True;
+
+                     if Opt.Verbose_Mode then
+                        Write_Str ("      -> library file """);
+                        Write_Str (Name_Buffer (1 .. Name_Len));
+                        Write_Line (""" not found");
+                     end if;
+
+                     exit;
+
+                  elsif String (Lib_TS) > String (Executable_TS) then
+                     Linker_Needs_To_Be_Called := True;
+
+                     if Opt.Verbose_Mode then
+                        Write_Str ("      -> library file """);
+                        Write_Str (Name_Buffer (1 .. Name_Len));
+                        Write_Line
+                          (""" is more recent than executable");
+                     end if;
+
+                     exit;
+                  end if;
+               end;
+            end if;
+         end loop;
+
+         Change_Dir (Current_Dir);
+      end;
+
+      if not Linker_Needs_To_Be_Called then
+         if Opt.Verbose_Mode then
+            Write_Line ("      -> up to date");
+
+         elsif not Opt.Quiet_Output then
+            Inform (Exec_Name, "up to date");
+         end if;
+
+      else
+         if Global_Archive_Exists then
+            Add_Argument
+              (Global_Archive_Name (Main_Proj), Opt.Verbose_Mode);
+         end if;
+
+         --  Add the library switches, if there are libraries
+
+         Process_Imported_Libraries
+           (Main_Proj, There_Are_SALs => Disregard);
+
+         Library_Dirs.Reset;
+
+         for J in reverse 1 .. Library_Projs.Last loop
+            if Library_Projs.Table (J).Library_Kind = Static then
+               Add_Argument
+                 (Get_Name_String
+                    (Library_Projs.Table (J).Library_Dir.Display_Name) &
+                    Directory_Separator &
+                    "lib" &
+                    Get_Name_String
+                    (Library_Projs.Table (J).Library_Name) &
+                    Archive_Suffix (Library_Projs.Table (J)),
+                  Opt.Verbose_Mode);
 
             else
-               if Global_Archive_Exists then
-                  Add_Argument
-                    (Global_Archive_Name (Main_Proj), Opt.Verbose_Mode);
-               end if;
+               --  Do not issue several time the same -L switch if
+               --  several library projects share the same library
+               --  directory.
 
-               --  Add the library switches, if there are libraries
+               if not Library_Dirs.Get
+                 (Library_Projs.Table (J).Library_Dir.Name)
+               then
+                  Library_Dirs.Set
+                    (Library_Projs.Table (J).Library_Dir.Name, True);
 
-               Process_Imported_Libraries
-                 (Main_Proj, There_Are_SALs => Disregard);
-
-               Library_Dirs.Reset;
-
-               for J in reverse 1 .. Library_Projs.Last loop
-                  if Library_Projs.Table (J).Library_Kind = Static then
+                  if
+                    Main_Proj.Config.Linker_Lib_Dir_Option = No_Name
+                  then
                      Add_Argument
-                       (Get_Name_String
-                          (Library_Projs.Table (J).Library_Dir.Display_Name) &
-                        Directory_Separator &
-                        "lib" &
-                        Get_Name_String
-                          (Library_Projs.Table (J).Library_Name) &
-                        Archive_Suffix (Library_Projs.Table (J)),
+                       ("-L" &
+                          Get_Name_String
+                          (Library_Projs.Table
+                             (J).Library_Dir.Display_Name),
                         Opt.Verbose_Mode);
 
                   else
-                     --  Do not issue several time the same -L switch if
-                     --  several library projects share the same library
-                     --  directory.
-
-                     if not Library_Dirs.Get
-                       (Library_Projs.Table (J).Library_Dir.Name)
-                     then
-                        Library_Dirs.Set
-                          (Library_Projs.Table (J).Library_Dir.Name, True);
-
-                        if
-                          Main_Proj.Config.Linker_Lib_Dir_Option = No_Name
-                        then
-                           Add_Argument
-                             ("-L" &
-                              Get_Name_String
-                                (Library_Projs.Table
-                                   (J).Library_Dir.Display_Name),
-                              Opt.Verbose_Mode);
-
-                        else
-                           Add_Argument
-                             (Get_Name_String
-                                (Main_Proj.Config.Linker_Lib_Dir_Option) &
-                              Get_Name_String
-                                (Library_Projs.Table
-                                   (J).Library_Dir.Display_Name),
-                              Opt.Verbose_Mode);
-                        end if;
-
-                        if Opt.Run_Path_Option
-                          and then
-                            Main_Proj.Config.Run_Path_Option /= No_Name_List
-                            and then
-                              Library_Projs.Table (J).Library_Kind /= Static
-                        then
-                           Add_Rpath
-                             (Get_Name_String
-                                (Library_Projs.Table
-                                   (J).Library_Dir.Display_Name));
-                        end if;
-                     end if;
-
-                     if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
-                        Add_Argument
-                          ("-l" &
-                           Get_Name_String
-                             (Library_Projs.Table (J).Library_Name),
-                           Opt.Verbose_Mode);
-
-                     else
-                        Add_Argument
-                          (Get_Name_String
-                             (Main_Proj.Config.Linker_Lib_Name_Option) &
-                           Get_Name_String
-                             (Library_Projs.Table (J).Library_Name),
-                           Opt.Verbose_Mode);
-                     end if;
+                     Add_Argument
+                       (Get_Name_String
+                          (Main_Proj.Config.Linker_Lib_Dir_Option) &
+                          Get_Name_String
+                          (Library_Projs.Table
+                             (J).Library_Dir.Display_Name),
+                        Opt.Verbose_Mode);
                   end if;
-               end loop;
 
-               --  Put the options in the project file, if any
-
-               declare
-                  The_Packages : constant Package_Id :=
-                                   Main_Proj.Decl.Packages;
-
-                  Linker_Package : constant Prj.Package_Id :=
-                                     Prj.Util.Value_Of
-                                       (Name        => Name_Linker,
-                                        In_Packages => The_Packages,
-                                        Shared      => Project_Tree.Shared);
-
-                  Switches     : Variable_Value;
-                  Switch_List  : String_List_Id;
-                  Element      : String_Element;
-
-               begin
-                  if Linker_Package /= No_Package then
-                     declare
-                        Defaults : constant Array_Element_Id :=
-                                     Prj.Util.Value_Of
-                                       (Name      => Name_Default_Switches,
-                                        In_Arrays =>
-                                          Project_Tree.Shared.Packages.Table
-                                            (Linker_Package).Decl.Arrays,
-                                        Shared    => Project_Tree.Shared);
-
-                        Switches_Array : constant Array_Element_Id :=
-                                        Prj.Util.Value_Of
-                                          (Name      => Name_Switches,
-                                           In_Arrays =>
-                                             Project_Tree.Shared.Packages.Table
-                                               (Linker_Package).Decl.Arrays,
-                                              Shared => Project_Tree.Shared);
-                        Option   : String_Access;
-
-                     begin
-                        Switches :=
-                          Prj.Util.Value_Of
-                            (Index           => Name_Id (Main_Id),
-                             Src_Index       => 0,
-                             In_Array        => Switches_Array,
-                             Shared          => Project_Tree.Shared,
-                             Allow_Wildcards => True);
-
-                        if Switches = Nil_Variable_Value then
-                           Switches :=
-                             Prj.Util.Value_Of
-                               (Index                  =>
-                                    Main_Source.Language.Name,
-                                Src_Index              => 0,
-                                In_Array               => Switches_Array,
-                                Shared                 => Project_Tree.Shared,
-                                Force_Lower_Case_Index => True);
-                        end if;
-
-                        if Switches = Nil_Variable_Value then
-                           Switches :=
-                             Prj.Util.Value_Of
-                               (Index                  => All_Other_Names,
-                                Src_Index              => 0,
-                                In_Array               => Switches_Array,
-                                Shared                 => Project_Tree.Shared,
-                                Force_Lower_Case_Index => True);
-                        end if;
-
-                        if Switches = Nil_Variable_Value then
-                           Switches :=
-                             Prj.Util.Value_Of
-                               (Index     =>
-                                    Main_Source.Language.Name,
-                                Src_Index => 0,
-                                In_Array  => Defaults,
-                                Shared    => Project_Tree.Shared);
-                        end if;
-
-                        case Switches.Kind is
-                        when Undefined | Single =>
-                           null;
-
-                        when Prj.List =>
-                           Switch_List := Switches.Values;
-
-                           while Switch_List /= Nil_String loop
-                              Element :=
-                                Project_Tree.Shared.String_Elements.Table
-                                  (Switch_List);
-                              Get_Name_String (Element.Value);
-
-                              if Name_Len > 0 then
-                                 Option :=
-                                   new String'(Name_Buffer (1 .. Name_Len));
-
-                                 Test_If_Relative_Path
-                                   (Option,
-                                    Main_Project_Dir.all,
-                                    Dash_L);
-
-                                 Add_Argument (Option.all, True);
-                              end if;
-
-                              Switch_List := Element.Next;
-                           end loop;
-                        end case;
-                     end;
+                  if Opt.Run_Path_Option
+                    and then
+                      Main_Proj.Config.Run_Path_Option /= No_Name_List
+                      and then
+                        Library_Projs.Table (J).Library_Kind /= Static
+                  then
+                     Add_Rpath
+                       (Get_Name_String
+                          (Library_Projs.Table
+                             (J).Library_Dir.Display_Name));
                   end if;
-               end;
+               end if;
 
-               --  Get the Linker_Options, if any
-
-               Get_Linker_Options (For_Project => Main_Proj);
-
-               --  Add the linker switches specified on the command line
-
-               for J in 1 .. Command_Line_Linker_Options.Last loop
+               if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
                   Add_Argument
-                    (Command_Line_Linker_Options.Table (J), Opt.Verbose_Mode);
-               end loop;
+                    ("-l" &
+                       Get_Name_String
+                       (Library_Projs.Table (J).Library_Name),
+                     Opt.Verbose_Mode);
 
-               --  Then the binding options
-
-               for J in 1 .. Binding_Options.Last loop
-                  Add_Argument (Binding_Options.Table (J), Opt.Verbose_Mode);
-               end loop;
-
-               --  Finally, the required switches, if any. These are put at the
-               --  end because, if they include -L switches for example, the
-               --  link may fail because the wrong objects or libraries are
-               --  linked in.
-
-               Min_Linker_Opts :=
-                 Main_Proj.Config.Trailing_Linker_Required_Switches;
-               while Min_Linker_Opts /= No_Name_List loop
+               else
                   Add_Argument
                     (Get_Name_String
-                       (Project_Tree.Shared.Name_Lists.Table
-                          (Min_Linker_Opts).Name),
+                       (Main_Proj.Config.Linker_Lib_Name_Option) &
+                       Get_Name_String
+                       (Library_Projs.Table (J).Library_Name),
                      Opt.Verbose_Mode);
-                  Min_Linker_Opts   := Project_Tree.Shared.Name_Lists.Table
-                    (Min_Linker_Opts).Next;
-               end loop;
-
-               --  Look for the last switch -shared-libgcc or -static-libgcc.
-               --  If -shared-libgcc was the last switch, then put in the
-               --  run path option the shared libgcc dir.
-
-               if Opt.Run_Path_Option and then
-                  Main_Proj.Config.Run_Path_Option /= No_Name_List
-               then
-                  declare
-                     Add_Shared_Libgcc_Dir : Boolean := False;
-                  begin
-                     for J in reverse 1 .. Last_Argument loop
-                        if Arguments (J).all = "-shared-libgcc" then
-                           Add_Shared_Libgcc_Dir := True;
-                           exit;
-
-                        elsif Arguments (J).all = "-static-libgcc" then
-                           exit;
-                        end if;
-                     end loop;
-
-                     if Add_Shared_Libgcc_Dir then
-                        --  Look for the adalib directory in -L switches.
-                        --  If it is found, then add the shared libgcc
-                        --  directory to the run path option.
-
-                        for J in 1 .. Last_Argument loop
-                           declare
-                              Option : String (1 .. Arguments (J)'Length);
-                              Last   : Natural := Option'Last;
-
-                           begin
-                              Option := Arguments (J).all;
-
-                              if Last > 2 and then Option (1 .. 2) = "-L" then
-                                 if Option (Last) = '/' or else
-                                   Option (Last) = Directory_Separator
-                                 then
-                                    Last := Last - 1;
-                                 end if;
-
-                                 if Last > 10 and then
-                                   Option (Last - 5 .. Last) = "adalib"
-                                 then
-                                    Add_Rpath
-                                      (Shared_Libgcc_Dir
-                                         (Option (3 .. Last)));
-                                    exit;
-                                 end if;
-                              end if;
-                           end;
-                        end loop;
-                     end if;
-                  end;
-               end if;
-
-               --  Add the run path option, if necessary
-
-               if Opt.Run_Path_Option
-                  and then
-                    Main_Proj.Config.Run_Path_Option /= No_Name_List
-                  and then
-                    Rpaths.Last > 0
-               then
-                  declare
-                     Nam_Nod  : Name_Node :=
-                                  Project_Tree.Shared.Name_Lists.Table
-                                    (Main_Proj.Config.Run_Path_Option);
-                     Length   : Natural := 0;
-                     Arg      : String_Access := null;
-                  begin
-                     if Main_Proj.Config.Run_Path_Origin /= No_Name then
-                        Rpaths_Relative_To
-                          (Main_Proj.Exec_Directory.Display_Name,
-                           Main_Proj.Config.Run_Path_Origin);
-                     end if;
-
-                     if Main_Proj.Config.Separate_Run_Path_Options then
-                        for J in 1 .. Rpaths.Last loop
-                           Nam_Nod := Project_Tree.Shared.Name_Lists.Table
-                                        (Main_Proj.Config.Run_Path_Option);
-                           while Nam_Nod.Next /= No_Name_List loop
-                              Add_Argument
-                                (Get_Name_String (Nam_Nod.Name), True);
-                              Nam_Nod := Project_Tree.Shared.Name_Lists.Table
-                                (Nam_Nod.Next);
-                           end loop;
-
-                           Get_Name_String (Nam_Nod.Name);
-                           Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
-                           Add_Argument
-                             (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
-                        end loop;
-
-                     else
-                        while Nam_Nod.Next /= No_Name_List loop
-                           Add_Argument (Get_Name_String (Nam_Nod.Name), True);
-                           Nam_Nod := Project_Tree.Shared.Name_Lists.Table
-                             (Nam_Nod.Next);
-                        end loop;
-
-                        --  Compute the length of the argument
-
-                        Get_Name_String (Nam_Nod.Name);
-                        Length := Name_Len;
-
-                        for J in 1 .. Rpaths.Last loop
-                           Length := Length + Rpaths.Table (J)'Length + 1;
-                        end loop;
-
-                        Length := Length - 1;
-
-                        --  Create the argument
-
-                        Arg := new String (1 .. Length);
-                        Length := Name_Len;
-                        Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
-
-                        for J in 1 .. Rpaths.Last loop
-                           if J /= 1 then
-                              Length := Length + 1;
-                              Arg (Length) := Path_Separator;
-                           end if;
-
-                           Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
-                             := Rpaths.Table (J).all;
-                           Length := Length + Rpaths.Table (J)'Length;
-                        end loop;
-
-                        Add_Argument (Arg, Opt.Verbose_Mode);
-                     end if;
-                  end;
-               end if;
-
-               --  Add the map file option, if supported and requested
-
-               if Map_File /= null and then
-                 Main_Proj.Config.Map_File_Option /= No_Name
-               then
-                  Get_Name_String (Main_Proj.Config.Map_File_Option);
-
-                  if Map_File'Length > 0 then
-                     Add_Str_To_Name_Buffer (Map_File.all);
-
-                  else
-                     Add_Str_To_Name_Buffer
-                       (Get_Name_String (Main_Base_Name_Index));
-                     Add_Str_To_Name_Buffer (".map");
-                  end if;
-
-                  Add_Argument (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
-               end if;
-
-               --  Add the switch(es) to specify the name of the executable
-
-               declare
-                  List : Name_List_Index :=
-                           Main_Proj.Config.Linker_Executable_Option;
-                  Nam  : Name_Node;
-
-                  procedure Add_Executable_Name;
-                  --  Add the name of the executable to to current name buffer,
-                  --  then the content of the name buffer as the next argument.
-
-                  -------------------------
-                  -- Add_Executable_Name --
-                  -------------------------
-
-                  procedure Add_Executable_Name is
-                  begin
-                     Add_Str_To_Name_Buffer (Get_Name_String (Exec_Path_Name));
-                     Add_Argument
-                       (Name_Buffer (1 .. Name_Len),
-                        True,
-                        Simple_Name => not Opt.Verbose_Mode);
-                  end Add_Executable_Name;
-
-               begin
-                  if List /= No_Name_List then
-                     loop
-                        Nam := Project_Tree.Shared.Name_Lists.Table (List);
-                        Get_Name_String (Nam.Name);
-
-                        if Nam.Next = No_Name_List then
-                           Add_Executable_Name;
-                           exit;
-
-                        else
-                           Add_Argument (Name_Buffer (1 .. Name_Len), True);
-                        end if;
-
-                        List := Nam.Next;
-                     end loop;
-
-                  else
-                     Add_Argument ("-o", True);
-                     Name_Len := 0;
-                     Add_Executable_Name;
-                  end if;
-               end;
-
-               --  If response file are supported, check the length of the
-               --  command line and the number of object files, then create
-               --  a response file if needed.
-
-               if Main_Proj.Config.Max_Command_Line_Length > 0 and then
-                 Main_Proj.Config.Resp_File_Format /= Prj.None and then
-                 First_Object_Index > 0
-               then
-                  declare
-                     Arg_Length : Natural := 0;
-                     Min_Number_Of_Objects : Natural := 0;
-                  begin
-                     for J in 1 .. Last_Argument loop
-                        Arg_Length := Arg_Length + Arguments (J)'Length + 1;
-                     end loop;
-
-                     if
-                       Arg_Length > Main_Proj.Config.Max_Command_Line_Length
-                     then
-                        if Main_Proj.Config.Resp_File_Options =
-                          No_Name_List
-                        then
-                           Min_Number_Of_Objects := 0;
-                        else
-                           Min_Number_Of_Objects := 1;
-                        end if;
-
-                        --  Don't create a project file if there would not be
-                        --  a smaller number of arguments.
-
-                        if Last_Object_Index - First_Object_Index + 1 >
-                          Min_Number_Of_Objects
-                        then
-                           declare
-                              Resp_File_Options : String_List_Access :=
-                                new String_List (1 .. 0);
-                              List             : Name_List_Index :=
-                                Main_Proj.Config.Resp_File_Options;
-                              Nam_Nod          : Name_Node;
-
-                           begin
-                              while List /= No_Name_List loop
-                                 Nam_Nod :=
-                                   Project_Tree.Shared.Name_Lists.Table (List);
-                                 Resp_File_Options :=
-                                   new String_List'
-                                     (Resp_File_Options.all &
-                                      new String'
-                                        (Get_Name_String (Nam_Nod.Name)));
-                                 List := Nam_Nod.Next;
-                              end loop;
-
-                              Create_Response_File
-                                (Format            =>
-                                   Main_Proj.Config.Resp_File_Format,
-                                 Objects           => Arguments
-                                   (First_Object_Index .. Last_Object_Index),
-                                 Other_Arguments   =>
-                                   Arguments (Last_Object_Index + 1 ..
-                                       Last_Argument),
-                                 Resp_File_Options => Resp_File_Options.all,
-                                 Name_1            => Response_File_Name,
-                                 Name_2            => Response_2);
-
-                              if Main_Proj.Config.Resp_File_Format = GCC
-                                   or else
-                                 Main_Proj.Config.Resp_File_Format = GCC_GNU
-                                   or else
-                                 Main_Proj.Config.Resp_File_Format =
-                                                             GCC_Object_List
-                                   or else
-                                 Main_Proj.Config.Resp_File_Format =
-                                                             GCC_Option_List
-                              then
-                                 Arguments (First_Object_Index) :=
-                                   new String'("@" &
-                                               Get_Name_String
-                                                 (Response_File_Name));
-                                 Last_Argument := First_Object_Index;
-
-                              else
-                                 --  Replace the first object file arguments
-                                 --  with the argument(s) specifying the
-                                 --  response file. No need to update
-                                 --  Arguments_Displayed, as the values are
-                                 --  already correct (= Verbose_Mode).
-
-                                 if Resp_File_Options'Length = 0 then
-                                    Arguments (First_Object_Index) :=
-                                      new String'(Get_Name_String
-                                                  (Response_File_Name));
-                                    First_Object_Index :=
-                                      First_Object_Index + 1;
-
-                                 else
-                                    for J in Resp_File_Options'First ..
-                                      Resp_File_Options'Last - 1
-                                    loop
-                                       Arguments (First_Object_Index) :=
-                                         Resp_File_Options (J);
-                                       First_Object_Index :=
-                                         First_Object_Index + 1;
-                                    end loop;
-
-                                    Arguments (First_Object_Index) :=
-                                      new String'(Resp_File_Options
-                                                  (Resp_File_Options'Last).all
-                                                  &
-                                                  Get_Name_String
-                                                    (Response_File_Name));
-                                    First_Object_Index :=
-                                      First_Object_Index + 1;
-                                 end if;
-
-                                 --  And put the arguments following the object
-                                 --  files immediately after the response file
-                                 --  argument(s). Update Arguments_Displayed
-                                 --  too.
-
-                                 Arguments (First_Object_Index ..
-                                              Last_Argument -
-                                                Last_Object_Index +
-                                                  First_Object_Index -
-                                                    1) :=
-                                           Arguments (Last_Object_Index + 1 ..
-                                                                Last_Argument);
-                                 Arguments_Displayed
-                                   (First_Object_Index ..
-                                      Last_Argument -
-                                        Last_Object_Index +
-                                          First_Object_Index -
-                                            1) :=
-                                           Arguments_Displayed
-                                             (Last_Object_Index + 1 ..
-                                                          Last_Argument);
-                                 Last_Argument :=
-                                   Last_Argument - Last_Object_Index +
-                                     First_Object_Index - 1;
-                              end if;
-                           end;
-                        end if;
-                     end if;
-                  end;
-               end if;
-
-               --  Delete an eventual executable, in case it is a symbolic
-               --  link as we don't want to modify the target of the link.
-
-               declare
-                  Dummy : Boolean;
-                  pragma Unreferenced (Dummy);
-
-               begin
-                  Delete_File (Get_Name_String (Exec_Path_Name), Dummy);
-               end;
-
-               Display_Command (Linker_Name.all, Linker_Path);
-
-               Spawn
-                 (Linker_Path.all, Arguments (1 .. Last_Argument), Success);
-
-               if Response_File_Name /= No_Path and then
-                  not Debug.Debug_Flag_N
-               then
-                  declare
-                     Dont_Care : Boolean;
-                     pragma Warnings (Off, Dont_Care);
-                  begin
-                     Delete_File
-                       (Get_Name_String (Response_File_Name), Dont_Care);
-
-                     if Response_2 /= No_Path then
-                        Delete_File
-                          (Get_Name_String (Response_2), Dont_Care);
-                     end if;
-                  end;
-               end if;
-
-               if not Success then
-                  Fail_Program
-                    (Project_Tree, "link of " & Main & " failed");
                end if;
             end if;
+         end loop;
+
+         --  Put the options in the project file, if any
+
+         declare
+            The_Packages : constant Package_Id :=
+              Main_Proj.Decl.Packages;
+
+            Linker_Package : constant Prj.Package_Id :=
+              Prj.Util.Value_Of
+                (Name        => Name_Linker,
+                 In_Packages => The_Packages,
+                 Shared      => Main_File.Tree.Shared);
+
+            Switches     : Variable_Value;
+            Switch_List  : String_List_Id;
+            Element      : String_Element;
+
+         begin
+            if Linker_Package /= No_Package then
+               declare
+                  Defaults : constant Array_Element_Id :=
+                    Prj.Util.Value_Of
+                      (Name      => Name_Default_Switches,
+                       In_Arrays =>
+                         Main_File.Tree.Shared.Packages.Table
+                           (Linker_Package).Decl.Arrays,
+                       Shared    => Main_File.Tree.Shared);
+
+                  Switches_Array : constant Array_Element_Id :=
+                    Prj.Util.Value_Of
+                      (Name      => Name_Switches,
+                       In_Arrays =>
+                         Main_File.Tree.Shared.Packages.Table
+                           (Linker_Package).Decl.Arrays,
+                       Shared => Main_File.Tree.Shared);
+                  Option   : String_Access;
+
+               begin
+                  Switches :=
+                    Prj.Util.Value_Of
+                      (Index           => Name_Id (Main_Id),
+                       Src_Index       => 0,
+                       In_Array        => Switches_Array,
+                       Shared          => Main_File.Tree.Shared,
+                       Allow_Wildcards => True);
+
+                  if Switches = Nil_Variable_Value then
+                     Switches :=
+                       Prj.Util.Value_Of
+                         (Index                  =>
+                              Main_Source.Language.Name,
+                          Src_Index              => 0,
+                          In_Array               => Switches_Array,
+                          Shared                 => Main_File.Tree.Shared,
+                          Force_Lower_Case_Index => True);
+                  end if;
+
+                  if Switches = Nil_Variable_Value then
+                     Switches :=
+                       Prj.Util.Value_Of
+                         (Index                  => All_Other_Names,
+                          Src_Index              => 0,
+                          In_Array               => Switches_Array,
+                          Shared                 => Main_File.Tree.Shared,
+                          Force_Lower_Case_Index => True);
+                  end if;
+
+                  if Switches = Nil_Variable_Value then
+                     Switches :=
+                       Prj.Util.Value_Of
+                         (Index     =>
+                              Main_Source.Language.Name,
+                          Src_Index => 0,
+                          In_Array  => Defaults,
+                          Shared    => Main_File.Tree.Shared);
+                  end if;
+
+                  case Switches.Kind is
+                     when Undefined | Single =>
+                        null;
+
+                     when Prj.List =>
+                        Switch_List := Switches.Values;
+
+                        while Switch_List /= Nil_String loop
+                           Element :=
+                             Main_File.Tree.Shared.String_Elements.Table
+                               (Switch_List);
+                           Get_Name_String (Element.Value);
+
+                           if Name_Len > 0 then
+                              Option :=
+                                new String'(Name_Buffer (1 .. Name_Len));
+
+                              Test_If_Relative_Path
+                                (Option,
+                                 Main_Project_Dir.all,
+                                 Dash_L);
+
+                              Add_Argument (Option.all, True);
+                           end if;
+
+                           Switch_List := Element.Next;
+                        end loop;
+                  end case;
+               end;
+            end if;
          end;
-      end loop;
-   end Linking_Phase;
+
+         --  Get the Linker_Options, if any
+
+         Get_Linker_Options (For_Project => Main_Proj);
+
+         --  Add the linker switches specified on the command line
+
+         for J in 1 .. Command_Line_Linker_Options.Last loop
+            Add_Argument
+              (Command_Line_Linker_Options.Table (J), Opt.Verbose_Mode);
+         end loop;
+
+         --  Then the binding options
+
+         for J in 1 .. Binding_Options.Last loop
+            Add_Argument (Binding_Options.Table (J), Opt.Verbose_Mode);
+         end loop;
+
+         --  Finally, the required switches, if any. These are put at the
+         --  end because, if they include -L switches for example, the
+         --  link may fail because the wrong objects or libraries are
+         --  linked in.
+
+         Min_Linker_Opts :=
+           Main_Proj.Config.Trailing_Linker_Required_Switches;
+         while Min_Linker_Opts /= No_Name_List loop
+            Add_Argument
+              (Get_Name_String
+                 (Main_File.Tree.Shared.Name_Lists.Table
+                    (Min_Linker_Opts).Name),
+               Opt.Verbose_Mode);
+            Min_Linker_Opts   := Main_File.Tree.Shared.Name_Lists.Table
+              (Min_Linker_Opts).Next;
+         end loop;
+
+         --  Look for the last switch -shared-libgcc or -static-libgcc.
+         --  If -shared-libgcc was the last switch, then put in the
+         --  run path option the shared libgcc dir.
+
+         if Opt.Run_Path_Option and then
+           Main_Proj.Config.Run_Path_Option /= No_Name_List
+         then
+            declare
+               Add_Shared_Libgcc_Dir : Boolean := False;
+            begin
+               for J in reverse 1 .. Last_Argument loop
+                  if Arguments (J).all = "-shared-libgcc" then
+                     Add_Shared_Libgcc_Dir := True;
+                     exit;
+
+                  elsif Arguments (J).all = "-static-libgcc" then
+                     exit;
+                  end if;
+               end loop;
+
+               if Add_Shared_Libgcc_Dir then
+                  --  Look for the adalib directory in -L switches.
+                  --  If it is found, then add the shared libgcc
+                  --  directory to the run path option.
+
+                  for J in 1 .. Last_Argument loop
+                     declare
+                        Option : String (1 .. Arguments (J)'Length);
+                        Last   : Natural := Option'Last;
+
+                     begin
+                        Option := Arguments (J).all;
+
+                        if Last > 2 and then Option (1 .. 2) = "-L" then
+                           if Option (Last) = '/' or else
+                             Option (Last) = Directory_Separator
+                           then
+                              Last := Last - 1;
+                           end if;
+
+                           if Last > 10 and then
+                             Option (Last - 5 .. Last) = "adalib"
+                           then
+                              Add_Rpath
+                                (Shared_Libgcc_Dir
+                                   (Option (3 .. Last)));
+                              exit;
+                           end if;
+                        end if;
+                     end;
+                  end loop;
+               end if;
+            end;
+         end if;
+
+         --  Add the run path option, if necessary
+
+         if Opt.Run_Path_Option
+           and then
+             Main_Proj.Config.Run_Path_Option /= No_Name_List
+             and then
+               Rpaths.Last > 0
+         then
+            declare
+               Nam_Nod  : Name_Node :=
+                 Main_File.Tree.Shared.Name_Lists.Table
+                   (Main_Proj.Config.Run_Path_Option);
+               Length   : Natural := 0;
+               Arg      : String_Access := null;
+            begin
+               if Main_Proj.Config.Run_Path_Origin /= No_Name then
+                  Rpaths_Relative_To
+                    (Main_Proj.Exec_Directory.Display_Name,
+                     Main_Proj.Config.Run_Path_Origin);
+               end if;
+
+               if Main_Proj.Config.Separate_Run_Path_Options then
+                  for J in 1 .. Rpaths.Last loop
+                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                       (Main_Proj.Config.Run_Path_Option);
+                     while Nam_Nod.Next /= No_Name_List loop
+                        Add_Argument
+                          (Get_Name_String (Nam_Nod.Name), True);
+                        Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                          (Nam_Nod.Next);
+                     end loop;
+
+                     Get_Name_String (Nam_Nod.Name);
+                     Add_Str_To_Name_Buffer (Rpaths.Table (J).all);
+                     Add_Argument
+                       (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
+                  end loop;
+
+               else
+                  while Nam_Nod.Next /= No_Name_List loop
+                     Add_Argument (Get_Name_String (Nam_Nod.Name), True);
+                     Nam_Nod := Main_File.Tree.Shared.Name_Lists.Table
+                       (Nam_Nod.Next);
+                  end loop;
+
+                  --  Compute the length of the argument
+
+                  Get_Name_String (Nam_Nod.Name);
+                  Length := Name_Len;
+
+                  for J in 1 .. Rpaths.Last loop
+                     Length := Length + Rpaths.Table (J)'Length + 1;
+                  end loop;
+
+                  Length := Length - 1;
+
+                  --  Create the argument
+
+                  Arg := new String (1 .. Length);
+                  Length := Name_Len;
+                  Arg (1 .. Name_Len) := Name_Buffer (1 .. Name_Len);
+
+                  for J in 1 .. Rpaths.Last loop
+                     if J /= 1 then
+                        Length := Length + 1;
+                        Arg (Length) := Path_Separator;
+                     end if;
+
+                     Arg (Length + 1 .. Length + Rpaths.Table (J)'Length)
+                       := Rpaths.Table (J).all;
+                     Length := Length + Rpaths.Table (J)'Length;
+                  end loop;
+
+                  Add_Argument (Arg, Opt.Verbose_Mode);
+               end if;
+            end;
+         end if;
+
+         --  Add the map file option, if supported and requested
+
+         if Map_File /= null and then
+           Main_Proj.Config.Map_File_Option /= No_Name
+         then
+            Get_Name_String (Main_Proj.Config.Map_File_Option);
+
+            if Map_File'Length > 0 then
+               Add_Str_To_Name_Buffer (Map_File.all);
+
+            else
+               Add_Str_To_Name_Buffer
+                 (Get_Name_String (Main_Base_Name_Index));
+               Add_Str_To_Name_Buffer (".map");
+            end if;
+
+            Add_Argument (Name_Buffer (1 .. Name_Len), Opt.Verbose_Mode);
+         end if;
+
+         --  Add the switch(es) to specify the name of the executable
+
+         declare
+            List : Name_List_Index :=
+              Main_Proj.Config.Linker_Executable_Option;
+            Nam  : Name_Node;
+
+            procedure Add_Executable_Name;
+            --  Add the name of the executable to to current name buffer,
+            --  then the content of the name buffer as the next argument.
+
+            -------------------------
+            -- Add_Executable_Name --
+            -------------------------
+
+            procedure Add_Executable_Name is
+            begin
+               Add_Str_To_Name_Buffer (Get_Name_String (Exec_Path_Name));
+               Add_Argument
+                 (Name_Buffer (1 .. Name_Len),
+                  True,
+                  Simple_Name => not Opt.Verbose_Mode);
+            end Add_Executable_Name;
+
+         begin
+            if List /= No_Name_List then
+               loop
+                  Nam := Main_File.Tree.Shared.Name_Lists.Table (List);
+                  Get_Name_String (Nam.Name);
+
+                  if Nam.Next = No_Name_List then
+                     Add_Executable_Name;
+                     exit;
+
+                  else
+                     Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                  end if;
+
+                  List := Nam.Next;
+               end loop;
+
+            else
+               Add_Argument ("-o", True);
+               Name_Len := 0;
+               Add_Executable_Name;
+            end if;
+         end;
+
+         --  If response file are supported, check the length of the
+         --  command line and the number of object files, then create
+         --  a response file if needed.
+
+         if Main_Proj.Config.Max_Command_Line_Length > 0 and then
+           Main_Proj.Config.Resp_File_Format /= Prj.None and then
+           First_Object_Index > 0
+         then
+            declare
+               Arg_Length : Natural := 0;
+               Min_Number_Of_Objects : Natural := 0;
+            begin
+               for J in 1 .. Last_Argument loop
+                  Arg_Length := Arg_Length + Arguments (J)'Length + 1;
+               end loop;
+
+               if
+                 Arg_Length > Main_Proj.Config.Max_Command_Line_Length
+               then
+                  if Main_Proj.Config.Resp_File_Options =
+                    No_Name_List
+                  then
+                     Min_Number_Of_Objects := 0;
+                  else
+                     Min_Number_Of_Objects := 1;
+                  end if;
+
+                  --  Don't create a project file if there would not be
+                  --  a smaller number of arguments.
+
+                  if Last_Object_Index - First_Object_Index + 1 >
+                    Min_Number_Of_Objects
+                  then
+                     declare
+                        Resp_File_Options : String_List_Access :=
+                          new String_List (1 .. 0);
+                        List             : Name_List_Index :=
+                          Main_Proj.Config.Resp_File_Options;
+                        Nam_Nod          : Name_Node;
+
+                     begin
+                        while List /= No_Name_List loop
+                           Nam_Nod :=
+                             Main_File.Tree.Shared.Name_Lists.Table (List);
+                           Resp_File_Options :=
+                             new String_List'
+                               (Resp_File_Options.all &
+                                  new String'
+                                  (Get_Name_String (Nam_Nod.Name)));
+                           List := Nam_Nod.Next;
+                        end loop;
+
+                        Create_Response_File
+                          (Format            =>
+                             Main_Proj.Config.Resp_File_Format,
+                           Objects           => Arguments
+                             (First_Object_Index .. Last_Object_Index),
+                           Other_Arguments   =>
+                             Arguments (Last_Object_Index + 1 ..
+                                 Last_Argument),
+                           Resp_File_Options => Resp_File_Options.all,
+                           Name_1            => Response_File_Name,
+                           Name_2            => Response_2);
+
+                        if Main_Proj.Config.Resp_File_Format = GCC
+                          or else
+                            Main_Proj.Config.Resp_File_Format = GCC_GNU
+                            or else
+                              Main_Proj.Config.Resp_File_Format =
+                                GCC_Object_List
+                                or else
+                                  Main_Proj.Config.Resp_File_Format =
+                                    GCC_Option_List
+                        then
+                           Arguments (First_Object_Index) :=
+                             new String'("@" &
+                                           Get_Name_String
+                                           (Response_File_Name));
+                           Last_Argument := First_Object_Index;
+
+                        else
+                           --  Replace the first object file arguments
+                           --  with the argument(s) specifying the
+                           --  response file. No need to update
+                           --  Arguments_Displayed, as the values are
+                           --  already correct (= Verbose_Mode).
+
+                           if Resp_File_Options'Length = 0 then
+                              Arguments (First_Object_Index) :=
+                                new String'(Get_Name_String
+                                            (Response_File_Name));
+                              First_Object_Index :=
+                                First_Object_Index + 1;
+
+                           else
+                              for J in Resp_File_Options'First ..
+                                Resp_File_Options'Last - 1
+                              loop
+                                 Arguments (First_Object_Index) :=
+                                   Resp_File_Options (J);
+                                 First_Object_Index :=
+                                   First_Object_Index + 1;
+                              end loop;
+
+                              Arguments (First_Object_Index) :=
+                                new String'(Resp_File_Options
+                                            (Resp_File_Options'Last).all
+                                            &
+                                              Get_Name_String
+                                              (Response_File_Name));
+                              First_Object_Index :=
+                                First_Object_Index + 1;
+                           end if;
+
+                           --  And put the arguments following the object
+                           --  files immediately after the response file
+                           --  argument(s). Update Arguments_Displayed
+                           --  too.
+
+                           Arguments (First_Object_Index ..
+                                        Last_Argument -
+                                          Last_Object_Index +
+                                            First_Object_Index -
+                                              1) :=
+                                     Arguments (Last_Object_Index + 1 ..
+                                                          Last_Argument);
+                           Arguments_Displayed
+                             (First_Object_Index ..
+                                Last_Argument -
+                                  Last_Object_Index +
+                                    First_Object_Index -
+                                      1) :=
+                                     Arguments_Displayed
+                                       (Last_Object_Index + 1 ..
+                                                    Last_Argument);
+                           Last_Argument :=
+                             Last_Argument - Last_Object_Index +
+                               First_Object_Index - 1;
+                        end if;
+                     end;
+                  end if;
+               end if;
+            end;
+         end if;
+
+         --  Delete an eventual executable, in case it is a symbolic
+         --  link as we don't want to modify the target of the link.
+
+         declare
+            Dummy : Boolean;
+            pragma Unreferenced (Dummy);
+
+         begin
+            Delete_File (Get_Name_String (Exec_Path_Name), Dummy);
+         end;
+
+         Display_Command (Linker_Name.all, Linker_Path);
+
+         Spawn
+           (Linker_Path.all, Arguments (1 .. Last_Argument), Success);
+
+         if Response_File_Name /= No_Path and then
+           not Debug.Debug_Flag_N
+         then
+            declare
+               Dont_Care : Boolean;
+               pragma Warnings (Off, Dont_Care);
+            begin
+               Delete_File
+                 (Get_Name_String (Response_File_Name), Dont_Care);
+
+               if Response_2 /= No_Path then
+                  Delete_File
+                    (Get_Name_String (Response_2), Dont_Care);
+               end if;
+            end;
+         end if;
+
+         if not Success then
+            Fail_Program
+              (Main_File.Tree, "link of " & Main & " failed");
+         end if;
+      end if;
+   end Link_Main;
 
    -------------
    -- Options --
@@ -9308,7 +9298,13 @@ package body Buildgpr is
             Main_File := Mains.Next_Main;
             exit when Main_File = No_Main_Info;
 
-            if not Builder_Data (Main_File.Tree).There_Are_Binder_Drivers then
+            if Main_File.Tree /= Project_Tree then
+               --  Will be processed later
+               null;
+
+            elsif
+               not Builder_Data (Main_File.Tree).There_Are_Binder_Drivers
+            then
                if Current_Verbosity = High then
                   Debug_Output ("Post-compilation, no binding required for",
                                 Debug_Name (Main_File.Tree));
