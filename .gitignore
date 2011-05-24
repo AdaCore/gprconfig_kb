@@ -58,6 +58,7 @@ internal/gprtests_python/env.dump
 /gnat/binderr.ad?
 /gnat/butil.ad?
 /gnat/casing.ad?
+/gnat/clean.ad?
 /gnat/csets.ad?
 /gnat/debug.ad?
 /gnat/einfo.ad?
@@ -69,6 +70,8 @@ internal/gprtests_python/env.dump
 /gnat/fmap.ad?
 /gnat/fname.ad?
 /gnat/fname-uf.ad?
+/gnat/fname-sf.ads
+/gnat/gnatcmd.ad?
 /gnat/gnat_style.css
 /gnat/gnatvsn.ad?
 /gnat/hostparm.ads
@@ -78,6 +81,9 @@ internal/gprtests_python/env.dump
 /gnat/lib-sort.adb
 /gnat/link.c
 /gnat/makeutl.ad?
+/gnat/make.ad?
+/gnat/makeusg.ads
+/gnat/mlib-prj.ads
 /gnat/mlib.ad?
 /gnat/mlib-fil.ad?
 /gnat/mlib-tgt.ad?
@@ -95,6 +101,7 @@ internal/gprtests_python/env.dump
 /gnat/*.o
 /gnat/opt.ad?
 /gnat/osint.ad?
+/gnat/osint-m.ads
 /gnat/output.ad?
 /gnat/prj.ad?
 /gnat/prj-attr.ad?
@@ -120,6 +127,7 @@ internal/gprtests_python/env.dump
 /gnat/scng.ad?
 /gnat/sdefault.ads
 /gnat/sem_aux.ad?
+/gnat/sfn_scan.ads
 /gnat/sinfo.ad?
 /gnat/sinput.ad?
 /gnat/sinput-c.ad?
@@ -137,6 +145,7 @@ internal/gprtests_python/env.dump
 /gnat/styleg.ad?
 /gnat/styleg-c.ad?
 /gnat/stylesw.ad?
+/gnat/switch-m.ads
 /gnat/switch.ad?
 /gnat/table.ad?
 /gnat/targparm.ad?
