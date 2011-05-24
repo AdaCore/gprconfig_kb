@@ -132,7 +132,8 @@ package body Cleangpr is
    --  Delete the library file in a library directory and any ALI file
    --  of a source of the project in a library ALI directory.
 
-   procedure Clean_Project (Project : Project_Id);
+   procedure Clean_Project
+     (Project : Project_Id; Project_Tree : Project_Tree_Ref);
    --  Do the cleaning work for Project.
    --  This procedure calls itself recursively when there are several
    --  project files in the tree rooted at the main project file and switch -r
@@ -573,7 +574,9 @@ package body Cleangpr is
    -- Clean_Project --
    -------------------
 
-   procedure Clean_Project (Project : Project_Id) is
+   procedure Clean_Project
+     (Project : Project_Id; Project_Tree : Project_Tree_Ref)
+   is
       Executable : File_Name_Type;
       --  Name of the executable file
 
@@ -748,7 +751,7 @@ package body Cleangpr is
                end loop;
 
                if Process then
-                  Clean_Project (Imported.Project);
+                  Clean_Project (Imported.Project, Project_Tree);
                end if;
                Imported := Imported.Next;
             end loop;
@@ -759,7 +762,7 @@ package body Cleangpr is
             --  this project.
 
             if Project.Extends /= No_Project then
-               Clean_Project (Project.Extends);
+               Clean_Project (Project.Extends, Project_Tree);
             end if;
          end;
       end if;
@@ -1149,7 +1152,12 @@ package body Cleangpr is
       end if;
 
       Processed_Projects.Init;
-      Clean_Project (Main_Project);
+
+      declare
+         procedure For_All is new For_Project_And_Aggregated (Clean_Project);
+      begin
+         For_All (Main_Project, Project_Tree);
+      end;
 
       if Delete_Autoconf_File then
          Delete ("", Configuration_Project_Path.all);
