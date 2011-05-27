@@ -124,27 +124,36 @@ package body Cleangpr is
    procedure Clean_Archive (Project : Project_Id);
    --  Delete a global archive and its dependency file, if they exist
 
-   procedure Clean_Interface_Copy_Directory (Project : Project_Id);
+   procedure Clean_Interface_Copy_Directory
+     (Project : Project_Id; Project_Tree : Project_Tree_Ref);
    --  Delete files in an interface copy directory: any file that is a copy of
    --  a source of the project.
 
-   procedure Clean_Library_Directory (Project : Project_Id);
+   procedure Clean_Library_Directory
+     (Project      : Project_Id;
+      Project_Tree : Project_Tree_Ref);
    --  Delete the library file in a library directory and any ALI file
    --  of a source of the project in a library ALI directory.
 
    procedure Clean_Project
-     (Project : Project_Id; Project_Tree : Project_Tree_Ref);
+     (Project      : Project_Id;
+      Project_Tree : Project_Tree_Ref;
+      Remove_Executables : Boolean);
    --  Do the cleaning work for Project.
    --  This procedure calls itself recursively when there are several
    --  project files in the tree rooted at the main project file and switch -r
    --  has been specified.
+   --  If Remove_Executables is true, the binder files and results of the
+   --  linker are also removed.
 
    procedure Delete (In_Directory : String; File : String);
    --  Delete one file, or list the file name if switch -n is specified
 
    procedure Delete_Binder_Generated_Files
-     (Dir    : String;
-      Source : Source_Id);
+     (Main_Project : Project_Id;
+      Project_Tree : Project_Tree_Ref;
+      Dir          : String;
+      Source       : Source_Id);
    --  Delete the binder generated file in directory Dir for Source
 
    procedure Display_Copyright;
@@ -205,7 +214,9 @@ package body Cleangpr is
    -- Clean_Interface_Copy_Directory --
    ------------------------------------
 
-   procedure Clean_Interface_Copy_Directory (Project : Project_Id) is
+   procedure Clean_Interface_Copy_Directory
+     (Project : Project_Id; Project_Tree : Project_Tree_Ref)
+   is
       Current : constant String := Get_Current_Dir;
 
       Direc : Dir_Type;
@@ -291,7 +302,10 @@ package body Cleangpr is
    -- Clean_Library_Directory --
    -----------------------------
 
-   procedure Clean_Library_Directory (Project : Project_Id) is
+   procedure Clean_Library_Directory
+     (Project      : Project_Id;
+      Project_Tree : Project_Tree_Ref)
+   is
       Current : constant String := Get_Current_Dir;
 
       Lib_Filename : constant String := Get_Name_String (Project.Library_Name);
@@ -575,7 +589,9 @@ package body Cleangpr is
    -------------------
 
    procedure Clean_Project
-     (Project : Project_Id; Project_Tree : Project_Tree_Ref)
+     (Project      : Project_Id;
+      Project_Tree : Project_Tree_Ref;
+      Remove_Executables : Boolean)
    is
       Executable : File_Name_Type;
       --  Name of the executable file
@@ -713,10 +729,10 @@ package body Cleangpr is
 
          if Project.Library then
             if not Compile_Only then
-               Clean_Library_Directory (Project);
+               Clean_Library_Directory (Project, Project_Tree);
 
                if Project.Library_Src_Dir /= No_Path_Information then
-                  Clean_Interface_Copy_Directory (Project);
+                  Clean_Interface_Copy_Directory (Project, Project_Tree);
                end if;
             end if;
          end if;
@@ -751,7 +767,7 @@ package body Cleangpr is
                end loop;
 
                if Process then
-                  Clean_Project (Imported.Project, Project_Tree);
+                  Clean_Project (Imported.Project, Project_Tree, False);
                end if;
                Imported := Imported.Next;
             end loop;
@@ -762,7 +778,7 @@ package body Cleangpr is
             --  this project.
 
             if Project.Extends /= No_Project then
-               Clean_Project (Project.Extends, Project_Tree);
+               Clean_Project (Project.Extends, Project_Tree, False);
             end if;
          end;
       end if;
@@ -772,7 +788,7 @@ package body Cleangpr is
 
       --  The executables are deleted only if switch -c is not specified
 
-      if Project = Main_Project
+      if Remove_Executables
         and then Project.Exec_Directory /= No_Path_Information
         and then Is_Directory
                    (Get_Name_String (Project.Exec_Directory.Display_Name))
@@ -780,69 +796,59 @@ package body Cleangpr is
          declare
             Exec_Dir : constant String :=
                          Get_Name_String (Project.Exec_Directory.Display_Name);
-            Source   : Prj.Source_Id;
-            Iter     : Source_Iterator;
-
             Main_File     : Main_Info;
 
          begin
             Change_Dir (Exec_Dir);
 
             Mains.Reset;
-
-            for N_File in 1 .. Mains.Number_Of_Mains (Project_Tree) loop
+            loop
                Main_File := Mains.Next_Main;
+               exit when Main_File = No_Main_Info;
 
-               Iter := For_Each_Source (Project_Tree);
+               if Main_File.Tree = Project_Tree then
+                  if not Compile_Only
+                    and then Main_File.Source /= No_Source
+                  then
+                     Executable :=
+                       Executable_Of
+                         (Project  => Project,
+                          Shared   => Project_Tree.Shared,
+                          Main     => Main_File.File,
+                          Index    => Main_File.Index,
+                          Ada_Main =>
+                            Main_File.Source.Language.Name = Snames.Name_Ada);
 
-               loop
-                  Source := Prj.Element (Iter);
-                  exit when Source = No_Source
-                    or else
-                      (Source.File = Main_File.File and then
-                       Source.Index = Main_File.Index);
-                  Next (Iter);
-               end loop;
+                     declare
+                        Exec_File_Name : constant String :=
+                                           Get_Name_String (Executable);
 
-               if not Compile_Only
-                 and then Source /= No_Source
-               then
-                  Executable :=
-                    Executable_Of
-                      (Project  => Main_Project,
-                       Shared   => Project_Tree.Shared,
-                       Main     => Main_File.File,
-                       Index    => Main_File.Index,
-                       Ada_Main => Source.Language.Name = Snames.Name_Ada);
+                     begin
+                        if Is_Absolute_Path (Name => Exec_File_Name) then
+                           if Is_Regular_File (Exec_File_Name) then
+                              Delete ("", Exec_File_Name);
+                           end if;
 
-                  declare
-                     Exec_File_Name : constant String :=
-                                        Get_Name_String (Executable);
-
-                  begin
-                     if Is_Absolute_Path (Name => Exec_File_Name) then
-                        if Is_Regular_File (Exec_File_Name) then
-                           Delete ("", Exec_File_Name);
+                        else
+                           if Is_Regular_File (Exec_File_Name) then
+                              Delete (Exec_Dir, Exec_File_Name);
+                           end if;
                         end if;
+                     end;
+                  end if;
 
-                     else
-                        if Is_Regular_File (Exec_File_Name) then
-                           Delete (Exec_Dir, Exec_File_Name);
-                        end if;
-                     end if;
-                  end;
-               end if;
+                  --  Delete the binder generated files only if the main source
+                  --  has been found and if there is an object directory.
 
-               --  Delete the binder generated files only if the main source
-               --  has been found and if there is an object directory.
-
-               if Source /= No_Source and then
-                 Project.Object_Directory /= No_Path_Information
-               then
-                  Delete_Binder_Generated_Files
-                    (Get_Name_String
-                       (Project.Object_Directory.Display_Name),
-                     Source);
+                  if Main_File.Source /= No_Source and then
+                    Project.Object_Directory /= No_Path_Information
+                  then
+                     Delete_Binder_Generated_Files
+                       (Project, Project_Tree,
+                        Get_Name_String
+                          (Project.Object_Directory.Display_Name),
+                        Main_File.Source);
+                  end if;
                end if;
             end loop;
          end;
@@ -916,8 +922,10 @@ package body Cleangpr is
    -----------------------------------
 
    procedure Delete_Binder_Generated_Files
-     (Dir    : String;
-      Source : Source_Id)
+     (Main_Project : Project_Id;
+      Project_Tree : Project_Tree_Ref;
+      Dir          : String;
+      Source       : Source_Id)
    is
       Data  : constant Builder_Data_Access := Builder_Data (Project_Tree);
       Current     : constant String := Get_Current_Dir;
@@ -1154,8 +1162,19 @@ package body Cleangpr is
       Processed_Projects.Init;
 
       declare
-         procedure For_All is new For_Project_And_Aggregated (Clean_Project);
+         procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref);
+         procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref) is
+         begin
+            --  For the main project and all aggregated projects, remove the
+            --  binder and linker generated files.
+            Clean_Project (Prj, Tree, Remove_Executables => True);
+         end Do_Clean;
+
+         procedure For_All is new For_Project_And_Aggregated (Do_Clean);
       begin
+         --  For an aggregate project, we always cleanup all aggregated
+         --  projects, whether "-r" was specified or not. But for those
+         --  projects, we might not clean their imported projects.
          For_All (Main_Project, Project_Tree);
       end;
 
