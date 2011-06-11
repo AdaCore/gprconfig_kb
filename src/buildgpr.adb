@@ -4837,8 +4837,28 @@ package body Buildgpr is
       ---------------------------------
 
       procedure Add_Name_Of_Source_Switches (Id : Source_Id) is
+         List        : Name_List_Index :=
+                         Id.Language.Config.Source_File_Switches;
+         Node        : Name_Node;
          Source_Path : String_Access;
       begin
+         --  Add any source file prefix
+
+         if List /= No_Name_List then
+            loop
+               Node := Project_Tree.Shared.Name_Lists.Table (List);
+               exit when Node.Next = No_Name_List;
+
+               Add_Option
+                 (Node.Name,
+                  To      => Compilation_Options,
+                  Display => Opt.Verbose_Mode or else Id.Index /= 0);
+               List := Node.Next;
+            end loop;
+         end if;
+
+         --  Then handle the source file
+
          Get_Name_String (Id.Path.Display_Name);
 
          case Id.Language.Config.Path_Syntax is
