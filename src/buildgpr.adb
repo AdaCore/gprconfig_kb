@@ -6362,7 +6362,7 @@ package body Buildgpr is
       then
          --  Register the Main units from the projects.
          --  No need to waste time when we are going to compile all files
-         ---  anyway (Unique_Compile).
+         --  anyway (Unique_Compile).
          Mains.Fill_From_Project (Main_Project, Project_Tree);
       end if;
 
