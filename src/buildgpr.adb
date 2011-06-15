@@ -4859,7 +4859,12 @@ package body Buildgpr is
 
          --  Then handle the source file
 
-         Get_Name_String (Id.Path.Display_Name);
+         if Node.Name = No_Name then
+            Get_Name_String (Id.Path.Display_Name);
+         else
+            Get_Name_String (Node.Name);
+            Add_Str_To_Name_Buffer (Get_Name_String (Id.Path.Display_Name));
+         end if;
 
          case Id.Language.Config.Path_Syntax is
             when Canonical =>
