@@ -4859,12 +4859,7 @@ package body Buildgpr is
 
          --  Then handle the source file
 
-         if Node.Name = No_Name then
-            Get_Name_String (Id.Path.Display_Name);
-         else
-            Get_Name_String (Node.Name);
-            Add_Str_To_Name_Buffer (Get_Name_String (Id.Path.Display_Name));
-         end if;
+         Get_Name_String (Id.Path.Display_Name);
 
          case Id.Language.Config.Path_Syntax is
             when Canonical =>
@@ -4874,11 +4869,21 @@ package body Buildgpr is
                Source_Path := To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
          end case;
 
-         Add_Option_Internal
-           (Source_Path,
-            To          => Compilation_Options,
-            Display     => True,
-            Simple_Name => not Opt.Verbose_Mode);
+         if Node.Name = No_Name then
+            Add_Option_Internal
+              (Source_Path,
+               To          => Compilation_Options,
+               Display     => True,
+               Simple_Name => not Opt.Verbose_Mode);
+
+         else
+            Get_Name_String (Node.Name);
+            Add_Option
+              (Name_Buffer (1 .. Name_Len) & Source_Path.all,
+               To          => Compilation_Options,
+               Display     => True,
+               Simple_Name => not Opt.Verbose_Mode);
+         end if;
       end Add_Name_Of_Source_Switches;
 
       ---------------------------------
