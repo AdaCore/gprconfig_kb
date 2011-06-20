@@ -6426,10 +6426,10 @@ package body Buildgpr is
          Main_Project     => Main_Project);
 
       Always_Compile :=
-        Always_Compile and then
-        Opt.Force_Compilations and then
-        Unique_Compile and then
-        (not Unique_Compile_All_Projects);
+        Always_Compile
+        and then Opt.Force_Compilations
+        and then Unique_Compile
+        and then not Unique_Compile_All_Projects;
 
       --  Reprocess recorded command line options that have priority over
       --  those in the main project file.

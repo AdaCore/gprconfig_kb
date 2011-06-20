@@ -111,8 +111,7 @@ package Gpr_Util is
    --  Local subprograms
 
    function Binder_Exchange_File_Name
-     (Main_Base_Name : File_Name_Type; Prefix : Name_Id)
-      return String_Access;
+     (Main_Base_Name : File_Name_Type; Prefix : Name_Id) return String_Access;
    --  Returns the name of the binder exchange file corresponding to an
    --  object file and a language.
    --  Main_Base_Name must have no extension specified
@@ -166,6 +165,7 @@ package Gpr_Util is
    --  found, otherwise returns an empty string.
 
    package Knowledge is
+
       function Normalized_Hostname return String;
       --  Return the normalized name of the host on which gprbuild is running.
       --  The knowledge base must have been parsed first.
