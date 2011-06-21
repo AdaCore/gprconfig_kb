@@ -6441,6 +6441,17 @@ package body Buildgpr is
                      Opt.Maximum_Processes'Img);
       end if;
 
+      --  Warn if --create-map-file is not supported
+
+      if Map_File /= null and then
+        Main_Project.Config.Map_File_Option = No_Name
+      then
+         Write_Str ("warning: option ");
+         Write_Str (Create_Map_File_Switch);
+         Write_Str (" is not supported in this configuration");
+         Write_Eol;
+      end if;
+
       --  Source file lookups should be cached for efficiency.
       --  Source files are not supposed to change.
 
