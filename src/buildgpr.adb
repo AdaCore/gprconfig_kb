@@ -8273,6 +8273,8 @@ package body Buildgpr is
             end;
          end if;
 
+         --  Check the generated object file
+
          if not Binder_Driver_Needs_To_Be_Called then
             if Line (1 .. Last) /=
               Binding_Label (Generated_Object_File)
@@ -10731,6 +10733,19 @@ package body Buildgpr is
          Write_Str (No_Object_Check_Switch);
          Write_Eol;
          Write_Str ("           Do not check object files");
+         Write_Eol;
+         Write_Eol;
+
+         Write_Str ("  ");
+         Write_Str (Create_Map_File_Switch);
+         Write_Eol;
+         Write_Str ("           Create map file mainprog.map");
+         Write_Eol;
+         Write_Str ("  ");
+         Write_Str (Create_Map_File_Switch);
+         Write_Str ("=mapfile");
+         Write_Eol;
+         Write_Str ("           Create map file mapfile");
          Write_Eol;
          Write_Eol;
 
