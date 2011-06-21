@@ -13,6 +13,12 @@ This date shows the implementation date of the feature. Any 1.6.0w
 wavefront subsequent to this date will contain the indicated feature, as
 will any subsequent releases.
 
+NF-16-K621-023 Warning when --create-map-file is not supported (2011-06-21)
+
+  When option --create-map-file is not supported (that is attribute
+  Linker'Map_File_Option is not declared in the configuration project file),
+  gprbuild issues a warning if this option is used.
+
 NF-16-K408-001 New attributes Dependency_Kind and Language_Kind (2011-04-21)
 
   Two new configuration attributes are added in package Compiler:
