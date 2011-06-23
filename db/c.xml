@@ -48,6 +48,8 @@
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
        <compiler name="GCC-WRSMILSHAE" language="C" />
+       <compiler name="GCC-WRSMILS-E500V2" language="C" />
+       <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -80,6 +82,8 @@
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
        <compiler name="GCC-WRSMILSHAE" language="C" />
+       <compiler name="GCC-WRSMILS-E500V2" language="C" />
+       <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
      </compilers>
      <config>
    package Compiler is
