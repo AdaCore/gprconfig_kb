@@ -51,7 +51,7 @@
     </version>
     <languages>C</languages>
     <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
-    <target name="^.*e500v2-wrs-vxworks$" />
+    <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
   <!-- VxWorks 6 Cert -->
@@ -117,7 +117,7 @@
     </version>
     <languages>C</languages>
     <runtimes>full,ravenscar-cert,zfp</runtimes>
-    <target name="^.*-wrs-vxworksmils$" />
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!-- VxWorks MILS HAE -->
@@ -132,7 +132,7 @@
     </version>
     <languages>C</languages>
     <runtimes>zfp</runtimes>
-    <target name="^.*-wrs-vxworksmils$" />
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!--     GCC 2.8.1
@@ -226,7 +226,7 @@
     </version>
     <languages>C++</languages>
     <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
-    <target name="^.*e500v2-wrs-vxworks$" />
+    <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
   <!-- G++ for VxWorks 6 Cert -->
@@ -275,7 +275,7 @@
     </version>
     <languages>C++</languages>
     <runtimes>full,ravenscar-cert,zfp</runtimes>
-    <target name="^.*-wrs-vxworksmils$" />
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!-- G++ for VxWorks MILS HAE -->
@@ -290,7 +290,7 @@
     </version>
     <languages>C++</languages>
     <runtimes>zfp</runtimes>
-    <target name="^.*-wrs-vxworksmils$" />
+    <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
   <!--  Assembler -->
