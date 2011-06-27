@@ -43,14 +43,12 @@
      </config>
    </configuration>
 
-   <!-- Import WIND_BASE on VxWorks 5 & 6 targets.  -->
+   <!-- Import WIND_BASE on VxWorks targets.  -->
    <configuration>
      <targets>
-       <target name="^powerpc-wrs-vxworks.*$" />
-       <target name="^e500v2-wrs-vxworks.*$" />
-       <target name="^ppc-vx6.*$" />
-       <target name="^e500v2-vx6.*$" />
-       <target name="^i.86-wrs-vxworks.*$" />
+       <target name="^.*-wrs-vxworks.*$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
      </targets>
      <config>
    Wind_Base := external ("WIND_BASE");
@@ -143,6 +141,9 @@
        <compiler name="GNAT" runtime="rtp" />
        <compiler name="GNAT" runtime="rtp-smp" />
      </compilers>
+     <targets>
+       <target name=".*-wrs-vxworks" />
+     </targets>
      <config>
    package Compiler is
       for Leading_Required_Switches ("Ada") use
@@ -172,35 +173,55 @@
    package Compiler is
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C") &amp; ("-mrtp")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h");
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h", 
+               "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
    end Compiler;
      </config>
    </configuration>
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS6" runtime="rtp" />
-       <compiler name="G++-WRS6E500V2" runtime="rtp" />
-       <compiler name="G++-WRS6" runtime="rtp-smp" />
-       <compiler name="G++-WRS6E500V2" runtime="rtp-smp" />
+       <compiler name="GCC" language="C" />
+       <compiler name="GCC-WRS653" language="C" />
+       <compiler name="GCC-WRSMILS" language="C" />
      </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
+     </targets>
      <config>
    package Compiler is
-      for Leading_Required_Switches ("C++") use
-        Compiler'Leading_Required_Switches ("C++") &amp; ("-mrtp")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h");
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/vThreads/h",
+               "-I" &amp; Wind_Base &amp; "/target/val/h");
    end Compiler;
      </config>
    </configuration>
 
    <configuration>
      <compilers>
-       <compiler name="GCC" runtime="default" />
+       <compiler name="GCC" language="C" />
+       <compiler name="GCC-WRSMILSHAE" language="C" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworksmils$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/include");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="GCC" runtime="kernel" />
        <compiler name="GCC" runtime="kernel-sjlj" />
        <compiler name="GCC" runtime="kernel-smp" />
        <compiler name="GCC" runtime="ravenscar-cert" />
-       <compiler name="GCC-WRS5" runtime="default" />
        <compiler name="GCC-WRS6" runtime="kernel" />
        <compiler name="GCC-WRS6" runtime="kernel-sjlj" />
        <compiler name="GCC-WRS6" runtime="kernel-smp" />
@@ -217,7 +238,42 @@
    package Compiler is
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h", 
+               "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC" runtime="default" />
+       <compiler name="GCC-WRS5" runtime="default" />
+     </compilers>
+     <targets>
+       <target name=".*-wrs-vxworks" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/h");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS6" runtime="rtp" />
+       <compiler name="G++-WRS6E500V2" runtime="rtp" />
+       <compiler name="G++-WRS6" runtime="rtp-smp" />
+       <compiler name="G++-WRS6E500V2" runtime="rtp-smp" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++") &amp; ("-mrtp")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h", 
+               "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
    end Compiler;
      </config>
    </configuration>
@@ -237,7 +293,43 @@
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/h");
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h"", 
+               "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+        <compiler name="G++-WRS653" language="C++" />
+        <compiler name="G++-WRSMILS" language="C++" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/vThreads/h",
+               "-I" &amp; Wind_Base &amp; "/target/val/h");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+        <compiler name="G++-WRSMILSHAE" language="C++" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworksmils$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/include");
    end Compiler;
      </config>
    </configuration>
