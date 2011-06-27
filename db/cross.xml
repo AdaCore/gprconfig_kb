@@ -193,6 +193,7 @@
        <compiler name="GCC" language="C" />
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
+       <compiler name="GCC-WRSMILS-E500V2" language="C" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworksae$" />
@@ -212,6 +213,7 @@
      <compilers>
        <compiler name="GCC" language="C" />
        <compiler name="GCC-WRSMILSHAE" language="C" />
+       <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworksmils$" />
@@ -318,6 +320,7 @@
      <compilers>
         <compiler name="G++-WRS653" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
+        <compiler name="G++-WRSMILS-E500V2" language="C++" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworksae$" />
@@ -336,6 +339,7 @@
    <configuration>
      <compilers>
         <compiler name="G++-WRSMILSHAE" language="C++" />
+        <compiler name="G++-WRSMILSHAE-E500V2" language="C++" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworksmils$" />
