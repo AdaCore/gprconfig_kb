@@ -221,21 +221,23 @@ package body Buildgpr is
    --  building jobs.
 
    type Process_Data is record
-      Pid           : Process_Id         := Invalid_Pid;
-      Source        : Queue.Source_Info  := Queue.No_Source_Info;
-      Mapping_File  : Path_Name_Type     := No_Path;
-      Purpose       : Process_Purpose    := Compilation;
-      Options       : String_List_Access := null;
+      Pid            : Process_Id         := Invalid_Pid;
+      Source         : Queue.Source_Info  := Queue.No_Source_Info;
+      Source_Project : Project_Id         := null;
+      Mapping_File   : Path_Name_Type     := No_Path;
+      Purpose        : Process_Purpose    := Compilation;
+      Options        : String_List_Access := null;
    end record;
    --  Data recorded for each spawned jobs, compilation of dependency file
    --  building.
 
    No_Process_Data : constant Process_Data :=
-                           (Pid          => Invalid_Pid,
-                            Source       => Queue.No_Source_Info,
-                            Mapping_File => No_Path,
-                            Purpose      => Compilation,
-                            Options      => null);
+                       (Pid             => Invalid_Pid,
+                        Source          => Queue.No_Source_Info,
+                        Source_Project  => null,
+                        Mapping_File    => No_Path,
+                        Purpose         => Compilation,
+                        Options         => null);
 
    type Header_Num is range 0 .. 2047;
 
@@ -687,11 +689,12 @@ package body Buildgpr is
    --  read from the project file.
 
    procedure Add_Process
-     (Pid          : Process_Id;
-      Source       : Queue.Source_Info;
-      Mapping_File : Path_Name_Type;
-      Purpose      : Process_Purpose;
-      Options      : String_List_Access);
+     (Pid            : Process_Id;
+      Source         : Queue.Source_Info;
+      Source_Project : Project_Id;
+      Mapping_File   : Path_Name_Type;
+      Purpose        : Process_Purpose;
+      Options        : String_List_Access);
    --  Add compilation process and indicate that the object directory is busy
 
    procedure Add_Rpath (Path : String);
@@ -1268,15 +1271,16 @@ package body Buildgpr is
    -----------------
 
    procedure Add_Process
-     (Pid          : Process_Id;
-      Source       : Queue.Source_Info;
-      Mapping_File : Path_Name_Type;
-      Purpose      : Process_Purpose;
-      Options      : String_List_Access)
+     (Pid            : Process_Id;
+      Source         : Queue.Source_Info;
+      Source_Project : Project_Id;
+      Mapping_File   : Path_Name_Type;
+      Purpose        : Process_Purpose;
+      Options        : String_List_Access)
    is
    begin
       Compilation_Htable.Set
-        (Pid, (Pid, Source, Mapping_File, Purpose, Options));
+        (Pid, (Pid, Source, Source_Project, Mapping_File, Purpose, Options));
       Outstanding_Compiles := Outstanding_Compiles + 1;
 
       Queue.Set_Obj_Dir_Busy (Source.Id.Project.Object_Directory.Name);
@@ -1428,6 +1432,9 @@ package body Buildgpr is
                   then
                      Source.Id.Object_TS := File_Stamp (Source.Id.Object_Path);
                   end if;
+
+               else
+                  Comp_Data.Source_Project.Compilation_Failed := True;
                end if;
 
                Language := Source.Id.Language;
@@ -3545,7 +3552,13 @@ package body Buildgpr is
                   end;
                end if;
 
-               Fail_Program (Tree, "*** compilation phase failed");
+               if Opt.Keep_Going
+                 and then Project.Qualifier = Aggregate
+               then
+                  Bad_Compilations.Init;
+               else
+                  Fail_Program (Tree, "*** compilation phase failed");
+               end if;
             end if;
          end if;
       end Do_Compile;
@@ -4964,11 +4977,12 @@ package body Buildgpr is
          end if;
 
          Add_Process
-           (Pid          => Pid,
-            Source       => Source,
-            Mapping_File => Mapping_File_Path,
-            Purpose      => Compilation,
-            Options      => Options);
+           (Pid            => Pid,
+            Source         => Source,
+            Source_Project => Source_Project,
+            Mapping_File   => Mapping_File_Path,
+            Purpose        => Compilation,
+            Options        => Options);
       end Spawn_Compiler_And_Register;
 
       ------------------------------
@@ -6934,11 +6948,18 @@ package body Buildgpr is
       end if;
 
       if Main_Object_TS = Empty_Time_Stamp then
-         Fail_Program
-           (Main_File.Tree,
-            "main object for " &
-              Get_Name_String (Main_Source.File) &
-              " does not exist");
+         if Opt.Keep_Going then
+            --  Do not stop there, the compilation error has already been
+            --  reported.
+            return;
+
+         else
+            Fail_Program
+              (Main_File.Tree,
+               "main object for " &
+                 Get_Name_String (Main_Source.File) &
+                 " does not exist");
+         end if;
       end if;
 
       if Main_Proj = Main_Source.Object_Project then
@@ -8115,6 +8136,10 @@ package body Buildgpr is
          Dep_Files   : out Boolean);
       --  Put the dependency files of the project in the binder exchange file
 
+      function Project_Compilation_Failed (Prj : Project_Id) return Boolean;
+      --  Check compilation status for Prj and ann project it depends on.
+      --  Return True if the compilations were successful and false otherwise.
+
       --------------------------
       -- Add_Dependency_Files --
       --------------------------
@@ -9289,6 +9314,32 @@ package body Buildgpr is
          end if;
       end Bind_Language;
 
+      --------------------------------
+      -- Project_Compilation_Failed --
+      --------------------------------
+
+      function Project_Compilation_Failed (Prj : Project_Id) return Boolean is
+      begin
+         if Prj.Compilation_Failed then
+            return True;
+
+         else
+            --  Check all imported projects directly or indirectly
+            declare
+               Plist : Project_List := Prj.All_Imported_Projects;
+            begin
+               while Plist /= null loop
+                  if Plist.Project.Compilation_Failed then
+                     return True;
+                  else
+                     Plist := Plist.Next;
+                  end if;
+               end loop;
+               return False;
+            end;
+         end if;
+      end Project_Compilation_Failed;
+
    --  Start of processing for Post_Compilation_Phase
 
    begin
@@ -9317,13 +9368,18 @@ package body Buildgpr is
             for J in Lib_Projs'Range loop
                Proj := Lib_Projs (J);
 
-               if Proj.Extended_By = No_Project then
-                  if not Proj.Externally_Built then
-                     Build_Library (Proj, Project_Tree);
-                  end if;
+               --  Try building a library only if no errors occured in library
+               --  project and projects it depends on.
 
-                  if Proj.Library_Kind /= Static then
-                     Shared_Libs := True;
+               if not Project_Compilation_Failed (Proj) then
+                  if Proj.Extended_By = No_Project then
+                     if not Proj.Externally_Built then
+                        Build_Library (Proj, Project_Tree);
+                     end if;
+
+                     if Proj.Library_Kind /= Static then
+                        Shared_Libs := True;
+                     end if;
                   end if;
                end if;
             end loop;
@@ -9349,7 +9405,8 @@ package body Buildgpr is
             Main_File : Main_Info;
          begin
             Main_File := Mains.Next_Main;
-            exit when Main_File = No_Main_Info;
+            exit when Main_File = No_Main_Info
+              or else Project_Compilation_Failed (Main_File.Project);
 
             if Main_File.Tree /= Project_Tree then
                --  Will be processed later
