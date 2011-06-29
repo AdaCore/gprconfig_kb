@@ -30,11 +30,8 @@ with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Ada.Text_IO;       use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 
-with ALI;
-with ALI.Util;
-with Csets;
-with Debug;     use Debug;
-with Err_Vars;  use Err_Vars;
+with System.Case_Util;       use System.Case_Util;
+with System.Multiprocessors; use System.Multiprocessors;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
@@ -42,30 +39,32 @@ with GNAT.Dynamic_Tables;
 with GNAT.HTable;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
-with Gpr_Util;         use Gpr_Util;
-with GPR_Version;      use GPR_Version;
-with Gprexch;          use Gprexch;
+with ALI;
+with ALI.Util;
+with Csets;
+with Debug;       use Debug;
+with Err_Vars;    use Err_Vars;
+with Gpr_Util;    use Gpr_Util;
+with GPR_Version; use GPR_Version;
+with Gprexch;     use Gprexch;
 with Hostparm;
-with Makeutl;          use Makeutl;
-with Namet;            use Namet;
-with Output;           use Output;
+with Makeutl;     use Makeutl;
+with Namet;       use Namet;
+with Output;      use Output;
 with Opt;
-with Osint;            use Osint;
-with Prj;              use Prj;
-with Prj.Conf;         use Prj.Conf;
+with Osint;       use Osint;
+with Prj;         use Prj;
+with Prj.Conf;    use Prj.Conf;
 with Prj.Env;
 with Prj.Err;
-with Prj.Tree;         use Prj.Tree;
-with Prj.Util;         use Prj.Util;
-with Snames;           use Snames;
-with Switch;           use Switch;
+with Prj.Tree;    use Prj.Tree;
+with Prj.Util;    use Prj.Util;
+with Snames;      use Snames;
+with Switch;      use Switch;
 with System;
 with Table;
 with Tempdir;
-with Types;            use Types;
-
-with System.Case_Util;       use System.Case_Util;
-with System.Multiprocessors; use System.Multiprocessors;
+with Types;       use Types;
 
 package body Buildgpr is
 
@@ -1348,8 +1347,8 @@ package body Buildgpr is
    -------------------
 
    procedure Await_Compile
-     (Source        : out Queue.Source_Info;
-      OK            : out Boolean)
+     (Source : out Queue.Source_Info;
+      OK     : out Boolean)
    is
       Pid       : Process_Id;
       Comp_Data : Process_Data;
@@ -1379,7 +1378,7 @@ package body Buildgpr is
                   --  We created a new ALI file, so reset the attributes of
                   --  the old one.
 
-                  Source.Id.Dep_TS    := Unknown_Attributes;
+                  Source.Id.Dep_TS := Unknown_Attributes;
 
                   if Comp_Data.Options /= null
                     and then Source.Id.Switches_Path /= No_Path
@@ -1436,8 +1435,8 @@ package body Buildgpr is
                --  If there is a mapping file used, recycle it in the hash
                --  table of the language.
 
-               if Comp_Data.Mapping_File /= No_Path and then
-                 Language /= No_Language_Index
+               if Comp_Data.Mapping_File /= No_Path
+                 and then Language /= No_Language_Index
                then
                   Mapping_Files_Htable.Set
                     (T => Language.Mapping_Files,
@@ -1447,16 +1446,16 @@ package body Buildgpr is
 
                Config := Language.Config;
 
-               if Config.Dependency_Kind = Makefile and then
-                 Config.Compute_Dependency /= No_Name_List
+               if Config.Dependency_Kind = Makefile
+                 and then Config.Compute_Dependency /= No_Name_List
                then
                   declare
                      List      : Name_List_Index :=
-                       Config.Compute_Dependency;
+                                   Config.Compute_Dependency;
                      Nam       : Name_Node :=
-                       Source.Tree.Shared.Name_Lists.Table (List);
+                                   Source.Tree.Shared.Name_Lists.Table (List);
                      Exec_Name : constant String :=
-                       Get_Name_String (Nam.Name);
+                                   Get_Name_String (Nam.Name);
                      Exec_Path : String_Access;
                   begin
                      Comp_Data.Mapping_File := No_Path;
@@ -1576,7 +1575,7 @@ package body Buildgpr is
       Object_Path  : Path_Name_Type;
       Time_Stamp   : Time_Stamp_Type;
 
-      First_Object        : Natural;
+      First_Object : Natural;
 
       Discard : Boolean;
 
@@ -1608,8 +1607,8 @@ package body Buildgpr is
 
       procedure Add_Sources (Proj : Project_Id) is
          Project : Project_Id := Proj;
-         Id : Source_Id;
-         Iter : Source_Iterator;
+         Id      : Source_Id;
+         Iter    : Source_Iterator;
 
       begin
          while Project /= No_Project loop
@@ -1638,8 +1637,8 @@ package body Buildgpr is
 
       procedure Add_Objects (Proj : Project_Id) is
          Project : Project_Id := Proj;
-         Id : Source_Id;
-         Iter : Source_Iterator;
+         Id      : Source_Id;
+         Iter    : Source_Iterator;
 
       begin
          loop
@@ -2015,8 +2014,8 @@ package body Buildgpr is
                   --  If the archive has not been built completely, add the
                   --  remaining chunks.
 
-                  if Success and then
-                    Current_Object_Pos <= Real_Last_Argument
+                  if Success
+                    and then Current_Object_Pos <= Real_Last_Argument
                   then
                      Last_Argument := 0;
                      Add_Arguments
@@ -2107,7 +2106,7 @@ package body Buildgpr is
                      --  file.
 
                      declare
-                        Dep_File  : Ada.Text_IO.File_Type;
+                        Dep_File : Ada.Text_IO.File_Type;
 
                      begin
                         --  Create the file in Append mode, to avoid automatic
@@ -3451,7 +3450,7 @@ package body Buildgpr is
    ------------------------
 
    procedure Add_Mains_To_Queue is
-      Main_Id      : Main_Info;
+      Main_Id : Main_Info;
 
    begin
       Mains.Reset;
@@ -3506,7 +3505,13 @@ package body Buildgpr is
    -----------------------
 
    procedure Compilation_Phase is
+
       procedure Do_Compile (Project : Project_Id; Tree : Project_Tree_Ref);
+
+      ----------------
+      -- Do_Compile --
+      ----------------
+
       procedure Do_Compile (Project : Project_Id; Tree : Project_Tree_Ref) is
       begin
          if Builder_Data (Tree).Need_Compilation then
@@ -3522,7 +3527,7 @@ package body Buildgpr is
                  and then Bad_Compilations.Last > 0
                then
                   declare
-                     Source   : Source_Id;
+                     Source : Source_Id;
                   begin
                      Write_Eol;
 
@@ -3676,10 +3681,10 @@ package body Buildgpr is
       --  file
 
       procedure Spawn_Compiler_And_Register
-        (Source            : Queue.Source_Info;
-         Source_Project    : Project_Id;
-         Compiler_Path     : String;
-         Mapping_File_Path : Path_Name_Type;
+        (Source                 : Queue.Source_Info;
+         Source_Project         : Project_Id;
+         Compiler_Path          : String;
+         Mapping_File_Path      : Path_Name_Type;
          Last_Switches_For_File : Integer);
       --  Spawn the compiler with the arguments currently set in
       --  Compiler_Options. It registers the process we just spawned, so that
@@ -3695,16 +3700,16 @@ package body Buildgpr is
       --  language.
 
       procedure Prepare_Imported_Dirs_Switches
-        (Data     : out Local_Project_Data;
-         Project  : Project_Id;
-         Lang     : Language_Ptr);
+        (Data    : out Local_Project_Data;
+         Project : Project_Id;
+         Lang    : Language_Ptr);
       --  Add the switches for include directories to the command line (these
       --  are the "-I" switches in the case of C for instance).
 
       procedure Prepare_Include_Path_File
-        (Data     : out Local_Project_Data;
-         Project  : Project_Id;
-         Lang     : Language_Ptr);
+        (Data    : out Local_Project_Data;
+         Project : Project_Id;
+         Lang    : Language_Ptr);
       --  Create a file to pass the include directories to the compiler
 
       procedure Start_Compile_If_Possible;
@@ -4102,14 +4107,14 @@ package body Buildgpr is
 
       function Phase_2_ALI (Src_Data : Queue.Source_Info) return Boolean is
          Compilation_OK : Boolean := True;
-         Text       : Text_Buffer_Ptr :=
-           Read_Library_Info_From_Full
-             (File_Name_Type (Src_Data.Id.Dep_Path),
-              Src_Data.Id.Dep_TS'Access);
-         The_ALI    : ALI.ALI_Id := ALI.No_ALI_Id;
-         Sfile      : File_Name_Type;
-         Afile      : File_Name_Type;
-         Source_2   : Source_Id;
+         Text           : Text_Buffer_Ptr :=
+                            Read_Library_Info_From_Full
+                              (File_Name_Type (Src_Data.Id.Dep_Path),
+                               Src_Data.Id.Dep_TS'Access);
+         The_ALI        : ALI.ALI_Id := ALI.No_ALI_Id;
+         Sfile          : File_Name_Type;
+         Afile          : File_Name_Type;
+         Source_2       : Source_Id;
 
          procedure Check_Source (Sfile : File_Name_Type);
          --  Check if source Sfile is in the same project file as the Src_Data
@@ -4121,7 +4126,8 @@ package body Buildgpr is
 
          procedure Check_Source (Sfile : File_Name_Type) is
             Source_3 : constant Source_Id :=
-              Find_Source (Src_Data.Tree, No_Project, Base_Name => Sfile);
+                         Find_Source
+                           (Src_Data.Tree, No_Project, Base_Name => Sfile);
 
          begin
             if Source_3 = No_Source then
@@ -4368,11 +4374,14 @@ package body Buildgpr is
       --------------------------
 
       procedure Set_Options_For_File (Id : Source_Id) is
-         Config  : Language_Config renames Id.Language.Config;
+
+         Config                   : Language_Config renames Id.Language.Config;
          Builder_Options_Instance : constant Builder_Comp_Option_Table_Ref :=
-           Builder_Compiling_Options_HTable.Get (Id.Language.Name);
+                                      Builder_Compiling_Options_HTable.Get
+                                        (Id.Language.Name);
          Comp_Opt                 : constant Comp_Option_Table_Ref :=
-           Compiling_Options_HTable.Get (Id.Language.Name);
+                                      Compiling_Options_HTable.Get
+                                        (Id.Language.Name);
 
          List    : Name_List_Index;
          Nam_Nod : Name_Node;
@@ -4470,10 +4479,15 @@ package body Buildgpr is
       -------------------------
 
       function Check_Switches_File (Id : Source_Id) return Boolean is
-         File    : Ada.Text_IO.File_Type;
+
+         File : Ada.Text_IO.File_Type;
 
          function Assert_Line (Current : String) return Boolean;
          --  Return False if Current is not the next line in the switches file
+
+         -----------------
+         -- Assert_Line --
+         -----------------
 
          function Assert_Line (Current : String) return Boolean is
             Line : String (1 .. 1_000);
@@ -4660,7 +4674,7 @@ package body Buildgpr is
         (Id             : Source_Id;
          Source_Project : Project_Id)
       is
-         Config : constant Language_Config := Id.Language.Config;
+         Config           : constant Language_Config := Id.Language.Config;
          Config_File_Path : Path_Name_Type;
       begin
          if Config.Config_File_Switches /= No_Name_List
@@ -4720,9 +4734,9 @@ package body Buildgpr is
         (Source         : Queue.Source_Info;
          Source_Project : Project_Id) return Path_Name_Type
       is
-         List : Name_List_Index :=
-           Source.Id.Language.Config.Mapping_File_Switches;
-         Node : Name_Node;
+         List              : Name_List_Index :=
+                               Source.Id.Language.Config.Mapping_File_Switches;
+         Node              : Name_Node;
          Mapping_File_Path : Path_Name_Type;
       begin
          if List /= No_Name_List then
@@ -5390,7 +5404,7 @@ package body Buildgpr is
 
       declare
          Data : Local_Project_Data :=
-           Local_Projects_HT.Get_First (Local_Projects);
+                  Local_Projects_HT.Get_First (Local_Projects);
       begin
          while Data /= No_Local_Project_Data loop
             Free (Data.Include_Path);
@@ -6936,18 +6950,17 @@ package body Buildgpr is
       --  Add the Leading_Switches if there are any in package Linker
 
       declare
-         The_Packages : constant Package_Id :=
-           Main_Proj.Decl.Packages;
-
+         The_Packages   : constant Package_Id :=
+                            Main_Proj.Decl.Packages;
          Linker_Package : constant Prj.Package_Id :=
-           Prj.Util.Value_Of
-             (Name        => Name_Linker,
-              In_Packages => The_Packages,
-              Shared      => Main_File.Tree.Shared);
+                            Prj.Util.Value_Of
+                              (Name        => Name_Linker,
+                               In_Packages => The_Packages,
+                               Shared      => Main_File.Tree.Shared);
 
-         Switches     : Variable_Value;
-         Switch_List  : String_List_Id;
-         Element      : String_Element;
+         Switches    : Variable_Value;
+         Switch_List : String_List_Id;
+         Element     : String_Element;
 
       begin
          if Linker_Package /= No_Package then
@@ -8338,12 +8351,10 @@ package body Buildgpr is
                if Opt.Verbose_Mode then
                   Write_Line
                     ("      -> previous gprbind failed, or " &
-                     Bind_Exchange.all &
-                     " corrupted");
+                     Bind_Exchange.all & " corrupted");
                end if;
 
             else
-
                --  Populate the hash table Project_File_Paths with
                --  the paths of all project files in the closure
                --  of the main project.
@@ -8368,8 +8379,7 @@ package body Buildgpr is
 
                while not End_Of_File (Exchange_File) loop
                   Get_Line (Exchange_File, Name_Buffer, Name_Len);
-                  exit when
-                    Name_Len > 0 and then Name_Buffer (1) = '[';
+                  exit when Name_Len > 0 and then Name_Buffer (1) = '[';
 
                   if End_Of_File (Exchange_File) then
                      Binder_Driver_Needs_To_Be_Called := True;
@@ -8395,9 +8405,7 @@ package body Buildgpr is
                      Project_File_TS :=
                        File_Stamp (Path_Name_Type (Project_Path));
 
-                     if String (Project_File_TS) /=
-                       Line (1 .. Last)
-                     then
+                     if String (Project_File_TS) /= Line (1 .. Last) then
                         Binder_Driver_Needs_To_Be_Called := True;
 
                         if Opt.Verbose_Mode then
@@ -8426,8 +8434,8 @@ package body Buildgpr is
                --  Check if there are still project file paths in
                --  the has table.
 
-               if (not Binder_Driver_Needs_To_Be_Called) and then
-                 Project_File_Paths.Get_First
+               if (not Binder_Driver_Needs_To_Be_Called)
+                 and then Project_File_Paths.Get_First
                then
                   Binder_Driver_Needs_To_Be_Called := True;
 
@@ -8606,14 +8614,14 @@ package body Buildgpr is
 
                      declare
                         Proj : Project_Id :=
-                          Source_Identity.Project.Extended_By;
+                                 Source_Identity.Project.Extended_By;
                      begin
                         while Proj /= No_Project loop
                            Name_Len := 0;
 
-                           if Proj.Library and then
-                             Proj.Library_ALI_Dir /=
-                               No_Path_Information
+                           if Proj.Library
+                             and then
+                               Proj.Library_ALI_Dir /= No_Path_Information
                            then
                               Add_Str_To_Name_Buffer
                                 (Get_Name_String
@@ -8638,7 +8646,7 @@ package body Buildgpr is
 
                            declare
                               NDT : aliased File_Attributes :=
-                                Unknown_Attributes;
+                                      Unknown_Attributes;
                            begin
                               if Is_Regular_File
                                 (Name_Buffer'Address, NDT'Access)
@@ -8652,8 +8660,7 @@ package body Buildgpr is
                         end loop;
                      end;
 
-                     Stamp :=
-                       File_Time_Stamp (Dep_Path, Dep_TS'Access);
+                     Stamp := File_Time_Stamp (Dep_Path, Dep_TS'Access);
 
                      --  Check the time stamp against the binder
                      --  exchange file time stamp.
@@ -8783,9 +8790,7 @@ package body Buildgpr is
             Object_File_Suffix_Label_Written := False;
 
             while Lang_Index /= No_Language_Index loop
-               if
-                 Lang_Index.Config.Object_File_Suffix /= No_Name
-               then
+               if Lang_Index.Config.Object_File_Suffix /= No_Name then
                   if not Object_File_Suffix_Label_Written then
                      Put_Line
                        (Exchange_File, Binding_Label
@@ -8808,9 +8813,7 @@ package body Buildgpr is
             --  Optional line: shared libs
 
             if Shared_Libs then
-               Put_Line
-                 (Exchange_File,
-                  Binding_Label (Gprexch.Shared_Libs));
+               Put_Line (Exchange_File, Binding_Label (Gprexch.Shared_Libs));
             end if;
 
             --  First, the main base name
@@ -8825,7 +8828,7 @@ package body Buildgpr is
 
             declare
                Config  : Language_Config renames
-                 B_Data.Language.Config;
+                           B_Data.Language.Config;
                List    : Name_List_Index;
                Nam_Nod : Name_Node;
             begin
@@ -8845,12 +8848,10 @@ package body Buildgpr is
                if List /= No_Name_List then
                   Put_Line
                     (Exchange_File,
-                     Binding_Label
-                       (Gprexch.Compiler_Leading_Switches));
+                     Binding_Label (Gprexch.Compiler_Leading_Switches));
 
                   while List /= No_Name_List loop
-                     Nam_Nod :=
-                       Project_Tree.Shared.Name_Lists.Table (List);
+                     Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
                      Put_Line
                        (Exchange_File,
                         Get_Name_String (Nam_Nod.Name));
@@ -8871,8 +8872,7 @@ package body Buildgpr is
                      Nam_Nod :=
                        Project_Tree.Shared.Name_Lists.Table (List);
                      Put_Line
-                       (Exchange_File,
-                        Get_Name_String (Nam_Nod.Name));
+                       (Exchange_File, Get_Name_String (Nam_Nod.Name));
                      List := Nam_Nod.Next;
                   end loop;
                end if;
@@ -8908,19 +8908,19 @@ package body Buildgpr is
 
             declare
                The_Packages : constant Package_Id :=
-                 Main_Proj.Decl.Packages;
+                                Main_Proj.Decl.Packages;
 
                Binder_Package : constant Prj.Package_Id :=
-                 Prj.Util.Value_Of
-                   (Name        => Name_Binder,
-                    In_Packages => The_Packages,
-                    Shared      => Project_Tree.Shared);
+                                  Prj.Util.Value_Of
+                                    (Name        => Name_Binder,
+                                     In_Packages => The_Packages,
+                                     Shared      => Project_Tree.Shared);
+               Config         : constant Language_Config :=
+                                  B_Data.Language.Config;
 
-               Switches     : Variable_Value;
-               Switch_List  : String_List_Id;
-               Element      : String_Element;
-               Config       : constant Language_Config :=
-                 B_Data.Language.Config;
+               Switches    : Variable_Value;
+               Switch_List : String_List_Id;
+               Element     : String_Element;
 
             begin
                --  First, check if there are binder options
@@ -8929,21 +8929,20 @@ package body Buildgpr is
                if Binder_Package /= No_Package then
                   declare
                      Defaults : constant Array_Element_Id :=
-                       Prj.Util.Value_Of
-                         (Name      =>
-                              Name_Default_Switches,
-                          In_Arrays =>
-                            Project_Tree.Shared.Packages.Table
-                              (Binder_Package).Decl.Arrays,
-                          Shared    => Project_Tree.Shared);
+                                  Prj.Util.Value_Of
+                                    (Name      => Name_Default_Switches,
+                                     In_Arrays =>
+                                       Project_Tree.Shared.Packages.Table
+                                         (Binder_Package).Decl.Arrays,
+                                     Shared    => Project_Tree.Shared);
 
                      Switches_Array : constant Array_Element_Id :=
-                       Prj.Util.Value_Of
-                         (Name      => Name_Switches,
-                          In_Arrays =>
-                            Project_Tree.Shared.Packages.Table
-                              (Binder_Package).Decl.Arrays,
-                          Shared   => Project_Tree.Shared);
+                                        Prj.Util.Value_Of
+                                          (Name      => Name_Switches,
+                                           In_Arrays =>
+                                             Project_Tree.Shared.Packages.Table
+                                               (Binder_Package).Decl.Arrays,
+                                           Shared    => Project_Tree.Shared);
 
                   begin
                      Switches :=
@@ -9065,9 +9064,7 @@ package body Buildgpr is
                   --  Then those on the command line, for all
                   --  binder drivers, if any.
 
-                  for
-                    J in 1 .. All_Language_Binder_Options.Last
-                  loop
+                  for J in 1 .. All_Language_Binder_Options.Last loop
                      Put_Line
                        (Exchange_File,
                         All_Language_Binder_Options.Table (J).all);
@@ -9132,11 +9129,11 @@ package body Buildgpr is
                if B_Data.Language.Config.Objects_Path /= No_Name then
                   declare
                      Env_Var   : constant String :=
-                       Get_Name_String
-                         (B_Data.Language.Config.
-                              Objects_Path);
+                                   Get_Name_String
+                                     (B_Data.Language.Config.
+                                                      Objects_Path);
                      Path_Name : String_Access :=
-                       Main_Proj.Objects_Path;
+                                   Main_Proj.Objects_Path;
                   begin
                      if Path_Name = null then
                         if Current_Verbosity = High then
@@ -9368,18 +9365,18 @@ package body Buildgpr is
 
             else
                declare
-                  Main           : constant String :=
-                    Get_Name_String (Main_File.File);
-                  Main_Id        : constant File_Name_Type :=
-                    Create_Name (Base_Name (Main));
-                  Main_Index     : constant Int := Main_File.Index;
-                  B_Data         : Binding_Data;
+                  Main                 : constant String :=
+                                           Get_Name_String (Main_File.File);
+                  Main_Id              : constant File_Name_Type :=
+                                           Create_Name (Base_Name (Main));
+                  Main_Index           : constant Int := Main_File.Index;
+                  B_Data               : Binding_Data;
                   Main_Base_Name_Index : File_Name_Type;
-                  Main_Proj      : Project_Id;
+                  Main_Proj            : Project_Id;
                   Index_Separator      : Character;
 
                begin
-                  Main_Proj   := Ultimate_Extending_Project_Of
+                  Main_Proj := Ultimate_Extending_Project_Of
                     (Main_File.Source.Project);
 
                   --  Get the main base name-index name
@@ -10471,8 +10468,7 @@ package body Buildgpr is
 
          elsif (Language = No_Name or else Language = Name_Ada)
             and then
-             (Arg = "-nostdlib"
-              or else Arg = "-nostdinc")
+             (Arg = "-nostdlib" or else Arg = "-nostdinc")
          then
             --  For compatibility with gnatmake, use switch to bind Ada code
             --  code and for -nostdlib to link.

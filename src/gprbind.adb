@@ -818,7 +818,6 @@ begin
                   null;
                end if;
             end if;
-
          end;
       end if;
    end;
