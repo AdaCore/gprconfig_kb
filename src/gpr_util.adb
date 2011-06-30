@@ -56,8 +56,6 @@ package body Gpr_Util is
    GNU_Closing : aliased constant String := '"' & ASCII.LF;
    GNU_Footer  : aliased constant String := ')' & ASCII.LF;
 
-   --  RTS_Name : String_Access := null;
-
    -------------------------------
    -- Binder_Exchange_File_Name --
    -------------------------------
