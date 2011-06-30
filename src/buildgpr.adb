@@ -1406,7 +1406,7 @@ package body Buildgpr is
                   end if;
 
                else
-                  Comp_Data.Source_Project.Compilation_Failed := True;
+                  Set_Failed_Compilation_Status (Comp_Data.Source_Project);
                end if;
 
                Language := Source.Id.Language;
@@ -6774,7 +6774,9 @@ package body Buildgpr is
                Main_File := Mains.Next_Main;
                exit when Main_File = No_Main_Info;
 
-               if Main_File.Tree = Tree then
+               if Main_File.Tree = Tree
+                 and then not Project_Compilation_Failed (Main_File.Project)
+               then
                   Link_Main (Main_File);
                end if;
             end loop;
@@ -8150,10 +8152,6 @@ package body Buildgpr is
          Dep_Files   : out Boolean);
       --  Put the dependency files of the project in the binder exchange file
 
-      function Project_Compilation_Failed (Prj : Project_Id) return Boolean;
-      --  Check compilation status for Prj and ann project it depends on.
-      --  Return True if the compilations were successful and false otherwise.
-
       --------------------------
       -- Add_Dependency_Files --
       --------------------------
@@ -9326,32 +9324,6 @@ package body Buildgpr is
          end if;
       end Bind_Language;
 
-      --------------------------------
-      -- Project_Compilation_Failed --
-      --------------------------------
-
-      function Project_Compilation_Failed (Prj : Project_Id) return Boolean is
-      begin
-         if Prj.Compilation_Failed then
-            return True;
-
-         else
-            --  Check all imported projects directly or indirectly
-            declare
-               Plist : Project_List := Prj.All_Imported_Projects;
-            begin
-               while Plist /= null loop
-                  if Plist.Project.Compilation_Failed then
-                     return True;
-                  else
-                     Plist := Plist.Next;
-                  end if;
-               end loop;
-               return False;
-            end;
-         end if;
-      end Project_Compilation_Failed;
-
    --  Start of processing for Post_Compilation_Phase
 
    begin
@@ -9417,11 +9389,13 @@ package body Buildgpr is
             Main_File : Main_Info;
          begin
             Main_File := Mains.Next_Main;
-            exit when Main_File = No_Main_Info
-              or else Project_Compilation_Failed (Main_File.Project);
+            exit when Main_File = No_Main_Info;
 
-            if Main_File.Tree /= Project_Tree then
-               --  Will be processed later
+            if Main_File.Tree /= Project_Tree
+              or else Project_Compilation_Failed (Main_File.Project)
+            then
+               --  Will be processed later, or do not need any processing in
+               --  the case of compilation errors in the project.
                null;
 
             elsif
