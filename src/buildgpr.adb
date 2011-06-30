@@ -126,7 +126,7 @@ package body Buildgpr is
    --  True when last switch was -aP
 
    No_Object_Check_Switch : constant String  := "--no-object-check";
-   Object_Checked : Boolean := True;
+   Object_Checked         : Boolean := True;
    --  False when switch --no-object-check is used. When True, presence of
    --  the object file and its time stamp are checked to decide if a file needs
    --  to be compiled.
@@ -134,10 +134,10 @@ package body Buildgpr is
    Map_File : String_Access := null;
    --  Value of switch --create-map-file
 
-   Direct_Import_Only_Switch :  constant String  := "--direct-import-only";
-   Indirect_Imports_Switch :    constant String  := "--indirect-imports";
+   Direct_Import_Only_Switch  : constant String  := "--direct-import-only";
+   Indirect_Imports_Switch    : constant String  := "--indirect-imports";
    No_Indirect_Imports_Switch : constant String  := "--no-indirect-imports";
-   Indirect_Imports : Boolean := True;
+   Indirect_Imports           : Boolean := True;
    --  False when switch --no-indirect-imports is used. Sources are only
    --  allowed to import from the projects that are directly withed.
 
@@ -153,11 +153,11 @@ package body Buildgpr is
    --  Set to True when gprbuid is called with -f -u and at least one source
    --  on the command line.
 
-   Naming_String                : aliased String := "naming";
-   Builder_String               : aliased String := "builder";
-   Compiler_String              : aliased String := "compiler";
-   Binder_String                : aliased String := "binder";
-   Linker_String                : aliased String := "linker";
+   Naming_String   : aliased String := "naming";
+   Builder_String  : aliased String := "builder";
+   Compiler_String : aliased String := "compiler";
+   Binder_String   : aliased String := "binder";
+   Linker_String   : aliased String := "linker";
    --  Name of packages to be checked when parsing/processing project files
 
    List_Of_Packages : aliased String_List :=
@@ -176,13 +176,13 @@ package body Buildgpr is
    Outstanding_Compiles : Natural := 0;
    --  The number of compilation jobs currently spawned
 
-   package Bad_Compilations is new Table.Table (
-     Table_Component_Type => Source_Id,
-     Table_Index_Type     => Natural,
-     Table_Low_Bound      => 1,
-     Table_Initial        => 20,
-     Table_Increment      => 100,
-     Table_Name           => "Buildgpr.Bad_Compilations");
+   package Bad_Compilations is new Table.Table
+     (Table_Component_Type => Source_Id,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 20,
+      Table_Increment      => 100,
+      Table_Name           => "Buildgpr.Bad_Compilations");
    --  Full name of all the source files for which compilation fails
 
    -------------------------------------------
@@ -190,6 +190,7 @@ package body Buildgpr is
    -------------------------------------------
 
    package Options is
+
       type Option_Type is
         (Force_Compilations_Option,
          Keep_Going_Option,
@@ -1496,9 +1497,7 @@ package body Buildgpr is
                            end if;
 
                            Add_Option
-                             (Nam.Name,
-                              Compilation_Options,
-                              Opt.Verbose_Mode);
+                             (Nam.Name, Compilation_Options, Opt.Verbose_Mode);
                         end loop;
                      end if;
 
@@ -3530,7 +3529,7 @@ package body Buildgpr is
                --  If switch -k or -jnn (with nn > 1), output a summary of the
                --  sources that could not be compiled.
 
-               if (Opt.Keep_Going or Opt.Maximum_Processes > 1)
+               if (Opt.Keep_Going or else Opt.Maximum_Processes > 1)
                  and then Bad_Compilations.Last > 0
                then
                   declare
@@ -3552,9 +3551,7 @@ package body Buildgpr is
                   end;
                end if;
 
-               if Opt.Keep_Going
-                 and then Project.Qualifier = Aggregate
-               then
+               if Opt.Keep_Going and then Project.Qualifier = Aggregate then
                   Bad_Compilations.Init;
                else
                   Fail_Program (Tree, "*** compilation phase failed");
@@ -5238,7 +5235,7 @@ package body Buildgpr is
                Object_Check   => Object_Checked,
                Always_Compile => Always_Compile);
 
-            if Compilation_Needed or Opt.Check_Switches then
+            if Compilation_Needed or else Opt.Check_Switches then
                Set_Options_For_File (Source.Id);
 
                if Opt.Check_Switches and then not Compilation_Needed then
@@ -5415,6 +5412,8 @@ package body Buildgpr is
             Write_Eol;
          end if;
       end loop Compilation_Loop;
+
+      --  Release local memory
 
       declare
          Data : Local_Project_Data :=
@@ -7181,8 +7180,7 @@ package body Buildgpr is
                   Fail_Program
                     (Main_File.Tree,
                      "binder exchange file " &
-                       Exchange_File_Name &
-                       " does not exist");
+                       Exchange_File_Name & " does not exist");
                end if;
             end;
 
@@ -8491,9 +8489,7 @@ package body Buildgpr is
             begin
                --  Put the root sources in the queue
 
-               if Main_Source.Language.Name =
-                 B_Data.Language.Name
-               then
+               if Main_Source.Language.Name = B_Data.Language.Name then
                   Queue.Insert
                     (Source => (Format => Format_Gprbuild,
                                 Tree   => Main_File.Tree,

@@ -177,9 +177,9 @@ package Gpr_Util is
    end Knowledge;
 
    procedure Need_To_Compile
-     (Source         : Prj.Source_Id;
-      Tree           : Prj.Project_Tree_Ref;
-      In_Project     : Prj.Project_Id;
+     (Source         : Source_Id;
+      Tree           : Project_Tree_Ref;
+      In_Project     : Project_Id;
       Must_Compile   : out Boolean;
       The_ALI        : out ALI.ALI_Id;
       Object_Check   : Boolean;

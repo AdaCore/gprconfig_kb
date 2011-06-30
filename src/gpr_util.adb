@@ -25,9 +25,12 @@
 ------------------------------------------------------------------------------
 
 with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Interfaces.C.Strings;
+
+with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+
 with ALI;      use ALI;
 with Debug;
-with Interfaces.C.Strings;
 with Makeutl;  use Makeutl;
 with Opt;      use Opt;
 with Osint;    use Osint;
@@ -40,7 +43,6 @@ with Sinput.P;
 with Snames;   use Snames;
 with Tempdir;
 with Types;    use Types;
-with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body Gpr_Util is
 
@@ -495,18 +497,19 @@ package body Gpr_Util is
 
    procedure Need_To_Compile
      (Source         : Prj.Source_Id;
-      Tree           : Prj.Project_Tree_Ref;
-      In_Project     : Prj.Project_Id;
+      Tree           : Project_Tree_Ref;
+      In_Project     : Project_Id;
       Must_Compile   : out Boolean;
       The_ALI        : out ALI.ALI_Id;
       Object_Check   : Boolean;
       Always_Compile : Boolean)
    is
-      Source_Path   : constant String :=
-                        Get_Name_String (Source.Path.Display_Name);
-      C_Source_Path : constant String := Get_Name_String (Source.Path.Name);
+      Source_Path        : constant String :=
+                             Get_Name_String (Source.Path.Display_Name);
+      C_Source_Path      : constant String :=
+                             Get_Name_String (Source.Path.Name);
       Runtime_Source_Dir : constant Name_Id :=
-                              Source.Language.Config.Runtime_Source_Dir;
+                             Source.Language.Config.Runtime_Source_Dir;
 
       Start    : Natural;
       Finish   : Natural;
@@ -525,7 +528,7 @@ package body Gpr_Util is
       Switches_Name : String_Access := null;
       --  ??? Missing doc for these
 
-      Num_Ext  : Natural;
+      Num_Ext : Natural;
       --  Number of extending projects
 
       ALI_Project : Project_Id;
