@@ -689,15 +689,6 @@ package body Buildgpr is
    --  Take into account a global switch (builder or global compilation switch)
    --  read from the project file.
 
-   procedure Add_Process
-     (Pid            : Process_Id;
-      Source         : Queue.Source_Info;
-      Source_Project : Project_Id;
-      Mapping_File   : Path_Name_Type;
-      Purpose        : Process_Purpose;
-      Options        : String_List_Access);
-   --  Add compilation process and indicate that the object directory is busy
-
    procedure Add_Rpath (Path : String);
    --  Add a path name to Rpath
 
@@ -1266,26 +1257,6 @@ package body Buildgpr is
          List := Element.Next;
       end loop;
    end Add_Options;
-
-   -----------------
-   -- Add_Process --
-   -----------------
-
-   procedure Add_Process
-     (Pid            : Process_Id;
-      Source         : Queue.Source_Info;
-      Source_Project : Project_Id;
-      Mapping_File   : Path_Name_Type;
-      Purpose        : Process_Purpose;
-      Options        : String_List_Access)
-   is
-   begin
-      Compilation_Htable.Set
-        (Pid, (Pid, Source, Source_Project, Mapping_File, Purpose, Options));
-      Outstanding_Compiles := Outstanding_Compiles + 1;
-
-      Queue.Set_Obj_Dir_Busy (Source.Id.Project.Object_Directory.Name);
-   end Add_Process;
 
    ---------------
    -- Add_Rpath --
@@ -4921,6 +4892,38 @@ package body Buildgpr is
          Mapping_File_Path      : Path_Name_Type;
          Last_Switches_For_File : Integer)
       is
+
+         procedure Add_Process
+           (Pid            : Process_Id;
+            Source         : Queue.Source_Info;
+            Source_Project : Project_Id;
+            Mapping_File   : Path_Name_Type;
+            Purpose        : Process_Purpose;
+            Options        : String_List_Access);
+         --  Add compilation process and indicate that the object directory is
+         --  busy.
+
+         -----------------
+         -- Add_Process --
+         -----------------
+
+         procedure Add_Process
+           (Pid            : Process_Id;
+            Source         : Queue.Source_Info;
+            Source_Project : Project_Id;
+            Mapping_File   : Path_Name_Type;
+            Purpose        : Process_Purpose;
+            Options        : String_List_Access)
+         is
+         begin
+            Compilation_Htable.Set
+              (Pid,
+               (Pid, Source, Source_Project, Mapping_File, Purpose, Options));
+            Outstanding_Compiles := Outstanding_Compiles + 1;
+
+            Queue.Set_Obj_Dir_Busy (Source.Id.Project.Object_Directory.Name);
+         end Add_Process;
+
          Pid     : Process_Id;
          Options : String_List_Access;
       begin
