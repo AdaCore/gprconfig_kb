@@ -5222,7 +5222,7 @@ package body Buildgpr is
          Source_Project         : constant Project_Id :=
                                     Ultimate_Extending_Project_Of
                                       (Source.Id.Project);
-         Compilation_Needed     : Boolean;
+         Compilation_Needed     : Boolean := True;
          Last_Switches_For_File : Integer;
          Mapping_File           : Path_Name_Type;
          The_ALI                : ALI.ALI_Id;
@@ -5237,6 +5237,19 @@ package body Buildgpr is
                The_ALI        => The_ALI,
                Object_Check   => Object_Checked,
                Always_Compile => Always_Compile);
+
+            if Compilation_Needed and then Opt.Keep_Going then
+               --  When in Keep__Going mode first check that we did not already
+               --  tried to compile this source as part of another import of
+               --  the corresponding project file.
+
+               for Index in 1 .. Bad_Compilations.Last loop
+                  if Source.Id.File = Bad_Compilations.Table (Index).File then
+                     Compilation_Needed := False;
+                     exit;
+                  end if;
+               end loop;
+            end if;
 
             if Compilation_Needed or else Opt.Check_Switches then
                Set_Options_For_File (Source.Id);
