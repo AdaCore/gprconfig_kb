@@ -28,6 +28,7 @@ with Ada.Strings.Fixed; use Ada.Strings.Fixed;
 with Interfaces.C.Strings;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 
 with ALI;      use ALI;
 with Debug;
@@ -55,6 +56,18 @@ package body Gpr_Util is
    GNU_Opening : aliased constant String := """";
    GNU_Closing : aliased constant String := '"' & ASCII.LF;
    GNU_Footer  : aliased constant String := ')' & ASCII.LF;
+
+   package Project_Name_Boolean_Htable is new Simple_HTable
+     (Header_Num => Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => Name_Id,
+      Hash       => Hash,
+      Equal      => "=");
+
+   Project_Failure : Project_Name_Boolean_Htable.Instance :=
+                       Project_Name_Boolean_Htable.Nil;
+   --  Record a boolean for project having failed to compile cleanly
 
    -------------------------------
    -- Binder_Exchange_File_Name --
@@ -439,6 +452,48 @@ package body Gpr_Util is
         '_' & Img (Img'First + 1 .. Img'Last)
         & Object_Suffix;
    end Partial_Name;
+
+   --------------------------------
+   -- Project_Compilation_Failed --
+   --------------------------------
+
+   function Project_Compilation_Failed
+     (Prj       : Project_Id;
+      Recursive : Boolean := True) return Boolean
+   is
+      use Project_Name_Boolean_Htable;
+   begin
+      if Get (Project_Failure, Prj.Name) then
+         return True;
+
+      elsif not Recursive then
+         return False;
+
+      else
+         --  Check all imported projects directly or indirectly
+         declare
+            Plist : Project_List := Prj.All_Imported_Projects;
+         begin
+            while Plist /= null loop
+               if Get (Project_Failure, Plist.Project.Name) then
+                  return True;
+               else
+                  Plist := Plist.Next;
+               end if;
+            end loop;
+            return False;
+         end;
+      end if;
+   end Project_Compilation_Failed;
+
+   -----------------------------------
+   -- Set_Failed_Compilation_Status --
+   -----------------------------------
+
+   procedure Set_Failed_Compilation_Status (Prj : Project_Id) is
+   begin
+      Project_Name_Boolean_Htable.Set (Project_Failure, Prj.Name, True);
+   end Set_Failed_Compilation_Status;
 
    -----------------------
    -- Shared_Libgcc_Dir --

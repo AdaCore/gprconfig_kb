@@ -206,4 +206,13 @@ package Gpr_Util is
    --  Always_Compile should be True when gprbuid is called with -f -u and at
    --  least one source on the command line.
 
+   function Project_Compilation_Failed
+     (Prj       : Project_Id;
+      Recursive : Boolean := True) return Boolean;
+   --  Returns True if all compilations for Prj (and all projects it depends on
+   --  if Recursive is True) were successful and False otherwise.
+
+   procedure Set_Failed_Compilation_Status (Prj : Project_Id);
+   --  Record compilation failure status for the given project
+
 end Gpr_Util;
