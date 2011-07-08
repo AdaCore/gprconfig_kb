@@ -571,7 +571,7 @@
   <!--  Define the right response file mechanism for linking
         when possible use both the GCC @response file (available starting with
         GNAT Pro 6) and the GNU linker mechanism. The latter can be used with
-        all cross since they rely and on GNU ld and some of the major natives.
+        all cross since they rely on GNU ld and some of the major natives.
         Max_Command_Line could be made different for different hosts but we
         use the smallest value of all the hosts instead for uniformity.
   -->
