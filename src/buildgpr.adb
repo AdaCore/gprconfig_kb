@@ -5830,7 +5830,7 @@ package body Buildgpr is
          exit when Source = No_Source;
 
          if Source.Language.Name = Language
-           and then Source.Naming_Exception
+           and then Source.Naming_Exception /= No
            and then Source.Unit /= No_Unit_Index
            and then not Source.Locally_Removed
            and then Source.Replaced_By = No_Source
