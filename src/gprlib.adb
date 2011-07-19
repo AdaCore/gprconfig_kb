@@ -2268,8 +2268,7 @@ begin
       Name_Len := Object_Files.Table (Index)'Length;
       Name_Buffer (1 .. Name_Len) := Object_Files.Table (Index).all;
       Put_Line
-        (IO_File,
-         String (Osint.File_Stamp (Path_Name_Type'(Name_Find))));
+        (IO_File, String (Osint.File_Stamp (Path_Name_Type'(Name_Find))));
    end loop;
 
    if Generated_Sources.Last > 0 then

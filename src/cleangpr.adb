@@ -175,8 +175,7 @@ package body Cleangpr is
    --  Display the usage.
    --  If called several times, the usage is displayed only the first time.
 
-   procedure Check_Version_And_Help is new
-     Check_Version_And_Help_G (Usage);
+   procedure Check_Version_And_Help is new Check_Version_And_Help_G (Usage);
 
    -------------------
    -- Clean_Archive --
@@ -185,8 +184,8 @@ package body Cleangpr is
    procedure Clean_Archive (Project : Project_Id) is
       Current_Dir  : constant Dir_Name_Str := Get_Current_Dir;
       Archive_Name : constant String :=
-                       "lib" & Get_Name_String (Project.Name) &
-                       Get_Name_String (Project.Config.Archive_Suffix);
+                       "lib" & Get_Name_String (Project.Name)
+                       & Get_Name_String (Project.Config.Archive_Suffix);
       --  The name of the archive file for this project
 
       Archive_Dep_Name : constant String :=
@@ -236,8 +235,8 @@ package body Cleangpr is
       then
          declare
             Directory : constant String :=
-              Get_Name_String (Project.Library_Src_Dir.Name);
-            Iter : Source_Iterator;
+                          Get_Name_String (Project.Library_Src_Dir.Name);
+            Iter      : Source_Iterator;
 
          begin
             Change_Dir (Get_Name_String (Project.Library_Src_Dir.Name));
@@ -308,15 +307,18 @@ package body Cleangpr is
    is
       Current : constant String := Get_Current_Dir;
 
-      Lib_Filename : constant String := Get_Name_String (Project.Library_Name);
-      DLL_Name     : String :=
-                       Get_Name_String
-                         (Project.Config.Shared_Lib_Prefix) &
-                       Lib_Filename &
-                       Get_Name_String (Project.Config.Shared_Lib_Suffix);
-      Archive_Name : String :=
-                       "lib" & Lib_Filename &
-                       Get_Name_String (Project.Config.Archive_Suffix);
+      Lib_Filename               : constant String :=
+                                     Get_Name_String (Project.Library_Name);
+      DLL_Name                   : String :=
+                                     Get_Name_String
+                                       (Project.Config.Shared_Lib_Prefix)
+                                     & Lib_Filename
+                                     & Get_Name_String
+                                       (Project.Config.Shared_Lib_Suffix);
+      Archive_Name               : String :=
+                                     "lib" & Lib_Filename
+                                     & Get_Name_String
+                                       (Project.Config.Archive_Suffix);
       Library_Exchange_File_Name : constant String :=
                                      Lib_Filename & Library_Exchange_Suffix;
 
@@ -336,9 +338,11 @@ package body Cleangpr is
             Obj_Directory     : constant String :=
               Get_Name_String (Project.Object_Directory.Display_Name);
             Lib_Directory     : constant String :=
-              Get_Name_String (Project.Library_Dir.Display_Name);
+                                  Get_Name_String
+                                    (Project.Library_Dir.Display_Name);
             Lib_ALI_Directory : constant String :=
-              Get_Name_String (Project.Library_ALI_Dir.Display_Name);
+                                  Get_Name_String
+                                    (Project.Library_ALI_Dir.Display_Name);
 
             Exchange_File : Ada.Text_IO.File_Type;
 
@@ -349,7 +353,7 @@ package body Cleangpr is
 
             Open (Direc, ".");
 
-            --  Look for the library exchange file in the object directory.
+            --  Look for the library exchange file in the object directory
 
             loop
                Read (Direc, Name, Last);
@@ -423,13 +427,12 @@ package body Cleangpr is
                then
                   Osint.Canonical_Case_File_Name (Name (1 .. Last));
 
-                  if (Project.Library_Kind = Static and then
-                        Name (1 .. Last) =  Archive_Name)
+                  if (Project.Library_Kind = Static
+                      and then Name (1 .. Last) =  Archive_Name)
                     or else
-                      ((Project.Library_Kind = Dynamic or else
-                          Project.Library_Kind = Relocatable)
-                       and then
-                         Name (1 .. Last) = DLL_Name)
+                      ((Project.Library_Kind = Dynamic
+                        or else Project.Library_Kind = Relocatable)
+                       and then Name (1 .. Last) = DLL_Name)
                   then
                      if not Do_Nothing then
                         Set_Writable (Name (1 .. Last));
@@ -794,9 +797,10 @@ package body Cleangpr is
                    (Get_Name_String (Project.Exec_Directory.Display_Name))
       then
          declare
-            Exec_Dir : constant String :=
-                         Get_Name_String (Project.Exec_Directory.Display_Name);
-            Main_File     : Main_Info;
+            Exec_Dir  : constant String :=
+                          Get_Name_String
+                            (Project.Exec_Directory.Display_Name);
+            Main_File : Main_Info;
 
          begin
             Change_Dir (Exec_Dir);
@@ -840,8 +844,8 @@ package body Cleangpr is
                   --  Delete the binder generated files only if the main source
                   --  has been found and if there is an object directory.
 
-                  if Main_File.Source /= No_Source and then
-                    Project.Object_Directory /= No_Path_Information
+                  if Main_File.Source /= No_Source
+                    and then Project.Object_Directory /= No_Path_Information
                   then
                      Delete_Binder_Generated_Files
                        (Project, Project_Tree,
@@ -927,10 +931,10 @@ package body Cleangpr is
       Dir          : String;
       Source       : Source_Id)
    is
-      Data  : constant Builder_Data_Access := Builder_Data (Project_Tree);
-      Current     : constant String := Get_Current_Dir;
-      B_Data      : Binding_Data;
-      Base_Name   : File_Name_Type;
+      Data      : constant Builder_Data_Access := Builder_Data (Project_Tree);
+      Current   : constant String := Get_Current_Dir;
+      B_Data    : Binding_Data;
+      Base_Name : File_Name_Type;
 
    begin
       Find_Binding_Languages (Project_Tree, Main_Project);
@@ -939,9 +943,7 @@ package body Cleangpr is
          --  Get the main base name
 
          Base_Name := Base_Name_Index_For
-           (Get_Name_String (Source.File),
-            Source.Index,
-            '~');
+           (Get_Name_String (Source.File), Source.Index, '~');
 
          --  Work in the object directory
 
@@ -1232,8 +1234,8 @@ package body Cleangpr is
    --------------------
 
    procedure Parse_Cmd_Line is
+      Last  : constant Natural := Argument_Count;
       Index : Positive := 1;
-      Last         : constant Natural := Argument_Count;
 
    begin
       --  First deal with --version and --help
@@ -1284,16 +1286,17 @@ package body Cleangpr is
                           and then Arg (1 .. Config_Project_Option'Length) =
                                    Config_Project_Option
                         then
-                           if Config_Project_File_Name /= null and then
-                             (Autoconf_Specified or else
-                                Config_Project_File_Name.all /=
+                           if Config_Project_File_Name /= null
+                             and then
+                               (Autoconf_Specified
+                                or else Config_Project_File_Name.all /=
                                   Arg (Config_Project_Option'Length + 1
                                        .. Arg'Last))
                            then
                               Fail_Program
                                 (Project_Tree,
-                                 "several configuration switches cannot " &
-                                 "be specified");
+                                 "several configuration switches cannot "
+                                 & "be specified");
 
                            else
 
@@ -1311,16 +1314,18 @@ package body Cleangpr is
                                 Arg (1 .. Autoconf_Project_Option'Length) =
                                 Autoconf_Project_Option
                         then
-                           if Config_Project_File_Name /= null and then
-                             ((not Autoconf_Specified) or else
-                                Config_Project_File_Name.all /=
-                                  Arg (Autoconf_Project_Option'Length + 1
-                                       .. Arg'Last))
+                           if Config_Project_File_Name /= null
+                             and then
+                               (not Autoconf_Specified
+                                or else
+                                  Config_Project_File_Name.all /=
+                                    Arg (Autoconf_Project_Option'Length + 1
+                                         .. Arg'Last))
                            then
                               Fail_Program
                                 (Project_Tree,
-                                 "several configuration switches cannot " &
-                                 "be specified");
+                                 "several configuration switches cannot "
+                                 & "be specified");
 
                            else
                               Config_Project_File_Name :=
@@ -1344,8 +1349,8 @@ package body Cleangpr is
                               then
                                  Fail_Program
                                    (Project_Tree,
-                                    "several target switches " &
-                                    "cannot be specified");
+                                    "several target switches "
+                                    & "cannot be specified");
                               end if;
 
                            else
@@ -1355,9 +1360,9 @@ package body Cleangpr is
                                         .. Arg'Last));
                            end if;
 
-                        elsif Arg'Length > Subdirs_Option'Length and then
-                          Arg (1 .. Subdirs_Option'Length) =
-                            Subdirs_Option
+                        elsif Arg'Length > Subdirs_Option'Length
+                          and then
+                            Arg (1 .. Subdirs_Option'Length) = Subdirs_Option
                         then
                            Subdirs :=
                              new String'
@@ -1418,8 +1423,8 @@ package body Cleangpr is
                            declare
                               Prj : constant String := Arg (3 .. Arg'Last);
                            begin
-                              if Prj'Length > 1 and then
-                                Prj (Prj'First) = '='
+                              if Prj'Length > 1
+                                and then Prj (Prj'First) = '='
                               then
                                  Project_File_Name :=
                                    new String'
@@ -1467,10 +1472,10 @@ package body Cleangpr is
                         end if;
 
                         declare
-                           Ext_Asgn  : constant String := Arg (3 .. Arg'Last);
-                           Start     : Positive := Ext_Asgn'First;
-                           Stop      : Natural  := Ext_Asgn'Last;
-                           OK        : Boolean  := True;
+                           Ext_Asgn : constant String := Arg (3 .. Arg'Last);
+                           Start    : Positive := Ext_Asgn'First;
+                           Stop     : Natural  := Ext_Asgn'Last;
+                           OK       : Boolean  := True;
 
                         begin
                            if Ext_Asgn (Start) = '"' then
@@ -1488,8 +1493,8 @@ package body Cleangpr is
                                 Declaration => Ext_Asgn (Start .. Stop))
                            then
                               Osint.Fail
-                                ("illegal external assignment '" &
-                                 Ext_Asgn & ''');
+                                ("illegal external assignment '"
+                                 & Ext_Asgn & ''');
                            end if;
                         end;
 
@@ -1598,11 +1603,11 @@ package body Cleangpr is
 
          Put_Line ("  -aPdir   Add directory dir to project search path");
          Put_Line ("  -c       Only delete compiler generated files");
-         Put_Line ("  -eL      Follow symbolic links when processing " &
-                   "project files");
+         Put_Line ("  -eL      Follow symbolic links when processing "
+                   & "project files");
          Put_Line ("  -f       Force deletions of unwritable files");
-         Put_Line ("  -F       Full project path name " &
-                   "in brief error messages");
+         Put_Line ("  -F       Full project path name "
+                   & "in brief error messages");
          Put_Line ("  -h       Display this message");
          Put_Line ("  -n       Nothing to do: only list files to delete");
          Put_Line ("  -P<proj> Use Project File <proj>");
@@ -1610,8 +1615,8 @@ package body Cleangpr is
          Put_Line ("  -r       Clean all projects recursively");
          Put_Line ("  -v       Verbose mode");
          Put_Line ("  -vPx     Specify verbosity when parsing Project Files");
-         Put_Line ("  -Xnm=val Specify an external reference " &
-                   "for Project Files");
+         Put_Line ("  -Xnm=val Specify an external reference "
+                   & "for Project Files");
          New_Line;
       end if;
    end Usage;

@@ -689,8 +689,7 @@ package body Gpr_Util is
             if Finish = 0 then
                Finish :=
                  Index
-                   (Name_Buffer (1 .. Name_Len),
-                    (1 => ':', 2 => ASCII.HT));
+                   (Name_Buffer (1 .. Name_Len), (1 => ':', 2 => ASCII.HT));
             end if;
 
             if Finish /= 0 then
@@ -701,9 +700,7 @@ package body Gpr_Util is
                     or else Name_Buffer (Last_Obj) /= ' ';
                end loop;
 
-               while Start < Last_Obj
-                 and then Name_Buffer (Start) = ' '
-               loop
+               while Start < Last_Obj and then Name_Buffer (Start) = ' ' loop
                   Start := Start + 1;
                end loop;
 

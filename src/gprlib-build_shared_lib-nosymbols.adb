@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2006-2010, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2011, Free Software Foundation, Inc.       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -40,7 +40,8 @@ procedure Build_Shared_Lib is
                Argument_List (Options_Table.Table (1 .. Options_Table.Last));
 
    Lib_File : constant String :=
-            Shared_Lib_Prefix.all & Library_Name.all & Shared_Lib_Suffix.all;
+                Shared_Lib_Prefix.all &
+                Library_Name.all & Shared_Lib_Suffix.all;
 
    Lib_Path : constant String :=
                 Library_Directory.all & Directory_Separator & Lib_File;
