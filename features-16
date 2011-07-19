@@ -77,7 +77,7 @@ NF-16-H414-002 Support for aggregate projects (2011-03-15)
   can be used to group together two or more independent projects, and compile
   all their main units through a single command. See the documentation for
   more use cases. The support is not complete yet, and in particular gprbuild
-  is missing a numbre of consistency checks, but the feature is already
+  is missing a number of consistency checks, but the feature is already
   useful as is.
 
 NF-16-H320-021 Support for aggregate library projects (2011-07-17)
