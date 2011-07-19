@@ -692,9 +692,6 @@ package body Buildgpr is
    procedure Add_Rpath (Path : String);
    --  Add a path name to Rpath
 
-   procedure Add_Source_Id (Project : Project_Id; Id : Source_Id);
-   --  Add a source id to Source_Indexes, with Found set to False
-
    function Archive_Suffix (For_Project : Project_Id) return String;
    --  Return the archive suffix for the project, if defined, otherwise
    --  return ".a".
@@ -1279,31 +1276,6 @@ package body Buildgpr is
       end if;
    end Add_Rpath;
 
-   -------------------
-   -- Add_Source_Id --
-   -------------------
-
-   procedure Add_Source_Id (Project : Project_Id; Id : Source_Id) is
-   begin
-      --  Reallocate the array, if necessary
-
-      if Last_Source = Source_Indexes'Last then
-         declare
-            New_Indexes : constant Source_Indexes_Ref :=
-                            new Source_Index_Array
-                              (1 .. Source_Indexes'Last +
-                                      Initial_Source_Index_Count);
-         begin
-            New_Indexes (Source_Indexes'Range) := Source_Indexes.all;
-            Free (Source_Indexes);
-            Source_Indexes := New_Indexes;
-         end;
-      end if;
-
-      Last_Source := Last_Source + 1;
-      Source_Indexes (Last_Source) := (Project, Id, False);
-   end Add_Source_Id;
-
    --------------------
    -- Archive_Suffix --
    --------------------
@@ -1586,6 +1558,34 @@ package body Buildgpr is
          Project : Project_Id := Proj;
          Id      : Source_Id;
          Iter    : Source_Iterator;
+
+         procedure Add_Source_Id (Project : Project_Id; Id : Source_Id);
+         --  Add a source id to Source_Indexes, with Found set to False
+
+         -------------------
+         -- Add_Source_Id --
+         -------------------
+
+         procedure Add_Source_Id (Project : Project_Id; Id : Source_Id) is
+         begin
+            --  Reallocate the array, if necessary
+
+            if Last_Source = Source_Indexes'Last then
+               declare
+                  New_Indexes : constant Source_Indexes_Ref :=
+                                  new Source_Index_Array
+                                    (1 .. Source_Indexes'Last +
+                                                   Initial_Source_Index_Count);
+               begin
+                  New_Indexes (Source_Indexes'Range) := Source_Indexes.all;
+                  Free (Source_Indexes);
+                  Source_Indexes := New_Indexes;
+               end;
+            end if;
+
+            Last_Source := Last_Source + 1;
+            Source_Indexes (Last_Source) := (Project, Id, False);
+         end Add_Source_Id;
 
       begin
          while Project /= No_Project loop
