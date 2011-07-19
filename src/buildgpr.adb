@@ -9337,30 +9337,38 @@ package body Buildgpr is
          And_Project_Itself => True);
 
       if Library_Projs.Last > 0 then
-         for J in 1 .. Library_Projs.Last loop
-            declare
-               Proj : Project_Id;
-            begin
-               Proj := Library_Projs.Table (J).Proj;
+         declare
+            Lib_Projs : array (1 .. Library_Projs.Last) of Library_Project;
+            Proj      : Library_Project;
 
+         begin
+            --  Copy the list of library projects in local array Lib_Projs,
+            --  as procedure Build_Library uses table Library_Projs.
+
+            for J in 1 .. Library_Projs.Last loop
+               Lib_Projs (J) := Library_Projs.Table (J);
+            end loop;
+
+            for J in Lib_Projs'Range loop
+               Proj := Lib_Projs (J);
                --  Try building a library only if no errors occured in library
                --  project and projects it depends on.
 
-               if not Project_Compilation_Failed (Proj) then
-                  if Proj.Extended_By = No_Project then
-                     if not Proj.Externally_Built then
+               if not Project_Compilation_Failed (Proj.Proj) then
+                  if Proj.Proj.Extended_By = No_Project then
+                     if not Proj.Proj.Externally_Built then
                         Build_Library
-                          (Proj, Project_Tree,
-                           No_Create => Library_Projs.Table (J).Is_Aggregated);
+                          (Proj.Proj, Project_Tree,
+                           No_Create => Proj.Is_Aggregated);
                      end if;
 
-                     if Proj.Library_Kind /= Static then
+                     if Proj.Proj.Library_Kind /= Static then
                         Shared_Libs := True;
                      end if;
                   end if;
                end if;
-            end;
-         end loop;
+            end loop;
+         end;
       end if;
 
       --  If no main is specified, there is nothing else to do
