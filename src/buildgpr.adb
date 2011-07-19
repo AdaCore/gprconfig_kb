@@ -9289,20 +9289,11 @@ package body Buildgpr is
          And_Project_Itself => True);
 
       if Library_Projs.Last > 0 then
-         declare
-            Lib_Projs : array (1 .. Library_Projs.Last) of Project_Id;
-            Proj      : Project_Id;
-
-         begin
-            --  Copy the list of library projects in local array Lib_Projs,
-            --  as procedure Build_Library uses table Library_Projs.
-
-            for J in 1 .. Library_Projs.Last loop
-               Lib_Projs (J) := Library_Projs.Table (J);
-            end loop;
-
-            for J in Lib_Projs'Range loop
-               Proj := Lib_Projs (J);
+         for J in 1 .. Library_Projs.Last loop
+            declare
+               Proj : Project_Id;
+            begin
+               Proj := Library_Projs.Table (J);
 
                --  Try building a library only if no errors occured in library
                --  project and projects it depends on.
@@ -9318,8 +9309,8 @@ package body Buildgpr is
                      end if;
                   end if;
                end if;
-            end loop;
-         end;
+            end;
+         end loop;
       end if;
 
       --  If no main is specified, there is nothing else to do
