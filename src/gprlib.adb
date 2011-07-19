@@ -298,6 +298,9 @@ procedure Gprlib is
    Static : Boolean := False;
    --  True if the library is an archive
 
+   No_Create : Boolean := False;
+   --  Should the library (static or dynamic) be built
+
    Archive_Builder : String_Access := null;
    --  Name of the archive builder
 
@@ -933,6 +936,9 @@ begin
                  Gprexch.Compiler_Trailing_Switches =>
                Current_Language := No_Name;
 
+            when Gprexch.No_Create =>
+               No_Create := True;
+
             when others =>
                null;
          end case;
@@ -944,6 +950,9 @@ begin
          case Current_Section is
             when No_Library_Section =>
                Osint.Fail ("no section specified: " & Line (1 .. Last));
+
+            when Gprexch.No_Create =>
+               Osint.Fail ("no create section should be empty");
 
             when Quiet =>
                Osint.Fail ("quiet section should be empty");
@@ -1765,7 +1774,7 @@ begin
 
    --  Archives
 
-   if Static then
+   if Static and then not No_Create then
       if Standalone and then Partial_Linker /= null then
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
@@ -2050,7 +2059,7 @@ begin
          end if;
       end if;
 
-   else
+   elsif not No_Create then
       --  Shared libraries
 
       Library_Path_Name :=
@@ -2251,8 +2260,10 @@ begin
          Osint.Fail ("could not create " & Exchange_File_Name.all);
    end;
 
-   Put_Line (IO_File, Library_Label (Library_Path));
-   Put_Line (IO_File, Library_Path_Name.all);
+   if Library_Path_Name /= null then
+      Put_Line (IO_File, Library_Label (Library_Path));
+      Put_Line (IO_File, Library_Path_Name.all);
+   end if;
 
    Put_Line (IO_File, Library_Label (Gprexch.Object_Files));
 
