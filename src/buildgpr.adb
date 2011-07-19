@@ -520,6 +520,11 @@ package body Buildgpr is
       Known : Boolean;
    end record;
 
+   type Library_Project is record
+      Proj          : Project_Id;
+      Is_Aggregated : Boolean;
+   end record;
+
    package Library_Objs is new Table.Table
      (Table_Component_Type => Library_Object,
       Table_Index_Type     => Integer,
@@ -539,7 +544,7 @@ package body Buildgpr is
    --  Projects that have already been processed
 
    package Library_Projs is new Table.Table (
-     Table_Component_Type => Project_Id,
+     Table_Component_Type => Library_Project,
      Table_Index_Type     => Integer,
      Table_Low_Bound      => 1,
      Table_Initial        => 10,
@@ -713,8 +718,11 @@ package body Buildgpr is
 
    procedure Build_Library
      (For_Project  : Project_Id;
-      Project_Tree : Project_Tree_Ref);
-   --  Build, if necessary, the library of a library project
+      Project_Tree : Project_Tree_Ref;
+      No_Create    : Boolean);
+   --  Build, if necessary, the library of a library project. If No_Create
+   --  is True then the actual static or shared library is not built, yet
+   --  the exchange file with dependencies is created.
 
    procedure Change_To_Object_Directory (Project : Project_Id);
    --  Change to the object directory of project Project, if this is not
@@ -2149,7 +2157,8 @@ package body Buildgpr is
 
    procedure Build_Library
      (For_Project  : Project_Id;
-      Project_Tree : Project_Tree_Ref)
+      Project_Tree : Project_Tree_Ref;
+      No_Create    : Boolean)
    is
       Object_Directory_Path : constant String :=
                                 Get_Name_String
@@ -2190,18 +2199,28 @@ package body Buildgpr is
       -----------------
 
       procedure Get_Objects is
-         Source : Source_Id;
-         Iter   : Source_Iterator;
-         Proj   : Project_Id := For_Project;
 
-      begin
-         Library_Objs.Init;
+         procedure Process
+           (Proj : Project_Id; Tree : Project_Tree_Ref; S : in out Boolean);
+         --  Get objects for corresponding project
 
-         loop
-            Iter := For_Each_Source (Project_Tree, Proj);
+         -------------
+         -- Process --
+         -------------
+
+         procedure Process
+           (Proj : Project_Id; Tree : Project_Tree_Ref; S : in out Boolean)
+         is
+            pragma Unreferenced (S);
+            Source : Source_Id;
+            Iter   : Source_Iterator;
+         begin
+            Iter := For_Each_Source (Tree, Proj);
             loop
                Source := Prj.Element (Iter);
                exit when Source = No_Source;
+
+               Change_To_Object_Directory (Source.Project);
 
                Initialize_Source_Record (Source);
 
@@ -2241,10 +2260,27 @@ package body Buildgpr is
 
                Next (Iter);
             end loop;
+         end Process;
 
-            Proj := Proj.Extends;
-            exit when Proj = No_Project;
-         end loop;
+         procedure Process_Project_And_Imported is
+           new For_Every_Project_Imported (Boolean, Process);
+
+         S : Boolean := False;
+
+      begin
+         Library_Objs.Init;
+
+         if For_Project.Qualifier = Aggregate_Library then
+            Process_Project_And_Imported
+              (For_Project, Project_Tree, S, Include_Aggregated => False);
+
+         else
+            Process (For_Project, Project_Tree, S);
+
+            if For_Project.Extends /= null then
+               Process (For_Project.Extends, Project_Tree, S);
+            end if;
+         end if;
       end Get_Objects;
 
       --  Start of processing for Build_Library
@@ -2288,10 +2324,6 @@ package body Buildgpr is
          Check_Archive_Builder;
       end if;
 
-      --  Work occurs in the object directory
-
-      Change_To_Object_Directory (For_Project);
-
       Library_Needs_To_Be_Built := Opt.Force_Compilations;
 
       if not Library_Needs_To_Be_Built and then Opt.Verbose_Mode then
@@ -2302,6 +2334,10 @@ package body Buildgpr is
       end if;
 
       Get_Objects;
+
+      --  Work occurs in the object directory
+
+      Change_To_Object_Directory (For_Project);
 
       --  Get the name of of the library exchange file
 
@@ -2736,6 +2772,10 @@ package body Buildgpr is
             end;
          end if;
 
+         if No_Create then
+            Put_Line (Exchange_File, Library_Label (Gprexch.No_Create));
+         end if;
+
          if For_Project.Library_Kind = Static then
             Put_Line (Exchange_File, Library_Label (Static));
 
@@ -3048,18 +3088,21 @@ package body Buildgpr is
             --  If there are imported libraries, put their data in the exchange
             --  file.
 
-            if Library_Projs.Last > 0 then
+            if Library_Projs.Last > 0
+              and then For_Project.Qualifier /= Aggregate_Library
+            then
                Put_Line (Exchange_File, Library_Label (Imported_Libraries));
 
                for J in reverse 1 .. Library_Projs.Last loop
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
-                       (Library_Projs.Table (J).Library_Dir.Display_Name));
+                       (Library_Projs.Table (J).
+                          Proj.Library_Dir.Display_Name));
                   Put_Line
                     (Exchange_File,
                      Get_Name_String
-                       (Library_Projs.Table (J).Library_Name));
+                       (Library_Projs.Table (J).Proj.Library_Name));
                end loop;
             end if;
          end if;
@@ -7385,71 +7428,74 @@ package body Buildgpr is
          Library_Dirs.Reset;
 
          for J in reverse 1 .. Library_Projs.Last loop
-            if Library_Projs.Table (J).Library_Kind = Static then
-               Add_Argument
-                 (Get_Name_String
-                    (Library_Projs.Table (J).Library_Dir.Display_Name) &
-                    Directory_Separator &
-                    "lib" &
-                    Get_Name_String
-                    (Library_Projs.Table (J).Library_Name) &
-                    Archive_Suffix (Library_Projs.Table (J)),
-                  Opt.Verbose_Mode);
+            if not Library_Projs.Table (J).Is_Aggregated then
+               if Library_Projs.Table (J).Proj.Library_Kind = Static then
+                  Add_Argument
+                    (Get_Name_String
+                       (Library_Projs.Table (J).Proj.Library_Dir.Display_Name)
+                       & "lib"
+                       & Get_Name_String
+                       (Library_Projs.Table (J).Proj.Library_Name)
+                       & Archive_Suffix (Library_Projs.Table (J).Proj),
+                     Opt.Verbose_Mode);
 
-            else
-               --  Do not issue several time the same -L switch if
-               --  several library projects share the same library
-               --  directory.
+               else
+                  --  Do not issue several time the same -L switch if
+                  --  several library projects share the same library
+                  --  directory.
 
-               if not Library_Dirs.Get
-                 (Library_Projs.Table (J).Library_Dir.Name)
-               then
-                  Library_Dirs.Set
-                    (Library_Projs.Table (J).Library_Dir.Name, True);
+                  if not Library_Dirs.Get
+                    (Library_Projs.Table (J).Proj.Library_Dir.Name)
+                  then
+                     Library_Dirs.Set
+                       (Library_Projs.Table (J).Proj.Library_Dir.Name, True);
 
-                  if Main_Proj.Config.Linker_Lib_Dir_Option = No_Name then
+                     if Main_Proj.Config.Linker_Lib_Dir_Option = No_Name then
+                        Add_Argument
+                          ("-L" &
+                             Get_Name_String
+                             (Library_Projs.Table (J).
+                                Proj.Library_Dir.Display_Name),
+                           Opt.Verbose_Mode);
+
+                     else
+                        Add_Argument
+                          (Get_Name_String
+                             (Main_Proj.Config.Linker_Lib_Dir_Option) &
+                             Get_Name_String
+                             (Library_Projs.Table (J).
+                                Proj.Library_Dir.Display_Name),
+                           Opt.Verbose_Mode);
+                     end if;
+
+                     if Opt.Run_Path_Option
+                       and then
+                         Main_Proj.Config.Run_Path_Option /= No_Name_List
+                       and then
+                         Library_Projs.Table (J).Proj.Library_Kind /= Static
+                     then
+                        Add_Rpath
+                          (Get_Name_String
+                             (Library_Projs.Table
+                                (J).Proj.Library_Dir.Display_Name));
+                     end if;
+                  end if;
+
+                  if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
                      Add_Argument
-                       ("-L" &
+                       ("-l" &
                           Get_Name_String
-                          (Library_Projs.Table
-                             (J).Library_Dir.Display_Name),
+                          (Library_Projs.Table (J).Proj.Library_Name),
                         Opt.Verbose_Mode);
 
                   else
                      Add_Argument
                        (Get_Name_String
-                          (Main_Proj.Config.Linker_Lib_Dir_Option) &
+                          (Main_Proj.Config.Linker_Lib_Name_Option) &
                           Get_Name_String
-                          (Library_Projs.Table
-                             (J).Library_Dir.Display_Name),
+                          (Library_Projs.Table (J).Proj.Library_Name),
                         Opt.Verbose_Mode);
                   end if;
-
-                  if Opt.Run_Path_Option
-                    and then Main_Proj.Config.Run_Path_Option /= No_Name_List
-                    and then Library_Projs.Table (J).Library_Kind /= Static
-                  then
-                     Add_Rpath
-                       (Get_Name_String
-                          (Library_Projs.Table
-                             (J).Library_Dir.Display_Name));
-                  end if;
-               end if;
-
-               if Main_Proj.Config.Linker_Lib_Name_Option = No_Name then
-                  Add_Argument
-                    ("-l" &
-                       Get_Name_String
-                       (Library_Projs.Table (J).Library_Name),
-                     Opt.Verbose_Mode);
-
-               else
-                  Add_Argument
-                    (Get_Name_String
-                       (Main_Proj.Config.Linker_Lib_Name_Option) &
-                       Get_Name_String
-                       (Library_Projs.Table (J).Library_Name),
-                     Opt.Verbose_Mode);
                end if;
             end if;
          end loop;
@@ -8094,7 +8140,15 @@ package body Buildgpr is
       procedure Post_Compile_All is new For_Project_And_Aggregated (Do_Post);
 
    begin
-      Post_Compile_All (Main_Project, Project_Tree);
+      if Main_Project.Qualifier = Aggregate_Library then
+         --  For an aggregate library we do not want to build separate
+         --  libraries if any, this means that at this point we want to
+         --  handle only the main aggregate library project.
+         Post_Compilation_Phase (Main_Project, Project_Tree);
+
+      else
+         Post_Compile_All (Main_Project, Project_Tree);
+      end if;
    end Post_Compilation_Phase;
 
    ----------------------------
@@ -9287,7 +9341,7 @@ package body Buildgpr is
             declare
                Proj : Project_Id;
             begin
-               Proj := Library_Projs.Table (J);
+               Proj := Library_Projs.Table (J).Proj;
 
                --  Try building a library only if no errors occured in library
                --  project and projects it depends on.
@@ -9295,7 +9349,9 @@ package body Buildgpr is
                if not Project_Compilation_Failed (Proj) then
                   if Proj.Extended_By = No_Project then
                      if not Proj.Externally_Built then
-                        Build_Library (Proj, Project_Tree);
+                        Build_Library
+                          (Proj, Project_Tree,
+                           No_Create => Library_Projs.Table (J).Is_Aggregated);
                      end if;
 
                      if Proj.Library_Kind /= Static then
@@ -9393,7 +9449,7 @@ package body Buildgpr is
       And_Project_Itself : Boolean := False)
    is
 
-      procedure Process_Project (Project : Project_Id);
+      procedure Process_Project (Project : Project_Id; Is_Aggregate : Boolean);
       --  Process Project and its imported projects recursively.
       --  Add any library projects to table Library_Projs.
 
@@ -9401,7 +9457,9 @@ package body Buildgpr is
       -- Process_Project --
       ---------------------
 
-      procedure Process_Project (Project : Project_Id) is
+      procedure Process_Project
+        (Project : Project_Id; Is_Aggregate : Boolean)
+      is
          Imported : Project_List := Project.Imported_Projects;
 
       begin
@@ -9410,13 +9468,17 @@ package body Buildgpr is
          if not Processed_Projects.Get (Project.Name) then
             Processed_Projects.Set (Project.Name, True);
 
-            --  Call Process_Project recursively for any imported project.
+            --  Call Process_Project recursively for any imported project
+            --  except for aggregated libraries where imported projects are
+            --  just there for dependency.
             --  We first process the imported projects to guarantee that
             --  we have a proper reverse order for the libraries.
 
             while Imported /= null loop
                if Imported.Project /= No_Project then
-                  Process_Project (Imported.Project);
+                  Process_Project
+                    (Imported.Project,
+                     Is_Aggregate => Project.Qualifier = Aggregate_Library);
                end if;
 
                Imported := Imported.Next;
@@ -9425,7 +9487,7 @@ package body Buildgpr is
             --  For an extending project, process the project being extended
 
             if Project.Extends /= No_Project then
-               Process_Project (Project.Extends);
+               Process_Project (Project.Extends, Is_Aggregate => False);
             end if;
 
             --  If it is a library project, add it to Library_Projs
@@ -9438,7 +9500,7 @@ package body Buildgpr is
                   There_Are_SALs := True;
                end if;
 
-               Library_Projs.Append (Project);
+               Library_Projs.Append (Library_Project'(Project, Is_Aggregate));
             end if;
          end if;
       end Process_Project;
@@ -9450,7 +9512,7 @@ package body Buildgpr is
       Library_Projs.Init;
       There_Are_SALs := False;
 
-      Process_Project (For_Project);
+      Process_Project (For_Project, Is_Aggregate => False);
    end Process_Imported_Libraries;
 
    ------------------------------------

@@ -79,3 +79,12 @@ NF-16-H414-002 Support for aggregate projects (2011-03-15)
   more use cases. The support is not complete yet, and in particular gprbuild
   is missing a numbre of consistency checks, but the feature is already
   useful as is.
+
+NF-16-H320-021 Support for aggregate library projects (2011-07-17)
+
+  A new concept was added to the project facility: aggregate library
+  projects.  These can be used to group together two or more
+  independent projects and to build a single library out of the
+  object files compiled from all those aggregated projects. The
+  support is not complete yet, and in particular gprbuild is missing a
+  number of consistency checks, but the feature is already useful as is.
