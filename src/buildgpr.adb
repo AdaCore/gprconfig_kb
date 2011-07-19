@@ -2152,7 +2152,8 @@ package body Buildgpr is
       Project_Tree : Project_Tree_Ref)
    is
       Object_Directory_Path : constant String :=
-        Get_Name_String (For_Project.Object_Directory.Display_Name);
+                                Get_Name_String
+                                  (For_Project.Object_Directory.Display_Name);
 
       Project_Name       : constant String :=
                              Get_Name_String (For_Project.Name);
@@ -3071,7 +3072,7 @@ package body Buildgpr is
          begin
             while Current_Proj /= No_Project loop
                declare
-                  Iter      : Source_Iterator;
+                  Iter : Source_Iterator;
                begin
                   Iter := For_Each_Source (Project_Tree, Current_Proj);
                   loop
@@ -8742,9 +8743,7 @@ package body Buildgpr is
             --  deleted.
 
             if Debug_Flag_N then
-               Put_Line
-                 (Exchange_File,
-                  Binding_Label (Delete_Temp_Files));
+               Put_Line (Exchange_File, Binding_Label (Delete_Temp_Files));
                Put_Line (Exchange_File, "False");
             end if;
 
@@ -8753,8 +8752,7 @@ package body Buildgpr is
             if There_Are_Stand_Alone_Libraries then
                Put_Line
                  (Exchange_File,
-                  Binding_Label
-                    (Gprexch.There_Are_Stand_Alone_Libraries));
+                  Binding_Label (Gprexch.There_Are_Stand_Alone_Libraries));
             end if;
 
             --  If the language is Ada, create a binder mapping file
@@ -8805,12 +8803,10 @@ package body Buildgpr is
                   end if;
 
                   Put_Line
-                    (Exchange_File,
-                     Get_Name_String (Lang_Index.Name));
+                    (Exchange_File, Get_Name_String (Lang_Index.Name));
                   Put_Line
                     (Exchange_File,
-                     Get_Name_String
-                       (Lang_Index.Config.Object_File_Suffix));
+                     Get_Name_String (Lang_Index.Config.Object_File_Suffix));
                end if;
 
                Lang_Index := Lang_Index.Next;
@@ -8830,16 +8826,14 @@ package body Buildgpr is
             --  Then, the compiler path and required switches
 
             declare
-               Config  : Language_Config renames
-                           B_Data.Language.Config;
+               Config  : Language_Config renames B_Data.Language.Config;
                List    : Name_List_Index;
                Nam_Nod : Name_Node;
             begin
                --  Compiler path
 
                Put_Line
-                 (Exchange_File,
-                  Binding_Label (Gprexch.Compiler_Path));
+                 (Exchange_File, Binding_Label (Gprexch.Compiler_Path));
                Put_Line
                  (Exchange_File,
                   Get_Compiler_Driver_Path

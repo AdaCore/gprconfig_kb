@@ -2058,9 +2058,9 @@ begin
           (Library_Directory.all &
              Shared_Lib_Prefix.all & Library_Name.all & Shared_Lib_Suffix.all);
 
-      if Relocatable and then
-         PIC_Option /= null and then
-         PIC_Option.all /= ""
+      if Relocatable
+        and then PIC_Option /= null
+        and then PIC_Option.all /= ""
       then
          Options_Table.Append (new String'(PIC_Option.all));
       end if;
