@@ -1781,10 +1781,7 @@ begin
       Library_Path_Name :=
         new String'
           (Library_Directory.all &
-           Directory_Separator &
-           "lib" &
-           Library_Name.all &
-           Archive_Suffix.all);
+             "lib" & Library_Name.all & Archive_Suffix.all);
 
       Add (Library_Path_Name, AB_Options, Last_AB_Option);
 
@@ -2059,10 +2056,7 @@ begin
       Library_Path_Name :=
         new String'
           (Library_Directory.all &
-           Directory_Separator &
-           Shared_Lib_Prefix.all &
-           Library_Name.all &
-           Shared_Lib_Suffix.all);
+             Shared_Lib_Prefix.all & Library_Name.all & Shared_Lib_Suffix.all);
 
       if Relocatable and then
          PIC_Option /= null and then

@@ -44,7 +44,7 @@ procedure Build_Shared_Lib is
                 Library_Name.all & Shared_Lib_Suffix.all;
 
    Lib_Path : constant String :=
-                Library_Directory.all & Directory_Separator & Lib_File;
+                Library_Directory.all & Lib_File;
 
    Maj_Version : String_Access := new String'("");
 
@@ -411,9 +411,7 @@ begin
       else
          Library_Version_Path :=
            new String'
-             (Library_Directory.all &
-              Directory_Separator &
-              Library_Version.all);
+             (Library_Directory.all & Library_Version.all);
       end if;
 
       --  Now that the table has been filled, call Build
