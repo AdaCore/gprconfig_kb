@@ -1259,6 +1259,10 @@ begin
                begin
                   Max_Command_Line_Length := Natural'Value (Line (1 .. Last));
 
+                  if Max_Command_Line_Length < Maximum_Size then
+                     Maximum_Size := Max_Command_Line_Length;
+                  end if;
+
                exception
                   when Constraint_Error =>
                      Osint.Fail
@@ -1504,11 +1508,6 @@ begin
 
          declare
             Size         : Natural := 0;
-            Maximum_Size : Integer;
-            pragma Import (C, Maximum_Size, "__gnat_link_max");
-            --  Maximum number of bytes to put in an invocation of the
-            --  gnatbind.
-
          begin
             for J in 1 .. Last_Bind_Option loop
                Size := Size + Bind_Options (J)'Length + 1;
