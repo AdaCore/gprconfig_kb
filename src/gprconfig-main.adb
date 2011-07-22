@@ -330,6 +330,7 @@ procedure GprConfig.Main is
 
    procedure Usage is
    begin
+      Switch.Display_Usage_Version_And_Help;
       Put_Line (" --target=target (" & Sdefault.Hostname & " by default)");
       Put_Line
         ("            Select specified target or ""all"" for any target.");

@@ -9531,7 +9531,7 @@ package body Buildgpr is
 
       procedure Process_Project (Project : Project_Id);
       --  Process Project and its imported projects recursively.
-      --  Add any library projects to table Library_Projs.
+      --  Add any non library project to table Non_Library_Projs.
 
       ---------------------
       -- Process_Project --
@@ -9575,7 +9575,7 @@ package body Buildgpr is
          end if;
       end Process_Project;
 
-      --  Start of processing for Process_Imported_Libraries
+      --  Start of processing for Process_Imported_Non_Libraries
 
    begin
       Processed_Projects.Reset;
@@ -10688,6 +10688,8 @@ package body Buildgpr is
 
          Write_Str ("gprbuild switches:");
          Write_Eol;
+
+         Display_Usage_Version_And_Help;
 
          --  Line for Config_Project_Option
 

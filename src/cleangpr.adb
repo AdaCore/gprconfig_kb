@@ -1573,6 +1573,8 @@ package body Cleangpr is
          Put_Line ("  {name} is zero or more file names");
          New_Line;
 
+         Display_Usage_Version_And_Help;
+
          Put_Line ("  --config=file.cgpr");
          Put_Line ("           Specify the configuration project file name");
 
