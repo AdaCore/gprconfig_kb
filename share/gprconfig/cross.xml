@@ -311,7 +311,7 @@
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/h"", 
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h", 
                "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
    end Compiler;
      </config>
