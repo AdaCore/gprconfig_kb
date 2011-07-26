@@ -512,7 +512,7 @@ different command line separators are:
 @item @option{-largs}
 
   The arguments that follow up to the next command line separator are
-  options for the linker.
+  options for the linker, when linking an executable.
 
 @item @option{-gargs}
 
