@@ -65,7 +65,7 @@
       <must_match>vxworks-cert-6.*</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>kernel,ravenscar-cert,zfp</runtimes>
+    <runtimes>kernel,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
     <target>
       <external>cc${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -115,7 +115,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>full,ravenscar-cert,zfp</runtimes>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
@@ -128,7 +128,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>full,ravenscar-cert,zfp</runtimes>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>e500v2-wrs-vxworksmils</target>
   </compiler_description>
 
@@ -263,7 +263,7 @@
       <must_match>vxworks-cert-6.*</must_match>
     </version>
     <languages>C++</languages>
-    <runtimes>kernel,ravenscar-cert,zfp</runtimes>
+    <runtimes>kernel,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
     <target>
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -297,7 +297,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C++</languages>
-    <runtimes>full,ravenscar-cert,zfp</runtimes>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>powerpc-wrs-vxworksmils</target>
   </compiler_description>
 
@@ -310,7 +310,7 @@
       <must_match>vxworksae</must_match>
     </version>
     <languages>C++</languages>
-    <runtimes>full,ravenscar-cert,zfp</runtimes>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>e500v2-wrs-vxworksmils</target>
   </compiler_description>
 

@@ -506,9 +506,14 @@
     </config>
   </configuration>
 
-  <!--  use C++, Fortran, Ada or C driver to link in this order      -->
+  <!--  use C++, Fortran, Ada or C driver to link in this order, except for
+        VxWorks 5 & 6, where c++* does not recognize -crtbe linker switch
+        needed for ZCX -->
 
   <configuration>
+    <targets negate="true">
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
     <compilers>
        <compiler language="C++" />
     </compilers>
@@ -687,8 +692,12 @@
     </config>
   </configuration>
 
-
+  <!--   Use GNAT driver for VxWorks 5 & 6 C, as cc* does not recognize
+         -crtbe linker switch needed for ZCX -->
   <configuration>
+    <targets negate="true">
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -700,6 +709,23 @@
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C");
+   end Linker;
+    </config>
+  </configuration>
+
+  <!-- Always use Ada driver for VxWorks 5 & 6, as the WRS drivers do not
+       recognize -crtbe linker switch needed for ZXC -->
+  <configuration>
+    <targets>
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
+    <compilers>
+       <compiler language="C" />
+       <compiler language="C++" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("Ada");
    end Linker;
     </config>
   </configuration>
