@@ -2445,8 +2445,7 @@ package body Buildgpr is
 
             if Opt.Verbose_Mode then
                Write_Line ("      -> library exchange file " &
-                           Exchange_File_Name.all &
-                           " has wrong format");
+                           Exchange_File_Name.all & " has wrong format");
             end if;
          end if;
 
@@ -2986,8 +2985,8 @@ package body Buildgpr is
                     (For_Project.Config.Library_Install_Name_Option));
             end if;
 
-            if Opt.Run_Path_Option and then
-              For_Project.Config.Run_Path_Option /= No_Name_List
+            if Opt.Run_Path_Option
+              and then For_Project.Config.Run_Path_Option /= No_Name_List
             then
                Put_Line
                  (Exchange_File, Library_Label (Gprexch.Run_Path_Option));

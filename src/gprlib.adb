@@ -2155,8 +2155,7 @@ begin
                if Id = No_ALI_Id then
                   Put_Line
                     ("warning: reading of " &
-                     ALIs.Table (Index).all &
-                     " failed");
+                     ALIs.Table (Index).all & " failed");
 
                else
                   --  Look for s-osinte.ads in the dependencies
