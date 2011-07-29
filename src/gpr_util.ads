@@ -2,11 +2,11 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                            G P R _ U T I L                               --
+--                             G P R _ U T I L                              --
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2007-2011, Free Software Foundation, Inc.       --
+--         Copyright (C) 2007-2011, Free Software Foundation, Inc.          --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -42,7 +42,7 @@ package Gpr_Util is
    End_Info   : constant String := "--  END Object file/option list   ";
 
    Project_Node_Tree : constant Project_Node_Tree_Ref :=
-     new Project_Node_Tree_Data;
+                         new Project_Node_Tree_Data;
    --  This is also used to hold project path and scenario variables
 
    Root_Environment : Prj.Tree.Environment;
