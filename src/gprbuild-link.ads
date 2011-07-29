@@ -2,11 +2,11 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             B U I L D G P R                              --
+--                        G P R B U I L D . L I N K                         --
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---          Copyright (C) 2004-2007, Free Software Foundation, Inc.         --
+--            Copyright (C) 2011, Free Software Foundation, Inc.            --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -24,12 +24,10 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  The following package implements the facilities to compile, bind and/or
---  link a set of Ada and non Ada sources, specified in Project Files.
+package Gprbuild.Link is
 
-package Buildgpr is
+   procedure Run;
+   --  Perform linking, if necessary, for all registered mains: main project,
+   --  aggregated projects,...
 
-   procedure Gprbuild;
-   --  The driver of gprbuild
-
-end Buildgpr;
+end Gprbuild.Link;

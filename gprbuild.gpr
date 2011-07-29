@@ -17,7 +17,7 @@ project Gprbuild is
 
    for Main use
        ("gprconfig-main.adb",
-        "gprbuild.adb",
+        "gprbuild-main.adb",
         "gprbind.adb",
         "gprlib.adb",
         "gprclean.adb");
@@ -55,6 +55,7 @@ project Gprbuild is
 
    package Builder is
       for Executable ("gprconfig-main.adb") use "gprconfig";
+      for Executable ("gprbuild-main.adb") use "gprbuild";
       for Default_Switches ("Ada") use ("-m", "-j" & Processors);
       for Switches ("Ada") use ();
    end Builder;
