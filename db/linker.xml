@@ -725,7 +725,7 @@
     </compilers>
     <config>
    package Linker is
-      for Driver use Compiler'Driver ("Ada");
+      for Driver use "${PATH(c)}${PREFIX(c)}gcc";
    end Linker;
     </config>
   </configuration>
