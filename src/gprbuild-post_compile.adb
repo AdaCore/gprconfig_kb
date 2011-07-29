@@ -24,7 +24,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO; use Ada, Ada.Text_IO;
+with Ada.Containers.Ordered_Sets;
+with Ada.Text_IO;                  use Ada, Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
@@ -90,6 +91,8 @@ package body Gprbuild.Post_Compile is
       Project_Tree : Project_Tree_Ref;
       No_Create    : Boolean)
    is
+      package Lang_Set is new Containers.Ordered_Sets (Name_Id);
+
       procedure Get_Objects;
       --  Get the paths of the object files of the library in table
       --  Library_Objs.
@@ -128,9 +131,6 @@ package body Gprbuild.Post_Compile is
       Exchange_File_Name : String_Access;
 
       Latest_Object_TS : Time_Stamp_Type := Empty_Time_Stamp;
-
-      Toolchain_Version_Label_Written : Boolean;
-      Lang_Index                      : Language_Ptr;
 
       Library_Builder_Name      : String_Access;
       Library_Builder           : String_Access;
@@ -328,28 +328,63 @@ package body Gprbuild.Post_Compile is
       ---------------------
 
       procedure Write_Compilers is
-         Lang     : Language_Ptr := For_Project.Languages;
-         Compiler : String_Access;
-      begin
-         --  Exchange file, Compilers section
 
+         procedure Compilers_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
+         --  Write compilers for the given project
+
+         Dummy     : Boolean := True;
+         Lang_Seen : Lang_Set.Set;
+
+         -------------------
+         -- Compilers_For --
+         -------------------
+
+         procedure Compilers_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
+         is
+            pragma Unreferenced (Tree, Dummy);
+            Lang     : Language_Ptr := Project.Languages;
+            Compiler : String_Access;
+         begin
+            --  Exchange file, Compilers section
+
+            while Lang /= No_Language_Index loop
+               if not Lang_Seen.Contains (Lang.Name) then
+                  Lang_Seen.Insert (Lang.Name);
+
+                  Compiler := Get_Compiler_Driver_Path (Project_Tree, Lang);
+                  if Compiler /= null then
+                     Put_Line (Exchange_File, Get_Name_String (Lang.Name));
+                     Put_Line (Exchange_File, Compiler.all);
+
+                  elsif Lang.Config.Compiler_Driver /= No_File then
+                     Put_Line (Exchange_File, Get_Name_String (Lang.Name));
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (Lang.Config.Compiler_Driver));
+                  end if;
+               end if;
+
+               Lang := Lang.Next;
+            end loop;
+         end Compilers_For;
+
+         procedure For_Imported is
+           new For_Every_Project_Imported (Boolean, Compilers_For);
+
+      begin
          Put_Line (Exchange_File, Library_Label (Compilers));
 
-         while Lang /= No_Language_Index loop
-            Compiler := Get_Compiler_Driver_Path (Project_Tree, Lang);
-            if Compiler /= null then
-               Put_Line (Exchange_File, Get_Name_String (Lang.Name));
-               Put_Line (Exchange_File, Compiler.all);
+         Compilers_For (For_Project, Project_Tree, Dummy);
 
-            elsif Lang.Config.Compiler_Driver /= No_File then
-               Put_Line (Exchange_File, Get_Name_String (Lang.Name));
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (Lang.Config.Compiler_Driver));
-            end if;
-
-            Lang := Lang.Next;
-         end loop;
+         if For_Project.Qualifier = Aggregate_Library then
+            For_Imported (For_Project, Project_Tree, Dummy);
+         end if;
       end Write_Compilers;
 
       -------------------------------------
@@ -357,29 +392,63 @@ package body Gprbuild.Post_Compile is
       -------------------------------------
 
       procedure Write_Compiler_Leading_Switches is
-         Lang : Language_Ptr := For_Project.Languages;
-         Indx : Name_List_Index;
-         Node : Name_Node;
+
+         procedure Compiler_Leading_Switches_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
+         --  Write compilers for the given project
+
+         Dummy     : Boolean := True;
+         Lang_Seen : Lang_Set.Set;
+
+         -----------------------------------
+         -- Compiler_Leading_Switches_For --
+         -----------------------------------
+
+         procedure Compiler_Leading_Switches_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
+         is
+            pragma Unreferenced (Tree, Dummy);
+            Lang : Language_Ptr := Project.Languages;
+            Indx : Name_List_Index;
+            Node : Name_Node;
+         begin
+            while Lang /= No_Language_Index loop
+               if not Lang_Seen.Contains (Lang.Name) then
+                  Lang_Seen.Insert (Lang.Name);
+                  Indx := Lang.Config.Compiler_Leading_Required_Switches;
+
+                  if Indx /= No_Name_List then
+                     Put_Line
+                       (Exchange_File,
+                        "language=" & Get_Name_String (Lang.Name));
+
+                     while Indx /= No_Name_List loop
+                        Node := Project_Tree.Shared.Name_Lists.Table (Indx);
+                        Put_Line (Exchange_File, Get_Name_String (Node.Name));
+                        Indx := Node.Next;
+                     end loop;
+                  end if;
+               end if;
+
+               Lang := Lang.Next;
+            end loop;
+         end Compiler_Leading_Switches_For;
+
+         procedure For_Imported is new For_Every_Project_Imported
+           (Boolean, Compiler_Leading_Switches_For);
+
       begin
          Put_Line (Exchange_File, Library_Label (Compiler_Leading_Switches));
 
-         while Lang /= No_Language_Index loop
-            Indx := Lang.Config.Compiler_Leading_Required_Switches;
+         Compiler_Leading_Switches_For (For_Project, Project_Tree, Dummy);
 
-            if Indx /= No_Name_List then
-               Put_Line
-                 (Exchange_File,
-                  "language=" & Get_Name_String (Lang.Name));
-
-               while Indx /= No_Name_List loop
-                  Node := Project_Tree.Shared.Name_Lists.Table (Indx);
-                  Put_Line (Exchange_File, Get_Name_String (Node.Name));
-                  Indx := Node.Next;
-               end loop;
-            end if;
-
-            Lang := Lang.Next;
-         end loop;
+         if For_Project.Qualifier = Aggregate_Library then
+            For_Imported (For_Project, Project_Tree, Dummy);
+         end if;
       end Write_Compiler_Leading_Switches;
 
       --------------------------------------
@@ -387,29 +456,64 @@ package body Gprbuild.Post_Compile is
       --------------------------------------
 
       procedure Write_Compiler_Trailing_Switches is
-         Lang : Language_Ptr := For_Project.Languages;
-         Indx : Name_List_Index;
-         Node : Name_Node;
+
+         procedure Compiler_Trailing_Switches_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
+         --  Write compilers for the given project
+
+         Dummy     : Boolean := True;
+         Lang_Seen : Lang_Set.Set;
+
+         ------------------------------------
+         -- Compiler_Trailing_Switches_For --
+         ------------------------------------
+
+         procedure Compiler_Trailing_Switches_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
+         is
+            pragma Unreferenced (Tree, Dummy);
+            Lang : Language_Ptr := Project.Languages;
+            Indx : Name_List_Index;
+            Node : Name_Node;
+         begin
+            while Lang /= No_Language_Index loop
+               if not Lang_Seen.Contains (Lang.Name) then
+                  Lang_Seen.Insert (Lang.Name);
+                  Indx := Lang.Config.Compiler_Trailing_Required_Switches;
+
+                  if Indx /= No_Name_List then
+                     Put_Line
+                       (Exchange_File,
+                        "language=" & Get_Name_String (Lang.Name));
+
+                     while Indx /= No_Name_List loop
+                        Node := Project_Tree.Shared.Name_Lists.Table (Indx);
+                        Put_Line (Exchange_File, Get_Name_String (Node.Name));
+                        Indx := Node.Next;
+                     end loop;
+                  end if;
+               end if;
+
+               Lang := Lang.Next;
+            end loop;
+         end Compiler_Trailing_Switches_For;
+
+         procedure For_Imported is new For_Every_Project_Imported
+           (Boolean, Compiler_Trailing_Switches_For);
+
       begin
-         Put_Line (Exchange_File, Library_Label (Compiler_Trailing_Switches));
+         Put_Line
+           (Exchange_File, Library_Label (Compiler_Trailing_Switches));
 
-         while Lang /= No_Language_Index loop
-            Indx := Lang.Config.Compiler_Trailing_Required_Switches;
+         Compiler_Trailing_Switches_For (For_Project, Project_Tree, Dummy);
 
-            if Indx /= No_Name_List then
-               Put_Line
-                 (Exchange_File,
-                  "language=" & Get_Name_String (Lang.Name));
-
-               while Indx /= No_Name_List loop
-                  Node := Project_Tree.Shared.Name_Lists.Table (Indx);
-                  Put_Line (Exchange_File, Get_Name_String (Node.Name));
-                  Indx := Node.Next;
-               end loop;
-            end if;
-
-            Lang := Lang.Next;
-         end loop;
+         if For_Project.Qualifier = Aggregate_Library then
+            For_Imported (For_Project, Project_Tree, Dummy);
+         end if;
       end Write_Compiler_Trailing_Switches;
 
       --------------------------
@@ -479,25 +583,59 @@ package body Gprbuild.Post_Compile is
       -------------------------------
 
       procedure Write_Runtime_Library_Dir is
-         List  : Language_Ptr := For_Project.Languages;
-         First : Boolean := True;
-      begin
-         while List /= No_Language_Index loop
-            if List.Config.Runtime_Library_Dir /= No_Name then
-               if First then
+
+         use type Ada.Containers.Count_Type;
+
+         procedure RTL_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
+         --  Write runtime libraries for the given project
+
+         Dummy     : Boolean := True;
+         Lang_Seen : Lang_Set.Set;
+
+         -------------
+         -- RTL_For --
+         -------------
+
+         procedure RTL_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
+         is
+            pragma Unreferenced (Tree, Dummy);
+            List : Language_Ptr := Project.Languages;
+         begin
+            while List /= No_Language_Index loop
+               if List.Config.Runtime_Library_Dir /= No_Name
+                 and then not Lang_Seen.Contains (List.Name)
+               then
+                  if Lang_Seen.Length = 0 then
+                     Put_Line
+                       (Exchange_File, Library_Label (Runtime_Library_Dir));
+                  end if;
+                  Lang_Seen.Insert (List.Name);
+
+                  Put_Line (Exchange_File, Get_Name_String (List.Name));
                   Put_Line
-                    (Exchange_File, Library_Label (Runtime_Library_Dir));
-                  First := False;
+                    (Exchange_File,
+                     Get_Name_String (List.Config.Runtime_Library_Dir));
                end if;
 
-               Put_Line (Exchange_File, Get_Name_String (List.Name));
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (List.Config.Runtime_Library_Dir));
-            end if;
+               List := List.Next;
+            end loop;
+         end RTL_For;
 
-            List := List.Next;
-         end loop;
+         procedure For_Imported is
+           new For_Every_Project_Imported (Boolean, RTL_For);
+
+      begin
+         RTL_For (For_Project, Project_Tree, Dummy);
+
+         if For_Project.Qualifier = Aggregate_Library then
+            For_Imported (For_Project, Project_Tree, Dummy);
+         end if;
       end Write_Runtime_Library_Dir;
 
       ---------------------
@@ -756,25 +894,55 @@ package body Gprbuild.Post_Compile is
       -----------------------------
 
       procedure Write_Toolchain_Version is
-      begin
-         Lang_Index := For_Project.Languages;
-         Toolchain_Version_Label_Written := False;
 
-         while Lang_Index /= No_Language_Index loop
-            if Lang_Index.Config.Toolchain_Version /= No_Name then
-               if not Toolchain_Version_Label_Written then
-                  Put_Line (Exchange_File, Library_Label (Toolchain_Version));
-                  Toolchain_Version_Label_Written := True;
+         use type Ada.Containers.Count_Type;
+
+         procedure Toolchain_Version_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
+         --  Write runtime libraries for the given project
+
+         Dummy     : Boolean := True;
+         Lang_Seen : Lang_Set.Set;
+
+         procedure Toolchain_Version_For
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
+         is
+            pragma Unreferenced (Tree, Dummy);
+            List : Language_Ptr := Project.Languages;
+         begin
+            while List /= No_Language_Index loop
+               if List.Config.Toolchain_Version /= No_Name
+                 and then not Lang_Seen.Contains (List.Name)
+               then
+                  if Lang_Seen.Length = 0 then
+                     Put_Line
+                       (Exchange_File, Library_Label (Toolchain_Version));
+                  end if;
+                  Lang_Seen.Insert (List.Name);
+
+                  Put_Line (Exchange_File, Get_Name_String (List.Name));
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String (List.Config.Toolchain_Version));
                end if;
 
-               Put_Line (Exchange_File, Get_Name_String (Lang_Index.Name));
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (Lang_Index.Config.Toolchain_Version));
-            end if;
+               List := List.Next;
+            end loop;
+         end Toolchain_Version_For;
 
-            Lang_Index := Lang_Index.Next;
-         end loop;
+         procedure For_Imported is
+           new For_Every_Project_Imported (Boolean, Toolchain_Version_For);
+
+      begin
+         Toolchain_Version_For (For_Project, Project_Tree, Dummy);
+
+         if For_Project.Qualifier = Aggregate_Library then
+            For_Imported (For_Project, Project_Tree, Dummy);
+         end if;
       end Write_Toolchain_Version;
 
       -------------------------------
