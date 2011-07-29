@@ -1556,7 +1556,7 @@ package body Gprbuild.Post_Compile is
       Project_File_TS : Time_Stamp_Type;
 
       There_Are_Stand_Alone_Libraries : Boolean := False;
-      --  Set to True if there are SALS in the project tree.
+      --  Set to True if there are SALS in the project tree
 
       procedure Bind_Language
         (Main_Proj            : Project_Id;

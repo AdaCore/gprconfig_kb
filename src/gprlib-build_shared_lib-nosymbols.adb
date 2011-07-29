@@ -228,7 +228,6 @@ procedure Build_Shared_Lib is
          end loop;
 
       else
-
          First_Object := Last_Arg + 1;
 
          for J in Ofiles'Range loop
@@ -285,12 +284,9 @@ procedure Build_Shared_Lib is
             Last_Arg := First_Object - 1;
 
             if Resp_File_Format = GCC
-                 or else
-               Resp_File_Format = GCC_GNU
-                 or else
-               Resp_File_Format = GCC_Object_List
-                 or else
-               Resp_File_Format = GCC_Option_List
+              or else Resp_File_Format = GCC_GNU
+              or else Resp_File_Format = GCC_Object_List
+              or else Resp_File_Format = GCC_Option_List
             then
                Add_Arg
                  (new String'("@" & Get_Name_String (Response_File_Name)));

@@ -1812,7 +1812,7 @@ package body Gprbuild.Link is
                      Fail_Program
                        (Main_File.Tree, "no binder generated object file");
 
-                  elsif (not Linker_Needs_To_Be_Called)
+                  elsif not Linker_Needs_To_Be_Called
                     and then
                       String (Binder_Object_TS) > String (Executable_TS)
                   then
@@ -2266,8 +2266,8 @@ package body Gprbuild.Link is
                         Option := Arguments (J).all;
 
                         if Last > 2 and then Option (1 .. 2) = "-L" then
-                           if Option (Last) = '/' or else
-                             Option (Last) = Directory_Separator
+                           if Option (Last) = '/'
+                             or else Option (Last) = Directory_Separator
                            then
                               Last := Last - 1;
                            end if;
@@ -2438,19 +2438,15 @@ package body Gprbuild.Link is
            and then First_Object_Index > 0
          then
             declare
-               Arg_Length : Natural := 0;
+               Arg_Length            : Natural := 0;
                Min_Number_Of_Objects : Natural := 0;
             begin
                for J in 1 .. Last_Argument loop
                   Arg_Length := Arg_Length + Arguments (J)'Length + 1;
                end loop;
 
-               if
-                 Arg_Length > Main_Proj.Config.Max_Command_Line_Length
-               then
-                  if Main_Proj.Config.Resp_File_Options =
-                    No_Name_List
-                  then
+               if Arg_Length > Main_Proj.Config.Max_Command_Line_Length then
+                  if Main_Proj.Config.Resp_File_Options = No_Name_List then
                      Min_Number_Of_Objects := 0;
                   else
                      Min_Number_Of_Objects := 1;
@@ -2497,12 +2493,10 @@ package body Gprbuild.Link is
                         if Main_Proj.Config.Resp_File_Format = GCC
                           or else
                             Main_Proj.Config.Resp_File_Format = GCC_GNU
-                            or else
-                              Main_Proj.Config.Resp_File_Format =
-                                GCC_Object_List
-                                or else
-                                  Main_Proj.Config.Resp_File_Format =
-                                    GCC_Option_List
+                          or else
+                            Main_Proj.Config.Resp_File_Format = GCC_Object_List
+                          or else
+                            Main_Proj.Config.Resp_File_Format = GCC_Option_List
                         then
                            Arguments (First_Object_Index) :=
                              new String'("@" &
@@ -2521,8 +2515,7 @@ package body Gprbuild.Link is
                               Arguments (First_Object_Index) :=
                                 new String'(Get_Name_String
                                             (Response_File_Name));
-                              First_Object_Index :=
-                                First_Object_Index + 1;
+                              First_Object_Index := First_Object_Index + 1;
 
                            else
                               for J in Resp_File_Options'First ..
@@ -2588,8 +2581,7 @@ package body Gprbuild.Link is
 
          Display_Command (Linker_Name.all, Linker_Path);
 
-         Spawn
-           (Linker_Path.all, Arguments (1 .. Last_Argument), Success);
+         Spawn (Linker_Path.all, Arguments (1 .. Last_Argument), Success);
 
          if Response_File_Name /= No_Path
            and then not Debug.Debug_Flag_N
@@ -2601,8 +2593,7 @@ package body Gprbuild.Link is
                Delete_File (Get_Name_String (Response_File_Name), Dont_Care);
 
                if Response_2 /= No_Path then
-                  Delete_File
-                    (Get_Name_String (Response_2), Dont_Care);
+                  Delete_File (Get_Name_String (Response_2), Dont_Care);
                end if;
             end;
          end if;

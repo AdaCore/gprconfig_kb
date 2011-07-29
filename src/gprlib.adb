@@ -1759,7 +1759,6 @@ begin
                      Libgnarl_Needed := True;
                      exit;
                   end if;
-
                end loop;
             end;
          end if;
