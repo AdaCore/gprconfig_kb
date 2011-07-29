@@ -108,6 +108,24 @@ package Gpr_Util is
    Load_Standard_Base : Boolean := True;
    --  False when switch --db- is used
 
+   --  Packages of project files where unknown attributes are errors
+
+   Naming_String   : aliased String := "naming";
+   Builder_String  : aliased String := "builder";
+   Compiler_String : aliased String := "compiler";
+   Binder_String   : aliased String := "binder";
+   Linker_String   : aliased String := "linker";
+   --  Name of packages to be checked when parsing/processing project files
+
+   List_Of_Packages : aliased String_List :=
+                        (Naming_String'Access,
+                         Builder_String'Access,
+                         Compiler_String'Access,
+                         Binder_String'Access,
+                         Linker_String'Access);
+   Packages_To_Check : constant String_List_Access := List_Of_Packages'Access;
+   --  List of the packages to be checked when parsing/processing project files
+
    --  Local subprograms
 
    function Binder_Exchange_File_Name

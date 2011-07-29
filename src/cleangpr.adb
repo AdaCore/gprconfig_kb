@@ -90,23 +90,6 @@ package body Cleangpr is
    --  Set to True when option -r is used, so that all projects in the project
    --  tree are cleaned.
 
-   --  Packages of project files where unknown attributes are errors
-
-   Naming_String   : aliased String := "naming";
-   Builder_String  : aliased String := "builder";
-   Compiler_String : aliased String := "compiler";
-   Binder_String   : aliased String := "binder";
-   Linker_String   : aliased String := "linker";
-
-   Package_Names : aliased String_List :=
-     (Naming_String   'Access,
-      Builder_String  'Access,
-      Compiler_String 'Access,
-      Binder_String   'Access,
-      Linker_String   'Access);
-
-   Packages_To_Check : constant String_List_Access := Package_Names'Access;
-
    package Processed_Projects is new Table.Table
      (Table_Component_Type => Project_Id,
       Table_Index_Type     => Natural,

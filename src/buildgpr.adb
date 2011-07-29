@@ -153,22 +153,6 @@ package body Buildgpr is
    --  Set to True when gprbuid is called with -f -u and at least one source
    --  on the command line.
 
-   Naming_String   : aliased String := "naming";
-   Builder_String  : aliased String := "builder";
-   Compiler_String : aliased String := "compiler";
-   Binder_String   : aliased String := "binder";
-   Linker_String   : aliased String := "linker";
-   --  Name of packages to be checked when parsing/processing project files
-
-   List_Of_Packages : aliased String_List :=
-                        (Naming_String              'Access,
-                         Builder_String             'Access,
-                         Compiler_String            'Access,
-                         Binder_String              'Access,
-                         Linker_String              'Access);
-   Packages_To_Check : constant String_List_Access := List_Of_Packages'Access;
-   --  List of the packages to be checked when parsing/processing project files
-
    type Processor is (None, Linker, Binder, Compiler);
    Current_Processor : Processor := None;
    --  This variable changes when switches -*args are used
