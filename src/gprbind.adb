@@ -685,10 +685,6 @@ begin
 
    declare
       Size : Natural := 0;
-      Maximum_Size : Integer;
-      pragma Import (C, Maximum_Size, "__gnat_link_max");
-      --  Maximum number of bytes to put in an invocation of the
-      --  gnatbind.
 
    begin
       for J in 1 .. Last_Gnatbind_Option loop

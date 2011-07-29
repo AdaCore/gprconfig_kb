@@ -53,11 +53,6 @@ private
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
 
-   Maximum_Size : Integer;
-   pragma Import (C, Maximum_Size, "__gnat_link_max");
-   --  Maximum number of bytes to put in an invocation of the
-   --  Archive_Builder.
-
    Dash_L : Name_Id;
    --  "-L", initialized in procedure Initialize
 

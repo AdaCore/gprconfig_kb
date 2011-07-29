@@ -58,11 +58,6 @@ procedure Gprlib is
    --  Character between "-lgnat" or "-lgnarl" and the toolchain version.
    --  It is not a constant because it is changed to '_' on VMS.
 
-   Maximum_Size : Integer;
-   pragma Import (C, Maximum_Size, "__gnat_link_max");
-   --  Maximum number of bytes to put in an invocation of the
-   --  Archive_Builder.
-
    Size : Natural;
 
    Partial_Number : Natural;

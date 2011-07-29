@@ -233,4 +233,9 @@ package Gpr_Util is
    procedure Set_Failed_Compilation_Status (Prj : Project_Id);
    --  Record compilation failure status for the given project
 
+   Maximum_Size : Integer;
+   pragma Import (C, Maximum_Size, "__gnat_link_max");
+   --  Maximum number of bytes to put in an invocation of the
+   --  Archive_Builder.
+
 end Gpr_Util;
