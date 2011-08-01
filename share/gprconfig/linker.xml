@@ -506,14 +506,30 @@
     </config>
   </configuration>
 
-  <!--  use C++, Fortran, Ada or C driver to link in this order, except for
-        VxWorks 5 & 6, where c++* does not recognize -crtbe linker switch
-        needed for ZCX -->
+  <!--  use C++, Fortran, Ada or C driver to link in this order -->
 
   <configuration>
     <targets negate="true">
       <target name="^.*-wrs-vxworks.*$" />
     </targets>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("C++");
+   end Linker;
+    </config>
+  </configuration>
+
+  <!-- If no Ada, use C++ driver when there are C++ sources -->
+  <configuration>
+    <targets>
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="Ada" />
+    </compilers>
     <compilers>
        <compiler language="C++" />
     </compilers>
@@ -559,16 +575,52 @@
     <targets negate="true">
        <target name="aamp" />
        <target name="dotnet" />
+       <target name="^.*-wrs-vxworks.*$" />
     </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
     </compilers>
     <compilers>
-       <compiler language="Ada" /></compilers>
+       <compiler language="Ada" />
+    </compilers>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("Ada");
+   end Linker;
+    </config>
+  </configuration>
+
+  <!-- For VxWorks 5 and 6 use Ada driver as default for linking, since cc*
+       and c++* do not recognize the -crtbe switch needed for ZCX -->
+  <configuration>
+    <targets>
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("Ada");
+   end Linker;
+    </config>
+  </configuration>
+
+  <!-- If no Ada, use C driver when there are C sources -->
+  <configuration>
+    <targets>
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler language="C" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("C");
    end Linker;
     </config>
   </configuration>
@@ -688,44 +740,6 @@
     <config>
    package Linker is
       for Response_File_Format use "GCC_Object_List";
-   end Linker;
-    </config>
-  </configuration>
-
-  <!--   Use GNAT driver for VxWorks 5 & 6 C, as cc* does not recognize
-         -crtbe linker switch needed for ZCX -->
-  <configuration>
-    <targets negate="true">
-      <target name="^.*-wrs-vxworks.*$" />
-    </targets>
-    <compilers negate="true">
-       <compiler language="C++" />
-       <compiler language="Fortran" />
-       <compiler language="Ada" />
-    </compilers>
-    <compilers>
-       <compiler language="C" />
-    </compilers>
-    <config>
-   package Linker is
-      for Driver use Compiler'Driver ("C");
-   end Linker;
-    </config>
-  </configuration>
-
-  <!-- Always use Ada driver for VxWorks 5 & 6, as the WRS drivers do not
-       recognize -crtbe linker switch needed for ZXC -->
-  <configuration>
-    <targets>
-      <target name="^.*-wrs-vxworks.*$" />
-    </targets>
-    <compilers>
-       <compiler language="C" />
-       <compiler language="C++" />
-    </compilers>
-    <config>
-   package Linker is
-      for Driver use "${PATH(c)}${PREFIX(c)}gcc";
    end Linker;
     </config>
   </configuration>
