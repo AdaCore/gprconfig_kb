@@ -119,9 +119,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_Sources;
       procedure Write_Response_Files;
 
-      Object_Directory_Path : constant String :=
-                                Get_Name_String
-                                  (For_Project.Object_Directory.Display_Name);
+      Object_Directory_Path : String_Access;
 
       Project_Name       : constant String :=
                              Get_Name_String (For_Project.Name);
@@ -263,7 +261,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_Object_Directory is
       begin
          Put_Line (Exchange_File, Library_Label (Object_Directory));
-         Put_Line (Exchange_File, Object_Directory_Path);
+         Put_Line (Exchange_File, Object_Directory_Path.all);
 
          --  Add object directory of project being extended, if any
 
@@ -1094,6 +1092,19 @@ package body Gprbuild.Post_Compile is
       --  Start of processing for Build_Library
 
    begin
+      --  Check if there is an object directory
+
+      if For_Project.Object_Directory.Display_Name = No_Path then
+         Fail_Program
+           (Project_Tree,
+            "no object directory for library project " &
+            Get_Name_String (For_Project.Display_Name));
+      end if;
+
+      Object_Directory_Path :=
+        new String'(Get_Name_String
+                    (For_Project.Object_Directory.Display_Name));
+
       --  Check consistentcy and build environment
 
       if For_Project.Config.Lib_Support = None then

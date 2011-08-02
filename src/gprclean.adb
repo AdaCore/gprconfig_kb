@@ -232,8 +232,7 @@ package body Gprclean is
          Osint.Canonical_Case_File_Name (Archive_Name);
 
          declare
-            Obj_Directory     : constant String :=
-              Get_Name_String (Project.Object_Directory.Display_Name);
+            Obj_Directory     : String_Access := null;
             Lib_Directory     : constant String :=
                                   Get_Name_String
                                     (Project.Library_Dir.Display_Name);
@@ -246,66 +245,72 @@ package body Gprclean is
             In_Generated : Boolean;
 
          begin
-            Change_Dir (Obj_Directory);
+            if Project.Object_Directory.Display_Name /= No_Path then
+               Obj_Directory :=
+                 new String'
+                   (Get_Name_String (Project.Object_Directory.Display_Name));
 
-            Open (Direc, ".");
+               Change_Dir (Obj_Directory.all);
 
-            --  Look for the library exchange file in the object directory
+               Open (Direc, ".");
 
-            loop
-               Read (Direc, Name, Last);
-               exit when Last = 0;
+               --  Look for the library exchange file in the object directory
 
-               if Is_Regular_File (Name (1 .. Last)) then
-                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
-                  exit when Name (1 .. Last) = Library_Exchange_File_Name;
-               end if;
-            end loop;
+               loop
+                  Read (Direc, Name, Last);
+                  exit when Last = 0;
 
-            Close (Direc);
-
-            --  If there is a library exchange file then get the generated
-            --  file names and delete them, then delete the library exchange
-            --  file.
-
-            if Last > 0 then
-               Ada.Text_IO.Open
-                 (Exchange_File,
-                  Ada.Text_IO.In_File,
-                  Library_Exchange_File_Name);
-
-               In_Generated := False;
-               while not Ada.Text_IO.End_Of_File (Exchange_File) loop
-                  Ada.Text_IO.Get_Line (Exchange_File, Name, Last);
-
-                  if Last > 0 then
-                     if Name (1) = '[' then
-                        In_Generated :=
-                          Name (1 .. Last) =
-                            Library_Label (Generated_Object_Files)
-                          or else
-                          Name (1 .. Last) =
-                            Library_Label (Generated_Source_Files);
-
-                     elsif In_Generated then
-                        if Is_Regular_File (Name (1 .. Last)) then
-                           if not Do_Nothing then
-                              Set_Writable (Name (1 .. Last));
-                           end if;
-
-                           Delete (Obj_Directory, Name (1 .. Last));
-                        end if;
-                     end if;
+                  if Is_Regular_File (Name (1 .. Last)) then
+                     Osint.Canonical_Case_File_Name (Name (1 .. Last));
+                     exit when Name (1 .. Last) = Library_Exchange_File_Name;
                   end if;
                end loop;
 
-               Ada.Text_IO.Close (Exchange_File);
+               Close (Direc);
 
-               if not Do_Nothing then
-                  Set_Writable (Library_Exchange_File_Name);
+               --  If there is a library exchange file then get the generated
+               --  file names and delete them, then delete the library exchange
+               --  file.
+
+               if Last > 0 then
+                  Ada.Text_IO.Open
+                    (Exchange_File,
+                     Ada.Text_IO.In_File,
+                     Library_Exchange_File_Name);
+
+                  In_Generated := False;
+                  while not Ada.Text_IO.End_Of_File (Exchange_File) loop
+                     Ada.Text_IO.Get_Line (Exchange_File, Name, Last);
+
+                     if Last > 0 then
+                        if Name (1) = '[' then
+                           In_Generated :=
+                             Name (1 .. Last) =
+                             Library_Label (Generated_Object_Files)
+                             or else
+                               Name (1 .. Last) =
+                               Library_Label (Generated_Source_Files);
+
+                        elsif In_Generated then
+                           if Is_Regular_File (Name (1 .. Last)) then
+                              if not Do_Nothing then
+                                 Set_Writable (Name (1 .. Last));
+                              end if;
+
+                              Delete (Obj_Directory.all, Name (1 .. Last));
+                           end if;
+                        end if;
+                     end if;
+                  end loop;
+
+                  Ada.Text_IO.Close (Exchange_File);
+
+                  if not Do_Nothing then
+                     Set_Writable (Library_Exchange_File_Name);
+                  end if;
+
+                  Delete (Obj_Directory.all, Library_Exchange_File_Name);
                end if;
-
-               Delete (Obj_Directory, Library_Exchange_File_Name);
             end if;
 
             Change_Dir (Lib_Directory);
