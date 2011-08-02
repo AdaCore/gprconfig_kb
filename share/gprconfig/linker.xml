@@ -607,13 +607,33 @@
     </config>
   </configuration>
 
-  <!-- If no Ada, use C driver when there are C sources -->
+  <configuration>
+    <targets negate="true">
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler language="C" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("C");
+   end Linker;
+    </config>
+  </configuration>
+
+  <!-- If no Ada and no C++, use C driver when there are C sources -->
   <configuration>
     <targets>
       <target name="^.*-wrs-vxworks.*$" />
     </targets>
     <compilers negate="true">
        <compiler language="Ada" />
+       <compiler language="C++" />
     </compilers>
     <compilers>
        <compiler language="C" />
