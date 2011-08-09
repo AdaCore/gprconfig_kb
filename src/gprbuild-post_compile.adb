@@ -857,7 +857,12 @@ package body Gprbuild.Post_Compile is
             declare
                Iter : Source_Iterator;
             begin
-               Iter := For_Each_Source (Project_Tree, Current_Proj);
+               if Current_Proj.Qualifier = Aggregate_Library then
+                  Iter := For_Each_Source (Project_Tree);
+               else
+                  Iter := For_Each_Source (Project_Tree, Current_Proj);
+               end if;
+
                loop
                   Source := Prj.Element (Iter);
                   exit when Source = No_Source;
@@ -965,7 +970,13 @@ package body Gprbuild.Post_Compile is
                Iter      : Source_Iterator;
             begin
                Next_Proj := For_Project.Extends;
-               Iter := For_Each_Source (Project_Tree, For_Project);
+
+               if For_Project.Qualifier = Aggregate_Library then
+                  Iter := For_Each_Source (Project_Tree);
+               else
+                  Iter := For_Each_Source (Project_Tree, For_Project);
+               end if;
+
                loop
                   while Prj.Element (Iter) /= No_Source
                     and then
@@ -998,6 +1009,7 @@ package body Gprbuild.Post_Compile is
                if Source /= No_Source then
                   if Source.Project /= Project
                     and then not Is_Extending (For_Project, Source.Project)
+                    and then not (For_Project.Qualifier = Aggregate_Library)
                   then
                      Source := No_Source;
                   end if;
