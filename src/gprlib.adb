@@ -1089,8 +1089,8 @@ begin
                end if;
 
             when Gprexch.Compiler_Leading_Switches =>
-               if Last > Language_Equal'Length and then
-                 Line (1 .. Language_Equal'Length) = Language_Equal
+               if Last > Language_Equal'Length
+                 and then Line (1 .. Language_Equal'Length) = Language_Equal
                then
                   Name_Len := 0;
                   Add_Str_To_Name_Buffer
@@ -1103,8 +1103,8 @@ begin
                end if;
 
             when Gprexch.Compiler_Trailing_Switches =>
-               if Last > Language_Equal'Length and then
-                 Line (1 .. Language_Equal'Length) = Language_Equal
+               if Last > Language_Equal'Length
+                 and then Line (1 .. Language_Equal'Length) = Language_Equal
                then
                   Name_Len := 0;
                   Add_Str_To_Name_Buffer
@@ -1690,8 +1690,8 @@ begin
                begin
                   if not Is_Front_End_Switch (Arg.all)
                     or else
-                      (Arg'Length > 6 and then
-                       Arg (Arg'First + 2 .. Arg'First + 5) = "RTS=")
+                      (Arg'Length > 6
+                       and then Arg (Arg'First + 2 .. Arg'First + 5) = "RTS=")
                   then
                      Add (Arg.all, Bind_Options, Last_Bind_Option);
                   end if;

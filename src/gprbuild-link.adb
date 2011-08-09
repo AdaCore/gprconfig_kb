@@ -500,10 +500,11 @@ package body Gprbuild.Link is
 
                         Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
 
-                        if Name_Len > Object_Suffix'Length and then
-                          Name_Buffer
-                            (Name_Len - Object_Suffix'Length + 1 .. Name_Len) =
-                            Object_Suffix
+                        if Name_Len > Object_Suffix'Length
+                          and then
+                            Name_Buffer
+                              (Name_Len - Object_Suffix'Length + 1
+                               .. Name_Len) = Object_Suffix
                         then
                            Add_Argument
                              (Obj_Dir & Directory_Separator &
@@ -627,7 +628,7 @@ package body Gprbuild.Link is
                         for S in 1 .. Last_Source loop
                            S_Id := Source_Indexes (S).Id;
 
-                           if (not Source_Indexes (S).Found)
+                           if not Source_Indexes (S).Found
                              and then S_Id.Object_Path = Object_Path
                            then
                               --  We have found the object file: get the
@@ -1024,8 +1025,8 @@ package body Gprbuild.Link is
          if Opt.Verbose_Mode then
             Write_Str (Path.all);
 
-         elsif Executable_Suffix'Length > 0 and then
-           Name'Length > Executable_Suffix'Length
+         elsif Executable_Suffix'Length > 0
+           and then Name'Length > Executable_Suffix'Length
          then
             Name_Len := Name'Length;
             Name_Buffer (1 .. Name_Len) := Name;
@@ -1193,7 +1194,8 @@ package body Gprbuild.Link is
                            True);
                      end if;
 
-                  elsif (Name_Len > Linker_Lib_Name_Option'Length and then
+                  elsif (Name_Len > Linker_Lib_Name_Option'Length
+                         and then
                            Name_Buffer (1 .. Linker_Lib_Name_Option'Length) =
                            Linker_Lib_Name_Option.all)
                     or else
@@ -1295,9 +1297,9 @@ package body Gprbuild.Link is
             Curr_Exec := Exec'First;
             loop
                exit when
-                 Curr_Path > Path'Last or else
-                 Curr_Exec > Exec'Last or else
-                 Path (Curr_Path) /= Exec (Curr_Exec);
+                 Curr_Path > Path'Last
+                 or else Curr_Exec > Exec'Last
+                 or else Path (Curr_Path) /= Exec (Curr_Exec);
 
                if Path (Curr_Path) = '/' then
                   Nmb := Nmb + 1;

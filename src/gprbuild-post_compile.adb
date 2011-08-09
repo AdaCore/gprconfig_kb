@@ -2854,15 +2854,13 @@ package body Gprbuild.Post_Compile is
                           (Get_Name_String
                              (B_Data.Binder_Driver_Name)));
 
-                     if Executable_Suffix'Length /= 0 and then
-                       Name_Len > Executable_Suffix'Length and then
-                       Name_Buffer
+                     if Executable_Suffix'Length /= 0
+                       and then Name_Len > Executable_Suffix'Length
+                       and then Name_Buffer
                          (Name_Len - Executable_Suffix'Length + 1
-                          .. Name_Len)
-                       = Executable_Suffix.all
+                          .. Name_Len) = Executable_Suffix.all
                      then
-                        Name_Len :=
-                          Name_Len - Executable_Suffix'Length;
+                        Name_Len := Name_Len - Executable_Suffix'Length;
                      end if;
 
                      Write_Str (Name_Buffer (1 .. Name_Len));
