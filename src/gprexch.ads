@@ -69,6 +69,7 @@ package Gprexch is
    type Library_Section is
      (No_Library_Section,
       No_Create,
+      No_Copy_ALI,
       Quiet,
       Verbose,
       Relocatable,

@@ -1441,6 +1441,10 @@ package body Gprbuild.Post_Compile is
             Put_Line (Exchange_File, Library_Label (Gprexch.No_Create));
          end if;
 
+         if For_Project.Qualifier = Aggregate_Library then
+            Put_Line (Exchange_File, Library_Label (Gprexch.No_Copy_ALI));
+         end if;
+
          if For_Project.Library_Kind = Static then
             Put_Line (Exchange_File, Library_Label (Static));
 

@@ -135,6 +135,12 @@ procedure Gprlib is
    Standalone : Boolean := False;
    --  True when building a stand-alone library
 
+   Copy_ALI : Boolean := True;
+   --  Set to False if the ALI (dep files) are not to be copied into the
+   --  library directory. This is the case for aggregate libraries, the
+   --  dependencies are stored into the ALI directory of their corresponding
+   --  projects.
+
    Library_Path_Name : String_Access;
    --  Path name of the library file
 
@@ -934,6 +940,9 @@ begin
             when Gprexch.No_Create =>
                No_Create := True;
 
+            when Gprexch.No_Copy_ALI =>
+               Copy_ALI := False;
+
             when others =>
                null;
          end case;
@@ -948,6 +957,9 @@ begin
 
             when Gprexch.No_Create =>
                Osint.Fail ("no create section should be empty");
+
+            when Gprexch.No_Copy_ALI =>
+               Osint.Fail ("no copy ALI section should be empty");
 
             when Quiet =>
                Osint.Fail ("quiet section should be empty");
@@ -2234,7 +2246,7 @@ begin
       Build_Shared_Lib;
    end if;
 
-   if ALIs.Last /= 0 then
+   if Copy_ALI and then ALIs.Last /= 0 then
       Copy_ALI_Files;
    end if;
 
