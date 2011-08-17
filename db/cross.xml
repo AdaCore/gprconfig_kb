@@ -379,32 +379,6 @@
      </config>
    </configuration>
 
-   <!--  Use WindRiver archiver -->
-   <configuration>
-     <targets>
-       <target name="^powerpc-wrs-vxworks.*$" />
-       <target name="^e500v2-wrs-vxworks.*$" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("arppc", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("ranlibppc");
-   for Archive_Suffix   use ".a";
-     </config>
-   </configuration>
-
-   <configuration>
-     <targets>
-       <target name="^i586-wrs-vxworks.*$" />
-     </targets>
-     <config>
-   for Archive_Builder  use ("arpentium", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("ranlibpentium");
-   for Archive_Suffix   use ".a";
-     </config>
-   </configuration>
-
    <!--  Set prefix of gnatbind -->
    <configuration>
      <targets>
