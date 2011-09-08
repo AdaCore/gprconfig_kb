@@ -53,7 +53,7 @@ NF-16-K310-021 Allow unit names on the gprbuild command line (2011-03-10)
 
 NF-16-K223-006 --RTS switches in package Builder (2011-04-01)
 
-  When configuration project file is auro-generated and there are no switches
+  When configuration project file is auto-generated and there are no switches
   --RTS on the command line, the switches --RTS found in package Builder of the
   main project are taken into account to invoke gprconfig and produce the
   configuration project file.
