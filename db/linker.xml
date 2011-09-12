@@ -391,7 +391,7 @@
    for Library_Auto_Init_Supported use "true";
    for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
    for Shared_Library_Minimum_Switches use
-         ("-dynamiclib", "-Wl,-flat_namespace", "-shared-libgcc");
+         ("-dynamiclib", "-shared-libgcc");
 
    package Linker is
       for Map_File_Option         use "-Wl,-map,";
