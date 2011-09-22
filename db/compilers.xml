@@ -361,10 +361,6 @@
     the directory. To be compatible with older versions of GNAT (3.16
     for instance), we also accept lib/gcc-lib as the directory that
     contains the runtime files.
-
-    Implementation note: we put two spaces after -adainclude $... in
-    the external_tool, because on windows the path will end with a
-    '\', and this would act as a quote for the following space.
    -->
   <compiler_description>
     <name>GNAT</name>
