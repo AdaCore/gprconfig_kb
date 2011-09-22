@@ -29,9 +29,6 @@ with Ada.Containers;            use Ada.Containers;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Command_Line;         use GNAT.Command_Line;
-with GNAT.Directory_Operations; use GNAT.Directory_Operations;
-with GNAT.OS_Lib;               use GNAT.OS_Lib;
-with GNAT.Strings;
 with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
 with GPR_Version;
@@ -42,16 +39,11 @@ with Prj;                       use Prj;
 with Switch;
 
 procedure GprConfig.Main is
-   Gprbuild : constant String := "gprbuild";
-   --  Name of the gprbuild executable. This is searched for on PATH, and used
-   --  to find out the default location for the output file
-   --  ??? Should be shared with gprbuild
-
    Default_Output_File : constant String := "default.cgpr";
    --  Name of the configuration file used by gprbuild by default
    --  ??? Should be shared with gprbuild
 
-   Output_File : Unbounded_String;
+   Output_File : Unbounded_String := To_Unbounded_String (Default_Output_File);
 
    Selected_Target : Unbounded_String;
    --  Value of --target switch
@@ -111,15 +103,6 @@ procedure GprConfig.Main is
    Batch              : Boolean := False;
    Show_Targets       : Boolean := False;
    Show_Compilers     : Boolean := False;
-
-   --  We need to add the executable suffix here, since on windows,
-   --  Locate_Exec_On_Path will also return directories with the name
-   --  "gprbuild" ie the current directory when gprconfig is run from the
-   --  current dir.
-   Exec_Suffix   : constant GNAT.Strings.String_Access :=
-                     Get_Executable_Suffix;
-   Gprbuild_Path : GNAT.OS_Lib.String_Access :=
-                     Locate_Exec_On_Path (Gprbuild & Exec_Suffix.all);
 
    Compilers : Compiler_Lists.List;
    package Compiler_Sort is
@@ -357,15 +340,6 @@ procedure GprConfig.Main is
 
 begin
    Namet.Initialize;
-
-   if Gprbuild_Path /= null  then
-      Output_File := To_Unbounded_String
-        (Normalize_Pathname (Dir_Name (Gprbuild_Path.all) & "..")
-         & Directory_Separator & "share"
-         & Directory_Separator & "gpr" & Directory_Separator
-         & Default_Output_File);
-   end if;
-   Free (Gprbuild_Path);
 
    Selected_Target := To_Unbounded_String (Sdefault.Hostname);
 
