@@ -480,6 +480,7 @@
     </targets>
     <config>
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
+   for Separate_Run_Path_Options use "true";
    for Run_Path_Origin use "$$ORIGIN";
     </config>
   </configuration>
