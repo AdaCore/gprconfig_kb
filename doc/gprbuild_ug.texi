@@ -1298,7 +1298,7 @@ invocation:
 @itemize @bullet
 @item The following command triggers interactive mode. The configuration will be
   generated in GPRbuild's default location, @code{./default.cgpr)}, unless
-  @option(-o) is used.
+  @option{-o} is used.
 
   @smallexample
   gprconfig
