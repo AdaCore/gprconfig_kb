@@ -1746,10 +1746,7 @@ begin
 
          --  For shared libraries, check if libgnarl is needed
 
-         if Relocatable
-           and then Use_GNAT_Lib
-           and then Runtime_Library_Dir /= null
-         then
+         if Relocatable then
             declare
                BG_File : File_Type;
                Line    : String (1 .. 1_000);
@@ -1767,9 +1764,19 @@ begin
                   Get_Line (BG_File, Line, Last);
                   exit when Line (1 .. Last) = End_Info;
 
-                  if Line (9 .. Last) = "-lgnarl" then
+                  if Use_GNAT_Lib
+                    and then Runtime_Library_Dir /= null
+                    and then Line (9 .. Last) = "-lgnarl"
+                  then
                      Libgnarl_Needed := True;
-                     exit;
+                  end if;
+
+                  if Standalone
+                    and then Line (9 .. 10) = "-l"
+                    and then Line (9 .. Last) /= "-lgnarl"
+                    and then Line (9 .. Last) /= "-lgnat"
+                  then
+                     Object_Files.Append (new String'(Line (9 .. Last)));
                   end if;
                end loop;
             end;
