@@ -11,6 +11,15 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-152-KA04-012 Pragma Linker_Options not honored
+
+  Problem:    gprbuild does not pass libraries specified with a pragma
+              Linker_Options to the linker.
+
+  Status:     This was fixed in 1.6.0 on 2011-10-06
+
+  Workaround: Pass the corresponding libraries explicitly to the linker
+
 KP-152-K801-014 Crash for library projects with no sources
 
   Problem:    gprbuild and gprclean crash with a library project with no
