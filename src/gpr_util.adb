@@ -1208,6 +1208,15 @@ package body Gpr_Util is
    begin
       The_ALI := ALI.No_ALI_Id;
 
+      --  Never attempt to compile header files
+
+      if Source.Language.Config.Kind = File_Based and then
+         Source.Kind = Spec
+      then
+         Must_Compile := False;
+         return;
+      end if;
+
       if Force_Compilations then
          Must_Compile := Always_Compile or else (not Externally_Built);
          return;

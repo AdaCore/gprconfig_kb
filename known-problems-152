@@ -11,6 +11,15 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-152-KA13-044 Crash when attempting to compile an header file
+
+  Problem:    gprbuild crashes when asked to compile an header file,
+              for example with: gprbuild -u -c prj.gpr toro.h
+
+  Status:     This was fixed in 1.6.0 on 2011-10-14
+
+  Workaround: Do not attempt to compile header files
+
 KP-152-KA04-012 Pragma Linker_Options not honored
 
   Problem:    gprbuild does not pass libraries specified with a pragma
