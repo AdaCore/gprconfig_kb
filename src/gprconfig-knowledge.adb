@@ -3296,28 +3296,37 @@ package body GprConfig.Knowledge is
       is
          C     : Compiler_Lists.Cursor := First (Iterator.Filters);
          Index : Count_Type := 1;
+         Ncomp : Compiler_Access;
+         El    : Compiler_Access;
       begin
          while Has_Element (C) loop
+            Ncomp := null;
+            El := Compiler_Lists.Element (C);
+
             --  A compiler in an "extra_dir" (ie specified on the command line)
             --  can only match if that directory was explicitly specified in
             --  --config. We do not want to find all compilers in /dir if that
             --  directory is not in $PATH
 
-            if (not From_Extra_Dir
-                or else Compiler_Lists.Element (C).Path = Comp.Path)
-              and then Filter_Match
-                (Base, Comp => Comp, Filter => Compiler_Lists.Element (C).all)
+            if (not From_Extra_Dir or else El.Path = Comp.Path)
+              and then Filter_Match (Base, Comp => Comp, Filter => El.all)
             then
-               Append (Iterator.Compilers, new Compiler'(Comp));
+               Ncomp := new Compiler'(Comp);
+               if El.Runtime_Dir /= No_Name
+                 and then Get_Name_String (Comp.Runtime) = "default"
+               then
+                  Ncomp.Runtime_Dir := El.Runtime_Dir;
+                  Ncomp.Runtime := No_Name;
+               end if;
+
+               Append (Iterator.Compilers, Ncomp);
 
                if Current_Verbosity /= Default then
                   Put_Verbose
                     ("Saving compiler for possible backtracking: "
-                     & To_String (Base, Comp, As_Config_Arg => True)
+                     & To_String (Base, Ncomp.all, As_Config_Arg => True)
                      & " (matches --config "
-                     & To_String
-                       (Base,
-                        Compiler_Lists.Element (C).all, As_Config_Arg => True)
+                     & To_String (Base, El.all, As_Config_Arg => True)
                      & ")");
                end if;
 
@@ -3426,6 +3435,8 @@ package body GprConfig.Knowledge is
 
       Put_Verbose ("Completing info for --config parameters, extra_dirs="
                    & Extra_Dirs, 1);
+
+      --  Find all the compilers in PATH and Extra_Dirs
 
       Foreach_Compiler_In_Path
         (Iterator   => Iter,
@@ -3626,17 +3637,13 @@ package body GprConfig.Knowledge is
                   declare
                      Rts : constant String := String_Lists.Element (C);
                   begin
-                     --  If the runtime is a full path, we'd better to
-                     --  discard it as we will never find it.
-                     --  ??? To be reworked.
+                     --  If the runtime is a full path, only set Runtime_Dir
+                     --  so that we could match the config for the default
+                     --  runtime, but with this runtime path.
 
                      if Rts'Length > 0 and then Is_Absolute_Path (Rts) then
-                        Put_Line
-                          (Standard_Error,
-                           "warning: RTS for language " &
-                             Get_Name_String (Compiler.Language_Case) &
-                             " is discarded (full path)");
                         Compiler.Runtime := No_Name;
+                        Compiler.Runtime_Dir := Get_String (Rts);
                      else
                         Compiler.Runtime := Get_String_Or_No_Name (Rts);
                      end if;
