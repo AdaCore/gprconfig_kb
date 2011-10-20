@@ -23,7 +23,6 @@
 -- Extensive contributions were provided by Ada Core Technologies Inc.      --
 --                                                                          --
 ------------------------------------------------------------------------------
-
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Exceptions;         use Ada.Exceptions;
 with System;
@@ -73,6 +72,11 @@ procedure Gprbuild.Main is
    procedure Add_Mains_To_Queue;
    --  Check that each main is a single file name and that it is a source
    --  of a project from the tree.
+
+   procedure Locate_Runtime (Language : Name_Id);
+   --  Wrapper around Set_Runtime_For. If RTS_Name is a base name (a name
+   --  without path separator), then calls Set_Runtime_For. Otherwise, convert
+   --  it to an absolute path (possibly by searching it in the project path)
 
    procedure Scan_Arg
      (Arg          : String;
@@ -452,6 +456,42 @@ procedure Gprbuild.Main is
       end Register_Command_Line_Option;
 
    end Options;
+
+   --------------------------
+   -- Set_Path_Runtime_For --
+   --------------------------
+
+   procedure Locate_Runtime (Language : Name_Id) is
+      function Is_Base_Name (Path : String) return Boolean;
+      --  Returns True if Path has no directory separator
+
+      function Is_Base_Name (Path : String) return Boolean is
+      begin
+         for I in Path'Range loop
+            if Path (I) = Directory_Separator then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Is_Base_Name;
+
+      function Find_Rts_In_Path is new Prj.Env.Find_Name_In_Path
+        (Check_Filename => Is_Directory);
+
+      RTS_Name : constant String := Runtime_Name_For (Language);
+
+      Full_Path : String_Access;
+   begin
+      if not Is_Base_Name (RTS_Name) then
+         Full_Path := Find_Rts_In_Path (Root_Environment.Project_Path,
+                                        RTS_Name);
+         if Full_Path = null then
+            Fail_Program (Project_Tree, "cannot find RTS " & RTS_Name);
+         end if;
+         Set_Runtime_For (Language, Normalize_Pathname (Full_Path.all));
+         Free (Full_Path);
+      end if;
+   end Locate_Runtime;
 
    --------------
    -- Scan_Arg --
@@ -1439,6 +1479,11 @@ procedure Gprbuild.Main is
       elsif Db_Directory_Expected then
          Fail_Program
            (Project_Tree, "directory name missing after --db");
+      end if;
+
+      if Runtime_Name_Set_For (Name_Ada) then
+         --  Makes the Ada RTS absolute if it is not a base name
+         Locate_Runtime (Name_Ada);
       end if;
 
       if Load_Standard_Base then
