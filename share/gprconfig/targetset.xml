@@ -213,6 +213,12 @@
     <target>powerpc-wrs-vxworksae</target>
   </targetset>
 
+ <!-- e500v2-vx653-.*  (vxworks 653) -->
+ <targetset>
+    <target>e500v2-vx653-windows</target>
+    <target>e500v2-wrs-vxworksae</target>
+  </targetset>
+
  <!-- ppc-vxmils-.*  (vxworks MILS) -->
  <targetset>
     <target>ppc-vxmils-windows</target>
