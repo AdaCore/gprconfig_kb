@@ -26,6 +26,7 @@
 
 with Ada.Command_Line;
 with Ada.Containers;            use Ada.Containers;
+with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Command_Line;         use GNAT.Command_Line;
@@ -594,9 +595,10 @@ exception
       Put_Line
         (Standard_Error, "Generation of configuration files failed");
       Ada.Command_Line.Set_Exit_Status (3);
-   when Invalid_Knowledge_Base =>
+   when E : Invalid_Knowledge_Base =>
       Put_Line
         (Standard_Error, "Invalid setup of the gprconfig knowledge base");
+      Put_Verbose (Exception_Information (E));
       Ada.Command_Line.Set_Exit_Status (4);
    when End_Error =>
       null;

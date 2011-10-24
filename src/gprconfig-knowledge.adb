@@ -1485,7 +1485,7 @@ package body GprConfig.Knowledge is
       Saved_Path     : constant String :=
                          Ada.Environment_Variables.Value ("PATH");
       Status         : aliased Integer;
-      Extracted_From : Name_Id;
+      Extracted_From : Name_Id := No_Name;
       Tmp_Result     : Unbounded_String;
       Node_Cursor    : External_Value_Nodes.Cursor := First (Value);
       Node           : External_Value_Node;
@@ -1494,7 +1494,6 @@ package body GprConfig.Knowledge is
       Clear (Processed_Value);
 
       while Has_Element (Node_Cursor) loop
-
          while Has_Element (Node_Cursor) loop
             Node := External_Value_Nodes.Element (Node_Cursor);
 
@@ -1625,6 +1624,7 @@ package body GprConfig.Knowledge is
                      Tmp_Result := Null_Unbounded_String;
                   end if;
                   exit;
+
                when Value_Done
                  | Value_Filter =>
                   exit;
@@ -1636,7 +1636,14 @@ package body GprConfig.Knowledge is
          case Node.Typ is
             when Value_Done | Value_Filter | Value_Must_Match =>
                if Tmp_Result = Null_Unbounded_String then
-                  null;
+                  --  Value could not be computed
+                  if Extracted_From /= No_Name then
+                     Append
+                       (Processed_Value,
+                        External_Value_Item'
+                          (Value          => No_Name,
+                           Extracted_From => Extracted_From));
+                  end if;
 
                elsif Split_Into_Words then
                   declare
@@ -1691,6 +1698,7 @@ package body GprConfig.Knowledge is
                        (Value          => Get_String (To_String (Tmp_Result)),
                         Extracted_From => Extracted_From));
                end if;
+
             when others =>
                null;
          end case;
