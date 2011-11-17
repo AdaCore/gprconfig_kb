@@ -468,7 +468,7 @@ procedure Gprbuild.Main is
       function Is_Base_Name (Path : String) return Boolean is
       begin
          for I in Path'Range loop
-            if Path (I) = Directory_Separator then
+            if Path (I) = Directory_Separator or else Path (I) = '/' then
                return False;
             end if;
          end loop;
