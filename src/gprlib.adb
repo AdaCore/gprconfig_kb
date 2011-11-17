@@ -1772,6 +1772,7 @@ begin
                   end if;
 
                   if Standalone
+                    and then Partial_Linker = null
                     and then Line (9 .. 10) = "-l"
                     and then Line (9 .. Last) /= "-lgnarl"
                     and then Line (9 .. Last) /= "-lgnat"
