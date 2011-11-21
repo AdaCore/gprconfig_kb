@@ -1772,7 +1772,8 @@ begin
                   end if;
 
                   if Standalone
-                    and then Partial_Linker = null
+                    and then (Partial_Linker = null
+                              or else Resp_File_Format /= Prj.None)
                     and then Line (9 .. 10) = "-l"
                     and then Line (9 .. Last) /= "-lgnarl"
                     and then Line (9 .. Last) /= "-lgnat"
