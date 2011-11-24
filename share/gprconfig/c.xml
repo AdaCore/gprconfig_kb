@@ -167,7 +167,7 @@
      </config>
    </configuration>
 
-  <!-- for cygming we make sure that the option -mno-cygwin is used -->
+   <!-- for cygming we make sure that the option -mno-cygwin is used -->
    <configuration>
      <compilers>
        <compiler name="GCC-CYGMING" language="C" />
@@ -179,4 +179,5 @@
    end Compiler;
      </config>
    </configuration>
+
 </gprconfig>
