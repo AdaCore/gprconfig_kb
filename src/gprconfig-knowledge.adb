@@ -33,6 +33,7 @@ with Ada.Environment_Variables; use Ada.Environment_Variables;
 with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
+with Ada.Strings.Hash;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
@@ -73,6 +74,14 @@ package body GprConfig.Knowledge is
 
    package External_Value_Lists is new Ada.Containers.Doubly_Linked_Lists
      (External_Value_Item);
+
+   package String_To_External_Value is new
+     Ada.Containers.Indefinite_Hashed_Maps
+     (Key_Type        => String,
+      Element_Type    => External_Value_Lists.Cursor,
+      Hash            => Ada.Strings.Hash,
+      Equivalent_Keys => "=",
+      "="             => External_Value_Lists."=");
 
    package CDM renames Compiler_Description_Maps;
    package CFL renames Compiler_Filter_Lists;
@@ -166,6 +175,7 @@ package body GprConfig.Knowledge is
       Value            : External_Value;
       Comp             : Compiler;
       Split_Into_Words : Boolean := True;
+      Merge_Same_Dirs  : Boolean := False;
       Processed_Value  : out External_Value_Lists.List);
    --  Computes the value of Value, depending on its type. When an external
    --  command needs to be executed, Path is put first on the PATH environment
@@ -178,6 +188,10 @@ package body GprConfig.Knowledge is
    --  separated string, and split.
    --  Comparisong with Matching is case-insensitive (this is needed for
    --  languages, does not matter for versions, is not used for targets)
+   --
+   --  If Merge_Same_Dirs is True, then the values that come from a
+   --  <directory> node will be merged (the last one is kept, other removed) if
+   --  they point to the same physical directory (after normalizing names).
    --
    --  This is only for use within a <compiler_description> context.
 
@@ -203,6 +217,7 @@ package body GprConfig.Knowledge is
 
    procedure Parse_All_Dirs
      (Processed_Value : out External_Value_Lists.List;
+      Visited         : in out String_To_External_Value.Map;
       Current_Dir     : String;
       Path_To_Check   : String;
       Regexp          : Pattern_Matcher;
@@ -210,7 +225,8 @@ package body GprConfig.Knowledge is
       Value_If_Match  : Name_Id;
       Group           : Integer;
       Group_Match     : String := "";
-      Group_Count     : Natural := 0);
+      Group_Count     : Natural := 0;
+      Merge_Same_Dirs : Boolean);
    --  Parse all subdirectories of Current_Dir for those that match
    --  Path_To_Check (see description of <directory>). When a match is found,
    --  the regexp is evaluated against the current directory, and the matching
@@ -222,6 +238,11 @@ package body GprConfig.Knowledge is
    --  processed so far. The idea is to compute the matching substring as we
    --  go, since the regexp might no longer match in the end, if for instance
    --  it includes ".." directories.
+   --
+   --  If Merge_Same_Dirs is True, then the values that come from a
+   --  <directory> node will be merged (the last one is kept, other removed) if
+   --  they point to the same physical directory (after normalizing names). In
+   --  this case, Visited contains the list of normalized directory names.
 
    generic
       with function Callback (Var_Name, Index : String) return String;
@@ -1302,6 +1323,7 @@ package body GprConfig.Knowledge is
 
    procedure Parse_All_Dirs
      (Processed_Value : out External_Value_Lists.List;
+      Visited         : in out String_To_External_Value.Map;
       Current_Dir     : String;
       Path_To_Check   : String;
       Regexp          : Pattern_Matcher;
@@ -1309,29 +1331,63 @@ package body GprConfig.Knowledge is
       Value_If_Match  : Name_Id;
       Group           : Integer;
       Group_Match     : String := "";
-      Group_Count     : Natural := 0)
+      Group_Count     : Natural := 0;
+      Merge_Same_Dirs : Boolean)
    is
       First : constant Integer := Path_To_Check'First;
       Last  : Integer;
+      Val   : Name_Id;
    begin
       if Path_To_Check'Length = 0
         or else Path_To_Check = "/"
         or else Path_To_Check = "" & Directory_Separator
       then
          if Group = -1 then
-            Put_Verbose ("<dir>: SAVE " & Current_Dir);
-            Append
-              (Processed_Value,
-               (Value          => Value_If_Match,
-                Extracted_From => Get_String (Current_Dir)));
+            Val := Value_If_Match;
          else
-            Put_Verbose ("<dir>: SAVE " & Current_Dir);
-            Append
-              (Processed_Value,
-               (Value          => Get_String (Group_Match),
-                Extracted_From => Get_String (Current_Dir)));
+            Val := Get_String (Group_Match);
          end if;
 
+         if not Merge_Same_Dirs then
+            Put_Verbose ("<dir>: SAVE " & Current_Dir);
+            Append
+              (Processed_Value,
+               (Value          => Val,
+                Extracted_From => Get_String (Current_Dir)));
+
+         else
+            declare
+               use String_To_External_Value;
+
+               Normalized : constant String := Normalize_Pathname
+                 (Name           => Current_Dir,
+                  Directory      => "",
+                  Resolve_Links  => True,
+                  Case_Sensitive => True);
+               Prev  : External_Value_Lists.Cursor;
+            begin
+               if Visited.Contains (Normalized) then
+                  Put_Verbose ("<dir>: Override " & Current_Dir);
+
+                  Prev := Visited.Element (Normalized);
+                  External_Value_Lists.Replace_Element
+                    (Container => Processed_Value,
+                     Position  => Prev,
+                     New_Item  =>
+                       (Value          => Val,
+                        Extracted_From => Get_String (Current_Dir)));
+
+               else
+                  Put_Verbose ("<dir>: SAVE " & Current_Dir);
+                  Append
+                    (Processed_Value,
+                     (Value          => Val,
+                      Extracted_From => Get_String (Current_Dir)));
+                  Visited.Include
+                    (Normalized, External_Value_Lists.Last (Processed_Value));
+               end if;
+            end;
+         end if;
       else
          --  Do not split on '\', since we document we only accept UNIX paths
          --  anyway. This leaves \ for regexp quotes
@@ -1363,6 +1419,7 @@ package body GprConfig.Knowledge is
                   --  If there is such a subdir, keep checking
                   Parse_All_Dirs
                     (Processed_Value => Processed_Value,
+                     Visited         => Visited,
                      Current_Dir     => Dir & Directory_Separator,
                      Path_To_Check   => Remains,
                      Regexp          => Regexp,
@@ -1370,7 +1427,8 @@ package body GprConfig.Knowledge is
                      Value_If_Match  => Value_If_Match,
                      Group           => Group,
                      Group_Match     => Group_Match,
-                     Group_Count     => Group_Count);
+                     Group_Count     => Group_Count,
+                     Merge_Same_Dirs => Merge_Same_Dirs);
                else
                   Put_Verbose ("<dir>: No such directory: " & Dir);
                end if;
@@ -1435,6 +1493,7 @@ package body GprConfig.Knowledge is
                                    .. Matched (Group - Group_Count).Last));
                               Parse_All_Dirs
                                 (Processed_Value => Processed_Value,
+                                 Visited         => Visited,
                                  Current_Dir     =>
                                    Full_Name (File) & Directory_Separator,
                                  Path_To_Check   => Path_To_Check
@@ -1446,11 +1505,13 @@ package body GprConfig.Knowledge is
                                  Group_Match     =>
                                    Simple (Matched (Group - Group_Count).First
                                        .. Matched (Group - Group_Count).Last),
-                                 Group_Count     => Group_Count + Count);
+                                 Group_Count     => Group_Count + Count,
+                                 Merge_Same_Dirs => Merge_Same_Dirs);
 
                            else
                               Parse_All_Dirs
                                 (Processed_Value => Processed_Value,
+                                 Visited         => Visited,
                                  Current_Dir     =>
                                    Full_Name (File) & Directory_Separator,
                                  Path_To_Check   => Path_To_Check
@@ -1460,7 +1521,8 @@ package body GprConfig.Knowledge is
                                  Value_If_Match  => Value_If_Match,
                                  Group           => Group,
                                  Group_Match     => Group_Match,
-                                 Group_Count     => Group_Count + Count);
+                                 Group_Count     => Group_Count + Count,
+                                 Merge_Same_Dirs => Merge_Same_Dirs);
                            end if;
                         end if;
                      end;
@@ -1480,6 +1542,7 @@ package body GprConfig.Knowledge is
       Value            : External_Value;
       Comp             : Compiler;
       Split_Into_Words : Boolean := True;
+      Merge_Same_Dirs  : Boolean := False;
       Processed_Value  : out External_Value_Lists.List)
    is
       Saved_Path     : constant String :=
@@ -1490,6 +1553,9 @@ package body GprConfig.Knowledge is
       Node_Cursor    : External_Value_Nodes.Cursor := First (Value);
       Node           : External_Value_Node;
       From_Static    : Boolean := False;
+
+      Visited : String_To_External_Value.Map;
+
    begin
       Clear (Processed_Value);
 
@@ -1565,6 +1631,7 @@ package body GprConfig.Knowledge is
                            & Search & ", starting from /", 1);
                         Parse_All_Dirs
                           (Processed_Value => Processed_Value,
+                           Visited         => Visited,
                            Current_Dir     => "",
                            Path_To_Check   => Search,
                            Regexp          =>
@@ -1572,6 +1639,7 @@ package body GprConfig.Knowledge is
                                               .. Search'Last)),
                            Regexp_Str      => Search,
                            Value_If_Match  => Node.Dir_If_Match,
+                           Merge_Same_Dirs => Merge_Same_Dirs,
                            Group           => Node.Directory_Group);
                      else
                         if Current_Verbosity /= Default then
@@ -1582,11 +1650,13 @@ package body GprConfig.Knowledge is
                         end if;
                         Parse_All_Dirs
                           (Processed_Value => Processed_Value,
+                           Visited         => Visited,
                            Current_Dir     => Get_Name_String (Comp.Path),
                            Path_To_Check   => Search,
                            Regexp          => Compile (Search),
                            Regexp_Str      => Search,
                            Value_If_Match  => Node.Dir_If_Match,
+                           Merge_Same_Dirs => Merge_Same_Dirs,
                            Group           => Node.Directory_Group);
                      end if;
                      Put_Verbose ("Done search directories", -1);
@@ -1930,10 +2000,16 @@ package body GprConfig.Knowledge is
             Value            => Descr.Runtimes,
             Comp             => Comp,
             Split_Into_Words => True,
+            Merge_Same_Dirs  => True,
             Processed_Value  => Runtimes);
-         --  Put default runtime first
 
          if not Is_Empty (Runtimes) then
+            --  This loop makes sure that the default runtime appears first in
+            --  the list (and thus is selected automatically when using
+            --  --batch). This doesn't impact the interactive display, where
+            --  the runtimes will be sorted alphabetically anyway (see
+            --  Display_Before)
+
             CS := First (Descr.Default_Runtimes);
             Defaults_Loop :
             while Has_Element (CS) loop
@@ -3583,6 +3659,10 @@ package body GprConfig.Knowledge is
                return False;
 
             else
+               --  If the "default" attribute was specified for <runtime>,
+               --  this only impacts the batch mode. We still want to sort
+               --  the runtimes alphabetically in the interactive display.
+
                case Compare (Comp1.Runtime, Comp2.Runtime) is
                   when Before =>
                      return True;
