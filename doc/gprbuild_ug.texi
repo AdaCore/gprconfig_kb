@@ -1757,6 +1757,12 @@ are evaluated (if necessary) in the same order as they are documented below.
   below for valid children. The returned value
   is split into words as for @code{<languages>}.
 
+  As a special case, gprconfig will merge two runtimes if the XML nodes
+  refer to the same directories after normalization and resolution of
+  links. As such, on Unix systems, the "adalib" link to "rts-native/adalib"
+  (or similar) will be ignored and only the "native" runtime will be
+  displayed.
+
 @end table
 
 @c ---------------------------------------------
