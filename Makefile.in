@@ -56,7 +56,7 @@ endif
 
 dummy:=$(shell $(MKDIR) $(objdir))
 
-PROCESSORS ?= 1
+PROCESSORS ?= 8
 
 GNATMAKE=gnatmake -p -m -j${PROCESSORS}
 ifeq ($(strip $(filter-out %vms%,$(host))),)
@@ -100,8 +100,11 @@ copy_gnat_src: force
 
 complete: copy_gnat_src all install
 
-gprbuild gprclean:
-	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} $@
+gprbuild:
+	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprbuild-main.adb
+
+gprclean:
+	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprclean-main.adb
 
 gprconfig:
 	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprconfig-main
