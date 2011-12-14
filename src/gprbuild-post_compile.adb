@@ -949,6 +949,10 @@ package body Gprbuild.Post_Compile is
          Dummy     : Boolean := True;
          Lang_Seen : Lang_Set.Set;
 
+         ---------------------------
+         -- Toolchain_Version_For --
+         ---------------------------
+
          procedure Toolchain_Version_For
            (Project : Project_Id;
             Tree    : Project_Tree_Ref;
