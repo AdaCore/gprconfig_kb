@@ -494,178 +494,178 @@ procedure Gprclean.Main is
    User_Project_Node : Project_Node_Id;
 
 begin
-      --  Do the necessary initializations
+   --  Do the necessary initializations
 
-      Initialize;
+   Initialize;
 
-      --  Parse the command line, getting the switches and the executable names
+   --  Parse the command line, getting the switches and the executable names
 
-      Parse_Cmd_Line;
+   Parse_Cmd_Line;
 
-      --  Once we have parsed the command line, we might know the target, and
-      --  thus can initialize the default project path.
+   --  Once we have parsed the command line, we might know the target, and
+   --  thus can initialize the default project path.
 
-      if Target_Name = null then
-         Prj.Env.Initialize_Default_Project_Path
-           (Root_Environment.Project_Path, Target_Name => "");
+   if Target_Name = null then
+      Prj.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path, Target_Name => "");
+   else
+      Prj.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path, Target_Name.all);
+   end if;
+
+   if Load_Standard_Base then
+      Parse_Knowledge_Base (Project_Tree);
+   end if;
+
+   --  If no project file was specified, look first for a default
+
+   if Project_File_Name = null then
+      Look_For_Default_Project;
+   end if;
+
+   --  Check that a project file was specified and get the configuration
+
+   if Project_File_Name = null then
+      Display_Copyright;
+      Usage;
+      return;
+   end if;
+
+   if Verbose_Mode then
+      Display_Copyright;
+   end if;
+
+   if Opt.Verbose_Mode then
+      New_Line;
+      Put ("Parsing Project File """);
+      Put (Project_File_Name.all);
+      Put_Line (""".");
+      New_Line;
+   end if;
+
+   --  Check command line arguments. These will be overridden when looking
+   --  for the configuration file
+
+   if Target_Name = null then
+      Target_Name := new String'("");
+   end if;
+
+   if Config_Project_File_Name = null then
+      Config_Project_File_Name := new String'("");
+   end if;
+
+   begin
+      Parse_Project_And_Apply_Config
+        (Main_Project               => Main_Project,
+         User_Project_Node          => User_Project_Node,
+         Config_File_Name           => Config_Project_File_Name.all,
+         Autoconf_Specified         => Autoconf_Specified,
+         Project_File_Name          => Project_File_Name.all,
+         Project_Tree               => Project_Tree,
+         Project_Node_Tree          => Project_Node_Tree,
+         Packages_To_Check          => Packages_To_Check,
+         Env                        => Root_Environment,
+         Allow_Automatic_Generation => Autoconfiguration,
+         Automatically_Generated    => Delete_Autoconf_File,
+         Config_File_Path           => Configuration_Project_Path,
+         Target_Name                => Target_Name.all,
+         Normalized_Hostname        => Normalized_Hostname);
+
+      --  Print warnings that might have occurred while parsing the project
+      Prj.Err.Finalize;
+
+      --  But avoid duplicate warnings later on
+      Prj.Err.Initialize;
+
+   exception
+      when E : Prj.Conf.Invalid_Config =>
+         Osint.Fail (Exception_Message (E));
+   end;
+
+   if Main_Project = No_Project then
+      --  Don't flush messages in case of parsing error. This has already
+      --  been taken care when parsing the tree. Otherwise, it results in
+      --  the same message being displayed twice.
+
+      Fail_Program
+        (Project_Tree,
+         """" & Project_File_Name.all & """ processing failed",
+         Flush_Messages => User_Project_Node /= Empty_Node);
+   end if;
+
+   --  Update info on all sources
+
+   declare
+      Iter    : Source_Iterator;
+   begin
+      Iter := For_Each_Source (Project_Tree);
+      while Prj.Element (Iter) /= No_Source loop
+         Initialize_Source_Record (Prj.Element (Iter));
+         Next (Iter);
+      end loop;
+   end;
+
+   --  Even if the config project file has not been automatically
+   --  generated, gprclean will delete it if it was specified using
+   --  --autoconf=.
+
+   Delete_Autoconf_File := Delete_Autoconf_File or Autoconf_Specified;
+
+   if Configuration_Project_Path /= null then
+      Free (Config_Project_File_Name);
+      Config_Project_File_Name := new String'
+        (Base_Name (Configuration_Project_Path.all));
+   end if;
+
+   if Opt.Verbose_Mode then
+      New_Line;
+      Put ("Parsing of Project File """);
+      Put (Project_File_Name.all);
+      Put (""" is finished.");
+      New_Line;
+   end if;
+
+   Mains.Fill_From_Project (Main_Project, Project_Tree);
+   Mains.Complete_Mains
+     (Root_Environment.Flags, Main_Project, Project_Tree);
+
+   if Verbose_Mode then
+      New_Line;
+   end if;
+
+   Processed_Projects.Init;
+
+   declare
+      procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref);
+      procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref) is
+      begin
+         --  For the main project and all aggregated projects, remove the
+         --  binder and linker generated files.
+         Clean_Project (Prj, Tree, Remove_Executables => True);
+      end Do_Clean;
+
+      procedure For_All is new For_Project_And_Aggregated (Do_Clean);
+   begin
+      --  For an aggregate project, we always cleanup all aggregated
+      --  projects, whether "-r" was specified or not. But for those
+      --  projects, we might not clean their imported projects.
+      For_All (Main_Project, Project_Tree);
+   end;
+
+   if Delete_Autoconf_File then
+      Delete ("", Configuration_Project_Path.all);
+   end if;
+
+   --  In verbose mode, if Delete has not been called, indicate that
+   --  no file needs to be deleted.
+
+   if Verbose_Mode and (not File_Deleted) then
+      New_Line;
+
+      if Do_Nothing then
+         Put_Line ("No file needs to be deleted");
       else
-         Prj.Env.Initialize_Default_Project_Path
-           (Root_Environment.Project_Path, Target_Name.all);
+         Put_Line ("No file has been deleted");
       end if;
-
-      if Load_Standard_Base then
-         Parse_Knowledge_Base (Project_Tree);
-      end if;
-
-      --  If no project file was specified, look first for a default
-
-      if Project_File_Name = null then
-         Look_For_Default_Project;
-      end if;
-
-      --  Check that a project file was specified and get the configuration
-
-      if Project_File_Name = null then
-         Display_Copyright;
-         Usage;
-         return;
-      end if;
-
-      if Verbose_Mode then
-         Display_Copyright;
-      end if;
-
-      if Opt.Verbose_Mode then
-         New_Line;
-         Put ("Parsing Project File """);
-         Put (Project_File_Name.all);
-         Put_Line (""".");
-         New_Line;
-      end if;
-
-      --  Check command line arguments. These will be overridden when looking
-      --  for the configuration file
-
-      if Target_Name = null then
-         Target_Name := new String'("");
-      end if;
-
-      if Config_Project_File_Name = null then
-         Config_Project_File_Name := new String'("");
-      end if;
-
-      begin
-         Parse_Project_And_Apply_Config
-           (Main_Project               => Main_Project,
-            User_Project_Node          => User_Project_Node,
-            Config_File_Name           => Config_Project_File_Name.all,
-            Autoconf_Specified         => Autoconf_Specified,
-            Project_File_Name          => Project_File_Name.all,
-            Project_Tree               => Project_Tree,
-            Project_Node_Tree          => Project_Node_Tree,
-            Packages_To_Check          => Packages_To_Check,
-            Env                        => Root_Environment,
-            Allow_Automatic_Generation => Autoconfiguration,
-            Automatically_Generated    => Delete_Autoconf_File,
-            Config_File_Path           => Configuration_Project_Path,
-            Target_Name                => Target_Name.all,
-            Normalized_Hostname        => Normalized_Hostname);
-
-         --  Print warnings that might have occurred while parsing the project
-         Prj.Err.Finalize;
-
-         --  But avoid duplicate warnings later on
-         Prj.Err.Initialize;
-
-      exception
-         when E : Prj.Conf.Invalid_Config =>
-            Osint.Fail (Exception_Message (E));
-      end;
-
-      if Main_Project = No_Project then
-         --  Don't flush messages in case of parsing error. This has already
-         --  been taken care when parsing the tree. Otherwise, it results in
-         --  the same message being displayed twice.
-
-         Fail_Program
-           (Project_Tree,
-            """" & Project_File_Name.all & """ processing failed",
-            Flush_Messages => User_Project_Node /= Empty_Node);
-      end if;
-
-      --  Update info on all sources
-
-      declare
-         Iter    : Source_Iterator;
-      begin
-         Iter := For_Each_Source (Project_Tree);
-         while Prj.Element (Iter) /= No_Source loop
-            Initialize_Source_Record (Prj.Element (Iter));
-            Next (Iter);
-         end loop;
-      end;
-
-      --  Even if the config project file has not been automatically
-      --  generated, gprclean will delete it if it was specified using
-      --  --autoconf=.
-
-      Delete_Autoconf_File := Delete_Autoconf_File or Autoconf_Specified;
-
-      if Configuration_Project_Path /= null then
-         Free (Config_Project_File_Name);
-         Config_Project_File_Name := new String'
-           (Base_Name (Configuration_Project_Path.all));
-      end if;
-
-      if Opt.Verbose_Mode then
-         New_Line;
-         Put ("Parsing of Project File """);
-         Put (Project_File_Name.all);
-         Put (""" is finished.");
-         New_Line;
-      end if;
-
-      Mains.Fill_From_Project (Main_Project, Project_Tree);
-      Mains.Complete_Mains
-        (Root_Environment.Flags, Main_Project, Project_Tree);
-
-      if Verbose_Mode then
-         New_Line;
-      end if;
-
-      Processed_Projects.Init;
-
-      declare
-         procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref);
-         procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref) is
-         begin
-            --  For the main project and all aggregated projects, remove the
-            --  binder and linker generated files.
-            Clean_Project (Prj, Tree, Remove_Executables => True);
-         end Do_Clean;
-
-         procedure For_All is new For_Project_And_Aggregated (Do_Clean);
-      begin
-         --  For an aggregate project, we always cleanup all aggregated
-         --  projects, whether "-r" was specified or not. But for those
-         --  projects, we might not clean their imported projects.
-         For_All (Main_Project, Project_Tree);
-      end;
-
-      if Delete_Autoconf_File then
-         Delete ("", Configuration_Project_Path.all);
-      end if;
-
-      --  In verbose mode, if Delete has not been called, indicate that
-      --  no file needs to be deleted.
-
-      if Verbose_Mode and (not File_Deleted) then
-         New_Line;
-
-         if Do_Nothing then
-            Put_Line ("No file needs to be deleted");
-         else
-            Put_Line ("No file has been deleted");
-         end if;
-      end if;
+   end if;
 end Gprclean.Main;
