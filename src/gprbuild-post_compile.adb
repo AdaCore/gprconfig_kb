@@ -1129,6 +1129,14 @@ package body Gprbuild.Post_Compile is
          Fail_Program
            (Project_Tree,
             "shared library projects not supported on this platform");
+
+      elsif not For_Project.Config.Lib_Fully_Standalone_Supported
+        and then For_Project.Standalone_Library = Full
+      then
+         Fail_Program
+           (Project_Tree,
+            "fully standalone library projects not supported "
+            & "on this platform");
       end if;
 
       if For_Project.Config.Library_Builder = No_Path then

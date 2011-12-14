@@ -2196,15 +2196,35 @@ begin
       end if;
 
       if Use_GNAT_Lib and then Runtime_Library_Dir /= null then
-         Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
+         if Standalone = Full then
 
-         if Path_Option /= null then
-            Add_Rpath (Runtime_Library_Dir);
+            --  For fully standalone library we want to link against the static
+            --  GNAT runtime.
 
-            --  Add to the Path Option the directory of the shared version of
-            --  libgcc.
+            Libgnat  := new String'(Runtime_Library_Dir.all & "libgnat.a");
+            Libgnarl := new String'(Runtime_Library_Dir.all & "libgnarl.a");
 
-            Add_Rpath (Shared_Libgcc_Dir (Runtime_Library_Dir.all));
+            if not Is_Regular_File (Libgnat.all) then
+               Osint.Fail
+                 ("missing " & Libgnat.all & " for fully standalone library");
+            end if;
+
+            if not Is_Regular_File (Libgnarl.all) then
+               Osint.Fail
+                 ("missing " & Libgnarl.all & " for fully standalone library");
+            end if;
+
+         else
+            Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
+
+            if Path_Option /= null then
+               Add_Rpath (Runtime_Library_Dir);
+
+               --  Add to the Path Option the directory of the shared version
+               --  of libgcc.
+
+               Add_Rpath (Shared_Libgcc_Dir (Runtime_Library_Dir.all));
+            end if;
          end if;
 
          if Libgnarl_Needed then
