@@ -1599,6 +1599,13 @@ package body Gprbuild.Post_Compile is
 
                Write_Sources;
             end if;
+
+            --  Standalone mode
+
+            Put_Line (Exchange_File, Library_Label (Standalone_Mode));
+            Put_Line
+              (Exchange_File,
+               Standalone'Image (For_Project.Standalone_Library));
          end if;
 
          Write_Response_Files;

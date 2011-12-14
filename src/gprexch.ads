@@ -107,6 +107,7 @@ package Gprexch is
       Install_Name,
       Auto_Init,
       Interface_Dep_Files,
+      Standalone_Mode,
       Dependency_Files,
       Binding_Options,
       Leading_Library_Options,

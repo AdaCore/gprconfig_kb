@@ -132,7 +132,7 @@ procedure Gprlib is
    --  Set to False when "-nostdlib" is in the library options. When False,
    --  a shared library is not linked with the GNAT libraries.
 
-   Standalone : Boolean := False;
+   Standalone : Prj.Standalone := No;
    --  True when building a stand-alone library
 
    Copy_ALI : Boolean := True;
@@ -557,7 +557,7 @@ procedure Gprlib is
       Status       : Boolean;
 
    begin
-      if not Standalone then
+      if Standalone = No then
          for Index in 1 .. ALIs.Last loop
             declare
                Destination : constant String :=
@@ -1228,7 +1228,10 @@ begin
 
             when Interface_Dep_Files =>
                Interface_ALIs.Append (new String'(Line (1 .. Last)));
-               Standalone := True;
+               Standalone := Prj.Standard;
+
+            when Gprexch.Standalone_Mode =>
+               Standalone := Prj.Standalone'Value (Line (1 .. Last));
 
             when Dependency_Files =>
                if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
@@ -1353,7 +1356,7 @@ begin
             Object_Directories.Table (1).all);
    end;
 
-   if Standalone then
+   if Standalone /= No then
       declare
          Binder_Generated_File   : String :=
                                      "b__" & Library_Name.all & ".adb";
@@ -1771,7 +1774,7 @@ begin
                      Libgnarl_Needed := True;
                   end if;
 
-                  if Standalone
+                  if Standalone /= No
                     and then (Partial_Linker = null
                               or else Resp_File_Format /= Prj.None)
                     and then Line (9 .. 10) = "-l"
@@ -1789,7 +1792,7 @@ begin
    --  Archives
 
    if Static and then not No_Create then
-      if Standalone and then Partial_Linker /= null then
+      if Standalone /= No and then Partial_Linker /= null then
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
          if Partial_Linker_Path = null then
@@ -1810,7 +1813,7 @@ begin
 
       First_AB_Object_Pos := Last_AB_Option + 1;
 
-      if Standalone and then Partial_Linker_Path /= null then
+      if Standalone /= No and then Partial_Linker_Path /= null then
          --  If partial linker is used, do a partial link and put the resulting
          --  object file in the archive.
 
