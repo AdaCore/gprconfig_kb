@@ -748,6 +748,9 @@ package body Gprclean is
 
                   if Main_File.Source /= No_Source
                     and then Project.Object_Directory /= No_Path_Information
+                    and then Is_Directory
+                               (Get_Name_String
+                                  (Project.Object_Directory.Display_Name))
                   then
                      Delete_Binder_Generated_Files
                        (Project, Project_Tree,
