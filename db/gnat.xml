@@ -221,6 +221,19 @@
    </config>
   </configuration>
 
+  <!--  Whether fully standalone library is supported -->
+  <configuration>
+   &filter_gnat;
+   <targets>
+      <target name="^.*mingw.*$" />
+      <target name="^i.86-.*linux.*$" />
+      <target name="^sparc-.*solaris.*$" />
+   </targets>
+   <config>
+      for Library_Fully_Standalone_Supported use "true";
+   </config>
+  </configuration>
+
   <!-- add the RTS= arg to the compiler and binder for GNAT -->
   <!-- ??? how do we generalize for any runtime? -->
   <configuration>
