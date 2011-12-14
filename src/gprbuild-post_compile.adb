@@ -642,7 +642,7 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Auto_Init is
       begin
-         if For_Project.Standalone_Library then
+         if For_Project.Standalone_Library /= No then
             if For_Project.Lib_Auto_Init then
                Put_Line (Exchange_File, Library_Label (Auto_Init));
             end if;
@@ -1582,7 +1582,7 @@ package body Gprbuild.Post_Compile is
 
          Write_Toolchain_Version;
 
-         if For_Project.Standalone_Library then
+         if For_Project.Standalone_Library /= No then
             if For_Project.Lib_Auto_Init then
                Put_Line (Exchange_File, Library_Label (Auto_Init));
             end if;
@@ -1818,7 +1818,7 @@ package body Gprbuild.Post_Compile is
                     (Exchange_File, Get_Name_String (Source.Dep_Path));
                   Dep_Files := True;
 
-               elsif not Source.Project.Standalone_Library then
+               elsif Source.Project.Standalone_Library = No then
                   Get_Name_String
                     (Source.Project.Library_ALI_Dir.Display_Name);
                   Add_Char_To_Name_Buffer (Directory_Separator);

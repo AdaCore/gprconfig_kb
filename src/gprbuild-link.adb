@@ -1904,7 +1904,7 @@ package body Gprbuild.Link is
               and then Proj.Object_Directory /= No_Path_Information
               and then not Proj.Externally_Built
               and then (Proj.Library_Kind = Static
-                        or else not Proj.Standalone_Library)
+                        or else Proj.Standalone_Library = No)
             then
                Change_Dir
                  (Get_Name_String (Proj.Object_Directory.Display_Name));

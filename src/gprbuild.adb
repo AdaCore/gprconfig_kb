@@ -411,7 +411,7 @@ package body Gprbuild is
               and then Project.Extended_By = No_Project
               and then Project.Library
             then
-               if Project.Standalone_Library then
+               if Project.Standalone_Library /= No then
                   There_Are_SALs := True;
                end if;
 
