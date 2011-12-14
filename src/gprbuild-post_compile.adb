@@ -776,7 +776,53 @@ package body Gprbuild.Post_Compile is
       --------------------------
 
       procedure Write_Library_Option is
+
+         procedure Write_Lists
+           (File  : Text_IO.File_Type;
+            Label : Library_Section;
+            List  : String_List_Id;
+            Count : in out Natural);
+         --  Write values in list into section Label in the given file. Count
+         --  is the numebr of already output items into this section. The label
+         --  will be output only if Count is 0 initially. Increments Count for
+         --  every new item output.
+
+         -----------------
+         -- Write_Lists --
+         -----------------
+
+         procedure Write_Lists
+           (File  : Text_IO.File_Type;
+            Label : Library_Section;
+            List  : String_List_Id;
+            Count : in out Natural)
+         is
+            Current      : String_List_Id := List;
+            Element      : String_Element;
+            Output_Label : Boolean := True;
+         begin
+            while Current /= Nil_String loop
+               Element :=
+                 Project_Tree.Shared.String_Elements.Table (Current);
+               Get_Name_String (Element.Value);
+
+               if Name_Len /= 0 then
+                  if Output_Label and then Count = 0 then
+                     Put_Line (File, Library_Label (Label));
+                     Output_Label := False;
+                  end if;
+
+                  Put_Line (File, Name_Buffer (1 .. Name_Len));
+                  Count := Count + 1;
+               end if;
+
+               Current := Element.Next;
+            end loop;
+         end Write_Lists;
+
          Library_Options : Variable_Value := Nil_Variable_Value;
+         Count           : Natural := 0;
+
       begin
          --  If attribute Library_Options was specified, add these
          --  additional options.
@@ -787,31 +833,25 @@ package body Gprbuild.Post_Compile is
             For_Project.Decl.Attributes, Project_Tree.Shared);
 
          if not Library_Options.Default then
-            declare
-               Current      : String_List_Id := Library_Options.Values;
-               Element      : String_Element;
-               Output_Label : Boolean := True;
+            Write_Lists
+              (Exchange_File,
+               Gprexch.Library_Options, Library_Options.Values, Count);
+         end if;
 
-            begin
-               while Current /= Nil_String loop
-                  Element :=
-                    Project_Tree.Shared.String_Elements.Table (Current);
-                  Get_Name_String (Element.Value);
+         --  Likewise, if Library_Fully_Standalone_Options is defined and we
+         --  are actually building such library add the corresponding options.
 
-                  if Name_Len /= 0 then
-                     if Output_Label then
-                        Put_Line
-                          (Exchange_File,
-                           Library_Label (Gprexch.Library_Options));
-                        Output_Label := False;
-                     end if;
+         if For_Project.Standalone_Library = Full then
+            Library_Options :=
+              Value_Of
+                (Name_Library_Fully_Standalone_Options,
+                 For_Project.Decl.Attributes, Project_Tree.Shared);
 
-                     Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
-                  end if;
-
-                  Current := Element.Next;
-               end loop;
-            end;
+            if not Library_Options.Default then
+               Write_Lists
+                 (Exchange_File,
+                  Gprexch.Library_Options, Library_Options.Values, Count);
+            end if;
          end if;
       end Write_Library_Option;
 
