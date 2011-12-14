@@ -97,6 +97,22 @@ package body Gprbuild.Post_Compile is
       --  Get the paths of the object files of the library in table
       --  Library_Objs.
 
+      procedure Write_List
+        (File  : Text_IO.File_Type;
+         Label : Library_Section;
+         List  : String_List_Id;
+         Count : in out Natural);
+      --  Write values in list into section Label in the given file. Count
+      --  is the numebr of already output items into this section. The label
+      --  will be output only if Count is 0 initially. Increments Count for
+      --  every new item output.
+
+      procedure Write_Name_List
+        (File  : Text_IO.File_Type;
+         Label : Library_Section;
+         List  : Name_List_Index);
+      --  Write name list values into the File, output Label first
+
       --  Procedures to write specific sections of the exchange file
 
       procedure Write_Object_Files;
@@ -512,24 +528,70 @@ package body Gprbuild.Post_Compile is
          end if;
       end Write_Compiler_Trailing_Switches;
 
+      ----------------
+      -- Write_List --
+      ----------------
+
+      procedure Write_List
+        (File  : Text_IO.File_Type;
+         Label : Library_Section;
+         List  : String_List_Id;
+         Count : in out Natural)
+      is
+         Current      : String_List_Id := List;
+         Element      : String_Element;
+         Output_Label : Boolean := True;
+      begin
+         while Current /= Nil_String loop
+            Element :=
+              Project_Tree.Shared.String_Elements.Table (Current);
+            Get_Name_String (Element.Value);
+
+            if Name_Len /= 0 then
+               if Output_Label and then Count = 0 then
+                  Put_Line (File, Library_Label (Label));
+                  Output_Label := False;
+               end if;
+
+               Put_Line (File, Name_Buffer (1 .. Name_Len));
+               Count := Count + 1;
+            end if;
+
+            Current := Element.Next;
+         end loop;
+      end Write_List;
+
+      ---------------------
+      -- Write_Name_List --
+      ---------------------
+
+      procedure Write_Name_List
+        (File  : Text_IO.File_Type;
+         Label : Library_Section;
+         List  : Name_List_Index)
+      is
+         Current : Name_List_Index := List;
+         Nam     : Name_Node;
+      begin
+         Put_Line (File, Library_Label (Label));
+
+         while Current /= No_Name_List loop
+            Nam := Project_Tree.Shared.Name_Lists.Table (Current);
+            Put_Line (File, Get_Name_String (Nam.Name));
+            Current := Nam.Next;
+         end loop;
+      end Write_Name_List;
+
       --------------------------
       -- Write_Partial_Linker --
       --------------------------
 
       procedure Write_Partial_Linker is
-         List    : Name_List_Index :=
-                     For_Project.Config.Lib_Partial_Linker;
-         Nam_Nod : Name_Node;
-
+         List : constant Name_List_Index :=
+                  For_Project.Config.Lib_Partial_Linker;
       begin
          if List /= No_Name_List then
-            Put_Line (Exchange_File, Library_Label (Partial_Linker));
-
-            while List /= No_Name_List loop
-               Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
-               Put_Line (Exchange_File, Get_Name_String (Nam_Nod.Name));
-               List := Nam_Nod.Next;
-            end loop;
+            Write_Name_List (Exchange_File, Partial_Linker, List);
          end if;
       end Write_Partial_Linker;
 
@@ -538,19 +600,11 @@ package body Gprbuild.Post_Compile is
       --------------------------------------
 
       procedure Write_Shared_Lib_Minimum_Options is
-         List    : Name_List_Index :=
-                     For_Project.Config.Shared_Lib_Min_Options;
-         Nam_Nod : Name_Node;
+         List : constant Name_List_Index :=
+                  For_Project.Config.Shared_Lib_Min_Options;
       begin
          if List /= No_Name_List then
-            Put_Line
-              (Exchange_File, Library_Label (Shared_Lib_Minimum_Options));
-
-            while List /= No_Name_List loop
-               Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
-               Put_Line (Exchange_File, Get_Name_String (Nam_Nod.Name));
-               List := Nam_Nod.Next;
-            end loop;
+            Write_Name_List (Exchange_File, Shared_Lib_Minimum_Options, List);
          end if;
       end Write_Shared_Lib_Minimum_Options;
 
@@ -559,18 +613,11 @@ package body Gprbuild.Post_Compile is
       ---------------------------
 
       procedure Write_Library_Version is
-         List    : Name_List_Index :=
-                     For_Project.Config.Lib_Version_Options;
-         Nam_Nod : Name_Node;
+         List : constant Name_List_Index :=
+                  For_Project.Config.Lib_Version_Options;
       begin
          if List /= No_Name_List then
-            Put_Line (Exchange_File, Library_Label (Library_Version_Options));
-
-            while List /= No_Name_List loop
-               Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
-               Put_Line (Exchange_File, Get_Name_String (Nam_Nod.Name));
-               List := Nam_Nod.Next;
-            end loop;
+            Write_Name_List (Exchange_File, Library_Version_Options, List);
          end if;
       end Write_Library_Version;
 
@@ -665,7 +712,7 @@ package body Gprbuild.Post_Compile is
                                      Shared    => Project_Tree.Shared);
                      Switches : Variable_Value := Nil_Variable_Value;
 
-                     Switch   : String_List_Id := Nil_String;
+                     Count    : Natural := 0;
 
                   begin
                      if Defaults /= No_Array_Element then
@@ -677,20 +724,9 @@ package body Gprbuild.Post_Compile is
                              Shared    => Project_Tree.Shared);
 
                         if not Switches.Default then
-                           Put_Line
-                             (Exchange_File,
-                              Library_Label (Gprexch.Binding_Options));
-                           Switch := Switches.Values;
-
-                           while Switch /= Nil_String loop
-                              Put_Line
-                                (Exchange_File,
-                                 Get_Name_String
-                                   (Project_Tree.Shared.String_Elements
-                                     .Table (Switch).Value));
-                              Switch := Project_Tree.Shared.String_Elements.
-                                Table (Switch).Next;
-                           end loop;
+                           Write_List
+                             (Exchange_File, Gprexch.Binding_Options,
+                              Switches.Values, Count);
                         end if;
                      end if;
                   end;
@@ -704,19 +740,11 @@ package body Gprbuild.Post_Compile is
       ---------------------------
 
       procedure Write_Run_Path_Option is
-         List : Name_List_Index :=
+         List : constant Name_List_Index :=
                   For_Project.Config.Run_Path_Option;
-         Nam  : Name_Node;
       begin
          if Opt.Run_Path_Option and then List /= No_Name_List then
-            Put_Line
-              (Exchange_File, Library_Label (Gprexch.Run_Path_Option));
-
-            while List /= No_Name_List loop
-               Nam := Project_Tree.Shared.Name_Lists.Table (List);
-               Put_Line (Exchange_File, Get_Name_String (Nam.Name));
-               List := Nam.Next;
-            end loop;
+            Write_Name_List (Exchange_File, Run_Path_Option, List);
 
             if For_Project.Config.Separate_Run_Path_Options then
                Put_Line
@@ -732,6 +760,7 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Leading_Library_Option is
          Leading_Library_Options : Variable_Value := Nil_Variable_Value;
+         Count                   : Natural := 0;
       begin
          --  If attribute Leading_Library_Options was specified, add these
          --  additional options.
@@ -742,32 +771,10 @@ package body Gprbuild.Post_Compile is
             For_Project.Decl.Attributes, Project_Tree.Shared);
 
          if not Leading_Library_Options.Default then
-            declare
-               Current      : String_List_Id :=
-                                Leading_Library_Options.Values;
-               Element      : String_Element;
-               Output_Label : Boolean := True;
-
-            begin
-               while Current /= Nil_String loop
-                  Element :=
-                    Project_Tree.Shared.String_Elements.Table (Current);
-                  Get_Name_String (Element.Value);
-
-                  if Name_Len /= 0 then
-                     if Output_Label then
-                        Put_Line
-                          (Exchange_File,
-                           Library_Label (Gprexch.Leading_Library_Options));
-                        Output_Label := False;
-                     end if;
-
-                     Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
-                  end if;
-
-                  Current := Element.Next;
-               end loop;
-            end;
+            Write_List
+              (Exchange_File,
+               Gprexch.Leading_Library_Options,
+               Leading_Library_Options.Values, Count);
          end if;
       end Write_Leading_Library_Option;
 
@@ -776,53 +783,8 @@ package body Gprbuild.Post_Compile is
       --------------------------
 
       procedure Write_Library_Option is
-
-         procedure Write_Lists
-           (File  : Text_IO.File_Type;
-            Label : Library_Section;
-            List  : String_List_Id;
-            Count : in out Natural);
-         --  Write values in list into section Label in the given file. Count
-         --  is the numebr of already output items into this section. The label
-         --  will be output only if Count is 0 initially. Increments Count for
-         --  every new item output.
-
-         -----------------
-         -- Write_Lists --
-         -----------------
-
-         procedure Write_Lists
-           (File  : Text_IO.File_Type;
-            Label : Library_Section;
-            List  : String_List_Id;
-            Count : in out Natural)
-         is
-            Current      : String_List_Id := List;
-            Element      : String_Element;
-            Output_Label : Boolean := True;
-         begin
-            while Current /= Nil_String loop
-               Element :=
-                 Project_Tree.Shared.String_Elements.Table (Current);
-               Get_Name_String (Element.Value);
-
-               if Name_Len /= 0 then
-                  if Output_Label and then Count = 0 then
-                     Put_Line (File, Library_Label (Label));
-                     Output_Label := False;
-                  end if;
-
-                  Put_Line (File, Name_Buffer (1 .. Name_Len));
-                  Count := Count + 1;
-               end if;
-
-               Current := Element.Next;
-            end loop;
-         end Write_Lists;
-
          Library_Options : Variable_Value := Nil_Variable_Value;
          Count           : Natural := 0;
-
       begin
          --  If attribute Library_Options was specified, add these
          --  additional options.
@@ -833,7 +795,7 @@ package body Gprbuild.Post_Compile is
             For_Project.Decl.Attributes, Project_Tree.Shared);
 
          if not Library_Options.Default then
-            Write_Lists
+            Write_List
               (Exchange_File,
                Gprexch.Library_Options, Library_Options.Values, Count);
          end if;
@@ -848,7 +810,7 @@ package body Gprbuild.Post_Compile is
                  For_Project.Decl.Attributes, Project_Tree.Shared);
 
             if not Library_Options.Default then
-               Write_Lists
+               Write_List
                  (Exchange_File,
                   Gprexch.Library_Options, Library_Options.Values, Count);
             end if;
@@ -1122,21 +1084,9 @@ package body Gprbuild.Post_Compile is
               (Exchange_File, For_Project.Config.Resp_File_Format'Img);
 
             if For_Project.Config.Resp_File_Options /= No_Name_List then
-               Put_Line
-                 (Exchange_File, Library_Label (Response_File_Switches));
-
-               declare
-                  List : Name_List_Index :=
-                           For_Project.Config.Resp_File_Options;
-               begin
-                  while List /= No_Name_List loop
-                     Put_Line
-                       (Exchange_File,
-                        Get_Name_String
-                          (Project_Tree.Shared.Name_Lists.Table (List).Name));
-                     List := Project_Tree.Shared.Name_Lists.Table (List).Next;
-                  end loop;
-               end;
+               Write_Name_List
+                 (Exchange_File, Response_File_Switches,
+                  For_Project.Config.Resp_File_Options);
             end if;
 
             if Debug.Debug_Flag_N then
