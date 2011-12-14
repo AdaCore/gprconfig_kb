@@ -227,7 +227,9 @@
    <targets>
       <target name="^.*mingw.*$" />
       <target name="^i.86-.*linux.*$" />
-      <target name="^sparc-.*solaris.*$" />
+      <target name="^.*sunos.*$" />
+      <target name="^.*solaris.*$"/>
+      <target name="^.*darwin.*$" />
    </targets>
    <config>
       for Library_Fully_Standalone_Supported use "true";
