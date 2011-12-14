@@ -132,8 +132,6 @@ package body Gprbuild.Post_Compile is
 
       Library_Builder_Name      : String_Access;
       Library_Builder           : String_Access;
-      Leading_Library_Options   : Variable_Value := Nil_Variable_Value;
-      Library_Options           : Variable_Value := Nil_Variable_Value;
       Library_Needs_To_Be_Built : Boolean := False;
 
       Object_Path : Path_Name_Type;
@@ -733,6 +731,7 @@ package body Gprbuild.Post_Compile is
       ----------------------------------
 
       procedure Write_Leading_Library_Option is
+         Leading_Library_Options : Variable_Value := Nil_Variable_Value;
       begin
          --  If attribute Leading_Library_Options was specified, add these
          --  additional options.
@@ -777,6 +776,7 @@ package body Gprbuild.Post_Compile is
       --------------------------
 
       procedure Write_Library_Option is
+         Library_Options : Variable_Value := Nil_Variable_Value;
       begin
          --  If attribute Library_Options was specified, add these
          --  additional options.
