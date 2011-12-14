@@ -1148,8 +1148,8 @@ begin
 
                elsif Last >= 3 and then Line (1 .. 2) = "-L" then
                   --  Set Adalib_Dir only if libgnat is found inside.
-                  if Is_Regular_File (Line (3 .. Last) &
-                                      Directory_Separator & "libgnat.a")
+                  if Is_Regular_File
+                    (Line (3 .. Last) & Directory_Separator & "libgnat.a")
                   then
                      Adalib_Dir := new String'(Line (3 .. Last));
 
@@ -1249,8 +1249,8 @@ begin
                   Static_Libs := True;
                   Put_Line (IO_File, Line (1 .. Last));
 
-                  if Shared_Libgcc_Default = 'T' and then
-                     GCC_Version >= '3'
+                  if Shared_Libgcc_Default = 'T'
+                    and then GCC_Version >= '3'
                   then
                      Put_Line (IO_File, Static_Libgcc);
                   end if;

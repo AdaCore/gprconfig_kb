@@ -1547,7 +1547,7 @@ package body Gprbuild.Compile is
 
                   --  For all the imported sources from project not
                   --  directly imported, check if their projects are
-                  --  in has thable imports.
+                  --  in table imports.
 
                   for J in 1 .. Included_Sources.Last loop
                      declare
