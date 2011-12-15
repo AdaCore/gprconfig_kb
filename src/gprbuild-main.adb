@@ -54,6 +54,8 @@ procedure Gprbuild.Main is
 
    use Gpr_Util.Knowledge;
 
+   There_Are_Restricted_Languages : Boolean := False;
+
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
    --  arguments.
@@ -883,6 +885,38 @@ procedure Gprbuild.Main is
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
+         elsif Command_Line
+           and then Arg'Length > Restricted_To_Languages_Option'Length
+           and then Arg (1 .. Restricted_To_Languages_Option'Length) =
+                      Restricted_To_Languages_Option
+         then
+            declare
+               Start  : Positive := Restricted_To_Languages_Option'Length + 1;
+               Finish : Positive;
+
+            begin
+               Processed := False;
+
+               while Start <= Arg'Last loop
+                  Finish := Start;
+                  loop
+                     exit when Finish > Arg'Last or else Arg (Finish) = ',';
+                     Finish := Finish + 1;
+                  end loop;
+
+                  if Finish > Start then
+                     Add_Restricted_Language (Arg (Start .. Finish - 1));
+                     Processed := True;
+                     There_Are_Restricted_Languages := True;
+                     Opt.Compile_Only := True;
+                     Opt.Bind_Only := False;
+                     Opt.Link_Only := False;
+                  end if;
+
+                  Start := Finish + 1;
+               end loop;
+            end;
+
          elsif Arg = Indirect_Imports_Switch then
             Indirect_Imports := True;
 
@@ -934,10 +968,14 @@ procedure Gprbuild.Main is
 
          elsif Arg = "-b" then
             Forbidden_In_Package_Builder;
-            Opt.Bind_Only  := True;
+
+            if not There_Are_Restricted_Languages then
+               Opt.Bind_Only  := True;
+            end if;
 
          elsif Arg = "-c" then
             Forbidden_In_Package_Builder;
+
             Opt.Compile_Only := True;
 
             if Opt.Link_Only then
@@ -1044,10 +1082,13 @@ procedure Gprbuild.Main is
 
          elsif Arg = "-l" then
             Forbidden_In_Package_Builder;
-            Opt.Link_Only  := True;
 
-            if Opt.Compile_Only then
-               Opt.Bind_Only := True;
+            if not There_Are_Restricted_Languages then
+               Opt.Link_Only  := True;
+
+               if Opt.Compile_Only then
+                  Opt.Bind_Only := True;
+               end if;
             end if;
 
          elsif Arg = "-m" then
@@ -1973,17 +2014,22 @@ begin
 
    Queue.Initialize (Opt.One_Compilation_Per_Obj_Dir);
 
-   if Mains.Number_Of_Mains (Project_Tree) = 0
-     and then not Unique_Compile
-   then
-      --  Register the Main units from the projects.
-      --  No need to waste time when we are going to compile all files
-      --  anyway (Unique_Compile).
-      Mains.Fill_From_Project (Main_Project, Project_Tree);
-   end if;
+   if There_Are_Restricted_Languages then
+      Mains.Delete;
 
-   Mains.Complete_Mains
-     (Root_Environment.Flags, Main_Project, Project_Tree);
+   else
+      if Mains.Number_Of_Mains (Project_Tree) = 0
+        and then not Unique_Compile
+      then
+         --  Register the Main units from the projects.
+         --  No need to waste time when we are going to compile all files
+         --  anyway (Unique_Compile).
+         Mains.Fill_From_Project (Main_Project, Project_Tree);
+      end if;
+
+      Mains.Complete_Mains
+        (Root_Environment.Flags, Main_Project, Project_Tree);
+   end if;
 
    if not Unique_Compile
      and then Output_File_Name /= null

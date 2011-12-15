@@ -65,6 +65,9 @@ package Gpr_Util is
 
    No_Name_Map_File_Option : constant String := "--map-file-option";
 
+   Restricted_To_Languages_Option : constant String :=
+                                               "--restricted-to-languages=";
+
    Named_Map_File_Option   : constant String := No_Name_Map_File_Option & '=';
 
    Config_Path : String_Access := null;
