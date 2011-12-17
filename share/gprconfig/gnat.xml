@@ -221,7 +221,7 @@
    </config>
   </configuration>
 
-  <!--  Whether fully standalone library is supported -->
+  <!--  Whether encapsulated library is supported -->
   <configuration>
    &filter_gnat;
    <targets>
@@ -232,7 +232,7 @@
       <target name="^.*darwin.*$" />
    </targets>
    <config>
-      for Library_Fully_Standalone_Supported use "true";
+      for Library_Encapsulated_Supported use "true";
    </config>
   </configuration>
 

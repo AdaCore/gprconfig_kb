@@ -2196,9 +2196,9 @@ begin
       end if;
 
       if Use_GNAT_Lib and then Runtime_Library_Dir /= null then
-         if Standalone = Full then
+         if Standalone = Encapsulated then
 
-            --  For fully standalone library we want to link against the static
+            --  For encapsulated library we want to link against the static
             --  GNAT runtime.
 
             Libgnat  := new String'(Runtime_Library_Dir.all & "libgnat.a");
@@ -2206,12 +2206,12 @@ begin
 
             if not Is_Regular_File (Libgnat.all) then
                Osint.Fail
-                 ("missing " & Libgnat.all & " for fully standalone library");
+                 ("missing " & Libgnat.all & " for encapsulated library");
             end if;
 
             if not Is_Regular_File (Libgnarl.all) then
                Osint.Fail
-                 ("missing " & Libgnarl.all & " for fully standalone library");
+                 ("missing " & Libgnarl.all & " for encapsulated library");
             end if;
 
          else

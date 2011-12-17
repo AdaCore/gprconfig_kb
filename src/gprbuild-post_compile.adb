@@ -803,10 +803,10 @@ package body Gprbuild.Post_Compile is
          --  Likewise, if Library_Fully_Standalone_Options is defined and we
          --  are actually building such library add the corresponding options.
 
-         if For_Project.Standalone_Library = Full then
+         if For_Project.Standalone_Library = Encapsulated then
             Library_Options :=
               Value_Of
-                (Name_Library_Fully_Standalone_Options,
+                (Name_Library_Encapsulated_Options,
                  For_Project.Decl.Attributes, Project_Tree.Shared);
 
             if not Library_Options.Default then
@@ -1124,13 +1124,12 @@ package body Gprbuild.Post_Compile is
            (Project_Tree,
             "shared library projects not supported on this platform");
 
-      elsif not For_Project.Config.Lib_Fully_Standalone_Supported
-        and then For_Project.Standalone_Library = Full
+      elsif not For_Project.Config.Lib_Encapsulated_Supported
+        and then For_Project.Standalone_Library = Encapsulated
       then
          Fail_Program
            (Project_Tree,
-            "fully standalone library projects not supported "
-            & "on this platform");
+            "encapsulated library projects not supported on this platform");
       end if;
 
       if For_Project.Config.Library_Builder = No_Path then
