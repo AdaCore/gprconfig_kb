@@ -517,7 +517,7 @@
 
    for Shared_Library_Suffix use ".so";
    for Library_Auto_Init_Supported use "true";
-   for Library_Fully_Standalone_Options use ("-mimpure-text");
+   for Library_Encapsulated_Options use ("-mimpure-text");
    for Run_Path_Option  use ("-Wl,-z,origin,-R,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
