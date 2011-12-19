@@ -182,19 +182,21 @@ procedure Gprbuild.Main is
                   """ cannot also be an excluded file");
             end if;
 
-            Queue.Insert
-              (Source     => (Format => Format_Gprbuild,
-                              Tree   => Main_Id.Tree,
-                              Id     => Main_Id.Source),
-               With_Roots => Builder_Data (Main_Id.Tree).Closure_Needed);
+            if Is_Allowed_Language (Main_Id.Source.Language.Name) then
+               Queue.Insert
+                 (Source     => (Format => Format_Gprbuild,
+                                 Tree   => Main_Id.Tree,
+                                 Id     => Main_Id.Source),
+                  With_Roots => Builder_Data (Main_Id.Tree).Closure_Needed);
 
-            --  If a non Ada main has no roots, then all sources need to be
-            --  compiled, so no need to check for closure.
+               --  If a non Ada main has no roots, then all sources need to be
+               --  compiled, so no need to check for closure.
 
-            if Main_Id.Source.Language.Config.Kind /= Unit_Based
-              and then Main_Id.Source.Roots = null
-            then
-               Builder_Data (Main_Id.Tree).Closure_Needed := False;
+               if Main_Id.Source.Language.Config.Kind /= Unit_Based
+                 and then Main_Id.Source.Roots = null
+               then
+                  Builder_Data (Main_Id.Tree).Closure_Needed := False;
+               end if;
             end if;
          end if;
       end loop;
@@ -2014,22 +2016,17 @@ begin
 
    Queue.Initialize (Opt.One_Compilation_Per_Obj_Dir);
 
-   if There_Are_Restricted_Languages then
-      Mains.Delete;
-
-   else
-      if Mains.Number_Of_Mains (Project_Tree) = 0
-        and then not Unique_Compile
-      then
-         --  Register the Main units from the projects.
-         --  No need to waste time when we are going to compile all files
-         --  anyway (Unique_Compile).
-         Mains.Fill_From_Project (Main_Project, Project_Tree);
-      end if;
-
-      Mains.Complete_Mains
-        (Root_Environment.Flags, Main_Project, Project_Tree);
+   if Mains.Number_Of_Mains (Project_Tree) = 0
+     and then not Unique_Compile
+   then
+      --  Register the Main units from the projects.
+      --  No need to waste time when we are going to compile all files
+      --  anyway (Unique_Compile).
+      Mains.Fill_From_Project (Main_Project, Project_Tree);
    end if;
+
+   Mains.Complete_Mains
+     (Root_Environment.Flags, Main_Project, Project_Tree);
 
    if not Unique_Compile
      and then Output_File_Name /= null
