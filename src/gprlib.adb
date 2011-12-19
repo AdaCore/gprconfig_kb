@@ -2214,6 +2214,15 @@ begin
                  ("missing " & Libgnarl.all & " for encapsulated library");
             end if;
 
+            --  Adds options into the library options table as those static
+            --  libraries must come late in the linker command line.
+
+            if Libgnarl_Needed then
+               Library_Options_Table.Append (Libgnarl);
+            end if;
+
+            Library_Options_Table.Append (Libgnat);
+
          else
             Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
 
@@ -2225,13 +2234,13 @@ begin
 
                Add_Rpath (Shared_Libgcc_Dir (Runtime_Library_Dir.all));
             end if;
-         end if;
 
-         if Libgnarl_Needed then
-            Options_Table.Append (Libgnarl);
-         end if;
+            if Libgnarl_Needed then
+               Options_Table.Append (Libgnarl);
+            end if;
 
-         Options_Table.Append (Libgnat);
+            Options_Table.Append (Libgnat);
+         end if;
       end if;
 
       if Install_Name /= null then
