@@ -20,7 +20,7 @@ KP-160-K917-002 Ignore compilers when variables cannot be computed
               gprconfig failed if a .NET compiler for Ada was installed on the
               machine.
 
-  Status:     This was fixed in 1.7.0 on 2011-10-24
+  Status:     This was fixed in 1.6.1 on 2011-10-24
 
   Workaround: Use the command line switches to specify the compilers to use,
               rather than let gprconfig auto-detect them.
