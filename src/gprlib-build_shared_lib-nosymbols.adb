@@ -274,12 +274,12 @@ procedure Build_Shared_Lib is
 
          begin
             Create_Response_File
-              (Format          => Resp_File_Format,
-               Objects         => Arguments (First_Object .. Last_Object),
-               Other_Arguments => Options,
+              (Format            => Resp_File_Format,
+               Objects           => Arguments (First_Object .. Last_Object),
+               Other_Arguments   => Options,
                Resp_File_Options => Response_File_Switches.all,
-               Name_1          => Response_File_Name,
-               Name_2          => Response_2);
+               Name_1            => Response_File_Name,
+               Name_2            => Response_2);
 
             Last_Arg := First_Object - 1;
 
