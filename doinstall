@@ -114,7 +114,7 @@ EOF
       if [ "X$answer" = "X" ]; then
           break
       fi
-      basedir = $answer
+      basedir=$answer
     done
     clear
     installdir=$basedir
