@@ -29,20 +29,6 @@ KP-152-KA04-012 Pragma Linker_Options not honored
 
   Workaround: Pass the corresponding libraries explicitly to the linker.
 
-KP-152-K917-002 Ignore compilers when variables cannot be computed
-
-  Problem:    In gprconfig, if a compiler description includes the computation
-              of extra variables (like "gcc_version" for GNAT) and this
-              variable cannot be computed, the compiler should simply be
-              ignored. Instead, gprconfig stops working. In particular,
-              gprconfig failed if a .NET compiler for Ada was installed on the
-              machine.
-
-  Status:     This was fixed in 1.6.0 on 2011-10-24
-
-  Workaround: Use the command line switches to specify the compilers to use,
-              rather than let gprconfig auto-detect them.
-
 KP-152-K801-014 Crash for library projects with no sources
 
   Problem:    gprbuild and gprclean crash with a library project with no
