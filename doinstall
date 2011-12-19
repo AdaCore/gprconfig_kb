@@ -10,7 +10,7 @@ if [ "x$ggd_prefix" = "x" ]; then
 else
     ggd_prog="$ggd_prefix-gnatmake"
 fi
-if type $ggd_prog > /dev/null 2>&1 && 
+if type $ggd_prog > /dev/null 2>&1 &&
    $ggd_prog -v 2>&1 | grep GNATMAKE | grep -q Pro;
 then
     has_gnatpro=y
@@ -98,21 +98,21 @@ while [ true ]; do
 
     Important Note: You should not use ~ or ~username wildcards
     when specifying this directory name.
-                                                                                
+
     Specify the base directory you want to use for installation:
 
 EOF
     read basedir
-    while [ true ]; do 
+    while [ true ]; do
       if [ "X" = "X`echo $basedir|sed -n -e 's%^/.*%/%p'`" ]; then
-	basedir=`pwd`/$basedir
+          basedir=`pwd`/$basedir
       fi
       echo "    " The base directory is $basedir
       echo "    " To accept this choice enter RETURN.
       echo "    " Otherwise type a new name.
       read answer
       if [ "X$answer" = "X" ]; then
-	break
+          break
       fi
       basedir = $answer
     done
