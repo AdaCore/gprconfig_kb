@@ -2209,7 +2209,7 @@ begin
                  ("missing " & Libgnat.all & " for encapsulated library");
             end if;
 
-            if not Is_Regular_File (Libgnarl.all) then
+            if Libgnarl_Needed and then not Is_Regular_File (Libgnarl.all) then
                Osint.Fail
                  ("missing " & Libgnarl.all & " for encapsulated library");
             end if;
