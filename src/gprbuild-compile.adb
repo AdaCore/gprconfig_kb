@@ -1120,7 +1120,7 @@ package body Gprbuild.Compile is
       --  Prepare the compiler options to use when building Id
 
       procedure Process_Project_Phase_1 (Source : Queue.Source_Info);
-      --  If some compilation is needed for this project, perform it.
+      --  If some compilation is needed for this project, perform it
 
       function Must_Exit_Because_Of_Error return Boolean;
       --  Return True if there were errors and the user decided to exit in such
