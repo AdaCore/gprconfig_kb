@@ -525,9 +525,10 @@ package body Gprbuild.Compile is
       Iter     : Source_Iterator;
 
       procedure Check
-        (Project : Project_Id;
-         Tree    : Project_Tree_Ref;
-         Dummy   : in out Boolean);
+        (Project          : Project_Id;
+         Tree             : Project_Tree_Ref;
+         In_Aggregate_Lib : Boolean;
+         Dummy            : in out Boolean);
       --  Check the naming schemes of the different projects of the project
       --  tree. For each different naming scheme issue the pattern config
       --  declarations.
@@ -551,12 +552,13 @@ package body Gprbuild.Compile is
       -----------
 
       procedure Check
-        (Project : Project_Id;
-         Tree    : Project_Tree_Ref;
-         Dummy   : in out Boolean)
+        (Project          : Project_Id;
+         Tree             : Project_Tree_Ref;
+         In_Aggregate_Lib : Boolean;
+         Dummy            : in out Boolean)
       is
-         pragma Unreferenced (Dummy, Tree);
-         Lang_Id   : Language_Ptr := Project.Languages;
+         pragma Unreferenced (Dummy, Tree, In_Aggregate_Lib);
+         Lang_Id : Language_Ptr := Project.Languages;
 
          Current_Naming : Positive := 1;
 
