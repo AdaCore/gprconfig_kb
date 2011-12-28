@@ -1847,7 +1847,6 @@ package body Gprbuild.Post_Compile is
                elsif Source.Project.Standalone_Library = No then
                   Get_Name_String
                     (Source.Project.Library_ALI_Dir.Display_Name);
-                  Add_Char_To_Name_Buffer (Directory_Separator);
                   Get_Name_String_And_Append (Source.Dep_Name);
                   Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
                   Dep_Files := True;
