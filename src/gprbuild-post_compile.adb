@@ -281,7 +281,13 @@ package body Gprbuild.Post_Compile is
       procedure Write_Object_Directory is
       begin
          Put_Line (Exchange_File, Library_Label (Object_Directory));
-         Put_Line (Exchange_File, Object_Directory_Path.all);
+
+         --  Do not output object directory for an aggregate library as such
+         --  library does not have objects by themselves.
+
+         if For_Project.Qualifier /= Aggregate_Library then
+            Put_Line (Exchange_File, Object_Directory_Path.all);
+         end if;
 
          --  Add object directory of project being extended, if any
 
