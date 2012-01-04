@@ -244,7 +244,7 @@ package body GprConfig.Knowledge is
    generic
       with function Callback (Var_Name, Index : String) return String;
    function Substitute_Variables (Str : String) return String;
-   --  Substitute variables in Str (their value is computed through Callback).
+   --  Substitute variables in Str (their value is computed through Callback)
 
    function Substitute_Variables_In_Compiler_Description
      (Str : String; Comp : Compiler) return String;
@@ -557,11 +557,11 @@ package body GprConfig.Knowledge is
                end if;
             end loop;
 
-            --  Constant value is not within a nested node.
+            --  Constant value is not within a nested node
             if Has_Static then
                External_Node :=
-                 (Typ        => Value_Constant,
-                  Value      => Get_String (Static_Value));
+                 (Typ   => Value_Constant,
+                  Value => Get_String (Static_Value));
                Append (Value, External_Node);
                Is_Done := False;
             end if;
@@ -1026,13 +1026,14 @@ package body GprConfig.Knowledge is
       Reader.Set_Feature (Validation_Feature, False);  --  Do not use DTD
 
       if Validate then
-         --  Load the XSD file used to validate the knowledge base.
+         --  Load the XSD file used to validate the knowledge base
 
          declare
             Filename : constant String :=
-              Format_Pathname
-                (Default_Knowledge_Base_Directory & "/gprconfig.xsd");
-            XSD    : File_Input;
+                         Format_Pathname
+                           (Default_Knowledge_Base_Directory
+                            & "/gprconfig.xsd");
+            XSD      : File_Input;
          begin
             Put_Verbose ("Parsing " & Filename);
             Open (Filename, XSD);
@@ -2382,8 +2383,8 @@ package body GprConfig.Knowledge is
                            Matches    => Matches);
                         Matched := Matches (0) /= No_Match;
                      else
-                        Matched := (Get_Name_String (Config.Executable) &
-                                    Exec_Suffix.all) = Simple_Name (Dir);
+                        Matched := (Get_Name_String (Config.Executable)
+                                    & Exec_Suffix.all) = Simple_Name (Dir);
                      end if;
 
                      if Matched then
@@ -2764,9 +2765,10 @@ package body GprConfig.Knowledge is
                    (Filter.Version_Re.all, Get_Name_String (Comp.Version))))
            and then (Filter.Runtime_Re = null
                      or else
-                       (Comp.Runtime /= No_Name and then
-                        Match (Filter.Runtime_Re.all,
-                               Get_Name_String (Comp.Runtime))))
+                       (Comp.Runtime /= No_Name
+                        and then Match
+                          (Filter.Runtime_Re.all,
+                           Get_Name_String (Comp.Runtime))))
            and then (Filter.Language_LC = No_Name
                      or else Filter.Language_LC = Comp.Language_LC)
          then
@@ -3240,7 +3242,7 @@ package body GprConfig.Knowledge is
          return;
       end if;
 
-      --  Create a new set.
+      --  Create a new set
       declare
          Set : Target_Lists.List;
       begin
