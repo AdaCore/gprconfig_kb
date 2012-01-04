@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                   Copyright (C) 2006-2011, AdaCore                       --
+--                   Copyright (C) 2006-2012, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -53,6 +53,9 @@ procedure GprConfig.Main is
 
    Selected_Targets_Set : Targets_Set_Id;
    --  Targets set id for the selected target
+
+   Opt_Validate : Boolean := False;
+   --  Whether we should validate the contents of the knowledge base
 
    use Compiler_Lists;
 
@@ -111,7 +114,7 @@ procedure GprConfig.Main is
 
    Valid_Switches : constant String :=
                       "-batch -config= -db: h o: v q -show-targets"
-                        & " -mi-show-compilers -target=";
+                      & " -validate -mi-show-compilers -target=";
 
    --------------
    -- Callback --
@@ -329,6 +332,8 @@ procedure GprConfig.Main is
       Put_Line (" --db dir : Parse dir as an additional knowledge base.");
       Put_Line (" --db-    : Do not load the standard knowledge base from:");
       Put_Line ("   " & Default_Knowledge_Base_Directory);
+      Put_Line (" --validate : Validate the contents of the knowledge base");
+      Put_Line ("            before loading.");
       Put_Line (" --config=language[,version[,runtime[,path[,name]]]]");
       Put_Line ("            Preselect a compiler.");
       Put_Line ("            Name is either one of the names of the blocks");
@@ -365,6 +370,9 @@ begin
                   Load_Standard_Base := False;
                end if;
 
+            elsif Full_Switch = "-validate" then
+               Opt_Validate := True;
+
             elsif Full_Switch = "-target" then
                Target_Specified := True;
 
@@ -400,7 +408,8 @@ begin
    end loop;
 
    if Load_Standard_Base then
-      Parse_Knowledge_Base (Base, Default_Knowledge_Base_Directory);
+      Parse_Knowledge_Base
+        (Base, Default_Knowledge_Base_Directory, Validate => Opt_Validate);
    end if;
 
    --  Now check all the other command line switches
@@ -440,7 +449,8 @@ begin
                if Parameter = "-" then
                   null;  --  already processed
                else
-                  Parse_Knowledge_Base (Base, Parameter);
+                  Parse_Knowledge_Base
+                    (Base, Parameter, Validate => Opt_Validate);
                end if;
             end if;
 
@@ -595,6 +605,9 @@ exception
       Put_Line
         (Standard_Error, "Generation of configuration files failed");
       Ada.Command_Line.Set_Exit_Status (3);
+   when E : Knowledge_Base_Validation_Error =>
+      Put_Verbose (Exception_Information (E));
+      Ada.Command_Line.Set_Exit_Status (4);
    when E : Invalid_Knowledge_Base =>
       Put_Line
         (Standard_Error, "Invalid setup of the gprconfig knowledge base");

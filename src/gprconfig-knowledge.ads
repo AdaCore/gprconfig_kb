@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---                   Copyright (C) 2006-2011, AdaCore                       --
+--                   Copyright (C) 2006-2012, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -56,16 +56,22 @@ package GprConfig.Knowledge is
    procedure Parse_Knowledge_Base
      (Base                : in out Knowledge_Base;
       Directory           : String;
-      Parse_Compiler_Info : Boolean := True);
+      Parse_Compiler_Info : Boolean := True;
+      Validate            : Boolean := False);
    --  Parse info from the knowledge base, and store it in memory.
    --  Only information relevant to the current host is parsed.
    --  If Parse_Compiler_Info is False, then only the information about
    --  target sets is parsed.
    --  This procedure will raise Invalid_Knowledge_Base if the base contains
    --  incorrect data.
+   --  If Validate is True, the contents of the knowledge base is first
+   --  validated with an XSD schema.
 
    Invalid_Knowledge_Base : exception;
    --  To be raised when an error occurred while parsing the knowledge base
+
+   Knowledge_Base_Validation_Error : exception;
+   --  Some files in the knowledge base are invalid.
 
    -----------------
    -- Target sets --

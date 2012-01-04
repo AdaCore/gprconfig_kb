@@ -145,6 +145,7 @@ install: install.data install.bin
 install.data: force
 	-${MKDIR} ${datadir}/gprconfig
 	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
+	${CP} share/gprconfig/gprconfig.xsd ${datadir}/gprconfig
 
 install.bin: force
 	-${MKDIR} ${bindir}

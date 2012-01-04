@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                   Copyright (C) 2006-2011, AdaCore                       --
+--                   Copyright (C) 2006-2012, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -39,7 +39,9 @@ with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with DOM.Core.Nodes;            use DOM.Core, DOM.Core.Nodes;
 with DOM.Core.Documents;
-with DOM.Readers;               use DOM.Readers;
+with Schema.Dom_Readers;        use Schema.Dom_Readers;
+with Schema.Schema_Readers;     use Schema.Schema_Readers;
+with Schema.Validators;         use Schema.Validators;
 with Input_Sources.File;        use Input_Sources.File;
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -499,9 +501,9 @@ package body GprConfig.Knowledge is
    procedure Parse_Knowledge_Base
      (Base                : in out Knowledge_Base;
       Directory           : String;
-      Parse_Compiler_Info : Boolean := True)
+      Parse_Compiler_Info : Boolean := True;
+      Validate            : Boolean := False)
    is
-
       procedure Parse_Compiler_Description
         (Base        : in out Knowledge_Base;
          File        : String;
@@ -1016,9 +1018,47 @@ package body GprConfig.Knowledge is
       File      : Directory_Entry_Type;
       File_Node : Node;
       N         : Node;
-      Reader    : Tree_Reader;
+      Reader    : Schema.Dom_Readers.Tree_Reader;
       Input     : File_Input;
+      Schema    : Schema_Reader;
+
    begin
+      if Current_Verbosity = High then
+         Standard.Schema.Set_Debug_Output (True);
+      end if;
+
+      Reader.Set_Feature (Schema_Validation_Feature, Validate);
+      Reader.Set_Feature (Validation_Feature, False);  --  Do not use DTD
+
+      if Validate then
+         --  Load the XSD file used to validate the knowledge base.
+
+         declare
+            Filename : constant String :=
+              Format_Pathname
+                (Default_Knowledge_Base_Directory & "/gprconfig.xsd");
+            XSD    : File_Input;
+         begin
+            Put_Verbose ("Parsing " & Filename);
+            Open (Filename, XSD);
+            Parse (Schema, XSD);
+            Close (XSD);
+            Reader.Set_Grammar (Get_Grammar (Schema));
+            Free (Schema);
+
+         exception
+            when Ada.Directories.Name_Error =>
+               Put_Line
+                 (Standard_Error,
+                  "Installation error: could not find the file " & Filename);
+               raise Knowledge_Base_Validation_Error;
+
+            when XML_Validation_Error =>
+               Put_Line (Standard_Error, Get_Error_Message (Schema));
+               raise Knowledge_Base_Validation_Error;
+         end;
+      end if;
+
       Put_Verbose ("Parsing knowledge base at " & Directory);
 
       Start_Search
@@ -1087,12 +1127,16 @@ package body GprConfig.Knowledge is
       when Ada.Directories.Name_Error =>
          Put_Verbose ("Directory not found: " & Directory);
 
-      when Invalid_Knowledge_Base =>
+      when Invalid_Knowledge_Base | Knowledge_Base_Validation_Error =>
          raise;
 
       when E : XML_Fatal_Error =>
          Put_Line (Standard_Error, Exception_Message (E));
          raise Invalid_Knowledge_Base;
+
+      when XML_Validation_Error =>
+         Put_Line (Standard_Error, Get_Error_Message (Reader));
+         raise Knowledge_Base_Validation_Error;
 
       when E : others =>
          Put_Line
