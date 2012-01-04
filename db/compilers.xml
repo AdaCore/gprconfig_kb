@@ -3,6 +3,7 @@
   <!--  Languages that require no compiler, but can be selected through
         -config -->
   <compiler_description>
+    <name>PRJFILE</name>
     <languages>Project File</languages>
   </compiler_description>
 
@@ -369,11 +370,11 @@
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
     </version>
+    <languages>Ada</languages>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </variable>
-    <languages>Ada</languages>
     <runtimes default="default,kernel,native">
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/adalib/</directory>
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/ada_source_path</directory>
