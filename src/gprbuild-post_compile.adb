@@ -95,18 +95,16 @@ package body Gprbuild.Post_Compile is
       procedure Write_List
         (File  : Text_IO.File_Type;
          Label : Library_Section;
-         List  : String_List_Id;
-         Count : in out Natural);
-      --  Write values in list into section Label in the given file. Count
-      --  is the numebr of already output items into this section. The label
-      --  will be output only if Count is 0 initially. Increments Count for
-      --  every new item output.
+         List  : String_List_Id);
+      --  Write values in list into section Label in the given file. Ouptut
+      --  Label if it is not the current section.
 
       procedure Write_Name_List
         (File  : Text_IO.File_Type;
          Label : Library_Section;
          List  : Name_List_Index);
-      --  Write name list values into the File, output Label first
+      --  Write name list values into the File, output Label first. Ouptut
+      --  Label if it is not the current section.
 
       --  Procedures to write specific sections of the exchange file
 
@@ -152,6 +150,8 @@ package body Gprbuild.Post_Compile is
       Disregard   : Boolean;
       Path_Found  : Boolean;
       Iter        : Source_Iterator;
+
+      Current_Section : Library_Section := No_Library_Section;
 
       -----------------
       -- Get_Objects --
@@ -550,8 +550,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_List
         (File  : Text_IO.File_Type;
          Label : Library_Section;
-         List  : String_List_Id;
-         Count : in out Natural)
+         List  : String_List_Id)
       is
          Current      : String_List_Id := List;
          Element      : String_Element;
@@ -563,13 +562,13 @@ package body Gprbuild.Post_Compile is
             Get_Name_String (Element.Value);
 
             if Name_Len /= 0 then
-               if Output_Label and then Count = 0 then
+               if Output_Label and then Current_Section /= Label then
                   Put_Line (File, Library_Label (Label));
                   Output_Label := False;
+                  Current_Section := Label;
                end if;
 
                Put_Line (File, Name_Buffer (1 .. Name_Len));
-               Count := Count + 1;
             end if;
 
             Current := Element.Next;
@@ -588,13 +587,18 @@ package body Gprbuild.Post_Compile is
          Current : Name_List_Index := List;
          Nam     : Name_Node;
       begin
-         Put_Line (File, Library_Label (Label));
+         if List /= No_Name_List then
+            if Current_Section /= Label then
+               Put_Line (File, Library_Label (Label));
+               Current_Section := Label;
+            end if;
 
-         while Current /= No_Name_List loop
-            Nam := Project_Tree.Shared.Name_Lists.Table (Current);
-            Put_Line (File, Get_Name_String (Nam.Name));
-            Current := Nam.Next;
-         end loop;
+            while Current /= No_Name_List loop
+               Nam := Project_Tree.Shared.Name_Lists.Table (Current);
+               Put_Line (File, Get_Name_String (Nam.Name));
+               Current := Nam.Next;
+            end loop;
+         end if;
       end Write_Name_List;
 
       --------------------------
@@ -729,8 +733,6 @@ package body Gprbuild.Post_Compile is
                                      Shared    => Project_Tree.Shared);
                      Switches : Variable_Value := Nil_Variable_Value;
 
-                     Count    : Natural := 0;
-
                   begin
                      if Defaults /= No_Array_Element then
                         Switches :=
@@ -743,7 +745,7 @@ package body Gprbuild.Post_Compile is
                         if not Switches.Default then
                            Write_List
                              (Exchange_File, Gprexch.Binding_Options,
-                              Switches.Values, Count);
+                              Switches.Values);
                         end if;
                      end if;
                   end;
@@ -777,7 +779,6 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Leading_Library_Option is
          Leading_Library_Options : Variable_Value := Nil_Variable_Value;
-         Count                   : Natural := 0;
       begin
          --  If attribute Leading_Library_Options was specified, add these
          --  additional options.
@@ -791,7 +792,7 @@ package body Gprbuild.Post_Compile is
             Write_List
               (Exchange_File,
                Gprexch.Leading_Library_Options,
-               Leading_Library_Options.Values, Count);
+               Leading_Library_Options.Values);
          end if;
       end Write_Leading_Library_Option;
 
@@ -801,7 +802,6 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Library_Option is
          Library_Options : Variable_Value := Nil_Variable_Value;
-         Count           : Natural := 0;
       begin
          --  If attribute Library_Options was specified, add these
          --  additional options.
@@ -814,7 +814,7 @@ package body Gprbuild.Post_Compile is
          if not Library_Options.Default then
             Write_List
               (Exchange_File,
-               Gprexch.Library_Options, Library_Options.Values, Count);
+               Gprexch.Library_Options, Library_Options.Values);
          end if;
 
          --  Likewise, if Library_Fully_Standalone_Options is defined and we
