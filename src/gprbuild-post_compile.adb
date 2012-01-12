@@ -619,11 +619,29 @@ package body Gprbuild.Post_Compile is
       --------------------------------------
 
       procedure Write_Shared_Lib_Minimum_Options is
-         List : constant Name_List_Index :=
-                  For_Project.Config.Shared_Lib_Min_Options;
+         Library_Options : Variable_Value := Nil_Variable_Value;
       begin
-         if List /= No_Name_List then
-            Write_Name_List (Exchange_File, Shared_Lib_Minimum_Options, List);
+         --  Output the minimal options to build a shared library (standard
+         --  or encapsulated).
+
+         if For_Project.Standalone_Library = Encapsulated then
+            Library_Options :=
+              Value_Of
+              (Name_Library_Encapsulated_Options,
+               For_Project.Decl.Attributes, Project_Tree.Shared);
+
+            if not Library_Options.Default then
+               Write_List
+                 (Exchange_File,
+                  Gprexch.Shared_Lib_Minimum_Options,
+                  Library_Options.Values);
+            end if;
+
+         else
+            Write_Name_List
+              (Exchange_File,
+               Shared_Lib_Minimum_Options,
+               For_Project.Config.Shared_Lib_Min_Options);
          end if;
       end Write_Shared_Lib_Minimum_Options;
 
@@ -815,22 +833,6 @@ package body Gprbuild.Post_Compile is
             Write_List
               (Exchange_File,
                Gprexch.Library_Options, Library_Options.Values);
-         end if;
-
-         --  Likewise, if Library_Fully_Standalone_Options is defined and we
-         --  are actually building such library add the corresponding options.
-
-         if For_Project.Standalone_Library = Encapsulated then
-            Library_Options :=
-              Value_Of
-                (Name_Library_Encapsulated_Options,
-                 For_Project.Decl.Attributes, Project_Tree.Shared);
-
-            if not Library_Options.Default then
-               Write_List
-                 (Exchange_File,
-                  Gprexch.Library_Options, Library_Options.Values, Count);
-            end if;
          end if;
       end Write_Library_Option;
 
