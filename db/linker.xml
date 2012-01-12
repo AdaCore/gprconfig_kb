@@ -392,7 +392,7 @@
    for Archive_Indexer use project'Archive_Indexer &amp; ("-c");
    for Shared_Library_Minimum_Switches use
          ("-dynamiclib", "-shared-libgcc");
-   for Library_Encapsulated_Options use ("-static-libgcc");
+   for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
 
    package Linker is
       for Map_File_Option         use "-Wl,-map,";
@@ -467,7 +467,7 @@
    for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
-   for Library_Encapsulated_Options use ("-static-libgcc");
+   for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
 
    package Linker is
       for Map_File_Option         use "-Wl,-Map,";
@@ -519,7 +519,8 @@
 
    for Shared_Library_Suffix use ".so";
    for Library_Auto_Init_Supported use "true";
-   for Library_Encapsulated_Options use ("-static-libgcc", "-mimpure-text");
+   for Library_Encapsulated_Options use
+      ("-shared", "-static-libgcc", "-mimpure-text");
    for Run_Path_Option  use ("-Wl,-z,origin,-R,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
@@ -540,7 +541,7 @@
    for Shared_Library_Minimum_Switches use ("-shared", "-shared-libgcc");
    for Library_Version_Switches use ("-Wl,-soname,");
    for Shared_Library_Suffix use ".dll";
-   for Library_Encapsulated_Options use ("-static-libgcc");
+   for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
    for Library_Auto_Init_Supported use "true";
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
 
