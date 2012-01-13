@@ -1675,6 +1675,13 @@ procedure Gprbuild.Main is
          Write_Eol;
          Write_Str ("           Do not check object files");
          Write_Eol;
+
+         Write_Str ("  ");
+         Write_Str (Restricted_To_Languages_Option);
+         Write_Str ("<list of languages>");
+         Write_Eol;
+         Write_Str ("           Restrict the languages of the sources");
+         Write_Eol;
          Write_Eol;
 
          Write_Str ("  ");
