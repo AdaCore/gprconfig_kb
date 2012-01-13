@@ -7,7 +7,7 @@
 @c                                                                            o
 @c                  G P R B U I L D   U S E R ' S   G U I D E                 o
 @c                                                                            o
-@c                      Copyright (C) 2007-2011, AdaCore                      o
+@c                      Copyright (C) 2007-2012, AdaCore                      o
 @c                                                                            o
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
@@ -626,6 +626,19 @@ package Builder of the main project:
   source info file exists but cannot be parsed successfully, the Project
   Manager will attempt to recreate it. If the Project Manager fails to create
   the source info file, a message is issued, but GPRbuild does not fail.
+
+@item @option{--restricted-to-languages=<list of language names>}
+
+  Restrict the sources to be compiled to one or several languages. Each
+  language name in the list is separated from the next by a comma, without any
+  space.
+
+  Example: @option{--restricted-to-languages=Ada,C}
+
+  When this switch is used, switches @option{-c}, @option{-b} and
+  @option{-l} are ignored. Only the compilation phase is performed and the
+  sources that are not in the list of restricted languages are not compiled,
+  including mains specified in package Builder of the main project.
 
 @item @option{-aP dir} (Add directory @file{dir} to project search path)
 
