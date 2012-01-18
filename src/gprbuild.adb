@@ -378,21 +378,24 @@ package body Gprbuild is
          if not Processed_Projects.Get (Project.Name) then
             Processed_Projects.Set (Project.Name, True);
 
-            --  Call Process_Project recursively for any imported project
-            --  except for aggregated libraries where imported projects are
-            --  just there for dependency.
             --  We first process the imported projects to guarantee that
-            --  we have a proper reverse order for the libraries.
+            --  We have a proper reverse order for the libraries. Do not add
+            --  library for encapsulated libraries dependencies except when
+            --  building the encapsulated library itself.
 
-            while Imported /= null loop
-               if Imported.Project /= No_Project then
-                  Process_Project
-                    (Imported.Project,
-                     Is_Aggregate => Project.Qualifier = Aggregate_Library);
-               end if;
+            if For_Project.Standalone_Library = Encapsulated
+              or else Project.Standalone_Library /= Encapsulated
+            then
+               while Imported /= null loop
+                  if Imported.Project /= No_Project then
+                     Process_Project
+                       (Imported.Project,
+                        Is_Aggregate => Project.Qualifier = Aggregate_Library);
+                  end if;
 
-               Imported := Imported.Next;
-            end loop;
+                  Imported := Imported.Next;
+               end loop;
+            end if;
 
             --  For an extending project, process the project being extended
 

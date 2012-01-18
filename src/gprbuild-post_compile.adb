@@ -1849,7 +1849,13 @@ package body Gprbuild.Post_Compile is
 
          if Roots = null then
             if Main_Source.Unit = No_Unit_Index then
-               Iter := For_Each_Source (Project_Tree);
+               if Main_Project.Qualifier = Aggregate_Library then
+                  Iter := For_Each_Source (Project_Tree);
+               else
+                  Iter := For_Each_Source
+                    (Project_Tree, Encapsulated_Libs => False);
+               end if;
+
                while Prj.Element (Iter) /= No_Source loop
                   Initialize_Source_Record (Prj.Element (Iter));
 
@@ -2730,16 +2736,20 @@ package body Gprbuild.Post_Compile is
             Proj_List := Main_Proj.All_Imported_Projects;
 
             while Proj_List /= null loop
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String
-                    (Proj_List.Project.Path.Display_Name));
+               if Main_Proj.Standalone_Library = Encapsulated
+                 or else not Proj_List.From_Encapsulated_Lib
+               then
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String
+                       (Proj_List.Project.Path.Display_Name));
 
-               Put_Line
-                 (Exchange_File,
-                  String
-                    (File_Stamp
-                       (Proj_List.Project.Path.Display_Name)));
+                  Put_Line
+                    (Exchange_File,
+                     String
+                       (File_Stamp
+                          (Proj_List.Project.Path.Display_Name)));
+               end if;
 
                Proj_List := Proj_List.Next;
             end loop;
