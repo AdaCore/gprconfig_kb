@@ -1829,8 +1829,7 @@ package body Gprbuild.Post_Compile is
                  or not Source.Project.Library
                  or Config.Kind = File_Based
                then
-                  Put_Line
-                    (Exchange_File, Get_Name_String (Source.Dep_Path));
+                  Put_Line (Exchange_File, Get_Name_String (Source.Dep_Path));
                   Dep_Files := True;
 
                elsif Source.Project.Standalone_Library = No then
@@ -2208,7 +2207,6 @@ package body Gprbuild.Post_Compile is
 
                      Next (Iter);
                   end loop Loop1;
-
                end if;
 
                --  Get each file from the queue and check its
