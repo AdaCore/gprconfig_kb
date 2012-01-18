@@ -160,10 +160,9 @@ package body Gprbuild.Post_Compile is
       procedure Get_Objects is
 
          procedure Process
-           (Proj             : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            S                : in out Boolean);
+           (Proj : Project_Id;
+            Tree : Project_Tree_Ref;
+            S    : in out Boolean);
          --  Get objects for corresponding project
 
          -------------
@@ -171,12 +170,11 @@ package body Gprbuild.Post_Compile is
          -------------
 
          procedure Process
-           (Proj             : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            S                : in out Boolean)
+           (Proj  : Project_Id;
+            Tree  : Project_Tree_Ref;
+            S     : in out Boolean)
          is
-            pragma Unreferenced (S, In_Aggregate_Lib);
+            pragma Unreferenced (S);
 
             Never : constant Time_Stamp_Type := (others => '9');
             --  A time stamp that is greater than any real one
@@ -244,10 +242,10 @@ package body Gprbuild.Post_Compile is
               (For_Project, Project_Tree, S, Include_Aggregated => False);
 
          else
-            Process (For_Project, Project_Tree, False, S);
+            Process (For_Project, Project_Tree, S);
 
             if For_Project.Extends /= null then
-               Process (For_Project.Extends, Project_Tree, False, S);
+               Process (For_Project.Extends, Project_Tree, S);
             end if;
          end if;
       end Get_Objects;
@@ -349,10 +347,9 @@ package body Gprbuild.Post_Compile is
       procedure Write_Compilers is
 
          procedure Compilers_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean);
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
          --  Write compilers for the given project
 
          Dummy     : Boolean := True;
@@ -363,12 +360,11 @@ package body Gprbuild.Post_Compile is
          -------------------
 
          procedure Compilers_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean)
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
          is
-            pragma Unreferenced (Tree, Dummy, In_Aggregate_Lib);
+            pragma Unreferenced (Tree, Dummy);
             Lang     : Language_Ptr := Project.Languages;
             Compiler : String_Access;
          begin
@@ -401,7 +397,7 @@ package body Gprbuild.Post_Compile is
       begin
          Put_Line (Exchange_File, Library_Label (Compilers));
 
-         Compilers_For (For_Project, Project_Tree, False, Dummy);
+         Compilers_For (For_Project, Project_Tree, Dummy);
 
          if For_Project.Qualifier = Aggregate_Library then
             For_Imported (For_Project, Project_Tree, Dummy);
@@ -415,10 +411,9 @@ package body Gprbuild.Post_Compile is
       procedure Write_Compiler_Leading_Switches is
 
          procedure Compiler_Leading_Switches_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean);
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
          --  Write compilers for the given project
 
          Dummy     : Boolean := True;
@@ -429,12 +424,11 @@ package body Gprbuild.Post_Compile is
          -----------------------------------
 
          procedure Compiler_Leading_Switches_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean)
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
          is
-            pragma Unreferenced (Tree, Dummy, In_Aggregate_Lib);
+            pragma Unreferenced (Tree, Dummy);
             Lang : Language_Ptr := Project.Languages;
             Indx : Name_List_Index;
             Node : Name_Node;
@@ -467,8 +461,7 @@ package body Gprbuild.Post_Compile is
       begin
          Put_Line (Exchange_File, Library_Label (Compiler_Leading_Switches));
 
-         Compiler_Leading_Switches_For
-           (For_Project, Project_Tree, False, Dummy);
+         Compiler_Leading_Switches_For (For_Project, Project_Tree, Dummy);
 
          if For_Project.Qualifier = Aggregate_Library then
             For_Imported (For_Project, Project_Tree, Dummy);
@@ -482,10 +475,9 @@ package body Gprbuild.Post_Compile is
       procedure Write_Compiler_Trailing_Switches is
 
          procedure Compiler_Trailing_Switches_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean);
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
          --  Write compilers for the given project
 
          Dummy     : Boolean := True;
@@ -496,12 +488,11 @@ package body Gprbuild.Post_Compile is
          ------------------------------------
 
          procedure Compiler_Trailing_Switches_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean)
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
          is
-            pragma Unreferenced (Tree, Dummy, In_Aggregate_Lib);
+            pragma Unreferenced (Tree, Dummy);
             Lang : Language_Ptr := Project.Languages;
             Indx : Name_List_Index;
             Node : Name_Node;
@@ -535,8 +526,7 @@ package body Gprbuild.Post_Compile is
          Put_Line
            (Exchange_File, Library_Label (Compiler_Trailing_Switches));
 
-         Compiler_Trailing_Switches_For
-           (For_Project, Project_Tree, False, Dummy);
+         Compiler_Trailing_Switches_For (For_Project, Project_Tree, Dummy);
 
          if For_Project.Qualifier = Aggregate_Library then
             For_Imported (For_Project, Project_Tree, Dummy);
@@ -667,10 +657,9 @@ package body Gprbuild.Post_Compile is
          use type Ada.Containers.Count_Type;
 
          procedure RTL_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean);
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
          --  Write runtime libraries for the given project
 
          Dummy     : Boolean := True;
@@ -681,12 +670,11 @@ package body Gprbuild.Post_Compile is
          -------------
 
          procedure RTL_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean)
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
          is
-            pragma Unreferenced (Tree, Dummy, In_Aggregate_Lib);
+            pragma Unreferenced (Tree, Dummy);
             List : Language_Ptr := Project.Languages;
          begin
             while List /= No_Language_Index loop
@@ -713,7 +701,7 @@ package body Gprbuild.Post_Compile is
            new For_Every_Project_Imported (Boolean, RTL_For);
 
       begin
-         RTL_For (For_Project, Project_Tree, False, Dummy);
+         RTL_For (For_Project, Project_Tree, Dummy);
 
          if For_Project.Qualifier = Aggregate_Library then
             For_Imported (For_Project, Project_Tree, Dummy);
@@ -922,10 +910,9 @@ package body Gprbuild.Post_Compile is
          use type Ada.Containers.Count_Type;
 
          procedure Toolchain_Version_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean);
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean);
          --  Write runtime libraries for the given project
 
          Dummy     : Boolean := True;
@@ -936,12 +923,11 @@ package body Gprbuild.Post_Compile is
          ---------------------------
 
          procedure Toolchain_Version_For
-           (Project          : Project_Id;
-            Tree             : Project_Tree_Ref;
-            In_Aggregate_Lib : Boolean;
-            Dummy            : in out Boolean)
+           (Project : Project_Id;
+            Tree    : Project_Tree_Ref;
+            Dummy   : in out Boolean)
          is
-            pragma Unreferenced (Tree, Dummy, In_Aggregate_Lib);
+            pragma Unreferenced (Tree, Dummy);
             List : Language_Ptr := Project.Languages;
          begin
             while List /= No_Language_Index loop
@@ -968,7 +954,7 @@ package body Gprbuild.Post_Compile is
            new For_Every_Project_Imported (Boolean, Toolchain_Version_For);
 
       begin
-         Toolchain_Version_For (For_Project, Project_Tree, False, Dummy);
+         Toolchain_Version_For (For_Project, Project_Tree, Dummy);
 
          if For_Project.Qualifier = Aggregate_Library then
             For_Imported (For_Project, Project_Tree, Dummy);

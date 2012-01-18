@@ -1072,10 +1072,9 @@ package body Gprbuild.Link is
       Linker_Lib_Name_Option : String_Access;
 
       procedure Recursive_Add
-        (Proj             : Project_Id;
-         Tree             : Project_Tree_Ref;
-         In_Aggregate_Lib : Boolean;
-         Dummy            : in out Boolean);
+        (Proj  : Project_Id;
+         Tree  : Project_Tree_Ref;
+         Dummy : in out Boolean);
       --  The recursive routine used to add linker options
 
       -------------------
@@ -1083,12 +1082,11 @@ package body Gprbuild.Link is
       -------------------
 
       procedure Recursive_Add
-        (Proj             : Project_Id;
-         Tree             : Project_Tree_Ref;
-         In_Aggregate_Lib : Boolean;
-         Dummy            : in out Boolean)
+        (Proj  : Project_Id;
+         Tree  : Project_Tree_Ref;
+         Dummy : in out Boolean)
       is
-         pragma Unreferenced (Dummy, In_Aggregate_Lib);
+         pragma Unreferenced (Dummy);
          Linker_Package : Package_Id;
          Options        : Variable_Value;
 
