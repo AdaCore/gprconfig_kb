@@ -272,6 +272,25 @@
    <!-- require specification of run-time for VxWorks 5 using GNAT for C -->
    <configuration>
      <compilers>
+       <compiler name="GCC" runtime="soft-float" />
+       <compiler name="GCC-WRS5" runtime="soft-float" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworks$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h",
+               "-msoft-float");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <!-- require specification of run-time for VxWorks 5 using GNAT for C -->
+   <configuration>
+     <compilers>
        <compiler name="GCC" runtime="default" />
        <compiler name="GCC-WRS5" />
        <compiler name="GCC-WRS5" runtime="default" />
