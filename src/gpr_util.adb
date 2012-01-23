@@ -69,8 +69,7 @@ package body Gpr_Util is
    -------------------------------
 
    function Binder_Exchange_File_Name
-     (Main_Base_Name : File_Name_Type; Prefix : Name_Id)
-      return String_Access
+     (Main_Base_Name : File_Name_Type; Prefix : Name_Id) return String_Access
    is
       File_Name : constant String := Get_Name_String (Main_Base_Name);
    begin
@@ -111,6 +110,10 @@ package body Gpr_Util is
          Last   : Natural := 0;
 
          procedure Add (C : Character);
+
+         ---------
+         -- Add --
+         ---------
 
          procedure Add (C : Character) is
          begin
@@ -158,8 +161,7 @@ package body Gpr_Util is
       end loop;
 
       if Format = GNU or else Format = GCC_GNU then
-         Status :=
-           Write (Resp_File, GNU_Footer'Address, GNU_Footer'Length);
+         Status := Write (Resp_File, GNU_Footer'Address, GNU_Footer'Length);
       end if;
 
       case Format is
@@ -169,8 +171,8 @@ package body Gpr_Util is
             Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
 
             declare
-               Arg      : constant String :=
-                 Modified_Argument (Get_Name_String (Name_2));
+               Arg : constant String :=
+                       Modified_Argument (Get_Name_String (Name_2));
 
             begin
                for J in Resp_File_Options'Range loop
@@ -205,15 +207,13 @@ package body Gpr_Util is
          for J in Other_Arguments'Range loop
             declare
                Arg : constant String :=
-                 Modified_Argument (Other_Arguments (J).all);
+                       Modified_Argument (Other_Arguments (J).all);
 
             begin
-               Status :=
-                 Write (Resp_File, Arg (1)'Address, Arg'Length);
+               Status := Write (Resp_File, Arg (1)'Address, Arg'Length);
             end;
 
-            Status :=
-              Write (Resp_File, ASCII.LF'Address, 1);
+            Status := Write (Resp_File, ASCII.LF'Address, 1);
          end loop;
 
          Close (Resp_File, Closing_Status);
@@ -259,7 +259,7 @@ package body Gpr_Util is
      (Tree         : Project_Tree_Ref;
       Root_Project : Project_Id)
    is
-      Data : constant Builder_Data_Access := Builder_Data (Tree);
+      Data    : constant Builder_Data_Access := Builder_Data (Tree);
       B_Index : Binding_Data;
 
       Language_Name      : Name_Id;
@@ -268,8 +268,8 @@ package body Gpr_Util is
       Binder_Prefix      : Name_Id;
       Language           : Language_Ptr;
 
-      Config        : Language_Config;
-      Project       : Project_List;
+      Config  : Language_Config;
+      Project : Project_List;
 
    begin
       --  Have we already processed this tree ?
@@ -939,9 +939,9 @@ package body Gpr_Util is
 
       function Process_ALI_Deps return Boolean is
          Text     : Text_Buffer_Ptr :=
-           Read_Library_Info_From_Full
-             (File_Name_Type (Source.Dep_Path),
-              Source.Dep_TS'Access);
+                      Read_Library_Info_From_Full
+                        (File_Name_Type (Source.Dep_Path),
+                         Source.Dep_TS'Access);
          Sfile    : File_Name_Type;
          Dep_Src  : Prj.Source_Id;
          Proj     : Project_Id;
