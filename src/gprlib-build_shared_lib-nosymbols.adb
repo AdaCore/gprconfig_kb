@@ -232,6 +232,15 @@ procedure Build_Shared_Lib is
 
       Last_Object := Last_Arg;
 
+      --  In Ofiles we can have at the end some libraries -lname, so ensure
+      --  that the object are only taken up to Last_Object_File_Index.
+
+      if Last_Object_File_Index > First_Object
+        and then Last_Object_File_Index < Last_Object
+      then
+         Last_Object := Last_Object_File_Index;
+      end if;
+
       --  Finally the library switches and the library options
 
       for J in 1 .. Library_Switches_Table.Last loop
