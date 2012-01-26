@@ -1361,6 +1361,7 @@ begin
          First_ALI               : File_Name_Type;
          T                       : Text_Buffer_Ptr;
          A                       : ALI.ALI_Id;
+         Obj_Index               : Natural;
          use ALI;
 
       begin
@@ -1473,7 +1474,7 @@ begin
             if Verbose_Mode then
                Put (Gnatbind_Path.all);
             else
-               Put (Gnatbind_Name.all);
+               Put (Base_Name (Gnatbind_Name.all));
             end if;
 
             for J in 1 .. Last_Bind_Option loop
@@ -1665,6 +1666,7 @@ begin
          Add (Binder_Generated_File, Bind_Options, Last_Bind_Option);
          Add (Output_Switch, Bind_Options, Last_Bind_Option);
          Add (Binder_Generated_Object, Bind_Options, Last_Bind_Option);
+         Obj_Index := Last_Bind_Option;
 
          if Relocatable and then PIC_Option /= null then
             Add (PIC_Option, Bind_Options, Last_Bind_Option);
@@ -1720,12 +1722,18 @@ begin
             if Verbose_Mode then
                Put (Compiler_Path.all);
             else
-               Put (Compiler_Name.all);
+               Put (Base_Name (Compiler_Name.all));
             end if;
 
             for J in 1 .. Last_Bind_Option loop
-               Put (" ");
-               Put (Bind_Options (J).all);
+               if not Verbose_Mode and then J > Obj_Index then
+                  Put (" ...");
+                  exit;
+
+               else
+                  Put (" ");
+                  Put (Bind_Options (J).all);
+               end if;
             end loop;
 
             New_Line;

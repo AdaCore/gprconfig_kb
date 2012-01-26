@@ -62,8 +62,49 @@ procedure Build_Shared_Lib is
 
       Driver   : String_Access;
 
+      Lib_Index : Natural := 0;
+
       Response_File_Name : Path_Name_Type := No_Path;
       Response_2         : Path_Name_Type := No_Path;
+
+      procedure Display_Linking_Command;
+      --  Display the linking command, depending on verbosity and quiet output
+
+      -----------------------------
+      -- Display_Linking_Command --
+      -----------------------------
+
+      procedure Display_Linking_Command is
+      begin
+         if not Opt.Quiet_Output then
+
+            if Opt.Verbose_Mode then
+               Write_Str (Driver.all);
+
+            else
+               Write_Str (Base_Name (Driver.all));
+            end if;
+
+            for J in 1 .. Last_Arg loop
+               if Opt.Verbose_Mode or else
+                 J <= Lib_Index or else
+                 J = First_Object
+               then
+                  Write_Char (' ');
+                  Write_Str  (Arguments (J).all);
+
+               elsif J > First_Object then
+                  Write_Str (" ...");
+                  exit;
+
+               elsif J = Lib_Index + 1 then
+                  Write_Str (" ...");
+               end if;
+            end loop;
+
+            Write_Eol;
+         end if;
+      end Display_Linking_Command;
 
    begin
       --  Get the executable to use, either the specified Driver, or "gcc"
@@ -102,6 +143,7 @@ procedure Build_Shared_Lib is
 
       Add_Arg (Out_Opt);
       Add_Arg (Out_V);
+      Lib_Index := Last_Arg;
 
       --  The options
 
@@ -251,18 +293,7 @@ procedure Build_Shared_Lib is
          Add_Arg (Library_Options_Table.Table (J));
       end loop;
 
-      --  Display command if not in quiet mode
-
-      if not Opt.Quiet_Output then
-         Write_Str (Driver.all);
-
-         for J in 1 .. Last_Arg loop
-            Write_Char (' ');
-            Write_Str  (Arguments (J).all);
-         end loop;
-
-         Write_Eol;
-      end if;
+      Display_Linking_Command;
 
       --  Check if a response file is needed
 
@@ -321,19 +352,7 @@ procedure Build_Shared_Lib is
             end if;
          end;
 
-         --  Display actual command if not in quiet mode
-
-         if not Opt.Quiet_Output then
-            Write_Str (Driver.all);
-
-            for J in 1 .. Last_Arg loop
-               Write_Char (' ');
-               Write_Str  (Arguments (J).all);
-            end loop;
-
-            Write_Eol;
-         end if;
-
+         Display_Linking_Command;
       end if;
 
       --  Finally spawn the library builder driver
