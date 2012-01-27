@@ -1,0 +1,16 @@
+==============================
+GPRBUILD 1.7 NEW FEATURES LIST
+==============================
+
+Copyright (C) 2012, AdaCore
+
+This file contains a complete list of new features in version 1.7 of GPRBUILD.
+A full description of all GPRBUILD features can be found in the GPRBUILD
+User's Guide.
+
+NF-17-L126-014 Verbosity when linking shared SALs (2012-01-26)
+
+  In default mode (not verbose and not quiet), the base name of gnatbind and
+  of the compiler when binding and compiling the binder generated file is now
+  output, instead of the full path names. Also, when the command line is long,
+  only the beginning is output.
