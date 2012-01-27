@@ -53,12 +53,12 @@ procedure Gprlib is
    --  Character between "-lgnat" or "-lgnarl" and the toolchain version.
    --  It is not a constant because it is changed to '_' on VMS.
 
-   Size : Natural;
+   Size           : Natural;
 
    Partial_Number : Natural;
 
-   First_Object : Natural;
-   Last_Object  : Natural;
+   First_Object   : Natural;
+   Last_Object    : Natural;
 
    Gcc_Name : constant String := "gcc";
 
