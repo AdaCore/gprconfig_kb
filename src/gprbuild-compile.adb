@@ -22,8 +22,8 @@
 with Ada.Strings.Fixed;         use Ada, Ada.Strings.Fixed;
 with Ada.Text_IO;               use Ada.Text_IO;
 
-with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 
 with ALI.Util;
 with Err_Vars;    use Err_Vars;
@@ -838,9 +838,9 @@ package body Gprbuild.Compile is
                declare
                   Cur       : Positive := 1;
                   Unit      : constant String :=
-                    Get_Name_String (Source.Unit.Name);
+                                Get_Name_String (Source.Unit.Name);
                   File_Name : constant String :=
-                    Get_Name_String (Source.Display_File);
+                                Get_Name_String (Source.Display_File);
 
                begin
                   while Cur < Name_Len loop
