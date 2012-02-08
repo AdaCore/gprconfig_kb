@@ -997,7 +997,7 @@ package body Gpr_Util is
             return True;
          end if;
 
-         if not Check_Source_Info_In_ALI (The_ALI, Tree) then
+         if Check_Source_Info_In_ALI (The_ALI, Tree) = No_Name then
             return True;
          end if;
 
