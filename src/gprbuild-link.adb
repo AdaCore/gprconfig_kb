@@ -2229,6 +2229,60 @@ package body Gprbuild.Link is
               (Min_Linker_Opts).Next;
          end loop;
 
+         --  Remove duplicate stack size setting coming from pragmas
+         --  Linker_Options or Link_With and linker switches ("-Xlinker
+         --  --stack=R,C" or "-Wl,--stack=R"). Only the first stack size
+         --  setting option should be taken into account, because the one in
+         --  the project file or on the command line will always be the first
+         --  one. And any subsequent stack setting option will overwrite the
+         --  previous one.
+
+         Clean_Link_Option_Set : declare
+            J        : Natural := Last_Object_Index + 1;
+            Stack_Op : Boolean := False;
+
+         begin
+            while J <= Last_Argument loop
+
+               --  Check for two switches "-Xlinker" followed by "--stack=..."
+
+               if Arguments (J).all = "-Xlinker"
+                 and then J < Last_Argument
+                 and then Arguments (J + 1)'Length > 8
+                 and then Arguments (J + 1) (1 .. 8) = "--stack="
+               then
+                  if Stack_Op then
+                     Arguments (J .. Last_Argument - 2) :=
+                       Arguments (J + 2 .. Last_Argument);
+                     Last_Argument := Last_Argument - 2;
+
+                  else
+                     Stack_Op := True;
+                  end if;
+               end if;
+
+               --  Check for single switch
+
+               if (Arguments (J)'Length > 17
+                   and then Arguments (J) (1 .. 17) = "-Xlinker --stack=")
+                 or else
+                  (Arguments (J)'Length > 12
+                   and then Arguments (J) (1 .. 12) = "-Wl,--stack=")
+               then
+                  if Stack_Op then
+                     Arguments (J .. Last_Argument - 1) :=
+                       Arguments (J + 1 .. Last_Argument);
+                     Last_Argument := Last_Argument - 1;
+
+                  else
+                     Stack_Op := True;
+                  end if;
+               end if;
+
+               J := J + 1;
+            end loop;
+         end Clean_Link_Option_Set;
+
          --  Look for the last switch -shared-libgcc or -static-libgcc.
          --  If -shared-libgcc was the last switch, then put in the
          --  run path option the shared libgcc dir.
