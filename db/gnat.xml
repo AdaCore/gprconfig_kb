@@ -228,7 +228,7 @@
       <target name="^.*mingw.*$" />
       <target name="^i.86-.*linux.*$" />
       <target name="^.*sunos.*$" />
-      <target name="^sparc.*solaris.*$"/>
+      <target name="^sparc-.*solaris.*$"/>
       <target name="^x86-solaris.*$"/>
       <target name="^.*darwin.*$" />
    </targets>
