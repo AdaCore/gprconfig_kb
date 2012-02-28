@@ -37,6 +37,7 @@
         <compiler name="G++-WRS6" language="C++" />
         <compiler name="G++-WRS6E500V2" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
+        <compiler name="G++-WRS6CERTE500V2" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
         <compiler name="G++-WRSMILSHAE" language="C++" />
         <compiler name="G++-WRSMILS-E500V2" language="C++" />
@@ -61,6 +62,7 @@
         <compiler name="G++-WRS6" language="C++" />
         <compiler name="G++-WRS6E500V2" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
+        <compiler name="G++-WRS6CERTE500V2" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
        <compiler name="GCC-MINGW32" language="C++" />
      </compilers>

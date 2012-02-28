@@ -73,6 +73,19 @@
     </target>
   </compiler_description>
 
+  <compiler_description>
+    <name>GCC-WRS6CERTE500V2</name>
+    <executable  prefix="1">cc(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-cert-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-cert-6.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>kernel,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
+    <target>e500v2-wrs-vxworks</target>
+  </compiler_description>
+
   <!-- VxWorks 5 -->
   <compiler_description>
     <name>GCC-WRS5</name>
@@ -279,6 +292,19 @@
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS6CERTE500V2</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-cert-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-cert-6.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
+    <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
   <!-- G++ for VxWorks 653 -->
