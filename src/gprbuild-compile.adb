@@ -2869,7 +2869,7 @@ package body Gprbuild.Compile is
                   when None     => null;
                   when Makefile =>
                      Compilation_OK := Phase_2_Makefile (Source_Identity);
-                  when ALI_File =>
+                  when ALI_File | ALI_Closure =>
                      Compilation_OK := Phase_2_ALI (Source_Identity);
                end case;
 

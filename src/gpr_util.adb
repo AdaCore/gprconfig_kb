@@ -37,6 +37,7 @@ with Scans;
 with Sinput.C;
 with Sinput.P;
 with Snames;   use Snames;
+with Table;
 with Tempdir;
 with Types;    use Types;
 
@@ -587,8 +588,9 @@ package body Gpr_Util is
       --  True if the project of the source is externally built
 
       function Process_Makefile_Deps
-        (Dep_Name, Obj_Dir : String) return Boolean;
-      function Process_ALI_Deps return Boolean;
+        (Dep_Name, Obj_Dir : String)    return Boolean;
+      function Process_ALI_Deps         return Boolean;
+      function Process_ALI_Closure_Deps return Boolean;
       --  Process the dependencies for the current source file for the various
       --  dependency modes.
       --  They return True if the file needs to be recompiled
@@ -1188,6 +1190,451 @@ package body Gpr_Util is
          return False;
       end Process_ALI_Deps;
 
+      package Processed_Sources is new Table.Table
+        (Table_Component_Type => Prj.Source_Id,
+         Table_Index_Type     => Positive,
+         Table_Low_Bound      => 1,
+         Table_Initial        => 10,
+         Table_Increment      => 100,
+         Table_Name           => "Gpr_Util.Processed_ALIs");
+
+      ------------------------------
+      -- Process_ALI_Closure_Deps --
+      ------------------------------
+
+      function Process_ALI_Closure_Deps return Boolean is
+         Text     : Text_Buffer_Ptr :=
+                      Read_Library_Info_From_Full
+                        (File_Name_Type (Source.Dep_Path),
+                         Source.Dep_TS'Access);
+         Sfile    : File_Name_Type;
+         Dep_Src  : Prj.Source_Id;
+         Proj     : Project_Id;
+
+         Found : Boolean := False;
+
+         Last_Processed_Source : Natural := 0;
+         Next_Source : Prj.Source_Id;
+         Insert_Source : Boolean := False;
+
+      begin
+         if Text = null then
+            if Verbose_Mode then
+               Write_Str ("    -> cannot read ");
+               Write_Line (Get_Name_String (Source.Dep_Path));
+            end if;
+
+            return True;
+         end if;
+
+         --  Read only the necessary lines of the ALI file
+
+         The_ALI :=
+           ALI.Scan_ALI
+             (File_Name_Type (Source.Dep_Path),
+              Text,
+              Ignore_ED     => False,
+              Err           => True,
+              Ignore_Errors => True,
+              Read_Lines    => "PDW");
+         Free (Text);
+
+         if The_ALI = ALI.No_ALI_Id then
+            if Verbose_Mode then
+               Write_Str ("    -> ");
+               Write_Str (Get_Name_String (Source.Dep_Path));
+               Write_Line (" is incorrectly formatted");
+            end if;
+
+            return True;
+         end if;
+
+         if ALI.ALIs.Table (The_ALI).Compile_Errors then
+            if Verbose_Mode then
+               Write_Line ("    -> last compilation had errors");
+            end if;
+
+            return True;
+         end if;
+
+         if Object_Check and then ALI.ALIs.Table (The_ALI).No_Object then
+            if Verbose_Mode then
+               Write_Line
+                 ("    -> no object generated during last compilation");
+            end if;
+
+            return True;
+         end if;
+
+         if Check_Source_Info_In_ALI (The_ALI, Tree) = No_Name then
+            return True;
+         end if;
+
+         Processed_Sources.Init;
+         Processed_Sources.Append (Source);
+         Last_Processed_Source := 2;
+
+         --  We need to check that the ALI file is in the correct object
+         --  directory. If it is in the object directory of a project
+         --  that is extended and it depends on a source that is in one
+         --  of its extending projects, then the ALI file is not in the
+         --  correct object directory.
+
+         ALI_Project := Source.Object_Project;
+
+         --  Count the extending projects
+
+         Num_Ext := 0;
+         Proj := ALI_Project;
+         loop
+            Proj := Proj.Extended_By;
+            exit when Proj = No_Project;
+            Num_Ext := Num_Ext + 1;
+         end loop;
+
+         declare
+            Projects : array (1 .. Num_Ext) of Project_Id;
+         begin
+            Proj := ALI_Project;
+            for J in Projects'Range loop
+               Proj := Proj.Extended_By;
+               Projects (J) := Proj;
+            end loop;
+
+            for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
+              ALI.ALIs.Table (The_ALI).Last_Sdep
+            loop
+               Sfile := ALI.Sdep.Table (D).Sfile;
+
+               if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
+                  Dep_Src := Source_Files_Htable.Get
+                    (Tree.Source_Files_HT, Sfile);
+                  Found := False;
+
+                  if Dep_Src /= No_Source then
+                     Insert_Source := True;
+                     for J in 1 .. Processed_Sources.Last loop
+                        if Processed_Sources.Table (J) = Dep_Src then
+                           Insert_Source := False;
+                           exit;
+                        end if;
+                     end loop;
+
+                     if Insert_Source then
+                        Processed_Sources.Append (Dep_Src);
+                     end if;
+                  end if;
+
+                  while Dep_Src /= No_Source loop
+                     Initialize_Source_Record (Dep_Src);
+
+                     if not Dep_Src.Locally_Removed
+                       and then Dep_Src.Unit /= No_Unit_Index
+                     then
+                        Found := True;
+
+                        if Opt.Minimal_Recompilation
+                          and then ALI.Sdep.Table (D).Stamp /=
+                          Dep_Src.Source_TS
+                        then
+                           --  If minimal recompilation is in action, replace
+                           --  the stamp of the source file in the table if
+                           --  checksums match.
+
+                           declare
+                              Source_Index : Source_File_Index;
+                              use Prj.Err;
+                              use Scans;
+
+                           begin
+                              Source_Index :=
+                                Sinput.C.Load_File
+                                  (Get_Name_String
+                                      (Dep_Src.Path.Display_Name));
+
+                              if Source_Index /= No_Source_File then
+
+                                 Scanner.Initialize_Scanner (Source_Index);
+
+                                 --  Make sure that the project language
+                                 --  reserved words are not recognized as
+                                 --  reserved words, but as identifiers.
+
+                                 Set_Name_Table_Byte (Name_Project,  0);
+                                 Set_Name_Table_Byte (Name_Extends,  0);
+                                 Set_Name_Table_Byte (Name_External, 0);
+
+                                 --  Scan the complete file to compute its
+                                 --  checksum.
+
+                                 loop
+                                    Scanner.Scan;
+                                    exit when Token = Tok_EOF;
+                                 end loop;
+
+                                 if Scans.Checksum =
+                                   ALI.Sdep.Table (D).Checksum
+                                 then
+                                    if Verbose_Mode then
+                                       Write_Str ("   ");
+                                       Write_Str
+                                         (Get_Name_String
+                                            (ALI.Sdep.Table (D).Sfile));
+                                       Write_Str (": up to date, " &
+                                                  "different timestamps " &
+                                                  "but same checksum");
+                                       Write_Eol;
+                                    end if;
+
+                                    ALI.Sdep.Table (D).Stamp :=
+                                      Dep_Src.Source_TS;
+                                 end if;
+                              end if;
+
+                              --  To avoid using too much memory, free the
+                              --  memory allocated.
+
+                              Sinput.P.Clear_Source_File_Table;
+                           end;
+                        end if;
+
+                        if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
+                           if Verbose_Mode then
+                              Write_Str
+                                ("   -> different time stamp for ");
+                              Write_Line (Get_Name_String (Sfile));
+
+                              if Debug.Debug_Flag_T then
+                                 Write_Str ("   in ALI file: ");
+                                 Write_Line
+                                   (String (ALI.Sdep.Table (D).Stamp));
+                                 Write_Str ("   actual file: ");
+                                 Write_Line (String (Dep_Src.Source_TS));
+                              end if;
+                           end if;
+
+                           return True;
+
+                        else
+                           for J in Projects'Range loop
+                              if Dep_Src.Project = Projects (J) then
+                                 if Verbose_Mode then
+                                    Write_Line
+                                      ("   -> wrong object directory");
+                                 end if;
+
+                                 return True;
+                              end if;
+                           end loop;
+
+                           exit;
+                        end if;
+                     end if;
+
+                     Dep_Src := Dep_Src.Next_With_File_Name;
+                  end loop;
+
+                  --  If the source was not found and the runtime source
+                  --  directory is defined, check if the file exists there, and
+                  --  if it does, check its timestamp.
+
+                  if not Found and then Runtime_Source_Dir /= No_Name then
+                     Get_Name_String (Runtime_Source_Dir);
+                     Add_Char_To_Name_Buffer (Directory_Separator);
+                     Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
+
+                     declare
+                        TS   : constant Time_Stamp_Type :=
+                          Source_File_Stamp (Name_Find);
+                     begin
+                        if TS /= Empty_Time_Stamp
+                          and then TS /= ALI.Sdep.Table (D).Stamp
+                        then
+                           if Verbose_Mode then
+                              Write_Str
+                                ("   -> different time stamp for ");
+                              Write_Line (Get_Name_String (Sfile));
+
+                              if Debug.Debug_Flag_T then
+                                 Write_Str ("   in ALI file: ");
+                                 Write_Line
+                                   (String (ALI.Sdep.Table (D).Stamp));
+                                 Write_Str ("   actual file: ");
+                                 Write_Line (String (TS));
+                              end if;
+                           end if;
+
+                           return True;
+                        end if;
+                     end;
+                  end if;
+               end if;
+            end loop;
+         end;
+
+         while Last_Processed_Source <= Processed_Sources.Last loop
+            Next_Source := Processed_Sources.Table (Last_Processed_Source);
+            Text :=
+              Read_Library_Info_From_Full
+                (File_Name_Type (Next_Source.Dep_Path),
+                 Next_Source.Dep_TS'Access);
+            Last_Processed_Source := Last_Processed_Source + 1;
+
+            if Text = null then
+               if Verbose_Mode then
+                  Write_Str ("    -> cannot read ");
+                  Write_Line (Get_Name_String (Next_Source.Dep_Path));
+               end if;
+
+               return True;
+            end if;
+
+            --  Read only the necessary lines of the ALI file
+
+            The_ALI :=
+              ALI.Scan_ALI
+                (File_Name_Type (Next_Source.Dep_Path),
+                 Text,
+                 Ignore_ED     => False,
+                 Err           => True,
+                 Ignore_Errors => True,
+                 Read_Lines    => "PDW");
+            Free (Text);
+
+            if The_ALI = ALI.No_ALI_Id then
+               if Verbose_Mode then
+                  Write_Str ("    -> ");
+                  Write_Str (Get_Name_String (Next_Source.Dep_Path));
+                  Write_Line (" is incorrectly formatted");
+               end if;
+
+               return True;
+            end if;
+
+            if ALI.ALIs.Table (The_ALI).Compile_Errors then
+               if Verbose_Mode then
+                  Write_Str  ("    -> last compilation of ");
+                  Write_Str  (Get_Name_String (Next_Source.Dep_Path));
+                  Write_Line (" had errors");
+               end if;
+
+               return True;
+            end if;
+
+            for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
+              ALI.ALIs.Table (The_ALI).Last_Sdep
+            loop
+               Sfile := ALI.Sdep.Table (D).Sfile;
+
+               if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
+                  Dep_Src := Source_Files_Htable.Get
+                    (Tree.Source_Files_HT, Sfile);
+                  Found := False;
+
+                  if Dep_Src /= No_Source then
+                     Insert_Source := True;
+                     for J in 1 .. Processed_Sources.Last loop
+                        if Processed_Sources.Table (J) = Dep_Src then
+                           Insert_Source := False;
+                           exit;
+                        end if;
+                     end loop;
+
+                     if Insert_Source then
+                        Processed_Sources.Append (Dep_Src);
+                     end if;
+                  end if;
+
+                  while Dep_Src /= No_Source loop
+                     Initialize_Source_Record (Dep_Src);
+
+                     if not Dep_Src.Locally_Removed
+                       and then Dep_Src.Unit /= No_Unit_Index
+                     then
+                        Found := True;
+
+                        if Opt.Minimal_Recompilation
+                          and then ALI.Sdep.Table (D).Stamp /=
+                          Dep_Src.Source_TS
+                        then
+                           --  If minimal recompilation is in action, replace
+                           --  the stamp of the source file in the table if
+                           --  checksums match.
+
+                           declare
+                              Source_Index : Source_File_Index;
+                              use Prj.Err;
+                              use Scans;
+
+                           begin
+                              Source_Index :=
+                                Sinput.C.Load_File
+                                  (Get_Name_String
+                                       (Dep_Src.Path.Display_Name));
+
+                              if Source_Index /= No_Source_File then
+
+                                 Scanner.Initialize_Scanner (Source_Index);
+
+                                 --  Make sure that the project language
+                                 --  reserved words are not recognized as
+                                 --  reserved words, but as identifiers.
+
+                                 Set_Name_Table_Byte (Name_Project,  0);
+                                 Set_Name_Table_Byte (Name_Extends,  0);
+                                 Set_Name_Table_Byte (Name_External, 0);
+
+                                 --  Scan the complete file to compute its
+                                 --  checksum.
+
+                                 loop
+                                    Scanner.Scan;
+                                    exit when Token = Tok_EOF;
+                                 end loop;
+
+                                 if Scans.Checksum =
+                                   ALI.Sdep.Table (D).Checksum
+                                 then
+                                    ALI.Sdep.Table (D).Stamp :=
+                                      Dep_Src.Source_TS;
+                                 end if;
+                              end if;
+
+                              --  To avoid using too much memory, free the
+                              --  memory allocated.
+
+                              Sinput.P.Clear_Source_File_Table;
+                           end;
+                        end if;
+
+                        if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
+                           if Verbose_Mode then
+                              Write_Str
+                                ("   -> different time stamp for ");
+                              Write_Line (Get_Name_String (Sfile));
+
+                              if Debug.Debug_Flag_T then
+                                 Write_Str ("   in ALI file: ");
+                                 Write_Line
+                                   (String (ALI.Sdep.Table (D).Stamp));
+                                 Write_Str ("   actual file: ");
+                                 Write_Line (String (Dep_Src.Source_TS));
+                              end if;
+                           end if;
+
+                           return True;
+                        end if;
+                     end if;
+
+                     Dep_Src := Dep_Src.Next_With_File_Name;
+                  end loop;
+               end if;
+            end loop;
+         end loop;
+
+         return False;
+      end Process_ALI_Closure_Deps;
+
       -------------
       -- Cleanup --
       -------------
@@ -1413,6 +1860,13 @@ package body Gpr_Util is
 
          when ALI_File =>
             if Process_ALI_Deps then
+               Must_Compile := True;
+               Cleanup;
+               return;
+            end if;
+
+         when ALI_Closure =>
+            if Process_ALI_Closure_Deps then
                Must_Compile := True;
                Cleanup;
                return;
