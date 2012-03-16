@@ -938,7 +938,6 @@ procedure Gprbuild.Main is
          elsif Arg = No_Object_Check_Switch then
             Forbidden_In_Package_Builder;
             Object_Checked := False;
-            Unique_Compile := True;
 
          elsif Arg = Create_Map_File_Switch then
             Map_File := new String'("");
