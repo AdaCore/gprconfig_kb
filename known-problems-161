@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-161-L315-021 gprbuild --no-object-check and main in project file
+
+  Problem:    When gprbuild is called with --no-object-check and no main on
+              the command line, and there is one or several mains specified in
+              the project file, all sources of the project files were compiled
+              instead of just the closure of the mains.
+
+  Status:     This was fixed in 1.7 on 2012-03-16
+
+  Workaround: Call gprbuild with a main on the command line.
+
 KP-161-L215-032 Remove duplicate stack size option on Windows
 
   Problem:    On Windows, a stack size option such as "-XLinker --stack="
