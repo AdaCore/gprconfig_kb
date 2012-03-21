@@ -1987,7 +1987,9 @@ package body Gprbuild.Compile is
 
             if Line (1 .. Last) /= Current then
                if Opt.Verbose_Mode then
-                  Write_Line ("    -> switches file has different line");
+                  Write_Line ("    -> switches file '"
+                              & Get_Name_String (Id.Switches_Path)
+                              & "' has different line");
                   Write_Line ("       " & Line (1 .. Last));
                   Write_Line ("       " & Current);
                end if;

@@ -1830,7 +1830,9 @@ package body Gpr_Util is
          --  The source needs to be recompiled if the source has been modified
          --  after the switches file has been created.
 
-         if Source.Switches_TS < Source.Source_TS then
+         if not Opt.Minimal_Recompilation
+           and then Source.Switches_TS < Source.Source_TS
+         then
             if Verbose_Mode then
                Write_Str  ("      -> switches file ");
                Write_Str  (Switches_Name.all);
