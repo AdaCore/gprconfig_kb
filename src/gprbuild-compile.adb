@@ -80,7 +80,11 @@ package body Gprbuild.Compile is
       Attribute_Name : Name_Id;
       Language       : Name_Id) return Path_Name_Type;
    --  Returns the name of a config file. Returns No_Name if there is no
-   --  config file
+   --  config file.
+
+   procedure Create_Object_Path_File (Project : Project_Id);
+   --  Create a temporary file that contains the list of object directories
+   --  in the correct order.
 
    procedure Record_Failure (Source : Source_Id);
    --  Record that compilation of a source failed
@@ -241,7 +245,7 @@ package body Gprbuild.Compile is
                     and then Opt.Check_Switches
                   then
                      --  First, update the time stamp of the object file
-                     --  that wil be written in the switches file.
+                     --  that will be written in the switches file.
 
                      Source.Id.Object_TS := File_Stamp (Source.Id.Object_Path);
 
@@ -914,6 +918,73 @@ package body Gprbuild.Compile is
       end if;
    end Create_Config_File;
 
+   -----------------------------
+   -- Create_Object_Path_File --
+   -----------------------------
+
+   procedure Create_Object_Path_File (Project : Project_Id) is
+      FD   : File_Descriptor;
+      Name : Path_Name_Type;
+
+      LF : constant String := (1 => ASCII.LF);
+
+      procedure Add
+        (Project : Project_Id;
+         In_Tree : Project_Tree_Ref;
+         Dummy   : in out Boolean);
+      --  Add the object directory of a project to the file
+
+      ---------
+      -- Add --
+      ---------
+
+      procedure Add
+        (Project : Project_Id;
+         In_Tree : Project_Tree_Ref;
+         Dummy   : in out Boolean)
+      is
+         pragma Unreferenced (Dummy, In_Tree);
+
+         Path : constant Path_Name_Type :=
+                  Get_Object_Directory
+                    (Project,
+                     Including_Libraries => True,
+                     Only_If_Ada         => False);
+
+         Last : Natural;
+
+         pragma Unreferenced (Last);
+
+      begin
+         if Path /= No_Path then
+            Get_Name_String (Path);
+            Last := Write (FD, Name_Buffer (1)'Address, Name_Len);
+            Last := Write (FD, LF (1)'Address, 1);
+         end if;
+
+         Dummy := True;
+      end Add;
+
+      procedure For_All_Projects is
+        new For_Every_Project_Imported (Boolean, Add);
+
+      Status : Boolean := False;
+
+   begin
+      Tempdir.Create_Temp_File (FD, Name);
+      Project.Object_Path_File := Name;
+
+      For_All_Projects
+        (Project, Project_Tree, Status, Include_Aggregated => True);
+
+      Close (FD, Status);
+
+      if not Status then
+         null;
+      end if;
+
+   end Create_Object_Path_File;
+
    ----------------------
    -- Recursive_Import --
    ----------------------
@@ -1139,6 +1210,11 @@ package body Gprbuild.Compile is
       procedure Add_Object_File_Switches (Id : Source_Id);
       --  If there are switches to specify the name of the object file, add
       --  them.
+
+      procedure Add_Object_Path_Switches (Id : Source_Id);
+      --  If attribute Compiler'Object_Path_Switches has been specified, create
+      --  the temporary object path file, if not already done, and add the
+      --  switch(es) to the invocation of the compiler.
 
       procedure Add_Config_File_Switches
         (Id             : Source_Id;
@@ -2149,6 +2225,42 @@ package body Gprbuild.Compile is
          end if;
       end Add_Object_File_Switches;
 
+      ------------------------------'
+      -- Add_Object_Path_Switches --
+      ------------------------------
+
+      procedure Add_Object_Path_Switches (Id : Source_Id) is
+         List : Name_List_Index := Id.Language.Config.Object_Path_Switches;
+         Node : Name_Node;
+
+      begin
+         if List /= No_Name_List then
+            if Id.Project.Object_Path_File = No_Path then
+               Create_Object_Path_File (Id.Project);
+            end if;
+
+            while List /= No_Name_List loop
+               Node := Project_Tree.Shared.Name_Lists.Table (List);
+               exit when Node.Next = No_Name_List;
+
+               Add_Option
+                 (Node.Name,
+                  To      => Compilation_Options,
+                  Display => Opt.Verbose_Mode);
+               List := Node.Next;
+            end loop;
+
+            Get_Name_String (Node.Name);
+            Add_Str_To_Name_Buffer
+              (Get_Name_String (Id.Project.Object_Path_File));
+
+            Add_Option
+              (Name_Buffer (1 .. Name_Len),
+               To      => Compilation_Options,
+               Display => Opt.Verbose_Mode);
+         end if;
+      end Add_Object_Path_Switches;
+
       ------------------------------
       -- Add_Config_File_Switches --
       ------------------------------
@@ -2783,6 +2895,7 @@ package body Gprbuild.Compile is
                Add_Name_Of_Source_Switches (Id);
                Add_Object_File_Switches (Id);
                Add_Multi_Unit_Switches (Id);
+               Add_Object_Path_Switches (Id);
 
                Spawn_Compiler_And_Register
                  (Source                 => Source,
