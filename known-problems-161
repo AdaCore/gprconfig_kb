@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-161-L321-006 Extra recompilation when using gprbuild -s -m
+
+  Problem:    When using both of these switches, and you change the timestamp
+              (or the comments, but not the code) of a source file, gprbuild
+              will still recompile the source because the file that contains
+              the list of switches is older than the source now.
+
+  Status:     This was fixed in 1.7 on 2012-03-21
+
+  Workaround: Use only -m.
+
 KP-161-L315-021 gprbuild --no-object-check and main in project file
 
   Problem:    When gprbuild is called with --no-object-check and no main on
