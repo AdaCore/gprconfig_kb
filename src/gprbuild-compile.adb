@@ -1729,23 +1729,26 @@ package body Gprbuild.Compile is
                   for K in ALI.Units.Table (J).First_With ..
                     ALI.Units.Table (J).Last_With
                   loop
-                     Sfile := ALI.Withs.Table (K).Sfile;
+                     if not
+                       ALI.Withs.Table (K).Implicit_With_From_Instantiation
+                     then
+                        Sfile := ALI.Withs.Table (K).Sfile;
 
-                     --  Skip generics
+                        --  Skip generics
 
-                     if Sfile /= No_File then
+                        if Sfile /= No_File then
 
-                        --  Look for this source
+                           --  Look for this source
 
-                        Afile := ALI.Withs.Table (K).Afile;
-                        Source_2 := Source_Files_Htable.Get
-                          (Src_Data.Tree.Source_Files_HT, Sfile);
+                           Afile := ALI.Withs.Table (K).Afile;
+                           Source_2 := Source_Files_Htable.Get
+                             (Src_Data.Tree.Source_Files_HT, Sfile);
 
-                        while Source_2 /= No_Source loop
-                           if Is_Compilable (Source_2)
-                             and then  Source_2.Dep_Name = Afile
-                           then
-                              case Source_2.Kind is
+                           while Source_2 /= No_Source loop
+                              if Is_Compilable (Source_2)
+                                and then  Source_2.Dep_Name = Afile
+                              then
+                                 case Source_2.Kind is
                                  when Spec => null;
 
                                  when Impl =>
@@ -1755,75 +1758,79 @@ package body Gprbuild.Compile is
 
                                  when Sep =>
                                     Source_2 := No_Source;
-                              end case;
+                                 end case;
 
-                              exit;
-                           end if;
+                                 exit;
+                              end if;
 
-                           Source_2 := Source_2.Next_With_File_Name;
-                        end loop;
+                              Source_2 := Source_2.Next_With_File_Name;
+                           end loop;
 
-                        --  If it is the source of a project that is not the
-                        --  project of the source just compiled, check if it is
-                        --  allowed to be imported.
+                           --  If it is the source of a project that is not the
+                           --  project of the source just compiled, check if it
+                           --  is allowed to be imported.
 
-                        if Source_2 /= No_Source then
-                           if not Project_Extends
+                           if Source_2 /= No_Source then
+                              if not Project_Extends
                                 (Src_Data.Id.Project, Source_2.Project)
-                               and then
-                                not Project_Extends
-                                 (Source_2.Project, Src_Data.Id.Project)
-                           then
-                              if not Indirect_Imports
-                                and then not Directly_Imports
-                                  (Src_Data.Id.Project, Source_2.Project)
+                                and then
+                                  not Project_Extends
+                                    (Source_2.Project, Src_Data.Id.Project)
                               then
-                                 --  It is in a project that is not directly
-                                 --  imported. Report an error and
-                                 --  invalidate the compilation.
+                                 if not Indirect_Imports
+                                   and then not Directly_Imports
+                                     (Src_Data.Id.Project, Source_2.Project)
+                                 then
+                                    --  It is in a project that is not directly
+                                    --  imported. Report an error and
+                                    --  invalidate the compilation.
 
-                                 Write_Str ("Unit """);
-                                 Write_Str
-                                   (Get_Name_String (Src_Data.Id.Unit.Name));
-                                 Write_Str (""" cannot import unit """);
-                                 Write_Str
-                                   (Get_Name_String (Source_2.Unit.Name));
-                                 Write_Line (""":");
+                                    Write_Str ("Unit """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Src_Data.Id.Unit.Name));
+                                    Write_Str (""" cannot import unit """);
+                                    Write_Str
+                                      (Get_Name_String (Source_2.Unit.Name));
+                                    Write_Line (""":");
 
-                                 Write_Str ("  """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Src_Data.Id.Project.Display_Name));
-                                 Write_Str
-                                   (""" does not directly import project """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Source_2.Project.Display_Name));
-                                 Write_Line ("""");
+                                    Write_Str ("  """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Src_Data.Id.Project.Display_Name));
+                                    Write_Str
+                                      (""" does not directly" &
+                                       " import project """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Source_2.Project.Display_Name));
+                                    Write_Line ("""");
 
-                                 Compilation_OK := False;
+                                    Compilation_OK := False;
 
-                              elsif not Source_2.In_Interfaces then
-                                 --  It is not an interface of its project.
-                                 --  Report an error and invalidate the
-                                 --  compilation.
+                                 elsif not Source_2.In_Interfaces then
+                                    --  It is not an interface of its project.
+                                    --  Report an error and invalidate the
+                                    --  compilation.
 
-                                 Write_Str ("Unit """);
-                                 Write_Str
-                                   (Get_Name_String (Src_Data.Id.Unit.Name));
-                                 Write_Str (""" cannot import unit """);
-                                 Write_Str
-                                   (Get_Name_String (Source_2.Unit.Name));
-                                 Write_Line (""":");
+                                    Write_Str ("Unit """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Src_Data.Id.Unit.Name));
+                                    Write_Str (""" cannot import unit """);
+                                    Write_Str
+                                      (Get_Name_String (Source_2.Unit.Name));
+                                    Write_Line (""":");
 
-                                 Write_Str
-                                   ("  it is not part of the " &
-                                    "interfaces of its project """);
-                                 Write_Str
-                                   (Get_Name_String
-                                      (Source_2.Project.Display_Name));
-                                 Write_Line ("""");
-                                 Compilation_OK := False;
+                                    Write_Str
+                                      ("  it is not part of the " &
+                                       "interfaces of its project """);
+                                    Write_Str
+                                      (Get_Name_String
+                                         (Source_2.Project.Display_Name));
+                                    Write_Line ("""");
+                                    Compilation_OK := False;
+                                 end if;
                               end if;
                            end if;
                         end if;
