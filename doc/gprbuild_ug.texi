@@ -1863,7 +1863,8 @@ of the @code{<directory>} and @code{<external>} nodes.
   <external>gcc -v</external>@NL{}
   <grep regexp="^gcc version (\S+)" group="1" />@NL{}
   </version>}
-@item @code{<directory group="0">regexp</directory>}
+
+@item @code{<directory group="0" contents="">regexp</directory>}
 
   If the contents of the node is a @code{<directory}> child, this
   indicates that @value{gprconfig} should find all the files matching the
@@ -1878,8 +1879,16 @@ of the @code{<directory>} and @code{<external>} nodes.
 
   @var{regexp} can be any valid regular expression. This will only match
   a directory or file name, not a subdirectory. Remember to quote special
-  characters,
-  including ``.'', if you do not mean to use a regexp.
+  characters, including ``.'', if you do not mean to use a regexp.
+
+  The optional attribute @var{contents} can be used to indicate that the
+  contents of the file should be read. The first line that matches the regular
+  expression given by @var{contents} will be used as a file path instead of
+  the file matched by @var{regexp}. This is in general used on platforms that
+  do not have symbolic links, and a file is used instead of a symbolic link.
+  In general, this will work better than @var{group} specifies a string rather
+  than a parenthesis group, since the latter will match the path matched by
+  @var{regexp}, not the one read in the file.
 
   For instance, finding the list of supported runtimes for the GNAT compiler
   is done with:

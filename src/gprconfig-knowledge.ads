@@ -404,6 +404,7 @@ private
                Directory       : Namet.Name_Id;
                Directory_Group : Integer;
                Dir_If_Match    : Namet.Name_Id;
+               Contents        : Pattern_Matcher_Access;
             when Value_Grep       =>
                Regexp_Re       : Pattern_Matcher_Access;
                Group           : Natural;

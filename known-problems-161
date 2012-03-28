@@ -43,3 +43,12 @@ KP-161-L215-032 Remove duplicate stack size option on Windows
 
   Workaround: Make sure that the default stack size option is sufficient
               for the execution of the program.
+
+KP-161-KC01-033 gprconfig: duplicate runtimes detected on Windows
+
+  Problem:    On Windows, gprconfig will sometimes report the "default" runtime
+              multiple times for a given Ada compiler.
+
+  Status:     This was fixed in 1.7 on 2012-03-28
+
+  Workaround: Selecting any of the lines has the same effect.
