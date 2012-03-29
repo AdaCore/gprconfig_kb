@@ -201,6 +201,7 @@
      <compilers>
        <compiler name="GCC" language="C" />
        <compiler name="GCC-WRS653" language="C" />
+       <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
        <compiler name="GCC-WRSMILS-E500V2" language="C" />
      </compilers>
@@ -332,6 +333,7 @@
    <configuration>
      <compilers>
         <compiler name="G++-WRS653" language="C++" />
+        <compiler name="G++-WRS653-E500V2" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
         <compiler name="G++-WRSMILS-E500V2" language="C++" />
      </compilers>

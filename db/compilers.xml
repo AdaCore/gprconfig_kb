@@ -105,6 +105,19 @@
     </target>
   </compiler_description>
 
+  <compiler_description>
+    <name>GCC-WRS653-E500V2</name>
+    <executable prefix="1">cc(pentium|ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
+    <target>e500v2-wrs-vxworksae</target>
+  </compiler_description>
+
   <!-- VxWorks MILS -->
   <compiler_description>
     <name>GCC-WRSMILS</name>
@@ -285,6 +298,20 @@
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <!-- G++ for VxWorks 653 -->
+  <compiler_description>
+    <name>G++-WRS653-E500V2</name>
+    <executable prefix="1">c\+\+(pentium|ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
+    <target>e500v2-wrs-vxworksae</target>
   </compiler_description>
 
   <!-- G++ for VxWorks MILS -->
