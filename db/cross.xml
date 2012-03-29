@@ -213,7 +213,8 @@
    package Compiler is
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/vThreads/h",
+        &amp; ("-DVTHREADS",
+               "-I" &amp; Wind_Base &amp; "/target/vThreads/h",
                "-I" &amp; Wind_Base &amp; "/target/val/h");
    end Compiler;
      </config>
@@ -345,7 +346,8 @@
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/vThreads/h",
+        &amp; ("-DVTHREADS",
+               "-I" &amp; Wind_Base &amp; "/target/vThreads/h",
                "-I" &amp; Wind_Base &amp; "/target/val/h");
    end Compiler;
      </config>
