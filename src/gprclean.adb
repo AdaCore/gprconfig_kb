@@ -43,6 +43,11 @@ package body Gprclean is
    -- Other local subprograms --
    -----------------------------
 
+   function Object_Artifact
+     (Object_File_Name   : File_Name_Type;
+      Artifact_Extension : Name_Id)
+      return String;
+
    procedure Clean_Archive (Project : Project_Id);
    --  Delete a global archive and its dependency file, if they exist
 
@@ -68,6 +73,26 @@ package body Gprclean is
    --  Returns either Project, if it is not extended by another project, or
    --  the project that extends Project, directly or indirectly, and that is
    --  not itself extended. Returns No_Project if Project is No_Project.
+
+   function Object_Artifact
+     (Object_File_Name   : File_Name_Type;
+      Artifact_Extension : Name_Id)
+     return String
+   is
+      Object : constant String := Get_Name_String (Object_File_Name);
+      Last   : Natural := Object'Last;
+
+   begin
+      while Last > 0 and then Object (Last) /= '.' loop
+         Last := Last - 1;
+      end loop;
+
+      if Last = 0 then
+         Last := Object'Last + 1;
+      end if;
+
+      return Object (1 .. Last - 1) & Get_Name_String (Artifact_Extension);
+   end Object_Artifact;
 
    -------------------
    -- Clean_Archive --
@@ -502,6 +527,10 @@ package body Gprclean is
       Source_Id   : Prj.Source_Id;
 
       Partial_Number : Natural;
+
+      List : Name_List_Index := No_Name_List;
+      Node : Name_Node;
+
    begin
       --  Check that we don't specify executable on the command line for
       --  a main library project.
@@ -584,8 +613,9 @@ package body Gprclean is
 
                Project2 := Project;
                while Project2 /= No_Project loop
-                  --  Delete the object files and the dependency files if they
-                  --  exist.
+                  --  Delete the object files, the dependency files, the
+                  --  switches files if they exist. Also additional artifacts
+                  --  if they are any.
 
                   Iter := For_Each_Source (Project_Tree, Project2);
                   loop
@@ -597,6 +627,26 @@ package body Gprclean is
                          (Get_Name_String (Source_Id.Object))
                      then
                         Delete (Obj_Dir, Get_Name_String (Source_Id.Object));
+
+                        --  Clean object artifacts, if any
+
+                        List :=
+                          Source_Id.Language.Config.Clean_Object_Artifacts;
+                        while List /= No_Name_List loop
+                           Node := Project_Tree.Shared.Name_Lists.Table (List);
+
+                           declare
+                              Artifact : constant String :=
+                                Object_Artifact (Source_Id.Object, Node.Name);
+
+                           begin
+                              if Is_Regular_File (Artifact) then
+                                 Delete (Obj_Dir, Artifact);
+                              end if;
+                           end;
+
+                           List := Node.Next;
+                        end loop;
                      end if;
 
                      if Source_Id.Dep_Name /= No_File
@@ -612,6 +662,25 @@ package body Gprclean is
                      then
                         Delete (Obj_Dir, Get_Name_String (Source_Id.Switches));
                      end if;
+
+                     --  Clean source artifacts, if any
+
+                     List := Source_Id.Language.Config.Clean_Source_Artifacts;
+                     while List /= No_Name_List loop
+                        Node := Project_Tree.Shared.Name_Lists.Table (List);
+
+                        declare
+                           Artifact : constant String :=
+                             Get_Name_String (Source_Id.File) &
+                             Get_Name_String (Node.Name);
+                        begin
+                           if Is_Regular_File (Artifact) then
+                              Delete (Obj_Dir, Artifact);
+                           end if;
+                        end;
+
+                        List := Node.Next;
+                     end loop;
 
                      Next (Iter);
                   end loop;

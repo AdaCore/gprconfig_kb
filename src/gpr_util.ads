@@ -113,6 +113,7 @@ package Gpr_Util is
    Compiler_String : aliased String := "compiler";
    Binder_String   : aliased String := "binder";
    Linker_String   : aliased String := "linker";
+   Clean_String    : aliased String := "clean";
    --  Name of packages to be checked when parsing/processing project files
 
    List_Of_Packages : aliased String_List :=
@@ -120,7 +121,8 @@ package Gpr_Util is
                          Builder_String'Access,
                          Compiler_String'Access,
                          Binder_String'Access,
-                         Linker_String'Access);
+                         Linker_String'Access,
+                         Clean_String'Access);
    Packages_To_Check : constant String_List_Access := List_Of_Packages'Access;
    --  List of the packages to be checked when parsing/processing project files
 
