@@ -276,7 +276,7 @@
     <executable prefix="1">c\+\+(pentium|ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks653[0-9.]*).*" group="1"></grep>
+      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
       <must_match>vxworks653.*</must_match>
     </version>
     <languages>C++</languages>
