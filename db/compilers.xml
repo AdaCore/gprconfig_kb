@@ -91,18 +91,28 @@
   <!-- VxWorks 653 -->
   <compiler_description>
     <name>GCC-WRS653</name>
-    <executable prefix="1">cc(pentium|ppc)</executable>
+    <executable prefix="1">cc(ppc)</executable>
     <version>
-      <external>cc${PREFIX} -v</external>
-      <grep regexp=".*(vxworksae).*" group="1"></grep>
-      <must_match>vxworksae</must_match>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653*</must_match>
     </version>
     <languages>C</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>
-      <external>cc${PREFIX} -dumpmachine</external>
-      <grep regexp="[^\r\n]+"></grep>
-    </target>
+    <target>powerpc-wrs-vxworksae</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>GCC-WRS653-E500v2</name>
+    <executable prefix="1">cc(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
+    <target>e500v2-wrs-vxworksae</target>
   </compiler_description>
 
   <compiler_description>
@@ -286,7 +296,7 @@
   <!-- G++ for VxWorks 653 -->
   <compiler_description>
     <name>G++-WRS653</name>
-    <executable prefix="1">c\+\+(pentium|ppc)</executable>
+    <executable prefix="1">c\+\+(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
@@ -294,10 +304,20 @@
     </version>
     <languages>C++</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>
-      <external>c++${PREFIX} -dumpmachine</external>
-      <grep regexp="[^\r\n]+"></grep>
-    </target>
+    <target>powerpc-wrs-vxworksae</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS653-E500v2</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
+    <target>e500v2-wrs-vxworksae</target>
   </compiler_description>
 
   <!-- G++ for VxWorks 653 -->
