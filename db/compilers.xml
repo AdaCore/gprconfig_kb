@@ -107,7 +107,7 @@
 
   <compiler_description>
     <name>GCC-WRS653-E500V2</name>
-    <executable prefix="1">cc(pentium|ppc)</executable>
+    <executable prefix="1">cc(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
@@ -303,7 +303,7 @@
   <!-- G++ for VxWorks 653 -->
   <compiler_description>
     <name>G++-WRS653-E500V2</name>
-    <executable prefix="1">c\+\+(pentium|ppc)</executable>
+    <executable prefix="1">c\+\+(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
