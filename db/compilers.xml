@@ -103,7 +103,7 @@
   </compiler_description>
 
   <compiler_description>
-    <name>GCC-WRS653-E500v2</name>
+    <name>GCC-WRS653-E500V2</name>
     <executable prefix="1">cc(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
@@ -295,7 +295,7 @@
   </compiler_description>
 
   <compiler_description>
-    <name>G++-WRS653-E500v2</name>
+    <name>G++-WRS653-E500V2</name>
     <executable prefix="1">c\+\+(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
