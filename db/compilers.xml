@@ -95,7 +95,7 @@
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks653*</must_match>
+      <must_match>vxworks653.*</must_match>
     </version>
     <languages>C</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
@@ -108,7 +108,7 @@
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks653*</must_match>
+      <must_match>vxworks653.*</must_match>
     </version>
     <languages>C</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
@@ -287,7 +287,7 @@
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks653*</must_match>
+      <must_match>vxworks653.*</must_match>
     </version>
     <languages>C++</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
@@ -300,7 +300,7 @@
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks653*</must_match>
+      <must_match>vxworks653.*</must_match>
     </version>
     <languages>C++</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
