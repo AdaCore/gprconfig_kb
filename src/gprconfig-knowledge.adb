@@ -3528,9 +3528,7 @@ package body GprConfig.Knowledge is
               and then Filter_Match (Base, Comp => Comp, Filter => El.all)
             then
                Ncomp := new Compiler'(Comp);
-               if El.Runtime_Dir /= No_Name
-                 and then Get_Name_String (Comp.Runtime) = "default"
-               then
+               if El.Runtime_Dir /= No_Name then
                   Ncomp.Runtime_Dir := El.Runtime_Dir;
                   Ncomp.Runtime := No_Name;
                end if;
