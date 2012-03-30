@@ -25,6 +25,11 @@
    package Compiler is
       for Driver              ("C") use "${PATH(c)}${PREFIX(c)}gcc";
    end Compiler;
+
+   package Clean is
+      for Source_Artifact_Extensions ("C")   use (".gli");
+      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno");
+   end Clean;
      </config>
    </configuration>
 
@@ -36,6 +41,11 @@
    package Compiler is
       for Driver              ("C") use "${PATH(c)}gcc${PREFIX(c)}";
    end Compiler;
+
+   package Clean is
+      for Source_Artifact_Extensions ("C")   use (".gli");
+      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno");
+   end Clean;
      </config>
    </configuration>
 

@@ -96,6 +96,11 @@
           "${GPRCONFIG_PREFIX}libexec/gprbuild/gprbind";
    end Binder;
 
+   package Clean is
+      for Source_Artifact_Extensions ("Ada") use (".dg", ".rep");
+      for Object_Artifact_Extensions ("Ada") use (".s", "ci", ".gcno");
+   end Clean;
+
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
    for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}";
    for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/../adainclude";
