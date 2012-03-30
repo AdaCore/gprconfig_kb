@@ -13,14 +13,25 @@ identified in the entry.
 
 KP-161-L321-006 Extra recompilation when using gprbuild -s -m
 
-  Problem:    When using both of these switches, and you change the timestamp
-              (or the comments, but not the code) of a source file, gprbuild
-              will still recompile the source because the file that contains
-              the list of switches is older than the source now.
+  Problem:    When gprbuild is invoked with both -s and -m and the timestamp
+              of a source (or the comments, but not the code) has changed,
+              gprbuild still recompiles the source because the switches file is
+              older than the source.
 
   Status:     This was fixed in 1.7 on 2012-03-21
 
   Workaround: Use only -m.
+
+KP-161-L320-047 gprbuild --no-indirect-imports and generic instantiations
+
+  Problem:    When --no-indirect-imports is used and an imported units
+              is instantiated or contains an instantiation, there may be units
+              imported by the generic body that are sources of a project that
+              is not imported. In this case, gprbuild reports an error.
+
+  Status:     This was fixed in 1.7 on 2012-03-27
+
+  Workaround: Import the additianal projects.
 
 KP-161-L315-021 gprbuild --no-object-check and main in project file
 
