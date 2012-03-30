@@ -14,3 +14,11 @@ NF-17-L126-014 Verbosity when linking shared SALs (2012-01-26)
   of the compiler when binding and compiling the binder generated file is now
   output, instead of the full path names. Also, when the command line is long,
   only the beginning is output.
+
+NF-17-JC09-030 New package Clean in project file (2012-03-30)
+
+  A new package Clean is added in project files. It can contain declarations
+  of attributes Source_Artifact_Extensions and Object_Artifact_Extensions,
+  that specify the extensions of files whose names are derived from source or
+  object file names, that reside in the object directory and that are to be
+  cleaned by gprclean.
