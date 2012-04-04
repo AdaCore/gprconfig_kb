@@ -1778,7 +1778,9 @@ package body Gpr_Util is
          --  to recompile.
 
          if Object_Check and then
-            Source.Language.Config.Dependency_Kind = ALI_File and then
+           (Source.Language.Config.Dependency_Kind = ALI_File or else
+             Source.Language.Config.Dependency_Kind = ALI_Closure)
+             and then
             Source.Object_TS < Stamp
          then
             if Verbose_Mode then
