@@ -475,6 +475,18 @@
     </config>
   </configuration>
 
+  <!-- wrs-linux -->
+  <configuration>
+    <targets>
+       <target name="^.*-wrs-linux.*$" />
+    </targets>
+    <config>
+   package Linker is
+      for Required_Switches use ("-r", "-nostdlib");
+   end Linker;
+    </config>
+  </configuration>
+
   <!-- freebsd -->
   <configuration>
     <targets>
