@@ -18,32 +18,34 @@
 -- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
+
 with Ada.Command_Line;       use Ada.Command_Line;
 with Ada.Exceptions;         use Ada.Exceptions;
 with System;
-with System.Case_Util;       use System.Case_Util;
-with System.Multiprocessors; use System.Multiprocessors;
+with System.Case_Util;          use System.Case_Util;
+with System.Multiprocessors;    use System.Multiprocessors;
+
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with Prj.Conf;    use Prj.Conf;
-with Osint;       use Osint;
-with Output;      use Output;
 with Csets;
-with Hostparm;
 with Debug;       use Debug;
 with Err_Vars;    use Err_Vars;
+with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
+with Hostparm;
+with Makeutl;     use Makeutl;
+with Osint;       use Osint;
+with Output;      use Output;
+with Prj.Conf;    use Prj.Conf;
 with Prj.Env;
 with Prj.Err;
 with Prj.Tree;    use Prj.Tree;
 with Snames;      use Snames;
 with Switch;      use Switch;
-with Gpr_Util;    use Gpr_Util;
-with Makeutl;     use Makeutl;
 
 with Gprbuild.Compile;
-with Gprbuild.Post_Compile;
 with Gprbuild.Link;
+with Gprbuild.Post_Compile;
 
 procedure Gprbuild.Main is
 
@@ -987,9 +989,9 @@ procedure Gprbuild.Main is
             Opt.Display_Compilation_Progress := True;
 
          elsif Arg'Length = 3 and then Arg (2) = 'd' then
-            if Arg (3) in '1' .. '9' or else
-              Arg (3) in 'a' .. 'z' or else
-              Arg (3) in 'A' .. 'Z'
+            if Arg (3) in '1' .. '9'
+              or else Arg (3) in 'a' .. 'z'
+              or else Arg (3) in 'A' .. 'Z'
             then
                Set_Debug_Flag (Arg (3));
 
