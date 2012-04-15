@@ -463,8 +463,13 @@ procedure Gprbuild.Main is
    --------------------------
 
    procedure Locate_Runtime (Language : Name_Id) is
+
       function Is_Base_Name (Path : String) return Boolean;
       --  Returns True if Path has no directory separator
+
+      ------------------
+      -- Is_Base_Name --
+      ------------------
 
       function Is_Base_Name (Path : String) return Boolean is
       begin
