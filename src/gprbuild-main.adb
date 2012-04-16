@@ -61,9 +61,9 @@ procedure Gprbuild.Main is
    --  Display the usage
 
    function Add_Global_Switches
-     (Switch      : String;
-      For_Lang    : Name_Id;
-      For_Builder : Boolean;
+     (Switch                          : String;
+      For_Lang                        : Name_Id;
+      For_Builder                     : Boolean;
       Has_Global_Compilation_Switches : Boolean) return Boolean;
    --  Take into account a global switch (builder or global compilation switch)
    --  read from the project file.
