@@ -30,19 +30,19 @@ with GNAT.IO;                   use GNAT.IO;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Csets;
-with GPR_Version; use GPR_Version;
 with Gpr_Util;    use Gpr_Util;
+with GPR_Version; use GPR_Version;
 with Hostparm;
 with Makeutl;     use Makeutl;
 with Namet;       use Namet;
 with Opt;         use Opt;
 with Osint;
+with Prj;         use Prj;
 with Prj.Conf;    use Prj.Conf;
 with Prj.Env;
 with Prj.Err;
 with Prj.Ext;
 with Prj.Tree;    use Prj.Tree;
-with Prj;         use Prj;
 with Snames;
 with Switch;      use Switch;
 
@@ -591,7 +591,7 @@ begin
    --  Update info on all sources
 
    declare
-      Iter    : Source_Iterator;
+      Iter : Source_Iterator;
    begin
       Iter := For_Each_Source (Project_Tree);
       while Prj.Element (Iter) /= No_Source loop
@@ -632,6 +632,11 @@ begin
 
    declare
       procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref);
+
+      --------------
+      -- Do_Clean --
+      --------------
+
       procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref) is
       begin
          --  For the main project and all aggregated projects, remove the
