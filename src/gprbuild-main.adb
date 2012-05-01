@@ -458,9 +458,9 @@ procedure Gprbuild.Main is
 
    end Options;
 
-   --------------------------
-   -- Set_Path_Runtime_For --
-   --------------------------
+   --------------------
+   -- Locate_Runtime --
+   --------------------
 
    procedure Locate_Runtime (Language : Name_Id) is
 
