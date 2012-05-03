@@ -394,7 +394,7 @@
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <languages>Ada</languages>
-    <runtimes default="default,kernel">
+    <runtimes default="default,kernel,native">
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/adalib/</directory>
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/ada_source_path</directory>
        <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/rts-(.*)/adalib/</directory>
