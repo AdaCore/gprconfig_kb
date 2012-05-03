@@ -396,7 +396,7 @@
     <languages>Ada</languages>
     <runtimes default="default,kernel,native">
        <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/adalib/</directory>
-       <directory group="default" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/ada_source_path</directory>
+       <directory group="default" contents="^rts-">\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/ada_object_path</directory>
        <directory group="2" >\.\./lib/gcc(-lib)?/$TARGET/$gcc_version/rts-(.*)/adalib/</directory>
     </runtimes>
     <target>
