@@ -23,11 +23,6 @@ NF-16-K907-021 Default config file created by gprconfig (2011-09-22)
   the current working directory, instead of <prefix>/share/gpr/default.cgpr.
   This will prevent the involuntary creation of a global config file.
 
-NF-16-K623-010 New switch --validate for gprconfig (2012-01-04)
-
-  This switch can be used to validate the XML files from the gprconfig
-  knowledge base. It should be used when you add your own XML files.
-
 NF-16-K621-023 Warning when --create-map-file is not supported (2011-06-21)
 
   When option --create-map-file is not supported (that is attribute

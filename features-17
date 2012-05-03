@@ -19,6 +19,11 @@ NF-17-KC19-034 Support for VxWorks Linux (2012-04-11)
 
   gprbuild now support VxWorks Linux targets.
 
+NF-17-K623-010 New switch --validate for gprconfig (2012-01-04)
+
+  This switch can be used to validate the XML files from the gprconfig
+  knowledge base. It should be used when you add your own XML files.
+
 NF-17-JC09-030 New package Clean in project file (2012-03-30)
 
   A new package Clean is added in project files. It can contain declarations
