@@ -391,7 +391,7 @@
     </version>
     <variable name="gcc_version">
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <languages>Ada</languages>
     <runtimes default="default,kernel,native">
