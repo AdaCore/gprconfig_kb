@@ -245,4 +245,8 @@ package Gpr_Util is
    function File_MD5 (Pathname : String) return Message_Digest;
    --  Returns the file MD5 signature
 
+   function Relative_Path (Pathname, To : String) return String;
+   --  Returns the relative pathname which corresponds to Pathname when
+   --  starting from directory to. Both Pathname and To must be absolute paths.
+
 end Gpr_Util;
