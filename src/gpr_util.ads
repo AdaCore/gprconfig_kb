@@ -22,6 +22,7 @@
 --  This package contains constants, variable and subprograms used by gprbuild
 --  and gprclean.
 
+with GNAT.MD5;    use GNAT.MD5;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
 with ALI;
@@ -240,5 +241,8 @@ package Gpr_Util is
 
    function Ensure_Directory (Path : String) return String;
    --  Returns Path with an ending directory separator
+
+   function File_MD5 (Pathname : String) return Message_Digest;
+   --  Returns the file MD5 signature
 
 end Gpr_Util;

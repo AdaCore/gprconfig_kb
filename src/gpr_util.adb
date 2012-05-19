@@ -19,7 +19,8 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Streams.Stream_IO; use Ada.Streams;
+with Ada.Strings.Fixed;     use Ada.Strings.Fixed;
 with Interfaces.C.Strings;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -238,6 +239,30 @@ package body Gpr_Util is
    end Ensure_Directory;
 
    --------------
+   -- File_MD5 --
+   --------------
+
+   function File_MD5 (Pathname : String) return Message_Digest is
+      use Stream_IO;
+
+      C : Context;
+      S : Stream_IO.File_Type;
+      B : Stream_Element_Array (1 .. 100 * 1024);
+      --  Buffer to read chunk of data
+      L : Stream_Element_Offset;
+   begin
+      Open (S, In_File, Pathname);
+
+      while not End_Of_File (S) loop
+         Read (S, B, L);
+         Update (C, B (1 .. L));
+      end loop;
+
+      Close (S);
+
+      return Digest (C);
+   end File_MD5;
+
    ------------------------------
    -- Get_Compiler_Driver_Path --
    ------------------------------
