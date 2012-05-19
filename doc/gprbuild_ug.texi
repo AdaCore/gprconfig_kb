@@ -284,6 +284,9 @@ Building with GPRbuild
 * Linking Phase::
 * Incompatibilities with gnatmake::
 
+Installing with GPRinstall
+* Switches for GPRinstall::
+
 Configuring with GPRconfig
 * Configuration::
 * Using GPRconfig::
@@ -389,6 +392,7 @@ instance it can be called from within a Makefile.
 * Configuring with GPRconfig::
 * Configuration File Reference::
 * Cleaning up with GPRclean::
+* Installing with GPRinstall::
 @end menu
 
 @c ---------------------------------------------
@@ -3094,6 +3098,126 @@ The switches for GPRclean are:
 
 @end itemize
 
+@c ---------------------------------------------
+@node Installing with GPRinstall
+@section Installing with GPRinstall
+@c ---------------------------------------------
+
+@noindent
+The GPRinstall tool installs a project for use by other projects.
+At a minimum, to invoke GPRinstall you must specify a main project file
+in a command such as @code{gprinstall proj.gpr} or
+@code{gprinstall -P proj.gpr}.
+
+Examples of invocation of GPRinstall:
+
+@smallexample
+   gprinstall prj1.gpr
+   gprinstall -r --prefix=/my/root/install -P prj2.gpr
+@end smallexample
+
+@menu
+* Switches for GPRinstall::
+@end menu
+
+@c ---------------------------------------------
+@node Switches for GPRinstall
+@subsection Switches for GPRinstall
+@c ---------------------------------------------
+
+@noindent
+The switches for GPRinstall are:
+
+@itemize @bullet
+@item @option{--config=<main config project file name>} : Specify the
+  configuration project file name
+
+@item @option{--autoconf=<config project file name>} :
+
+  This specifies a configuration project file name that already exists or will
+  be created automatically. Option @option{--autoconf=}
+  cannot be specified more than once. If the configuration project file
+  specified with @option{--autoconf=} exists, then it is used. Otherwise,
+  @value{gprconfig} is invoked to create it automatically.
+
+@item @option{--build-name} : Specify under which name the current
+project build must be installed. The default value is
+@code{default}. Using this option it is possible to install different
+builds (using different configuration, options, etc...) of the same
+project. The given name will be used by client to select which build
+they want to use (link against).
+
+@item @option{--build-var} : Specify the name of the build variable in
+the installed project. The default value being @code{<PROJECT_NAME>_BUILD}.
+
+@item @option{--dry-run} : Install nothing, just display the actions
+that would have been done.
+
+@item @option{-f} : Force overwriting of existing files
+
+@item @option{-h} : Display this message
+
+@item @option{--mode=[dev/usage]} : Specify the installation mode.
+
+@table @option
+
+@item dev
+
+For this mode the binaries (built libraries and
+executable) are installed together with the sources to use them.
+
+@item usage
+
+For this mode only the binaries are installed.
+
+@end table
+
+@item @option{-p, --create-missing-dirs} : Create missing directories
+in the installation location.
+
+@item @option{-P<proj>} : Use Project File @emph{<proj>}.
+
+@item @option{--prefix=path} : Specify the location of the
+installation. If not specified, the default location for the current
+compiler is used. That is, @code{path} corresponds to parent directory
+where @code{gprinstall} is found.
+
+@item @option{--sources-subdir=path} : Specify the value for the
+sources installation directory if an absolute path. Otherwise it is
+appended to the prefix above.
+
+@item @option{--lib-subdir=path} : Specify the value for the
+library and object installation directory if an absolute
+path. Otherwise it is appended to the prefix above.
+
+@item @option{---exec-subdir=path} : Specify the value for the
+executables installation directory if an absolute path. Otherwise it is
+appended to the prefix above.
+
+@item @option{--project-subdir=path} : Specify the value for the
+project installation directory if an absolute path. Otherwise it is
+appended to the prefix above.
+
+@item @option{-q} : Be quiet/terse. There is no output, except to report
+  problems.
+
+@item @option{-r} : (recursive) Install all projects referenced by the main
+  project directly or indirectly. Without this switch, GPRinstall only
+  installs the main project.
+
+@item @option{--uninstall} : Uninstall mode, files installed for the
+given project will be removed. A check is done that no manual changes
+have been applied to the file before removing. Deletion of the files
+can be forced in this case by using the @option{-f} option.
+
+@item @option{-v}  : Verbose mode
+
+@item @option{-Xnm=val} : Specify an external reference for Project Files.
+
+@end itemize
+
+@c ---------------------------------------------
+@c include the GNU Free Documentation License
 @include gfdl.texi
 
 @c ---------------------------------------------

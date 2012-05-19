@@ -20,7 +20,8 @@ project Gprbuild is
         "gprbuild-main.adb",
         "gprbind.adb",
         "gprlib.adb",
-        "gprclean-main.adb");
+        "gprclean-main.adb",
+        "gprinstall-main.adb");
 
    for Source_Dirs use ("src", "gnat");
 
@@ -57,6 +58,7 @@ project Gprbuild is
       for Executable ("gprconfig-main.adb") use "gprconfig";
       for Executable ("gprbuild-main.adb") use "gprbuild";
       for Executable ("gprclean-main.adb") use "gprclean";
+      for Executable ("gprinstall-main.adb") use "gprinstall";
       for Default_Switches ("Ada") use ("-m", "-j" & Processors);
       for Switches ("Ada") use ();
    end Builder;

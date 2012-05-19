@@ -59,10 +59,14 @@ package Gpr_Util is
 
    Target_Project_Option : constant String := "--target=";
 
+   Prefix_Project_Option : constant String := "--prefix";
+
    No_Name_Map_File_Option : constant String := "--map-file-option";
 
    Restricted_To_Languages_Option : constant String :=
                                                "--restricted-to-languages=";
+
+   Dry_Run_Option : constant String := "--dry-run";
 
    Named_Map_File_Option   : constant String := No_Name_Map_File_Option & '=';
 

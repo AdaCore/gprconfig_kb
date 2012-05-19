@@ -31,3 +31,8 @@ NF-17-JC09-030 New package Clean in project file (2012-03-30)
   that specify the extensions of files whose names are derived from source or
   object file names, that reside in the object directory and that are to be
   cleaned by gprclean.
+
+NF-17-H729-014 New tool named gprinstall (2012-05-18)
+
+  A new tool named gprinstall has been implemeted and can be used to
+  install a standard or a library project.

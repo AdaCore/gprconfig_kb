@@ -11,6 +11,8 @@
 /gprmake.exe
 /gprbind
 /gprbind.exe
+/gprinstall
+/gprinstall.exe
 /gprlib
 /gprlib.exe
 /install

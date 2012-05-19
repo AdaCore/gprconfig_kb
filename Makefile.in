@@ -65,7 +65,8 @@ endif
 
 ADA_GEN_SUBDIR=gnat
 
-.PHONY: all distall gprbuild gprconfig gprclean copy_gnat_src complete bootstrap
+.PHONY: all distall gprbuild gprconfig gprclean gprinstall \
+	copy_gnat_src complete bootstrap
 all: $(xmlada_build_target) $(ADA_GEN_SUBDIR)/stamp-snames
 	${GNATMAKE} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
@@ -84,6 +85,7 @@ distall:
 	strip $(prefix)/bin/gprbuild$(EXEXT)
 	strip $(prefix)/bin/gprclean$(EXEXT)
 	strip $(prefix)/bin/gprconfig$(EXEXT)
+	strip $(prefix)/bin/gprinstall$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprbind$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
 
@@ -102,6 +104,9 @@ complete: copy_gnat_src all install
 
 gprbuild:
 	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprbuild-main.adb
+
+gprinstall:
+	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprinstall-main.adb
 
 gprclean:
 	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprclean-main.adb
@@ -152,6 +157,7 @@ install.bin: force
 	${INSTALL_PROGRAM} gprconfig${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} gprbuild${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} gprclean${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} gprinstall${EXEXT} ${bindir}
 	-${MKDIR} ${libexecdir}/gprbuild
 	${INSTALL_PROGRAM} gprbind${EXEXT} ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} gprlib${EXEXT} ${libexecdir}/gprbuild/
