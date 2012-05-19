@@ -238,4 +238,7 @@ package Gpr_Util is
    --  Maximum number of bytes to put in an invocation of the
    --  Archive_Builder.
 
+   function Ensure_Directory (Path : String) return String;
+   --  Returns Path with an ending directory separator
+
 end Gpr_Util;

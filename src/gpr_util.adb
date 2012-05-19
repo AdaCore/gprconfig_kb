@@ -221,6 +221,23 @@ package body Gpr_Util is
       end if;
    end Create_Response_File;
 
+   ----------------------
+   -- Ensure_Directory --
+   ----------------------
+
+   function Ensure_Directory (Path : String) return String is
+   begin
+      if Path'Length = 0
+        or else Path (Path'Last) = Directory_Separator
+        or else Path (Path'Last) = '\'
+      then
+         return Path;
+      else
+         return Path & Directory_Separator;
+      end if;
+   end Ensure_Directory;
+
+   --------------
    ------------------------------
    -- Get_Compiler_Driver_Path --
    ------------------------------
