@@ -231,7 +231,7 @@ package body Gpr_Util is
    begin
       if Path'Length = 0
         or else Path (Path'Last) = Directory_Separator
-        or else Path (Path'Last) = '\'
+        or else Path (Path'Last) = '/' -- on Windows check also for /
       then
          return Path;
       else
