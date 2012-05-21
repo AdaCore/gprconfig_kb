@@ -247,7 +247,8 @@ package Gpr_Util is
    --  Returns Path with an ending directory separator
 
    function File_MD5 (Pathname : String) return Message_Digest;
-   --  Returns the file MD5 signature
+   --  Returns the file MD5 signature. Raises Name_Error if Pathname does not
+   --  exists.
 
    function Relative_Path (Pathname, To : String) return String;
    --  Returns the relative pathname which corresponds to Pathname when
