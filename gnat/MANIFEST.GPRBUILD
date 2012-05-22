@@ -105,7 +105,6 @@ projects.texi
 restrict.adb
 restrict.ads
 rident.ads
-s-rident.ads
 scans.adb
 scans.ads
 scng.adb
