@@ -769,7 +769,7 @@ procedure Gprlib is
               Text,
               Ignore_ED  => False,
               Err        => True,
-              Read_Lines => "U");
+              Read_Lines => "UD");
          Free (Text);
 
          Second_Unit := ALI.No_Unit_Id;
