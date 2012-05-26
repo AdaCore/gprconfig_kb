@@ -271,6 +271,9 @@ procedure Gprinstall.Main is
          elsif Arg = "-f" then
             Force_Installations := True;
 
+         elsif Arg = "-a" then
+            All_Sources := True;
+
          elsif Arg'Length >= 3
            and then Arg (2) = 'X'
            and then Is_External_Assignment (Root_Environment, Arg)

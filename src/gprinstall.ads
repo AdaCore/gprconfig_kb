@@ -114,4 +114,9 @@ private
    Uninstall_Mode : Boolean := False;
    --  Set to true if project is to be uninstalled
 
+   All_Sources : Boolean := False;
+   --  By default install only the sources needed to use the project (the
+   --  interface for a SAL). If All_Sources is set to True all the sources are
+   --  copied.
+
 end Gprinstall;

@@ -581,27 +581,52 @@ package body Gprinstall.Install is
       ----------------
 
       procedure Copy_Files is
+
+         procedure Copy_Source (Sid : Source_Id);
+
+         ----------
+         -- Copy --
+         ----------
+
+         procedure Copy_Source (Sid : Source_Id) is
+         begin
+            if Copy (Source) then
+               Copy_File
+                 (From => Get_Name_String (Sid.Path.Name),
+                  To   => Sources_Dir,
+                  File => Get_Name_String (Sid.File));
+            end if;
+         end Copy_Source;
+
+         procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
+
          Iter : Source_Iterator := For_Each_Source (Tree, Project);
          Sid  : Source_Id;
+
       begin
+         if not All_Sources then
+            Copy_Interfaces (Tree, Project);
+         end if;
+
          loop
             Sid := Element (Iter);
             exit when Sid = No_Source;
 
-            --  Skip sources that are removed/excluded and sources not part of
-            --  the interface for standalone libraries.
+            --  Skip sources that are removed/excluded and sources not
+            --  part of the interface for standalone libraries.
 
             if not Sid.Locally_Removed
               and then (Project.Standalone_Library = No
                         or else Sid.Declared_In_Interfaces)
             then
-               --  Sources
+               --  If the unit has a naming exception we install it regardless
+               --  of the fact that it is part of the interface or not. This
+               --  is because the installed project will have a Namig package
+               --  referencing this file. The .ali is looked based on the name
+               --  of the renamed body.
 
-               if Copy (Source) then
-                  Copy_File
-                    (From => Get_Name_String (Sid.Path.Name),
-                     To   => Sources_Dir,
-                     File => Get_Name_String (Sid.File));
+               if All_Sources or else Sid.Naming_Exception = Yes then
+                  Copy_Source (Sid);
                end if;
 
                --  Objects / Deps

@@ -3153,6 +3153,8 @@ the installed project. The default value being @code{<PROJECT_NAME>_BUILD}.
 @item @option{--dry-run} : Install nothing, just display the actions
 that would have been done.
 
+@item @option{-a} : Install all sources and not only the interface sources
+
 @item @option{-f} : Force overwriting of existing files
 
 @item @option{-h} : Display this message
