@@ -257,6 +257,15 @@ procedure Gprinstall.Main is
                Project_File_Name := new String'(Arg (3 .. Arg'Last));
             end if;
 
+         elsif Arg'Length >= 3 and then Arg (1 .. 3) = "-aP" then
+            if Arg'Length = 3 then
+               Search_Project_Dir_Expected := True;
+
+            else
+               Prj.Env.Add_Directories
+                 (Root_Environment.Project_Path, Arg (4 .. Arg'Last));
+            end if;
+
          elsif Arg = "-q" then
             Opt.Quiet_Output := True;
             Opt.Verbose_Mode := False;
