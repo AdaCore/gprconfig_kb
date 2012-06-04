@@ -636,7 +636,7 @@ package body Gprinstall.Install is
                      Copy_File
                        (From => Cat
                           (Get_Object_Directory
-                             (Sid.Project, True), Sid.Object),
+                             (Sid.Project, False), Sid.Object),
                         To   => Lib_Dir,
                         File => Get_Name_String (Sid.Object));
                   end if;
@@ -644,7 +644,7 @@ package body Gprinstall.Install is
                   if Copy (Dependency) and then Sid.Kind /= Sep then
                      Copy_File
                        (From => Cat
-                          (Get_Object_Directory (Sid.Project, True),
+                          (Get_Object_Directory (Sid.Project, False),
                            Sid.Dep_Name),
                         To   => Lib_Dir,
                         File => Get_Name_String (Sid.Dep_Name));
