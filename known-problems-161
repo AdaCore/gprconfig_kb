@@ -11,6 +11,15 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-161-L530-060 Allow the same library project in multiple tree
+
+  Problem:    An error message is reported when the same library
+              project is found in different aggregated projects.
+
+  Status:     This was fixed in 1.7 on 2012-06-06
+
+  Workaround: Compile aggregated projects separately
+
 KP-161-L321-006 Extra recompilation when using gprbuild -s -m
 
   Problem:    When gprbuild is invoked with both -s and -m and the timestamp
