@@ -390,7 +390,9 @@ package body Gprbuild is
                   if Imported.Project /= No_Project then
                      Process_Project
                        (Imported.Project,
-                        Is_Aggregate => Project.Qualifier = Aggregate_Library);
+                        Is_Aggregate =>
+                          (Project.Qualifier = Aggregate_Library)
+                           or else Is_Aggregate);
                   end if;
 
                   Imported := Imported.Next;
