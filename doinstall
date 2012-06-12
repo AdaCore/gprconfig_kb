@@ -143,7 +143,7 @@ if tar cf - bin share libexec | (cd $installdir && tar xf -) ; then
    # --------------------------- End of the script -----------------------
    clear
    echo " "
-   echo "$gprbuild have been installed in $installdir"
+   echo "$gprbuild has been installed in $installdir"
    echo "Thank you for using $gprbuild !"
    echo " "
 
