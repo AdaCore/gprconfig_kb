@@ -170,6 +170,13 @@
     <target>powerpc-elf-lynxos.*</target>
   </targetset>
 
+ <!-- ppc-xcoff-lynxos178-.* -->
+
+  <targetset>
+    <target>ppc-xcoff-lynxos178.*</target>
+    <target>powerpc-xcoff-lynxos178.*</target>
+  </targetset>
+
  <!-- x86-lynx5-.* -->
   <targetset>
     <target>x86-lynx5.*</target>
