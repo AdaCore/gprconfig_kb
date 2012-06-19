@@ -562,7 +562,7 @@
   <!-- ??? this cannot be verified due to the lincense manager -->
   <compiler_description>
     <name>CPP-LYNXOS178-PPC</name>
-    <executable prefix="1">c++</executable>
+    <executable prefix="1">c\+\+</executable>
     <version>
       <external>c++ -v</external>
       <grep regexp="gcc version ([0-9].?){2}" group="1"></grep>
