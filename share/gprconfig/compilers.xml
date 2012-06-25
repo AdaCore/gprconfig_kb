@@ -549,7 +549,8 @@
   <!-- C for PowerPC LynxOS-178 -->
   <compiler_description>
     <name>C-LYNXOS178-PPC</name>
-    <executable prefix="1">gcc</executable>
+  <!-- ??? disabled due to GPRBuild regressions, see L624-002, L625-015 -->
+    <executable prefix="1">gcc_disabled</executable>
     <version>
       <external>gcc -v</external>
       <grep regexp="gcc version ([0-9].?){2}" group="1"></grep>
@@ -562,7 +563,8 @@
   <!-- ??? this cannot be verified due to the lincense manager -->
   <compiler_description>
     <name>CPP-LYNXOS178-PPC</name>
-    <executable prefix="1">c\+\+</executable>
+  <!-- ??? disabled due to GPRBuild regressions, see L624-002, L625-015 -->
+    <executable prefix="1">c\+\+_disabled</executable>
     <version>
       <external>c++ -v</external>
       <grep regexp="gcc version ([0-9].?){2}" group="1"></grep>
