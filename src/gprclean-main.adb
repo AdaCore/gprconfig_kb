@@ -449,7 +449,7 @@ procedure Gprclean.Main is
 
          if not Hostparm.OpenVMS then
             Put_Line ("  --target=targetname");
-            Put_Line ("           Specify a target for cross polatforms");
+            Put_Line ("           Specify a target for cross platforms");
          end if;
 
          if not Hostparm.OpenVMS then
