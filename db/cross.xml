@@ -191,12 +191,12 @@
    package Compiler is
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C") &amp; ("-mrtp")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h", 
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h",
                "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
    end Compiler;
      </config>
    </configuration>
- 
+
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
@@ -265,7 +265,7 @@
    package Compiler is
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/h", 
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h",
                "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
    end Compiler;
      </config>
@@ -303,7 +303,7 @@
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++") &amp; ("-mrtp")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h", 
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h",
                "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
    end Compiler;
      </config>
@@ -325,7 +325,7 @@
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-I" &amp; Wind_Base &amp; "/target/h", 
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h",
                "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
    end Compiler;
      </config>
@@ -387,6 +387,7 @@
    <configuration>
      <targets>
        <target name="^.*-wrs-vxworks.*$" />
+       <target name="^.*-wrs-linux.*$" />
        <target name="^.*-elf-lynx.*$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
