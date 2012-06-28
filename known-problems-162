@@ -1,21 +1,12 @@
 ========================================
-Known problems in GPRBUILD version 1.6.1
+Known problems in GPRBUILD version 1.6.2
 ========================================
 
 Copyright (C) 2012, AdaCore
 
-The following is a listing of known problems in release 1.6.1. Except where
+The following is a listing of known problems in release 1.6.2. Except where
 specifically noted, all these problems have been corrected in the development
 tree of the 1.7 technology. This means they are corrected in any 1.7.0w
 wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
-
-KP-161-KC01-033 gprconfig: duplicate runtimes detected on Windows
-
-  Problem:    On Windows, gprconfig will sometimes report the "default" runtime
-              multiple times for a given Ada compiler.
-
-  Status:     This was fixed in 1.6.2 on 2012-03-28
-
-  Workaround: Selecting any of the lines has the same effect.
