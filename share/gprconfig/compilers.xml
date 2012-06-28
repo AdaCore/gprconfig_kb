@@ -521,9 +521,11 @@
   </compiler_description>
 
   <!-- LynxWorks C compiler for LynxOS-178 -->
+  <!-- Disabled for now due to interference with target_all.
+       See L530-061, L624-002, L625-015 for more information. -->
   <compiler_description>
     <name>LYNXWORKS-C</name>
-    <executable>gcc</executable>
+    <executable>gcc_disabled</executable>
     <version>
       <external>gcc -v</external>
       <grep regexp="^gcc version (\S+)" group="1"></grep>
@@ -537,9 +539,11 @@
   </compiler_description>
 
   <!-- LynxWorks C++ compiler for LynxOS-178 -->
+  <!-- Disabled for now due to interference with target_all.
+       See L530-061, L624-002, L625-015 for more information. -->
   <compiler_description>
     <name>LYNXWORKS-C++</name>
-    <executable>c\+\+</executable>
+    <executable>c\+\+_disabled</executable>
     <version>
       <external>c++ -v</external>
       <grep regexp="^gcc version (\S+)" group="1"></grep>
