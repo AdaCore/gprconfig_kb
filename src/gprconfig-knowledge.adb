@@ -1823,6 +1823,7 @@ package body GprConfig.Knowledge is
                            & Get_Name_String (Node.Must_Match));
                      end if;
                      Tmp_Result := Null_Unbounded_String;
+                     raise Ignore_Compiler;
                   end if;
                   exit;
 
