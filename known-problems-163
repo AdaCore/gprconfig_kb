@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-163-L624-002 Knowledge base must_match node may not have desired effect
+
+  Problem:    In some cases, the toolchain that should have been ignored
+              by gprconfig because it doesn't satisfy must_match criterion
+              is added to the list of candidates anyway.
+
+  Status:     This was fixed in 1.7 on 2012-06-28
+
+  Workaround: Describe a toolchain in a way that doesn't use must_match
+              criterion, or simply do not select a candidate that is incorrect.
+
 KP-163-L530-060 Allow the same library project in multiple tree
 
   Problem:    An error message is reported when the same library
