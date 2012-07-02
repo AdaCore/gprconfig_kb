@@ -246,18 +246,19 @@
   <!-- ??? how do we generalize for any runtime? -->
   <configuration>
    <compilers>
-     <compiler name="GNAT" runtime="sjlj" />
-     <compiler name="GNAT" runtime="zfp" />
-     <compiler name="GNAT" runtime="zcx" />
-     <compiler name="GNAT" runtime="marte" />
      <compiler name="GNAT" runtime="cert" />
      <compiler name="GNAT" runtime="full" />
      <compiler name="GNAT" runtime="hi" />
-     <compiler name="GNAT" runtime="raven" />
-     <compiler name="GNAT" runtime="soft-float" />
      <compiler name="GNAT" runtime="kernel" />
+     <compiler name="GNAT" runtime="marte" />
+     <compiler name="GNAT" runtime="pthread" />
+     <compiler name="GNAT" runtime="raven" />
      <compiler name="GNAT" runtime="rtp" />
+     <compiler name="GNAT" runtime="sjlj" />
+     <compiler name="GNAT" runtime="soft-float" />
      <compiler name="GNAT" runtime="xenomai" />
+     <compiler name="GNAT" runtime="zcx" />
+     <compiler name="GNAT" runtime="zfp" />
      <compiler name="GNAT_DOTNET" runtime="compact" />
      <compiler name="GNAT_DOTNET" runtime="silverlight" />
    </compilers>
