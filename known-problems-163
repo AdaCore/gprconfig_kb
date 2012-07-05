@@ -31,6 +31,16 @@ KP-163-L530-060 Allow the same library project in multiple tree
 
   Workaround: Compile aggregated projects separately
 
+KP-163-L503-024 gprbuild crashes with exception names in virtual project
+
+  Problem:    gprbuild crashes if a project that is virtually extended
+              has one or several sources with exception names specified in
+              its package Naming.
+
+  Status:     This was fixed in 1.7 on 2012-07-05
+
+  Workaround: Use only names that follows the naming scheme of the project.
+
 KP-163-L321-006 Extra recompilation when using gprbuild -s -m
 
   Problem:    When gprbuild is invoked with both -s and -m and the timestamp
