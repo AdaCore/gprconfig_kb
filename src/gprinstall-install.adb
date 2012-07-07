@@ -584,6 +584,10 @@ package body Gprinstall.Install is
 
          procedure Copy_Source (Sid : Source_Id);
 
+         function Is_Ada (Sid : Source_Id) return Boolean;
+         pragma Inline (Is_Ada);
+         --  Returns True if Sid is an Ada source
+
          ----------
          -- Copy --
          ----------
@@ -597,6 +601,16 @@ package body Gprinstall.Install is
                   File => Get_Name_String (Sid.File));
             end if;
          end Copy_Source;
+
+         ------------
+         -- Is_Ada --
+         ------------
+
+         function Is_Ada (Sid : Source_Id) return Boolean is
+         begin
+            return Sid.Language /= null
+              and then Get_Name_String (Sid.Language.Name) = "ada";
+         end Is_Ada;
 
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
 
@@ -641,7 +655,12 @@ package body Gprinstall.Install is
                         File => Get_Name_String (Sid.Object));
                   end if;
 
-                  if Copy (Dependency) and then Sid.Kind /= Sep then
+                  --  Only install Ada .ali files
+
+                  if Copy (Dependency)
+                    and then Sid.Kind /= Sep
+                    and then Is_Ada (Sid)
+                  then
                      Copy_File
                        (From => Cat
                           (Get_Object_Directory (Sid.Project, False),
@@ -1231,6 +1250,32 @@ package body Gprinstall.Install is
                end if;
 
                Line := Line & """, """ & Build_Name.all & """);";
+               Content.Append (-Line);
+
+               --  Add languages
+
+               Add_Empty_Line;
+
+               Line := +"   for Languages use (";
+
+               declare
+                  L     : Language_Ptr := Project.Languages;
+                  First : Boolean := True;
+               begin
+                  while L /= null loop
+                     if not First then
+                        Line := Line & ", ";
+                     end if;
+
+                     Line := Line
+                       & '"' & Get_Name_String (L.Display_Name) & '"';
+
+                     First := False;
+                     L := L.Next;
+                  end loop;
+               end;
+
+               Line := Line & ");";
                Content.Append (-Line);
 
                --  Build_Suffix used to avoid .default as suffix
