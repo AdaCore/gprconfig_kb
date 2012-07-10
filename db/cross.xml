@@ -179,9 +179,7 @@
        <compiler name="GCC" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
-       <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^rtp$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp$" />
        <compiler name="GCC-WRS6" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp-smp$" />
@@ -194,6 +192,25 @@
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C") &amp; ("-mrtp")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h",
+               "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworks$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C") &amp; ("-mrtp")
+        &amp; ("-fno-builtin",
+               "-I" &amp; Wind_Base &amp; "/target/usr/h",
                "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
    end Compiler;
      </config>
@@ -245,19 +262,14 @@
        <compiler name="GCC" runtime="^kernel$" />
        <compiler name="GCC" runtime="^kernel-sjlj$" />
        <compiler name="GCC" runtime="^kernel-smp$" />
-       <compiler name="GCC" runtime="^ravenscar-cert$" />
        <compiler name="GCC-WRS6" runtime="^kernel$" />
        <compiler name="GCC-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6" runtime="^kernel-smp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6CERT" runtime="^zfp$" />
        <compiler name="GCC-WRS6CERT" runtime="^kernel$" />
-       <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^zfp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworks$" />
@@ -267,6 +279,29 @@
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/h",
+               "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC" runtime="^zfp$" />
+       <compiler name="GCC" runtime="^ravenscar-cert$" />
+       <compiler name="GCC-WRS6CERT" runtime="^zfp$" />
+       <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert$" />
+       <compiler name="GCC-WRS6CERTE500V2" runtime="^zfp$" />
+       <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworks$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-fno-builtin",
+               "-I" &amp; Wind_Base &amp; "/target/h",
                "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
    end Compiler;
      </config>
@@ -314,9 +349,7 @@
      <compilers>
        <compiler name="G++-WRS6" runtime="^rtp$" />
        <compiler name="G++-WRS6CERT" runtime="^rtp$" />
-       <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp$" />
        <compiler name="G++-WRS6" runtime="^rtp-smp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp-smp$" />
@@ -333,24 +366,54 @@
 
    <configuration>
      <compilers>
+       <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++") &amp; ("-mrtp")
+        &amp; ("-fno-builtin",
+               "-I" &amp; Wind_Base &amp; "/target/usr/h",
+               "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="G++-WRS6" runtime="^kernel$" />
        <compiler name="G++-WRS6" runtime="^kernel-smp$" />
        <compiler name="G++-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel-smp$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel-sjlj$" />
-       <compiler name="G++-WRS6CERT" runtime="^zfp$" />
        <compiler name="G++-WRS6CERT" runtime="^kernel$" />
-       <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^zfp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^kernel$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
      </compilers>
      <config>
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
         &amp; ("-I" &amp; Wind_Base &amp; "/target/h",
+               "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS6CERT" runtime="^zfp$" />
+       <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert$" />
+       <compiler name="G++-WRS6CERTE500V2" runtime="^zfp$" />
+       <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-fno-builtin",
+               "-I" &amp; Wind_Base &amp; "/target/h",
                "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
    end Compiler;
      </config>
