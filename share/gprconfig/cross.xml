@@ -431,6 +431,7 @@
        <target name="^.*-elf-lynx.*$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
+       <target name="^powerpc-xcoff-lynxos178$" />
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
