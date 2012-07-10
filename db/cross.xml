@@ -72,42 +72,32 @@
    <!-- vxworks kernel executables have a .out extension -->
    <configuration>
      <compilers>
-       <compiler name="GNAT" />
        <compiler name="GNAT" runtime="^default$" />
        <compiler name="GNAT" runtime="^kernel$" />
        <compiler name="GNAT" runtime="^kernel-sjlj$" />
        <compiler name="GNAT" runtime="^kernel-smp$" />
-       <compiler name="GCC" />
        <compiler name="GCC" runtime="^default$" />
        <compiler name="GCC" runtime="^kernel$" />
        <compiler name="GCC" runtime="^kernel-sjlj$" />
        <compiler name="GCC" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6" />
        <compiler name="GCC-WRS6" runtime="^kernel$" />
        <compiler name="GCC-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6E500V2" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6CERT" />
        <compiler name="GCC-WRS6CERT" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert$" />
-       <compiler name="GCC-WRS6CERTE500V2" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
-       <compiler name="G++-WRS6" />
        <compiler name="G++-WRS6" runtime="^kernel$" />
        <compiler name="G++-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="G++-WRS6" runtime="^kernel-smp$" />
-       <compiler name="G++-WRS6E500V2" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel-sjlj$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel-smp$" />
-       <compiler name="G++-WRS6CERT" />
        <compiler name="G++-WRS6CERT" runtime="^kernel$" />
        <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert$" />
-       <compiler name="G++-WRS6CERTE500V2" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
        <compiler name="GCC-WRS5" />
@@ -252,24 +242,19 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC" />
        <compiler name="GCC" runtime="^kernel$" />
        <compiler name="GCC" runtime="^kernel-sjlj$" />
        <compiler name="GCC" runtime="^kernel-smp$" />
        <compiler name="GCC" runtime="^ravenscar-cert$" />
-       <compiler name="GCC-WRS6" />
        <compiler name="GCC-WRS6" runtime="^kernel$" />
        <compiler name="GCC-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6E500V2" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6CERT" />
        <compiler name="GCC-WRS6CERT" runtime="^zfp$" />
        <compiler name="GCC-WRS6CERT" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert$" />
-       <compiler name="GCC-WRS6CERTE500V2" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^zfp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
