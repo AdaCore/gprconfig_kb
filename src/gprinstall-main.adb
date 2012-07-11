@@ -576,8 +576,8 @@ procedure Gprinstall.Main is
 
          --  Line for --build-name
 
-         Write_Line ("  --build-var=<name>");
-         Write_Line ("           Build name value (default is ""Default""");
+         Write_Line ("  --build-name=<name>");
+         Write_Line ("           Build name value (default is ""Default"")");
 
          --  Line for -aP
 
