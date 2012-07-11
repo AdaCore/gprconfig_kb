@@ -62,6 +62,7 @@ procedure Gprinstall.Main is
    Exec_Subdir_Option    : constant String := "--exec-subdir";
    Sources_Subdir_Option : constant String := "--sources-subdir";
    Project_Subdir_Option : constant String := "--project-subdir";
+   No_Lib_In_Exec_Option : constant String := "--no-lib-in-exec";
 
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
@@ -338,6 +339,9 @@ procedure Gprinstall.Main is
             elsif Has_Prefix (Dry_Run_Option) then
                Dry_Run := True;
 
+            elsif Has_Prefix (No_Lib_In_Exec_Option) then
+               Copy_Lib_In_Exec := False;
+
             else
                Processed := False;
             end if;
@@ -563,6 +567,8 @@ procedure Gprinstall.Main is
          Write_Line ("           The executbales directory/sub-directory");
          Write_Line ("  --project-subdir=<dir>");
          Write_Line ("           The project directory/sub-directory");
+         Write_Line ("  --no-lib-in-exec");
+         Write_Line ("           Do not copy shared lib in exec directory");
 
          --  Line for --dry-run
 

@@ -29,6 +29,7 @@ with Ada.Text_IO;                       use Ada.Text_IO;
 
 with Gpr_Util; use Gpr_Util;
 
+with Makeutl;
 with MLib;     use MLib;
 with Namet;    use Namet;
 with Opt;
@@ -701,6 +702,20 @@ package body Gprinstall.Install is
                     (Project.Library_Dir.Display_Name,
                      Get_Library_Filename),
                   To   => Lib_Dir,
+                  File => Get_Name_String (Get_Library_Filename));
+            end if;
+
+            --  On Windows copy the shared libraries into the bin directory
+            --  for it to be found in the PATH when running executable.
+
+            if Project.Library_Kind /= Static
+              and then Makeutl.On_Windows
+              and then Copy_Lib_In_Exec
+            then
+               Copy_File
+                 (From => Lib_Dir
+                            & Get_Name_String (Get_Library_Filename),
+                  To   => Exec_Dir,
                   File => Get_Name_String (Get_Library_Filename));
             end if;
          end if;
