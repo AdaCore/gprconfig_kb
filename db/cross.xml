@@ -76,6 +76,7 @@
        <compiler name="GNAT" runtime="^kernel$" />
        <compiler name="GNAT" runtime="^kernel-sjlj$" />
        <compiler name="GNAT" runtime="^kernel-smp$" />
+       <compiler name="GNAT" runtime="^ravenscar-cert$" />
        <compiler name="GCC" runtime="^default$" />
        <compiler name="GCC" runtime="^kernel$" />
        <compiler name="GCC" runtime="^kernel-sjlj$" />
