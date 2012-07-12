@@ -56,16 +56,29 @@
      </config>
    </configuration>
 
-   <!-- Forbid mixing kernel and rtp.  -->
+   <!-- Forbid mixing cert, kernel and rtp.  -->
+   <!-- Watch out: "ravenscar-cert-rtp" matches both "rtp" and "cert" -->
    <configuration>
-     <compilers><compiler /></compilers>
-     <compilers><compiler runtime="^kernel$" /></compilers>
-     <compilers><compiler runtime="^kernel-smp$" /></compilers>
-     <compilers><compiler runtime="^kernel-sjlj$" /></compilers>
-     <compilers><compiler runtime="^ravenscar-cert$" /></compilers>
+     <compilers><compiler runtime="rtp" /></compilers>
+     <compilers><compiler runtime="kernel" /></compilers>
+     <config></config>
+   </configuration>
+
+   <configuration>
+     <compilers><compiler runtime="cert" /></compilers>
+     <compilers><compiler runtime="kernel" /></compilers>
+     <config></config>
+   </configuration>
+
+   <configuration>
+     <compilers><compiler runtime="cert" /></compilers>
      <compilers><compiler runtime="^rtp$" /></compilers>
-     <compilers><compiler runtime="^rtp-smp$" /></compilers>
-     <compilers><compiler runtime="^ravenscar-cert-rtp$" /></compilers>
+     <config></config>
+   </configuration>
+
+   <configuration>
+     <compilers><compiler runtime="rtp" /></compilers>
+     <compilers><compiler runtime="^ravenscar-cert$" /></compilers>
      <config></config>
    </configuration>
 
