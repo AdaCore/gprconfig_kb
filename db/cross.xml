@@ -53,6 +53,14 @@
      </targets>
      <config>
    Wind_Base := external ("WIND_BASE");
+   Wind_Usr := external ("WIND_USR", Wind_Base &amp; "/target/usr/");
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers><compiler runtime="ravenscar-cert-rtp" /></compilers>
+     <config>
+       WRS_RTP_Base := external ("WRS_RTP_BASE", "0x40000000");
      </config>
    </configuration>
 
@@ -158,10 +166,79 @@
    package Builder is
       for Executable_Suffix use ".vxe";
    end Builder;
+     </config>
+   </configuration>
 
+   <configuration>
+     <compilers>
+       <compiler name="GNAT" runtime="^rtp$" />
+       <compiler name="GNAT" runtime="^rtp-smp$" />
+       <compiler name="GCC" runtime="^rtp$" />
+       <compiler name="GCC" runtime="^rtp-smp$" />
+       <compiler name="GCC-WRS6" runtime="^rtp$" />
+       <compiler name="GCC-WRS6E500V2" runtime="^rtp$" />
+       <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
+       <compiler name="GCC-WRS6CERTE500V2" runtime="^rtp$" />
+       <compiler name="GCC-WRS6" runtime="^rtp-smp$" />
+       <compiler name="GCC-WRS6E500V2" runtime="^rtp-smp$" />
+       <compiler name="G++-WRS6" runtime="^rtp$" />
+       <compiler name="G++-WRS6E500V2" runtime="^rtp$" />
+       <compiler name="G++-WRS6" runtime="^rtp-smp$" />
+       <compiler name="G++-WRS6E500V2" runtime="^rtp-smp$" />
+       <compiler name="G++-WRS6CERT" runtime="^rtp$" />
+       <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworks$" />
+     </targets>
+     <config>
    package Linker is
       for Required_Switches use
 	Linker'Required_Switches &amp; ("-mrtp");
+   end Linker;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GNAT" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
+     </compilers>
+     <targets>
+       <target name="e500v2-wrs-vxworks$" />
+     </targets>
+     <config>
+   package Linker is
+      for Required_Switches use
+	Linker'Required_Switches
+        &amp; (Wind_Usr &amp; "/lib_cert_rtp/ppc/PPC32/e500v2common/certRtp.o",
+               "-nostartfiles",
+	       "-nostdlib",
+	       "-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+               "-mrtp");
+   end Linker;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GNAT" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
+     </compilers>
+     <targets>
+       <target name="powerpc-wrs-vxworks$" />
+     </targets>
+     <config>
+   package Linker is
+      for Required_Switches use
+	Linker'Required_Switches
+        &amp; (Wind_Usr &amp; "/lib_cert_rtp/ppc/PPC32/common/certRtp.o",
+               "-nostartfiles",
+	       "-nostdlib",
+	       "-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+               "-mrtp");
    end Linker;
      </config>
    </configuration>
