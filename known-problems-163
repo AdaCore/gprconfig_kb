@@ -11,6 +11,16 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-163-L713-021 Exception DIRECTORY_ERROR raised when missing obj directory
+
+  Problem:    The exception DIRECTORY_ERROR is raised when an externally
+              build project defines an object directory which does not
+              exists.
+
+  Status:     This was fixed in 1.7 on 2012-07-13
+
+  Workaround: Create the missing object directory manually
+
 KP-163-L624-002 Knowledge base must_match node may not have desired effect
 
   Problem:    In some cases, the toolchain that should have been ignored

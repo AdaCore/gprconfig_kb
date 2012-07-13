@@ -487,29 +487,32 @@ package body Gprbuild.Link is
                      Dir_Obj : Dir_Type;
 
                   begin
-                     Open (Dir_Obj, Obj_Dir);
+                     if Is_Regular_File (Obj_Dir) then
+                        Open (Dir_Obj, Obj_Dir);
 
-                     loop
-                        Read (Dir_Obj, Name_Buffer, Name_Len);
-                        exit when Name_Len = 0;
+                        loop
+                           Read (Dir_Obj, Name_Buffer, Name_Len);
+                           exit when Name_Len = 0;
 
-                        Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+                           Canonical_Case_File_Name
+                             (Name_Buffer (1 .. Name_Len));
 
-                        if Name_Len > Object_Suffix'Length
-                          and then
-                            Name_Buffer
-                              (Name_Len - Object_Suffix'Length + 1
-                               .. Name_Len) = Object_Suffix
-                        then
-                           Add_Argument
-                             (Obj_Dir & Directory_Separator &
-                              Name_Buffer (1 .. Name_Len),
-                              Opt.Verbose_Mode,
-                              Simple_Name => not Opt.Verbose_Mode);
-                        end if;
-                     end loop;
+                           if Name_Len > Object_Suffix'Length
+                             and then
+                               Name_Buffer
+                                 (Name_Len - Object_Suffix'Length + 1
+                                  .. Name_Len) = Object_Suffix
+                           then
+                              Add_Argument
+                                (Obj_Dir & Directory_Separator &
+                                   Name_Buffer (1 .. Name_Len),
+                                 Opt.Verbose_Mode,
+                                 Simple_Name => not Opt.Verbose_Mode);
+                           end if;
+                        end loop;
 
-                     Close (Dir_Obj);
+                        Close (Dir_Obj);
+                     end if;
                   end;
 
                else
