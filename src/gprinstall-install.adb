@@ -1201,10 +1201,48 @@ package body Gprinstall.Install is
                   elsif Fixed.Index (Line, "when """ & BN & """ =>") /= 0 then
                      --  Found a when with the current build name, this is a
                      --  previous install overwritten by this one. Remove this
-                     --  section. Note that in both cases (in project and in
-                     --  package Naming) there is 3 lines.
+                     --  section.
 
-                     Content.Delete (Pos, 3);
+                     Count_Line_To_Delete : declare
+
+                        use type Containers.Count_Type;
+
+                        function End_When (L : String) return Boolean;
+                        --  Return True if L is the end of a when alternative
+
+                        --------------
+                        -- End_When --
+                        --------------
+
+                        function End_When (L : String) return Boolean is
+                           P   : constant Natural :=
+                                   Strings.Fixed.Index_Non_Blank (L);
+                           Len : constant Natural := L'Length;
+                        begin
+                           return P > 0
+                             and then
+                               ((P + 4 <= Len
+                                 and then L (P .. P + 4) = "when ")
+                                or else
+                                  (P + 8 <= Len
+                                   and then L (P .. P + 8) = "end case;"));
+                        end End_When;
+
+                        N : Containers.Count_Type := 1;
+                        P : String_Vector.Cursor := Pos;
+                     begin
+                        --  The number of line to delete are from Pos to the
+                        --  first line starting with a "when".
+
+                        loop
+                           String_Vector.Next (P);
+
+                           exit when End_When (String_Vector.Element (P));
+                           N := N + 1;
+                        end loop;
+
+                        Content.Delete (Pos, N);
+                     end Count_Line_To_Delete;
                   end if;
                end;
 
