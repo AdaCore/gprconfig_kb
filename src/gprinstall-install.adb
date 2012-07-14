@@ -967,6 +967,13 @@ package body Gprinstall.Install is
 
             V.Append (-Line);
 
+            if Project.Library then
+               Line := +"         for Library_Kind use """;
+               Line := Line & To_Lower (Lib_Kind'Image (Project.Library_Kind));
+               Line := Line & """;";
+               V.Append (-Line);
+            end if;
+
             return V;
          end Data_Attributes;
 
@@ -1341,17 +1348,12 @@ package body Gprinstall.Install is
 
                Add_Empty_Line;
 
-               --  Library dir, name, kind
+               --  Library Name
 
                if Project.Library then
                   Content.Append
                     ("   for Library_Name use """
                      & Get_Name_String (Project.Library_Name)
-                     & """;");
-
-                  Content.Append
-                    ("   for Library_Kind use """
-                     & To_Lower (Lib_Kind'Image (Project.Library_Kind))
                      & """;");
 
                   --  Issue the Library_Version only if needed
