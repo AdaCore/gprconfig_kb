@@ -1210,7 +1210,7 @@ package body Gprinstall.Install is
                      --  previous install overwritten by this one. Remove this
                      --  section.
 
-                     Count_Line_To_Delete : declare
+                     Count_And_Delete : declare
 
                         use type Containers.Count_Type;
 
@@ -1235,7 +1235,7 @@ package body Gprinstall.Install is
                                    and then L (P .. P + 8) = "end case;"));
                         end End_When;
 
-                        N : Containers.Count_Type := 1;
+                        N : Containers.Count_Type := 0;
                         P : String_Vector.Cursor := Pos;
                      begin
                         --  The number of line to delete are from Pos to the
@@ -1243,13 +1243,13 @@ package body Gprinstall.Install is
 
                         loop
                            String_Vector.Next (P);
+                           N := N + 1;
 
                            exit when End_When (String_Vector.Element (P));
-                           N := N + 1;
                         end loop;
 
                         Content.Delete (Pos, N);
-                     end Count_Line_To_Delete;
+                     end Count_And_Delete;
                   end if;
                end;
 
