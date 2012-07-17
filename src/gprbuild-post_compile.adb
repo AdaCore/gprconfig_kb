@@ -2725,6 +2725,9 @@ package body Gprbuild.Post_Compile is
 
             Put_Line (Exchange_File, Binding_Label (Project_Files));
 
+            --  The main project file is always the first one, so that
+            --  gprbind may know the main project dir.
+
             Put_Line
               (Exchange_File,
                Get_Name_String (Main_Proj.Path.Display_Name));
