@@ -778,8 +778,7 @@ package body Gprinstall.Install is
 
          function Image
            (Name : Name_Id;
-            Id   : Array_Element_Id)
-            return String;
+            Id   : Array_Element_Id) return String;
          --  Returns Id image
 
          function Image (Id : Variable_Id) return String;
@@ -986,11 +985,10 @@ package body Gprinstall.Install is
 
          function Image
            (Name : Name_Id;
-            Id   : Array_Element_Id)
-            return String
+            Id   : Array_Element_Id) return String
          is
             E : constant Array_Element :=
-                           Tree.Shared.Array_Elements.Table (Id);
+                  Tree.Shared.Array_Elements.Table (Id);
          begin
             return "for "
               & Get_Name_String (Name)
@@ -1068,6 +1066,7 @@ package body Gprinstall.Install is
             while A /= No_Array loop
                N := Tree.Shared.Arrays.Table (A).Name;
                E := Tree.Shared.Arrays.Table (A).Value;
+
                while E /= No_Array_Element loop
                   V.Append ("            " & Image (N, E));
                   E := Tree.Shared.Array_Elements.Table (E).Next;
