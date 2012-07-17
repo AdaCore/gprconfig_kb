@@ -23,7 +23,8 @@
 --  the driver for gnatbind. It gets its input from gprmake through the
 --  binding exchange file and gives back its results through the same file.
 
-with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Directories;
+with Ada.Text_IO;     use Ada.Text_IO;
 
 with Ada.Command_Line; use Ada.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -463,6 +464,38 @@ begin
    end if;
 
    Close (IO_File);
+
+   --  Modify binding option -A=<file> if <file> is not an absolute path
+
+   if Project_Paths.Last >= 1 then
+      declare
+         Project_Dir : constant String :=
+                         Ada.Directories.Containing_Directory
+                           (Project_Paths.Table (1).Path.all);
+      begin
+         for J in 1 .. Binding_Options_Table.Last loop
+            if Binding_Options_Table.Table (J)'Length >= 4 and then
+               Binding_Options_Table.Table (J) (1 .. 3) = "-A="
+            then
+               declare
+                  File : constant String :=
+                    Binding_Options_Table.Table (J)
+                      (4 .. Binding_Options_Table.Table (J)'Length);
+               begin
+                  if not Is_Absolute_Path (File) then
+                     declare
+                        New_File : constant String :=
+                          Normalize_Pathname (File, Project_Dir);
+                     begin
+                        Binding_Options_Table.Table (J) :=
+                          new String'("-A=" & New_File);
+                     end;
+                  end if;
+               end;
+            end if;
+         end loop;
+      end;
+   end if;
 
    --  Check if GNAT version is 6.4 or higher
 
