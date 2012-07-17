@@ -776,7 +776,10 @@ package body Gprinstall.Install is
          --  Create packages that are needed, currently Naming and part of
          --  Linker is generated for the installed project.
 
-         function Image (Id : Array_Id) return String;
+         function Image
+           (Name : Name_Id;
+            Id   : Array_Element_Id)
+            return String;
          --  Returns Id image
 
          function Image (Id : Variable_Id) return String;
@@ -981,18 +984,20 @@ package body Gprinstall.Install is
          -- Image --
          -----------
 
-         function Image (Id : Array_Id) return String is
-            E : constant Array_Element_Id :=
-                  Tree.Shared.Arrays.Table (Id).Value;
-            V : constant Variable_Value :=
-                  Tree.Shared.Array_Elements.Table (E).Value;
+         function Image
+           (Name : Name_Id;
+            Id   : Array_Element_Id)
+            return String
+         is
+            E : constant Array_Element :=
+                           Tree.Shared.Array_Elements.Table (Id);
          begin
             return "for "
-              & Get_Name_String (Tree.Shared.Arrays.Table (Id).Name)
+              & Get_Name_String (Name)
               & " ("""
-              & Get_Name_String (Tree.Shared.Array_Elements.Table (E).Index)
+              & Get_Name_String (E.Index)
               & """) use "
-              & Image (V);
+              & Image (E.Value);
          end Image;
 
          function Image (Id : Variable_Id) return String is
@@ -1052,6 +1057,8 @@ package body Gprinstall.Install is
            (Pck : Package_Id) return String_Vector.Vector
          is
             A : Array_Id := Pcks (Pck).Decl.Arrays;
+            N : Name_Id;
+            E : Array_Element_Id;
             V : String_Vector.Vector;
          begin
             V.Append ("         when """ & Build_Name.all & """ =>");
@@ -1059,7 +1066,13 @@ package body Gprinstall.Install is
             --  Arrays
 
             while A /= No_Array loop
-               V.Append ("            " & Image (A));
+               N := Tree.Shared.Arrays.Table (A).Name;
+               E := Tree.Shared.Arrays.Table (A).Value;
+               while E /= No_Array_Element loop
+                  V.Append ("            " & Image (N, E));
+                  E := Tree.Shared.Array_Elements.Table (E).Next;
+               end loop;
+
                A := Tree.Shared.Arrays.Table (A).Next;
             end loop;
 
