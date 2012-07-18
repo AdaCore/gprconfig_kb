@@ -3339,7 +3339,8 @@ package body GprConfig.Knowledge is
          Set : Target_Lists.List;
       begin
          Put_Verbose ("create a new target set for " & Target);
-         Set.Append (new Pattern_Matcher'(Compile ("^" & Target & "$")));
+         Set.Append
+           (new Pattern_Matcher'(Compile ("^" & Quote (Target) & "$")));
          Base.Targets_Sets.Append ((Get_String (Target), Set));
          Id := Base.Targets_Sets.Last_Index;
       end;
