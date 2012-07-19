@@ -11,6 +11,18 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-163-L717-025 gprconfig crashes with exception Expression_Error
+
+  Problem:    If a query for the target of a compiler, such as
+              "gcc -dumpmachine", returns a string that includes special
+              characters or sequence of characters in regular expressions,
+              gprconfig may crash with exception Expression_error.
+
+  Status:     This was fixed in 1.7 on 2012-07-18
+
+  Workaround: Remove from the path the compilers that returns such malformed
+              targets.
+
 KP-163-L713-021 Exception DIRECTORY_ERROR raised when missing obj directory
 
   Problem:    The exception DIRECTORY_ERROR is raised when an externally
