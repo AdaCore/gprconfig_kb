@@ -1199,6 +1199,7 @@
        <target name="^.*dragonfly.*$" />
        <target name="^.*-fastos.*$" />
        <target name="^.*qnx[0-9]*$" />
+       <target name="^(i.86|x86_64)-gnu$" /><!-- Hurd -->
     </targets>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
