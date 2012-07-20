@@ -26,7 +26,7 @@
      </config>
    </configuration>
 
-   <!-- ppc-elf executables do not have any extension -->
+   <!-- on some targets, executables do not have any extension -->
    <configuration>
      <targets>
        <target name="^powerpc-elf$" />
@@ -36,6 +36,7 @@
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^arm-linux-androideabi" />
      </targets>
      <config>
    package Builder is
@@ -584,6 +585,7 @@
        <target name="^.*-elinos-linux$" />
        <target name="^dotnet$" />
        <target name="^.*-pc-mingw32$" />
+       <target name="^arm-linux-androideabi$" />
      </targets>
      <compilers>
        <compiler name="GNAT" />

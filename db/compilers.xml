@@ -411,7 +411,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|elinos-linux|pc-|-xcoff-).*)?gnatmake</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabispe-|avr-|elinos-linux|pc-|-xcoff-|arm-linux-androideabi-).*)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
