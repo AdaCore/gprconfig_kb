@@ -32,18 +32,6 @@
 
   <configuration>
     <targets>
-      <target name="^powerpc-xcoff-lynxos178$" />
-    </targets>
-    <config>
-   for Archive_Builder  use ("powerpc-xcoff-lynxos178-ar", "cr");
-   for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("powerpc-xcoff-lynxos178-ranlib");
-   for Archive_Suffix   use ".a";
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
       <target name="^powerpc-eabispe$" />
     </targets>
     <config>
@@ -134,6 +122,18 @@
    for Archive_Builder  use ("powerpc-elinos-linux-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
    for Archive_Indexer  use ("powerpc-elinos-linux-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^arm-linux-androideabi$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("arm-linux-androideabi-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("arm-linux-androideabi-ranlib");
    for Archive_Suffix   use ".a";
     </config>
   </configuration>
@@ -318,7 +318,6 @@
       <target name="^.*-wrs-vxworks.*$" />
       <target name="^powerpc-elf$"/>
       <target name="^powerpc-elf-lynxos$" />
-      <target name="^powerpc-xcoff-lynxos178$" />
       <target name="^powerpc-eabispe$"/>
       <target name="^avr$"/>
       <target name="^erc32-elf$"/>
@@ -327,6 +326,7 @@
       <target name="^.*aix.*$" />
       <target name="^.*ia64.*hpux.*$" />
       <target name="^.*pc-mingw32$" />
+      <target name="^arm-linux-androideabi$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
