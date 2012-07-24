@@ -683,11 +683,12 @@ package body Gprinstall.Install is
               and then Project.Library_Name /= Project.Lib_Internal_Name
             then
                Copy_File
-                 (From => Cat
+                 (From       => Cat
                     (Project.Library_Dir.Display_Name,
                      File_Name_Type (Project.Lib_Internal_Name)),
-                  To   => Lib_Dir,
-                  File => Get_Name_String (Project.Lib_Internal_Name));
+                  To         => Lib_Dir,
+                  File       => Get_Name_String (Project.Lib_Internal_Name),
+                  Executable => Project.Library_Kind /= Static);
 
                Copy_File
                  (From     => Lib_Dir
@@ -698,11 +699,12 @@ package body Gprinstall.Install is
 
             else
                Copy_File
-                 (From => Cat
+                 (From       => Cat
                     (Project.Library_Dir.Display_Name,
                      Get_Library_Filename),
-                  To   => Lib_Dir,
-                  File => Get_Name_String (Get_Library_Filename));
+                  To         => Lib_Dir,
+                  File       => Get_Name_String (Get_Library_Filename),
+                  Executable => Project.Library_Kind /= Static);
             end if;
 
             --  On Windows copy the shared libraries into the bin directory
@@ -713,10 +715,11 @@ package body Gprinstall.Install is
               and then Copy_Lib_In_Exec
             then
                Copy_File
-                 (From => Lib_Dir
-                            & Get_Name_String (Get_Library_Filename),
-                  To   => Exec_Dir,
-                  File => Get_Name_String (Get_Library_Filename));
+                 (From       => Lib_Dir
+                                  & Get_Name_String (Get_Library_Filename),
+                  To         => Exec_Dir,
+                  File       => Get_Name_String (Get_Library_Filename),
+                  Executable => True);
             end if;
          end if;
 
@@ -731,11 +734,12 @@ package body Gprinstall.Install is
                      Bin : constant String := Main_Binary (Strs (M).Value);
                   begin
                      Copy_File
-                       (From =>
+                       (From       =>
                           Get_Name_String
                             (Project.Exec_Directory.Display_Name) & Bin,
-                        To   => Exec_Dir,
-                        File => Bin);
+                        To         => Exec_Dir,
+                        File       => Bin,
+                        Executable => True);
                   end;
 
                   M := Strs (M).Next;
