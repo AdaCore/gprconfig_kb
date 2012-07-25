@@ -2316,13 +2316,26 @@ in the configuration project file.
 @item Run_Path_Option
 
   Specifies a ``run path option''; i.e., an option to use when linking an
-  executable or a shared library to indicate the path where to look for other
-  libraries. The value of this attribute is a string list. When linking an
-  executable or a shared library, the search path is concatenated with the last
-  string in the list, which may be an empty string. Example:
+  executable or a shared library to indicate the path (Rpath) where to look
+  for other libraries. The value of this attribute is a string list.
+  When linking an executable or a shared library, the search path is
+  concatenated with the last string in the list, which may be an empty string.
+
+  Example:
 
   @smallexample
     for Run_Path_Option  use ("-Wl,-rpath,");
+  @end smallexample
+
+@item Run_Path_Origin
+
+  Specifies the string to be used in an Rpath to indicate the directory
+  of the executable, allowing then to have Rpaths specified as relative paths.
+
+  Example:
+
+  @smallexample
+    for Run_Path_Origin use "$ORIGIN";
   @end smallexample
 
 @item Toolchain_Version (<language>)
