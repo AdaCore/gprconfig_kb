@@ -311,7 +311,7 @@ procedure Gprinstall.Main is
 
             elsif Has_Prefix (Build_Var_Option) then
                Build_Var := new String'
-                 (Arg (Prefix_Project_Option'Length + 2 .. Arg'Last));
+                 (Arg (Build_Var_Option'Length + 2 .. Arg'Last));
 
             elsif Has_Prefix (Build_Name_Option) then
                Free (Build_Name);
