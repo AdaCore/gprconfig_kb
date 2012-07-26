@@ -589,10 +589,6 @@ procedure Gprinstall.Main is
 
          Write_Line ("  -aP dir  Add directory dir to project search path");
 
-         --  Line for -d
-
-         Write_Line ("  -d       Display progress");
-
          --  Line for -eL
 
          Write_Line ("  -eL      "
@@ -615,9 +611,9 @@ procedure Gprinstall.Main is
 
          Write_Line ("  -r       Recursive (default except when using -c)");
 
-         --  Line for -R
+         --  Line for -f
 
-         Write_Line ("  -R       Do not use run path option");
+         Write_Line ("  -f       Force installaion, overwrite files");
 
          --  Line for -v
 
