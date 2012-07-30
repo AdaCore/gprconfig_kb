@@ -1164,7 +1164,7 @@ package body Gprinstall.Install is
                declare
                   BN   : constant String := Build_Name.all;
                   Line : constant String := String_Vector.Element (Pos);
-                  P    : Natural;
+                  P, L : Natural;
                begin
                   if Fixed.Index (Line, "type BUILD_KIND is (") /= 0 then
                      --  This is the "type BUILD_KIND" line, add new build name
@@ -1185,6 +1185,35 @@ package body Gprinstall.Install is
                              (Pos,
                               Line (Line'First .. P - 1)
                               & ", """ & BN & """);");
+                        end if;
+                     end if;
+
+                  elsif Fixed.Index (Line, ":= external") /= 0
+                    and then Build_Var /= null
+                  then
+                     --  Replace build-var with new one
+
+                     P := Fixed.Index (Line, """");
+
+                     if P = 0 then
+                        Write_Line ("cannot parse the BUILD line");
+                        OS_Exit (1);
+
+                     else
+                        L := P + 1;
+                        while L <= Line'Last and then Line (L) /= '"' loop
+                           L := L + 1;
+                        end loop;
+
+                        if Line (L) /= '"' then
+                           Write_Line ("cannot parse the BUILD line");
+                           OS_Exit (1);
+
+                        else
+                           Content.Replace_Element
+                             (Pos,
+                              Line (Line'First .. P)
+                              & Build_Var.all & Line (L .. Line'Last));
                         end if;
                      end if;
 
