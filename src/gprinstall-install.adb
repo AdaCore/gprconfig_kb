@@ -553,7 +553,7 @@ package body Gprinstall.Install is
 
          if Dry_Run or else Opt.Verbose_Mode then
             if Sym_Link then
-               Write_Str ("ln ");
+               Write_Str ("ln -s ");
             else
                Write_Str ("cp ");
             end if;
