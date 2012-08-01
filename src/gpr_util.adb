@@ -19,10 +19,12 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Directories;       use Ada.Directories;
 with Ada.Streams.Stream_IO; use Ada.Streams;
 with Ada.Strings.Fixed;     use Ada.Strings.Fixed;
 with Ada.Strings.Maps;      use Ada.Strings.Maps;
 with Interfaces.C.Strings;
+with System;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
@@ -222,6 +224,29 @@ package body Gpr_Util is
          Close (Resp_File, Closing_Status);
       end if;
    end Create_Response_File;
+
+   ---------------------
+   -- Create_Sym_Link --
+   ---------------------
+
+   procedure Create_Sym_Link (From, To : String) is
+
+      function Symlink
+        (Oldpath : System.Address;
+         Newpath : System.Address) return Integer;
+      pragma Import (C, Symlink, "__gnat_symlink");
+
+      C_From : constant String := From & ASCII.NUL;
+      C_To   : constant String :=
+                 Relative_Path
+                   (Containing_Directory (To), Containing_Directory (From)) &
+                 Ada.Directories.Simple_Name (To) & ASCII.NUL;
+      Result : Integer;
+      pragma Unreferenced (Result);
+
+   begin
+      Result := Symlink (C_To'Address, C_From'Address);
+   end Create_Sym_Link;
 
    ----------------------
    -- Ensure_Directory --

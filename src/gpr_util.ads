@@ -254,4 +254,7 @@ package Gpr_Util is
    --  Returns the relative pathname which corresponds to Pathname when
    --  starting from directory to. Both Pathname and To must be absolute paths.
 
+   procedure Create_Sym_Link (From, To : String);
+   --  Create a relative symlink in From pointing to To
+
 end Gpr_Util;
