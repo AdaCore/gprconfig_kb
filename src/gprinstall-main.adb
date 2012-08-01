@@ -619,6 +619,10 @@ procedure Gprinstall.Main is
 
          Write_Line ("  -r       Recursive (default except when using -c)");
 
+         --  Line for -a
+
+         Write_Line ("  -a       Force copy of all sources");
+
          --  Line for -f
 
          Write_Line ("  -f       Force installaion, overwrite files");
