@@ -30,7 +30,6 @@ with Ada.Text_IO;                       use Ada.Text_IO;
 with Gpr_Util; use Gpr_Util;
 
 with Makeutl;
-with MLib;     use MLib;
 with Namet;    use Namet;
 with Opt;
 with Output;   use Output;
@@ -105,6 +104,9 @@ package body Gprinstall.Install is
 
       function Lib_Dir (Build_Name : Boolean := True) return String;
       --  Returns the full pathname to the library destination directory
+
+      function Link_Lib_Dir return String;
+      --  Returns the full pathname to the lib symlib directory
 
       function Project_Dir return String;
       --  Returns the full pathname to the project destination directory
@@ -473,6 +475,19 @@ package body Gprinstall.Install is
          end if;
       end Lib_Dir;
 
+      ------------------
+      -- Link_Lib_Dir --
+      ------------------
+
+      function Link_Lib_Dir return String is
+      begin
+         if Is_Absolute_Path (Link_Lib_Subdir.V.all) then
+            return Link_Lib_Subdir.V.all;
+         else
+            return Prefix_Dir.V.all & Link_Lib_Subdir.V.all;
+         end if;
+      end Link_Lib_Dir;
+
       -----------------
       -- Sources_Dir --
       -----------------
@@ -525,7 +540,10 @@ package body Gprinstall.Install is
       is
          Dest_Filename : constant String := To & File;
       begin
-         if Exists (Dest_Filename) and then not Force_Installations then
+         if not Sym_Link
+           and then Exists (Dest_Filename)
+           and then not Force_Installations
+         then
             Write_Str ("file ");
             Write_Str (File);
             Write_Str (" exists, use -f to overwrite");
@@ -547,9 +565,15 @@ package body Gprinstall.Install is
          end if;
 
          if not Dry_Run then
-            if not Exists (To) then
+            if (not Sym_Link and then not Exists (To))
+              or else (Sym_Link and then not Exists (From))
+            then
                if Opt.Setup_Projects then
-                  Create_Path (To);
+                  if Sym_Link then
+                     Create_Path (Containing_Directory (From));
+                  else
+                     Create_Path (To);
+                  end if;
 
                else
                   Set_Standard_Error;
@@ -561,7 +585,7 @@ package body Gprinstall.Install is
             --  Do copy
 
             if Sym_Link then
-               Create_Sym_Links (From, File, To, "");
+               Create_Sym_Link (From, To & File);
 
                --  Add file to manifest
 
@@ -714,18 +738,26 @@ package body Gprinstall.Install is
             end if;
 
             --  On Windows copy the shared libraries into the bin directory
-            --  for it to be found in the PATH when running executable.
+            --  for it to be found in the PATH when running executable. On non
+            --  Windows platforms add a symlink into the lib directory.
 
-            if Project.Library_Kind /= Static
-              and then Makeutl.On_Windows
-              and then Add_Lib_Link
-            then
-               Copy_File
-                 (From       => Lib_Dir
-                                  & Get_Name_String (Get_Library_Filename),
-                  To         => Exec_Dir,
-                  File       => Get_Name_String (Get_Library_Filename),
-                  Executable => True);
+            if Project.Library_Kind /= Static and then Add_Lib_Link then
+               if Makeutl.On_Windows then
+                  Copy_File
+                    (From       => Lib_Dir
+                                     & Get_Name_String (Get_Library_Filename),
+                     To         => Exec_Dir,
+                     File       => Get_Name_String (Get_Library_Filename),
+                     Executable => True);
+
+               else
+                  Copy_File
+                    (From       => Link_Lib_Dir
+                                     & Get_Name_String (Get_Library_Filename),
+                     To         => Lib_Dir,
+                     File       => Get_Name_String (Get_Library_Filename),
+                     Sym_Link   => True);
+               end if;
             end if;
          end if;
 
