@@ -712,7 +712,7 @@ package body Gprinstall.Install is
 
             if Project.Library_Kind /= Static
               and then Makeutl.On_Windows
-              and then Copy_Lib_In_Exec
+              and then Add_Lib_Link
             then
                Copy_File
                  (From       => Lib_Dir

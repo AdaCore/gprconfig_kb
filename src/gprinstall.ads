@@ -119,8 +119,8 @@ private
    --  interface for a SAL). If All_Sources is set to True all the sources are
    --  copied.
 
-   Copy_Lib_In_Exec : Boolean := True;
-   --  Wether to copy the shared library into the executable directory. This is
-   --  used on Windows to place the DLL into the PATH.
+   Add_Lib_Link : Boolean := True;
+   --  Wether to copy the shared library into the executable directory on
+   --  Windows or a create a link into the lib directory on UNIX.
 
 end Gprinstall;

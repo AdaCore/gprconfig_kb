@@ -3213,10 +3213,10 @@ appended to the prefix above.
 project installation directory if an absolute path. Otherwise it is
 appended to the prefix above.
 
-@item @option{--no-lib-in-exec} : Disable copy of shared libraries into
-the executable directory. This is done by default on Windows to place
-the DLLs into the bin directory for them to be found in the PATH. On
-other platforms this option is ignored.
+@item @option{--no-lib-link} : Disable copy of shared libraries into
+the executable directory on Windows or creation of symlink in the lib
+directory on UNIX. This is done by default to place the shared
+libraries into a directory where application will look for them.
 
 @item @option{-q} : Be quiet/terse. There is no output, except to report
   problems.

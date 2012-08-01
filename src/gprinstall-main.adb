@@ -339,8 +339,8 @@ procedure Gprinstall.Main is
             elsif Has_Prefix (Dry_Run_Option) then
                Dry_Run := True;
 
-            elsif Has_Prefix (No_Lib_In_Exec_Option) then
-               Copy_Lib_In_Exec := False;
+            elsif Has_Prefix (No_Lib_Link_Option) then
+               Add_Lib_Link := False;
 
             else
                Processed := False;
@@ -567,8 +567,9 @@ procedure Gprinstall.Main is
          Write_Line ("           The executbales directory/sub-directory");
          Write_Line ("  --project-subdir=<dir>");
          Write_Line ("           The project directory/sub-directory");
-         Write_Line ("  --no-lib-in-exec");
-         Write_Line ("           Do not copy shared lib in exec directory");
+         Write_Line ("  --no-lib-link");
+         Write_Line
+           ("           Do not copy shared lib in exec/lib directory");
 
          --  Line for --dry-run
 
