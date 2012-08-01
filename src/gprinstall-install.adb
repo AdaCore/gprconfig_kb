@@ -842,6 +842,10 @@ package body Gprinstall.Install is
            (Pck : Package_Id) return String_Vector.Vector;
          --  Returns the naming case alternative for this project configuration
 
+         function Linker_Case_Alternative
+           (Pck : Package_Id) return String_Vector.Vector;
+         --  Returns the linker case alternative for this project configuration
+
          function Data_Attributes return String_Vector.Vector;
          --  Returns the attributes for the sources, objects and library
 
@@ -880,7 +884,7 @@ package body Gprinstall.Install is
                   V : Variable_Id := Pcks (Pck).Decl.Attributes;
                begin
                   while V /= No_Variable loop
-                     Content.Append (Image (V));
+                     Content.Append ("      " & Image (V));
                      V := Tree.Shared.Variable_Elements.Table (V).Next;
                   end loop;
                end;
@@ -902,27 +906,12 @@ package body Gprinstall.Install is
             begin
                Content.Append ("   package Linker is");
 
+               Content.Append ("      case BUILD is");
                --  Attribute Linker_Options only if set
 
-               declare
-                  V : Variable_Id := Pcks (Pck).Decl.Attributes;
-               begin
-                  while V /= No_Variable loop
-                     if Tree.Shared.Variable_Elements.Table (V).Name =
-                       Name_Linker_Options
-                     then
-                        declare
-                           Img : constant String := Image (V);
-                        begin
-                           if Img'Length /= 0 then
-                              Content.Append (Image (V));
-                           end if;
-                        end;
-                     end if;
-                     V := Tree.Shared.Variable_Elements.Table (V).Next;
-                  end loop;
-               end;
+               Content.Append (Linker_Case_Alternative (Pck));
 
+               Content.Append ("      end case;");
                Content.Append ("   end Linker;");
                Add_Empty_Line;
             end Create_Linker;
@@ -1047,7 +1036,7 @@ package body Gprinstall.Install is
             if V.Default then
                return "";
             else
-               return "      for "
+               return "for "
                  & Get_Name_String
                      (Tree.Shared.Variable_Elements.Table (Id).Name)
                  & " use "
@@ -1088,6 +1077,43 @@ package body Gprinstall.Install is
                   return "";
             end case;
          end Image;
+
+         -----------------------------
+         -- Linker_Case_Alternative --
+         -----------------------------
+
+         function Linker_Case_Alternative
+           (Pck : Package_Id) return String_Vector.Vector
+         is
+            use type Ada.Containers.Count_Type;
+
+            V : Variable_Id := Pcks (Pck).Decl.Attributes;
+            R : String_Vector.Vector;
+         begin
+            R.Append ("         when """ & Build_Name.all & """ =>");
+
+            while V /= No_Variable loop
+               if Tree.Shared.Variable_Elements.Table (V).Name =
+                 Name_Linker_Options
+               then
+                  declare
+                     Img : constant String := Image (V);
+                  begin
+                     if Img'Length /= 0 then
+                        R.Append ("            " & Img);
+                     end if;
+                  end;
+               end if;
+               V := Tree.Shared.Variable_Elements.Table (V).Next;
+            end loop;
+
+            if R.Length = 1 then
+               --  No linker alternative found, add null statement
+               R.Append ("            null;");
+            end if;
+
+            return R;
+         end Linker_Case_Alternative;
 
          -----------------------------
          -- Naming_Case_Alternative --
@@ -1161,8 +1187,10 @@ package body Gprinstall.Install is
             end if;
          end Write_Project;
 
-         Naming : Boolean := False;
-         Pos    : String_Vector.Cursor;
+         type Section_Kind is (Top, Naming, Linker);
+
+         Current_Section : Section_Kind := Top;
+         Pos             : String_Vector.Cursor;
 
       begin
          if Dry_Run or else Opt.Verbose_Mode then
@@ -1256,42 +1284,64 @@ package body Gprinstall.Install is
                      end if;
 
                   elsif Fixed.Index (Line, "package Naming is") /= 0 then
-                     Naming := True;
+                     Current_Section := Naming;
+
+                  elsif Fixed.Index (Line, "package Linker is") /= 0 then
+                     Current_Section := Linker;
 
                   elsif Fixed.Index (Line, "case BUILD is") /= 0 then
 
                      --  Add new case section for the new build name
 
-                     if Naming then
-                        --  In the Naming package
-
-                        declare
-                           Pck : Package_Id := Project.Decl.Packages;
-                        begin
-                           while Pck /= No_Package loop
-                              if Pcks (Pck).Decl /= No_Declarations then
-                                 if Pcks (Pck).Name = Name_Naming then
-                                    String_Vector.Next (Pos);
-                                    Content.Insert
-                                      (Pos, Naming_Case_Alternative (Pck));
+                     case Current_Section is
+                        when Naming =>
+                           declare
+                              Pck : Package_Id := Project.Decl.Packages;
+                           begin
+                              Look_Naming :
+                              while Pck /= No_Package loop
+                                 if Pcks (Pck).Decl /= No_Declarations then
+                                    if Pcks (Pck).Name = Name_Naming then
+                                       String_Vector.Next (Pos);
+                                       Content.Insert
+                                         (Pos, Naming_Case_Alternative (Pck));
+                                       exit Look_Naming;
+                                    end if;
                                  end if;
-                              end if;
-                              Pck := Pcks (Pck).Next;
-                           end loop;
-                        end;
+                                 Pck := Pcks (Pck).Next;
+                              end loop Look_Naming;
+                           end;
 
-                        exit Parse_Content;
+                        when Linker =>
+                           declare
+                              Pck : Package_Id := Project.Decl.Packages;
+                           begin
+                              Look_Linker :
+                              while Pck /= No_Package loop
+                                 if Pcks (Pck).Decl /= No_Declarations then
+                                    if Pcks (Pck).Name = Name_Linker then
+                                       String_Vector.Next (Pos);
+                                       Content.Insert
+                                         (Pos, Linker_Case_Alternative (Pck));
+                                       exit Look_Linker;
+                                    end if;
+                                 end if;
+                                 Pck := Pcks (Pck).Next;
+                              end loop Look_Linker;
+                           end;
 
-                     else
-                        --  For the Sources/Lib attributes
-                        String_Vector.Next (Pos);
-                        Content.Insert (Pos, Data_Attributes);
-                     end if;
+                        when Top =>
+                           --  For the Sources/Lib attributes
+                           String_Vector.Next (Pos);
+                           Content.Insert (Pos, Data_Attributes);
+                     end case;
 
                   elsif Fixed.Index (Line, "when """ & BN & """ =>") /= 0 then
                      --  Found a when with the current build name, this is a
                      --  previous install overwritten by this one. Remove this
-                     --  section.
+                     --  section. Note that this removes sections from all
+                     --  packages Naming and Linker, and from project level
+                     --  case alternative.
 
                      Count_And_Delete : declare
 
