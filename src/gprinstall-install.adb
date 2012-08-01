@@ -63,11 +63,12 @@ package body Gprinstall.Install is
       Active         : Boolean := True;
       --  Whether installation is active or not (Install paskage's attribute)
 
-      Prefix_Dir     : Param := Dup (Global_Prefix_Dir);
-      Exec_Subdir    : Param := Dup (Global_Exec_Subdir);
-      Lib_Subdir     : Param := Dup (Global_Lib_Subdir);
-      Sources_Subdir : Param := Dup (Global_Sources_Subdir);
-      Project_Subdir : Param := Dup (Global_Project_Subdir);
+      Prefix_Dir      : Param := Dup (Global_Prefix_Dir);
+      Exec_Subdir     : Param := Dup (Global_Exec_Subdir);
+      Lib_Subdir      : Param := Dup (Global_Lib_Subdir);
+      Link_Lib_Subdir : Param := Dup (Global_Link_Lib_Subdir);
+      Sources_Subdir  : Param := Dup (Global_Sources_Subdir);
+      Project_Subdir  : Param := Dup (Global_Project_Subdir);
 
       type Items is (Source, Object, Dependency, Library, Executable);
 
@@ -254,6 +255,11 @@ package body Gprinstall.Install is
                           and then Global_Lib_Subdir.Default
                         then
                            Replace (Lib_Subdir, V.Value.Value);
+
+                        elsif V.Name = Name_Link_Lib_Subdir
+                          and then Global_Link_Lib_Subdir.Default
+                        then
+                           Replace (Link_Lib_Subdir, V.Value.Value);
 
                         elsif V.Name = Name_Sources_Subdir
                           and then Global_Sources_Subdir.Default

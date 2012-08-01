@@ -3205,6 +3205,10 @@ appended to the prefix above.
 library and object installation directory if an absolute
 path. Otherwise it is appended to the prefix above.
 
+@item @option{--link-lib-subdir=path} : Specify the value for the
+library symlink directory if an absolute path. Otherwise it is
+appended to the prefix above.
+
 @item @option{---exec-subdir=path} : Specify the value for the
 executables installation directory if an absolute path. Otherwise it is
 appended to the prefix above.

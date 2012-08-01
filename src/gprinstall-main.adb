@@ -54,15 +54,16 @@ procedure Gprinstall.Main is
 
    --  Options specific to gprinstall
 
-   Build_Var_Option      : constant String := "--build-var";
-   Build_Name_Option     : constant String := "--build-name";
-   Uninstall_Option      : constant String := "--uninstall";
-   Mode_Option           : constant String := "--mode=";
-   Lib_Subdir_Option     : constant String := "--lib-subdir";
-   Exec_Subdir_Option    : constant String := "--exec-subdir";
-   Sources_Subdir_Option : constant String := "--sources-subdir";
-   Project_Subdir_Option : constant String := "--project-subdir";
-   No_Lib_In_Exec_Option : constant String := "--no-lib-in-exec";
+   Build_Var_Option       : constant String := "--build-var";
+   Build_Name_Option      : constant String := "--build-name";
+   Uninstall_Option       : constant String := "--uninstall";
+   Mode_Option            : constant String := "--mode=";
+   Lib_Subdir_Option      : constant String := "--lib-subdir";
+   Link_Lib_Subdir_Option : constant String := "--link-lib-subdir";
+   Exec_Subdir_Option     : constant String := "--exec-subdir";
+   Sources_Subdir_Option  : constant String := "--sources-subdir";
+   Project_Subdir_Option  : constant String := "--project-subdir";
+   No_Lib_Link_Option     : constant String := "--no-lib-link";
 
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
@@ -302,6 +303,9 @@ procedure Gprinstall.Main is
 
             elsif Has_Prefix (Lib_Subdir_Option) then
                Set_Param (Global_Lib_Subdir, Lib_Subdir_Option);
+
+            elsif Has_Prefix (Link_Lib_Subdir_Option) then
+               Set_Param (Global_Link_Lib_Subdir, Link_Lib_Subdir_Option);
 
             elsif Has_Prefix (Sources_Subdir_Option) then
                Set_Param (Global_Sources_Subdir, Sources_Subdir_Option);
@@ -563,6 +567,9 @@ procedure Gprinstall.Main is
          Write_Line ("           The sources directory/sub-directory");
          Write_Line ("  --lib-subdir=<dir>");
          Write_Line ("           The library directory/sub-directory");
+         Write_Line ("  --link-lib-subdir=<dir>");
+         Write_Line
+           ("           The symlib directory/sub-directory to libraries");
          Write_Line ("  --exec-subdir=<dir>");
          Write_Line ("           The executbales directory/sub-directory");
          Write_Line ("  --project-subdir=<dir>");

@@ -70,6 +70,9 @@ private
    Global_Lib_Subdir : Param := (new String'("lib" & DS), True);
    --  Subdirectory for libraries
 
+   Global_Link_Lib_Subdir : Param := (new String'("lib" & DS), True);
+   --  Subdirectory for libraries sym links (on UNIX)
+
    Global_Sources_Subdir : Param := (new String'("include" & DS), True);
    --  Subdirectory for sources
 
