@@ -1185,11 +1185,11 @@ procedure Gprbuild.Main is
                Register_Command_Line_Option (Verbose_Medium_Mode_Option);
             end if;
 
-         elsif Arg'Length = 4 and then Arg (1 .. 3) = "-vP"
-           and then Arg (4) in '0' .. '2'
-         then
+         elsif Arg'Length >= 3 and then Arg (1 .. 3) = "-vP" then
             Forbidden_In_Package_Builder;
-            case Arg (4) is
+
+            if Arg'Length = 4 and then  Arg (4) in '0' .. '2' then
+               case Arg (4) is
                when '0' =>
                   Current_Verbosity := Prj.Default;
                when '1' =>
@@ -1198,7 +1198,13 @@ procedure Gprbuild.Main is
                   Current_Verbosity := Prj.High;
                when others =>
                   null;
-            end case;
+               end case;
+
+            else
+               Fail_Program
+                 (Project_Tree,
+                  "invalid verbosity level " & Arg (4 .. Arg'Last));
+            end if;
 
          elsif Arg = "-we" then
             Opt.Warning_Mode := Opt.Treat_As_Error;
