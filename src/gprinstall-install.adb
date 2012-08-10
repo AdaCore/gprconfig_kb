@@ -1221,7 +1221,7 @@ package body Gprinstall.Install is
 
             --  Do merging for new build, we need to add an entry into the
             --  BUILD_KIND type and a corresponding case entry in the naming
-            --  package.
+            --  and Linker package.
 
             Pos := Content.First;
 
