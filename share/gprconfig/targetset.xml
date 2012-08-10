@@ -277,6 +277,12 @@
     <target>leon3-elf.*</target>
   </targetset>
 
+  <!-- arm-elf-.*  -->
+  <targetset>
+    <target>arm-elf-linux</target>
+    <target>arm-eabi</target>
+  </targetset>
+
   <!-- avr -->
   <targetset>
     <target>avr-elf-windows</target>

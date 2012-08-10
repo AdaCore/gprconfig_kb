@@ -188,6 +188,18 @@
 
   <configuration>
     <targets>
+      <target name="^arm-eabi$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("arm-eabi-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("arm-eabi-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^avr$" />
     </targets>
     <config>
@@ -336,6 +348,7 @@
       <target name="^erc32-elf$"/>
       <target name="^leon-elf$"/>
       <target name="^leon3-elf$"/>
+      <target name="^arm-eabi$"/>
       <target name="^.*aix.*$" />
       <target name="^.*ia64.*hpux.*$" />
       <target name="^.*pc-mingw32$" />
@@ -359,6 +372,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^arm-eabi$" />
        <target name="^.*wrs-vxworks.*$" />
        <target name="^avr$" />
     </targets>
@@ -788,6 +802,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^arm-eabi$" />
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*wrs-vxworks.*$" />
@@ -828,6 +843,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^arm-eabi$" />
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
@@ -867,6 +883,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^arm-eabi$" />
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />

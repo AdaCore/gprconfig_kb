@@ -35,6 +35,7 @@
        <target name="^avr$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^arm-eabi$" />
        <target name="^.*-elinos-linux$" />
        <target name="^arm-linux-androideabi" />
      </targets>
@@ -580,6 +581,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^arm-eabi$" />
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
