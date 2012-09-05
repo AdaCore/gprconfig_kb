@@ -593,9 +593,17 @@ package body Gprinstall.Install is
                Add_To_Manifest (From);
 
             else
-               Directories.Copy_File
-                 (Source_Name => From,
-                  Target_Name => Dest_Filename);
+               begin
+                  Directories.Copy_File
+                    (Source_Name => From,
+                     Target_Name => Dest_Filename);
+               exception
+                  when Text_IO.Use_Error =>
+                     Write_Line
+                       ("cannot overwrite file " & Dest_Filename
+                        & " check permissions.");
+                     OS_Exit (1);
+               end;
 
                if Executable then
                   Set_Executable (Dest_Filename);
