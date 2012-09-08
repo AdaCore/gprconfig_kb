@@ -442,7 +442,8 @@ package body Gprinstall.Install is
 
       function Has_Sources (Project : Project_Id) return Boolean is
       begin
-         return Project.Source_Dirs /= Nil_String;
+         return Project.Source_Dirs /= Nil_String
+           or else Project.Qualifier = Aggregate_Library;
       end Has_Sources;
 
       --------------
@@ -649,9 +650,16 @@ package body Gprinstall.Install is
                  and then Get_Name_String (Sid.Language.Name) = "ada";
             end Is_Ada;
 
-            Iter : Source_Iterator := For_Each_Source (Tree, Project);
+            Iter : Source_Iterator;
             Sid  : Source_Id;
+
          begin
+            if Project.Qualifier = Aggregate_Library then
+               Iter := For_Each_Source (Tree);
+            else
+               Iter := For_Each_Source (Tree, Project);
+            end if;
+
             loop
                Sid := Element (Iter);
                exit when Sid = No_Source;
@@ -1458,24 +1466,26 @@ package body Gprinstall.Install is
             Add_Empty_Line;
 
             --  Handle with clauses, generate a with clauses only for project
-            --  bringing some visibility to sources.
+            --  bringing some visibility to sources. No need for doing this for
+            --  aggregate projects.
 
-            declare
-               L : Project_List := Project.Imported_Projects;
-            begin
+            if Project.Qualifier /= Aggregate_Library then
+               declare
+                  L : Project_List := Project.Imported_Projects;
+               begin
+                  while L /= null loop
+                     if Bring_Sources (L.Project) then
+                        Content.Append
+                          ("with """
+                          & Base_Name
+                            (Get_Name_String (L.Project.Path.Display_Name))
+                          & """;");
+                     end if;
 
-               while L /= null loop
-                  if Bring_Sources (L.Project) then
-                     Content.Append
-                       ("with """
-                        & Base_Name
-                          (Get_Name_String (L.Project.Path.Display_Name))
-                        & """;");
-                  end if;
-
-                  L := L.Next;
-               end loop;
-            end;
+                     L := L.Next;
+                  end loop;
+               end;
+            end if;
 
             --  Project name
 
