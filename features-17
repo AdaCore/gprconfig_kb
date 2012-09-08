@@ -8,6 +8,10 @@ This file contains a complete list of new features in version 1.7 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-L908-003 Add aggregate project support for gprinstall (2012-09-08)
+
+  gprinstall can now be used to install aggregate projects.
+
 NF-17-L126-014 Verbosity when linking shared SALs (2012-01-26)
 
   In default mode (not verbose and not quiet), the base name of gnatbind and

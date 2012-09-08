@@ -1616,6 +1616,24 @@ package body Gprinstall.Install is
       --  Whether the project is to be installed
 
    begin
+      --  If we have an aggregate project we just install separately all
+      --  aggregated projects.
+
+      if Project.Qualifier = Aggregate then
+         declare
+            L : Aggregated_Project_List := Project.Aggregated_Projects;
+         begin
+            while L /= null loop
+               Process (L.Tree, L.Project);
+               L := L.Next;
+            end loop;
+         end;
+
+         --  Nothing more to do for an aggegate project
+
+         return;
+      end if;
+
       if not Installed.Contains (Project.Name) then
          Installed.Include (Project.Name);
 
@@ -1655,19 +1673,6 @@ package body Gprinstall.Install is
             if Install_Project  or Opt.Verbose_Mode then
                Write_Eol;
             end if;
-         end if;
-
-         --  Currently we do not support aggregate projects
-
-         if Project.Qualifier = Aggregate then
-            Write_Line
-              (Get_Name_String (Project.Path.Display_Name)
-               & " not installed");
-            Write_Str
-              ("Aggregate projects not supported, ");
-            Write_Line
-              ("install each individual aggregated projects.");
-            Write_Eol;
          end if;
 
          --  If this is not an active project, just return now
