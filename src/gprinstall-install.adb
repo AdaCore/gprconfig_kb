@@ -628,9 +628,9 @@ package body Gprinstall.Install is
          pragma Inline (Is_Ada);
          --  Returns True if Sid is an Ada source
 
-         ----------
-         -- Copy --
-         ----------
+         -----------------
+         -- Copy_Source --
+         -----------------
 
          procedure Copy_Source (Sid : Source_Id) is
          begin
