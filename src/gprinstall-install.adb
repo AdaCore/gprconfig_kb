@@ -1657,6 +1657,19 @@ package body Gprinstall.Install is
             end if;
          end if;
 
+         --  Currently we do not support aggregate projects
+
+         if Project.Qualifier = Aggregate then
+            Write_Line
+              (Get_Name_String (Project.Path.Display_Name)
+               & " not installed");
+            Write_Str
+              ("Aggregate projects not supported, ");
+            Write_Line
+              ("install each individual aggregated projects.");
+            Write_Eol;
+         end if;
+
          --  If this is not an active project, just return now
 
          if not Install_Project then
