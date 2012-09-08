@@ -622,11 +622,88 @@ package body Gprinstall.Install is
 
       procedure Copy_Files is
 
+         procedure Copy_Project_Sources
+           (Project : Project_Id; Tree : Project_Tree_Ref);
+         --  Copy sources from the given project
+
          procedure Copy_Source (Sid : Source_Id);
 
-         function Is_Ada (Sid : Source_Id) return Boolean;
-         pragma Inline (Is_Ada);
-         --  Returns True if Sid is an Ada source
+         --------------------------
+         -- Copy_Project_Sources --
+         --------------------------
+
+         procedure Copy_Project_Sources
+           (Project : Project_Id; Tree : Project_Tree_Ref)
+         is
+            function Is_Ada (Sid : Source_Id) return Boolean;
+            pragma Inline (Is_Ada);
+            --  Returns True if Sid is an Ada source
+
+            ------------
+            -- Is_Ada --
+            ------------
+
+            function Is_Ada (Sid : Source_Id) return Boolean is
+            begin
+               return Sid.Language /= null
+                 and then Get_Name_String (Sid.Language.Name) = "ada";
+            end Is_Ada;
+
+            Iter : Source_Iterator := For_Each_Source (Tree, Project);
+            Sid  : Source_Id;
+         begin
+            loop
+               Sid := Element (Iter);
+               exit when Sid = No_Source;
+
+               --  Skip sources that are removed/excluded and sources not
+               --  part of the interface for standalone libraries.
+
+               if not Sid.Locally_Removed
+                 and then (Project.Standalone_Library = No
+                           or else Sid.Declared_In_Interfaces)
+               then
+                  --  If the unit has a naming exception we install it
+                  --  regardless of the fact that it is part of the interface
+                  --  or not. This is because the installed project will have
+                  --  a Namig package referencing this file. The .ali is looked
+                  --  based on the name of the renamed body.
+
+                  if All_Sources or else Sid.Naming_Exception = Yes then
+                     Copy_Source (Sid);
+                  end if;
+
+                  --  Objects / Deps
+
+                  if Other_Part (Sid) = null or else Sid.Kind /= Spec then
+                     if Copy (Object) then
+                        Copy_File
+                          (From => Cat
+                             (Get_Object_Directory
+                                (Sid.Project, False), Sid.Object),
+                           To   => Lib_Dir,
+                           File => Get_Name_String (Sid.Object));
+                     end if;
+
+                     --  Only install Ada .ali files
+
+                     if Copy (Dependency)
+                       and then Sid.Kind /= Sep
+                       and then Is_Ada (Sid)
+                     then
+                        Copy_File
+                          (From => Cat
+                             (Get_Object_Directory (Sid.Project, False),
+                              Sid.Dep_Name),
+                           To   => Lib_Dir,
+                           File => Get_Name_String (Sid.Dep_Name));
+                     end if;
+                  end if;
+               end if;
+
+               Next (Iter);
+            end loop;
+         end Copy_Project_Sources;
 
          -----------------
          -- Copy_Source --
@@ -642,77 +719,14 @@ package body Gprinstall.Install is
             end if;
          end Copy_Source;
 
-         ------------
-         -- Is_Ada --
-         ------------
-
-         function Is_Ada (Sid : Source_Id) return Boolean is
-         begin
-            return Sid.Language /= null
-              and then Get_Name_String (Sid.Language.Name) = "ada";
-         end Is_Ada;
-
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
-
-         Iter : Source_Iterator := For_Each_Source (Tree, Project);
-         Sid  : Source_Id;
 
       begin
          if not All_Sources then
             Copy_Interfaces (Tree, Project);
          end if;
 
-         loop
-            Sid := Element (Iter);
-            exit when Sid = No_Source;
-
-            --  Skip sources that are removed/excluded and sources not
-            --  part of the interface for standalone libraries.
-
-            if not Sid.Locally_Removed
-              and then (Project.Standalone_Library = No
-                        or else Sid.Declared_In_Interfaces)
-            then
-               --  If the unit has a naming exception we install it regardless
-               --  of the fact that it is part of the interface or not. This
-               --  is because the installed project will have a Namig package
-               --  referencing this file. The .ali is looked based on the name
-               --  of the renamed body.
-
-               if All_Sources or else Sid.Naming_Exception = Yes then
-                  Copy_Source (Sid);
-               end if;
-
-               --  Objects / Deps
-
-               if Other_Part (Sid) = null or else Sid.Kind /= Spec then
-                  if Copy (Object) then
-                     Copy_File
-                       (From => Cat
-                          (Get_Object_Directory
-                             (Sid.Project, False), Sid.Object),
-                        To   => Lib_Dir,
-                        File => Get_Name_String (Sid.Object));
-                  end if;
-
-                  --  Only install Ada .ali files
-
-                  if Copy (Dependency)
-                    and then Sid.Kind /= Sep
-                    and then Is_Ada (Sid)
-                  then
-                     Copy_File
-                       (From => Cat
-                          (Get_Object_Directory (Sid.Project, False),
-                           Sid.Dep_Name),
-                        To   => Lib_Dir,
-                        File => Get_Name_String (Sid.Dep_Name));
-                  end if;
-               end if;
-            end if;
-
-            Next (Iter);
-         end loop;
+         Copy_Project_Sources (Project, Tree);
 
          --  Copy library
 
