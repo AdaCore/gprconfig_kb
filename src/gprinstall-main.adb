@@ -593,6 +593,12 @@ procedure Gprinstall.Main is
          Write_Line ("  --build-name=<name>");
          Write_Line ("           Build name value (default is ""Default"")");
 
+         --  Line for --mode
+
+         Write_Line ("  --mode=[dev|usage]");
+         Write_Line
+           ("           Kind of installation (default is ""dev"")");
+
          --  Line for -aP
 
          Write_Line ("  -aP dir  Add directory dir to project search path");
