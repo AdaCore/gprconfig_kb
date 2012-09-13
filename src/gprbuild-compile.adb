@@ -2913,7 +2913,9 @@ package body Gprbuild.Compile is
                   Last_Switches_For_File => Last_Switches_For_File);
 
             elsif Builder_Data (Source.Tree).Closure_Needed
-              and then Id.Language.Config.Dependency_Kind = ALI_File
+              and then
+                (Id.Language.Config.Dependency_Kind = ALI_File or else
+                 Id.Language.Config.Dependency_Kind = ALI_Closure)
             then
                Record_ALI_For (Source, The_ALI);
 

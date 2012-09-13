@@ -1285,6 +1285,7 @@ package body Gpr_Util is
          Next_Source : Prj.Source_Id;
          Insert_Source : Boolean := False;
 
+         Other_ALI : ALI.ALI_Id;
       begin
          if Text = null then
             if Verbose_Mode then
@@ -1559,7 +1560,7 @@ package body Gpr_Util is
 
             --  Read only the necessary lines of the ALI file
 
-            The_ALI :=
+            Other_ALI :=
               ALI.Scan_ALI
                 (File_Name_Type (Next_Source.Dep_Path),
                  Text,
@@ -1569,7 +1570,7 @@ package body Gpr_Util is
                  Read_Lines    => "PDW");
             Free (Text);
 
-            if The_ALI = ALI.No_ALI_Id then
+            if Other_ALI = ALI.No_ALI_Id then
                if Verbose_Mode then
                   Write_Str ("    -> ");
                   Write_Str (Get_Name_String (Next_Source.Dep_Path));
@@ -1579,7 +1580,7 @@ package body Gpr_Util is
                return True;
             end if;
 
-            if ALI.ALIs.Table (The_ALI).Compile_Errors then
+            if ALI.ALIs.Table (Other_ALI).Compile_Errors then
                if Verbose_Mode then
                   Write_Str  ("    -> last compilation of ");
                   Write_Str  (Get_Name_String (Next_Source.Dep_Path));
@@ -1589,8 +1590,8 @@ package body Gpr_Util is
                return True;
             end if;
 
-            for D in ALI.ALIs.Table (The_ALI).First_Sdep ..
-              ALI.ALIs.Table (The_ALI).Last_Sdep
+            for D in ALI.ALIs.Table (Other_ALI).First_Sdep ..
+              ALI.ALIs.Table (Other_ALI).Last_Sdep
             loop
                Sfile := ALI.Sdep.Table (D).Sfile;
 
