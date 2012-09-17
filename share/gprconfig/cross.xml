@@ -37,6 +37,7 @@
        <target name="^leon3-elf$" />
        <target name="^arm-eabi$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-pikeos$" />
        <target name="^arm-linux-androideabi" />
      </targets>
      <config>
@@ -585,6 +586,7 @@
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-pikeos$" />
        <target name="^dotnet$" />
        <target name="^.*-pc-mingw32$" />
        <target name="^arm-linux-androideabi$" />

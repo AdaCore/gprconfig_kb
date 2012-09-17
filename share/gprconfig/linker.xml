@@ -210,6 +210,18 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^i586-sysgo-pikeos$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("i586-sysgo-pikeos-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("i586-sysgo-pikeos-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
   <!-- Do not run ranlib on AIX -->
   <configuration>
     <targets>
@@ -352,6 +364,7 @@
       <target name="^.*aix.*$" />
       <target name="^.*ia64.*hpux.*$" />
       <target name="^.*pc-mingw32$" />
+      <target name="^.*-pikeos$" />
       <target name="^arm-linux-androideabi$" />
     </targets>
     <config>
@@ -375,6 +388,7 @@
        <target name="^arm-eabi$" />
        <target name="^.*wrs-vxworks.*$" />
        <target name="^avr$" />
+       <target name="^.*-pikeos$" />
     </targets>
     <config>
    for Library_Support  use "static_only";
@@ -807,6 +821,7 @@
        <target name="^avr$" />
        <target name="^.*wrs-vxworks.*$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-pikeos$" />
        <target name="^.*mingw.*$" />
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
