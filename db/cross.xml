@@ -215,10 +215,7 @@
    package Linker is
       for Required_Switches use
 	Linker'Required_Switches
-        &amp; (Wind_Usr &amp; "/lib_cert_rtp/ppc/PPC32/e500v2common/certRtp.o",
-               "-nostartfiles",
-	       "-nostdlib",
-	       "-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
                "-mrtp");
    end Linker;
      </config>
@@ -237,10 +234,7 @@
    package Linker is
       for Required_Switches use
 	Linker'Required_Switches
-        &amp; (Wind_Usr &amp; "/lib_cert_rtp/ppc/PPC32/common/certRtp.o",
-               "-nostartfiles",
-	       "-nostdlib",
-	       "-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
                "-mrtp");
    end Linker;
      </config>
