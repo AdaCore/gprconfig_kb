@@ -242,35 +242,41 @@
    </config>
   </configuration>
 
-  <!-- add the RTS= arg to the compiler and binder for GNAT -->
-  <!-- ??? how do we generalize for any runtime? -->
+  <!-- add switch __RTS= to the compiler and binder for GNAT, if not default -->
   <configuration>
    <compilers>
-     <compiler name="GNAT" runtime="cert" />
-     <compiler name="GNAT" runtime="full" />
-     <compiler name="GNAT" runtime="hi" />
-     <compiler name="GNAT" runtime="kernel" />
-     <compiler name="GNAT" runtime="marte" />
-     <compiler name="GNAT" runtime="pthread" />
-     <compiler name="GNAT" runtime="raven" />
-     <compiler name="GNAT" runtime="rtp" />
-     <compiler name="GNAT" runtime="sjlj" />
-     <compiler name="GNAT" runtime="soft-float" />
-     <compiler name="GNAT" runtime="xenomai" />
-     <compiler name="GNAT" runtime="zcx" />
-     <compiler name="GNAT" runtime="zfp" />
+     <compiler name="GNAT" />
+   </compilers>
+   <compilers negate="true">
+     <compiler runtime="default" />
+   </compilers>
+   <config>
+   package Compiler is
+      for Leading_Required_Switches ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME_DIR(ada)}/..");
+   end Compiler;
+
+   package Binder is
+      for Required_Switches ("Ada") use
+        Binder'Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME_DIR(ada)}/..");
+   end Binder;
+   </config>
+  </configuration>
+
+  <configuration>
+   <compilers>
      <compiler name="GNAT_DOTNET" runtime="compact" />
      <compiler name="GNAT_DOTNET" runtime="silverlight" />
    </compilers>
    <config>
    package Compiler is
       for Leading_Required_Switches ("Ada") use
-        Compiler'Leading_Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}");
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}/..");
    end Compiler;
 
    package Binder is
       for Required_Switches ("Ada") use
-        Binder'Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}");
+        Binder'Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}/..");
    end Binder;
    </config>
   </configuration>
