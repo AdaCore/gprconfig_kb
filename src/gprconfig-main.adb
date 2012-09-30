@@ -25,6 +25,7 @@ with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Command_Line;         use GNAT.Command_Line;
+with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
 with GPR_Version;
@@ -575,9 +576,25 @@ begin
             Comp := Compiler_Lists.Element (Cursor);
 
             if Runtime_Dir_Of (Comp) /= No_Name then
-               Parse_Knowledge_Base
-                 (Base,
-                  Get_Name_String (Runtime_Dir_Of (Comp)));
+               declare
+                  RTS : constant String :=
+                          Get_Name_String (Runtime_Dir_Of (Comp));
+                  Last : Natural := RTS'Last;
+               begin
+                  if RTS (Last) = '/' or else
+                     RTS (Last) = Directory_Separator
+                  then
+                     Last := Last - 1;
+                  end if;
+
+                  if Last - RTS'First > 6 and then
+                     RTS (Last - 5 .. Last) = "adalib"
+                  then
+                     Last := Last - 6;
+                  end if;
+
+                  Parse_Knowledge_Base (Base, RTS (RTS'First .. Last));
+               end;
             end if;
 
             Compiler_Lists.Next (Cursor);

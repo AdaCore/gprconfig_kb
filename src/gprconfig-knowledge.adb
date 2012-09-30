@@ -3856,6 +3856,7 @@ package body GprConfig.Knowledge is
                if Has_Element (C) then
                   declare
                      Rts : constant String := String_Lists.Element (C);
+                     Last : Natural := Rts'Last;
                   begin
                      --  If the runtime is a full path, only set Runtime_Dir
                      --  so that we could match the config for the default
@@ -3863,7 +3864,22 @@ package body GprConfig.Knowledge is
 
                      if Rts'Length > 0 and then Is_Absolute_Path (Rts) then
                         Compiler.Runtime := No_Name;
-                        Compiler.Runtime_Dir := Get_String (Rts);
+
+                        if Rts'Length > 1 and then
+                            (Rts (Last) = '/' or else
+                             Rts (Last) = Directory_Separator)
+                        then
+                           Last := Last - 1;
+                        end if;
+
+                        if Last - Rts'First >= 6 and then
+                          Rts (Last - 5 .. Last) = "adalib"
+                        then
+                           Last := Last - 6;
+                        end if;
+
+                        Compiler.Runtime_Dir :=
+                          Get_String (Rts (Rts'First .. Last) & "/adalib/");
                      else
                         Compiler.Runtime := Get_String_Or_No_Name (Rts);
                      end if;
