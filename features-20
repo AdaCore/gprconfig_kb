@@ -1,38 +1,38 @@
 ==============================
-GPRBUILD 1.7 NEW FEATURES LIST
+GPRBUILD 2.0 NEW FEATURES LIST
 ==============================
 
 Copyright (C) 2012, AdaCore
 
-This file contains a complete list of new features in version 1.7 of GPRBUILD.
+This file contains a complete list of new features in version 2.0 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
-NF-17-L908-003 Add aggregate project support for gprinstall (2012-09-08)
+NF-20-L908-003 Add aggregate project support for gprinstall (2012-09-08)
 
   gprinstall can now be used to install aggregate projects.
 
-NF-17-L906-035 Add aggregate library project support to gprinstall (2012-09-08)
+NF-20-L906-035 Add aggregate library project support to gprinstall (2012-09-08)
 
   gprinstall can now be used to install aggregate library projects.
 
-NF-17-L126-014 Verbosity when linking shared SALs (2012-01-26)
+NF-20-L126-014 Verbosity when linking shared SALs (2012-01-26)
 
   In default mode (not verbose and not quiet), the base name of gnatbind and
   of the compiler when binding and compiling the binder generated file is now
   output, instead of the full path names. Also, when the command line is long,
   only the beginning is output.
 
-NF-17-KC19-034 Support for VxWorks Linux (2012-04-11)
+NF-20-KC19-034 Support for VxWorks Linux (2012-04-11)
 
   gprbuild now support VxWorks Linux targets.
 
-NF-17-K623-010 New switch --validate for gprconfig (2012-01-04)
+NF-20-K623-010 New switch --validate for gprconfig (2012-01-04)
 
   This switch can be used to validate the XML files from the gprconfig
   knowledge base. It should be used when you add your own XML files.
 
-NF-17-JC09-030 New package Clean in project file (2012-03-30)
+NF-20-JC09-030 New package Clean in project file (2012-03-30)
 
   A new package Clean is added in project files. It can contain declarations
   of attributes Source_Artifact_Extensions and Object_Artifact_Extensions,
@@ -40,7 +40,7 @@ NF-17-JC09-030 New package Clean in project file (2012-03-30)
   object file names, that reside in the object directory and that are to be
   cleaned by gprclean.
 
-NF-17-H729-014 New tool named gprinstall (2012-05-18)
+NF-20-H729-014 New tool named gprinstall (2012-05-18)
 
   A new tool named gprinstall has been implemeted and can be used to
   install a standard or a library project.

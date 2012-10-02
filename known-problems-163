@@ -6,7 +6,7 @@ Copyright (C) 2012, AdaCore
 
 The following is a listing of known problems in release 1.6.3. Except where
 specifically noted, all these problems have been corrected in the development
-tree of the 1.7 technology. This means they are corrected in any 1.7.0w
+tree of the 2.0 technology. This means they are corrected in any 1.7.0w/2.0.0w
 wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
@@ -18,7 +18,7 @@ KP-163-L717-025 gprconfig crashes with exception Expression_Error
               characters or sequence of characters in regular expressions,
               gprconfig may crash with exception Expression_error.
 
-  Status:     This was fixed in 1.7 on 2012-07-18
+  Status:     This was fixed in 2.0 on 2012-07-18
 
   Workaround: Remove from the path the compilers that returns such malformed
               targets.
@@ -29,7 +29,7 @@ KP-163-L713-021 Exception DIRECTORY_ERROR raised when missing obj directory
               build project defines an object directory which does not
               exists.
 
-  Status:     This was fixed in 1.7 on 2012-07-13
+  Status:     This was fixed in 2.0 on 2012-07-13
 
   Workaround: Create the missing object directory manually
 
@@ -39,7 +39,7 @@ KP-163-L624-002 Knowledge base must_match node may not have desired effect
               by gprconfig because it doesn't satisfy must_match criterion
               is added to the list of candidates anyway.
 
-  Status:     This was fixed in 1.7 on 2012-06-28
+  Status:     This was fixed in 2.0 on 2012-06-28
 
   Workaround: Describe a toolchain in a way that doesn't use must_match
               criterion, or simply do not select a candidate that is incorrect.
@@ -49,7 +49,7 @@ KP-163-L530-060 Allow the same library project in multiple tree
   Problem:    An error message is reported when the same library
               project is found in different aggregated projects.
 
-  Status:     This was fixed in 1.7 on 2012-06-06
+  Status:     This was fixed in 2.0 on 2012-06-06
 
   Workaround: Compile aggregated projects separately
 
@@ -59,7 +59,7 @@ KP-163-L503-024 gprbuild crashes with exception names in virtual project
               has one or several sources with exception names specified in
               its package Naming.
 
-  Status:     This was fixed in 1.7 on 2012-07-05
+  Status:     This was fixed in 2.0 on 2012-07-05
 
   Workaround: Use only names that follows the naming scheme of the project.
 
@@ -70,7 +70,7 @@ KP-163-L321-006 Extra recompilation when using gprbuild -s -m
               gprbuild still recompiles the source because the switches file is
               older than the source.
 
-  Status:     This was fixed in 1.7 on 2012-03-21
+  Status:     This was fixed in 2.0 on 2012-03-21
 
   Workaround: Use only -m.
 
@@ -81,7 +81,7 @@ KP-163-L320-047 gprbuild --no-indirect-imports and generic instantiations
               imported by the generic body that are sources of a project that
               is not imported. In this case, gprbuild reports an error.
 
-  Status:     This was fixed in 1.7 on 2012-03-27
+  Status:     This was fixed in 2.0 on 2012-03-27
 
   Workaround: Import the additional projects.
 
@@ -92,7 +92,7 @@ KP-163-L315-021 gprbuild --no-object-check and main in project file
               the project file, all sources of the project files were compiled
               instead of just the closure of the mains.
 
-  Status:     This was fixed in 1.7 on 2012-03-16
+  Status:     This was fixed in 2.0 on 2012-03-16
 
   Workaround: Call gprbuild with a main on the command line.
 
@@ -102,7 +102,7 @@ KP-163-L215-032 Remove duplicate stack size option on Windows
               in the linker switches in the project file or on the command line
               is not taken into account.
 
-  Status:     This was fixed in 1.7 on 2012-02-16
+  Status:     This was fixed in 2.0 on 2012-02-16
 
   Workaround: Make sure that the default stack size option is sufficient
               for the execution of the program.
