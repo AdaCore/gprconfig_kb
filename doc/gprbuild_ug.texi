@@ -1185,7 +1185,7 @@ Example:
 @end smallexample
 
 @noindent
-If gprbuild can determine that the artifacts from a previous
+If GPRbuild can determine that the artifacts from a previous
 post-compilation phase are already up to date, the binder driver is not called.
 
 If there are no libraries and no binder drivers, then the post-compilation
@@ -1916,7 +1916,7 @@ of the @code{<directory>} and @code{<external>} nodes.
 
 @item @code{<filter>value1,value2,...</filter>}
 
-  This node must come after one the previously described ones. It is used to
+  This node must come after one of the previously described ones. It is used to
   further filter the output. The previous output is split into words (it is
   considered as a comma-separated or space-separated list of words), and only
   those words in @samp{value1}, @samp{value2},@dots{} are kept.
