@@ -9,7 +9,7 @@
       <external>${PREFIX}windres --version</external>
       <grep regexp="^GNU windres \(GNU Binutils\) (\S+)" group="1"></grep>
     </version>
-    <languages>RC</languages>
+    <languages>WinRes</languages>
     <target>
       <external>${PREFIX}gcc -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -18,18 +18,18 @@
 
    <configuration>
      <compilers>
-       <compiler language="RC" />
+       <compiler language="WinRes" />
      </compilers>
      <config>
    package Compiler is
-      for Driver ("RC") use "${PREFIX(RC)}windres";
-      for Leading_Required_Switches ("RC") use ("-i");
-      for Object_File_Suffix ("RC") use ".coff";
-      for Object_File_Switches ("RC") use ("-o", "");
+      for Driver ("WinRes") use "${PREFIX(WinRes)}windres";
+      for Leading_Required_Switches ("WinRes") use ("-i");
+      for Object_File_Suffix ("WinRes") use ".coff";
+      for Object_File_Switches ("WinRes") use ("-o", "");
    end Compiler;
 
    package Naming is
-      for Body_Suffix ("RC") use ".rc";
+      for Body_Suffix ("WinRes") use ".rc";
    end Naming;
      </config>
    </configuration>
