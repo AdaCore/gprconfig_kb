@@ -58,8 +58,8 @@
    end Binder;
 
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
-   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}";
-   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/../adainclude";
+   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}/adalib";
+   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/adainclude";
    </config>
   </configuration>
 
@@ -102,8 +102,8 @@
    end Clean;
 
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
-   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}";
-   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/../adainclude";
+   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}/adalib";
+   for Runtime_Source_Dir    ("Ada") use "${RUNTIME_DIR(ada)}/adainclude";
    </config>
   </configuration>
 
@@ -253,12 +253,12 @@
    <config>
    package Compiler is
       for Leading_Required_Switches ("Ada") use
-        Compiler'Leading_Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME_DIR(ada)}/..");
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}");
    end Compiler;
 
    package Binder is
       for Required_Switches ("Ada") use
-        Binder'Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME_DIR(ada)}/..");
+        Binder'Required_Switches ("Ada") &amp; ("--RTS=${RUNTIME(ada)}");
    end Binder;
    </config>
   </configuration>
