@@ -61,6 +61,7 @@ package body GprConfig.Knowledge is
 
    type External_Value_Item is record
       Value          : Name_Id;
+      Alternate      : Name_Id := No_Name;
       Extracted_From : Name_Id;
    end record;
    --  Value is the actual value of the <external_value> node.
@@ -160,6 +161,9 @@ package body GprConfig.Knowledge is
 
    function Name_As_Directory (Dir : String) return String;
    --  Ensure that Dir ends with a directory separator
+
+   function Get_String_No_Adalib (Str : String) return Namet.Name_Id;
+   --  Return the name without "adalib" at the end
 
    function Get_String (Str : String) return Namet.Name_Id;
    function Get_String_Or_No_Name (Str : String) return Namet.Name_Id;
@@ -1410,7 +1414,8 @@ package body GprConfig.Knowledge is
             Append
               (Processed_Value,
                (Value          => Val,
-                Extracted_From => Get_String (Current_Dir)));
+                Alternate      => No_Name,
+                Extracted_From => Get_String_No_Adalib (Current_Dir)));
 
          else
             declare
@@ -1421,19 +1426,20 @@ package body GprConfig.Knowledge is
                   Resolve_Links  => True,
                   Case_Sensitive => True);
                Prev  : External_Value_Lists.Cursor;
+               Rec   : External_Value_Item;
             begin
                if Visited.Contains (Normalized) then
-                  Put_Verbose ("<dir>: OVERRIDE ("
+                  Put_Verbose ("<dir>: ALREADY FOUND ("
                                & Get_Name_String (Val) & ") "
                                & Current_Dir);
 
                   Prev := Visited.Element (Normalized);
+                  Rec  := External_Value_Lists.Element (Prev);
+                  Rec.Alternate := Val;
                   External_Value_Lists.Replace_Element
                     (Container => Processed_Value,
                      Position  => Prev,
-                     New_Item  =>
-                       (Value          => Val,
-                        Extracted_From => Get_String (Current_Dir)));
+                     New_Item  => Rec);
 
                else
                   Put_Verbose ("<dir>: SAVE (" & Get_Name_String (Val)
@@ -1441,7 +1447,8 @@ package body GprConfig.Knowledge is
                   Append
                     (Processed_Value,
                      (Value          => Val,
-                      Extracted_From => Get_String (Current_Dir)));
+                      Alternate      => No_Name,
+                      Extracted_From => Get_String_No_Adalib (Current_Dir)));
                   Visited.Include
                     (Normalized, External_Value_Lists.Last (Processed_Value));
                end if;
@@ -1844,6 +1851,7 @@ package body GprConfig.Knowledge is
                        (Processed_Value,
                         External_Value_Item'
                           (Value          => No_Name,
+                           Alternate      => No_Name,
                            Extracted_From => Extracted_From));
                   end if;
 
@@ -1888,6 +1896,7 @@ package body GprConfig.Knowledge is
                            External_Value_Item'
                              (Value          => Get_String
                                 (String_Lists.Element (C)),
+                              Alternate      => No_Name,
                               Extracted_From => Extracted_From));
                         Next (C);
                      end loop;
@@ -1898,6 +1907,7 @@ package body GprConfig.Knowledge is
                     (Processed_Value,
                      External_Value_Item'
                        (Value          => Get_String (To_String (Tmp_Result)),
+                        Alternate      => No_Name,
                         Extracted_From => Extracted_From));
                end if;
 
@@ -2189,6 +2199,8 @@ package body GprConfig.Knowledge is
                C2 := First (Runtimes);
                while Has_Element (C2) loop
                   Comp.Runtime     := External_Value_Lists.Element (C2).Value;
+                  Comp.Alt_Runtime :=
+                    External_Value_Lists.Element (C2).Alternate;
                   Comp.Runtime_Dir :=
                     External_Value_Lists.Element (C2).Extracted_From;
                   Callback
@@ -2226,10 +2238,26 @@ package body GprConfig.Knowledge is
       Rank_In_List    : Integer := -1;
       Parser_Friendly : Boolean := False) return String
    is
+      function Runtime_Or_Alternate return String;
       function Runtime_Or_Empty return String;
       function Rank return String;
       function Target return String;
       --  Return various aspects of the compiler;
+
+      --------------------------
+      -- Runtime_Or_Alternate --
+      --------------------------
+
+      function Runtime_Or_Alternate return String is
+      begin
+         if Comp.Alt_Runtime /= No_Name then
+            return Get_Name_String (Comp.Alt_Runtime);
+         elsif Comp.Runtime /= No_Name then
+            return Get_Name_String (Comp.Runtime);
+         else
+            return "";
+         end if;
+      end Runtime_Or_Alternate;
 
       ----------------------
       -- Runtime_Or_Empty --
@@ -2238,7 +2266,14 @@ package body GprConfig.Knowledge is
       function Runtime_Or_Empty return String is
       begin
          if Comp.Runtime /= No_Name then
-            return " (" & Get_Name_String (Comp.Runtime) & " runtime)";
+            if Comp.Alt_Runtime = No_Name then
+               return " (" & Get_Name_String (Comp.Runtime) & " runtime)";
+            else
+               return
+                 " (" & Get_Name_String (Comp.Runtime) &
+                 " [" & Get_Name_String (Comp.Alt_Runtime) &
+                 "] runtime)";
+            end if;
          else
             return "";
          end if;
@@ -2300,7 +2335,7 @@ package body GprConfig.Knowledge is
            & Rank & " version:"
            & Get_Name_String_Or_Null (Comp.Version) & ASCII.LF
            & Rank & " runtime:"
-           & Get_Name_String_Or_Null (Comp.Runtime) & ASCII.LF
+           & Runtime_Or_Alternate & ASCII.LF
            & Rank & " native:"
            & Boolean'Image
                (Query_Targets_Set (Base, Hostname) = Comp.Targets_Set);
@@ -2808,7 +2843,10 @@ package body GprConfig.Knowledge is
          return False;
       end if;
 
-      if Filter.Runtime /= No_Name and then Filter.Runtime /= Comp.Runtime then
+      if Filter.Runtime /= No_Name and then
+         not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
+         Filter.Runtime /= Comp.Runtime
+      then
          if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": runtime does not match");
@@ -3371,6 +3409,36 @@ package body GprConfig.Knowledge is
       return Name_Find;
    end Get_String;
 
+   --------------------------
+   -- Get_String_No_Adalib --
+   --------------------------
+
+   function Get_String_No_Adalib (Str : String) return Namet.Name_Id is
+      Name : constant String (1 .. Str'Length) := Str;
+      Last : Natural := Name'Last;
+   begin
+      if Last > 7 and then
+        (Name (Last) = Directory_Separator or else
+         Name (Last) = '/')
+      then
+         Last := Last - 1;
+      end if;
+
+      if Last > 6 and then
+        Name (Last - 5 .. Last) = "adalib" and then
+        (Name (Last - 6) = Directory_Separator or else
+         Name (Last - 6) = '/')
+      then
+         Last := Last - 6;
+      else
+         Last := Name'Last;
+      end if;
+
+      Name_Len := Last;
+      Name_Buffer (1 .. Last) := Name (1 .. Last);
+      return Name_Find;
+   end Get_String_No_Adalib;
+
    ---------------------------
    -- Get_String_Or_No_Name --
    ---------------------------
@@ -3532,7 +3600,7 @@ package body GprConfig.Knowledge is
                Ncomp := new Compiler'(Comp);
                if El.Runtime_Dir /= No_Name then
                   Ncomp.Runtime_Dir := El.Runtime_Dir;
-                  Ncomp.Runtime := No_Name;
+                  Ncomp.Runtime := El.Runtime;
                end if;
 
                Append (Iterator.Compilers, Ncomp);
@@ -3856,30 +3924,13 @@ package body GprConfig.Knowledge is
                if Has_Element (C) then
                   declare
                      Rts : constant String := String_Lists.Element (C);
-                     Last : Natural := Rts'Last;
                   begin
-                     --  If the runtime is a full path, only set Runtime_Dir
-                     --  so that we could match the config for the default
-                     --  runtime, but with this runtime path.
+                     --  If the runtime is a full path, set Runtime and
+                     --  Runtime_Dir to the same value.
 
                      if Rts'Length > 0 and then Is_Absolute_Path (Rts) then
-                        Compiler.Runtime := No_Name;
-
-                        if Rts'Length > 1 and then
-                            (Rts (Last) = '/' or else
-                             Rts (Last) = Directory_Separator)
-                        then
-                           Last := Last - 1;
-                        end if;
-
-                        if Last - Rts'First >= 6 and then
-                          Rts (Last - 5 .. Last) = "adalib"
-                        then
-                           Last := Last - 6;
-                        end if;
-
-                        Compiler.Runtime_Dir :=
-                          Get_String (Rts (Rts'First .. Last) & "/adalib/");
+                        Compiler.Runtime := Get_String_No_Adalib (Rts);
+                        Compiler.Runtime_Dir := Compiler.Runtime;
                      else
                         Compiler.Runtime := Get_String_Or_No_Name (Rts);
                      end if;

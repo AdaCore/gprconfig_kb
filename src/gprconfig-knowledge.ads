@@ -348,6 +348,7 @@ private
       Variables   : Variables_Maps.Map;
       Prefix      : Namet.Name_Id := Namet.No_Name;
       Runtime     : Namet.Name_Id := Namet.No_Name;
+      Alt_Runtime : Namet.Name_Id := Namet.No_Name;
       Runtime_Dir : Namet.Name_Id := Namet.No_Name;
       Path_Order  : Integer;
 
@@ -374,6 +375,7 @@ private
                     Version       => Namet.No_Name,
                     Prefix        => Namet.No_Name,
                     Runtime       => Namet.No_Name,
+                    Alt_Runtime   => Namet.No_Name,
                     Runtime_Dir   => Namet.No_Name,
                     Language_Case => Namet.No_Name,
                     Language_LC   => Namet.No_Name,
