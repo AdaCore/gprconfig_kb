@@ -2845,7 +2845,8 @@ package body GprConfig.Knowledge is
 
       if Filter.Runtime /= No_Name and then
          not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
-         Filter.Runtime /= Comp.Runtime
+         Filter.Runtime /= Comp.Runtime and then
+         Filter.Runtime /= Comp.Alt_Runtime
       then
          if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Base, Filter, True)
