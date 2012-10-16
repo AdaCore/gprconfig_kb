@@ -640,10 +640,14 @@ package body Gpr_Util is
       --  Set True if source was found in dependency file of its object file
 
       C_Object_Name : String_Access := null;
-      Object_Name   : String_Access := null;
+      --  The canonical file name for the object file
+
       Object_Path   : String_Access := null;
+      --  The absolute path name for the object file
+
       Switches_Name : String_Access := null;
-      --  ??? Missing doc for these
+      --  The file name of the file that contains the switches that were used
+      --  in the last compilation.
 
       Num_Ext : Natural;
       --  Number of extending projects
@@ -1278,6 +1282,7 @@ package body Gpr_Util is
          Sfile    : File_Name_Type;
          Dep_Src  : Prj.Source_Id;
          Proj     : Project_Id;
+         TS0      : Time_Stamp_Type;
 
          Found : Boolean := False;
 
@@ -1295,6 +1300,8 @@ package body Gpr_Util is
 
             return True;
          end if;
+
+         TS0 := File_Stamp (Source.Dep_Path);
 
          --  Read only the necessary lines of the ALI file
 
@@ -1513,11 +1520,11 @@ package body Gpr_Util is
                      Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
 
                      declare
-                        TS   : constant Time_Stamp_Type :=
+                        TS1   : constant Time_Stamp_Type :=
                           Source_File_Stamp (Name_Find);
                      begin
-                        if TS /= Empty_Time_Stamp
-                          and then TS /= ALI.Sdep.Table (D).Stamp
+                        if TS1 /= Empty_Time_Stamp
+                          and then TS1 /= ALI.Sdep.Table (D).Stamp
                         then
                            if Verbose_Mode then
                               Write_Str
@@ -1529,7 +1536,7 @@ package body Gpr_Util is
                                  Write_Line
                                    (String (ALI.Sdep.Table (D).Stamp));
                                  Write_Str ("   actual file: ");
-                                 Write_Line (String (TS));
+                                 Write_Line (String (TS1));
                               end if;
                            end if;
 
@@ -1692,6 +1699,16 @@ package body Gpr_Util is
                            end if;
 
                            return True;
+
+                        elsif TS0 < Dep_Src.Source_TS then
+                           if Verbose_Mode then
+                              Write_Str ("   -> file ");
+                              Write_Str
+                                (Get_Name_String (Dep_Src.Path.Display_Name));
+                              Write_Line (" later than ALI file");
+                           end if;
+
+                           return True;
                         end if;
                      end if;
 
@@ -1710,7 +1727,6 @@ package body Gpr_Util is
 
       procedure Cleanup is
       begin
-         Free (Object_Name);
          Free (C_Object_Name);
          Free (Object_Path);
          Free (Switches_Name);
@@ -1741,8 +1757,7 @@ package body Gpr_Util is
       end if;
 
       if Source.Language.Config.Object_Generated and then Object_Check then
-         Object_Name := new String'(Get_Name_String (Source.Object));
-         C_Object_Name := new String'(Object_Name.all);
+         C_Object_Name := new String'(Get_Name_String (Source.Object));
          Canonical_Case_File_Name (C_Object_Name.all);
          Object_Path := new String'(Get_Name_String (Source.Object_Path));
 
