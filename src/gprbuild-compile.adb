@@ -449,19 +449,18 @@ package body Gprbuild.Compile is
          return Name_Find;
       end Absolute_Path;
 
-      Config_Package      : constant Package_Id :=
-                              Value_Of
-                                (Name        => Package_Name,
-                                 In_Packages => Project.Decl.Packages,
-                                 Shared      => Project_Tree.Shared);
+      Config_Package  : constant Package_Id :=
+                          Value_Of
+                            (Name        => Package_Name,
+                             In_Packages => Project.Decl.Packages,
+                             Shared      => Project_Tree.Shared);
 
-      Config_Variable     : Variable_Value :=
-                              Value_Of
-                                (Name                    => Language,
-                                 Attribute_Or_Array_Name => Attribute_Name,
-                                 In_Package              => Config_Package,
-                                 Shared                  =>
-                                   Project_Tree.Shared);
+      Config_Variable : Variable_Value :=
+                          Value_Of
+                            (Name                    => Language,
+                             Attribute_Or_Array_Name => Attribute_Name,
+                             In_Package              => Config_Package,
+                             Shared                  => Project_Tree.Shared);
 
    begin
       --  Get the config pragma attribute when the language is Ada and the
