@@ -19,7 +19,7 @@ EXEXT=
 endif
 CP=cp -p
 MKDIR=mkdir -p
-BUILD=debug
+BUILD=production
 
 prefix=@prefix@
 srcdir=@srcdir@
@@ -39,9 +39,6 @@ xmlada_prj_flags=@xmlada_prj_flags@
 # How do we want to use XML/Ada ?
 LIBRARY_TYPE=static
 export LIBRARY_TYPE
-
-# What is the default debug mode ?
-DEBUG_MODE=debug
 
 objdir=obj
 ifeq ($(BUILD), debug)
@@ -71,23 +68,20 @@ all: $(xmlada_build_target) $(ADA_GEN_SUBDIR)/stamp-snames
 	${GNATMAKE} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
 distall:
-	make GNATMAKE="$(GNATMAKE)" BUILD="$(DEBUG_MODE)"
-	make BUILD="$(DEBUG_MODE)" install
-	mv $(prefix)/bin/gprconfig$(EXEXT) $(prefix)/bin/gprconfig_debug$(EXEXT)
-	mv $(prefix)/bin/gprclean$(EXEXT) $(prefix)/bin/gprclean_debug$(EXEXT)
-	mv $(prefix)/bin/gprbuild$(EXEXT) $(prefix)/bin/gprbuild_debug$(EXEXT)
-	make GNATMAKE="$(GNATMAKE)" BUILD=production
-	make BUILD=production install
+	make GNATMAKE="$(GNATMAKE)" BUILD="$(BUILD)"
+	make BUILD="$(BUILD)" install
 	if [ "$(IS_WINDOWS)" = "false" ]; then \
 	  $(CP) $(srcdir)/doinstall $(prefix) && \
 	  chmod a+x $(prefix)/doinstall; \
 	fi
+ifeq ($(BUILD), production)
 	strip $(prefix)/bin/gprbuild$(EXEXT)
 	strip $(prefix)/bin/gprclean$(EXEXT)
 	strip $(prefix)/bin/gprconfig$(EXEXT)
 	strip $(prefix)/bin/gprinstall$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprbind$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
+endif
 
 all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
 
