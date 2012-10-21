@@ -236,6 +236,7 @@
       <target name="^sparc-.*solaris.*$"/>
       <target name="^x86-solaris.*$"/>
       <target name="^.*darwin.*$" />
+      <target name="^.*android.*$" />
    </targets>
    <config>
       for Library_Encapsulated_Supported use "true";
