@@ -24,8 +24,8 @@ with Ada.Text_IO;                  use Ada, Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
+with Atree;       use Atree;
 with Debug;       use Debug;
-with Err_Vars;    use Err_Vars;
 with Gpr_Util;    use Gpr_Util;
 with Gprexch;     use Gprexch;
 with Makeutl;     use Makeutl;

@@ -27,6 +27,7 @@ with System.Multiprocessors;    use System.Multiprocessors;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
+with Atree;       use Atree;
 with Csets;
 with Debug;       use Debug;
 with Err_Vars;    use Err_Vars;
@@ -198,7 +199,7 @@ procedure Gprbuild.Main is
          end if;
       end loop;
 
-      if Err_Vars.Total_Errors_Detected /= 0 then
+      if Total_Errors_Detected /= 0 then
          Fail_Program (Project_Tree, "cannot continue");
       end if;
 
@@ -2021,7 +2022,7 @@ begin
    Main_Project_Dir :=
      new String'(Get_Name_String (Main_Project.Directory.Display_Name));
 
-   if Err_Vars.Warnings_Detected > 0 then
+   if Warnings_Detected > 0 then
       Prj.Err.Finalize;
       Prj.Err.Initialize;
    end if;

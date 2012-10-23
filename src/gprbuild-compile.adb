@@ -25,8 +25,8 @@ with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 
+with Atree;       use Atree;
 with ALI.Util;
-with Err_Vars;    use Err_Vars;
 with Gpr_Util;    use Gpr_Util;
 with Makeutl;     use Makeutl;
 with Osint;       use Osint;

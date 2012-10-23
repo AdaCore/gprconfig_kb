@@ -26,8 +26,8 @@ with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
+with Atree;       use Atree;
 with Csets;
-with Err_Vars;    use Err_Vars;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
 with Hostparm;
@@ -723,7 +723,7 @@ begin
       Main_Project_Dir :=
         new String'(Get_Name_String (Main_Project.Directory.Display_Name));
 
-      if Err_Vars.Warnings_Detected > 0 then
+      if Warnings_Detected > 0 then
          Prj.Err.Finalize;
          Prj.Err.Initialize;
       end if;
