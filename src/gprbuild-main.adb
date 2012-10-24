@@ -20,7 +20,9 @@
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line;       use Ada.Command_Line;
+with Ada.Directories;
 with Ada.Exceptions;         use Ada.Exceptions;
+
 with System;
 with System.Case_Util;          use System.Case_Util;
 with System.Multiprocessors;    use System.Multiprocessors;
@@ -1965,6 +1967,19 @@ begin
 
    if Config_Project_File_Name = null then
       Config_Project_File_Name := new String'("");
+
+   elsif Opt.Setup_Projects then
+      --  Check if path needs to be created
+
+      declare
+         Config_Path : constant String :=
+                         Ada.Directories.Containing_Directory
+                           (Config_Project_File_Name.all);
+      begin
+         if not Ada.Directories.Exists (Config_Path) then
+            Ada.Directories.Create_Path (Config_Path);
+         end if;
+      end;
    end if;
 
    --  Then, parse the user's project and the configuration file. Apply the
