@@ -32,7 +32,6 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with Atree;       use Atree;
 with Csets;
 with Debug;       use Debug;
-with Err_Vars;    use Err_Vars;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
 with Hostparm;
@@ -1968,7 +1967,7 @@ begin
    if Config_Project_File_Name = null then
       Config_Project_File_Name := new String'("");
 
-   elsif Opt.Setup_Projects then
+   elsif Autoconf_Specified then
       --  Check if path needs to be created
 
       declare
