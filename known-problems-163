@@ -11,15 +11,6 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
-KP-163-LA23-043 Fail to create path for config project
-
-  Problem:    gprbuild fails to create the path specified for the
-              configuration project for an aggregate project.
-
-  Status:     This was fixed in 2.0 on 2012-10-24
-
-  Workaround: Create the path manually before calling gprconfig.
-
 KP-163-L717-025 gprconfig crashes with exception Expression_Error
 
   Problem:    If a query for the target of a compiler, such as
