@@ -8,6 +8,16 @@ This file contains a complete list of new features in version 2.0 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-20-LA23-043 Unconditionally create --autoconf= path (2012-10-26)
+
+  gprbuild now creates unconditionally the directory of the configuration
+  project file specified with --autoconf= when this directory does not exist.
+
+NF-20-L924-049 Add support for arbitrary runtimes for GNAT (2012-09-30)
+
+  The names of the runtimes for GNAT are no longer limited to a restricted
+  list.
+
 NF-20-L918-009 Add support for Windows resources (2012-10-03)
 
   Support for compiling Windows resources file with the binutils's
