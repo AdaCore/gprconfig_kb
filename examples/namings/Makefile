@@ -13,7 +13,7 @@ clean: force
 	$(RM) default.cgpr
 
 run: all
-	main-case1
-	main-case2
-	main-case3
+	./main-case1
+	./main-case2
+	./main-case3
 force:

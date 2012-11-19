@@ -19,8 +19,8 @@ clean: force
 run: all
 	./main0
 	./main1
-	(PATH="lib2:${PATH}" main2)
-	(PATH="lib3:${PATH}" main3)
-	(PATH="lib2:${PATH}" main4)
+	(PATH="lib2:${PATH}" ./main2)
+	(PATH="lib3:${PATH}" ./main3)
+	(PATH="lib2:${PATH}" ./main4)
 
 force:
