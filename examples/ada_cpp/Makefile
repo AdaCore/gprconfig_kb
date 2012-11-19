@@ -11,7 +11,7 @@ clean: force
 	$(RM) default.cgpr
 
 run: all
-	ada_main
-	cpp_main
-	main
+	./ada_main
+	./cpp_main
+	./main
 force:

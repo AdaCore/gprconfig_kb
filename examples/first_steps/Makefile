@@ -11,6 +11,6 @@ clean: force
 	$(RM) default.cgpr
 
 run: all
-	ada_main
-	obj1/c_main
+	./ada_main
+	./obj1/c_main
 force:

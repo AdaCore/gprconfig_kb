@@ -12,7 +12,7 @@ clean: force
 	$(RM) default.cgpr
 
 run: all
-	obj/main
+	./obj/main
 	(PATH="../libraries/lib2:${PATH}" obj1/main)
 
 force:

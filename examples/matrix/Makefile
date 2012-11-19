@@ -9,5 +9,5 @@ clean: force
 	$(RM) default.cgpr
 
 run: all
-	obj/main
+	./obj/main
 force:

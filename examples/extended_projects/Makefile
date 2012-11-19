@@ -9,4 +9,4 @@ clean:
 
 
 run: all
-	ada_main
+	./ada_main

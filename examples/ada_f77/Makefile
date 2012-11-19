@@ -9,4 +9,4 @@ clean:
 	$(RM) default.cgpr
 
 run: all
-	fobj/ess
+	./fobj/ess
