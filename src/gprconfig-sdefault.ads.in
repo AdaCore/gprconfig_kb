@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---                   Copyright (C) 2006-2007, AdaCore                       --
+--                   Copyright (C) 2006-2012, AdaCore                       --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -26,5 +26,5 @@
 
 package GprConfig.Sdefault is
    pragma Warnings (Off);
-   Hostname           : constant String := "@host@";
+   Hostname : constant String := "@host@";
 end GprConfig.Sdefault;

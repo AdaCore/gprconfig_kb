@@ -30,4 +30,5 @@ package GPR_Version is
    function Gpr_Version_String return String;
    --  Version output when GPRBUILD or its related tools, including
    --  GPRCLEAN, are run (with appropriate verbose option switch set).
+
 end GPR_Version;

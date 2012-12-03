@@ -33,7 +33,7 @@ package body GPR_Version is
       First : Positive;
 
       Date : String (1 .. 10) := "(unknown) ";
-      Host  : constant String := " (" & GprConfig.Sdefault.Hostname & ')';
+      Host : constant String := " (" & GprConfig.Sdefault.Hostname & ')';
 
    begin
       --  Find the beginning and the end of the current date, that is the last
