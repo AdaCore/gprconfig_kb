@@ -82,7 +82,7 @@ package Gprbuild.Compilation.Protocol is
       FL,  -- a file
       OK,  -- compilation ok (with pid)
       KO,  -- compilation failed (with pid)
-      PF,  -- project name
+      CX,  -- master context
       DP,  -- display output
       EC); -- end of compilation
 

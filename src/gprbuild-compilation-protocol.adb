@@ -211,7 +211,7 @@ package body Gprbuild.Compilation.Protocol is
       Result : Command;
 
    begin
-      if C in "EX" | "AK" | "FL" | "OK" | "KO" | "PF" | "DP" | "EC" then
+      if C in "EX" | "AK" | "FL" | "OK" | "KO" | "CX" | "DP" | "EC" then
          Result.Cmd := Command_Kind'Value (C);
 
          Create
@@ -247,7 +247,7 @@ package body Gprbuild.Compilation.Protocol is
    is
       Line : constant Command := Get_Command (Channel);
    begin
-      if Line.Cmd = PF
+      if Line.Cmd = CX
         and then Args_Count (Line) = 3
       then
          OS := To_Unbounded_String (Slice (Line.Args, 1));
@@ -327,7 +327,7 @@ package body Gprbuild.Compilation.Protocol is
    begin
       String'Output
         (Channel.Channel,
-         Command_Kind'Image (PF) & OS & Args_Sep & Project_Name
+         Command_Kind'Image (CX) & OS & Args_Sep & Project_Name
          & Args_Sep & Sync_Kind'Image (Sync));
    end Send_Context;
 
