@@ -555,6 +555,15 @@ package body Gprbuild.Compilation.Protocol is
       Channel.To := To_Unbounded_String (To);
    end Set_Rewrite;
 
+   ----------
+   -- Sock --
+   ----------
+
+   function Sock (Channel : Communication_Channel) return Socket_Type is
+   begin
+      return Channel.Sock;
+   end Sock;
+
    -----------------------
    -- Translate_Receive --
    -----------------------

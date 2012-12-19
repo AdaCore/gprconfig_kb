@@ -45,6 +45,9 @@ package Gprbuild.Compilation.Protocol is
    function Create (Sock : Socket_Type) return Communication_Channel;
    --  Create a communication channel
 
+   function Sock (Channel : Communication_Channel) return Socket_Type;
+   pragma Inline (Sock);
+
    procedure Close (Channel : in out Communication_Channel);
    --  Close the channel
 
