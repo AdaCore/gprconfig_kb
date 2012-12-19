@@ -21,6 +21,8 @@
 
 with Ada.Containers.Doubly_Linked_Lists;
 
+with Gpr_Util; use Gpr_Util;
+
 package body Gprbuild.Compilation.Result is
 
    use Ada;

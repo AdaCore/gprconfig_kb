@@ -116,9 +116,6 @@ private
    --  Used to decide to what compiler the Builder'Default_Switches that
    --  are not recognized by gprbuild should be given.
 
-   Distributed_Mode : Boolean := False;
-   --  Wether the distributed compilation mode has been activated
-
    package All_Language_Builder_Compiling_Options is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,

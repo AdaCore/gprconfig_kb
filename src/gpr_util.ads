@@ -66,6 +66,8 @@ package Gpr_Util is
    Restricted_To_Languages_Option : constant String :=
                                                "--restricted-to-languages=";
 
+   Distributed_Option : constant String := "--distributed";
+
    Dry_Run_Option : constant String := "--dry-run";
 
    Named_Map_File_Option   : constant String := No_Name_Map_File_Option & '=';
@@ -110,6 +112,9 @@ package Gpr_Util is
 
    Load_Standard_Base : Boolean := True;
    --  False when switch --db- is used
+
+   Distributed_Mode : Boolean := False;
+   --  Wether the distributed compilation mode has been activated
 
    --  Packages of project files where unknown attributes are errors
 

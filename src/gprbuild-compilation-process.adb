@@ -25,6 +25,7 @@ with Output; use Output;
 
 with Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Slave;
+with Gpr_Util;                    use Gpr_Util;
 
 package body Gprbuild.Compilation.Process is
 

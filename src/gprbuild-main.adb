@@ -114,7 +114,6 @@ procedure Gprbuild.Main is
    Direct_Import_Only_Switch  : constant String := "--direct-import-only";
    Indirect_Imports_Switch    : constant String := "--indirect-imports";
    No_Indirect_Imports_Switch : constant String := "--no-indirect-imports";
-   Distributed_Switch         : constant String := "--distributed";
 
    Current_Working_Dir : constant String := Get_Current_Dir;
    --  The current working directory
@@ -694,7 +693,7 @@ procedure Gprbuild.Main is
 
       elsif Arg (1) = '-' then
 
-         if Arg = Distributed_Switch then
+         if Arg = Distributed_Option then
             Distributed_Mode := True;
 
          elsif Arg = "--db-" then
