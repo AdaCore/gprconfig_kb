@@ -74,6 +74,13 @@ package body Gprbuild.Compilation.Slave is
    --  Parse the remote package and call action for every remote slave defined
    --  in the Build_Slave attribute.
 
+   function Connect_Slave
+     (User, Host   : String;
+      Project_Name : String;
+      Port         : Port_Type;
+      Sync         : Sync_Kind) return Slave;
+   --  Connect to the slave and return the corresponding object
+
    --  Ack transient signal stored into this variable
 
    protected Wait_Ack is
@@ -104,6 +111,67 @@ package body Gprbuild.Compilation.Slave is
    Slaves         : Slave_S.Map;
    Slaves_Sockets : Socket_Set_Type;
    Max_Processes  : Natural := 0;
+
+   -------------------
+   -- Connect_Slave --
+   -------------------
+
+   function Connect_Slave
+     (User, Host   : String;
+      Project_Name : String;
+      Port         : Port_Type;
+      Sync         : Sync_Kind) return Slave
+   is
+      Address : Sock_Addr_Type;
+      Sock    : Socket_Type;
+      S       : Slave;
+      Status  : Selector_Status;
+
+   begin
+      S.Host := To_Unbounded_String (Host);
+      S.User := To_Unbounded_String (User);
+      S.Sync := Sync;
+      S.Project_Name := To_Unbounded_String (Project_Name);
+
+      Address.Addr := Addresses (Get_Host_By_Name (Host), 1);
+      Address.Port := Port;
+
+      Create_Socket (Sock);
+      Set_Socket_Option (Sock, Socket_Level, (Reuse_Address, True));
+
+      Connect_Socket (Sock, Address, Timeout => 2.0, Status => Status);
+
+      if Status in Expired .. Aborted then
+         Write_Line ("Cannot connect to slave " & Host & ", aborting");
+         OS_Exit (1);
+      end if;
+
+      S.Channel := Create (Sock);
+
+      --  Do initial handshake
+
+      Protocol.Send_Context (S.Channel, Get_OS, Project_Name, S.Sync);
+
+      declare
+         Cmd        : constant Command := Get_Command (S.Channel);
+         Parameters : constant Slice_Set := Args (Cmd);
+      begin
+         if Kind (Cmd) = OK and then Slice_Count (Parameters) = 2 then
+            S.Max_Processes := Natural'Value (Slice (Parameters, 1));
+            S.Root_Dir := To_Unbounded_String (Slice (Parameters, 2));
+
+         elsif Kind (Cmd) = KO then
+            Write_Line ("Slave OS is not compatible " & Host);
+            OS_Exit (1);
+
+         else
+            Write_Line ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
+            OS_Exit (1);
+         end if;
+      end;
+
+      return S;
+   end Connect_Slave;
 
    ----------------------------
    -- For_Every_Remote_Slave --
@@ -269,55 +337,11 @@ package body Gprbuild.Compilation.Slave is
       function User_Host return String is
         (if User = "" then Host else User & '@' & Host);
 
-      Address : Sock_Addr_Type;
-      Sock    : Socket_Type;
-      S       : Slave;
-      Status  : Selector_Status;
-
+      S : Slave;
    begin
-      S.Host := To_Unbounded_String (Host);
-      S.User := To_Unbounded_String (User);
-      S.Sync := Sync;
-      S.Project_Name := To_Unbounded_String (Project_Name);
+      S := Connect_Slave (User, Host, Project_Name, Port, Sync);
 
-      Address.Addr := Addresses (Get_Host_By_Name (Host), 1);
-      Address.Port := Port;
-
-      Create_Socket (Sock);
-      Set_Socket_Option (Sock, Socket_Level, (Reuse_Address, True));
-
-      Connect_Socket (Sock, Address, Timeout => 2.0, Status => Status);
-
-      if Status in Expired .. Aborted then
-         Write_Line ("Cannot connect to slave " & Host & ", aborting");
-         OS_Exit (1);
-      end if;
-
-      Set (Slaves_Sockets, Sock);
-
-      S.Channel := Create (Sock);
-
-      --  Do initial handshake
-
-      Protocol.Send_Context (S.Channel, Get_OS, Project_Name, S.Sync);
-
-      declare
-         Cmd        : constant Command := Get_Command (S.Channel);
-         Parameters : constant Slice_Set := Args (Cmd);
-      begin
-         if Kind (Cmd) = OK and then Slice_Count (Parameters) = 2 then
-            S.Max_Processes := Natural'Value (Slice (Parameters, 1));
-            S.Root_Dir := To_Unbounded_String (Slice (Parameters, 2));
-
-         elsif Kind (Cmd) = KO then
-            Write_Line ("Slave OS is not compatible " & User_Host);
-            OS_Exit (1);
-
-         else
-            Write_Line ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
-            OS_Exit (1);
-         end if;
-      end;
+      Set (Slaves_Sockets, Sock (S.Channel));
 
       --  Sum the Max_Process values
 
@@ -325,7 +349,7 @@ package body Gprbuild.Compilation.Slave is
 
       --  Now that all slave's data is known and set, record it
 
-      Slaves.Insert (To_C (Sock), S);
+      Slaves.Insert (To_C (Sock (S.Channel)), S);
 
       if Opt.Verbose_Mode then
          Write_Str ("Register slave " & User_Host & ",");
