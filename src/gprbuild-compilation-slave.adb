@@ -543,9 +543,29 @@ package body Gprbuild.Compilation.Slave is
                   begin
                      if not V.Value.Default then
                         if V.Name = Name_Root_Dir then
-                           Root_Dir :=
-                             To_Unbounded_String
-                               (Get_Name_String (V.Value.Value));
+                           declare
+                              RD : constant String :=
+                                     Get_Name_String (V.Value.Value);
+                           begin
+                              if Is_Absolute_Path (RD) then
+                                 Root_Dir := To_Unbounded_String (RD);
+                              else
+                                 Root_Dir := To_Unbounded_String
+                                   (Normalize_Pathname
+                                      (To_String (Root_Dir)
+                                       & Directory_Separator & RD));
+                              end if;
+
+                              if not Exists (To_String (Root_Dir))
+                                or else not Is_Directory (To_String (Root_Dir))
+                              then
+                                 Write_Line
+                                   ("error: " & To_String (Root_Dir)
+                                    & " is not a directory"
+                                    & " or does not exists");
+                                 OS_Exit (1);
+                              end if;
+                           end;
                         end if;
                      end if;
                   end;
