@@ -1,9 +1,9 @@
 ------------------------------------------------------------------------------
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                 G P R B U I L D . C O M P I L A T I O N                  --
+--                     G P R B U I L D . C O M P I L E                      --
 --                                                                          --
---                                 S p e c                                  --
+--                                 B o d y                                  --
 --                                                                          --
 --            Copyright (C) 2012, Free Software Foundation, Inc.            --
 --                                                                          --
@@ -19,34 +19,4 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
---  This is the root package for the compilation support. It handles the local
---  and distributed compilation modes.
-
-package Gprbuild.Compilation is
-
-   Default_Port : constant := 8484;
-
-   --  A simple concurrent counter type
-
-   protected type Shared_Counter is
-
-      function Count return Natural;
-      --  Returns the current conter value
-
-      procedure Increment;
-      --  Increment by one
-
-      procedure Decrement;
-      --  Decrement by one
-
-      procedure Reset;
-      --  Reset counter to 0
-
-      entry Wait_Non_Zero;
-      --  Returns when the counter is above zeor
-
-   private
-      Counter : Natural := 0;
-   end Shared_Counter;
-
-end Gprbuild.Compilation;
+procedure Gprslave;

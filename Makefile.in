@@ -79,6 +79,7 @@ ifeq ($(BUILD), production)
 	strip $(prefix)/bin/gprclean$(EXEXT)
 	strip $(prefix)/bin/gprconfig$(EXEXT)
 	strip $(prefix)/bin/gprinstall$(EXEXT)
+	strip $(prefix)/bin/gprslave$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprbind$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
 endif
@@ -152,6 +153,7 @@ install.bin: force
 	${INSTALL_PROGRAM} gprbuild${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} gprclean${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} gprinstall${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} gprslave${EXEXT} ${bindir}
 	-${MKDIR} ${libexecdir}/gprbuild
 	${INSTALL_PROGRAM} gprbind${EXEXT} ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} gprlib${EXEXT} ${libexecdir}/gprbuild/
@@ -165,7 +167,7 @@ $(objdir)/link.o: gnat/link.c
 .PHONY: build_xmlada
 build_xmlada:
 	cd $(srcdir)/xmlada && ./configure --build=$(build) \
-	  --prefix=$(root_objdir)/xmlada/install 
+	  --prefix=$(root_objdir)/xmlada/install
 	cd $(srcdir)/xmlada && make LIBRARY_TYPE=static static install_static
 
 clean:

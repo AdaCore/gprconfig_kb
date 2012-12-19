@@ -30,19 +30,28 @@ package Gprbuild.Compilation.Process is
 
    Invalid_Process : constant Id;
 
-   procedure Wait (Process : out Id; Status : out Boolean);
-   --  Wait for a process to terminate, returns the process id and the status
+   function Create_Local (Pid : GNAT.OS_Lib.Process_Id) return Id;
+   --  Returns a local process for Pid
+
+   function Create_Remote (Pid : Integer) return Id;
+   --  Returns a remote process (one running on a slave) for Pid
 
    function Run
      (Executable  : String;
       Options     : GNAT.OS_Lib.Argument_List;
+      Dep_Name    : String := "";
       Output_File : String := "";
       Err_To_Out  : Boolean := False;
       Force_Local : Boolean := False) return Id;
-   --  Run Executable with the given options locally
+   --  Run Executable with the given options locally or on a remote slave.
+   --  Dep_File name is the name of the file that is expected to be generated
+   --  if the compilation is successful. If Force_Local is set then the
+   --  compilation will happen on the local machine.
 
    function Get_Maximum_Processes return Positive;
-   --  The maximum number of simultaneous compilation supported
+   --  The maximum number of simultaneous compilation supported. This is the
+   --  sum of the local parallelism and the sum of of remote slaves supported
+   --  processes.
 
    --  For the hash table of jobs
 
@@ -56,8 +65,8 @@ private
 
    type Id (Kind : Process_Kind := Local) is record
       case Kind is
-         when Local  => Pid : Process_Id;
-         when Remote => null;
+         when Local  => Pid   : Process_Id;
+         when Remote => R_Pid : Integer;
       end case;
    end record;
 

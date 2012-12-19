@@ -19,7 +19,40 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Exceptions; use Ada.Exceptions;
+
+with Output; use Output;
+
+with Gprbuild.Compilation.Result;
+with Gprbuild.Compilation.Slave;
+
 package body Gprbuild.Compilation.Process is
+
+   use Ada;
+
+   task type Wait_Local;
+   type Wait_Local_Ref is access Wait_Local;
+
+   WL            : Wait_Local_Ref;
+   Local_Process : Shared_Counter;
+
+   ------------------
+   -- Create_Local --
+   ------------------
+
+   function Create_Local (Pid : Process_Id) return Id is
+   begin
+      return Id'(Local, Pid);
+   end Create_Local;
+
+   -------------------
+   -- Create_Remote --
+   -------------------
+
+   function Create_Remote (Pid : Integer) return Id is
+   begin
+      return Id'(Remote, Pid);
+   end Create_Remote;
 
    ---------------------------
    -- Get_Maximum_Processes --
@@ -27,7 +60,7 @@ package body Gprbuild.Compilation.Process is
 
    function Get_Maximum_Processes return Positive is
    begin
-      return Opt.Maximum_Processes;
+      return Opt.Maximum_Processes + Slave.Get_Max_Processes;
    end Get_Maximum_Processes;
 
    ----------
@@ -36,8 +69,15 @@ package body Gprbuild.Compilation.Process is
 
    function Hash (Process : Id) return Header_Num is
       Modulo : constant Integer := Integer (Header_Num'Last) + 1;
+      Pid    : Integer;
    begin
-      return Header_Num (Pid_To_Integer (Process.Pid) mod Modulo);
+      if Process.Kind = Local then
+         Pid := Pid_To_Integer (Process.Pid);
+      else
+         Pid := Process.R_Pid;
+      end if;
+
+      return Header_Num (Pid mod Modulo);
    end Hash;
 
    ---------
@@ -47,30 +87,65 @@ package body Gprbuild.Compilation.Process is
    function Run
      (Executable  : String;
       Options     : GNAT.OS_Lib.Argument_List;
+      Dep_Name    : String := "";
       Output_File : String := "";
       Err_To_Out  : Boolean := False;
-      Force_Local : Boolean := False) return Id
-   is
-      pragma Unreferenced (Force_Local);
-      P : Id (Local);
+      Force_Local : Boolean := False) return Id is
    begin
-      if Output_File = "" then
-         P.Pid := Non_Blocking_Spawn (Executable, Options);
-      else
-         P.Pid := Non_Blocking_Spawn
-           (Executable, Options, Output_File, Err_To_Out);
+      --  Initialize the task waiting for local process only in distributed
+      --  mode. In standard mode, the process are waited for in the
+      --  Compilation.Result.Wait procedure.
+
+      if Distributed_Mode and then WL = null then
+         WL := new Wait_Local;
       end if;
 
-      return P;
+      --  Run locally first, then send jobs to remote slaves
+
+      if Force_Local
+        or else not Distributed_Mode
+        or else Local_Process.Count < Opt.Maximum_Processes
+        or else Output_File /= ""
+      then
+         Run_Local : declare
+            P : Id (Local);
+         begin
+            if Output_File = "" then
+               P.Pid := Non_Blocking_Spawn (Executable, Options);
+            else
+               P.Pid := Non_Blocking_Spawn
+                 (Executable, Options, Output_File, Err_To_Out);
+            end if;
+
+            Local_Process.Increment;
+
+            return P;
+         end Run_Local;
+
+      else
+         return Slave.Run (Executable, Options, Dep_Name);
+      end if;
    end Run;
 
-   ----------
-   -- Wait --
-   ----------
+   ----------------
+   -- Wait_Local --
+   ----------------
 
-   procedure Wait (Process : out Id; Status : out Boolean) is
+   task body Wait_Local is
+      Pid    : Process_Id;
+      Status : Boolean;
    begin
-      Wait_Process (Process.Pid, Status);
-   end Wait;
+      loop
+         Local_Process.Wait_Non_Zero;
+
+         Wait_Process (Pid, Status);
+         Result.Add (Id'(Local, Pid), Status);
+         Local_Process.Decrement;
+      end loop;
+   exception
+      when E : others =>
+         Write_Line (Exception_Information (E));
+         OS_Exit (1);
+   end Wait_Local;
 
 end Gprbuild.Compilation.Process;

@@ -3,7 +3,7 @@
 --                                                                          --
 --                 G P R B U I L D . C O M P I L A T I O N                  --
 --                                                                          --
---                                 S p e c                                  --
+--                                 B o d y                                  --
 --                                                                          --
 --            Copyright (C) 2012, Free Software Foundation, Inc.            --
 --                                                                          --
@@ -19,34 +19,59 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
---  This is the root package for the compilation support. It handles the local
---  and distributed compilation modes.
+package body Gprbuild.Compilation is
 
-package Gprbuild.Compilation is
+   --------------------
+   -- Shared_Counter --
+   --------------------
 
-   Default_Port : constant := 8484;
+   protected body Shared_Counter is
 
-   --  A simple concurrent counter type
+      -----------
+      -- Count --
+      -----------
 
-   protected type Shared_Counter is
+      function Count return Natural is
+      begin
+         return Counter;
+      end Count;
 
-      function Count return Natural;
-      --  Returns the current conter value
+      ---------------
+      -- Decrement --
+      ---------------
 
-      procedure Increment;
-      --  Increment by one
+      procedure Decrement is
+      begin
+         Counter := Counter - 1;
+      end Decrement;
 
-      procedure Decrement;
-      --  Decrement by one
+      ---------------
+      -- Increment --
+      ---------------
 
-      procedure Reset;
-      --  Reset counter to 0
+      procedure Increment is
+      begin
+         Counter := Counter + 1;
+      end Increment;
 
-      entry Wait_Non_Zero;
-      --  Returns when the counter is above zeor
+      -----------
+      -- Reset --
+      -----------
 
-   private
-      Counter : Natural := 0;
+      procedure Reset is
+      begin
+         Counter := 0;
+      end Reset;
+
+      -------------------
+      -- Wait_Non_Zero --
+      -------------------
+
+      entry Wait_Non_Zero when Counter /= 0 is
+      begin
+         null;
+      end Wait_Non_Zero;
+
    end Shared_Counter;
 
 end Gprbuild.Compilation;

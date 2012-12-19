@@ -48,6 +48,7 @@ with Switch;      use Switch;
 with Gprbuild.Compile;
 with Gprbuild.Link;
 with Gprbuild.Post_Compile;
+with Gprbuild.Compilation.Slave;
 
 procedure Gprbuild.Main is
 
@@ -109,10 +110,11 @@ procedure Gprbuild.Main is
    --  Called when the program is interrupted by Ctrl-C to delete the
    --  temporary mapping files and configuration pragmas files.
 
-   No_Object_Check_Switch     : constant String  := "--no-object-check";
-   Direct_Import_Only_Switch  : constant String  := "--direct-import-only";
-   Indirect_Imports_Switch    : constant String  := "--indirect-imports";
-   No_Indirect_Imports_Switch : constant String  := "--no-indirect-imports";
+   No_Object_Check_Switch     : constant String := "--no-object-check";
+   Direct_Import_Only_Switch  : constant String := "--direct-import-only";
+   Indirect_Imports_Switch    : constant String := "--indirect-imports";
+   No_Indirect_Imports_Switch : constant String := "--no-indirect-imports";
+   Distributed_Switch         : constant String := "--distributed";
 
    Current_Working_Dir : constant String := Get_Current_Dir;
    --  The current working directory
@@ -692,7 +694,10 @@ procedure Gprbuild.Main is
 
       elsif Arg (1) = '-' then
 
-         if Arg = "--db-" then
+         if Arg = Distributed_Switch then
+            Distributed_Mode := True;
+
+         elsif Arg = "--db-" then
             if Hostparm.OpenVMS then
                Fail_Program
                  (Project_Tree,
@@ -1405,6 +1410,11 @@ procedure Gprbuild.Main is
    begin
       Write_Line ("*** Interrupted ***");
       Delete_All_Temp_Files (Project_Tree.Shared);
+
+      if Distributed_Mode then
+         Compilation.Slave.Unregister_Remote_Slaves;
+      end if;
+
       OS_Exit (1);
    end Sigint_Intercepted;
 
@@ -1588,6 +1598,13 @@ procedure Gprbuild.Main is
          Write_Eol;
 
          Display_Usage_Version_And_Help;
+
+         --  Line for --distributed
+
+         Write_Str ("  --distributed");
+         Write_Eol;
+         Write_Str ("           Activate the remote/distributed compilations");
+         Write_Eol;
 
          --  Line for Config_Project_Option
 

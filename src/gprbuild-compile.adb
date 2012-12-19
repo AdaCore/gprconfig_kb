@@ -37,6 +37,8 @@ with Snames;      use Snames;
 with Tempdir;
 
 with Gprbuild.Compilation.Process; use Gprbuild.Compilation.Process;
+with Gprbuild.Compilation.Result;  use Gprbuild.Compilation.Result;
+with Gprbuild.Compilation.Slave;
 
 package body Gprbuild.Compile is
 
@@ -102,6 +104,10 @@ package body Gprbuild.Compile is
 
    Outstanding_Compiles : Natural := 0;
    --  The number of compilation jobs currently spawned
+
+   Slave_Initialized    : Boolean := False;
+   --  Record wether the remote compilation slaves have been initialized when
+   --  running in distributed mode.
 
    type Process_Purpose is (Compilation, Dependency);
    --  A type to distinguish between compilation jobs and dependency file
@@ -1059,7 +1065,7 @@ package body Gprbuild.Compile is
                --  If switch -k or -jnn (with nn > 1), output a summary of the
                --  sources that could not be compiled.
 
-               if (Opt.Keep_Going or else Opt.Maximum_Processes > 1)
+               if (Opt.Keep_Going or else Get_Maximum_Processes > 1)
                  and then Bad_Compilations.Last > 0
                then
                   declare
@@ -1084,6 +1090,10 @@ package body Gprbuild.Compile is
                if Opt.Keep_Going and then Project.Qualifier = Aggregate then
                   Bad_Compilations.Init;
                else
+                  if Distributed_Mode and then Slave_Initialized then
+                     Gprbuild.Compilation.Slave.Unregister_Remote_Slaves;
+                  end if;
+
                   Fail_Program (Tree, "*** compilation phase failed");
                end if;
             end if;
@@ -1094,6 +1104,11 @@ package body Gprbuild.Compile is
 
    begin
       Compile_All (Main_Project, Project_Tree);
+
+      --  Unregister the slaves and get back compiled object code. This is a
+      --  nop if no compilation has been done.
+
+      Gprbuild.Compilation.Slave.Unregister_Remote_Slaves;
    end Run;
 
    -----------------------
@@ -2577,7 +2592,8 @@ package body Gprbuild.Compile is
 
          Process := Run
            (Compiler_Path,
-            Compilation_Options.Options (1 .. Compilation_Options.Last));
+            Compilation_Options.Options (1 .. Compilation_Options.Last),
+            Dep_Name => Get_Name_String (Source.Id.Dep_Name));
 
          if Last_Switches_For_File >= 0 then
             Compilation_Options.Last := Last_Switches_For_File;
@@ -2870,6 +2886,15 @@ package body Gprbuild.Compile is
             end if;
 
             if Compilation_Needed then
+               --  If Distributed_Mode activated, parse Remote package to
+               --  register and initialize the slaves.
+
+               if Distributed_Mode and then not Slave_Initialized then
+                  Gprbuild.Compilation.Slave.Register_Remote_Slaves
+                    (Project_Tree, Main_Project);
+                  Slave_Initialized := True;
+               end if;
+
                Update_Object_Path (Source.Id, Source_Project);
                Change_To_Object_Directory (Source_Project);
 
@@ -2965,7 +2990,7 @@ package body Gprbuild.Compile is
          Compilation_OK  : Boolean;
          No_Check        : Boolean;
       begin
-         if Outstanding_Compiles = Opt.Maximum_Processes
+         if Outstanding_Compiles = Get_Maximum_Processes
            or else (Queue.Is_Virtually_Empty and then Outstanding_Compiles > 0)
          then
             Await_Compile (Source_Identity, Compilation_OK);

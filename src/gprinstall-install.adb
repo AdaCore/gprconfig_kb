@@ -210,7 +210,7 @@ package body Gprinstall.Install is
       ---------------------------
 
       procedure Check_Install_Package is
-         Pck  : Package_Id := Project.Decl.Packages;
+         Pck : Package_Id := Project.Decl.Packages;
 
          procedure Replace (P : in out Param; Val : Name_Id);
          pragma Inline (Replace);

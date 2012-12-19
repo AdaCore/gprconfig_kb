@@ -21,7 +21,8 @@ project Gprbuild is
         "gprbind.adb",
         "gprlib.adb",
         "gprclean-main.adb",
-        "gprinstall-main.adb");
+        "gprinstall-main.adb",
+        "gprslave.adb");
 
    for Source_Dirs use ("src", "gnat");
 
@@ -64,7 +65,7 @@ project Gprbuild is
    end Builder;
 
    package Compiler is
-      common_switches := ("-gnat05", "-gnaty", "-gnatQ");
+      common_switches := ("-gnat12", "-gnaty", "-gnatQ");
       case Bld is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches &
