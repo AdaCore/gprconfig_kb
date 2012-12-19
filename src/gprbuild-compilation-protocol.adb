@@ -239,16 +239,20 @@ package body Gprbuild.Compilation.Protocol is
    -- Get_Context --
    -----------------
 
-   function Get_Context
-     (Channel : Communication_Channel; Sync : out Sync_Kind) return String
+   procedure Get_Context
+     (Channel      : Communication_Channel;
+      OS           : out Unbounded_String;
+      Project_Name : out Unbounded_String;
+      Sync         : out Sync_Kind)
    is
       Line : constant Command := Get_Command (Channel);
    begin
       if Line.Cmd = PF
-        and then Args_Count (Line) = 2
+        and then Args_Count (Line) = 3
       then
-         Sync := Sync_Kind'Value (Slice (Line.Args, 2));
-         return Slice (Line.Args, 1);
+         OS := To_Unbounded_String (Slice (Line.Args, 1));
+         Project_Name := To_Unbounded_String (Slice (Line.Args, 2));
+         Sync := Sync_Kind'Value (Slice (Line.Args, 3));
       else
          raise Wrong_Command
            with "Expected PF found " & Command_Kind'Image (Line.Cmd);
@@ -317,12 +321,13 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Send_Context
      (Channel      : Communication_Channel;
+      OS           : String;
       Project_Name : String;
       Sync         : Sync_Kind) is
    begin
       String'Output
         (Channel.Channel,
-         Command_Kind'Image (PF) & Project_Name
+         Command_Kind'Image (PF) & OS & Args_Sep & Project_Name
          & Args_Sep & Sync_Kind'Image (Sync));
    end Send_Context;
 
@@ -498,6 +503,11 @@ package body Gprbuild.Compilation.Protocol is
    procedure Send_Ko (Channel : Communication_Channel; Pid : Integer) is
    begin
       String'Output (Channel.Channel, Command_Kind'Image (KO) & Image (Pid));
+   end Send_Ko;
+
+   procedure Send_Ko (Channel : Communication_Channel) is
+   begin
+      String'Output (Channel.Channel, Command_Kind'Image (KO));
    end Send_Ko;
 
    -------------

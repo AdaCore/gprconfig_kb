@@ -108,6 +108,7 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Send_Context
      (Channel      : Communication_Channel;
+      OS           : String;
       Project_Name : String;
       Sync         : Sync_Kind);
    --  Send initial context to the slave
@@ -147,8 +148,11 @@ package Gprbuild.Compilation.Protocol is
    --  From gprslave
    --
 
-   function Get_Context
-     (Channel : Communication_Channel; Sync : out Sync_Kind) return String;
+   procedure Get_Context
+     (Channel      : Communication_Channel;
+      OS           : out Unbounded_String;
+      Project_Name : out Unbounded_String;
+      Sync         : out Sync_Kind);
    --  Wait for an initial context from a build master
 
    procedure Send_Slave_Config
@@ -165,6 +169,10 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Send_Ko (Channel : Communication_Channel; Pid : Integer);
    --  Send Pid of an un-successful command
+
+   procedure Send_Ko (Channel : Communication_Channel);
+   --  Send Ko to initial handshake (slave not compatible with master for
+   --  example).
 
    procedure Send_Output (Channel : Communication_Channel; File_Name : String);
    --  Send an output of a command

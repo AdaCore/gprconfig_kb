@@ -34,6 +34,7 @@ with GNAT.Sockets;                  use GNAT.Sockets;
 with GNAT.String_Split;             use GNAT.String_Split;
 with GNAT.Strings;
 
+with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 
@@ -105,6 +106,7 @@ procedure Gprslave is
    Server       : Socket_Type;
    Socket       : Socket_Type;
    Project_Name : Unbounded_String;
+   OS           : Unbounded_String;
    Sync         : Sync_Kind;
    Index        : Long_Integer := 0;
 
@@ -348,19 +350,38 @@ procedure Gprslave is
 
    procedure Wait_For_Master is
    begin
-      --  Wait for a connection
+      Wait_Compatible_Master : loop
+         --  Wait for a connection
 
-      Accept_Socket (Server, Socket, Address);
+         Accept_Socket (Server, Socket, Address);
 
-      Channel := Create (Socket);
+         Channel := Create (Socket);
 
-      --  Initial handshake
+         --  Initial handshake
 
-      Project_Name := To_Unbounded_String (Get_Context (Channel, Sync));
+         begin
+            Get_Context (Channel, OS, Project_Name, Sync);
+         exception
+            when E : others =>
+               if Verbose then
+                  Put_Line (Exception_Information (E));
+               end if;
+         end;
 
-      if Verbose then
-         Put_Line ("Handling project : " & To_String (Project_Name));
-      end if;
+         if Verbose then
+            Put_Line ("Handling project : " & To_String (Project_Name));
+
+            if To_String (OS) /= Get_OS then
+               Send_Ko (Channel);
+
+               Put_Line
+                 ("   rejected, master OS is imcompatible " & To_String (OS));
+
+            else
+               exit Wait_Compatible_Master;
+            end if;
+         end if;
+      end loop Wait_Compatible_Master;
 
       --  Move to root directory before creating a new project environment
 
@@ -395,7 +416,8 @@ begin
 
    if Verbose then
       Put_Line
-        ("gprslave on " & Host_Name & ":" & Image (Long_Integer (Port)));
+        ("gprslave on " & Host_Name & ":" & Image (Long_Integer (Port))
+         & " (" & Get_OS & ")");
       Put_Line ("  max processes :" & Integer'Image (Max_Processes));
    end if;
 

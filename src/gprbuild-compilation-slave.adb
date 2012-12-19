@@ -32,6 +32,7 @@ with GNAT.String_Split; use GNAT.String_Split;
 with Output; use Output;
 with Snames; use Snames;
 
+with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with Gprbuild.Compilation.Result;
 
@@ -161,7 +162,7 @@ package body Gprbuild.Compilation.Slave is
 
       --  Do initial handshake
 
-      Protocol.Send_Context (S.Channel, Project_Name, S.Sync);
+      Protocol.Send_Context (S.Channel, Get_OS, Project_Name, S.Sync);
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);
@@ -170,6 +171,14 @@ package body Gprbuild.Compilation.Slave is
          if Kind (Cmd) = OK and then Slice_Count (Parameters) = 2 then
             S.Max_Processes := Natural'Value (Slice (Parameters, 1));
             S.Root_Dir := To_Unbounded_String (Slice (Parameters, 2));
+
+         elsif Kind (Cmd) = KO then
+            Write_Line ("Slave OS is not compatible " & User_Host);
+            OS_Exit (1);
+
+         else
+            Write_Line ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
+            OS_Exit (1);
          end if;
       end;
 
