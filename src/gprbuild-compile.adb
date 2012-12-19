@@ -981,7 +981,6 @@ package body Gprbuild.Compile is
       if not Status then
          null;
       end if;
-
    end Create_Object_Path_File;
 
    ----------------------
@@ -3032,7 +3031,7 @@ package body Gprbuild.Compile is
       Outstanding_Compiles := 0;
 
       --  Then process each files in the queue (new files might be added to
-      --  the queue as a result)
+      --  the queue as a result).
 
       Compilation_Loop :
       while not Queue.Is_Empty or else Outstanding_Compiles > 0 loop
