@@ -36,6 +36,8 @@ with Prj.Util;    use Prj.Util;
 with Snames;      use Snames;
 with Tempdir;
 
+with Gprbuild.Compilation.Process; use Gprbuild.Compilation.Process;
+
 package body Gprbuild.Compile is
 
    procedure Add_Compilation_Switches (Source : Source_Id);
@@ -106,7 +108,7 @@ package body Gprbuild.Compile is
    --  building jobs.
 
    type Process_Data is record
-      Pid            : Process_Id         := Invalid_Pid;
+      Process        : Id                 := Invalid_Process;
       Source         : Queue.Source_Info  := Queue.No_Source_Info;
       Source_Project : Project_Id         := null;
       Mapping_File   : Path_Name_Type     := No_Path;
@@ -117,22 +119,18 @@ package body Gprbuild.Compile is
    --  building.
 
    No_Process_Data : constant Process_Data :=
-                       (Pid            => Invalid_Pid,
+                       (Process        => Invalid_Process,
                         Source         => Queue.No_Source_Info,
                         Source_Project => null,
                         Mapping_File   => No_Path,
                         Purpose        => Compilation,
                         Options        => null);
 
-   type Header_Num is range 0 .. 2047;
-
-   function Hash (Pid : Process_Id) return Header_Num;
-
    package Compilation_Htable is new GNAT.HTable.Simple_HTable
-     (Header_Num => Header_Num,
+     (Header_Num => Gprbuild.Compilation.Process.Header_Num,
       Element    => Process_Data,
       No_Element => No_Process_Data,
-      Key        => Process_Id,
+      Key        => Id,
       Hash       => Hash,
       Equal      => "=");
    --  Hash table to keep data for all spawned jobs
@@ -173,16 +171,6 @@ package body Gprbuild.Compile is
       Table_Name           => "Makegpr.Subunits");
    --  A table to store the subunit names when switch --no-split-units ia used
 
-   ----------
-   -- Hash --
-   ----------
-
-   function Hash (Pid : Process_Id) return Header_Num is
-      Modulo : constant Integer := Integer (Header_Num'Last) + 1;
-   begin
-      return Header_Num (Pid_To_Integer (Pid) mod Modulo);
-   end Hash;
-
    ------------------------------
    -- Add_Compilation_Switches --
    ------------------------------
@@ -210,7 +198,7 @@ package body Gprbuild.Compile is
      (Source : out Queue.Source_Info;
       OK     : out Boolean)
    is
-      Pid       : Process_Id;
+      Process   : Id;
       Comp_Data : Process_Data;
       Language  : Language_Ptr;
       Config    : Language_Config;
@@ -219,13 +207,13 @@ package body Gprbuild.Compile is
       loop
          Source := Queue.No_Source_Info;
 
-         Wait_Process (Pid, OK);
+         Wait (Process, OK);
 
-         if Pid = Invalid_Pid then
+         if Process = Invalid_Process then
             return;
          end if;
 
-         Comp_Data := Compilation_Htable.Get (Pid);
+         Comp_Data := Compilation_Htable.Get (Process);
 
          if Comp_Data /= No_Process_Data then
             Source := Comp_Data.Source;
@@ -384,16 +372,17 @@ package body Gprbuild.Compile is
                         Write_Eol;
                      end if;
 
-                     Comp_Data.Pid :=
-                       GNAT.OS_Lib.Non_Blocking_Spawn
-                         (Program_Name => Exec_Path.all,
-                          Args         =>
+                     Comp_Data.Process :=
+                       Run
+                         (Executable => Exec_Path.all,
+                          Options    =>
                             Compilation_Options.Options
                               (1 .. Compilation_Options.Last),
                           Output_File  => Get_Name_String (Source.Id.Dep_Path),
-                          Err_To_Out   => True);
+                          Err_To_Out   => True,
+                          Force_Local  => True);
 
-                     Compilation_Htable.Set (Comp_Data.Pid, Comp_Data);
+                     Compilation_Htable.Set (Comp_Data.Process, Comp_Data);
 
                      Free (Exec_Path);
                   end;
@@ -2514,7 +2503,7 @@ package body Gprbuild.Compile is
       is
 
          procedure Add_Process
-           (Pid            : Process_Id;
+           (Process        : Id;
             Source         : Queue.Source_Info;
             Source_Project : Project_Id;
             Mapping_File   : Path_Name_Type;
@@ -2528,7 +2517,7 @@ package body Gprbuild.Compile is
          -----------------
 
          procedure Add_Process
-           (Pid            : Process_Id;
+           (Process        : Id;
             Source         : Queue.Source_Info;
             Source_Project : Project_Id;
             Mapping_File   : Path_Name_Type;
@@ -2537,15 +2526,17 @@ package body Gprbuild.Compile is
          is
          begin
             Compilation_Htable.Set
-              (Pid,
-               (Pid, Source, Source_Project, Mapping_File, Purpose, Options));
+              (Process,
+               (Process, Source, Source_Project,
+                Mapping_File, Purpose, Options));
             Outstanding_Compiles := Outstanding_Compiles + 1;
 
             Queue.Set_Obj_Dir_Busy (Source.Id.Project.Object_Directory.Name);
          end Add_Process;
 
-         Pid     : Process_Id;
+         Process : Id;
          Options : String_List_Access;
+
       begin
          if not Opt.Quiet_Output then
             if Opt.Verbose_Mode then
@@ -2584,7 +2575,7 @@ package body Gprbuild.Compile is
             Write_Eol;
          end if;
 
-         Pid := GNAT.OS_Lib.Non_Blocking_Spawn
+         Process := Run
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last));
 
@@ -2597,7 +2588,7 @@ package body Gprbuild.Compile is
          end if;
 
          Add_Process
-           (Pid            => Pid,
+           (Process        => Process,
             Source         => Source,
             Source_Project => Source_Project,
             Mapping_File   => Mapping_File_Path,
@@ -2955,7 +2946,7 @@ package body Gprbuild.Compile is
          Source : Queue.Source_Info;
       begin
          if not Queue.Is_Empty
-           and then Outstanding_Compiles < Opt.Maximum_Processes
+           and then Outstanding_Compiles < Get_Maximum_Processes
          then
             Queue.Extract (Found, Source);
             if Found then
