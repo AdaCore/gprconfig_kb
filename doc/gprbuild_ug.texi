@@ -287,6 +287,9 @@ Building with GPRbuild
 Installing with GPRinstall
 * Switches for GPRinstall::
 
+Building using multiple computers
+* Distributed compilation::
+
 Configuring with GPRconfig
 * Configuration::
 * Using GPRconfig::
@@ -393,6 +396,7 @@ instance it can be called from within a Makefile.
 * Configuration File Reference::
 * Cleaning up with GPRclean::
 * Installing with GPRinstall::
+* Distributed compilation::
 @end menu
 
 @c ---------------------------------------------
@@ -3113,6 +3117,9 @@ The switches for GPRclean are:
 
 @item @option{-Xnm=val} : Specify an external reference for Project Files.
 
+@item @option{--distributed} : Also clean-up the sources on build slaves,
+@pxref{Distributed compilation}.
+
 @end itemize
 
 @c ---------------------------------------------
@@ -3241,6 +3248,185 @@ can be forced in this case by using the @option{-f} option.
 @item @option{-v}  : Verbose mode
 
 @item @option{-Xnm=val} : Specify an external reference for Project Files.
+
+@end itemize
+
+@c -----------------------------
+@node Distributed compilation
+@section Distributed compilation
+@c -----------------------------
+
+@menu
+* Introduction to distributed compilation::
+* Setup build environments::
+* GPRslave::
+@end menu
+
+@c ---------------------------------------------
+@node Introduction to distributed compilation
+@subsection Introduction to distributed compilation
+@c ---------------------------------------------
+
+@noindent
+For large projects the compilation time can become a limitation in
+the development cycle. To cope with that, GPRbuild supports
+distributed compilation.
+
+In the distributed mode, the local machine (called the build master)
+compile locally but also sends compilation requests to some remote
+machines (called the build slaves). The compilation process can use
+one or more build slaves. Once the compilation phase is done, the
+build master will conduct the binding and linking phases locally.
+
+@c ---------------------------------------------
+@node Setup build environments
+@subsection Setup build environments
+@c ---------------------------------------------
+
+@noindent
+The configuration process to be able to use the distributed compilation
+support is the following:
+
+@itemize @bullet
+
+@item Add a Remote package in the main project file
+
+This Remote package is to be placed into the project file that is passed
+to GPRbuild to build the application. It describes the remote slaves and
+optionally the Root_Dir for the sources.
+
+@smallexample
+  package Remote is
+     for Build_Slaves use ("comp1.mydomaine.com", "comp2.mydomaine.com");
+  end Remote;
+@end smallexample
+
+Here the Build_Slaves attribute list all the remote computers that
+can be used to compile the application. It is required that the build
+slaves' environment matches (or be compatible) with the build master one.
+
+The Root_Dir default value is the project's directory. This attribute
+designates the sources root directory. That is, the directory from which
+all the sources are to be found to build the application. If the project
+passed to GPRbuild to build the application is not at the top-level
+directory but in a direct sub-directory the Remote package should be:
+
+@smallexample
+  package Remote is
+     for Build_Slaves use ("comp1.mydomaine.com", "comp2.mydomaine.com");
+     for Root_Dir use "..";
+  end Remote;
+@end smallexample
+
+@item Setup sources sharing
+
+There is two ways for the slaves to get access to the sources of the project:
+
+@itemize @bullet
+
+@item rsync
+
+This is the default protocol use. In this case the build slaves must have the
+rsync tool installed. It is also required that the user building have a
+password-less access to the machine by installing the proper RSA public key
+on the build slaves. This is also a way to control who can access such or
+such build slaves.
+
+In this mode, the build slaves will get a copy of the project sources locally.
+At the end of the compilation the compilation artifacts (object code) will
+be synchronized back to the build master for the binding and linking phases.
+
+Note that the local copy of the sources is kept after the compilation is
+over. This means that the second time a project is compiled only the new or
+changed sources are copied. This incremental synchronization done by
+@command{rsync} is really welcome on large project.
+
+@item mount point, or shared directory
+
+In this model the sources are accessible via a shared directory. In this
+case the build slaves must be specified with the @option{file://} protocol.
+
+@smallexample
+  package Remote is
+     for Build_Slaves use ("comp1.mydomaine.com", "file://comp2.mydomaine.com");
+     for Root_Dir use "..";
+  end Remote;
+@end smallexample
+
+Note that different slaves can use different protocol. It is not recommended to
+use too many slaves with the @option{file://} protocol as it will put a lot of
+pressure on the network slowing down the build process in the end.
+
+Also, in this model the full pathname of the sources must be the same on all
+machines (build master and build slaves).
+
+@end itemize
+
+@item Launch a slave driver on each build slave
+
+The build master will communicate with each build slave with a specific driver
+in charge of running the compilation process and returning statuses. This
+driver is @command{gprslave}, @pxref{GPRslave}.
+
+The requirement for the slaves are:
+
+@itemize @bullet
+@item The same OS as the build master must be used. This is enforced.
+@item The same build environment must be setup. This is not checked, but
+generally the build will fail if this rule is violated.
+@item The compilers used must be installed into the same prefix on all
+computers (build master and build slaves).
+@end itemize
+
+When all the requirement are set, just launch the slave driver:
+
+@smallexample
+  $ gprslave
+@end smallexample
+
+@end itemize
+
+When all this is done, the remote compilation can be used simply by
+running GPRbuild in distributed mode from the build master:
+
+@smallexample
+  $ gprbuild --distributed prj.gpr
+@end smallexample
+
+@c ---------------------------------------------
+@node GPRslave
+@subsection GPRslave
+@c ---------------------------------------------
+
+@noindent
+This is the slave driver in charge of running the compilation
+jobs as request by the build master. One instance of this tool must be
+launched in each build slaves referenced in the project file.
+
+Compilations for a specific project is conducted under a sub-directory
+from where the slave is launched by default. This can be overriden
+with the @code{-d} option below.
+
+The current options are:
+
+@itemize @bullet
+
+@item @option{-v, --verbose} : Activate the verbose mode
+
+@item @option{-h, --help} : Display the usage
+
+@item @option{-d, --directory=} : Set the work directory for the
+slave. This is where the sources will be copied and where the
+compilation will take place. A sub-directory will be created for each
+root project built.
+
+@item @option{-jN, --jobs=N} : set the maximum simultaneous compilation
+
+The default for N is the number of cores.
+
+@item @option{-p, --port=N} : Set the port the slave will listen to
+
+The default value is 8484.
 
 @end itemize
 

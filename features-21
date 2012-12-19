@@ -1,0 +1,14 @@
+==============================
+GPRBUILD 2.1 NEW FEATURES LIST
+==============================
+
+Copyright (C) 2012, AdaCore
+
+This file contains a complete list of new features in version 2.0 of GPRBUILD.
+A full description of all GPRBUILD features can be found in the GPRBUILD
+User's Guide.
+
+NF-21-K826-028 Add support for distributed compilation (2012-12-19)
+
+  It is now possible to use multiple computers to conduct the compilations.
+  This can give good speed-up for large projects.
