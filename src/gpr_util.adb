@@ -28,6 +28,7 @@ with System;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
+with GNAT.Regpat;               use GNAT.Regpat;
 
 with ALI;      use ALI;
 with Debug;
@@ -44,6 +45,8 @@ with Snames;   use Snames;
 with Table;
 with Tempdir;
 with Types;    use Types;
+
+with GprConfig.Sdefault;
 
 package body Gpr_Util is
 
@@ -439,6 +442,24 @@ package body Gpr_Util is
          end;
       end if;
    end Find_Binding_Languages;
+
+   ------------
+   -- Get_OS --
+   ------------
+
+   function Get_OS return String is
+      HN      : String renames GprConfig.Sdefault.Hostname;
+      Re      : constant Pattern_Matcher := Compile (".*(linux).*");
+      Matches : Match_Array (0 .. 1);
+   begin
+      Match (Re, HN, Matches);
+
+      if Matches (0) /= No_Match then
+         return HN (Matches (1).First .. Matches (1).Last);
+      else
+         return "unknown";
+      end if;
+   end Get_OS;
 
    ------------------------------
    -- Look_For_Default_Project --

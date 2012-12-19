@@ -257,4 +257,11 @@ package Gpr_Util is
    procedure Create_Sym_Link (From, To : String);
    --  Create a relative symlink in From pointing to To
 
+   --  Architecture
+
+   function Get_OS return String;
+   --  Returns the OS kind (linux, windows, solaris...) of the host. This is
+   --  parsed from Sdefault.Hostname and is used mainly to ensure conformance
+   --  between build master and slaves.
+
 end Gpr_Util;
