@@ -741,11 +741,45 @@
     <targets negate="true">
        <target name="aamp" />
        <target name="dotnet" />
+       <target name="^.*-sysgo-pikeos.*$" />
        <target name="^.*-wrs-vxworks.*$" />
     </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
+    </compilers>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("Ada");
+   end Linker;
+    </config>
+  </configuration>
+
+  <!-- For PikeOS use C drivers as default for linking,
+       to use SYSGO's libgcc -->
+  <configuration>
+    <targets>
+      <target name="^.*-sysgo-pikeos.*$" />
+    </targets>
+    <compilers>
+       <compiler language="C" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("C");
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^.*-sysgo-pikeos.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C" />
     </compilers>
     <compilers>
        <compiler language="Ada" />
