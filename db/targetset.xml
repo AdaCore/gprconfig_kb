@@ -215,7 +215,7 @@
 
   <targetset>
     <!-- leon-vx6-.* -->
-    <target>sparc-wrs-vxworks</target>
+    <target>leon-wrs-vxworks</target>
     <target>leon-vx6-linux</target>
   </targetset>
 

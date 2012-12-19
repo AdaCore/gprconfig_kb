@@ -315,12 +315,12 @@
 
    <configuration>
      <targets>
-       <target name="^sparc-wrs-vxworks$" />
+       <target name="^leon-wrs-vxworks$" />
      </targets>
      <config>
-   for Archive_Builder  use ("sparc-wrs-vxworks-ar", "cr");
+   for Archive_Builder  use ("leon-wrs-vxworks-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
-   for Archive_Indexer  use ("sparc-wrs-vxworks-ranlib");
+   for Archive_Indexer  use ("leon-wrs-vxworks-ranlib");
    for Archive_Suffix   use ".a";
      </config>
    </configuration>
