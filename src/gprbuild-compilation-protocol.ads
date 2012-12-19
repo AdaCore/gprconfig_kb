@@ -34,6 +34,11 @@ package Gprbuild.Compilation.Protocol is
    --  The string replacing root diretory of full path name, see Set_Write
    --  below.
 
+   Any_OS : constant String := "any";
+   --  Used when OS check is not necessary, for example gprclean does not need
+   --  this check. It is safe to clean-up a Solaris slave from a Windows
+   --  master.
+
    --
    --  Communication
    --
@@ -83,9 +88,10 @@ package Gprbuild.Compilation.Protocol is
      (EX,  -- execute a command
       AK,  -- acknowledge received command (with pid)
       FL,  -- a file
-      OK,  -- compilation ok (with pid)
-      KO,  -- compilation failed (with pid)
+      OK,  -- compilation ok (with optional pid)
+      KO,  -- compilation failed (with optional pid)
       CX,  -- master context
+      CU,  -- clean-up request
       DP,  -- display output
       EC); -- end of compilation
 
@@ -146,6 +152,10 @@ package Gprbuild.Compilation.Protocol is
       Pid     : out Integer;
       Success : out Boolean);
    --  Get a process id, Success is set to False in case of failure
+
+   procedure Send_Clean_Up
+     (Channel : Communication_Channel; Project_Name : String);
+   --  Send a clean-up requets to the slave
 
    --
    --  From gprslave

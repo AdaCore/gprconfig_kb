@@ -112,6 +112,80 @@ package body Gprbuild.Compilation.Slave is
    Slaves_Sockets : Socket_Set_Type;
    Max_Processes  : Natural := 0;
 
+   ----------------------------
+   -- Clean_Up_Remote_Slaves --
+   ----------------------------
+
+   procedure Clean_Up_Remote_Slaves
+     (Tree    : Project_Tree_Ref;
+      Project : Project_Id)
+   is
+
+      procedure Clean_Up_Remote_Slave
+        (User, Host   : String;
+         Project_Name : String;
+         Port         : Port_Type;
+         Sync         : Sync_Kind);
+      --  Clean-up slave
+
+      ---------------------------
+      -- Clean_Up_Remote_Slave --
+      ---------------------------
+
+      procedure Clean_Up_Remote_Slave
+        (User, Host   : String;
+         Project_Name : String;
+         Port         : Port_Type;
+         Sync         : Sync_Kind)
+      is
+
+         function User_Host return String is
+           (if User = "" then Host else User & '@' & Host);
+
+         S : Slave;
+
+      begin
+         --  Only clean-up when the sources are not shared
+
+         if Sync = Protocol.Rsync then
+            S := Connect_Slave (User, Host, Project_Name, Port, Sync);
+
+            --  Send the clean-up request
+
+            Protocol.Send_Clean_Up (S.Channel, Project_Name);
+
+            declare
+               Cmd : constant Command := Get_Command (S.Channel);
+            begin
+               if Kind (Cmd) = OK then
+                  if Opt.Verbose_Mode then
+                     Write_Line ("Clean-up done on " & Host);
+                  end if;
+
+               elsif Kind (Cmd) = KO then
+                  Write_Line ("Slave cannot clean-up " & User_Host);
+                  OS_Exit (1);
+
+               else
+                  Write_Line
+                    ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
+                  OS_Exit (1);
+               end if;
+            end;
+
+            Protocol.Send_End_Of_Compilation (S.Channel);
+
+            Close (S.Channel);
+         end if;
+      end Clean_Up_Remote_Slave;
+
+      procedure Clean_Up_Slaves is
+        new For_Every_Remote_Slave (Clean_Up_Remote_Slave);
+
+   begin
+      Clean_Up_Slaves (Tree, Project);
+   end Clean_Up_Remote_Slaves;
+
    -------------------
    -- Connect_Slave --
    -------------------

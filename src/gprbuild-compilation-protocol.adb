@@ -211,7 +211,7 @@ package body Gprbuild.Compilation.Protocol is
       Result : Command;
 
    begin
-      if C in "EX" | "AK" | "FL" | "OK" | "KO" | "CX" | "DP" | "EC" then
+      if C in "EX" | "AK" | "FL" | "OK" | "KO" | "CX" | "CU" | "DP" | "EC" then
          Result.Cmd := Command_Kind'Value (C);
 
          Create
@@ -255,7 +255,7 @@ package body Gprbuild.Compilation.Protocol is
          Sync := Sync_Kind'Value (Slice (Line.Args, 3));
       else
          raise Wrong_Command
-           with "Expected PF found " & Command_Kind'Image (Line.Cmd);
+           with "Expected CX found " & Command_Kind'Image (Line.Cmd);
       end if;
    end Get_Context;
 
@@ -314,6 +314,17 @@ package body Gprbuild.Compilation.Protocol is
    begin
       String'Output (Channel.Channel, Command_Kind'Image (AK) & Image (Pid));
    end Send_Ack;
+
+   -------------------
+   -- Send_Clean_Up --
+   -------------------
+
+   procedure Send_Clean_Up
+     (Channel : Communication_Channel; Project_Name : String) is
+   begin
+      String'Output
+        (Channel.Channel, Command_Kind'Image (CU) & Project_Name);
+   end Send_Clean_Up;
 
    ------------------
    -- Send_Context --

@@ -371,7 +371,9 @@ procedure Gprslave is
          if Verbose then
             Put_Line ("Handling project : " & To_String (Project_Name));
 
-            if To_String (OS) /= Get_OS then
+            if To_String (OS) /= Get_OS
+              and then To_String (OS) /= Any_OS
+            then
                Send_Ko (Channel);
 
                Put_Line
@@ -519,6 +521,25 @@ begin
 
             elsif Kind (Cmd) = FL then
                null;
+
+            elsif Kind (Cmd) = CU then
+               Clean_Up_Request : begin
+                  Project_Name := To_Unbounded_String (Slice (Args (Cmd), 1));
+
+                  if Exists (Work_Directory) then
+                     if Verbose then
+                        Put_Line ("Delete " & Work_Directory);
+                     end if;
+
+                     Delete_Tree (Work_Directory);
+                  end if;
+
+                  Send_Ok (Channel);
+
+               exception
+                  when others =>
+                     Send_Ko (Channel);
+               end Clean_Up_Request;
 
             elsif Kind (Cmd) = EC then
                --  No more compilation for this project

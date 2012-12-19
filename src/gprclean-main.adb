@@ -22,12 +22,14 @@
 --  This package contains the implementation of gprclean.
 --  See gprclean.adb
 
-with Ada.Command_Line;          use Ada.Command_Line;
-with Ada.Exceptions;            use Ada.Exceptions;
+with Ada.Command_Line;           use Ada.Command_Line;
+with Ada.Exceptions;             use Ada.Exceptions;
 
-with GNAT.Directory_Operations; use GNAT.Directory_Operations;
-with GNAT.IO;                   use GNAT.IO;
-with GNAT.OS_Lib;               use GNAT.OS_Lib;
+with GNAT.Directory_Operations;  use GNAT.Directory_Operations;
+with GNAT.IO;                    use GNAT.IO;
+with GNAT.OS_Lib;                use GNAT.OS_Lib;
+
+with Gprbuild.Compilation.Slave; use Gprbuild.Compilation.Slave;
 
 with Csets;
 with Gpr_Util;    use Gpr_Util;
@@ -187,6 +189,9 @@ procedure Gprclean.Main is
                                   (Arg (Config_Project_Option'Length + 1
                                         .. Arg'Last));
                            end if;
+
+                        elsif Arg = Distributed_Option then
+                           Distributed_Mode := True;
 
                         elsif not Hostparm.OpenVMS
                               and then
@@ -438,6 +443,10 @@ procedure Gprclean.Main is
 
          Display_Usage_Version_And_Help;
 
+         Put_Line ("  --distributed");
+         Put_Line ("           Activate the remote clean-up");
+         New_Line;
+
          Put_Line ("  --config=file.cgpr");
          Put_Line ("           Specify the configuration project file name");
 
@@ -630,6 +639,8 @@ begin
 
    Processed_Projects.Init;
 
+   --  Clean-up local build
+
    declare
       procedure Do_Clean (Prj : Project_Id; Tree : Project_Tree_Ref);
 
@@ -651,6 +662,12 @@ begin
       --  projects, we might not clean their imported projects.
       For_All (Main_Project, Project_Tree);
    end;
+
+   --  Clean-up remote slaves
+
+   if Distributed_Mode then
+      Clean_Up_Remote_Slaves (Project_Tree, Main_Project);
+   end if;
 
    if Delete_Autoconf_File then
       Delete ("", Configuration_Project_Path.all);
