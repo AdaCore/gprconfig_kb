@@ -519,6 +519,11 @@ package body Gprbuild.Compilation.Protocol is
       String'Output (Channel.Channel, Command_Kind'Image (OK) & Image (Pid));
    end Send_Ok;
 
+   procedure Send_Ok (Channel : Communication_Channel) is
+   begin
+      String'Output (Channel.Channel, Command_Kind'Image (OK));
+   end Send_Ok;
+
    -----------------
    -- Send_Output --
    -----------------
