@@ -63,6 +63,17 @@ package body Gprbuild.Compilation.Slave is
    --  when calling rsync, it is the remote machine user name, if empty the
    --  local user name is used.
 
+   generic
+      with procedure Action
+        (User, Host   : String;
+         Project_Name : String;
+         Port         : Port_Type;
+         Sync         : Sync_Kind);
+   procedure For_Every_Remote_Slave
+     (Tree : Project_Tree_Ref; Project : Project_Id);
+   --  Parse the remote package and call action for every remote slave defined
+   --  in the Build_Slave attribute.
+
    --  Ack transient signal stored into this variable
 
    protected Wait_Ack is
@@ -93,6 +104,132 @@ package body Gprbuild.Compilation.Slave is
    Slaves         : Slave_S.Map;
    Slaves_Sockets : Socket_Set_Type;
    Max_Processes  : Natural := 0;
+
+   ----------------------------
+   -- For_Every_Remote_Slave --
+   ----------------------------
+
+   procedure For_Every_Remote_Slave
+     (Tree : Project_Tree_Ref; Project : Project_Id)
+   is
+
+      procedure Parse_Build_Slaves (V : Variable_Value);
+      --  Parse the Build_Slaves attribute, register the slave accordingly
+
+      ------------------------
+      -- Parse_Build_Slaves --
+      ------------------------
+
+      procedure Parse_Build_Slaves (V : Variable_Value) is
+         Str : String_List_Id := V.Values;
+      begin
+         while Str /= Nil_String loop
+            declare
+               V    : constant String :=
+                        Get_Name_String
+                          (Tree.Shared.String_Elements.Table (Str).Value);
+               --  The general format is: [protocol://][user@]host[:port]
+
+               User : Unbounded_String;
+               Host : Unbounded_String;
+               Port : Port_Type := Default_Port;
+               Sync : Sync_Kind := Protocol.Rsync;
+               F    : Natural := V'First;
+               I    : Natural := Index (V, "://");
+            begin
+               --  Check for protocol
+
+               if I /= 0 then
+                  if V (F .. I - 1) = "rsync" then
+                     Sync := Protocol.Rsync;
+                  elsif V (F .. I - 1) = "file" then
+                     Sync := File;
+                  else
+                     Write_Line ("error: unknown protocol in " & V);
+                     OS_Exit (1);
+                  end if;
+
+                  F := I + 3;
+               end if;
+
+               --  Check for user
+
+               I := Index (V, "@", From => F);
+
+               if I /= 0 then
+                  User := To_Unbounded_String (V (F .. I - 1));
+
+                  F := I + 1;
+               end if;
+
+               --  Get for port
+
+               I := Index (V, ":", From => F);
+
+               if I = 0 then
+                  Host := To_Unbounded_String (V (F .. V'Last));
+
+               else
+                  Host := To_Unbounded_String (V (F .. I - 1));
+
+                  declare
+                     Port_Str : constant String := V (I + 1 .. V'Last);
+                  begin
+                     if Strings.Maps.Is_Subset
+                       (Maps.To_Set (Port_Str),
+                        Maps.Constants.Decimal_Digit_Set)
+                     then
+                        Port := Port_Type'Value (V (I + 1 .. V'Last));
+                     else
+                        Write_Line ("error: invalid port value in " & V);
+                        OS_Exit (1);
+                     end if;
+                  end;
+               end if;
+
+               Action
+                 (User         => To_String (User),
+                  Host         => To_String (Host),
+                  Project_Name => Get_Name_String (Project.Name),
+                  Port         => Port,
+                  Sync         => Sync);
+            end;
+
+            Str := Tree.Shared.String_Elements.Table (Str).Next;
+         end loop;
+      end Parse_Build_Slaves;
+
+      Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
+      Pck  : Package_Id := Project.Decl.Packages;
+
+   begin
+      Look_Remote_Package : while Pck /= No_Package loop
+         if Pcks (Pck).Decl /= No_Declarations
+           and then Pcks (Pck).Name = Name_Remote
+         then
+            declare
+               Id : Variable_Id := Pcks (Pck).Decl.Attributes;
+            begin
+               while Id /= No_Variable loop
+                  declare
+                     V : constant Variable :=
+                           Tree.Shared.Variable_Elements.Table (Id);
+                  begin
+                     if not V.Value.Default then
+                        if V.Name = Name_Build_Slaves then
+                           Parse_Build_Slaves (V.Value);
+                        end if;
+                     end if;
+                  end;
+
+                  Id := Tree.Shared.Variable_Elements.Table (Id).Next;
+               end loop;
+            end;
+         end if;
+
+         Pck := Pcks (Pck).Next;
+      end loop Look_Remote_Package;
+   end For_Every_Remote_Slave;
 
    --------------
    -- Get_Free --
@@ -281,91 +418,9 @@ package body Gprbuild.Compilation.Slave is
      (Tree    : Project_Tree_Ref;
       Project : Project_Id)
    is
-      procedure Parse_Build_Slaves (V : Variable_Value);
-      --  Parse the Build_Slaves attribute, register the slave accordingly
 
-      ------------------------
-      -- Parse_Build_Slaves --
-      ------------------------
-
-      procedure Parse_Build_Slaves (V : Variable_Value) is
-         Str : String_List_Id := V.Values;
-      begin
-         while Str /= Nil_String loop
-            declare
-               V    : constant String :=
-                        Get_Name_String
-                          (Tree.Shared.String_Elements.Table (Str).Value);
-               --  The general format is: [protocol://][user@]host[:port]
-
-               User : Unbounded_String;
-               Host : Unbounded_String;
-               Port : Port_Type := Default_Port;
-               Sync : Sync_Kind := Protocol.Rsync;
-               F    : Natural := V'First;
-               I    : Natural := Index (V, "://");
-            begin
-               --  Check for protocol
-
-               if I /= 0 then
-                  if V (F .. I - 1) = "rsync" then
-                     Sync := Protocol.Rsync;
-                  elsif V (F .. I - 1) = "file" then
-                     Sync := File;
-                  else
-                     Write_Line ("error: unknown protocol in " & V);
-                     OS_Exit (1);
-                  end if;
-
-                  F := I + 3;
-               end if;
-
-               --  Check for user
-
-               I := Index (V, "@", From => F);
-
-               if I /= 0 then
-                  User := To_Unbounded_String (V (F .. I - 1));
-
-                  F := I + 1;
-               end if;
-
-               --  Get for port
-
-               I := Index (V, ":", From => F);
-
-               if I = 0 then
-                  Host := To_Unbounded_String (V (F .. V'Last));
-
-               else
-                  Host := To_Unbounded_String (V (F .. I - 1));
-
-                  declare
-                     Port_Str : constant String := V (I + 1 .. V'Last);
-                  begin
-                     if Strings.Maps.Is_Subset
-                       (Maps.To_Set (Port_Str),
-                        Maps.Constants.Decimal_Digit_Set)
-                     then
-                        Port := Port_Type'Value (V (I + 1 .. V'Last));
-                     else
-                        Write_Line ("error: invalid port value in " & V);
-                        OS_Exit (1);
-                     end if;
-                  end;
-               end if;
-
-               Register_Remote_Slave
-                 (User         => To_String (User),
-                  Host         => To_String (Host),
-                  Project_Name => Get_Name_String (Project.Name),
-                  Port         => Port,
-                  Sync         => Sync);
-            end;
-
-            Str := Tree.Shared.String_Elements.Table (Str).Next;
-         end loop;
-      end Parse_Build_Slaves;
+      procedure Register_Slaves is
+        new For_Every_Remote_Slave (Action => Register_Remote_Slave);
 
       Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
       Pck  : Package_Id := Project.Decl.Packages;
@@ -373,6 +428,8 @@ package body Gprbuild.Compilation.Slave is
    begin
       Root_Dir := To_Unbounded_String
         (Containing_Directory (Get_Name_String (Project.Path.Display_Name)));
+
+      --  Check for Root_Dir attribute
 
       Look_Remote_Package : while Pck /= No_Package loop
          if Pcks (Pck).Decl /= No_Declarations
@@ -391,9 +448,6 @@ package body Gprbuild.Compilation.Slave is
                            Root_Dir :=
                              To_Unbounded_String
                                (Get_Name_String (V.Value.Value));
-
-                        elsif V.Name = Name_Build_Slaves then
-                           Parse_Build_Slaves (V.Value);
                         end if;
                      end if;
                   end;
@@ -405,6 +459,10 @@ package body Gprbuild.Compilation.Slave is
 
          Pck := Pcks (Pck).Next;
       end loop Look_Remote_Package;
+
+      --  Then registers the build slaves
+
+      Register_Slaves (Tree, Project);
 
       --  We are in remote mode, the initialization was successful, start tasks
       --  now.
