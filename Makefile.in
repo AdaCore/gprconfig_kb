@@ -153,6 +153,10 @@ install.bin: force
 	${INSTALL_PROGRAM} gprbuild${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} gprclean${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} gprinstall${EXEXT} ${bindir}
+ifeq ($(IS_WINDOWS),true)
+	${CP} src/gprinstall.exe.manifest ${bindir}
+	chmod +x ${bindir}/gprinstall.exe.manifest
+endif
 	${INSTALL_PROGRAM} gprslave${EXEXT} ${bindir}
 	-${MKDIR} ${libexecdir}/gprbuild
 	${INSTALL_PROGRAM} gprbind${EXEXT} ${libexecdir}/gprbuild/
