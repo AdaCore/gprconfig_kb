@@ -183,6 +183,17 @@
     <target>e500v2-wrs-vxworksmils</target>
   </compiler_description>
 
+  <!-- PikeOS -->
+  <compiler_description>
+    <name>GCC-SYSGO</name>
+    <executable prefix="1">(x86_i586-)gcc</executable>
+    <version>
+      <getenv name="PIKEOS_VERSION" />
+    </version>
+    <languages>C</languages>
+    <target>i586-sysgo-pikeos</target>
+  </compiler_description>
+
   <!--     GCC 2.8.1
     There is no switch, in such versions, to find out the list of languages,
     so we just assume there is only C.

@@ -60,6 +60,16 @@
      </config>
    </configuration>
 
+   <!-- Import PIKEOS_TARGET_FILES on PikeOS targets.  -->
+   <configuration>
+     <targets>
+       <target name="^.*-sysgo-pikeos.*$" />
+     </targets>
+     <config>
+   Pikeos_Target_Files := external ("PIKEOS_TARGET_FILES");
+     </config>
+   </configuration>
+
    <configuration>
      <compilers><compiler runtime="ravenscar-cert-rtp" /></compilers>
      <config>
@@ -207,6 +217,7 @@
      <compilers>
        <compiler name="GNAT"/>
        <compiler name="GCC"/>
+       <compiler name="GCC-SYSGO"/>
        <compiler name="G++"/>
      </compilers>
      <targets>
@@ -223,7 +234,9 @@
       for Required_Switches use
 	Linker'Required_Switches
         &amp; ("-u_p4_entry", "-e_p4_entry", "-nostdlib", "-Tapp-ld-script",
-               "-lvm", "-lp4", "-lstand", "-lgcc");
+               "-lvm", "-lp4", "-lstand", "-lgcc",
+               "-L" &amp; Pikeos_Target_Files &amp; "/scripts",
+               "-L" &amp; Pikeos_Target_Files &amp; "/lib");
    end Linker;
      </config>
    </configuration>
