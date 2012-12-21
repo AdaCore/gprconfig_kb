@@ -2593,7 +2593,9 @@ package body Gprbuild.Compile is
          Process := Run
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last),
-            Dep_Name => Get_Name_String (Source.Id.Dep_Name));
+            Dep_Name => (if Source.Id.Dep_Name = No_File
+                         then ""
+                         else Get_Name_String (Source.Id.Dep_Name)));
 
          if Last_Switches_For_File >= 0 then
             Compilation_Options.Last := Last_Switches_For_File;
