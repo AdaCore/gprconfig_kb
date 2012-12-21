@@ -205,6 +205,31 @@
 
    <configuration>
      <compilers>
+       <compiler name="GNAT"/>
+       <compiler name="GCC"/>
+       <compiler name="G++"/>
+     </compilers>
+     <targets>
+       <target name="^.*-sysgo-pikeos$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-fno-builtin");
+   end Compiler;
+
+   package Linker is
+      for Required_Switches use
+	Linker'Required_Switches
+        &amp; ("-u_p4_entry", "-e_p4_entry", "-nostdlib", "-Tapp-ld-script",
+               "-lvm", "-lp4", "-lstand", "-lgcc");
+   end Linker;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="GNAT" runtime="^ravenscar-cert-rtp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
