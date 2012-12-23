@@ -2294,19 +2294,44 @@ package body Gprbuild.Link is
            and then Main_Proj.Config.Run_Path_Option /= No_Name_List
          then
             declare
-               Add_Shared_Libgcc_Dir : Boolean := False;
-            begin
-               for J in reverse 1 .. Last_Argument loop
-                  if Arguments (J).all = "-shared-libgcc" then
-                     Add_Shared_Libgcc_Dir := True;
-                     exit;
+               Dash_Shared_Libgcc : Boolean := False;
+               Dash_Static_Libgcc : Boolean := False;
+               Arg : Natural;
 
-                  elsif Arguments (J).all = "-static-libgcc" then
-                     exit;
+               procedure Remove_Argument;
+               --  Remove Arguments (Arg)
+
+               procedure Remove_Argument is
+               begin
+                  Arguments (Arg .. Last_Argument - 1) :=
+                    Arguments (Arg + 1 .. Last_Argument);
+                  Last_Argument := Last_Argument - 1;
+               end Remove_Argument;
+
+            begin
+               Arg := Last_Argument;
+               loop
+                  if Arguments (Arg).all = "-shared-libgcc" then
+                     if Dash_Shared_Libgcc or Dash_Static_Libgcc then
+                        Remove_Argument;
+
+                     else
+                        Dash_Shared_Libgcc := True;
+                     end if;
+
+                  elsif Arguments (Arg).all = "-static-libgcc" then
+                     if Dash_Shared_Libgcc or Dash_Static_Libgcc then
+                        Remove_Argument;
+                     else
+                        Dash_Static_Libgcc := True;
+                     end if;
                   end if;
+
+                  Arg := Arg - 1;
+                  exit when Arg = 0;
                end loop;
 
-               if Add_Shared_Libgcc_Dir then
+               if Dash_Shared_Libgcc then
                   --  Look for the adalib directory in -L switches.
                   --  If it is found, then add the shared libgcc
                   --  directory to the run path option.
