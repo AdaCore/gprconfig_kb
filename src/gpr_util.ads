@@ -41,14 +41,6 @@ package Gpr_Util is
                          new Project_Node_Tree_Data;
    --  This is also used to hold project path and scenario variables
 
-   Root_Environment : Prj.Tree.Environment;
-   --  The environment coming from environment variables and command line
-   --  switches. When we do not have an aggregate project, this is used for
-   --  parsing the project tree. When we have an aggregate project, this is
-   --  used to parse the aggregate project; the latter then generates another
-   --  environment (with additional external values and project path) to parse
-   --  the aggregated projects.
-
    Success : Boolean := False;
 
    --  Config project
@@ -109,9 +101,6 @@ package Gpr_Util is
 
    Db_Directory_Expected : Boolean := False;
    --  True when last switch was --db
-
-   Load_Standard_Base : Boolean := True;
-   --  False when switch --db- is used
 
    Distributed_Mode : Boolean := False;
    --  Wether the distributed compilation mode has been activated
