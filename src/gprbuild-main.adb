@@ -576,6 +576,10 @@ procedure Gprbuild.Main is
             Db_Directory_Expected := False;
             Parse_Knowledge_Base (Project_Tree, Arg);
 
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (Arg);
+         Db_Switch_Args.Append (Name_Find);
+
          --  Set the processor/language for the following switches
 
          --  -cargs         all compiler arguments
@@ -739,8 +743,6 @@ procedure Gprbuild.Main is
            and then
                Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
          then
-            Forbidden_In_Package_Builder;
-
             if Config_Project_File_Name /= null
               and then (Autoconf_Specified
                         or else Config_Project_File_Name.all /=
