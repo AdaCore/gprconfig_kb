@@ -2286,84 +2286,85 @@ package body Gprbuild.Link is
             end loop;
          end Clean_Link_Option_Set;
 
-         --  Look for the last switch -shared-libgcc or -static-libgcc.
-         --  If -shared-libgcc was the last switch, then put in the
-         --  run path option the shared libgcc dir.
+         --  Look for the last switch -shared-libgcc or -static-libgcc and
+         --  remove all the others.
 
-         if Opt.Run_Path_Option
-           and then Main_Proj.Config.Run_Path_Option /= No_Name_List
-         then
-            declare
-               Dash_Shared_Libgcc : Boolean := False;
-               Dash_Static_Libgcc : Boolean := False;
-               Arg : Natural;
+         declare
+            Dash_Shared_Libgcc : Boolean := False;
+            Dash_Static_Libgcc : Boolean := False;
+            Arg : Natural;
 
-               procedure Remove_Argument;
-               --  Remove Arguments (Arg)
+            procedure Remove_Argument;
+            --  Remove Arguments (Arg)
 
-               procedure Remove_Argument is
-               begin
-                  Arguments (Arg .. Last_Argument - 1) :=
-                    Arguments (Arg + 1 .. Last_Argument);
-                  Last_Argument := Last_Argument - 1;
-               end Remove_Argument;
-
+            procedure Remove_Argument is
             begin
-               Arg := Last_Argument;
-               loop
-                  if Arguments (Arg).all = "-shared-libgcc" then
-                     if Dash_Shared_Libgcc or Dash_Static_Libgcc then
-                        Remove_Argument;
+               Arguments (Arg .. Last_Argument - 1) :=
+                 Arguments (Arg + 1 .. Last_Argument);
+               Last_Argument := Last_Argument - 1;
+            end Remove_Argument;
 
-                     else
-                        Dash_Shared_Libgcc := True;
-                     end if;
+         begin
+            Arg := Last_Argument;
+            loop
+               if Arguments (Arg).all = "-shared-libgcc" then
+                  if Dash_Shared_Libgcc or Dash_Static_Libgcc then
+                     Remove_Argument;
 
-                  elsif Arguments (Arg).all = "-static-libgcc" then
-                     if Dash_Shared_Libgcc or Dash_Static_Libgcc then
-                        Remove_Argument;
-                     else
-                        Dash_Static_Libgcc := True;
-                     end if;
+                  else
+                     Dash_Shared_Libgcc := True;
                   end if;
 
-                  Arg := Arg - 1;
-                  exit when Arg = 0;
-               end loop;
-
-               if Dash_Shared_Libgcc then
-                  --  Look for the adalib directory in -L switches.
-                  --  If it is found, then add the shared libgcc
-                  --  directory to the run path option.
-
-                  for J in 1 .. Last_Argument loop
-                     declare
-                        Option : String (1 .. Arguments (J)'Length);
-                        Last   : Natural := Option'Last;
-
-                     begin
-                        Option := Arguments (J).all;
-
-                        if Last > 2 and then Option (1 .. 2) = "-L" then
-                           if Option (Last) = '/'
-                             or else Option (Last) = Directory_Separator
-                           then
-                              Last := Last - 1;
-                           end if;
-
-                           if Last > 10
-                             and then Option (Last - 5 .. Last) = "adalib"
-                           then
-                              Add_Rpath
-                                (Shared_Libgcc_Dir (Option (3 .. Last)));
-                              exit;
-                           end if;
-                        end if;
-                     end;
-                  end loop;
+               elsif Arguments (Arg).all = "-static-libgcc" then
+                  if Dash_Shared_Libgcc or Dash_Static_Libgcc then
+                     Remove_Argument;
+                  else
+                     Dash_Static_Libgcc := True;
+                  end if;
                end if;
-            end;
-         end if;
+
+               Arg := Arg - 1;
+               exit when Arg = 0;
+            end loop;
+
+            --  If -shared-libgcc was the last switch, then put in the
+            --  run path option the shared libgcc dir.
+
+            if Dash_Shared_Libgcc
+              and then Opt.Run_Path_Option
+              and then Main_Proj.Config.Run_Path_Option /= No_Name_List
+            then
+               --  Look for the adalib directory in -L switches.
+               --  If it is found, then add the shared libgcc
+               --  directory to the run path option.
+
+               for J in 1 .. Last_Argument loop
+                  declare
+                     Option : String (1 .. Arguments (J)'Length);
+                     Last   : Natural := Option'Last;
+
+                  begin
+                     Option := Arguments (J).all;
+
+                     if Last > 2 and then Option (1 .. 2) = "-L" then
+                        if Option (Last) = '/'
+                          or else Option (Last) = Directory_Separator
+                        then
+                           Last := Last - 1;
+                        end if;
+
+                        if Last > 10
+                          and then Option (Last - 5 .. Last) = "adalib"
+                        then
+                           Add_Rpath
+                             (Shared_Libgcc_Dir (Option (3 .. Last)));
+                           exit;
+                        end if;
+                     end if;
+                  end;
+               end loop;
+            end if;
+         end;
 
          --  Add the run path option, if necessary
 
