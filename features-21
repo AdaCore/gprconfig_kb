@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.0 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-21-LA05-034 --config= in Builder switches (2012-12-24)
+
+  gprbuild now takes into account a switch --config= in package Builder
+  of the main project.
+
 NF-21-K826-028 Add support for distributed compilation (2012-12-19)
 
   It is now possible to use multiple computers to conduct the compilations.
