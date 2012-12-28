@@ -2214,10 +2214,9 @@ package body Gprbuild.Link is
             Add_Argument (Binding_Options.Table (J), Opt.Verbose_Mode);
          end loop;
 
-         --  Finally, the required switches, if any. These are put at the
-         --  end because, if they include -L switches for example, the
-         --  link may fail because the wrong objects or libraries are
-         --  linked in.
+         --  Then the required switches, if any. These are put here because,
+         --  if they include -L switches for example, the link may fail because
+         --  the wrong objects or libraries are linked in.
 
          Min_Linker_Opts :=
            Main_Proj.Config.Trailing_Linker_Required_Switches;
@@ -2231,6 +2230,90 @@ package body Gprbuild.Link is
             Min_Linker_Opts   := Main_File.Tree.Shared.Name_Lists.Table
               (Min_Linker_Opts).Next;
          end loop;
+
+         --  Finally the Trailing_Switches if there are any in package Linker.
+         --  They are put here so that it is possible to override the required
+         --  switches from the configuration project file.
+
+         declare
+            The_Packages   : constant Package_Id :=
+              Main_Proj.Decl.Packages;
+            Linker_Package : constant Prj.Package_Id :=
+              Prj.Util.Value_Of
+                (Name        => Name_Linker,
+                 In_Packages => The_Packages,
+                 Shared      => Main_File.Tree.Shared);
+
+            Switches    : Variable_Value;
+            Switch_List : String_List_Id;
+            Element     : String_Element;
+
+         begin
+            if Linker_Package /= No_Package then
+               declare
+                  Switches_Array : constant Array_Element_Id :=
+                    Prj.Util.Value_Of
+                      (Name      => Name_Trailing_Switches,
+                       In_Arrays =>
+                         Main_File.Tree.Shared.Packages.Table
+                           (Linker_Package).Decl.Arrays,
+                       Shared    => Main_File.Tree.Shared);
+                  Option         : String_Access;
+
+               begin
+                  Switches :=
+                    Prj.Util.Value_Of
+                      (Index     => Name_Id (Main_Id),
+                       Src_Index => 0,
+                       In_Array  => Switches_Array,
+                       Shared    => Main_File.Tree.Shared);
+
+                  if Switches = Nil_Variable_Value then
+                     Switches :=
+                       Prj.Util.Value_Of
+                         (Index                  =>
+                              Main_Source.Language.Name,
+                          Src_Index              => 0,
+                          In_Array               => Switches_Array,
+                          Shared                 => Main_File.Tree.Shared,
+                          Force_Lower_Case_Index => True);
+                  end if;
+
+                  if Switches = Nil_Variable_Value then
+                     Switches :=
+                       Prj.Util.Value_Of
+                         (Index                  => All_Other_Names,
+                          Src_Index              => 0,
+                          In_Array               => Switches_Array,
+                          Shared                 => Main_File.Tree.Shared,
+                          Force_Lower_Case_Index => True);
+                  end if;
+
+                  case Switches.Kind is
+                  when Undefined | Single =>
+                     null;
+
+                  when Prj.List =>
+                     Switch_List := Switches.Values;
+
+                     while Switch_List /= Nil_String loop
+                        Element :=
+                          Main_File.Tree.Shared.String_Elements.Table
+                            (Switch_List);
+                        Get_Name_String (Element.Value);
+
+                        if Name_Len > 0 then
+                           Option :=
+                             new String'(Name_Buffer (1 .. Name_Len));
+                           Add_Argument (Option.all, True);
+                        end if;
+
+                        Switch_List := Element.Next;
+                     end loop;
+                  end case;
+               end;
+            end if;
+         end;
 
          --  Remove duplicate stack size setting coming from pragmas
          --  Linker_Options or Link_With and linker switches ("-Xlinker
