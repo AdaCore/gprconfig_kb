@@ -213,6 +213,12 @@
     <target>e500v2-vx6-linux</target>
   </targetset>
 
+  <targetset>
+    <!-- leon-vx6-.* -->
+    <target>leon-wrs-vxworks</target>
+    <target>leon-vx6-linux</target>
+  </targetset>
+
   <!-- ppc-vx653-.*  (vxworks 653) -->
   <targetset>
     <target>ppc-vx653-solaris</target>
