@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -664,18 +664,26 @@ package body Gprbuild.Compilation.Slave is
       Pid : Integer;
 
    begin
-      if Slaves (S).Sync /= File then
+      if Slaves (S).Sync = File then
+         --  Do not filter out CWD as we want the compilation to take place in
+         --  the shared directory.
+
+         Send_Exec
+           (Slaves (S).Channel,
+            CWD, Executable, Options, Dep_Name, Filter_String'Access);
+
+      else
          --  Record the rewrite information for this channel only of we are not
          --  using a shared directory.
 
          Set_Rewrite
            (Slaves (S).Channel, From => RD, To => Protocol.Full_Path_Tag);
-      end if;
 
-      Send_Exec
-        (Slaves (S).Channel,
-         Filter_String (CWD, Sep => ""), Executable, Options, Dep_Name,
-         Filter_String'Access);
+         Send_Exec
+           (Slaves (S).Channel,
+            Filter_String (CWD, Sep => ""), Executable, Options, Dep_Name,
+            Filter_String'Access);
+      end if;
 
       Remote_Process.Increment;
 

@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -74,6 +74,9 @@ procedure Gprslave is
    procedure Output_Compilation (File : String);
    --  Output compilation information
 
+   function Get_Output_File return String;
+   --  Returns a unique output file
+
    task Wait_Completion;
 
    --  A mutex to avoid interweaved responses on the channel
@@ -135,6 +138,17 @@ procedure Gprslave is
 
       return Args;
    end Get_Args;
+
+   ---------------------
+   -- Get_Output_File --
+   ---------------------
+
+   function Get_Output_File return String is
+      Filename : constant String := "output.slave." & Image (Index);
+   begin
+      Index := Index + 1;
+      return Compose (Work_Directory, Filename);
+   end Get_Output_File;
 
    -----------
    -- Image --
@@ -304,15 +318,7 @@ procedure Gprslave is
                Dir      : constant String := To_String (Data.Dir);
                Dep_File : constant String := To_String (Data.Dep_File);
             begin
-               if Dir = "" then
-                  Send_Output
-                    (Channel,
-                     Work_Directory & DS & To_String (Data.Output));
-               else
-                  Send_Output
-                    (Channel,
-                     Work_Directory & DS & Dir & DS & To_String (Data.Output));
-               end if;
+               Send_Output (Channel, To_String (Data.Output));
 
                if Success and then Sync /= Protocol.File then
                   --  No Dep_File to send back if the compilation was not
@@ -478,15 +484,15 @@ begin
                      if not Is_Directory (Dir) then
                         Create_Directory (Dir);
                      end if;
-
-                     Set_Directory (Dir);
                   end if;
+
+                  Set_Directory (Dir);
 
                   Create (List, Slice (Args (Cmd), 4), ";");
 
                   Execute_Process : declare
-                     Out_File : constant String :=
-                                  "output.slave." & Image (Index);
+                     Out_File : constant String := Get_Output_File;
+                     Dep_File : constant String := Slice (Args (Cmd), 3);
                      O        : Argument_List := Get_Args (List);
                   begin
                      Output_Compilation (O (O'Last).all);
@@ -500,7 +506,7 @@ begin
                        (Job_Data'(Pid_To_Integer (Pid),
                         To_Unbounded_String
                           (if Is_Absolute_Path (Dir) then "" else Dir),
-                        To_Unbounded_String (Slice (Args (Cmd), 3)),
+                        To_Unbounded_String (Dep_File),
                         To_Unbounded_String (Out_File)));
 
                      if Dir /= "" then
@@ -512,8 +518,6 @@ begin
                      for K in O'Range loop
                         Free (O (K));
                      end loop;
-
-                     Index := Index + 1;
 
                      Jobs.Increment;
                   end Execute_Process;
