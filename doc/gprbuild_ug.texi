@@ -3358,7 +3358,10 @@ use too many slaves with the @option{file://} protocol as it will put a lot of
 pressure on the network slowing down the build process in the end.
 
 Also, in this model the full pathname of the sources must be the same on all
-machines (build master and build slaves).
+machines (build master and build slaves). An optional port number can be
+specified at the end of the slave, for example:
+@command{file://comp2.mydomain.com:9876}. The same port number must then
+be specified on the command line of @command{gprslave}.
 
 @end itemize
 
@@ -3426,7 +3429,8 @@ The default for N is the number of cores.
 
 @item @option{-p, --port=N} : Set the port the slave will listen to
 
-The default value is 8484.
+The default value is 8484. The same port must be specified in the
+Build_Slaves attribute.
 
 @end itemize
 
