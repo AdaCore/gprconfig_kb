@@ -351,11 +351,9 @@ procedure Gprslave is
                   --  No Dep_File to send back if the compilation was not
                   --  successful.
 
-                  if Dir = "" then
-                     Send_Dep_File (Work_Directory & DS & Dep_File);
-                  else
-                     Send_Dep_File (Work_Directory & DS & Dir & DS & Dep_File);
-                  end if;
+                  Send_Dep_File
+                    (Work_Directory
+                     & (if Dir /= "" then DS & Dir else "") & DS & Dep_File);
                end if;
             end;
 
