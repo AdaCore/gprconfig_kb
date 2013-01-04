@@ -97,6 +97,7 @@ procedure Gprslave is
    Max_Processes  : aliased Integer;
    Help           : aliased Boolean;
    Verbose        : aliased Boolean;
+   Debug          : aliased Boolean;
    Root_Directory : aliased GNAT.Strings.String_Access :=
                        new String'(Current_Directory);
    --  Root directoty for the gprslave environment. All projects sources and
@@ -246,6 +247,11 @@ procedure Gprslave is
          "-v", Long_Switch => "--verbose",
          Help => "activate verbose mode, display extra information");
 
+      Define_Switch
+        (Config, Debug'Access,
+         "-vv", Long_Switch => "--debug",
+         Help => "activate debug mode, display lot of information (imply -v)");
+
       Set_Usage (Config, Usage => "[switches]");
 
       Getopt (Config);
@@ -253,6 +259,10 @@ procedure Gprslave is
       if Help then
          Display_Help (Config);
          OS_Exit (1);
+      end if;
+
+      if Debug then
+         Verbose := True;
       end if;
 
       --  Ensure Root_Directory does not ends with a directory separator
@@ -281,6 +291,23 @@ procedure Gprslave is
    ---------------------
 
    task body Wait_Completion is
+
+      procedure Send_Dep_File (Filename : String);
+      --  Send Filename back to the build master
+
+      -------------------
+      -- Send_Dep_File --
+      -------------------
+
+      procedure Send_Dep_File (Filename : String) is
+      begin
+         if Debug then
+            Put_Line ("# send dep_file to master '" & Filename & ''');
+         end if;
+
+         Send_File (Channel, Filename);
+      end Send_Dep_File;
+
       Pid     : Process_Id;
       Success : Boolean;
       Data    : Job_Data;
@@ -325,13 +352,16 @@ procedure Gprslave is
                   --  successful.
 
                   if Dir = "" then
-                     Send_File (Channel, Work_Directory & DS & Dep_File);
+                     Send_Dep_File (Work_Directory & DS & Dep_File);
                   else
-                     Send_File
-                       (Channel, Work_Directory & DS & Dir & DS & Dep_File);
+                     Send_Dep_File (Work_Directory & DS & Dir & DS & Dep_File);
                   end if;
                end if;
             end;
+
+            if Debug then
+               Put_Line ("# compilation status " & Boolean'Image (Success));
+            end if;
 
             if Success then
                Send_Ok (Channel, Pid_To_Integer (Pid));
@@ -398,6 +428,12 @@ procedure Gprslave is
       Set_Rewrite (Channel, From => Work_Directory, To => Full_Path_Tag);
 
       if not Exists (To_String (Project_Name)) then
+         if Debug then
+            Put_Line
+              ("# create project directory '"
+               & To_String (Project_Name) & " in " & Current_Directory);
+         end if;
+
          Create_Directory (To_String (Project_Name));
       end if;
 
@@ -455,6 +491,19 @@ begin
             Pid  : Process_Id;
             List : Slice_Set;
          begin
+            if Debug then
+               Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
+
+               declare
+                  List : constant Slice_Set := Args (Cmd);
+               begin
+                  for K in 1 .. Slice_Count (List) loop
+                     Put (", " & Slice (List, K));
+                  end loop;
+               end;
+               New_Line;
+            end if;
+
             --  Move to project environment, which is:
             --  Root_Directory & Project_Name. We can do this only now since we
             --  know that at this point the sources have been synchronized.
@@ -486,6 +535,10 @@ begin
                      end if;
                   end if;
 
+                  if Debug then
+                     Put_Line ("# move to directory " & Dir);
+                  end if;
+
                   Set_Directory (Dir);
 
                   Create (List, Slice (Args (Cmd), 4), ";");
@@ -502,6 +555,13 @@ begin
 
                      Send_Ack (Channel, Pid_To_Integer (Pid));
 
+                     if Debug then
+                        Put_Line
+                          ("#   pid" & Integer'Image (Pid_To_Integer (Pid)));
+                        Put_Line ("#   dep_file " & Dep_File);
+                        Put_Line ("#   out_file " & Out_File);
+                     end if;
+
                      Job_Set.Insert
                        (Job_Data'(Pid_To_Integer (Pid),
                         To_Unbounded_String
@@ -509,9 +569,11 @@ begin
                         To_Unbounded_String (Dep_File),
                         To_Unbounded_String (Out_File)));
 
-                     if Dir /= "" then
-                        Set_Directory (Work_Directory);
+                     if Debug then
+                        Put_Line ("# move to directory " & Work_Directory);
                      end if;
+
+                     Set_Directory (Work_Directory);
 
                      Mutex.Release;
 
