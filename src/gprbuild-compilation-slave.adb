@@ -634,6 +634,9 @@ package body Gprbuild.Compilation.Slave is
                return O;
 
             else
+               --  Note that we transfer files only when they are under the
+               --  project root.
+
                if O'Length > 8
                  and then O (O'First .. O'First + 7) in "-gnatem=" | "-gnatec="
                then
