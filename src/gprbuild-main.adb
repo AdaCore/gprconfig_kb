@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -44,6 +44,7 @@ with Prj.Err;
 with Prj.Tree;    use Prj.Tree;
 with Snames;      use Snames;
 with Switch;      use Switch;
+with Tempdir;     use Tempdir;
 
 with Gprbuild.Compile;
 with Gprbuild.Link;
@@ -699,6 +700,10 @@ procedure Gprbuild.Main is
 
          if Arg = Distributed_Option then
             Distributed_Mode := True;
+
+            --  In distributed mode we do not want to use temp directories
+
+            Use_Temp_Dir (Status => False);
 
          elsif Arg = "--db-" then
             if Hostparm.OpenVMS then
