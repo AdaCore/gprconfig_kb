@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -558,7 +558,10 @@ begin
    end if;
 
    if not Target_Specified then
-      Selected_Target := Null_Unbounded_String;
+      Get_Targets_Set
+        (Base, GprConfig.Sdefault.Hostname, Selected_Targets_Set);
+      Selected_Target :=
+        To_Unbounded_String (Normalized_Target (Base, Selected_Targets_Set));
    end if;
 
    if Output_File /= Null_Unbounded_String then
