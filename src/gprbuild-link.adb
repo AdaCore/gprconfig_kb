@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1900,74 +1900,52 @@ package body Gprbuild.Link is
             if Proj.Extended_By = No_Project
               and then Proj.Library
               and then Proj.Object_Directory /= No_Path_Information
-              and then not Proj.Externally_Built
               and then (Proj.Library_Kind = Static
-                        or else Proj.Standalone_Library = No)
+                         or else Proj.Standalone_Library = No)
             then
-               Change_Dir
-                 (Get_Name_String (Proj.Object_Directory.Display_Name));
-               Get_Name_String (Proj.Library_Name);
-               Add_Str_To_Name_Buffer (Library_Exchange_Suffix);
+               --  Put the full path name of the library file in Name_Buffer
+
+               Get_Name_String (Proj.Library_Dir.Display_Name);
+
+               if Proj.Library_Kind = Static then
+                  Add_Str_To_Name_Buffer ("lib");
+                  Add_Str_To_Name_Buffer (Get_Name_String (Proj.Library_Name));
+
+                  if Proj.Config.Archive_Suffix = No_File then
+                     Add_Str_To_Name_Buffer (".a");
+                  else
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Proj.Config.Archive_Suffix));
+                  end if;
+
+               else
+                  --  Shared libraries
+
+                  if Proj.Config.Shared_Lib_Prefix = No_File then
+                     Add_Str_To_Name_Buffer ("lib");
+                  else
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Proj.Config.Shared_Lib_Prefix));
+                  end if;
+
+                  Add_Str_To_Name_Buffer (Get_Name_String (Proj.Library_Name));
+
+                  if Proj.Config.Shared_Lib_Suffix = No_File then
+                     Add_Str_To_Name_Buffer (".so");
+                  else
+                     Add_Str_To_Name_Buffer
+                       (Get_Name_String (Proj.Config.Shared_Lib_Suffix));
+                  end if;
+               end if;
+
+               --  Check that library file exists and that it is not more
+               --  recent than the executable.
 
                declare
-                  Path_Name     : constant String :=
-                                    Name_Buffer (1 .. Name_Len);
-                  Exchange_File : Text_IO.File_Type;
-                  Lib_TS        : Time_Stamp_Type;
+                  Lib_TS : constant Time_Stamp_Type :=
+                             File_Stamp (File_Name_Type'(Name_Find));
 
                begin
-                  begin
-                     Open (Exchange_File, In_File, Path_Name);
-
-                  exception
-                     when others =>
-                        if Opt.Verbose_Mode then
-                           Write_Str
-                             ("      -> library exchange file """);
-                           Write_Str (Path_Name);
-                           Write_Line (""" does not exist");
-                        end if;
-
-                        Linker_Needs_To_Be_Called := True;
-                        exit;
-                  end;
-
-                  if End_Of_File (Exchange_File) then
-                     if Opt.Verbose_Mode then
-                        Write_Str
-                          ("      -> library exchange file """);
-                        Write_Str (Path_Name);
-                        Write_Line (""" is empty");
-                     end if;
-
-                     Linker_Needs_To_Be_Called := True;
-                     Close (Exchange_File);
-                     exit;
-                  end if;
-
-                  Get_Line (Exchange_File, Name_Buffer, Name_Len);
-
-                  if Name_Buffer (1 .. Name_Len) /=
-                    Library_Label (Library_Path)
-                  then
-                     Linker_Needs_To_Be_Called := True;
-                     Close (Exchange_File);
-
-                     if Opt.Verbose_Mode then
-                        Write_Str
-                          ("      -> library exchange file """);
-                        Write_Str (Path_Name);
-                        Write_Line (""" has wrong format");
-                     end if;
-
-                     exit;
-                  end if;
-
-                  Get_Line (Exchange_File, Name_Buffer, Name_Len);
-                  Close (Exchange_File);
-
-                  Lib_TS := File_Stamp (File_Name_Type'(Name_Find));
-
                   if Lib_TS = Empty_Time_Stamp then
                      Linker_Needs_To_Be_Called := True;
 
