@@ -121,6 +121,7 @@
        <compiler name="GCC-WRS6E500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-smp$" />
+       <compiler name="GCC-WRS6LEON" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERT" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
@@ -378,6 +379,7 @@
        <compiler name="GCC-WRS6E500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-sjlj$" />
        <compiler name="GCC-WRS6E500V2" runtime="^kernel-smp$" />
+       <compiler name="GCC-WRS6LEON" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERT" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="GCC" runtime="^zfp$" />
