@@ -14,6 +14,15 @@ NF-21-LC19-034 Project_Path searched before ADA_PROJECT_PATH (2013-01-04)
   is better as if Project_Path is defined for the aggregate project we
   do not want to pick a random project found in ADA_PROJECT_PATH.
 
+NF-21-LA25-026 Aggregate projects and auto-configuration (2012-01-11)
+
+  gprbuild fails when the project tree includes only aggregate projects and
+  aggregate libraries projects. When gprbuild is called with a main project
+  that is either an aggregate project or an aggregate library project,
+  if auto-configuration is used, the configuration project file is created
+  in the object directory of one of the non aggregate projects in the project
+  tree.
+
 NF-21-LA22-030 New Linker attribute Trailing_Switches (2012-12-29)
 
   A new attribute Trailing_Switches has been added in package Linker of
