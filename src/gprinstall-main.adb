@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--          Copyright (C) 2012-2013, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -598,6 +598,12 @@ procedure Gprinstall.Main is
          Write_Line ("  --mode=[dev|usage]");
          Write_Line
            ("           Kind of installation (default is ""dev"")");
+
+         --  Line for --uninstall
+
+         Write_Line ("  --uninstall");
+         Write_Line
+           ("           Remove all previously installed files");
 
          --  Line for -aP
 
