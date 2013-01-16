@@ -29,6 +29,7 @@
    <!-- on some targets, executables do not have any extension -->
    <configuration>
      <targets>
+       <target name="^lmp-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-elf-lynxos5$" />
        <target name="^powerpc-eabispe$" />
@@ -611,6 +612,7 @@
        <target name="^.*-wrs-vxworks.*$" />
        <target name="^.*-wrs-linux.*$" />
        <target name="^.*-elf-lynx.*$" />
+       <target name="^lmp-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-eabispe$" />
        <target name="^powerpc-xcoff-lynxos178$" />
