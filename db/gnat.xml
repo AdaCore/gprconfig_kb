@@ -52,7 +52,7 @@
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
       for Required_Switches     ("Ada") use
           Binder'Required_Switches ("Ada")  &amp;
-          ("-I-", "ada_binder=gnaampbind");
+          ("ada_binder=gnaampbind");
       for Driver         ("Ada") use
           "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
    end Binder;
@@ -90,8 +90,6 @@
 
    package Binder is
       for Objects_Path_File     ("Ada") use "ADA_PRJ_OBJECTS_FILE";
-      for Required_Switches     ("Ada") use
-          Binder'Required_Switches ("Ada")  &amp; ("-I-");
       for Driver         ("Ada") use
           "${GPRCONFIG_PREFIX}libexec/gprbuild/gprbind";
    end Binder;
