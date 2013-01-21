@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -24,6 +24,8 @@
 
 with Ada.Command_Line;           use Ada.Command_Line;
 with Ada.Exceptions;             use Ada.Exceptions;
+
+with System.Case_Util;           use System.Case_Util;
 
 with GNAT.Directory_Operations;  use GNAT.Directory_Operations;
 with GNAT.IO;                    use GNAT.IO;
@@ -245,6 +247,81 @@ procedure Gprclean.Main is
                                   (Arg (Target_Project_Option'Length + 1
                                         .. Arg'Last));
                            end if;
+
+                        elsif Arg'Length > RTS_Option'Length
+                          and then Arg (1 .. RTS_Option'Length) = RTS_Option
+                        then
+                           declare
+                              Set : constant Boolean :=
+                                Runtime_Name_Set_For (Snames.Name_Ada);
+                              Old : constant String :=
+                                Runtime_Name_For (Snames.Name_Ada);
+                              RTS : constant String :=
+                                Arg (RTS_Option'Length + 1 .. Arg'Last);
+
+                           begin
+                              if Set and then Old /= RTS then
+                                 Fail_Program
+                                   (Project_Tree,
+                                    "several different run-times " &
+                                      "cannot be specified");
+                              end if;
+
+                              Set_Runtime_For (Snames.Name_Ada, RTS);
+                           end;
+
+                        elsif Arg'Length > RTS_Language_Option'Length
+                          and then Arg (1 .. RTS_Language_Option'Length) =
+                                   RTS_Language_Option
+                        then
+                           declare
+                              Language_Name : Name_Id := No_Name;
+                              RTS_Start : Natural := Arg'Last + 1;
+
+                           begin
+                              for J in RTS_Language_Option'Length + 2 ..
+                                       Arg'Last
+                              loop
+                                 if Arg (J) = '=' then
+                                    Name_Len := 0;
+                                    Add_Str_To_Name_Buffer
+                                      (Arg
+                                         (RTS_Language_Option'Length + 1 ..
+                                          J - 1));
+                                    To_Lower (Name_Buffer (1 .. Name_Len));
+                                    Language_Name := Name_Find;
+                                    RTS_Start := J + 1;
+                                    exit;
+                                 end if;
+                              end loop;
+
+                              if Language_Name = No_Name then
+                                 Fail_Program
+                                   (Project_Tree, "illegal switch: " & Arg);
+
+                              else
+
+                                 declare
+                                    RTS : constant String :=
+                                      Arg (RTS_Start .. Arg'Last);
+                                    Set : constant Boolean :=
+                                      Runtime_Name_Set_For (Language_Name);
+                                    Old : constant String :=
+                                      Runtime_Name_For (Language_Name);
+
+                                 begin
+                                    if Set and then Old /= RTS then
+                                       Fail_Program
+                                       (Project_Tree,
+                                        "several different run-times cannot" &
+                                        " be specified for the same language");
+
+                                    else
+                                       Set_Runtime_For (Language_Name, RTS);
+                                    end if;
+                                 end;
+                              end if;
+                           end;
 
                         elsif Arg'Length > Subdirs_Option'Length
                           and then
@@ -468,6 +545,11 @@ procedure Gprclean.Main is
          if not Hostparm.OpenVMS then
             Put_Line ("  --db-    Do not load the standard knowledge base");
          end if;
+
+         Put_Line ("  --RTS=<runtime>");
+         Put_Line ("           Use runtime <runtime> for language Ada");
+         Put_Line ("  --RTS:<lang>=<runtime>");
+         Put_Line ("           Use runtime <runtime> for language <lang>");
 
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
