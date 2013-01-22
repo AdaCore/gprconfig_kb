@@ -7,7 +7,7 @@
 @c                                                                            o
 @c                  G P R B U I L D   U S E R ' S   G U I D E                 o
 @c                                                                            o
-@c                      Copyright (C) 2007-2012, AdaCore                      o
+@c                      Copyright (C) 2007-2013, AdaCore                      o
 @c                                                                            o
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
@@ -3079,8 +3079,12 @@ Examples of invocation of GPRclean:
 The switches for GPRclean are:
 
 @itemize @bullet
-@item @option{--config=<main config project file name>} : Specify the
-  configuration project file name
+
+@item @option{--distributed} : Also clean-up the sources on build slaves,
+@pxref{Distributed compilation}.
+
+@item @option{--config=<config project file name>} : Specify the
+  configuration project file name.
 
 @item @option{--autoconf=<config project file name>}
 
@@ -3090,16 +3094,37 @@ The switches for GPRclean are:
   specified with @option{--autoconf=} exists, then it is used. Otherwise,
   @value{gprconfig} is invoked to create it automatically.
 
+@item @option{--target=targetname} : Specify a target for cross platforms.
+
+@item @option{--db dir} : Parse dir as an additional knowledge base.
+
+@item @option{--db-} : Do not parse the standard knowledge base.
+
+@item @option{--RTS=<runtime>} : Use runtime <runtime> for language Ada.
+
+@item @option{--RTS:<lang>=<runtime>} : Use runtime <runtime>
+  for language <lang>.
+
+@item @option{--subdirs=<dir>} : Real object, library or exec directories are
+   subdirectories <dir> of the specified ones.
+
+@item @option{--unchecked-shared-lib-imports} : Shared library projects may
+   import any project.
+
+@item @option{-aP<dir>} : Add directory <dir> to the project search path.
+
 @item @option{-c} : Only delete compiler-generated files. Do not delete
   executables and libraries.
 
-@item @option{-f} : Force deletions of unwritable files
+@item @option(-eL} : Follow symbolic links when processing project files.
 
-@item @option{-F} : Display full project path name in brief error messages
+@item @option{-f} : Force deletions of unwritable files.
 
-@item @option{-h} : Display this message
+@item @option{-F} : Display full project path name in brief error messages.
 
-@item @option{-n} : Do not delete files, only list files to delete
+@item @option{-h} : Display the usage.
+
+@item @option{-n} : Do not delete files, only list files that would be deleted.
 
 @item @option{-P<proj>} : Use Project File @emph{<proj>}.
 
@@ -3110,15 +3135,12 @@ The switches for GPRclean are:
   project directly or indirectly. Without this switch, GPRclean only
   cleans the main project.
 
-@item @option{-v}  : Verbose mode
+@item @option{-v} : Verbose mode.
 
 @item @option{-vPx} : Specify verbosity when parsing Project Files.
   x = 0 (default), 1 or 2.
 
 @item @option{-Xnm=val} : Specify an external reference for Project Files.
-
-@item @option{--distributed} : Also clean-up the sources on build slaves,
-@pxref{Distributed compilation}.
 
 @end itemize
 
