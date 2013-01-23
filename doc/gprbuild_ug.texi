@@ -3116,7 +3116,7 @@ The switches for GPRclean are:
 @item @option{-c} : Only delete compiler-generated files. Do not delete
   executables and libraries.
 
-@item @option(-eL} : Follow symbolic links when processing project files.
+@item @option{-eL} : Follow symbolic links when processing project files.
 
 @item @option{-f} : Force deletions of unwritable files.
 
