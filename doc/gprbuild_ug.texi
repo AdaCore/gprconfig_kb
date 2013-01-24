@@ -199,7 +199,6 @@ A copy of the license is included in the section entitled
 
 @menu
 * GNAT Project Manager::
-* Tools Supporting Project Files::
 * Gprbuild::
 * GNU Free Documentation License::
 * Index::
@@ -250,21 +249,8 @@ Project File Reference
 * External Values::
 * Typed String Declaration::
 * Variables::
+* Case Constructions::
 * Attributes::
-* Case Statements::
-
-Tools Supporting Project Files
-* gnatmake and Project Files::
-* The GNAT Driver and Project Files::
-* The Development Environments::
-* Cleaning up with GPRclean::
-
-gnatmake and Project Files
-* Switches Related to Project Files::
-* Switches and Project Files::
-* Specifying Configuration Pragmas::
-* Project Files and Main Subprograms::
-* Library Project Files::
 
 Cleaning up with GPRclean
 * Switches for GPRclean::
