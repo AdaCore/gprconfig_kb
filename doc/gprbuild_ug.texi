@@ -2269,7 +2269,7 @@ When @file{default.cgpr} cannot be found in the configuration project path,
 GPRbuild invokes @value{gprconfig} to create a configuration file.
 
 In the following description of the attributes, when an attribute is an
-associative array indexed by the language name, for example
+indexed attribute and its index is a language name, for example
 @code{Spec_Suffix (<language>)}, then the name of the language is case insensitive.
 For example, both @code{C} and @code{c} are allowed.
 
