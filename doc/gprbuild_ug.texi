@@ -2265,7 +2265,7 @@ project tree. However, usually only the attributes listed below make sense
 in the configuration project file.
 
 @menu
-* Project Level Attributes::
+* Project Level Configuration Attributes::
 * Package Naming::
 * Package Builder::
 * Package Compiler::
@@ -2274,8 +2274,8 @@ in the configuration project file.
 @end menu
 
 @c ---------------------------------------------
-@node Project Level Attributes
-@subsection Project Level Attributes
+@node Project Level Configuration Attributes
+@subsection Project Level Configuration Attributes
 @c ---------------------------------------------
 
 @noindent
