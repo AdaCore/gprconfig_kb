@@ -289,7 +289,7 @@ The GPRconfig knowledge base
 * Configurations::
 
 Configuration File Reference
-* Project Level Attributes::
+* Project Level Configuration Attributes::
 * Package Naming::
 * Package Builder::
 * Package Compiler::
