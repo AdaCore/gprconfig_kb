@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -61,7 +61,7 @@ package body Gprinstall.Install is
       --  project if any.
 
       Active         : Boolean := True;
-      --  Whether installation is active or not (Install paskage's attribute)
+      --  Whether installation is active or not (Install package's attribute)
 
       Prefix_Dir      : Param := Dup (Global_Prefix_Dir);
       Exec_Subdir     : Param := Dup (Global_Exec_Subdir);
