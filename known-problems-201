@@ -11,6 +11,15 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-201-M125-039 Library version on IA64 HP-UX
+
+  Problem:    On IA64 HP-UX, gprbuild fails to build a shared library when
+              attribute Library_Version is declared.
+
+  Status:     This was fixed in 2.1 on 2013-01-25
+
+  Workaround: Do not specify Library_Version.
+
 KP-201-M116-027 aggregated projects sharing extended projects
 
   Problem:    gprbuild refuses aggregate projects where several aggregated
