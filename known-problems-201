@@ -28,3 +28,14 @@ KP-201-M116-027 aggregated projects sharing extended projects
   Status:     This was fixed in 2.1 on 2013-01-18
 
   Workaround: Do not aggregate projects that share an extended project.
+
+KP-201-KC15-051 gprconfig should not parse twice the same knowledge base
+
+  Problem:    gprconfig, in some circumstances, may parse several times the
+              same knowledge base directory. This may result in an invalid
+              configuration project file, for example the same string type
+              may be declared several times.
+
+  Status:     This was fixed in 2.1 on 2013-02-04
+
+  Workaround: Avoid parsing several times the same knowledge base directory.
