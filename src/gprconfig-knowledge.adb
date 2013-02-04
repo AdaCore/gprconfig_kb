@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -498,6 +498,13 @@ package body GprConfig.Knowledge is
       end loop;
       return False;
    end Is_Language_With_No_Compiler;
+
+   RTS_List : GNAT.OS_Lib.String_List_Access :=
+     new GNAT.OS_Lib.String_List (1 .. 4);
+   --  List of the knowledge base directories that hac=ve already been parsed
+
+   RTS_Last : Natural := 0;
+   --  Index of the last directory in RTS_List
 
    --------------------------
    -- Parse_Knowledge_Base --
@@ -1041,7 +1048,33 @@ package body GprConfig.Knowledge is
       Input     : File_Input;
       Schema    : Schema_Reader;
 
+      Dir : constant String :=
+        Normalize_Pathname (Directory, Case_Sensitive => False);
+
    begin
+      --  Do not parse several times the same database directory
+
+      for J in 1 .. RTS_Last loop
+         if RTS_List (J).all = Dir then
+            return;
+         end if;
+      end loop;
+
+      --  Extend RTS_List if it is full
+
+      if RTS_Last = RTS_List'Last then
+         declare
+            New_List : constant GNAT.OS_Lib.String_List_Access :=
+              new GNAT.OS_Lib.String_List (1 .. RTS_List'Length * 2);
+         begin
+            New_List (1 .. RTS_Last) := RTS_List (1 .. RTS_Last);
+            RTS_List := New_List;
+         end;
+      end if;
+
+      RTS_Last := RTS_Last + 1;
+      RTS_List (RTS_Last) := new String'(Dir);
+
       if Current_Verbosity = High then
          Standard.Schema.Set_Debug_Output (True);
       end if;
@@ -1079,11 +1112,11 @@ package body GprConfig.Knowledge is
          end;
       end if;
 
-      Put_Verbose ("Parsing knowledge base at " & Directory);
+      Put_Verbose ("Parsing knowledge base at " & Dir);
 
       Start_Search
         (Search,
-         Directory => Directory,
+         Directory => Dir,
          Pattern   => "*.xml",
          Filter    => (Ordinary_File => True, others => False));
 
