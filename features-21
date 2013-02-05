@@ -42,6 +42,13 @@ NF-21-LA05-034 --config= in Builder switches (2012-12-24)
   gprbuild now takes into account a switch --config= in package Builder
   of the main project.
 
+NF-21-L724-003 Empty Run_Path_Origin (2013-02-05)
+
+  It is now allowed to specify attribute Run_Path_Origin as an empty
+  string. This allows the run paths to be absolute paths. Then an executable
+  may be moved to another directory without moving the shared libraries
+  it needs.
+
 NF-21-K826-028 Add support for distributed compilation (2012-12-19)
 
   It is now possible to use multiple computers to conduct the compilations.
