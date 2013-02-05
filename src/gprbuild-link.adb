@@ -1252,7 +1252,11 @@ package body Gprbuild.Link is
      (Exec_Dir : Path_Name_Type;
       Origin   : Name_Id)
    is
-      Exec      : String := Get_Name_String (Exec_Dir);
+      Exec : String :=
+               Normalize_Pathname
+                 (Get_Name_String (Exec_Dir),
+                  Case_Sensitive => False);
+
       Last_Exec : Positive;
       Curr_Exec : Positive;
       Last_Path : Positive;
@@ -1274,7 +1278,10 @@ package body Gprbuild.Link is
 
       for Npath in 1 .. Rpaths.Last loop
          declare
-            Path : String := Rpaths.Table (Npath).all;
+            Path : String :=
+              Normalize_Pathname
+                (Rpaths.Table (Npath).all,
+                 Case_Sensitive => False);
 
          begin
             --  Replace all directory separators with '/' to ease search
@@ -2440,7 +2447,10 @@ package body Gprbuild.Link is
                Length  : Natural := 0;
                Arg     : String_Access := null;
             begin
-               if Main_Proj.Config.Run_Path_Origin /= No_Name then
+               if Main_Proj.Config.Run_Path_Origin /= No_Name
+                 and then
+                   Get_Name_String (Main_Proj.Config.Run_Path_Origin) /= ""
+               then
                   Rpaths_Relative_To
                     (Main_Proj.Exec_Directory.Display_Name,
                      Main_Proj.Config.Run_Path_Origin);
