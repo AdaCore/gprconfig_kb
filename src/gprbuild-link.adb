@@ -1348,7 +1348,7 @@ package body Gprbuild.Link is
                      Rpaths.Table (Npath) :=
                        new String'
                          (Origin_Name & Directory_Separator &
-                          Rpaths.Table (Npath) (Last_Path + 1 .. Path'Last));
+                          Path (Last_Path + 1 .. Path'Last));
                   end if;
 
                else
@@ -1367,7 +1367,7 @@ package body Gprbuild.Link is
                        new String'
                          (Origin_Name & Directory_Separator &
                           Nmb * (".." & Directory_Separator) &
-                          Rpaths.Table (Npath) (Last_Path + 1 .. Path'Last));
+                          Path (Last_Path + 1 .. Path'Last));
                   end if;
                end if;
             end if;
