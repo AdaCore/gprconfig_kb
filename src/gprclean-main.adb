@@ -195,6 +195,9 @@ procedure Gprclean.Main is
                         elsif Arg = Distributed_Option then
                            Distributed_Mode := True;
 
+                           Gprbuild.Compilation.Slave.Record_Slaves
+                             (Arg (Distributed_Option'Length + 1 .. Arg'Last));
+
                         elsif not Hostparm.OpenVMS
                               and then
                                 Arg'Length > Autoconf_Project_Option'Length
@@ -748,7 +751,7 @@ begin
    --  Clean-up remote slaves
 
    if Distributed_Mode then
-      Clean_Up_Remote_Slaves (Project_Tree, Main_Project);
+      Clean_Up_Remote_Slaves;
    end if;
 
    if Delete_Autoconf_File then

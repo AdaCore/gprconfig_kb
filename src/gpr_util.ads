@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2007-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2007-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -58,7 +58,7 @@ package Gpr_Util is
    Restricted_To_Languages_Option : constant String :=
                                                "--restricted-to-languages=";
 
-   Distributed_Option : constant String := "--distributed";
+   Distributed_Option : constant String := "--distributed=";
 
    Dry_Run_Option : constant String := "--dry-run";
 

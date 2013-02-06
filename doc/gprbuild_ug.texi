@@ -3297,35 +3297,6 @@ support is the following:
 
 @itemize @bullet
 
-@item Add a Remote package in the main project file
-
-This Remote package is to be placed into the project file that is passed
-to GPRbuild to build the application. It describes the remote slaves and
-optionally the Root_Dir for the sources.
-
-@smallexample
-  package Remote is
-     for Build_Slaves use ("comp1.mydomaine.com", "comp2.mydomaine.com");
-  end Remote;
-@end smallexample
-
-Here the Build_Slaves attribute list all the remote computers that
-can be used to compile the application. It is required that the build
-slaves' environment matches (or be compatible) with the build master one.
-
-The Root_Dir default value is the project's directory. This attribute
-designates the sources root directory. That is, the directory from which
-all the sources are to be found to build the application. If the project
-passed to GPRbuild to build the application is not at the top-level
-directory but in a direct sub-directory the Remote package should be:
-
-@smallexample
-  package Remote is
-     for Build_Slaves use ("comp1.mydomaine.com", "comp2.mydomaine.com");
-     for Root_Dir use "..";
-  end Remote;
-@end smallexample
-
 @item Setup sources sharing
 
 There is two ways for the slaves to get access to the sources of the project:
@@ -3356,7 +3327,6 @@ case the build slaves must be specified with the @option{file://} protocol.
 
 @smallexample
   package Remote is
-     for Build_Slaves use ("comp1.mydomaine.com", "file://comp2.mydomaine.com");
      for Root_Dir use "..";
   end Remote;
 @end smallexample
@@ -3372,6 +3342,23 @@ specified at the end of the slave, for example:
 be specified on the command line of @command{gprslave}.
 
 @end itemize
+
+@item Optionaly add a Remote package in the main project file
+
+This Remote package is to be placed into the project file that is passed
+to GPRbuild to build the application.
+
+The Root_Dir default value is the project's directory. This attribute
+designates the sources root directory. That is, the directory from which
+all the sources are to be found to build the application. If the project
+passed to GPRbuild to build the application is not at the top-level
+directory but in a direct sub-directory the Remote package should be:
+
+@smallexample
+  package Remote is
+     for Root_Dir use "..";
+  end Remote;
+@end smallexample
 
 @item Launch a slave driver on each build slave
 
@@ -3401,8 +3388,16 @@ When all this is done, the remote compilation can be used simply by
 running GPRbuild in distributed mode from the build master:
 
 @smallexample
-  $ gprbuild --distributed prj.gpr
+  $ gprbuild --distributed=file://comp1.xyz.com,comp2.xyz.com prj.gpr
 @end smallexample
+
+The build slaves are specified as URL with the following form:
+
+@smallexample
+[protocol://]<machine_name>[:port]
+@end smallexample
+
+Where protocol is @command{rsync} or @command{file} as described above.
 
 @c ---------------------------------------------
 @node GPRslave

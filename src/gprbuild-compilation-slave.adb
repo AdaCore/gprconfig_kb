@@ -19,7 +19,8 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Containers.Ordered_Maps; use Ada;
+with Ada.Containers.Ordered_Maps;
+with Ada.Containers.Vectors;      use Ada;
 with Ada.Directories;             use Ada.Directories;
 with Ada.Exceptions;              use Ada.Exceptions;
 with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
@@ -38,12 +39,20 @@ with Gprbuild.Compilation.Result;
 
 package body Gprbuild.Compilation.Slave is
 
+   type Slave_Data is record
+      Host : Unbounded_String;
+      User : Unbounded_String;
+      Port : Port_Type;
+      Sync : Sync_Kind;
+   end record;
+
+   package Slaves_N is new Containers.Vectors (Positive, Slave_Data);
+
+   Slaves_Data : Slaves_N.Vector;
+
    type Slave is record
-      Host          : Unbounded_String;
-      User          : Unbounded_String;
-      Project_Name  : Unbounded_String;
+      Data          : Slave_Data;
       Channel       : Communication_Channel;
-      Sync          : Sync_Kind;
       Current       : Natural := 0;
       Max_Processes : Positive := 1;
       Root_Dir      : Unbounded_String;
@@ -54,31 +63,9 @@ package body Gprbuild.Compilation.Slave is
    function Get_Free return Slave_S.Cursor;
    --  Returns a slave with free compilation slot
 
-   procedure Register_Remote_Slave
-     (User, Host   : String;
-      Project_Name : String;
-      Port         : Port_Type;
-      Sync         : Sync_Kind);
-   --  Register a slave living on Host for the given project name. User is used
-   --  when calling rsync, it is the remote machine user name, if empty the
-   --  local user name is used.
-
-   generic
-      with procedure Action
-        (User, Host   : String;
-         Project_Name : String;
-         Port         : Port_Type;
-         Sync         : Sync_Kind);
-   procedure For_Every_Remote_Slave
-     (Tree : Project_Tree_Ref; Project : Project_Id);
-   --  Parse the remote package and call action for every remote slave defined
-   --  in the Build_Slave attribute.
-
    function Connect_Slave
-     (User, Host   : String;
-      Project_Name : String;
-      Port         : Port_Type;
-      Sync         : Sync_Kind) return Slave;
+     (S_Data       : Slave_Data;
+      Project_Name : String) return Slave;
    --  Connect to the slave and return the corresponding object
 
    --  Ack transient signal stored into this variable
@@ -101,7 +88,10 @@ package body Gprbuild.Compilation.Slave is
    Rsync    : constant GNAT.OS_Lib.String_Access :=
                 Locate_Exec_On_Path ("rsync");
 
-   Root_Dir : Unbounded_String;
+   Project_Name : Unbounded_String;
+   --  Current project name being compiled
+
+   Root_Dir     : Unbounded_String;
    --  Root directory from where the sources are to be synchronized with the
    --  slaves. This is by default the directory containing the main project
    --  file. The value is changed with the Root_Dir attribute value of the
@@ -116,16 +106,11 @@ package body Gprbuild.Compilation.Slave is
    -- Clean_Up_Remote_Slaves --
    ----------------------------
 
-   procedure Clean_Up_Remote_Slaves
-     (Tree    : Project_Tree_Ref;
-      Project : Project_Id)
-   is
+   procedure Clean_Up_Remote_Slaves is
 
       procedure Clean_Up_Remote_Slave
-        (User, Host   : String;
-         Project_Name : String;
-         Port         : Port_Type;
-         Sync         : Sync_Kind);
+        (S_Data       : Slave_Data;
+         Project_Name : String);
       --  Clean-up slave
 
       ---------------------------
@@ -133,22 +118,22 @@ package body Gprbuild.Compilation.Slave is
       ---------------------------
 
       procedure Clean_Up_Remote_Slave
-        (User, Host   : String;
-         Project_Name : String;
-         Port         : Port_Type;
-         Sync         : Sync_Kind)
+        (S_Data       : Slave_Data;
+         Project_Name : String)
       is
 
          function User_Host return String is
-           (if User = "" then Host else User & '@' & Host);
+           (if S_Data.User = Null_Unbounded_String
+            then To_String (S_Data.Host)
+            else To_String (S_Data.User) & '@' & To_String (S_Data.Host));
 
          S : Slave;
 
       begin
          --  Only clean-up when the sources are not shared
 
-         if Sync = Protocol.Rsync then
-            S := Connect_Slave (User, Host, Project_Name, Port, Sync);
+         if S_Data.Sync = Protocol.Rsync then
+            S := Connect_Slave (S_Data, Project_Name);
 
             --  Send the clean-up request
 
@@ -159,7 +144,8 @@ package body Gprbuild.Compilation.Slave is
             begin
                if Kind (Cmd) = OK then
                   if Opt.Verbose_Mode then
-                     Write_Line ("Clean-up done on " & Host);
+                     Write_Line
+                       ("Clean-up done on " & To_String (S_Data.Host));
                   end if;
 
                elsif Kind (Cmd) = KO then
@@ -179,11 +165,10 @@ package body Gprbuild.Compilation.Slave is
          end if;
       end Clean_Up_Remote_Slave;
 
-      procedure Clean_Up_Slaves is
-        new For_Every_Remote_Slave (Clean_Up_Remote_Slave);
-
    begin
-      Clean_Up_Slaves (Tree, Project);
+      for S of Slaves_Data loop
+         Clean_Up_Remote_Slave (S, To_String (Project_Name));
+      end loop;
    end Clean_Up_Remote_Slaves;
 
    -------------------
@@ -191,10 +176,8 @@ package body Gprbuild.Compilation.Slave is
    -------------------
 
    function Connect_Slave
-     (User, Host   : String;
-      Project_Name : String;
-      Port         : Port_Type;
-      Sync         : Sync_Kind) return Slave
+     (S_Data       : Slave_Data;
+      Project_Name : String) return Slave
    is
       Address : Sock_Addr_Type;
       Sock    : Socket_Type;
@@ -202,13 +185,11 @@ package body Gprbuild.Compilation.Slave is
       Status  : Selector_Status;
 
    begin
-      S.Host := To_Unbounded_String (Host);
-      S.User := To_Unbounded_String (User);
-      S.Sync := Sync;
-      S.Project_Name := To_Unbounded_String (Project_Name);
+      S.Data := S_Data;
 
-      Address.Addr := Addresses (Get_Host_By_Name (Host), 1);
-      Address.Port := Port;
+      Address.Addr := Addresses
+        (Get_Host_By_Name (To_String (S.Data.Host)), 1);
+      Address.Port := S_Data.Port;
 
       Create_Socket (Sock);
       Set_Socket_Option (Sock, Socket_Level, (Reuse_Address, True));
@@ -216,7 +197,9 @@ package body Gprbuild.Compilation.Slave is
       Connect_Socket (Sock, Address, Timeout => 2.0, Status => Status);
 
       if Status in Expired .. Aborted then
-         Write_Line ("Cannot connect to slave " & Host & ", aborting");
+         Write_Line
+           ("Cannot connect to slave "
+            & To_String (S.Data.Host) & ", aborting");
          OS_Exit (1);
       end if;
 
@@ -224,7 +207,7 @@ package body Gprbuild.Compilation.Slave is
 
       --  Do initial handshake
 
-      Protocol.Send_Context (S.Channel, Get_OS, Project_Name, S.Sync);
+      Protocol.Send_Context (S.Channel, Get_OS, Project_Name, S.Data.Sync);
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);
@@ -235,7 +218,8 @@ package body Gprbuild.Compilation.Slave is
             S.Root_Dir := To_Unbounded_String (Slice (Parameters, 2));
 
          elsif Kind (Cmd) = KO then
-            Write_Line ("Slave OS is not compatible " & Host);
+            Write_Line
+              ("Slave OS is not compatible " & To_String (S.Data.Host));
             OS_Exit (1);
 
          else
@@ -246,132 +230,6 @@ package body Gprbuild.Compilation.Slave is
 
       return S;
    end Connect_Slave;
-
-   ----------------------------
-   -- For_Every_Remote_Slave --
-   ----------------------------
-
-   procedure For_Every_Remote_Slave
-     (Tree : Project_Tree_Ref; Project : Project_Id)
-   is
-
-      procedure Parse_Build_Slaves (V : Variable_Value);
-      --  Parse the Build_Slaves attribute, register the slave accordingly
-
-      ------------------------
-      -- Parse_Build_Slaves --
-      ------------------------
-
-      procedure Parse_Build_Slaves (V : Variable_Value) is
-         Str : String_List_Id := V.Values;
-      begin
-         while Str /= Nil_String loop
-            declare
-               V    : constant String :=
-                        Get_Name_String
-                          (Tree.Shared.String_Elements.Table (Str).Value);
-               --  The general format is: [protocol://][user@]host[:port]
-
-               User : Unbounded_String;
-               Host : Unbounded_String;
-               Port : Port_Type := Default_Port;
-               Sync : Sync_Kind := Protocol.Rsync;
-               F    : Natural := V'First;
-               I    : Natural := Index (V, "://");
-            begin
-               --  Check for protocol
-
-               if I /= 0 then
-                  if V (F .. I - 1) = "rsync" then
-                     Sync := Protocol.Rsync;
-                  elsif V (F .. I - 1) = "file" then
-                     Sync := File;
-                  else
-                     Write_Line ("error: unknown protocol in " & V);
-                     OS_Exit (1);
-                  end if;
-
-                  F := I + 3;
-               end if;
-
-               --  Check for user
-
-               I := Index (V, "@", From => F);
-
-               if I /= 0 then
-                  User := To_Unbounded_String (V (F .. I - 1));
-
-                  F := I + 1;
-               end if;
-
-               --  Get for port
-
-               I := Index (V, ":", From => F);
-
-               if I = 0 then
-                  Host := To_Unbounded_String (V (F .. V'Last));
-
-               else
-                  Host := To_Unbounded_String (V (F .. I - 1));
-
-                  declare
-                     Port_Str : constant String := V (I + 1 .. V'Last);
-                  begin
-                     if Strings.Maps.Is_Subset
-                       (Maps.To_Set (Port_Str),
-                        Maps.Constants.Decimal_Digit_Set)
-                     then
-                        Port := Port_Type'Value (V (I + 1 .. V'Last));
-                     else
-                        Write_Line ("error: invalid port value in " & V);
-                        OS_Exit (1);
-                     end if;
-                  end;
-               end if;
-
-               Action
-                 (User         => To_String (User),
-                  Host         => To_String (Host),
-                  Project_Name => Get_Name_String (Project.Name),
-                  Port         => Port,
-                  Sync         => Sync);
-            end;
-
-            Str := Tree.Shared.String_Elements.Table (Str).Next;
-         end loop;
-      end Parse_Build_Slaves;
-
-      Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
-      Pck  : Package_Id := Project.Decl.Packages;
-
-   begin
-      Look_Remote_Package : while Pck /= No_Package loop
-         if Pcks (Pck).Decl /= No_Declarations
-           and then Pcks (Pck).Name = Name_Remote
-         then
-            declare
-               Id : Variable_Id := Pcks (Pck).Decl.Attributes;
-            begin
-               while Id /= No_Variable loop
-                  declare
-                     V : constant Variable :=
-                           Tree.Shared.Variable_Elements.Table (Id);
-                  begin
-                     if not V.Value.Default then
-                        if V.Name = Name_Build_Slaves then
-                           Parse_Build_Slaves (V.Value);
-                        end if;
-                     end if;
-                  end;
-
-                  Id := Tree.Shared.Variable_Elements.Table (Id).Next;
-               end loop;
-            end;
-         end if;
-
-         Pck := Pcks (Pck).Next;
-      end loop Look_Remote_Package;
-   end For_Every_Remote_Slave;
 
    --------------
    -- Get_Free --
@@ -397,116 +255,89 @@ package body Gprbuild.Compilation.Slave is
       return Max_Processes;
    end Get_Max_Processes;
 
-   ---------------------------
-   -- Register_Remote_Slave --
-   ---------------------------
+   -------------------
+   -- Record_Slaves --
+   -------------------
 
-   procedure Register_Remote_Slave
-     (User, Host   : String;
-      Project_Name : String;
-      Port         : Port_Type;
-      Sync         : Sync_Kind)
-   is
+   procedure Record_Slaves (Option : String) is
 
-      function User_Host return String is
-        (if User = "" then Host else User & '@' & Host);
+      S : Slice_Set;
 
-      S : Slave;
-   begin
-      S := Connect_Slave (User, Host, Project_Name, Port, Sync);
+      procedure Parse_Build_Slave (V : String);
+      --  Parse the build slave V
 
-      Set (Slaves_Sockets, Sock (S.Channel));
+      -----------------------
+      -- Parse_Build_Slave --
+      -----------------------
 
-      --  Sum the Max_Process values
+      procedure Parse_Build_Slave (V : String) is
+         User : Unbounded_String;
+         Host : Unbounded_String;
+         Port : Port_Type := Default_Port;
+         Sync : Sync_Kind := Protocol.Rsync;
+         F    : Natural := V'First;
+         I    : Natural := Index (V, "://");
+      begin
+         --  Check for protocol
 
-      Max_Processes := Max_Processes + S.Max_Processes;
-
-      --  Now that all slave's data is known and set, record it
-
-      Slaves.Insert (To_C (Sock (S.Channel)), S);
-
-      if Opt.Verbose_Mode then
-         Write_Str ("Register slave " & User_Host & ",");
-         Write_Str (Integer'Image (S.Max_Processes));
-         Write_Line (" process(es)");
-         Write_Line ("  location: " & To_String (S.Root_Dir));
-      end if;
-
-      --  Let's double check that Root_Dir and Projet_Name are not empty, this
-      --  is a safety check to avoid rsync detroying remote environment as
-      --  rsync is using the --delete options.
-
-      if Length (S.Root_Dir) = 0 then
-         Write_Line ("error: Root_Dir cannot be empty");
-         OS_Exit (1);
-      end if;
-
-      if Project_Name = "" then
-         Write_Line ("error: Project_Name cannot be empty");
-         OS_Exit (1);
-      end if;
-
-      --  ??? It would probably be better to do the rsync in parallel
-
-      if S.Sync = Protocol.Rsync then
-         --  Check for rsync tool
-
-         if Rsync = null then
-            Write_Line ("error: rsync not found for " & Host);
-            OS_Exit (1);
-         end if;
-
-         declare
-            Args    : Argument_List (1 .. 14);
-            Success : Boolean;
-         begin
-            --  Archive mode, compression and ignore VCS
-
-            Args (1) := new String'("-arz");
-
-            --  Exclude objects/ali
-
-            Args (2) := new String'("--exclude=*.o");
-            Args (3) := new String'("--exclude=*.obj");
-            Args (4) := new String'("--exclude=*.ali");
-            Args (5) := new String'("--exclude=*.dll");
-            Args (6) := new String'("--exclude=*.so");
-            Args (7) := new String'("--exclude=*.so.*");
-            Args (8) := new String'("--exclude=.git");
-            Args (9) := new String'("--exclude=.svn");
-            Args (10) := new String'("--exclude=CVS");
-
-            --  Delete remote files not in local directory
-
-            Args (11) := new String'("--delete");
-            Args (12) := new String'("--copy-links");
-
-            --  Local and remote directory
-
-            Args (13) := new String'(To_String (Root_Dir) & "/");
-            Args (14) := new String'
-              (User_Host & ":"
-               & Compose (To_String (S.Root_Dir), Project_Name));
-
-            if Opt.Verbose_Mode then
-               Write_Line ("  synchronize data");
-               Write_Line ("    from: " & Args (13).all);
-               Write_Line ("    to  : " & Args (14).all);
-            end if;
-
-            Spawn (Rsync.all, Args, Success);
-
-            for A of Args loop
-               Free (A);
-            end loop;
-
-            if not Success then
-               Write_Line ("error: rsync on " & To_String (S.Root_Dir));
+         if I /= 0 then
+            if V (F .. I - 1) = "rsync" then
+               Sync := Protocol.Rsync;
+            elsif V (F .. I - 1) = "file" then
+               Sync := File;
+            else
+               Write_Line ("error: unknown protocol in " & V);
                OS_Exit (1);
             end if;
-         end;
-      end if;
-   end Register_Remote_Slave;
+
+            F := I + 3;
+         end if;
+
+         --  Check for user
+
+         I := Index (V, "@", From => F);
+
+         if I /= 0 then
+            User := To_Unbounded_String (V (F .. I - 1));
+
+            F := I + 1;
+         end if;
+
+         --  Get for port
+
+         I := Index (V, ":", From => F);
+
+         if I = 0 then
+            Host := To_Unbounded_String (V (F .. V'Last));
+
+         else
+            Host := To_Unbounded_String (V (F .. I - 1));
+
+            declare
+               Port_Str : constant String := V (I + 1 .. V'Last);
+            begin
+               if Strings.Maps.Is_Subset
+                 (Maps.To_Set (Port_Str),
+                  Maps.Constants.Decimal_Digit_Set)
+               then
+                  Port := Port_Type'Value (V (I + 1 .. V'Last));
+               else
+                  Write_Line ("error: invalid port value in " & V);
+                  OS_Exit (1);
+               end if;
+            end;
+         end if;
+
+         Slaves_Data.Append (Slave_Data'(Host, User, Port, Sync));
+      end Parse_Build_Slave;
+
+   begin
+      Create (S, Option, ",");
+
+      for K in 1 .. Slice_Count (S) loop
+         Parse_Build_Slave (Slice (S, K));
+      end loop;
+   end Record_Slaves;
 
    ----------------------------
    -- Register_Remote_Slaves --
@@ -517,13 +348,131 @@ package body Gprbuild.Compilation.Slave is
       Project : Project_Id)
    is
 
-      procedure Register_Slaves is
-        new For_Every_Remote_Slave (Action => Register_Remote_Slave);
+      procedure Register_Remote_Slave
+        (S_Data       : Slave_Data;
+         Project_Name : String);
+      --  Register a slave living on Host for the given project name. User is
+      --  used when calling rsync, it is the remote machine user name, if empty
+      --  the local user name is used.
+
+      ---------------------------
+      -- Register_Remote_Slave --
+      ---------------------------
+
+      procedure Register_Remote_Slave
+        (S_Data       : Slave_Data;
+         Project_Name : String)
+      is
+
+         function User_Host return String is
+           (if S_Data.User = Null_Unbounded_String
+            then To_String (S_Data.Host)
+            else To_String (S_Data.User) & '@' & To_String (S_Data.Host));
+
+         S : Slave;
+      begin
+         S := Connect_Slave (S_Data, Project_Name);
+
+         Set (Slaves_Sockets, Sock (S.Channel));
+
+         --  Sum the Max_Process values
+
+         Max_Processes := Max_Processes + S.Max_Processes;
+
+         --  Now that all slave's data is known and set, record it
+
+         Slaves.Insert (To_C (Sock (S.Channel)), S);
+
+         if Opt.Verbose_Mode then
+            Write_Str ("Register slave " & User_Host & ",");
+            Write_Str (Integer'Image (S.Max_Processes));
+            Write_Line (" process(es)");
+            Write_Line ("  location: " & To_String (S.Root_Dir));
+         end if;
+
+         --  Let's double check that Root_Dir and Projet_Name are not empty,
+         --  this is a safety check to avoid rsync detroying remote environment
+         --  as rsync is using the --delete options.
+
+         if Length (S.Root_Dir) = 0 then
+            Write_Line ("error: Root_Dir cannot be empty");
+            OS_Exit (1);
+         end if;
+
+         if Project_Name = "" then
+            Write_Line ("error: Project_Name cannot be empty");
+            OS_Exit (1);
+         end if;
+
+         --  ??? It would probably be better to do the rsync in parallel
+
+         if S.Data.Sync = Protocol.Rsync then
+            --  Check for rsync tool
+
+            if Rsync = null then
+               Write_Line
+                 ("error: rsync not found for " & To_String (S.Data.Host));
+               OS_Exit (1);
+            end if;
+
+            declare
+               Args    : Argument_List (1 .. 14);
+               Success : Boolean;
+            begin
+               --  Archive mode, compression and ignore VCS
+
+               Args (1) := new String'("-arz");
+
+               --  Exclude objects/ali
+
+               Args (2) := new String'("--exclude=*.o");
+               Args (3) := new String'("--exclude=*.obj");
+               Args (4) := new String'("--exclude=*.ali");
+               Args (5) := new String'("--exclude=*.dll");
+               Args (6) := new String'("--exclude=*.so");
+               Args (7) := new String'("--exclude=*.so.*");
+               Args (8) := new String'("--exclude=.git");
+               Args (9) := new String'("--exclude=.svn");
+               Args (10) := new String'("--exclude=CVS");
+
+               --  Delete remote files not in local directory
+
+               Args (11) := new String'("--delete");
+               Args (12) := new String'("--copy-links");
+
+               --  Local and remote directory
+
+               Args (13) := new String'(To_String (Root_Dir) & "/");
+               Args (14) := new String'
+                 (User_Host & ":"
+                  & Compose (To_String (S.Root_Dir), Project_Name));
+
+               if Opt.Verbose_Mode then
+                  Write_Line ("  synchronize data");
+                  Write_Line ("    from: " & Args (13).all);
+                  Write_Line ("    to  : " & Args (14).all);
+               end if;
+
+               Spawn (Rsync.all, Args, Success);
+
+               for A of Args loop
+                  Free (A);
+               end loop;
+
+               if not Success then
+                  Write_Line ("error: rsync on " & To_String (S.Root_Dir));
+                  OS_Exit (1);
+               end if;
+            end;
+         end if;
+      end Register_Remote_Slave;
 
       Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
       Pck  : Package_Id := Project.Decl.Packages;
 
    begin
+      Project_Name := To_Unbounded_String (Get_Name_String (Project.Name));
+
       Root_Dir := To_Unbounded_String
         (Containing_Directory (Get_Name_String (Project.Path.Display_Name)));
 
@@ -580,7 +529,9 @@ package body Gprbuild.Compilation.Slave is
 
       --  Then registers the build slaves
 
-      Register_Slaves (Tree, Project);
+      for S of Slaves_Data loop
+         Register_Remote_Slave (S, To_String (Project_Name));
+      end loop;
 
       --  We are in remote mode, the initialization was successful, start tasks
       --  now.
@@ -623,7 +574,7 @@ package body Gprbuild.Compilation.Slave is
       is
          Pos : constant Natural := Index (O, RD);
       begin
-         if Slaves (S).Sync = File then
+         if Slaves (S).Data.Sync = File then
             --  Nothing to translate really, this slave is using a shared
             --  directory to get access to the sources.
 
@@ -667,7 +618,7 @@ package body Gprbuild.Compilation.Slave is
       Pid : Integer;
 
    begin
-      if Slaves (S).Sync = File then
+      if Slaves (S).Data.Sync = File then
          --  Do not filter out CWD as we want the compilation to take place in
          --  the shared directory.
 
@@ -712,16 +663,16 @@ package body Gprbuild.Compilation.Slave is
       for S of Slaves loop
          declare
             function User_Host return String is
-              (if S.User = Null_Unbounded_String
-               then To_String (S.Host)
-               else To_String (S.User) & '@' & To_String (S.Host));
+              (if S.Data.User = Null_Unbounded_String
+               then To_String (S.Data.Host)
+               else To_String (S.Data.User) & '@' & To_String (S.Data.Host));
          begin
             Send_End_Of_Compilation (S.Channel);
             Close (S.Channel);
 
             --  Sync back the object code if needed
 
-            if S.Sync = Protocol.Rsync then
+            if S.Data.Sync = Protocol.Rsync then
                declare
                   Args    : Argument_List (1 .. 5);
                   Success : Boolean;
@@ -738,7 +689,7 @@ package body Gprbuild.Compilation.Slave is
                   Args (4) := new String'
                     (User_Host & ":"
                      & Compose
-                       (To_String (S.Root_Dir), To_String (S.Project_Name))
+                       (To_String (S.Root_Dir), To_String (Project_Name))
                      & "/");
                   Args (5) := new String'(To_String (Root_Dir));
 

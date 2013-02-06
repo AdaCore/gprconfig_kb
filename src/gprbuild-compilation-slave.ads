@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -25,6 +25,9 @@ with Gprbuild.Compilation.Process; use Gprbuild.Compilation.Process;
 
 package Gprbuild.Compilation.Slave is
 
+   procedure Record_Slaves (Option : String);
+   --  Record the slaves as passed on the command line
+
    procedure Register_Remote_Slaves
      (Tree    : Project_Tree_Ref;
       Project : Project_Id);
@@ -32,9 +35,7 @@ package Gprbuild.Compilation.Slave is
    --  Remote package. This routine also initialize the slaves sources. This
    --  routine must be called before any other in this unit.
 
-   procedure Clean_Up_Remote_Slaves
-     (Tree    : Project_Tree_Ref;
-      Project : Project_Id);
+   procedure Clean_Up_Remote_Slaves;
    --  Send a clean-up request to all remote slaves. The slaves are then asked
    --  to remove all the sources and build artifacts for the given project.
 

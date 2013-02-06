@@ -698,12 +698,15 @@ procedure Gprbuild.Main is
 
       elsif Arg (1) = '-' then
 
-         if Arg = Distributed_Option then
+         if Arg (1 .. Distributed_Option'Length) = Distributed_Option then
             Distributed_Mode := True;
 
             --  In distributed mode we do not want to use temp directories
 
             Use_Temp_Dir (Status => False);
+
+            Compilation.Slave.Record_Slaves
+              (Arg (Distributed_Option'Length + 1 .. Arg'Last));
 
          elsif Arg = "--db-" then
             if Hostparm.OpenVMS then
@@ -1607,7 +1610,7 @@ procedure Gprbuild.Main is
 
          --  Line for --distributed
 
-         Write_Str ("  --distributed");
+         Write_Str ("  --distributed=slave1[,slave2]");
          Write_Eol;
          Write_Str ("           Activate the remote/distributed compilations");
          Write_Eol;
