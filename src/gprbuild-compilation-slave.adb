@@ -187,6 +187,11 @@ package body Gprbuild.Compilation.Slave is
    begin
       S.Data := S_Data;
 
+      if S.Data.Host = Null_Unbounded_String then
+         Write_Line ("A slave must have a name, aborting");
+         OS_Exit (1);
+      end if;
+
       Address.Addr := Addresses
         (Get_Host_By_Name (To_String (S.Data.Host)), 1);
       Address.Port := S_Data.Port;
