@@ -698,7 +698,10 @@ procedure Gprbuild.Main is
 
       elsif Arg (1) = '-' then
 
-         if Arg (1 .. Distributed_Option'Length) = Distributed_Option then
+         if Arg'Length > Distributed_Option'Length
+            and then
+            Arg (1 .. Distributed_Option'Length) = Distributed_Option
+         then
             Distributed_Mode := True;
 
             --  In distributed mode we do not want to use temp directories
