@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,6 +29,7 @@ with Debug;       use Debug;
 with Gpr_Util;    use Gpr_Util;
 with Gprexch;     use Gprexch;
 with Makeutl;     use Makeutl;
+with Opt;
 with Osint;       use Osint;
 with Output;      use Output;
 with Prj.Env;
@@ -432,6 +433,7 @@ package body Gprbuild.Post_Compile is
             Lang : Language_Ptr := Project.Languages;
             Indx : Name_List_Index;
             Node : Name_Node;
+
          begin
             while Lang /= No_Language_Index loop
                if not Lang_Seen.Contains (Lang.Name) then
@@ -1901,7 +1903,8 @@ package body Gprbuild.Post_Compile is
          Object_File_Suffix_Label_Written : Boolean;
 
       begin
-         Binder_Driver_Needs_To_Be_Called := Opt.Force_Compilations;
+         Binder_Driver_Needs_To_Be_Called :=
+           Opt.Force_Compilations or Opt.CodePeer_Mode;
 
          --  First check if the binder driver needs to be called.
          --  It needs to be called if
@@ -2476,6 +2479,7 @@ package body Gprbuild.Post_Compile is
                Config  : Language_Config renames B_Data.Language.Config;
                List    : Name_List_Index;
                Nam_Nod : Name_Node;
+               Previous_Was_x : Boolean := False;
             begin
                --  Compiler path
 
@@ -2496,11 +2500,23 @@ package body Gprbuild.Post_Compile is
 
                   while List /= No_Name_List loop
                      Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
-                     Put_Line
-                       (Exchange_File,
-                        Get_Name_String (Nam_Nod.Name));
+
+                     if Opt.CodePeer_Mode and then Previous_Was_x then
+                        Put_Line (Exchange_File, "adascil");
+
+                     else
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String (Nam_Nod.Name));
+                     end if;
+
+                     Previous_Was_x := Get_Name_String (Nam_Nod.Name) = "-x";
                      List := Nam_Nod.Next;
                   end loop;
+
+                  if Opt.CodePeer_Mode then
+                     Put_Line (Exchange_File, "-gnatcC");
+                  end if;
                end if;
 
                --  Trailing required switches, if any
@@ -2635,6 +2651,7 @@ package body Gprbuild.Post_Compile is
                  or else Switches.Kind = Prj.List
                  or else All_Language_Binder_Options.Last > 0
                  or else Options_Instance /= No_Bind_Option_Table
+                 or else Opt.CodePeer_Mode
                then
                   Put_Line
                     (Exchange_File, Binding_Label (Gprexch.Binding_Options));
@@ -2693,6 +2710,12 @@ package body Gprbuild.Post_Compile is
                            Switch_List := Element.Next;
                         end loop;
                      end;
+                  end if;
+
+                  --  Then -P if in CodePeer mode
+
+                  if Opt.CodePeer_Mode then
+                     Put_Line (Exchange_File, "-P");
                   end if;
 
                   --  Then those on the command line, for all
@@ -2929,44 +2952,46 @@ package body Gprbuild.Post_Compile is
 
       --  First, get the libraries in building order in table Library_Projs
 
-      Process_Imported_Libraries
-        (Main_Project,
-         There_Are_SALs     => There_Are_Stand_Alone_Libraries,
-         And_Project_Itself => True);
+      if not Opt.CodePeer_Mode then
+         Process_Imported_Libraries
+           (Main_Project,
+            There_Are_SALs     => There_Are_Stand_Alone_Libraries,
+            And_Project_Itself => True);
 
-      if Library_Projs.Last > 0 then
-         declare
-            Lib_Projs : array (1 .. Library_Projs.Last) of Library_Project;
-            Proj      : Library_Project;
+         if Library_Projs.Last > 0 then
+            declare
+               Lib_Projs : array (1 .. Library_Projs.Last) of Library_Project;
+               Proj      : Library_Project;
 
-         begin
-            --  Copy the list of library projects in local array Lib_Projs,
-            --  as procedure Build_Library uses table Library_Projs.
+            begin
+               --  Copy the list of library projects in local array Lib_Projs,
+               --  as procedure Build_Library uses table Library_Projs.
 
-            for J in 1 .. Library_Projs.Last loop
-               Lib_Projs (J) := Library_Projs.Table (J);
-            end loop;
+               for J in 1 .. Library_Projs.Last loop
+                  Lib_Projs (J) := Library_Projs.Table (J);
+               end loop;
 
-            for J in Lib_Projs'Range loop
-               Proj := Lib_Projs (J);
-               --  Try building a library only if no errors occured in library
-               --  project and projects it depends on.
+               for J in Lib_Projs'Range loop
+                  Proj := Lib_Projs (J);
+                  --  Try building a library only if no errors occured in
+                  --  library project and projects it depends on.
 
-               if not Project_Compilation_Failed (Proj.Proj) then
-                  if Proj.Proj.Extended_By = No_Project then
-                     if not Proj.Proj.Externally_Built then
-                        Build_Library
-                          (Proj.Proj, Project_Tree,
-                           No_Create => Proj.Is_Aggregated);
-                     end if;
+                  if not Project_Compilation_Failed (Proj.Proj) then
+                     if Proj.Proj.Extended_By = No_Project then
+                        if not Proj.Proj.Externally_Built then
+                           Build_Library
+                             (Proj.Proj, Project_Tree,
+                              No_Create => Proj.Is_Aggregated);
+                        end if;
 
-                     if Proj.Proj.Library_Kind /= Static then
-                        Shared_Libs := True;
+                        if Proj.Proj.Library_Kind /= Static then
+                           Shared_Libs := True;
+                        end if;
                      end if;
                   end if;
-               end if;
-            end loop;
-         end;
+               end loop;
+            end;
+         end if;
       end if;
 
       --  If no main is specified, there is nothing else to do

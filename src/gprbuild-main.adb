@@ -36,6 +36,7 @@ with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
 with Hostparm;
 with Makeutl;     use Makeutl;
+with Opt;         use Opt;
 with Osint;       use Osint;
 with Output;      use Output;
 with Prj.Conf;    use Prj.Conf;
@@ -913,6 +914,13 @@ procedure Gprbuild.Main is
            and then Arg (1 .. Restricted_To_Languages_Option'Length) =
                       Restricted_To_Languages_Option
          then
+            if CodePeer_Mode then
+               Fail_Program
+                 (Project_Tree,
+                  "--codepeer is not compatible with " &
+                    "--restricted-to-languages=");
+            end if;
+
             declare
                Start  : Positive := Restricted_To_Languages_Option'Length + 1;
                Finish : Positive;
@@ -964,6 +972,30 @@ procedure Gprbuild.Main is
          elsif Arg = No_Object_Check_Switch then
             Forbidden_In_Package_Builder;
             Object_Checked := False;
+
+         elsif Arg = "--codepeer" then
+            Forbidden_In_Package_Builder;
+
+            if not CodePeer_Mode then
+               if There_Are_Restricted_Languages then
+                  Fail_Program
+                    (Project_Tree,
+                     "--codepper is not compatible with " &
+                       "--restricted-to-languages=");
+               end if;
+
+               CodePeer_Mode := True;
+               Object_Checked := False;
+               Add_Restricted_Language ("ada");
+               There_Are_Restricted_Languages := True;
+               Opt.Compile_Only := True;
+               Opt.Bind_Only := True;
+               Opt.Link_Only := False;
+
+               if Subdirs = null then
+                  Subdirs := new String'("codepeer");
+               end if;
+            end if;
 
          elsif Arg = Create_Map_File_Switch then
             Map_File := new String'("");

@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1955,7 +1955,7 @@ package body Gprbuild.Compile is
       begin
          Compilation_Options.Last := 0;
 
-         --  1) The leading required switches
+         --  1a) The leading required switches
 
          List := Config.Compiler_Leading_Required_Switches;
          First := True;
@@ -1968,6 +1968,43 @@ package body Gprbuild.Compile is
             First := False;
             List := Nam_Nod.Next;
          end loop;
+
+         --  1b) The switches in CodePeer mode
+
+         if Opt.CodePeer_Mode then
+            --  Replace -x ada with -x adascil
+
+            declare
+               Cur : Integer := Compilation_Options.Last - 1;
+            begin
+               while Cur > 0
+                 and then Compilation_Options.Options (Cur).all /= "-x"
+               loop
+                  Cur := Cur - 1;
+               end loop;
+
+               if Cur /= 0 then
+                  Compilation_Options.Options (Cur + 1) :=
+                    new String'("adascil");
+
+               else
+                  Add_Option
+                    (Value   => "-x",
+                     To      => Compilation_Options,
+                     Display => Opt.Verbose_Mode);
+
+                  Add_Option
+                    (Value   => "adascil",
+                     To      => Compilation_Options,
+                     Display => Opt.Verbose_Mode);
+               end if;
+            end;
+
+            Add_Option
+              (Value   => "-gnatcC",
+               To      => Compilation_Options,
+               Display => Opt.Verbose_Mode);
+         end if;
 
          --  2) the compilation switches specified in package Builder
          --  for all compilers, following "-cargs", if any.
@@ -2991,13 +3028,16 @@ package body Gprbuild.Compile is
          Source_Identity : Queue.Source_Info;
          Compilation_OK  : Boolean;
          No_Check        : Boolean;
+         use Queue;
       begin
          if Outstanding_Compiles = Get_Maximum_Processes
            or else (Queue.Is_Virtually_Empty and then Outstanding_Compiles > 0)
          then
             Await_Compile (Source_Identity, Compilation_OK);
 
-            if Compilation_OK then
+            if Compilation_OK
+              and then Source_Identity /= Queue.No_Source_Info
+            then
                --  Check if dependencies are on sources in Interfaces and,
                --  when --direct-import-only is used, the imported sources
                --  come from directly withed projects.
