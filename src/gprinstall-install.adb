@@ -1095,6 +1095,7 @@ package body Gprinstall.Install is
                      while L /= Nil_String loop
                         if not First then
                            Append (V, ", ");
+                        else
                            First := False;
                         end if;
                         Append (V, """");
