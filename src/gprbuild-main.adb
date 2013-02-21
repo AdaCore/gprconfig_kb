@@ -914,13 +914,6 @@ procedure Gprbuild.Main is
            and then Arg (1 .. Restricted_To_Languages_Option'Length) =
                       Restricted_To_Languages_Option
          then
-            if CodePeer_Mode then
-               Fail_Program
-                 (Project_Tree,
-                  "--codepeer is not compatible with " &
-                    "--restricted-to-languages=");
-            end if;
-
             declare
                Start  : Positive := Restricted_To_Languages_Option'Length + 1;
                Finish : Positive;
@@ -939,9 +932,6 @@ procedure Gprbuild.Main is
                      Add_Restricted_Language (Arg (Start .. Finish - 1));
                      Processed := True;
                      There_Are_Restricted_Languages := True;
-                     Opt.Compile_Only := True;
-                     Opt.Bind_Only := False;
-                     Opt.Link_Only := False;
                   end if;
 
                   Start := Finish + 1;
@@ -977,20 +967,8 @@ procedure Gprbuild.Main is
             Forbidden_In_Package_Builder;
 
             if not CodePeer_Mode then
-               if There_Are_Restricted_Languages then
-                  Fail_Program
-                    (Project_Tree,
-                     "--codepper is not compatible with " &
-                       "--restricted-to-languages=");
-               end if;
-
                CodePeer_Mode := True;
                Object_Checked := False;
-               Add_Restricted_Language ("ada");
-               There_Are_Restricted_Languages := True;
-               Opt.Compile_Only := True;
-               Opt.Bind_Only := True;
-               Opt.Link_Only := False;
 
                if Subdirs = null then
                   Subdirs := new String'("codepeer");
@@ -1022,19 +1000,11 @@ procedure Gprbuild.Main is
 
          elsif Arg = "-b" then
             Forbidden_In_Package_Builder;
-
-            if not There_Are_Restricted_Languages then
-               Opt.Bind_Only  := True;
-            end if;
+            Opt.Bind_Only  := True;
 
          elsif Arg = "-c" then
             Forbidden_In_Package_Builder;
-
             Opt.Compile_Only := True;
-
-            if Opt.Link_Only then
-               Opt.Bind_Only := True;
-            end if;
 
          elsif Arg = "-C" then
             --  This switch is only for upward compatibility
@@ -1136,13 +1106,10 @@ procedure Gprbuild.Main is
 
          elsif Arg = "-l" then
             Forbidden_In_Package_Builder;
+            Opt.Link_Only  := True;
 
-            if not There_Are_Restricted_Languages then
-               Opt.Link_Only  := True;
-
-               if Opt.Compile_Only then
-                  Opt.Bind_Only := True;
-               end if;
+            if Opt.Compile_Only then
+               Opt.Bind_Only := True;
             end if;
 
          elsif Arg = "-m" then
@@ -1511,6 +1478,26 @@ procedure Gprbuild.Main is
                Success      => Do_Not_Care);
          end loop Scan_Args;
       end;
+
+      if CodePeer_Mode then
+         if There_Are_Restricted_Languages then
+            Remove_All_Restricted_Languages;
+         end if;
+
+         Add_Restricted_Language ("ada");
+
+         Opt.Link_Only := False;
+
+         if not Opt.Compile_Only and not Opt.Bind_Only then
+            Opt.Compile_Only := True;
+            Opt.Bind_Only    := True;
+         end if;
+
+      elsif There_Are_Restricted_Languages then
+         Opt.Compile_Only := True;
+         Opt.Bind_Only    := False;
+         Opt.Link_Only    := False;
+      end if;
 
       Mains.Set_Multi_Unit_Index (Project_Tree, Main_Index);
 
