@@ -1984,26 +1984,28 @@ package body Gprbuild.Compile is
                end loop;
 
                if Cur /= 0 then
+                  Compilation_Options.Visible (Cur) := True;
                   Compilation_Options.Options (Cur + 1) :=
                     new String'("adascil");
+                  Compilation_Options.Visible (Cur + 1) := True;
 
                else
                   Add_Option
                     (Value   => "-x",
                      To      => Compilation_Options,
-                     Display => Opt.Verbose_Mode);
+                     Display => True);
 
                   Add_Option
                     (Value   => "adascil",
                      To      => Compilation_Options,
-                     Display => Opt.Verbose_Mode);
+                     Display => True);
                end if;
             end;
 
             Add_Option
               (Value   => "-gnatcC",
                To      => Compilation_Options,
-               Display => Opt.Verbose_Mode);
+               Display => True);
          end if;
 
          --  2) the compilation switches specified in package Builder

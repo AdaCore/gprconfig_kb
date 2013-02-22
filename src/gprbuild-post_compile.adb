@@ -78,6 +78,9 @@ package body Gprbuild.Post_Compile is
       Hash       => Hash,
       Equal      => "=");
 
+   procedure CodePeer_Globalize;
+   --  Call the codepeer_globalizer for each of the object directories.
+
    -------------------
    -- Build_Library --
    -------------------
@@ -1654,6 +1657,65 @@ package body Gprbuild.Post_Compile is
       Change_Dir (Current_Dir);
    end Build_Library;
 
+   ------------------------
+   -- CodePeer_Globalize --
+   ------------------------
+
+   procedure CodePeer_Globalize is
+      Globalizer : constant String := "codepeer_globalizer";
+      --  CodePeer globalizer executable name
+
+      Globalizer_Path : constant String_Access :=
+                          GNAT.OS_Lib.Locate_Exec_On_Path (Globalizer);
+      --  Path for CodePeer globalizer
+
+      Quiet_Str       : aliased String := "-quiet";
+      Globalizer_Args : constant Argument_List :=
+                          (1 => Quiet_Str'Unchecked_Access);
+      Previous_Dir    : String_Access := null;
+
+      Success : Boolean;
+
+      procedure Globalize_Dir (Dir : String);
+      --  Call CodePeer globalizer on Dir
+
+      -------------------
+      -- Globalize_Dir --
+      -------------------
+
+      procedure Globalize_Dir (Dir : String) is
+         Result : Boolean;
+      begin
+         if Previous_Dir = null or else Dir /= Previous_Dir.all then
+            Free (Previous_Dir);
+            Previous_Dir := new String'(Dir);
+            Change_Dir (Dir);
+            GNAT.OS_Lib.Spawn (Globalizer_Path.all, Globalizer_Args, Result);
+            Success := Success and Result;
+         end if;
+      end Globalize_Dir;
+
+      procedure Globalize_Dirs is new
+        Prj.Env.For_All_Object_Dirs (Globalize_Dir);
+
+   begin
+      if Globalizer_Path = null then
+         Fail_Program (Project_Tree, "error, unable to locate " & Globalizer);
+
+      elsif not Opt.Quiet_Output then
+         Write_Str (Globalizer);
+         Write_Char (' ');
+         Write_Line (Quiet_Str);
+      end if;
+
+      Success := True;
+      Globalize_Dirs (Main_Project, Project_Tree);
+
+      if not Success then
+         Fail_Program (Project_Tree, "codepeer_globalizer failed");
+      end if;
+   end CodePeer_Globalize;
+
    -----------------------------------
    -- Is_Included_In_Global_Archive --
    -----------------------------------
@@ -1740,6 +1802,10 @@ package body Gprbuild.Post_Compile is
 
       else
          Post_Compile_All (Main_Project, Project_Tree);
+      end if;
+
+      if Opt.CodePeer_Mode then
+         CodePeer_Globalize;
       end if;
    end Run;
 
