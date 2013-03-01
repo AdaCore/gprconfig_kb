@@ -1961,11 +1961,15 @@ package body Gprbuild.Compile is
          First := True;
          while List /= No_Name_List loop
             Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
-            Add_Option
-              (Value   => Nam_Nod.Name,
-               To      => Compilation_Options,
-               Display => First or Opt.Verbose_Mode);
-            First := False;
+
+            if Nam_Nod.Name /= Empty_String then
+               Add_Option
+                 (Value   => Nam_Nod.Name,
+                  To      => Compilation_Options,
+                  Display => First or Opt.Verbose_Mode);
+               First := False;
+            end if;
+
             List := Nam_Nod.Next;
          end loop;
 
