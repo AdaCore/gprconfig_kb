@@ -1587,10 +1587,13 @@ procedure Gprbuild.Main is
          Parse_Knowledge_Base (Project_Tree);
       end if;
 
-      --  If no project file was specified, look first for a default
+      --  If no project file is specified, look for a default
 
       if Project_File_Name = null then
          Look_For_Default_Project;
+
+      else
+         No_Project_File_Found := False;
       end if;
 
       if Project_File_Name = null then
@@ -2050,7 +2053,8 @@ begin
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Normalized_Hostname);
+         Normalized_Hostname        => Normalized_Hostname,
+         Implicit_Project           => No_Project_File_Found);
    exception
       when E : Prj.Conf.Invalid_Config =>
          Osint.Fail (Exception_Message (E));

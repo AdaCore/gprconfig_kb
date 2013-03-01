@@ -659,7 +659,8 @@ begin
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Normalized_Hostname);
+         Normalized_Hostname        => Normalized_Hostname,
+         Implicit_Project           => No_Project_File_Found);
 
       --  Print warnings that might have occurred while parsing the project
       Prj.Err.Finalize;

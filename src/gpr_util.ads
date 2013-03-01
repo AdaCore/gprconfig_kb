@@ -87,10 +87,24 @@ package Gpr_Util is
 
    Default_Project_File_Name : constant String := "default.gpr";
 
+   --  Implicit project
+
+   Implicit_Project_File_Path : constant String :=
+     "share" &
+     Directory_Separator &
+     "gpr" &
+     Directory_Separator &
+     '_' &
+     Default_Project_File_Name;
+
    --  User projects
 
    Project_File_Name          : String_Access := null;
    --  The name of the project file specified with switch -P
+
+   No_Project_File_Found : Boolean := False;
+   --  True when no project file is specified and there is no .gpr file
+   --  in the current working directory.
 
    Main_Project : Project_Id;
    --  The project id of the main project

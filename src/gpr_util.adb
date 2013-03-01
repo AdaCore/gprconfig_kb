@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2007-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2007-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -467,6 +467,8 @@ package body Gpr_Util is
 
    procedure Look_For_Default_Project is
    begin
+      No_Project_File_Found := False;
+
       if Is_Regular_File (Default_Project_File_Name) then
          Project_File_Name := new String'(Default_Project_File_Name);
 
@@ -481,6 +483,8 @@ package body Gpr_Util is
             Single : String_Access := null;
 
          begin
+            No_Project_File_Found := True;
+
             Open (Dir, ".");
 
             loop
@@ -495,6 +499,8 @@ package body Gpr_Util is
                   if Str (Last - Project_File_Extension'Length + 1 .. Last)
                     = Project_File_Extension
                   then
+                     No_Project_File_Found := False;
+
                      if Single = null then
                         Single := new String'(Str (1 .. Last));
 
@@ -513,6 +519,15 @@ package body Gpr_Util is
 
             Project_File_Name := Single;
          end;
+
+         if No_Project_File_Found then
+            Project_File_Name :=
+              new String'(Executable_Prefix_Path & Implicit_Project_File_Path);
+
+            if not Is_Regular_File (Project_File_Name.all) then
+               Project_File_Name := null;
+            end if;
+         end if;
       end if;
 
       if (not Quiet_Output) and then Project_File_Name /= null then
