@@ -11,6 +11,20 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-163-M214-016 VxWorks: incompatible system headers in RTP
+
+  Problem:    When compiling a C file for a RTP on VxWorks, path to
+              incompatible system headers are added to the configuration
+              and can provoke a compilation error.
+
+  Status:     This was fixed in 2.0 on 2012-07-10
+
+  Workaround: Remove the following lines from the .cgpr file:
+              for Leading_Required_Switches ("C") use
+                Compiler'Leading_Required_Switches ("C")
+                & ("-I" & Wind_Base & "/target/h",
+                   "-I" & Wind_Base & "/target/h/wrn/coreip");
+
 KP-163-L921-007 Resolve --RTS relative pathes
 
   Problem:    The behaviour of --RTS switch using a relative path is different
