@@ -149,9 +149,7 @@ procedure GprConfig.Main is
       --  Ignore compilers from extra directories, unless they have been
       --  selected because of a --config argument
 
-      if Is_Selected (New_Comp)
-        or else not From_Extra_Dir
-      then
+      if Is_Selected (New_Comp) or else not From_Extra_Dir then
          Put_Verbose
            ("Adding compiler to interactive menu "
             & To_String (Base, Comp, True)
