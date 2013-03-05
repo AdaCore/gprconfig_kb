@@ -597,7 +597,8 @@ package body Gprinstall.Install is
                begin
                   Directories.Copy_File
                     (Source_Name => From,
-                     Target_Name => Dest_Filename);
+                     Target_Name => Dest_Filename,
+                     Form        => "preserve=timestamps");
                exception
                   when Text_IO.Use_Error =>
                      Write_Line
