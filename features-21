@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.0 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-21-M304-056 gprinstall now preserves timestamps (2013-03-05)
+
+  gprinstall now preserves timestamps when copying the source files,
+  object files and libraries.
+
 NF-21-M121-032 Switches --RTS for gprclean (2013-01-21)
 
   gprclean may now be called with switches --RTS= or --RTS:<lang>=. The
