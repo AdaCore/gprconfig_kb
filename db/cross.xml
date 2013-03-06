@@ -32,6 +32,7 @@
        <target name="^lmp-elf$" />
        <target name="^powerpc-elf$" />
        <target name="^powerpc-elf-lynxos5$" />
+       <target name="^powerpc-xcoff-lynxos178$" />
        <target name="^powerpc-eabispe$" />
        <target name="^avr$" />
        <target name="^leon-elf$" />
