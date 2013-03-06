@@ -106,7 +106,10 @@ package body Gprbuild.Compilation.Slave is
    -- Clean_Up_Remote_Slaves --
    ----------------------------
 
-   procedure Clean_Up_Remote_Slaves is
+   procedure Clean_Up_Remote_Slaves
+     (Tree    : Project_Tree_Ref;
+      Project : Project_Id)
+   is
 
       procedure Clean_Up_Remote_Slave
         (S_Data       : Slave_Data;
@@ -167,7 +170,7 @@ package body Gprbuild.Compilation.Slave is
 
    begin
       for S of Slaves_Data loop
-         Clean_Up_Remote_Slave (S, To_String (Project_Name));
+         Clean_Up_Remote_Slave (S, Get_Name_String (Project.Name));
       end loop;
    end Clean_Up_Remote_Slaves;
 

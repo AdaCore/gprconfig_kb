@@ -35,7 +35,9 @@ package Gprbuild.Compilation.Slave is
    --  Remote package. This routine also initialize the slaves sources. This
    --  routine must be called before any other in this unit.
 
-   procedure Clean_Up_Remote_Slaves;
+   procedure Clean_Up_Remote_Slaves
+     (Tree    : Project_Tree_Ref;
+      Project : Project_Id);
    --  Send a clean-up request to all remote slaves. The slaves are then asked
    --  to remove all the sources and build artifacts for the given project.
 

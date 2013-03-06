@@ -192,7 +192,9 @@ procedure Gprclean.Main is
                                         .. Arg'Last));
                            end if;
 
-                        elsif Arg = Distributed_Option then
+                        elsif Arg (1 .. Distributed_Option'Length)
+                          = Distributed_Option
+                        then
                            Distributed_Mode := True;
 
                            Gprbuild.Compilation.Slave.Record_Slaves
@@ -524,7 +526,7 @@ procedure Gprclean.Main is
 
          Display_Usage_Version_And_Help;
 
-         Put_Line ("  --distributed");
+         Put_Line ("  --distributed=slave1[,slave2]");
          Put_Line ("           Activate the remote clean-up");
          New_Line;
 
@@ -740,6 +742,12 @@ begin
          --  For the main project and all aggregated projects, remove the
          --  binder and linker generated files.
          Clean_Project (Prj, Tree, Remove_Executables => True);
+
+         --  Clean-up remote slaves
+
+         if Distributed_Mode then
+            Clean_Up_Remote_Slaves (Tree, Prj);
+         end if;
       end Do_Clean;
 
       procedure For_All is new For_Project_And_Aggregated (Do_Clean);
@@ -749,12 +757,6 @@ begin
       --  projects, we might not clean their imported projects.
       For_All (Main_Project, Project_Tree);
    end;
-
-   --  Clean-up remote slaves
-
-   if Distributed_Mode then
-      Clean_Up_Remote_Slaves;
-   end if;
 
    if Delete_Autoconf_File then
       Delete ("", Configuration_Project_Path.all);
