@@ -110,6 +110,7 @@ package body Gprbuild.Compilation.Slave is
      (Tree    : Project_Tree_Ref;
       Project : Project_Id)
    is
+      pragma Unreferenced (Tree);
 
       procedure Clean_Up_Remote_Slave
         (S_Data       : Slave_Data;
