@@ -404,18 +404,20 @@ procedure Gprslave is
 
          if Verbose then
             Put_Line ("Handling project : " & To_String (Project_Name));
+         end if;
 
-            if To_String (OS) /= Get_OS
-              and then To_String (OS) /= Any_OS
-            then
-               Send_Ko (Channel);
+         if To_String (OS) /= Get_OS
+           and then To_String (OS) /= Any_OS
+         then
+            Send_Ko (Channel);
 
+            if Verbose then
                Put_Line
                  ("   rejected, master OS is imcompatible " & To_String (OS));
-
-            else
-               exit Wait_Compatible_Master;
             end if;
+
+         else
+            exit Wait_Compatible_Master;
          end if;
       end loop Wait_Compatible_Master;
 
