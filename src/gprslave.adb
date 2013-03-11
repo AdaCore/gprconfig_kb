@@ -456,15 +456,6 @@ procedure Gprslave is
 begin
    Parse_Command_Line;
 
-   --  If verbose
-
-   if Verbose then
-      Put_Line
-        ("gprslave on " & Host_Name & ":" & Image (Long_Integer (Port))
-         & " (" & Get_OS & ")");
-      Put_Line ("  max processes :" & Integer'Image (Max_Processes));
-   end if;
-
    --  Wait for a gprbuild connection on any addresses
 
    Address.Addr := Any_Inet_Addr;
@@ -475,6 +466,20 @@ begin
    Set_Socket_Option (Server, Socket_Level, (Reuse_Address, True));
 
    Bind_Socket (Server, Address);
+
+   if Port = 0 then
+      Address := Get_Socket_Name (Server);
+   end if;
+
+   --  If verbose
+
+   if Verbose then
+      Put_Line
+        ("gprslave on " & Host_Name
+         & ":" & Image (Long_Integer (Address.Port)));
+      Put_Line ("  max processes :" & Integer'Image (Max_Processes));
+      Flush;
+   end if;
 
    Listen_Socket (Server);
 
