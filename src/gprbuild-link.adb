@@ -1278,18 +1278,21 @@ package body Gprbuild.Link is
 
       for Npath in 1 .. Rpaths.Last loop
          declare
-            Path : String :=
+            Insensitive_Path : String :=
               Normalize_Pathname
                 (Rpaths.Table (Npath).all,
                  Case_Sensitive => False);
+
+            Path : constant String :=
+                     Normalize_Pathname (Rpaths.Table (Npath).all);
 
          begin
             --  Replace all directory separators with '/' to ease search
 
             if Directory_Separator /= '/' then
-               for J in Path'Range loop
-                  if Path (J) = Directory_Separator then
-                     Path (J) := '/';
+               for J in Insensitive_Path'Range loop
+                  if Insensitive_Path (J) = Directory_Separator then
+                     Insensitive_Path (J) := '/';
                   end if;
                end loop;
             end if;
@@ -1298,20 +1301,21 @@ package body Gprbuild.Link is
             --  exec directory.
 
             Nmb := 0;
-            Curr_Path := Path'First;
+            Curr_Path := Insensitive_Path'First;
             Curr_Exec := Exec'First;
             loop
                exit when
-                 Curr_Path > Path'Last
+                 Curr_Path > Insensitive_Path'Last
                  or else Curr_Exec > Exec'Last
-                 or else Path (Curr_Path) /= Exec (Curr_Exec);
+                 or else Insensitive_Path (Curr_Path) /= Exec (Curr_Exec);
 
-               if Path (Curr_Path) = '/' then
+               if Insensitive_Path (Curr_Path) = '/' then
                   Nmb := Nmb + 1;
                   Last_Path := Curr_Path;
                   Last_Exec := Curr_Exec;
 
-               elsif Curr_Exec = Exec'Last and then Curr_Path > Path'Last then
+               elsif Curr_Exec = Exec'Last
+                 and then Curr_Path > Insensitive_Path'Last then
                   Nmb := Nmb + 1;
                   Last_Path := Curr_Path + 1;
                   Last_Exec := Curr_Exec + 1;
