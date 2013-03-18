@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -88,6 +88,7 @@ package body Gprbuild.Compilation.Process is
    function Run
      (Executable  : String;
       Options     : GNAT.OS_Lib.Argument_List;
+      Language    : String := "";
       Dep_Name    : String := "";
       Output_File : String := "";
       Err_To_Out  : Boolean := False;
@@ -101,12 +102,15 @@ package body Gprbuild.Compilation.Process is
          WL := new Wait_Local;
       end if;
 
-      --  Run locally first, then send jobs to remote slaves
+      --  Run locally first, then send jobs to remote slaves. Note that to
+      --  build remotely we need an output file and a language, if one of
+      --  this requirement is not fulfilled we just run the process locally.
 
       if Force_Local
         or else not Distributed_Mode
         or else Local_Process.Count < Opt.Maximum_Processes
         or else Output_File /= ""
+        or else Language = ""
       then
          Run_Local : declare
             P : Id (Local);
@@ -124,7 +128,7 @@ package body Gprbuild.Compilation.Process is
          end Run_Local;
 
       else
-         return Slave.Run (Executable, Options, Dep_Name);
+         return Slave.Run (Language, Options, Dep_Name);
       end if;
    end Run;
 

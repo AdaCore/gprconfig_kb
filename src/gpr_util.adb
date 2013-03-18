@@ -28,7 +28,6 @@ with System;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
-with GNAT.Regpat;               use GNAT.Regpat;
 
 with ALI;      use ALI;
 with Debug;
@@ -443,23 +442,18 @@ package body Gpr_Util is
       end if;
    end Find_Binding_Languages;
 
-   ------------
-   -- Get_OS --
-   ------------
+   ----------------
+   -- Get_Target --
+   ----------------
 
-   function Get_OS return String is
-      HN      : String renames GprConfig.Sdefault.Hostname;
-      Re      : constant Pattern_Matcher := Compile (".*(linux).*");
-      Matches : Match_Array (0 .. 1);
+   function Get_Target return String is
    begin
-      Match (Re, HN, Matches);
-
-      if Matches (0) /= No_Match then
-         return HN (Matches (1).First .. Matches (1).Last);
+      if Target_Name = null or else Target_Name.all = "" then
+         return GprConfig.Sdefault.Hostname;
       else
-         return "unknown";
+         return Target_Name.all;
       end if;
-   end Get_OS;
+   end Get_Target;
 
    ------------------------------
    -- Look_For_Default_Project --

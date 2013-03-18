@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -241,7 +241,7 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Get_Context
      (Channel      : Communication_Channel;
-      OS           : out Unbounded_String;
+      Target       : out Unbounded_String;
       Project_Name : out Unbounded_String;
       Sync         : out Sync_Kind)
    is
@@ -250,7 +250,7 @@ package body Gprbuild.Compilation.Protocol is
       if Line.Cmd = CX
         and then Args_Count (Line) = 3
       then
-         OS := To_Unbounded_String (Slice (Line.Args, 1));
+         Target := To_Unbounded_String (Slice (Line.Args, 1));
          Project_Name := To_Unbounded_String (Slice (Line.Args, 2));
          Sync := Sync_Kind'Value (Slice (Line.Args, 3));
       else
@@ -332,13 +332,13 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Send_Context
      (Channel      : Communication_Channel;
-      OS           : String;
+      Target       : String;
       Project_Name : String;
       Sync         : Sync_Kind) is
    begin
       String'Output
         (Channel.Channel,
-         Command_Kind'Image (CX) & OS & Args_Sep & Project_Name
+         Command_Kind'Image (CX) & Target & Args_Sep & Project_Name
          & Args_Sep & Sync_Kind'Image (Sync));
    end Send_Context;
 

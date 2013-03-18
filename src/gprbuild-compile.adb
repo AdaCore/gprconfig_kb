@@ -2592,6 +2592,11 @@ package body Gprbuild.Compile is
             Queue.Set_Obj_Dir_Busy (Source.Id.Project.Object_Directory.Name);
          end Add_Process;
 
+         function Get_Language return String is
+           (if Source.Id.Language /= null
+            then Get_Name_String (Source.Id.Language.Name)
+            else "");
+
          Process : Id;
          Options : String_List_Access;
 
@@ -2636,6 +2641,7 @@ package body Gprbuild.Compile is
          Process := Run
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last),
+            Get_Language,
             Dep_Name => (if Source.Id.Dep_Name = No_File
                          then ""
                          else Get_Name_String (Source.Id.Dep_Name)));

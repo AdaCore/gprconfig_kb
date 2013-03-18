@@ -19,14 +19,26 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Characters.Handling;               use Ada.Characters.Handling;
+with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Ordered_Sets;
+with Ada.Directories;                       use Ada.Directories;
+with Ada.Exceptions;                        use Ada.Exceptions;
+with Ada.Strings.Equal_Case_Insensitive;
+with Ada.Strings.Fixed;                     use Ada.Strings;
+with Ada.Strings.Hash_Case_Insensitive;
+with Ada.Strings.Unbounded;                 use Ada.Strings.Unbounded;
+with Ada.Text_IO;                           use Ada.Text_IO;
+with System.Multiprocessors;                use System;
 
-with Ada.Directories;               use Ada.Directories;
-with Ada.Exceptions;                use Ada.Exceptions;
-with Ada.Strings.Fixed;             use Ada.Strings;
-with Ada.Strings.Unbounded;         use Ada.Strings.Unbounded;
-with Ada.Text_IO;                   use Ada.Text_IO;
-with System.Multiprocessors;        use System;
+with Csets;                         use Csets;
+with Namet;                         use Namet;
+with Prj;                           use Prj;
+with Prj.Env;                       use Prj.Env;
+with Prj.Part;                      use Prj.Part;
+with Prj.Proc;                      use Prj.Proc;
+with Prj.Tree;                      use Prj.Tree;
+with Snames;                        use Snames;
 
 with GNAT.Command_Line;             use GNAT;
 with GNAT.OS_Lib;                   use GNAT.OS_Lib;
@@ -37,6 +49,7 @@ with GNAT.Strings;
 with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
+with GprConfig.Knowledge;           use GprConfig.Knowledge;
 
 procedure Gprslave is
 
@@ -77,6 +90,10 @@ procedure Gprslave is
    function Get_Output_File return String;
    --  Returns a unique output file
 
+   function Get_Driver (Language : String) return String;
+   --  Returns the compiler driver for the given language and the current
+   --  target as retreived from the initial handshake context exchange.
+
    task Wait_Completion;
 
    --  A mutex to avoid interweaved responses on the channel
@@ -87,6 +104,12 @@ procedure Gprslave is
    private
       Free : Boolean := True;
    end Mutex;
+
+   package Drivers_Cache is new Containers.Indefinite_Hashed_Maps
+     (String, String,
+      Ada.Strings.Hash_Case_Insensitive, Ada.Strings.Equal_Case_Insensitive);
+
+   Cache   : Drivers_Cache.Map;
 
    Job_Set : Job_Data_Set.Set; -- current jobs waiting for completion
    Jobs    : Shared_Counter;   -- number of jobs running
@@ -110,9 +133,14 @@ procedure Gprslave is
    Server       : Socket_Type;
    Socket       : Socket_Type;
    Project_Name : Unbounded_String;
-   OS           : Unbounded_String;
    Sync         : Sync_Kind;
    Index        : Long_Integer := 0;
+
+   --  Knowledge base
+
+   Base                 : Knowledge_Base;
+   Target               : Unbounded_String;
+   Selected_Targets_Set : Targets_Set_Id;
 
    --------------
    -- Get_Args --
@@ -139,6 +167,147 @@ procedure Gprslave is
 
       return Args;
    end Get_Args;
+
+   ----------------
+   -- Get_Driver --
+   ----------------
+
+   function Get_Driver (Language : String) return String is
+      Key                  : constant String :=
+                               To_String (Target) & '+' & Language;
+      Position             : constant Drivers_Cache.Cursor := Cache.Find (Key);
+      Compilers, Filters   : Compiler_Lists.List;
+      Requires_Comp        : Boolean;
+      Comp                 : Compiler_Access;
+      Project_Node_Tree    : Project_Node_Tree_Ref;
+      Project_Node         : Project_Node_Id := Empty_Node;
+      Project_Tree         : Project_Tree_Ref;
+      Project              : Project_Id;
+      Env                  : Environment;
+      Success              : Boolean;
+      Driver               : Unbounded_String := To_Unbounded_String (Key);
+   begin
+      if Drivers_Cache.Has_Element (Position) then
+         return Drivers_Cache.Element (Position);
+
+      else
+         Project_Node_Tree := new Project_Node_Tree_Data;
+
+         --  Generate the configuration project for this language and target
+
+         Parse_Config_Parameter
+           (Base              => Base,
+            Config            => Language,
+            Compiler          => Comp,
+            Requires_Compiler => Requires_Comp);
+
+         if Requires_Comp then
+            Filters.Append (Comp);
+         else
+            Compilers.Append (Comp);
+         end if;
+
+         Complete_Command_Line_Compilers
+           (Base,
+            Selected_Targets_Set,
+            Filters,
+            Compilers);
+
+         Generate_Configuration
+           (Base, Compilers, "slave_tmp.cgpr", To_String (Target));
+
+         Prj.Tree.Initialize (Env, Prj.Gprbuild_Flags);
+         Prj.Tree.Initialize (Project_Node_Tree);
+         Prj.Initialize (Prj.No_Project_Tree);
+
+         Prj.Env.Initialize_Default_Project_Path
+           (Env.Project_Path, Target_Name => To_String (Target));
+
+         --  Load the configuration project
+
+         Prj.Part.Parse
+           (Project_Node_Tree, Project_Node,
+            "slave_tmp.cgpr",
+            Errout_Handling   => Prj.Part.Finalize_If_Error,
+            Packages_To_Check => null,
+            Is_Config_File    => True,
+            Target_Name       => To_String (Target),
+            Env               => Env);
+
+         Project_Tree := new Project_Tree_Data;
+         Prj.Initialize (Project_Tree);
+
+         Proc.Process
+           (Project_Tree, Project, null, Success,
+            Project_Node, Project_Node_Tree, Env);
+
+         if not Success then
+            return Key;
+         end if;
+
+         --  Parse it to find the driver for this language
+
+         Look_Driver : declare
+            Pcks : Package_Table.Table_Ptr renames
+                     Project_Tree.Shared.Packages.Table;
+            Pck  : Package_Id := Project.Decl.Packages;
+         begin
+            Look_Compiler_Package : while Pck /= No_Package loop
+               if Pcks (Pck).Decl /= No_Declarations
+                 and then Pcks (Pck).Name = Name_Compiler
+               then
+                  --  Look for the Driver ("<language>") attribute
+
+                  declare
+                     Id : Array_Id := Pcks (Pck).Decl.Arrays;
+                  begin
+                     while Id /= No_Array loop
+                        declare
+                           V : constant Array_Data :=
+                                 Project_Tree.Shared.Arrays.Table (Id);
+                        begin
+                           if V.Name = Name_Driver
+                             and then V.Value /= No_Array_Element
+                           then
+                              --  Check if element is for the given language,
+                              --  and if so return the corresponding value.
+
+                              declare
+                                 E : constant Array_Element :=
+                                       Project_Tree.Shared.
+                                         Array_Elements.Table (V.Value);
+                              begin
+                                 if Get_Name_String (E.Index) =
+                                   To_Lower (Language)
+                                 then
+                                    Driver := To_Unbounded_String
+                                      (Get_Name_String (E.Value.Value));
+                                    exit Look_Compiler_Package;
+                                 end if;
+                              end;
+                           end if;
+                        end;
+
+                        Id := Project_Tree.Shared.Arrays.Table (Id).Next;
+                     end loop;
+                  end;
+               end if;
+
+               Pck := Pcks (Pck).Next;
+            end loop Look_Compiler_Package;
+         end Look_Driver;
+
+         --  Record this driver for the language and target into the cache
+
+         Cache.Insert (Key, To_String (Driver));
+
+         --  Clean-up and free project structure
+
+         Directories.Delete_File ("slave_tmp.cgpr");
+
+         return To_String (Driver);
+      end if;
+   end Get_Driver;
 
    ---------------------
    -- Get_Output_File --
@@ -384,42 +553,30 @@ procedure Gprslave is
 
    procedure Wait_For_Master is
    begin
-      Wait_Compatible_Master : loop
-         --  Wait for a connection
+      --  Wait for a connection
 
-         Accept_Socket (Server, Socket, Address);
+      Accept_Socket (Server, Socket, Address);
 
-         Channel := Create (Socket);
+      Channel := Create (Socket);
 
-         --  Initial handshake
+      --  Initial handshake
 
-         begin
-            Get_Context (Channel, OS, Project_Name, Sync);
-         exception
-            when E : others =>
-               if Verbose then
-                  Put_Line (Exception_Information (E));
-               end if;
-         end;
-
-         if Verbose then
-            Put_Line ("Handling project : " & To_String (Project_Name));
-         end if;
-
-         if To_String (OS) /= Get_OS
-           and then To_String (OS) /= Any_OS
-         then
-            Send_Ko (Channel);
-
+      begin
+         Get_Context (Channel, Target, Project_Name, Sync);
+      exception
+         when E : others =>
             if Verbose then
-               Put_Line
-                 ("   rejected, master OS is imcompatible " & To_String (OS));
+               Put_Line (Exception_Information (E));
             end if;
+      end;
 
-         else
-            exit Wait_Compatible_Master;
-         end if;
-      end loop Wait_Compatible_Master;
+      Get_Targets_Set
+        (Base, To_String (Target), Selected_Targets_Set);
+
+      if Verbose then
+         Put_Line ("Handling project : " & To_String (Project_Name));
+         Put_Line ("Compiling for    : " & To_String (Target));
+      end if;
 
       --  Move to root directory before creating a new project environment
 
@@ -455,6 +612,14 @@ procedure Gprslave is
 
 begin
    Parse_Command_Line;
+
+   --  Initialize the project support
+
+   Namet.Initialize;
+   Csets.Initialize;
+   Snames.Initialize;
+
+   Parse_Knowledge_Base (Base, Default_Knowledge_Base_Directory);
 
    --  Wait for a gprbuild connection on any addresses
 
@@ -549,6 +714,7 @@ begin
                   Create (List, Slice (Args (Cmd), 4), ";");
 
                   Execute_Process : declare
+                     Language : constant String := Slice (Args (Cmd), 2);
                      Out_File : constant String := Get_Output_File;
                      Dep_File : constant String := Slice (Args (Cmd), 3);
                      O        : Argument_List := Get_Args (List);
@@ -556,7 +722,7 @@ begin
                      Output_Compilation (O (O'Last).all);
 
                      Pid := Non_Blocking_Spawn
-                       (Slice (Args (Cmd), 2), O, Out_File);
+                       (Get_Driver (Language), O, Out_File);
 
                      Send_Ack (Channel, Pid_To_Integer (Pid));
 

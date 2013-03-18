@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -117,7 +117,7 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Send_Context
      (Channel      : Communication_Channel;
-      OS           : String;
+      Target       : String;
       Project_Name : String;
       Sync         : Sync_Kind);
    --  Send initial context to the slave
@@ -163,7 +163,7 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Get_Context
      (Channel      : Communication_Channel;
-      OS           : out Unbounded_String;
+      Target       : out Unbounded_String;
       Project_Name : out Unbounded_String;
       Sync         : out Sync_Kind);
    --  Wait for an initial context from a build master

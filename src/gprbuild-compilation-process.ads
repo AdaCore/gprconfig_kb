@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--          Copyright (C) 2012-2013, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -39,6 +39,7 @@ package Gprbuild.Compilation.Process is
    function Run
      (Executable  : String;
       Options     : GNAT.OS_Lib.Argument_List;
+      Language    : String := "";
       Dep_Name    : String := "";
       Output_File : String := "";
       Err_To_Out  : Boolean := False;

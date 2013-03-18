@@ -267,9 +267,7 @@ package Gpr_Util is
 
    --  Architecture
 
-   function Get_OS return String;
-   --  Returns the OS kind (linux, windows, solaris...) of the host. This is
-   --  parsed from Sdefault.Hostname and is used mainly to ensure conformance
-   --  between build master and slaves.
+   function Get_Target return String;
+   --  Returns the current target for the compilation
 
 end Gpr_Util;

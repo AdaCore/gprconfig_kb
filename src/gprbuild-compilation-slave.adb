@@ -216,7 +216,7 @@ package body Gprbuild.Compilation.Slave is
 
       --  Do initial handshake
 
-      Protocol.Send_Context (S.Channel, Get_OS, Project_Name, S.Data.Sync);
+      Protocol.Send_Context (S.Channel, Get_Target, Project_Name, S.Data.Sync);
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);
@@ -555,9 +555,9 @@ package body Gprbuild.Compilation.Slave is
    ---------
 
    function Run
-     (Executable : String;
-      Options    : GNAT.OS_Lib.Argument_List;
-      Dep_Name   : String := "") return Id
+     (Language : String;
+      Options  : GNAT.OS_Lib.Argument_List;
+      Dep_Name : String := "") return Id
    is
       CWD : constant String := Current_Directory;
       --  CWD is the directory from which the command is run
@@ -633,7 +633,7 @@ package body Gprbuild.Compilation.Slave is
 
          Send_Exec
            (Slaves (S).Channel,
-            CWD, Executable, Options, Dep_Name, Filter_String'Access);
+            CWD, Language, Options, Dep_Name, Filter_String'Access);
 
       else
          --  Record the rewrite information for this channel only of we are not
@@ -644,7 +644,7 @@ package body Gprbuild.Compilation.Slave is
 
          Send_Exec
            (Slaves (S).Channel,
-            Filter_String (CWD, Sep => ""), Executable, Options, Dep_Name,
+            Filter_String (CWD, Sep => ""), Language, Options, Dep_Name,
             Filter_String'Access);
       end if;
 
