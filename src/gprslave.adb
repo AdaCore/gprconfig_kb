@@ -46,7 +46,6 @@ with GNAT.Sockets;                  use GNAT.Sockets;
 with GNAT.String_Split;             use GNAT.String_Split;
 with GNAT.Strings;
 
-with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with GprConfig.Knowledge;           use GprConfig.Knowledge;
