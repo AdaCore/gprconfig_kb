@@ -3432,8 +3432,8 @@ The default for N is the number of cores.
 
 @item @option{-p, --port=N} : Set the port the slave will listen to
 
-The default value is 8484. The same port must be specified in the
-Build_Slaves attribute.
+The default value is 8484. The same port must be specified for the
+build slaves on @code{GPRbuild} command line.
 
 @end itemize
 
