@@ -306,6 +306,14 @@ procedure Gprslave is
 
          return To_String (Driver);
       end if;
+
+   exception
+      when others =>
+         --  Be sure we never propagate an exception from this routine, in
+         --  case of problem we just return the key, this will be used as an
+         --  executable and will be reported to the master as a proper build
+         --  failure.
+         return Key;
    end Get_Driver;
 
    ---------------------
