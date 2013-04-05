@@ -8,6 +8,12 @@ This file contains a complete list of new features in version 2.0 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-21-M405-028 gprinstall now supports cross-environment (2013-04-05)
+
+  gprinstall will work in cross-environment by using the newly added
+  --target option. This way it is possible to install a .dll created
+  from a Windows cross-compiler on GNU/Linux for example.
+
 NF-21-M304-056 gprinstall now preserves timestamps (2013-03-05)
 
   gprinstall now preserves timestamps when copying the source files,

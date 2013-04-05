@@ -346,6 +346,23 @@ procedure Gprinstall.Main is
             elsif Has_Prefix (No_Lib_Link_Option) then
                Add_Lib_Link := False;
 
+            elsif Has_Prefix (Target_Project_Option) then
+               if Target_Name /= null then
+                  if Target_Name.all /=
+                    Arg (Target_Project_Option'Length + 1 .. Arg'Last)
+                  then
+                     Fail_Program
+                       (Project_Tree,
+                        "several different target switches "
+                        & "cannot be specified");
+                  end if;
+
+               else
+                  Target_Name :=
+                    new String'
+                      (Arg (Target_Project_Option'Length + 1 .. Arg'Last));
+               end if;
+
             else
                Processed := False;
             end if;
@@ -577,6 +594,16 @@ procedure Gprinstall.Main is
          Write_Line ("  --no-lib-link");
          Write_Line
            ("           Do not copy shared lib in exec/lib directory");
+
+         --  Line for Target_Project_Option
+
+         Write_Str ("  ");
+         Write_Str (Target_Project_Option);
+         Write_Str ("targetname");
+         Write_Eol;
+         Write_Str
+           ("           Specify a target for cross platforms");
+         Write_Eol;
 
          --  Line for --dry-run
 

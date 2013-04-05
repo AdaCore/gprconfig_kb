@@ -3236,6 +3236,8 @@ appended to the prefix above.
 project installation directory if an absolute path. Otherwise it is
 appended to the prefix above.
 
+@item @option{--target=targetname} : Specify a target for cross platforms.
+
 @item @option{--no-lib-link} : Disable copy of shared libraries into
 the executable directory on Windows or creation of symlink in the lib
 directory on UNIX. This is done by default to place the shared
