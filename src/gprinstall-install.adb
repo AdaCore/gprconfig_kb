@@ -567,6 +567,14 @@ package body Gprinstall.Install is
          end if;
 
          if not Dry_Run then
+            if not Sym_Link and then not Exists (From) then
+               Write_Str ("file ");
+               Write_Str (From);
+               Write_Str (" does not exist, build may not be complete");
+               Write_Eol;
+               OS_Exit (1);
+            end if;
+
             if (not Sym_Link and then not Exists (To))
               or else (Sym_Link and then not Exists (From))
             then
