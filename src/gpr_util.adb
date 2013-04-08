@@ -1867,6 +1867,16 @@ package body Gpr_Util is
             Cleanup;
             return;
          end if;
+
+         if Verbose_Mode and then Debug.Debug_Flag_T then
+            Write_Str ("   object file ");
+            Write_Str (Object_Path.all);
+            Write_Str (": ");
+            Write_Line (String (Source.Object_TS));
+
+            Write_Str ("   source file: ");
+            Write_Line (String (Source.Source_TS));
+         end if;
       end if;
 
       if Source.Language.Config.Dependency_Kind /= None then
