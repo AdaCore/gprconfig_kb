@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2004-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2004-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -91,7 +91,7 @@ private
    Object_Checked : Boolean := True;
    --  False when switch --no-object-check is used. When True, presence of
    --  the object file and its time stamp are checked to decide if a file needs
-   --  to be compiled.
+   --  to be compiled. Also set to False when switch --codepeer is used.
 
    Map_File : String_Access := null;
    --  Value of switch --create-map-file
