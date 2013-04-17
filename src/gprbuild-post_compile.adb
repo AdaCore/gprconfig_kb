@@ -238,6 +238,8 @@ package body Gprbuild.Post_Compile is
 
          S : Boolean := False;
 
+         Proj : Project_Id := For_Project;
+
       begin
          Library_Objs.Init;
 
@@ -246,11 +248,10 @@ package body Gprbuild.Post_Compile is
               (For_Project, Project_Tree, S, Include_Aggregated => False);
 
          else
-            Process (For_Project, Project_Tree, S);
-
-            if For_Project.Extends /= null then
-               Process (For_Project.Extends, Project_Tree, S);
-            end if;
+            while Proj /= No_Project loop
+               Process (Proj, Project_Tree, S);
+               Proj := Proj.Extends;
+            end loop;
          end if;
       end Get_Objects;
 
