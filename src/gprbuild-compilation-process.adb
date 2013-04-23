@@ -23,9 +23,9 @@ with Ada.Exceptions; use Ada.Exceptions;
 
 with Output; use Output;
 
+with Gpr_Util;                    use Gpr_Util;
 with Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Slave;
-with Gpr_Util;                    use Gpr_Util;
 
 package body Gprbuild.Compilation.Process is
 
