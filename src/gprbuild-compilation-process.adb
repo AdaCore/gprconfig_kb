@@ -144,8 +144,8 @@ package body Gprbuild.Compilation.Process is
          Local_Process.Wait_Non_Zero;
 
          Wait_Process (Pid, Status);
-         Result.Add (Id'(Local, Pid), Status);
          Local_Process.Decrement;
+         Result.Add (Id'(Local, Pid), Status);
       end loop;
    exception
       when E : others =>
