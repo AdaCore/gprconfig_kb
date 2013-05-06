@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -26,6 +26,13 @@ package body Rewrite_Data is
    use Ada;
 
    subtype SEO is Stream_Element_Offset;
+
+   procedure Do_Output
+     (B      : in out Buffer;
+      Data   : Stream_Element_Array;
+      Output : not null access procedure (Data : Stream_Element_Array));
+   --  Do the actual output, this ensure that we properly send the data through
+   --  linked rewrite buffers if any.
 
    ------------
    -- Create --
@@ -58,6 +65,22 @@ package body Rewrite_Data is
       end return;
    end Create;
 
+   ---------------
+   -- Do_Output --
+   ---------------
+
+   procedure Do_Output
+     (B      : in out Buffer;
+      Data   : Stream_Element_Array;
+      Output : not null access procedure (Data : Stream_Element_Array)) is
+   begin
+      if B.Next = null then
+         Output (Data);
+      else
+         Write (B.Next.all, Data, Output);
+      end if;
+   end Do_Output;
+
    -----------
    -- Flush --
    -----------
@@ -67,15 +90,28 @@ package body Rewrite_Data is
       Output : not null access procedure (Data : Stream_Element_Array)) is
    begin
       if B.Pos_B > 0 then
-         Output (B.Buffer (1 .. B.Pos_B));
+         Do_Output (B, B.Buffer (1 .. B.Pos_B), Output);
       end if;
 
       if B.Pos_C > 0 then
-         Output (B.Current (1 .. B.Pos_C));
+         Do_Output (B, B.Current (1 .. B.Pos_C), Output);
+      end if;
+
+      if B.Next /= null then
+         Flush (B.Next.all, Output);
       end if;
 
       Reset (B);
    end Flush;
+
+   ----------
+   -- Link --
+   ----------
+
+   procedure Link (From : in out Buffer; To : Buffer_Ref) is
+   begin
+      From.Next := To;
+   end Link;
 
    -----------
    -- Reset --
@@ -85,6 +121,10 @@ package body Rewrite_Data is
    begin
       B.Pos_B := 0;
       B.Pos_C := 0;
+
+      if B.Next /= null then
+         Reset (B.Next.all);
+      end if;
    end Reset;
 
    -------------
@@ -139,14 +179,14 @@ package body Rewrite_Data is
       procedure Need_Space (Size : Stream_Element_Offset) is
       begin
          if B.Pos_B + Size > B.Size then
-            Output (B.Buffer (1 .. B.Pos_B));
+            Do_Output (B, B.Buffer (1 .. B.Pos_B), Output);
             B.Pos_B := 0;
          end if;
       end Need_Space;
 
    begin
       if B.Size_Pattern = 0 then
-         Output (Data);
+         Do_Output (B, Data, Output);
 
       else
          for K in Data'Range loop

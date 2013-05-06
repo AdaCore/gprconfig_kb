@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -26,6 +26,7 @@ package Rewrite_Data is
    type Buffer
      (Size, Size_Pattern, Size_Value : Stream_Element_Offset) is
    limited private;
+   type Buffer_Ref is access all Buffer;
 
    function Create
      (Pattern, Value : String;
@@ -60,6 +61,10 @@ package Rewrite_Data is
       Output : not null access procedure (Data : Stream_Element_Array));
    --  Read data from Input, rewrite them and then call Output
 
+   procedure Link (From : in out Buffer; To : Buffer_Ref);
+   --  Link two rewrite buffers, that is all data send to From buffer will be
+   --  rewritten and then passed to the To rewrite buffer.
+
 private
 
    type Buffer
@@ -81,6 +86,8 @@ private
 
       Pos_C   : Stream_Element_Offset; -- last valid element in Current
       Pos_B   : Stream_Element_Offset; -- last valid element in Buffer
+
+      Next    : Buffer_Ref;
    end record;
 
 end Rewrite_Data;
