@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -31,7 +31,7 @@ package Gprbuild.Compilation is
    protected type Shared_Counter is
 
       function Count return Natural;
-      --  Returns the current conter value
+      --  Returns the current counter value
 
       procedure Increment;
       --  Increment by one
@@ -43,7 +43,7 @@ package Gprbuild.Compilation is
       --  Reset counter to 0
 
       entry Wait_Non_Zero;
-      --  Returns when the counter is above zeor
+      --  Returns when the counter is above zero
 
    private
       Counter : Natural := 0;
