@@ -461,8 +461,8 @@ package body Gprbuild.Compilation.Slave is
 
                if Opt.Verbose_Mode then
                   Write_Line ("  synchronize data");
-                  Write_Line ("    from: " & Args (13).all);
-                  Write_Line ("    to  : " & Args (14).all);
+                  Write_Line ("    from: " & Args (Args'Last - 1).all);
+                  Write_Line ("    to  : " & Args (Args'Last).all);
                end if;
 
                Spawn (Rsync.all, Args, Success);
