@@ -953,38 +953,47 @@ procedure Gprslave is
 
             Mutex.Seize;
 
-            if Debug then
-               Put_Line ("# job " & Image (Job.Id) & " terminated");
-            end if;
-
-            declare
-               DS       : Character renames Directory_Separator;
-               Dep_Dir  : constant String := To_String (Job.Dep_Dir);
-               Dep_File : constant String := To_String (Job.Dep_File);
             begin
-               Send_Output (Builder.Channel, To_String (Job.Output));
+               if Debug then
+                  Put_Line ("# job " & Image (Job.Id) & " terminated");
+               end if;
 
-               if Success and then Builder.Sync /= Protocol.File then
-                  --  No Dep_File to send back if the compilation was not
-                  --  successful.
+               declare
+                  DS       : Character renames Directory_Separator;
+                  Dep_Dir  : constant String := To_String (Job.Dep_Dir);
+                  Dep_File : constant String := To_String (Job.Dep_File);
+               begin
+                  Send_Output (Builder.Channel, To_String (Job.Output));
 
-                  Send_Dep_File
-                    (Builder,
-                     Work_Directory (Builder)
-                     & (if Dep_Dir /= "" then DS & Dep_Dir else "")
-                     & DS & Dep_File);
+                  if Success and then Builder.Sync /= Protocol.File then
+                     --  No Dep_File to send back if the compilation was not
+                     --  successful.
+
+                     Send_Dep_File
+                       (Builder,
+                        Work_Directory (Builder)
+                        & (if Dep_Dir /= "" then DS & Dep_Dir else "")
+                        & DS & Dep_File);
+                  end if;
+               end;
+
+               if Debug then
+                  Put_Line ("# compilation status " & Boolean'Image (Success));
+               end if;
+
+               if Success then
+                  Send_Ok (Builder.Channel, Job.Id);
+               else
+                  Send_Ko (Builder.Channel, Job.Id);
+               end if;
+            exception
+               when others =>
+                  --  An exception can be raised if the builder master has been
+                  --  terminated. In this case the comminication won't succeed.
+               if Debug then
+                  Put_Line ("# cannot send response to build master");
                end if;
             end;
-
-            if Debug then
-               Put_Line ("# compilation status " & Boolean'Image (Success));
-            end if;
-
-            if Success then
-               Send_Ok (Builder.Channel, Job.Id);
-            else
-               Send_Ko (Builder.Channel, Job.Id);
-            end if;
 
             Mutex.Release;
 
