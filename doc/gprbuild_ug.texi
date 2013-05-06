@@ -3421,6 +3421,8 @@ The current options are:
 
 @item @option{-v, --verbose} : Activate the verbose mode
 
+@item @option{-vv, --debug} : Activate the debug mode (very verbose)
+
 @item @option{-h, --help} : Display the usage
 
 @item @option{-d, --directory=} : Set the work directory for the
