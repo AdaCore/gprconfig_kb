@@ -50,7 +50,7 @@ package body Gprbuild.Compilation.Process is
    -- Create_Remote --
    -------------------
 
-   function Create_Remote (Pid : Integer) return Id is
+   function Create_Remote (Pid : Remote_Id) return Id is
    begin
       return Id'(Remote, Pid);
    end Create_Remote;
@@ -70,16 +70,23 @@ package body Gprbuild.Compilation.Process is
 
    function Hash (Process : Id) return Header_Num is
       Modulo : constant Integer := Integer (Header_Num'Last) + 1;
-      Pid    : Integer;
    begin
       if Process.Kind = Local then
-         Pid := Pid_To_Integer (Process.Pid);
+         return Header_Num (Pid_To_Integer (Process.Pid) mod Modulo);
       else
-         Pid := Process.R_Pid;
+         return Header_Num (Process.R_Pid mod Remote_Id (Modulo));
       end if;
-
-      return Header_Num (Pid mod Modulo);
    end Hash;
+
+   -----------
+   -- Image --
+   -----------
+
+   function Image (Pid : Remote_Id) return String is
+      N_Img : constant String := Remote_Id'Image (Pid);
+   begin
+      return N_Img (N_Img'First + 1 .. N_Img'Last);
+   end Image;
 
    ---------
    -- Run --

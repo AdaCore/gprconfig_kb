@@ -25,6 +25,8 @@ with GNAT.OS_Lib;
 with GNAT.Sockets;          use GNAT.Sockets;
 with GNAT.String_Split;     use GNAT.String_Split;
 
+with Gprbuild.Compilation.Process;
+
 package Gprbuild.Compilation.Protocol is
 
    Wrong_Command : exception;
@@ -150,7 +152,7 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Get_Pid
      (Channel : Communication_Channel;
-      Pid     : out Integer;
+      Pid     : out Process.Remote_Id;
       Success : out Boolean);
    --  Get a process id, Success is set to False in case of failure
 
@@ -176,13 +178,16 @@ package Gprbuild.Compilation.Protocol is
       Root_Directory : String);
    --  Send the slave configuration to the build master
 
-   procedure Send_Ack (Channel : Communication_Channel; Pid : Integer);
+   procedure Send_Ack
+     (Channel : Communication_Channel; Pid : Process.Remote_Id);
    --  Send Acknoledgement of a received compilation job
 
-   procedure Send_Ok (Channel : Communication_Channel; Pid : Integer);
+   procedure Send_Ok
+     (Channel : Communication_Channel; Pid : Process.Remote_Id);
    --  Send Pid of a successful command
 
-   procedure Send_Ko (Channel : Communication_Channel; Pid : Integer);
+   procedure Send_Ko
+     (Channel : Communication_Channel; Pid : Process.Remote_Id);
    --  Send Pid of an un-successful command
 
    procedure Send_Ok (Channel : Communication_Channel);

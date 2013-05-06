@@ -28,12 +28,20 @@ package Gprbuild.Compilation.Process is
 
    type Id is private;
 
+   type Remote_Id is mod 2 ** 64;
+   --  Represent a remote process id, this number is unique across all slaves.
+   --  Such number if created by the slaves using a slave id (unique number)
+   --  and a compilation number. Bother numbers are 32bits value:
+   --
+   --     63                 32  31                     0
+   --      |    [slave id]      |  [compilation number] |
+
    Invalid_Process : constant Id;
 
    function Create_Local (Pid : GNAT.OS_Lib.Process_Id) return Id;
    --  Returns a local process for Pid
 
-   function Create_Remote (Pid : Integer) return Id;
+   function Create_Remote (Pid : Remote_Id) return Id;
    --  Returns a remote process (one running on a slave) for Pid
 
    function Run
@@ -60,6 +68,9 @@ package Gprbuild.Compilation.Process is
 
    function Hash (Process : Id) return Header_Num;
 
+   function Image (Pid : Remote_Id) return String;
+   --  Returns the string representation of Pid
+
 private
 
    type Process_Kind is (Local, Remote);
@@ -67,7 +78,7 @@ private
    type Id (Kind : Process_Kind := Local) is record
       case Kind is
          when Local  => Pid   : Process_Id;
-         when Remote => R_Pid : Integer;
+         when Remote => R_Pid : Remote_Id;
       end case;
    end record;
 

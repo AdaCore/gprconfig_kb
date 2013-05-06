@@ -271,7 +271,7 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Get_Pid
      (Channel : Communication_Channel;
-      Pid     : out Integer;
+      Pid     : out Process.Remote_Id;
       Success : out Boolean)
    is
       Cmd : constant Command := Get_Command (Channel);
@@ -279,7 +279,7 @@ package body Gprbuild.Compilation.Protocol is
       if Slice_Count (Cmd.Args) = 1
         and then Cmd.Cmd in OK | KO
       then
-         Pid := Natural'Value (Slice (Cmd.Args, 1));
+         Pid := Process.Remote_Id'Value (Slice (Cmd.Args, 1));
          Success := (if Kind (Cmd) = KO then False);
       end if;
    end Get_Pid;
@@ -316,9 +316,11 @@ package body Gprbuild.Compilation.Protocol is
    -- Send_Ack --
    --------------
 
-   procedure Send_Ack (Channel : Communication_Channel; Pid : Integer) is
+   procedure Send_Ack
+     (Channel : Communication_Channel; Pid : Process.Remote_Id) is
    begin
-      String'Output (Channel.Channel, Command_Kind'Image (AK) & Image (Pid));
+      String'Output
+        (Channel.Channel, Command_Kind'Image (AK) & Process.Image (Pid));
    end Send_Ack;
 
    -------------------
@@ -519,9 +521,11 @@ package body Gprbuild.Compilation.Protocol is
    -- Send_Ko --
    -------------
 
-   procedure Send_Ko (Channel : Communication_Channel; Pid : Integer) is
+   procedure Send_Ko
+     (Channel : Communication_Channel; Pid : Process.Remote_Id) is
    begin
-      String'Output (Channel.Channel, Command_Kind'Image (KO) & Image (Pid));
+      String'Output
+        (Channel.Channel, Command_Kind'Image (KO) & Process.Image (Pid));
    end Send_Ko;
 
    procedure Send_Ko (Channel : Communication_Channel) is
@@ -533,9 +537,11 @@ package body Gprbuild.Compilation.Protocol is
    -- Send_Ok --
    -------------
 
-   procedure Send_Ok (Channel : Communication_Channel; Pid : Integer) is
+   procedure Send_Ok
+     (Channel : Communication_Channel; Pid : Process.Remote_Id) is
    begin
-      String'Output (Channel.Channel, Command_Kind'Image (OK) & Image (Pid));
+      String'Output
+        (Channel.Channel, Command_Kind'Image (OK) & Process.Image (Pid));
    end Send_Ok;
 
    procedure Send_Ok (Channel : Communication_Channel) is

@@ -22,6 +22,7 @@
 with Ada.Characters.Handling;               use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Ordered_Sets;
+with Ada.Containers.Vectors;
 with Ada.Directories;                       use Ada.Directories;
 with Ada.Exceptions;                        use Ada.Exceptions;
 with Ada.Strings.Equal_Case_Insensitive;
@@ -29,6 +30,7 @@ with Ada.Strings.Fixed;                     use Ada.Strings;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;                 use Ada.Strings.Unbounded;
 with Ada.Text_IO;                           use Ada.Text_IO;
+with Interfaces;
 with System.Multiprocessors;                use System;
 
 with Csets;                         use Csets;
@@ -41,12 +43,14 @@ with Prj.Tree;                      use Prj.Tree;
 with Snames;                        use Snames;
 
 with GNAT.Command_Line;             use GNAT;
+with GNAT.CRC32;
 with GNAT.OS_Lib;                   use GNAT.OS_Lib;
 with GNAT.Sockets;                  use GNAT.Sockets;
 with GNAT.String_Split;             use GNAT.String_Split;
 with GNAT.Strings;
 
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
+with Gprbuild.Compilation.Process;  use Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with GprConfig.Knowledge;           use GprConfig.Knowledge;
 
@@ -76,7 +80,9 @@ procedure Gprslave is
    --  Representation of a job data
 
    type Job_Data is record
-      Pid        : Integer;
+      Cmd        : Command;
+      Id         : Remote_Id;         -- job id must be uniq across all slaves
+      Pid        : Integer;           -- the OS process id
       Dep_Dir    : Unbounded_String;
       Dep_File   : Unbounded_String;
       Output     : Unbounded_String;
@@ -87,6 +93,8 @@ procedure Gprslave is
    function "=" (J1, J2 : Job_Data) return Boolean is (J1.Pid = J2.Pid);
 
    package Job_Data_Set is new Containers.Ordered_Sets (Job_Data);
+
+   package To_Run_Set is new Containers.Vectors (Positive, Job_Data);
 
    function Get_Args
      (Builder : Build_Master; Slices : Slice_Set) return Argument_List;
@@ -106,16 +114,7 @@ procedure Gprslave is
    procedure Parse_Command_Line;
    --  Parse the command line options, set variables below accordingly
 
-   procedure Output_Compilation (File : String);
-   --  Output compilation information
-
-   function Get_Output_File (Builder : Build_Master) return String;
-   --  Returns a unique output file
-
-   function Get_Driver
-     (Builder : Build_Master; Language : String) return String;
-   --  Returns the compiler driver for the given language and the current
-   --  target as retreived from the initial handshake context exchange.
+   function Get_Slave_Id return Remote_Id;
 
    task Wait_Completion;
    --  Waiting for job completion and sending back the response to the build
@@ -125,7 +124,14 @@ procedure Gprslave is
    --  Waiting for incoming requests from the masters, take corresponding
    --  actions.
 
-   --  A mutex to avoid interweaved responses on the channel
+   task Run_Compilation;
+   --  Task running a maximum of Max_Process compilation simultaneously. These
+   --  jobs are taken from the To_Run protected object.
+
+   --  A mutex to avoid interweaved responses on the channel and keep the
+   --  working directory. Indeed the tasks are moving to some working directory
+   --  from where a compilation has to be run or where the builder environment
+   --  has to be created. We must ensure that all those actions are atomic.
 
    protected Mutex is
       entry Seize;
@@ -155,14 +161,23 @@ procedure Gprslave is
       Builders : Builder_Set.Set;
    end Builders;
 
-   package Drivers_Cache is new Containers.Indefinite_Hashed_Maps
-     (String, String,
-      Ada.Strings.Hash_Case_Insensitive, Ada.Strings.Equal_Case_Insensitive);
+   --  Queue of Job to run
 
-   Cache   : Drivers_Cache.Map;
+   protected To_Run is
 
-   Job_Set : Job_Data_Set.Set; -- current jobs waiting for completion
-   Jobs    : Shared_Counter;   -- number of jobs running
+      procedure Push (Job : Job_Data);
+
+      entry Pop (Job : out Job_Data);
+
+   private
+      Set : To_Run_Set.Vector;
+   end To_Run;
+
+   Slave_Id : Remote_Id;
+   --  Host Id used to compose a unique job id across all running slaves
+
+   Job_Set      : Job_Data_Set.Set; -- current jobs waiting for completion
+   Running_Jobs : Shared_Counter;   -- number of jobs running
 
    --  Command line parameters statuses
 
@@ -270,167 +285,20 @@ procedure Gprslave is
       return Args;
    end Get_Args;
 
-   ----------------
-   -- Get_Driver --
-   ----------------
+   -----------------
+   -- Get_Slave_Id --
+   -----------------
 
-   function Get_Driver
-     (Builder : Build_Master; Language : String) return String
-   is
-      Key                  : constant String :=
-                               To_String (Builder.Target) & '+' & Language;
-      Position             : constant Drivers_Cache.Cursor := Cache.Find (Key);
-      Compilers, Filters   : Compiler_Lists.List;
-      Requires_Comp        : Boolean;
-      Comp                 : Compiler_Access;
-      Project_Node_Tree    : Project_Node_Tree_Ref;
-      Project_Node         : Project_Node_Id := Empty_Node;
-      Project_Tree         : Project_Tree_Ref;
-      Project              : Project_Id;
-      Env                  : Environment;
-      Success              : Boolean;
-      Driver               : Unbounded_String := To_Unbounded_String (Key);
+   function Get_Slave_Id return Remote_Id is
+      use GNAT.CRC32;
+      use type Interfaces.Unsigned_32;
+      CRC : GNAT.CRC32.CRC32;
    begin
-      if Drivers_Cache.Has_Element (Position) then
-         return Drivers_Cache.Element (Position);
-
-      else
-         Project_Node_Tree := new Project_Node_Tree_Data;
-
-         --  Generate the configuration project for this language and target
-
-         Parse_Config_Parameter
-           (Base              => Base,
-            Config            => Language,
-            Compiler          => Comp,
-            Requires_Compiler => Requires_Comp);
-
-         if Requires_Comp then
-            Filters.Append (Comp);
-         else
-            Compilers.Append (Comp);
-         end if;
-
-         Complete_Command_Line_Compilers
-           (Base,
-            Selected_Targets_Set,
-            Filters,
-            Compilers);
-
-         Generate_Configuration
-           (Base, Compilers, "slave_tmp.cgpr", To_String (Builder.Target));
-
-         Prj.Tree.Initialize (Env, Prj.Gprbuild_Flags);
-         Prj.Tree.Initialize (Project_Node_Tree);
-         Prj.Initialize (Prj.No_Project_Tree);
-
-         Prj.Env.Initialize_Default_Project_Path
-           (Env.Project_Path, Target_Name => To_String (Builder.Target));
-
-         --  Load the configuration project
-
-         Prj.Part.Parse
-           (Project_Node_Tree, Project_Node,
-            "slave_tmp.cgpr",
-            Errout_Handling   => Prj.Part.Finalize_If_Error,
-            Packages_To_Check => null,
-            Is_Config_File    => True,
-            Target_Name       => To_String (Builder.Target),
-            Env               => Env);
-
-         Project_Tree := new Project_Tree_Data;
-         Prj.Initialize (Project_Tree);
-
-         Proc.Process
-           (Project_Tree, Project, null, Success,
-            Project_Node, Project_Node_Tree, Env);
-
-         if not Success then
-            return Key;
-         end if;
-
-         --  Parse it to find the driver for this language
-
-         Look_Driver : declare
-            Pcks : Package_Table.Table_Ptr renames
-                     Project_Tree.Shared.Packages.Table;
-            Pck  : Package_Id := Project.Decl.Packages;
-         begin
-            Look_Compiler_Package : while Pck /= No_Package loop
-               if Pcks (Pck).Decl /= No_Declarations
-                 and then Pcks (Pck).Name = Name_Compiler
-               then
-                  --  Look for the Driver ("<language>") attribute
-
-                  declare
-                     Id : Array_Id := Pcks (Pck).Decl.Arrays;
-                  begin
-                     while Id /= No_Array loop
-                        declare
-                           V : constant Array_Data :=
-                                 Project_Tree.Shared.Arrays.Table (Id);
-                        begin
-                           if V.Name = Name_Driver
-                             and then V.Value /= No_Array_Element
-                           then
-                              --  Check if element is for the given language,
-                              --  and if so return the corresponding value.
-
-                              declare
-                                 E : constant Array_Element :=
-                                       Project_Tree.Shared.
-                                         Array_Elements.Table (V.Value);
-                              begin
-                                 if Get_Name_String (E.Index) =
-                                   To_Lower (Language)
-                                 then
-                                    Driver := To_Unbounded_String
-                                      (Get_Name_String (E.Value.Value));
-                                    exit Look_Compiler_Package;
-                                 end if;
-                              end;
-                           end if;
-                        end;
-
-                        Id := Project_Tree.Shared.Arrays.Table (Id).Next;
-                     end loop;
-                  end;
-               end if;
-
-               Pck := Pcks (Pck).Next;
-            end loop Look_Compiler_Package;
-         end Look_Driver;
-
-         --  Record this driver for the language and target into the cache
-
-         Cache.Insert (Key, To_String (Driver));
-
-         --  Clean-up and free project structure
-
-         Directories.Delete_File ("slave_tmp.cgpr");
-
-         return To_String (Driver);
-      end if;
-
-   exception
-      when others =>
-         --  Be sure we never propagate an exception from this routine, in
-         --  case of problem we just return the key, this will be used as an
-         --  executable and will be reported to the master as a proper build
-         --  failure.
-         return Key;
-   end Get_Driver;
-
-   ---------------------
-   -- Get_Output_File --
-   ---------------------
-
-   function Get_Output_File (Builder : Build_Master) return String is
-      Filename : constant String := "output.slave." & Image (Index);
-   begin
-      Index := Index + 1;
-      return Compose (Work_Directory (Builder), Filename);
-   end Get_Output_File;
+      Initialize (CRC);
+      Update (CRC, Host_Name);
+      --  Set the host id as the 32 higher bits
+      return Remote_Id (Get_Value (CRC)) * 2 ** 32;
+   end Get_Slave_Id;
 
    -----------
    -- Image --
@@ -469,26 +337,6 @@ procedure Gprslave is
       end Release;
 
    end Mutex;
-
-   ------------------------
-   -- Output_Compilation --
-   ------------------------
-
-   procedure Output_Compilation (File : String) is
-      RDL : constant Natural := Root_Directory'Length;
-   begin
-      if Verbose then
-         if File'Length > RDL
-           and then File (File'First .. File'First + RDL - 1)
-                    = Root_Directory.all
-         then
-            Text_IO.Put_Line
-              ("Compiling: " & File (File'First + RDL + 1 .. File'Last));
-         else
-            Text_IO.Put_Line ("Compiling: " & File);
-         end if;
-      end if;
-   end Output_Compilation;
 
    ------------------------
    -- Parse_Command_Line --
@@ -558,6 +406,8 @@ procedure Gprslave is
          end Delete_Last;
       end if;
 
+      Running_Jobs.Set_Threshold (Max_Processes);
+
    exception
       when E : Invalid_Switch =>
          Put_Line (Exception_Information (E));
@@ -572,12 +422,19 @@ procedure Gprslave is
    ----------------------
 
    task body Protocol_Handler is
+
+      type Job_Number is mod 2**32;
+      --  A 32bits integer which wrap around. This is no problem as we want
+      --  to be able to identify running process. There won't be 2**32 process
+      --  running at the same time. So it is safe restart numbering at 0.
+
       Selector     : Selector_Type;
       R_Socket_Set : Socket_Set_Type;
       Empty_Set    : Socket_Set_Type;
       Status       : Selector_Status;
       Builder      : Build_Master;
       Socket       : Socket_Type;
+      Jid          : Job_Number := 0;
    begin
       --  Create selector
 
@@ -599,10 +456,10 @@ procedure Gprslave is
          if Socket /= No_Socket then
             Builder := Builders.Get (Socket);
 
+            Mutex.Seize;
+
             declare
-               Cmd  : constant Command := Get_Command (Builder.Channel);
-               Pid  : Process_Id;
-               List : Slice_Set;
+               Cmd : constant Command := Get_Command (Builder.Channel);
             begin
                if Debug then
                   Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
@@ -617,93 +474,29 @@ procedure Gprslave is
                   New_Line;
                end if;
 
-               --  Move to project environment, which is: Root_Directory &
-               --  Project_Name. We can do this only now since we know that
-               --  at this point the sources have been synchronized.
-
                if Kind (Cmd) = EX then
-                  Setup_Execute_Process : declare
-                     Dir : constant String := Slice (Args (Cmd), 1);
+                  Record_Job : declare
+                     Id : constant Remote_Id := Slave_Id + Remote_Id (Jid);
+                     --  Note that the Id above should be unique across all
+                     --  running slaves. This is not the process id, but an id
+                     --  sent back to the build master to identify the actual
+                     --  job.
                   begin
-                     --  Enter a critical section to:
-                     --     - move to directory where the command is executed
-                     --     - execute the compilation command
-                     --     - register a new job and acknowledge
-                     --     - move back to working directory
-
-                     Mutex.Seize;
-
-                     --  Create/Move to object dir if any, note that if we
-                     --  have an absolute path name here it is because the
-                     --  Build_Root is probably not properly set. Try to fail
-                     --  gracefully to report a proper error message to the
-                     --  build master.
-                     --
-                     --  If we have an absolute pathname, just start the
-                     --  process into the to directory. The output file will
-                     --  be created there and will be reported to the master.
-
-                     if Dir /= "" and then not Is_Absolute_Path (Dir) then
-                        if not Is_Directory (Dir) then
-                           Create_Directory (Dir);
-                        end if;
-                     end if;
-
+                     Jid := Jid + 1;
                      if Debug then
-                        Put_Line ("# move to directory " & Dir);
+                        Put_Line ("# register compilation " & Image (Id));
                      end if;
 
-                     Set_Directory (Dir);
+                     To_Run.Push
+                       (Job_Data'(Cmd,
+                        Id, -1,
+                        Null_Unbounded_String,
+                        Null_Unbounded_String,
+                        Null_Unbounded_String,
+                        Builder.Socket));
 
-                     Create (List, Slice (Args (Cmd), 4), ";");
-
-                     Execute_Process : declare
-                        Language : constant String := Slice (Args (Cmd), 2);
-                        Out_File : constant String :=
-                                     Get_Output_File (Builder);
-                        Dep_File : constant String := Slice (Args (Cmd), 3);
-                        O        : Argument_List := Get_Args (Builder, List);
-                     begin
-                        Output_Compilation (O (O'Last).all);
-
-                        Pid := Non_Blocking_Spawn
-                          (Get_Driver (Builder, Language), O, Out_File);
-
-                        Send_Ack (Builder.Channel, Pid_To_Integer (Pid));
-
-                        if Debug then
-                           Put_Line
-                             ("#   pid"
-                              & Integer'Image (Pid_To_Integer (Pid)));
-                           Put_Line ("#   dep_file " & Dep_File);
-                           Put_Line ("#   out_file " & Out_File);
-                        end if;
-
-                        Job_Set.Insert
-                          (Job_Data'(Pid_To_Integer (Pid),
-                           To_Unbounded_String
-                             (if Is_Absolute_Path (Dir) then "" else Dir),
-                           To_Unbounded_String (Dep_File),
-                           To_Unbounded_String (Out_File),
-                           Builder.Socket));
-
-                        if Debug then
-                           Put_Line
-                             ("# move to directory "
-                              & Work_Directory (Builder));
-                        end if;
-
-                        Set_Directory (Work_Directory (Builder));
-
-                        Mutex.Release;
-
-                        for K in O'Range loop
-                           Free (O (K));
-                        end loop;
-
-                        Jobs.Increment;
-                     end Execute_Process;
-                  end Setup_Execute_Process;
+                     Send_Ack (Builder.Channel, Id);
+                  end Record_Job;
 
                elsif Kind (Cmd) = FL then
                   null;
@@ -753,9 +546,348 @@ procedure Gprslave is
                   --  Not doing that could make the slave unresponding.
                   Close (Builder.Channel);
             end;
+
+            Mutex.Release;
          end if;
       end loop Handle_Commands;
    end Protocol_Handler;
+
+   ---------------------
+   -- Run_Compilation --
+   ---------------------
+
+   task body Run_Compilation is
+
+      function Get_Driver
+        (Builder : Build_Master; Language : String) return String;
+      --  Returns the compiler driver for the given language and the current
+      --  target as retreived from the initial handshake context exchange.
+
+      function Get_Output_File (Builder : Build_Master) return String;
+      --  Returns a unique output file
+
+      procedure Output_Compilation (File : String);
+      --  Output compilation information
+
+      package Drivers_Cache is new Containers.Indefinite_Hashed_Maps
+        (String, String,
+         Ada.Strings.Hash_Case_Insensitive,
+         Ada.Strings.Equal_Case_Insensitive);
+
+      Cache : Drivers_Cache.Map;
+
+      ----------------
+      -- Get_Driver --
+      ----------------
+
+      function Get_Driver
+        (Builder : Build_Master; Language : String) return String
+      is
+         Key                : constant String :=
+                                To_String (Builder.Target) & '+' & Language;
+         Position           : constant Drivers_Cache.Cursor :=
+                                Cache.Find (Key);
+         Compilers, Filters : Compiler_Lists.List;
+         Requires_Comp      : Boolean;
+         Comp               : Compiler_Access;
+         Project_Node_Tree  : Project_Node_Tree_Ref;
+         Project_Node       : Project_Node_Id := Empty_Node;
+         Project_Tree       : Project_Tree_Ref;
+         Project            : Project_Id;
+         Env                : Environment;
+         Success            : Boolean;
+         Driver             : Unbounded_String := To_Unbounded_String (Key);
+      begin
+         if Drivers_Cache.Has_Element (Position) then
+            return Drivers_Cache.Element (Position);
+
+         else
+            Project_Node_Tree := new Project_Node_Tree_Data;
+
+            --  Generate the configuration project for this language and target
+
+            Parse_Config_Parameter
+              (Base              => Base,
+               Config            => Language,
+               Compiler          => Comp,
+               Requires_Compiler => Requires_Comp);
+
+            if Requires_Comp then
+               Filters.Append (Comp);
+            else
+               Compilers.Append (Comp);
+            end if;
+
+            Complete_Command_Line_Compilers
+              (Base,
+               Selected_Targets_Set,
+               Filters,
+               Compilers);
+
+            Generate_Configuration
+              (Base, Compilers, "slave_tmp.cgpr", To_String (Builder.Target));
+
+            Prj.Tree.Initialize (Env, Prj.Gprbuild_Flags);
+            Prj.Tree.Initialize (Project_Node_Tree);
+            Prj.Initialize (Prj.No_Project_Tree);
+
+            Prj.Env.Initialize_Default_Project_Path
+              (Env.Project_Path, Target_Name => To_String (Builder.Target));
+
+            --  Load the configuration project
+
+            Prj.Part.Parse
+              (Project_Node_Tree, Project_Node,
+               "slave_tmp.cgpr",
+               Errout_Handling   => Prj.Part.Finalize_If_Error,
+               Packages_To_Check => null,
+               Is_Config_File    => True,
+               Target_Name       => To_String (Builder.Target),
+               Env               => Env);
+
+            Project_Tree := new Project_Tree_Data;
+            Prj.Initialize (Project_Tree);
+
+            Proc.Process
+              (Project_Tree, Project, null, Success,
+               Project_Node, Project_Node_Tree, Env);
+
+            if not Success then
+               return Key;
+            end if;
+
+            --  Parse it to find the driver for this language
+
+            Look_Driver : declare
+               Pcks : Package_Table.Table_Ptr renames
+                        Project_Tree.Shared.Packages.Table;
+               Pck  : Package_Id := Project.Decl.Packages;
+            begin
+               Look_Compiler_Package : while Pck /= No_Package loop
+                  if Pcks (Pck).Decl /= No_Declarations
+                    and then Pcks (Pck).Name = Name_Compiler
+                  then
+                     --  Look for the Driver ("<language>") attribute
+
+                     declare
+                        Id : Array_Id := Pcks (Pck).Decl.Arrays;
+                     begin
+                        while Id /= No_Array loop
+                           declare
+                              V : constant Array_Data :=
+                                    Project_Tree.Shared.Arrays.Table (Id);
+                           begin
+                              if V.Name = Name_Driver
+                                and then V.Value /= No_Array_Element
+                              then
+                                 --  Check if element is for the given
+                                 --  language, and if so return the
+                                 --  corresponding value.
+
+                                 declare
+                                    E : constant Array_Element :=
+                                          Project_Tree.Shared.
+                                            Array_Elements.Table (V.Value);
+                                 begin
+                                    if Get_Name_String (E.Index) =
+                                      To_Lower (Language)
+                                    then
+                                       Driver := To_Unbounded_String
+                                         (Get_Name_String (E.Value.Value));
+                                       exit Look_Compiler_Package;
+                                    end if;
+                                 end;
+                              end if;
+                           end;
+
+                           Id := Project_Tree.Shared.Arrays.Table (Id).Next;
+                        end loop;
+                     end;
+                  end if;
+
+                  Pck := Pcks (Pck).Next;
+               end loop Look_Compiler_Package;
+            end Look_Driver;
+
+            --  Record this driver for the language and target into the cache
+
+            Cache.Insert (Key, To_String (Driver));
+
+            --  Clean-up and free project structure
+
+            Directories.Delete_File ("slave_tmp.cgpr");
+
+            return To_String (Driver);
+         end if;
+
+      exception
+         when others =>
+            --  Be sure we never propagate an exception from this routine, in
+            --  case of problem we just return the key, this will be used as an
+            --  executable and will be reported to the master as a proper build
+            --  failure.
+            return Key;
+      end Get_Driver;
+
+      ---------------------
+      -- Get_Output_File --
+      ---------------------
+
+      function Get_Output_File (Builder : Build_Master) return String is
+         Filename : constant String := "output.slave." & Image (Index);
+      begin
+         Index := Index + 1;
+         return Compose (Work_Directory (Builder), Filename);
+      end Get_Output_File;
+
+      ------------------------
+      -- Output_Compilation --
+      ------------------------
+
+      procedure Output_Compilation (File : String) is
+         RDL : constant Natural := Root_Directory'Length;
+      begin
+         if Verbose then
+            if File'Length > RDL
+              and then File (File'First .. File'First + RDL - 1)
+              = Root_Directory.all
+            then
+               Text_IO.Put_Line
+                 ("Compiling: " & File (File'First + RDL + 1 .. File'Last));
+            else
+               Text_IO.Put_Line ("Compiling: " & File);
+            end if;
+         end if;
+      end Output_Compilation;
+
+      Job : Job_Data;
+   begin
+      loop
+         --  Launch a new compiilation only if the maximum of simultaneous
+         --  process has not yet been reached.
+
+         Running_Jobs.Wait_Less_Threshold;
+
+         To_Run.Pop (Job);
+
+         Process : declare
+            Builder : constant Build_Master := Builders.Get (Job.Build_Sock);
+            Dir     : constant String := Slice (Args (Job.Cmd), 1);
+            List    : Slice_Set;
+            Pid     : Process_Id;
+         begin
+            --  Enter a critical section to:
+            --     - move to directory where the command is executed
+            --     - execute the compilation command
+            --     - register a new job and acknowledge
+            --     - move back to working directory
+
+            Mutex.Seize;
+
+            Set_Directory (Work_Directory (Builder));
+
+            --  Create/Move to object dir if any, note that if we
+            --  have an absolute path name here it is because the
+            --  Build_Root is probably not properly set. Try to fail
+            --  gracefully to report a proper error message to the
+            --  build master.
+            --
+            --  If we have an absolute pathname, just start the
+            --  process into the to directory. The output file will
+            --  be created there and will be reported to the master.
+
+            if Dir /= "" and then not Is_Absolute_Path (Dir) then
+               if not Is_Directory (Dir) then
+                  Create_Directory (Dir);
+               end if;
+            end if;
+
+            if Debug then
+               Put_Line ("# move to directory " & Dir);
+            end if;
+
+            Set_Directory (Dir);
+
+            Create (List, Slice (Args (Job.Cmd), 4), ";");
+
+            Execute : declare
+               Language : constant String := Slice (Args (Job.Cmd), 2);
+               Out_File : constant String :=
+                            Get_Output_File (Builder);
+               Dep_File : constant String := Slice (Args (Job.Cmd), 3);
+               O        : Argument_List := Get_Args (Builder, List);
+            begin
+               Output_Compilation (O (O'Last).all);
+
+               Pid := Non_Blocking_Spawn
+                 (Get_Driver (Builder, Language), O, Out_File);
+
+               if Debug then
+                  Put_Line
+                    ("#   pid"
+                     & Integer'Image (Pid_To_Integer (Pid)));
+                  Put_Line ("#   dep_file " & Dep_File);
+                  Put_Line ("#   out_file " & Out_File);
+               end if;
+
+               Job.Pid      := Pid_To_Integer (Pid);
+               Job.Dep_File := To_Unbounded_String (Dep_File);
+               Job.Output   := To_Unbounded_String (Out_File);
+               Job.Dep_Dir  := To_Unbounded_String
+                 ((if Is_Absolute_Path (Dir) then "" else Dir));
+
+               Job_Set.Insert (Job);
+
+               if Debug then
+                  Put_Line ("# move to directory " & Work_Directory (Builder));
+               end if;
+
+               Mutex.Release;
+
+               for K in O'Range loop
+                  Free (O (K));
+               end loop;
+
+               Running_Jobs.Increment;
+            end Execute;
+         exception
+            when E : others =>
+               Mutex.Release;
+               if Debug then
+                  Put_Line
+                    ("# Error in Run_Compilation: "
+                     & Exception_Information (E));
+               end if;
+         end Process;
+      end loop;
+   end Run_Compilation;
+
+   ------------
+   -- To_Run --
+   ------------
+
+   protected body To_Run is
+
+      ----------
+      -- Push --
+      ----------
+
+      procedure Push (Job : Job_Data) is
+      begin
+         Set.Append (Job);
+      end Push;
+
+      ---------
+      -- Pop --
+      ---------
+
+      entry Pop (Job : out Job_Data) when not Set.Is_Empty is
+      begin
+         Job := Set.First_Element;
+         Set.Delete_First;
+      end Pop;
+
+   end To_Run;
 
    ---------------------
    -- Wait_Completion --
@@ -781,22 +913,25 @@ procedure Gprslave is
 
       Pid     : Process_Id;
       Success : Boolean;
-      Data    : Job_Data;
+      Job     : Job_Data;
       Pos     : Job_Data_Set.Cursor;
       Builder : Build_Master;
+
    begin
       loop
-         Jobs.Wait_Non_Zero;
+         --  Wait for a job to complete only if there is job running
+
+         Running_Jobs.Wait_Non_Zero;
 
          Wait_Process (Pid, Success);
 
          --  Set Pid (the key)
 
-         Data.Pid := Pid_To_Integer (Pid);
+         Job.Pid := Pid_To_Integer (Pid);
 
          --  Look for it into the set
 
-         Pos := Job_Set.Find (Data);
+         Pos := Job_Set.Find (Job);
 
          --  Note that if there is not such element it could be because the
          --  build master has been killed before the end of the compilation.
@@ -804,11 +939,11 @@ procedure Gprslave is
          --  Job_Set is clear. See Main_Loop in gprslave's body.
 
          if Job_Data_Set.Has_Element (Pos) then
-            Data := Job_Data_Set.Element (Pos);
+            Job := Job_Data_Set.Element (Pos);
 
             --  Now get the corresponding build master
 
-            Builder := Builders.Get (Data.Build_Sock);
+            Builder := Builders.Get (Job.Build_Sock);
             --  ???What to do if the builder is not found???
 
             --  Enter a critical section to:
@@ -817,12 +952,16 @@ procedure Gprslave is
 
             Mutex.Seize;
 
+            if Debug then
+               Put_Line ("# job " & Image (Job.Id) & " terminated");
+            end if;
+
             declare
                DS       : Character renames Directory_Separator;
-               Dep_Dir  : constant String := To_String (Data.Dep_Dir);
-               Dep_File : constant String := To_String (Data.Dep_File);
+               Dep_Dir  : constant String := To_String (Job.Dep_Dir);
+               Dep_File : constant String := To_String (Job.Dep_File);
             begin
-               Send_Output (Builder.Channel, To_String (Data.Output));
+               Send_Output (Builder.Channel, To_String (Job.Output));
 
                if Success and then Builder.Sync /= Protocol.File then
                   --  No Dep_File to send back if the compilation was not
@@ -841,18 +980,24 @@ procedure Gprslave is
             end if;
 
             if Success then
-               Send_Ok (Builder.Channel, Pid_To_Integer (Pid));
+               Send_Ok (Builder.Channel, Job.Id);
             else
-               Send_Ko (Builder.Channel, Pid_To_Integer (Pid));
+               Send_Ko (Builder.Channel, Job.Id);
             end if;
 
             Mutex.Release;
 
-            Jobs.Decrement;
+            Running_Jobs.Decrement;
+
+         else
+            if Debug then
+               Put_Line ("# unknown job data for pid");
+            end if;
          end if;
       end loop;
    exception
       when E : others =>
+         Put_Line ("Unrecoverable error: Wait_Completion.");
          Put_Line (Exception_Information (E));
          OS_Exit (1);
    end Wait_Completion;
@@ -906,13 +1051,11 @@ procedure Gprslave is
          Put_Line ("Compiling for    : " & To_String (Builder.Target));
       end if;
 
+      Mutex.Seize;
+
       --  Move to root directory before creating a new project environment
 
       Set_Directory (Root_Directory.all);
-
-      Set_Rewrite
-        (Builder.Channel,
-         From => Work_Directory (Builder), To => Full_Path_Tag);
 
       if not Exists (To_String (Builder.Build_Env)) then
          if Debug then
@@ -938,13 +1081,21 @@ procedure Gprslave is
          Create_Directory (To_String (Builder.Project_Name));
       end if;
 
+      Mutex.Release;
+
+      --  Configure slave, note that this does not need to be into the critical
+      --  section has the builder is not yet known in the system. At this point
+      --  no compilation can be received for this slave anyway.
+
+      Set_Rewrite
+        (Builder.Channel,
+         From => Work_Directory (Builder), To => Full_Path_Tag);
+
       Send_Slave_Config
         (Builder.Channel, Max_Processes,
          Compose (Root_Directory.all, To_String (Builder.Build_Env)));
 
-      --  Now move into the work directory (Root_Directory & Project_Name)
-
-      Set_Directory (Work_Directory (Builder));
+      --  Register the new builder
 
       Builders.Insert (Builder);
    end Wait_For_Master;
@@ -994,6 +1145,14 @@ begin
          & ":" & Image (Long_Integer (Address.Port)));
       Put_Line ("  max processes :" & Integer'Image (Max_Processes));
       Flush;
+   end if;
+
+   --  Initialize the host key used to create unique pid
+
+   Slave_Id := Get_Slave_Id;
+
+   if Debug then
+      Put_Line ("# slave id " & Image (Slave_Id));
    end if;
 
    Listen_Socket (Server);

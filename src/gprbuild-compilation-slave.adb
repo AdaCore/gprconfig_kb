@@ -71,11 +71,11 @@ package body Gprbuild.Compilation.Slave is
    --  Ack transient signal stored into this variable
 
    protected Wait_Ack is
-      procedure Set (Pid : Integer);
-      entry Get (Pid : out Integer);
+      procedure Set (Pid : Remote_Id);
+      entry Get (Pid : out Remote_Id);
    private
       Is_Set : Boolean := False;
-      P      : Integer;
+      Id     : Remote_Id;
    end Wait_Ack;
 
    task type Wait_Remote;
@@ -626,7 +626,7 @@ package body Gprbuild.Compilation.Slave is
          end if;
       end Filter_String;
 
-      Pid : Integer;
+      Pid : Remote_Id;
 
    begin
       if Slaves (S).Data.Sync = File then
@@ -738,9 +738,9 @@ package body Gprbuild.Compilation.Slave is
       -- Set --
       ---------
 
-      procedure Set (Pid : Integer) is
+      procedure Set (Pid : Remote_Id) is
       begin
-         P := Pid;
+         Id := Pid;
          Is_Set := True;
       end Set;
 
@@ -748,9 +748,9 @@ package body Gprbuild.Compilation.Slave is
       -- Get --
       ---------
 
-      entry Get (Pid : out Integer) when Is_Set is
+      entry Get (Pid : out Remote_Id) when Is_Set is
       begin
-         Pid := P;
+         Pid := Id;
          Is_Set := False;
       end Get;
 
@@ -764,7 +764,7 @@ package body Gprbuild.Compilation.Slave is
       use type Slave_S.Cursor;
 
       Proc         : Id;
-      Pid          : Integer;
+      Pid          : Remote_Id;
       Selector     : Selector_Type;
       Status       : Selector_Status;
       R_Set, W_Set : Socket_Set_Type;
@@ -825,8 +825,8 @@ package body Gprbuild.Compilation.Slave is
 
                   elsif Kind (Cmd) = AK then
                      declare
-                        Pid : constant Integer :=
-                                Integer'Value (Slice (Args (Cmd), 1));
+                        Pid : constant Remote_Id :=
+                                Remote_Id'Value (Slice (Args (Cmd), 1));
                      begin
                         Slaves (S).Current := Slaves (S).Current + 1;
                         Wait_Ack.Set (Pid);
