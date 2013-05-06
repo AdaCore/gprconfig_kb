@@ -32,9 +32,9 @@ package Gprbuild.Compilation.Protocol is
    Wrong_Command : exception;
    --  Raised when a command cannot be parsed
 
-   Full_Path_Tag : constant String := "<>";
-   --  The string replacing root diretory of full path name, see Set_Write
-   --  below.
+   WD_Path_Tag : constant String := "<1>";
+   --  The string replacing root working diretory of full path name, see
+   --  Set_Rewrite below.
 
    Any_OS : constant String := "any";
    --  Used when OS check is not necessary, for example gprclean does not need

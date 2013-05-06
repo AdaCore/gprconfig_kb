@@ -379,7 +379,7 @@ package body Gprbuild.Compilation.Protocol is
 
       for K in Options'Range loop
          if Filter /= null then
-            R_Cmd := R_Cmd & Filter (Options (K).all, Full_Path_Tag);
+            R_Cmd := R_Cmd & Filter (Options (K).all, WD_Path_Tag);
          else
             R_Cmd := R_Cmd & Options (K).all;
          end if;

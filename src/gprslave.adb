@@ -269,7 +269,7 @@ procedure Gprslave is
       for K in Args'Range loop
          declare
             A : constant String := Slice (Slices, Slice_Number (K));
-            P : constant Natural := Fixed.Index (A, Full_Path_Tag);
+            P : constant Natural := Fixed.Index (A, WD_Path_Tag);
          begin
             if P = 0 then
                Args (K) := new String'(A);
@@ -277,7 +277,8 @@ procedure Gprslave is
                Args (K) := new String'
                  (A (A'First .. P - 1)
                   & Work_Directory (Builder)
-                  & Directory_Separator & A (P + 2 .. A'Last));
+                  & Directory_Separator
+                  & A (P + WD_Path_Tag'Length .. A'Last));
             end if;
          end;
       end loop;
@@ -1089,7 +1090,7 @@ procedure Gprslave is
 
       Set_Rewrite
         (Builder.Channel,
-         From => Work_Directory (Builder), To => Full_Path_Tag);
+         From => Work_Directory (Builder), To => WD_Path_Tag);
 
       Send_Slave_Config
         (Builder.Channel, Max_Processes,

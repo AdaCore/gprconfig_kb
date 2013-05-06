@@ -571,7 +571,7 @@ package body Gprbuild.Compilation.Slave is
       --  Get a free slave for conducting the compilation
 
       function Filter_String
-        (O : String; Sep : String := Full_Path_Tag) return String;
+        (O : String; Sep : String := WD_Path_Tag) return String;
       --  Make O PATH relative to RD. For option -gnatec and -gnatem makes
       --  the specified filename absolute in the slave environment and send
       --  the file to the slave.
@@ -582,7 +582,7 @@ package body Gprbuild.Compilation.Slave is
 
       function Filter_String
         (O   : String;
-         Sep : String := Full_Path_Tag) return String
+         Sep : String := WD_Path_Tag) return String
       is
          Pos : constant Natural := Index (O, RD);
       begin
@@ -643,7 +643,7 @@ package body Gprbuild.Compilation.Slave is
          --  using a shared directory.
 
          Set_Rewrite
-           (Slaves (S).Channel, From => RD, To => Protocol.Full_Path_Tag);
+           (Slaves (S).Channel, From => RD, To => Protocol.WD_Path_Tag);
 
          Send_Exec
            (Slaves (S).Channel,
