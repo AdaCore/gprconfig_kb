@@ -65,13 +65,22 @@ procedure Gprslave is
       Sync         : Sync_Kind;
    end record;
 
+   function "<" (B1, B2 : Build_Master)
+      return Boolean is (To_C (B1.Socket) < To_C (B2.Socket));
+
+   function "="
+     (B1, B2 : Build_Master) return Boolean is (B1.Socket = B2.Socket);
+
+   package Builder_Set is new Containers.Ordered_Sets (Build_Master);
+
    --  Representation of a job data
 
    type Job_Data is record
-      Pid      : Integer;
-      Dir      : Unbounded_String;
-      Dep_File : Unbounded_String;
-      Output   : Unbounded_String;
+      Pid        : Integer;
+      Dep_Dir    : Unbounded_String;
+      Dep_File   : Unbounded_String;
+      Output     : Unbounded_String;
+      Build_Sock : Socket_Type; -- key used to get the corresponding builder
    end record;
 
    function "<" (J1, J2 : Job_Data) return Boolean is (J1.Pid < J2.Pid);
@@ -79,7 +88,8 @@ procedure Gprslave is
 
    package Job_Data_Set is new Containers.Ordered_Sets (Job_Data);
 
-   function Get_Args (Slices : Slice_Set) return Argument_List;
+   function Get_Args
+     (Builder : Build_Master; Slices : Slice_Set) return Argument_List;
    --  Returns an Argument_List corresponding to the Slice_Set
 
    procedure Wait_For_Master;
@@ -108,6 +118,12 @@ procedure Gprslave is
    --  target as retreived from the initial handshake context exchange.
 
    task Wait_Completion;
+   --  Waiting for job completion and sending back the response to the build
+   --  masters.
+
+   task Protocol_Handler;
+   --  Waiting for incoming requests from the masters, take corresponding
+   --  actions.
 
    --  A mutex to avoid interweaved responses on the channel
 
@@ -117,6 +133,27 @@ procedure Gprslave is
    private
       Free : Boolean := True;
    end Mutex;
+
+   --  Protected builders data set (used by environment task and the
+   --  Protocol_Handler).
+
+   protected Builders is
+
+      procedure Insert (Builder : Build_Master);
+      --  Add Builder into the set
+
+      procedure Remove (Builder : Build_Master);
+      --  Remove Builder from the set
+
+      function Get (Socket : Socket_Type) return Build_Master;
+      --  Get the builder using Socket
+
+      entry Get_Socket_Set (Socket_Set : out Socket_Set_Type);
+      --  Get a socket set for all builders
+
+   private
+      Builders : Builder_Set.Set;
+   end Builders;
 
    package Drivers_Cache is new Containers.Indefinite_Hashed_Maps
      (String, String,
@@ -145,18 +182,73 @@ procedure Gprslave is
    Server  : Socket_Type;
    Index   : Long_Integer := 0;
 
-   Builder : Build_Master;
-
    --  Knowledge base
 
    Base                 : Knowledge_Base;
    Selected_Targets_Set : Targets_Set_Id;
 
    --------------
+   -- Builders --
+   --------------
+
+   protected body Builders is
+
+      ---------
+      -- Get --
+      ---------
+
+      function Get (Socket : Socket_Type) return Build_Master is
+         Builder : Build_Master;
+         Pos     : Builder_Set.Cursor;
+      begin
+         Builder.Socket := Socket;
+         Pos := Builders.Find (Builder);
+
+         if Builder_Set.Has_Element (Pos) then
+            Builder := Builder_Set.Element (Pos);
+         end if;
+         return Builder;
+      end Get;
+
+      --------------------
+      -- Get_Socket_Set --
+      --------------------
+
+      entry Get_Socket_Set (Socket_Set : out Socket_Set_Type)
+        when not Builders.Is_Empty is
+      begin
+         Empty (Socket_Set);
+         for B of Builders loop
+            Set (Socket_Set, B.Socket);
+         end loop;
+      end Get_Socket_Set;
+      ------------
+      -- Insert --
+      ------------
+
+      procedure Insert (Builder : Build_Master) is
+      begin
+         Builders.Insert (Builder);
+      end Insert;
+
+      ------------
+      -- Remove --
+      ------------
+
+      procedure Remove (Builder : Build_Master) is
+      begin
+         Builders.Delete (Builder);
+      end Remove;
+
+   end Builders;
+
+   --------------
    -- Get_Args --
    --------------
 
-   function Get_Args (Slices : Slice_Set) return Argument_List is
+   function Get_Args
+     (Builder : Build_Master; Slices : Slice_Set) return Argument_List
+   is
       Args : Argument_List (1 .. Integer (Slice_Count (Slices)));
    begin
       for K in Args'Range loop
@@ -475,20 +567,210 @@ procedure Gprslave is
          OS_Exit (1);
    end Parse_Command_Line;
 
+   ----------------------
+   -- Protocol_Handler --
+   ----------------------
+
+   task body Protocol_Handler is
+      Selector     : Selector_Type;
+      R_Socket_Set : Socket_Set_Type;
+      Empty_Set    : Socket_Set_Type;
+      Status       : Selector_Status;
+      Builder      : Build_Master;
+      Socket       : Socket_Type;
+   begin
+      --  Create selector
+
+      Create_Selector (Selector);
+
+      Empty (Empty_Set);
+      --  For now do not check write status
+
+      Handle_Commands : loop
+
+         --  Wait for some commands from one of the build master
+
+         Builders.Get_Socket_Set (R_Socket_Set);
+
+         Check_Selector (Selector, R_Socket_Set, Empty_Set, Status);
+
+         Get (R_Socket_Set, Socket);
+
+         if Socket /= No_Socket then
+            Builder := Builders.Get (Socket);
+
+            declare
+               Cmd  : constant Command := Get_Command (Builder.Channel);
+               Pid  : Process_Id;
+               List : Slice_Set;
+            begin
+               if Debug then
+                  Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
+
+                  declare
+                     List : constant Slice_Set := Args (Cmd);
+                  begin
+                     for K in 1 .. Slice_Count (List) loop
+                        Put (", " & Slice (List, K));
+                     end loop;
+                  end;
+                  New_Line;
+               end if;
+
+               --  Move to project environment, which is: Root_Directory &
+               --  Project_Name. We can do this only now since we know that
+               --  at this point the sources have been synchronized.
+
+               if Kind (Cmd) = EX then
+                  Setup_Execute_Process : declare
+                     Dir : constant String := Slice (Args (Cmd), 1);
+                  begin
+                     --  Enter a critical section to:
+                     --     - move to directory where the command is executed
+                     --     - execute the compilation command
+                     --     - register a new job and acknowledge
+                     --     - move back to working directory
+
+                     Mutex.Seize;
+
+                     --  Create/Move to object dir if any, note that if we
+                     --  have an absolute path name here it is because the
+                     --  Build_Root is probably not properly set. Try to fail
+                     --  gracefully to report a proper error message to the
+                     --  build master.
+                     --
+                     --  If we have an absolute pathname, just start the
+                     --  process into the to directory. The output file will
+                     --  be created there and will be reported to the master.
+
+                     if Dir /= "" and then not Is_Absolute_Path (Dir) then
+                        if not Is_Directory (Dir) then
+                           Create_Directory (Dir);
+                        end if;
+                     end if;
+
+                     if Debug then
+                        Put_Line ("# move to directory " & Dir);
+                     end if;
+
+                     Set_Directory (Dir);
+
+                     Create (List, Slice (Args (Cmd), 4), ";");
+
+                     Execute_Process : declare
+                        Language : constant String := Slice (Args (Cmd), 2);
+                        Out_File : constant String :=
+                                     Get_Output_File (Builder);
+                        Dep_File : constant String := Slice (Args (Cmd), 3);
+                        O        : Argument_List := Get_Args (Builder, List);
+                     begin
+                        Output_Compilation (O (O'Last).all);
+
+                        Pid := Non_Blocking_Spawn
+                          (Get_Driver (Builder, Language), O, Out_File);
+
+                        Send_Ack (Builder.Channel, Pid_To_Integer (Pid));
+
+                        if Debug then
+                           Put_Line
+                             ("#   pid"
+                              & Integer'Image (Pid_To_Integer (Pid)));
+                           Put_Line ("#   dep_file " & Dep_File);
+                           Put_Line ("#   out_file " & Out_File);
+                        end if;
+
+                        Job_Set.Insert
+                          (Job_Data'(Pid_To_Integer (Pid),
+                           To_Unbounded_String
+                             (if Is_Absolute_Path (Dir) then "" else Dir),
+                           To_Unbounded_String (Dep_File),
+                           To_Unbounded_String (Out_File),
+                           Builder.Socket));
+
+                        if Debug then
+                           Put_Line
+                             ("# move to directory "
+                              & Work_Directory (Builder));
+                        end if;
+
+                        Set_Directory (Work_Directory (Builder));
+
+                        Mutex.Release;
+
+                        for K in O'Range loop
+                           Free (O (K));
+                        end loop;
+
+                        Jobs.Increment;
+                     end Execute_Process;
+                  end Setup_Execute_Process;
+
+               elsif Kind (Cmd) = FL then
+                  null;
+
+               elsif Kind (Cmd) = CU then
+                  Clean_Up_Request : begin
+                     Builder.Project_Name :=
+                       To_Unbounded_String (Slice (Args (Cmd), 1));
+
+                     if Exists (Work_Directory (Builder)) then
+                        if Verbose then
+                           Put_Line ("Delete " & Work_Directory (Builder));
+                        end if;
+
+                        Delete_Tree (Work_Directory (Builder));
+                     end if;
+
+                     Send_Ok (Builder.Channel);
+
+                  exception
+                     when others =>
+                        Send_Ko (Builder.Channel);
+                  end Clean_Up_Request;
+
+               elsif Kind (Cmd) = EC then
+                  --  No more compilation for this project
+                  Close (Builder.Channel);
+                  Builders.Remove (Builder);
+
+                  if Verbose then
+                     Put_Line
+                       ("End project : " & To_String (Builder.Project_Name));
+                  end if;
+
+               else
+                  raise Constraint_Error with "unexpected command "
+                    & Command_Kind'Image (Kind (Cmd));
+               end if;
+
+            exception
+               when E : others =>
+                  Put_Line ("Error: " & Exception_Message (E));
+
+                  --  In case of an exception, communication endded
+                  --  prematurately or some wrong command received, make sure
+                  --  we clean the slave state and we listen to new commands.
+                  --  Not doing that could make the slave unresponding.
+                  Close (Builder.Channel);
+            end;
+         end if;
+      end loop Handle_Commands;
+   end Protocol_Handler;
+
    ---------------------
    -- Wait_Completion --
    ---------------------
 
    task body Wait_Completion is
 
-      procedure Send_Dep_File (Filename : String);
+      procedure Send_Dep_File (Builder : Build_Master; Filename : String);
       --  Send Filename back to the build master
 
       -------------------
       -- Send_Dep_File --
       -------------------
 
-      procedure Send_Dep_File (Filename : String) is
+      procedure Send_Dep_File (Builder : Build_Master; Filename : String) is
       begin
          if Debug then
             Put_Line ("# send dep_file to master '" & Filename & ''');
@@ -501,6 +783,7 @@ procedure Gprslave is
       Success : Boolean;
       Data    : Job_Data;
       Pos     : Job_Data_Set.Cursor;
+      Builder : Build_Master;
    begin
       loop
          Jobs.Wait_Non_Zero;
@@ -523,6 +806,11 @@ procedure Gprslave is
          if Job_Data_Set.Has_Element (Pos) then
             Data := Job_Data_Set.Element (Pos);
 
+            --  Now get the corresponding build master
+
+            Builder := Builders.Get (Data.Build_Sock);
+            --  ???What to do if the builder is not found???
+
             --  Enter a critical section to:
             --    - send atomic response to build master
             --    - make sure the current directory is the work directory
@@ -531,7 +819,7 @@ procedure Gprslave is
 
             declare
                DS       : Character renames Directory_Separator;
-               Dir      : constant String := To_String (Data.Dir);
+               Dep_Dir  : constant String := To_String (Data.Dep_Dir);
                Dep_File : constant String := To_String (Data.Dep_File);
             begin
                Send_Output (Builder.Channel, To_String (Data.Output));
@@ -541,8 +829,10 @@ procedure Gprslave is
                   --  successful.
 
                   Send_Dep_File
-                    (Work_Directory (Builder)
-                     & (if Dir /= "" then DS & Dir else "") & DS & Dep_File);
+                    (Builder,
+                     Work_Directory (Builder)
+                     & (if Dep_Dir /= "" then DS & Dep_Dir else "")
+                     & DS & Dep_File);
                end if;
             end;
 
@@ -572,6 +862,7 @@ procedure Gprslave is
    ---------------------
 
    procedure Wait_For_Master is
+      Builder : Build_Master;
    begin
       --  Wait for a connection
 
@@ -647,11 +938,15 @@ procedure Gprslave is
          Create_Directory (To_String (Builder.Project_Name));
       end if;
 
-      Send_Slave_Config (Builder.Channel, Max_Processes, Root_Directory.all);
+      Send_Slave_Config
+        (Builder.Channel, Max_Processes,
+         Compose (Root_Directory.all, To_String (Builder.Build_Env)));
 
       --  Now move into the work directory (Root_Directory & Project_Name)
 
       Set_Directory (Work_Directory (Builder));
+
+      Builders.Insert (Builder);
    end Wait_For_Master;
 
    --------------------
@@ -705,166 +1000,6 @@ begin
 
    Main_Loop : loop
       Wait_For_Master;
-
-      --  We have a connection
-
-      Handle_Compilation : loop
-         --  Move to work directory
-
-         declare
-            Cmd  : constant Command := Get_Command (Builder.Channel);
-            Pid  : Process_Id;
-            List : Slice_Set;
-         begin
-            if Debug then
-               Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
-
-               declare
-                  List : constant Slice_Set := Args (Cmd);
-               begin
-                  for K in 1 .. Slice_Count (List) loop
-                     Put (", " & Slice (List, K));
-                  end loop;
-               end;
-               New_Line;
-            end if;
-
-            --  Move to project environment, which is:
-            --  Root_Directory & Project_Name. We can do this only now since we
-            --  know that at this point the sources have been synchronized.
-
-            if Kind (Cmd) = EX then
-               Setup_Execute_Process : declare
-                  Dir : constant String := Slice (Args (Cmd), 1);
-               begin
-                  --  Enter a critical section to:
-                  --     - move to directory where the command is executed
-                  --     - execute the compilation command
-                  --     - register a new job and acknowledge
-                  --     - move back to working directory
-
-                  Mutex.Seize;
-
-                  --  Create/Move to object dir if any, note that if we have
-                  --  an absolute path name here it is because the Build_Root
-                  --  is probably not properly set. Try to fail gracefully to
-                  --  report a proper error message to the build master.
-                  --
-                  --  If we have an absolute pathname, just start the process
-                  --  into the to directory. The output file will be created
-                  --  there and will be reported to the master.
-
-                  if Dir /= "" and then not Is_Absolute_Path (Dir) then
-                     if not Is_Directory (Dir) then
-                        Create_Directory (Dir);
-                     end if;
-                  end if;
-
-                  if Debug then
-                     Put_Line ("# move to directory " & Dir);
-                  end if;
-
-                  Set_Directory (Dir);
-
-                  Create (List, Slice (Args (Cmd), 4), ";");
-
-                  Execute_Process : declare
-                     Language : constant String := Slice (Args (Cmd), 2);
-                     Out_File : constant String := Get_Output_File (Builder);
-                     Dep_File : constant String := Slice (Args (Cmd), 3);
-                     O        : Argument_List := Get_Args (List);
-                  begin
-                     Output_Compilation (O (O'Last).all);
-
-                     Pid := Non_Blocking_Spawn
-                       (Get_Driver (Builder, Language), O, Out_File);
-
-                     Send_Ack (Builder.Channel, Pid_To_Integer (Pid));
-
-                     if Debug then
-                        Put_Line
-                          ("#   pid" & Integer'Image (Pid_To_Integer (Pid)));
-                        Put_Line ("#   dep_file " & Dep_File);
-                        Put_Line ("#   out_file " & Out_File);
-                     end if;
-
-                     Job_Set.Insert
-                       (Job_Data'(Pid_To_Integer (Pid),
-                        To_Unbounded_String
-                          (if Is_Absolute_Path (Dir) then "" else Dir),
-                        To_Unbounded_String (Dep_File),
-                        To_Unbounded_String (Out_File)));
-
-                     if Debug then
-                        Put_Line
-                          ("# move to directory " & Work_Directory (Builder));
-                     end if;
-
-                     Set_Directory (Work_Directory (Builder));
-
-                     Mutex.Release;
-
-                     for K in O'Range loop
-                        Free (O (K));
-                     end loop;
-
-                     Jobs.Increment;
-                  end Execute_Process;
-               end Setup_Execute_Process;
-
-            elsif Kind (Cmd) = FL then
-               null;
-
-            elsif Kind (Cmd) = CU then
-               Clean_Up_Request : begin
-                  Builder.Project_Name :=
-                    To_Unbounded_String (Slice (Args (Cmd), 1));
-
-                  if Exists (Work_Directory (Builder)) then
-                     if Verbose then
-                        Put_Line ("Delete " & Work_Directory (Builder));
-                     end if;
-
-                     Delete_Tree (Work_Directory (Builder));
-                  end if;
-
-                  Send_Ok (Builder.Channel);
-
-               exception
-                  when others =>
-                     Send_Ko (Builder.Channel);
-               end Clean_Up_Request;
-
-            elsif Kind (Cmd) = EC then
-               --  No more compilation for this project
-               Close (Builder.Channel);
-               Job_Set.Clear;
-               Jobs.Reset;
-               exit Handle_Compilation;
-
-            else
-               raise Constraint_Error
-                 with "unexpected command " & Command_Kind'Image (Kind (Cmd));
-            end if;
-
-         exception
-            when E : others =>
-               Put_Line ("Error: " & Exception_Message (E));
-
-               --  In case of an exception, communication endded prematurately
-               --  or some wrong command received, make sure we clean the slave
-               --  state and we listen to new commands. Not doing that could
-               --  make the slave unresponding.
-               Close (Builder.Channel);
-               Job_Set.Clear;
-               Jobs.Reset;
-               exit Handle_Compilation;
-         end;
-      end loop Handle_Compilation;
-
-      if Verbose then
-         Put_Line ("End project : " & To_String (Builder.Project_Name));
-      end if;
    end loop Main_Loop;
 
 exception
