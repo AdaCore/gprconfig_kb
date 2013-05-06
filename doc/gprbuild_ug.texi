@@ -3371,11 +3371,10 @@ driver is @command{gprslave}, @pxref{GPRslave}.
 The requirement for the slaves are:
 
 @itemize @bullet
-@item The same OS as the build master must be used. This is enforced.
-@item The same build environment must be setup. This is not checked, but
-generally the build will fail if this rule is violated.
-@item The compilers used must be installed into the same prefix on all
-computers (build master and build slaves).
+@item The same build environment must be setup (same compiler version).
+@item The same libraries must be installed. That is, if the GNAT
+project makes use of external libraries the corresponding C headers or
+Ada units must be installed on the remote slaves.
 @end itemize
 
 When all the requirement are set, just launch the slave driver:
