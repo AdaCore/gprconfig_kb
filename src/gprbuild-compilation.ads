@@ -45,8 +45,16 @@ package Gprbuild.Compilation is
       entry Wait_Non_Zero;
       --  Returns when the counter is above zero
 
+      procedure Set_Threshold (Value : Positive);
+      --  Record a value that will act as a barrier to let a client enter
+
+      entry Wait_Less_Threshold;
+      --  Let a caller enter only if the current counter number is less than
+      --  the specified threshold.
+
    private
-      Counter : Natural := 0;
+      Threshold : Positive := 1;
+      Counter   : Natural := 0;
    end Shared_Counter;
 
 end Gprbuild.Compilation;

@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -64,6 +64,15 @@ package body Gprbuild.Compilation is
       end Reset;
 
       -------------------
+      -- Set_Threshold --
+      -------------------
+
+      procedure Set_Threshold (Value : Positive) is
+      begin
+         Threshold := Value;
+      end Set_Threshold;
+
+      -------------------
       -- Wait_Non_Zero --
       -------------------
 
@@ -71,6 +80,15 @@ package body Gprbuild.Compilation is
       begin
          null;
       end Wait_Non_Zero;
+
+      -------------------------
+      -- Wait_Less_Threshold --
+      -------------------------
+
+      entry Wait_Less_Threshold when Counter < Threshold is
+      begin
+         null;
+      end Wait_Less_Threshold;
 
    end Shared_Counter;
 
