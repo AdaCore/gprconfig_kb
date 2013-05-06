@@ -613,7 +613,7 @@ procedure Gprslave is
             Put_Line
               ("# create build environment directory '"
                & To_String (Builder.Build_Env)
-               & " in " & Current_Directory);
+               & "' in " & Current_Directory);
          end if;
 
          Create_Directory (To_String (Builder.Build_Env));
@@ -626,7 +626,7 @@ procedure Gprslave is
             Put_Line
               ("# create project directory '"
                & To_String (Builder.Project_Name)
-               & " in " & Current_Directory);
+               & "' in " & Current_Directory);
          end if;
 
          Create_Directory (To_String (Builder.Project_Name));
