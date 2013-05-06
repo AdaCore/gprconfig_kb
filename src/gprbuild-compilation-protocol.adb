@@ -229,7 +229,11 @@ package body Gprbuild.Compilation.Protocol is
          end if;
 
       else
-         raise Wrong_Command with Line;
+         if Line'Length > 0 then
+            raise Wrong_Command with Line;
+         else
+            raise Wrong_Command with "empty command line";
+         end if;
       end if;
 
       return Result;
