@@ -243,16 +243,18 @@ package body Gprbuild.Compilation.Protocol is
      (Channel      : Communication_Channel;
       Target       : out Unbounded_String;
       Project_Name : out Unbounded_String;
+      Build_Env    : out Unbounded_String;
       Sync         : out Sync_Kind)
    is
       Line : constant Command := Get_Command (Channel);
    begin
       if Line.Cmd = CX
-        and then Args_Count (Line) = 3
+        and then Args_Count (Line) = 4
       then
-         Target := To_Unbounded_String (Slice (Line.Args, 1));
+         Target       := To_Unbounded_String (Slice (Line.Args, 1));
          Project_Name := To_Unbounded_String (Slice (Line.Args, 2));
-         Sync := Sync_Kind'Value (Slice (Line.Args, 3));
+         Build_Env    := To_Unbounded_String (Slice (Line.Args, 3));
+         Sync         := Sync_Kind'Value (Slice (Line.Args, 4));
       else
          raise Wrong_Command
            with "Expected CX found " & Command_Kind'Image (Line.Cmd);
@@ -334,11 +336,13 @@ package body Gprbuild.Compilation.Protocol is
      (Channel      : Communication_Channel;
       Target       : String;
       Project_Name : String;
+      Build_Env    : String;
       Sync         : Sync_Kind) is
    begin
       String'Output
         (Channel.Channel,
          Command_Kind'Image (CX) & Target & Args_Sep & Project_Name
+         & Args_Sep & Build_Env
          & Args_Sep & Sync_Kind'Image (Sync));
    end Send_Context;
 

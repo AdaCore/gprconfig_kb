@@ -119,6 +119,7 @@ package Gprbuild.Compilation.Protocol is
      (Channel      : Communication_Channel;
       Target       : String;
       Project_Name : String;
+      Build_Env    : String;
       Sync         : Sync_Kind);
    --  Send initial context to the slave
 
@@ -165,6 +166,7 @@ package Gprbuild.Compilation.Protocol is
      (Channel      : Communication_Channel;
       Target       : out Unbounded_String;
       Project_Name : out Unbounded_String;
+      Build_Env    : out Unbounded_String;
       Sync         : out Sync_Kind);
    --  Wait for an initial context from a build master
 

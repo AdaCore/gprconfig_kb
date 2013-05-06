@@ -89,7 +89,7 @@ procedure Gprslave is
    function Image (Value : Long_Integer) return String;
    --  Return Value string representation without the leading space
 
-   function Work_Directory return String;
+   function Work_Directory (Builder : Build_Master) return String;
    --  Directory where compilation are to be done, this is the directory named
    --  after the project under the Root_Directory.
 
@@ -99,7 +99,7 @@ procedure Gprslave is
    procedure Output_Compilation (File : String);
    --  Output compilation information
 
-   function Get_Output_File return String;
+   function Get_Output_File (Builder : Build_Master) return String;
    --  Returns a unique output file
 
    function Get_Driver
@@ -169,7 +169,7 @@ procedure Gprslave is
             else
                Args (K) := new String'
                  (A (A'First .. P - 1)
-                  & Work_Directory
+                  & Work_Directory (Builder)
                   & Directory_Separator & A (P + 2 .. A'Last));
             end if;
          end;
@@ -333,11 +333,11 @@ procedure Gprslave is
    -- Get_Output_File --
    ---------------------
 
-   function Get_Output_File return String is
+   function Get_Output_File (Builder : Build_Master) return String is
       Filename : constant String := "output.slave." & Image (Index);
    begin
       Index := Index + 1;
-      return Compose (Work_Directory, Filename);
+      return Compose (Work_Directory (Builder), Filename);
    end Get_Output_File;
 
    -----------
@@ -541,7 +541,7 @@ procedure Gprslave is
                   --  successful.
 
                   Send_Dep_File
-                    (Work_Directory
+                    (Work_Directory (Builder)
                      & (if Dir /= "" then DS & Dir else "") & DS & Dep_File);
                end if;
             end;
@@ -584,7 +584,7 @@ procedure Gprslave is
       begin
          Get_Context
            (Builder.Channel, Builder.Target,
-            Builder.Project_Name, Builder.Sync);
+            Builder.Project_Name, Builder.Build_Env, Builder.Sync);
       exception
          when E : others =>
             if Verbose then
@@ -605,7 +605,21 @@ procedure Gprslave is
       Set_Directory (Root_Directory.all);
 
       Set_Rewrite
-        (Builder.Channel, From => Work_Directory, To => Full_Path_Tag);
+        (Builder.Channel,
+         From => Work_Directory (Builder), To => Full_Path_Tag);
+
+      if not Exists (To_String (Builder.Build_Env)) then
+         if Debug then
+            Put_Line
+              ("# create build environment directory '"
+               & To_String (Builder.Build_Env)
+               & " in " & Current_Directory);
+         end if;
+
+         Create_Directory (To_String (Builder.Build_Env));
+      end if;
+
+      Set_Directory (To_String (Builder.Build_Env));
 
       if not Exists (To_String (Builder.Project_Name)) then
          if Debug then
@@ -622,16 +636,18 @@ procedure Gprslave is
 
       --  Now move into the work directory (Root_Directory & Project_Name)
 
-      Set_Directory (Work_Directory);
+      Set_Directory (Work_Directory (Builder));
    end Wait_For_Master;
 
    --------------------
    -- Work_Directory --
    --------------------
 
-   function Work_Directory return String is
+   function Work_Directory (Builder : Build_Master) return String is
    begin
-      return Compose (Root_Directory.all, To_String (Builder.Project_Name));
+      return Compose
+        (Compose (Root_Directory.all, To_String (Builder.Build_Env)),
+         To_String (Builder.Project_Name));
    end Work_Directory;
 
 begin
@@ -739,7 +755,7 @@ begin
 
                   Execute_Process : declare
                      Language : constant String := Slice (Args (Cmd), 2);
-                     Out_File : constant String := Get_Output_File;
+                     Out_File : constant String := Get_Output_File (Builder);
                      Dep_File : constant String := Slice (Args (Cmd), 3);
                      O        : Argument_List := Get_Args (List);
                   begin
@@ -765,10 +781,11 @@ begin
                         To_Unbounded_String (Out_File)));
 
                      if Debug then
-                        Put_Line ("# move to directory " & Work_Directory);
+                        Put_Line
+                          ("# move to directory " & Work_Directory (Builder));
                      end if;
 
-                     Set_Directory (Work_Directory);
+                     Set_Directory (Work_Directory (Builder));
 
                      Mutex.Release;
 
@@ -788,12 +805,12 @@ begin
                   Builder.Project_Name :=
                     To_Unbounded_String (Slice (Args (Cmd), 1));
 
-                  if Exists (Work_Directory) then
+                  if Exists (Work_Directory (Builder)) then
                      if Verbose then
-                        Put_Line ("Delete " & Work_Directory);
+                        Put_Line ("Delete " & Work_Directory (Builder));
                      end if;
 
-                     Delete_Tree (Work_Directory);
+                     Delete_Tree (Work_Directory (Builder));
                   end if;
 
                   Send_Ok (Builder.Channel);
