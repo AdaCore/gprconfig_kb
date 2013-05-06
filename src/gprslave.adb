@@ -173,6 +173,9 @@ procedure Gprslave is
       Set : To_Run_Set.Vector;
    end To_Run;
 
+   Compiler_Path : constant OS_Lib.String_Access :=
+                     Locate_Exec_On_Path ("gnatls");
+
    Slave_Id : Remote_Id;
    --  Host Id used to compose a unique job id across all running slaves
 
@@ -1097,9 +1100,28 @@ procedure Gprslave is
       --  section has the builder is not yet known in the system. At this point
       --  no compilation can be received for this slave anyway.
 
-      Set_Rewrite
-        (Builder.Channel,
-         From => Work_Directory (Builder), To => WD_Path_Tag);
+      Set_Rewrite_WD
+        (Builder.Channel, Path => Work_Directory (Builder));
+
+      --  For Ada compilers, rewrite the root directory
+
+      if Debug then
+         if Compiler_Path = null then
+            Put_Line ("# compiler path is null.");
+         else
+            Put_Line
+              ("# compiler path is : "
+               & Containing_Directory
+                 (Containing_Directory (Compiler_Path.all)));
+         end if;
+      end if;
+
+      if Compiler_Path /= null then
+         Set_Rewrite_CD
+           (Builder.Channel,
+            Path => Containing_Directory
+              (Containing_Directory (Compiler_Path.all)));
+      end if;
 
       Send_Slave_Config
         (Builder.Channel, Max_Processes,

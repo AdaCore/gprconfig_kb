@@ -85,6 +85,9 @@ package body Gprbuild.Compilation.Slave is
    WR : Wait_Remote_Ref;
    --  Will be initialized only if the distributed mode is activated
 
+   Compiler_Path : constant OS_Lib.String_Access :=
+                     Locate_Exec_On_Path ("gnatls");
+
    Rsync    : constant GNAT.OS_Lib.String_Access :=
                 Locate_Exec_On_Path ("rsync");
 
@@ -642,8 +645,14 @@ package body Gprbuild.Compilation.Slave is
          --  Record the rewrite information for this channel only if we are not
          --  using a shared directory.
 
-         Set_Rewrite
-           (Slaves (S).Channel, From => RD, To => Protocol.WD_Path_Tag);
+         Set_Rewrite_WD (Slaves (S).Channel, Path => RD);
+
+         if Compiler_Path /= null then
+            Set_Rewrite_CD
+              (Slaves (S).Channel,
+               Path => Containing_Directory
+                 (Containing_Directory (Compiler_Path.all)));
+         end if;
 
          Send_Exec
            (Slaves (S).Channel,

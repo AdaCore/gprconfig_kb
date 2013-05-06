@@ -63,8 +63,10 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Clear_Rewrite (Channel : in out Communication_Channel) is
    begin
-      Channel.From := Null_Unbounded_String;
-      Channel.To := Null_Unbounded_String;
+      Channel.WD_From := Null_Unbounded_String;
+      Channel.WD_To := Null_Unbounded_String;
+      Channel.CD_From := Null_Unbounded_String;
+      Channel.CD_To := Null_Unbounded_String;
    end Clear_Rewrite;
 
    -----------
@@ -85,7 +87,9 @@ package body Gprbuild.Compilation.Protocol is
    function Create (Sock : Socket_Type) return Communication_Channel is
    begin
       return Communication_Channel'
-        (Sock, Stream (Sock), Null_Unbounded_String, Null_Unbounded_String);
+        (Sock, Stream (Sock),
+         Null_Unbounded_String, Null_Unbounded_String,
+         Null_Unbounded_String, Null_Unbounded_String);
    end Create;
 
    -----------------
@@ -123,10 +127,16 @@ package body Gprbuild.Compilation.Protocol is
                        Stream_Element_Count'Value (Slice (Cmd.Args, 1));
          --  Number of bytes remaining to be read from channel
 
-         Rewriter : Rewrite_Data.Buffer :=
-                      Rewrite_Data.Create
-                        (To_String (Channel.To), To_String (Channel.From));
-         File     : File_Type;
+         Rewriter    : Rewrite_Data.Buffer :=
+                         Rewrite_Data.Create
+                           (To_String (Channel.WD_To),
+                            To_String (Channel.WD_From));
+         Rewriter_CD : aliased Rewrite_Data.Buffer :=
+                         Rewrite_Data.Create
+                           (To_String (Channel.CD_To),
+                            To_String (Channel.CD_From));
+
+         File : File_Type;
 
          -----------
          -- Input --
@@ -159,6 +169,8 @@ package body Gprbuild.Compilation.Protocol is
          end Output;
 
       begin
+         Rewrite_Data.Link (Rewriter, Rewriter_CD'Unchecked_Access);
+
          if Dir /= "" and then not Exists (Dir) then
             Create_Directory (Dir);
          end if;
@@ -433,9 +445,15 @@ package body Gprbuild.Compilation.Protocol is
 
       File     : File_Type;
       F_Size   : Natural;
-      Rewriter : Rewrite_Data.Buffer :=
-                   Rewrite_Data.Create
-                     (To_String (Channel.From), To_String (Channel.To));
+
+      Rewriter    : Rewrite_Data.Buffer :=
+                      Rewrite_Data.Create
+                        (To_String (Channel.WD_From),
+                         To_String (Channel.WD_To));
+      Rewriter_CD : aliased Rewrite_Data.Buffer :=
+                      Rewrite_Data.Create
+                        (To_String (Channel.CD_From),
+                         To_String (Channel.CD_To));
 
       ---------------
       -- File_Size --
@@ -458,8 +476,8 @@ package body Gprbuild.Compilation.Protocol is
          end Count;
 
       begin
-         if Channel.From /= Null_Unbounded_String
-           and then Length (Channel.From) <= Result
+         if Channel.WD_From /= Null_Unbounded_String
+           and then Length (Channel.WD_From) <= Result
          then
             Result := 0;
             Rewrite_Data.Rewrite (Rewriter, Input'Access, Count'Access);
@@ -493,6 +511,8 @@ package body Gprbuild.Compilation.Protocol is
       end Output;
 
    begin
+      Rewrite_Data.Link (Rewriter, Rewriter_CD'Unchecked_Access);
+
       if Exists (Path_Name) then
          Open (File, In_File, Path_Name);
 
@@ -574,16 +594,27 @@ package body Gprbuild.Compilation.Protocol is
          & Image (Max_Process) & Args_Sep & Root_Directory);
    end Send_Slave_Config;
 
-   -----------------
-   -- Set_Rewrite --
-   -----------------
+   --------------------
+   -- Set_Rewrite_CD --
+   --------------------
 
-   procedure Set_Rewrite
-     (Channel : in out Communication_Channel; From, To : String) is
+   procedure Set_Rewrite_CD
+     (Channel : in out Communication_Channel; Path : String) is
    begin
-      Channel.From := To_Unbounded_String (From);
-      Channel.To := To_Unbounded_String (To);
-   end Set_Rewrite;
+      Channel.CD_From := To_Unbounded_String (Path);
+      Channel.CD_To := To_Unbounded_String (CD_Path_Tag);
+   end Set_Rewrite_CD;
+
+   --------------------
+   -- Set_Rewrite_WD --
+   --------------------
+
+   procedure Set_Rewrite_WD
+     (Channel : in out Communication_Channel; Path : String) is
+   begin
+      Channel.WD_From := To_Unbounded_String (Path);
+      Channel.WD_To := To_Unbounded_String (WD_Path_Tag);
+   end Set_Rewrite_WD;
 
    ----------
    -- Sock --
@@ -601,13 +632,13 @@ package body Gprbuild.Compilation.Protocol is
    function Translate_Receive
      (Channel : Communication_Channel; Str : String) return String
    is
-      P : constant Natural := Index (Str, To_String (Channel.To));
+      P : constant Natural := Index (Str, To_String (Channel.WD_To));
    begin
       if P = 0 then
          return Str;
       else
-         return To_String (Channel.From)
-           & Str (P + Length (Channel.To) .. Str'Last);
+         return To_String (Channel.WD_From)
+           & Str (P + Length (Channel.WD_To) .. Str'Last);
       end if;
    end Translate_Receive;
 
@@ -618,13 +649,13 @@ package body Gprbuild.Compilation.Protocol is
    function Translate_Send
      (Channel : Communication_Channel; Str : String) return String
    is
-      P : constant Natural := Index (Str, To_String (Channel.From));
+      P : constant Natural := Index (Str, To_String (Channel.WD_From));
    begin
       if P = 0 then
          return Str;
       else
-         return To_String (Channel.To)
-           & Str (P + Length (Channel.From) .. Str'Last);
+         return To_String (Channel.WD_To)
+           & Str (P + Length (Channel.WD_From) .. Str'Last);
       end if;
    end Translate_Send;
 

@@ -36,6 +36,9 @@ package Gprbuild.Compilation.Protocol is
    --  The string replacing root working diretory of full path name, see
    --  Set_Rewrite below.
 
+   CD_Path_Tag   : constant String := "<2>";
+   --  The string replacing the compiler root directory, see Set_Rewrite below
+
    Any_OS : constant String := "any";
    --  Used when OS check is not necessary, for example gprclean does not need
    --  this check. It is safe to clean-up a Solaris slave from a Windows
@@ -58,12 +61,18 @@ package Gprbuild.Compilation.Protocol is
    procedure Close (Channel : in out Communication_Channel);
    --  Close the channel
 
-   procedure Set_Rewrite
-     (Channel : in out Communication_Channel; From, To : String);
-   --  Register the rewritting to be conducted on this channel. That is every
-   --  string From found on a file will be replaved by To. This is needed for
-   --  example for mapping files as the full pathname on the build master is
-   --  not necessary the same for the slave.
+   procedure Set_Rewrite_WD
+     (Channel : in out Communication_Channel; Path : String);
+   --  Add rewrite information for the working directory. This is needed to
+   --  translate paths to/from build master and slave working directories.
+
+   procedure Set_Rewrite_CD
+     (Channel : in out Communication_Channel; Path : String);
+   --  Add rewrite information for the compiler directory. This is needed to
+   --  translate paths to/from compilers path in build master and in slave.
+   --  This is needed to be able to find the files from other projects
+   --  installed with the compiler. The translated paths are in the
+   --  gprbuild mapping file.
 
    procedure Clear_Rewrite (Channel : in out Communication_Channel);
    --  Remove any rewrite information from the channel
@@ -203,9 +212,10 @@ package Gprbuild.Compilation.Protocol is
 private
 
    type Communication_Channel is record
-      Sock     : Socket_Type;
-      Channel  : Stream_Access;
-      From, To : Unbounded_String; -- for sending data
+      Sock           : Socket_Type;
+      Channel        : Stream_Access;
+      WD_From, WD_To : Unbounded_String; -- working directory
+      CD_From, CD_To : Unbounded_String; -- compiler directory
    end record;
 
    type Command is record
