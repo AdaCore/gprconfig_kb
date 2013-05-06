@@ -712,6 +712,13 @@ procedure Gprbuild.Main is
             Compilation.Slave.Record_Slaves
               (Arg (Distributed_Option'Length + 1 .. Arg'Last));
 
+         elsif Arg'Length > Build_Env_Option'Length
+            and then
+            Arg (1 .. Build_Env_Option'Length) = Build_Env_Option
+         then
+            Build_Env :=
+              new String'(Arg (Build_Env_Option'Length + 1 .. Arg'Last));
+
          elsif Arg = "--db-" then
             if Hostparm.OpenVMS then
                Fail_Program
@@ -1572,6 +1579,10 @@ procedure Gprbuild.Main is
       elsif Db_Directory_Expected then
          Fail_Program
            (Project_Tree, "directory name missing after --db");
+
+      elsif Build_Env /= null and then not Distributed_Mode then
+         Fail_Program
+           (Project_Tree, "cannot use --build-env in non distributed mode");
       end if;
 
       if Runtime_Name_Set_For (Name_Ada) then

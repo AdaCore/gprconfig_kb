@@ -217,7 +217,8 @@ package body Gprbuild.Compilation.Slave is
       --  Do initial handshake
 
       Protocol.Send_Context
-        (S.Channel, Get_Target, Project_Name, "", S.Data.Sync);
+        (S.Channel, Get_Target, Project_Name,
+         (if Build_Env = null then "" else Build_Env.all), S.Data.Sync);
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);
