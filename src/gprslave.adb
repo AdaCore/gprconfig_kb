@@ -54,6 +54,19 @@ procedure Gprslave is
 
    use Ada;
 
+   --  Data for a build master
+
+   type Build_Master is record
+      Channel      : Communication_Channel; -- communication with build master
+      Socket       : Socket_Type;
+      Project_Name : Unbounded_String;
+      Target       : Unbounded_String;
+      Build_Env    : Unbounded_String;
+      Sync         : Sync_Kind;
+   end record;
+
+   --  Representation of a job data
+
    type Job_Data is record
       Pid      : Integer;
       Dir      : Unbounded_String;
@@ -89,7 +102,8 @@ procedure Gprslave is
    function Get_Output_File return String;
    --  Returns a unique output file
 
-   function Get_Driver (Language : String) return String;
+   function Get_Driver
+     (Builder : Build_Master; Language : String) return String;
    --  Returns the compiler driver for the given language and the current
    --  target as retreived from the initial handshake context exchange.
 
@@ -127,18 +141,15 @@ procedure Gprslave is
 
    --  Running instances statuses
 
-   Channel      : Communication_Channel; -- communication with build master
-   Address      : Sock_Addr_Type;
-   Server       : Socket_Type;
-   Socket       : Socket_Type;
-   Project_Name : Unbounded_String;
-   Sync         : Sync_Kind;
-   Index        : Long_Integer := 0;
+   Address : Sock_Addr_Type;
+   Server  : Socket_Type;
+   Index   : Long_Integer := 0;
+
+   Builder : Build_Master;
 
    --  Knowledge base
 
    Base                 : Knowledge_Base;
-   Target               : Unbounded_String;
    Selected_Targets_Set : Targets_Set_Id;
 
    --------------
@@ -171,9 +182,11 @@ procedure Gprslave is
    -- Get_Driver --
    ----------------
 
-   function Get_Driver (Language : String) return String is
+   function Get_Driver
+     (Builder : Build_Master; Language : String) return String
+   is
       Key                  : constant String :=
-                               To_String (Target) & '+' & Language;
+                               To_String (Builder.Target) & '+' & Language;
       Position             : constant Drivers_Cache.Cursor := Cache.Find (Key);
       Compilers, Filters   : Compiler_Lists.List;
       Requires_Comp        : Boolean;
@@ -213,14 +226,14 @@ procedure Gprslave is
             Compilers);
 
          Generate_Configuration
-           (Base, Compilers, "slave_tmp.cgpr", To_String (Target));
+           (Base, Compilers, "slave_tmp.cgpr", To_String (Builder.Target));
 
          Prj.Tree.Initialize (Env, Prj.Gprbuild_Flags);
          Prj.Tree.Initialize (Project_Node_Tree);
          Prj.Initialize (Prj.No_Project_Tree);
 
          Prj.Env.Initialize_Default_Project_Path
-           (Env.Project_Path, Target_Name => To_String (Target));
+           (Env.Project_Path, Target_Name => To_String (Builder.Target));
 
          --  Load the configuration project
 
@@ -230,7 +243,7 @@ procedure Gprslave is
             Errout_Handling   => Prj.Part.Finalize_If_Error,
             Packages_To_Check => null,
             Is_Config_File    => True,
-            Target_Name       => To_String (Target),
+            Target_Name       => To_String (Builder.Target),
             Env               => Env);
 
          Project_Tree := new Project_Tree_Data;
@@ -481,7 +494,7 @@ procedure Gprslave is
             Put_Line ("# send dep_file to master '" & Filename & ''');
          end if;
 
-         Send_File (Channel, Filename);
+         Send_File (Builder.Channel, Filename);
       end Send_Dep_File;
 
       Pid     : Process_Id;
@@ -521,9 +534,9 @@ procedure Gprslave is
                Dir      : constant String := To_String (Data.Dir);
                Dep_File : constant String := To_String (Data.Dep_File);
             begin
-               Send_Output (Channel, To_String (Data.Output));
+               Send_Output (Builder.Channel, To_String (Data.Output));
 
-               if Success and then Sync /= Protocol.File then
+               if Success and then Builder.Sync /= Protocol.File then
                   --  No Dep_File to send back if the compilation was not
                   --  successful.
 
@@ -538,9 +551,9 @@ procedure Gprslave is
             end if;
 
             if Success then
-               Send_Ok (Channel, Pid_To_Integer (Pid));
+               Send_Ok (Builder.Channel, Pid_To_Integer (Pid));
             else
-               Send_Ko (Channel, Pid_To_Integer (Pid));
+               Send_Ko (Builder.Channel, Pid_To_Integer (Pid));
             end if;
 
             Mutex.Release;
@@ -562,14 +575,16 @@ procedure Gprslave is
    begin
       --  Wait for a connection
 
-      Accept_Socket (Server, Socket, Address);
+      Accept_Socket (Server, Builder.Socket, Address);
 
-      Channel := Create (Socket);
+      Builder.Channel := Create (Builder.Socket);
 
       --  Initial handshake
 
       begin
-         Get_Context (Channel, Target, Project_Name, Sync);
+         Get_Context
+           (Builder.Channel, Builder.Target,
+            Builder.Project_Name, Builder.Sync);
       exception
          when E : others =>
             if Verbose then
@@ -578,30 +593,32 @@ procedure Gprslave is
       end;
 
       Get_Targets_Set
-        (Base, To_String (Target), Selected_Targets_Set);
+        (Base, To_String (Builder.Target), Selected_Targets_Set);
 
       if Verbose then
-         Put_Line ("Handling project : " & To_String (Project_Name));
-         Put_Line ("Compiling for    : " & To_String (Target));
+         Put_Line ("Handling project : " & To_String (Builder.Project_Name));
+         Put_Line ("Compiling for    : " & To_String (Builder.Target));
       end if;
 
       --  Move to root directory before creating a new project environment
 
       Set_Directory (Root_Directory.all);
 
-      Set_Rewrite (Channel, From => Work_Directory, To => Full_Path_Tag);
+      Set_Rewrite
+        (Builder.Channel, From => Work_Directory, To => Full_Path_Tag);
 
-      if not Exists (To_String (Project_Name)) then
+      if not Exists (To_String (Builder.Project_Name)) then
          if Debug then
             Put_Line
               ("# create project directory '"
-               & To_String (Project_Name) & " in " & Current_Directory);
+               & To_String (Builder.Project_Name)
+               & " in " & Current_Directory);
          end if;
 
-         Create_Directory (To_String (Project_Name));
+         Create_Directory (To_String (Builder.Project_Name));
       end if;
 
-      Send_Slave_Config (Channel, Max_Processes, Root_Directory.all);
+      Send_Slave_Config (Builder.Channel, Max_Processes, Root_Directory.all);
 
       --  Now move into the work directory (Root_Directory & Project_Name)
 
@@ -614,7 +631,7 @@ procedure Gprslave is
 
    function Work_Directory return String is
    begin
-      return Compose (Root_Directory.all, To_String (Project_Name));
+      return Compose (Root_Directory.all, To_String (Builder.Project_Name));
    end Work_Directory;
 
 begin
@@ -664,7 +681,7 @@ begin
          --  Move to work directory
 
          declare
-            Cmd  : constant Command := Get_Command (Channel);
+            Cmd  : constant Command := Get_Command (Builder.Channel);
             Pid  : Process_Id;
             List : Slice_Set;
          begin
@@ -729,9 +746,9 @@ begin
                      Output_Compilation (O (O'Last).all);
 
                      Pid := Non_Blocking_Spawn
-                       (Get_Driver (Language), O, Out_File);
+                       (Get_Driver (Builder, Language), O, Out_File);
 
-                     Send_Ack (Channel, Pid_To_Integer (Pid));
+                     Send_Ack (Builder.Channel, Pid_To_Integer (Pid));
 
                      if Debug then
                         Put_Line
@@ -768,7 +785,8 @@ begin
 
             elsif Kind (Cmd) = CU then
                Clean_Up_Request : begin
-                  Project_Name := To_Unbounded_String (Slice (Args (Cmd), 1));
+                  Builder.Project_Name :=
+                    To_Unbounded_String (Slice (Args (Cmd), 1));
 
                   if Exists (Work_Directory) then
                      if Verbose then
@@ -778,16 +796,16 @@ begin
                      Delete_Tree (Work_Directory);
                   end if;
 
-                  Send_Ok (Channel);
+                  Send_Ok (Builder.Channel);
 
                exception
                   when others =>
-                     Send_Ko (Channel);
+                     Send_Ko (Builder.Channel);
                end Clean_Up_Request;
 
             elsif Kind (Cmd) = EC then
                --  No more compilation for this project
-               Close (Channel);
+               Close (Builder.Channel);
                Job_Set.Clear;
                Jobs.Reset;
                exit Handle_Compilation;
@@ -805,7 +823,7 @@ begin
                --  or some wrong command received, make sure we clean the slave
                --  state and we listen to new commands. Not doing that could
                --  make the slave unresponding.
-               Close (Channel);
+               Close (Builder.Channel);
                Job_Set.Clear;
                Jobs.Reset;
                exit Handle_Compilation;
@@ -813,7 +831,7 @@ begin
       end loop Handle_Compilation;
 
       if Verbose then
-         Put_Line ("End project : " & To_String (Project_Name));
+         Put_Line ("End project : " & To_String (Builder.Project_Name));
       end if;
    end loop Main_Loop;
 
