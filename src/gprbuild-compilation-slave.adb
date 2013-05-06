@@ -426,7 +426,7 @@ package body Gprbuild.Compilation.Slave is
             end if;
 
             declare
-               Args    : Argument_List (1 .. 14);
+               Args    : Argument_List (1 .. 15);
                Success : Boolean;
             begin
                --  Archive mode, compression and ignore VCS
@@ -448,12 +448,13 @@ package body Gprbuild.Compilation.Slave is
                --  Delete remote files not in local directory
 
                Args (11) := new String'("--delete");
-               Args (12) := new String'("--copy-links");
+               Args (12) := new String'("--delete-excluded");
+               Args (13) := new String'("--copy-links");
 
                --  Local and remote directory
 
-               Args (13) := new String'(To_String (Root_Dir) & "/");
-               Args (14) := new String'
+               Args (14) := new String'(To_String (Root_Dir) & "/");
+               Args (15) := new String'
                  (User_Host & ":"
                   & Compose (To_String (S.Root_Dir), Project_Name));
 
