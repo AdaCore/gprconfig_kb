@@ -636,7 +636,7 @@ package body Gprbuild.Compilation.Slave is
             CWD, Language, Options, Dep_Name, Filter_String'Access);
 
       else
-         --  Record the rewrite information for this channel only of we are not
+         --  Record the rewrite information for this channel only if we are not
          --  using a shared directory.
 
          Set_Rewrite
