@@ -1024,7 +1024,17 @@ procedure Gprslave is
    begin
       --  Wait for a connection
 
-      Accept_Socket (Server, Builder.Socket, Address);
+      Wait_Incoming_Master : loop
+         begin
+            Accept_Socket (Server, Builder.Socket, Address);
+            exit Wait_Incoming_Master;
+         exception
+            when E : Socket_Error =>
+               if Resolve_Exception (E) /= Interrupted_System_Call then
+                  raise;
+               end if;
+         end;
+      end loop Wait_Incoming_Master;
 
       Builder.Channel := Create (Builder.Socket);
 
