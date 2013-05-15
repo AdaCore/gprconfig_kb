@@ -19,14 +19,6 @@ NF-21-M304-056 gprinstall now preserves timestamps (2013-03-05)
   gprinstall now preserves timestamps when copying the source files,
   object files and libraries.
 
-NF-21-M121-032 Switches --RTS for gprclean (2013-01-21)
-
-  gprclean may now be called with switches --RTS= or --RTS:<lang>=. The
-  runtimes specified with these switches are taken into account in the
-  invocation of gprconfig in auto-configuration. This allows gprclean to
-  have more accurate file names to delete, for example when the executable
-  extension depends on the runtime.
-
 NF-21-LC19-034 Project_Path searched before ADA_PROJECT_PATH (2013-01-04)
 
   Project_Path values are searched before ADA_PROJECT_PATH. This behavior

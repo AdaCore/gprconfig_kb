@@ -2,11 +2,19 @@
 GPRBUILD 2.0 NEW FEATURES LIST
 ==============================
 
-Copyright (C) 2012, AdaCore
+Copyright (C) 2013, AdaCore
 
 This file contains a complete list of new features in version 2.0 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
+
+NF-20-M121-032 Switches --RTS for gprclean (2013-01-21)
+
+  gprclean may now be called with switches --RTS= or --RTS:<lang>=. The
+  runtimes specified with these switches are taken into account in the
+  invocation of gprconfig in auto-configuration. This allows gprclean to
+  have more accurate file names to delete, for example when the executable
+  extension depends on the runtime.
 
 NF-20-LA23-043 Unconditionally create --autoconf= path (2012-10-26)
 
