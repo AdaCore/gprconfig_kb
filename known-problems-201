@@ -11,41 +11,12 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
-KP-201-M417-023 Deeply extended library projects
-
-  Problem:    When a library A project extends a project B that itself extends
-              a project C, object files for sources that are not immediate
-              sources of projects A or B are not included in the library file.
-
-  Status:     This was fixed in 2.1 on 2013-04-17
-
-  Workaround: Do not extend an already extending library project.
-
 KP-201-M125-039 Library version on IA64 HP-UX
 
   Problem:    On IA64 HP-UX, gprbuild fails to build a shared library when
               attribute Library_Version is declared.
 
   Status:     This was fixed in 2.1 on 2013-01-25
+              This was fixed in 2.0.2 on 2013-05-27
 
   Workaround: Do not specify Library_Version.
-
-KP-201-M116-027 aggregated projects sharing extended projects
-
-  Problem:    gprbuild refuses aggregate projects where several aggregated
-              project trees share a project that is extended at least once.
-
-  Status:     This was fixed in 2.1 on 2013-01-18
-
-  Workaround: Do not aggregate projects that share an extended project.
-
-KP-201-KC15-051 gprconfig should not parse twice the same knowledge base
-
-  Problem:    gprconfig, in some circumstances, may parse several times the
-              same knowledge base directory. This may result in an invalid
-              configuration project file, for example the same string type
-              may be declared several times.
-
-  Status:     This was fixed in 2.1 on 2013-02-04
-
-  Workaround: Avoid parsing several times the same knowledge base directory.
