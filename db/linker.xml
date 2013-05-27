@@ -493,13 +493,15 @@
     </config>
   </configuration>
 
-  <!-- On IA64 HPUX, the shared library suffix is .so -->
+  <!-- On IA64 HPUX, the shared library suffix is .so,
+       and the ld switch for internal names in +h -->
    <configuration>
     <targets>
        <target name=".*ia64.*hpux.*" />
     </targets>
     <config>
    for Shared_Library_Suffix use ".so";
+   for Library_Version_Switches use ("-Wl,+h,");
     </config>
   </configuration>
 
