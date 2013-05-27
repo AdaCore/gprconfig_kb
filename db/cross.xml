@@ -486,6 +486,30 @@
 
    <configuration>
      <compilers>
+       <compiler name="GCC-WRS6E500V2" />
+       <compiler name="GCC-WRS6CERTE500V2" />
+       <compiler name="GCC-WRS653-E500V2" />
+       <compiler name="GCC-WRSMILS-E500V2" />
+       <compiler name="G++-WRS6E500V2" />
+       <compiler name="G++-WRS6CERTE500V2" />
+       <compiler name="G++-WRS653-E500V2" />
+       <compiler name="G++-WRSMILS-E500V2" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-te500v2", "-fno-implicit-fp");
+
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-te500v2", "-fno-implicit-fp");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
         <compiler name="G++-WRS653" language="C++" />
         <compiler name="G++-WRS653-E500V2" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
