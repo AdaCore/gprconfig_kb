@@ -20,6 +20,8 @@ debug.adb
 debug.ads
 einfo.adb
 einfo.ads
+elists.ads
+elists.adb
 err_vars.ads
 errout.adb
 errout.ads
