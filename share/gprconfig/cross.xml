@@ -233,10 +233,16 @@
         &amp; ("-fno-builtin");
    end Compiler;
 
+   --  Traditionally the entry point of a native application is _p4_entry. For
+   --  an APEX application, it is _begin.
+
+   --  In order to use the same link options for both personalities, _begin is
+   --  used for native as well.
+
    package Linker is
       for Required_Switches use
 	Linker'Required_Switches
-        &amp; ("-u_p4_entry", "-e_p4_entry", "-nostdlib", "-Tapp-ld-script",
+        &amp; ("-u_begin", "-e_begin", "-nostdlib", "-Tapp-ld-script",
                "-lvm", "-lp4", "-lstand", "-lgcc",
                "-L" &amp; Pikeos_Target_Files &amp; "/scripts",
                "-L" &amp; Pikeos_Target_Files &amp; "/lib");
