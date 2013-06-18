@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 2.0 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-21-M529-021 Clean artifacts in object and exec directories (2013-06-18)
+
+  gprclean now cleans from the object directory the files specified in
+  new attribute Artifacts_In_Object_Dir in package Clean and for main projects
+  cleans from the exec directory the files specified in new attribute
+  Artifacts_In_Exec_Dir in package Clean.
+
 NF-21-M405-028 gprinstall now supports cross-environment (2013-04-05)
 
   gprinstall will work in cross-environment by using the newly added
