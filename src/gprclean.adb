@@ -691,11 +691,6 @@ package body Gprclean is
             begin
                Change_Dir (Obj_Dir);
 
-               --  Clean the artifacts in object directory, if any
-
-               Clean_Artifacts
-                 (Obj_Dir, Project.Config.Artifacts_In_Object_Dir);
-
                --  For non library project, clean the global archive and its
                --  dependency file if they exist.
 
@@ -807,6 +802,13 @@ package body Gprclean is
 
                   Project2 := Project2.Extends;
                end loop;
+
+               --  Clean the artifacts in object directory, if any. Do this
+               --  after cleaning the object files, to avoid checking every
+               --  object file when the artifacts are given as a regexp.
+
+               Clean_Artifacts
+                 (Obj_Dir, Project.Config.Artifacts_In_Object_Dir);
             end;
          end if;
 
