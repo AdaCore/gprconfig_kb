@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -76,13 +76,15 @@ private
    --  switch -r is specified.
 
    procedure Clean_Project
-     (Project      : Project_Id;
-      Project_Tree : Project_Tree_Ref;
+     (Project            : Project_Id;
+      Project_Tree       : Project_Tree_Ref;
+      Main               : Boolean;
       Remove_Executables : Boolean);
    --  Do the cleaning work for Project.
    --  This procedure calls itself recursively when there are several
    --  project files in the tree rooted at the main project file and switch -r
    --  has been specified.
+   --  Main is True iff Project is a main project.
    --  If Remove_Executables is true, the binder files and results of the
    --  linker are also removed.
 

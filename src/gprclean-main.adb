@@ -741,7 +741,8 @@ begin
       begin
          --  For the main project and all aggregated projects, remove the
          --  binder and linker generated files.
-         Clean_Project (Prj, Tree, Remove_Executables => True);
+         Clean_Project
+           (Prj, Tree, Main => True, Remove_Executables => not Compile_Only);
 
          --  Clean-up remote slaves
 

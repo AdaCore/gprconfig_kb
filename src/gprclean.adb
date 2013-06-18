@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -23,6 +23,7 @@ with Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.IO;                   use GNAT.IO;
+with GNAT.Regexp;               use GNAT.Regexp;
 
 with Gpr_Util;    use Gpr_Util;
 with Gprexch;     use Gprexch;
@@ -509,13 +510,26 @@ package body Gprclean is
       end if;
    end Clean_Library_Directory;
 
+   --  Artifacts
+
+   type Artifact_Array_Type is array (Positive range <>) of GNAT.Regexp.Regexp;
+   type Artifact_Array_Ptr is access Artifact_Array_Type;
+
+   Artifacts : Artifact_Array_Ptr := new Artifact_Array_Type (1 .. 4);
+   --  List of regular expression file names to be deleted in procedure
+   --  Clean_Artifacts below. Size 4 is arbitrary.
+
+   Artifact_Last : Natural := 0;
+   --  Last index of the valid artifacts in array Artifacts.
+
    -------------------
    -- Clean_Project --
    -------------------
 
    procedure Clean_Project
-     (Project      : Project_Id;
-      Project_Tree : Project_Tree_Ref;
+     (Project            : Project_Id;
+      Project_Tree       : Project_Tree_Ref;
+      Main               : Boolean;
       Remove_Executables : Boolean)
    is
       Executable : File_Name_Type;
@@ -530,6 +544,107 @@ package body Gprclean is
 
       List : Name_List_Index := No_Name_List;
       Node : Name_Node;
+
+      procedure Clean_Artifacts (Dir : String; List : Name_List_Index);
+      --  Clean the artifacts specified by List in directory Dir.
+      --  The current directory is Dir.
+
+      function Is_Regexp (Name : String) return Boolean;
+      --  Return True iff Name is a glob regexp.
+
+      ---------------------
+      -- Clean_Artifacts --
+      ---------------------
+
+      procedure Clean_Artifacts (Dir : String; List : Name_List_Index) is
+         Lst : Name_List_Index := List;
+         Nod : Name_Node;
+
+      begin
+         Artifact_Last := 0;
+
+         while Lst /= No_Name_List loop
+            Nod := Project_Tree.Shared.Name_Lists.Table (Lst);
+
+            declare
+               Name : constant String := Get_Name_String (Nod.Name);
+            begin
+
+               if Is_Regexp (Name) then
+                  if Artifact_Last = Artifacts'Length then
+                     declare
+                        New_Artifacts : constant Artifact_Array_Ptr :=
+                          new Artifact_Array_Type (1 .. 2 * Artifact_Last);
+                     begin
+                        New_Artifacts (1 .. Artifact_Last) :=
+                          Artifacts (1 .. Artifact_Last);
+                        Artifacts := New_Artifacts;
+                     end;
+                  end if;
+
+                  Artifact_Last := Artifact_Last + 1;
+                  Artifacts (Artifact_Last) :=
+                    Compile (Name, Glob => True);
+
+               elsif Is_Regular_File (Name) then
+                  Delete (Dir, Name);
+               end if;
+            end;
+
+            Lst := Nod.Next;
+         end loop;
+
+         if Artifact_Last > 0 then
+            declare
+               Directory : Dir_Type;
+               File_Name : Dir_Name_Str (1 .. 1_000);
+               Last      : Natural;
+
+            begin
+               Open (Directory, Dir);
+
+               Directory_Loop :
+               loop
+                  Read (Directory, File_Name, Last);
+                  exit Directory_Loop when Last = 0;
+
+                  if Is_Regular_File (File_Name (1 .. Last)) then
+                     Artifact_Loop :
+                     for J in 1 .. Artifact_Last loop
+                        if Match
+                          (File_Name (1 .. Last), Artifacts (J))
+                        then
+                           Delete (Dir, File_Name (1 .. Last));
+                           exit Artifact_Loop;
+                        end if;
+                     end loop Artifact_Loop;
+                  end if;
+               end loop Directory_Loop;
+
+               Close (Directory);
+            end;
+         end if;
+
+      end Clean_Artifacts;
+
+      ---------------
+      -- Is_Regexp --
+      ---------------
+
+      function Is_Regexp (Name : String) return Boolean is
+      begin
+         for J in Name'Range loop
+            case Name (J) is
+               when '?' | '*' | '[' | '{' =>
+                  return True;
+
+               when others =>
+                  null;
+            end case;
+         end loop;
+
+         return False;
+      end Is_Regexp;
 
    begin
       --  Check that we don't specify executable on the command line for
@@ -575,6 +690,11 @@ package body Gprclean is
 
             begin
                Change_Dir (Obj_Dir);
+
+               --  Clean the artifacts in object directory, if any
+
+               Clean_Artifacts
+                 (Obj_Dir, Project.Config.Artifacts_In_Object_Dir);
 
                --  For non library project, clean the global archive and its
                --  dependency file if they exist.
@@ -736,7 +856,7 @@ package body Gprclean is
                end loop;
 
                if Process then
-                  Clean_Project (Imported.Project, Project_Tree, False);
+                  Clean_Project (Imported.Project, Project_Tree, False, False);
                end if;
                Imported := Imported.Next;
             end loop;
@@ -747,7 +867,7 @@ package body Gprclean is
             --  this project.
 
             if Project.Extends /= No_Project then
-               Clean_Project (Project.Extends, Project_Tree, False);
+               Clean_Project (Project.Extends, Project_Tree, False, False);
             end if;
          end;
       end if;
@@ -757,7 +877,7 @@ package body Gprclean is
 
       --  The executables are deleted only if switch -c is not specified
 
-      if Remove_Executables
+      if Main
         and then Project.Exec_Directory /= No_Path_Information
         and then Is_Directory
                    (Get_Name_String (Project.Exec_Directory.Display_Name))
@@ -771,13 +891,17 @@ package body Gprclean is
          begin
             Change_Dir (Exec_Dir);
 
+            --  Clean the artifacts in the exec dir, if any
+
+            Clean_Artifacts (Exec_Dir, Project.Config.Artifacts_In_Exec_Dir);
+
             Mains.Reset;
             loop
                Main_File := Mains.Next_Main;
                exit when Main_File = No_Main_Info;
 
                if Main_File.Tree = Project_Tree then
-                  if not Compile_Only
+                  if Remove_Executables
                     and then Main_File.Source /= No_Source
                   then
                      Executable :=
