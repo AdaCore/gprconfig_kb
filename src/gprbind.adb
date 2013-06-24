@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -748,7 +748,6 @@ begin
             Args          : Argument_List (1 .. 1);
             EOL           : constant String (1 .. 1) := (1 => ASCII.LF);
             Status        : Integer;
-            Succ          : Boolean;
             Quotes_Needed : Boolean;
             Last_Char     : Natural;
             Ch            : Character;
@@ -836,11 +835,13 @@ begin
             end if;
 
             if Delete_Temp_Files then
-               Delete_File (Get_Name_String (Path), Succ);
+               declare
+                  Succ : Boolean;
+                  pragma Warnings (Off, Succ);
 
-               if not Succ then
-                  null;
-               end if;
+               begin
+                  Delete_File (Get_Name_String (Path), Succ);
+               end;
             end if;
          end;
       end if;
