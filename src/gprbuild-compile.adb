@@ -963,6 +963,7 @@ package body Gprbuild.Compile is
         new For_Every_Project_Imported (Boolean, Add);
 
       Status : Boolean := False;
+      pragma Warnings (Off, Status);
 
    begin
       Tempdir.Create_Temp_File (FD, Name);
@@ -972,10 +973,6 @@ package body Gprbuild.Compile is
         (Project, Project_Tree, Status, Include_Aggregated => True);
 
       Close (FD, Status);
-
-      if not Status then
-         null;
-      end if;
    end Create_Object_Path_File;
 
    ----------------------
