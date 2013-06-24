@@ -129,6 +129,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_Dependency_Files;
       procedure Write_Toolchain_Version;
       procedure Write_Interface_Dep_Files;
+      procedure Write_Other_Interfaces;
       procedure Write_Sources;
       procedure Write_Response_Files;
 
@@ -1043,6 +1044,25 @@ package body Gprbuild.Post_Compile is
          end loop;
       end Write_Interface_Dep_Files;
 
+      ----------------------------
+      -- Write_Other_Interfaces --
+      ----------------------------
+
+      procedure Write_Other_Interfaces is
+         Interfaces : String_List_Id :=
+                            For_Project.Other_Interfaces;
+         Element        : String_Element;
+      begin
+         Put_Line (Exchange_File, Library_Label (Other_Interfaces));
+
+         while Interfaces /= Nil_String loop
+            Element :=
+              Project_Tree.Shared.String_Elements.Table (Interfaces);
+            Put_Line (Exchange_File, Get_Name_String (Element.Value));
+            Interfaces := Element.Next;
+         end loop;
+      end Write_Other_Interfaces;
+
       -------------------
       -- Write_Sources --
       -------------------
@@ -1062,8 +1082,7 @@ package body Gprbuild.Post_Compile is
                Source := Prj.Element (Iter);
                exit when Source = No_Source;
 
-               if Source.Language.Config.Kind = Unit_Based
-                 and then not Source.Locally_Removed
+               if not Source.Locally_Removed
                  and then Source.Replaced_By = No_Source
                then
                   Put_Line
@@ -1603,6 +1622,10 @@ package body Gprbuild.Post_Compile is
 
             Write_Interface_Dep_Files;
 
+            if For_Project.Other_Interfaces /= Nil_String then
+               Write_Other_Interfaces;
+            end if;
+
             if For_Project.Library_Src_Dir /= No_Path_Information then
                --  Copy_Source_Dir
 
@@ -1620,6 +1643,9 @@ package body Gprbuild.Post_Compile is
             Put_Line
               (Exchange_File,
                Standalone'Image (For_Project.Standalone_Library));
+
+         elsif For_Project.Other_Interfaces /= Nil_String then
+            Write_Other_Interfaces;
          end if;
 
          Write_Response_Files;

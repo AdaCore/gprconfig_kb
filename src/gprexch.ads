@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -102,6 +102,7 @@ package Gprexch is
       Install_Name,
       Auto_Init,
       Interface_Dep_Files,
+      Other_Interfaces,
       Standalone_Mode,
       Dependency_Files,
       Binding_Options,

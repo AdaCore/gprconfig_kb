@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -197,6 +197,15 @@ procedure Gprlib is
       Table_Increment      => 100,
       Table_Name           => "Gprlib.Interface_Alis");
    --  A table to store the ALI files of the interfaces of an SAL
+
+   package Other_Interfaces is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 50,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Other_Interfaces");
+   --  A table to store the interface files other than the ALI files
 
    package Binding_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
@@ -560,6 +569,8 @@ procedure Gprlib is
                                Directory_Separator &
                                Base_Name (ALIs.Table (Index).all);
                Disregard   : Boolean;
+               pragma Warnings (Off, Disregard);
+
             begin
                if Is_Regular_File (Destination) then
                   Set_Writable (Destination);
@@ -602,6 +613,7 @@ procedure Gprlib is
                                Directory_Separator &
                                File_Name;
                Disregard   : Boolean;
+               pragma Warnings (Off, Disregard);
 
             begin
                if Is_Regular_File (Destination) then
@@ -727,21 +739,25 @@ procedure Gprlib is
 
       use ALI;
 
-      procedure Copy (File_Name : File_Name_Type);
+      procedure Copy (Fname : String);
       --  Copy one source of the project to the copy source directory
 
       ----------
       -- Copy --
       ----------
 
-      procedure Copy (File_Name : File_Name_Type) is
+      procedure Copy (Fname : String) is
          Success : Boolean := False;
-
-         Fname   : constant String := Get_Name_String (File_Name);
 
       begin
          for Index in 1 .. Sources.Last loop
             if Base_Name (Sources.Table (Index).all) = Fname then
+
+               if Verbose_Mode then
+                  Put ("Copying ");
+                  Put (Sources.Table (Index).all);
+                  Put_Line (" to copy source directory");
+               end if;
 
                Copy_File
                  (Sources.Table (Index).all,
@@ -795,11 +811,13 @@ procedure Gprlib is
          --  Copy the file(s) that need to be copied
 
          if First_Unit /= No_Unit_Id then
-            Copy (File_Name => ALI.Units.Table (First_Unit).Sfile);
+            Copy (Fname =>
+                    Get_Name_String (ALI.Units.Table (First_Unit).Sfile));
          end if;
 
          if Second_Unit /= No_Unit_Id then
-            Copy (File_Name => ALI.Units.Table (Second_Unit).Sfile);
+            Copy (Fname =>
+                    Get_Name_String (ALI.Units.Table (Second_Unit).Sfile));
          end if;
 
          --  Copy all the separates, if any
@@ -809,10 +827,14 @@ procedure Gprlib is
               ALI.ALIs.Table (The_ALI).Last_Sdep
             loop
                if ALI.Sdep.Table (Dep).Subunit_Name /= No_Name then
-                  Copy (File_Name => Sdep.Table (Dep).Sfile);
+                  Copy (Fname => Get_Name_String (Sdep.Table (Dep).Sfile));
                end if;
             end loop;
          end if;
+      end loop;
+
+      for Index in 1 .. Other_Interfaces.Last loop
+         Copy (Fname => Other_Interfaces.Table (Index).all);
       end loop;
    end Copy_Sources;
 
@@ -1225,6 +1247,9 @@ begin
                Interface_ALIs.Append (new String'(Line (1 .. Last)));
                Standalone := Prj.Standard;
 
+            when Gprexch.Other_Interfaces =>
+               Other_Interfaces.Append (new String'(Line (1 .. Last)));
+
             when Gprexch.Standalone_Mode =>
                Standalone := Prj.Standalone'Value (Line (1 .. Last));
 
@@ -1548,7 +1573,6 @@ begin
                   Path          : Path_Name_Type;
                   Args          : Argument_List (1 .. 1);
                   Status        : Integer;
-                  Succ          : Boolean;
                   Quotes_Needed : Boolean;
                   Last_Char     : Natural;
                   Ch            : Character;
@@ -1626,11 +1650,13 @@ begin
                   Spawn (Gnatbind_Path.all, Args, Success);
 
                   if Delete_Response_File then
-                     Delete_File (Get_Name_String (Path), Succ);
+                     declare
+                        Succ : Boolean;
+                        pragma Warnings (Off, Succ);
 
-                     if not Succ then
-                        null;
-                     end if;
+                     begin
+                        Delete_File (Get_Name_String (Path), Succ);
+                     end;
                   end if;
                end;
             end if;
