@@ -77,6 +77,7 @@ package Gprexch is
       Library_Dependency_Directory,
       Library_Version,
       Library_Options,
+      Library_Rpath_Options,
       Library_Path,
       Library_Version_Options,
       Shared_Lib_Prefix,

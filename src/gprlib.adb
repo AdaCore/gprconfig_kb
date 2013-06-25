@@ -234,6 +234,15 @@ procedure Gprlib is
       Table_Name           => "Gprlib.Library_Options_Table");
    --  A table to store the library options
 
+   package Library_Rpath_Options_Table is new Table.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 5,
+      Table_Increment      => 100,
+      Table_Name           => "Gprlib.Library_Rpath_Options_Table");
+   --  A table to store the library rpath options
+
    package Library_Switches_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -1032,6 +1041,10 @@ begin
                end if;
 
                Library_Options_Table.Append (new String'(Line (1 .. Last)));
+
+            when Gprexch.Library_Rpath_Options =>
+               Library_Rpath_Options_Table.Append
+                                             (new String'(Line (1 .. Last)));
 
             when Library_Path =>
                Osint.Fail ("library path should not be specified");
@@ -2280,6 +2293,12 @@ begin
                Shared_Lib_Prefix.all &
                Library_Name.all &
                Shared_Lib_Suffix.all));
+      end if;
+
+      if Path_Option /= null then
+         for Index in 1 .. Library_Rpath_Options_Table.Last loop
+            Add_Rpath (Library_Rpath_Options_Table.Table (Index));
+         end loop;
       end if;
 
       if Path_Option /= null and then Rpath /= null then

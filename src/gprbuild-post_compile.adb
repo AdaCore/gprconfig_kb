@@ -35,8 +35,15 @@ with Output;      use Output;
 with Prj.Env;
 with Prj.Util;    use Prj.Util;
 with Snames;      use Snames;
+with Tempdir;
 
 package body Gprbuild.Post_Compile is
+
+   type Lang_Names is array (Positive range <>) of Language_Ptr;
+   type Lang_Names_Ptr is access Lang_Names;
+
+   Langs : Lang_Names_Ptr := new Lang_Names (1 .. 4);
+   Last_Lang : Natural := 0;
 
    procedure Build_Library
      (For_Project  : Project_Id;
@@ -123,8 +130,9 @@ package body Gprbuild.Post_Compile is
       procedure Write_Runtime_Library_Dir;
       procedure Write_Auto_Init;
       procedure Write_Run_Path_Option;
-      procedure Write_Leading_Library_Option;
-      procedure Write_Library_Option;
+      procedure Write_Leading_Library_Options;
+      procedure Write_Library_Options;
+      procedure Write_Library_Rpath_Options;
       procedure Write_Imported_Libraries;
       procedure Write_Dependency_Files;
       procedure Write_Toolchain_Version;
@@ -786,11 +794,11 @@ package body Gprbuild.Post_Compile is
          end if;
       end Write_Run_Path_Option;
 
-      ----------------------------------
-      -- Write_Leading_Library_Option --
-      ----------------------------------
+      -----------------------------------
+      -- Write_Leading_Library_Options --
+      -----------------------------------
 
-      procedure Write_Leading_Library_Option is
+      procedure Write_Leading_Library_Options is
          Leading_Library_Options : Variable_Value := Nil_Variable_Value;
       begin
          --  If attribute Leading_Library_Options was specified, add these
@@ -807,13 +815,13 @@ package body Gprbuild.Post_Compile is
                Gprexch.Leading_Library_Options,
                Leading_Library_Options.Values);
          end if;
-      end Write_Leading_Library_Option;
+      end Write_Leading_Library_Options;
 
-      --------------------------
-      -- Write_Library_Option --
-      --------------------------
+      ---------------------------
+      -- Write_Library_Options --
+      ---------------------------
 
-      procedure Write_Library_Option is
+      procedure Write_Library_Options is
          Library_Options : Variable_Value := Nil_Variable_Value;
       begin
          --  If attribute Library_Options was specified, add these
@@ -829,7 +837,274 @@ package body Gprbuild.Post_Compile is
               (Exchange_File,
                Gprexch.Library_Options, Library_Options.Values);
          end if;
-      end Write_Library_Option;
+      end Write_Library_Options;
+
+      ---------------------------------
+      -- Write_Library_Rpath_Options --
+      ---------------------------------
+
+      procedure Write_Library_Rpath_Options is
+
+         procedure Add_Language (Lang : Language_Ptr);
+         --  Add language Name in array Langs if not already there
+
+         procedure Find_Languages
+           (Project    : Project_Id;
+            Tree       : Project_Tree_Ref;
+            With_State : in out Boolean);
+         --  Find the languages of a project
+
+         procedure Find_All_Languages is new
+           For_Every_Project_Imported (Boolean, Find_Languages);
+
+         procedure Get_Languages;
+         --  Put in Langs the languages of the project tree rooted at project
+         --  For_Project.
+
+         ------------------
+         -- Add_Language --
+         ------------------
+
+         procedure Add_Language (Lang : Language_Ptr) is
+         begin
+
+            --  Only add a language if it is not already in the list
+
+            for J in 1 .. Last_Lang loop
+               if Lang.Name = Langs (J).Name then
+                  return;
+               end if;
+            end loop;
+
+            --  Double array Langs if already full
+
+            if Last_Lang = Langs'Last then
+               declare
+                  New_Langs : constant Lang_Names_Ptr :=
+                    new Lang_Names (1 .. 2 * Langs'Length);
+
+               begin
+                  New_Langs (Langs'Range) := Langs.all;
+                  Langs := New_Langs;
+               end;
+            end if;
+
+            Last_Lang := Last_Lang + 1;
+            Langs (Last_Lang) := Lang;
+         end Add_Language;
+
+         --------------------
+         -- Find_Languages --
+         --------------------
+
+         procedure Find_Languages
+           (Project    : Project_Id;
+            Tree       : Project_Tree_Ref;
+            With_State : in out Boolean)
+         is
+            pragma Unreferenced (Tree);
+            pragma Unreferenced (With_State);
+
+            Lang : Language_Ptr := Project.Languages;
+
+         begin
+            while Lang /= No_Language_Index loop
+               Add_Language (Lang);
+               Lang := Lang.Next;
+            end loop;
+         end Find_Languages;
+
+         -------------------
+         -- Get_Languages --
+         -------------------
+
+         procedure Get_Languages is
+            OK : Boolean := True;
+         begin
+            Last_Lang := 0;
+
+            Find_Languages (For_Project, Project_Tree, OK);
+
+            Find_All_Languages
+              (By                 => For_Project,
+               Tree               => Project_Tree,
+               With_State         => OK,
+               Include_Aggregated => False);
+         end Get_Languages;
+
+         List : Array_Element_Id;
+         Elem : Array_Element;
+         Label_Issued : Boolean := False;
+         Lang_Index : Natural;
+         Lang_Ptr   : Language_Ptr;
+
+         Opt_List : String_List_Id;
+         Opt_Elem : String_Element;
+
+      begin
+         if Opt.Run_Path_Option and then
+           For_Project.Config.Run_Path_Option /= No_Name_List
+         then
+            List :=
+              Value_Of
+                (Name_Library_Rpath_Options,
+                 For_Project.Decl.Arrays, Project_Tree.Shared);
+
+            if List /= No_Array_Element then
+               Get_Languages;
+
+               while Last_Lang /= 0 and then List /= No_Array_Element loop
+                  Elem := Project_Tree.Shared.Array_Elements.Table (List);
+                  Lang_Index := 0;
+
+                  for J in 1 .. Last_Lang loop
+                     if Elem.Index = Langs (J).Name then
+                        Lang_Index := J;
+                        exit;
+                     end if;
+                  end loop;
+
+                  if Lang_Index /= 0 then
+                     Lang_Ptr := Langs (Lang_Index);
+
+                     --  Remove language from the list so that rpath options
+                     --  are not looked for twice for the same language.
+
+                     Langs (Lang_Index .. Last_Lang - 1) :=
+                       Langs (Lang_Index + 1 .. Last_Lang);
+                     Last_Lang := Last_Lang - 1;
+
+                     --  Invoke the compiler for the language, followed by
+                     --  the options and put the result into a temporary file.
+
+                     Opt_List := Elem.Value.Values;
+
+                     --  Nothing to do if there is no options
+
+                     if Opt_List /= Nil_String then
+
+                        declare
+                           Opt_Nmb : Natural := 0;
+
+                        begin
+
+                           --  Count the options
+
+                           while Opt_List /= Nil_String loop
+                              Opt_Elem :=
+                                Project_Tree.Shared.String_Elements.Table
+                                                                    (Opt_List);
+                              Opt_Nmb := Opt_Nmb + 1;
+                              Opt_List := Opt_Elem.Next;
+                           end loop;
+
+                           declare
+                              Args : Argument_List (1 .. Opt_Nmb);
+                              FD : File_Descriptor;
+                              Pname : Path_Name_Type;
+                              Return_Code : Integer;
+                              pragma Warnings (Off, Return_Code);
+
+                              File : Text_File;
+                              Line : String (1 .. 1000);
+                              Last : Natural;
+
+                              Disregard : Boolean;
+                              pragma Warnings (Off, Disregard);
+
+                           begin
+                              Opt_List := Elem.Value.Values;
+                              Opt_Nmb := 0;
+
+                              --  Put the options in Args
+
+                              while Opt_List /= Nil_String loop
+                                 Opt_Elem :=
+                                   Project_Tree.Shared.String_Elements.Table
+                                     (Opt_List);
+                                 Opt_Nmb := Opt_Nmb + 1;
+                                 Args (Opt_Nmb) :=
+                                   new String'
+                                     (Get_Name_String (Opt_Elem.Value));
+                                 Opt_List := Opt_Elem.Next;
+                              end loop;
+
+                              --  Create a temporary file and invoke the
+                              --  compiler with the options redirecting
+                              --  the output to this temporary file.
+
+                              Tempdir.Create_Temp_File (FD, Pname);
+                              Spawn
+                                (Program_Name =>
+                                   Lang_Ptr.Config.Compiler_Driver_Path.all,
+                                 Args => Args,
+                                 Output_File_Descriptor => FD,
+                                 Return_Code => Return_Code);
+                              Close (FD);
+
+                              --  Now read the temporary file and get the first
+                              --  non empty line, if any.
+
+                              Open (File, Get_Name_String (Pname));
+
+                              if Is_Valid (File) then
+                                 Last := 0;
+                                 while not End_Of_File (File) loop
+                                    Get_Line (File, Line, Last);
+                                    exit when Last > 0;
+                                 end loop;
+
+                                 --  Get the directory name of the path
+
+                                 if Last /= 0 then
+                                    declare
+                                       Dir : constant String :=
+                                         Dir_Name
+                                           (Normalize_Pathname
+                                              (Line (1 .. Last)));
+
+                                    begin
+
+                                       --  If it is in fact a directory, put it
+                                       --  in the exchange file.
+
+                                       if Is_Directory (Dir) then
+                                          if not Label_Issued then
+                                             Put_Line
+                                               (Exchange_File,
+                                                Library_Label
+                                             (Gprexch.Library_Rpath_Options));
+                                             Label_Issued := True;
+                                          end if;
+
+                                          Put_Line
+                                            (Exchange_File, Dir);
+                                       end if;
+                                    end;
+                                 end if;
+                              end if;
+
+                              if Is_Valid (File) then
+                                 Close (File);
+                              end if;
+
+                              --  Delete the temporary file, if gprbuild was
+                              --  not invoked with -dn.
+
+                              if not Debug_Flag_N then
+                                 Delete_File
+                                   (Get_Name_String (Pname), Disregard);
+                              end if;
+                           end;
+                        end;
+                     end if;
+                  end if;
+
+                  List := Elem.Next;
+               end loop;
+            end if;
+         end if;
+      end Write_Library_Rpath_Options;
 
       ------------------------------
       -- Write_Imported_Libraries --
@@ -1604,9 +1879,11 @@ package body Gprbuild.Post_Compile is
 
             Write_Run_Path_Option;
 
-            Write_Leading_Library_Option;
+            Write_Leading_Library_Options;
 
-            Write_Library_Option;
+            Write_Library_Options;
+
+            Write_Library_Rpath_Options;
 
             Write_Imported_Libraries;
          end if;
