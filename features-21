@@ -65,6 +65,13 @@ NF-21-L724-003 Empty Run_Path_Origin (2013-02-05)
   may be moved to another directory without moving the shared libraries
   it needs.
 
+NF-21-KB01-015 libstdc++.so directory in run path option (2013-06-26)
+
+  A new configuration attribute Library_Rpath_Options is created. The main
+  goal of this attribute is to make sure that shared libraries with C++ code
+  are linked with a run path option that includes the directory of the
+  correct libstdc++.so.
+
 NF-21-K826-028 Add support for distributed compilation (2012-12-19)
 
   It is now possible to use multiple computers to conduct the compilations.
