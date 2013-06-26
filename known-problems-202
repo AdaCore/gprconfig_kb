@@ -11,6 +11,18 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-202-M625-043 Minimal recompilation and preprocessed sources
+
+  Problem:    When gprbuild is invoked with -m (minimal recompilation) and
+              a source that need preprocessing is checked for its checksum
+              to decide if it needs to be recompiled, gprbuild may behave
+              incorrectly, either reporting "preprocessor not active" errors
+              or even crashing.
+
+  Status:     This was fixed in 2.1 on 2013-06-26
+
+  Workaround: Invoke gprbuild without switch -m.
+
 KP-202-M417-023 Deeply extended library projects
 
   Problem:    When a library A project extends a project B that itself extends
