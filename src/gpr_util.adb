@@ -35,11 +35,12 @@ with Makeutl;  use Makeutl;
 with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
-with Prj.Err;
 with Prj.Util; use Prj.Util;
 with Scans;
+with Scng;
 with Sinput.C;
 with Sinput.P;
+with Styleg;
 with Snames;   use Snames;
 with Table;
 with Tempdir;
@@ -48,6 +49,31 @@ with Types;    use Types;
 with GprConfig.Sdefault;
 
 package body Gpr_Util is
+
+   --  Empty procedures needed to instantiate Scng. Error procedures are
+   --  empty, because we don't want to report any errors when computing
+   --  a source checksum.
+
+   procedure Post_Scan;
+
+   procedure Error_Msg (Msg : String; Flag_Location : Source_Ptr);
+
+   procedure Error_Msg_S (Msg : String);
+
+   procedure Error_Msg_SC (Msg : String);
+
+   procedure Error_Msg_SP (Msg : String);
+
+   --  Instantiation of Styleg, needed to instantiate Scng
+
+   package Style is new Styleg
+     (Error_Msg, Error_Msg_S, Error_Msg_SC, Error_Msg_SP);
+
+   --  A Scanner is needed to get checksum of a source (procedure
+   --  Get_File_Checksum).
+
+   package Scanner is new Scng
+     (Post_Scan, Error_Msg, Error_Msg_S, Error_Msg_SC, Error_Msg_SP, Style);
 
    Libgcc_Subdir_Ptr : Interfaces.C.Strings.chars_ptr;
    pragma Import (C, Libgcc_Subdir_Ptr, "__gnat_default_libgcc_subdir");
@@ -265,6 +291,47 @@ package body Gpr_Util is
          return Path & Directory_Separator;
       end if;
    end Ensure_Directory;
+
+   ---------------
+   -- Error_Msg --
+   ---------------
+
+   procedure Error_Msg (Msg : String; Flag_Location : Source_Ptr) is
+      pragma Warnings (Off, Msg);
+      pragma Warnings (Off, Flag_Location);
+   begin
+      null;
+   end Error_Msg;
+
+   -----------------
+   -- Error_Msg_S --
+   -----------------
+
+   procedure Error_Msg_S (Msg : String) is
+      pragma Warnings (Off, Msg);
+   begin
+      null;
+   end Error_Msg_S;
+
+   ------------------
+   -- Error_Msg_SC --
+   ------------------
+
+   procedure Error_Msg_SC (Msg : String) is
+      pragma Warnings (Off, Msg);
+   begin
+      null;
+   end Error_Msg_SC;
+
+   ------------------
+   -- Error_Msg_SP --
+   ------------------
+
+   procedure Error_Msg_SP (Msg : String) is
+      pragma Warnings (Off, Msg);
+   begin
+      null;
+   end Error_Msg_SP;
 
    --------------
    -- File_MD5 --
@@ -1160,7 +1227,6 @@ package body Gpr_Util is
 
                            declare
                               Source_Index : Source_File_Index;
-                              use Prj.Err;
                               use Scans;
 
                            begin
@@ -1180,6 +1246,8 @@ package body Gpr_Util is
                                  Set_Name_Table_Byte (Name_Project,  0);
                                  Set_Name_Table_Byte (Name_Extends,  0);
                                  Set_Name_Table_Byte (Name_External, 0);
+                                 Set_Name_Table_Byte
+                                   (Name_External_As_List, 0);
 
                                  --  Scan the complete file to compute its
                                  --  checksum.
@@ -1449,7 +1517,6 @@ package body Gpr_Util is
 
                            declare
                               Source_Index : Source_File_Index;
-                              use Prj.Err;
                               use Scans;
 
                            begin
@@ -1469,6 +1536,8 @@ package body Gpr_Util is
                                  Set_Name_Table_Byte (Name_Project,  0);
                                  Set_Name_Table_Byte (Name_Extends,  0);
                                  Set_Name_Table_Byte (Name_External, 0);
+                                 Set_Name_Table_Byte
+                                   (Name_External_As_List, 0);
 
                                  --  Scan the complete file to compute its
                                  --  checksum.
@@ -1669,7 +1738,6 @@ package body Gpr_Util is
 
                            declare
                               Source_Index : Source_File_Index;
-                              use Prj.Err;
                               use Scans;
 
                            begin
@@ -1689,6 +1757,8 @@ package body Gpr_Util is
                                  Set_Name_Table_Byte (Name_Project,  0);
                                  Set_Name_Table_Byte (Name_Extends,  0);
                                  Set_Name_Table_Byte (Name_External, 0);
+                                 Set_Name_Table_Byte
+                                   (Name_External_As_List, 0);
 
                                  --  Scan the complete file to compute its
                                  --  checksum.
@@ -2017,6 +2087,15 @@ package body Gpr_Util is
    ---------------
 
    package body Knowledge is separate;
+
+   ---------------
+   -- Post_Scan --
+   ---------------
+
+   procedure Post_Scan is
+   begin
+      null;
+   end Post_Scan;
 
    -------------------
    -- Relative_Path --
