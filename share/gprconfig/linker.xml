@@ -492,6 +492,18 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+       <target name="^.*darwin.*$" />
+    </targets>
+    <compilers>
+        <compiler name="G++" language="C++" />
+    </compilers>
+    <config>
+    for Library_Rpath_Options ("C++") use ("-print-file-name=libstdc++.dylib");
+    </config>
+  </configuration>
+
   <!--  HPUX -->
   <configuration>
     <targets>
@@ -569,6 +581,18 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+       <target name="^.*linux.*$" />
+    </targets>
+    <compilers>
+        <compiler name="G++" language="C++" />
+    </compilers>
+    <config>
+    for Library_Rpath_Options ("C++") use ("-print-file-name=libstdc++.so");
+    </config>
+  </configuration>
+
   <!-- freebsd -->
   <configuration>
     <targets>
@@ -618,6 +642,19 @@
    for Run_Path_Option  use ("-Wl,-z,origin,-R,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+       <target name="^.*sunos.*$" />
+       <target name="^.*solaris.*$" />
+    </targets>
+    <compilers>
+        <compiler name="G++" language="C++" />
+    </compilers>
+    <config>
+    for Library_Rpath_Options ("C++") use ("-print-file-name=libstdc++.so");
     </config>
   </configuration>
 
