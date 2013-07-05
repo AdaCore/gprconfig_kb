@@ -56,6 +56,7 @@ package body Gprbuild.Compilation.Slave is
       Current       : Natural := 0;
       Max_Processes : Positive := 1;
       Root_Dir      : Unbounded_String;
+      Rsync_Pid     : Process_Id;
    end record;
 
    package Slave_S is new Containers.Ordered_Maps (Integer, Slave);
@@ -67,6 +68,9 @@ package body Gprbuild.Compilation.Slave is
      (S_Data       : Slave_Data;
       Project_Name : String) return Slave;
    --  Connect to the slave and return the corresponding object
+
+   procedure Wait_Rsync (N : Natural);
+   --  Wait for N rsync processes. If one of the is in error exit
 
    --  Ack transient signal stored into this variable
 
@@ -369,6 +373,10 @@ package body Gprbuild.Compilation.Slave is
       --  used when calling rsync, it is the remote machine user name, if empty
       --  the local user name is used.
 
+      Rsync_Count : Natural := 0;
+      --  The number of rsync process started, we need to wait for them to
+      --  terminate.
+
       ---------------------------
       -- Register_Remote_Slave --
       ---------------------------
@@ -393,10 +401,6 @@ package body Gprbuild.Compilation.Slave is
 
          Max_Processes := Max_Processes + S.Max_Processes;
 
-         --  Now that all slave's data is known and set, record it
-
-         Slaves.Insert (To_C (Sock (S.Channel)), S);
-
          if Opt.Verbose_Mode then
             Write_Str ("Register slave " & User_Host & ",");
             Write_Str (Integer'Image (S.Max_Processes));
@@ -418,8 +422,6 @@ package body Gprbuild.Compilation.Slave is
             OS_Exit (1);
          end if;
 
-         --  ??? It would probably be better to do the rsync in parallel
-
          if S.Data.Sync = Protocol.Rsync then
             --  Check for rsync tool
 
@@ -430,8 +432,7 @@ package body Gprbuild.Compilation.Slave is
             end if;
 
             declare
-               Args    : Argument_List (1 .. 15);
-               Success : Boolean;
+               Args : Argument_List (1 .. 15);
             begin
                --  Archive mode, compression and ignore VCS
 
@@ -468,18 +469,19 @@ package body Gprbuild.Compilation.Slave is
                   Write_Line ("    to  : " & Args (Args'Last).all);
                end if;
 
-               Spawn (Rsync.all, Args, Success);
+               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args);
+
+               Rsync_Count := Rsync_Count + 1;
 
                for A of Args loop
                   Free (A);
                end loop;
-
-               if not Success then
-                  Write_Line ("error: rsync on " & To_String (S.Root_Dir));
-                  OS_Exit (1);
-               end if;
             end;
          end if;
+
+         --  Now that all slave's data is known and set, record it
+
+         Slaves.Insert (To_C (Sock (S.Channel)), S);
       end Register_Remote_Slave;
 
       Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
@@ -547,6 +549,8 @@ package body Gprbuild.Compilation.Slave is
       for S of Slaves_Data loop
          Register_Remote_Slave (S, To_String (Project_Name));
       end loop;
+
+      Wait_Rsync (Rsync_Count);
 
       --  We are in remote mode, the initialization was successful, start tasks
       --  now.
@@ -680,6 +684,7 @@ package body Gprbuild.Compilation.Slave is
    ------------------------------
 
    procedure Unregister_Remote_Slaves is
+      Rsync_Count : Natural := 0;
    begin
       for S of Slaves loop
          declare
@@ -696,7 +701,6 @@ package body Gprbuild.Compilation.Slave is
             if S.Data.Sync = Protocol.Rsync then
                declare
                   Args    : Argument_List (1 .. 5);
-                  Success : Boolean;
                begin
                   --  Archive mode, compression and ignore VCS
 
@@ -720,20 +724,19 @@ package body Gprbuild.Compilation.Slave is
                      Write_Line ("    to  : " & Args (5).all);
                   end if;
 
-                  Spawn (Rsync.all, Args, Success);
+                  S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args);
+
+                  Rsync_Count := Rsync_Count + 1;
 
                   for A of Args loop
                      Free (A);
                   end loop;
-
-                  if not Success then
-                     Write_Line ("error: rsync on " & To_String (S.Root_Dir));
-                     OS_Exit (1);
-                  end if;
                end;
             end if;
          end;
       end loop;
+
+      Wait_Rsync (Rsync_Count);
 
       Slaves.Clear;
    end Unregister_Remote_Slaves;
@@ -864,5 +867,45 @@ package body Gprbuild.Compilation.Slave is
          Write_Line (Exception_Information (E));
          OS_Exit (1);
    end Wait_Remote;
+
+   ----------------
+   -- Wait_Rsync --
+   ----------------
+
+   procedure Wait_Rsync (N : Natural) is
+      Pid     : Process_Id;
+      Success : Boolean;
+      Error   : Boolean := False;
+      Slv     : Slave;
+   begin
+      for K in 1 .. N loop
+         Wait_Process (Pid, Success);
+
+         Find_Slave : for S of Slaves loop
+            if S.Rsync_Pid = Pid then
+               Slv := S;
+               exit Find_Slave;
+            end if;
+         end loop Find_Slave;
+
+         if Success then
+            if Opt.Verbose_Mode then
+               Write_Line
+                 ("  synchronization done for "
+                  & To_String (Slv.Data.Host));
+            end if;
+
+         else
+            Error := True;
+            Write_Line ("error: rsync on " & To_String (Slv.Data.Host));
+         end if;
+      end loop;
+
+      --  If there is any error we cannot continue, just exit now
+
+      if Error then
+         OS_Exit (1);
+      end if;
+   end Wait_Rsync;
 
 end Gprbuild.Compilation.Slave;
