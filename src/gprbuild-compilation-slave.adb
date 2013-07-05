@@ -92,8 +92,8 @@ package body Gprbuild.Compilation.Slave is
    Compiler_Path : constant OS_Lib.String_Access :=
                      Locate_Exec_On_Path ("gnatls");
 
-   Rsync    : constant GNAT.OS_Lib.String_Access :=
-                Locate_Exec_On_Path ("rsync");
+   Rsync         : constant GNAT.OS_Lib.String_Access :=
+                     Locate_Exec_On_Path ("rsync");
 
    Project_Name : Unbounded_String;
    --  Current project name being compiled
