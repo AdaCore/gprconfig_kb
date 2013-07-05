@@ -1651,6 +1651,13 @@ procedure Gprbuild.Main is
          Write_Str ("           Activate the remote/distributed compilations");
          Write_Eol;
 
+         --  Line for --build-env
+
+         Write_Str ("  --build-env=name");
+         Write_Eol;
+         Write_Str ("           Use name instead of IP of the build master");
+         Write_Eol;
+
          --  Line for Config_Project_Option
 
          Write_Str ("  ");
