@@ -935,6 +935,8 @@ procedure Gprslave is
 
          --  Look for it into the set
 
+         Mutex.Seize;
+
          Pos := Job_Set.Find (Job);
 
          --  Note that if there is not such element it could be because the
@@ -953,8 +955,6 @@ procedure Gprslave is
             --  Enter a critical section to:
             --    - send atomic response to build master
             --    - make sure the current directory is the work directory
-
-            Mutex.Seize;
 
             begin
                if Debug then
@@ -998,8 +998,6 @@ procedure Gprslave is
                end if;
             end;
 
-            Mutex.Release;
-
             Running_Jobs.Decrement;
 
          else
@@ -1007,6 +1005,8 @@ procedure Gprslave is
                Put_Line ("# unknown job data for pid");
             end if;
          end if;
+
+         Mutex.Release;
       end loop;
    exception
       when E : others =>
