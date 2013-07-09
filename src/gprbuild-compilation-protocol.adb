@@ -75,7 +75,15 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Close (Channel : in out Communication_Channel) is
    begin
-      Shutdown_Socket (Channel.Sock);
+      begin
+         --  Make sure we never fail, the other end-point could have already
+         --  closed the channel (hard ctrl-c).
+         Shutdown_Socket (Channel.Sock);
+      exception
+         when others =>
+            null;
+      end;
+
       Channel.Channel := null;
       Clear_Rewrite (Channel);
    end Close;
