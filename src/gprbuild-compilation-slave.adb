@@ -700,7 +700,7 @@ package body Gprbuild.Compilation.Slave is
 
             if S.Data.Sync = Protocol.Rsync then
                declare
-                  Args    : Argument_List (1 .. 5);
+                  Args : Argument_List (1 .. 5);
                begin
                   --  Archive mode, compression and ignore VCS
 
