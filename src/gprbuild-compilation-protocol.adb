@@ -609,7 +609,7 @@ package body Gprbuild.Compilation.Protocol is
    procedure Set_Rewrite_CD
      (Channel : in out Communication_Channel; Path : String) is
    begin
-      Channel.CD_From := To_Unbounded_String (Path);
+      Channel.CD_From := To_Unbounded_String (Normalize_Pathname (Path));
       Channel.CD_To := To_Unbounded_String (CD_Path_Tag);
    end Set_Rewrite_CD;
 
