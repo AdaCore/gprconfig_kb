@@ -19,6 +19,7 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Calendar;                use Ada.Calendar;
 with Ada.Containers.Ordered_Maps;
 with Ada.Containers.Vectors;      use Ada;
 with Ada.Directories;             use Ada.Directories;
@@ -377,6 +378,8 @@ package body Gprbuild.Compilation.Slave is
       --  The number of rsync process started, we need to wait for them to
       --  terminate.
 
+      Start, Stop : Calendar.Time;
+
       ---------------------------
       -- Register_Remote_Slave --
       ---------------------------
@@ -546,11 +549,21 @@ package body Gprbuild.Compilation.Slave is
 
       --  Then registers the build slaves
 
+      Start := Calendar.Clock;
+
       for S of Slaves_Data loop
          Register_Remote_Slave (S, To_String (Project_Name));
       end loop;
 
       Wait_Rsync (Rsync_Count);
+
+      Stop := Calendar.Clock;
+
+      if Opt.Verbose_Mode and then Rsync_Count > 0 then
+         Write_Str ("  All data synchronized in ");
+         Write_Str (Duration'Image (Stop - Start));
+         Write_Line (" seconds");
+      end if;
 
       --  We are in remote mode, the initialization was successful, start tasks
       --  now.
@@ -685,7 +698,10 @@ package body Gprbuild.Compilation.Slave is
 
    procedure Unregister_Remote_Slaves is
       Rsync_Count : Natural := 0;
+      Start, Stop : Time;
    begin
+      Start := Clock;
+
       for S of Slaves loop
          declare
             function User_Host return String is
@@ -719,7 +735,7 @@ package body Gprbuild.Compilation.Slave is
                   Args (5) := new String'(To_String (Root_Dir));
 
                   if Opt.Verbose_Mode then
-                     Write_Line ("synchronize back data");
+                     Write_Line ("  synchronize back data");
                      Write_Line ("    from: " & Args (4).all);
                      Write_Line ("    to  : " & Args (5).all);
                   end if;
@@ -737,6 +753,14 @@ package body Gprbuild.Compilation.Slave is
       end loop;
 
       Wait_Rsync (Rsync_Count);
+
+      Stop := Clock;
+
+      if Opt.Verbose_Mode and then Rsync_Count > 0 then
+         Write_Str ("  All data synchronized in ");
+         Write_Str (Duration'Image (Stop - Start));
+         Write_Line (" seconds");
+      end if;
 
       Slaves.Clear;
    end Unregister_Remote_Slaves;
