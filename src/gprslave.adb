@@ -542,7 +542,7 @@ procedure Gprslave is
 
             exception
                when E : others =>
-                  Put_Line ("Error: " & Exception_Message (E));
+                  Put_Line ("Error: " & Exception_Information (E));
 
                   --  In case of an exception, communication endded
                   --  prematurately or some wrong command received, make sure
@@ -554,6 +554,12 @@ procedure Gprslave is
             Mutex.Release;
          end if;
       end loop Handle_Commands;
+
+   exception
+      when E : others =>
+         Put_Line ("Unrecoverable error: Protocol_Handler.");
+         Put_Line (Exception_Information (E));
+         OS_Exit (1);
    end Protocol_Handler;
 
    ---------------------
@@ -864,6 +870,12 @@ procedure Gprslave is
                end if;
          end Process;
       end loop;
+
+   exception
+      when E : others =>
+         Put_Line ("Unrecoverable error: Run_Compilation.");
+         Put_Line (Exception_Information (E));
+         OS_Exit (1);
    end Run_Compilation;
 
    ------------
@@ -1008,6 +1020,7 @@ procedure Gprslave is
 
          Mutex.Release;
       end loop;
+
    exception
       when E : others =>
          Put_Line ("Unrecoverable error: Wait_Completion.");
@@ -1205,6 +1218,7 @@ begin
 
 exception
    when E : others =>
-      Put_Line ("Unexpected error : " & Exception_Information (E));
+      Put_Line ("Unrecoverable error: GprSlave.");
+      Put_Line (Exception_Information (E));
       OS_Exit (1);
 end Gprslave;
