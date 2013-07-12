@@ -845,6 +845,9 @@ package body Gprbuild.Compilation.Slave is
                         Wait_Ack.Set (Pid);
                      end;
 
+                  elsif Kind (Cmd) = EC then
+                     null;
+
                   else
                      raise Constraint_Error with "Unexpected command: "
                        & Command_Kind'Image (Kind (Cmd));

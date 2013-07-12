@@ -223,40 +223,51 @@ package body Gprbuild.Compilation.Protocol is
          end if;
       end Handle_Output;
 
-      Line   : constant String := String'Input (Channel.Channel);
-      C      : constant String :=
-                 (if Line'Length >= 2
-                  then Line (Line'First .. Line'First + 1)
-                  else "");
       Result : Command;
 
    begin
-      if C in "EX" | "AK" | "FL" | "OK" | "KO" | "CX" | "CU" | "DP" | "EC" then
-         Result.Cmd := Command_Kind'Value (C);
+      declare
+         Line : constant String := String'Input (Channel.Channel);
+         C    : constant String :=
+                  (if Line'Length >= 2
+                   then Line (Line'First .. Line'First + 1)
+                   else "");
+      begin
+         if C in
+           "EX" | "AK" | "FL" | "OK" | "KO" | "CX" | "CU" | "DP" | "EC"
+         then
+            Result.Cmd := Command_Kind'Value (C);
 
-         Create
-           (Result.Args,
-            Line (Line'First + 2 .. Line'Last),
-            String'(1 => Args_Sep));
+            Create
+              (Result.Args,
+               Line (Line'First + 2 .. Line'Last),
+               String'(1 => Args_Sep));
 
-         if Result.Cmd = FL then
-            --  We got some file data to write
-            return Handle_File (Result);
+            if Result.Cmd = FL then
+               --  We got some file data to write
+               return Handle_File (Result);
 
-         elsif Result.Cmd = DP then
-            --  We got an output to display
-            Handle_Output (Result);
-         end if;
+            elsif Result.Cmd = DP then
+               --  We got an output to display
+               Handle_Output (Result);
+            end if;
 
-      else
-         if Line'Length > 0 then
-            raise Wrong_Command with Line;
          else
-            raise Wrong_Command with "empty command line";
+            if Line'Length > 0 then
+               raise Wrong_Command with Line;
+            else
+               raise Wrong_Command with "empty command line";
+            end if;
          end if;
-      end if;
 
-      return Result;
+         return Result;
+      end;
+
+   exception
+      when others =>
+         --  Any exception means that the channel has been closed
+         Result.Cmd := EC;
+         return Result;
    end Get_Command;
 
    -----------------
