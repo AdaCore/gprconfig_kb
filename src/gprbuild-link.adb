@@ -25,7 +25,6 @@ with Ada.Text_IO;                use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with Atree;       use Atree;
 with Debug;       use Debug;
 with Gpr_Util;    use Gpr_Util;
 with Gprexch;     use Gprexch;
@@ -62,14 +61,61 @@ package body Gprbuild.Link is
    --  A list of the Source_Ids, with an indication that they have been found
    --  in the archive dependency file.
 
+   package Bad_Links is new Table.Table
+     (Table_Component_Type => Main_Info,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Buildgpr.Bad_Links");
+   --  Info for all the mains where link fails
+
+   Outstanding_Links : Natural := 0;
+   --  The number of link jobs currently spawned
+
+   Stop_Linking : Boolean := False;
+   --  True when one link process failed and switch -k was not used
+
+   procedure Record_Failure (Main : Main_Info);
+   --  Add Main to table Bad_Links and set Stop_Linking to True if switch -k is
+   --  not used.
+
+   type Process_Data is record
+      Process    : Process_Id     := Invalid_Pid;
+      Main       : Main_Info      := No_Main_Info;
+      Response_1 : Path_Name_Type := No_Path;
+      Response_2 : Path_Name_Type := No_Path;
+   end record;
+
+   No_Process_Data : constant Process_Data :=
+     (Invalid_Pid, No_Main_Info, No_Path, No_Path);
+
+   type Header_Num is range 0 .. 2047;
+
+   function Hash (Pid : Process_Id) return Header_Num;
+
+   package Link_Htable is new GNAT.HTable.Simple_HTable
+     (Header_Num => Header_Num,
+      Element    => Process_Data,
+      No_Element => No_Process_Data,
+      Key        => Process_Id,
+      Hash       => Hash,
+      Equal      => "=");
+   --  Hash table to keep data for all spawned jobs
+
+   procedure Await_Link (Main_File : out Main_Info; OK : out Boolean);
+   --  Wait for the end of a link
+
    procedure Build_Global_Archive
      (For_Project    : Project_Id;
       Project_Tree   : Project_Tree_Ref;
       Has_Been_Built : out Boolean;
-      Exists         : out Boolean);
+      Exists         : out Boolean;
+      OK             : out Boolean);
    --  Build, if necessary, the global archive for a main project.
    --  Out parameter Has_Been_Built is True iff the global archive has been
    --  built/rebuilt. Exists is False if there is no need for a global archive.
+   --  OK is False when there is a problem building the global archive.
 
    procedure Link_Main (Main_File : Main_Info);
    --  Link a specific main unit
@@ -354,6 +400,51 @@ package body Gprbuild.Link is
       end if;
    end Add_Rpath;
 
+   ----------------
+   -- Await_Link --
+   ----------------
+
+   procedure Await_Link (Main_File : out Main_Info; OK : out Boolean) is
+      Pid       : Process_Id;
+      Link_Data : Process_Data;
+   begin
+      loop
+         Main_File := No_Main_Info;
+
+         Wait_Process (Pid, OK);
+
+         if Pid = Invalid_Pid then
+            return;
+         end if;
+
+         Link_Data := Link_Htable.Get (Pid);
+
+         if Link_Data /= No_Process_Data then
+            Main_File := Link_Data.Main;
+
+            if Link_Data.Response_1 /= No_Path
+              and then not Debug.Debug_Flag_N
+            then
+               declare
+                  Dont_Care : Boolean;
+                  pragma Warnings (Off, Dont_Care);
+               begin
+                  Delete_File
+                    (Get_Name_String (Link_Data.Response_1), Dont_Care);
+
+                  if Link_Data.Response_2 /= No_Path then
+                     Delete_File
+                       (Get_Name_String (Link_Data.Response_2), Dont_Care);
+                  end if;
+               end;
+            end if;
+
+            Outstanding_Links := Outstanding_Links - 1;
+            return;
+         end if;
+      end loop;
+   end Await_Link;
+
    --------------------------
    -- Build_Global_Archive --
    --------------------------
@@ -362,7 +453,8 @@ package body Gprbuild.Link is
      (For_Project    : Project_Id;
       Project_Tree   : Project_Tree_Ref;
       Has_Been_Built : out Boolean;
-      Exists         : out Boolean)
+      Exists         : out Boolean;
+      OK             : out Boolean)
    is
       Archive_Name : constant String :=
                        "lib"
@@ -542,6 +634,7 @@ package body Gprbuild.Link is
    begin
       Exists := False;
       Has_Been_Built := False;
+      OK := True;
 
       --  No need to build the global archive, if it has already been done
 
@@ -931,14 +1024,11 @@ package body Gprbuild.Link is
                            if Is_Regular_File (Archive_Dep_Name) then
                               Delete_File (Archive_Dep_Name, Success);
                            end if;
-
-                           Fail_Program
-                             (Project_Tree,
-                              "global archive could not be built");
-                           return;
                         end if;
                      end if;
+                  end if;
 
+                  if Success then
                      --  The archive was correctly built, create its dependency
                      --  file.
 
@@ -981,13 +1071,11 @@ package body Gprbuild.Link is
                         Delete_File (Archive_Dep_Name, Success);
                      end if;
 
-                     Fail_Program
-                       (Project_Tree,
-                        "global archive could not be built");
-
-                     Has_Been_Built := False;
-                     Exists         := True;
-
+                     Write_Str ("global archive for project ");
+                     Write_Str
+                       (Get_Name_String (For_Project.Display_Name));
+                     Write_Line (" could not be built");
+                     OK := False;
                      return;
                   end if;
                end if;
@@ -1220,6 +1308,16 @@ package body Gprbuild.Link is
       end loop;
    end Get_Linker_Options;
 
+   ----------
+   -- Hash --
+   ----------
+
+   function Hash (Pid : Process_Id) return Header_Num is
+      Modulo : constant Integer := Integer (Header_Num'Last) + 1;
+   begin
+      return Header_Num (Pid_To_Integer (Pid) mod Modulo);
+   end Hash;
+
    ---------------------------
    -- Is_In_Library_Project --
    ---------------------------
@@ -1379,67 +1477,17 @@ package body Gprbuild.Link is
       end loop;
    end Rpaths_Relative_To;
 
-   ---------
-   -- Run --
-   ---------
-
-   procedure Run is
-
-      procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref);
-
-      -------------
-      -- Do_Link --
-      -------------
-
-      procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref) is
-         pragma Unreferenced (Project);
-         Main_File : Main_Info;
-      begin
-         if Builder_Data (Tree).Need_Linking then
-            Mains.Reset;
-            loop
-               Main_File := Mains.Next_Main;
-               exit when Main_File = No_Main_Info;
-
-               if Main_File.Tree = Tree
-                 and then not Project_Compilation_Failed (Main_File.Project)
-               then
-                  Link_Main (Main_File);
-               end if;
-            end loop;
-
-            if Total_Errors_Detected > 0 then
-               Fail_Program (Tree, "*** link failed");
-            end if;
-         end if;
-      end Do_Link;
-
-      procedure Link_All is new For_Project_And_Aggregated (Do_Link);
-
-   begin
-      Link_All (Main_Project, Project_Tree);
-   end Run;
-
    ---------------
    -- Link_Main --
    ---------------
 
    procedure Link_Main (Main_File  : Main_Info) is
 
+      procedure Add_Process (Process : Process_Id);
+      --  Add link process
+
       function Global_Archive_Name (For_Project : Project_Id) return String;
       --  Returns the name of the global archive for a project
-
-      -------------------------
-      -- Global_Archive_Name --
-      -------------------------
-
-      function Global_Archive_Name (For_Project : Project_Id) return String is
-      begin
-         return
-           "lib" &
-           Get_Name_String (For_Project.Name) &
-           Archive_Suffix (For_Project);
-      end Global_Archive_Name;
 
       Linker_Name        : String_Access := null;
       Linker_Path        : String_Access;
@@ -1448,7 +1496,7 @@ package body Gprbuild.Link is
       Line               : String (1 .. 1_000);
       Last               : Natural;
 
-      Success            : Boolean := False;
+      --  Success            : Boolean := False;
 
       Section            : Binding_Section := No_Binding_Section;
 
@@ -1462,6 +1510,7 @@ package body Gprbuild.Link is
 
       Global_Archive_Has_Been_Built : Boolean;
       Global_Archive_Exists         : Boolean;
+      OK                            : Boolean;
 
       Disregard          : Boolean;
 
@@ -1488,6 +1537,30 @@ package body Gprbuild.Link is
       Response_File_Name : Path_Name_Type := No_Path;
       Response_2         : Path_Name_Type := No_Path;
 
+      -----------------
+      -- Add_Process --
+      -----------------
+
+      procedure Add_Process (Process : Process_Id) is
+      begin
+         Link_Htable.Set
+           (Process,
+            (Process, Main_File, Response_File_Name, Response_2));
+         Outstanding_Links := Outstanding_Links + 1;
+      end Add_Process;
+
+      -------------------------
+      -- Global_Archive_Name --
+      -------------------------
+
+      function Global_Archive_Name (For_Project : Project_Id) return String is
+      begin
+         return
+           "lib" &
+           Get_Name_String (For_Project.Name) &
+           Archive_Suffix (For_Project);
+      end Global_Archive_Name;
+
    begin
       --  Make sure that the table Rpaths is emptied after each main, so
       --  that the same rpaths are not duplicated.
@@ -1507,7 +1580,14 @@ package body Gprbuild.Link is
         (Main_Proj,
          Main_File.Tree,
          Global_Archive_Has_Been_Built,
-         Global_Archive_Exists);
+         Global_Archive_Exists,
+         OK);
+
+      if not OK then
+         Stop_Linking := True;
+         Bad_Links.Append (Main_File);
+         return;
+      end if;
 
       --  Get the main base name
 
@@ -1606,18 +1686,11 @@ package body Gprbuild.Link is
       end if;
 
       if Main_Object_TS = Empty_Time_Stamp then
-         if Opt.Keep_Going then
-            --  Do not stop there, the compilation error has already been
-            --  reported.
-            return;
-
-         else
-            Fail_Program
-              (Main_File.Tree,
-               "main object for "
-               & Get_Name_String (Main_Source.File)
-               & " does not exist");
-         end if;
+         Write_Str ("main object for ");
+         Write_Str (Get_Name_String (Main_Source.File));
+         Write_Line (" does not exist");
+         Record_Failure (Main_File);
+         return;
       end if;
 
       if Main_Proj = Main_Source.Object_Project then
@@ -1820,8 +1893,10 @@ package body Gprbuild.Link is
                           ("      -> no binder generated object file");
                      end if;
 
-                     Fail_Program
-                       (Main_File.Tree, "no binder generated object file");
+                     Write_Str ("no binder generated object file for ");
+                     Write_Line (Get_Name_String (Main_File.File));
+                     Record_Failure (Main_File);
+                     return;
 
                   elsif not Linker_Needs_To_Be_Called
                     and then
@@ -1837,10 +1912,11 @@ package body Gprbuild.Link is
                   end if;
 
                else
-                  Fail_Program
-                    (Main_File.Tree,
-                     "binder exchange file " &
-                       Exchange_File_Name & " does not exist");
+                  Write_Str ("binder exchange file ");
+                  Write_Str (Exchange_File_Name);
+                  Write_Line (" does not exist");
+                  Record_Failure (Main_File);
+                  return;
                end if;
             end;
 
@@ -1865,11 +1941,9 @@ package body Gprbuild.Link is
                Write_Line ("      -> global archive does not exist");
             end if;
 
-            Fail_Program
-              (Main_File.Tree,
-               "global archive for project file " &
-                 Get_Name_String (Main_Proj.Name) &
-                 " does not exist");
+            Write_Str ("global archive for project file ");
+            Write_Str (Get_Name_String (Main_Proj.Name));
+            Write_Line (" does not exist");
          end if;
       end if;
 
@@ -2736,27 +2810,144 @@ package body Gprbuild.Link is
 
          Display_Command (Linker_Name.all, Linker_Path);
 
-         Spawn (Linker_Path.all, Arguments (1 .. Last_Argument), Success);
+         declare
+            Pid : Process_Id;
 
-         if Response_File_Name /= No_Path
-           and then not Debug.Debug_Flag_N
-         then
-            declare
-               Dont_Care : Boolean;
-               pragma Warnings (Off, Dont_Care);
-            begin
-               Delete_File (Get_Name_String (Response_File_Name), Dont_Care);
+         begin
 
-               if Response_2 /= No_Path then
-                  Delete_File (Get_Name_String (Response_2), Dont_Care);
+            Pid := Non_Blocking_Spawn
+              (Linker_Path.all,  Arguments (1 .. Last_Argument));
+
+            if Pid = Invalid_Pid then
+               Record_Failure (Main_File);
+
+            else
+               Add_Process (Pid);
+
+               if Opt.Maximum_Processes > 1
+                 and then Opt.Verbose_Mode
+                 and then Current_Verbosity = High
+               then
+                  Write_Line
+                    ("   " & Outstanding_Links'Img & " link processes");
                end if;
-            end;
-         end if;
-
-         if not Success then
-            Fail_Program (Main_File.Tree, "link of " & Main & " failed");
-         end if;
+            end if;
+         end;
       end if;
    end Link_Main;
+
+   --------------------
+   -- Record_Failure --
+   --------------------
+
+   procedure Record_Failure (Main : Main_Info) is
+   begin
+      Bad_Links.Append (Main);
+
+      if not Opt.Keep_Going then
+         Stop_Linking := True;
+      end if;
+   end Record_Failure;
+
+   ---------
+   -- Run --
+   ---------
+
+   procedure Run is
+
+      Main : Main_Info;
+      OK   : Boolean;
+
+      procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref);
+
+      procedure Wait_For_Available_Slot;
+
+      -------------
+      -- Do_Link --
+      -------------
+
+      procedure Do_Link (Project : Project_Id; Tree : Project_Tree_Ref) is
+         pragma Unreferenced (Project);
+         Main_File : Main_Info;
+      begin
+         if Builder_Data (Tree).Need_Linking and then not Stop_Linking then
+            Mains.Reset;
+            loop
+               Main_File := Mains.Next_Main;
+               exit when Main_File = No_Main_Info;
+
+               if Main_File.Tree = Tree
+                 and then not Project_Compilation_Failed (Main_File.Project)
+               then
+                  Wait_For_Available_Slot;
+                  exit when Stop_Linking;
+                  Link_Main (Main_File);
+                  exit when Stop_Linking;
+               end if;
+            end loop;
+         end if;
+      end Do_Link;
+
+      procedure Link_All is new For_Project_And_Aggregated (Do_Link);
+
+      -----------------------------
+      -- Wait_For_Available_Slot --
+      -----------------------------
+
+      procedure Wait_For_Available_Slot is
+      begin
+         while Outstanding_Links >= Opt.Maximum_Processes loop
+            Await_Link (Main, OK);
+
+            if not OK then
+               Record_Failure (Main);
+            end if;
+
+            if Opt.Maximum_Processes > 1
+              and then Opt.Verbose_Mode
+              and then Current_Verbosity = High
+            then
+               Write_Line ("   " & Outstanding_Links'Img & " link processes");
+            end if;
+         end loop;
+      end Wait_For_Available_Slot;
+
+   begin
+      Outstanding_Links := 0;
+      Stop_Linking := False;
+      Link_All (Main_Project, Project_Tree);
+
+      while Outstanding_Links > 0 loop
+         Await_Link (Main, OK);
+
+         if not OK then
+            Record_Failure (Main);
+         end if;
+
+         if Opt.Maximum_Processes > 1
+           and then Opt.Verbose_Mode
+           and then Current_Verbosity = High
+         then
+            Write_Line ("   " & Outstanding_Links'Img & " link processes");
+         end if;
+      end loop;
+
+      if Bad_Links.Last = 1 then
+         Main := Bad_Links.Table (1);
+         Fail_Program
+           (Main.Tree,
+            "link of " & Get_Name_String (Main.File) & " failed");
+
+      elsif Bad_Links.Last > 1 then
+         for J in 1 .. Bad_Links.Last loop
+            Main := Bad_Links.Table (J);
+            Write_Str ("   link of ");
+            Write_Str (Get_Name_String (Main.File));
+            Write_Line (" failed");
+         end loop;
+
+         Fail_Program (Main.Tree, "*** link phase failed");
+      end if;
+   end Run;
 
 end Gprbuild.Link;
