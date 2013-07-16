@@ -76,3 +76,8 @@ NF-21-K826-028 Add support for distributed compilation (2012-12-19)
 
   It is now possible to use multiple computers to conduct the compilations.
   This can give good speed-up for large projects.
+
+NF-21-K314-016 Linking several executables simultaneously (2013-07-14)
+
+  gprbuild is now able to link several executables simultaneously when
+  switch -jnnn is used, with nnn other than 1.
