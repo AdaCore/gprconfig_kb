@@ -1202,6 +1202,9 @@ line, and these mains are not up to date, the linker is invoked for each main,
 with all the specified or implied options, including the object files generated
 during the post-compilation phase by the binder drivers.
 
+If switch -jnnn is used, with nnn other than 1, gprbuild will attempt to link
+simultaneously up to nnn executables.
+
 @c ---------------------------------------------
 @node Incompatibilities with gnatmake
 @subsection Incompatibilities with gnatmake
