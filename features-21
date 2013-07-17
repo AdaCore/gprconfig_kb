@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.1 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-21-M714-001 Binding several executables simultaneously (2013-07-17)
+
+  gprbuild is now able to bind several executables simultaneously when
+  switch -jnnn is used, with nnn other than 1.
+
 NF-21-M529-021 Clean artifacts in object and exec directories (2013-06-18)
 
   gprclean now cleans from the object directory the files specified in
