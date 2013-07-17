@@ -24,7 +24,6 @@ with Ada.Text_IO;                  use Ada, Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with Atree;       use Atree;
 with Debug;       use Debug;
 with Gpr_Util;    use Gpr_Util;
 with Gprexch;     use Gprexch;
@@ -2078,6 +2077,10 @@ package body Gprbuild.Post_Compile is
 
    procedure Run is
 
+      Data : Process_Data;
+      Main : Main_Info;
+      OK   : Boolean;
+
       procedure Do_Post (Project : Project_Id; Tree : Project_Tree_Ref);
 
       -------------
@@ -2086,18 +2089,19 @@ package body Gprbuild.Post_Compile is
 
       procedure Do_Post (Project : Project_Id; Tree : Project_Tree_Ref) is
       begin
-         if Builder_Data (Tree).Need_Binding then
+         if Builder_Data (Tree).Need_Binding
+           and then not Stop_Spawning
+         then
             Post_Compilation_Phase (Project, Tree);
-
-            if Total_Errors_Detected > 0 then
-               Fail_Program (Tree, "*** bind failed");
-            end if;
          end if;
       end Do_Post;
 
       procedure Post_Compile_All is new For_Project_And_Aggregated (Do_Post);
 
    begin
+      Outstanding_Processes := 0;
+      Stop_Spawning := False;
+
       if Main_Project.Qualifier = Aggregate_Library then
          --  For an aggregate library we do not want to build separate
          --  libraries if any, this means that at this point we want to
@@ -2106,6 +2110,33 @@ package body Gprbuild.Post_Compile is
 
       else
          Post_Compile_All (Main_Project, Project_Tree);
+      end if;
+
+      while Outstanding_Processes > 0 loop
+         Await_Process (Data, OK);
+
+         if not OK then
+            Record_Failure (Data.Main);
+         end if;
+
+         Display_Processes ("bind");
+      end loop;
+
+      if Bad_Processes.Last = 1 then
+         Main := Bad_Processes.Table (1);
+         Fail_Program
+           (Main.Tree,
+            "unable to bind " & Get_Name_String (Main.File));
+
+      elsif Bad_Processes.Last > 1 then
+         for J in 1 .. Bad_Processes.Last loop
+            Main := Bad_Processes.Table (J);
+            Write_Str ("   binding of ");
+            Write_Str (Get_Name_String (Main.File));
+            Write_Line (" failed");
+         end loop;
+
+         Fail_Program (Main.Tree, "*** post compilation phase failed");
       end if;
 
       if Opt.CodePeer_Mode then
@@ -2120,8 +2151,6 @@ package body Gprbuild.Post_Compile is
    procedure Post_Compilation_Phase
      (Main_Project : Project_Id; Project_Tree : Project_Tree_Ref)
    is
-      Success : Boolean;
-
       Exchange_File : Text_IO.File_Type;
       Line          : String (1 .. 1_000);
       Last          : Natural;
@@ -2155,6 +2184,8 @@ package body Gprbuild.Post_Compile is
          Main_Source : Source_Id;
          Dep_Files   : out Boolean);
       --  Put the dependency files of the project in the binder exchange file
+
+      procedure Wait_For_Available_Slot;
 
       --------------------------
       -- Add_Dependency_Files --
@@ -3304,16 +3335,43 @@ package body Gprbuild.Post_Compile is
                   Write_Line (Bind_Exchange.all);
                end if;
 
-               Spawn
-                 (B_Data.Binder_Driver_Path.all,
-                  (1 => Bind_Exchange), Success);
+               declare
+                  Pid : Process_Id;
+               begin
+                  Pid := Non_Blocking_Spawn
+                    (B_Data.Binder_Driver_Path.all, (1 => Bind_Exchange));
 
-               if not Success then
-                  Fail_Program (Project_Tree, "unable to bind " & Main);
-               end if;
+                  if Pid = Invalid_Pid then
+                     Record_Failure (Main_File);
+
+                  else
+                     Add_Process (Pid, (Binding, Pid, Main_File));
+
+                     Display_Processes ("bind");
+                  end if;
+               end;
             end if;
          end if;
       end Bind_Language;
+
+      -----------------------------
+      -- Wait_For_Available_Slot --
+      -----------------------------
+
+      procedure Wait_For_Available_Slot is
+         Data : Process_Data;
+         OK   : Boolean;
+      begin
+         while Outstanding_Processes >= Opt.Maximum_Processes loop
+            Await_Process (Data, OK);
+
+            if not OK then
+               Record_Failure (Data.Main);
+            end if;
+
+            Display_Processes ("bind");
+         end loop;
+      end Wait_For_Available_Slot;
 
    --  Start of processing for Post_Compilation_Phase
 
@@ -3429,9 +3487,12 @@ package body Gprbuild.Post_Compile is
 
                   B_Data := Builder_Data (Main_File.Tree).Binding;
                   while B_Data /= null loop
+                     Wait_For_Available_Slot;
+                     exit when Stop_Spawning;
                      Bind_Language
                        (Main_Proj, Main, Main_Base_Name_Index,
                         Main_File, Main_Id, B_Data);
+                     exit when Stop_Spawning;
                      B_Data := B_Data.Next;
                   end loop;
                end;

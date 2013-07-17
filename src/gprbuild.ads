@@ -27,6 +27,7 @@ private with Ada.Unchecked_Deallocation;
 private with GNAT.Dynamic_Tables;
 private with GNAT.HTable;
 private with GNAT.OS_Lib;
+private with Makeutl;
 
 with ALI;
 with Namet;       use Namet;
@@ -379,5 +380,69 @@ private
    procedure Change_To_Object_Directory (Project : Project_Id);
    --  Change to the object directory of project Project, if this is not
    --  already the current working directory.
+
+   use Makeutl;
+
+   package Bad_Processes is new Table.Table
+     (Table_Component_Type => Main_Info,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Gprbuild.Bad_Processes");
+   --  Info for all the mains where binding fails
+
+   Outstanding_Processes : Natural := 0;
+   --  The number of bind jobs currently spawned
+
+   Stop_Spawning : Boolean := False;
+   --  True when one bind process failed and switch -k was not used
+
+   procedure Record_Failure (Main : Main_Info);
+   --  Add Main to table Bad_Binds and set Stop_Binding to True if switch -k is
+   --  not used.
+
+   type Process_Kind is (None, Binding, Linking);
+
+   type Process_Data (Kind : Process_Kind := None) is record
+      Process    : Process_Id     := Invalid_Pid;
+      Main       : Main_Info      := No_Main_Info;
+
+      case Kind is
+         when Linking =>
+            Response_1 : Path_Name_Type := No_Path;
+            Response_2 : Path_Name_Type := No_Path;
+
+         when others =>
+            null;
+      end case;
+   end record;
+
+   No_Process_Data : constant Process_Data :=
+     (None, Invalid_Pid, No_Main_Info);
+
+   type Header_Num is range 0 .. 2047;
+
+   function Hash (Pid : Process_Id) return Header_Num;
+   --  Used for Process_Htable below
+
+   package Process_Htable is new GNAT.HTable.Simple_HTable
+     (Header_Num => Header_Num,
+      Element    => Process_Data,
+      No_Element => No_Process_Data,
+      Key        => Process_Id,
+      Hash       => Hash,
+      Equal      => "=");
+   --  Hash table to keep data for all spawned jobs
+
+   procedure Add_Process (Process : Process_Id; Data : Process_Data);
+   --  Add process in the Process_Htable
+
+   procedure Await_Process (Data : out Process_Data; OK : out Boolean);
+   --  Wait for the end of a bind job
+
+   procedure Display_Processes (Name : String);
+   --  When -jnn, -v and -vP2 are used, display the number of currently spawned
+   --  processes.
 
 end Gprbuild;

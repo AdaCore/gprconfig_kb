@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2004-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2004-2013, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -25,7 +25,6 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with Output;      use Output;
 with Gpr_Util;    use Gpr_Util;
-with Makeutl;     use Makeutl;
 
 package body Gprbuild is
 
@@ -147,6 +146,16 @@ package body Gprbuild is
       end loop;
    end Add_Options;
 
+   -----------------
+   -- Add_Process --
+   -----------------
+
+   procedure Add_Process (Process : Process_Id; Data : Process_Data) is
+   begin
+      Process_Htable.Set (Process, Data);
+      Outstanding_Processes := Outstanding_Processes + 1;
+   end Add_Process;
+
    --------------------
    -- Archive_Suffix --
    --------------------
@@ -160,6 +169,32 @@ package body Gprbuild is
          return Get_Name_String (For_Project.Config.Archive_Suffix);
       end if;
    end Archive_Suffix;
+
+   -------------------
+   -- Await_Process --
+   -------------------
+
+   procedure Await_Process (Data : out Process_Data; OK : out Boolean) is
+      Pid  : Process_Id;
+   begin
+      loop
+         Data := No_Process_Data;
+
+         Wait_Process (Pid, OK);
+
+         if Pid = Invalid_Pid then
+            return;
+         end if;
+
+         Data := Process_Htable.Get (Pid);
+
+         if Data /= No_Process_Data then
+            Process_Htable.Set (Pid, No_Process_Data);
+            Outstanding_Processes := Outstanding_Processes - 1;
+            return;
+         end if;
+      end loop;
+   end Await_Process;
 
    --------------------------------
    -- Change_To_Object_Directory --
@@ -323,6 +358,29 @@ package body Gprbuild is
       return Tmp;
    end Create_Path_From_Dirs;
 
+   -----------------------
+   -- Display_Processes --
+   -----------------------
+
+   procedure Display_Processes (Name : String) is
+   begin
+      if Opt.Maximum_Processes > 1
+        and then Opt.Verbose_Mode
+        and then Current_Verbosity = High
+      then
+         Write_Str ("   ");
+         Write_Str (Outstanding_Processes'Img);
+         Write_Char (' ');
+         Write_Str (Name);
+
+         if Outstanding_Processes <= 1 then
+            Write_Line (" process");
+         else
+            Write_Line (" processes");
+         end if;
+      end if;
+   end Display_Processes;
+
    ----------------
    -- Get_Option --
    ----------------
@@ -348,6 +406,16 @@ package body Gprbuild is
 
       return All_Options.Options (All_Options.Last);
    end Get_Option;
+
+   ----------
+   -- Hash --
+   ----------
+
+   function Hash (Pid : Process_Id) return Header_Num is
+      Modulo : constant Integer := Integer (Header_Num'Last) + 1;
+   begin
+      return Header_Num (Pid_To_Integer (Pid) mod Modulo);
+   end Hash;
 
    --------------------------------
    -- Process_Imported_Libraries --
@@ -490,6 +558,19 @@ package body Gprbuild is
 
       Process_Project (For_Project);
    end Process_Imported_Non_Libraries;
+
+   --------------------
+   -- Record_Failure --
+   --------------------
+
+   procedure Record_Failure (Main : Main_Info) is
+   begin
+      Bad_Processes.Append (Main);
+
+      if not Opt.Keep_Going then
+         Stop_Spawning := True;
+      end if;
+   end Record_Failure;
 
    ---------------------------
    -- Test_If_Relative_Path --
