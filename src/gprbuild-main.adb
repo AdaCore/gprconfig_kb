@@ -967,7 +967,6 @@ procedure Gprbuild.Main is
             Opt.Unchecked_Shared_Lib_Imports := True;
 
          elsif Arg = No_Object_Check_Switch then
-            Forbidden_In_Package_Builder;
             Object_Checked := False;
 
          elsif Arg = "--codepeer" then
