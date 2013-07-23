@@ -958,6 +958,7 @@ procedure Gprslave is
 
          if Job_Data_Set.Has_Element (Pos) then
             Job := Job_Data_Set.Element (Pos);
+            Job_Set.Delete (Job);
 
             --  Now get the corresponding build master
 
