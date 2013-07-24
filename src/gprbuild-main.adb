@@ -2222,4 +2222,8 @@ begin
    Namet.Finalize;
 
    Finish_Program (Project_Tree, E_Success);
+
+exception
+   when E : others =>
+      Osint.Fail (Exception_Information (E));
 end Gprbuild.Main;
