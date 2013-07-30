@@ -1,10 +1,10 @@
 ========================================
-Known problems in GPRBUILD version 2.0.1
+Known problems in GPRBUILD version 2.0.2
 ========================================
 
 Copyright (C) 2013, AdaCore
 
-The following is a listing of known problems in release 2.0.1. Except where
+The following is a listing of known problems in release 2.0.2. Except where
 specifically noted, all these problems have been corrected in the development
 tree of the 2.1 technology. This means they are corrected in any 2.1.0w
 wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
