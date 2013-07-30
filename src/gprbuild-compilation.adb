@@ -64,15 +64,6 @@ package body Gprbuild.Compilation is
       end Reset;
 
       -------------------
-      -- Set_Threshold --
-      -------------------
-
-      procedure Set_Threshold (Value : Positive) is
-      begin
-         Threshold := Value;
-      end Set_Threshold;
-
-      -------------------
       -- Wait_Non_Zero --
       -------------------
 
@@ -80,15 +71,6 @@ package body Gprbuild.Compilation is
       begin
          null;
       end Wait_Non_Zero;
-
-      -------------------------
-      -- Wait_Less_Threshold --
-      -------------------------
-
-      entry Wait_Less_Threshold when Counter < Threshold is
-      begin
-         null;
-      end Wait_Less_Threshold;
 
    end Shared_Counter;
 
