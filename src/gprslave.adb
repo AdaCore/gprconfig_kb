@@ -185,8 +185,19 @@ procedure Gprslave is
       procedure Get (Job : out Job_Data; Pid : Process_Id);
       --  Get Job having the given Pid
 
+      procedure Set_Max (Max : Positive);
+      --  Set the maximum running processes simultaneously
+
+      entry Wait_Slot;
+      --  Wait for a running slot to be available
+
+      entry Wait;
+      --  Wait for at least one running process
+
    private
-      Set : Job_Data_Set.Set;
+      Set   : Job_Data_Set.Set;
+      Count : Natural := 0;
+      Max   : Natural := 0;
    end Running;
 
    Compiler_Path : constant OS_Lib.String_Access :=
@@ -194,8 +205,6 @@ procedure Gprslave is
 
    Slave_Id : Remote_Id;
    --  Host Id used to compose a unique job id across all running slaves
-
-   Running_Jobs : Shared_Counter;   -- number of jobs running
 
    --  Command line parameters statuses
 
@@ -425,7 +434,7 @@ procedure Gprslave is
          end Delete_Last;
       end if;
 
-      Running_Jobs.Set_Threshold (Max_Processes);
+      Running.Set_Max (Max_Processes);
 
    exception
       when E : Invalid_Switch =>
@@ -793,7 +802,7 @@ procedure Gprslave is
          --  Launch a new compiilation only if the maximum of simultaneous
          --  process has not yet been reached.
 
-         Running_Jobs.Wait_Less_Threshold;
+         Running.Wait_Slot;
 
          To_Run.Pop (Job);
 
@@ -874,8 +883,6 @@ procedure Gprslave is
                for K in O'Range loop
                   Free (O (K));
                end loop;
-
-               Running_Jobs.Increment;
             end Execute;
          exception
             when E : others =>
@@ -908,6 +915,7 @@ procedure Gprslave is
       procedure Register (Job : Job_Data) is
       begin
          Set.Insert (Job);
+         Count := Count + 1;
       end Register;
 
       ---------
@@ -927,7 +935,35 @@ procedure Gprslave is
          end if;
 
          Set.Delete (Job);
+         Count := Count - 1;
       end Get;
+
+      -------------
+      -- Set_Max --
+      -------------
+
+      procedure Set_Max (Max : Positive) is
+      begin
+         Running.Max := Max;
+      end Set_Max;
+
+      ----------
+      -- Wait --
+      ----------
+
+      entry Wait when Count > 0 is
+      begin
+         null;
+      end Wait;
+
+      ---------------
+      -- Wait_Slot --
+      ---------------
+
+      entry Wait_Slot when Count < Max is
+      begin
+         null;
+      end Wait_Slot;
 
    end Running;
 
@@ -989,7 +1025,7 @@ procedure Gprslave is
       loop
          --  Wait for a job to complete only if there is job running
 
-         Running_Jobs.Wait_Non_Zero;
+         Running.Wait;
 
          Wait_Process (Pid, Success);
 
@@ -1065,8 +1101,6 @@ procedure Gprslave is
                   Put_Line ("# cannot send response to build master");
                end if;
             end;
-
-            Running_Jobs.Decrement;
 
             Mutex.Release;
 
