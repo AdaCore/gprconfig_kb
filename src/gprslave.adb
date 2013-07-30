@@ -89,6 +89,8 @@ procedure Gprslave is
       Build_Sock : Socket_Type; -- key used to get the corresponding builder
    end record;
 
+   No_Job : constant Job_Data := (Id => -1, others => <>);
+
    function "<" (J1, J2 : Job_Data) return Boolean is (J1.Pid < J2.Pid);
    function "=" (J1, J2 : Job_Data) return Boolean is (J1.Pid = J2.Pid);
 
@@ -173,13 +175,26 @@ procedure Gprslave is
       Set : To_Run_Set.Vector;
    end To_Run;
 
+   --  Set of running jobs
+
+   protected Running is
+
+      procedure Register (Job : Job_Data);
+      --  Register a running Job
+
+      procedure Get (Job : out Job_Data; Pid : Process_Id);
+      --  Get Job having the given Pid
+
+   private
+      Set : Job_Data_Set.Set;
+   end Running;
+
    Compiler_Path : constant OS_Lib.String_Access :=
                      Locate_Exec_On_Path ("gnatls");
 
    Slave_Id : Remote_Id;
    --  Host Id used to compose a unique job id across all running slaves
 
-   Job_Set      : Job_Data_Set.Set; -- current jobs waiting for completion
    Running_Jobs : Shared_Counter;   -- number of jobs running
 
    --  Command line parameters statuses
@@ -848,7 +863,7 @@ procedure Gprslave is
                Job.Dep_Dir  := To_Unbounded_String
                  ((if Is_Absolute_Path (Dir) then "" else Dir));
 
-               Job_Set.Insert (Job);
+               Running.Register (Job);
 
                if Debug then
                   Put_Line ("# move to directory " & Work_Directory (Builder));
@@ -879,6 +894,42 @@ procedure Gprslave is
          Put_Line (Exception_Information (E));
          OS_Exit (1);
    end Run_Compilation;
+
+   -------------
+   -- Running --
+   -------------
+
+   protected body Running is
+
+      --------------
+      -- Register --
+      --------------
+
+      procedure Register (Job : Job_Data) is
+      begin
+         Set.Insert (Job);
+      end Register;
+
+      ---------
+      -- Get --
+      ---------
+
+      procedure Get (Job : out Job_Data; Pid : Process_Id) is
+         Pos : Job_Data_Set.Cursor;
+      begin
+         Job.Pid := Pid_To_Integer (Pid);
+         Pos := Set.Find (Job);
+
+         if Job_Data_Set.Has_Element (Pos) then
+            Job := Job_Data_Set.Element (Pos);
+         else
+            Job := No_Job;
+         end if;
+
+         Set.Delete (Job);
+      end Get;
+
+   end Running;
 
    ------------
    -- To_Run --
@@ -932,7 +983,6 @@ procedure Gprslave is
       Pid     : Process_Id;
       Success : Boolean;
       Job     : Job_Data;
-      Pos     : Job_Data_Set.Cursor;
       Builder : Build_Master;
 
    begin
@@ -943,24 +993,27 @@ procedure Gprslave is
 
          Wait_Process (Pid, Success);
 
-         --  Set Pid (the key)
-
-         Job.Pid := Pid_To_Integer (Pid);
-
-         --  Look for it into the set
-
-         Mutex.Seize;
-
-         Pos := Job_Set.Find (Job);
+         Running.Get (Job, Pid);
 
          --  Note that if there is not such element it could be because the
          --  build master has been killed before the end of the compilation.
          --  In this case an EC message is received by the slave and the
          --  Job_Set is clear. See Main_Loop in gprslave's body.
 
-         if Job_Data_Set.Has_Element (Pos) then
-            Job := Job_Data_Set.Element (Pos);
-            Job_Set.Delete (Job);
+         if Job /= No_Job then
+            Mutex.Seize;
+
+            declare
+               A : Argument_List_Access := Args (Job.Cmd);
+            begin
+               --  Free args
+
+               for K in A'Range loop
+                  Free (A (K));
+               end loop;
+
+               Free (A);
+            end;
 
             --  Now get the corresponding build master
 
@@ -1015,13 +1068,13 @@ procedure Gprslave is
 
             Running_Jobs.Decrement;
 
+            Mutex.Release;
+
          else
             if Debug then
                Put_Line ("# unknown job data for pid");
             end if;
          end if;
-
-         Mutex.Release;
       end loop;
 
    exception
