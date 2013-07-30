@@ -230,11 +230,11 @@ package body Gprbuild.Compilation.Slave is
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);
-         Parameters : constant Slice_Set := Args (Cmd);
+         Parameters : constant Argument_List_Access := Args (Cmd);
       begin
-         if Kind (Cmd) = OK and then Slice_Count (Parameters) = 2 then
-            S.Max_Processes := Natural'Value (Slice (Parameters, 1));
-            S.Root_Dir := To_Unbounded_String (Slice (Parameters, 2));
+         if Kind (Cmd) = OK and then Parameters'Length = 2 then
+            S.Max_Processes := Natural'Value (Parameters (1).all);
+            S.Root_Dir := To_Unbounded_String (Parameters (2).all);
 
          elsif Kind (Cmd) = KO then
             Write_Line
@@ -863,7 +863,7 @@ package body Gprbuild.Compilation.Slave is
                   elsif Kind (Cmd) = AK then
                      declare
                         Pid : constant Remote_Id :=
-                                Remote_Id'Value (Slice (Args (Cmd), 1));
+                                Remote_Id'Value (Args (Cmd)(1).all);
                      begin
                         Slaves (S).Current := Slaves (S).Current + 1;
                         Wait_Ack.Set (Pid);

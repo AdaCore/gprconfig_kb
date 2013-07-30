@@ -469,11 +469,13 @@ procedure Gprslave is
                   Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
 
                   declare
-                     List : constant Slice_Set := Args (Cmd);
+                     List : constant Argument_List_Access := Args (Cmd);
                   begin
-                     for K in 1 .. Slice_Count (List) loop
-                        Put (", " & Slice (List, K));
-                     end loop;
+                     if List /= null then
+                        for K in List'Range loop
+                           Put (", " & List (K).all);
+                        end loop;
+                     end if;
                   end;
                   New_Line;
                end if;
@@ -508,7 +510,7 @@ procedure Gprslave is
                elsif Kind (Cmd) = CU then
                   Clean_Up_Request : begin
                      Builder.Project_Name :=
-                       To_Unbounded_String (Slice (Args (Cmd), 1));
+                       To_Unbounded_String (Args (Cmd)(1).all);
 
                      if Exists (Work_Directory (Builder)) then
                         if Verbose then
@@ -782,7 +784,7 @@ procedure Gprslave is
 
          Process : declare
             Builder : constant Build_Master := Builders.Get (Job.Build_Sock);
-            Dir     : constant String := Slice (Args (Job.Cmd), 1);
+            Dir     : constant String := Args (Job.Cmd)(1).all;
             List    : Slice_Set;
             Pid     : Process_Id;
          begin
@@ -818,13 +820,13 @@ procedure Gprslave is
 
             Set_Directory (Dir);
 
-            Create (List, Slice (Args (Job.Cmd), 4), ";");
+            Create (List, Args (Job.Cmd)(4).all, ";");
 
             Execute : declare
-               Language : constant String := Slice (Args (Job.Cmd), 2);
+               Language : constant String := Args (Job.Cmd)(2).all;
                Out_File : constant String :=
                             Get_Output_File (Builder);
-               Dep_File : constant String := Slice (Args (Job.Cmd), 3);
+               Dep_File : constant String := Args (Job.Cmd)(3).all;
                O        : Argument_List := Get_Args (Builder, List);
             begin
                Output_Compilation (O (O'Last).all);

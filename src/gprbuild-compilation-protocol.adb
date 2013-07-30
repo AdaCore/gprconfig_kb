@@ -24,6 +24,8 @@ with Ada.Streams.Stream_IO;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps;
 
+with GNAT.String_Split;     use GNAT.String_Split;
+
 with Rewrite_Data;
 
 package body Gprbuild.Compilation.Protocol is
@@ -34,10 +36,6 @@ package body Gprbuild.Compilation.Protocol is
    Opts_Sep : constant Character := ';';
    --  Command options separator, that is the separator used for options to be
    --  passed to the executed command.
-
-   function Args_Count
-     (Cmd : Command) return Slice_Number is (Slice_Count (Cmd.Args));
-   --  Number of argument in the command
 
    function Image (N : Natural) return String;
    --  Returns string representation of N without leading space
@@ -52,7 +50,7 @@ package body Gprbuild.Compilation.Protocol is
    -- Args --
    ----------
 
-   function Args (Cmd : Command) return Slice_Set is
+   function Args (Cmd : Command) return Argument_List_Access is
    begin
       return Cmd.Args;
    end Args;
@@ -120,7 +118,7 @@ package body Gprbuild.Compilation.Protocol is
 
       function Handle_File (Cmd : Command) return Command is
          File_Name : constant String :=
-                       Translate_Receive (Channel, Slice (Cmd.Args, 2));
+                       Translate_Receive (Channel, Cmd.Args (2).all);
          Dir       : constant String := Containing_Directory (File_Name);
 
          procedure Input
@@ -132,7 +130,7 @@ package body Gprbuild.Compilation.Protocol is
          --  Write data to file
 
          Size     : Stream_Element_Count :=
-                       Stream_Element_Count'Value (Slice (Cmd.Args, 1));
+                       Stream_Element_Count'Value (Cmd.Args (1).all);
          --  Number of bytes remaining to be read from channel
 
          Rewriter    : Rewrite_Data.Buffer :=
@@ -199,14 +197,14 @@ package body Gprbuild.Compilation.Protocol is
       procedure Handle_Output (Cmd : in out Command) is
          function Is_Number (Cmd : Command) return Boolean is
            (Is_Subset
-              (To_Set (Slice (Cmd.Args, 1)), Constants.Decimal_Digit_Set));
+              (To_Set (Cmd.Args (1).all), Constants.Decimal_Digit_Set));
       begin
-         if Args_Count (Cmd) = 2
+         if Cmd.Args'Length = 2
            and then Is_Number (Cmd)
          then
             declare
                Size   : constant Natural :=
-                          Natural'Value (Slice (Cmd.Args, 1));
+                          Natural'Value (Cmd.Args (1).all);
                Result : String (1 .. Size);
             begin
                if Size = 0 then
@@ -224,6 +222,7 @@ package body Gprbuild.Compilation.Protocol is
       end Handle_Output;
 
       Result : Command;
+      Args   : Slice_Set;
 
    begin
       declare
@@ -238,10 +237,19 @@ package body Gprbuild.Compilation.Protocol is
          then
             Result.Cmd := Command_Kind'Value (C);
 
+            --  Slice arguments
+
             Create
-              (Result.Args,
+              (Args,
                Line (Line'First + 2 .. Line'Last),
                String'(1 => Args_Sep));
+
+            Result.Args :=
+              new Argument_List (1 .. Integer (Slice_Count (Args)));
+
+            for K in Result.Args'Range loop
+               Result.Args (K) := new String'(Slice (Args, Slice_Number (K)));
+            end loop;
 
             if Result.Cmd = FL then
                --  We got some file data to write
@@ -284,12 +292,12 @@ package body Gprbuild.Compilation.Protocol is
       Line : constant Command := Get_Command (Channel);
    begin
       if Line.Cmd = CX
-        and then Args_Count (Line) = 4
+        and then Line.Args'Length = 4
       then
-         Target       := To_Unbounded_String (Slice (Line.Args, 1));
-         Project_Name := To_Unbounded_String (Slice (Line.Args, 2));
-         Build_Env    := To_Unbounded_String (Slice (Line.Args, 3));
-         Sync         := Sync_Kind'Value (Slice (Line.Args, 4));
+         Target       := To_Unbounded_String (Line.Args (1).all);
+         Project_Name := To_Unbounded_String (Line.Args (2).all);
+         Build_Env    := To_Unbounded_String (Line.Args (3).all);
+         Sync         := Sync_Kind'Value (Line.Args (4).all);
       else
          raise Wrong_Command
            with "Expected CX found " & Command_Kind'Image (Line.Cmd);
@@ -307,10 +315,10 @@ package body Gprbuild.Compilation.Protocol is
    is
       Cmd : constant Command := Get_Command (Channel);
    begin
-      if Slice_Count (Cmd.Args) = 1
+      if Cmd.Args'Length = 1
         and then Cmd.Cmd in OK | KO
       then
-         Pid := Process.Remote_Id'Value (Slice (Cmd.Args, 1));
+         Pid := Process.Remote_Id'Value (Cmd.Args (1).all);
          Success := (if Kind (Cmd) = KO then False);
       end if;
    end Get_Pid;

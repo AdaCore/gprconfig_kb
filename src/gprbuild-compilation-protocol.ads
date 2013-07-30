@@ -21,9 +21,8 @@
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
-with GNAT.OS_Lib;
+with GNAT.OS_Lib;           use GNAT;
 with GNAT.Sockets;          use GNAT.Sockets;
-with GNAT.String_Split;     use GNAT.String_Split;
 
 with Gprbuild.Compilation.Process;
 
@@ -109,7 +108,7 @@ package Gprbuild.Compilation.Protocol is
    function Kind (Cmd : Command) return Command_Kind;
    pragma Inline (Kind);
 
-   function Args (Cmd : Command) return Slice_Set;
+   function Args (Cmd : Command) return OS_Lib.Argument_List_Access;
    pragma Inline (Args);
    --  Returns all arguments for Cmd
 
@@ -220,7 +219,7 @@ private
 
    type Command is record
       Cmd    : Command_Kind;
-      Args   : Slice_Set;
+      Args   : Argument_List_Access;
       Output : Unbounded_String;
    end record;
 
