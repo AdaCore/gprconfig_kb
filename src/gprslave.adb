@@ -161,7 +161,7 @@ procedure Gprslave is
       Builders : Builder_Set.Set;
    end Builders;
 
-   --  Queue of Job to run
+   --  Queue of Job to run, A FIFO list
 
    protected To_Run is
 
