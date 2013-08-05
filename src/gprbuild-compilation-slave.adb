@@ -20,7 +20,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Calendar;                use Ada.Calendar;
-with Ada.Containers.Ordered_Maps;
+with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;      use Ada;
 with Ada.Directories;             use Ada.Directories;
 with Ada.Exceptions;              use Ada.Exceptions;
@@ -47,11 +47,15 @@ package body Gprbuild.Compilation.Slave is
       Sync : Sync_Kind;
    end record;
 
+   No_Slave_Data : constant Slave_Data :=
+                     (Port => Port_Type'Last, others => <>);
+
    package Slaves_N is new Containers.Vectors (Positive, Slave_Data);
 
    Slaves_Data : Slaves_N.Vector;
 
    type Slave is record
+      Sock          : Integer;
       Data          : Slave_Data;
       Channel       : Communication_Channel;
       Current       : Natural := 0;
@@ -60,10 +64,14 @@ package body Gprbuild.Compilation.Slave is
       Rsync_Pid     : Process_Id;
    end record;
 
-   package Slave_S is new Containers.Ordered_Maps (Integer, Slave);
+   function "<" (K1, K2 : Slave) return Boolean is (K1.Sock < K2.Sock);
+   function "=" (K1, K2 : Slave) return Boolean is (K1.Sock = K2.Sock);
 
-   function Get_Free return Slave_S.Cursor;
-   --  Returns a slave with free compilation slot
+   No_Slave : constant Slave :=
+                (-1, No_Slave_Data, Current => Natural'Last, others => <>);
+
+   package Slave_S is new Containers.Ordered_Sets (Slave);
+   --  The key is the C socket number
 
    function Connect_Slave
      (S_Data       : Slave_Data;
@@ -106,9 +114,44 @@ package body Gprbuild.Compilation.Slave is
    --  project file's Remote package.
 
    Remote_Process : Shared_Counter;
-   Slaves         : Slave_S.Map;
    Slaves_Sockets : Socket_Set_Type;
    Max_Processes  : Natural := 0;
+
+   protected Slaves is
+
+      procedure Insert (S : Slave);
+      --  Add a slave into the pool
+
+      function Find (Socket : Integer) return Slave;
+      --  Find a slave given the socket number
+
+      function Find (Pid : Process_Id) return Slave;
+      --  Find a slave given the rsync process id
+
+      function Get_Free return Slave;
+      --  Returns a slave with free compilation slot
+
+      procedure Increment_Current (S : in out Slave);
+      --  Increment the number of processes handled by slave
+
+      procedure Decrement_Current (S : in out Slave);
+      --  Decrement the number of processes handled by slave
+
+      procedure Set_Rewrite_CD (S : in out Slave; Path : String);
+      --  Record rewriting of the compiler directory
+
+      procedure Set_Rewrite_WD (S : in out Slave; Path : String);
+      --  Record rewriting of the wording directory
+
+      procedure Iterate (Proc : access procedure (S : in out Slave));
+      --  Iterate over all slaves in the pool and call proc
+
+      procedure Clear;
+      --  Clear the pool
+
+   private
+      Pool : Slave_S.Set;
+   end Slaves;
 
    ----------------------------
    -- Clean_Up_Remote_Slaves --
@@ -249,21 +292,6 @@ package body Gprbuild.Compilation.Slave is
 
       return S;
    end Connect_Slave;
-
-   --------------
-   -- Get_Free --
-   --------------
-
-   function Get_Free return Slave_S.Cursor is
-   begin
-      for S in Slaves.Iterate loop
-         if Slaves (S).Current < Slaves (S).Max_Processes then
-            return S;
-         end if;
-      end loop;
-
-      return Slave_S.No_Element;
-   end Get_Free;
 
    -----------------------
    -- Get_Max_Processes --
@@ -484,7 +512,8 @@ package body Gprbuild.Compilation.Slave is
 
          --  Now that all slave's data is known and set, record it
 
-         Slaves.Insert (To_C (Sock (S.Channel)), S);
+         S.Sock := To_C (Sock (S.Channel));
+         Slaves.Insert (S);
       end Register_Remote_Slave;
 
       Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
@@ -587,7 +616,7 @@ package body Gprbuild.Compilation.Slave is
 
       RD  : constant String := To_String (Root_Dir);
 
-      S   : constant Slave_S.Cursor := Get_Free;
+      S   : Slave := Slaves.Get_Free;
       --  Get a free slave for conducting the compilation
 
       function Filter_String
@@ -606,7 +635,7 @@ package body Gprbuild.Compilation.Slave is
       is
          Pos : constant Natural := Index (O, RD);
       begin
-         if Slaves (S).Data.Sync = File then
+         if S.Data.Sync = File then
             --  Nothing to translate really, this slave is using a shared
             --  directory to get access to the sources.
 
@@ -628,7 +657,7 @@ package body Gprbuild.Compilation.Slave is
                      File_Name : constant String := O (O'First + 8 .. O'Last);
                   begin
                      if Exists (File_Name) then
-                        Send_File (Slaves (S).Channel, File_Name);
+                        Send_File (S.Channel, File_Name);
                      else
                         Write_Line
                           ("File not found " & File_Name);
@@ -637,7 +666,7 @@ package body Gprbuild.Compilation.Slave is
                      end if;
 
                      return O (O'First .. O'First + 7)
-                       & Translate_Send (Slaves (S).Channel, File_Name);
+                       & Translate_Send (S.Channel, File_Name);
                   end;
                end if;
 
@@ -650,29 +679,29 @@ package body Gprbuild.Compilation.Slave is
       Pid : Remote_Id;
 
    begin
-      if Slaves (S).Data.Sync = File then
+      if S.Data.Sync = File then
          --  Do not filter out CWD as we want the compilation to take place in
          --  the shared directory.
 
          Send_Exec
-           (Slaves (S).Channel,
+           (S.Channel,
             CWD, Language, Options, Dep_Name, Filter_String'Access);
 
       else
          --  Record the rewrite information for this channel only if we are not
          --  using a shared directory.
 
-         Set_Rewrite_WD (Slaves (S).Channel, Path => RD);
+         Slaves.Set_Rewrite_WD (S, Path => RD);
 
          if Compiler_Path /= null then
-            Set_Rewrite_CD
-              (Slaves (S).Channel,
+            Slaves.Set_Rewrite_CD
+              (S,
                Path => Containing_Directory
                  (Containing_Directory (Compiler_Path.all)));
          end if;
 
          Send_Exec
-           (Slaves (S).Channel,
+           (S.Channel,
             Filter_String (CWD, Sep => ""), Language, Options, Dep_Name,
             Filter_String'Access);
       end if;
@@ -692,65 +721,202 @@ package body Gprbuild.Compilation.Slave is
          OS_Exit (1);
    end Run;
 
+   ------------
+   -- Slaves --
+   ------------
+
+   protected body Slaves is
+
+      --------------------
+      -- Change_Current --
+      --------------------
+
+      procedure Change_Current (S : in out Slave; Value : Integer) is
+         Position : constant Slave_S.Cursor := Pool.Find (S);
+      begin
+         Pool (Position).Current := Pool (Position).Current + Value;
+      end Change_Current;
+
+      -----------
+      -- Clear --
+      -----------
+
+      procedure Clear is
+      begin
+         Pool.Clear;
+      end Clear;
+
+      -----------------------
+      -- Decrement_Current --
+      -----------------------
+
+      procedure Decrement_Current (S : in out Slave) is
+      begin
+         Change_Current (S, -1);
+      end Decrement_Current;
+
+      ----------
+      -- Find --
+      ----------
+
+      function Find (Socket : Integer) return Slave is
+         S        : constant Slave := (Sock => Socket, others => <>);
+         Position : constant Slave_S.Cursor := Pool.Find (S);
+      begin
+         if Slave_S.Has_Element (Position) then
+            return Slave_S.Element (Position);
+         else
+            return No_Slave;
+         end if;
+      end Find;
+
+      function Find (Pid : Process_Id) return Slave is
+      begin
+         for S of Pool loop
+            if S.Rsync_Pid = Pid then
+               return S;
+            end if;
+         end loop;
+
+         return No_Slave;
+      end Find;
+
+      --------------
+      -- Get_Free --
+      --------------
+
+      function Get_Free return Slave is
+      begin
+         for S of Pool loop
+            if S.Current < S.Max_Processes then
+               return S;
+            end if;
+         end loop;
+
+         return No_Slave;
+      end Get_Free;
+
+      -----------------------
+      -- Increment_Current --
+      -----------------------
+
+      procedure Increment_Current (S : in out Slave) is
+      begin
+         Change_Current (S, 1);
+      end Increment_Current;
+
+      ------------
+      -- Insert --
+      ------------
+
+      procedure Insert (S : Slave) is
+      begin
+         Pool.Insert (S);
+      end Insert;
+
+      -------------
+      -- Iterate --
+      -------------
+
+      procedure Iterate (Proc : access procedure (S : in out Slave)) is
+      begin
+         for S of Pool loop
+            Proc (S);
+         end loop;
+      end Iterate;
+
+      --------------------
+      -- Set_Rewrite_CD --
+      --------------------
+
+      procedure Set_Rewrite_CD (S : in out Slave; Path : String) is
+         Position : constant Slave_S.Cursor := Pool.Find (S);
+      begin
+         Set_Rewrite_CD (Pool (Position).Channel, Path => Path);
+         S := Pool (Position);
+      end Set_Rewrite_CD;
+
+      --------------------
+      -- Set_Rewrite_WD --
+      --------------------
+
+      procedure Set_Rewrite_WD (S : in out Slave; Path : String) is
+         Position : constant Slave_S.Cursor := Pool.Find (S);
+      begin
+         Set_Rewrite_WD (Pool (Position).Channel, Path => Path);
+         S := Pool (Position);
+      end Set_Rewrite_WD;
+
+   end Slaves;
+
    ------------------------------
    -- Unregister_Remote_Slaves --
    ------------------------------
 
    procedure Unregister_Remote_Slaves is
+
+      procedure Unregister (S : in out Slave);
+      --  Unregister given slave
+
       Rsync_Count : Natural := 0;
       Start, Stop : Time;
+
+      ----------------
+      -- Unregister --
+      ----------------
+
+      procedure Unregister (S : in out Slave) is
+         function User_Host return String is
+           (if S.Data.User = Null_Unbounded_String
+            then To_String (S.Data.Host)
+            else To_String (S.Data.User) & '@' & To_String (S.Data.Host));
+      begin
+         Send_End_Of_Compilation (S.Channel);
+         Close (S.Channel);
+
+         --  Sync back the object code if needed
+
+         if S.Data.Sync = Protocol.Rsync then
+            declare
+               Args : Argument_List (1 .. 5);
+            begin
+               --  Archive mode, compression and ignore VCS
+
+               Args (1) := new String'("-arz");
+
+               Args (2) := new String'("--exclude=output.slave.*");
+               Args (3) := new String'("--exclude=GNAT-TEMP*");
+
+               --  Local and remote directory
+
+               Args (4) := new String'
+                 (User_Host & ":"
+                  & Compose
+                    (To_String (S.Root_Dir), To_String (Project_Name))
+                  & "/");
+               Args (5) := new String'(To_String (Root_Dir));
+
+               if Opt.Verbose_Mode then
+                  Write_Line ("  synchronize back data");
+                  Write_Line ("    from: " & Args (4).all);
+                  Write_Line ("    to  : " & Args (5).all);
+               end if;
+
+               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args);
+
+               Rsync_Count := Rsync_Count + 1;
+
+               for A of Args loop
+                  Free (A);
+               end loop;
+            end;
+         end if;
+      end Unregister;
+
    begin
       Start := Clock;
 
-      for S of Slaves loop
-         declare
-            function User_Host return String is
-              (if S.Data.User = Null_Unbounded_String
-               then To_String (S.Data.Host)
-               else To_String (S.Data.User) & '@' & To_String (S.Data.Host));
-         begin
-            Send_End_Of_Compilation (S.Channel);
-            Close (S.Channel);
-
-            --  Sync back the object code if needed
-
-            if S.Data.Sync = Protocol.Rsync then
-               declare
-                  Args : Argument_List (1 .. 5);
-               begin
-                  --  Archive mode, compression and ignore VCS
-
-                  Args (1) := new String'("-arz");
-
-                  Args (2) := new String'("--exclude=output.slave.*");
-                  Args (3) := new String'("--exclude=GNAT-TEMP*");
-
-                  --  Local and remote directory
-
-                  Args (4) := new String'
-                    (User_Host & ":"
-                     & Compose
-                       (To_String (S.Root_Dir), To_String (Project_Name))
-                     & "/");
-                  Args (5) := new String'(To_String (Root_Dir));
-
-                  if Opt.Verbose_Mode then
-                     Write_Line ("  synchronize back data");
-                     Write_Line ("    from: " & Args (4).all);
-                     Write_Line ("    to  : " & Args (5).all);
-                  end if;
-
-                  S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args);
-
-                  Rsync_Count := Rsync_Count + 1;
-
-                  for A of Args loop
-                     Free (A);
-                  end loop;
-               end;
-            end if;
-         end;
-      end loop;
+      Slaves.Iterate (Unregister'Access);
 
       Wait_Rsync (Rsync_Count);
 
@@ -805,9 +971,8 @@ package body Gprbuild.Compilation.Slave is
       Selector     : Selector_Type;
       Status       : Selector_Status;
       R_Set, W_Set : Socket_Set_Type;
-      Channel      : Communication_Channel;
       Sock         : Socket_Type;
-      S            : Slave_S.Cursor;
+      S            : Slave;
    begin
       --  In this task we are only interrested by the incoming data, so we do
       --  not wait on incoming ones.
@@ -835,11 +1000,9 @@ package body Gprbuild.Compilation.Slave is
 
             S := Slaves.Find (To_C (Sock));
 
-            if S /= Slave_S.No_Element then
-               Channel := Slaves (S).Channel;
-
+            if S /= No_Slave then
                declare
-                  Cmd     : constant Command := Get_Command (Channel);
+                  Cmd     : constant Command := Get_Command (S.Channel);
                   Success : Boolean;
                begin
                   --  A display output
@@ -849,12 +1012,12 @@ package body Gprbuild.Compilation.Slave is
 
                      Write_Str (To_String (Protocol.Output (Cmd)));
 
-                     Get_Pid (Channel, Pid, Success);
+                     Get_Pid (S.Channel, Pid, Success);
 
                      Proc := Create_Remote (Pid);
 
                      Remote_Process.Decrement;
-                     Slaves (S).Current := Slaves (S).Current - 1;
+                     Slaves.Decrement_Current (S);
 
                      Result.Add (Proc, Success);
 
@@ -865,7 +1028,7 @@ package body Gprbuild.Compilation.Slave is
                         Pid : constant Remote_Id :=
                                 Remote_Id'Value (Args (Cmd)(1).all);
                      begin
-                        Slaves (S).Current := Slaves (S).Current + 1;
+                        Slaves.Increment_Current (S);
                         Wait_Ack.Set (Pid);
                      end;
 
@@ -908,12 +1071,7 @@ package body Gprbuild.Compilation.Slave is
       for K in 1 .. N loop
          Wait_Process (Pid, Success);
 
-         Find_Slave : for S of Slaves loop
-            if S.Rsync_Pid = Pid then
-               Slv := S;
-               exit Find_Slave;
-            end if;
-         end loop Find_Slave;
+         Slv := Slaves.Find (Pid);
 
          if Success then
             if Opt.Verbose_Mode then
