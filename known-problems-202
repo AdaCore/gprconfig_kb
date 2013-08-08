@@ -23,6 +23,16 @@ KP-202-M625-043 Minimal recompilation and preprocessed sources
 
   Workaround: Invoke gprbuild without switch -m.
 
+KP-202-M617-043 --single-compile-per-obj-dir in package Builder
+
+  Problem:    When switches --single-compile-per-obj-dir is specified in
+              package Builder of the main project, it has no effect for
+              simultaneous compilations.
+
+  Status:     This was fixed in 2.1 on 2013-08-08
+
+  Workaround: Use --single-compile-per-obj-dir on the command line.
+
 KP-202-M417-023 Deeply extended library projects
 
   Problem:    When a library A project extends a project B that itself extends
