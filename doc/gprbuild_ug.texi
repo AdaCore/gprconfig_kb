@@ -811,7 +811,13 @@ package Builder of the main project (attribute Switches):
   it is possible to instruct GPRbuild to spawn several simultaneous compilation
   jobs if needed. For example, @option{-j2} for two simultaneous compilation
   jobs or @option{-j4} for four. On a multi-processor system,
-  @option{-j<num>} can greatly speed up the build process.
+  @option{-j<num>} can greatly speed up the build process. If @option{-j0} is
+  used, then the maximum number of simultaneous compilation jobs is the number
+  of core processors on the platform.
+
+  Switch @option{-j<num>} is also used to spawned several simultaneous binding
+  processes and several simultaneous linking processes when there are several
+  mains to be bound and/or linked.
 
 @item @option{-k} (Keep going after compilation errors)
 
