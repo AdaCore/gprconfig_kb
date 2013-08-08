@@ -1006,12 +1006,14 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-b" then
-            Forbidden_In_Package_Builder;
             Opt.Bind_Only  := True;
 
          elsif Arg = "-c" then
-            Forbidden_In_Package_Builder;
             Opt.Compile_Only := True;
+
+            if Opt.Link_Only then
+               Opt.Bind_Only  := True;
+            end if;
 
          elsif Arg = "-C" then
             --  This switch is only for upward compatibility
@@ -1112,7 +1114,6 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-l" then
-            Forbidden_In_Package_Builder;
             Opt.Link_Only  := True;
 
             if Opt.Compile_Only then
@@ -2113,8 +2114,6 @@ begin
 
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
-   Queue.Initialize (Opt.One_Compilation_Per_Obj_Dir);
-
    if Mains.Number_Of_Mains (Project_Tree) = 0
      and then not Unique_Compile
    then
@@ -2134,6 +2133,13 @@ begin
       Fail_Program
         (Project_Tree, "cannot specify -o when there are several mains");
    end if;
+
+   Do_Compute_Builder_Switches
+     (Project_Tree     => Project_Tree,
+      Root_Environment => Root_Environment,
+      Main_Project     => Main_Project);
+
+   Queue.Initialize (Opt.One_Compilation_Per_Obj_Dir);
 
    Compute_Compilation_Phases
      (Project_Tree,
@@ -2167,11 +2173,6 @@ begin
 
       Finish_Program (Project_Tree, E_Success);
    end if;
-
-   Do_Compute_Builder_Switches
-     (Project_Tree     => Project_Tree,
-      Root_Environment => Root_Environment,
-      Main_Project     => Main_Project);
 
    Always_Compile :=
      Always_Compile
