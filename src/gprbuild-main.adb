@@ -975,6 +975,7 @@ procedure Gprbuild.Main is
             if not CodePeer_Mode then
                CodePeer_Mode := True;
                Object_Checked := False;
+               Target_Name := new String'("codepeer");
 
                if Subdirs = null then
                   Subdirs := new String'("codepeer");
