@@ -600,10 +600,6 @@ slaves. This options is only used in distributed mode.
   Note: only one of @option{--config}, @option{--autoconf} or @option{--target=}
   can be specified.
 
-@item @option{--no-object-check}
-
-  Do not check if an object has been created after compilation.
-
 @item @option{--subdirs=<subdir>}
 
   This indicates that the real directories (except the source directories) are
@@ -649,17 +645,6 @@ slaves. This options is only used in distributed mode.
   Specify to GPRbuild to add directory @file{dir} to the user project file search
   path, before the default directory.
 
-@item @option{-b} (Bind only)
-
-  Specify to GPRbuild that the post-compilation (or binding) phase is to be
-  performed, but not the other phases unless they are specified by appropriate
-  switches.
-
-@item @option{-c} (Compile only)
-
-  Specify to GPRbuild that the compilation phase is to be performed, but not
-  the other phases unless they are specified by appropriate switches.
-
 @item @option{-d} (Display progress)
 
   Display progress for each source, up to date or not, as a single
@@ -691,16 +676,6 @@ slaves. This options is only used in distributed mode.
   a project file, only the simple name of the project file is displayed in the
   error message. When switch @option{-F} is used, the full path of the project
   file is used. This switch has no effect when switch @option{-v} is used.
-
-@item @option{-l} (Link only)
-
-  Specify to GPRbuild that the linking phase is to be performed, but not
-  the other phases unless they are specified by appropriate switches.
-
-@item @option{-m} (Minimum Ada recompilation)
-
-  Do not recompile Ada code if timestamps are different but checksums are the
-  same.
 
 @item @option{-o name} (Choose an alternate executable name)
 
@@ -792,6 +767,10 @@ package Builder of the main project (attribute Switches):
   This switch is provided to cancel a previous switch
   @option{--no-indirect-imports} on the command line.
 
+@item @option{--no-object-check}
+
+  Do not check if an object has been created after compilation.
+
 @item @option{--no-split-units}
 
   Forbid the sources of the same Ada unit to be in different projects.
@@ -799,6 +778,17 @@ package Builder of the main project (attribute Switches):
 @item @option{--single-compile-per-obj-dir}
 
   Disallow several simultaneous compilations for the same object directory.
+
+@item @option{-b} (Bind only)
+
+  Specify to GPRbuild that the post-compilation (or binding) phase is to be
+  performed, but not the other phases unless they are specified by appropriate
+  switches.
+
+@item @option{-c} (Compile only)
+
+  Specify to GPRbuild that the compilation phase is to be performed, but not
+  the other phases unless they are specified by appropriate switches.
 
 @item @option{-f} (Force recompilations)
 
@@ -827,6 +817,16 @@ package Builder of the main project (attribute Switches):
   compilations failed. The post-compilation phase and the linking phase are never
   attempted if there are compilation failures, even when switch @option{-k} is
   used.
+
+@item @option{-l} (Link only)
+
+  Specify to GPRbuild that the linking phase is to be performed, but not
+  the other phases unless they are specified by appropriate switches.
+
+@item @option{-m} (Minimum Ada recompilation)
+
+  Do not recompile Ada code if timestamps are different but checksums are the
+  same.
 
 @item @option{-p} or @option{--create-missing-dirs} (Create missing object, library and exec directories)
 
@@ -3475,4 +3475,3 @@ build slaves on @code{GPRbuild} command line.
 @contents
 
 @bye
-
