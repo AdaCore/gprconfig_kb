@@ -41,6 +41,7 @@
        <target name="^.*-elinos-linux$" />
        <target name="^.*-pikeos$" />
        <target name="^arm-linux-androideabi" />
+       <target name="^arm-linux-gnueabi" />
      </targets>
      <config>
    package Builder is
@@ -659,6 +660,7 @@
        <target name="^codepeer$" />
        <target name="^.*-pc-mingw32$" />
        <target name="^arm-linux-androideabi$" />
+       <target name="^arm-linux-gnueabi" />
      </targets>
      <compilers>
        <compiler name="GNAT" />
