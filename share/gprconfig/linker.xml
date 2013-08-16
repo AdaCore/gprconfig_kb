@@ -582,7 +582,6 @@
        <target name="^.*linux.*$" />
     </targets>
     <config>
-   for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
    for Run_Path_Option  use ("-Wl,-z,origin,-rpath,");
    for Run_Path_Origin use "$$ORIGIN";
    for Library_Encapsulated_Options use ("-shared", "-static-libgcc");
@@ -590,6 +589,33 @@
    package Linker is
       for Map_File_Option         use "-Wl,-Map,";
    end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+       <target name="^.*linux.*$" />
+    </targets>
+    <compilers>
+       <compiler name="GNAT" />
+    </compilers>
+    <config>
+   for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+       <target name="^.*linux.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler name="GNAT" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC" />
+    </compilers>
+    <config>
+   for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(c)}gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>
 
