@@ -217,6 +217,85 @@
      </config>
    </configuration>
 
+   <!-- mlongcall is passed by default in the case of GNAT.
+        Do the same thing for WRS compilers for consistency.  -->
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS6" />
+       <compiler name="GCC-WRS6E500V2" />
+       <compiler name="GCC-WRS6CERT" />
+       <compiler name="GCC-WRS6CERTE500V2" />
+       <compiler name="GCC-WRS5" />
+     </compilers>
+     <targets>
+       <target name="^powerpc-wrs-vxworks.*$" />
+       <target name="^e500v2-wrs-vxworks.*$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-mlongcall");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS6" />
+       <compiler name="G++-WRS6E500V2" />
+       <compiler name="G++-WRS6CERT" />
+       <compiler name="G++-WRS6CERTE500V2" />
+       <compiler name="G++-WRS5" />
+     </compilers>
+     <targets>
+       <target name="^powerpc-wrs-vxworks.*$" />
+       <target name="^e500v2-wrs-vxworks.*$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-mlongcall");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS6" />
+       <compiler name="GCC-WRS6CERT" />
+     </compilers>
+     <targets>
+       <target name="^arm-wrs-vxworks.*$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-mlong-calls");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS6" />
+       <compiler name="G++-WRS6CERT" />
+     </compilers>
+     <targets>
+       <target name="^arm-wrs-vxworks.*$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-mlong-calls");
+   end Compiler;
+     </config>
+   </configuration>
+
    <configuration>
      <compilers>
        <compiler name="GNAT"/>
