@@ -1154,21 +1154,6 @@ procedure Gprslave is
             end if;
       end;
 
-      --  If build environment not specified use the peer name
-
-      if Builder.Build_Env = "" then
-         declare
-            Peer_Name : constant String :=
-                          Image (Get_Peer_Name (Builder.Socket));
-            Index     : constant Natural := Fixed.Index (Peer_Name, ":");
-            Last      : constant Natural :=
-                          (if Index = 0 then Peer_Name'Last else Index - 1);
-         begin
-            Builder.Build_Env := To_Unbounded_String
-              (Peer_Name (Peer_Name'First .. Last));
-         end;
-      end if;
-
       Get_Targets_Set
         (Base, To_String (Builder.Target), Selected_Targets_Set);
 
