@@ -28,6 +28,7 @@ with System.Case_Util;          use System.Case_Util;
 with System.Multiprocessors;    use System.Multiprocessors;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.Sockets;
 
 with Atree;       use Atree;
 with Csets;
@@ -1584,6 +1585,20 @@ procedure Gprbuild.Main is
       elsif Build_Env /= null and then not Distributed_Mode then
          Fail_Program
            (Project_Tree, "cannot use --build-env in non distributed mode");
+      end if;
+
+      --  In distributed mode if Build_Env is not specified then create a
+      --  default one. Use concatenation of IP and user name.
+
+      if Build_Env = null and then Distributed_Mode then
+         declare
+            User : String_Access :=  Getenv ("USER");
+         begin
+            Build_Env := new String'
+              ((if User = null then "unknown" else User.all)
+               & '@' & GNAT.Sockets.Host_Name);
+            Free (User);
+         end;
       end if;
 
       if Runtime_Name_Set_For (Name_Ada) then
