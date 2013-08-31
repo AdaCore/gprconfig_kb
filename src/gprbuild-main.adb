@@ -1588,7 +1588,7 @@ procedure Gprbuild.Main is
       end if;
 
       --  In distributed mode if Build_Env is not specified then create a
-      --  default one. Use concatenation of IP and user name.
+      --  default one. Use concatenation of <user_name> & '@' & <host_name>.
 
       if Build_Env = null and then Distributed_Mode then
          declare
@@ -1675,7 +1675,7 @@ procedure Gprbuild.Main is
 
          Write_Str ("  --build-env=name");
          Write_Eol;
-         Write_Str ("           Use name instead of IP of the build master");
+         Write_Str ("           Use a specific slave's environment");
          Write_Eol;
 
          --  Line for Config_Project_Option
