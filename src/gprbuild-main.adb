@@ -1592,12 +1592,16 @@ procedure Gprbuild.Main is
 
       if Build_Env = null and then Distributed_Mode then
          declare
-            User : String_Access :=  Getenv ("USER");
+            User      : String_Access := Getenv ("USER");
+            User_Name : String_Access := Getenv ("USERNAME");
          begin
             Build_Env := new String'
-              ((if User = null then "unknown" else User.all)
+              ((if User = null
+               then (if User_Name = null then "unknown" else User_Name.all)
+               else User.all)
                & '@' & GNAT.Sockets.Host_Name);
             Free (User);
+            Free (User_Name);
          end;
       end if;
 
