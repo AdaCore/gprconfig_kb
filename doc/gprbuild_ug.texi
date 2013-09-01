@@ -557,8 +557,8 @@ name).
 
 @item @option{--build-env=name}
 
-Use name instead of IP of the build master as working directory on the
-slaves. This options is only used in distributed mode.
+Use name as the slave's environment directory instead of the default one.
+This options is only used in distributed mode.
 
 @item @option{--version}
 
