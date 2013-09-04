@@ -524,6 +524,11 @@ package body Gprbuild.Link is
                      exit when Id = No_Source;
 
                      if Object_To_Global_Archive (Id) then
+                        --  The source record may not be initialized if
+                        --  gprbuild was called with the switch -l.
+
+                        Initialize_Source_Record (Id);
+
                         Add_Argument
                           (Get_Name_String (Id.Object_Path),
                            Opt.Verbose_Mode,
