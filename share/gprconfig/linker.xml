@@ -929,6 +929,165 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="^powerpc-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS6" language="C" runtime="^rtp$"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/lib/usr/lib/ppc/PPC32/common",
+                 "-L" &amp; Wind_Base
+                 &amp; "/target/usr/lib/ppc/PPC32/common");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^powerpc-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS6" language="C" runtime="^rtp-smp$"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/lib_smp/usr/lib/ppc/PPC32/common");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^arm-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS6" language="C" runtime="^rtp$"/>
+    </compilers>
+    <config>
+     <!-- As a special exception, on ARM, rts-rtp is smp-based. -->
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/lib_smp/usr/lib/arm/ARMARCH7/common");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^e500v2-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS6E500V2" language="C" runtime="^rtp$"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/lib/usr/lib/ppc/PPC32/e500v2common",
+                 "-L" &amp; Wind_Base
+                 &amp; "/target/usr/lib/ppc/PPC32/e500v2common");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^e500v2-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS6E500V2" language="C" runtime="^rtp-smp$"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/lib_smp/usr/lib/ppc/PPC32/e500v2common");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^powerpc-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS6CERT" language="C" runtime="rtp"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/usr/lib_cert_rtp/ppc/PPC32/common");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^e500v2-wrs-vxworks.*$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS6CERTE500V2" language="C" runtime="rtp"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-L" &amp; Wind_Base
+                 &amp; "/target/usr/lib_cert_rtp/ppc/PPC32/e500v2common");
+     end Linker;
+    </config>
+  </configuration>
+
   <!-- If no Ada and no C++, use C driver when there are C sources -->
   <configuration>
     <targets>
