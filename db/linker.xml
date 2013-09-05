@@ -987,8 +987,8 @@
     <compilers>
        <compiler name="GCC-WRS6" language="C" runtime="^rtp$"/>
     </compilers>
+    <!-- As a special exception, on ARM, rts-rtp is smp-based. -->
     <config>
-     <!-- As a special exception, on ARM, rts-rtp is smp-based. -->
      package Linker is
         for Required_Switches use
           Linker'Required_Switches
