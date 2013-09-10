@@ -60,7 +60,8 @@ package Gpr_Util is
 
    Distributed_Option : constant String := "--distributed=";
 
-   Slave_Env_Option : constant String := "--slave-env=";
+   Slave_Env_Option : constant String := "--slave-env";
+   Slave_Env_Auto   : Boolean := False;
 
    Dry_Run_Option : constant String := "--dry-run";
 

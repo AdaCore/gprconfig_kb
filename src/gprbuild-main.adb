@@ -713,12 +713,18 @@ procedure Gprbuild.Main is
             Compilation.Slave.Record_Slaves
               (Arg (Distributed_Option'Length + 1 .. Arg'Last));
 
-         elsif Arg'Length > Slave_Env_Option'Length
+         elsif Arg'Length >= Slave_Env_Option'Length
             and then
             Arg (1 .. Slave_Env_Option'Length) = Slave_Env_Option
          then
-            Slave_Env :=
-              new String'(Arg (Slave_Env_Option'Length + 1 .. Arg'Last));
+            if Arg = Slave_Env_Option then
+               --  Just --slave-env, it is up to gprbuild to build a sensible
+               --  slave environment value.
+               Slave_Env_Auto := True;
+            else
+               Slave_Env :=
+                 new String'(Arg (Slave_Env_Option'Length + 2 .. Arg'Last));
+            end if;
 
          elsif Arg = "--db-" then
             if Hostparm.OpenVMS then
@@ -1587,24 +1593,6 @@ procedure Gprbuild.Main is
            (Project_Tree, "cannot use --slave-env in non distributed mode");
       end if;
 
-      --  In distributed mode if Build_Env is not specified then create a
-      --  default one. Use concatenation of <user_name> & '@' & <host_name>.
-
-      if Slave_Env = null and then Distributed_Mode then
-         declare
-            User      : String_Access := Getenv ("USER");
-            User_Name : String_Access := Getenv ("USERNAME");
-         begin
-            Slave_Env := new String'
-              ((if User = null
-               then (if User_Name = null then "unknown" else User_Name.all)
-               else User.all)
-               & '@' & GNAT.Sockets.Host_Name);
-            Free (User);
-            Free (User_Name);
-         end;
-      end if;
-
       if Runtime_Name_Set_For (Name_Ada) then
          --  Makes the Ada RTS absolute if it is not a base name
          Locate_Runtime (Name_Ada);
@@ -1673,7 +1661,7 @@ procedure Gprbuild.Main is
 
          --  Line for --slave-env
 
-         Write_Str ("  --slave-env=name");
+         Write_Str ("  --slave-env[=name]");
          Write_Eol;
          Write_Str ("           Use a specific slave's environment");
          Write_Eol;
@@ -2230,6 +2218,41 @@ begin
 
    if not Object_Checked then
       Opt.Check_Switches := False;
+   end if;
+
+   --  Set slave-env
+
+   if Slave_Env = null and then Distributed_Mode then
+      declare
+         User      : String_Access := Getenv ("USER");
+         User_Name : String_Access := Getenv ("USERNAME");
+         Default   : constant String :=
+                       (if User = null
+                        then (if User_Name = null
+                              then "unknown" else User_Name.all)
+                        else User.all)
+                       & '@' & GNAT.Sockets.Host_Name;
+      begin
+         if Slave_Env_Auto then
+            --  In this mode the slave environment is computed based on
+            --  the project variable value and the command line arguments.
+            Slave_Env :=
+              new String'(Compute_Slave_Env (Project_Tree, Default));
+
+            if not Opt.Quiet_Output then
+               Write_Str ("slave environment is ");
+               Write_Str (Slave_Env.all);
+               Write_Eol;
+            end if;
+
+         else
+            --  Otherwise use the default <user_name> & '@' & <host_name>
+            Slave_Env := new String'(Default);
+         end if;
+
+         Free (User);
+         Free (User_Name);
+      end;
    end if;
 
    Compile.Run;
