@@ -713,12 +713,12 @@ procedure Gprbuild.Main is
             Compilation.Slave.Record_Slaves
               (Arg (Distributed_Option'Length + 1 .. Arg'Last));
 
-         elsif Arg'Length > Build_Env_Option'Length
+         elsif Arg'Length > Slave_Env_Option'Length
             and then
-            Arg (1 .. Build_Env_Option'Length) = Build_Env_Option
+            Arg (1 .. Slave_Env_Option'Length) = Slave_Env_Option
          then
-            Build_Env :=
-              new String'(Arg (Build_Env_Option'Length + 1 .. Arg'Last));
+            Slave_Env :=
+              new String'(Arg (Slave_Env_Option'Length + 1 .. Arg'Last));
 
          elsif Arg = "--db-" then
             if Hostparm.OpenVMS then
@@ -1582,20 +1582,20 @@ procedure Gprbuild.Main is
          Fail_Program
            (Project_Tree, "directory name missing after --db");
 
-      elsif Build_Env /= null and then not Distributed_Mode then
+      elsif Slave_Env /= null and then not Distributed_Mode then
          Fail_Program
-           (Project_Tree, "cannot use --build-env in non distributed mode");
+           (Project_Tree, "cannot use --slave-env in non distributed mode");
       end if;
 
       --  In distributed mode if Build_Env is not specified then create a
       --  default one. Use concatenation of <user_name> & '@' & <host_name>.
 
-      if Build_Env = null and then Distributed_Mode then
+      if Slave_Env = null and then Distributed_Mode then
          declare
             User      : String_Access := Getenv ("USER");
             User_Name : String_Access := Getenv ("USERNAME");
          begin
-            Build_Env := new String'
+            Slave_Env := new String'
               ((if User = null
                then (if User_Name = null then "unknown" else User_Name.all)
                else User.all)
@@ -1671,9 +1671,9 @@ procedure Gprbuild.Main is
          Write_Str ("           Activate the remote/distributed compilations");
          Write_Eol;
 
-         --  Line for --build-env
+         --  Line for --slave-env
 
-         Write_Str ("  --build-env=name");
+         Write_Str ("  --slave-env=name");
          Write_Eol;
          Write_Str ("           Use a specific slave's environment");
          Write_Eol;

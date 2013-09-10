@@ -60,7 +60,7 @@ package Gpr_Util is
 
    Distributed_Option : constant String := "--distributed=";
 
-   Build_Env_Option : constant String := "--build-env=";
+   Slave_Env_Option : constant String := "--slave-env=";
 
    Dry_Run_Option : constant String := "--dry-run";
 
@@ -121,7 +121,7 @@ package Gpr_Util is
    Distributed_Mode : Boolean := False;
    --  Wether the distributed compilation mode has been activated
 
-   Build_Env : String_Access;
+   Slave_Env : String_Access;
    --  The name of the distributed build environment
 
    --  Packages of project files where unknown attributes are errors

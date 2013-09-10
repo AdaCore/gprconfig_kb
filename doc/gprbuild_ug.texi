@@ -555,7 +555,7 @@ package Builder of the main project:
 Activate the distributed compilation on the listed slaves nodes (IP or
 name).
 
-@item @option{--build-env=name}
+@item @option{--slave-env=name}
 
 Use name as the slave's environment directory instead of the default one.
 This options is only used in distributed mode.
