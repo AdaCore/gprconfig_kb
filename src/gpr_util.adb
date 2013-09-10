@@ -19,6 +19,9 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Containers.Indefinite_Ordered_Sets;
+
+with Ada.Command_Line;      use Ada.Command_Line;
 with Ada.Directories;       use Ada.Directories;
 with Ada.Streams.Stream_IO; use Ada.Streams;
 with Ada.Strings.Fixed;     use Ada.Strings.Fixed;
@@ -28,6 +31,7 @@ with System;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
+with GNAT.MD5;                  use GNAT.MD5;
 
 with ALI;      use ALI;
 with Debug;
@@ -49,6 +53,8 @@ with Types;    use Types;
 with GprConfig.Sdefault;
 
 package body Gpr_Util is
+
+   use Ada;
 
    --  Empty procedures needed to instantiate Scng. Error procedures are
    --  empty, because we don't want to report any errors when computing
@@ -111,6 +117,52 @@ package body Gpr_Util is
       Add_Str_To_Name_Buffer (Binder_Exchange_Suffix);
       return new String'(Name_Buffer (1 .. Name_Len));
    end Binder_Exchange_File_Name;
+
+   -----------------------
+   -- Compute_Slave_Env --
+   -----------------------
+
+   function Compute_Slave_Env
+     (Project : Project_Tree_Ref; Data : String) return String
+   is
+      package S_Set is new Containers.Indefinite_Ordered_Sets (String);
+
+      Set : S_Set.Set;
+      Ctx : Context;
+
+   begin
+      --  First adds all command line arguments
+
+      for K in 1 .. Argument_Count loop
+         Set.Insert (Argument (K));
+      end loop;
+
+      --  Then all the global variables for the project tree
+
+      for K in
+        1 .. Variable_Element_Table.Last (Project.Shared.Variable_Elements)
+      loop
+         declare
+            V : Variable := Project.Shared.Variable_Elements.Table (K);
+         begin
+            if V.Value.Kind = Single then
+               Set.Include
+                 (Get_Name_String (V.Name)
+                  & "=" & Get_Name_String (V.Value.Value));
+            end if;
+         end;
+      end loop;
+
+      --  Compute the MD5 sum of the sorted elements in the set
+
+      Update (Ctx, Data);
+
+      for S of Set loop
+         Update (Ctx, S);
+      end loop;
+
+      return Digest (Ctx);
+   end Compute_Slave_Env;
 
    --------------------------
    -- Create_Response_File --
