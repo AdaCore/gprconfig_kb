@@ -2213,23 +2213,25 @@ package body Gprbuild.Compile is
          List : Name_List_Index := Id.Language.Config.Dependency_Option;
          Node : Name_Node;
       begin
-         while List /= No_Name_List loop
-            Node := Project_Tree.Shared.Name_Lists.Table (List);
-            List := Node.Next;
+         if Id.Language.Config.Dependency_Kind /= None then
+            while List /= No_Name_List loop
+               Node := Project_Tree.Shared.Name_Lists.Table (List);
+               List := Node.Next;
 
-            if List = No_Name_List then
-               Add_Option
-                 (Value   => Get_Name_String (Node.Name)
-                    & Get_Name_String (Id.Dep_Name),
-                  To      => Compilation_Options,
-                  Display => Opt.Verbose_Mode);
-            else
-               Add_Option
-                 (Value   => Node.Name,
-                  To      => Compilation_Options,
-                  Display => Opt.Verbose_Mode);
-            end if;
-         end loop;
+               if List = No_Name_List then
+                  Add_Option
+                    (Value   => Get_Name_String (Node.Name)
+                     & Get_Name_String (Id.Dep_Name),
+                     To      => Compilation_Options,
+                     Display => Opt.Verbose_Mode);
+               else
+                  Add_Option
+                    (Value   => Node.Name,
+                     To      => Compilation_Options,
+                     Display => Opt.Verbose_Mode);
+               end if;
+            end loop;
+         end if;
       end Add_Dependency_Options;
 
       ------------------------------

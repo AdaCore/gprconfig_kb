@@ -11,6 +11,18 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-202-M910-024 None dependency kind and non empty dependency switches
+
+  Problem:    gprbuild may crash or ehaves incorrectly when the Dependency_Kind
+              for a language is "None" and the Dependency_Switches is declared
+              as a non empty list.
+
+  Status:     This was fixed in 2.1 in 2013-09-10
+
+  Workaround: Make sure that when Dependency_Kind is "None",
+              Dependency_Switches is not declared or is declared with an empty
+              list value, including in the configuration project file.
+
 KP-202-M903-002 Incorrect link with gprbuild -l
 
   Problem:    When gprbuild is invoked with -l to link an executable and
