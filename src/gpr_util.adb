@@ -150,7 +150,17 @@ package body Gpr_Util is
          --  First adds all command line arguments
 
          for K in 1 .. Argument_Count loop
-            Set.Insert (Argument (K));
+            --  Skip arguments that are not changing the actual compilation and
+            --  this will ensure that the same environment will be created for
+            --  gprclean.
+
+            if Argument (K) not in "-p" | "-d" | "-c" | "-q"
+              and then
+                (Argument (K)'Length < 2
+                 or else Argument (K) (1 .. 2) /= "-j")
+            then
+               Set.Insert (Argument (K));
+            end if;
          end loop;
 
          --  Then all the global variables for the project tree
