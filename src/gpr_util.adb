@@ -31,7 +31,6 @@ with System;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
-with GNAT.MD5;                  use GNAT.MD5;
 
 with ALI;      use ALI;
 with Debug;
@@ -143,7 +142,8 @@ package body Gpr_Util is
         1 .. Variable_Element_Table.Last (Project.Shared.Variable_Elements)
       loop
          declare
-            V : Variable := Project.Shared.Variable_Elements.Table (K);
+            V : constant Variable :=
+                Project.Shared.Variable_Elements.Table (K);
          begin
             if V.Value.Kind = Single then
                Set.Include
