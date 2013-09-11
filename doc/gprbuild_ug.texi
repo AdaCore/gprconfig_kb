@@ -3088,6 +3088,11 @@ The switches for GPRclean are:
 @item @option{--distributed} : Also clean-up the sources on build slaves,
 @pxref{Distributed compilation}.
 
+@item @option{--slave-env=name}
+
+Use name as the slave's environment directory instead of the default one.
+This options is only used in distributed mode.
+
 @item @option{--config=<config project file name>} : Specify the
   configuration project file name.
 

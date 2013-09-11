@@ -200,6 +200,21 @@ procedure Gprclean.Main is
                            Gprbuild.Compilation.Slave.Record_Slaves
                              (Arg (Distributed_Option'Length + 1 .. Arg'Last));
 
+                        elsif Arg'Length >= Slave_Env_Option'Length
+                          and then
+                            Arg (1 .. Slave_Env_Option'Length)
+                          = Slave_Env_Option
+                        then
+                           if Arg = Slave_Env_Option then
+                              --  Just --slave-env, it is up to gprbuild to
+                              --  build a sensible slave environment value.
+                              Slave_Env_Auto := True;
+                           else
+                              Slave_Env := new String'
+                                (Arg
+                                   (Slave_Env_Option'Length + 2 .. Arg'Last));
+                           end if;
+
                         elsif not Hostparm.OpenVMS
                               and then
                                 Arg'Length > Autoconf_Project_Option'Length
@@ -528,7 +543,9 @@ procedure Gprclean.Main is
 
          Put_Line ("  --distributed=slave1[,slave2]");
          Put_Line ("           Activate the remote clean-up");
-         New_Line;
+
+         Put_Line ("  --slave-env[=name]");
+         Put_Line ("           Use a specific slave's environment");
 
          Put_Line ("  --config=file.cgpr");
          Put_Line ("           Specify the configuration project file name");
@@ -727,6 +744,15 @@ begin
    end if;
 
    Processed_Projects.Init;
+
+   if Slave_Env = null and then Distributed_Mode then
+      Slave_Env :=
+        new String'(Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
+
+      if Slave_Env_Auto and not Opt.Quiet_Output then
+         Put_Line ("slave environment is " & Slave_Env.all);
+      end if;
+   end if;
 
    --  Clean-up local build
 
