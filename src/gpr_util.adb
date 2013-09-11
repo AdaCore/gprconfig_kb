@@ -31,6 +31,7 @@ with System;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
+with GNAT.Sockets;
 
 with ALI;      use ALI;
 with Debug;
@@ -122,46 +123,65 @@ package body Gpr_Util is
    -----------------------
 
    function Compute_Slave_Env
-     (Project : Project_Tree_Ref; Data : String) return String
+     (Project : Project_Tree_Ref; Auto : Boolean) return String
    is
+      User      : String_Access := Getenv ("USER");
+      User_Name : String_Access := Getenv ("USERNAME");
+      Default   : constant String :=
+                    (if User = null
+                     then (if User_Name = null
+                       then "unknown" else User_Name.all)
+                     else User.all)
+                    & '@' & GNAT.Sockets.Host_Name;
+
       package S_Set is new Containers.Indefinite_Ordered_Sets (String);
 
       Set : S_Set.Set;
       Ctx : Context;
 
    begin
-      --  First adds all command line arguments
+      Free (User);
+      Free (User_Name);
 
-      for K in 1 .. Argument_Count loop
-         Set.Insert (Argument (K));
-      end loop;
+      if Auto then
+         --  In this mode the slave environment is computed based on
+         --  the project variable value and the command line arguments.
 
-      --  Then all the global variables for the project tree
+         --  First adds all command line arguments
 
-      for K in
-        1 .. Variable_Element_Table.Last (Project.Shared.Variable_Elements)
-      loop
-         declare
-            V : constant Variable :=
-                Project.Shared.Variable_Elements.Table (K);
-         begin
-            if V.Value.Kind = Single then
-               Set.Include
-                 (Get_Name_String (V.Name)
-                  & "=" & Get_Name_String (V.Value.Value));
-            end if;
-         end;
-      end loop;
+         for K in 1 .. Argument_Count loop
+            Set.Insert (Argument (K));
+         end loop;
 
-      --  Compute the MD5 sum of the sorted elements in the set
+         --  Then all the global variables for the project tree
 
-      Update (Ctx, Data);
+         for K in
+           1 .. Variable_Element_Table.Last (Project.Shared.Variable_Elements)
+         loop
+            declare
+               V : constant Variable :=
+                     Project.Shared.Variable_Elements.Table (K);
+            begin
+               if V.Value.Kind = Single then
+                  Set.Include
+                    (Get_Name_String (V.Name)
+                     & "=" & Get_Name_String (V.Value.Value));
+               end if;
+            end;
+         end loop;
 
-      for S of Set loop
-         Update (Ctx, S);
-      end loop;
+         --  Compute the MD5 sum of the sorted elements in the set
 
-      return Digest (Ctx);
+         for S of Set loop
+            Update (Ctx, S);
+         end loop;
+
+         return Default & "-" & Digest (Ctx);
+
+      else
+         --  Otherwise use the default <user_name> & '@' & <host_name>
+         return Default;
+      end if;
    end Compute_Slave_Env;
 
    --------------------------

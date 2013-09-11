@@ -277,7 +277,7 @@ package Gpr_Util is
    --  Returns the current target for the compilation
 
    function Compute_Slave_Env
-     (Project : Project_Tree_Ref; Data : String) return String;
+     (Project : Project_Tree_Ref; Auto : Boolean) return String;
    --  Compute a slave environment based on the command line parameter and
    --  the project variables. We want the same slave environment for identical
    --  build. Data is a string that must be taken into account in the returned

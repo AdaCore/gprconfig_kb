@@ -28,7 +28,6 @@ with System.Case_Util;          use System.Case_Util;
 with System.Multiprocessors;    use System.Multiprocessors;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
-with GNAT.Sockets;
 
 with Atree;       use Atree;
 with Csets;
@@ -2223,36 +2222,14 @@ begin
    --  Set slave-env
 
    if Slave_Env = null and then Distributed_Mode then
-      declare
-         User      : String_Access := Getenv ("USER");
-         User_Name : String_Access := Getenv ("USERNAME");
-         Default   : constant String :=
-                       (if User = null
-                        then (if User_Name = null
-                              then "unknown" else User_Name.all)
-                        else User.all)
-                       & '@' & GNAT.Sockets.Host_Name;
-      begin
-         if Slave_Env_Auto then
-            --  In this mode the slave environment is computed based on
-            --  the project variable value and the command line arguments.
-            Slave_Env :=
-              new String'(Compute_Slave_Env (Project_Tree, Default));
+      Slave_Env :=
+        new String'(Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
 
-            if not Opt.Quiet_Output then
-               Write_Str ("slave environment is ");
-               Write_Str (Slave_Env.all);
-               Write_Eol;
-            end if;
-
-         else
-            --  Otherwise use the default <user_name> & '@' & <host_name>
-            Slave_Env := new String'(Default);
-         end if;
-
-         Free (User);
-         Free (User_Name);
-      end;
+      if Slave_Env_Auto and not Opt.Quiet_Output then
+         Write_Str ("slave environment is ");
+         Write_Str (Slave_Env.all);
+         Write_Eol;
+      end if;
    end if;
 
    Compile.Run;
