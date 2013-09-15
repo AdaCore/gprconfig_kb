@@ -462,7 +462,7 @@ package body Gprbuild.Compilation.Slave is
             end if;
 
             declare
-               Args : Argument_List (1 .. 15);
+               Args : Argument_List (1 .. 16);
             begin
                --  Archive mode, compression and ignore VCS
 
@@ -476,20 +476,21 @@ package body Gprbuild.Compilation.Slave is
                Args (5) := new String'("--exclude=*.dll");
                Args (6) := new String'("--exclude=*.so");
                Args (7) := new String'("--exclude=*.so.*");
-               Args (8) := new String'("--exclude=.git");
-               Args (9) := new String'("--exclude=.svn");
-               Args (10) := new String'("--exclude=CVS");
+               Args (8) := new String'("--exclude=*.exe");
+               Args (9) := new String'("--exclude=.git");
+               Args (10) := new String'("--exclude=.svn");
+               Args (11) := new String'("--exclude=CVS");
 
                --  Delete remote files not in local directory
 
-               Args (11) := new String'("--delete");
-               Args (12) := new String'("--delete-excluded");
-               Args (13) := new String'("--copy-links");
+               Args (12) := new String'("--delete");
+               Args (13) := new String'("--delete-excluded");
+               Args (14) := new String'("--copy-links");
 
                --  Local and remote directory
 
-               Args (14) := new String'(To_String (Root_Dir) & "/");
-               Args (15) := new String'
+               Args (15) := new String'(To_String (Root_Dir) & "/");
+               Args (16) := new String'
                  (User_Host & ":"
                   & Compose (To_String (S.Root_Dir), Project_Name));
 
