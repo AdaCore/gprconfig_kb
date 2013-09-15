@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-202-M913-037 Several compilations of the same source with aggregated project
+
+  Problem:    When gprbuild is invoked with an aggregate project and the same
+              project A belongs to several project trees rooted at the
+              aggregated projects, sources of project A may be compiled or
+              recompiled several times.
+
+  Status:     This was fixed in 2.1 in 2013-09-15
+
+  Workaround: Invoke gprbuild individually on the aggregated projects.
+
 KP-202-M910-024 None dependency kind and non empty dependency switches
 
   Problem:    gprbuild may crash or ehaves incorrectly when the Dependency_Kind
