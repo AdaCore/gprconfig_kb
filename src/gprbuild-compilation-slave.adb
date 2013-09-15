@@ -19,14 +19,15 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Calendar;                use Ada.Calendar;
+with Ada.Calendar;                      use Ada.Calendar;
 with Ada.Containers.Ordered_Sets;
-with Ada.Containers.Vectors;      use Ada;
-with Ada.Directories;             use Ada.Directories;
-with Ada.Exceptions;              use Ada.Exceptions;
-with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
-with Ada.Strings.Maps.Constants;  use Ada.Strings;
-with Ada.Strings.Unbounded;       use Ada.Strings.Unbounded;
+with Ada.Containers.Vectors;            use Ada;
+with Ada.Containers.Indefinite_Vectors;
+with Ada.Directories;                   use Ada.Directories;
+with Ada.Exceptions;                    use Ada.Exceptions;
+with Ada.Strings.Fixed;                 use Ada.Strings.Fixed;
+with Ada.Strings.Maps.Constants;        use Ada.Strings;
+with Ada.Strings.Unbounded;             use Ada.Strings.Unbounded;
 
 with GNAT.Sockets;      use GNAT; use GNAT.Sockets;
 with GNAT.String_Split; use GNAT.String_Split;
@@ -407,6 +408,9 @@ package body Gprbuild.Compilation.Slave is
 
       Start, Stop : Calendar.Time;
 
+      package Str_Vect is new Containers.Indefinite_Vectors (Positive, String);
+      Excluded_Patterns : Str_Vect.Vector;
+
       ---------------------------
       -- Register_Remote_Slave --
       ---------------------------
@@ -462,7 +466,9 @@ package body Gprbuild.Compilation.Slave is
             end if;
 
             declare
-               Args : Argument_List (1 .. 16);
+               Args : Argument_List
+                        (1 .. 16 + Positive (Excluded_Patterns.Length));
+               N    : Positive range 12 .. Args'Last;
             begin
                --  Archive mode, compression and ignore VCS
 
@@ -481,16 +487,25 @@ package body Gprbuild.Compilation.Slave is
                Args (10) := new String'("--exclude=.svn");
                Args (11) := new String'("--exclude=CVS");
 
+               --  Add any user's defined excluded patterns
+
+               N := 12;
+
+               for P of Excluded_Patterns loop
+                  Args (N) := new String'("--exclude=" & P);
+                  N := N + 1;
+               end loop;
+
                --  Delete remote files not in local directory
 
-               Args (12) := new String'("--delete");
-               Args (13) := new String'("--delete-excluded");
-               Args (14) := new String'("--copy-links");
+               Args (N) := new String'("--delete");
+               Args (N + 1) := new String'("--delete-excluded");
+               Args (N + 2) := new String'("--copy-links");
 
                --  Local and remote directory
 
-               Args (15) := new String'(To_String (Root_Dir) & "/");
-               Args (16) := new String'
+               Args (N + 3) := new String'(To_String (Root_Dir) & "/");
+               Args (N + 4) := new String'
                  (User_Host & ":"
                   & Compose (To_String (S.Root_Dir), Project_Name));
 
@@ -525,7 +540,7 @@ package body Gprbuild.Compilation.Slave is
       Root_Dir := To_Unbounded_String
         (Containing_Directory (Get_Name_String (Project.Path.Display_Name)));
 
-      --  Check for Root_Dir attribute
+      --  Check for Root_Dir attribute and Excluded_Patterns
 
       Look_Remote_Package : while Pck /= No_Package loop
          if Pcks (Pck).Decl /= No_Declarations
@@ -563,6 +578,23 @@ package body Gprbuild.Compilation.Slave is
                                     & " or does not exists");
                                  OS_Exit (1);
                               end if;
+                           end;
+
+                        elsif V.Name = Name_Excluded_Patterns then
+                           declare
+                              Idx : String_List_Id := V.Value.Values;
+                           begin
+                              while Idx /= Nil_String loop
+                                 declare
+                                    Item : constant String_Element :=
+                                             Tree.Shared.String_Elements.Table
+                                               (Idx);
+                                 begin
+                                    Excluded_Patterns.Append
+                                      (Get_Name_String (Item.Value));
+                                    Idx := Item.Next;
+                                 end;
+                              end loop;
                            end;
                         end if;
                      end if;
