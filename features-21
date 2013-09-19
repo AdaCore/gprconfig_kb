@@ -8,6 +8,12 @@ This file contains a complete list of new features in version 2.1 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-21-M918-043 Attributes External and environment variables (2013-09-19)
+
+  In main aggregate project, when attribute External is specified, the
+  corresponding environment variable is set, if it is not already set in the
+  environment.
+
 NF-21-M719-035 -b, -c and -l may be used in package Builder (2013-08-08)
 
   The switches -c, -b and -l are no longer restricted to the command line. They
