@@ -910,28 +910,29 @@ package body Gprbuild.Compilation.Slave is
 
          if S.Data.Sync = Protocol.Rsync then
             declare
-               Args : Argument_List (1 .. 5);
+               Args : Argument_List (1 .. 6);
             begin
                --  Archive mode, compression and ignore VCS
 
                Args (1) := new String'("-arz");
+               Args (2) := new String'("--update");
 
-               Args (2) := new String'("--exclude=output.slave.*");
-               Args (3) := new String'("--exclude=GNAT-TEMP*");
+               Args (3) := new String'("--exclude=output.slave.*");
+               Args (4) := new String'("--exclude=GNAT-TEMP*");
 
                --  Local and remote directory
 
-               Args (4) := new String'
+               Args (5) := new String'
                  (User_Host & ":"
                   & Compose
                     (To_String (S.Root_Dir), To_String (Project_Name))
                   & "/");
-               Args (5) := new String'(To_String (Root_Dir));
+               Args (6) := new String'(To_String (Root_Dir));
 
                if Opt.Verbose_Mode then
                   Write_Line ("  synchronize back data");
-                  Write_Line ("    from: " & Args (4).all);
-                  Write_Line ("    to  : " & Args (5).all);
+                  Write_Line ("    from: " & Args (Args'Last - 1).all);
+                  Write_Line ("    to  : " & Args (Args'Last).all);
                end if;
 
                S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args);
