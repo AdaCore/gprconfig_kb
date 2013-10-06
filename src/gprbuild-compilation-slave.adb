@@ -467,8 +467,8 @@ package body Gprbuild.Compilation.Slave is
 
             declare
                Args : Argument_List
-                        (1 .. 16 + Positive (Excluded_Patterns.Length));
-               N    : Positive range 12 .. Args'Last;
+                        (1 .. 17 + Positive (Excluded_Patterns.Length));
+               N    : Positive range 13 .. Args'Last;
             begin
                --  Archive mode, compression and ignore VCS
 
@@ -486,10 +486,11 @@ package body Gprbuild.Compilation.Slave is
                Args (9) := new String'("--exclude=.git");
                Args (10) := new String'("--exclude=.svn");
                Args (11) := new String'("--exclude=CVS");
+               Args (12) := new String'("--exclude=gnatinspect.db*");
 
                --  Add any user's defined excluded patterns
 
-               N := 12;
+               N := 13;
 
                for P of Excluded_Patterns loop
                   Args (N) := new String'("--exclude=" & P);
@@ -910,7 +911,7 @@ package body Gprbuild.Compilation.Slave is
 
          if S.Data.Sync = Protocol.Rsync then
             declare
-               Args : Argument_List (1 .. 6);
+               Args : Argument_List (1 .. 13);
             begin
                --  Archive mode, compression and ignore VCS
 
@@ -919,15 +920,25 @@ package body Gprbuild.Compilation.Slave is
 
                Args (3) := new String'("--exclude=output.slave.*");
                Args (4) := new String'("--exclude=GNAT-TEMP*");
+               Args (5) := new String'("--exclude=gnatinspect.db*");
+
+               --  Exclude some known source files
+
+               Args (6) := new String'("--exclude=*.ads");
+               Args (7) := new String'("--exclude=*.adb");
+               Args (8) := new String'("--exclude=*.ada");
+               Args (9) := new String'("--exclude=*.c");
+               Args (10) := new String'("--exclude=*.h");
+               Args (11) := new String'("--exclude=*.c++");
 
                --  Local and remote directory
 
-               Args (5) := new String'
+               Args (12) := new String'
                  (User_Host & ":"
                   & Compose
                     (To_String (S.Root_Dir), To_String (Project_Name))
                   & "/");
-               Args (6) := new String'(To_String (Root_Dir));
+               Args (13) := new String'(To_String (Root_Dir));
 
                if Opt.Verbose_Mode then
                   Write_Line ("  synchronize back data");
