@@ -914,7 +914,7 @@ package body Gprbuild.Compilation.Slave is
             begin
                --  Archive mode, compression and ignore VCS
 
-               Args (1) := new String'("-arz");
+               Args (1) := new String'("-az");
                Args (2) := new String'("--update");
 
                Args (3) := new String'("--exclude=output.slave.*");
