@@ -911,34 +911,32 @@ package body Gprbuild.Compilation.Slave is
 
          if S.Data.Sync = Protocol.Rsync then
             declare
-               Args : Argument_List (1 .. 13);
+               Args : Argument_List (1 .. 9);
             begin
                --  Archive mode, compression and ignore VCS
 
                Args (1) := new String'("-az");
                Args (2) := new String'("--update");
 
-               Args (3) := new String'("--exclude=output.slave.*");
-               Args (4) := new String'("--exclude=GNAT-TEMP*");
-               Args (5) := new String'("--exclude=gnatinspect.db*");
+               --  Include only objects (generated) code
 
-               --  Exclude some known source files
+               Args (3) := new String'("--include=*.o");
+               Args (4) := new String'("--include=*.ali");
+               Args (5) := new String'("--include=*.obj");
+               Args (6) := new String'("--include=*.coff");
 
-               Args (6) := new String'("--exclude=*.ads");
-               Args (7) := new String'("--exclude=*.adb");
-               Args (8) := new String'("--exclude=*.ada");
-               Args (9) := new String'("--exclude=*.c");
-               Args (10) := new String'("--exclude=*.h");
-               Args (11) := new String'("--exclude=*.c++");
+               --  Exclude everything else
+
+               Args (7) := new String'("--exclude=*");
 
                --  Local and remote directory
 
-               Args (12) := new String'
+               Args (8) := new String'
                  (User_Host & ":"
                   & Compose
                     (To_String (S.Root_Dir), To_String (Project_Name))
                   & "/");
-               Args (13) := new String'(To_String (Root_Dir));
+               Args (9) := new String'(To_String (Root_Dir));
 
                if Opt.Verbose_Mode then
                   Write_Line ("  synchronize back data");
