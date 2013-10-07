@@ -911,32 +911,37 @@ package body Gprbuild.Compilation.Slave is
 
          if S.Data.Sync = Protocol.Rsync then
             declare
-               Args : Argument_List (1 .. 9);
+               Args : Argument_List (1 .. 11);
             begin
                --  Archive mode, compression and ignore VCS
 
                Args (1) := new String'("-az");
                Args (2) := new String'("--update");
 
-               --  Include only objects (generated) code
+               --  Check all subdirectories
 
-               Args (3) := new String'("--include=*.o");
-               Args (4) := new String'("--include=*.ali");
-               Args (5) := new String'("--include=*.obj");
-               Args (6) := new String'("--include=*.coff");
+               Args (3) := new String'("--include=/*");
+
+               --  Include known suffix (objects, dependencies)
+
+               Args (4) := new String'("--include=*.o");
+               Args (5) := new String'("--include=*.ali");
+               Args (6) := new String'("--include=*.d");
+               Args (7) := new String'("--include=*.obj");
+               Args (8) := new String'("--include=*.coff");
 
                --  Exclude everything else
 
-               Args (7) := new String'("--exclude=*");
+               Args (9) := new String'("--exclude=*");
 
                --  Local and remote directory
 
-               Args (8) := new String'
+               Args (10) := new String'
                  (User_Host & ":"
                   & Compose
                     (To_String (S.Root_Dir), To_String (Project_Name))
                   & "/");
-               Args (9) := new String'(To_String (Root_Dir));
+               Args (11) := new String'(To_String (Root_Dir));
 
                if Opt.Verbose_Mode then
                   Write_Line ("  synchronize back data");
