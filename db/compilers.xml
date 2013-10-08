@@ -7,13 +7,28 @@
     <languages>Project File</languages>
   </compiler_description>
 
-  <!--    GCC 3.x & 4.x -->
+  <!--    GCC 3.x & 4.x (not for GNAT Pro)-->
   <compiler_description>
     <name>GCC</name>
     <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^gcc \S+ (\S+) \d+ [^f]" group="1"></grep>
+    </version>
+    <languages>C</languages>
+    <target>
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!--    GCC for GNAT Pro 3.x & 4.x -->
+  <compiler_description>
+    <name>GCC_Pro</name>
+    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
+    <version>
+      <external>${PREFIX}gcc -v</external>
+      <grep regexp="^gcc \S+ (\S+) \d+ for GNAT Pro" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
@@ -239,13 +254,28 @@
     <target>aamp</target>
   </compiler_description>
 
-  <!--  G++ compilers, including recent CodeSourcery compilers  -->
+  <!--  G++ compilers (not for GNAT Pro)  -->
   <compiler_description>
     <name>G++</name>
     <executable>g\+\+</executable>
     <version>
       <external>g++ -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+      <grep regexp="^gcc \S+ (\S+) \d+ [^f]" group="1"></grep>
+    </version>
+    <languages>C++</languages>
+    <target>
+      <external>g++ -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!--  G++ compilers for GNAT Pro  -->
+  <compiler_description>
+    <name>G++_Pro</name>
+    <executable>g\+\+</executable>
+    <version>
+      <external>g++ -v</external>
+      <grep regexp="^gcc \S+ (\S+) \d+ for GNAT Pro" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
