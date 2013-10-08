@@ -18,6 +18,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="GCC_Pro" language="C" />
        <compiler name="GCC-28" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-SYSGO" language="C" />
@@ -86,6 +87,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="GCC_Pro" language="C" />
        <compiler name="GCC-28" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-MINGW32" language="C" />
@@ -106,7 +108,7 @@
      <config>
    package Compiler is
       for Leading_Required_Switches   ("C") use
-         Compiler'Leading_Required_Switches ("C") &amp; ("-c", "-x", "c");
+         ("-c", "-x", "c") &amp; Compiler'Leading_Required_Switches ("C");
       for Include_Path        ("C") use "CPATH";
    end Compiler;
      </config>
@@ -131,6 +133,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="GCC_Pro" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-MINGW32" language="C" />
        <compiler name="GCC-WRS6" language="C" />
@@ -172,6 +175,7 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
+       <compiler name="GCC_Pro" language="C" />
        <compiler name="GCC-28" language="C" />
      </compilers>
      <targets negate="true">
@@ -184,6 +188,26 @@
      <config>
    package Compiler is
       for PIC_Option ("C") use ("-fPIC");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <!-- Additional switch -fdump-xref for recent gcc for GNAT Pro compilers -->
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC_Pro" language="C" />
+     </compilers>
+     <compilers negate="true">
+       <compiler version="4.1.2" />
+       <compiler version="4.1.3" />
+       <compiler version="4.3.3" />
+       <compiler version="4.3.5" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C") use
+         Compiler'Leading_Required_Switches ("C") &amp; ("-fdump-xref");
    end Compiler;
      </config>
    </configuration>
