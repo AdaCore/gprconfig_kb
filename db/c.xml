@@ -204,6 +204,7 @@
        <compiler version="4.3.3" />
        <compiler version="4.5.2" />
        <compiler version="4.5.4" />
+       <compiler version="4.9.0" />
      </compilers>
      <config>
    package Compiler is
