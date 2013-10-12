@@ -11,6 +11,16 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-202-MA11-007 Aggregate projects and mains with no suffix
+
+  Problem:    When the main project is an aggregate project, gprbuild does
+              not recognize mains specified without suffix, including in
+              attributes Main in aggregated projects.
+
+  Status:     This was fixed in 2.1 in 1013-10-11
+
+  Workaround: Use full source file names for mains.
+
 KP-202-M913-037 Several compilations of the same source with aggregated project
 
   Problem:    When gprbuild is invoked with an aggregate project and the same
@@ -24,7 +34,7 @@ KP-202-M913-037 Several compilations of the same source with aggregated project
 
 KP-202-M910-024 None dependency kind and non empty dependency switches
 
-  Problem:    gprbuild may crash or ehaves incorrectly when the Dependency_Kind
+  Problem:    gprbuild may crash or behave incorrectly when the Dependency_Kind
               for a language is "None" and the Dependency_Switches is declared
               as a non empty list.
 
