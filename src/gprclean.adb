@@ -114,17 +114,19 @@ package body Gprclean is
                       Get_Name_String (Project.Object_Directory.Display_Name);
 
    begin
-      Change_Dir (Obj_Dir);
+      if Is_Directory (Obj_Dir) then
+         Change_Dir (Obj_Dir);
 
-      if Is_Regular_File (Archive_Name) then
-         Delete (Obj_Dir, Archive_Name);
+         if Is_Regular_File (Archive_Name) then
+            Delete (Obj_Dir, Archive_Name);
+         end if;
+
+         if Is_Regular_File (Archive_Dep_Name) then
+            Delete (Obj_Dir, Archive_Dep_Name);
+         end if;
+
+         Change_Dir (Current_Dir);
       end if;
-
-      if Is_Regular_File (Archive_Dep_Name) then
-         Delete (Obj_Dir, Archive_Dep_Name);
-      end if;
-
-      Change_Dir (Current_Dir);
    end Clean_Archive;
 
    ------------------------------------
@@ -157,57 +159,59 @@ package body Gprclean is
             Iter      : Source_Iterator;
 
          begin
-            Change_Dir (Get_Name_String (Project.Library_Src_Dir.Name));
-            Open (Direc, ".");
+            if Is_Directory (Directory) then
+               Change_Dir (Directory);
+               Open (Direc, ".");
 
-            --  For each regular file in the directory, if switch -n has not
-            --  been specified, make it writable and delete the file if it is
-            --  a copy of a source of the project.
+               --  For each regular file in the directory, if switch -n has not
+               --  been specified, make it writable and delete the file if it
+               --  is a copy of a source of the project.
 
-            loop
-               Read (Direc, Name, Last);
-               exit when Last = 0;
+               loop
+                  Read (Direc, Name, Last);
+                  exit when Last = 0;
 
-               if Is_Regular_File (Name (1 .. Last)) then
-                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
+                  if Is_Regular_File (Name (1 .. Last)) then
+                     Osint.Canonical_Case_File_Name (Name (1 .. Last));
 
-                  Name_Len := Last;
-                  Name_Buffer (1 .. Name_Len) := Name (1 .. Last);
-                  File_Name := Name_Find;
+                     Name_Len := Last;
+                     Name_Buffer (1 .. Name_Len) := Name (1 .. Last);
+                     File_Name := Name_Find;
 
-                  Delete_File := False;
+                     Delete_File := False;
 
-                  Iter := For_Each_Source (Project_Tree);
+                     Iter := For_Each_Source (Project_Tree);
 
-                  loop
-                     Source := Prj.Element (Iter);
-                     exit when Source = No_Source;
+                     loop
+                        Source := Prj.Element (Iter);
+                        exit when Source = No_Source;
 
-                     if Ultimate_Extension_Of (Source.Project) = Project
-                       and then Source.File = File_Name
-                     then
-                        Delete_File := True;
-                        exit;
+                        if Ultimate_Extension_Of (Source.Project) = Project
+                          and then Source.File = File_Name
+                        then
+                           Delete_File := True;
+                           exit;
+                        end if;
+
+                        Next (Iter);
+                     end loop;
+
+                     if Delete_File then
+                        if not Do_Nothing then
+                           Set_Writable (Name (1 .. Last));
+                        end if;
+
+                        Delete (Directory, Name (1 .. Last));
                      end if;
-
-                     Next (Iter);
-                  end loop;
-
-                  if Delete_File then
-                     if not Do_Nothing then
-                        Set_Writable (Name (1 .. Last));
-                     end if;
-
-                     Delete (Directory, Name (1 .. Last));
                   end if;
-               end if;
-            end loop;
+               end loop;
 
-            Close (Direc);
+               Close (Direc);
 
-            --  Restore the initial working directory
+               --  Restore the initial working directory
 
-            Change_Dir (Current);
+               Change_Dir (Current);
+            end if;
          end;
       end if;
    end Clean_Interface_Copy_Directory;
@@ -268,11 +272,196 @@ package body Gprclean is
                  new String'
                    (Get_Name_String (Project.Object_Directory.Display_Name));
 
-               Change_Dir (Obj_Directory.all);
+               if Is_Directory (Obj_Directory.all) then
+                  Change_Dir (Obj_Directory.all);
 
+                  Open (Direc, ".");
+
+                  --  Look for the library exchange file in the object
+                  --  directory.
+
+                  loop
+                     Read (Direc, Name, Last);
+                     exit when Last = 0;
+
+                     if Is_Regular_File (Name (1 .. Last)) then
+                        Osint.Canonical_Case_File_Name (Name (1 .. Last));
+                        exit when
+                          Name (1 .. Last) = Library_Exchange_File_Name;
+                     end if;
+                  end loop;
+
+                  Close (Direc);
+
+                  --  If there is a library exchange file then get the
+                  --  generated file names and delete them, then delete
+                  --  the library exchange file.
+
+                  if Last > 0 then
+                     Ada.Text_IO.Open
+                       (Exchange_File,
+                        Ada.Text_IO.In_File,
+                        Library_Exchange_File_Name);
+
+                     In_Generated := False;
+                     while not Ada.Text_IO.End_Of_File (Exchange_File) loop
+                        Ada.Text_IO.Get_Line (Exchange_File, Name, Last);
+
+                        if Last > 0 then
+                           if Name (1) = '[' then
+                              In_Generated :=
+                                Name (1 .. Last) =
+                                Library_Label (Generated_Object_Files)
+                                or else
+                                  Name (1 .. Last) =
+                                Library_Label (Generated_Source_Files);
+
+                           elsif In_Generated then
+                              if Is_Regular_File (Name (1 .. Last)) then
+                                 if not Do_Nothing then
+                                    Set_Writable (Name (1 .. Last));
+                                 end if;
+
+                                 Delete (Obj_Directory.all, Name (1 .. Last));
+                              end if;
+                           end if;
+                        end if;
+                     end loop;
+
+                     Ada.Text_IO.Close (Exchange_File);
+
+                     if not Do_Nothing then
+                        Set_Writable (Library_Exchange_File_Name);
+                     end if;
+
+                     Delete (Obj_Directory.all, Library_Exchange_File_Name);
+                  end if;
+
+                  Change_Dir (Current);
+               end if;
+            end if;
+
+            if Is_Directory (Lib_Directory) then
+               Change_Dir (Lib_Directory);
                Open (Direc, ".");
 
-               --  Look for the library exchange file in the object directory
+               --  For each regular file in the directory, if switch -n has not
+               --  been specified, make it writable and delete the file if it
+               --  is the library file.
+
+               loop
+                  Read (Direc, Name, Last);
+                  exit when Last = 0;
+
+                  if Is_Regular_File (Name (1 .. Last))
+                    or else Is_Symbolic_Link (Name (1 .. Last))
+                  then
+                     Osint.Canonical_Case_File_Name (Name (1 .. Last));
+
+                     if (Project.Library_Kind = Static
+                         and then Name (1 .. Last) =  Archive_Name)
+                       or else
+                         ((Project.Library_Kind = Dynamic
+                           or else Project.Library_Kind = Relocatable)
+                          and then Name (1 .. Last) = DLL_Name)
+                     then
+                        if not Do_Nothing then
+                           Set_Writable (Name (1 .. Last));
+                        end if;
+
+                        Delete (Lib_Directory, Name (1 .. Last));
+                     end if;
+                  end if;
+               end loop;
+
+               Close (Direc);
+
+               if Project.Config.Symbolic_Link_Supported then
+                  if (Project.Library_Kind = Dynamic
+                      or else Project.Library_Kind = Relocatable)
+                    and then Project.Lib_Internal_Name /= No_Name
+                  then
+                     declare
+                        Lib_Version : String :=
+                          Get_Name_String (Project.Lib_Internal_Name);
+
+                     begin
+                        Osint.Canonical_Case_File_Name (Lib_Version);
+
+                        if Project.Config.Lib_Maj_Min_Id_Supported then
+                           declare
+                              Maj_Version : String :=
+                                Major_Id_Name (DLL_Name, Lib_Version);
+                           begin
+                              if Maj_Version /= "" then
+                                 Osint.Canonical_Case_File_Name (Maj_Version);
+
+                                 Open (Direc, ".");
+
+                                 --  For each regular file in the directory, if
+                                 --  switch -n has not been specified, make it
+                                 --  writable and delete the file if it is the
+                                 --  library major version file.
+
+                                 loop
+                                    Read (Direc, Name, Last);
+                                    exit when Last = 0;
+
+                                    if (Is_Regular_File (Name (1 .. Last))
+                                        or else
+                                        Is_Symbolic_Link (Name (1 .. Last)))
+                                      and then Name (1 .. Last) = Maj_Version
+                                    then
+                                       if not Do_Nothing then
+                                          Set_Writable (Name (1 .. Last));
+                                       end if;
+
+                                       Delete
+                                         (Lib_Directory, Name (1 .. Last));
+                                    end if;
+                                 end loop;
+
+                                 Close (Direc);
+                              end if;
+                           end;
+                        end if;
+
+                        Open (Direc, ".");
+
+                        --  For each regular file in the directory, if switch
+                        --  -n has not been specified, make it writable and
+                        --  delete the file if it is the library version file.
+
+                        loop
+                           Read (Direc, Name, Last);
+                           exit when Last = 0;
+
+                           if Is_Regular_File (Name (1 .. Last))
+                             and then Name (1 .. Last) = Lib_Version
+                           then
+                              if not Do_Nothing then
+                                 Set_Writable (Name (1 .. Last));
+                              end if;
+
+                              Delete (Lib_Directory, Name (1 .. Last));
+                           end if;
+                        end loop;
+
+                        Close (Direc);
+                     end;
+                  end if;
+               end if;
+
+               Change_Dir (Current);
+            end if;
+
+            if Is_Directory (Lib_ALI_Directory) then
+               Change_Dir (Lib_ALI_Directory);
+               Open (Direc, ".");
+
+               --  For each regular file in the directory, if switch -n has not
+               --  been specified, make it writable and delete the file if it
+               --  is any dependency file of a source of the project.
 
                loop
                   Read (Direc, Name, Last);
@@ -280,229 +469,57 @@ package body Gprclean is
 
                   if Is_Regular_File (Name (1 .. Last)) then
                      Osint.Canonical_Case_File_Name (Name (1 .. Last));
-                     exit when Name (1 .. Last) = Library_Exchange_File_Name;
+                     Delete_File := False;
+
+                     if Last > 4 and then Name (Last - 3 .. Last) = ".ali" then
+                        declare
+                           Source   : Prj.Source_Id;
+                           Iter     : Source_Iterator;
+                           Proj     : Project_Id := Project;
+                        begin
+                           Project_Loop : loop
+                              Iter := For_Each_Source (Project_Tree, Proj);
+
+                              loop
+                                 Source := Prj.Element (Iter);
+                                 exit when Source = No_Source;
+
+                                 if Source.Dep_Name /= No_File
+                                   and then
+                                     Get_Name_String (Source.Dep_Name) =
+                                   Name (1 .. Last)
+                                 then
+                                    Delete_File := True;
+                                    exit Project_Loop;
+                                 end if;
+
+                                 Next (Iter);
+                              end loop;
+
+                              exit Project_Loop when Proj.Extends = No_Project;
+
+                              Proj := Proj.Extends;
+                           end loop Project_Loop;
+                        end;
+                     end if;
+
+                     if Delete_File then
+                        if not Do_Nothing then
+                           Set_Writable (Name (1 .. Last));
+                        end if;
+
+                        Delete (Lib_ALI_Directory, Name (1 .. Last));
+                     end if;
+
                   end if;
                end loop;
 
                Close (Direc);
 
-               --  If there is a library exchange file then get the generated
-               --  file names and delete them, then delete the library exchange
-               --  file.
+               --  Restore the initial working directory
 
-               if Last > 0 then
-                  Ada.Text_IO.Open
-                    (Exchange_File,
-                     Ada.Text_IO.In_File,
-                     Library_Exchange_File_Name);
-
-                  In_Generated := False;
-                  while not Ada.Text_IO.End_Of_File (Exchange_File) loop
-                     Ada.Text_IO.Get_Line (Exchange_File, Name, Last);
-
-                     if Last > 0 then
-                        if Name (1) = '[' then
-                           In_Generated :=
-                             Name (1 .. Last) =
-                             Library_Label (Generated_Object_Files)
-                             or else
-                               Name (1 .. Last) =
-                               Library_Label (Generated_Source_Files);
-
-                        elsif In_Generated then
-                           if Is_Regular_File (Name (1 .. Last)) then
-                              if not Do_Nothing then
-                                 Set_Writable (Name (1 .. Last));
-                              end if;
-
-                              Delete (Obj_Directory.all, Name (1 .. Last));
-                           end if;
-                        end if;
-                     end if;
-                  end loop;
-
-                  Ada.Text_IO.Close (Exchange_File);
-
-                  if not Do_Nothing then
-                     Set_Writable (Library_Exchange_File_Name);
-                  end if;
-
-                  Delete (Obj_Directory.all, Library_Exchange_File_Name);
-               end if;
+               Change_Dir (Current);
             end if;
-
-            Change_Dir (Lib_Directory);
-            Open (Direc, ".");
-
-            --  For each regular file in the directory, if switch -n has not
-            --  been specified, make it writable and delete the file if it is
-            --  the library file.
-
-            loop
-               Read (Direc, Name, Last);
-               exit when Last = 0;
-
-               if Is_Regular_File (Name (1 .. Last))
-                 or else Is_Symbolic_Link (Name (1 .. Last))
-               then
-                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
-
-                  if (Project.Library_Kind = Static
-                      and then Name (1 .. Last) =  Archive_Name)
-                    or else
-                      ((Project.Library_Kind = Dynamic
-                        or else Project.Library_Kind = Relocatable)
-                       and then Name (1 .. Last) = DLL_Name)
-                  then
-                     if not Do_Nothing then
-                        Set_Writable (Name (1 .. Last));
-                     end if;
-
-                     Delete (Lib_Directory, Name (1 .. Last));
-                  end if;
-               end if;
-            end loop;
-
-            Close (Direc);
-
-            if Project.Config.Symbolic_Link_Supported then
-               if (Project.Library_Kind = Dynamic
-                   or else Project.Library_Kind = Relocatable)
-                 and then Project.Lib_Internal_Name /= No_Name
-               then
-                  declare
-                     Lib_Version : String :=
-                                   Get_Name_String (Project.Lib_Internal_Name);
-
-                  begin
-                     Osint.Canonical_Case_File_Name (Lib_Version);
-
-                     if Project.Config.Lib_Maj_Min_Id_Supported then
-                        declare
-                           Maj_Version : String :=
-                                         Major_Id_Name (DLL_Name, Lib_Version);
-                        begin
-                           if Maj_Version /= "" then
-                              Osint.Canonical_Case_File_Name (Maj_Version);
-
-                              Open (Direc, ".");
-
-                              --  For each regular file in the directory, if
-                              --  switch -n has not been specified, make it
-                              --  writable and delete the file if it is the
-                              --  library major version file.
-
-                              loop
-                                 Read (Direc, Name, Last);
-                                 exit when Last = 0;
-
-                                 if (Is_Regular_File (Name (1 .. Last))
-                                     or else
-                                     Is_Symbolic_Link (Name (1 .. Last)))
-                                   and then Name (1 .. Last) = Maj_Version
-                                 then
-                                    if not Do_Nothing then
-                                       Set_Writable (Name (1 .. Last));
-                                    end if;
-
-                                    Delete (Lib_Directory, Name (1 .. Last));
-                                 end if;
-                              end loop;
-
-                              Close (Direc);
-                           end if;
-                        end;
-                     end if;
-
-                     Open (Direc, ".");
-
-                     --  For each regular file in the directory, if switch -n
-                     --  has not been specified, make it writable and delete
-                     --  the file if it is the library version file.
-
-                     loop
-                        Read (Direc, Name, Last);
-                        exit when Last = 0;
-
-                        if Is_Regular_File (Name (1 .. Last))
-                          and then Name (1 .. Last) = Lib_Version
-                        then
-                           if not Do_Nothing then
-                              Set_Writable (Name (1 .. Last));
-                           end if;
-
-                           Delete (Lib_Directory, Name (1 .. Last));
-                        end if;
-                     end loop;
-
-                     Close (Direc);
-                  end;
-               end if;
-            end if;
-
-            Change_Dir (Lib_ALI_Directory);
-            Open (Direc, ".");
-
-            --  For each regular file in the directory, if switch -n has not
-            --  been specified, make it writable and delete the file if it is
-            --  any dependency file of a source of the project.
-
-            loop
-               Read (Direc, Name, Last);
-               exit when Last = 0;
-
-               if Is_Regular_File (Name (1 .. Last)) then
-                  Osint.Canonical_Case_File_Name (Name (1 .. Last));
-                  Delete_File := False;
-
-                  if Last > 4 and then Name (Last - 3 .. Last) = ".ali" then
-                     declare
-                        Source   : Prj.Source_Id;
-                        Iter     : Source_Iterator;
-                        Proj     : Project_Id := Project;
-                     begin
-                        Project_Loop : loop
-                           Iter := For_Each_Source (Project_Tree, Proj);
-
-                           loop
-                              Source := Prj.Element (Iter);
-                              exit when Source = No_Source;
-
-                              if Source.Dep_Name /= No_File
-                                and then
-                                  Get_Name_String (Source.Dep_Name) =
-                                  Name (1 .. Last)
-                              then
-                                 Delete_File := True;
-                                 exit Project_Loop;
-                              end if;
-
-                              Next (Iter);
-                           end loop;
-
-                           exit Project_Loop when Proj.Extends = No_Project;
-
-                           Proj := Proj.Extends;
-                        end loop Project_Loop;
-                     end;
-                  end if;
-
-                  if Delete_File then
-                     if not Do_Nothing then
-                        Set_Writable (Name (1 .. Last));
-                     end if;
-
-                     Delete (Lib_ALI_Directory, Name (1 .. Last));
-                  end if;
-
-               end if;
-            end loop;
-
-            Close (Direc);
-
-            --  Restore the initial working directory
-
-            Change_Dir (Current);
          end;
       end if;
    end Clean_Library_Directory;
@@ -805,7 +822,7 @@ package body Gprclean is
                --  object file when the artifacts are given as a regexp.
 
                Clean_Artifacts
-                 (Obj_Dir, Project.Config.Artifacts_In_Object_Dir);
+                    (Obj_Dir, Project.Config.Artifacts_In_Object_Dir);
             end;
          end if;
 
