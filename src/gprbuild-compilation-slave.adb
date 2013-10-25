@@ -853,8 +853,13 @@ package body Gprbuild.Compilation.Slave is
 
       procedure Iterate (Proc : access procedure (S : in out Slave)) is
       begin
-         for S of Pool loop
-            Proc (S);
+         for C in Pool.Iterate loop
+            declare
+               S : Slave := Slave_S.Element (C);
+            begin
+               Proc (S);
+               Pool (C) := S;
+            end;
          end loop;
       end Iterate;
 
