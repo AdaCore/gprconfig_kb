@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-202-MA30-007 Aggregated projects with same name
+
+  Problem:    When gprbuild is invoked with an aggregate project and some of
+              the aggregated projects have a common name, linking some
+              executables may fail in one or several of these aggregated
+              projects.
+
+  Status:     This was fixed in 2.1 on 2013-10-30
+
+  Workaround: Use diffrent project names for the aggregated projects.
+
 KP-202-MA15-007 gprclean crashes cleaning a library project without object dir
 
   Problem:    gprclean crashes with an exception when invoked to clean a
