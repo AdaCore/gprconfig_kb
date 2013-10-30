@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--          Copyright (C) 2012-2013, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -125,5 +125,8 @@ private
    Add_Lib_Link : Boolean := True;
    --  Wether to copy the shared library into the executable directory on
    --  Windows or a create a link into the lib directory on UNIX.
+
+   Create_Dest_Dir : Boolean := False;
+   --  Wether to create the missing directories in the destination point
 
 end Gprinstall;

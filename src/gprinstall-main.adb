@@ -244,7 +244,7 @@ procedure Gprinstall.Main is
             Usage_Needed := True;
 
          elsif Arg = "-p" or else Arg = "--create-missing-dirs" then
-            Opt.Setup_Projects := True;
+            Create_Dest_Dir := True;
 
          elsif Arg'Length >= 2 and then Arg (2) = 'P' then
             if Project_File_Name /= null then

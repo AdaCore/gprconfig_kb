@@ -578,7 +578,7 @@ package body Gprinstall.Install is
             if (not Sym_Link and then not Exists (To))
               or else (Sym_Link and then not Exists (From))
             then
-               if Opt.Setup_Projects then
+               if Create_Dest_Dir then
                   if Sym_Link then
                      Create_Path (Containing_Directory (From));
                   else
