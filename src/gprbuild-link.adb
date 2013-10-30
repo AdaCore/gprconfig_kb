@@ -554,7 +554,8 @@ package body Gprbuild.Link is
       --  No need to build the global archive, if it has already been done
 
       if For_Project.Object_Directory /= No_Path_Information then
-         Global_Archive_Data := Global_Archives_Built.Get (For_Project.Name);
+         Global_Archive_Data :=
+           Global_Archives_Built.Get (Name_Id (For_Project.Path.Name));
 
          if Global_Archive_Data.Checked then
             Exists         := Global_Archive_Data.Exists;
@@ -997,7 +998,7 @@ package body Gprbuild.Link is
             end if;
 
             Global_Archives_Built.Set
-              (For_Project.Name,
+              (Name_Id (For_Project.Path.Name),
                (Checked        => True,
                 Has_Been_Built => Has_Been_Built,
                 Exists         => Exists));
