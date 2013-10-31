@@ -450,8 +450,9 @@ that are not up to date.
 
 If invoked without the @option{--config=} or
 @option{--autoconf=} options, then GPRbuild will look for a configuration
-project file @file{default.cgpr}, or @file{<targetname>.cgpr} if option
-@option{--target=<targetname>} is used. If there is no such file in the default
+project file. The file name or path name of this configuration project file
+depends on the target, the runtime and environment variable @code{GPR_CONFIG}
+See @ref{Configuring with GPRconfig}. If there is no such file in the default
 locations expected by GPRbuild (<install>/share/gpr and the current
 directory) then GPRbuild will invoke @value{gprconfig} with
 the languages from the project files, and create a configuration project
