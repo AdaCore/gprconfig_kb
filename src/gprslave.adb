@@ -1069,8 +1069,12 @@ procedure Gprslave is
                   DS       : Character renames Directory_Separator;
                   Dep_Dir  : constant String := To_String (Job.Dep_Dir);
                   Dep_File : constant String := To_String (Job.Dep_File);
+                  Out_File : constant String := To_String (Job.Output);
+                  S        : Boolean;
                begin
-                  Send_Output (Builder.Channel, To_String (Job.Output));
+                  Send_Output (Builder.Channel, Out_File);
+
+                  OS_Lib.Delete_File (Out_File, S);
 
                   if Success and then Builder.Sync /= Protocol.File then
                      --  No Dep_File to send back if the compilation was not
