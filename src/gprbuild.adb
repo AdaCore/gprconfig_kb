@@ -483,7 +483,10 @@ package body Gprbuild is
                   There_Are_SALs := True;
                end if;
 
-               Library_Projs.Append (Library_Project'(Project, Is_Aggregate));
+               Library_Projs.Append
+                 (Library_Project'
+                    (Project,
+                     Is_Aggregate and then not Project.Externally_Built));
             end if;
          end if;
       end Process_Project;
