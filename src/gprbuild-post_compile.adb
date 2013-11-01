@@ -1117,21 +1117,23 @@ package body Gprbuild.Post_Compile is
          --  If there are imported libraries, put their data in the exchange
          --  file.
 
-         if Library_Projs.Last > 0
-           and then For_Project.Qualifier /= Aggregate_Library
-         then
+         if Library_Projs.Last > 0 then
             Put_Line (Exchange_File, Library_Label (Imported_Libraries));
 
             for J in reverse 1 .. Library_Projs.Last loop
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String
-                    (Library_Projs.Table (J).
-                       Proj.Library_Dir.Display_Name));
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String
-                    (Library_Projs.Table (J).Proj.Library_Name));
+               if For_Project.Qualifier /= Aggregate_Library
+                 or else Library_Projs.Table (J).Proj.Externally_Built
+               then
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String
+                       (Library_Projs.Table (J).
+                            Proj.Library_Dir.Display_Name));
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String
+                       (Library_Projs.Table (J).Proj.Library_Name));
+               end if;
             end loop;
          end if;
       end Write_Imported_Libraries;
