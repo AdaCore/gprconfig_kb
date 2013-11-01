@@ -213,6 +213,9 @@ package body Gprbuild.Post_Compile is
                        and then (Source.Kind = Impl
                                  or else Other_Part (Source) = No_Source)
                        and then not Is_Subunit (Source)))
+                 and then
+                   (not Source.Project.Externally_Built
+                    or else Source.Project.Extended_By /= No_Project)
                then
                   Library_Objs.Append
                     ((Path  => Source.Object_Path,
@@ -1159,6 +1162,9 @@ package body Gprbuild.Post_Compile is
 
                   if not Source.Locally_Removed
                     and then Source.Dep_Path /= No_Path
+                    and then
+                      (not Source.Project.Externally_Built
+                       or else Source.Project.Extended_By /= No_Project)
                   then
                      if Source.Kind = Spec then
                         if Other_Part (Source) = No_Source then
