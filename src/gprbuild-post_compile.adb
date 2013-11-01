@@ -85,7 +85,7 @@ package body Gprbuild.Post_Compile is
       Equal      => "=");
 
    procedure CodePeer_Globalize;
-   --  Call the codepeer_globalizer for each of the object directories.
+   --  Call the codepeer_globalizer for each of the object directories
 
    -------------------
    -- Build_Library --
@@ -944,8 +944,8 @@ package body Gprbuild.Post_Compile is
          Opt_Elem : String_Element;
 
       begin
-         if Opt.Run_Path_Option and then
-           For_Project.Config.Run_Path_Option /= No_Name_List
+         if Opt.Run_Path_Option
+           and then For_Project.Config.Run_Path_Option /= No_Name_List
          then
             List :=
               Value_Of

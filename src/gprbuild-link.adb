@@ -1319,7 +1319,8 @@ package body Gprbuild.Link is
                   Last_Exec := Curr_Exec;
 
                elsif Curr_Exec = Exec'Last
-                 and then Curr_Path > Insensitive_Path'Last then
+                 and then Curr_Path > Insensitive_Path'Last
+               then
                   Nmb := Nmb + 1;
                   Last_Path := Curr_Path + 1;
                   Last_Exec := Curr_Exec + 1;
@@ -1877,7 +1878,7 @@ package body Gprbuild.Link is
               and then Proj.Library
               and then Proj.Object_Directory /= No_Path_Information
               and then (Proj.Library_Kind = Static
-                         or else Proj.Standalone_Library = No)
+                        or else Proj.Standalone_Library = No)
             then
                --  Put the full path name of the library file in Name_Buffer
 
