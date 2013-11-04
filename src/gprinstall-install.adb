@@ -1625,6 +1625,28 @@ package body Gprinstall.Install is
                end;
             end if;
 
+            --  In all cases adds externally built projects
+
+            declare
+               L : Project_List := Project.All_Imported_Projects;
+            begin
+               while L /= null loop
+                  if Bring_Sources (L.Project)
+                    and then L.Project.Externally_Built
+                  then
+                     Content.Append
+                       ("with """
+                        & Base_Name
+                          (Get_Name_String (L.Project.Path.Display_Name))
+                        & """;");
+                  end if;
+
+                  L := L.Next;
+               end loop;
+            end;
+
+            Add_Empty_Line;
+
             --  Project name
 
             if Has_Sources (Project) then
