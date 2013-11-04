@@ -1225,6 +1225,7 @@ package body Gprinstall.Install is
             --  handling aggregated projects.
 
             R    : String_Vector.Vector;
+            Opts : String_Vector.Vector;
 
             ----------------
             -- Linker_For --
@@ -1238,14 +1239,15 @@ package body Gprinstall.Install is
                     Name_Linker_Options
                   then
                      declare
-                        Img : constant String := Image (V);
+                        Val : constant Variable_Value :=
+                                Tree.Shared.Variable_Elements.Table (V).Value;
+                        L   : String_List_Id := Val.Values;
                      begin
-                        if Img'Length /= 0
-                          and then not Seen.Contains (Img)
-                        then
-                           R.Append ("            " & Img);
-                           Seen.Include (Img);
-                        end if;
+                        while L /= Nil_String loop
+                           Opts.Append (Get_Name_String (Strs (L).Value));
+                           Seen.Include (Get_Name_String (Strs (L).Value));
+                           L := Strs (L).Next;
+                        end loop;
                      end;
                   end if;
                   V := Tree.Shared.Variable_Elements.Table (V).Next;
@@ -1269,9 +1271,45 @@ package body Gprinstall.Install is
                end;
             end if;
 
-            if R.Length = 1 then
+            --  We also want to add the externally built libraries without
+            --  sources (referencing system libraries for example).
+
+            declare
+               L : Project_List := Project.All_Imported_Projects;
+            begin
+               while L /= null loop
+                  if L.Project.Library
+                    and then L.Project.Externally_Built
+                    and then not Bring_Sources (L.Project)
+                  then
+                     Opts.Append
+                       ("-l" & Get_Name_String (L.Project.Library_Name));
+                  end if;
+
+                  L := L.Next;
+               end loop;
+            end;
+
+            if Opts.Length = 0 then
                --  No linker alternative found, add null statement
                R.Append ("            null;");
+
+            else
+               declare
+                  O_List : Unbounded_String;
+               begin
+                  for O of Opts loop
+                     if O_List /= Null_Unbounded_String then
+                        Append (O_List, ", ");
+                     end if;
+
+                     Append (O_List, '"' & O & '"');
+                  end loop;
+
+                  R.Append
+                    ("            for Linker_Options use ("
+                     & To_String (O_List) & ");");
+               end;
             end if;
 
             return R;
