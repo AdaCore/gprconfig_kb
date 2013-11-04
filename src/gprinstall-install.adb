@@ -849,6 +849,8 @@ package body Gprinstall.Install is
          package String_Vector is
            new Containers.Indefinite_Vectors (Positive, String);
 
+         package Seen_Set is new Containers.Indefinite_Ordered_Sets (String);
+
          Content : String_Vector.Vector;
          --  The content of the project, this is used when creating the project
          --  and is needed to ease the project section merging when installing
@@ -886,11 +888,11 @@ package body Gprinstall.Install is
          pragma Inline (Add_Empty_Line);
 
          function Naming_Case_Alternative
-           (Pck : Package_Id) return String_Vector.Vector;
+           (Proj : Project_Id) return String_Vector.Vector;
          --  Returns the naming case alternative for this project configuration
 
          function Linker_Case_Alternative
-           (Pck : Package_Id) return String_Vector.Vector;
+           (Proj : Project_Id) return String_Vector.Vector;
          --  Returns the linker case alternative for this project configuration
 
          function Data_Attributes return String_Vector.Vector;
@@ -898,6 +900,10 @@ package body Gprinstall.Install is
 
          function Get_Languages return String;
          --  Returns the list of languages
+
+         function Get_Package
+           (Project : Project_Id; Pkg_Name : Name_Id) return Package_Id;
+         --  Returns the package Name for the given project
 
          --------------------
          -- Add_Empty_Line --
@@ -914,24 +920,25 @@ package body Gprinstall.Install is
 
          procedure Create_Packages is
 
-            procedure Create_Naming (Pck : Package_Id);
+            procedure Create_Naming (Proj : Project_Id);
             --  Create the naming package
 
-            procedure Create_Linker (Pck : Package_Id);
+            procedure Create_Linker (Proj : Project_Id);
             --  Create the linker package if needed
 
             -------------------
             -- Create_Naming --
             -------------------
 
-            procedure Create_Naming (Pck : Package_Id) is
+            procedure Create_Naming (Proj : Project_Id) is
             begin
                Content.Append ("   package Naming is");
 
                --  Attributes
 
                declare
-                  V : Variable_Id := Pcks (Pck).Decl.Attributes;
+                  V : Variable_Id := Pcks
+                        (Get_Package (Proj, Name_Naming)).Decl.Attributes;
                begin
                   while V /= No_Variable loop
                      Content.Append ("      " & Image (V));
@@ -941,7 +948,7 @@ package body Gprinstall.Install is
 
                Content.Append ("      case BUILD is");
 
-               Content.Append (Naming_Case_Alternative (Pck));
+               Content.Append (Naming_Case_Alternative (Proj));
 
                Content.Append ("      end case;");
                Content.Append ("   end Naming;");
@@ -952,39 +959,23 @@ package body Gprinstall.Install is
             -- Create_Linker --
             -------------------
 
-            procedure Create_Linker (Pck : Package_Id) is
+            procedure Create_Linker (Proj : Project_Id) is
             begin
                Content.Append ("   package Linker is");
 
                Content.Append ("      case BUILD is");
                --  Attribute Linker_Options only if set
 
-               Content.Append (Linker_Case_Alternative (Pck));
+               Content.Append (Linker_Case_Alternative (Proj));
 
                Content.Append ("      end case;");
                Content.Append ("   end Linker;");
                Add_Empty_Line;
             end Create_Linker;
 
-            Pck  : Package_Id := Project.Decl.Packages;
-
          begin
-            while Pck /= No_Package loop
-               if Pcks (Pck).Decl /= No_Declarations then
-                  if Pcks (Pck).Name = Name_Naming then
-                     Create_Naming (Pck);
-
-                  elsif Pcks (Pck).Name = Name_Linker then
-                     Create_Linker (Pck);
-
-                  else
-                     --  All other packages are ignored
-                     null;
-                  end if;
-
-                  Pck := Pcks (Pck).Next;
-               end if;
-            end loop;
+            Create_Naming (Project);
+            Create_Linker (Project);
          end Create_Packages;
 
          ---------------------
@@ -1125,6 +1116,27 @@ package body Gprinstall.Install is
             end;
          end Get_Languages;
 
+         -----------------
+         -- Get_Package --
+         -----------------
+
+         function Get_Package
+           (Project : Project_Id; Pkg_Name : Name_Id) return Package_Id
+         is
+            Pck : Package_Id := Project.Decl.Packages;
+         begin
+            while Pck /= No_Package loop
+               if Pcks (Pck).Decl /= No_Declarations
+                 and then Pcks (Pck).Name = Pkg_Name
+               then
+                  return Pck;
+               end if;
+
+               Pck := Pcks (Pck).Next;
+            end loop;
+            return No_Package;
+         end Get_Package;
+
          -----------
          -- Image --
          -----------
@@ -1199,29 +1211,61 @@ package body Gprinstall.Install is
          -----------------------------
 
          function Linker_Case_Alternative
-           (Pck : Package_Id) return String_Vector.Vector
+           (Proj : Project_Id) return String_Vector.Vector
          is
             use type Ada.Containers.Count_Type;
 
-            V : Variable_Id := Pcks (Pck).Decl.Attributes;
-            R : String_Vector.Vector;
+            procedure Linker_For (Pck : Package_Id);
+            --  Handle the linker options for this package
+
+            Seen : Seen_Set.Set;
+            --  Records the attribute generated to avoid duplicate when
+            --  handling aggregated projects.
+
+            R    : String_Vector.Vector;
+
+            ----------------
+            -- Linker_For --
+            ----------------
+
+            procedure Linker_For (Pck : Package_Id) is
+               V : Variable_Id := Pcks (Pck).Decl.Attributes;
+            begin
+               while V /= No_Variable loop
+                  if Tree.Shared.Variable_Elements.Table (V).Name =
+                    Name_Linker_Options
+                  then
+                     declare
+                        Img : constant String := Image (V);
+                     begin
+                        if Img'Length /= 0
+                          and then not Seen.Contains (Img)
+                        then
+                           R.Append ("            " & Img);
+                           Seen.Include (Img);
+                        end if;
+                     end;
+                  end if;
+                  V := Tree.Shared.Variable_Elements.Table (V).Next;
+               end loop;
+            end Linker_For;
+
          begin
             R.Append ("         when """ & Build_Name.all & """ =>");
 
-            while V /= No_Variable loop
-               if Tree.Shared.Variable_Elements.Table (V).Name =
-                 Name_Linker_Options
-               then
-                  declare
-                     Img : constant String := Image (V);
-                  begin
-                     if Img'Length /= 0 then
-                        R.Append ("            " & Img);
-                     end if;
-                  end;
-               end if;
-               V := Tree.Shared.Variable_Elements.Table (V).Next;
-            end loop;
+            Linker_For (Get_Package (Proj, Name_Linker));
+
+            if Proj.Qualifier = Aggregate_Library then
+               declare
+                  Agg : Aggregated_Project_List :=
+                          Project.Aggregated_Projects;
+               begin
+                  while Agg /= null loop
+                     Linker_For (Get_Package (Agg.Project, Name_Linker));
+                     Agg := Agg.Next;
+                  end loop;
+               end;
+            end if;
 
             if R.Length = 1 then
                --  No linker alternative found, add null statement
@@ -1236,28 +1280,64 @@ package body Gprinstall.Install is
          -----------------------------
 
          function Naming_Case_Alternative
-           (Pck : Package_Id) return String_Vector.Vector
+           (Proj : Project_Id) return String_Vector.Vector
          is
-            A : Array_Id := Pcks (Pck).Decl.Arrays;
-            N : Name_Id;
-            E : Array_Element_Id;
-            V : String_Vector.Vector;
+            procedure Naming_For (Pck : Package_Id);
+            --  Handle the naming scheme for this package
+
+            Seen : Seen_Set.Set;
+            --  Records the attribute generated to avoid duplicate when
+            --  handling aggregated projects.
+
+            V    : String_Vector.Vector;
+
+            ----------------
+            -- Naming_For --
+            ----------------
+
+            procedure Naming_For (Pck : Package_Id) is
+               A : Array_Id := Pcks (Pck).Decl.Arrays;
+               N : Name_Id;
+               E : Array_Element_Id;
+            begin
+               --  Arrays
+
+               while A /= No_Array loop
+                  N := Tree.Shared.Arrays.Table (A).Name;
+                  E := Tree.Shared.Arrays.Table (A).Value;
+
+                  while E /= No_Array_Element loop
+                     declare
+                        Decl : constant String := Image (N, E);
+                     begin
+                        if not Seen.Contains (Decl) then
+                           V.Append ("            " & Image (N, E));
+                           Seen.Include (Decl);
+                        end if;
+                     end;
+                     E := Tree.Shared.Array_Elements.Table (E).Next;
+                  end loop;
+
+                  A := Tree.Shared.Arrays.Table (A).Next;
+               end loop;
+            end Naming_For;
+
          begin
             V.Append ("         when """ & Build_Name.all & """ =>");
 
-            --  Arrays
+            Naming_For (Get_Package (Proj, Name_Naming));
 
-            while A /= No_Array loop
-               N := Tree.Shared.Arrays.Table (A).Name;
-               E := Tree.Shared.Arrays.Table (A).Value;
-
-               while E /= No_Array_Element loop
-                  V.Append ("            " & Image (N, E));
-                  E := Tree.Shared.Array_Elements.Table (E).Next;
-               end loop;
-
-               A := Tree.Shared.Arrays.Table (A).Next;
-            end loop;
+            if Proj.Qualifier = Aggregate_Library then
+               declare
+                  Agg : Aggregated_Project_List :=
+                          Project.Aggregated_Projects;
+               begin
+                  while Agg /= null loop
+                     Naming_For (Get_Package (Agg.Project, Name_Naming));
+                     Agg := Agg.Next;
+                  end loop;
+               end;
+            end if;
 
             return V;
          end Naming_Case_Alternative;
@@ -1440,40 +1520,14 @@ package body Gprinstall.Install is
 
                      case Current_Section is
                         when Naming =>
-                           declare
-                              Pck : Package_Id := Project.Decl.Packages;
-                           begin
-                              Look_Naming :
-                              while Pck /= No_Package loop
-                                 if Pcks (Pck).Decl /= No_Declarations then
-                                    if Pcks (Pck).Name = Name_Naming then
-                                       String_Vector.Next (Pos);
-                                       Content.Insert
-                                         (Pos, Naming_Case_Alternative (Pck));
-                                       exit Look_Naming;
-                                    end if;
-                                 end if;
-                                 Pck := Pcks (Pck).Next;
-                              end loop Look_Naming;
-                           end;
+                           String_Vector.Next (Pos);
+                           Content.Insert
+                             (Pos, Naming_Case_Alternative (Project));
 
                         when Linker =>
-                           declare
-                              Pck : Package_Id := Project.Decl.Packages;
-                           begin
-                              Look_Linker :
-                              while Pck /= No_Package loop
-                                 if Pcks (Pck).Decl /= No_Declarations then
-                                    if Pcks (Pck).Name = Name_Linker then
-                                       String_Vector.Next (Pos);
-                                       Content.Insert
-                                         (Pos, Linker_Case_Alternative (Pck));
-                                       exit Look_Linker;
-                                    end if;
-                                 end if;
-                                 Pck := Pcks (Pck).Next;
-                              end loop Look_Linker;
-                           end;
+                           String_Vector.Next (Pos);
+                           Content.Insert
+                             (Pos, Linker_Case_Alternative (Project));
 
                         when Top =>
                            --  For the Sources/Lib attributes
