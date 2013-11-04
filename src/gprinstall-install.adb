@@ -1848,7 +1848,7 @@ package body Gprinstall.Install is
                if not Active then
                   Write_Str (" (not active)");
                elsif Project.Externally_Built then
-                  Write_Str (" (externally build)");
+                  Write_Str (" (externally built)");
                elsif Project.Source_Dirs = Nil_String then
                   Write_Str (" (no sources)");
                end if;
