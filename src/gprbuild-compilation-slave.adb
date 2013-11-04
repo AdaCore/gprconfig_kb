@@ -409,7 +409,34 @@ package body Gprbuild.Compilation.Slave is
       Start, Stop : Calendar.Time;
 
       package Str_Vect is new Containers.Indefinite_Vectors (Positive, String);
+
+      procedure Insert
+        (V      : out Str_Vect.Vector;
+         Values : String_List_Id);
+      --  Inserts all values into the vector
+
       Excluded_Patterns : Str_Vect.Vector;
+
+      ------------
+      -- Insert --
+      ------------
+
+      procedure Insert
+        (V      : out Str_Vect.Vector;
+         Values : String_List_Id)
+      is
+         Idx : String_List_Id := Values;
+      begin
+         while Idx /= Nil_String loop
+            declare
+               Item : constant String_Element :=
+                        Tree.Shared.String_Elements.Table (Idx);
+            begin
+               V.Append (Get_Name_String (Item.Value));
+               Idx := Item.Next;
+            end;
+         end loop;
+      end Insert;
 
       ---------------------------
       -- Register_Remote_Slave --
@@ -582,21 +609,7 @@ package body Gprbuild.Compilation.Slave is
                            end;
 
                         elsif V.Name = Name_Excluded_Patterns then
-                           declare
-                              Idx : String_List_Id := V.Value.Values;
-                           begin
-                              while Idx /= Nil_String loop
-                                 declare
-                                    Item : constant String_Element :=
-                                             Tree.Shared.String_Elements.Table
-                                               (Idx);
-                                 begin
-                                    Excluded_Patterns.Append
-                                      (Get_Name_String (Item.Value));
-                                    Idx := Item.Next;
-                                 end;
-                              end loop;
-                           end;
+                           Insert (Excluded_Patterns, V.Value.Values);
                         end if;
                      end if;
                   end;
