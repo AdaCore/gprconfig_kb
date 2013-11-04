@@ -1842,6 +1842,9 @@ package body Gprinstall.Install is
             if Install_Project or Opt.Verbose_Mode then
                Write_Str (" project ");
                Write_Str (Get_Name_String (Project.Display_Name));
+               if Build_Name.all /= "default" then
+                  Write_Str (" - " & Build_Name.all);
+               end if;
             end if;
 
             if not Install_Project and Opt.Verbose_Mode then
