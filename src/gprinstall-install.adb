@@ -1797,7 +1797,7 @@ package body Gprinstall.Install is
                Write_Str ("Skip");
             end if;
 
-            if Install_Project  or Opt.Verbose_Mode then
+            if Install_Project or Opt.Verbose_Mode then
                Write_Str (" project ");
                Write_Str (Get_Name_String (Project.Display_Name));
             end if;

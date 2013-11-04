@@ -23,8 +23,8 @@
 --  file. gprlib gets it parameters from a text file and give back results
 --  through the same text file.
 
-with Ada.Text_IO;       use Ada.Text_IO;
 with Ada.Command_Line;  use Ada.Command_Line;
+with Ada.Text_IO;       use Ada.Text_IO;
 
 with ALI;
 with Csets;
@@ -32,8 +32,8 @@ with Csets;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
-with Gprexch;          use Gprexch;
 with Gpr_Util;         use Gpr_Util;
+with Gprexch;          use Gprexch;
 with Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
@@ -1385,8 +1385,8 @@ begin
    exception
       when others =>
          Osint.Fail
-           ("cannot change to object directory " &
-            Object_Directories.Table (1).all);
+           ("cannot change to object directory "
+            & Object_Directories.Table (1).all);
    end;
 
    if Standalone /= No then
@@ -2073,8 +2073,8 @@ begin
 
             if not Success then
                Osint.Fail
-                 ("call to archive builder " &
-                  Archive_Builder.all & " failed");
+                 ("call to archive builder "
+                  & Archive_Builder.all & " failed");
             end if;
 
             exit when Next_AB_Object_Pos > Last_AB_Option;
