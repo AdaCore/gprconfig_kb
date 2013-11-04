@@ -332,23 +332,31 @@ package body Gprbuild.Post_Compile is
             end loop;
          end;
 
-         --  Add ALI dir directories of imported projects
+         --  Add ALI dir directories of imported projects (only if it is not an
+         --  externally built project or if the project has sources). This skip
+         --  the library projects with no sources used for example to add a
+         --  system library to the linker.
 
          declare
             List : Project_List := For_Project.All_Imported_Projects;
 
          begin
             while List /= null loop
-               if List.Project.Library_ALI_Dir /= No_Path_Information then
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String
-                       (List.Project.Library_ALI_Dir.Display_Name));
+               if not List.Project.Externally_Built
+                 or else List.Project.Source_Dirs /= Nil_String
+               then
+                  if List.Project.Library_ALI_Dir /= No_Path_Information then
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String
+                          (List.Project.Library_ALI_Dir.Display_Name));
 
-               elsif List.Project.Library_Dir /= No_Path_Information then
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (List.Project.Library_Dir.Display_Name));
+                  elsif List.Project.Library_Dir /= No_Path_Information then
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String
+                          (List.Project.Library_Dir.Display_Name));
+                  end if;
                end if;
 
                List := List.Next;
