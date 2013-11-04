@@ -52,17 +52,19 @@ package body Gprbuild.Compilation.Slave is
                      (Port => Port_Type'Last, others => <>);
 
    package Slaves_N is new Containers.Vectors (Positive, Slave_Data);
+   package Str_Vect is new Containers.Indefinite_Vectors (Positive, String);
 
    Slaves_Data : Slaves_N.Vector;
 
    type Slave is record
-      Sock          : Integer;
-      Data          : Slave_Data;
-      Channel       : Communication_Channel;
-      Current       : Natural := 0;
-      Max_Processes : Positive := 1;
-      Root_Dir      : Unbounded_String;
-      Rsync_Pid     : Process_Id;
+      Sock                       : Integer;
+      Data                       : Slave_Data;
+      Channel                    : Communication_Channel;
+      Current                    : Natural := 0;
+      Max_Processes              : Positive := 1;
+      Root_Dir                   : Unbounded_String;
+      Rsync_Pid                  : Process_Id;
+      Included_Artifact_Patterns : Str_Vect.Vector;
    end record;
 
    function "<" (K1, K2 : Slave) return Boolean is (K1.Sock < K2.Sock);
@@ -394,6 +396,7 @@ package body Gprbuild.Compilation.Slave is
      (Tree    : Project_Tree_Ref;
       Project : Project_Id)
    is
+      use type Containers.Count_Type;
 
       procedure Register_Remote_Slave
         (S_Data       : Slave_Data;
@@ -408,14 +411,14 @@ package body Gprbuild.Compilation.Slave is
 
       Start, Stop : Calendar.Time;
 
-      package Str_Vect is new Containers.Indefinite_Vectors (Positive, String);
-
       procedure Insert
         (V      : out Str_Vect.Vector;
          Values : String_List_Id);
       --  Inserts all values into the vector
 
-      Excluded_Patterns : Str_Vect.Vector;
+      Excluded_Patterns          : Str_Vect.Vector;
+      Included_Patterns          : Str_Vect.Vector;
+      Included_Artifact_Patterns : Str_Vect.Vector;
 
       ------------
       -- Insert --
@@ -493,61 +496,92 @@ package body Gprbuild.Compilation.Slave is
             end if;
 
             declare
+               procedure Add_Arg (Str : String);
+               --  Add new argument
+
                Args : Argument_List
-                        (1 .. 17 + Positive (Excluded_Patterns.Length));
-               N    : Positive range 13 .. Args'Last;
+                 (1 ..
+                    5 + Positive'Max
+                      (12 + Positive (Excluded_Patterns.Length),
+                       2 + Positive (Included_Patterns.Length)));
+               N    : Natural range 0 .. Args'Last := 0;
+
+               --------------
+               -- Add_Args --
+               --------------
+
+               procedure Add_Arg (Str : String) is
+               begin
+                  N := N + 1;
+                  Args (N) := new String'(Str);
+               end Add_Arg;
+
             begin
                --  Archive mode, compression and ignore VCS
 
-               Args (1) := new String'("-arz");
+               Add_Arg ("-arz");
 
-               --  Exclude objects/ali
+               if Included_Patterns.Length = 0 then
+                  --  Exclude objects/ali
 
-               Args (2) := new String'("--exclude=*.o");
-               Args (3) := new String'("--exclude=*.obj");
-               Args (4) := new String'("--exclude=*.ali");
-               Args (5) := new String'("--exclude=*.dll");
-               Args (6) := new String'("--exclude=*.so");
-               Args (7) := new String'("--exclude=*.so.*");
-               Args (8) := new String'("--exclude=*.exe");
-               Args (9) := new String'("--exclude=.git");
-               Args (10) := new String'("--exclude=.svn");
-               Args (11) := new String'("--exclude=CVS");
-               Args (12) := new String'("--exclude=gnatinspect.db*");
+                  Add_Arg ("--exclude=*.o");
+                  Add_Arg ("--exclude=*.obj");
+                  Add_Arg ("--exclude=*.ali");
+                  Add_Arg ("--exclude=*.dll");
+                  Add_Arg ("--exclude=*.so");
+                  Add_Arg ("--exclude=*.so.*");
+                  Add_Arg ("--exclude=*.exe");
+                  Add_Arg ("--exclude=.git");
+                  Add_Arg ("--exclude=.svn");
+                  Add_Arg ("--exclude=CVS");
+                  Add_Arg ("--exclude=gnatinspect.db*");
 
-               --  Add any user's defined excluded patterns
+                  --  Add any user's defined excluded patterns
 
-               N := 13;
+                  for P of Excluded_Patterns loop
+                     Add_Arg ("--exclude=" & P);
+                  end loop;
 
-               for P of Excluded_Patterns loop
-                  Args (N) := new String'("--exclude=" & P);
-                  N := N + 1;
-               end loop;
+                  Add_Arg ("--delete-excluded");
+
+               else
+                  --  Include sub-directories
+
+                  Add_Arg ("--include=/*");
+
+                  --  Add any user's defined included patterns
+
+                  for P of Included_Patterns loop
+                     Add_Arg ("--include=" & P);
+                  end loop;
+
+                  --  Then we exclude everything else
+
+                  Add_Arg ("--exclude=*");
+               end if;
 
                --  Delete remote files not in local directory
 
-               Args (N) := new String'("--delete");
-               Args (N + 1) := new String'("--delete-excluded");
-               Args (N + 2) := new String'("--copy-links");
+               Add_Arg ("--delete");
+               Add_Arg ("--copy-links");
 
                --  Local and remote directory
 
-               Args (N + 3) := new String'(To_String (Root_Dir) & "/");
-               Args (N + 4) := new String'
-                 (User_Host & ":"
-                  & Compose (To_String (S.Root_Dir), Project_Name));
+               Add_Arg (To_String (Root_Dir) & "/");
+               Add_Arg (User_Host & ":"
+                        & Compose (To_String (S.Root_Dir), Project_Name));
 
                if Opt.Verbose_Mode then
                   Write_Line ("  synchronize data");
-                  Write_Line ("    from: " & Args (Args'Last - 1).all);
-                  Write_Line ("    to  : " & Args (Args'Last).all);
+                  Write_Line ("    from: " & Args (N - 1).all);
+                  Write_Line ("    to  : " & Args (N).all);
                end if;
 
-               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args);
+               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args (1 .. N));
 
                Rsync_Count := Rsync_Count + 1;
 
-               for A of Args loop
+               for A of Args (1 .. N) loop
                   Free (A);
                end loop;
             end;
@@ -556,6 +590,8 @@ package body Gprbuild.Compilation.Slave is
          --  Now that all slave's data is known and set, record it
 
          S.Sock := To_C (Sock (S.Channel));
+         S.Included_Artifact_Patterns := Included_Artifact_Patterns;
+
          Slaves.Insert (S);
       end Register_Remote_Slave;
 
@@ -605,11 +641,21 @@ package body Gprbuild.Compilation.Slave is
                                     & " is not a directory"
                                     & " or does not exists");
                                  OS_Exit (1);
+
+                              else
+                                 Write_Line
+                                   ("root dir : " & To_String (Root_Dir));
                               end if;
                            end;
 
                         elsif V.Name = Name_Excluded_Patterns then
                            Insert (Excluded_Patterns, V.Value.Values);
+
+                        elsif V.Name = Name_Included_Patterns then
+                           Insert (Included_Patterns, V.Value.Values);
+
+                        elsif V.Name = Name_Included_Artifact_Patterns then
+                           Insert (Included_Artifact_Patterns, V.Value.Values);
                         end if;
                      end if;
                   end;
@@ -621,6 +667,16 @@ package body Gprbuild.Compilation.Slave is
 
          Pck := Pcks (Pck).Next;
       end loop Look_Remote_Package;
+
+      --  Check if Excluded_Patterns and Included_Patterns are set
+
+      if Included_Patterns.Length /= 0
+        and then Excluded_Patterns.Length /= 0
+      then
+         Write_Line
+           ("error: Excluded_Patterns and Included_Patterns are exclusive");
+         OS_Exit (1);
+      end if;
 
       --  Then registers the build slaves
 
@@ -917,6 +973,8 @@ package body Gprbuild.Compilation.Slave is
       ----------------
 
       procedure Unregister (S : in out Slave) is
+         use type Containers.Count_Type;
+
          function User_Host return String is
            (if S.Data.User = Null_Unbounded_String
             then To_String (S.Data.Host)
@@ -929,7 +987,11 @@ package body Gprbuild.Compilation.Slave is
 
          if S.Data.Sync = Protocol.Rsync then
             declare
-               Args : Argument_List (1 .. 11);
+               Args : Argument_List
+                 (1 ..
+                    6 + Positive'Max
+                      (5, Natural (S.Included_Artifact_Patterns.Length)));
+               N : Positive range 3 .. Args'Last;
             begin
                --  Archive mode, compression and ignore VCS
 
@@ -940,34 +1002,46 @@ package body Gprbuild.Compilation.Slave is
 
                Args (3) := new String'("--include=/*");
 
-               --  Include known suffix (objects, dependencies)
+               if S.Included_Artifact_Patterns.Length = 0 then
+                  --  Include known suffix (objects, dependencies)
 
-               Args (4) := new String'("--include=*.o");
-               Args (5) := new String'("--include=*.ali");
-               Args (6) := new String'("--include=*.d");
-               Args (7) := new String'("--include=*.obj");
-               Args (8) := new String'("--include=*.coff");
+                  Args (4) := new String'("--include=*.o");
+                  Args (5) := new String'("--include=*.ali");
+                  Args (6) := new String'("--include=*.d");
+                  Args (7) := new String'("--include=*.obj");
+                  Args (8) := new String'("--include=*.coff");
+
+               else
+                  N := 3;
+                  for P of S.Included_Artifact_Patterns loop
+                     N := N + 1;
+                     Args (N) := new String'("--include=" & P);
+                  end loop;
+               end if;
 
                --  Exclude everything else
 
-               Args (9) := new String'("--exclude=*");
+               N := N + 1;
+               Args (N) := new String'("--exclude=*");
 
                --  Local and remote directory
 
-               Args (10) := new String'
+               N := N + 1;
+               Args (N) := new String'
                  (User_Host & ":"
                   & Compose
                     (To_String (S.Root_Dir), To_String (Project_Name))
                   & "/");
-               Args (11) := new String'(To_String (Root_Dir));
+               N := N + 1;
+               Args (N) := new String'(To_String (Root_Dir));
 
                if Opt.Verbose_Mode then
                   Write_Line ("  synchronize back data");
-                  Write_Line ("    from: " & Args (Args'Last - 1).all);
-                  Write_Line ("    to  : " & Args (Args'Last).all);
+                  Write_Line ("    from: " & Args (N - 1).all);
+                  Write_Line ("    to  : " & Args (N).all);
                end if;
 
-               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args);
+               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args (1 .. N));
 
                Rsync_Count := Rsync_Count + 1;
 
