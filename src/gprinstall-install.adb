@@ -677,6 +677,7 @@ package body Gprinstall.Install is
                --  part of the interface for standalone libraries.
 
                if not Sid.Locally_Removed
+                 and then not Sid.Project.Externally_Built
                  and then (Project.Standalone_Library = No
                            or else Sid.Declared_In_Interfaces)
                then
