@@ -1076,7 +1076,11 @@ package body Gprinstall.Install is
                L : Language_Ptr := Project.Languages;
             begin
                while L /= null loop
-                  Langs.Include (Get_Name_String (L.Display_Name));
+                  if L.Config.Compiler_Driver /= No_File
+                    and then Get_Name_String (L.Config.Compiler_Driver) /= ""
+                  then
+                     Langs.Include (Get_Name_String (L.Display_Name));
+                  end if;
                   L := L.Next;
                end loop;
             end For_Project;

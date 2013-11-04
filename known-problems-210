@@ -22,3 +22,13 @@ KP-210-MA31-004 Aggregated libraries and externally built
 
   Workaround: Remove the externally built projects from the dependencies if
               possible and pass the corresponding library to the linker.
+
+KP-210-MA30-041 Aggregated libraries and gprinstall
+
+  Problem:    gprinstall was not properly handling aggregate libraries. The
+              installation was failing and/or the generated project was not
+              usable.
+
+  Status:     This was fixed in 2.2 on 2013-11-02
+
+  Workaround: Install the software using a script.
