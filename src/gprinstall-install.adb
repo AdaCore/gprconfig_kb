@@ -19,13 +19,16 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Characters.Handling;           use Ada.Characters.Handling;
-with Ada.Containers.Indefinite_Vectors; use Ada;
+with Ada.Characters.Handling;                use Ada.Characters.Handling;
+with Ada.Containers.Indefinite_Vectors;      use Ada;
+with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Containers.Ordered_Sets;
-with Ada.Directories;                   use Ada.Directories;
-with Ada.Strings.Fixed;                 use Ada.Strings;
+with Ada.Directories;                        use Ada.Directories;
+with Ada.Strings.Equal_Case_Insensitive;
+with Ada.Strings.Less_Case_Insensitive;
+with Ada.Strings.Fixed;                      use Ada.Strings;
 with Ada.Strings.Unbounded;
-with Ada.Text_IO;                       use Ada.Text_IO;
+with Ada.Text_IO;                            use Ada.Text_IO;
 
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
@@ -893,6 +896,9 @@ package body Gprinstall.Install is
          function Data_Attributes return String_Vector.Vector;
          --  Returns the attributes for the sources, objects and library
 
+         function Get_Languages return String;
+         --  Returns the list of languages
+
          --------------------
          -- Add_Empty_Line --
          --------------------
@@ -1053,6 +1059,71 @@ package body Gprinstall.Install is
 
             return V;
          end Data_Attributes;
+
+         -------------------
+         -- Get_Languages --
+         -------------------
+
+         function Get_Languages return String is
+
+            package Lang_Set is new Containers.Indefinite_Ordered_Sets
+              (String,
+               Strings.Less_Case_Insensitive, Strings.Equal_Case_Insensitive);
+
+            Langs : Lang_Set.Set;
+
+            procedure For_Project (Project : Project_Id);
+            --  Add languages for the given project
+
+            -----------------
+            -- For_Project --
+            -----------------
+
+            procedure For_Project (Project : Project_Id) is
+               L : Language_Ptr := Project.Languages;
+            begin
+               while L /= null loop
+                  Langs.Include (Get_Name_String (L.Display_Name));
+                  L := L.Next;
+               end loop;
+            end For_Project;
+
+         begin
+            --  First adds language for the main project
+
+            For_Project (Project);
+
+            --  If we are dealing with an aggregate library, adds the languages
+            --  from all aggregated projects.
+
+            if Project.Qualifier = Aggregate_Library then
+               declare
+                  Agg : Aggregated_Project_List := Project.Aggregated_Projects;
+               begin
+                  while Agg /= null loop
+                     For_Project (Agg.Project);
+                     Agg := Agg.Next;
+                  end loop;
+               end;
+            end if;
+
+            declare
+               Res   : Unbounded_String;
+               First : Boolean := True;
+            begin
+               for V of Langs loop
+                  if not First then
+                     Res := Res & ", ";
+                  end if;
+
+                  Res := Res & '"' & V & '"';
+
+                  First := False;
+               end loop;
+
+               return To_String (Res);
+            end;
+         end Get_Languages;
 
          -----------
          -- Image --
@@ -1533,31 +1604,13 @@ package body Gprinstall.Install is
                Line := Line & """, """ & Build_Name.all & """);";
                Content.Append (-Line);
 
-               --  Add languages
+               --  Add languages, for an aggregate library we want all unique
+               --  languages from all aggregated libraries.
 
                Add_Empty_Line;
 
-               Line := +"   for Languages use (";
-
-               declare
-                  L     : Language_Ptr := Project.Languages;
-                  First : Boolean := True;
-               begin
-                  while L /= null loop
-                     if not First then
-                        Line := Line & ", ";
-                     end if;
-
-                     Line := Line
-                       & '"' & Get_Name_String (L.Display_Name) & '"';
-
-                     First := False;
-                     L := L.Next;
-                  end loop;
-               end;
-
-               Line := Line & ");";
-               Content.Append (-Line);
+               Content.Append
+                 ("   for Languages use (" & Get_Languages & ");");
 
                --  Build_Suffix used to avoid .default as suffix
 
