@@ -911,7 +911,9 @@ package body Gprinstall.Install is
 
          procedure Add_Empty_Line is
          begin
-            Content.Append ("");
+            if Content.Element (Content.Last_Index) /= "" then
+               Content.Append ("");
+            end if;
          end Add_Empty_Line;
 
          ---------------------
