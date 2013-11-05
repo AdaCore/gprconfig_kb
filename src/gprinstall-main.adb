@@ -346,6 +346,10 @@ procedure Gprinstall.Main is
             elsif Has_Prefix (No_Lib_Link_Option) then
                Add_Lib_Link := False;
 
+            elsif Has_Prefix (Subdirs_Option) then
+               Subdirs :=
+                 new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
+
             elsif Has_Prefix (Target_Project_Option) then
                if Target_Name /= null then
                   if Target_Name.all /=
@@ -594,6 +598,11 @@ procedure Gprinstall.Main is
          Write_Line ("  --no-lib-link");
          Write_Line
            ("           Do not copy shared lib in exec/lib directory");
+
+         --  Line for --subdirs=
+
+         Write_Line ("  --subdirs=dir");
+         Write_Line ("           Real obj/lib/exec dirs are subdirs");
 
          --  Line for Target_Project_Option
 

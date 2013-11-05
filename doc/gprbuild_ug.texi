@@ -3266,6 +3266,14 @@ the executable directory on Windows or creation of symlink in the lib
 directory on UNIX. This is done by default to place the shared
 libraries into a directory where application will look for them.
 
+@item @option{--subdirs=<subdir>}
+
+This indicates that the real directories (except the source directories) are
+subdirectories of the directories specified in the project files. This applies
+in particular to object directories, library directories and exec directories.
+If the directories do not exist, they are created automatically. It is
+expected that the sub-dir option value here is the one used with gprbuild.
+
 @item @option{-q} : Be quiet/terse. There is no output, except to report
   problems.
 
