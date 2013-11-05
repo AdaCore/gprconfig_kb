@@ -145,6 +145,12 @@ package body Gprinstall.Install is
       --  binary as built by gprbuild. This routine looks into the Builder
       --  switches for a the Executable attribute.
 
+      function Is_Install_Active
+        (Tree    : Project_Tree_Ref;
+         Project : Project_Id) return Boolean;
+      --  Returns True if the Project is active, that is there is no attribute
+      --  Activer set to False in the Install package.
+
       ---------------------
       -- Add_To_Manifest --
       ---------------------
@@ -373,6 +379,60 @@ package body Gprinstall.Install is
 
          return Name_Find;
       end Get_Library_Filename;
+
+      -----------------------
+      -- Is_Install_Active --
+      -----------------------
+
+      function Is_Install_Active
+        (Tree    : Project_Tree_Ref;
+         Project : Project_Id) return Boolean
+      is
+         Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
+         Pck  : Package_Id := Project.Decl.Packages;
+      begin
+         Look_Install_Package : while Pck /= No_Package loop
+            if Pcks (Pck).Decl /= No_Declarations
+              and then Pcks (Pck).Name = Name_Install
+            then
+               --  Found Install package, check attributes
+
+               declare
+                  Id : Variable_Id := Pcks (Pck).Decl.Attributes;
+               begin
+                  while Id /= No_Variable loop
+                     declare
+                        V : constant Variable :=
+                              Tree.Shared.Variable_Elements.Table (Id);
+                     begin
+                        if V.Name = Name_Active then
+                           declare
+                              Val : constant String :=
+                                      To_Lower
+                                        (Get_Name_String (V.Value.Value));
+                           begin
+                              if Val = "false" then
+                                 return False;
+                              else
+                                 return True;
+                              end if;
+                           end;
+                        end if;
+                     end;
+                     Id := Tree.Shared.Variable_Elements.Table (Id).Next;
+                  end loop;
+               end;
+
+               exit Look_Install_Package;
+            end if;
+
+            Pck := Pcks (Pck).Next;
+         end loop Look_Install_Package;
+
+         --  If not defined, the default is active
+
+         return True;
+      end Is_Install_Active;
 
       -----------------
       -- Main_Binary --
@@ -1654,7 +1714,10 @@ package body Gprinstall.Install is
                   L : Project_List := Project.Imported_Projects;
                begin
                   while L /= null loop
-                     if Bring_Sources (L.Project) then
+                     if Has_Sources (L.Project)
+                       and then not L.Project.Externally_Built
+                       and then Is_Install_Active (Tree, L.Project)
+                     then
                         Content.Append
                           ("with """
                           & Base_Name
@@ -1673,7 +1736,7 @@ package body Gprinstall.Install is
                L : Project_List := Project.All_Imported_Projects;
             begin
                while L /= null loop
-                  if Bring_Sources (L.Project)
+                  if Has_Sources (L.Project)
                     and then L.Project.Externally_Built
                   then
                      Content.Append
