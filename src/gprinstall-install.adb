@@ -816,20 +816,33 @@ package body Gprinstall.Install is
               and then Project.Lib_Internal_Name /= No_Name
               and then Project.Library_Name /= Project.Lib_Internal_Name
             then
-               Copy_File
-                 (From       => Cat
-                    (Project.Library_Dir.Display_Name,
-                     File_Name_Type (Project.Lib_Internal_Name)),
-                  To         => Lib_Dir,
-                  File       => Get_Name_String (Project.Lib_Internal_Name),
-                  Executable => Project.Library_Kind /= Static);
+               if Makeutl.On_Windows then
+                  --  No support for version, do a simple copy
 
-               Copy_File
-                 (From     => Lib_Dir
-                                & Get_Name_String (Get_Library_Filename),
-                  To       => Lib_Dir,
-                  File     => Get_Name_String (Project.Lib_Internal_Name),
-                  Sym_Link => True);
+                  Copy_File
+                    (From       => Cat
+                       (Project.Library_Dir.Display_Name,
+                        Get_Library_Filename),
+                     To         => Lib_Dir,
+                     File       => Get_Name_String (Get_Library_Filename),
+                     Executable => Project.Library_Kind /= Static);
+
+               else
+                  Copy_File
+                    (From       => Cat
+                       (Project.Library_Dir.Display_Name,
+                        File_Name_Type (Project.Lib_Internal_Name)),
+                     To         => Lib_Dir,
+                     File       => Get_Name_String (Project.Lib_Internal_Name),
+                     Executable => Project.Library_Kind /= Static);
+
+                  Copy_File
+                    (From     => Lib_Dir
+                     & Get_Name_String (Get_Library_Filename),
+                     To       => Lib_Dir,
+                     File     => Get_Name_String (Project.Lib_Internal_Name),
+                     Sym_Link => True);
+               end if;
 
             else
                Copy_File
