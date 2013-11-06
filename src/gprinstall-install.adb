@@ -1108,6 +1108,40 @@ package body Gprinstall.Install is
                Line := Line & To_Lower (Lib_Kind'Image (Project.Library_Kind));
                Line := Line & """;";
                V.Append (-Line);
+
+               if Project.Standalone_Library /= No then
+                  Line := +"         for Library_Standalone use """;
+                  Line := Line &
+                    To_Lower (Standalone'Image (Project.Standalone_Library));
+                  Line := Line & """;";
+                  V.Append (-Line);
+
+                  --  And then generates the interfaces
+
+                  Line := +"         for Library_Interface use (";
+
+                  declare
+                     L     : String_List_Id := Project.Lib_Interface_ALIs;
+                     First : Boolean := True;
+                  begin
+                     while L /= Nil_String loop
+                        if not First then
+                           Append (Line, ", ");
+                        else
+                           First := False;
+                        end if;
+                        Append (Line, """");
+                        --  Removes the trailing .ali extension
+                        Append
+                          (Line,
+                           Base_Name (Get_Name_String (Strs (L).Value)));
+                        Append (Line, """");
+                        L := Strs (L).Next;
+                     end loop;
+                  end;
+                  Append (Line, ");");
+                  V.Append (-Line);
+               end if;
             end if;
 
             return V;
