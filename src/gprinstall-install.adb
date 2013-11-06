@@ -55,6 +55,10 @@ package body Gprinstall.Install is
       Project : Project_Id)
    is
 
+      Windows_Target : constant Boolean :=
+                         Get_Name_String
+                           (Project.Config.Shared_Lib_Suffix) = ".dll";
+
       Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;
       Strs : String_Element_Table.Table_Ptr renames
                Tree.Shared.String_Elements.Table;
@@ -816,7 +820,7 @@ package body Gprinstall.Install is
               and then Project.Lib_Internal_Name /= No_Name
               and then Project.Library_Name /= Project.Lib_Internal_Name
             then
-               if Makeutl.On_Windows then
+               if Windows_Target then
                   --  No support for version, do a simple copy
 
                   Copy_File
@@ -859,7 +863,7 @@ package body Gprinstall.Install is
             --  Windows platforms add a symlink into the lib directory.
 
             if Project.Library_Kind /= Static and then Add_Lib_Link then
-               if Makeutl.On_Windows then
+               if Windows_Target then
                   Copy_File
                     (From       => Lib_Dir
                                      & Get_Name_String (Get_Library_Filename),
