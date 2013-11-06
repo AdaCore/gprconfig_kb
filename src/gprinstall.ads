@@ -124,7 +124,7 @@ private
 
    Add_Lib_Link : Boolean := True;
    --  Wether to copy the shared library into the executable directory on
-   --  Windows or a create a link into the lib directory on UNIX.
+   --  Windows or create a link into the lib directory on UNIX.
 
    Create_Dest_Dir : Boolean := False;
    --  Wether to create the missing directories in the destination point
