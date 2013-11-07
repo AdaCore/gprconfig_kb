@@ -10,7 +10,7 @@
   <!--    GCC 3.x & 4.x (not for GNAT Pro)-->
   <compiler_description>
     <name>GCC</name>
-    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc-mingw32|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^gcc \S+ (\S+) \d+ [^f]" group="1"></grep>
@@ -25,7 +25,7 @@
   <!--    GCC for GNAT Pro 3.x & 4.x -->
   <compiler_description>
     <name>GCC_Pro</name>
-    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc-mingw32|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^gcc \S+ (\S+) \d+ for GNAT Pro" group="1"></grep>
@@ -459,7 +459,7 @@
   <!--  Assembler -->
   <compiler_description>
     <name>GCC-ASM</name>
-    <executable prefix="1">(.*(-wrs-|-elf-|-eabi-|-eabispe-|avr-|elinos-linux).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-elf-|-eabi-|-eabispe-|avr-|elinos-linux|-pc-mingw32).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
       <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
@@ -479,7 +479,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|elinos-linux|pc-|-xcoff-|-pikeos-|arm-linux-androideabi-|arm-linux-gnueabi-).*)?gnatmake</executable>
+    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|elinos-linux|-pc-mingw32|-xcoff-|-pikeos-|arm-linux-androideabi-|arm-linux-gnueabi-).*)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
