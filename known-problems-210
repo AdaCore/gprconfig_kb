@@ -39,6 +39,15 @@ KP-210-MB05-034 gprinstall fails to install projects built with sub-dirs
 
   Workaround: Install the code manually.
 
+KP-210-MB05-020 gprconfig does not detect non GNAT gcc C and g++ compilers
+
+  Problem:    gprconfig does not find all non GNAT gcc C and g++ compilers.
+
+  Status:     This was fixed in 2.2 on 2013-11-07
+
+  Workaround: Manually edit a configuration project file and use it with
+              gprbuild.
+
 KP-210-MA31-004 Aggregated libraries and externally built
 
   Problem:    gprbuild was not properly dealing with externally built
