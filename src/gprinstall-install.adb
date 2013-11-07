@@ -33,7 +33,6 @@ with Ada.Text_IO;                            use Ada.Text_IO;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
 
-with Makeutl;
 with Namet;    use Namet;
 with Opt;
 with Output;   use Output;
