@@ -991,7 +991,7 @@ package body Gprbuild.Compilation.Slave is
                  (1 ..
                     6 + Positive'Max
                       (5, Natural (S.Included_Artifact_Patterns.Length)));
-               N : Positive range 3 .. Args'Last;
+               N : Positive range 3 .. Args'Last := 3;
             begin
                --  Archive mode, compression and ignore VCS
 
@@ -1012,7 +1012,6 @@ package body Gprbuild.Compilation.Slave is
                   Args (8) := new String'("--include=*.coff");
 
                else
-                  N := 3;
                   for P of S.Included_Artifact_Patterns loop
                      N := N + 1;
                      Args (N) := new String'("--include=" & P);
