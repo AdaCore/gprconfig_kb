@@ -502,8 +502,8 @@ package body Gprbuild.Compilation.Slave is
                Args : Argument_List
                  (1 ..
                     5 + Positive'Max
-                      (12 + Positive (Excluded_Patterns.Length),
-                       2 + Positive (Included_Patterns.Length)));
+                      (12 + Natural (Excluded_Patterns.Length),
+                       2 + Natural (Included_Patterns.Length)));
                N    : Natural range 0 .. Args'Last := 0;
 
                --------------
