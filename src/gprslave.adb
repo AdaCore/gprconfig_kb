@@ -604,7 +604,7 @@ procedure Gprslave is
    task body Run_Compilation is
 
       function Get_Driver
-        (Builder : Build_Master; Language : String) return String;
+        (Builder : Build_Master; Language, Project : String) return String;
       --  Returns the compiler driver for the given language and the current
       --  target as retreived from the initial handshake context exchange.
 
@@ -626,8 +626,11 @@ procedure Gprslave is
       ----------------
 
       function Get_Driver
-        (Builder : Build_Master; Language : String) return String
+        (Builder : Build_Master; Language, Project : String) return String
       is
+         procedure Look_Driver (Project_Name : String; Is_Config : Boolean);
+         --  Set Driver with the found driver for the Language
+
          Key                : constant String :=
                                 To_String (Builder.Target) & '+' & Language;
          Position           : constant Drivers_Cache.Cursor :=
@@ -635,58 +638,29 @@ procedure Gprslave is
          Compilers, Filters : Compiler_Lists.List;
          Requires_Comp      : Boolean;
          Comp               : Compiler_Access;
-         Project_Node_Tree  : Project_Node_Tree_Ref;
-         Project_Node       : Project_Node_Id := Empty_Node;
-         Project_Tree       : Project_Tree_Ref;
-         Project            : Project_Id;
          Env                : Environment;
          Success            : Boolean;
          Driver             : Unbounded_String := To_Unbounded_String (Key);
-      begin
-         if Drivers_Cache.Has_Element (Position) then
-            return Drivers_Cache.Element (Position);
 
-         else
+         -----------------
+         -- Look_Driver --
+         -----------------
+
+         procedure Look_Driver (Project_Name : String; Is_Config : Boolean) is
+            Project_Node_Tree : Project_Node_Tree_Ref;
+            Project_Node      : Project_Node_Id := Empty_Node;
+            Project_Tree      : Project_Tree_Ref;
+            Project           : Project_Id;
+         begin
             Project_Node_Tree := new Project_Node_Tree_Data;
-
-            --  Generate the configuration project for this language and target
-
-            Parse_Config_Parameter
-              (Base              => Base,
-               Config            => Language,
-               Compiler          => Comp,
-               Requires_Compiler => Requires_Comp);
-
-            if Requires_Comp then
-               Filters.Append (Comp);
-            else
-               Compilers.Append (Comp);
-            end if;
-
-            Complete_Command_Line_Compilers
-              (Base,
-               Selected_Targets_Set,
-               Filters,
-               Compilers);
-
-            Generate_Configuration
-              (Base, Compilers, "slave_tmp.cgpr", To_String (Builder.Target));
-
-            Prj.Tree.Initialize (Env, Prj.Gprbuild_Flags);
             Prj.Tree.Initialize (Project_Node_Tree);
-            Prj.Initialize (Prj.No_Project_Tree);
-
-            Prj.Env.Initialize_Default_Project_Path
-              (Env.Project_Path, Target_Name => To_String (Builder.Target));
-
-            --  Load the configuration project
 
             Prj.Part.Parse
               (Project_Node_Tree, Project_Node,
-               "slave_tmp.cgpr",
+               Project_Name,
                Errout_Handling   => Prj.Part.Finalize_If_Error,
                Packages_To_Check => null,
-               Is_Config_File    => True,
+               Is_Config_File    => Is_Config,
                Target_Name       => To_String (Builder.Target),
                Env               => Env);
 
@@ -698,14 +672,12 @@ procedure Gprslave is
                Project_Node, Project_Node_Tree, Env);
 
             if not Success then
-               return Key;
+               return;
             end if;
 
-            --  Parse it to find the driver for this language
-
-            Look_Driver : declare
-               Pcks : Package_Table.Table_Ptr renames
-                        Project_Tree.Shared.Packages.Table;
+            declare
+               Pcks : Package_Table.Table_Ptr
+                        renames Project_Tree.Shared.Packages.Table;
                Pck  : Package_Id := Project.Decl.Packages;
             begin
                Look_Compiler_Package : while Pck /= No_Package loop
@@ -752,7 +724,70 @@ procedure Gprslave is
 
                   Pck := Pcks (Pck).Next;
                end loop Look_Compiler_Package;
-            end Look_Driver;
+            end;
+
+         exception
+            --  Never propagate an exception, the driver won't be set anyway
+            when others =>
+               null;
+         end Look_Driver;
+
+      begin
+         if Drivers_Cache.Has_Element (Position) then
+            return Drivers_Cache.Element (Position);
+
+         else
+            --  Generate the configuration project for this language and target
+
+            Parse_Config_Parameter
+              (Base              => Base,
+               Config            => Language,
+               Compiler          => Comp,
+               Requires_Compiler => Requires_Comp);
+
+            if Requires_Comp then
+               Filters.Append (Comp);
+            else
+               Compilers.Append (Comp);
+            end if;
+
+            Complete_Command_Line_Compilers
+              (Base,
+               Selected_Targets_Set,
+               Filters,
+               Compilers);
+
+            --  Generate configuration project file
+
+            Generate_Configuration
+              (Base, Compilers, "slave_tmp.cgpr", To_String (Builder.Target));
+
+            Prj.Tree.Initialize (Env, Prj.Gprbuild_Flags);
+            Prj.Initialize (Prj.No_Project_Tree);
+
+            Prj.Env.Initialize_Default_Project_Path
+              (Env.Project_Path, Target_Name => To_String (Builder.Target));
+
+            --  Parse it to find the driver for this language
+
+            Look_Driver ("slave_tmp.cgpr", Is_Config => True);
+            Directories.Delete_File ("slave_tmp.cgpr");
+
+            --  Language is not found in the knowledge base, check the project
+            --  to see if there is a definition for the language.
+
+            if Driver = Key then
+               Look_Driver (Project, Is_Config => False);
+
+               --  Ensure that we have a full-path name
+               declare
+                  Exe : OS_Lib.String_Access :=
+                          Locate_Exec_On_Path (To_String (Driver));
+               begin
+                  Driver := To_Unbounded_String (Exe.all);
+                  Free (Exe);
+               end;
+            end if;
 
             --  Record this driver for the language and target into the cache
 
@@ -760,7 +795,10 @@ procedure Gprslave is
 
             --  Clean-up and free project structure
 
-            Directories.Delete_File ("slave_tmp.cgpr");
+            if Debug then
+               Put_Line
+                 ("# driver for " & Language & " is : " & To_String (Driver));
+            end if;
 
             return To_String (Driver);
          end if;
