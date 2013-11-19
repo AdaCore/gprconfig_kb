@@ -98,6 +98,10 @@ procedure Gprslave is
 
    package To_Run_Set is new Containers.Vectors (Positive, Job_Data);
 
+   function Get_Arg (Builder : Build_Master; Value : String) return String;
+   pragma Inline (Get_Arg);
+   --  Returns Value with possible translation of the local repositories
+
    function Get_Args
      (Builder : Build_Master; Slices : Slice_Set) return Argument_List;
    --  Returns an Argument_List corresponding to the Slice_Set
@@ -284,6 +288,23 @@ procedure Gprslave is
 
    end Builders;
 
+   -------------
+   -- Get_Arg --
+   -------------
+
+   function Get_Arg (Builder : Build_Master; Value : String) return String is
+      P : constant Natural := Fixed.Index (Value, WD_Path_Tag);
+   begin
+      if P = 0 then
+         return Value;
+      else
+         return Value (Value'First .. P - 1)
+           & Work_Directory (Builder)
+           & Directory_Separator
+           & Value (P + WD_Path_Tag'Length .. Value'Last);
+      end if;
+   end Get_Arg;
+
    --------------
    -- Get_Args --
    --------------
@@ -294,20 +315,8 @@ procedure Gprslave is
       Args : Argument_List (1 .. Integer (Slice_Count (Slices)));
    begin
       for K in Args'Range loop
-         declare
-            A : constant String := Slice (Slices, Slice_Number (K));
-            P : constant Natural := Fixed.Index (A, WD_Path_Tag);
-         begin
-            if P = 0 then
-               Args (K) := new String'(A);
-            else
-               Args (K) := new String'
-                 (A (A'First .. P - 1)
-                  & Work_Directory (Builder)
-                  & Directory_Separator
-                  & A (P + WD_Path_Tag'Length .. A'Last));
-            end if;
-         end;
+         Args (K) := new String'
+           (Get_Arg (Builder, Slice (Slices, Slice_Number (K))));
       end loop;
 
       return Args;
