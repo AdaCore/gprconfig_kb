@@ -42,7 +42,8 @@ package Gprbuild.Compilation.Slave is
    --  to remove all the sources and build artifacts for the given project.
 
    function Run
-     (Language : String;
+     (Project  : Project_Id;
+      Language : String;
       Options  : GNAT.OS_Lib.Argument_List;
       Dep_Name : String := "") return Id;
    --  Send a compilation job to one slave that has still some free slot. There

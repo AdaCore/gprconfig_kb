@@ -817,7 +817,7 @@ procedure Gprslave is
 
          Process : declare
             Builder : constant Build_Master := Builders.Get (Job.Build_Sock);
-            Dir     : constant String := Args (Job.Cmd)(1).all;
+            Dir     : constant String := Args (Job.Cmd)(2).all;
             List    : Slice_Set;
             Pid     : Process_Id;
          begin
@@ -853,19 +853,21 @@ procedure Gprslave is
 
             Set_Directory (Dir);
 
-            Create (List, Args (Job.Cmd)(4).all, ";");
+            Create (List, Args (Job.Cmd)(5).all, ";");
 
             Execute : declare
-               Language : constant String := Args (Job.Cmd)(2).all;
+               Project  : constant String :=
+                            Get_Arg (Builder, Args (Job.Cmd) (1).all);
+               Language : constant String := Args (Job.Cmd)(3).all;
                Out_File : constant String :=
                             Get_Output_File (Builder);
-               Dep_File : constant String := Args (Job.Cmd)(3).all;
+               Dep_File : constant String := Args (Job.Cmd)(4).all;
                O        : Argument_List := Get_Args (Builder, List);
             begin
                Output_Compilation (O (O'Last).all);
 
                Pid := Non_Blocking_Spawn
-                 (Get_Driver (Builder, Language), O, Out_File);
+                 (Get_Driver (Builder, Language, Project), O, Out_File);
 
                if Debug then
                   Put_Line

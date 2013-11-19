@@ -135,6 +135,7 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Send_Exec
      (Channel  : Communication_Channel;
+      Project  : String;
       Dir      : String;
       Command  : String;
       Options  : GNAT.OS_Lib.Argument_List;

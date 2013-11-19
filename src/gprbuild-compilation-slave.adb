@@ -709,7 +709,8 @@ package body Gprbuild.Compilation.Slave is
    ---------
 
    function Run
-     (Language : String;
+     (Project  : Project_Id;
+      Language : String;
       Options  : GNAT.OS_Lib.Argument_List;
       Dep_Name : String := "") return Id
    is
@@ -787,7 +788,8 @@ package body Gprbuild.Compilation.Slave is
 
          Send_Exec
            (S.Channel,
-            CWD, Language, Options, Dep_Name, Filter_String'Access);
+            Get_Name_String (Project.Path.Display_Name), CWD,
+            Language, Options, Dep_Name, Filter_String'Access);
 
       else
          --  Record the rewrite information for this channel only if we are not
@@ -804,7 +806,9 @@ package body Gprbuild.Compilation.Slave is
 
          Send_Exec
            (S.Channel,
-            Filter_String (CWD, Sep => ""), Language, Options, Dep_Name,
+            Get_Name_String (Project.Path.Display_Name),
+            Filter_String (CWD, Sep => ""),
+            Language, Options, Dep_Name,
             Filter_String'Access);
       end if;
 

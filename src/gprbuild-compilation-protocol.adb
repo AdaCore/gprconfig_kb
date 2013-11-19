@@ -406,6 +406,7 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Send_Exec
      (Channel  : Communication_Channel;
+      Project  : String;
       Dir      : String;
       Command  : String;
       Options  : Argument_List;
@@ -433,6 +434,7 @@ package body Gprbuild.Compilation.Protocol is
       String'Output
         (Channel.Channel,
          Command_Kind'Image (EX)
+         & Filter (Project, WD_Path_Tag) & Args_Sep
          & Dir & Args_Sep & Command & Args_Sep
          & Dep_Name & Args_Sep & To_String (R_Cmd));
    end Send_Exec;

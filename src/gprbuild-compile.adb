@@ -384,6 +384,7 @@ package body Gprbuild.Compile is
                           Options    =>
                             Compilation_Options.Options
                               (1 .. Compilation_Options.Last),
+                          Project      => Comp_Data.Source_Project,
                           Output_File  => Get_Name_String (Source.Id.Dep_Path),
                           Err_To_Out   => True,
                           Force_Local  => True);
@@ -2640,6 +2641,7 @@ package body Gprbuild.Compile is
          Process := Run
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last),
+            Source_Project,
             Get_Language,
             Dep_Name => (if Source.Id.Dep_Name = No_File
                          then ""

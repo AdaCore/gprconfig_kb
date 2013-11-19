@@ -95,6 +95,7 @@ package body Gprbuild.Compilation.Process is
    function Run
      (Executable  : String;
       Options     : GNAT.OS_Lib.Argument_List;
+      Project     : Project_Id;
       Language    : String := "";
       Dep_Name    : String := "";
       Output_File : String := "";
@@ -135,7 +136,7 @@ package body Gprbuild.Compilation.Process is
          end Run_Local;
 
       else
-         return Slave.Run (Language, Options, Dep_Name);
+         return Slave.Run (Project, Language, Options, Dep_Name);
       end if;
    end Run;
 

@@ -47,6 +47,7 @@ package Gprbuild.Compilation.Process is
    function Run
      (Executable  : String;
       Options     : GNAT.OS_Lib.Argument_List;
+      Project     : Project_Id;
       Language    : String := "";
       Dep_Name    : String := "";
       Output_File : String := "";
