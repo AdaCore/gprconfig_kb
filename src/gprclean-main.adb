@@ -652,6 +652,12 @@ begin
       New_Line;
    end if;
 
+   --  Makes the Ada RTS is absolute if it is not a base name
+
+   if Runtime_Name_Set_For (Snames.Name_Ada) then
+      Locate_Runtime (Project_Tree, Snames.Name_Ada);
+   end if;
+
    --  Check command line arguments. These will be overridden when looking
    --  for the configuration file
 

@@ -39,6 +39,8 @@ with Makeutl;  use Makeutl;
 with Opt;      use Opt;
 with Osint;    use Osint;
 with Output;   use Output;
+with Prj.Conf;
+with Prj.Env;
 with Prj.Util; use Prj.Util;
 with Scans;
 with Scng;
@@ -603,6 +605,52 @@ package body Gpr_Util is
          return Target_Name.all;
       end if;
    end Get_Target;
+
+   --------------------
+   -- Locate_Runtime --
+   --------------------
+
+   procedure Locate_Runtime
+     (Project_Tree : Project_Tree_Ref;
+      Language     : Name_Id)
+   is
+
+      function Is_Base_Name (Path : String) return Boolean;
+      --  Returns True if Path has no directory separator
+
+      ------------------
+      -- Is_Base_Name --
+      ------------------
+
+      function Is_Base_Name (Path : String) return Boolean is
+      begin
+         for I in Path'Range loop
+            if Path (I) = Directory_Separator or else Path (I) = '/' then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Is_Base_Name;
+
+      function Find_Rts_In_Path is new Prj.Env.Find_Name_In_Path
+        (Check_Filename => Is_Directory);
+
+      RTS_Name : constant String := Prj.Conf.Runtime_Name_For (Language);
+
+      Full_Path : String_Access;
+
+   begin
+      if not Is_Base_Name (RTS_Name) then
+         Full_Path := Find_Rts_In_Path (Root_Environment.Project_Path,
+                                        RTS_Name);
+         if Full_Path = null then
+            Fail_Program (Project_Tree, "cannot find RTS " & RTS_Name);
+         end if;
+         Prj.Conf.Set_Runtime_For
+           (Language, Normalize_Pathname (Full_Path.all));
+         Free (Full_Path);
+      end if;
+   end Locate_Runtime;
 
    ------------------------------
    -- Look_For_Default_Project --

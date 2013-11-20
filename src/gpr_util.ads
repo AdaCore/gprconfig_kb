@@ -187,6 +187,13 @@ package Gpr_Util is
    --  Returns "null" if no compiler driver was specified for the language, and
    --  exit with an error if one was specified but not found.
 
+   procedure Locate_Runtime
+     (Project_Tree : Project_Tree_Ref;
+      Language     : Name_Id);
+   --  Wrapper around Set_Runtime_For. If RTS_Name is a base name (a name
+   --  without path separator), then calls Set_Runtime_For. Otherwise, convert
+   --  it to an absolute path (possibly by searching it in the project path)
+
    procedure Look_For_Default_Project;
    --  Check if default.gpr exists in the current directory. If it does, use
    --  it. Otherwise, if there is only one file ending with .gpr, use it.
