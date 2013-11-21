@@ -389,7 +389,7 @@
   <!-- G++ for VxWorks 653 -->
   <compiler_description>
     <name>G++-WRS653</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
+    <executable prefix="1">c\+\+(ppc|pentium)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
@@ -397,7 +397,10 @@
     </version>
     <languages>C++</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>powerpc-wrs-vxworksae</target>
+    <target>
+      <external>c++${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
   </compiler_description>
 
   <compiler_description>
