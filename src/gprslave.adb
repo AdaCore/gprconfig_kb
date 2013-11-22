@@ -890,7 +890,7 @@ procedure Gprslave is
 
             Set_Directory (Dir);
 
-            Create (List, Args (Job.Cmd)(5).all, ";");
+            Create (List, Args (Job.Cmd)(5).all, String'(1 => Opts_Sep));
 
             Execute : declare
                Project  : constant String :=

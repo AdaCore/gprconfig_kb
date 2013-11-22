@@ -26,6 +26,10 @@ package Gprbuild.Compilation is
 
    Default_Port : constant := 8484;
 
+   Opts_Sep : constant Character := ';';
+   --  Command options separator, that is the separator used for options to be
+   --  passed to the executed command.
+
    --  A simple concurrent counter type
 
    protected type Shared_Counter is

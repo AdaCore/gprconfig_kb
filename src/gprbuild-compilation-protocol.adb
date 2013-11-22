@@ -33,10 +33,6 @@ package body Gprbuild.Compilation.Protocol is
    Args_Sep : constant Character := '|';
    --  Channel's argument separator
 
-   Opts_Sep : constant Character := ';';
-   --  Command options separator, that is the separator used for options to be
-   --  passed to the executed command.
-
    function Image (N : Natural) return String;
    --  Returns string representation of N without leading space
 
