@@ -19,7 +19,64 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Text_IO;
+with Ada.Environment_Variables; use Ada;
+with Ada.Strings.Fixed;
+
+with GNAT.MD5;          use GNAT;
+with GNAT.String_Split; use GNAT.String_Split;
+
 package body Gprbuild.Compilation is
+
+   Last_Env_MD5 : MD5.Message_Digest := (others => <>);
+   --  Keep last environement variable set to avoid too many system calls.
+   --  ??? Ideally, we should set them when spawning the process, in
+   --  which case it would be less expensive to set and could be set
+   --  every time.
+
+   -------------
+   -- Set_Env --
+   -------------
+
+   procedure Set_Env
+     (Env   : String;
+      Fail  : Boolean;
+      Force : Boolean := False)
+   is
+      Env_List : Slice_Set;
+   begin
+      Create (Env_List, Env, String'(1 => Opts_Sep));
+
+      for K in 1 .. Slice_Count (Env_List) loop
+         declare
+            Var : constant String := Slice (Env_List, K);
+            I   : constant Natural := Strings.Fixed.Index (Env, "=");
+            Sum : constant MD5.Message_Digest := MD5.Digest (Var);
+         begin
+            if I /= 0 then
+               if Force or else Last_Env_MD5 /= Sum then
+                  Environment_Variables.Set
+                    (Name  => Var (Var'First .. I - 1),
+                     Value => Var (I + 1 .. Var'Last));
+
+                  Last_Env_MD5 := Sum;
+               end if;
+
+            elsif Var'Length > 0 then
+               --  This is a protocol error, we do not want to fail here as
+               --  this routine is used by gprslave. This error message should
+               --  never been displayed anyway.
+
+               Text_IO.Put_Line
+                 ("wrong environment variable, missing '=' : " & Var);
+
+               if Fail then
+                  OS_Exit (1);
+               end if;
+            end if;
+         end;
+      end loop;
+   end Set_Env;
 
    --------------------
    -- Shared_Counter --

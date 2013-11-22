@@ -2849,9 +2849,6 @@ package body Gprbuild.Compile is
          end if;
 
          --  Reset environment variables if they have changed
-         --  ??? Ideally, we should set them when spawning the process, in
-         --  which case it would be less expensive to set and could be set
-         --  every time.
 
          if Id.Object_Project /= Current_Project
            or else Id.Language /= Current_Language_Ind
