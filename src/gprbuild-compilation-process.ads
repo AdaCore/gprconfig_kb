@@ -44,6 +44,13 @@ package Gprbuild.Compilation.Process is
    function Create_Remote (Pid : Remote_Id) return Id;
    --  Returns a remote process (one running on a slave) for Pid
 
+   procedure Record_Environment
+     (Project     : Project_Id;
+      Language    : Name_Id;
+      Name, Value : String);
+   --  Record an environement variable to set when spawning a compilation. This
+   --  is for example to set CPATH if needed for the compilation of C sources.
+
    function Run
      (Executable  : String;
       Options     : GNAT.OS_Lib.Argument_List;

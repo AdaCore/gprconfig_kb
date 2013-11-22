@@ -19,7 +19,9 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Exceptions; use Ada.Exceptions;
+with Ada.Containers.Indefinite_Ordered_Maps;
+with Ada.Exceptions;                         use Ada.Exceptions;
+with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 
 with Output; use Output;
 
@@ -31,11 +33,22 @@ package body Gprbuild.Compilation.Process is
 
    use Ada;
 
+   package Env_Maps is
+     new Containers.Indefinite_Ordered_Maps (String, String);
+   --  A set of key=value
+   package Prj_Maps is new Containers.Indefinite_Ordered_Maps
+     (String, Env_Maps.Map, Env_Maps."<", Env_Maps."=");
+   --  A set of project+language=map
+
+   function Get_Env (Project : Project_Id; Language : String) return String;
+   --  Get the environment for a specific project and language
+
    task type Wait_Local;
    type Wait_Local_Ref is access Wait_Local;
 
    WL            : Wait_Local_Ref;
    Local_Process : Shared_Counter;
+   Environments  : Prj_Maps.Map;
 
    ------------------
    -- Create_Local --
@@ -64,6 +77,28 @@ package body Gprbuild.Compilation.Process is
       return Opt.Maximum_Processes + Slave.Get_Max_Processes;
    end Get_Maximum_Processes;
 
+   -------------
+   -- Get_Env --
+   -------------
+
+   function Get_Env (Project : Project_Id; Language : String) return String is
+      Key  : constant String :=
+               Get_Name_String (Project.Name) & "+" & Language;
+      Res  : Unbounded_String;
+   begin
+      if Environments.Contains (Key) then
+         for C in Environments (Key).Iterate loop
+            if Res /= Null_Unbounded_String then
+               Res := Res & Opts_Sep;
+            end if;
+
+            Res := Res & Env_Maps.Key (C) & '=' & Env_Maps.Element (C);
+         end loop;
+      end if;
+
+      return To_String (Res);
+   end Get_Env;
+
    ----------
    -- Hash --
    ----------
@@ -87,6 +122,35 @@ package body Gprbuild.Compilation.Process is
    begin
       return N_Img (N_Img'First + 1 .. N_Img'Last);
    end Image;
+
+   ------------------------
+   -- Record_Environment --
+   ------------------------
+
+   procedure Record_Environment
+     (Project     : Project_Id;
+      Language    : Name_Id;
+      Name, Value : String)
+   is
+      Lang : constant String := Get_Name_String (Language);
+      Key  : constant String := Get_Name_String (Project.Name) & "+" & Lang;
+      New_Item : Env_Maps.Map;
+   begin
+      --  Create new item, variable association
+
+      New_Item.Include (Name, Value);
+
+      if Environments.Contains (Key) then
+         if Environments (Key).Contains (Name) then
+            Environments (Key).Replace (Name, Value);
+         else
+            Environments (Key).Insert (Name, Value);
+         end if;
+
+      else
+         Environments.Insert (Key, New_Item);
+      end if;
+   end Record_Environment;
 
    ---------
    -- Run --
