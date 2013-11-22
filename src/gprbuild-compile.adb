@@ -2277,7 +2277,7 @@ package body Gprbuild.Compile is
          end if;
       end Add_Object_File_Switches;
 
-      ------------------------------'
+      ------------------------------
       -- Add_Object_Path_Switches --
       ------------------------------
 

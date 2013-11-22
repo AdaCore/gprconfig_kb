@@ -894,7 +894,7 @@ procedure Gprslave is
 
             Execute : declare
                Project  : constant String :=
-                            Get_Arg (Builder, Args (Job.Cmd) (1).all);
+                            Get_Arg (Builder, Args (Job.Cmd)(1).all);
                Language : constant String := Args (Job.Cmd)(3).all;
                Out_File : constant String :=
                             Get_Output_File (Builder);
