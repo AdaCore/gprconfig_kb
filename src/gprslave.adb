@@ -446,8 +446,7 @@ procedure Gprslave is
       Running.Set_Max (Max_Processes);
 
    exception
-      when E : Invalid_Switch =>
-         Put_Line (Exception_Information (E));
+      when Invalid_Switch =>
          OS_Exit (1);
 
       when Exit_From_Command_Line =>
