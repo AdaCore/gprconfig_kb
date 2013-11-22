@@ -164,7 +164,9 @@ package body Gprbuild.Compilation.Process is
       Dep_Name    : String := "";
       Output_File : String := "";
       Err_To_Out  : Boolean := False;
-      Force_Local : Boolean := False) return Id is
+      Force_Local : Boolean := False) return Id
+   is
+      Env : constant String := Get_Env (Project, Language);
    begin
       --  Initialize the task waiting for local process only in distributed
       --  mode. In standard mode, the process are waited for in the
@@ -187,6 +189,8 @@ package body Gprbuild.Compilation.Process is
          Run_Local : declare
             P : Id (Local);
          begin
+            Set_Env (Env, Fail => True);
+
             if Output_File = "" then
                P.Pid := Non_Blocking_Spawn (Executable, Options);
             else
@@ -200,7 +204,7 @@ package body Gprbuild.Compilation.Process is
          end Run_Local;
 
       else
-         return Slave.Run (Project, Language, Options, Dep_Name);
+         return Slave.Run (Project, Language, Options, Dep_Name, Env);
       end if;
    end Run;
 

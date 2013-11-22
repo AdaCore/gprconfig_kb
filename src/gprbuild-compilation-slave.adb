@@ -712,7 +712,8 @@ package body Gprbuild.Compilation.Slave is
      (Project  : Project_Id;
       Language : String;
       Options  : GNAT.OS_Lib.Argument_List;
-      Dep_Name : String := "") return Id
+      Dep_Name : String := "";
+      Env      : String := "") return Id
    is
       CWD : constant String := Current_Directory;
       --  CWD is the directory from which the command is run
@@ -774,7 +775,7 @@ package body Gprbuild.Compilation.Slave is
                end if;
 
                return O (O'First .. Pos - 1)
-                 & Sep & O (Pos + RD'Length + 1 .. O'Last);
+                 & Sep & Filter_String (O (Pos + RD'Length + 1 .. O'Last));
             end if;
          end if;
       end Filter_String;
@@ -789,7 +790,7 @@ package body Gprbuild.Compilation.Slave is
          Send_Exec
            (S.Channel,
             Get_Name_String (Project.Path.Display_Name), CWD,
-            Language, Options, Dep_Name, Filter_String'Access);
+            Language, Options, Dep_Name, Env, Filter_String'Access);
 
       else
          --  Record the rewrite information for this channel only if we are not
@@ -808,7 +809,7 @@ package body Gprbuild.Compilation.Slave is
            (S.Channel,
             Get_Name_String (Project.Path.Display_Name),
             Filter_String (CWD, Sep => ""),
-            Language, Options, Dep_Name,
+            Language, Options, Dep_Name, Env,
             Filter_String'Access);
       end if;
 

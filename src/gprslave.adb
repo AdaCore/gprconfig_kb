@@ -301,7 +301,7 @@ procedure Gprslave is
          return Value (Value'First .. P - 1)
            & Work_Directory (Builder)
            & Directory_Separator
-           & Value (P + WD_Path_Tag'Length .. Value'Last);
+           & Get_Arg (Builder, Value (P + WD_Path_Tag'Length .. Value'Last));
       end if;
    end Get_Arg;
 
@@ -899,9 +899,15 @@ procedure Gprslave is
                Out_File : constant String :=
                             Get_Output_File (Builder);
                Dep_File : constant String := Args (Job.Cmd)(4).all;
+               Env      : constant String :=
+                            Get_Arg (Builder, Args (Job.Cmd) (6).all);
                O        : Argument_List := Get_Args (Builder, List);
             begin
                Output_Compilation (O (O'Last).all);
+
+               --  Set compiler environment
+
+               Set_Env (Env, Fail => False, Force => True);
 
                Pid := Non_Blocking_Spawn
                  (Get_Driver (Builder, Language, Project), O, Out_File);

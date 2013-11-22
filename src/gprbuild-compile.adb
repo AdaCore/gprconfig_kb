@@ -2861,8 +2861,11 @@ package body Gprbuild.Compile is
                        Get_Name_String (Data.Include_Path_File));
 
             elsif Data.Include_Path /= null then
-               Setenv (Get_Name_String (Id.Language.Config.Include_Path),
-                       Data.Include_Path.all);
+               Gprbuild.Compilation.Process.Record_Environment
+                 (Current_Project,
+                  Id.Language.Name,
+                  Get_Name_String (Id.Language.Config.Include_Path),
+                  Data.Include_Path.all);
 
                if Opt.Verbose_Mode then
                   Write_Str

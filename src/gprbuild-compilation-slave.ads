@@ -45,7 +45,8 @@ package Gprbuild.Compilation.Slave is
      (Project  : Project_Id;
       Language : String;
       Options  : GNAT.OS_Lib.Argument_List;
-      Dep_Name : String := "") return Id;
+      Dep_Name : String := "";
+      Env      : String := "") return Id;
    --  Send a compilation job to one slave that has still some free slot. There
    --  is also free slot when this routine is called (gprbuild ensure this).
 

@@ -407,6 +407,7 @@ package body Gprbuild.Compilation.Protocol is
       Command  : String;
       Options  : Argument_List;
       Dep_Name : String;
+      Env      : String;
       Filter   : access function (Str, Sep : String) return String := null)
    is
       R_Cmd : Unbounded_String;
@@ -432,7 +433,8 @@ package body Gprbuild.Compilation.Protocol is
          Command_Kind'Image (EX)
          & Filter (Project, WD_Path_Tag) & Args_Sep
          & Dir & Args_Sep & Command & Args_Sep
-         & Dep_Name & Args_Sep & To_String (R_Cmd));
+         & Dep_Name & Args_Sep & To_String (R_Cmd)
+         & Args_Sep & Filter (Env, WD_Path_Tag));
    end Send_Exec;
 
    ---------------
