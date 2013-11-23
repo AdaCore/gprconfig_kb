@@ -1647,7 +1647,7 @@ be parsed automatically by @value{gprconfig} at startup.
 
 All files must have the following format:
 
-@CODESAMPLE{<?xml version="1.0">@NL{}
+@CODESAMPLE{<?xml version="1.0" ?>@NL{}
 <gprconfig>@NL{}
    @dots{}@NL{}
 </gprconfig>}
