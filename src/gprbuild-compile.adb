@@ -1282,7 +1282,8 @@ package body Gprbuild.Compile is
       --  nothing else to do (that is the Q is empty and there are outstanding
       --  compilations).
 
-      procedure Set_Env_For_Include_Dirs (Id : Source_Id);
+      procedure Set_Env_For_Include_Dirs
+        (Id : Source_Id;  Source_Project : Project_Id);
       --  Set environment variables or switches to pass the include directories
       --  to the compiler
 
@@ -2808,7 +2809,9 @@ package body Gprbuild.Compile is
       -- Set_Env_For_Include_Dirs --
       ------------------------------
 
-      procedure Set_Env_For_Include_Dirs (Id : Source_Id) is
+      procedure Set_Env_For_Include_Dirs
+        (Id : Source_Id; Source_Project : Project_Id)
+      is
          Data : Local_Project_Data :=
                   Local_Projects_HT.Get (Local_Projects, Id.Object_Project);
       begin
@@ -2862,7 +2865,7 @@ package body Gprbuild.Compile is
 
             elsif Data.Include_Path /= null then
                Gprbuild.Compilation.Process.Record_Environment
-                 (Current_Project,
+                 (Source_Project,
                   Id.Language.Name,
                   Get_Name_String (Id.Language.Config.Include_Path),
                   Data.Include_Path.all);
@@ -2960,7 +2963,7 @@ package body Gprbuild.Compile is
                end if;
 
                Add_Dependency_Options (Id);
-               Set_Env_For_Include_Dirs (Id);
+               Set_Env_For_Include_Dirs (Id, Source_Project);
                Add_Config_File_Switches (Id, Source_Project);
                Mapping_File := Add_Mapping_File_Switches
                  (Source, Source_Project);
