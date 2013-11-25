@@ -982,14 +982,17 @@ procedure Gprslave is
          Job.Pid := Pid_To_Integer (Pid);
          Pos := Set.Find (Job);
 
+         --  Not that a job could be not found here because the Pid is one of
+         --  gprconfig runned to generate a configuration file for a specific
+         --  language.
+
          if Job_Data_Set.Has_Element (Pos) then
             Job := Job_Data_Set.Element (Pos);
+            Set.Delete (Job);
+            Count := Count - 1;
          else
             Job := No_Job;
          end if;
-
-         Set.Delete (Job);
-         Count := Count - 1;
       end Get;
 
       -------------
@@ -1083,6 +1086,8 @@ procedure Gprslave is
 
          Wait_Process (Pid, Success);
 
+         Mutex.Seize;
+
          Running.Get (Job, Pid);
 
          --  Note that if there is not such element it could be because the
@@ -1091,8 +1096,6 @@ procedure Gprslave is
          --  Job_Set is clear. See Main_Loop in gprslave's body.
 
          if Job /= No_Job then
-            Mutex.Seize;
-
             declare
                A : Argument_List_Access := Args (Job.Cmd);
             begin
@@ -1130,15 +1133,22 @@ procedure Gprslave is
 
                   OS_Lib.Delete_File (Out_File, S);
 
-                  if Success and then Builder.Sync /= Protocol.File then
+                  if Success then
                      --  No Dep_File to send back if the compilation was not
                      --  successful.
 
-                     Send_Dep_File
-                       (Builder,
-                        Work_Directory (Builder)
-                        & (if Dep_Dir /= "" then DS & Dep_Dir else "")
-                        & DS & Dep_File);
+                     declare
+                        D_File : constant String :=
+                                   Work_Directory (Builder)
+                                 & (if Dep_Dir /= "" then DS & Dep_Dir else "")
+                                 & DS & Dep_File;
+                     begin
+                        if Exists (D_File)
+                          and then Builder.Sync /= Protocol.File
+                        then
+                           Send_Dep_File (Builder, D_File);
+                        end if;
+                     end;
                   end if;
                end;
 
@@ -1160,13 +1170,17 @@ procedure Gprslave is
                end if;
             end;
 
-            Mutex.Release;
-
          else
+            --  This is not necessarily an error as we could get a Pid of a a
+            --  gprconfig run launched to generate a configuration file for a
+            --  specific language. So we do not want to fail in this case.
+
             if Debug then
                Put_Line ("# unknown job data for pid");
             end if;
          end if;
+
+         Mutex.Release;
       end loop;
 
    exception
