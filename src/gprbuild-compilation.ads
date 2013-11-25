@@ -22,11 +22,14 @@
 --  This is the root package for the compilation support. It handles the local
 --  and distributed compilation modes.
 
+with Ada.Characters.Latin_1;
+
 package Gprbuild.Compilation is
 
    Default_Port : constant := 8484;
 
-   Opts_Sep : constant Character := ';';
+   Opts_Sep : constant Character := Ada.Characters.Latin_1.HT;
+
    --  Command options separator, that is the separator used for options to be
    --  passed to the executed command.
 
