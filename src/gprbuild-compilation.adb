@@ -50,7 +50,7 @@ package body Gprbuild.Compilation is
       for K in 1 .. Slice_Count (Env_List) loop
          declare
             Var : constant String := Slice (Env_List, K);
-            I   : constant Natural := Strings.Fixed.Index (Env, "=");
+            I   : constant Natural := Strings.Fixed.Index (Var, "=");
             Sum : constant MD5.Message_Digest := MD5.Digest (Var);
          begin
             if I /= 0 then
