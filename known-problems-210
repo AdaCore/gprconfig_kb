@@ -11,6 +11,27 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-210-MB06-054 gprinstall and shared library with version on windows
+
+  Problem:    On Windows, gprinstall fails while installing a shared library
+              project when the attribute Library_Version is defined.
+
+  Status:     This was fixed in 2.2 on 2013-11-06
+              This was fixed in 2.1.1 on 2013-11-27
+
+  Workaround: Manually install the library.
+
+KP-210-MB06-015 gprinstall and standalone libraries
+
+  Problem:    gprinstall does not generate a usable project file for
+              standalone libraries.
+
+  Status:     This was fixed in 2.2 on 2013-11-06
+              This was fixed in 2.1.1 on 2013-11-27
+
+  Workaround: Manually adds the Library_Interface and Library_Standalone
+              attributes.
+
 KP-210-MB05-034 gprinstall fails to install projects built with sub-dirs
 
   Problem:    gprinstall is not able to install a code which has been
