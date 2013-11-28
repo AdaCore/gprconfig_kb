@@ -11,6 +11,18 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-210-MB26-007 Dependency builder must be invoked from the object directory
+
+  Problem:    When gprbuild performs parallel compilations and for some
+              language a dependency builder is invoked to build a dependency
+              file, the dependency builder may be invoked from the object
+              directory of another project and thus may fail if some of its
+              arguments are relative paths.
+
+  Status:     This was fixed in 2.2 on 2013-11-27
+
+  Workaround: Use absolute paths for the arguments of a dependency builder.
+
 KP-210-MB06-054 gprinstall and shared library with version on windows
 
   Problem:    On Windows, gprinstall fails while installing a shared library
