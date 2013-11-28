@@ -307,6 +307,8 @@ package body Gprbuild.Compile is
                  and then Config.Compute_Dependency /= No_Name_List
                then
                   declare
+                     Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
+
                      List      : Name_List_Index :=
                                    Config.Compute_Dependency;
                      Nam       : Name_Node :=
@@ -315,6 +317,9 @@ package body Gprbuild.Compile is
                                    Get_Name_String (Nam.Name);
                      Exec_Path : String_Access;
                   begin
+                     Change_Dir
+                       (Get_Name_String
+                          (Source.Id.Project.Object_Directory.Display_Name));
                      Comp_Data.Mapping_File := No_Path;
                      Comp_Data.Purpose := Dependency;
 
@@ -392,6 +397,8 @@ package body Gprbuild.Compile is
                      Compilation_Htable.Set (Comp_Data.Process, Comp_Data);
 
                      Free (Exec_Path);
+
+                     Change_Dir (Current_Dir);
                   end;
 
                else
