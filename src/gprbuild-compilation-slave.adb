@@ -542,8 +542,6 @@ package body Gprbuild.Compilation.Slave is
                      Add_Arg ("--exclude=" & P);
                   end loop;
 
-                  Add_Arg ("--delete-excluded");
-
                else
                   --  Include sub-directories
 
@@ -562,6 +560,7 @@ package body Gprbuild.Compilation.Slave is
 
                --  Delete remote files not in local directory
 
+               Add_Arg ("--delete-excluded");
                Add_Arg ("--delete");
                Add_Arg ("--copy-links");
 
