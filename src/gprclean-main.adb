@@ -48,6 +48,7 @@ with Prj.Err;
 with Prj.Ext;
 with Prj.Tree;    use Prj.Tree;
 with Snames;
+with Stringt;
 with Switch;      use Switch;
 
 procedure Gprclean.Main is
@@ -97,6 +98,7 @@ procedure Gprclean.Main is
          Csets.Initialize;
          Namet.Initialize;
          Snames.Initialize;
+         Stringt.Initialize;
 
          Prj.Tree.Initialize (Root_Environment, Gprclean_Flags);
          Prj.Tree.Initialize (Project_Node_Tree);
@@ -152,6 +154,10 @@ procedure Gprclean.Main is
             if Db_Directory_Expected then
                Db_Directory_Expected := False;
                Parse_Knowledge_Base (Project_Tree, Arg);
+
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Arg);
+               Db_Switch_Args.Append (Name_Find);
 
             elsif Arg'Length /= 0 then
                if Arg (1) = '-' then

@@ -44,6 +44,7 @@ with Prj.Env;
 with Prj.Err;
 with Prj.Tree;    use Prj.Tree;
 with Snames;      use Snames;
+with Stringt;
 with Switch;      use Switch;
 with Tempdir;     use Tempdir;
 
@@ -121,6 +122,10 @@ procedure Gprbuild.Main is
 
    Current_Builder_Comp_Option_Table : Builder_Comp_Option_Table_Ref :=
                                          No_Builder_Comp_Option_Table;
+
+   Aggregate_With_Mains : Boolean := False;
+   --  Set to True when the main project is an aggregate project and there are
+   --  mains specified on the command line;
 
    -------------------------------------------
    -- Options specified on the command line --
@@ -202,13 +207,16 @@ procedure Gprbuild.Main is
          Fail_Program (Project_Tree, "cannot continue");
       end if;
 
-      Queue.Insert_Project_Sources
-        (Project        => Main_Project,
-         Project_Tree   => Project_Tree,
-         Unique_Compile => Unique_Compile,
-         All_Projects =>
-            not Unique_Compile
+      if not Aggregate_With_Mains then
+         Queue.Insert_Project_Sources
+           (Project        => Main_Project,
+            Project_Tree   => Project_Tree,
+            Unique_Compile => Unique_Compile,
+            All_Projects =>
+               not Unique_Compile
             or else (Unique_Compile_All_Projects or Recursive));
+      end if;
+
    end Add_Mains_To_Queue;
 
    -------------------------
@@ -529,8 +537,8 @@ procedure Gprbuild.Main is
          end if;
 
       elsif Db_Directory_Expected then
-            Db_Directory_Expected := False;
-            Parse_Knowledge_Base (Project_Tree, Arg);
+         Db_Directory_Expected := False;
+         Parse_Knowledge_Base (Project_Tree, Arg);
 
          Name_Len := 0;
          Add_Str_To_Name_Buffer (Arg);
@@ -1410,6 +1418,7 @@ procedure Gprbuild.Main is
       Csets.Initialize;
       Namet.Initialize;
       Snames.Initialize;
+      Stringt.Initialize;
 
       Prj.Tree.Initialize (Root_Environment, Gprbuild_Flags);
       Prj.Tree.Initialize (Project_Node_Tree);
@@ -2075,13 +2084,15 @@ begin
 
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
-   if Mains.Number_Of_Mains (Project_Tree) = 0
-     and then not Unique_Compile
-   then
-      --  Register the Main units from the projects.
-      --  No need to waste time when we are going to compile all files
-      --  anyway (Unique_Compile).
-      Mains.Fill_From_Project (Main_Project, Project_Tree);
+   if Mains.Number_Of_Mains (null) = 0 then
+      if not Unique_Compile then
+         --  Register the Main units from the projects. No need to waste time
+         --  when we are going to compile all files anyway (Unique_Compile).
+         Mains.Fill_From_Project (Main_Project, Project_Tree);
+      end if;
+
+   elsif Main_Project.Qualifier = Aggregate then
+      Aggregate_With_Mains := True;
    end if;
 
    Mains.Complete_Mains

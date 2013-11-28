@@ -40,6 +40,7 @@ with Prj.Env;
 with Prj.Err;
 with Prj.Tree;    use Prj.Tree;
 with Snames;      use Snames;
+with Stringt;
 with Switch;      use Switch;
 
 with Opt;         use Opt;
@@ -441,6 +442,7 @@ procedure Gprinstall.Main is
       Csets.Initialize;
       Namet.Initialize;
       Snames.Initialize;
+      Stringt.Initialize;
 
       Prj.Tree.Initialize (Root_Environment, Gprbuild_Flags);
       Prj.Tree.Initialize (Project_Node_Tree);
