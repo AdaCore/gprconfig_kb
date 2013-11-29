@@ -123,10 +123,6 @@ procedure Gprbuild.Main is
    Current_Builder_Comp_Option_Table : Builder_Comp_Option_Table_Ref :=
                                          No_Builder_Comp_Option_Table;
 
-   Aggregate_With_Mains : Boolean := False;
-   --  Set to True when the main project is an aggregate project and there are
-   --  mains specified on the command line;
-
    -------------------------------------------
    -- Options specified on the command line --
    -------------------------------------------
@@ -207,16 +203,13 @@ procedure Gprbuild.Main is
          Fail_Program (Project_Tree, "cannot continue");
       end if;
 
-      if not Aggregate_With_Mains then
-         Queue.Insert_Project_Sources
-           (Project        => Main_Project,
-            Project_Tree   => Project_Tree,
-            Unique_Compile => Unique_Compile,
-            All_Projects =>
-               not Unique_Compile
+      Queue.Insert_Project_Sources
+        (Project        => Main_Project,
+         Project_Tree   => Project_Tree,
+         Unique_Compile => Unique_Compile,
+         All_Projects =>
+            not Unique_Compile
             or else (Unique_Compile_All_Projects or Recursive));
-      end if;
-
    end Add_Mains_To_Queue;
 
    -------------------------
@@ -2084,15 +2077,13 @@ begin
 
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
-   if Mains.Number_Of_Mains (null) = 0 then
-      if not Unique_Compile then
-         --  Register the Main units from the projects. No need to waste time
-         --  when we are going to compile all files anyway (Unique_Compile).
-         Mains.Fill_From_Project (Main_Project, Project_Tree);
-      end if;
-
-   elsif Main_Project.Qualifier = Aggregate then
-      Aggregate_With_Mains := True;
+   if Mains.Number_Of_Mains (Project_Tree) = 0
+     and then not Unique_Compile
+   then
+      --  Register the Main units from the projects.
+      --  No need to waste time when we are going to compile all files
+      --  anyway (Unique_Compile).
+      Mains.Fill_From_Project (Main_Project, Project_Tree);
    end if;
 
    Mains.Complete_Mains
