@@ -158,6 +158,14 @@ procedure Gprbind is
 
    Ada_Object_Suffix : String_Access := Get_Object_Suffix;
 
+   Display_Line : String_Access := new String (1 .. 1_000);
+   Display_Last : Natural := 0;
+   --  A String buffer to store temporarily the displayed gnatbind command
+   --  invoked by gprbind.
+
+   procedure Add_To_Display_Line (S : String);
+   --  Add an argument to the Display_Line
+
    package Binding_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -205,6 +213,33 @@ procedure Gprbind is
    end record;
 
    Bound_Files : Bound_File_Access;
+
+   -------------------------
+   -- Add_To_Display_Line --
+   -------------------------
+
+   procedure Add_To_Display_Line (S : String) is
+   begin
+      while Display_Last + 1 + S'Length > Display_Line'Last loop
+         declare
+            New_Buffer : constant String_Access :=
+              new String (1 .. 2 * Display_Line'Length);
+         begin
+            New_Buffer (1 .. Display_Last) :=
+              Display_Line (1 .. Display_Last);
+            Free (Display_Line);
+            Display_Line := New_Buffer;
+         end;
+      end loop;
+
+      if Display_Last > 0 then
+         Display_Last := Display_Last + 1;
+         Display_Line (Display_Last) := ' ';
+      end if;
+
+      Display_Line (Display_Last + 1 .. Display_Last + S'Length) := S;
+      Display_Last := Display_Last + S'Length;
+   end Add_To_Display_Line;
 
 begin
    if Argument_Count /= 1 then
@@ -674,41 +709,39 @@ begin
    end if;
 
    if not Quiet_Output then
+      Display_Last := 0;
+
       if Verbose_Mode then
-         Put (Gnatbind_Path.all);
+         Add_To_Display_Line (Gnatbind_Path.all);
       else
-         Put (Base_Name (GNATBIND.all));
+         Add_To_Display_Line (Base_Name (GNATBIND.all));
       end if;
 
       if Verbose_Mode then
          for Option in 1 .. Last_Gnatbind_Option loop
-            Put (' ');
-            Put (Gnatbind_Options (Option).all);
+            Add_To_Display_Line (Gnatbind_Options (Option).all);
          end loop;
 
       else
-         Put (' ');
-
          if Main_ALI /= null then
-            Put (Base_Name (Main_ALI.all));
+            Add_To_Display_Line (Base_Name (Main_ALI.all));
 
             if ALI_Files_Table.Last > 0 then
-               Put (" ...");
+               Add_To_Display_Line ("...");
             end if;
 
          elsif ALI_Files_Table.Last > 0 then
-            Put (Base_Name (ALI_Files_Table.Table (1).all));
+            Add_To_Display_Line (Base_Name (ALI_Files_Table.Table (1).all));
 
             if ALI_Files_Table.Last > 1 then
-               Put (" ...");
+               Add_To_Display_Line ("...");
             end if;
 
-            Put (' ');
-            Put (No_Main_Option);
+            Add_To_Display_Line (No_Main_Option);
          end if;
       end if;
 
-      New_Line;
+      Put_Line (Display_Line (1 .. Display_Last));
    end if;
 
    declare
@@ -970,25 +1003,23 @@ begin
             Name_Len := Name_Len - Executable_Suffix'Length;
          end if;
 
-         Put (Name_Buffer (1 .. Name_Len));
+         Display_Last := 0;
+         Add_To_Display_Line (Name_Buffer (1 .. Name_Len));
 
          if Verbose_Mode then
             for Option in 1 .. Last_Compiler_Option loop
-               Put (' ');
-               Put (Compiler_Options (Option).all);
+               Add_To_Display_Line (Compiler_Options (Option).all);
             end loop;
 
          else
-            Put (' ');
-            Put (Compiler_Options (1).all);
+            Add_To_Display_Line (Compiler_Options (1).all);
 
             if Compiler_Options (1) /= Binder_Generated_File then
-               Put (' ');
-               Put (Binder_Generated_File.all);
+               Add_To_Display_Line (Binder_Generated_File.all);
             end if;
          end if;
 
-         New_Line;
+         Put_Line (Display_Line (1 .. Display_Last));
       end if;
 
       --  Add the trailing options, if any
