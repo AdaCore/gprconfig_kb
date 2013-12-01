@@ -11,6 +11,16 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-210-MB30-011 Garbled output from parallel invocations of gnatbind
+
+  Problem:    When gprbuild is invoked with -jnn and there are several mains,
+              several invocations of gprbind may be running in parallel and
+              their displayed gnatbind invocations may be garbled.
+
+  Status:     This was fixed in 2.2 on 2013-12-01
+
+  Workaround: Ignore the problem or invoke gprbuild without -jnn.
+
 KP-210-MB26-007 Dependency builder must be invoked from the object directory
 
   Problem:    When gprbuild performs parallel compilations and for some
