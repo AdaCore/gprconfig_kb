@@ -93,6 +93,7 @@
        <compiler name="G++_Pro" language="C++" />
      </compilers>
      <compilers negate="true">
+       <compiler version="3.4.6" />
        <compiler version="4.1.2" />
        <compiler version="4.1.3" />
        <compiler version="4.3.3" />
