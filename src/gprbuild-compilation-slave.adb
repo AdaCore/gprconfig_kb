@@ -1015,6 +1015,7 @@ package body Gprbuild.Compilation.Slave is
                   Args (7) := new String'("--include=*.obj");
                   Args (8) := new String'("--include=*.coff");
 
+                  N := 8;
                else
                   for P of S.Included_Artifact_Patterns loop
                      N := N + 1;
