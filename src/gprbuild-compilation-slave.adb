@@ -994,7 +994,7 @@ package body Gprbuild.Compilation.Slave is
                Args : Argument_List
                  (1 ..
                     6 + Positive'Max
-                      (5, Natural (S.Included_Artifact_Patterns.Length)));
+                      (4, Natural (S.Included_Artifact_Patterns.Length)));
                N : Positive range 3 .. Args'Last := 3;
             begin
                --  Archive mode, compression and ignore VCS
@@ -1010,12 +1010,11 @@ package body Gprbuild.Compilation.Slave is
                   --  Include known suffix (objects, dependencies)
 
                   Args (4) := new String'("--include=*.o");
-                  Args (5) := new String'("--include=*.ali");
-                  Args (6) := new String'("--include=*.d");
-                  Args (7) := new String'("--include=*.obj");
-                  Args (8) := new String'("--include=*.coff");
+                  Args (5) := new String'("--include=*.gli");
+                  Args (6) := new String'("--include=*.obj");
+                  Args (7) := new String'("--include=*.coff");
 
-                  N := 8;
+                  N := 7;
                else
                   for P of S.Included_Artifact_Patterns loop
                      N := N + 1;
