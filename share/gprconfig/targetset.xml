@@ -142,10 +142,17 @@
     <target>pent.*-cygwin.*</target>
   </targetset>
 
-  <!-- Freebsd -->
+  <!-- x86 Freebsd -->
   <targetset>
     <target>x86-freebsd</target>
     <target>i.86-.*freebsd.*</target>
+  </targetset>
+
+  <!-- x86_64 Freebsd -->
+  <targetset>
+    <target>x86_64-freebsd</target>
+    <target>x86_64-.*freebsd.*</target>
+    <target>amd64-.*freebsd.*</target>
   </targetset>
 
 <!-- Cross Ports -->
