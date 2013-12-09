@@ -501,8 +501,8 @@ package body Gprbuild.Compilation.Slave is
 
                Args : Argument_List
                  (1 ..
-                    5 + Positive'Max
-                      (12 + Natural (Excluded_Patterns.Length),
+                    6 + Positive'Max
+                      (11 + Natural (Excluded_Patterns.Length),
                        2 + Natural (Included_Patterns.Length)));
                N    : Natural range 0 .. Args'Last := 0;
 
@@ -545,7 +545,7 @@ package body Gprbuild.Compilation.Slave is
                else
                   --  Include sub-directories
 
-                  Add_Arg ("--include=/*");
+                  Add_Arg ("--include=*/");
 
                   --  Add any user's defined included patterns
 
@@ -1004,7 +1004,7 @@ package body Gprbuild.Compilation.Slave is
 
                --  Check all subdirectories
 
-               Args (3) := new String'("--include=/*");
+               Args (3) := new String'("--include=*/");
 
                if S.Included_Artifact_Patterns.Length = 0 then
                   --  Include known suffix (objects, dependencies)
