@@ -68,6 +68,7 @@ KP-210-MB05-020 gprconfig does not detect non GNAT gcc C and g++ compilers
   Problem:    gprconfig does not find all non GNAT gcc C and g++ compilers.
 
   Status:     This was fixed in 2.2 on 2013-11-07
+              This was fixed in 2.1.1 on 2013-12-10
 
   Workaround: Manually edit a configuration project file and use it with
               gprbuild.
