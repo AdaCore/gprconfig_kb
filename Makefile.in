@@ -53,7 +53,7 @@ endif
 
 dummy:=$(shell $(MKDIR) $(objdir))
 
-PROCESSORS ?= 1
+PROCESSORS ?= 0
 
 GNATMAKE=gnatmake -p -m -j${PROCESSORS}
 ifeq ($(strip $(filter-out %vms%,$(host))),)
