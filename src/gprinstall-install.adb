@@ -23,6 +23,7 @@ with Ada.Characters.Handling;                use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Vectors;      use Ada;
 with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Containers.Ordered_Sets;
+with Ada.Containers.Vectors;
 with Ada.Directories;                        use Ada.Directories;
 with Ada.Strings.Equal_Case_Insensitive;
 with Ada.Strings.Less_Case_Insensitive;
@@ -35,6 +36,7 @@ with GPR_Version; use GPR_Version;
 
 with Namet;    use Namet;
 with Opt;
+with Osint;
 with Output;   use Output;
 with Prj.Util; use Prj.Util;
 with Snames;   use Snames;
@@ -84,6 +86,17 @@ package body Gprinstall.Install is
 
       Man : Text_IO.File_Type;
       --  File where manifest for this project is kept
+
+      --  Keeping track of artifacts to install
+
+      type Artifacts_Data is record
+         Destination, Filename : Name_Id;
+      end record;
+
+      package Artifacts_Set is
+        new Containers.Vectors (Positive, Artifacts_Data);
+
+      Artifacts : Artifacts_Set.Vector;
 
       procedure Copy_File
         (From, To, File : String;
@@ -301,6 +314,45 @@ package body Gprinstall.Install is
                         end if;
                      end;
                      Id := Tree.Shared.Variable_Elements.Table (Id).Next;
+                  end loop;
+               end;
+
+               --  Now check arrays
+
+               declare
+                  Id : Array_Id := Pcks (Pck).Decl.Arrays;
+               begin
+                  while Id /= No_Array loop
+                     declare
+                        V : constant Array_Data :=
+                              Tree.Shared.Arrays.Table (Id);
+                     begin
+                        if V.Name = Name_Artifacts then
+                           declare
+                              Eid : Array_Element_Id := V.Value;
+                           begin
+                              while Eid /= No_Array_Element loop
+                                 declare
+                                    E : constant Array_Element :=
+                                          Tree.Shared.Array_Elements.Table
+                                            (Eid);
+                                    S : String_List_Id := E.Value.Values;
+                                 begin
+                                    while S /= Nil_String loop
+                                       Artifacts.Append
+                                         (Artifacts_Data'
+                                            (E.Index, Strs (S).Value));
+                                       S := Strs (S).Next;
+                                    end loop;
+                                 end;
+
+                                 Eid := Tree.Shared.Array_Elements.
+                                   Table (Eid).Next;
+                              end loop;
+                           end;
+                        end if;
+                     end;
+                     Id := Tree.Shared.Arrays.Table (Id).Next;
                   end loop;
                end;
 
@@ -904,6 +956,90 @@ package body Gprinstall.Install is
                end loop;
             end;
          end if;
+
+         --  Copy artifacts
+
+         for E of Artifacts loop
+            declare
+
+               procedure Copy_Entry (E : Directory_Entry_Type);
+               --  Copy file pointed by E
+
+               function Get_Directory (Fullname : String) return String;
+               --  Returns the directory containing fullname. Note that we
+               --  cannot use the standard Containing_Directory as filename
+               --  can be a pattern and not be allowed in filename.
+
+               function Get_Pattern return String;
+               --  Return filename of pattern from Filename below
+
+               Destination : constant String :=
+                               Ensure_Directory
+                                 (Get_Name_String (E.Destination));
+               Filename    : constant String :=
+                               Get_Name_String (E.Filename);
+
+               ----------------
+               -- Copy_Entry --
+               ----------------
+
+               procedure Copy_Entry (E : Directory_Entry_Type) is
+                  Fullname : constant String := Full_Name (E);
+               begin
+                  Copy_File
+                    (From => Fullname,
+                     To   => (if Is_Absolute_Path (Destination)
+                              then Destination
+                              else Prefix_Dir.V.all & Destination),
+                     File => Simple_Name (Fullname));
+               end Copy_Entry;
+
+               -------------------
+               -- Get_Directory --
+               -------------------
+
+               function Get_Directory (Fullname : String) return String is
+                  K : Natural := Fullname'Last;
+               begin
+                  while K > 0
+                    and then not Osint.Is_Directory_Separator (Fullname (K))
+                  loop
+                     K := K - 1;
+                  end loop;
+
+                  pragma Assert (K > 0);
+
+                  return Fullname (Fullname'First .. K);
+               end Get_Directory;
+
+               -----------------
+               -- Get_Pattern --
+               -----------------
+
+               function Get_Pattern return String is
+                  K : Natural := Filename'Last;
+               begin
+                  while K > 0
+                    and then not Osint.Is_Directory_Separator (Filename (K))
+                  loop
+                     K := K - 1;
+                  end loop;
+
+                  if K = 0 then
+                     return Filename;
+                  else
+                     return Filename (K + 1 .. Filename'Last);
+                  end if;
+               end Get_Pattern;
+
+            begin
+               Directories.Search
+                 (Directory => Get_Directory
+                    (Get_Name_String (Project.Directory.Name) & Filename),
+                  Pattern   => Get_Pattern,
+                  Process   => Copy_Entry'Access);
+            end;
+         end loop;
       end Copy_Files;
 
       --------------------
