@@ -865,6 +865,96 @@ package body Gprinstall.Install is
             end if;
          end Copy_Source;
 
+         procedure Copy_Artifacts (Pathname, Destination : String);
+
+         --------------------
+         -- Copy_Artifacts --
+         --------------------
+
+         procedure Copy_Artifacts (Pathname, Destination : String) is
+
+            procedure Copy_Entry (E : Directory_Entry_Type);
+            --  Copy file pointed by E
+
+            function Get_Directory (Fullname : String) return String;
+            --  Returns the directory containing fullname. Note that we
+            --  cannot use the standard Containing_Directory as filename
+            --  can be a pattern and not be allowed in filename.
+
+            function Get_Pattern return String;
+            --  Return filename of pattern from Filename below
+
+            ----------------
+            -- Copy_Entry --
+            ----------------
+
+            procedure Copy_Entry (E : Directory_Entry_Type) is
+               Fullname : constant String := Full_Name (E);
+               Dest_Dir : constant String :=
+                            (if Is_Absolute_Path (Destination)
+                             then Destination
+                             else Prefix_Dir.V.all & Destination);
+            begin
+               if Kind (E) = Directory
+                 and then Simple_Name (E) /= "."
+                 and then Simple_Name (E) /= ".."
+               then
+                  Copy_Artifacts
+                    (Fullname & "/*", Dest_Dir & Simple_Name (E) & '/');
+
+               elsif Kind (E) = Ordinary_File then
+                  Copy_File
+                    (From => Fullname,
+                     To   => Dest_Dir,
+                     File => Simple_Name (Fullname));
+               end if;
+            end Copy_Entry;
+
+            -------------------
+            -- Get_Directory --
+            -------------------
+
+            function Get_Directory (Fullname : String) return String is
+               K : Natural := Fullname'Last;
+            begin
+               while K > 0
+                 and then not Osint.Is_Directory_Separator (Fullname (K))
+               loop
+                  K := K - 1;
+               end loop;
+
+               pragma Assert (K > 0);
+
+               return Fullname (Fullname'First .. K);
+            end Get_Directory;
+
+            -----------------
+            -- Get_Pattern --
+            -----------------
+
+            function Get_Pattern return String is
+               K : Natural := Pathname'Last;
+            begin
+               while K > 0
+                 and then not Osint.Is_Directory_Separator (Pathname (K))
+               loop
+                  K := K - 1;
+               end loop;
+
+               if K = 0 then
+                  return Pathname;
+               else
+                  return Pathname (K + 1 .. Pathname'Last);
+               end if;
+            end Get_Pattern;
+
+         begin
+            Directories.Search
+              (Directory => Get_Directory (Pathname),
+               Pattern   => Get_Pattern,
+               Process   => Copy_Entry'Access);
+         end Copy_Artifacts;
+
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
 
       begin
@@ -971,83 +1061,15 @@ package body Gprinstall.Install is
 
          for E of Artifacts loop
             declare
-
-               procedure Copy_Entry (E : Directory_Entry_Type);
-               --  Copy file pointed by E
-
-               function Get_Directory (Fullname : String) return String;
-               --  Returns the directory containing fullname. Note that we
-               --  cannot use the standard Containing_Directory as filename
-               --  can be a pattern and not be allowed in filename.
-
-               function Get_Pattern return String;
-               --  Return filename of pattern from Filename below
-
                Destination : constant String :=
                                Ensure_Directory
                                  (Get_Name_String (E.Destination));
                Filename    : constant String :=
                                Get_Name_String (E.Filename);
-
-               ----------------
-               -- Copy_Entry --
-               ----------------
-
-               procedure Copy_Entry (E : Directory_Entry_Type) is
-                  Fullname : constant String := Full_Name (E);
-               begin
-                  Copy_File
-                    (From => Fullname,
-                     To   => (if Is_Absolute_Path (Destination)
-                              then Destination
-                              else Prefix_Dir.V.all & Destination),
-                     File => Simple_Name (Fullname));
-               end Copy_Entry;
-
-               -------------------
-               -- Get_Directory --
-               -------------------
-
-               function Get_Directory (Fullname : String) return String is
-                  K : Natural := Fullname'Last;
-               begin
-                  while K > 0
-                    and then not Osint.Is_Directory_Separator (Fullname (K))
-                  loop
-                     K := K - 1;
-                  end loop;
-
-                  pragma Assert (K > 0);
-
-                  return Fullname (Fullname'First .. K);
-               end Get_Directory;
-
-               -----------------
-               -- Get_Pattern --
-               -----------------
-
-               function Get_Pattern return String is
-                  K : Natural := Filename'Last;
-               begin
-                  while K > 0
-                    and then not Osint.Is_Directory_Separator (Filename (K))
-                  loop
-                     K := K - 1;
-                  end loop;
-
-                  if K = 0 then
-                     return Filename;
-                  else
-                     return Filename (K + 1 .. Filename'Last);
-                  end if;
-               end Get_Pattern;
-
             begin
-               Directories.Search
-                 (Directory => Get_Directory
-                    (Get_Name_String (Project.Directory.Name) & Filename),
-                  Pattern   => Get_Pattern,
-                  Process   => Copy_Entry'Access);
+               Copy_Artifacts
+                 (Get_Name_String (Project.Directory.Name) & Filename,
+                  Destination);
             end;
          end loop;
       end Copy_Files;
