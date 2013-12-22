@@ -848,10 +848,20 @@ package body Gprinstall.Install is
          procedure Copy_Source (Sid : Source_Id) is
          begin
             if Copy (Source) then
-               Copy_File
-                 (From => Get_Name_String (Sid.Path.Name),
-                  To   => Sources_Dir,
-                  File => Get_Name_String (Sid.File));
+               declare
+                  Prep_Filename : constant String :=
+                                    Cat
+                                      (Get_Object_Directory
+                                         (Sid.Project, False),
+                                       Sid.File) & ".prep";
+               begin
+                  Copy_File
+                    (From => (if Exists (Prep_Filename)
+                              then Prep_Filename
+                              else Get_Name_String (Sid.Path.Name)),
+                     To   => Sources_Dir,
+                     File => Get_Name_String (Sid.File));
+               end;
             end if;
          end Copy_Source;
 
