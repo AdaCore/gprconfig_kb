@@ -853,7 +853,7 @@ package body Gprinstall.Install is
                                     Cat
                                       (Get_Object_Directory
                                          (Sid.Project, False),
-                                       Sid.File) & ".prep";
+                                       Sid.File) & Osint.Prep_Suffix;
                begin
                   Copy_File
                     (From => (if Exists (Prep_Filename)
