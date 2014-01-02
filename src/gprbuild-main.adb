@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1761,7 +1761,7 @@ procedure Gprbuild.Main is
 
          --  Line for -d
 
-         Write_Str ("  -d       Display progress");
+         Write_Str ("  -d       Display compilation progress");
          Write_Eol;
 
          --  Line for -eInn
