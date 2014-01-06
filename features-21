@@ -2,11 +2,18 @@
 GPRBUILD 2.1 NEW FEATURES LIST
 ==============================
 
-Copyright (C) 2012-2013, AdaCore
+Copyright (C) 2012-2014, AdaCore
 
 This file contains a complete list of new features in version 2.1 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
+
+NF-21-MC01-007 Add support for artifacts in gprinstall (2013-12-22)
+
+  It is now possible to install files or directories not part of the
+  project (source or object). Those artifacts are described into the
+  project's Install package and can be used to install documentation
+  or examples.
 
 NF-21-M918-043 Attributes External and environment variables (2013-09-19)
 
