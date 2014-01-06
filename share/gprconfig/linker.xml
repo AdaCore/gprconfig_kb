@@ -1130,6 +1130,7 @@
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*wrs-vxworks.*$" />
+       <target name="^powerpc-xcoff-lynxos178$" />
        <target name="^.*-elinos-linux$" />
        <target name="^.*-pikeos$" />
        <target name="^.*mingw.*$" />
