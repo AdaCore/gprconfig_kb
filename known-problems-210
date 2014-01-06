@@ -2,7 +2,7 @@
 Known problems in GPRBUILD version 2.1.0
 ========================================
 
-Copyright (C) 2013, AdaCore
+Copyright (C) 2013-2014, AdaCore
 
 The following is a listing of known problems in release 2.1.0. Except where
 specifically noted, all these problems have been corrected in the development
@@ -10,6 +10,18 @@ tree of the 2.2 technology. This means they are corrected in any 2.2.0w
 wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
+
+KP-210-N103-018 Failure to link on target powerpc-xcoff-lynxos178
+
+  Problem:    For target powerpc-xcoff-lynxos178, when there are two many
+              object files to be linked, because a response file is not used,
+              the linking phase may fail.
+
+  Status:     This was fixed in 2.2 on 2014-01-06
+
+  Workaround: Add these two lines in package Linker of the main project:
+                for Response_File_Format use "GCC_GNU";
+                for Max_Command_Line_Length use "8192";
 
 KP-210-MB30-011 Garbled output from parallel invocations of gnatbind
 
