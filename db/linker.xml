@@ -415,6 +415,7 @@
       <target name="^.*pc-mingw32$" />
       <target name="^.*-pikeos$" />
       <target name="^arm-linux-androideabi$" />
+      <target name="^.*-gnueabi$" />
     </targets>
     <config>
    for Archive_Builder  use ("ar", "cr");
