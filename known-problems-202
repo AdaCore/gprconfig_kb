@@ -22,7 +22,7 @@ KP-202-MA30-007 Aggregated projects with same name
 
   Workaround: Use diffrent project names for the aggregated projects.
 
-KP-202-MA15-007 gprclean crashes cleaning a library project without object dir
+KP-202-MA15-017 gprclean crashes cleaning a library project without object dir
 
   Problem:    gprclean crashes with an exception when invoked to clean a
               library project with a specified object directory that does not
