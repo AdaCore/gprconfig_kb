@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -953,6 +953,11 @@ package body Gprinstall.Install is
               (Directory => Get_Directory (Pathname),
                Pattern   => Get_Pattern,
                Process   => Copy_Entry'Access);
+         exception
+            when Text_IO.Name_Error =>
+               Put_Line
+                 ("warning: path does not exists '"
+                  & Get_Directory (Pathname) & ''');
          end Copy_Artifacts;
 
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
