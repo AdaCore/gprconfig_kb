@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2012-2013, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2014, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -667,7 +667,7 @@ procedure Gprinstall.Main is
 
          --  Line for -r
 
-         Write_Line ("  -r       Recursive (default except when using -c)");
+         Write_Line ("  -r       Recursive");
 
          --  Line for -a
 
