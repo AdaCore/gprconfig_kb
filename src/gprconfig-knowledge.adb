@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -677,6 +677,14 @@ package body GprConfig.Knowledge is
                         Multiple_Lines)),
                      Group      => Integer'Value
                        (Get_Attribute (Tmp, "group", "0")));
+                  Append (Value, External_Node);
+
+               elsif Node_Name (Tmp) = "nogrep" then
+                  External_Node :=
+                    (Typ        => Value_Nogrep,
+                     Regexp_No  => new Pattern_Matcher'
+                       (Compile (Get_Attribute (Tmp, "regexp", ".*"),
+                        Multiple_Lines)));
                   Append (Value, External_Node);
 
                else
@@ -1848,6 +1856,22 @@ package body GprConfig.Knowledge is
                      else
                         Tmp_Result := Null_Unbounded_String;
                         Put_Verbose (Attribute & ": grep no match");
+                     end if;
+                  end;
+
+               when Value_Nogrep =>
+                  declare
+                     Matched : Match_Array (0 .. 0);
+                     Tmp_Str : constant String := To_String (Tmp_Result);
+                  begin
+                     Match (Node.Regexp_No.all, Tmp_Str, Matched);
+                     if Matched (0) /= No_Match then
+                        Put_Verbose (Attribute & ": nogrep matched="""
+                                     & Tmp_Str & """");
+                        raise Ignore_Compiler;
+
+                     else
+                        Put_Verbose (Attribute & ": nogrep no match");
                      end if;
                   end;
 

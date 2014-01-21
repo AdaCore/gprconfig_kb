@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2006-2012, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -390,6 +390,7 @@ private
                                 Value_Shell,
                                 Value_Directory,
                                 Value_Grep,
+                                Value_Nogrep,
                                 Value_Filter,
                                 Value_Must_Match,
                                 Value_Variable,
@@ -410,6 +411,8 @@ private
             when Value_Grep       =>
                Regexp_Re       : Pattern_Matcher_Access;
                Group           : Natural;
+            when Value_Nogrep     =>
+               Regexp_No       : Pattern_Matcher_Access;
             when Value_Filter     =>
                Filter          : Namet.Name_Id;
             when Value_Must_Match =>
