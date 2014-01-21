@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -672,6 +672,11 @@ package body Gprclean is
            ("Cannot specify executable(s) for a Library Project File");
       end if;
 
+      --  Add project to the list of processed projects
+
+      Processed_Projects.Increment_Last;
+      Processed_Projects.Table (Processed_Projects.Last) := Project;
+
       --  Nothing to clean in an externally built project
 
       if Project.Externally_Built then
@@ -687,11 +692,6 @@ package body Gprclean is
             Put (Get_Name_String (Project.Name));
             Put_Line ("""");
          end if;
-
-         --  Add project to the list of processed projects
-
-         Processed_Projects.Increment_Last;
-         Processed_Projects.Table (Processed_Projects.Last) := Project;
 
          if Project.Object_Directory /= No_Path_Information
            and then Is_Directory
