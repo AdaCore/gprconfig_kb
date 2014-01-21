@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-210-N120-075 gprclean -r and cycles in externally built projects
+
+  Problem:    When there are several externally built projects in the project
+              tree and some of them form a cycle, through limited withs,
+              invoking gprclean with switch -r will result in a crash.
+
+  Status:     This was fixed in 2.2 on 2014-01-21
+
+  Workaround: Avoid circularities in externally built projects or invoke
+              gprclean without switch -r.
+
 KP-210-N103-018 Failure to link on target powerpc-xcoff-lynxos178
 
   Problem:    For target powerpc-xcoff-lynxos178, when there are two many
