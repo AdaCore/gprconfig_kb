@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -485,7 +485,17 @@ procedure Gprslave is
 
          Builders.Get_Socket_Set (R_Socket_Set);
 
-         Check_Selector (Selector, R_Socket_Set, Empty_Set, Status);
+         Wait_Incoming_Data : loop
+            begin
+               Check_Selector (Selector, R_Socket_Set, Empty_Set, Status);
+               exit Wait_Incoming_Data;
+            exception
+               when E : Socket_Error =>
+                  if Resolve_Exception (E) /= Interrupted_System_Call then
+                     raise;
+                  end if;
+            end;
+         end loop Wait_Incoming_Data;
 
          Get (R_Socket_Set, Socket);
 
