@@ -28,9 +28,10 @@ with Ada.Directories;                        use Ada.Directories;
 with Ada.Strings.Equal_Case_Insensitive;
 with Ada.Strings.Less_Case_Insensitive;
 with Ada.Strings.Fixed;                      use Ada.Strings;
-with Ada.Strings.Unbounded;
+with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 with Ada.Text_IO;                            use Ada.Text_IO;
 
+with GNAT.MD5;    use GNAT.MD5;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
 
@@ -167,6 +168,9 @@ package body Gprinstall.Install is
       --  Returns True if the Project is active, that is there is no attribute
       --  Activer set to False in the Install package.
 
+      procedure Open_Check_Manifest;
+      --  Check that manifest file can be used
+
       ---------------------
       -- Add_To_Manifest --
       ---------------------
@@ -175,24 +179,7 @@ package body Gprinstall.Install is
          Prefix_Len : constant Natural := Prefix_Dir.V'Length;
       begin
          if not Is_Open (Man) then
-            --  Create manifest file
-
-            declare
-               Dir  : constant String := Project_Dir & "manifests";
-               Name : constant String :=
-                        Dir & DS
-                        & Base_Name (Get_Name_String (Project.Path.Name));
-            begin
-               if not Exists (Dir) then
-                  Create_Path (Dir);
-               end if;
-
-               if Exists (Name) then
-                  Open (Man, Append_File, Name);
-               else
-                  Create (Man, Out_File, Name);
-               end if;
-            end;
+            Open_Check_Manifest;
          end if;
 
          --  Append entry into manifest
@@ -1084,8 +1071,6 @@ package body Gprinstall.Install is
       --------------------
 
       procedure Create_Project (Project : Project_Id) is
-
-         use Ada.Strings.Unbounded;
 
          Filename : constant String :=
                       Project_Dir
@@ -2082,6 +2067,51 @@ package body Gprinstall.Install is
          end if;
       end Create_Project;
 
+      -------------------------
+      -- Open_Check_Manifest --
+      -------------------------
+
+      procedure Open_Check_Manifest is
+         Dir     : constant String := Project_Dir & "manifests";
+         Name    : constant String := Dir & DS & Install_Name.all;
+         Prj_Sig : constant String :=
+                     File_MD5 (Get_Name_String (Project.Path.Display_Name));
+         Buf     : String (1 .. 128);
+         Last    : Natural;
+      begin
+         --  Check wether the manifest does not exist in this case
+
+         if Exists (Name) then
+            Open (Man, In_File, Name);
+            Get_Line (Man, Buf, Last);
+
+            if Last >= Message_Digest'Length
+              and then (Buf (1 .. 2) /= Sig_Line
+                        or else Buf (3 .. Message_Digest'Last + 2) /= Prj_Sig)
+              and then Install_Name_Default
+            then
+               Write_Line
+                 ("Project already installed, either:");
+               Write_Line
+                 ("   - uninstall first using --uninstall option");
+               Write_Line
+                 ("   - install under another name, use --install-name");
+               Write_Line
+                 ("   - force installation under the same name, "
+                  & "use --install-name=" & Install_Name.all);
+               OS_Exit (1);
+            end if;
+
+            Reset (Man, Append_File);
+
+         else
+            Create_Path (Dir);
+            Create (Man, Out_File, Name);
+
+            Put_Line (Man, Sig_Line & Prj_Sig);
+         end if;
+      end Open_Check_Manifest;
+
       Install_Project : Boolean;
       --  Whether the project is to be installed
 
@@ -2111,6 +2141,15 @@ package body Gprinstall.Install is
          --  accordingly.
 
          Check_Install_Package;
+
+         --  The default install name is the name of the project without
+         --  extension.
+
+         if Install_Name = null or else Install_Name_Default then
+            Free (Install_Name);
+            Install_Name :=
+              new String'((Base_Name (Get_Name_String (Project.Path.Name))));
+         end if;
 
          --  Skip non active project and externally built ones
 

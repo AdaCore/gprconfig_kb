@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2012-2013, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2014, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -86,6 +86,13 @@ private
    Build_Name : String_Access := new String'("default");
    --  Name of the current build
 
+   Install_Name         : String_Access;
+   --  The installation name
+
+   Install_Name_Default : Boolean := True;
+   --  Wether the Install_Name has been specified on the command line. If
+   --  specified then Install_Name_Default will be false.
+
    For_Dev : Boolean := True;
    --  True if the installation is for developers (source of the libraries
    --  are also installed). If set to False (for usage) only the shared
@@ -128,5 +135,8 @@ private
 
    Create_Dest_Dir : Boolean := False;
    --  Wether to create the missing directories in the destination point
+
+   Sig_Line : constant String := "S ";
+   --  The prefix of the line containing the original project's signature
 
 end Gprinstall;

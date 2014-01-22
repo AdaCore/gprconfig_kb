@@ -8,3 +8,11 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N108-032 Add support for grouping installs with gprinstall (2014-01-22)
+
+  A new option named --install-name can be used to group installations
+  under a single name. It makes it possible to uninstall with a single
+  command the multiple installations. This can be handy when a library
+  comes with some tools for example, both built with different projects files.
+  Yet, the library and the executables are tightly related and part of the
+  same application.

@@ -20,6 +20,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Directories;
 with Ada.Exceptions;   use Ada.Exceptions;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
@@ -57,6 +58,7 @@ procedure Gprinstall.Main is
 
    Build_Var_Option       : constant String := "--build-var";
    Build_Name_Option      : constant String := "--build-name";
+   Install_Name_Option    : constant String := "--install-name";
    Uninstall_Option       : constant String := "--uninstall";
    Mode_Option            : constant String := "--mode=";
    Lib_Subdir_Option      : constant String := "--lib-subdir";
@@ -323,6 +325,12 @@ procedure Gprinstall.Main is
                Build_Name := new String'
                  (Arg (Build_Name_Option'Length + 2 .. Arg'Last));
 
+            elsif Has_Prefix (Install_Name_Option) then
+               Free (Install_Name);
+               Install_Name := new String'
+                 (Arg (Install_Name_Option'Length + 2 .. Arg'Last));
+               Install_Name_Default := False;
+
             elsif Has_Prefix (Uninstall_Option) then
                Uninstall_Mode := True;
 
@@ -385,10 +393,12 @@ procedure Gprinstall.Main is
          begin
             Canonical_Case_File_Name (File_Name);
 
-            if File_Name'Length > Project_File_Extension'Length
-              and then File_Name
-                (File_Name'Last - Project_File_Extension'Length + 1
-                 .. File_Name'Last) = Project_File_Extension
+            if Uninstall_Mode
+              or else
+                (File_Name'Length > Project_File_Extension'Length
+                 and then File_Name
+                   (File_Name'Last - Project_File_Extension'Length + 1
+                    .. File_Name'Last) = Project_File_Extension)
             then
                if Project_File_Name /= null then
                   Fail_Program
@@ -586,6 +596,8 @@ procedure Gprinstall.Main is
 
          Write_Line ("  --prefix=<dir>");
          Write_Line ("           Install destination directory");
+         Write_Line ("  --install-name=<name>");
+         Write_Line ("           The name of the installation");
          Write_Line ("  --sources-subdir=<dir>");
          Write_Line ("           The sources directory/sub-directory");
          Write_Line ("  --lib-subdir=<dir>");
@@ -788,7 +800,12 @@ begin
       end if;
 
    else
-      Uninstall.Process (Base_Name (Project_File_Name.all, ".gpr"));
+      if Install_Name = null then
+         Install_Name := new String'
+           (Ada.Directories.Base_Name (Project_File_Name.all));
+      end if;
+
+      Uninstall.Process (Install_Name.all);
    end if;
 
    Namet.Finalize;

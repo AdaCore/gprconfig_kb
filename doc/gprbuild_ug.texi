@@ -3159,8 +3159,26 @@ This options is only used in distributed mode.
 @c ---------------------------------------------
 
 @noindent
-The GPRinstall tool installs projects. The parts of a project that can
-be installed are:
+The GPRinstall tool installs projects. With GPRinstall it is not
+needed to create complex @code{makefiles} to install the components. This
+also removes the need for OS specific commands (like @code{cp},
+@code{mkdir} on UNIXs) and so makes the installation process easier on
+all supported platforms.
+
+After building a project it is often needed to install the project to
+make it accessible to other projects. GPRinstall installs only what is
+necessary and nothing more. That is for a library projects the library
+itself is installed with the corresponding ALI files for Ada
+sources. But the object code is not installed as not needed. Also if
+the Ada specs are installed the bodies are not as not needed in most
+cases. The cases where the bodies are required (if the spec has inline
+routines or is a generic) are properly detected by GPRinstall.
+
+Furthermore, we can note that GPRinstall handles the pre-processed
+sources. So it installs the correct variant of the source after resolving
+the pre-processing directives.
+
+The parts of a project that can be installed are:
 
 @itemize @bullet
 
@@ -3176,9 +3194,9 @@ be installed are:
 
 Moreover, GPRinstall will create, when needed, a project to use the
 installed sources, objects or library. By default, this project file
-is installed in the gprbuild's default path location so that it can be
-"with"ed easily. The installation process keeps record of every file
-installed for easy and safe removal.
+is installed in the GPRbuild's default path location so that it can be
+"with"ed easily without further configuration. The installation
+process keeps record of every file installed for easy and safe removal.
 
 At a minimum, to invoke GPRinstall you must specify a main project file
 in a command such as @code{gprinstall proj.gpr} or
@@ -3190,6 +3208,44 @@ Examples of invocation of GPRinstall:
    gprinstall prj1.gpr
    gprinstall -r --prefix=/my/root/install -P prj2.gpr
 @end smallexample
+
+GPRinstall will record the installation under the @emph{install name}
+which is by default the name of the project without the
+extension. That is above the project install names are @code{prj1} and
+@code{prj2}.
+
+The installation name can be specified with the option
+@code{--install-name}. This makes it possible to record the
+installation of multiple projects under the same name. This is handy
+if an application comes with a library and a set of tools built with
+multiple projects. In this case we may want to record the installation
+under the same name.
+
+Examples of installation under the same name:
+
+@smallexample
+   gprinstall --install-name=myapp lib.gpr
+   gprinstall --install-name=myapp --mode=usage tools/tools.gpr
+@end smallexample
+
+Note the @code{--mode=usage} option above. This tells GPRinstall to
+only install the executable built as part of the project.
+
+It is possible to uninstall a project by using the @code{--uninstall}
+option. In this case we just pass the install name to GPRinstall:
+
+@smallexample
+   gprinstall --uninstall prj1
+   gprinstall --uninstall prj2
+@end smallexample
+
+And both @code{lib.gpr} and @code{tools.gpr} above will be uninstalled with:
+
+@smallexample
+   gprinstall --uninstall myapp
+@end smallexample
+
+Note that GPRinstall does not deal with dependencies between projects.
 
 @menu
 * Switches for GPRinstall::
@@ -3308,10 +3364,11 @@ expected that the sub-dir option value here is the one used with gprbuild.
   project directly or indirectly. Without this switch, GPRinstall only
   installs the main project.
 
-@item @option{--uninstall} : Uninstall mode, files installed for the
-given project will be removed. A check is done that no manual changes
-have been applied to the file before removing. Deletion of the files
-can be forced in this case by using the @option{-f} option.
+@item @option{--uninstall} : Uninstall mode, files installed for a
+given project or install name will be removed. A check is done that
+no manual changes have been applied to the files before removing.
+Deletion of the files can be forced in this case by using the
+@option{-f} option.
 
 @item @option{-v}  : Verbose mode
 

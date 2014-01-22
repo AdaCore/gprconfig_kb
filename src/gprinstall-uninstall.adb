@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -39,7 +39,7 @@ package body Gprinstall.Uninstall is
    -- Process --
    -------------
 
-   procedure Process (Project_Name : String) is
+   procedure Process (Install_Name : String) is
 
       procedure Delete_File (Position : File_Set.Cursor);
       --  Delete file pointed to by Position, do nothing if the file is not
@@ -142,7 +142,7 @@ package body Gprinstall.Uninstall is
       end Project_Dir;
 
       Dir  : constant String := Project_Dir & "manifests";
-      Name : constant String := Dir & DS & Project_Name;
+      Name : constant String := Dir & DS & Install_Name;
 
       Man     : File_Type;
       Buffer  : String (1 .. 4096);
@@ -171,7 +171,7 @@ package body Gprinstall.Uninstall is
       end if;
 
       if not Opt.Quiet_Output then
-         Write_Line ("Uninstall project " & Project_Name);
+         Write_Line ("Uninstall project " & Install_Name);
       end if;
 
       --  Check each file to be deleted
@@ -181,7 +181,11 @@ package body Gprinstall.Uninstall is
       while not End_Of_File (Man) loop
          Get_Line (Man, Buffer, Last);
 
-         if Last /= 0 then
+         --  Skip first line if it is the original project's signature
+
+         if Last > MD5_Range'Last
+           and then Buffer (1 .. 2) /= Sig_Line
+         then
             declare
                F_Name : constant String := Buffer (Name_Range'First .. Last);
             begin
