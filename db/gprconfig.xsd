@@ -80,6 +80,7 @@
             <xsd:element name="directory" type="Tdirectory"
                          maxOccurs="unbounded"/>
          </xsd:choice>
+         <xsd:element name="nogrep" type="Tgrep" minOccurs="0" />
          <xsd:element name="grep" type="Tgrep" minOccurs="0" />
          <xsd:element name="must_match" type="xsd:string" minOccurs="0" />
       </xsd:sequence>
