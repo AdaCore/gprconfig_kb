@@ -7,7 +7,7 @@
 @c                                                                            o
 @c                  G P R B U I L D   U S E R ' S   G U I D E                 o
 @c                                                                            o
-@c                      Copyright (C) 2007-2013, AdaCore                      o
+@c                      Copyright (C) 2007-2014, AdaCore                      o
 @c                                                                            o
 @c oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
@@ -3159,7 +3159,27 @@ This options is only used in distributed mode.
 @c ---------------------------------------------
 
 @noindent
-The GPRinstall tool installs a project for use by other projects.
+The GPRinstall tool installs projects. The parts of a project that can
+be installed are:
+
+@itemize @bullet
+
+@item sources of a project
+
+@item a static or shared library built from a library project
+
+@item objects built from a standard project
+
+@item executables built from a standard project
+
+@end itemize
+
+Moreover, GPRinstall will create, when needed, a project to use the
+installed sources, objects or library. By default, this project file
+is installed in the gprbuild's default path location so that it can be
+"with"ed easily. The installation process keeps record of every file
+installed for easy and safe removal.
+
 At a minimum, to invoke GPRinstall you must specify a main project file
 in a command such as @code{gprinstall proj.gpr} or
 @code{gprinstall -P proj.gpr}.
@@ -3225,27 +3245,34 @@ executable) are installed together with the sources to use them.
 
 @item usage
 
-For this mode only the binaries are installed.
+For this mode only the binaries are installed and no project are
+created.
 
 @end table
 
 @item @option{-p, --create-missing-dirs} : Create missing directories
 in the installation location.
 
-@item @option{-P<proj>} : Use Project File @emph{<proj>}.
+@item @option{-P<proj>} : Specify the project file to install.
 
 @item @option{--prefix=path} : Specify the location of the
 installation. If not specified, the default location for the current
 compiler is used. That is, @code{path} corresponds to parent directory
 where @code{gprinstall} is found.
 
+@item @option{--install-name=name} : Specify the name to use for
+recording the installation. The default is the project name without
+the extension.
+
 @item @option{--sources-subdir=path} : Specify the value for the
 sources installation directory if an absolute path. Otherwise it is
-appended to the prefix above.
+appended to the prefix above. The default is
+@code{include/<projet_name>[.<build-name>]}
 
 @item @option{--lib-subdir=path} : Specify the value for the
 library and object installation directory if an absolute
-path. Otherwise it is appended to the prefix above.
+path. Otherwise it is appended to the prefix above. The default is
+@code{lib/<projet_name>[.<build-name>]}
 
 @item @option{--link-lib-subdir=path} : Specify the value for the
 library symlink directory if an absolute path. Otherwise it is
@@ -3253,11 +3280,11 @@ appended to the prefix above.
 
 @item @option{---exec-subdir=path} : Specify the value for the
 executables installation directory if an absolute path. Otherwise it is
-appended to the prefix above.
+appended to the prefix above. The default is @code{bin}.
 
 @item @option{--project-subdir=path} : Specify the value for the
 project installation directory if an absolute path. Otherwise it is
-appended to the prefix above.
+appended to the prefix above. The default is @code{share/gpr}.
 
 @item @option{--target=targetname} : Specify a target for cross platforms.
 
