@@ -2099,7 +2099,7 @@ begin
 
    Do_Compute_Builder_Switches
      (Project_Tree     => Project_Tree,
-      Root_Environment => Root_Environment,
+      Env              => Root_Environment,
       Main_Project     => Main_Project);
 
    Queue.Initialize (Opt.One_Compilation_Per_Obj_Dir);
