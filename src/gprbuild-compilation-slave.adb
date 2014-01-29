@@ -277,9 +277,15 @@ package body Gprbuild.Compilation.Slave is
          Cmd        : constant Command := Get_Command (S.Channel);
          Parameters : constant Argument_List_Access := Args (Cmd);
       begin
-         if Kind (Cmd) = OK and then Parameters'Length = 2 then
+         if Kind (Cmd) = OK and then Parameters'Length = 3 then
             S.Max_Processes := Natural'Value (Parameters (1).all);
             S.Root_Dir := To_Unbounded_String (Parameters (2).all);
+
+            if not Boolean'Value (Parameters (3).all) then
+               Write_Line
+                 ("warning: non synchronized clock detected for "
+                  & To_String (S.Data.Host));
+            end if;
 
          elsif Kind (Cmd) = KO then
             Write_Line

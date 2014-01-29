@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2007-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2007-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,6 +29,7 @@ with ALI;
 with Namet;    use Namet;
 with Prj;      use Prj;
 with Prj.Tree; use Prj.Tree;
+with Types;
 
 package Gpr_Util is
 
@@ -289,5 +290,14 @@ package Gpr_Util is
    --  the project variables. We want the same slave environment for identical
    --  build. Data is a string that must be taken into account in the returned
    --  value.
+
+   function UTC_Time return Types.Time_Stamp_Type;
+   --  Returns the UTC time
+
+   function Check_Diff
+     (Ts1, Ts2  : Types.Time_Stamp_Type;
+      Max_Drift : Duration := 5.0) return Boolean;
+   --  Check two time stamps, returns True if both time are in a range of
+   --  Max_Drift seconds maximum.
 
 end Gpr_Util;

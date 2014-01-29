@@ -41,6 +41,7 @@ with Prj.Part;                      use Prj.Part;
 with Prj.Proc;                      use Prj.Proc;
 with Prj.Tree;                      use Prj.Tree;
 with Snames;                        use Snames;
+with Types;
 
 with GNAT.Command_Line;             use GNAT;
 with GNAT.CRC32;
@@ -49,6 +50,7 @@ with GNAT.Sockets;                  use GNAT.Sockets;
 with GNAT.String_Split;             use GNAT.String_Split;
 with GNAT.Strings;
 
+with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Process;  use Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
@@ -1205,7 +1207,10 @@ procedure Gprslave is
    ---------------------
 
    procedure Wait_For_Master is
-      Builder : Build_Master;
+      use Types;
+
+      Builder      : Build_Master;
+      Clock_Status : Boolean;
    begin
       --  Wait for a connection
 
@@ -1225,10 +1230,15 @@ procedure Gprslave is
 
       --  Initial handshake
 
+      declare
+         Master_Timestamp : Time_Stamp_Type;
       begin
          Get_Context
            (Builder.Channel, Builder.Target,
-            Builder.Project_Name, Builder.Build_Env, Builder.Sync);
+            Builder.Project_Name, Builder.Build_Env, Builder.Sync,
+            Master_Timestamp);
+
+         Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
       exception
          when E : others =>
             if Verbose then
@@ -1305,7 +1315,8 @@ procedure Gprslave is
 
       Send_Slave_Config
         (Builder.Channel, Max_Processes,
-         Compose (Root_Directory.all, To_String (Builder.Build_Env)));
+         Compose (Root_Directory.all, To_String (Builder.Build_Env)),
+         Clock_Status);
 
       --  Register the new builder
 

@@ -21,14 +21,16 @@
 
 with Ada.Containers.Indefinite_Ordered_Sets;
 
-with Ada.Command_Line;      use Ada.Command_Line;
-with Ada.Directories;       use Ada.Directories;
-with Ada.Streams.Stream_IO; use Ada.Streams;
-with Ada.Strings.Fixed;     use Ada.Strings.Fixed;
-with Ada.Strings.Maps;      use Ada.Strings.Maps;
+with Ada.Calendar.Time_Zones; use Ada.Calendar; use Ada.Calendar.Time_Zones;
+with Ada.Command_Line;        use Ada.Command_Line;
+with Ada.Directories;         use Ada.Directories;
+with Ada.Streams.Stream_IO;   use Ada.Streams;
+with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
+with Ada.Strings.Maps;        use Ada.Strings.Maps;
 with Interfaces.C.Strings;
 with System;
 
+with GNAT.Calendar.Time_IO;     use GNAT.Calendar.Time_IO;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 with GNAT.Sockets;
@@ -2274,5 +2276,40 @@ package body Gpr_Util is
 
       return N * "../" & Ensure_Directory (P (Pi + 1 .. P'Last));
    end Relative_Path;
+
+   --------------
+   -- UTC_Time --
+   --------------
+
+   function UTC_Time return Time_Stamp_Type is
+      Now : constant Time := Clock - Duration (UTC_Time_Offset);
+   begin
+      return Time_Stamp_Type (Image (Now, "%Y%m%d%H%M%S"));
+   end UTC_Time;
+
+   ----------------
+   -- Check_Diff --
+   ----------------
+
+   function Check_Diff
+     (Ts1, Ts2 : Time_Stamp_Type; Max_Drift : Duration := 5.0) return Boolean
+   is
+      use GNAT.Calendar;
+
+      function Get (T : String) return Time is
+        (Time_Of
+           (Year   => Year_Number'Value   (T (T'First .. T'First + 3)),
+            Month  => Month_Number'Value  (T (T'First + 4 .. T'First + 5)),
+            Day    => Day_Number'Value    (T (T'First + 6 .. T'First + 7)),
+            Hour   => Hour_Number'Value   (T (T'First + 8 .. T'First + 9)),
+            Minute => Minute_Number'Value (T (T'First + 10 .. T'First + 11)),
+            Second => Second_Number'Value (T (T'First + 12 .. T'First + 13))));
+
+      T1 : constant Time := Get (String (Ts1));
+      T2 : constant Time := Get (String (Ts2));
+
+   begin
+      return abs (T1 - T2) <= Max_Drift;
+   end Check_Diff;
 
 end Gpr_Util;

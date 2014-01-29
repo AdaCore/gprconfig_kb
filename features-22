@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N121-005 Check for clock drift in distributed mode (2014-01-29)
+
+  A clock check is done between the slaves and the build master before
+  starting a distributed compilation. A warning is issued if a clock drift
+  is detected. It is important to have the clock properly synchronized to
+  avoid unneeded recompilation.
+
 NF-22-N108-032 Add support for grouping installs with gprinstall (2014-01-22)
 
   A new option named --install-name can be used to group installations

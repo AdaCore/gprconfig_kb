@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -181,13 +181,15 @@ package Gprbuild.Compilation.Protocol is
       Target       : out Unbounded_String;
       Project_Name : out Unbounded_String;
       Build_Env    : out Unbounded_String;
-      Sync         : out Sync_Kind);
+      Sync         : out Sync_Kind;
+      Timestamp    : out Time_Stamp_Type);
    --  Wait for an initial context from a build master
 
    procedure Send_Slave_Config
      (Channel        : Communication_Channel;
       Max_Process    : Positive;
-      Root_Directory : String);
+      Root_Directory : String;
+      Clock_Status   : Boolean);
    --  Send the slave configuration to the build master
 
    procedure Send_Ack
