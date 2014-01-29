@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2007-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2007-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -46,8 +46,8 @@ with Scans;
 with Scng;
 with Sinput.C;
 with Sinput.P;
-with Styleg;
 with Snames;   use Snames;
+with Styleg;
 with Table;
 with Tempdir;
 with Types;    use Types;
@@ -682,8 +682,8 @@ package body Gpr_Util is
                Read (Dir, Str, Last);
                exit when Last = 0;
 
-               if Last > Project_File_Extension'Length and then
-                 Is_Regular_File (Str (1 .. Last))
+               if Last > Project_File_Extension'Length
+                 and then Is_Regular_File (Str (1 .. Last))
                then
                   Canonical_Case_File_Name (Str (1 .. Last));
 
@@ -1006,9 +1006,10 @@ package body Gpr_Util is
             --  First line must start with name of object file, followed by
             --  colon.
 
-            if Finish = 0 or else
-              (C_Object_Name /= null
-               and then Name_Buffer (Start .. Last_Obj) /= C_Object_Name.all)
+            if Finish = 0
+              or else
+                (C_Object_Name /= null
+                 and then Name_Buffer (Start .. Last_Obj) /= C_Object_Name.all)
             then
                if Verbose_Mode then
                   Write_Str  ("      -> dependency file ");
@@ -1175,8 +1176,8 @@ package body Gpr_Util is
                               Source_2 := Source_Paths_Htable.Get
                                 (Tree.Source_Paths_HT, Name_Find);
 
-                              if Source_2 /= No_Source and then
-                                Source_2.Replaced_By /= No_Source
+                              if Source_2 /= No_Source
+                                and then Source_2.Replaced_By /= No_Source
                               then
                                  if Verbose_Mode then
                                     Write_Str  ("      -> source ");
@@ -1967,8 +1968,8 @@ package body Gpr_Util is
 
       --  Never attempt to compile header files
 
-      if Source.Language.Config.Kind = File_Based and then
-         Source.Kind = Spec
+      if Source.Language.Config.Kind = File_Based
+        and then Source.Kind = Spec
       then
          Must_Compile := False;
          return;
@@ -2054,8 +2055,8 @@ package body Gpr_Util is
          --  If the object file has been created before the last modification
          --  of the source, the source need to be recompiled.
 
-         if (not Opt.Minimal_Recompilation) and then
-           Source.Object_TS < Source.Source_TS
+         if (not Opt.Minimal_Recompilation)
+           and then Source.Object_TS < Source.Source_TS
          then
             if Verbose_Mode then
                Write_Str  ("      -> object file ");
@@ -2101,11 +2102,12 @@ package body Gpr_Util is
          --  If the ALI file has been created after the object file, we need
          --  to recompile.
 
-         if Object_Check and then
-           (Source.Language.Config.Dependency_Kind = ALI_File or else
-             Source.Language.Config.Dependency_Kind = ALI_Closure)
-             and then
-            Source.Object_TS < Stamp
+         if Object_Check
+           and then
+             (Source.Language.Config.Dependency_Kind = ALI_File
+              or else Source.Language.Config.Dependency_Kind = ALI_Closure)
+           and then
+             Source.Object_TS < Stamp
          then
             if Verbose_Mode then
                Write_Str  ("      -> ALI file ");

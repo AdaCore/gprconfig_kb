@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -20,9 +20,9 @@
 ------------------------------------------------------------------------------
 
 with Ada.Calendar;                      use Ada.Calendar;
+with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;            use Ada;
-with Ada.Containers.Indefinite_Vectors;
 with Ada.Directories;                   use Ada.Directories;
 with Ada.Exceptions;                    use Ada.Exceptions;
 with Ada.Strings.Fixed;                 use Ada.Strings.Fixed;
