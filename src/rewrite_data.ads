@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -23,9 +23,7 @@ with Ada.Streams; use Ada.Streams;
 
 package Rewrite_Data is
 
-   type Buffer
-     (Size, Size_Pattern, Size_Value : Stream_Element_Offset) is
-   limited private;
+   type Buffer (<>) is limited private;
    type Buffer_Ref is access all Buffer;
 
    function Create
