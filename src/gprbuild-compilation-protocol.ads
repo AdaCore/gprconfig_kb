@@ -182,7 +182,8 @@ package Gprbuild.Compilation.Protocol is
       Project_Name : out Unbounded_String;
       Build_Env    : out Unbounded_String;
       Sync         : out Sync_Kind;
-      Timestamp    : out Time_Stamp_Type);
+      Timestamp    : out Time_Stamp_Type;
+      Version      : out Unbounded_String);
    --  Wait for an initial context from a build master
 
    procedure Send_Slave_Config

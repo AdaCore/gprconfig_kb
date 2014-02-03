@@ -289,7 +289,7 @@ package body Gprbuild.Compilation.Slave is
 
          elsif Kind (Cmd) = KO then
             Write_Line
-              ("Slave OS is not compatible " & To_String (S.Data.Host));
+              ("build slave is not compatible : " & To_String (S.Data.Host));
             OS_Exit (1);
 
          else

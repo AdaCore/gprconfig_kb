@@ -34,6 +34,7 @@ with Interfaces;
 with System.Multiprocessors;                use System;
 
 with Csets;                         use Csets;
+with Gnatvsn;                       use Gnatvsn;
 with Namet;                         use Namet;
 with Prj;                           use Prj;
 with Prj.Env;                       use Prj.Env;
@@ -1232,18 +1233,33 @@ procedure Gprslave is
 
       declare
          Master_Timestamp : Time_Stamp_Type;
+         Version          : Unbounded_String;
       begin
          Get_Context
            (Builder.Channel, Builder.Target,
             Builder.Project_Name, Builder.Build_Env, Builder.Sync,
-            Master_Timestamp);
+            Master_Timestamp, Version);
 
          Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
+
+         if To_String (Version) /= Gnat_Static_Version_String then
+            if Verbose then
+               Put_Line
+                 ("Reject non compatible build for "
+                  & To_String (Builder.Project_Name));
+            end if;
+            Send_Ko (Builder.Channel);
+            return;
+         end if;
+
       exception
          when E : others =>
             if Verbose then
                Put_Line (Exception_Information (E));
             end if;
+            --  Do not try to go further
+            Send_Ko (Builder.Channel);
+            return;
       end;
 
       Get_Targets_Set

@@ -26,6 +26,7 @@ with Ada.Strings.Maps.Constants; use Ada.Strings.Maps;
 
 with GNAT.String_Split;     use GNAT.String_Split;
 
+with Gnatvsn;      use Gnatvsn;
 with Gpr_Util;     use Gpr_Util;
 with Rewrite_Data;
 
@@ -285,18 +286,20 @@ package body Gprbuild.Compilation.Protocol is
       Project_Name : out Unbounded_String;
       Build_Env    : out Unbounded_String;
       Sync         : out Sync_Kind;
-      Timestamp    : out Time_Stamp_Type)
+      Timestamp    : out Time_Stamp_Type;
+      Version      : out Unbounded_String)
    is
       Line : constant Command := Get_Command (Channel);
    begin
       if Line.Cmd = CX
-        and then Line.Args'Length = 5
+        and then Line.Args'Length = 6
       then
          Target       := To_Unbounded_String (Line.Args (1).all);
          Project_Name := To_Unbounded_String (Line.Args (2).all);
          Build_Env    := To_Unbounded_String (Line.Args (3).all);
          Sync         := Sync_Kind'Value (Line.Args (4).all);
          Timestamp    := Time_Stamp_Type (Line.Args (5).all);
+         Version      := To_Unbounded_String (Line.Args (6).all);
       else
          raise Wrong_Command
            with "Expected CX found " & Command_Kind'Image (Line.Cmd);
@@ -388,7 +391,8 @@ package body Gprbuild.Compilation.Protocol is
          Command_Kind'Image (CX) & Target & Args_Sep & Project_Name
          & Args_Sep & Build_Env
          & Args_Sep & Sync_Kind'Image (Sync)
-         & Args_Sep & String (UTC_Time));
+         & Args_Sep & String (UTC_Time)
+         & Args_Sep & Gnat_Static_Version_String);
    end Send_Context;
 
    -----------------------------

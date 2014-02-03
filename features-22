@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N130-015 Check distributed build consistency (2014-02-03)
+
+  A check is now done to ensure that build slaves, used on a distributed
+  compilation farm, are all of the same version as the build master.
+
 NF-22-N121-005 Check for clock drift in distributed mode (2014-01-29)
 
   A clock check is done between the slaves and the build master before
