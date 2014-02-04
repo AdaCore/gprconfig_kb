@@ -24,11 +24,11 @@ with Ada.Streams.Stream_IO;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps;
 
+with GNAT.Rewrite_Data;
 with GNAT.String_Split;     use GNAT.String_Split;
 
 with Gnatvsn;      use Gnatvsn;
 with Gpr_Util;     use Gpr_Util;
-with Rewrite_Data;
 
 package body Gprbuild.Compilation.Protocol is
 
