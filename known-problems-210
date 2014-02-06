@@ -11,6 +11,17 @@ wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
 the status line. This can be used to determine if a given wavefront has the fix
 identified in the entry.
 
+KP-210-N206-041 wrong permissions set by gprinstall for binaries
+
+  Problem:    On UNIX, a binary installed with gprinstall will have the
+              executable permission set only for the owner. This will prevent
+              others to execute this binary. It is a problem when installing
+              an application in a shared computer for example.
+
+  Status:     This was fixed in 2.2 on 2014-02-06
+
+  Workaround: change the permissions manually using chmod
+
 KP-210-N120-075 gprclean -r and cycles in externally built projects
 
   Problem:    When there are several externally built projects in the project

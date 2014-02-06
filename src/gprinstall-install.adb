@@ -721,7 +721,8 @@ package body Gprinstall.Install is
                end;
 
                if Executable then
-                  Set_Executable (Dest_Filename);
+                  Set_Executable
+                    (Dest_Filename, Mode => S_Owner + S_Group + S_Others);
                end if;
 
                --  Add file to manifest
