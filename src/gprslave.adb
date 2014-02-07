@@ -891,17 +891,19 @@ procedure Gprslave is
             --  process into the to directory. The output file will
             --  be created there and will be reported to the master.
 
-            if Dir /= "" and then not Is_Absolute_Path (Dir) then
-               if not Is_Directory (Dir) then
+            if Dir /= "" then
+               if not Is_Absolute_Path (Dir)
+                 and then not Is_Directory (Dir)
+               then
                   Create_Directory (Dir);
                end if;
-            end if;
 
-            if Debug then
-               Put_Line ("# move to directory " & Dir);
-            end if;
+               if Debug then
+                  Put_Line ("# move to directory " & Dir);
+               end if;
 
-            Set_Directory (Dir);
+               Set_Directory (Dir);
+            end if;
 
             Create (List, Args (Job.Cmd)(5).all, String'(1 => Opts_Sep));
 
