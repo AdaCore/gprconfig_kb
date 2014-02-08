@@ -11,6 +11,9 @@ specified (in ISO format YYYY-MM-DD) also contains the fix. This can be used
 to determine if a given release or wavefront has the fix identified in the
 entry.
 
+Note that older releases might or might not be affected by the problems listed
+in this document.
+
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
