@@ -1,17 +1,20 @@
-========================================
-Known problems in GPRBUILD version 2.1.0
-========================================
+======================================
+Known problems in GPRBUILD version 2.1
+======================================
 
 Copyright (C) 2013-2014, AdaCore
 
-The following is a listing of known problems in release 2.1.0. Except where
-specifically noted, all these problems have been corrected in the development
-tree of the 2.2 technology. This means they are corrected in any 2.2.0w
-wavefront issued subsequent to the date specified (in ISO format YYYY-MM-DD) in
-the status line. This can be used to determine if a given wavefront has the fix
-identified in the entry.
+The following is a listing of known problems in releases 2.1.1 and 2.1.2.
+Each entry contains a status line stating when the problem was fixed, and on
+which release(s). In addition, any wavefront issued subsequent to the date
+specified (in ISO format YYYY-MM-DD) also contains the fix. This can be used
+to determine if a given release or wavefront has the fix identified in the
+entry.
 
-KP-210-N207-022 Fail to compile sources in distributed mode
+Known problems fixed in 2.2.1 and above
+---------------------------------------
+
+KP-21-N207-022 Fail to compile sources in distributed mode
 
   Problem:    Top level sources (sources found at the project's root
               directory) will fail to compile on remote compilation slaves.
@@ -20,7 +23,7 @@ KP-210-N207-022 Fail to compile sources in distributed mode
 
   Workaround: do not use the distributed compilation mode
 
-KP-210-N206-041 wrong permissions set by gprinstall for binaries
+KP-21-N206-041 wrong permissions set by gprinstall for binaries
 
   Problem:    On UNIX, a binary installed with gprinstall will have the
               executable permission set only for the owner. This will prevent
@@ -31,7 +34,7 @@ KP-210-N206-041 wrong permissions set by gprinstall for binaries
 
   Workaround: change the permissions manually using chmod
 
-KP-210-N120-075 gprclean -r and cycles in externally built projects
+KP-21-N120-075 gprclean -r and cycles in externally built projects
 
   Problem:    When there are several externally built projects in the project
               tree and some of them form a cycle, through limited withs,
@@ -42,7 +45,7 @@ KP-210-N120-075 gprclean -r and cycles in externally built projects
   Workaround: Avoid circularities in externally built projects or invoke
               gprclean without switch -r.
 
-KP-210-N103-018 Failure to link on target powerpc-xcoff-lynxos178
+KP-21-N103-018 Failure to link on target powerpc-xcoff-lynxos178
 
   Problem:    For target powerpc-xcoff-lynxos178, when there are two many
               object files to be linked, because a response file is not used,
@@ -54,7 +57,7 @@ KP-210-N103-018 Failure to link on target powerpc-xcoff-lynxos178
                 for Response_File_Format use "GCC_GNU";
                 for Max_Command_Line_Length use "8192";
 
-KP-210-MB30-011 Garbled output from parallel invocations of gnatbind
+KP-21-MB30-011 Garbled output from parallel invocations of gnatbind
 
   Problem:    When gprbuild is invoked with -jnn and there are several mains,
               several invocations of gprbind may be running in parallel and
@@ -64,7 +67,7 @@ KP-210-MB30-011 Garbled output from parallel invocations of gnatbind
 
   Workaround: Ignore the problem or invoke gprbuild without -jnn.
 
-KP-210-MB26-007 Dependency builder must be invoked from the object directory
+KP-21-MB26-007 Dependency builder must be invoked from the object directory
 
   Problem:    When gprbuild performs parallel compilations and for some
               language a dependency builder is invoked to build a dependency
@@ -76,28 +79,7 @@ KP-210-MB26-007 Dependency builder must be invoked from the object directory
 
   Workaround: Use absolute paths for the arguments of a dependency builder.
 
-KP-210-MB06-054 gprinstall and shared library with version on windows
-
-  Problem:    On Windows, gprinstall fails while installing a shared library
-              project when the attribute Library_Version is defined.
-
-  Status:     This was fixed in 2.2 on 2013-11-06
-              This was fixed in 2.1.1 on 2013-11-27
-
-  Workaround: Manually install the library.
-
-KP-210-MB06-015 gprinstall and standalone libraries
-
-  Problem:    gprinstall does not generate a usable project file for
-              standalone libraries.
-
-  Status:     This was fixed in 2.2 on 2013-11-06
-              This was fixed in 2.1.1 on 2013-11-27
-
-  Workaround: Manually adds the Library_Interface and Library_Standalone
-              attributes.
-
-KP-210-MB05-034 gprinstall fails to install projects built with sub-dirs
+KP-21-MB05-034 gprinstall fails to install projects built with sub-dirs
 
   Problem:    gprinstall is not able to install a code which has been
               built with gprbuild's --subdirs option.
@@ -106,17 +88,7 @@ KP-210-MB05-034 gprinstall fails to install projects built with sub-dirs
 
   Workaround: Install the code manually.
 
-KP-210-MB05-020 gprconfig does not detect non GNAT gcc C and g++ compilers
-
-  Problem:    gprconfig does not find all non GNAT gcc C and g++ compilers.
-
-  Status:     This was fixed in 2.2 on 2013-11-07
-              This was fixed in 2.1.1 on 2013-12-10
-
-  Workaround: Manually edit a configuration project file and use it with
-              gprbuild.
-
-KP-210-MA31-004 Aggregated libraries and externally built
+KP-21-MA31-004 Aggregated libraries and externally built
 
   Problem:    gprbuild was not properly dealing with externally built
               projects on the dependencies. First it was trying to add the
@@ -128,7 +100,7 @@ KP-210-MA31-004 Aggregated libraries and externally built
   Workaround: Remove the externally built projects from the dependencies if
               possible and pass the corresponding library to the linker.
 
-KP-210-MA30-041 Aggregated libraries and gprinstall
+KP-21-MA30-041 Aggregated libraries and gprinstall
 
   Problem:    gprinstall was not properly handling aggregate libraries. The
               installation was failing and/or the generated project was not
@@ -137,3 +109,40 @@ KP-210-MA30-041 Aggregated libraries and gprinstall
   Status:     This was fixed in 2.2 on 2013-11-02
 
   Workaround: Install the software using a script.
+
+Known problems fixed in 2.1.2 and above
+---------------------------------------
+
+Known problems fixed in 2.1.1 and above
+---------------------------------------
+
+KP-21-MB06-054 gprinstall and shared library with version on windows
+
+  Problem:    On Windows, gprinstall fails while installing a shared library
+              project when the attribute Library_Version is defined.
+
+  Status:     This was fixed in 2.2 on 2013-11-06
+              This was fixed in 2.1.1 on 2013-11-27
+
+  Workaround: Manually install the library.
+
+KP-21-MB06-015 gprinstall and standalone libraries
+
+  Problem:    gprinstall does not generate a usable project file for
+              standalone libraries.
+
+  Status:     This was fixed in 2.2 on 2013-11-06
+              This was fixed in 2.1.1 on 2013-11-27
+
+  Workaround: Manually adds the Library_Interface and Library_Standalone
+              attributes.
+
+KP-21-MB05-020 gprconfig does not detect non GNAT gcc C and g++ compilers
+
+  Problem:    gprconfig does not find all non GNAT gcc C and g++ compilers.
+
+  Status:     This was fixed in 2.2 on 2013-11-07
+              This was fixed in 2.1.1 on 2013-12-10
+
+  Workaround: Manually edit a configuration project file and use it with
+              gprbuild.
