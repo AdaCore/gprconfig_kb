@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N206-046 No usage for gpr tools incorrectly invoked (2014-02-10)
+
+  When a gpr tool (gprbuild, gprconfig, gprclean or gprinstall) is incorrectly
+  invoked, with at least one argument, the usage will no longer be displayed.
+  Instead this line will be displayed:
+     type `gprxxx --help` for more information.
+
 NF-22-N130-015 Check distributed build consistency (2014-02-03)
 
   A check is now done to ensure that build slaves, used on a distributed
