@@ -24,6 +24,7 @@ with Ada.Directories;
 with Ada.Exceptions;   use Ada.Exceptions;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
+with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
@@ -536,8 +537,7 @@ procedure Gprinstall.Main is
       --  If no project file was specified, look first for a default
 
       if Project_File_Name = null then
-         Copyright;
-         Usage;
+         Try_Help;
          Fail_Program (Project_Tree, "no project file specified");
       end if;
 

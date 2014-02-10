@@ -27,6 +27,7 @@ with System;
 with System.Case_Util;          use System.Case_Util;
 with System.Multiprocessors;    use System.Multiprocessors;
 
+with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with Atree;       use Atree;
@@ -1572,8 +1573,7 @@ procedure Gprbuild.Main is
       end if;
 
       if Project_File_Name = null then
-         Copyright;
-         Usage;
+         Try_Help;
          Fail_Program
            (Project_Tree,
             "no project file specified and no default project file");

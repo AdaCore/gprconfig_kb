@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -27,6 +27,7 @@ with Ada.Exceptions;             use Ada.Exceptions;
 
 with System.Case_Util;           use System.Case_Util;
 
+with GNAT.Command_Line;          use GNAT.Command_Line;
 with GNAT.Directory_Operations;  use GNAT.Directory_Operations;
 with GNAT.IO;                    use GNAT.IO;
 with GNAT.OS_Lib;                use GNAT.OS_Lib;
@@ -641,9 +642,10 @@ begin
    --  Check that a project file was specified and get the configuration
 
    if Project_File_Name = null then
-      Display_Copyright;
-      Usage;
-      return;
+      Try_Help;
+      Fail_Program
+        (Project_Tree,
+         "no project file specified and no default project file");
    end if;
 
    if Verbose_Mode then

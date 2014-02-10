@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -338,6 +338,8 @@ procedure GprConfig.Main is
       Put_Line ("            optional parameters");
    end Usage;
 
+   Saved_Verbosity : Verbosity := Default;
+
 begin
    Namet.Initialize;
 
@@ -401,6 +403,9 @@ begin
       end case;
    end loop;
 
+   Saved_Verbosity := Current_Verbosity;
+   Current_Verbosity := Default;
+
    if Load_Standard_Base then
       Parse_Knowledge_Base
         (Base, Default_Knowledge_Base_Directory, Validate => Opt_Validate);
@@ -462,6 +467,8 @@ begin
             exit;
       end case;
    end loop;
+
+   Current_Verbosity := Saved_Verbosity;
 
    Put_Verbose ("Only compilers matching target "
                 & To_String (Selected_Target)
@@ -635,6 +642,6 @@ exception
       null;
    when Invalid_Switch | Invalid_Parameter =>
       Put_Line ("Invalid command line switch: -" & Full_Switch);
-      Help (Base);
+      Try_Help;
       Ada.Command_Line.Set_Exit_Status (2);
 end GprConfig.Main;
