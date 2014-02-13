@@ -16,6 +16,20 @@
     <target>powerpc-elinos-linux</target>
   </targetset>
 
+
+<!-- Add wrs-linux ports *before* native ports to
+     be matched before native compiler -->
+  <targetset>
+    <target>e500v2-wrs-linux</target>
+    <target>e500v2-wrs-linux</target>
+  </targetset>
+
+  <targetset>
+    <target>ppc-wrs-linux</target>
+    <target>powerpc-wrs-linux</target>
+  </targetset>
+
+
 <!-- Native ports -->
 <!-- ************ -->
 

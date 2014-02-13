@@ -425,6 +425,49 @@
     </config>
   </configuration>
 
+   <configuration>
+     <targets>
+       <target name="^powerpc-wrs-linux$" />
+     </targets>
+     <config>
+   for Archive_Builder  use ("powerpc-wrs-linux-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("powerpc-wrs-linux-ranlib");
+   for Archive_Suffix   use ".a";
+     </config>
+   </configuration>
+
+   <configuration>
+     <targets>
+       <target name="^e500v2-wrs-linux$" />
+     </targets>
+     <config>
+   for Archive_Builder  use ("e500v2-wrs-linux-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("e500v2-wrs-linux-ranlib");
+   for Archive_Suffix   use ".a";
+     </config>
+   </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^.*-wrs-linux.*$" />
+    </targets>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <config>
+   package Linker is
+      for Driver use Compiler'Driver ("Ada");
+   end Linker;
+    </config>
+  </configuration>
+
+
+
+
+
+
   <!--  Systems with no support for shared libraries, but with static libraries -->
   <configuration>
     <targets>
@@ -781,6 +824,7 @@
   <configuration>
     <targets negate="true">
       <target name="^.*-wrs-vxworks.*$" />
+      <target name="^.*-wrs-linux.*$" />
     </targets>
     <compilers>
        <compiler language="C++" />
@@ -1132,6 +1176,7 @@
        <target name="^.*wrs-vxworks.*$" />
        <target name="^powerpc-xcoff-lynxos178$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-wrs-linux$" />
        <target name="^.*-pikeos$" />
        <target name="^.*mingw.*$" />
        <target name="^.*linux.*$" />
@@ -1174,6 +1219,7 @@
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-wrs-linux$" />
        <target name="^.*mingw.*$" />
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
@@ -1215,6 +1261,7 @@
        <target name="^arm-elf$" />
        <target name="^avr$" />
        <target name="^.*-elinos-linux$" />
+       <target name="^.*-wrs-linux$" />
        <target name="^.*mingw.*$" />
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
