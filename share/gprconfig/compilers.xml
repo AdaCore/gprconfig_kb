@@ -86,6 +86,53 @@
     <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
+  <!-- VxWorks 7 -->
+  <!-- We need to distinguish version to correctly report runtimes.  -->
+  <compiler_description>
+    <name>GCC-WRS7</name>
+    <executable prefix="1">cc(arm|pentium|sh|mips|ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
+    <target>
+      <external>cc${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>GCC-WRS7LEON</name>
+    <executable prefix="1">cc(sparc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-6.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>kernel</runtimes>
+    <target>leon-wrs-vxworks</target>
+  </compiler_description>
+
+  <!-- VxWorks 7 e500v2-->
+  <!-- We need to distinguish version to correctly report runtimes.  -->
+  <compiler_description>
+    <name>GCC-WRS7E500V2</name>
+    <executable prefix="1">cc(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
+    <target>e500v2-wrs-vxworks</target>
+  </compiler_description>
+
+
   <!-- VxWorks 6 Cert -->
   <!-- We need to distinguish version to correctly report runtimes.  -->
   <compiler_description>
@@ -348,6 +395,51 @@
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks-6[0-9.]*).*" group="1"></grep>
       <must_match>vxworks-6.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
+    <target>e500v2-wrs-vxworks</target>
+  </compiler_description>
+
+  <!-- G++ for VxWorks 7 -->
+  <compiler_description>
+    <name>G++-WRS7</name>
+    <executable prefix="1">c\+\+(arm|pentium|sh|mips|ppc|sparc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
+    <target>
+      <external>c++${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
+  <!-- G++ for VxWorks 7 Leon-->
+  <compiler_description>
+    <name>G++-WRS7LEON</name>
+    <executable prefix="1">c\+\+(sparc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel</runtimes>
+    <target>leon-wrs-vxworks</target>
+  </compiler_description>
+
+  <!-- G++ for VxWorks 7 e500v2-->
+  <compiler_description>
+    <name>G++-WRS7E500V2</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
     </version>
     <languages>C++</languages>
     <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
