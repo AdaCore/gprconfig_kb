@@ -31,10 +31,11 @@ NF-21-M719-029 --no-object-check may be used in package Builder (2013-07-21)
   The gprbuild switch --no-object-check is no longer restricted to the command
   line. It may be specified in package Builder of the main project file.
 
-NF-21-M714-001 Binding several executables simultaneously (2013-07-17)
+NF-21-M714-001 Bind and link several executables simultaneously (2013-07-17)
 
   gprbuild is now able to bind several executables simultaneously when
-  switch -jnnn is used, with nnn other than 1.
+  switch -jnnn is used, with nnn other than 1. It is also able to link
+  these executables simultaneously with the same switch -jnnn.
 
 NF-21-M529-021 Clean artifacts in object and exec directories (2013-06-18)
 
