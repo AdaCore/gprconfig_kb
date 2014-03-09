@@ -20,7 +20,6 @@
 ------------------------------------------------------------------------------
 
 with Ada.Calendar;                      use Ada.Calendar;
-with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;            use Ada;
 with Ada.Directories;                   use Ada.Directories;
@@ -38,6 +37,7 @@ with Snames; use Snames;
 with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with Gprbuild.Compilation.Result;
+with Gprbuild.Compilation.Sync;
 
 package body Gprbuild.Compilation.Slave is
 
@@ -52,7 +52,6 @@ package body Gprbuild.Compilation.Slave is
                      (Port => Port_Type'Last, others => <>);
 
    package Slaves_N is new Containers.Vectors (Positive, Slave_Data);
-   package Str_Vect is new Containers.Indefinite_Vectors (Positive, String);
 
    Slaves_Data : Slaves_N.Vector;
 
@@ -81,9 +80,6 @@ package body Gprbuild.Compilation.Slave is
       Project_Name : String) return Slave;
    --  Connect to the slave and return the corresponding object
 
-   procedure Wait_Rsync (N : Natural);
-   --  Wait for N rsync processes. If one of the is in error exit
-
    --  Ack transient signal stored into this variable
 
    protected Wait_Ack is
@@ -103,9 +99,6 @@ package body Gprbuild.Compilation.Slave is
 
    Compiler_Path : constant OS_Lib.String_Access :=
                      Locate_Exec_On_Path ("gnatls");
-
-   Rsync         : constant GNAT.OS_Lib.String_Access :=
-                     Locate_Exec_On_Path ("rsync");
 
    Project_Name : Unbounded_String;
    --  Current project name being compiled
@@ -128,11 +121,11 @@ package body Gprbuild.Compilation.Slave is
       function Find (Socket : Integer) return Slave;
       --  Find a slave given the socket number
 
-      function Find (Pid : Process_Id) return Slave;
-      --  Find a slave given the rsync process id
-
       function Get_Free return Slave;
       --  Returns a slave with free compilation slot
+
+      function Count return Natural;
+      --  Returns the number of registered slaves
 
       procedure Increment_Current (S : in out Slave);
       --  Increment the number of processes handled by slave
@@ -411,10 +404,6 @@ package body Gprbuild.Compilation.Slave is
       --  used when calling rsync, it is the remote machine user name, if empty
       --  the local user name is used.
 
-      Rsync_Count : Natural := 0;
-      --  The number of rsync process started, we need to wait for them to
-      --  terminate.
-
       Start, Stop : Calendar.Time;
 
       procedure Insert
@@ -492,105 +481,15 @@ package body Gprbuild.Compilation.Slave is
             OS_Exit (1);
          end if;
 
-         if S.Data.Sync = Protocol.Rsync then
-            --  Check for rsync tool
-
-            if Rsync = null then
-               Write_Line
-                 ("error: rsync not found for " & To_String (S.Data.Host));
-               OS_Exit (1);
-            end if;
-
-            declare
-               procedure Add_Arg (Str : String);
-               --  Add new argument
-
-               Args : Argument_List
-                 (1 ..
-                    6 + Positive'Max
-                      (11 + Natural (Excluded_Patterns.Length),
-                       2 + Natural (Included_Patterns.Length)));
-               N    : Natural range 0 .. Args'Last := 0;
-
-               --------------
-               -- Add_Args --
-               --------------
-
-               procedure Add_Arg (Str : String) is
-               begin
-                  N := N + 1;
-                  Args (N) := new String'(Str);
-               end Add_Arg;
-
-            begin
-               --  Archive mode, compression and ignore VCS
-
-               Add_Arg ("-arz");
-
-               if Included_Patterns.Length = 0 then
-                  --  Exclude objects/ali
-
-                  Add_Arg ("--exclude=*.o");
-                  Add_Arg ("--exclude=*.obj");
-                  Add_Arg ("--exclude=*.ali");
-                  Add_Arg ("--exclude=*.dll");
-                  Add_Arg ("--exclude=*.so");
-                  Add_Arg ("--exclude=*.so.*");
-                  Add_Arg ("--exclude=*.exe");
-                  Add_Arg ("--exclude=.git");
-                  Add_Arg ("--exclude=.svn");
-                  Add_Arg ("--exclude=CVS");
-                  Add_Arg ("--exclude=gnatinspect.db*");
-
-                  --  Add any user's defined excluded patterns
-
-                  for P of Excluded_Patterns loop
-                     Add_Arg ("--exclude=" & P);
-                  end loop;
-
-               else
-                  --  Include sub-directories
-
-                  Add_Arg ("--include=*/");
-
-                  --  Add any user's defined included patterns
-
-                  for P of Included_Patterns loop
-                     Add_Arg ("--include=" & P);
-                  end loop;
-
-                  --  Then we exclude everything else
-
-                  Add_Arg ("--exclude=*");
-               end if;
-
-               --  Delete remote files not in local directory
-
-               Add_Arg ("--delete-excluded");
-               Add_Arg ("--delete");
-               Add_Arg ("--copy-links");
-
-               --  Local and remote directory
-
-               Add_Arg (To_String (Root_Dir) & "/");
-               Add_Arg (User_Host & ":"
-                        & Compose (To_String (S.Root_Dir), Project_Name));
-
-               if Opt.Verbose_Mode then
-                  Write_Line ("  synchronize data");
-                  Write_Line ("    from: " & Args (N - 1).all);
-                  Write_Line ("    to  : " & Args (N).all);
-               end if;
-
-               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args (1 .. N));
-
-               Rsync_Count := Rsync_Count + 1;
-
-               for A of Args (1 .. N) loop
-                  Free (A);
-               end loop;
-            end;
-         end if;
+         Compilation.Sync.To_Slave
+           (Sync              => S_Data.Sync,
+            Project_Name      => Project_Name,
+            Root_Dir          => To_String (Root_Dir),
+            Slave_Root_Dir    => To_String (S.Root_Dir),
+            Host              => To_String (S_Data.Host),
+            User              => To_String (S_Data.User),
+            Included_Patterns => Included_Patterns,
+            Excluded_Patterns => Excluded_Patterns);
 
          --  Now that all slave's data is known and set, record it
 
@@ -691,11 +590,11 @@ package body Gprbuild.Compilation.Slave is
          Register_Remote_Slave (S, To_String (Project_Name));
       end loop;
 
-      Wait_Rsync (Rsync_Count);
+      Sync.Wait;
 
       Stop := Calendar.Clock;
 
-      if Opt.Verbose_Mode and then Rsync_Count > 0 then
+      if Opt.Verbose_Mode then
          Write_Str ("  All data synchronized in ");
          Write_Str (Duration'Image (Stop - Start));
          Write_Line (" seconds");
@@ -858,6 +757,15 @@ package body Gprbuild.Compilation.Slave is
          Pool.Clear;
       end Clear;
 
+      -----------
+      -- Count --
+      -----------
+
+      function Count return Natural is
+      begin
+         return Natural (Pool.Length);
+      end Count;
+
       -----------------------
       -- Decrement_Current --
       -----------------------
@@ -880,17 +788,6 @@ package body Gprbuild.Compilation.Slave is
          else
             return No_Slave;
          end if;
-      end Find;
-
-      function Find (Pid : Process_Id) return Slave is
-      begin
-         for S of Pool loop
-            if S.Rsync_Pid = Pid then
-               return S;
-            end if;
-         end loop;
-
-         return No_Slave;
       end Find;
 
       --------------
@@ -975,7 +872,6 @@ package body Gprbuild.Compilation.Slave is
       procedure Unregister (S : in out Slave);
       --  Unregister given slave
 
-      Rsync_Count : Natural := 0;
       Start, Stop : Time;
 
       ----------------
@@ -983,82 +879,20 @@ package body Gprbuild.Compilation.Slave is
       ----------------
 
       procedure Unregister (S : in out Slave) is
-         use type Containers.Count_Type;
-
-         function User_Host return String is
-           (if S.Data.User = Null_Unbounded_String
-            then To_String (S.Data.Host)
-            else To_String (S.Data.User) & '@' & To_String (S.Data.Host));
       begin
          Send_End_Of_Compilation (S.Channel);
          Close (S.Channel);
 
          --  Sync back the object code if needed
 
-         if S.Data.Sync = Protocol.Rsync then
-            declare
-               Args : Argument_List
-                 (1 ..
-                    6 + Positive'Max
-                      (4, Natural (S.Included_Artifact_Patterns.Length)));
-               N : Positive range 3 .. Args'Last := 3;
-            begin
-               --  Archive mode, compression and ignore VCS
-
-               Args (1) := new String'("-az");
-               Args (2) := new String'("--update");
-
-               --  Check all subdirectories
-
-               Args (3) := new String'("--include=*/");
-
-               if S.Included_Artifact_Patterns.Length = 0 then
-                  --  Include known suffix (objects, dependencies)
-
-                  Args (4) := new String'("--include=*.o");
-                  Args (5) := new String'("--include=*.gli");
-                  Args (6) := new String'("--include=*.obj");
-                  Args (7) := new String'("--include=*.coff");
-
-                  N := 7;
-               else
-                  for P of S.Included_Artifact_Patterns loop
-                     N := N + 1;
-                     Args (N) := new String'("--include=" & P);
-                  end loop;
-               end if;
-
-               --  Exclude everything else
-
-               N := N + 1;
-               Args (N) := new String'("--exclude=*");
-
-               --  Local and remote directory
-
-               N := N + 1;
-               Args (N) := new String'
-                 (User_Host & ":"
-                  & Compose
-                    (To_String (S.Root_Dir), To_String (Project_Name))
-                  & "/");
-               N := N + 1;
-               Args (N) := new String'(To_String (Root_Dir));
-
-               if Opt.Verbose_Mode then
-                  Write_Line ("  synchronize back data");
-                  Write_Line ("    from: " & Args (N - 1).all);
-                  Write_Line ("    to  : " & Args (N).all);
-               end if;
-
-               S.Rsync_Pid := Non_Blocking_Spawn (Rsync.all, Args (1 .. N));
-
-               Rsync_Count := Rsync_Count + 1;
-
-               for A of Args loop
-                  Free (A);
-               end loop;
-            end;
-         end if;
+         Sync.From_Slave
+           (Sync                       => S.Data.Sync,
+            Project_Name               => To_String (Project_Name),
+            Root_Dir                   => To_String (Root_Dir),
+            Slave_Root_Dir             => To_String (S.Root_Dir),
+            User                       => To_String (S.Data.User),
+            Host                       => To_String (S.Data.Host),
+            Included_Artifact_Patterns => S.Included_Artifact_Patterns);
       end Unregister;
 
    begin
@@ -1066,11 +900,11 @@ package body Gprbuild.Compilation.Slave is
 
       Slaves.Iterate (Unregister'Access);
 
-      Wait_Rsync (Rsync_Count);
+      Sync.Wait;
 
       Stop := Clock;
 
-      if Opt.Verbose_Mode and then Rsync_Count > 0 then
+      if Opt.Verbose_Mode and then Slaves.Count > 0 then
          Write_Str ("  All data synchronized in ");
          Write_Str (Duration'Image (Stop - Start));
          Write_Line (" seconds");
@@ -1205,40 +1039,5 @@ package body Gprbuild.Compilation.Slave is
          Write_Line (Exception_Information (E));
          OS_Exit (1);
    end Wait_Remote;
-
-   ----------------
-   -- Wait_Rsync --
-   ----------------
-
-   procedure Wait_Rsync (N : Natural) is
-      Pid     : Process_Id;
-      Success : Boolean;
-      Error   : Boolean := False;
-      Slv     : Slave;
-   begin
-      for K in 1 .. N loop
-         Wait_Process (Pid, Success);
-
-         Slv := Slaves.Find (Pid);
-
-         if Success then
-            if Opt.Verbose_Mode then
-               Write_Line
-                 ("  synchronization done for "
-                  & To_String (Slv.Data.Host));
-            end if;
-
-         else
-            Error := True;
-            Write_Line ("error: rsync on " & To_String (Slv.Data.Host));
-         end if;
-      end loop;
-
-      --  If there is any error we cannot continue, just exit now
-
-      if Error then
-         OS_Exit (1);
-      end if;
-   end Wait_Rsync;
 
 end Gprbuild.Compilation.Slave;

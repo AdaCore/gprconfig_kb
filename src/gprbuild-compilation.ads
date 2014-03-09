@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -23,6 +23,8 @@
 --  and distributed compilation modes.
 
 with Ada.Characters.Latin_1;
+
+private with Ada.Containers.Indefinite_Vectors;
 
 package Gprbuild.Compilation is
 
@@ -68,5 +70,10 @@ package Gprbuild.Compilation is
    --  If Fail is true the program will exit if the a format error is detected.
    --  If Force is set to True the environement will always be set otherwise it
    --  will be set only if not already set.
+
+private
+
+   package Str_Vect is
+     new Ada.Containers.Indefinite_Vectors (Positive, String);
 
 end Gprbuild.Compilation;
