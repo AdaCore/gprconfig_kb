@@ -58,8 +58,6 @@ with GprConfig.Sdefault;
 
 package body Gpr_Util is
 
-   use Ada;
-
    --  Empty procedures needed to instantiate Scng. Error procedures are
    --  empty, because we don't want to report any errors when computing
    --  a source checksum.
@@ -2311,5 +2309,15 @@ package body Gpr_Util is
    begin
       return abs (T1 - T2) <= Max_Drift;
    end Check_Diff;
+
+   -------------------
+   -- To_Time_Stamp --
+   -------------------
+
+   function To_Time_Stamp
+     (Time : Calendar.Time) return Types.Time_Stamp_Type is
+   begin
+      return Time_Stamp_Type (Image (Time, "%Y%m%d%H%M%S"));
+   end To_Time_Stamp;
 
 end Gpr_Util;

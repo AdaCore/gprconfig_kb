@@ -22,8 +22,10 @@
 --  This package contains constants, variable and subprograms used by gprbuild
 --  and gprclean.
 
-with GNAT.MD5;    use GNAT.MD5;
-with GNAT.OS_Lib; use GNAT.OS_Lib;
+with Ada.Calendar; use Ada;
+
+with GNAT.MD5;     use GNAT.MD5;
+with GNAT.OS_Lib;  use GNAT.OS_Lib;
 
 with ALI;
 with Namet;    use Namet;
@@ -299,5 +301,8 @@ package Gpr_Util is
       Max_Drift : Duration := 5.0) return Boolean;
    --  Check two time stamps, returns True if both time are in a range of
    --  Max_Drift seconds maximum.
+
+   function To_Time_Stamp (Time : Calendar.Time) return Types.Time_Stamp_Type;
+   --  Returns Time as a time stamp type
 
 end Gpr_Util;
