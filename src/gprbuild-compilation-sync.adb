@@ -37,6 +37,10 @@ package body Gprbuild.Compilation.Sync is
    function User_Host (User, Host : String) return String is
      (if User = "" then Host else User & '@' & Host);
 
+   Default_Excluded_Patterns : Str_Vect.Vector;
+   --  Default excluded patterns to use when in excluded mode as opposed to
+   --  include mode where we describe the patterns to include specifically.
+
    Rsync_Cmd : constant GNAT.OS_Lib.String_Access :=
                  Locate_Exec_On_Path ("rsync");
 
@@ -246,19 +250,11 @@ package body Gprbuild.Compilation.Sync is
       Add_Arg ("-arz");
 
       if Included_Patterns.Length = 0 then
-         --  Exclude objects/ali
+         --  Default excluded patterns objects/ali
 
-         Add_Arg ("--exclude=*.o");
-         Add_Arg ("--exclude=*.obj");
-         Add_Arg ("--exclude=*.ali");
-         Add_Arg ("--exclude=*.dll");
-         Add_Arg ("--exclude=*.so");
-         Add_Arg ("--exclude=*.so.*");
-         Add_Arg ("--exclude=*.exe");
-         Add_Arg ("--exclude=.git");
-         Add_Arg ("--exclude=.svn");
-         Add_Arg ("--exclude=CVS");
-         Add_Arg ("--exclude=gnatinspect.db*");
+         for P of Default_Excluded_Patterns loop
+            Add_Arg ("--exclude=" & P);
+         end loop;
 
          --  Add any user's defined excluded patterns
 
@@ -355,4 +351,16 @@ package body Gprbuild.Compilation.Sync is
       Wait_Rsync (Rsync_Count);
    end Wait;
 
+begin
+   Default_Excluded_Patterns.Append ("*.o");
+   Default_Excluded_Patterns.Append ("*.obj");
+   Default_Excluded_Patterns.Append ("*.ali");
+   Default_Excluded_Patterns.Append ("*.dll");
+   Default_Excluded_Patterns.Append ("*.so");
+   Default_Excluded_Patterns.Append ("*.so.*");
+   Default_Excluded_Patterns.Append ("*.exe");
+   Default_Excluded_Patterns.Append (".git");
+   Default_Excluded_Patterns.Append (".svn");
+   Default_Excluded_Patterns.Append ("CVS");
+   Default_Excluded_Patterns.Append ("gnatinspect.db*");
 end Gprbuild.Compilation.Sync;
