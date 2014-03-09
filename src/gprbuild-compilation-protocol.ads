@@ -217,6 +217,10 @@ package Gprbuild.Compilation.Protocol is
    procedure Send_Output (Channel : Communication_Channel; File_Name : String);
    --  Send an output of a command
 
+   function Get_Raw_Data
+     (Channel : Communication_Channel) return Stream_Element_Array;
+   --  Get a Stream_Element_Array from the channel and return it
+
 private
 
    type Communication_Channel is record

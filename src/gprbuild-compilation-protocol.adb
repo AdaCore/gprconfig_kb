@@ -325,6 +325,16 @@ package body Gprbuild.Compilation.Protocol is
       end if;
    end Get_Pid;
 
+   ------------------
+   -- Get_Raw_Data --
+   ------------------
+
+   function Get_Raw_Data
+     (Channel : Communication_Channel) return Stream_Element_Array is
+   begin
+      return Stream_Element_Array'Input (Channel.Channel);
+   end Get_Raw_Data;
+
    -----------
    -- Image --
    -----------
