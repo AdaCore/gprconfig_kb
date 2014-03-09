@@ -330,8 +330,7 @@ package body Gprbuild.Compile is
                      if Exec_Path = null then
                         Fail_Program
                           (Source.Tree,
-                           "unable to find dependency builder " &
-                           Exec_Name);
+                           "unable to find dependency builder " & Exec_Name);
                      end if;
 
                      List := Nam.Next;
@@ -729,8 +728,8 @@ package body Gprbuild.Compile is
                when others =>
                   Fail_Program
                     (Project_Tree,
-                     "unable to open config file " &
-                     Get_Name_String (Config_File_Path));
+                     "unable to open config file "
+                     & Get_Name_String (Config_File_Path));
             end;
 
             Check_Temp_File;
@@ -993,8 +992,8 @@ package body Gprbuild.Compile is
       L   : Project_List := Project.Imported_Projects;
 
    begin
-      if Ext /= No_Project and then
-        not Imports.Get (Ext)
+      if Ext /= No_Project
+        and then not Imports.Get (Ext)
       then
          Imports.Set (Ext, True);
          Recursive_Import (Ext);
@@ -1445,9 +1444,7 @@ package body Gprbuild.Compile is
                         --  Find the beginning of the next source path
                         --  name.
 
-                        while Start < Last and then
-                        Line (Start) = ' '
-                        loop
+                        while Start < Last and then Line (Start) = ' ' loop
                            Start := Start + 1;
                         end loop;
 
@@ -1479,15 +1476,15 @@ package body Gprbuild.Compile is
                               --  of the path name, even if it is a
                               --  space.
 
-                              if On_Windows and then
-                                Finish = Start and then
-                                Line (Finish + 1) = '\'
+                              if On_Windows
+                                and then Finish = Start
+                                and then Line (Finish + 1) = '\'
                               then
                                  Finish := Finish + 2;
 
-                              elsif On_Windows and then
-                                Line (Finish + 1) /= '\' and then
-                                Line (Finish + 1) /= ' '
+                              elsif On_Windows
+                                and then Line (Finish + 1) /= '\'
+                                and then Line (Finish + 1) /= ' '
                               then
                                  Finish := Finish + 1;
 
@@ -1571,8 +1568,8 @@ package body Gprbuild.Compile is
                                     Write_Line (""":");
 
                                     Write_Str
-                                      ("  it is not part of the " &
-                                       "interfaces of its project """);
+                                      ("  it is not part of the "
+                                       & "interfaces of its project """);
                                     Write_Str
                                       (Get_Name_String
                                          (Source_2.Project.Display_Name));
@@ -1808,8 +1805,8 @@ package body Gprbuild.Compile is
                                       (Get_Name_String
                                          (Src_Data.Id.Project.Display_Name));
                                     Write_Str
-                                      (""" does not directly" &
-                                       " import project """);
+                                      (""" does not directly"
+                                       & " import project """);
                                     Write_Str
                                       (Get_Name_String
                                          (Source_2.Project.Display_Name));
@@ -1832,8 +1829,8 @@ package body Gprbuild.Compile is
                                     Write_Line (""":");
 
                                     Write_Str
-                                      ("  it is not part of the " &
-                                       "interfaces of its project """);
+                                      ("  it is not part of the "
+                                       & "interfaces of its project """);
                                     Write_Str
                                       (Get_Name_String
                                          (Source_2.Project.Display_Name));
@@ -2994,8 +2991,8 @@ package body Gprbuild.Compile is
 
             elsif Builder_Data (Source.Tree).Closure_Needed
               and then
-                (Id.Language.Config.Dependency_Kind = ALI_File or else
-                 Id.Language.Config.Dependency_Kind = ALI_Closure)
+                (Id.Language.Config.Dependency_Kind = ALI_File
+                 or else Id.Language.Config.Dependency_Kind = ALI_Closure)
             then
                Record_ALI_For (Source, The_ALI);
 
