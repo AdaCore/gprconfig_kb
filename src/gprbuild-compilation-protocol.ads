@@ -102,7 +102,8 @@ package Gprbuild.Compilation.Protocol is
       AK,  -- acknowledge received command (with pid)
       TS,  -- a file timestamp
       ES,  -- end of file timestamp
-      FL,  -- a file
+      FL,  -- a file, content being rewritten from builder/slave PATH
+      FR,  -- a RAW file, no rewrite taking place
       OK,  -- compilation ok (with optional pid)
       KO,  -- compilation failed (with optional pid)
       CX,  -- master context
@@ -161,7 +162,8 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Send_File
      (Channel   : Communication_Channel;
-      Path_Name : String);
+      Path_Name : String;
+      Rewrite   : Boolean);
    --  Path_Name is the full path name to the local filename
 
    procedure Sync_Files

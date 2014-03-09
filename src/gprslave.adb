@@ -1150,7 +1150,8 @@ procedure Gprslave is
                                  & DS & Dep_File;
                      begin
                         if Exists (D_File) then
-                           Send_File (Builder.Channel, D_File);
+                           Send_File
+                             (Builder.Channel, D_File, Rewrite => True);
                         end if;
                      end;
 
@@ -1163,7 +1164,8 @@ procedure Gprslave is
                         if Exists (O_File)
                           and then Builder.Sync = Protocol.Gpr
                         then
-                           Send_File (Builder.Channel, O_File);
+                           Send_File
+                             (Builder.Channel, O_File, Rewrite => False);
                         end if;
                      end;
                   end if;

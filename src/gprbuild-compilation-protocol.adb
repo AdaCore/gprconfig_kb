@@ -111,6 +111,9 @@ package body Gprbuild.Compilation.Protocol is
       function Handle_File (Cmd : Command) return Command;
       --  A file has been recieved, write it to disk
 
+      function Handle_RAW_File (Cmd : Command) return Command;
+      --  A file has been recieved, write it to disk, no rewritte taking place
+
       procedure Handle_Output (Cmd : in out Command);
       --  A display output is received, read it and store it into the command
 
@@ -192,6 +195,37 @@ package body Gprbuild.Compilation.Protocol is
          return Get_Command (Channel);
       end Handle_File;
 
+      ---------------------
+      -- Handle_RAW_File --
+      ---------------------
+
+      function Handle_RAW_File (Cmd : Command) return Command is
+         File_Name : constant String :=
+                       Translate_Receive (Channel, Cmd.Args (1).all);
+         Dir       : constant String := Containing_Directory (File_Name);
+         File      : File_Type;
+      begin
+         if Dir /= "" and then not Exists (Dir) then
+            Create_Directory (Dir);
+         end if;
+
+         Create (File, Out_File, File_Name);
+
+         loop
+            declare
+               Data : constant Stream_Element_Array := Get_Raw_Data (Channel);
+            begin
+               exit when Data'Length = 0;
+
+               Write (File, Data);
+            end;
+         end loop;
+
+         Close (File);
+
+         return Get_Command (Channel);
+      end Handle_RAW_File;
+
       -------------------
       -- Handle_Output --
       -------------------
@@ -235,7 +269,7 @@ package body Gprbuild.Compilation.Protocol is
                    else "");
       begin
          if C in
-           "EX" | "AK" | "TS" | "ES" | "FL" | "OK" | "KO"
+           "EX" | "AK" | "TS" | "ES" | "FL" | "FR" | "OK" | "KO"
            | "CX" | "CU" | "DP" | "EC"
          then
             Result.Cmd := Command_Kind'Value (C);
@@ -257,6 +291,9 @@ package body Gprbuild.Compilation.Protocol is
             if Result.Cmd = FL then
                --  We got some file data to write
                return Handle_File (Result);
+
+            elsif Result.Cmd = FR then
+               return Handle_RAW_File (Result);
 
             elsif Result.Cmd = DP then
                --  We got an output to display
@@ -477,9 +514,21 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Send_File
      (Channel   : Communication_Channel;
-      Path_Name : String) is
+      Path_Name : String;
+      Rewrite   : Boolean) is
    begin
-      Send_File_Internal (Channel, Path_Name, FL);
+      if Rewrite then
+         Send_File_Internal (Channel, Path_Name, FL);
+
+      else
+         if Exists (Path_Name) then
+            String'Output
+              (Channel.Channel,
+               Command_Kind'Image (FR) & Translate_Send (Channel, Path_Name));
+
+            Send_RAW_File_Content (Channel, Path_Name);
+         end if;
+      end if;
    end Send_File;
 
    ----------------
