@@ -1149,7 +1149,9 @@ procedure Gprslave is
                                  & (if Dep_Dir /= "" then DS & Dep_Dir else "")
                                  & DS & Dep_File;
                      begin
-                        if Exists (D_File) then
+                        if Exists (D_File)
+                          and then Kind (D_File) = Ordinary_File
+                        then
                            Send_File
                              (Builder.Channel, D_File, Rewrite => True);
                         end if;
@@ -1181,11 +1183,13 @@ procedure Gprslave is
                   Send_Ko (Builder.Channel, Job.Id);
                end if;
             exception
-               when others =>
+               when E : others =>
                   --  An exception can be raised if the builder master has been
                   --  terminated. In this case the comminication won't succeed.
                if Debug then
-                  Put_Line ("# cannot send response to build master");
+                     Put_Line
+                       ("# cannot send response to build master "
+                        & Exception_Information (E));
                end if;
             end;
 
