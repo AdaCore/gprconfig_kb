@@ -331,8 +331,6 @@ package body Gprbuild.Compilation.Slave is
          if I /= 0 then
             if V (F .. I - 1) = "rsync" then
                Sync := Protocol.Rsync;
-            elsif V (F .. I - 1) = "file" then
-               Sync := File;
             elsif V (F .. I - 1) = "gpr" then
                Sync := Gpr;
             else
@@ -647,79 +645,60 @@ package body Gprbuild.Compilation.Slave is
       is
          Pos : constant Natural := Index (O, RD);
       begin
-         if S.Data.Sync = File then
-            --  Nothing to translate really, this slave is using a shared
-            --  directory to get access to the sources.
-
+         if Pos = 0 then
             return O;
 
          else
-            if Pos = 0 then
-               return O;
+            --  Note that we transfer files only when they are under the
+            --  project root.
 
-            else
-               --  Note that we transfer files only when they are under the
-               --  project root.
+            if O'Length > 8
+              and then O (O'First .. O'First + 7) in "-gnatem=" | "-gnatec="
+            then
+               --  Send the corresponding file to the slave
+               declare
+                  File_Name : constant String := O (O'First + 8 .. O'Last);
+               begin
+                  if Exists (File_Name) then
+                     Send_File (S.Channel, File_Name);
+                  else
+                     Write_Line
+                       ("File not found " & File_Name);
+                     Write_Line
+                       ("Please check that Built_Root is properly set");
+                  end if;
 
-               if O'Length > 8
-                 and then O (O'First .. O'First + 7) in "-gnatem=" | "-gnatec="
-               then
-                  --  Send the corresponding file to the slave
-                  declare
-                     File_Name : constant String := O (O'First + 8 .. O'Last);
-                  begin
-                     if Exists (File_Name) then
-                        Send_File (S.Channel, File_Name);
-                     else
-                        Write_Line
-                          ("File not found " & File_Name);
-                        Write_Line
-                          ("Please check that Built_Root is properly set");
-                     end if;
-
-                     return O (O'First .. O'First + 7)
-                       & Translate_Send (S.Channel, File_Name);
-                  end;
-               end if;
-
-               return O (O'First .. Pos - 1)
-                 & Sep & Filter_String (O (Pos + RD'Length + 1 .. O'Last));
+                  return O (O'First .. O'First + 7)
+                    & Translate_Send (S.Channel, File_Name);
+               end;
             end if;
+
+            return O (O'First .. Pos - 1)
+              & Sep & Filter_String (O (Pos + RD'Length + 1 .. O'Last));
          end if;
       end Filter_String;
 
       Pid : Remote_Id;
 
    begin
-      if S.Data.Sync = File then
-         --  Do not filter out CWD as we want the compilation to take place in
-         --  the shared directory.
+      --  Record the rewrite information for this channel only if we are not
+      --  using a shared directory.
 
-         Send_Exec
-           (S.Channel,
-            Get_Name_String (Project.Path.Display_Name), CWD,
-            Language, Options, Obj_Name, Dep_Name, Env, Filter_String'Access);
+      Slaves.Set_Rewrite_WD (S, Path => RD);
 
-      else
-         --  Record the rewrite information for this channel only if we are not
-         --  using a shared directory.
-
-         Slaves.Set_Rewrite_WD (S, Path => RD);
-
-         if Compiler_Path /= null then
-            Slaves.Set_Rewrite_CD
-              (S,
-               Path => Containing_Directory
-                 (Containing_Directory (Compiler_Path.all)));
-         end if;
-
-         Send_Exec
-           (S.Channel,
-            Get_Name_String (Project.Path.Display_Name),
-            Filter_String (CWD, Sep => ""),
-            Language, Options, Obj_Name, Dep_Name, Env,
-            Filter_String'Access);
+      if Compiler_Path /= null then
+         Slaves.Set_Rewrite_CD
+           (S,
+            Path => Containing_Directory
+              (Containing_Directory (Compiler_Path.all)));
       end if;
+
+      Send_Exec
+        (S.Channel,
+         Get_Name_String (Project.Path.Display_Name),
+         Filter_String (CWD, Sep => ""),
+         Language, Options, Obj_Name, Dep_Name, Env,
+         Filter_String'Access);
 
       Remote_Process.Increment;
 

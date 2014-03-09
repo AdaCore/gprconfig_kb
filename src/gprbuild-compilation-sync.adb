@@ -161,10 +161,6 @@ package body Gprbuild.Compilation.Sync is
       Included_Artifact_Patterns : Str_Vect.Vector) is
    begin
       case Sync is
-         when Protocol.File  =>
-            --  Nothing to do as we are sharing the same file system
-            null;
-
          when Protocol.Gpr =>
             --  Nothing to do as the artifacts are copied after each
             --  compilation.
@@ -521,10 +517,6 @@ package body Gprbuild.Compilation.Sync is
       Included_Patterns : Str_Vect.Vector) is
    begin
       case Sync is
-         when Protocol.File  =>
-            --  Nothing to do as we are sharing the same file system
-            null;
-
          when Protocol.Gpr =>
             To_Slave_Gpr
               (Channel, Project_Name, Root_Dir, Slave_Root_Dir, User, Host,

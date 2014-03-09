@@ -3437,28 +3437,18 @@ over. This means that the second time a project is compiled only the new or
 changed sources are copied. This incremental synchronization done by
 @command{rsync} is really welcome on large project.
 
-@item mount point, or shared directory
+@item gpr
 
-In this model the sources are accessible via a shared directory. In this
-case the build slaves must be specified with the @option{file://} protocol.
-
-@smallexample
-  package Remote is
-     for Root_Dir use "..";
-  end Remote;
-@end smallexample
-
-Note that different slaves can use different protocol. It is not recommended to
-use too many slaves with the @option{file://} protocol as it will put a lot of
-pressure on the network slowing down the build process in the end.
-
-Also, in this model the full pathname of the sources must be the same on all
-machines (build master and build slaves). An optional port number can be
-specified at the end of the slave, for example:
-@command{file://comp2.mydomain.com:9876}. The same port number must then
-be specified on the command line of @command{gprslave}.
+There is no external tools to install. This is using the GPRbuild
+internal protocol which communicates directly with the slaves.
 
 @end itemize
+
+Note that different slaves can use different protocols.
+
+An optional port number can be specified at the end of the slave, for example:
+@command{gpr://comp2.mydomain.com:9876}. The same port number must then
+be specified on the command line of @command{gprslave}.
 
 @item Optionaly add a Remote package in the main project file
 
@@ -3504,7 +3494,7 @@ When all this is done, the remote compilation can be used simply by
 running GPRbuild in distributed mode from the build master:
 
 @smallexample
-  $ gprbuild --distributed=file://comp1.xyz.com,comp2.xyz.com prj.gpr
+  $ gprbuild --distributed=gpr://comp1.xyz.com,comp2.xyz.com prj.gpr
 @end smallexample
 
 The build slaves are specified as URL with the following form:
@@ -3513,7 +3503,8 @@ The build slaves are specified as URL with the following form:
 [protocol://]<machine_name>[:port]
 @end smallexample
 
-Where protocol is @command{rsync} or @command{file} as described above.
+Where protocol is @command{rsync} or @command{gpr} as described
+above. And the default protocol is @command{rsync}.
 
 @c ---------------------------------------------
 @node GPRslave
