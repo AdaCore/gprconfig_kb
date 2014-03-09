@@ -44,6 +44,11 @@ package body Gprbuild.Compilation.Protocol is
       Cmd       : Command_Kind);
    --  Send file Path_Name over the channel with rewritting if needed
 
+   procedure Send_RAW_File_Content
+     (Channel   : Communication_Channel;
+      Path_Name : String);
+   --  Send the file content untranslated
+
    ----------
    -- Args --
    ----------
@@ -508,60 +513,17 @@ package body Gprbuild.Compilation.Protocol is
       end Create_Args;
 
       declare
-         use Ada;
          use Protocol;
-
-         type Buffer_Access is access Stream_Element_Array;
-
-         procedure Unchecked_Free is
-           new Unchecked_Deallocation (Stream_Element_Array, Buffer_Access);
-
-         Buffer : Buffer_Access;
-         Last   : Stream_Element_Offset;
-
          Cmd : constant Command := Get_Command (Channel);
       begin
          if Kind (Cmd) = KO then
-
-            Buffer := new Stream_Element_Array (1 .. 2 * 1_024 * 1_024);
-            --  A somewhat large buffer is needed to transfer big file
-            --  efficiently. Here we use a 2Mb buffer which should be
-            --  large enough for read most file contents in one OS call.
-            --
-            --  This is allocated on the heap to avoid too much pressure on the
-            --  stack of the tasks.
-
-            --  We need to send the files in arguments
-
             for Filename of Args (Cmd).all loop
-               declare
-                  File : Stream_IO.File_Type;
-               begin
-                  --  Open the file in shared mode as multiple tasks could have
-                  --  to send it to some slaves.
-
-                  Stream_IO.Open
-                    (File, Stream_IO.In_File,
-                     (if Root_Dir = ""
-                      then ""
-                      else Root_Dir & Directory_Separator) & Filename.all,
-                     Form => "shared=yes");
-
-                  --  Always send an empty stream element array at the end.
-                  --  This is used as EOF tag.
-
-                  loop
-                     Stream_IO.Read (File, Buffer.all, Last);
-                     Stream_Element_Array'Output
-                       (Channel.Channel, Buffer (1 .. Last));
-                     exit when Last = 0;
-                  end loop;
-
-                  Stream_IO.Close (File);
-               end;
+               Send_RAW_File_Content
+                 (Channel,
+                  (if Root_Dir = ""
+                   then ""
+                   else Root_Dir & Directory_Separator) & Filename.all);
             end loop;
-
-            Unchecked_Free (Buffer);
          end if;
       end;
    end Sync_Files;
@@ -743,6 +705,54 @@ package body Gprbuild.Compilation.Protocol is
    begin
       Send_File_Internal (Channel, File_Name, DP);
    end Send_Output;
+
+   ---------------------------
+   -- Send_RAW_File_Content --
+   ---------------------------
+
+   procedure Send_RAW_File_Content
+     (Channel   : Communication_Channel;
+      Path_Name : String)
+   is
+      use Ada;
+
+      type Buffer_Access is access Stream_Element_Array;
+
+      procedure Unchecked_Free is
+        new Unchecked_Deallocation (Stream_Element_Array, Buffer_Access);
+
+      Buffer : Buffer_Access;
+      Last   : Stream_Element_Offset;
+
+      File   : Stream_IO.File_Type;
+   begin
+      Buffer := new Stream_Element_Array (1 .. 2 * 1_024 * 1_024);
+      --  A somewhat large buffer is needed to transfer big file
+      --  efficiently. Here we use a 2Mb buffer which should be
+      --  large enough for read most file contents in one OS call.
+      --
+      --  This is allocated on the heap to avoid too much pressure on the
+      --  stack of the tasks.
+
+      --  Open the file in shared mode as multiple tasks could have
+      --  to send it.
+
+      Stream_IO.Open
+        (File, Stream_IO.In_File, Path_Name, Form => "shared=yes");
+
+      --  Always send an empty stream element array at the end.
+      --  This is used as EOF tag.
+
+      loop
+         Stream_IO.Read (File, Buffer.all, Last);
+         Stream_Element_Array'Output (Channel.Channel, Buffer (1 .. Last));
+         exit when Last = 0;
+      end loop;
+
+      Stream_IO.Close (File);
+
+      Unchecked_Free (Buffer);
+   end Send_RAW_File_Content;
 
    -----------------------
    -- Send_Slave_Config --
