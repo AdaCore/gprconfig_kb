@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -390,6 +390,7 @@ package body Gprbuild.Compile is
                             Compilation_Options.Options
                               (1 .. Compilation_Options.Last),
                           Project      => Comp_Data.Source_Project,
+                          Obj_Name     => Get_Name_String (Source.Id.Object),
                           Output_File  => Get_Name_String (Source.Id.Dep_Path),
                           Err_To_Out   => True,
                           Force_Local  => True);
@@ -2650,10 +2651,13 @@ package body Gprbuild.Compile is
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last),
             Source_Project,
-            Get_Language,
+            Language => Get_Language,
             Dep_Name => (if Source.Id.Dep_Name = No_File
                          then ""
-                         else Get_Name_String (Source.Id.Dep_Name)));
+                         else Get_Name_String (Source.Id.Dep_Name)),
+            Obj_Name => (if Source.Id.Object = No_File
+                         then ""
+                         else Get_Name_String (Source.Id.Object)));
 
          if Last_Switches_For_File >= 0 then
             Compilation_Options.Last := Last_Switches_For_File;

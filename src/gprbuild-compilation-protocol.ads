@@ -87,9 +87,10 @@ package Gprbuild.Compilation.Protocol is
      (Channel : Communication_Channel; Str : String) return String;
    --  Translate Str using Channel rewrite
 
-   type Sync_Kind is (Rsync, File);
-   --  The kind of synchronization used. It is either using rsync external tool
-   --  or relying on shared directory (samba for example).
+   type Sync_Kind is (Rsync, File, Gpr);
+   --  The kind of synchronization used. It is either using rsync external
+   --  tool based on gprbuild internal protocol or relying on shared directory
+   --  (samba for example).
 
    --
    --  Command
@@ -144,6 +145,7 @@ package Gprbuild.Compilation.Protocol is
       Dir      : String;
       Command  : String;
       Options  : GNAT.OS_Lib.Argument_List;
+      Obj_Name : String;
       Dep_Name : String;
       Env      : String;
       Filter   : access function (Str, Sep : String) return String := null);

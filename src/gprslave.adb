@@ -25,6 +25,7 @@ with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Directories;                       use Ada.Directories;
 with Ada.Exceptions;                        use Ada.Exceptions;
+with Ada.Streams.Stream_IO;                 use Ada.Streams;
 with Ada.Strings.Equal_Case_Insensitive;
 with Ada.Strings.Fixed;                     use Ada.Strings;
 with Ada.Strings.Hash_Case_Insensitive;
@@ -88,6 +89,7 @@ procedure Gprslave is
       Pid        : Integer;           -- the OS process id
       Dep_Dir    : Unbounded_String;
       Dep_File   : Unbounded_String;
+      Obj_File   : Unbounded_String;
       Output     : Unbounded_String;
       Build_Sock : Socket_Type; -- key used to get the corresponding builder
    end record;
@@ -544,6 +546,7 @@ procedure Gprslave is
                         Null_Unbounded_String,
                         Null_Unbounded_String,
                         Null_Unbounded_String,
+                        Null_Unbounded_String,
                         Builder.Socket));
 
                      Send_Ack (Builder.Channel, Id);
@@ -905,7 +908,7 @@ procedure Gprslave is
                Set_Directory (Dir);
             end if;
 
-            Create (List, Args (Job.Cmd)(5).all, String'(1 => Opts_Sep));
+            Create (List, Args (Job.Cmd)(6).all, String'(1 => Opts_Sep));
 
             Execute : declare
                Project  : constant String :=
@@ -913,9 +916,10 @@ procedure Gprslave is
                Language : constant String := Args (Job.Cmd)(3).all;
                Out_File : constant String :=
                             Get_Output_File (Builder);
-               Dep_File : constant String := Args (Job.Cmd)(4).all;
+               Obj_File : constant String := Args (Job.Cmd)(4).all;
+               Dep_File : constant String := Args (Job.Cmd)(5).all;
                Env      : constant String :=
-                            Get_Arg (Builder, Args (Job.Cmd) (6).all);
+                            Get_Arg (Builder, Args (Job.Cmd) (7).all);
                O        : Argument_List := Get_Args (Builder, List);
             begin
                Output_Compilation (O (O'Last).all);
@@ -929,14 +933,15 @@ procedure Gprslave is
 
                if Debug then
                   Put_Line
-                    ("#   pid"
-                     & Integer'Image (Pid_To_Integer (Pid)));
+                    ("#   pid" & Integer'Image (Pid_To_Integer (Pid)));
                   Put_Line ("#   dep_file " & Dep_File);
                   Put_Line ("#   out_file " & Out_File);
+                  Put_Line ("#   obj_file " & Obj_File);
                end if;
 
                Job.Pid      := Pid_To_Integer (Pid);
                Job.Dep_File := To_Unbounded_String (Dep_File);
+               Job.Obj_File := To_Unbounded_String (Obj_File);
                Job.Output   := To_Unbounded_String (Out_File);
                Job.Dep_Dir  := To_Unbounded_String
                  ((if Is_Absolute_Path (Dir) then "" else Dir));
@@ -1072,22 +1077,6 @@ procedure Gprslave is
 
    task body Wait_Completion is
 
-      procedure Send_Dep_File (Builder : Build_Master; Filename : String);
-      --  Send Filename back to the build master
-
-      -------------------
-      -- Send_Dep_File --
-      -------------------
-
-      procedure Send_Dep_File (Builder : Build_Master; Filename : String) is
-      begin
-         if Debug then
-            Put_Line ("# send dep_file to master '" & Filename & ''');
-         end if;
-
-         Send_File (Builder.Channel, Filename);
-      end Send_Dep_File;
-
       Pid     : Process_Id;
       Success : Boolean;
       Job     : Job_Data;
@@ -1141,6 +1130,7 @@ procedure Gprslave is
                   DS       : Character renames Directory_Separator;
                   Dep_Dir  : constant String := To_String (Job.Dep_Dir);
                   Dep_File : constant String := To_String (Job.Dep_File);
+                  Obj_File : constant String := To_String (Job.Obj_File);
                   Out_File : constant String := To_String (Job.Output);
                   S        : Boolean;
                begin
@@ -1161,7 +1151,20 @@ procedure Gprslave is
                         if Exists (D_File)
                           and then Builder.Sync /= Protocol.File
                         then
-                           Send_Dep_File (Builder, D_File);
+                           Send_File (Builder.Channel, D_File);
+                        end if;
+                     end;
+
+                     declare
+                        O_File : constant String :=
+                                   Work_Directory (Builder)
+                                & (if Dep_Dir /= "" then DS & Dep_Dir else "")
+                                & DS & Obj_File;
+                     begin
+                        if Exists (O_File)
+                          and then Builder.Sync = Protocol.Gpr
+                        then
+                           Send_File (Builder.Channel, O_File);
                         end if;
                      end;
                   end if;
@@ -1212,8 +1215,10 @@ procedure Gprslave is
    procedure Wait_For_Master is
       use Types;
 
-      Builder      : Build_Master;
-      Clock_Status : Boolean;
+      Builder           : Build_Master;
+      Clock_Status      : Boolean;
+      Total_File        : Natural := 0;
+      Total_Transferred : Natural := 0;
    begin
       --  Wait for a connection
 
@@ -1302,8 +1307,6 @@ procedure Gprslave is
          Create_Directory (To_String (Builder.Project_Name));
       end if;
 
-      Mutex.Release;
-
       --  Configure slave, note that this does not need to be into the critical
       --  section has the builder is not yet known in the system. At this point
       --  no compilation can be received for this slave anyway.
@@ -1335,6 +1338,101 @@ procedure Gprslave is
         (Builder.Channel, Max_Processes,
          Compose (Root_Directory.all, To_String (Builder.Build_Env)),
          Clock_Status);
+
+      --  If we are using the Gpr synchronisation, it is time to do it here.
+      --  Note that we want to avoid the rewriting rules below that are
+      --  requiring some CPU cycles not needed at this stage.
+
+      if Builder.Sync = Protocol.Gpr then
+         --  Move to projet directory
+
+         Set_Directory (To_String (Builder.Project_Name));
+
+         Check_Time_Stamps : loop
+            declare
+               Cmd  : constant Command := Get_Command (Builder.Channel);
+               List : constant Argument_List_Access := Args (Cmd);
+            begin
+               if Debug then
+                  Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
+
+                  if List /= null then
+                     for K in List'Range loop
+                        Put (", " & List (K).all);
+                     end loop;
+                  end if;
+                  New_Line;
+               end if;
+
+               if Kind (Cmd) = TS then
+                  Total_File := Total_File + 1;
+
+                  declare
+                     Path_Name : constant String := List (1).all;
+                     TS        : constant String (1 .. 14) := List (2).all;
+                  begin
+                     Create_Path (Containing_Directory (Path_Name));
+
+                     if not Exists (Path_Name)
+                       or else
+                         To_Time_Stamp (Modification_Time (Path_Name))
+                           <  Time_Stamp_Type (TS)
+                     then
+                        Total_Transferred := Total_Transferred + 1;
+
+                        Send_Ko (Builder.Channel);
+
+                        --  We then receive the file content
+
+                        declare
+                           File : Stream_IO.File_Type;
+                        begin
+                           Stream_IO.Create
+                             (File, Stream_IO.Out_File, Path_Name);
+
+                           loop
+                              declare
+                                 Data : constant Stream_Element_Array :=
+                                          Get_Raw_Data (Builder.Channel);
+                              begin
+                                 exit when Data'Length = 0;
+                                 Stream_IO.Write (File, Data);
+                              end;
+                           end loop;
+
+                           Stream_IO.Close (File);
+
+                           --  Set file time stamp
+
+                           Set_File_Last_Modify_Time_Stamp
+                             (Path_Name,
+                              GM_Time_Of
+                                (Year   => Year_Type'Value (TS (1 .. 4)),
+                                 Month  => Month_Type'Value (TS (5 .. 6)),
+                                 Day    => Day_Type'Value (TS (7 .. 8)),
+                                 Hour   => Hour_Type'Value (TS (9 .. 10)),
+                                 Minute => Minute_Type'Value (TS (11 .. 12)),
+                                 Second => Second_Type'Value (TS (13 .. 14))));
+                        end;
+
+                     else
+                        Send_Ok (Builder.Channel);
+                     end if;
+                  end;
+
+               elsif Kind (Cmd) = ES then
+                  exit Check_Time_Stamps;
+               end if;
+            end;
+         end loop Check_Time_Stamps;
+
+         if Verbose then
+            Put_Line ("Files    total:" & Natural'Image (Total_File));
+            Put_Line ("  transferred :" & Natural'Image (Total_Transferred));
+         end if;
+      end if;
+
+      Mutex.Release;
 
       --  Register the new builder
 

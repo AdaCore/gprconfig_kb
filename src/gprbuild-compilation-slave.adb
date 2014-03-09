@@ -333,6 +333,8 @@ package body Gprbuild.Compilation.Slave is
                Sync := Protocol.Rsync;
             elsif V (F .. I - 1) = "file" then
                Sync := File;
+            elsif V (F .. I - 1) = "gpr" then
+               Sync := Gpr;
             else
                Write_Line ("error: unknown protocol in " & V);
                OS_Exit (1);
@@ -483,6 +485,7 @@ package body Gprbuild.Compilation.Slave is
 
          Compilation.Sync.To_Slave
            (Sync              => S_Data.Sync,
+            Channel           => S.Channel,
             Project_Name      => Project_Name,
             Root_Dir          => To_String (Root_Dir),
             Slave_Root_Dir    => To_String (S.Root_Dir),
@@ -616,6 +619,7 @@ package body Gprbuild.Compilation.Slave is
      (Project  : Project_Id;
       Language : String;
       Options  : GNAT.OS_Lib.Argument_List;
+      Obj_Name : String;
       Dep_Name : String := "";
       Env      : String := "") return Id
    is
@@ -694,7 +698,7 @@ package body Gprbuild.Compilation.Slave is
          Send_Exec
            (S.Channel,
             Get_Name_String (Project.Path.Display_Name), CWD,
-            Language, Options, Dep_Name, Env, Filter_String'Access);
+            Language, Options, Obj_Name, Dep_Name, Env, Filter_String'Access);
 
       else
          --  Record the rewrite information for this channel only if we are not
@@ -713,7 +717,7 @@ package body Gprbuild.Compilation.Slave is
            (S.Channel,
             Get_Name_String (Project.Path.Display_Name),
             Filter_String (CWD, Sep => ""),
-            Language, Options, Dep_Name, Env,
+            Language, Options, Obj_Name, Dep_Name, Env,
             Filter_String'Access);
       end if;
 

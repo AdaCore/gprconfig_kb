@@ -30,6 +30,7 @@ private package Gprbuild.Compilation.Sync is
 
    procedure To_Slave
      (Sync              : Protocol.Sync_Kind;
+      Channel           : Protocol.Communication_Channel;
       Project_Name      : String;
       Root_Dir          : String;
       Slave_Root_Dir    : String;

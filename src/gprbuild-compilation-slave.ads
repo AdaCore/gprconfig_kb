@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -45,6 +45,7 @@ package Gprbuild.Compilation.Slave is
      (Project  : Project_Id;
       Language : String;
       Options  : GNAT.OS_Lib.Argument_List;
+      Obj_Name : String;
       Dep_Name : String := "";
       Env      : String := "") return Id;
    --  Send a compilation job to one slave that has still some free slot. There

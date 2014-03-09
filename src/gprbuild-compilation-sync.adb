@@ -20,13 +20,21 @@
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Indefinite_Ordered_Maps;
-with Ada.Directories; use Ada.Directories;
+with Ada.Containers.Vectors;
 
-with Output; use Output;
+with Ada.Directories;         use Ada.Directories;
+with Ada.Exceptions;          use Ada.Exceptions;
+with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
+
+with GNAT.Regexp;             use GNAT.Regexp;
+
+with Gpr_Util; use Gpr_Util;
+with Output;   use Output;
 
 package body Gprbuild.Compilation.Sync is
 
    use Ada;
+   use type Containers.Count_Type;
 
    package Hosts_Set is
      new Containers.Indefinite_Ordered_Maps (Integer, String);
@@ -47,6 +55,12 @@ package body Gprbuild.Compilation.Sync is
    Rsync_Count : Natural := 0;
    --  The number of rsync process started, we need to wait for them to
    --  terminate.
+
+   Max_Gpr_Sync : constant := 10;
+   --  The number of parallele synchronization done for the gpr protocol. This
+   --  is currenlty fixed to 6 but could probable be a parameter. The number is
+   --  high, as these tasks are mostly doing IO and so are not CPU demanding,
+   --  the goal is to saturate the network bandwidth.
 
    Hosts : Hosts_Set.Map;
 
@@ -69,6 +83,80 @@ package body Gprbuild.Compilation.Sync is
       Included_Artifact_Patterns : Str_Vect.Vector);
    --  Rsync based synchronization from the slave
 
+   procedure To_Slave_Gpr
+     (Channel           : Protocol.Communication_Channel;
+      Project_Name      : String;
+      Root_Dir          : String;
+      Slave_Root_Dir    : String;
+      User              : String;
+      Host              : String;
+      Excluded_Patterns : Str_Vect.Vector;
+      Included_Patterns : Str_Vect.Vector);
+   --  Gpr based synchronization to the slave
+
+   --  Data for each synchronization job for the Gpr protocol
+
+   type Gpr_Data is record
+      Channel           : Protocol.Communication_Channel;
+      Project_Name      : Unbounded_String;
+      Root_Dir          : Unbounded_String;
+      Slave_Root_Dir    : Unbounded_String;
+      User, Host        : Unbounded_String;
+      Excluded_Patterns : Str_Vect.Vector;
+      Included_Patterns : Str_Vect.Vector;
+   end record;
+
+   --  The set of files for a given project (associated with a synchronization
+   --  job).
+
+   type File_Data is record
+      Path_Name : Unbounded_String;
+      Timestamp : Time_Stamp_Type; -- YYYYMMDDhhmmss
+   end record;
+
+   package File_Data_Set is new Containers.Vectors (Positive, File_Data);
+
+   package Gpr_Data_Set is new Containers.Vectors (Positive, Gpr_Data);
+
+   --  Queue of job to be done for the gpr protocol
+
+   protected Gpr_Queue is
+
+      procedure Add (Job : Gpr_Data);
+      --  Add a new synchronization job
+
+      entry Get
+        (Job   : out Gpr_Data;
+         Files : out File_Data_Set.Vector;
+         Stop  : out Boolean);
+      --  Get a synchronization job with the corresponding files, Stop is set
+      --  to True if there is no more job to handle and False otherwise.
+
+      procedure No_More_Job;
+
+   private
+      procedure Set_Project_Files (Job : Gpr_Data);
+      --  Set the project files to be synchronized
+
+      Jobs           : Gpr_Data_Set.Vector;
+      Project_Files  : File_Data_Set.Vector;
+      PF_Initialized : Boolean := False;
+      No_More        : Boolean := False;
+   end Gpr_Queue;
+
+   --  Synchronization job are handled by the Gpr_Sync tasks
+
+   task type Gpr_Sync is
+      entry Stop;
+   end Gpr_Sync;
+
+   type Gpr_Sync_Tasks is array (1 .. Max_Gpr_Sync) of Gpr_Sync;
+   type Sync_Tasks_Ref is access all Gpr_Sync_Tasks;
+
+   Sync_Tasks : Sync_Tasks_Ref;
+   --  Only allocated (and so started) if a some slaves are using the gpr
+   --  protocol. Otherwise this variable will stay null.
+
    ----------------
    -- From_Slave --
    ----------------
@@ -84,6 +172,12 @@ package body Gprbuild.Compilation.Sync is
    begin
       case Sync is
          when Protocol.File  =>
+            --  Nothing to do as we are sharing the same file system
+            null;
+
+         when Protocol.Gpr =>
+            --  Nothing to do as the artifacts are copied after each
+            --  compilation.
             null;
 
          when Protocol.Rsync =>
@@ -105,8 +199,6 @@ package body Gprbuild.Compilation.Sync is
       Host                       : String;
       Included_Artifact_Patterns : Str_Vect.Vector)
    is
-      use type Containers.Count_Type;
-
       Args : Argument_List
         (1 ..
            6 + Positive'Max
@@ -172,12 +264,228 @@ package body Gprbuild.Compilation.Sync is
       end loop;
    end From_Slave_Rsync;
 
+   ---------------
+   -- Gpr_Queue --
+   ---------------
+
+   protected body Gpr_Queue is
+
+      ---------
+      -- Add --
+      ---------
+
+      procedure Add (Job : Gpr_Data) is
+      begin
+         Jobs.Append (Job);
+      end Add;
+
+      ---------
+      -- Get --
+      ---------
+
+      entry Get
+        (Job   : out Gpr_Data;
+         Files : out File_Data_Set.Vector;
+         Stop  : out Boolean) when Jobs.Length > 0 or No_More is
+      begin
+         if Jobs.Length = 0 and then No_More then
+            Stop := True;
+
+         else
+            Stop := False;
+            Job := Jobs.First_Element;
+            Jobs.Delete_First;
+
+            if not PF_Initialized then
+               Set_Project_Files (Job);
+            end if;
+
+            Files := Project_Files;
+         end if;
+      end Get;
+
+      -----------------
+      -- No_More_Job --
+      -----------------
+
+      procedure No_More_Job is
+      begin
+         No_More := True;
+      end No_More_Job;
+
+      -----------------------
+      -- Set_Project_Files --
+      -----------------------
+
+      procedure Set_Project_Files (Job : Gpr_Data) is
+
+         Root_Dir : constant String :=
+                      (if Job.Root_Dir = Null_Unbounded_String
+                       then "." else To_String (Job.Root_Dir));
+
+         type Regexp_Set is array (Containers.Count_Type range <>) of Regexp;
+
+         I_Regexp : Regexp_Set (1 .. Job.Included_Patterns.Length);
+         E_Regexp : Regexp_Set (1 .. Job.Excluded_Patterns.Length
+                                       + Default_Excluded_Patterns.Length);
+
+         procedure Process (Prefix : String);
+
+         procedure Process (Prefix : String) is
+            procedure Check (File : Directory_Entry_Type);
+            --  Check and add this file if it passes the filters
+
+            -----------
+            -- Check --
+            -----------
+
+            procedure Check (File : Directory_Entry_Type) is
+               use GNAT;
+
+               function Match
+                 (Name : String; R_Set : Regexp_Set)
+                  return Boolean with Inline;
+               --  Returns true if Name is matched by one of the regexp in
+               --  R_Set.
+
+               -----------
+               -- Match --
+               -----------
+
+               function Match
+                 (Name : String; R_Set : Regexp_Set) return Boolean is
+               begin
+                  for Regexp of R_Set loop
+                     if Match (Name, Regexp) then
+                        return True;
+                     end if;
+                  end loop;
+                  return False;
+               end Match;
+
+               S_Name     : constant String := Simple_Name (File);
+               Entry_Name : constant String := Prefix & S_Name;
+               Is_File    : Boolean;
+
+            begin
+               if Kind (File) = Directory then
+                  if S_Name not in "." | ".."
+                    and then (I_Regexp'Length /= 0
+                              or else not Match (S_Name, E_Regexp))
+                    and then not Is_Symbolic_Link
+                      (Root_Dir & Directory_Separator & Entry_Name)
+                  then
+                     Process (Entry_Name & Directory_Separator);
+                  end if;
+
+               else
+                  if I_Regexp'Length = 0 then
+                     if Match (S_Name, E_Regexp) then
+                        Is_File := False;
+                     else
+                        Is_File := True;
+                     end if;
+
+                  else
+                     if Match (S_Name, I_Regexp) then
+                        Is_File := True;
+                     else
+                        Is_File := False;
+                     end if;
+                  end if;
+
+                  if Is_File then
+                     Project_Files.Append
+                       (File_Data'
+                          (To_Unbounded_String (Entry_Name),
+                           To_Time_Stamp (Modification_Time (File))));
+                  end if;
+               end if;
+            end Check;
+
+         begin
+            Search
+              (Directory =>
+                 Root_Dir
+                 & (if Prefix = "" then "" else Directory_Separator & Prefix),
+               Pattern   => "*",
+               Filter    => (Special_File => False, others => True),
+               Process   => Check'Access);
+         end Process;
+
+      begin
+         --  Compile the patterns
+
+         declare
+            K : Containers.Count_Type := 1;
+         begin
+            for P of Job.Included_Patterns loop
+               I_Regexp (K) := Compile (P, Glob => True);
+               K := K + 1;
+            end loop;
+
+            K := 1;
+            for P of Default_Excluded_Patterns loop
+               E_Regexp (K) := Compile (P, Glob => True);
+               K := K + 1;
+            end loop;
+
+            for P of Job.Excluded_Patterns loop
+               E_Regexp (K) := Compile (P, Glob => True);
+               K := K + 1;
+            end loop;
+         end;
+
+         --  Check the files under the project root
+
+         Process (Prefix => "");
+
+         PF_Initialized := True;
+      end Set_Project_Files;
+
+   end Gpr_Queue;
+
+   --------------
+   -- Gpr_Sync --
+   --------------
+
+   task body Gpr_Sync is
+      Job         : Gpr_Data;
+      Files       : File_Data_Set.Vector;
+      No_More_Job : Boolean;
+   begin
+      For_Slave : loop
+         --  Get a new job and the associated files if any
+
+         Gpr_Queue.Get (Job, Files, No_More_Job);
+
+         exit For_Slave when No_More_Job;
+
+         --  Synchronize each file in the list we got
+
+         for F of Files loop
+            Protocol.Sync_File
+              (Job.Channel, To_String (F.Path_Name), F.Timestamp);
+         end loop;
+
+         Protocol.Send_End_Of_File_List (Job.Channel);
+      end loop For_Slave;
+
+      accept Stop;
+
+   exception
+      when E : others =>
+         Write_Line (Exception_Information (E));
+         OS_Exit (1);
+   end Gpr_Sync;
+
    --------------
    -- To_Slave --
    --------------
 
    procedure To_Slave
      (Sync              : Protocol.Sync_Kind;
+      Channel           : Protocol.Communication_Channel;
       Project_Name      : String;
       Root_Dir          : String;
       Slave_Root_Dir    : String;
@@ -188,7 +496,13 @@ package body Gprbuild.Compilation.Sync is
    begin
       case Sync is
          when Protocol.File  =>
+            --  Nothing to do as we are sharing the same file system
             null;
+
+         when Protocol.Gpr =>
+            To_Slave_Gpr
+              (Channel, Project_Name, Root_Dir, Slave_Root_Dir, User, Host,
+               Excluded_Patterns, Included_Patterns);
 
          when Protocol.Rsync =>
             To_Slave_Rsync
@@ -196,6 +510,37 @@ package body Gprbuild.Compilation.Sync is
                Excluded_Patterns, Included_Patterns);
       end case;
    end To_Slave;
+
+   ------------------
+   -- To_Slave_Gpr --
+   ------------------
+
+   procedure To_Slave_Gpr
+     (Channel           : Protocol.Communication_Channel;
+      Project_Name      : String;
+      Root_Dir          : String;
+      Slave_Root_Dir    : String;
+      User              : String;
+      Host              : String;
+      Excluded_Patterns : Str_Vect.Vector;
+      Included_Patterns : Str_Vect.Vector) is
+   begin
+      --  Starts the tasks if not already done
+
+      if Sync_Tasks = null then
+         Sync_Tasks := new Gpr_Sync_Tasks;
+      end if;
+
+      Gpr_Queue.Add
+        (Gpr_Data'
+           (Channel,
+            To_Unbounded_String (Project_Name),
+            To_Unbounded_String (Root_Dir),
+            To_Unbounded_String (Slave_Root_Dir),
+            To_Unbounded_String (User),
+            To_Unbounded_String (Host),
+            Excluded_Patterns, Included_Patterns));
+   end To_Slave_Gpr;
 
    --------------------
    -- To_Slave_Rsync --
@@ -210,7 +555,6 @@ package body Gprbuild.Compilation.Sync is
       Excluded_Patterns : Str_Vect.Vector;
       Included_Patterns : Str_Vect.Vector)
    is
-      use type Containers.Count_Type;
 
       procedure Add_Arg (Str : String);
       --  Add new argument
@@ -348,7 +692,17 @@ package body Gprbuild.Compilation.Sync is
 
    procedure Wait is
    begin
+      Gpr_Queue.No_More_Job;
+
       Wait_Rsync (Rsync_Count);
+
+      if Sync_Tasks /= null then
+         for T of Sync_Tasks.all loop
+            if not T'Terminated then
+               T.Stop;
+            end if;
+         end loop;
+      end if;
    end Wait;
 
 begin
