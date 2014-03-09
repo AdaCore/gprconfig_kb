@@ -101,7 +101,6 @@ package body Gprbuild.Compilation.Protocol is
    -----------------
 
    function Get_Command (Channel : Communication_Channel) return Command is
-      use Ada.Streams;
       use Ada.Streams.Stream_IO;
 
       function Handle_File (Cmd : Command) return Command;
@@ -231,7 +230,8 @@ package body Gprbuild.Compilation.Protocol is
                    else "");
       begin
          if C in
-           "EX" | "AK" | "FL" | "OK" | "KO" | "CX" | "CU" | "DP" | "EC"
+           "EX" | "AK" | "TS" | "ES" | "FL" | "OK" | "KO"
+           | "CX" | "CU" | "DP" | "EC"
          then
             Result.Cmd := Command_Kind'Value (C);
 
@@ -414,6 +414,15 @@ package body Gprbuild.Compilation.Protocol is
       String'Output (Channel.Channel, Command_Kind'Image (EC));
    end Send_End_Of_Compilation;
 
+   ---------------------------
+   -- Send_End_Of_File_List --
+   ---------------------------
+
+   procedure Send_End_Of_File_List (Channel : Communication_Channel) is
+   begin
+      String'Output (Channel.Channel, Command_Kind'Image (ES));
+   end Send_End_Of_File_List;
+
    ---------------
    -- Send_Exec --
    ---------------
@@ -466,6 +475,47 @@ package body Gprbuild.Compilation.Protocol is
       Send_File_Internal (Channel, Path_Name, FL);
    end Send_File;
 
+   ---------------
+   -- Sync_File --
+   ---------------
+
+   procedure Sync_File
+     (Channel   : Communication_Channel;
+      Path_Name : String;
+      Timestamp : Time_Stamp_Type) is
+   begin
+      String'Output
+        (Channel.Channel,
+         Command_Kind'Image (TS)
+         & Path_Name & Args_Sep & String (Timestamp));
+
+      declare
+         use Protocol;
+         Cmd : constant Command := Get_Command (Channel);
+      begin
+         if Kind (Cmd) = KO then
+            --  We need to send the file
+
+            declare
+               File   : Stream_IO.File_Type;
+               Buffer : Stream_Element_Array (1 .. 16 * 1_024);
+               Last   : Stream_Element_Offset;
+            begin
+               Stream_IO.Open (File, Stream_IO.In_File, Path_Name);
+
+               loop
+                  Stream_IO.Read (File, Buffer, Last);
+                  Stream_Element_Array'Output
+                    (Channel.Channel, Buffer (1 .. Last));
+                  exit when Last = 0;
+               end loop;
+
+               Stream_IO.Close (File);
+            end;
+         end if;
+      end;
+   end Sync_File;
+
    ------------------------
    -- Send_File_Internal --
    ------------------------
@@ -475,7 +525,6 @@ package body Gprbuild.Compilation.Protocol is
       Path_Name : String;
       Cmd       : Command_Kind)
    is
-      use Ada.Streams;
       use Ada.Streams.Stream_IO;
 
       procedure Input

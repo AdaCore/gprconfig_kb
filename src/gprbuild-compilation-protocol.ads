@@ -19,6 +19,7 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Streams;           use Ada.Streams;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with GNAT.OS_Lib;           use GNAT;
@@ -99,6 +100,8 @@ package Gprbuild.Compilation.Protocol is
    type Command_Kind is
      (EX,  -- execute a command
       AK,  -- acknowledge received command (with pid)
+      TS,  -- a file timestamp
+      ES,  -- end of file timestamp
       FL,  -- a file
       OK,  -- compilation ok (with optional pid)
       KO,  -- compilation failed (with optional pid)
@@ -160,9 +163,20 @@ package Gprbuild.Compilation.Protocol is
       Path_Name : String);
    --  Path_Name is the full path name to the local filename
 
+   procedure Sync_File
+     (Channel   : Communication_Channel;
+      Path_Name : String;
+      Timestamp : Time_Stamp_Type);
+   --  Send a filename and associated timestamp. Will receive a OK or KO if the
+   --  file is to be transfered to the slave.
+
    procedure Send_End_Of_Compilation (Channel : Communication_Channel);
    --  Send an end of compilation signal, the slave will at this point be able
    --  to get jobs from another build master (Get_Context).
+
+   procedure Send_End_Of_File_List (Channel : Communication_Channel);
+   --  Send an end of file list signal, it means that all files timestamps have
+   --  been checked. After this the compilation can be started.
 
    procedure Get_Pid
      (Channel : Communication_Channel;
