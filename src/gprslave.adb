@@ -1350,15 +1350,51 @@ procedure Gprslave is
 
          Check_Time_Stamps : loop
             declare
-               Cmd  : constant Command := Get_Command (Builder.Channel);
-               List : constant Argument_List_Access := Args (Cmd);
+
+               type File_Data is record
+                  Path_Name : Unbounded_String;
+                  Timestamp : Time_Stamp_Type; -- YYYYMMDDhhmmss
+               end record;
+
+               package File_Data_Set is
+                 new Containers.Vectors (Positive, File_Data);
+
+               procedure Set_Stamp
+                 (Path_Name : String; Time_Stamp : Time_Stamp_Type)
+                 with Inline;
+               --  Set modification time stamp to the given file
+
+               ---------------
+               -- Set_Stamp --
+               ---------------
+
+               procedure Set_Stamp
+                 (Path_Name : String; Time_Stamp : Time_Stamp_Type)
+               is
+                  TS : constant String := String (Time_Stamp);
+               begin
+                  Set_File_Last_Modify_Time_Stamp
+                    (Path_Name,
+                     GM_Time_Of
+                       (Year   => Year_Type'Value (TS (1 .. 4)),
+                        Month  => Month_Type'Value (TS (5 .. 6)),
+                        Day    => Day_Type'Value (TS (7 .. 8)),
+                        Hour   => Hour_Type'Value (TS (9 .. 10)),
+                        Minute => Minute_Type'Value (TS (11 .. 12)),
+                        Second => Second_Type'Value (TS (13 .. 14))));
+               end Set_Stamp;
+
+               Old_Stamps : File_Data_Set.Vector;
+               Cmd        : Command;
             begin
+               Cmd := Get_Command (Builder.Channel);
+
                if Debug then
                   Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
 
-                  if List /= null then
-                     for K in List'Range loop
-                        Put (", " & List (K).all);
+                  if Args (Cmd) /= null then
+                     for K in Args (Cmd)'Range loop
+                        Put (", " & Args (Cmd) (K).all);
                      end loop;
                   end if;
                   New_Line;
@@ -1368,16 +1404,23 @@ procedure Gprslave is
                   Total_File := Total_File + 1;
 
                   declare
-                     Path_Name : constant String := List (1).all;
-                     TS        : constant String (1 .. 14) := List (2).all;
+                     Path_Name  : constant String := Args (Cmd) (1).all;
+                     TS         : constant Time_Stamp_Type :=
+                                    Time_Stamp_Type (Args (Cmd) (2).all);
+                     File_Stamp : Time_Stamp_Type;
+                     Exists     : Boolean;
                   begin
                      Create_Path (Containing_Directory (Path_Name));
 
-                     if not Exists (Path_Name)
-                       or else
-                         To_Time_Stamp (Modification_Time (Path_Name))
-                           <  Time_Stamp_Type (TS)
-                     then
+                     if Directories.Exists (Path_Name) then
+                        File_Stamp :=
+                          To_Time_Stamp (Modification_Time (Path_Name));
+                        Exists := True;
+                     else
+                        Exists := False;
+                     end if;
+
+                     if not Exists or else File_Stamp <  TS then
                         Total_Transferred := Total_Transferred + 1;
 
                         Send_Ko (Builder.Channel);
@@ -1402,17 +1445,15 @@ procedure Gprslave is
 
                            Stream_IO.Close (File);
 
+                           --  First record old stamp if we need to restore it
+
+                           Old_Stamps.Append
+                             (File_Data'
+                                (To_Unbounded_String (Path_Name), File_Stamp));
+
                            --  Set file time stamp
 
-                           Set_File_Last_Modify_Time_Stamp
-                             (Path_Name,
-                              GM_Time_Of
-                                (Year   => Year_Type'Value (TS (1 .. 4)),
-                                 Month  => Month_Type'Value (TS (5 .. 6)),
-                                 Day    => Day_Type'Value (TS (7 .. 8)),
-                                 Hour   => Hour_Type'Value (TS (9 .. 10)),
-                                 Minute => Minute_Type'Value (TS (11 .. 12)),
-                                 Second => Second_Type'Value (TS (13 .. 14))));
+                           Set_Stamp (Path_Name, TS);
                         end;
 
                      else
@@ -1423,6 +1464,24 @@ procedure Gprslave is
                elsif Kind (Cmd) = ES then
                   exit Check_Time_Stamps;
                end if;
+
+            exception
+               when others =>
+                  --  If any exceptions are raised whe have a partial
+                  --  synchronization. To ensure that the euristic (never try
+                  --  to synchronize files with older time stamp than any one
+                  --  already syncronized) we set back all files to the old
+                  --  modify time stamps.
+                  --
+                  --  We are goind to leave the slave, but this way we make
+                  --  sure that when restarted all files are going to be
+                  --  resynchronized as needed.
+
+                  for F of Old_Stamps loop
+                     Set_Stamp (To_String (F.Path_Name), F.Timestamp);
+                  end loop;
+
+                  raise;
             end;
          end loop Check_Time_Stamps;
 

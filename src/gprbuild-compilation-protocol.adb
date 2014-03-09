@@ -484,7 +484,8 @@ package body Gprbuild.Compilation.Protocol is
    procedure Sync_File
      (Channel   : Communication_Channel;
       Path_Name : String;
-      Timestamp : Time_Stamp_Type) is
+      Timestamp : Time_Stamp_Type;
+      Done      : out Boolean) is
    begin
       String'Output
         (Channel.Channel,
@@ -497,6 +498,8 @@ package body Gprbuild.Compilation.Protocol is
       begin
          if Kind (Cmd) = KO then
             --  We need to send the file
+
+            Done := True;
 
             declare
                File   : Stream_IO.File_Type;
@@ -514,6 +517,9 @@ package body Gprbuild.Compilation.Protocol is
 
                Stream_IO.Close (File);
             end;
+
+         else
+            Done := False;
          end if;
       end;
    end Sync_File;

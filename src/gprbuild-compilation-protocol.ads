@@ -168,7 +168,8 @@ package Gprbuild.Compilation.Protocol is
    procedure Sync_File
      (Channel   : Communication_Channel;
       Path_Name : String;
-      Timestamp : Time_Stamp_Type);
+      Timestamp : Time_Stamp_Type;
+      Done      : out Boolean);
    --  Send a filename and associated timestamp. Will receive a OK or KO if the
    --  file is to be transfered to the slave.
 

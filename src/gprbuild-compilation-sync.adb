@@ -450,9 +450,11 @@ package body Gprbuild.Compilation.Sync is
    --------------
 
    task body Gpr_Sync is
-      Job         : Gpr_Data;
-      Files       : File_Data_Set.Vector;
-      No_More_Job : Boolean;
+      Job            : Gpr_Data;
+      Files          : File_Data_Set.Vector;
+      Time_Threshold : Time_Stamp_Type := "19000101000000";
+      No_More_Job    : Boolean;
+      Done           : Boolean;
    begin
       For_Slave : loop
          --  Get a new job and the associated files if any
@@ -464,8 +466,15 @@ package body Gprbuild.Compilation.Sync is
          --  Synchronize each file in the list we got
 
          for F of Files loop
-            Protocol.Sync_File
-              (Job.Channel, To_String (F.Path_Name), F.Timestamp);
+            if F.Timestamp > Time_Threshold then
+               Protocol.Sync_File
+                 (Job.Channel, To_String (F.Path_Name), F.Timestamp, Done);
+
+               if not Done then
+                  --  File is up-to-date on slave, set the new threshold
+                  Time_Threshold := F.Timestamp;
+               end if;
+            end if;
          end loop;
 
          Protocol.Send_End_Of_File_List (Job.Channel);
