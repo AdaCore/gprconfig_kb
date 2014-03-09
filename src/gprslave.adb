@@ -1215,10 +1215,161 @@ procedure Gprslave is
    procedure Wait_For_Master is
       use Types;
 
-      Builder           : Build_Master;
-      Clock_Status      : Boolean;
-      Total_File        : Natural := 0;
-      Total_Transferred : Natural := 0;
+      procedure Sync_Gpr (Builder : Build_Master);
+
+      --------------
+      -- Sync_Gpr --
+      --------------
+
+      procedure Sync_Gpr (Builder : Build_Master) is
+
+         use type Containers.Count_Type;
+
+         procedure Set_Stamp
+           (Path_Name : String; Time_Stamp : Time_Stamp_Type)
+           with Inline;
+         --  Set modification time stamp to the given file
+
+         ---------------
+         -- Set_Stamp --
+         ---------------
+
+         procedure Set_Stamp
+           (Path_Name : String; Time_Stamp : Time_Stamp_Type)
+         is
+            TS : constant String := String (Time_Stamp);
+         begin
+            Set_File_Last_Modify_Time_Stamp
+              (Path_Name,
+               GM_Time_Of
+                 (Year   => Year_Type'Value (TS (1 .. 4)),
+                  Month  => Month_Type'Value (TS (5 .. 6)),
+                  Day    => Day_Type'Value (TS (7 .. 8)),
+                  Hour   => Hour_Type'Value (TS (9 .. 10)),
+                  Minute => Minute_Type'Value (TS (11 .. 12)),
+                  Second => Second_Type'Value (TS (13 .. 14))));
+         end Set_Stamp;
+
+         Total_File        : Natural := 0;
+         Total_Transferred : Natural := 0;
+
+      begin
+         Set_Directory (To_String (Builder.Project_Name));
+
+         Check_Time_Stamps : loop
+            declare
+               To_Sync : File_Data_Set.Vector;
+               Cmd     : Command;
+               K       : Positive := 1;
+            begin
+               Cmd := Get_Command (Builder.Channel);
+
+               if Debug then
+                  Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
+
+                  if Args (Cmd) /= null then
+                     for K in Args (Cmd)'Range loop
+                        Put (", " & Args (Cmd) (K).all);
+                     end loop;
+                  end if;
+                  New_Line;
+               end if;
+
+               if Kind (Cmd) = TS then
+                  --  Check all files in the argument of the command. This is a
+                  --  list of couple (filename and time stamp).
+
+                  Check_All_Files : loop
+                     Total_File := Total_File + 1;
+
+                     declare
+                        Path_Name  : constant String := Args (Cmd) (K).all;
+                        TS         : constant Time_Stamp_Type :=
+                                       Time_Stamp_Type
+                                         (Args (Cmd) (K + 1).all);
+                        File_Stamp : Time_Stamp_Type;
+                        Exists     : Boolean;
+                     begin
+                        if Directories.Exists (Path_Name) then
+                           File_Stamp :=
+                             To_Time_Stamp (Modification_Time (Path_Name));
+                           Exists := True;
+                        else
+                           Exists := False;
+                        end if;
+
+                        if not Exists or else File_Stamp <  TS then
+                           To_Sync.Append
+                             (File_Data'
+                                (To_Unbounded_String (Path_Name),
+                                 TS, File_Stamp));
+                        end if;
+                     end;
+
+                     K := K + 2;
+                     exit Check_All_Files when K > Args (Cmd)'Length;
+                  end loop Check_All_Files;
+
+                  --  If all files are up-to-data
+
+                  if To_Sync.Length = 0 then
+                     Send_Ok (Builder.Channel);
+
+                  else
+                     --  Some files are to be synchronized, send the list of
+                     --  names back to the master.
+
+                     Send_Ko (Builder.Channel, To_Sync);
+
+                     --  We then receive the files contents in the same order
+
+                     for W of To_Sync loop
+                        declare
+                           File : Stream_IO.File_Type;
+                        begin
+                           Create_Path
+                             (Containing_Directory (To_String (W.Path_Name)));
+
+                           Stream_IO.Create
+                             (File, Stream_IO.Out_File,
+                              To_String (W.Path_Name));
+
+                           loop
+                              declare
+                                 Data : constant Stream_Element_Array :=
+                                          Get_Raw_Data (Builder.Channel);
+                              begin
+                                 exit when Data'Length = 0;
+                                 Stream_IO.Write (File, Data);
+                              end;
+                           end loop;
+
+                           Stream_IO.Close (File);
+
+                           --  Set file time stamp
+
+                           Set_Stamp (To_String (W.Path_Name), W.Timestamp);
+                        end;
+                     end loop;
+
+                     Total_Transferred :=
+                       Total_Transferred + Natural (To_Sync.Length);
+                  end if;
+
+               elsif Kind (Cmd) = ES then
+                  exit Check_Time_Stamps;
+               end if;
+            end;
+         end loop Check_Time_Stamps;
+
+         if Verbose then
+            Put_Line ("Files    total:" & Natural'Image (Total_File));
+            Put_Line ("  transferred :" & Natural'Image (Total_Transferred));
+         end if;
+      end Sync_Gpr;
+
+      Builder      : Build_Master;
+      Clock_Status : Boolean;
    begin
       --  Wait for a connection
 
@@ -1345,150 +1496,7 @@ procedure Gprslave is
 
       if Builder.Sync = Protocol.Gpr then
          --  Move to projet directory
-
-         Set_Directory (To_String (Builder.Project_Name));
-
-         Check_Time_Stamps : loop
-            declare
-
-               type File_Data is record
-                  Path_Name : Unbounded_String;
-                  Timestamp : Time_Stamp_Type; -- YYYYMMDDhhmmss
-               end record;
-
-               package File_Data_Set is
-                 new Containers.Vectors (Positive, File_Data);
-
-               procedure Set_Stamp
-                 (Path_Name : String; Time_Stamp : Time_Stamp_Type)
-                 with Inline;
-               --  Set modification time stamp to the given file
-
-               ---------------
-               -- Set_Stamp --
-               ---------------
-
-               procedure Set_Stamp
-                 (Path_Name : String; Time_Stamp : Time_Stamp_Type)
-               is
-                  TS : constant String := String (Time_Stamp);
-               begin
-                  Set_File_Last_Modify_Time_Stamp
-                    (Path_Name,
-                     GM_Time_Of
-                       (Year   => Year_Type'Value (TS (1 .. 4)),
-                        Month  => Month_Type'Value (TS (5 .. 6)),
-                        Day    => Day_Type'Value (TS (7 .. 8)),
-                        Hour   => Hour_Type'Value (TS (9 .. 10)),
-                        Minute => Minute_Type'Value (TS (11 .. 12)),
-                        Second => Second_Type'Value (TS (13 .. 14))));
-               end Set_Stamp;
-
-               Old_Stamps : File_Data_Set.Vector;
-               Cmd        : Command;
-            begin
-               Cmd := Get_Command (Builder.Channel);
-
-               if Debug then
-                  Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
-
-                  if Args (Cmd) /= null then
-                     for K in Args (Cmd)'Range loop
-                        Put (", " & Args (Cmd) (K).all);
-                     end loop;
-                  end if;
-                  New_Line;
-               end if;
-
-               if Kind (Cmd) = TS then
-                  Total_File := Total_File + 1;
-
-                  declare
-                     Path_Name  : constant String := Args (Cmd) (1).all;
-                     TS         : constant Time_Stamp_Type :=
-                                    Time_Stamp_Type (Args (Cmd) (2).all);
-                     File_Stamp : Time_Stamp_Type;
-                     Exists     : Boolean;
-                  begin
-                     Create_Path (Containing_Directory (Path_Name));
-
-                     if Directories.Exists (Path_Name) then
-                        File_Stamp :=
-                          To_Time_Stamp (Modification_Time (Path_Name));
-                        Exists := True;
-                     else
-                        Exists := False;
-                     end if;
-
-                     if not Exists or else File_Stamp <  TS then
-                        Total_Transferred := Total_Transferred + 1;
-
-                        Send_Ko (Builder.Channel);
-
-                        --  We then receive the file content
-
-                        declare
-                           File : Stream_IO.File_Type;
-                        begin
-                           Stream_IO.Create
-                             (File, Stream_IO.Out_File, Path_Name);
-
-                           loop
-                              declare
-                                 Data : constant Stream_Element_Array :=
-                                          Get_Raw_Data (Builder.Channel);
-                              begin
-                                 exit when Data'Length = 0;
-                                 Stream_IO.Write (File, Data);
-                              end;
-                           end loop;
-
-                           Stream_IO.Close (File);
-
-                           --  First record old stamp if we need to restore it
-
-                           Old_Stamps.Append
-                             (File_Data'
-                                (To_Unbounded_String (Path_Name), File_Stamp));
-
-                           --  Set file time stamp
-
-                           Set_Stamp (Path_Name, TS);
-                        end;
-
-                     else
-                        Send_Ok (Builder.Channel);
-                     end if;
-                  end;
-
-               elsif Kind (Cmd) = ES then
-                  exit Check_Time_Stamps;
-               end if;
-
-            exception
-               when others =>
-                  --  If any exceptions are raised whe have a partial
-                  --  synchronization. To ensure that the euristic (never try
-                  --  to synchronize files with older time stamp than any one
-                  --  already syncronized) we set back all files to the old
-                  --  modify time stamps.
-                  --
-                  --  We are goind to leave the slave, but this way we make
-                  --  sure that when restarted all files are going to be
-                  --  resynchronized as needed.
-
-                  for F of Old_Stamps loop
-                     Set_Stamp (To_String (F.Path_Name), F.Timestamp);
-                  end loop;
-
-                  raise;
-            end;
-         end loop Check_Time_Stamps;
-
-         if Verbose then
-            Put_Line ("Files    total:" & Natural'Image (Total_File));
-            Put_Line ("  transferred :" & Natural'Image (Total_Transferred));
-         end if;
+         Sync_Gpr (Builder);
       end if;
 
       Mutex.Release;

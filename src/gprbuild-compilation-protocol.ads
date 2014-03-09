@@ -165,13 +165,13 @@ package Gprbuild.Compilation.Protocol is
       Path_Name : String);
    --  Path_Name is the full path name to the local filename
 
-   procedure Sync_File
-     (Channel   : Communication_Channel;
-      Path_Name : String;
-      Timestamp : Time_Stamp_Type;
-      Done      : out Boolean);
-   --  Send a filename and associated timestamp. Will receive a OK or KO if the
-   --  file is to be transfered to the slave.
+   procedure Sync_Files
+     (Channel  : Communication_Channel;
+      Root_Dir : String;
+      Files    : File_Data_Set.Vector;
+      Newest   : out Time_Stamp_Type);
+   --  Send a set of filenames and associated timestamps. Will receive a OK or
+   --  KO with the list of files to be transfered to the slave.
 
    procedure Send_End_Of_Compilation (Channel : Communication_Channel);
    --  Send an end of compilation signal, the slave will at this point be able
@@ -230,6 +230,11 @@ package Gprbuild.Compilation.Protocol is
    procedure Send_Ko (Channel : Communication_Channel);
    --  Send Ko to initial handshake (slave not compatible with master for
    --  example).
+
+   procedure Send_Ko
+     (Channel : Communication_Channel;
+      Files   : File_Data_Set.Vector);
+   --  Send a Ko message with a list of file names
 
    procedure Send_Output (Channel : Communication_Channel; File_Name : String);
    --  Send an output of a command

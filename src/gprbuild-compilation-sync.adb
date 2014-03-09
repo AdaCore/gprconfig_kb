@@ -106,16 +106,6 @@ package body Gprbuild.Compilation.Sync is
       Included_Patterns : Str_Vect.Vector;
    end record;
 
-   --  The set of files for a given project (associated with a synchronization
-   --  job).
-
-   type File_Data is record
-      Path_Name : Unbounded_String;
-      Timestamp : Time_Stamp_Type; -- YYYYMMDDhhmmss
-   end record;
-
-   package File_Data_Set is new Containers.Vectors (Positive, File_Data);
-
    package Gpr_Data_Set is new Containers.Vectors (Positive, Gpr_Data);
 
    --  Queue of job to be done for the gpr protocol
@@ -398,7 +388,8 @@ package body Gprbuild.Compilation.Sync is
                      Project_Files.Append
                        (File_Data'
                           (To_Unbounded_String (Entry_Name),
-                           To_Time_Stamp (Modification_Time (File))));
+                           To_Time_Stamp (Modification_Time (File)),
+                           Dummy_Time_Stamp));
                   end if;
                end if;
             end Check;
@@ -450,11 +441,9 @@ package body Gprbuild.Compilation.Sync is
    --------------
 
    task body Gpr_Sync is
-      Job            : Gpr_Data;
-      Files          : File_Data_Set.Vector;
-      Time_Threshold : Time_Stamp_Type := "19000101000000";
-      No_More_Job    : Boolean;
-      Done           : Boolean;
+      Job         : Gpr_Data;
+      Files       : File_Data_Set.Vector;
+      No_More_Job : Boolean;
    begin
       For_Slave : loop
          --  Get a new job and the associated files if any
@@ -463,21 +452,49 @@ package body Gprbuild.Compilation.Sync is
 
          exit For_Slave when No_More_Job;
 
-         --  Synchronize each file in the list we got
+         declare
+            Chunk_Size     : constant := 200;
+            --  This constant controls the number of files sent with the sync
+            --  command. Doing one at a time is really time consumming as
+            --  we have for every file and send and a receive command on
+            --  the socket.
 
-         for F of Files loop
-            if F.Timestamp > Time_Threshold then
-               Protocol.Sync_File
-                 (Job.Channel, To_String (F.Path_Name), F.Timestamp, Done);
+            Time_Threshold : Time_Stamp_Type := Dummy_Time_Stamp;
+            F_List         : File_Data_Set.Vector;
+            Count          : Natural := 0;
+            Newest         : Time_Stamp_Type;
 
-               if not Done then
-                  --  File is up-to-date on slave, set the new threshold
-                  Time_Threshold := F.Timestamp;
+         begin
+            --  Synchronize each file in the list we got
+
+            for F of Files loop
+               if F.Timestamp > Time_Threshold then
+                  if Count = Chunk_Size then
+                     Protocol.Sync_Files
+                       (Job.Channel, To_String (Job.Root_Dir), F_List, Newest);
+
+                     if Newest > Time_Threshold then
+                        Time_Threshold := Newest;
+                     end if;
+
+                     F_List.Clear;
+                     Count := 0;
+                  end if;
+
+                  F_List.Append (F);
+                  Count := Count + 1;
                end if;
-            end if;
-         end loop;
+            end loop;
 
-         Protocol.Send_End_Of_File_List (Job.Channel);
+            --  Then send the last chunk if any
+
+            if Count /= 0 then
+               Protocol.Sync_Files
+                 (Job.Channel, To_String (Job.Root_Dir), F_List, Newest);
+            end if;
+
+            Protocol.Send_End_Of_File_List (Job.Channel);
+         end;
       end loop For_Slave;
 
       accept Stop;

@@ -19,10 +19,11 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Directories;            use Ada.Directories;
+with Ada.Containers.Ordered_Sets; use Ada;
+with Ada.Directories;             use Ada.Directories;
 with Ada.Streams.Stream_IO;
-with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
-with Ada.Strings.Maps.Constants; use Ada.Strings.Maps;
+with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
+with Ada.Strings.Maps.Constants;  use Ada.Strings.Maps;
 
 with GNAT.Rewrite_Data;
 with GNAT.String_Split;     use GNAT.String_Split;
@@ -477,52 +478,123 @@ package body Gprbuild.Compilation.Protocol is
       Send_File_Internal (Channel, Path_Name, FL);
    end Send_File;
 
-   ---------------
-   -- Sync_File --
-   ---------------
+   ----------------
+   -- Sync_Files --
+   ----------------
 
-   procedure Sync_File
-     (Channel   : Communication_Channel;
-      Path_Name : String;
-      Timestamp : Time_Stamp_Type;
-      Done      : out Boolean) is
+   procedure Sync_Files
+     (Channel  : Communication_Channel;
+      Root_Dir : String;
+      Files    : File_Data_Set.Vector;
+      Newest   : out Time_Stamp_Type)
+   is
+      function "<" (Left, Right : File_Data) return Boolean
+        is (Left.Path_Name < Right.Path_Name);
+
+      function "=" (Left, Right : File_Data) return Boolean
+        is (Left.Path_Name = Right.Path_Name);
+
+      package File_Set is new Containers.Ordered_Sets (File_Data);
+
+      N_TS            : Time_Stamp_Type := Dummy_Time_Stamp;
+      Not_Transferred : File_Set.Set;
+
    begin
-      String'Output
-        (Channel.Channel,
-         Command_Kind'Image (TS)
-         & Path_Name & Args_Sep & String (Timestamp));
+      Create_Args : declare
+         Args  : Unbounded_String;
+         First : Boolean := True;
+      begin
+         for F of Files loop
+            if First then
+               First := False;
+            else
+               Append (Args, Args_Sep);
+            end if;
+
+            Append (Args, F.Path_Name);
+            Append (Args, Args_Sep);
+            Append (Args, String (F.Timestamp));
+
+            Not_Transferred.Insert (F);
+         end loop;
+
+         String'Output
+           (Channel.Channel,
+            Command_Kind'Image (TS) & To_String (Args));
+      end Create_Args;
 
       declare
          use Protocol;
+
+         type Buffer_Access is access Stream_Element_Array;
+
+         procedure Unchecked_Free is
+           new Unchecked_Deallocation (Stream_Element_Array, Buffer_Access);
+
+         Buffer : Buffer_Access;
+         Last   : Stream_Element_Offset;
+
          Cmd : constant Command := Get_Command (Channel);
       begin
          if Kind (Cmd) = KO then
-            --  We need to send the file
 
-            Done := True;
+            Buffer := new Stream_Element_Array (1 .. 2 * 1_024 * 1_024);
+            --  A somewhat large buffer is needed to transfer big file
+            --  efficiently. Here we use a 2Mb buffer which should be
+            --  large enough for read most file contents in one OS call.
+            --
+            --  This is allocated on the heap to avoid too much pressure on the
+            --  stack of the tasks.
 
-            declare
-               File   : Stream_IO.File_Type;
-               Buffer : Stream_Element_Array (1 .. 16 * 1_024);
-               Last   : Stream_Element_Offset;
-            begin
-               Stream_IO.Open (File, Stream_IO.In_File, Path_Name);
+            --  We need to send the files in arguments
 
-               loop
-                  Stream_IO.Read (File, Buffer, Last);
-                  Stream_Element_Array'Output
-                    (Channel.Channel, Buffer (1 .. Last));
-                  exit when Last = 0;
-               end loop;
+            for Filename of Args (Cmd).all loop
+               declare
+                  File : Stream_IO.File_Type;
+               begin
+                  --  Open the file in shared mode as multiple tasks could have
+                  --  to send it to some slaves.
 
-               Stream_IO.Close (File);
-            end;
+                  Stream_IO.Open
+                    (File, Stream_IO.In_File,
+                     (if Root_Dir = ""
+                      then ""
+                      else Root_Dir & Directory_Separator) & Filename.all,
+                     Form => "shared=yes");
 
-         else
-            Done := False;
+                  --  Always send an empty stream element array at the end.
+                  --  This is used as EOF tag.
+
+                  loop
+                     Stream_IO.Read (File, Buffer.all, Last);
+                     Stream_Element_Array'Output
+                       (Channel.Channel, Buffer (1 .. Last));
+                     exit when Last = 0;
+                  end loop;
+
+                  Stream_IO.Close (File);
+
+                  Not_Transferred.Delete
+                    (File_Data'
+                       (To_Unbounded_String (Filename.all),
+                        others => <>));
+               end;
+            end loop;
+
+            Unchecked_Free (Buffer);
          end if;
       end;
-   end Sync_File;
+
+      --  Find the newest time stamps amongst the non transferred files
+
+      for File of Not_Transferred loop
+         if File.Timestamp > N_TS then
+            N_TS := File.Timestamp;
+         end if;
+      end loop;
+
+      Newest := N_TS;
+   end Sync_Files;
 
    ------------------------
    -- Send_File_Internal --
@@ -653,6 +725,27 @@ package body Gprbuild.Compilation.Protocol is
    procedure Send_Ko (Channel : Communication_Channel) is
    begin
       String'Output (Channel.Channel, Command_Kind'Image (KO));
+   end Send_Ko;
+
+   procedure Send_Ko
+     (Channel : Communication_Channel;
+      Files   : File_Data_Set.Vector)
+   is
+      Args  : Unbounded_String;
+      First : Boolean := True;
+   begin
+      for F of Files loop
+         if First then
+            First := False;
+         else
+            Append (Args, Args_Sep);
+         end if;
+
+         Append (Args, To_String (F.Path_Name));
+      end loop;
+
+      String'Output
+        (Channel.Channel, Command_Kind'Image (KO) & To_String (Args));
    end Send_Ko;
 
    -------------

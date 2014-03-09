@@ -26,6 +26,9 @@ with Ada.Characters.Latin_1;
 
 private with Ada.Containers.Indefinite_Vectors;
 
+with Ada.Containers.Vectors;
+with Ada.Strings.Unbounded;
+
 package Gprbuild.Compilation is
 
    Default_Port : constant := 8484;
@@ -70,6 +73,17 @@ package Gprbuild.Compilation is
    --  If Fail is true the program will exit if the a format error is detected.
    --  If Force is set to True the environement will always be set otherwise it
    --  will be set only if not already set.
+
+   --  The set of files for a given project (associated with a synchronization
+   --  job).
+
+   type File_Data is record
+      Path_Name : Ada.Strings.Unbounded.Unbounded_String;
+      Timestamp : Time_Stamp_Type; -- YYYYMMDDhhmmss
+      Prev      : Time_Stamp_Type;
+   end record;
+
+   package File_Data_Set is new Ada.Containers.Vectors (Positive, File_Data);
 
 private
 
