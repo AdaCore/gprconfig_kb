@@ -21,6 +21,7 @@
 
 with Ada.Characters.Handling;               use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Hashed_Maps;
+with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Directories;                       use Ada.Directories;
@@ -1228,6 +1229,12 @@ procedure Gprslave is
            with Inline;
          --  Set modification time stamp to the given file
 
+         package Files is new Containers.Indefinite_Ordered_Sets (String);
+
+         procedure Delete_Files (Except : Files.Set);
+         --  Delete all files in the current working tree except those in
+         --  Except set.
+
          ---------------
          -- Set_Stamp --
          ---------------
@@ -1248,8 +1255,71 @@ procedure Gprslave is
                   Second => Second_Type'Value (TS (13 .. 14))));
          end Set_Stamp;
 
+         ------------------
+         -- Delete_Files --
+         ------------------
+
+         procedure Delete_Files (Except : Files.Set) is
+
+            procedure Process (Path : String);
+            --  Search recursively the Path
+
+            procedure Process (Path : String) is
+
+               procedure Check (File : Directory_Entry_Type);
+               --  Remove this file if not part of Except set
+
+               -----------
+               -- Check --
+               -----------
+
+               procedure Check (File : Directory_Entry_Type) is
+                  S_Name     : constant String := Simple_Name (File);
+                  Entry_Name : constant String :=
+                                 Path & Directory_Separator & S_Name;
+               begin
+                  if Kind (File) = Directory then
+                     if S_Name not in "." | ".."
+                       and then not Is_Symbolic_Link (Entry_Name)
+                     then
+                        Process (Entry_Name);
+                     end if;
+
+                  else
+                     declare
+                        R_Name : constant String :=
+                                   (if Path = "."
+                                    then ""
+                                    else Path (Path'First + 2 .. Path'Last)
+                                         & Directory_Separator) & S_Name;
+                     begin
+                        if not Except.Contains (R_Name) then
+                           if Debug then
+                              Put_Line
+                                ("# detele excluded '" & R_Name & ''');
+                           end if;
+
+                           Delete_File (R_Name);
+                        end if;
+                     end;
+                  end if;
+               end Check;
+
+            begin
+               Search
+                 (Directory => Path,
+                  Pattern   => "*",
+                  Filter    => (Special_File => False, others => True),
+                  Process   => Check'Access);
+            end Process;
+
+         begin
+            Process (".");
+         end Delete_Files;
+
          Total_File        : Natural := 0;
          Total_Transferred : Natural := 0;
+         In_Master         : Files.Set;
 
       begin
          Set_Directory (To_String (Builder.Project_Name));
@@ -1295,6 +1365,8 @@ procedure Gprslave is
                         else
                            Exists := False;
                         end if;
+
+                        In_Master.Insert (Path_Name);
 
                         if not Exists or else File_Stamp <  TS then
                            To_Sync.Append
@@ -1355,6 +1427,13 @@ procedure Gprslave is
                   end if;
 
                elsif Kind (Cmd) = ES then
+                  --  Delete all files not part of the list sent by the master.
+                  --  This is needed to remove files in previous build removed
+                  --  since then on the master. Again we need to do that as we
+                  --  can't let around unnedded specs or bodies.
+
+                  Delete_Files (Except => In_Master);
+
                   exit Check_Time_Stamps;
                end if;
             end;

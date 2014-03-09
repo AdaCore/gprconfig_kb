@@ -449,44 +449,36 @@ package body Gprbuild.Compilation.Sync is
          exit For_Slave when No_More_Job;
 
          declare
-            Chunk_Size     : constant := 200;
+            Chunk_Size : constant := 500;
             --  This constant controls the number of files sent with the sync
             --  command. Doing one at a time is really time consumming as
             --  we have for every file and send and a receive command on
             --  the socket.
 
-            Time_Threshold : Time_Stamp_Type := Dummy_Time_Stamp;
-            F_List         : File_Data_Set.Vector;
-            Count          : Natural := 0;
-            Newest         : Time_Stamp_Type;
+            F_List     : File_Data_Set.Vector;
+            Count      : Natural := 0;
 
          begin
             --  Synchronize each file in the list we got
 
             for F of Files loop
-               if F.Timestamp > Time_Threshold then
-                  if Count = Chunk_Size then
-                     Protocol.Sync_Files
-                       (Job.Channel, To_String (Job.Root_Dir), F_List, Newest);
+               if Count = Chunk_Size then
+                  Protocol.Sync_Files
+                    (Job.Channel, To_String (Job.Root_Dir), F_List);
 
-                     if Newest > Time_Threshold then
-                        Time_Threshold := Newest;
-                     end if;
-
-                     F_List.Clear;
-                     Count := 0;
-                  end if;
-
-                  F_List.Append (F);
-                  Count := Count + 1;
+                  F_List.Clear;
+                  Count := 0;
                end if;
+
+               F_List.Append (F);
+               Count := Count + 1;
             end loop;
 
             --  Then send the last chunk if any
 
             if Count /= 0 then
                Protocol.Sync_Files
-                 (Job.Channel, To_String (Job.Root_Dir), F_List, Newest);
+                 (Job.Channel, To_String (Job.Root_Dir), F_List);
             end if;
 
             Protocol.Send_End_Of_File_List (Job.Channel);

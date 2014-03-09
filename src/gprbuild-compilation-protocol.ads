@@ -167,8 +167,7 @@ package Gprbuild.Compilation.Protocol is
    procedure Sync_Files
      (Channel  : Communication_Channel;
       Root_Dir : String;
-      Files    : File_Data_Set.Vector;
-      Newest   : out Time_Stamp_Type);
+      Files    : File_Data_Set.Vector);
    --  Send a set of filenames and associated timestamps. Will receive a OK or
    --  KO with the list of files to be transfered to the slave.
 

@@ -19,7 +19,6 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Containers.Ordered_Sets; use Ada;
 with Ada.Directories;             use Ada.Directories;
 with Ada.Streams.Stream_IO;
 with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
@@ -485,20 +484,7 @@ package body Gprbuild.Compilation.Protocol is
    procedure Sync_Files
      (Channel  : Communication_Channel;
       Root_Dir : String;
-      Files    : File_Data_Set.Vector;
-      Newest   : out Time_Stamp_Type)
-   is
-      function "<" (Left, Right : File_Data) return Boolean
-        is (Left.Path_Name < Right.Path_Name);
-
-      function "=" (Left, Right : File_Data) return Boolean
-        is (Left.Path_Name = Right.Path_Name);
-
-      package File_Set is new Containers.Ordered_Sets (File_Data);
-
-      N_TS            : Time_Stamp_Type := Dummy_Time_Stamp;
-      Not_Transferred : File_Set.Set;
-
+      Files    : File_Data_Set.Vector) is
    begin
       Create_Args : declare
          Args  : Unbounded_String;
@@ -514,8 +500,6 @@ package body Gprbuild.Compilation.Protocol is
             Append (Args, F.Path_Name);
             Append (Args, Args_Sep);
             Append (Args, String (F.Timestamp));
-
-            Not_Transferred.Insert (F);
          end loop;
 
          String'Output
@@ -524,6 +508,7 @@ package body Gprbuild.Compilation.Protocol is
       end Create_Args;
 
       declare
+         use Ada;
          use Protocol;
 
          type Buffer_Access is access Stream_Element_Array;
@@ -573,27 +558,12 @@ package body Gprbuild.Compilation.Protocol is
                   end loop;
 
                   Stream_IO.Close (File);
-
-                  Not_Transferred.Delete
-                    (File_Data'
-                       (To_Unbounded_String (Filename.all),
-                        others => <>));
                end;
             end loop;
 
             Unchecked_Free (Buffer);
          end if;
       end;
-
-      --  Find the newest time stamps amongst the non transferred files
-
-      for File of Not_Transferred loop
-         if File.Timestamp > N_TS then
-            N_TS := File.Timestamp;
-         end if;
-      end loop;
-
-      Newest := N_TS;
    end Sync_Files;
 
    ------------------------
