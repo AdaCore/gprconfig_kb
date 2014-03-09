@@ -1339,6 +1339,12 @@ procedure Gprslave is
       --  Register the new builder
 
       Builders.Insert (Builder);
+
+   exception
+      when E : others =>
+         Put_Line ("Unrecoverable error: Wait_For_Master.");
+         Put_Line (Exception_Information (E));
+         OS_Exit (1);
    end Wait_For_Master;
 
    --------------------
