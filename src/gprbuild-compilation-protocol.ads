@@ -51,6 +51,8 @@ package Gprbuild.Compilation.Protocol is
    --  A communication channel, this channel is used for any communication
    --  between the build master and the slaves.
 
+   No_Channel : constant Communication_Channel;
+
    function Create (Sock : Socket_Type) return Communication_Channel;
    --  Create a communication channel
 
@@ -223,6 +225,11 @@ private
       WD_From, WD_To : Unbounded_String; -- working directory
       CD_From, CD_To : Unbounded_String; -- compiler directory
    end record;
+
+   No_Channel : constant Communication_Channel :=
+                  (Sock    => <>,
+                   Channel => null,
+                   others  => Null_Unbounded_String);
 
    type Command is record
       Cmd    : Command_Kind;
