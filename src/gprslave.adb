@@ -858,7 +858,7 @@ procedure Gprslave is
       Job : Job_Data;
    begin
       loop
-         --  Launch a new compiilation only if the maximum of simultaneous
+         --  Launch a new compilation only if the maximum of simultaneous
          --  process has not yet been reached.
 
          Running.Wait_Slot;
