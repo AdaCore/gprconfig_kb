@@ -405,7 +405,7 @@ procedure Gprslave is
       Define_Switch
         (Config, Root_Directory'Access,
          "-d:", Long_Switch => "--directory=",
-         Help    => "set the root directory");
+         Help => "set the root directory");
 
       Define_Switch
         (Config, Port'Access,
