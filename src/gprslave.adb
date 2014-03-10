@@ -883,6 +883,11 @@ procedure Gprslave is
 
             Mutex.Seize;
 
+            if Debug then
+               Put_Line
+                 ("# move to work directory " & Work_Directory (Builder));
+            end if;
+
             Set_Directory (Work_Directory (Builder));
 
             --  Create/Move to object dir if any, note that if we
@@ -948,10 +953,6 @@ procedure Gprslave is
                  ((if Is_Absolute_Path (Dir) then "" else Dir));
 
                Running.Register (Job);
-
-               if Debug then
-                  Put_Line ("# move to directory " & Work_Directory (Builder));
-               end if;
 
                Mutex.Release;
 
