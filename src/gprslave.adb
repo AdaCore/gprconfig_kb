@@ -899,20 +899,32 @@ procedure Gprslave is
             --  If we have an absolute pathname, just start the
             --  process into the to directory. The output file will
             --  be created there and will be reported to the master.
+            --
+            --  Note that the following block should never fail otherwise the
+            --  process won't be started. Even if we know the compilation will
+            --  fail we need to move forward as the result for this compilation
+            --  is waited for by the build master.
 
-            if Dir /= "" then
-               if not Is_Absolute_Path (Dir)
-                 and then not Is_Directory (Dir)
-               then
-                  Create_Directory (Dir);
+            begin
+               if Dir /= "" then
+                  if not Is_Absolute_Path (Dir)
+                    and then not Is_Directory (Dir)
+                  then
+                     Create_Directory (Dir);
+                  end if;
+
+                  if Debug then
+                     Put_Line ("# move to directory " & Dir);
+                  end if;
+
+                  Set_Directory (Dir);
                end if;
-
-               if Debug then
-                  Put_Line ("# move to directory " & Dir);
-               end if;
-
-               Set_Directory (Dir);
-            end if;
+            exception
+               when others =>
+                  if Debug then
+                     Put_Line ("# cannot move to object directory");
+                  end if;
+            end;
 
             Create (List, Args (Job.Cmd)(6).all, String'(1 => Opts_Sep));
 

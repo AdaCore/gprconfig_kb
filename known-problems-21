@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N310-027 gprbuild wait indefinitely for some compilation results
+
+  Problem:    If the Remote package Root_Dir attribute is not properly set
+              gprbuild may not terminate.
+
+  Status:     This was fixed in 2.2 on 2014-03-10
+
+  Workaround: fix the Root_Dir attribute value.
+
 KP-21-N207-022 Fail to compile sources in distributed mode
 
   Problem:    Top level sources (sources found at the project's root
