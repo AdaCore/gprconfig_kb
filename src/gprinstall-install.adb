@@ -48,6 +48,19 @@ package body Gprinstall.Install is
 
    Installed : Name_Id_Set.Set;
 
+   Initial : constant := 20;
+   --  Arbitrary initial length of array Copied_Sources below
+
+   type Source_Ids is array (Positive range <>) of Source_Id;
+   type Source_Ids_Ref is access Source_Ids;
+
+   Copied_Sources : Source_Ids_Ref := new Source_Ids (1 .. Initial);
+   --  Store the copied sources to avoid copying several times the same source
+   --  in procedure Copy_Files.
+
+   Copied_Last : Natural := 0;
+   --  Index of the last copied source in Copied_Sources
+
    -------------
    -- Process --
    -------------
@@ -790,8 +803,8 @@ package body Gprinstall.Install is
                   --  If the unit has a naming exception we install it
                   --  regardless of the fact that it is part of the interface
                   --  or not. This is because the installed project will have
-                  --  a Namig package referencing this file. The .ali is looked
-                  --  based on the name of the renamed body.
+                  --  a Naming package referencing this file. The .ali is
+                  --  looked based on the name of the renamed body.
 
                   if All_Sources or else Sid.Naming_Exception = Yes then
                      Copy_Source (Sid);
@@ -843,12 +856,32 @@ package body Gprinstall.Install is
                                          (Sid.Project, False),
                                        Sid.File) & Osint.Prep_Suffix;
                begin
+                  for J in 1 .. Copied_Last loop
+                     if Sid = Copied_Sources (J) then
+                        return;
+                     end if;
+                  end loop;
+
                   Copy_File
                     (From => (if Exists (Prep_Filename)
                               then Prep_Filename
                               else Get_Name_String (Sid.Path.Name)),
                      To   => Sources_Dir,
                      File => Get_Name_String (Sid.File));
+
+                  if Copied_Last = Copied_Sources'Last then
+                     declare
+                        New_Copied_Sources : constant Source_Ids_Ref :=
+                          new Source_Ids (1 .. Copied_Last * 2);
+                     begin
+                        New_Copied_Sources (Copied_Sources'Range) :=
+                          Copied_Sources.all;
+                        Copied_Sources := New_Copied_Sources;
+                     end;
+                  end if;
+
+                  Copied_Last := Copied_Last + 1;
+                  Copied_Sources (Copied_Last) := Sid;
                end;
             end if;
          end Copy_Source;
@@ -951,6 +984,8 @@ package body Gprinstall.Install is
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
 
       begin
+         Copied_Last := 0;
+
          if not All_Sources then
             Copy_Interfaces (Tree, Project);
          end if;
