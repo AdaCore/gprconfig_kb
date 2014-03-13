@@ -27,6 +27,12 @@ NF-22-N121-005 Check for clock drift in distributed mode (2014-01-29)
   is detected. It is important to have the clock properly synchronized to
   avoid unneeded recompilation.
 
+NF-22-N115-029 GPRinstall supports listing of installed packages (2014-03-13)
+
+  A new mode, enabled with the option --list, can be used in GPRinstall to
+  display the installed packages. Used with --stat a set of statistics are
+  also displayed like the number of installed files and the total size on disk.
+
 NF-22-N108-032 Add support for grouping installs with gprinstall (2014-01-22)
 
   A new option named --install-name can be used to group installations

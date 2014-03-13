@@ -48,6 +48,7 @@ with Switch;      use Switch;
 with Opt;         use Opt;
 with Types;       use Types;
 
+with Gprinstall.DB;
 with Gprinstall.Install;
 with Gprinstall.Uninstall;
 
@@ -68,6 +69,8 @@ procedure Gprinstall.Main is
    Sources_Subdir_Option  : constant String := "--sources-subdir";
    Project_Subdir_Option  : constant String := "--project-subdir";
    No_Lib_Link_Option     : constant String := "--no-lib-link";
+   List_Option            : constant String := "--list";
+   Stat_Option            : constant String := "--stat";
 
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
@@ -333,7 +336,13 @@ procedure Gprinstall.Main is
                Install_Name_Default := False;
 
             elsif Has_Prefix (Uninstall_Option) then
-               Uninstall_Mode := True;
+               Usage_Mode := Uninstall_Mode;
+
+            elsif Has_Prefix (List_Option) then
+               Usage_Mode := List_Mode;
+
+            elsif Has_Prefix (Stat_Option) then
+               Output_Stats := True;
 
             elsif Has_Prefix (Mode_Option) then
                declare
@@ -394,7 +403,7 @@ procedure Gprinstall.Main is
          begin
             Canonical_Case_File_Name (File_Name);
 
-            if Uninstall_Mode
+            if Usage_Mode = Uninstall_Mode
               or else
                 (File_Name'Length > Project_File_Extension'Length
                  and then File_Name
@@ -516,14 +525,19 @@ procedure Gprinstall.Main is
            (Project_Tree, "directory name missing after -aP");
       end if;
 
-      if Build_Name.all /= "default" and then Uninstall_Mode then
+      if Build_Name.all /= "default" and then Usage_Mode = Uninstall_Mode then
          Fail_Program
            (Project_Tree, "cannot specify --build-name in uninstall mode");
       end if;
 
-      if Build_Var /= null and then Uninstall_Mode then
+      if Build_Var /= null and then Usage_Mode = Uninstall_Mode then
          Fail_Program
            (Project_Tree, "cannot specify --build-var in uninstall mode");
+      end if;
+
+      if Output_Stats and then Usage_Mode /= List_Mode then
+         Fail_Program
+           (Project_Tree, "cannot specify --stat in install/uninstall mode");
       end if;
 
       if Load_Standard_Base then
@@ -536,7 +550,9 @@ procedure Gprinstall.Main is
 
       --  If no project file was specified, look first for a default
 
-      if Project_File_Name = null then
+      if Project_File_Name = null
+        and then Usage_Mode /= List_Mode
+      then
          Try_Help;
          Fail_Program (Project_Tree, "no project file specified");
       end if;
@@ -729,7 +745,7 @@ begin
    --  If either the project or the configuration file contains errors, the
    --  following call with call Osint.Fail and never return
 
-   if not Uninstall_Mode then
+   if Usage_Mode = Install_Mode then
       begin
          Parse_Project_And_Apply_Config
            (Main_Project               => Main_Project,
@@ -799,6 +815,9 @@ begin
          Prj.Err.Finalize;
       end if;
 
+   elsif Usage_Mode = List_Mode then
+      DB.List;
+
    else
       if Install_Name = null then
          Install_Name := new String'
@@ -810,7 +829,7 @@ begin
 
    Namet.Finalize;
 
-   if not Uninstall_Mode then
+   if Usage_Mode = Install_Mode then
       Finish_Program (Project_Tree, E_Success);
    end if;
 end Gprinstall.Main;

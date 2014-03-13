@@ -121,8 +121,13 @@ private
    --  True then the action will be displayed on the console but actually not
    --  performed.
 
-   Uninstall_Mode : Boolean := False;
+   type Usage_Kind is (Install_Mode, Uninstall_Mode, List_Mode);
+
+   Usage_Mode : Usage_Kind := Install_Mode;
    --  Set to true if project is to be uninstalled
+
+   Output_Stats : Boolean := False;
+   --  Wether the stats are to be displayed when listing installed packages
 
    All_Sources : Boolean := False;
    --  By default install only the sources needed to use the project (the

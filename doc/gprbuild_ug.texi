@@ -3370,6 +3370,12 @@ no manual changes have been applied to the files before removing.
 Deletion of the files can be forced in this case by using the
 @option{-f} option.
 
+@item @option{--list} : List mode, displays all the installed packaged.
+
+@item @option{--stat} : Apply to list mode above, displays also some
+statistics about the installed packages : number of files, total size
+used on disk, and whether there is some files missing.
+
 @item @option{-v}  : Verbose mode
 
 @item @option{-Xnm=val} : Specify an external reference for Project Files.
