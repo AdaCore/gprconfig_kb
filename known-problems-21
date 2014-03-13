@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N313-008 gprinstall fails with spec naming exception
+
+  Problem:    when gprinstall is invoked to install a library project file
+              that is not a Stand-Alone Library and there is a spec with
+              a naming exception, the installation will fail.
+
+  Status:     This was fixed in 2.2 on 2014-03-13
+
+  Workaround: Avoid spec naming exceptions in library project file.
+
 KP-21-N310-027 gprbuild wait indefinitely for some compilation results
 
   Problem:    If the Remote package Root_Dir attribute is not properly set
