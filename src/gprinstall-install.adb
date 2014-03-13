@@ -757,6 +757,9 @@ package body Gprinstall.Install is
 
          procedure Copy_Source (Sid : Source_Id);
 
+         procedure Copy_Artifacts (Pathname, Destination : String);
+         --  Copy items from the artifacts attribute
+
          --------------------------
          -- Copy_Project_Sources --
          --------------------------
@@ -885,8 +888,6 @@ package body Gprinstall.Install is
                end;
             end if;
          end Copy_Source;
-
-         procedure Copy_Artifacts (Pathname, Destination : String);
 
          --------------------
          -- Copy_Artifacts --
