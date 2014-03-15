@@ -171,11 +171,19 @@ package body Gprinstall.DB is
 
    begin
       New_Line;
-      Put_Line ("List of installed packages");
-      New_Line;
 
-      Search
-        (Dir, "*", (Ordinary_File => True, others => False), Process'Access);
+      if Exists (Dir) then
+         Put_Line ("List of installed packages");
+         New_Line;
+
+         Search
+           (Dir, "*",
+            (Ordinary_File => True, others => False),
+            Process'Access);
+      else
+         Put_Line ("No package installed");
+         New_Line;
+      end if;
    end List;
 
 end Gprinstall.DB;
