@@ -940,7 +940,7 @@ package body Gprbuild.Compilation.Slave is
       S            : Slave;
    begin
       --  In this task we are only interrested by the incoming data, so we do
-      --  not wait on incoming ones.
+      --  not wait on socket ready for writting.
 
       Sockets.Empty (W_Set);
 
