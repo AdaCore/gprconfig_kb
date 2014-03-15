@@ -984,7 +984,7 @@ package body Gprbuild.Compilation.Slave is
                      Remote_Process.Decrement;
                      Slaves.Decrement_Current (S);
 
-                     Result.Add (Proc, Success);
+                     Result.Add (Proc, Success, To_String (S.Data.Host));
 
                   --  An acknowledgment of an compilation job
 

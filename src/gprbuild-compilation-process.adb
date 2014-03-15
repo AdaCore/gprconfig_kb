@@ -36,9 +36,16 @@ package body Gprbuild.Compilation.Process is
    package Env_Maps is
      new Containers.Indefinite_Ordered_Maps (String, String);
    --  A set of key=value
+
    package Prj_Maps is new Containers.Indefinite_Ordered_Maps
      (String, Env_Maps.Map, Env_Maps."<", Env_Maps."=");
    --  A set of project+language=map
+
+   function "<" (Left, Right : Id) return Boolean is
+     (Left.R_Pid < Right.R_Pid);
+
+   package Failures_Slave_Set is
+     new Containers.Indefinite_Ordered_Maps (Id, String);
 
    function Get_Env (Project : Project_Id; Language : String) return String;
    --  Get the environment for a specific project and language
@@ -49,6 +56,7 @@ package body Gprbuild.Compilation.Process is
    WL            : Wait_Local_Ref;
    Local_Process : Shared_Counter;
    Environments  : Prj_Maps.Map;
+   Failed_Proc   : Failures_Slave_Set.Map;
 
    ------------------
    -- Create_Local --
@@ -98,6 +106,30 @@ package body Gprbuild.Compilation.Process is
 
       return To_String (Res);
    end Get_Env;
+
+   -------------------
+   -- Get_Slave_For --
+   -------------------
+
+   function Get_Slave_For (Pid : Id) return String is
+      use type Failures_Slave_Set.Cursor;
+
+   begin
+      if Pid.Kind = Local then
+         return "";
+
+      else
+         declare
+            Pos : constant Failures_Slave_Set.Cursor := Failed_Proc.Find (Pid);
+         begin
+            if Pos = Failures_Slave_Set.No_Element then
+               return "";
+            else
+               return Failures_Slave_Set.Element (Pos);
+            end if;
+         end;
+      end if;
+   end Get_Slave_For;
 
    ----------
    -- Hash --
@@ -151,6 +183,15 @@ package body Gprbuild.Compilation.Process is
          Environments.Insert (Key, New_Item);
       end if;
    end Record_Environment;
+
+   ---------------------------
+   -- Record_Remote_Failure --
+   ---------------------------
+
+   procedure Record_Remote_Failure (Pid : Id; Slave : String) is
+   begin
+      Failed_Proc.Insert (Pid, Slave);
+   end Record_Remote_Failure;
 
    ---------
    -- Run --

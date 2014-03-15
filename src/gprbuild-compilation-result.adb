@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---            Copyright (C) 2012, Free Software Foundation, Inc.            --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -46,9 +46,15 @@ package body Gprbuild.Compilation.Result is
    -- Add --
    ---------
 
-   procedure Add (Process : Id; Status : Boolean) is
+   procedure Add (Process : Id; Status : Boolean; Slave : String := "") is
    begin
       Results.Add (Process_Data'(Process, Status));
+
+      --  For a compilation failure records the slave to be able to report it
+
+      if not Status and then Slave /= "" then
+         Record_Remote_Failure (Process, Slave);
+      end if;
    end Add;
 
    -------------

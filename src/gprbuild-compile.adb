@@ -19,10 +19,12 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Containers.Indefinite_Ordered_Maps;
 with Ada.Strings.Fixed;         use Ada, Ada.Strings.Fixed;
+with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 
-with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.Directory_Operations; use GNAT, GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 
 with Atree;       use Atree;
@@ -49,7 +51,8 @@ package body Gprbuild.Compile is
 
    procedure Await_Compile
      (Source : out Queue.Source_Info;
-      OK     : out Boolean);
+      OK     : out Boolean;
+      Slave  : out Unbounded_String);
    --  Wait for the end of a compilation and indicate that the object directory
    --  is free.
 
@@ -90,17 +93,14 @@ package body Gprbuild.Compile is
    --  Create a temporary file that contains the list of object directories
    --  in the correct order.
 
-   procedure Record_Failure (Source : Source_Id);
-   --  Record that compilation of a source failed
+   function "<" (Left, Right : Source_Id) return Boolean
+     is (Left.File < Right.File);
 
-   package Bad_Compilations is new Table.Table
-     (Table_Component_Type => Source_Id,
-      Table_Index_Type     => Natural,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 20,
-      Table_Increment      => 100,
-      Table_Name           => "Buildgpr.Bad_Compilations");
-   --  Full name of all the source files for which compilation fails
+   package Bad_Compilations_Set is new
+     Containers.Indefinite_Ordered_Maps (Source_Id, String);
+
+   Bad_Compilations : Bad_Compilations_Set.Map;
+   --  Records bad compilation with the given slave name if any
 
    Outstanding_Compiles : Natural := 0;
    --  The number of compilation jobs currently spawned
@@ -169,7 +169,7 @@ package body Gprbuild.Compile is
       Table_Name           => "Makegpr.Included_Sources");
 
    package Subunits is new Table.Table
-     (Table_Component_Type => String_Access,
+     (Table_Component_Type => GNAT.OS_Lib.String_Access,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
@@ -202,7 +202,8 @@ package body Gprbuild.Compile is
 
    procedure Await_Compile
      (Source : out Queue.Source_Info;
-      OK     : out Boolean)
+      OK     : out Boolean;
+      Slave  : out Unbounded_String)
    is
       Process   : Id;
       Comp_Data : Process_Data;
@@ -287,6 +288,8 @@ package body Gprbuild.Compile is
 
                else
                   Set_Failed_Compilation_Status (Comp_Data.Source_Project);
+
+                  Slave := To_Unbounded_String (Get_Slave_For (Process));
                end if;
 
                Language := Source.Id.Language;
@@ -317,7 +320,7 @@ package body Gprbuild.Compile is
                                    Source.Tree.Shared.Name_Lists.Table (List);
                      Exec_Name : constant String :=
                                    Get_Name_String (Nam.Name);
-                     Exec_Path : String_Access;
+                     Exec_Path : OS_Lib.String_Access;
                   begin
                      Change_Dir
                        (Get_Name_String
@@ -1010,16 +1013,6 @@ package body Gprbuild.Compile is
       end loop;
    end Recursive_Import;
 
-   --------------------
-   -- Record_Failure --
-   --------------------
-
-   procedure Record_Failure (Source : Source_Id) is
-   begin
-      Bad_Compilations.Increment_Last;
-      Bad_Compilations.Table (Bad_Compilations.Last) := Source;
-   end Record_Failure;
-
    ----------------------
    -- Directly_Imports --
    ----------------------
@@ -1061,40 +1054,48 @@ package body Gprbuild.Compile is
       ----------------
 
       procedure Do_Compile (Project : Project_Id; Tree : Project_Tree_Ref) is
+         use type Containers.Count_Type;
       begin
          if Builder_Data (Tree).Need_Compilation then
             Compilation_Phase (Project, Tree);
 
             if Total_Errors_Detected > 0
-              or else Bad_Compilations.Last > 0
+              or else not Bad_Compilations.Is_Empty
             then
                --  If switch -k or -jnn (with nn > 1), output a summary of the
                --  sources that could not be compiled.
 
                if (Opt.Keep_Going or else Get_Maximum_Processes > 1)
-                 and then Bad_Compilations.Last > 0
+                 and then not Bad_Compilations.Is_Empty
                then
-                  declare
-                     Source : Source_Id;
-                  begin
-                     Write_Eol;
+                  Write_Eol;
 
-                     for Index in 1 .. Bad_Compilations.Last loop
-                        Source := Bad_Compilations.Table (Index);
-
+                  for Index in Bad_Compilations.Iterate loop
+                     declare
+                        Source : constant Source_Id :=
+                                   Bad_Compilations_Set.Key (Index);
+                        Slave  : constant String :=
+                                   Bad_Compilations_Set.Element (Index);
+                     begin
                         if Source /= No_Source then
                            Write_Str ("   compilation of ");
-                           Write_Str (Get_Name_String (Source.Display_File));
-                           Write_Line (" failed");
+                           Write_Str
+                             (Get_Name_String (Source.Display_File));
+                           Write_Str (" failed");
+                           if Slave /= "" then
+                              Write_Str (" on " & Slave);
+                           end if;
+                           Write_Eol;
                         end if;
-                     end loop;
+                     end;
+                  end loop;
 
-                     Write_Eol;
-                  end;
+                  Write_Eol;
                end if;
 
                if Opt.Keep_Going and then Project.Qualifier = Aggregate then
-                  Bad_Compilations.Init;
+                  Bad_Compilations.Clear;
+
                else
                   if Distributed_Mode and then Slave_Initialized then
                      Gprbuild.Compilation.Slave.Unregister_Remote_Slaves;
@@ -1137,7 +1138,7 @@ package body Gprbuild.Compile is
          --  List of the source search switches (-I<source dir>) to be used
          --  when compiling.
 
-         Include_Path           : String_Access := null;
+         Include_Path           : OS_Lib.String_Access := null;
          --  The search source path for the project. Used as the value for an
          --  environment variable, specified by attribute Include_Path
          --  (<langu>). The names of the environment variables are in component
@@ -2509,7 +2510,7 @@ package body Gprbuild.Compile is
          List        : Name_List_Index :=
                          Id.Language.Config.Source_File_Switches;
          Node        : Name_Node;
-         Source_Path : String_Access;
+         Source_Path : OS_Lib.String_Access;
       begin
          --  Add any source file prefix
 
@@ -2760,7 +2761,7 @@ package body Gprbuild.Compile is
                        Length
                          (Project_Tree.Shared.Name_Lists,
                           Lang.Config.Include_Option);
-         Host_Path : String_Access;
+         Host_Path : OS_Lib.String_Access;
          Last      : Natural := 0;
          List      : Name_List_Index;
          Nam       : Name_Node;
@@ -2929,16 +2930,13 @@ package body Gprbuild.Compile is
                Always_Compile => Always_Compile);
 
             if Compilation_Needed and then Opt.Keep_Going then
-               --  When in Keep__Going mode first check that we did not already
+               --  When in Keep_Going mode first check that we did not already
                --  tried to compile this source as part of another import of
                --  the corresponding project file.
 
-               for Index in 1 .. Bad_Compilations.Last loop
-                  if Source.Id.File = Bad_Compilations.Table (Index).File then
-                     Compilation_Needed := False;
-                     exit;
-                  end if;
-               end loop;
+               if Bad_Compilations.Contains (Source.Id) then
+                  Compilation_Needed := False;
+               end if;
             end if;
 
             if Compilation_Needed or else Opt.Check_Switches then
@@ -3009,15 +3007,19 @@ package body Gprbuild.Compile is
       --------------------------------
 
       function Must_Exit_Because_Of_Error return Boolean is
+         use type Containers.Count_Type;
+
          Source_Identity : Queue.Source_Info;
          Compilation_OK  : Boolean;
+         Slave           : Unbounded_String;
       begin
-         if Bad_Compilations.Last > 0 and then not Opt.Keep_Going then
+         if not Bad_Compilations.Is_Empty and then not Opt.Keep_Going then
             while Outstanding_Compiles > 0 loop
-               Await_Compile (Source_Identity, Compilation_OK);
+               Await_Compile (Source_Identity, Compilation_OK, Slave);
 
                if not Compilation_OK then
-                  Record_Failure (Source_Identity.Id);
+                  Bad_Compilations.Insert
+                    (Source_Identity.Id, To_String (Slave));
                end if;
             end loop;
 
@@ -3053,12 +3055,13 @@ package body Gprbuild.Compile is
          Source_Identity : Queue.Source_Info;
          Compilation_OK  : Boolean;
          No_Check        : Boolean;
+         Slave           : Unbounded_String;
          use Queue;
       begin
          if Outstanding_Compiles = Get_Maximum_Processes
            or else (Queue.Is_Virtually_Empty and then Outstanding_Compiles > 0)
          then
-            Await_Compile (Source_Identity, Compilation_OK);
+            Await_Compile (Source_Identity, Compilation_OK, Slave);
 
             if Compilation_OK
               and then Source_Identity /= Queue.No_Source_Info
@@ -3103,7 +3106,7 @@ package body Gprbuild.Compile is
             end if;
 
             if not Compilation_OK then
-               Record_Failure (Source_Identity.Id);
+               Bad_Compilations.Insert (Source_Identity.Id, To_String (Slave));
             end if;
          end if;
       end Wait_For_Available_Slot;
