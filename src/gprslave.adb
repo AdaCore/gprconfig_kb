@@ -1176,8 +1176,8 @@ procedure Gprslave is
                                 & (if Dep_Dir /= "" then DS & Dep_Dir else "")
                                 & DS & Obj_File;
                      begin
-                        if Exists (O_File)
-                          and then Builder.Sync = Protocol.Gpr
+                        if Builder.Sync = Protocol.Gpr
+                          and then Exists (O_File)
                         then
                            Send_File
                              (Builder.Channel, O_File, Rewrite => False);
