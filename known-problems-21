@@ -28,7 +28,7 @@ KP-21-N318-025 gprinstall does not recognized -d option
 
 KP-21-N313-008 gprinstall fails with spec naming exception
 
-  Problem:    when gprinstall is invoked to install a library project file
+  Problem:    When gprinstall is invoked to install a library project file
               that is not a Stand-Alone Library and there is a spec with
               a naming exception, the installation will fail.
 
