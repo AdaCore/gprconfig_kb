@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N318-025 gprinstall does not recognized -d option
+
+  Problem:    The -d option (short version of --dry-run) is documented
+              but not recognized by gprinstall.
+
+  Status:     This was fixed in 2.2 on 2014-03-19
+
+  Workaround: Uses --dry-run instead.
+
 KP-21-N313-008 gprinstall fails with spec naming exception
 
   Problem:    when gprinstall is invoked to install a library project file
