@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N319-020 gprbuild fails with binder switch "-s"
+
+  Problem:    When gprbuild is invoked with the binder switch "-s". the binding
+              phase will fail as gnatbind is unable to find the sources.
+
+  Status:     This was fixed in 2.2 on 2014-03-19
+
+  Workaround: Do not use binder switch "-s" when using gprbuild.
+
 KP-21-N318-025 gprinstall does not recognized -d option
 
   Problem:    The -d option (short version of --dry-run) is documented
