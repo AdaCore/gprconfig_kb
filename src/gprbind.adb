@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -562,8 +562,6 @@ begin
       Binding_Options_Table.Append (new String'("-v"));
    end if;
 
-   Add (Dash_x, Gnatbind_Options, Last_Gnatbind_Option);
-
    if not Static_Libs then
       Add (Dash_shared, Gnatbind_Options, Last_Gnatbind_Option);
    end if;
@@ -621,6 +619,12 @@ begin
          Objects_Path := Name_Find;
       end if;
    end loop;
+
+   --  Add -x at the end, so that if -s is specified in the binding options,
+   --  gnatbind does not try to look for sources, as the binder mapping file
+   --  specified by -F- is not for sources, but for ALI files.
+
+   Add (Dash_x, Gnatbind_Options, Last_Gnatbind_Option);
 
    if Ada_Compiler_Path = null or else
       Is_Absolute_Path (GNATBIND.all)
