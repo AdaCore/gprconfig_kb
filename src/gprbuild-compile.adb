@@ -188,11 +188,28 @@ package body Gprbuild.Compile is
       Makeutl.Get_Switches
         (Source, Name_Compiler, Project_Tree, Options, Is_Default);
       if Options /= Nil_Variable_Value then
-         Add_Options
-           (Options.Values,
-            To            => Compilation_Options,
-            Display_All   => True,
-            Display_First => True);
+         declare
+            List            : String_List_Id := Options.Values;
+            Element         : String_Element;
+            Option          : GNAT.OS_Lib.String_Access;
+         begin
+            while List /= Nil_String loop
+               Element := Project_Tree.Shared.String_Elements.Table (List);
+
+               --  Ignore empty options
+
+               if Element.Value /= Empty_String then
+                  Option := Get_Option (Element.Value);
+
+                  Add_Option_Internal_Codepeer
+                    (Value       => Option,
+                     To          => Compilation_Options,
+                     Display     => True);
+               end if;
+
+               List := Element.Next;
+            end loop;
+         end;
       end if;
    end Add_Compilation_Switches;
 
@@ -2022,7 +2039,7 @@ package body Gprbuild.Compile is
          --  for all compilers, following "-cargs", if any.
 
          for Index in 1 .. All_Language_Builder_Compiling_Options.Last loop
-            Add_Option_Internal
+            Add_Option_Internal_Codepeer
               (Value   => All_Language_Builder_Compiling_Options.Table (Index),
                To      => Compilation_Options,
                Display => True);
@@ -2036,7 +2053,7 @@ package body Gprbuild.Compile is
             for Index in 1 ..
               Builder_Compiling_Options.Last (Builder_Options_Instance.all)
             loop
-               Add_Option_Internal
+               Add_Option_Internal_Codepeer
                  (Value   => Builder_Options_Instance.Table (Index),
                   To      => Compilation_Options,
                   Display => True);
@@ -2065,23 +2082,23 @@ package body Gprbuild.Compile is
 
          Add_Compilation_Switches (Id);
 
-         --  4) the switches specified on the gprbuild command line
+         --  6) the switches specified on the gprbuild command line
          --  for all compilers, following "-cargs", if any.
 
          for Index in 1 .. All_Language_Compiling_Options.Last loop
-            Add_Option_Internal
+            Add_Option_Internal_Codepeer
               (Value   => All_Language_Compiling_Options.Table (Index),
                To      => Compilation_Options,
                Display => True);
          end loop;
 
-         --  6) the switches specified on the gprbuild command line
+         --  7) the switches specified on the gprbuild command line
          --  for the compiler of the language, following
          --  -cargs:<language>.
 
          if Comp_Opt /= null then
             for Index in 1 .. Compiling_Options.Last (Comp_Opt.all) loop
-               Add_Option_Internal
+               Add_Option_Internal_Codepeer
                  (Value   => Comp_Opt.Table (Index),
                   To      => Compilation_Options,
                   Display => True);

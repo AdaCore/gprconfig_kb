@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2004-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2004-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -109,6 +109,24 @@ package body Gprbuild is
       To.Visible (To.Last)     := Display;
       To.Simple_Name (To.Last) := Simple_Name;
    end Add_Option_Internal;
+
+   ----------------------------------
+   -- Add_Option_Internal_Codepeer --
+   ----------------------------------
+
+   procedure Add_Option_Internal_Codepeer
+     (Value       : String_Access;
+      To          : in out Options_Data;
+      Display     : Boolean;
+      Simple_Name : Boolean := False)
+   is
+   begin
+      if Value'Length <= 2
+        or else Value (Value'First .. Value'First + 1) /= "-m"
+      then
+         Add_Option_Internal (Value, To, Display, Simple_Name);
+      end if;
+   end Add_Option_Internal_Codepeer;
 
    -----------------
    -- Add_Options --
