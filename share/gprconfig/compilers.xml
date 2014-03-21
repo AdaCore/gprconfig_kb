@@ -811,4 +811,19 @@
     </target>
   </compiler_description>
 
+  <!-- LLVM Compiler -->
+  <compiler_description>
+    <name>LLVM</name>
+    <executable>clang</executable>
+    <version>
+      <external>clang -v</external>
+      <grep regexp=".*LLVM version ([0-9.]*)" group="1"></grep>
+    </version>
+    <languages>C</languages>
+    <target>
+      <external>clang -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
 </gprconfig>

@@ -8,6 +8,10 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N321-014 Add support for LLVM C compiler (2014-03-21)
+
+  This adds support for compiling and linking with the LLVM C compiler (clang).
+
 NF-22-N310-033 Display slaves name for remote compilation errors (2014-03-15)
 
   When a remote compilation fails we now display on which remote computer
