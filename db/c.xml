@@ -86,6 +86,17 @@
 
    <configuration>
      <compilers>
+       <compiler name="LLVM" language="C" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver              ("C") use "${PATH(c)}clang";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
        <compiler name="GCC" language="C" />
        <compiler name="GCC_Pro" language="C" />
        <compiler name="GCC-28" language="C" />
