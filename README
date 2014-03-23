@@ -12,12 +12,16 @@ Configuring is usually done simply as:
   ./configure
 
 Two parameters may be worth specifying: --prefix for specifying the
-installation root and --build for specifying the build host. In particular,
-on Windows, when using cygwin to build, it is necessary to configure with
---build=i686-pc-mingw32 if one wants to use 32 bit mingw based compilers such
-as GNAT Pro or GNAT GPL. Here is an example of such a command:
+installation root and --build for specifying the build host.
+
+In particular, on Windows, when using cygwin to build, it is necessary to
+configure with --build=i686-pc-mingw32 if one wants to use 32 bit mingw based
+compilers such as GNAT Pro or GNAT GPL, and with --build=x86_64-pc-mingw32 for
+64 bit compilers. Here are examples of such commands:
 
    ./configure --build=i686-pc-mingw32 --prefix=$HOME/local
+
+   ./configure --build=x86_64-pc-mingw32 --prefix=$HOME/local
 
 Using alternate GNAT Sources
 ============================
