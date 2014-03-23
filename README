@@ -5,6 +5,20 @@ The build instructions for gprbuild may have a slight UNIX flavor but they
 can be used on Windows platforms with a full CYGWIN installation. The latter
 makes it simpler to build gprbuild but is not required to use it.
 
+Configuring
+===========
+
+Configuring is usually done simply as:
+  ./configure
+
+Two parameters may be worth specifying: --prefix for specifying the
+installation root and --build for specifying the build host. In particular,
+on Windows, when using cygwin to build, it is necessary to configure with
+--build=i686-pc-mingw32 if one wants to use 32 bit mingw based compilers such
+as GNAT Pro or GNAT GPL. Here is an example of such a command:
+
+   ./configure --build=i686-pc-mingw32 --prefix=$HOME/local
+
 Using alternate GNAT Sources
 ============================
 
@@ -17,52 +31,35 @@ In order to use GNAT sources from another location, create a link named
 gnat_src and call the Makefile target copy_gnat_src:
 
    ln -s <path_to_gnat_sources> gnat_src
-   make copy_gnat_src -f Makefile.in
+   make copy_gnat_src
    
 That will place links into the gnat/ subdirectory for each of the required 
 GNAT source files.
    
-On Windows with Cygwin, the files must be copied because symbolic 
-links do not work.  You can modify the definition of GNAT_SOURCE_DIR in the 
-makefile so that it specifies the path to the GNAT sources you intend to
-use, and then call the Makefile target copy_gnat_src:
+On Windows with Cygwin, the files must be copied because symbolic links do not
+work. The definition of GNAT_SOURCE_DIR in the Makefile needs to be modified so
+that it specifies the path to the GNAT sources. For example:
 
-   make copy_gnat_src -f Makefile.in
+GNAT_SOURCE_DIR=$(HOME)/gnat
+
+Then call the Makefile target copy_gnat_src:
+
+   make copy_gnat_src
    
-The makefile will recognize the use of Windows and will therefore place a 
+The Makefile will recognize the use of Windows and will therefore place a 
 copy of the required files into the gnat/ subdirectory.  
 
 Alternatively you can specify GNAT_SOURCE_DIR on the command line when invoking
 the makefile target:
 
-   make copy_gnat_src -f Makefile.in GNAT_SOURCE_DIR=<path/to/gnat/sources>
+   make copy_gnat_src GNAT_SOURCE_DIR=<path/to/gnat/sources>
 
-Finally, another alternative would be to check out the GNAT sources into a dedicated
-copy for the sake of building Gprbuild. To do so, create a directory named gnat_src/
-under the Gprbuild root directory and check out the GNAT sources into that directory.
-Then invoke the Makefile target as before:
-
-   make copy_gnat_src -f Makefile.in
-
-Note that copy_gnat_src can be invoked automatically by other targets.
-
-Configuring
-===========
-
-You must install XML/Ada before compiling gprconfig.
-
-Configuring is usually done simply as:
-  ./configure
-
-Two parameters may be worth specifying: --prefix for specifying the
-installation root and --build for specifying the build host. In particular,
-on Windows, when using cygwin to build, it is necessary to configure with
---build=pentium-mingw32msv if one wants to use mingw based compilers
-such as GNAT Pro or GNAT GPL. Here is an example of such a command:
-  ./configure --build=pentium-mingw32msv --prefix=$HOME/local
+Note that target "copy_gnat_src" is invoked automatically by target "complete".
 
 Building and Installing
 =======================
+
+XML/Ada must be installed before building.
 
 Building the main executables is done simply with
    make all
@@ -75,9 +72,6 @@ instead of the above.
 
 Installation is done with
   make install
-
-You can bootstrap grpbuild (compile it with itself) with the following command:
-   make bootstrap
 
 Doc & Examples
 ==============
