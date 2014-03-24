@@ -246,8 +246,6 @@ package body Gprbuild.Compile is
 
             if Comp_Data.Purpose = Compilation then
 
-               Outstanding_Compiles := Outstanding_Compiles - 1;
-
                if OK then
                   --  We created a new ALI file, so reset the attributes of
                   --  the old one.
@@ -424,6 +422,7 @@ package body Gprbuild.Compile is
                   end;
 
                else
+                  Outstanding_Compiles := Outstanding_Compiles - 1;
                   return;
                end if;
 
