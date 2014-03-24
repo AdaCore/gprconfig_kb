@@ -192,8 +192,6 @@ package body Gprbuild.Compilation.Sync is
       N    : Positive range 3 .. Args'Last := 3;
       Pid  : Process_Id;
    begin
-      Rsync_Count := 0;
-
       --  Archive mode, compression and ignore VCS
 
       Args (1) := new String'("-az");
@@ -242,8 +240,6 @@ package body Gprbuild.Compilation.Sync is
 
       Pid := Non_Blocking_Spawn (Rsync_Cmd.all, Args (1 .. N));
       Hosts.Insert (Pid_To_Integer (Pid), Host);
-
-      Rsync_Count := Rsync_Count + 1;
 
       for A of Args loop
          Free (A);
@@ -596,8 +592,6 @@ package body Gprbuild.Compilation.Sync is
            ("error: rsync not found for " & Host);
          OS_Exit (1);
       end if;
-
-      Rsync_Count := 0;
 
       --  Archive mode, compression and ignore VCS
 
