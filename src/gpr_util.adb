@@ -1454,9 +1454,19 @@ package body Gpr_Util is
                   --  directory is defined, check if the file exists there, and
                   --  if it does, check its timestamp.
 
-                  if not Found and then Runtime_Source_Dir /= No_Name then
-                     Get_Name_String (Runtime_Source_Dir);
-                     Add_Char_To_Name_Buffer (Directory_Separator);
+                  if not Found
+                     and then
+                      (Runtime_Source_Dir /= No_Name
+                       or else
+                       Is_Absolute_Path (Get_Name_String (Sfile)))
+                  then
+                     Name_Len := 0;
+
+                     if not Is_Absolute_Path (Get_Name_String (Sfile)) then
+                        Get_Name_String (Runtime_Source_Dir);
+                        Add_Char_To_Name_Buffer (Directory_Separator);
+                     end if;
+
                      Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
 
                      declare
