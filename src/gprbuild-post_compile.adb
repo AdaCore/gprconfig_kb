@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -96,6 +96,9 @@ package body Gprbuild.Post_Compile is
       Project_Tree : Project_Tree_Ref;
       No_Create    : Boolean)
    is
+      Expected_File_Name : String_Access;
+      --  Expected library file name
+
       package Lang_Set is new Containers.Ordered_Sets (Name_Id);
 
       procedure Get_Objects;
@@ -1572,8 +1575,62 @@ package body Gprbuild.Post_Compile is
          else
             Get_Line (Exchange_File, Name_Buffer, Name_Len);
 
-            if String (File_Stamp (File_Name_Type'(Name_Find))) <
-               String (Latest_Object_TS)
+            declare
+               Lib_File_Name : constant String :=
+                 Base_Name (Name_Buffer (1 .. Name_Len));
+               Shared_Lib_Prefix : String_Access := new String'("lib");
+               Shared_Lib_Suffix : String_Access := new String'(".so");
+               Archive_Suffix    : String_Access := new String'(".a");
+            begin
+               if For_Project.Library_Kind = Static then
+                  if For_Project.Config.Archive_Suffix /= No_File then
+                     Archive_Suffix :=
+                       new String'
+                         (Get_Name_String (For_Project.Config.Archive_Suffix));
+                  end if;
+
+                  Expected_File_Name :=
+                    new String'
+                      ("lib" &
+                       Get_Name_String (For_Project.Library_Name) &
+                       Archive_Suffix.all);
+               else
+                  if For_Project.Config.Shared_Lib_Prefix /= No_File then
+                     Shared_Lib_Prefix :=
+                       new String'
+                         (Get_Name_String
+                            (For_Project.Config.Shared_Lib_Prefix));
+                  end if;
+
+                  if For_Project.Config.Shared_Lib_Suffix /= No_File then
+                     Shared_Lib_Suffix :=
+                       new String'
+                         (Get_Name_String
+                            (For_Project.Config.Shared_Lib_Suffix));
+                  end if;
+
+                  Expected_File_Name :=
+                    new String'
+                      (Shared_Lib_Prefix.all &
+                         Get_Name_String (For_Project.Library_Name) &
+                           Shared_Lib_Suffix.all);
+               end if;
+
+               if Lib_File_Name /= Expected_File_Name.all then
+                  Library_Needs_To_Be_Built := True;
+                  Close (Exchange_File);
+
+                  if Opt.Verbose_Mode then
+                     Write_Line ("      -> incorrect library file name");
+                     Write_Line ("   expected " & Expected_File_Name.all);
+                     Write_Line ("     actual " & Lib_File_Name);
+                  end if;
+               end if;
+            end;
+
+            if not Library_Needs_To_Be_Built
+              and then String (File_Stamp (File_Name_Type'(Name_Find))) <
+                         String (Latest_Object_TS)
             then
                Library_Needs_To_Be_Built := True;
                Close (Exchange_File);
@@ -1706,6 +1763,11 @@ package body Gprbuild.Post_Compile is
       if not Library_Needs_To_Be_Built then
          if Opt.Verbose_Mode then
             Write_Line ("      -> up to date");
+
+         elsif not Opt.Quiet_Output and then For_Project = Main_Project then
+            Write_Char ('"');
+            Write_Str (Expected_File_Name.all);
+            Write_Line (""" up to date");
          end if;
 
       else

@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N402-028 Short message when main library project up to date (2014-04-02)
+
+  When the main project is a library project and is up to date, gprbuild
+  instead of running silently now displays a short message such as:
+     "libmain.a" up to date
+     "libmain.so" up to date
+
 NF-22-N321-014 Add support for LLVM C compiler (2014-03-21)
 
   This adds support for compiling and linking with the LLVM C compiler (clang).
