@@ -20,7 +20,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Directories;             use Ada.Directories;
-with Ada.Streams.Stream_IO;
+with Ada.Streams.Stream_IO;       use Ada.Streams;
 with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants;  use Ada.Strings.Maps;
 
@@ -48,6 +48,14 @@ package body Gprbuild.Compilation.Protocol is
      (Channel   : Communication_Channel;
       Path_Name : String);
    --  Send the file content untranslated
+
+   Buffer_Size : constant := 256 * 1_024; --  256Kb
+
+   type Buffer_Access is access Stream_Element_Array;
+   --  Used for RAW data
+
+   procedure Unchecked_Free is
+     new Ada.Unchecked_Deallocation (Stream_Element_Array, Buffer_Access);
 
    ----------
    -- Args --
@@ -203,25 +211,12 @@ package body Gprbuild.Compilation.Protocol is
          File_Name : constant String :=
                        Translate_Receive (Channel, Cmd.Args (1).all);
          Dir       : constant String := Containing_Directory (File_Name);
-         File      : File_Type;
       begin
          if Dir /= "" and then not Exists (Dir) then
             Create_Directory (Dir);
          end if;
 
-         Create (File, Out_File, File_Name);
-
-         loop
-            declare
-               Data : constant Stream_Element_Array := Get_Raw_Data (Channel);
-            begin
-               exit when Data'Length = 0;
-
-               Write (File, Data);
-            end;
-         end loop;
-
-         Close (File);
+         Get_RAW_File_Content (Channel, File_Name);
 
          return Get_Command (Channel);
       end Handle_RAW_File;
@@ -370,15 +365,43 @@ package body Gprbuild.Compilation.Protocol is
       end if;
    end Get_Pid;
 
-   ------------------
-   -- Get_Raw_Data --
-   ------------------
+   --------------------------
+   -- Get_RAW_File_Content --
+   --------------------------
 
-   function Get_Raw_Data
-     (Channel : Communication_Channel) return Stream_Element_Array is
+   procedure Get_RAW_File_Content
+     (Channel   : Communication_Channel;
+      Path_Name : String)
+   is
+      Buffer : Buffer_Access;
+      Last   : Stream_Element_Offset;
+      Size   : Stream_Element_Offset;
+      File   : Stream_IO.File_Type;
    begin
-      return Stream_Element_Array'Input (Channel.Channel);
-   end Get_Raw_Data;
+      Buffer := new Stream_Element_Array (1 .. Buffer_Size);
+
+      Stream_IO.Create (File, Stream_IO.Out_File, Path_Name);
+
+      loop
+         --  Get the size
+
+         Stream_Element_Offset'Read (Channel.Channel, Size);
+
+         exit when Size = 0;
+
+         --  Read this chunk
+
+         while Size > 0 loop
+            Receive_Socket (Channel.Sock, Buffer (1 .. Size), Last);
+            Stream_IO.Write (File, Buffer (1 .. Last));
+            Size := Size - Last;
+         end loop;
+      end loop;
+
+      Stream_IO.Close (File);
+
+      Unchecked_Free (Buffer);
+   end Get_RAW_File_Content;
 
    -----------
    -- Image --
@@ -775,13 +798,14 @@ package body Gprbuild.Compilation.Protocol is
 
       Buffer : Buffer_Access;
       Last   : Stream_Element_Offset;
+      Sent   : Stream_Element_Offset;
 
       File   : Stream_IO.File_Type;
    begin
-      Buffer := new Stream_Element_Array (1 .. 2 * 1_024 * 1_024);
-      --  A somewhat large buffer is needed to transfer big file
-      --  efficiently. Here we use a 2Mb buffer which should be
-      --  large enough for read most file contents in one OS call.
+      Buffer := new Stream_Element_Array (1 .. Buffer_Size);
+      --  A somewhat large buffer is needed to transfer big file efficiently.
+      --  Here we use a buffer which should be large enough for read most file
+      --  contents in one OS call.
       --
       --  This is allocated on the heap to avoid too much pressure on the
       --  stack of the tasks.
@@ -797,8 +821,21 @@ package body Gprbuild.Compilation.Protocol is
 
       loop
          Stream_IO.Read (File, Buffer.all, Last);
-         Stream_Element_Array'Output (Channel.Channel, Buffer (1 .. Last));
+
+         --  Send the chunk size
+
+         Stream_Element_Offset'Write (Channel.Channel, Last);
          exit when Last = 0;
+
+         --  Send the chunk data
+
+         Sent := 1;
+
+         loop
+            Send_Socket (Channel.Sock, Buffer (Sent .. Last), Sent);
+            exit when Sent = Last;
+            Sent := Sent + 1;
+         end loop;
       end loop;
 
       Stream_IO.Close (File);

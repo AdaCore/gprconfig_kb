@@ -26,7 +26,6 @@ with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Directories;                       use Ada.Directories;
 with Ada.Exceptions;                        use Ada.Exceptions;
-with Ada.Streams.Stream_IO;                 use Ada.Streams;
 with Ada.Strings.Equal_Case_Insensitive;
 with Ada.Strings.Fixed;                     use Ada.Strings;
 with Ada.Strings.Hash_Case_Insensitive;
@@ -578,6 +577,7 @@ procedure Gprslave is
 
                elsif Kind (Cmd) = EC then
                   --  No more compilation for this project
+
                   Close (Builder.Channel);
                   Builders.Remove (Builder);
 
@@ -1413,32 +1413,15 @@ procedure Gprslave is
                      --  We then receive the files contents in the same order
 
                      for W of To_Sync loop
-                        declare
-                           File : Stream_IO.File_Type;
-                        begin
-                           Create_Path
-                             (Containing_Directory (To_String (W.Path_Name)));
+                        Create_Path
+                          (Containing_Directory (To_String (W.Path_Name)));
 
-                           Stream_IO.Create
-                             (File, Stream_IO.Out_File,
-                              To_String (W.Path_Name));
+                        Get_RAW_File_Content
+                          (Builder.Channel, To_String (W.Path_Name));
 
-                           loop
-                              declare
-                                 Data : constant Stream_Element_Array :=
-                                          Get_Raw_Data (Builder.Channel);
-                              begin
-                                 exit when Data'Length = 0;
-                                 Stream_IO.Write (File, Data);
-                              end;
-                           end loop;
+                        --  Set file time stamp
 
-                           Stream_IO.Close (File);
-
-                           --  Set file time stamp
-
-                           Set_Stamp (To_String (W.Path_Name), W.Timestamp);
-                        end;
+                        Set_Stamp (To_String (W.Path_Name), W.Timestamp);
                      end loop;
 
                      Total_Transferred :=

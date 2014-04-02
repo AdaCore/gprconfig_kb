@@ -19,7 +19,6 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Streams;           use Ada.Streams;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with GNAT.OS_Lib;           use GNAT;
@@ -239,9 +238,11 @@ package Gprbuild.Compilation.Protocol is
    procedure Send_Output (Channel : Communication_Channel; File_Name : String);
    --  Send an output of a command
 
-   function Get_Raw_Data
-     (Channel : Communication_Channel) return Stream_Element_Array;
-   --  Get a Stream_Element_Array from the channel and return it
+   procedure Get_RAW_File_Content
+     (Channel   : Communication_Channel;
+      Path_Name : String);
+   --  Create Path_Name from data received from the channel. The data must be
+   --  sent by Send_RAW_File_Content to have the correct format.
 
 private
 

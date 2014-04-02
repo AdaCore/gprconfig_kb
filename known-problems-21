@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N331-007 Fail to compile large sources in distributed mode
+
+  Problem:    When a project contains large sources or large objects
+              gprbuild may fail during the compilation phase when using
+              the gpr protocol.
+
+  Status:     This was fixed in 2.2 on 2014-04-02
+
+  Workaround: use the rsync distributed compilation protocol.
+
 KP-21-N319-020 gprbuild fails with binder switch "-s"
 
   Problem:    When gprbuild is invoked with the binder switch "-s". the binding
