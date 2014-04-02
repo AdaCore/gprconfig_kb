@@ -364,6 +364,9 @@ package body Gprbuild.Compilation.Protocol is
       then
          Pid := Process.Remote_Id'Value (Cmd.Args (1).all);
          Success := (if Kind (Cmd) = KO then False);
+
+      else
+         Success := False;
       end if;
    end Get_Pid;
 
