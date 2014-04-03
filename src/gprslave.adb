@@ -1466,6 +1466,10 @@ procedure Gprslave is
 
       Builder.Channel := Create (Builder.Socket);
 
+      if Verbose then
+         Put_Line ("Connecting with " & Image (Address));
+      end if;
+
       --  Initial handshake
 
       declare
