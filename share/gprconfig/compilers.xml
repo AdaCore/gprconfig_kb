@@ -3,6 +3,16 @@
   <!--  Languages that require no compiler, but can be selected through
         -config -->
   <compiler_description>
+    <name>SIMULINK</name>
+    <languages>Simulink</languages>
+  </compiler_description>
+
+  <compiler_description>
+    <name>MATLAB</name>
+    <languages>Matlab</languages>
+  </compiler_description>
+
+  <compiler_description>
     <name>PRJFILE</name>
     <languages>Project File</languages>
   </compiler_description>
