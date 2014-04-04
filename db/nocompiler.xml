@@ -16,4 +16,34 @@ package Naming is
 end Naming;
    </config>
   </configuration>
+
+  <configuration>
+   <compilers>
+    <compiler language="Simulink"/>
+   </compilers>
+   <config>
+package Compiler is
+   for Driver ("Simulink") use "";
+end Compiler;
+
+package Naming is
+   for Spec_Suffix ("Simulink") use ".mdl";
+end Naming;
+   </config>
+  </configuration>
+
+  <configuration>
+   <compilers>
+    <compiler language="Matlab"/>
+   </compilers>
+   <config>
+package Compiler is
+   for Driver ("Matlab") use "";
+end Compiler;
+
+package Naming is
+   for Spec_Suffix ("Matlab") use ".m";
+end Naming;
+   </config>
+  </configuration>
 </gprconfig>
