@@ -161,7 +161,7 @@ package body Gprbuild.Compilation.Sync is
       Included_Artifact_Patterns : Str_Vect.Vector) is
    begin
       case Sync is
-         when Protocol.Gpr =>
+         when Protocol.Gpr | Protocol.None =>
             --  Nothing to do as the artifacts are copied after each
             --  compilation.
             null;
@@ -514,6 +514,9 @@ package body Gprbuild.Compilation.Sync is
             To_Slave_Rsync
               (Project_Name, Root_Dir, Slave_Root_Dir, User, Host,
                Excluded_Patterns, Included_Patterns);
+
+         when Protocol.None =>
+            null;
       end case;
    end To_Slave;
 

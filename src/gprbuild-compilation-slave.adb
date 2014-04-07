@@ -77,7 +77,8 @@ package body Gprbuild.Compilation.Slave is
 
    function Connect_Slave
      (S_Data       : Slave_Data;
-      Project_Name : String) return Slave;
+      Project_Name : String;
+      No_Sync      : Boolean := False) return Slave;
    --  Connect to the slave and return the corresponding object
 
    --  Ack transient signal stored into this variable
@@ -181,39 +182,35 @@ package body Gprbuild.Compilation.Slave is
          S : Slave;
 
       begin
-         --  Only clean-up when the sources are not shared
+         S := Connect_Slave (S_Data, Project_Name, No_Sync => True);
 
-         if S_Data.Sync = Protocol.Rsync then
-            S := Connect_Slave (S_Data, Project_Name);
+         --  Send the clean-up request
 
-            --  Send the clean-up request
+         Protocol.Send_Clean_Up (S.Channel, Project_Name);
 
-            Protocol.Send_Clean_Up (S.Channel, Project_Name);
-
-            declare
-               Cmd : constant Command := Get_Command (S.Channel);
-            begin
-               if Kind (Cmd) = OK then
-                  if Opt.Verbose_Mode then
-                     Write_Line
-                       ("Clean-up done on " & To_String (S_Data.Host));
-                  end if;
-
-               elsif Kind (Cmd) = KO then
-                  Write_Line ("Slave cannot clean-up " & User_Host);
-                  OS_Exit (1);
-
-               else
+         declare
+            Cmd : constant Command := Get_Command (S.Channel);
+         begin
+            if Kind (Cmd) = OK then
+               if Opt.Verbose_Mode then
                   Write_Line
-                    ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
-                  OS_Exit (1);
+                    ("Clean-up done on " & To_String (S_Data.Host));
                end if;
-            end;
 
-            Protocol.Send_End_Of_Compilation (S.Channel);
+            elsif Kind (Cmd) = KO then
+               Write_Line ("Slave cannot clean-up " & User_Host);
+               OS_Exit (1);
 
-            Close (S.Channel);
-         end if;
+            else
+               Write_Line
+                 ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
+               OS_Exit (1);
+            end if;
+         end;
+
+         Protocol.Send_End_Of_Compilation (S.Channel);
+
+         Close (S.Channel);
       end Clean_Up_Remote_Slave;
 
    begin
@@ -228,7 +225,8 @@ package body Gprbuild.Compilation.Slave is
 
    function Connect_Slave
      (S_Data       : Slave_Data;
-      Project_Name : String) return Slave
+      Project_Name : String;
+      No_Sync      : Boolean := False) return Slave
    is
       Address : Sock_Addr_Type;
       Sock    : Socket_Type;
@@ -264,7 +262,8 @@ package body Gprbuild.Compilation.Slave is
       --  Do initial handshake
 
       Protocol.Send_Context
-        (S.Channel, Get_Target, Project_Name, Slave_Env.all, S.Data.Sync);
+        (S.Channel, Get_Target, Project_Name, Slave_Env.all,
+         (if No_Sync then None else S.Data.Sync));
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);

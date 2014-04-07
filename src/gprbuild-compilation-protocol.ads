@@ -86,7 +86,7 @@ package Gprbuild.Compilation.Protocol is
      (Channel : Communication_Channel; Str : String) return String;
    --  Translate Str using Channel rewrite
 
-   type Sync_Kind is (Rsync, Gpr);
+   type Sync_Kind is (Rsync, Gpr, None);
    --  The kind of synchronization used. It is either using rsync external
    --  tool based or gprbuild internal protocol.
 

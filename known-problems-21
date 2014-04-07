@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N407-018 Fail to clean-up remote slave with gpr protocol
+
+  Problem:    When using the gpr protocol it is not possible to clean-up the
+              remote slaves with gprclean.
+
+  Status:     This was fixed in 2.2 on 2014-04-07
+
+  Workaround: use the rsync protocol for cleaning-up the remote slaves.
+
 KP-21-N331-007 Fail to compile large sources in distributed mode
 
   Problem:    When a project contains large sources or large objects
