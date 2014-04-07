@@ -14,7 +14,15 @@ if type $ggd_prog > /dev/null 2>&1 &&
    $ggd_prog -v 2>&1 | grep GNATMAKE | grep -q Pro;
 then
     has_gnatpro=y
-    prefix=`type $ggd_prog | cut -d' ' -f3 | sed 's%/bin.*$%%'`
+    saved_IFS="$IFS"
+    IFS=:
+    for d in $PATH; do
+      if [ -x "$d/$ggd_prog" ]; then
+        prefix=$d
+        break
+      fi
+    done
+    IFS="$saved_IFS"
     machine=`$prefix/bin/gcc -dumpmachine || true`
 fi
 
