@@ -236,9 +236,11 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Get_RAW_File_Content
      (Channel   : Communication_Channel;
-      Path_Name : String);
+      Path_Name : String;
+      Timestamp : Time_Stamp_Type := Empty_Time_Stamp);
    --  Create Path_Name from data received from the channel. The data must be
-   --  sent by Send_RAW_File_Content to have the correct format.
+   --  sent by Send_RAW_File_Content to have the correct format. If specified
+   --  the file's timestamp is set.
 
 private
 

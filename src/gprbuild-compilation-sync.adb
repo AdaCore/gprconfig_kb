@@ -19,8 +19,8 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Calendar.Time_Zones; use Ada.Calendar;
 with Ada.Containers.Vectors;
-
 with Ada.Directories;         use Ada.Directories;
 with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
@@ -236,7 +236,9 @@ package body Gprbuild.Compilation.Sync is
                      Project_Files.Append
                        (File_Data'
                           (To_Unbounded_String (Entry_Name),
-                           To_Time_Stamp (Modification_Time (File)),
+                           To_Time_Stamp
+                             (Modification_Time (File)
+                              - Duration (Time_Zones.UTC_Time_Offset) * 60.0),
                            Dummy_Time_Stamp));
                   end if;
                end if;

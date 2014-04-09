@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N409-006 Truncated files on distributed builds
+
+  Problem:    If GPRbuild is killed abruptly it can happen that some truncated
+              sources are left on the slave's side.
+
+  Status:     This was fixed in 2.2 on 2014-04-09
+
+  Workaround: remove all files on the slaves using GPRclean.
+
 KP-21-N407-018 Fail to clean-up remote slave with gpr protocol
 
   Problem:    When using the gpr protocol it is not possible to clean-up the

@@ -19,6 +19,7 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Calendar.Time_Zones;     use Ada.Calendar;
 with Ada.Directories;             use Ada.Directories;
 with Ada.Streams.Stream_IO;       use Ada.Streams;
 with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
@@ -371,8 +372,42 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Get_RAW_File_Content
      (Channel   : Communication_Channel;
-      Path_Name : String)
+      Path_Name : String;
+      Timestamp : Time_Stamp_Type := Empty_Time_Stamp)
    is
+      procedure Set_Stamp
+        (Path_Name : String; Time_Stamp : Time_Stamp_Type)
+      with Inline;
+      --  Set modification time stamp to the given file
+
+      ---------------
+      -- Set_Stamp --
+      ---------------
+
+      procedure Set_Stamp
+        (Path_Name : String; Time_Stamp : Time_Stamp_Type)
+      is
+         use type Time_Zones.Time_Offset;
+
+         TS : constant String := String (Time_Stamp);
+         H  : Hour_Type := Hour_Type'Value (TS (9 .. 10));
+      begin
+         --  GM_Time_Of expect a local time, we are receiving a GM time in the
+         --  Timestamp variable.
+
+         H := H + Hour_Type (Time_Zones.UTC_Time_Offset / 60);
+
+         Set_File_Last_Modify_Time_Stamp
+           (Path_Name,
+            GM_Time_Of
+              (Year   => Year_Type'Value (TS (1 .. 4)),
+               Month  => Month_Type'Value (TS (5 .. 6)),
+               Day    => Day_Type'Value (TS (7 .. 8)),
+               Hour   => H,
+               Minute => Minute_Type'Value (TS (11 .. 12)),
+               Second => Second_Type'Value (TS (13 .. 14))));
+      end Set_Stamp;
+
       Buffer : Buffer_Access;
       Last   : Stream_Element_Offset;
       Size   : Stream_Element_Offset;
@@ -400,7 +435,26 @@ package body Gprbuild.Compilation.Protocol is
 
       Stream_IO.Close (File);
 
+      if Timestamp /= Empty_Time_Stamp then
+         Set_Stamp (Path_Name, Timestamp);
+      end if;
+
       Unchecked_Free (Buffer);
+
+   exception
+      when others =>
+         --  If the file was opened, let's close it
+
+         if Stream_IO.Is_Open (File) then
+            Stream_IO.Close (File);
+         end if;
+
+         --  If the file has been created, make sure it is deleted as the
+         --  content may be truncated.
+
+         if Exists (Path_Name) then
+            Delete_File (Path_Name);
+         end if;
    end Get_RAW_File_Content;
 
    -----------

@@ -1241,36 +1241,11 @@ procedure Gprslave is
 
          use type Containers.Count_Type;
 
-         procedure Set_Stamp
-           (Path_Name : String; Time_Stamp : Time_Stamp_Type)
-           with Inline;
-         --  Set modification time stamp to the given file
-
          package Files is new Containers.Indefinite_Ordered_Sets (String);
 
          procedure Delete_Files (Except : Files.Set);
          --  Delete all files in the current working tree except those in
          --  Except set.
-
-         ---------------
-         -- Set_Stamp --
-         ---------------
-
-         procedure Set_Stamp
-           (Path_Name : String; Time_Stamp : Time_Stamp_Type)
-         is
-            TS : constant String := String (Time_Stamp);
-         begin
-            Set_File_Last_Modify_Time_Stamp
-              (Path_Name,
-               GM_Time_Of
-                 (Year   => Year_Type'Value (TS (1 .. 4)),
-                  Month  => Month_Type'Value (TS (5 .. 6)),
-                  Day    => Day_Type'Value (TS (7 .. 8)),
-                  Hour   => Hour_Type'Value (TS (9 .. 10)),
-                  Minute => Minute_Type'Value (TS (11 .. 12)),
-                  Second => Second_Type'Value (TS (13 .. 14))));
-         end Set_Stamp;
 
          ------------------
          -- Delete_Files --
@@ -1415,11 +1390,8 @@ procedure Gprslave is
                           (Containing_Directory (To_String (W.Path_Name)));
 
                         Get_RAW_File_Content
-                          (Builder.Channel, To_String (W.Path_Name));
-
-                        --  Set file time stamp
-
-                        Set_Stamp (To_String (W.Path_Name), W.Timestamp);
+                          (Builder.Channel,
+                           To_String (W.Path_Name), W.Timestamp);
                      end loop;
 
                      Total_Transferred :=
