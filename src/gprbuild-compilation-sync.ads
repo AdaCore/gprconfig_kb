@@ -21,7 +21,7 @@
 
 --  Synchronize data to/from the slave. The usage is:
 --
---    1. call To_Slave or From_Slave for every slave to be synchronise
+--    1. call To_Slave for every slave to be synchronise
 --    2. call Wait to wait for the synchronization to be terminated
 
 with Gprbuild.Compilation.Protocol;
@@ -29,28 +29,15 @@ with Gprbuild.Compilation.Protocol;
 private package Gprbuild.Compilation.Sync is
 
    procedure To_Slave
-     (Sync              : Protocol.Sync_Kind;
-      Channel           : Protocol.Communication_Channel;
+     (Channel           : Protocol.Communication_Channel;
       Project_Name      : String;
       Root_Dir          : String;
       Slave_Root_Dir    : String;
-      User              : String;
       Host              : String;
       Excluded_Patterns : Str_Vect.Vector;
       Included_Patterns : Str_Vect.Vector);
    --  Synchronize from from the build master to the slave depending on the
    --  Sync method.
-
-   procedure From_Slave
-     (Sync                       : Protocol.Sync_Kind;
-      Project_Name               : String;
-      Root_Dir                   : String;
-      Slave_Root_Dir             : String;
-      User                       : String;
-      Host                       : String;
-      Included_Artifact_Patterns : Str_Vect.Vector);
-   --  Synchronize from the slave to the build master depending on the Sync
-   --  method.
 
    procedure Wait;
    --  Wait for all synchronization to be terminated

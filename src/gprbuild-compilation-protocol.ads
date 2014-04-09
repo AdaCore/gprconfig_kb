@@ -86,10 +86,6 @@ package Gprbuild.Compilation.Protocol is
      (Channel : Communication_Channel; Str : String) return String;
    --  Translate Str using Channel rewrite
 
-   type Sync_Kind is (Rsync, Gpr, None);
-   --  The kind of synchronization used. It is either using rsync external
-   --  tool based or gprbuild internal protocol.
-
    --
    --  Command
    --
@@ -135,7 +131,7 @@ package Gprbuild.Compilation.Protocol is
       Target       : String;
       Project_Name : String;
       Build_Env    : String;
-      Sync         : Sync_Kind);
+      Sync         : Boolean);
    --  Send initial context to the slave
 
    procedure Send_Exec
@@ -199,7 +195,7 @@ package Gprbuild.Compilation.Protocol is
       Target       : out Unbounded_String;
       Project_Name : out Unbounded_String;
       Build_Env    : out Unbounded_String;
-      Sync         : out Sync_Kind;
+      Sync         : out Boolean;
       Timestamp    : out Time_Stamp_Type;
       Version      : out Unbounded_String);
    --  Wait for an initial context from a build master

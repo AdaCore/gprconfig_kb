@@ -3420,42 +3420,6 @@ support is the following:
 
 @itemize @bullet
 
-@item Setup sources sharing
-
-There is two ways for the slaves to get access to the sources of the project:
-
-@itemize @bullet
-
-@item rsync
-
-This is the default protocol use. In this case the build slaves must have the
-rsync tool installed. It is also required that the user building have a
-password-less access to the machine by installing the proper RSA public key
-on the build slaves. This is also a way to control who can access such or
-such build slaves.
-
-In this mode, the build slaves will get a copy of the project sources locally.
-At the end of the compilation the compilation artifacts (object code) will
-be synchronized back to the build master for the binding and linking phases.
-
-Note that the local copy of the sources is kept after the compilation is
-over. This means that the second time a project is compiled only the new or
-changed sources are copied. This incremental synchronization done by
-@command{rsync} is really welcome on large project.
-
-@item gpr
-
-There is no external tools to install. This is using the GPRbuild
-internal protocol which communicates directly with the slaves.
-
-@end itemize
-
-Note that different slaves can use different protocols.
-
-An optional port number can be specified at the end of the slave, for example:
-@command{gpr://comp2.mydomain.com:9876}. The same port number must then
-be specified on the command line of @command{gprslave}.
-
 @item Optionaly add a Remote package in the main project file
 
 This Remote package is to be placed into the project file that is passed
@@ -3500,17 +3464,14 @@ When all this is done, the remote compilation can be used simply by
 running GPRbuild in distributed mode from the build master:
 
 @smallexample
-  $ gprbuild --distributed=gpr://comp1.xyz.com,comp2.xyz.com prj.gpr
+  $ gprbuild --distributed=comp1.xyz.com,comp2.xyz.com prj.gpr
 @end smallexample
 
-The build slaves are specified as URL with the following form:
+The build slaves are specified with the following form:
 
 @smallexample
-[protocol://]<machine_name>[:port]
+<machine_name>[:port]
 @end smallexample
-
-Where protocol is @command{rsync} or @command{gpr} as described
-above. And the default protocol is @command{rsync}.
 
 @c ---------------------------------------------
 @node GPRslave

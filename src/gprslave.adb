@@ -70,7 +70,7 @@ procedure Gprslave is
       Project_Name : Unbounded_String;
       Target       : Unbounded_String;
       Build_Env    : Unbounded_String;
-      Sync         : Sync_Kind;
+      Sync         : Boolean;
    end record;
 
    function "<" (B1, B2 : Build_Master)
@@ -1176,9 +1176,7 @@ procedure Gprslave is
                                 & (if Dep_Dir /= "" then DS & Dep_Dir else "")
                                 & DS & Obj_File;
                      begin
-                        if Builder.Sync = Protocol.Gpr
-                          and then Exists (O_File)
-                        then
+                        if Exists (O_File) then
                            Send_File
                              (Builder.Channel, O_File, Rewrite => False);
                         end if;
@@ -1577,7 +1575,7 @@ procedure Gprslave is
       --  Note that we want to avoid the rewriting rules below that are
       --  requiring some CPU cycles not needed at this stage.
 
-      if Builder.Sync = Protocol.Gpr then
+      if Builder.Sync then
          --  Move to projet directory
          Sync_Gpr (Builder);
       end if;

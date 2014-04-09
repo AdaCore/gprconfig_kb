@@ -43,9 +43,8 @@ package body Gprbuild.Compilation.Slave is
 
    type Slave_Data is record
       Host : Unbounded_String;
-      User : Unbounded_String;
+--        User : Unbounded_String;
       Port : Port_Type;
-      Sync : Sync_Kind;
    end record;
 
    No_Slave_Data : constant Slave_Data :=
@@ -78,7 +77,7 @@ package body Gprbuild.Compilation.Slave is
    function Connect_Slave
      (S_Data       : Slave_Data;
       Project_Name : String;
-      No_Sync      : Boolean := False) return Slave;
+      Sync         : Boolean) return Slave;
    --  Connect to the slave and return the corresponding object
 
    --  Ack transient signal stored into this variable
@@ -173,16 +172,10 @@ package body Gprbuild.Compilation.Slave is
         (S_Data       : Slave_Data;
          Project_Name : String)
       is
-
-         function User_Host return String is
-           (if S_Data.User = Null_Unbounded_String
-            then To_String (S_Data.Host)
-            else To_String (S_Data.User) & '@' & To_String (S_Data.Host));
-
          S : Slave;
 
       begin
-         S := Connect_Slave (S_Data, Project_Name, No_Sync => True);
+         S := Connect_Slave (S_Data, Project_Name, Sync => False);
 
          --  Send the clean-up request
 
@@ -198,7 +191,7 @@ package body Gprbuild.Compilation.Slave is
                end if;
 
             elsif Kind (Cmd) = KO then
-               Write_Line ("Slave cannot clean-up " & User_Host);
+               Write_Line ("Slave cannot clean-up " & To_String (S_Data.Host));
                OS_Exit (1);
 
             else
@@ -226,7 +219,7 @@ package body Gprbuild.Compilation.Slave is
    function Connect_Slave
      (S_Data       : Slave_Data;
       Project_Name : String;
-      No_Sync      : Boolean := False) return Slave
+      Sync         : Boolean) return Slave
    is
       Address : Sock_Addr_Type;
       Sock    : Socket_Type;
@@ -262,8 +255,7 @@ package body Gprbuild.Compilation.Slave is
       --  Do initial handshake
 
       Protocol.Send_Context
-        (S.Channel, Get_Target, Project_Name, Slave_Env.all,
-         (if No_Sync then None else S.Data.Sync));
+        (S.Channel, Get_Target, Project_Name, Slave_Env.all, Sync);
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);
@@ -318,47 +310,17 @@ package body Gprbuild.Compilation.Slave is
       -----------------------
 
       procedure Parse_Build_Slave (V : String) is
-         User : Unbounded_String;
+         I    : constant Natural := Index (V, ":");
          Host : Unbounded_String;
          Port : Port_Type := Default_Port;
-         Sync : Sync_Kind := Protocol.Rsync;
-         F    : Natural := V'First;
-         I    : Natural := Index (V, "://");
       begin
-         --  Check for protocol
-
-         if I /= 0 then
-            if V (F .. I - 1) = "rsync" then
-               Sync := Protocol.Rsync;
-            elsif V (F .. I - 1) = "gpr" then
-               Sync := Gpr;
-            else
-               Write_Line ("error: unknown protocol in " & V);
-               OS_Exit (1);
-            end if;
-
-            F := I + 3;
-         end if;
-
-         --  Check for user
-
-         I := Index (V, "@", From => F);
-
-         if I /= 0 then
-            User := To_Unbounded_String (V (F .. I - 1));
-
-            F := I + 1;
-         end if;
-
          --  Get for port
 
-         I := Index (V, ":", From => F);
-
          if I = 0 then
-            Host := To_Unbounded_String (V (F .. V'Last));
+            Host := To_Unbounded_String (V (V'First .. V'Last));
 
          else
-            Host := To_Unbounded_String (V (F .. I - 1));
+            Host := To_Unbounded_String (V (V'First .. I - 1));
 
             declare
                Port_Str : constant String := V (I + 1 .. V'Last);
@@ -375,7 +337,7 @@ package body Gprbuild.Compilation.Slave is
             end;
          end if;
 
-         Slaves_Data.Append (Slave_Data'(Host, User, Port, Sync));
+         Slaves_Data.Append (Slave_Data'(Host, Port));
       end Parse_Build_Slave;
 
    begin
@@ -443,15 +405,10 @@ package body Gprbuild.Compilation.Slave is
         (S_Data       : Slave_Data;
          Project_Name : String)
       is
-
-         function User_Host return String is
-           (if S_Data.User = Null_Unbounded_String
-            then To_String (S_Data.Host)
-            else To_String (S_Data.User) & '@' & To_String (S_Data.Host));
-
          S : Slave;
+
       begin
-         S := Connect_Slave (S_Data, Project_Name);
+         S := Connect_Slave (S_Data, Project_Name, Sync => True);
 
          Set (Slaves_Sockets, Sock (S.Channel));
 
@@ -460,7 +417,7 @@ package body Gprbuild.Compilation.Slave is
          Max_Processes := Max_Processes + S.Max_Processes;
 
          if Opt.Verbose_Mode then
-            Write_Str ("Register slave " & User_Host & ",");
+            Write_Str ("Register slave " & To_String (S_Data.Host) & ",");
             Write_Str (Integer'Image (S.Max_Processes));
             Write_Line (" process(es)");
             Write_Line ("  location: " & To_String (S.Root_Dir));
@@ -481,13 +438,11 @@ package body Gprbuild.Compilation.Slave is
          end if;
 
          Compilation.Sync.To_Slave
-           (Sync              => S_Data.Sync,
-            Channel           => S.Channel,
+           (Channel           => S.Channel,
             Project_Name      => Project_Name,
             Root_Dir          => To_String (Root_Dir),
             Slave_Root_Dir    => To_String (S.Root_Dir),
             Host              => To_String (S_Data.Host),
-            User              => To_String (S_Data.User),
             Included_Patterns => Included_Patterns,
             Excluded_Patterns => Excluded_Patterns);
 
@@ -864,17 +819,6 @@ package body Gprbuild.Compilation.Slave is
       begin
          Send_End_Of_Compilation (S.Channel);
          Close (S.Channel);
-
-         --  Sync back the object code if needed
-
-         Sync.From_Slave
-           (Sync                       => S.Data.Sync,
-            Project_Name               => To_String (Project_Name),
-            Root_Dir                   => To_String (Root_Dir),
-            Slave_Root_Dir             => To_String (S.Root_Dir),
-            User                       => To_String (S.Data.User),
-            Host                       => To_String (S.Data.Host),
-            Included_Artifact_Patterns => S.Included_Artifact_Patterns);
       end Unregister;
 
    begin

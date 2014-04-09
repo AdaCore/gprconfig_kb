@@ -322,7 +322,7 @@ package body Gprbuild.Compilation.Protocol is
       Target       : out Unbounded_String;
       Project_Name : out Unbounded_String;
       Build_Env    : out Unbounded_String;
-      Sync         : out Sync_Kind;
+      Sync         : out Boolean;
       Timestamp    : out Time_Stamp_Type;
       Version      : out Unbounded_String)
    is
@@ -334,7 +334,7 @@ package body Gprbuild.Compilation.Protocol is
          Target       := To_Unbounded_String (Line.Args (1).all);
          Project_Name := To_Unbounded_String (Line.Args (2).all);
          Build_Env    := To_Unbounded_String (Line.Args (3).all);
-         Sync         := Sync_Kind'Value (Line.Args (4).all);
+         Sync         := Boolean'Value (Line.Args (4).all);
          Timestamp    := Time_Stamp_Type (Line.Args (5).all);
          Version      := To_Unbounded_String (Line.Args (6).all);
       else
@@ -462,13 +462,13 @@ package body Gprbuild.Compilation.Protocol is
       Target       : String;
       Project_Name : String;
       Build_Env    : String;
-      Sync         : Sync_Kind) is
+      Sync         : Boolean) is
    begin
       String'Output
         (Channel.Channel,
          Command_Kind'Image (CX) & Target & Args_Sep & Project_Name
          & Args_Sep & Build_Env
-         & Args_Sep & Sync_Kind'Image (Sync)
+         & Args_Sep & Boolean'Image (Sync)
          & Args_Sep & String (UTC_Time)
          & Args_Sep & Gnat_Static_Version_String);
    end Send_Context;
