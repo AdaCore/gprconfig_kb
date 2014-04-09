@@ -412,6 +412,7 @@ package body Gprbuild.Compilation.Protocol is
       Last   : Stream_Element_Offset;
       Size   : Stream_Element_Offset;
       File   : Stream_IO.File_Type;
+
    begin
       Buffer := new Stream_Element_Array (1 .. Buffer_Size);
 

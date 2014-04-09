@@ -170,6 +170,7 @@ package body Gprbuild.Compilation.Sync is
          -------------
 
          procedure Process (Prefix : String) is
+
             procedure Check (File : Directory_Entry_Type);
             --  Check and add this file if it passes the filters
 
