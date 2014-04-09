@@ -405,4 +405,6 @@ begin
    Default_Excluded_Patterns.Append (".svn");
    Default_Excluded_Patterns.Append ("CVS");
    Default_Excluded_Patterns.Append ("gnatinspect.db*");
+   Default_Excluded_Patterns.Append ("GNAT-TEMP*.TMP");
+   Default_Excluded_Patterns.Append ("*.lexch");
 end Gprbuild.Compilation.Sync;
