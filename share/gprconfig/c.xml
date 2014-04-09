@@ -115,6 +115,7 @@
        <compiler name="GCC-WRSMILSHAE" language="C" />
        <compiler name="GCC-WRSMILS-E500V2" language="C" />
        <compiler name="GCC-WRSMILSHAE-E500V2" language="C" />
+       <compiler name="LLVM" language="C" />
      </compilers>
      <config>
    package Compiler is
