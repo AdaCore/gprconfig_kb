@@ -1424,6 +1424,7 @@ procedure Gprslave is
 
       Builder      : Build_Master;
       Clock_Status : Boolean;
+
    begin
       --  Wait for a connection
 
