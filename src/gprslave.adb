@@ -19,6 +19,7 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;               use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Indefinite_Ordered_Sets;
@@ -143,6 +144,13 @@ procedure Gprslave is
    --  working directory. Indeed the tasks are moving to some working directory
    --  from where a compilation has to be run or where the builder environment
    --  has to be created. We must ensure that all those actions are atomic.
+
+   procedure Message
+     (Str      : String;
+      Is_Debug : Boolean := False;
+      Force    : Boolean := False) with Inline;
+   --  Display a message (in verbose mode) and adds a leading timestamp. Also
+   --  display the message in debug mode if Is_Debug is set.
 
    protected Mutex is
       entry Seize;
@@ -354,6 +362,21 @@ procedure Gprslave is
               else I (I'First + 1 .. I'Last));
    end Image;
 
+   -------------
+   -- Message --
+   -------------
+
+   procedure Message
+     (Str      : String;
+      Is_Debug : Boolean := False;
+      Force    : Boolean := False) is
+   begin
+      if Force or (Verbose and not Is_Debug) or (Debug and Is_Debug) then
+         Put_Line
+           ('[' & Calendar.Formatting.Image (Calendar.Clock) & "] " & Str);
+      end if;
+   end Message;
+
    -----------
    -- Mutex --
    -----------
@@ -538,9 +561,7 @@ procedure Gprslave is
                         --  actual job.
                      begin
                         Jid := Jid + 1;
-                        if Debug then
-                           Put_Line ("# register compilation " & Image (Id));
-                        end if;
+                        Message ("# register compilation " & Image (Id), True);
 
                         To_Run.Push
                           (Job_Data'(Cmd,
@@ -563,9 +584,7 @@ procedure Gprslave is
                           To_Unbounded_String (Args (Cmd)(1).all);
 
                         if Exists (Work_Directory (Builder)) then
-                           if Verbose then
-                              Put_Line ("Delete " & Work_Directory (Builder));
-                           end if;
+                           Message ("Delete " & Work_Directory (Builder));
 
                            Delete_Tree (Work_Directory (Builder));
                         end if;
@@ -583,11 +602,8 @@ procedure Gprslave is
                      Close (Builder.Channel);
                      Builders.Remove (Builder);
 
-                     if Verbose then
-                        Put_Line
-                          ("End project : "
-                           & To_String (Builder.Project_Name));
-                     end if;
+                     Message
+                       ("End project : " & To_String (Builder.Project_Name));
 
                   else
                      raise Constraint_Error with "unexpected command "
@@ -601,7 +617,8 @@ procedure Gprslave is
                      Close (Builder.Channel);
 
                   when E : others =>
-                     Put_Line ("Error: " & Exception_Information (E));
+                     Message
+                       ("Error: " & Exception_Information (E), Force => True);
 
                      --  In case of an exception, communication endded
                      --  prematurately or some wrong command received, make
@@ -618,8 +635,8 @@ procedure Gprslave is
 
    exception
       when E : others =>
-         Put_Line ("Unrecoverable error: Protocol_Handler.");
-         Put_Line (Exception_Information (E));
+         Message ("Unrecoverable error: Protocol_Handler.", Force => True);
+         Message (Exception_Information (E), Force => True);
          OS_Exit (1);
    end Protocol_Handler;
 
@@ -821,10 +838,9 @@ procedure Gprslave is
 
             --  Clean-up and free project structure
 
-            if Debug then
-               Put_Line
-                 ("# driver for " & Language & " is : " & To_String (Driver));
-            end if;
+            Message
+              ("# driver for " & Language & " is : " & To_String (Driver),
+               Is_Debug => True);
 
             return To_String (Driver);
          end if;
@@ -861,10 +877,10 @@ procedure Gprslave is
               and then File (File'First .. File'First + RDL - 1)
               = Root_Directory.all
             then
-               Text_IO.Put_Line
+               Message
                  ("Compiling: " & File (File'First + RDL + 1 .. File'Last));
             else
-               Text_IO.Put_Line ("Compiling: " & File);
+               Message ("Compiling: " & File);
             end if;
          end if;
       end Output_Compilation;
@@ -893,10 +909,9 @@ procedure Gprslave is
 
             Mutex.Seize;
 
-            if Debug then
-               Put_Line
-                 ("# move to work directory " & Work_Directory (Builder));
-            end if;
+            Message
+              ("# move to work directory " & Work_Directory (Builder),
+               Is_Debug => True);
 
             Set_Directory (Work_Directory (Builder));
 
@@ -923,17 +938,15 @@ procedure Gprslave is
                      Create_Directory (Dir);
                   end if;
 
-                  if Debug then
-                     Put_Line ("# move to directory " & Dir);
-                  end if;
+                  Message ("# move to directory " & Dir, Is_Debug => True);
 
                   Set_Directory (Dir);
                end if;
             exception
                when others =>
-                  if Debug then
-                     Put_Line ("# cannot move to object directory");
-                  end if;
+                  Message
+                    ("# cannot move to object directory",
+                     Is_Debug => True);
             end;
 
             Create (List, Args (Job.Cmd)(6).all, String'(1 => Opts_Sep));
@@ -959,13 +972,12 @@ procedure Gprslave is
                Pid := Non_Blocking_Spawn
                  (Get_Driver (Builder, Language, Project), O, Out_File);
 
-               if Debug then
-                  Put_Line
-                    ("#   pid" & Integer'Image (Pid_To_Integer (Pid)));
-                  Put_Line ("#   dep_file " & Dep_File);
-                  Put_Line ("#   out_file " & Out_File);
-                  Put_Line ("#   obj_file " & Obj_File);
-               end if;
+               Message
+                 ("#   pid" & Integer'Image (Pid_To_Integer (Pid)),
+                  Is_Debug => True);
+               Message ("#   dep_file " & Dep_File, Is_Debug => True);
+               Message ("#   out_file " & Out_File, Is_Debug => True);
+               Message ("#   obj_file " & Obj_File, Is_Debug => True);
 
                Job.Pid      := Pid_To_Integer (Pid);
                Job.Dep_File := To_Unbounded_String (Dep_File);
@@ -985,18 +997,16 @@ procedure Gprslave is
          exception
             when E : others =>
                Mutex.Release;
-               if Debug then
-                  Put_Line
-                    ("# Error in Run_Compilation: "
-                     & Exception_Information (E));
-               end if;
+               Message
+                 ("# Error in Run_Compilation: " & Exception_Information (E),
+                  Is_Debug => True);
          end Process;
       end loop;
 
    exception
       when E : others =>
-         Put_Line ("Unrecoverable error: Run_Compilation.");
-         Put_Line (Exception_Information (E));
+         Message ("Unrecoverable error: Run_Compilation.", Force => True);
+         Message (Exception_Information (E), Force => True);
          OS_Exit (1);
    end Run_Compilation;
 
@@ -1146,9 +1156,9 @@ procedure Gprslave is
             --    - make sure the current directory is the work directory
 
             begin
-               if Debug then
-                  Put_Line ("# job " & Image (Job.Id) & " terminated");
-               end if;
+               Message
+                 ("# job " & Image (Job.Id) & " terminated",
+                  Is_Debug => True);
 
                declare
                   DS       : Character renames Directory_Separator;
@@ -1194,9 +1204,9 @@ procedure Gprslave is
                   end if;
                end;
 
-               if Debug then
-                  Put_Line ("# compilation status " & Boolean'Image (Success));
-               end if;
+               Message
+                 ("# compilation status " & Boolean'Image (Success),
+                  Is_Debug => True);
 
                if Success then
                   Send_Ok (Builder.Channel, Job.Id);
@@ -1207,11 +1217,10 @@ procedure Gprslave is
                when E : others =>
                   --  An exception can be raised if the builder master has been
                   --  terminated. In this case the comminication won't succeed.
-               if Debug then
-                     Put_Line
-                       ("# cannot send response to build master "
-                        & Exception_Information (E));
-               end if;
+                  Message
+                    ("# cannot send response to build master "
+                     & Exception_Information (E),
+                     Is_Debug => True);
             end;
 
          else
@@ -1219,9 +1228,7 @@ procedure Gprslave is
             --  gprconfig run launched to generate a configuration file for a
             --  specific language. So we do not want to fail in this case.
 
-            if Debug then
-               Put_Line ("# unknown job data for pid");
-            end if;
+            Message ("# unknown job data for pid", Is_Debug => True);
          end if;
 
          Mutex.Release;
@@ -1229,8 +1236,8 @@ procedure Gprslave is
 
    exception
       when E : others =>
-         Put_Line ("Unrecoverable error: Wait_Completion.");
-         Put_Line (Exception_Information (E));
+         Message ("Unrecoverable error: Wait_Completion.", Force => True);
+         Message (Exception_Information (E), Force => True);
          OS_Exit (1);
    end Wait_Completion;
 
@@ -1296,10 +1303,9 @@ procedure Gprslave is
                                          & Directory_Separator) & S_Name;
                      begin
                         if not Except.Contains (R_Name) then
-                           if Debug then
-                              Put_Line
-                                ("# detele excluded '" & R_Name & ''');
-                           end if;
+                           Message
+                             ("# detele excluded '" & R_Name & ''',
+                              Is_Debug => True);
 
                            Delete_File (R_Name);
                         end if;
@@ -1431,10 +1437,8 @@ procedure Gprslave is
             end;
          end loop Check_Time_Stamps;
 
-         if Verbose then
-            Put_Line ("Files    total:" & Natural'Image (Total_File));
-            Put_Line ("  transferred :" & Natural'Image (Total_Transferred));
-         end if;
+         Message ("Files    total:" & Natural'Image (Total_File));
+         Message ("  transferred :" & Natural'Image (Total_Transferred));
 
       exception
          when Socket_Error =>
@@ -1462,9 +1466,7 @@ procedure Gprslave is
 
       Builder.Channel := Create (Builder.Socket);
 
-      if Verbose then
-         Put_Line ("Connecting with " & Image (Address));
-      end if;
+      Message ("Connecting with " & Image (Address));
 
       --  Initial handshake
 
@@ -1480,20 +1482,16 @@ procedure Gprslave is
          Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
 
          if To_String (Version) /= Gnat_Static_Version_String then
-            if Verbose then
-               Put_Line
-                 ("Reject non compatible build for "
-                  & To_String (Builder.Project_Name));
-            end if;
+            Message
+              ("Reject non compatible build for "
+               & To_String (Builder.Project_Name));
             Send_Ko (Builder.Channel);
             return;
          end if;
 
       exception
          when E : others =>
-            if Verbose then
-               Put_Line (Exception_Information (E));
-            end if;
+            Message (Exception_Information (E));
             --  Do not try to go further
             Send_Ko (Builder.Channel);
             return;
@@ -1502,10 +1500,8 @@ procedure Gprslave is
       Get_Targets_Set
         (Base, To_String (Builder.Target), Selected_Targets_Set);
 
-      if Verbose then
-         Put_Line ("Handling project : " & To_String (Builder.Project_Name));
-         Put_Line ("Compiling for    : " & To_String (Builder.Target));
-      end if;
+      Message ("Handling project : " & To_String (Builder.Project_Name));
+      Message ("Compiling for    : " & To_String (Builder.Target));
 
       Mutex.Seize;
 
@@ -1514,12 +1510,10 @@ procedure Gprslave is
       Set_Directory (Root_Directory.all);
 
       if not Exists (To_String (Builder.Build_Env)) then
-         if Debug then
-            Put_Line
-              ("# create build environment directory '"
-               & To_String (Builder.Build_Env)
-               & "' in " & Current_Directory);
-         end if;
+         Message
+           ("# create build environment directory '"
+            & To_String (Builder.Build_Env)
+            & "' in " & Current_Directory, Is_Debug => True);
 
          Create_Directory (To_String (Builder.Build_Env));
       end if;
@@ -1527,12 +1521,10 @@ procedure Gprslave is
       Set_Directory (To_String (Builder.Build_Env));
 
       if not Exists (To_String (Builder.Project_Name)) then
-         if Debug then
-            Put_Line
-              ("# create project directory '"
-               & To_String (Builder.Project_Name)
-               & "' in " & Current_Directory);
-         end if;
+         Message
+           ("# create project directory '"
+            & To_String (Builder.Project_Name)
+             & "' in " & Current_Directory, Is_Debug => True);
 
          Create_Directory (To_String (Builder.Project_Name));
       end if;
@@ -1546,15 +1538,13 @@ procedure Gprslave is
 
       --  For Ada compilers, rewrite the root directory
 
-      if Debug then
-         if Compiler_Path = null then
-            Put_Line ("# compiler path is null.");
-         else
-            Put_Line
-              ("# compiler path is : "
-               & Containing_Directory
-                 (Containing_Directory (Compiler_Path.all)));
-         end if;
+      if Compiler_Path = null then
+         Message ("# compiler path is null.", Is_Debug => True);
+      else
+         Message
+           ("# compiler path is : "
+            & Containing_Directory (Containing_Directory (Compiler_Path.all)),
+            Is_Debug => True);
       end if;
 
       if Compiler_Path /= null then
@@ -1588,8 +1578,8 @@ procedure Gprslave is
 
    exception
       when E : others =>
-         Put_Line ("Unrecoverable error: Wait_For_Master.");
-         Put_Line (Exception_Information (E));
+         Message ("Unrecoverable error: Wait_For_Master.", Force => True);
+         Message (Exception_Information (E), Force => True);
          OS_Exit (1);
    end Wait_For_Master;
 
@@ -1632,21 +1622,16 @@ begin
 
    --  If verbose
 
-   if Verbose then
-      Put_Line
-        ("gprslave on " & Host_Name
-         & ":" & Image (Long_Integer (Address.Port)));
-      Put_Line ("  max processes :" & Integer'Image (Max_Processes));
-      Flush;
-   end if;
+   Put_Line
+     ("gprslave on " & Host_Name
+      & ":" & Image (Long_Integer (Address.Port)));
+   Put_Line ("  max processes :" & Integer'Image (Max_Processes));
 
    --  Initialize the host key used to create unique pid
 
    Slave_Id := Get_Slave_Id;
 
-   if Debug then
-      Put_Line ("# slave id " & Image (Slave_Id));
-   end if;
+   Message ("# slave id " & Image (Slave_Id), Is_Debug => True);
 
    Listen_Socket (Server);
 
@@ -1656,7 +1641,7 @@ begin
 
 exception
    when E : others =>
-      Put_Line ("Unrecoverable error: GprSlave.");
-      Put_Line (Exception_Information (E));
+      Message ("Unrecoverable error: GprSlave.", Force => True);
+      Message (Exception_Information (E), Force => True);
       OS_Exit (1);
 end Gprslave;

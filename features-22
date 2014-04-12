@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N411-007 Add a time-stamp in all gprslave's message (2014-04-12)
+
+  All gprslave's messages are now prefixed with a time-stamp in verbose mode.
+  This will help tracking down possible issues with the slave.
+
 NF-22-N402-028 Short message when main library project up to date (2014-04-02)
 
   When the main project is a library project and is up to date, gprbuild
