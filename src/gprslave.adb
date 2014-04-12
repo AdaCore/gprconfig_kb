@@ -595,6 +595,11 @@ procedure Gprslave is
                   end if;
 
                exception
+                  when Socket_Error =>
+                     --  The build master has probably been killed. We cannot
+                     --  communicate with it. Just close the channal.
+                     Close (Builder.Channel);
+
                   when E : others =>
                      Put_Line ("Error: " & Exception_Information (E));
 
@@ -1236,13 +1241,13 @@ procedure Gprslave is
    procedure Wait_For_Master is
       use Types;
 
-      procedure Sync_Gpr (Builder : Build_Master);
+      procedure Sync_Gpr (Builder : in out Build_Master);
 
       --------------
       -- Sync_Gpr --
       --------------
 
-      procedure Sync_Gpr (Builder : Build_Master) is
+      procedure Sync_Gpr (Builder : in out Build_Master) is
 
          use type Containers.Count_Type;
 
@@ -1412,6 +1417,16 @@ procedure Gprslave is
                   Delete_Files (Except => In_Master);
 
                   exit Check_Time_Stamps;
+
+               elsif Kind (Cmd) = EC then
+                  --  Cannot communicate with build master anymore, we then
+                  --  receive an end-of-compilation. Exit now.
+
+                  Close (Builder.Channel);
+                  Builder.Socket := No_Socket;
+
+                  exit Check_Time_Stamps;
+
                end if;
             end;
          end loop Check_Time_Stamps;
@@ -1420,6 +1435,11 @@ procedure Gprslave is
             Put_Line ("Files    total:" & Natural'Image (Total_File));
             Put_Line ("  transferred :" & Natural'Image (Total_Transferred));
          end if;
+
+      exception
+         when Socket_Error =>
+            Close (Builder.Channel);
+            Builder.Socket := No_Socket;
       end Sync_Gpr;
 
       Builder      : Build_Master;
@@ -1562,7 +1582,9 @@ procedure Gprslave is
 
       --  Register the new builder
 
-      Builders.Insert (Builder);
+      if Builder.Socket /= No_Socket then
+         Builders.Insert (Builder);
+      end if;
 
    exception
       when E : others =>
