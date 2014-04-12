@@ -497,112 +497,117 @@ procedure Gprslave is
             exception
                when E : Socket_Error =>
                   if Resolve_Exception (E) /= Interrupted_System_Call then
-                     raise;
+                     Status := Aborted;
+                     exit Wait_Incoming_Data;
                   end if;
             end;
          end loop Wait_Incoming_Data;
 
-         Get (R_Socket_Set, Socket);
+         if Status /= Aborted then
+            Get (R_Socket_Set, Socket);
 
-         if Socket /= No_Socket then
-            Builder := Builders.Get (Socket);
+            if Socket /= No_Socket then
+               Builder := Builders.Get (Socket);
 
-            Mutex.Seize;
+               Mutex.Seize;
 
-            declare
-               Cmd : constant Command := Get_Command (Builder.Channel);
-            begin
-               if Debug then
-                  Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
+               declare
+                  Cmd : constant Command := Get_Command (Builder.Channel);
+               begin
+                  if Debug then
+                     Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
 
-                  declare
-                     List : constant Argument_List_Access := Args (Cmd);
-                  begin
-                     if List /= null then
-                        for K in List'Range loop
-                           Put (", " & List (K).all);
-                        end loop;
-                     end if;
-                  end;
-                  New_Line;
-               end if;
-
-               if Kind (Cmd) = EX then
-                  Record_Job : declare
-                     Id : constant Remote_Id := Slave_Id + Remote_Id (Jid);
-                     --  Note that the Id above should be unique across all
-                     --  running slaves. This is not the process id, but an id
-                     --  sent back to the build master to identify the actual
-                     --  job.
-                  begin
-                     Jid := Jid + 1;
-                     if Debug then
-                        Put_Line ("# register compilation " & Image (Id));
-                     end if;
-
-                     To_Run.Push
-                       (Job_Data'(Cmd,
-                        Id, -1,
-                        Null_Unbounded_String,
-                        Null_Unbounded_String,
-                        Null_Unbounded_String,
-                        Null_Unbounded_String,
-                        Builder.Socket));
-
-                     Send_Ack (Builder.Channel, Id);
-                  end Record_Job;
-
-               elsif Kind (Cmd) = FL then
-                  null;
-
-               elsif Kind (Cmd) = CU then
-                  Clean_Up_Request : begin
-                     Builder.Project_Name :=
-                       To_Unbounded_String (Args (Cmd)(1).all);
-
-                     if Exists (Work_Directory (Builder)) then
-                        if Verbose then
-                           Put_Line ("Delete " & Work_Directory (Builder));
+                     declare
+                        List : constant Argument_List_Access := Args (Cmd);
+                     begin
+                        if List /= null then
+                           for K in List'Range loop
+                              Put (", " & List (K).all);
+                           end loop;
                         end if;
-
-                        Delete_Tree (Work_Directory (Builder));
-                     end if;
-
-                     Send_Ok (Builder.Channel);
-
-                  exception
-                     when others =>
-                        Send_Ko (Builder.Channel);
-                  end Clean_Up_Request;
-
-               elsif Kind (Cmd) = EC then
-                  --  No more compilation for this project
-
-                  Close (Builder.Channel);
-                  Builders.Remove (Builder);
-
-                  if Verbose then
-                     Put_Line
-                       ("End project : " & To_String (Builder.Project_Name));
+                     end;
+                     New_Line;
                   end if;
 
-               else
-                  raise Constraint_Error with "unexpected command "
-                    & Command_Kind'Image (Kind (Cmd));
-               end if;
+                  if Kind (Cmd) = EX then
+                     Record_Job : declare
+                        Id : constant Remote_Id := Slave_Id + Remote_Id (Jid);
+                        --  Note that the Id above should be unique across all
+                        --  running slaves. This is not the process id, but an
+                        --  id sent back to the build master to identify the
+                        --  actual job.
+                     begin
+                        Jid := Jid + 1;
+                        if Debug then
+                           Put_Line ("# register compilation " & Image (Id));
+                        end if;
 
-            exception
-               when E : others =>
-                  Put_Line ("Error: " & Exception_Information (E));
+                        To_Run.Push
+                          (Job_Data'(Cmd,
+                           Id, -1,
+                           Null_Unbounded_String,
+                           Null_Unbounded_String,
+                           Null_Unbounded_String,
+                           Null_Unbounded_String,
+                           Builder.Socket));
 
-                  --  In case of an exception, communication endded
-                  --  prematurately or some wrong command received, make sure
-                  --  we clean the slave state and we listen to new commands.
-                  --  Not doing that could make the slave unresponding.
-                  Close (Builder.Channel);
-            end;
+                        Send_Ack (Builder.Channel, Id);
+                     end Record_Job;
 
-            Mutex.Release;
+                  elsif Kind (Cmd) = FL then
+                     null;
+
+                  elsif Kind (Cmd) = CU then
+                     Clean_Up_Request : begin
+                        Builder.Project_Name :=
+                          To_Unbounded_String (Args (Cmd)(1).all);
+
+                        if Exists (Work_Directory (Builder)) then
+                           if Verbose then
+                              Put_Line ("Delete " & Work_Directory (Builder));
+                           end if;
+
+                           Delete_Tree (Work_Directory (Builder));
+                        end if;
+
+                        Send_Ok (Builder.Channel);
+
+                     exception
+                        when others =>
+                           Send_Ko (Builder.Channel);
+                     end Clean_Up_Request;
+
+                  elsif Kind (Cmd) = EC then
+                     --  No more compilation for this project
+
+                     Close (Builder.Channel);
+                     Builders.Remove (Builder);
+
+                     if Verbose then
+                        Put_Line
+                          ("End project : "
+                           & To_String (Builder.Project_Name));
+                     end if;
+
+                  else
+                     raise Constraint_Error with "unexpected command "
+                       & Command_Kind'Image (Kind (Cmd));
+                  end if;
+
+               exception
+                  when E : others =>
+                     Put_Line ("Error: " & Exception_Information (E));
+
+                     --  In case of an exception, communication endded
+                     --  prematurately or some wrong command received, make
+                     --  sure we clean the slave state and we listen to new
+                     --  commands. Not doing that could make the slave
+                     --  unresponding.
+                     Close (Builder.Channel);
+               end;
+
+               Mutex.Release;
+            end if;
          end if;
       end loop Handle_Commands;
 

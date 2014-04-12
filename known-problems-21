@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N411-006 Better handle unexpected events in gprslave
+
+  Problem:    In some cases (using old build master) gprslave could freeze
+              and become unresponsive.
+
+  Status:     This was fixed in 2.2 on 2014-04-12
+
+  Workaround: do not use an old build master with recent gprslave version
+
 KP-21-N409-006 Truncated files on distributed builds
 
   Problem:    If GPRbuild is killed abruptly it can happen that some truncated
