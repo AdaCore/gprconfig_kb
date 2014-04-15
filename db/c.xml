@@ -218,6 +218,8 @@
        <compiler version="4.5.2" />
        <compiler version="4.5.4" />
        <compiler version="4.9.0" />
+       <compiler version="4.10.0" />
+       <compiler version="5.0.0" />
      </compilers>
      <config>
    package Compiler is
