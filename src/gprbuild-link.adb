@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -475,6 +475,60 @@ package body Gprbuild.Link is
          Id      : Source_Id;
          Iter    : Source_Iterator;
 
+         type Arg_Record;
+         type Arg_Access is access Arg_Record;
+         type Arg_Record is record
+            Path    : Name_Id;
+            Display : Boolean;
+            Simple  : Boolean;
+            Next    : Arg_Access;
+         end record;
+
+         First_Arg : Arg_Access := null;
+         --  Head of the list of arguments in ascending order of paths
+
+         procedure Add
+           (Path    : String;
+            Display : Boolean;
+            Simple  : Boolean);
+         --  Ad an argument in the list in the correct order
+
+         ---------
+         -- Add --
+         ---------
+
+         procedure Add
+           (Path    : String;
+            Display : Boolean;
+            Simple  : Boolean)
+         is
+            Arg_Ptr : Arg_Access;
+            Current : Arg_Access;
+
+         begin
+            Name_Len := 0;
+            Add_Str_To_Name_Buffer (Path);
+            Arg_Ptr := new Arg_Record'(Name_Find, Display, Simple, null);
+
+            if First_Arg = null
+              or else Path < Get_Name_String (First_Arg.Path)
+            then
+               Arg_Ptr.Next := First_Arg;
+               First_Arg := Arg_Ptr;
+
+            else
+               Current := First_Arg;
+               while Current.Next /= null
+                 and then Path > Get_Name_String (Current.Next.Path)
+               loop
+                  Current := Current.Next;
+               end loop;
+
+               Arg_Ptr.Next := Current.Next;
+               Current.Next := Arg_Ptr;
+            end if;
+         end Add;
+
       begin
          loop
             if Project.Object_Directory /= No_Path_Information then
@@ -505,11 +559,11 @@ package body Gprbuild.Link is
                                  (Name_Len - Object_Suffix'Length + 1
                                   .. Name_Len) = Object_Suffix
                            then
-                              Add_Argument
+                              Add
                                 (Obj_Dir & Directory_Separator &
                                    Name_Buffer (1 .. Name_Len),
                                  Opt.Verbose_Mode,
-                                 Simple_Name => not Opt.Verbose_Mode);
+                                 Simple => not Opt.Verbose_Mode);
                            end if;
                         end loop;
 
@@ -529,10 +583,10 @@ package body Gprbuild.Link is
 
                         Initialize_Source_Record (Id);
 
-                        Add_Argument
+                        Add
                           (Get_Name_String (Id.Object_Path),
                            Opt.Verbose_Mode,
-                           Simple_Name => not Opt.Verbose_Mode);
+                           Simple => not Opt.Verbose_Mode);
                      end if;
 
                      Next (Iter);
@@ -544,6 +598,18 @@ package body Gprbuild.Link is
 
             exit when Project = No_Project;
          end loop;
+
+         --  Add the object files in the arguments in acending order of paths
+         --  so that the global archive is always built the same way.
+
+         while First_Arg /= null loop
+            Add_Argument
+              (Get_Name_String (First_Arg.Path),
+               First_Arg.Display,
+               First_Arg.Simple);
+            First_Arg := First_Arg.Next;
+         end loop;
+
       end Add_Objects;
 
    begin
