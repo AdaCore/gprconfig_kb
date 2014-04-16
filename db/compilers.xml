@@ -827,7 +827,7 @@
     <executable>clang</executable>
     <version>
       <external>clang -v</external>
-      <grep regexp=".*LLVM version ([0-9.]*)" group="1"></grep>
+      <grep regexp=".*(LLVM|clang) version ([0-9.]*)" group="2"></grep>
     </version>
     <languages>C</languages>
     <target>
