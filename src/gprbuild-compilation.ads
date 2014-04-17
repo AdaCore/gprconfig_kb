@@ -80,7 +80,6 @@ package Gprbuild.Compilation is
    type File_Data is record
       Path_Name : Ada.Strings.Unbounded.Unbounded_String;
       Timestamp : Time_Stamp_Type; -- YYYYMMDDhhmmss
-      Prev      : Time_Stamp_Type;
    end record;
 
    package File_Data_Set is new Ada.Containers.Vectors (Positive, File_Data);

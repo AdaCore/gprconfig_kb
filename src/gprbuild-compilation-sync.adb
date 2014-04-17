@@ -238,9 +238,8 @@ package body Gprbuild.Compilation.Sync is
                        (File_Data'
                           (To_Unbounded_String (Entry_Name),
                            To_Time_Stamp
-                             (Modification_Time (File)
-                              - Duration (Time_Zones.UTC_Time_Offset) * 60.0),
-                           Dummy_Time_Stamp));
+                             (Modification_Time (File) -
+                              Duration (Time_Zones.UTC_Time_Offset) * 60.0)));
                   end if;
                end if;
             end Check;

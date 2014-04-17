@@ -1379,8 +1379,7 @@ procedure Gprslave is
                         if not Exists or else File_Stamp <  TS then
                            To_Sync.Append
                              (File_Data'
-                                (To_Unbounded_String (Path_Name),
-                                 TS, File_Stamp));
+                                (To_Unbounded_String (Path_Name), TS));
                         end if;
                      end;
 
