@@ -19,6 +19,7 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Calendar.Time_Zones;               use Ada.Calendar;
 with Ada.Calendar.Formatting;
 with Ada.Characters.Handling;               use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Hashed_Maps;
@@ -1368,7 +1369,9 @@ procedure Gprslave is
                      begin
                         if Directories.Exists (Path_Name) then
                            File_Stamp :=
-                             To_Time_Stamp (Modification_Time (Path_Name));
+                             To_Time_Stamp
+                             (Modification_Time (Path_Name)
+                              - Duration (Time_Zones.UTC_Time_Offset) * 60.0);
                            Exists := True;
                         else
                            Exists := False;
@@ -1376,7 +1379,7 @@ procedure Gprslave is
 
                         In_Master.Insert (Path_Name);
 
-                        if not Exists or else File_Stamp <  TS then
+                        if not Exists or else File_Stamp /= TS then
                            To_Sync.Append
                              (File_Data'
                                 (To_Unbounded_String (Path_Name), TS));
