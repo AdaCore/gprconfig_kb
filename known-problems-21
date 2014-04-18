@@ -91,15 +91,6 @@ KP-21-N310-027 gprbuild wait indefinitely for some compilation results
 
   Workaround: fix the Root_Dir attribute value.
 
-KP-21-N207-022 Fail to compile sources in distributed mode
-
-  Problem:    Top level sources (sources found at the project's root
-              directory) will fail to compile on remote compilation slaves.
-
-  Status:     This was fixed in 2.2 on 2014-02-07
-
-  Workaround: do not use the distributed compilation mode
-
 KP-21-N206-041 wrong permissions set by gprinstall for binaries
 
   Problem:    On UNIX, a binary installed with gprinstall will have the
@@ -189,6 +180,15 @@ KP-21-MA30-041 Aggregated libraries and gprinstall
 
 Known problems fixed in 2.1.2 and above
 ---------------------------------------
+
+KP-21-N207-022 Fail to compile sources in distributed mode
+
+  Problem:    Top level sources (sources found at the project's root
+              directory) will fail to compile on remote compilation slaves.
+
+  Status:     This was fixed in 2.1.2 on 2014-02-07
+
+  Workaround: do not use the distributed compilation mode
 
 Known problems fixed in 2.1.1 and above
 ---------------------------------------
