@@ -10,7 +10,7 @@
   <!--    GCC 3.x & 4.x (not for GNAT Pro)-->
   <compiler_description>
     <name>GCC</name>
-    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-androideabi-|arm-linux-gnueabi-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
 
@@ -27,7 +27,7 @@
   <!--    GCC for GNAT Pro 3.x & 4.x -->
   <compiler_description>
     <name>GCC_Pro</name>
-    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-gnueabi-).*)?gcc</executable>
+    <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-androideabi-|arm-linux-gnueabi-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
 
