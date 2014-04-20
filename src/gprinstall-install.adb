@@ -20,14 +20,14 @@
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Handling;                use Ada.Characters.Handling;
-with Ada.Containers.Indefinite_Vectors;      use Ada;
 with Ada.Containers.Indefinite_Ordered_Sets;
+with Ada.Containers.Indefinite_Vectors;      use Ada;
 with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Directories;                        use Ada.Directories;
 with Ada.Strings.Equal_Case_Insensitive;
-with Ada.Strings.Less_Case_Insensitive;
 with Ada.Strings.Fixed;                      use Ada.Strings;
+with Ada.Strings.Less_Case_Insensitive;
 with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 with Ada.Text_IO;                            use Ada.Text_IO;
 
