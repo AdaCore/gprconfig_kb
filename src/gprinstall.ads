@@ -144,4 +144,8 @@ private
    Sig_Line : constant String := "S ";
    --  The prefix of the line containing the original project's signature
 
+   Sources_Only : Boolean := False;
+   --  Whether to copy only the projects sources. This means that the object,
+   --  library, executable files are not to be copied.
+
 end Gprinstall;

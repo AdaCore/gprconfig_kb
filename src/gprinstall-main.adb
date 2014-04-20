@@ -71,6 +71,7 @@ procedure Gprinstall.Main is
    No_Lib_Link_Option     : constant String := "--no-lib-link";
    List_Option            : constant String := "--list";
    Stat_Option            : constant String := "--stat";
+   Sources_Only_Option    : constant String := "--sources-only";
 
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
@@ -338,6 +339,9 @@ procedure Gprinstall.Main is
                  (Arg (Install_Name_Option'Length + 2 .. Arg'Last));
                Install_Name_Default := False;
 
+            elsif Has_Prefix (Sources_Only_Option) then
+               Sources_Only := True;
+
             elsif Has_Prefix (Uninstall_Option) then
                Usage_Mode := Uninstall_Mode;
 
@@ -467,7 +471,7 @@ procedure Gprinstall.Main is
       Snames.Initialize;
       Stringt.Initialize;
 
-      Prj.Tree.Initialize (Root_Environment, Gprbuild_Flags);
+      Prj.Tree.Initialize (Root_Environment, Gprinstall_Flags);
       Prj.Tree.Initialize (Project_Node_Tree);
 
       Prj.Initialize (Project_Tree);
@@ -566,6 +570,10 @@ procedure Gprinstall.Main is
          --  Set to default for current toolchain
          Global_Prefix_Dir := (new String'(Executable_Prefix_Path), True);
       end if;
+
+      --  Do not require directory to be present in Sources_Only mode
+
+      Opt.Directories_Must_Exist_In_Projects := not Sources_Only;
    end Initialize;
 
    -----------
@@ -631,6 +639,9 @@ procedure Gprinstall.Main is
          Write_Line ("  --no-lib-link");
          Write_Line
            ("           Do not copy shared lib in exec/lib directory");
+
+         Write_Line ("  --sources-only");
+         Write_Line ("           Copy project sources only");
 
          --  Line for --subdirs=
 
@@ -739,7 +750,8 @@ begin
    end if;
 
    if Config_Project_File_Name = null then
-      Config_Project_File_Name := new String'("");
+      Config_Project_File_Name :=
+        new String'((if Sources_Only then "auto.cgpr" else ""));
    end if;
 
    --  Then, parse the user's project and the configuration file. Apply the

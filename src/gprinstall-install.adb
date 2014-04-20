@@ -805,7 +805,9 @@ package body Gprinstall.Install is
 
                   --  Objects / Deps
 
-                  if Other_Part (Sid) = null or else Sid.Kind /= Spec then
+                  if not Sources_Only
+                    and then (Other_Part (Sid) = null or else Sid.Kind /= Spec)
+                  then
                      if Copy (Object) then
                         Copy_File
                           (From => Cat
@@ -967,7 +969,7 @@ package body Gprinstall.Install is
 
          --  Copy library
 
-         if Copy (Library) then
+         if Copy (Library) and not Sources_Only then
             if Project.Library_Kind /= Static
               and then Project.Lib_Internal_Name /= No_Name
               and then Project.Library_Name /= Project.Lib_Internal_Name
@@ -1036,7 +1038,7 @@ package body Gprinstall.Install is
 
          --  Copy executable(s)
 
-         if Copy (Executable) then
+         if Copy (Executable) and not Sources_Only then
             declare
                M : String_List_Id := Project.Mains;
             begin
@@ -2051,7 +2053,9 @@ package body Gprinstall.Install is
 
                --  Externally Built
 
-               Content.Append ("   for Externally_Built use ""True"";");
+               if not Sources_Only then
+                  Content.Append ("   for Externally_Built use ""True"";");
+               end if;
 
             else
                --  This is an abstract project

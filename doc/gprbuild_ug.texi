@@ -3349,6 +3349,10 @@ the executable directory on Windows or creation of symlink in the lib
 directory on UNIX. This is done by default to place the shared
 libraries into a directory where application will look for them.
 
+@item @option{--sources-only} : Copy only sources part of the project,
+the object, library or executable files are never copied. When this
+switch is used the installed project is not set as externally built.
+
 @item @option{--subdirs=<subdir>}
 
 This indicates that the real directories (except the source directories) are

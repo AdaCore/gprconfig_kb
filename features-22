@@ -8,6 +8,12 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N418-025 New gprinstall option to copy only project sources (2014-04-19)
+
+  Using gprinstall's --sources-only option it is now possible to install
+  projects sources only. In this mode it is not required for the project to
+  have been built before.
+
 NF-22-N411-007 Add a time-stamp in all gprslave's message (2014-04-12)
 
   All gprslave's messages are now prefixed with a time-stamp in verbose mode.
