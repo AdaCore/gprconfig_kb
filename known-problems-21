@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N416-050 Files not properly synchronized in disttributed compilation
+
+  Problem:    Some files are not properly synchronized when using two
+              directories for the same projects.
+
+  Status:     This was fixed in 2.2 on 2014-04-17
+
+  Workaround: clear the remote slave environement (using gprclean) when
+              switching from one directory to another.
+
 KP-21-N411-006 Better handle unexpected events in gprslave
 
   Problem:    In some cases (using old build master) gprslave could freeze
