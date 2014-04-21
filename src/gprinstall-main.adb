@@ -115,7 +115,7 @@ procedure Gprinstall.Main is
       if not Copyright_Output then
          Copyright_Output := True;
          Display_Version
-           ("GPRBUILD", "2012", Version_String => Gpr_Version_String);
+           ("GPRINSTALL", "2012", Version_String => Gpr_Version_String);
       end if;
    end Copyright;
 
