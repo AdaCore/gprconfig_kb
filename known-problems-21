@@ -27,14 +27,14 @@ KP-21-N421-002 Failing installing artifacts with gprinstall
 
   Workaround: force installation for the second gprinstall call using -f
 
-KP-21-N416-050 Files not properly synchronized in disttributed compilation
+KP-21-N416-050 Files not properly synchronized in distributed compilation
 
   Problem:    Some files are not properly synchronized when using two
               directories for the same projects.
 
   Status:     This was fixed in 2.2 on 2014-04-17
 
-  Workaround: clear the remote slave environement (using gprclean) when
+  Workaround: clear the remote slave environment (using gprclean) when
               switching from one directory to another.
 
 KP-21-N411-006 Better handle unexpected events in gprslave
