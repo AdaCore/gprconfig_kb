@@ -651,6 +651,7 @@ package body Gprinstall.Install is
          if not Sym_Link
            and then Exists (Dest_Filename)
            and then not Force_Installations
+           and then File_MD5 (From) /= File_MD5 (Dest_Filename)
          then
             Write_Str ("file ");
             Write_Str (File);
