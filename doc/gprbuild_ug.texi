@@ -3292,6 +3292,21 @@ that would have been done.
 
 @item @option{--mode=[dev/usage]} : Specify the installation mode.
 
+@itemize @bullet
+@item dev
+This is the default mode. The installation is done in developper
+mode. All files to use the project are copied to to install prefix. For a
+library this means that the specs, the corresponding ALI files for
+Ada units and the library itself (static or relocatable) are
+installed. For a standard project the object files are installed
+instead of the library.
+
+@item usage
+The installation is done in usage mode. This means that only the
+library or the executable is installed. In this installation mode
+there is no project generated, nor specs or ALI files installed.
+@end itemize
+
 @table @option
 
 @item dev
