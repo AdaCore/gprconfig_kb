@@ -17,6 +17,24 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N422-024 gprinstall fails to properly install shared SAL
+
+  Problem:    Shared standalone libraries are not properly installed and
+              cannot be used once install by gprinstall.
+
+  Status:     This was fixed in 2.2 on 2014-04-22
+
+  Workaround: install the library manually.
+
+KP-21-N422-023 gprinstall fails to properly install static SAL
+
+  Problem:    Static standalone libraries are not properly installed and
+              cannot be used once install by gprinstall.
+
+  Status:     This was fixed in 2.2 on 2014-04-22
+
+  Workaround: install the library manually.
+
 KP-21-N421-002 Failing installing artifacts with gprinstall
 
   Problem:    When installing a static and relocatable build of the same

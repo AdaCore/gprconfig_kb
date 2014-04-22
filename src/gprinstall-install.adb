@@ -826,7 +826,8 @@ package body Gprinstall.Install is
                      then
                         Copy_File
                           (From => Cat
-                             (Get_Object_Directory (Sid.Project, False),
+                             (Get_Object_Directory
+                                  (Sid.Project, Project.Library),
                               Sid.Dep_Name),
                            To   => Lib_Dir,
                            File => Get_Name_String (Sid.Dep_Name));
@@ -1296,11 +1297,13 @@ package body Gprinstall.Install is
                V.Append (-Line);
 
                if Project.Standalone_Library /= No then
-                  Line := +"         for Library_Standalone use """;
-                  Line := Line &
-                    To_Lower (Standalone'Image (Project.Standalone_Library));
-                  Line := Line & """;";
-                  V.Append (-Line);
+                  if Project.Library_Kind /= Static then
+                     Line := +"         for Library_Standalone use """;
+                     Line := Line & To_Lower
+                       (Standalone'Image (Project.Standalone_Library));
+                     Line := Line & """;";
+                     V.Append (-Line);
+                  end if;
 
                   --  And then generates the interfaces
 
