@@ -1946,7 +1946,9 @@ package body Gprbuild.Compile is
                end if;
 
                if Compilation_OK
-                 and then Builder_Data (Src_Data.Tree).Closure_Needed
+                 and then
+                   (Builder_Data (Src_Data.Tree).Closure_Needed
+                    or else Src_Data.Closure)
                then
                   Record_ALI_For (Src_Data, The_ALI);
                end if;
