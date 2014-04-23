@@ -183,9 +183,10 @@ procedure Gprbuild.Main is
 
             if Is_Allowed_Language (Main_Id.Source.Language.Name) then
                Queue.Insert
-                 (Source     => (Format => Format_Gprbuild,
-                                 Tree   => Main_Id.Tree,
-                                 Id     => Main_Id.Source),
+                 (Source     => (Format  => Format_Gprbuild,
+                                 Tree    => Main_Id.Tree,
+                                 Id      => Main_Id.Source,
+                                 Closure => False),
                   With_Roots => Builder_Data (Main_Id.Tree).Closure_Needed);
 
                --  If a non Ada main has no roots, then all sources need to be
