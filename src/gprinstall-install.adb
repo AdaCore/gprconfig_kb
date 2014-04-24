@@ -790,7 +790,6 @@ package body Gprinstall.Install is
                --  part of the interface for standalone libraries.
 
                if not Sid.Locally_Removed
-                 and then not Sid.Project.Externally_Built
                  and then (Project.Standalone_Library = No
                            or else Sid.Declared_In_Interfaces)
                then
@@ -963,11 +962,13 @@ package body Gprinstall.Install is
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
 
       begin
-         if not All_Sources then
-            Copy_Interfaces (Tree, Project);
-         end if;
+         if Has_Sources (Project) then
+            if not All_Sources then
+               Copy_Interfaces (Tree, Project);
+            end if;
 
-         Copy_Project_Sources (Project, Tree);
+            Copy_Project_Sources (Project, Tree);
+         end if;
 
          --  Copy library
 
@@ -1264,11 +1265,15 @@ package body Gprinstall.Install is
             --  Project sources
 
             Line := +"         for Source_Dirs use (""";
-            Line := Line
-              & Relative_Path
-              (Sources_Dir (Build_Name => False), To => Project_Dir);
 
-            Gen_Dir_Name (Sources_Subdir, Line);
+            if Has_Sources (Project) then
+               Line := Line
+                 & Relative_Path
+                 (Sources_Dir (Build_Name => False), To => Project_Dir);
+
+               Gen_Dir_Name (Sources_Subdir, Line);
+            end if;
+
             Line := Line & """);";
 
             V.Append (-Line);
@@ -1938,7 +1943,6 @@ package body Gprinstall.Install is
                begin
                   while L /= null loop
                      if Has_Sources (L.Project)
-                       and then not L.Project.Externally_Built
                        and then Is_Install_Active (Tree, L.Project)
                      then
                         Content.Append
@@ -1977,14 +1981,14 @@ package body Gprinstall.Install is
 
             --  Project name
 
-            if Has_Sources (Project) then
-               if Project.Library then
-                  Line := +"library ";
-               else
-                  Line := +"standard ";
-               end if;
+            if Project.Library then
+               Line := +"library ";
             else
-               Line := +"abstract ";
+               if Has_Sources (Project) then
+                  Line := +"standard ";
+               else
+                  Line := +"abstract ";
+               end if;
             end if;
 
             Line := Line & "project ";
@@ -1992,7 +1996,7 @@ package body Gprinstall.Install is
             Line := Line & " is";
             Content.Append (-Line);
 
-            if Has_Sources (Project) then
+            if Has_Sources (Project) or Project.Library then
                --  BUILD variable
 
                Content.Append
@@ -2013,10 +2017,12 @@ package body Gprinstall.Install is
                --  Add languages, for an aggregate library we want all unique
                --  languages from all aggregated libraries.
 
-               Add_Empty_Line;
+               if Has_Sources (Project) then
+                  Add_Empty_Line;
 
-               Content.Append
-                 ("   for Languages use (" & Get_Languages & ");");
+                  Content.Append
+                    ("   for Languages use (" & Get_Languages & ");");
+               end if;
 
                --  Build_Suffix used to avoid .default as suffix
 
@@ -2049,15 +2055,26 @@ package body Gprinstall.Install is
                   end if;
                end if;
 
-               Add_Empty_Line;
-
                --  Packages
 
-               Create_Packages;
+               if Has_Sources (Project) then
+                  Add_Empty_Line;
+
+                  Create_Packages;
+               end if;
+
+               --  Set as not installable
+
+               Add_Empty_Line;
+
+               Content.Append ("   package Install is");
+               Content.Append ("      for Active use ""False"";");
+               Content.Append ("   end Install;");
 
                --  Externally Built
 
                if not Sources_Only then
+                  Add_Empty_Line;
                   Content.Append ("   for Externally_Built use ""True"";");
                end if;
 
@@ -2171,8 +2188,8 @@ package body Gprinstall.Install is
          --  Skip non active project and externally built ones
 
          Install_Project := Active
-           and Bring_Sources (Project)
-           and not Project.Externally_Built;
+           and (Bring_Sources (Project)
+                or Project.Externally_Built);
 
          if not Opt.Quiet_Output then
             if Install_Project then
@@ -2190,16 +2207,10 @@ package body Gprinstall.Install is
             end if;
 
             if not Install_Project and Opt.Verbose_Mode then
-               if not Active then
-                  Write_Str (" (not active)");
-               elsif Project.Externally_Built then
-                  Write_Str (" (externally built)");
-               elsif Project.Source_Dirs = Nil_String then
-                  Write_Str (" (no sources)");
-               end if;
+               Write_Str (" (not active)");
             end if;
 
-            if Install_Project  or Opt.Verbose_Mode then
+            if Install_Project or Opt.Verbose_Mode then
                Write_Eol;
             end if;
          end if;
@@ -2228,9 +2239,7 @@ package body Gprinstall.Install is
 
          --  Copy all files from the project
 
-         if Has_Sources (Project) then
-            Copy_Files;
-         end if;
+         Copy_Files;
 
          --  A project file is only needed in developer mode
 
