@@ -3198,6 +3198,40 @@ is installed in the GPRbuild's default path location so that it can be
 "with"ed easily without further configuration. The installation
 process keeps record of every file installed for easy and safe removal.
 
+GPRinstall supports all kind of project:
+
+@itemize @bullet
+
+@item standard projects
+
+The object files, executable and source files are considered for installation.
+
+@item library and aggregate library projects
+
+The library itself and the source files are considered for installation.
+
+@item aggregate projects
+
+All aggregated projects are considered for installation.
+
+@end itemize
+
+Projects that won't be installed are:
+
+@itemize @bullet
+
+@item Project explicitly disabled for installation
+
+A project with the Active attribute set to False in the project's
+Install package.
+
+@item Abstract project
+
+A project explicitly set with the abstract discriminant or a standard project
+without any sources.
+
+@end itemize
+
 At a minimum, to invoke GPRinstall you must specify a main project file
 in a command such as @code{gprinstall proj.gpr} or
 @code{gprinstall -P proj.gpr}.
