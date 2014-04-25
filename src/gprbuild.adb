@@ -219,23 +219,25 @@ package body Gprbuild is
    --------------------------------
 
    procedure Change_To_Object_Directory (Project : Project_Id) is
+      Proj : constant Project_Id := Object_Project (Project);
+
    begin
       --  Nothing to do if the current working directory is already the correct
       --  object directory.
 
-      if Project_Of_Current_Object_Directory /= Project then
-         Project_Of_Current_Object_Directory := Project;
+      if Project_Of_Current_Object_Directory /= Proj then
+         Project_Of_Current_Object_Directory := Proj;
 
          --  Set the working directory to the object directory of the actual
          --  project.
 
-         Change_Dir (Get_Name_String (Project.Object_Directory.Display_Name));
+         Change_Dir (Get_Name_String (Proj.Object_Directory.Display_Name));
 
          if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
             Write_Str  ("Changing to object directory of """);
-            Write_Name (Project.Display_Name);
+            Write_Name (Proj.Display_Name);
             Write_Str  (""": """);
-            Write_Name (Project.Object_Directory.Display_Name);
+            Write_Name (Proj.Object_Directory.Display_Name);
             Write_Line ("""");
          end if;
       end if;
@@ -467,18 +469,18 @@ package body Gprbuild is
             --  We first process the imported projects to guarantee that
             --  We have a proper reverse order for the libraries. Do not add
             --  library for encapsulated libraries dependencies except when
-            --  building the encapsulated library itself.
+            --  building the encapsulated library itself. Also, do not add
+            --  libraries aggregated from an aggregate library.
 
-            if For_Project.Standalone_Library = Encapsulated
-              or else Project.Standalone_Library /= Encapsulated
+            if (For_Project.Standalone_Library = Encapsulated
+                 or else Project.Standalone_Library /= Encapsulated)
+                 and then Project.Qualifier /= Aggregate_Library
             then
                while Imported /= null loop
                   if Imported.Project /= No_Project then
                      Process_Project
                        (Imported.Project,
-                        Is_Aggregate =>
-                          (Project.Qualifier = Aggregate_Library)
-                           or else Is_Aggregate);
+                        Is_Aggregate => Is_Aggregate);
                   end if;
 
                   Imported := Imported.Next;

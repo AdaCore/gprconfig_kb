@@ -823,13 +823,20 @@ package body Gprinstall.Install is
                        and then Sid.Kind /= Sep
                        and then Is_Ada (Sid)
                      then
-                        Copy_File
-                          (From => Cat
-                             (Get_Object_Directory
-                                  (Sid.Project, Project.Library),
-                              Sid.Dep_Name),
-                           To   => Lib_Dir,
-                           File => Get_Name_String (Sid.Dep_Name));
+                        declare
+                           Proj : Project_Id := Sid.Project;
+                        begin
+                           if Project.Qualifier = Aggregate_Library then
+                              Proj := Project;
+                           end if;
+
+                           Copy_File
+                             (From => Cat
+                                (Get_Object_Directory (Proj, Project.Library),
+                                 Sid.Dep_Name),
+                              To   => Lib_Dir,
+                              File => Get_Name_String (Sid.Dep_Name));
+                        end;
                      end if;
                   end if;
                end if;

@@ -201,6 +201,11 @@ package Gpr_Util is
    --  Check if default.gpr exists in the current directory. If it does, use
    --  it. Otherwise, if there is only one file ending with .gpr, use it.
 
+   function Object_Project (Project : Project_Id) return Project_Id;
+   --  For a non aggregate project, returns the project.
+   --  For an aggrete project or an aggregate library project, returns an
+   --  aggregated project that is not an aggregate project.
+
    function Partial_Name
      (Lib_Name      : String;
       Number        : Natural;

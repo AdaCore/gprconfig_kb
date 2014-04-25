@@ -266,11 +266,15 @@ package body Gprclean is
 
             In_Generated : Boolean;
 
+            Obj_Proj : constant Project_Id := Object_Project (Project);
+
          begin
-            if Project.Object_Directory.Display_Name /= No_Path then
+            if Obj_Proj /= No_Project
+                and then Obj_Proj.Object_Directory.Display_Name /= No_Path
+            then
                Obj_Directory :=
                  new String'
-                   (Get_Name_String (Project.Object_Directory.Display_Name));
+                   (Get_Name_String (Obj_Proj.Object_Directory.Display_Name));
 
                if Is_Directory (Obj_Directory.all) then
                   Change_Dir (Obj_Directory.all);
@@ -478,7 +482,11 @@ package body Gprclean is
                            Proj     : Project_Id := Project;
                         begin
                            Project_Loop : loop
-                              Iter := For_Each_Source (Project_Tree, Proj);
+                              if Proj.Qualifier = Aggregate_Library then
+                                 Iter := For_Each_Source (Project_Tree);
+                              else
+                                 Iter := For_Each_Source (Project_Tree, Proj);
+                              end if;
 
                               loop
                                  Source := Prj.Element (Iter);

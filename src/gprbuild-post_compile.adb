@@ -234,7 +234,8 @@ package body Gprbuild.Post_Compile is
                        and then not Is_Subunit (Source)))
                  and then
                    (not Source.Project.Externally_Built
-                    or else Source.Project.Extended_By /= No_Project)
+                     or else not For_Project.Externally_Built
+                     or else Source.Project.Extended_By /= No_Project)
                then
                   Library_Objs.Append
                     ((Path  => Source.Object_Path,
@@ -306,7 +307,8 @@ package body Gprbuild.Post_Compile is
                        and then not Is_Subunit (Source)))
                  and then
                    (not Source.Project.Externally_Built
-                    or else Source.Project.Extended_By /= No_Project)
+                     or else not For_Project.Externally_Built
+                     or else Source.Project.Extended_By /= No_Project)
                then
                   if Source.Unit = No_Unit_Index then
                      OK := True;
@@ -1439,6 +1441,7 @@ package body Gprbuild.Post_Compile is
                     and then Source.Dep_Path /= No_Path
                     and then
                       (not Source.Project.Externally_Built
+                        or else not For_Project.Externally_Built
                        or else Source.Project.Extended_By /= No_Project)
                   then
                      if Source.Kind = Spec then
@@ -2104,10 +2107,6 @@ package body Gprbuild.Post_Compile is
 
          if No_Create then
             Put_Line (Exchange_File, Library_Label (Gprexch.No_Create));
-         end if;
-
-         if For_Project.Qualifier = Aggregate_Library then
-            Put_Line (Exchange_File, Library_Label (Gprexch.No_Copy_ALI));
          end if;
 
          if For_Project.Library_Kind = Static then
