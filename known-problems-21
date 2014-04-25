@@ -17,6 +17,26 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N423-036 Installation of aggregate SAL projects
+
+  Problem:    gprinstall does not install properly aggregate Stand-Alone
+              Library projects. In particular, no ALI file is copied to
+              the library ALI directory.
+
+  Status:     This was fixed in 2.2 on 2014-04-25
+
+  Workaround: Avoid installation of aggregate library projects.
+
+KP-21-N422-033 Library exchange files of aggregate libraries
+
+  Problem:    gprbuild creates the library exchange file of an aggregate
+              library project in the project directory, which may be read-only.
+
+  Status:     This was fixed in 2.2 on 2014-04-25
+
+  Workaround: Make sure that the project directory of an aggregate library
+              project is writable.
+
 KP-21-N422-024 gprinstall fails to properly install shared SAL
 
   Problem:    Shared standalone libraries are not properly installed and
