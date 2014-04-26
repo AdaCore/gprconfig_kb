@@ -474,7 +474,7 @@ package body Gprbuild is
 
             if (For_Project.Standalone_Library = Encapsulated
                  or else Project.Standalone_Library /= Encapsulated)
-                 and then Project.Qualifier /= Aggregate_Library
+              and then Project.Qualifier /= Aggregate_Library
             then
                while Imported /= null loop
                   if Imported.Project /= No_Project then
