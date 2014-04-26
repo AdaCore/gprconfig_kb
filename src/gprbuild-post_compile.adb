@@ -186,14 +186,12 @@ package body Gprbuild.Post_Compile is
 
          procedure Process
            (Proj : Project_Id;
-            Tree : Project_Tree_Ref;
-            S    : in out Boolean);
+            Tree : Project_Tree_Ref);
          --  Get objects for non Stand-Alone library
 
          procedure Process_Standalone
            (Proj : Project_Id;
-            Tree : Project_Tree_Ref;
-            S    : in out Boolean);
+            Tree : Project_Tree_Ref);
          --  Get objects for a Stand-Alone Library
 
          -------------
@@ -202,10 +200,9 @@ package body Gprbuild.Post_Compile is
 
          procedure Process
            (Proj  : Project_Id;
-            Tree  : Project_Tree_Ref;
-            S     : in out Boolean)
+            Tree  : Project_Tree_Ref)
          is
-            pragma Unreferenced (S);
+            pragma Unreferenced (Tree);
 
             Never : constant Time_Stamp_Type := (others => '9');
             --  A time stamp that is greater than any real one
@@ -213,7 +210,7 @@ package body Gprbuild.Post_Compile is
             Source : Source_Id;
             Iter   : Source_Iterator;
          begin
-            Iter := For_Each_Source (Tree, Proj);
+            Iter := For_Each_Source (Project_Tree, Proj);
             loop
                Source := Prj.Element (Iter);
                exit when Source = No_Source;
@@ -270,10 +267,9 @@ package body Gprbuild.Post_Compile is
 
          procedure Process_Standalone
            (Proj : Project_Id;
-            Tree : Project_Tree_Ref;
-            S    : in out Boolean)
+            Tree : Project_Tree_Ref)
          is
-            pragma Unreferenced (S);
+            pragma Unreferenced (Tree);
 
             Never : constant Time_Stamp_Type := (others => '9');
             --  A time stamp that is greater than any real one
@@ -286,7 +282,7 @@ package body Gprbuild.Post_Compile is
             OK   : Boolean;
 
          begin
-            Iter := For_Each_Source (Tree, Proj);
+            Iter := For_Each_Source (Project_Tree, Proj);
             loop
                Source := Prj.Element (Iter);
                exit when Source = No_Source;
@@ -469,12 +465,10 @@ package body Gprbuild.Post_Compile is
          end Process_Standalone;
 
          procedure Process_Non_Standalone_Aggregate_Library is
-           new For_Every_Project_Imported (Boolean, Process);
+           new For_Project_And_Aggregated (Process);
 
          procedure Process_Standalone_Aggregate_Library is
-           new For_Every_Project_Imported (Boolean, Process_Standalone);
-
-         S : Boolean := False;
+           new For_Project_And_Aggregated (Process_Standalone);
 
          Proj : Project_Id := For_Project;
 
@@ -485,18 +479,18 @@ package body Gprbuild.Post_Compile is
          if For_Project.Qualifier = Aggregate_Library then
             if For_Project.Standalone_Library = No then
                Process_Non_Standalone_Aggregate_Library
-                 (For_Project, Project_Tree, S, Include_Aggregated => False);
+                 (For_Project, Project_Tree);
             else
                Process_Standalone_Aggregate_Library
-                 (For_Project, Project_Tree, S, Include_Aggregated => False);
+                 (For_Project, Project_Tree);
             end if;
 
          else
             while Proj /= No_Project loop
                if For_Project.Standalone_Library = No then
-                  Process (Proj, Project_Tree, S);
+                  Process (Proj, Project_Tree);
                else
-                  Process_Standalone (Proj, Project_Tree, S);
+                  Process_Standalone (Proj, Project_Tree);
                end if;
 
                Proj := Proj.Extends;
