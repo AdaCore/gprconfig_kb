@@ -3729,19 +3729,22 @@ package body Gprbuild.Post_Compile is
 
                for J in Lib_Projs'Range loop
                   Proj := Lib_Projs (J);
-                  --  Try building a library only if no errors occured in
-                  --  library project and projects it depends on.
 
-                  if not Project_Compilation_Failed (Proj.Proj) then
-                     if Proj.Proj.Extended_By = No_Project then
-                        if not Proj.Proj.Externally_Built then
-                           Build_Library
-                             (Proj.Proj, Project_Tree,
-                              No_Create => Proj.Is_Aggregated);
-                        end if;
+                  if not Proj.Is_Aggregated then
+                     --  Try building a library only if no errors occured in
+                     --  library project and projects it depends on.
 
-                        if Proj.Proj.Library_Kind /= Static then
-                           Shared_Libs := True;
+                     if not Project_Compilation_Failed (Proj.Proj) then
+                        if Proj.Proj.Extended_By = No_Project then
+                           if not Proj.Proj.Externally_Built then
+                              Build_Library
+                                (Proj.Proj, Project_Tree,
+                                 No_Create => Proj.Is_Aggregated);
+                           end if;
+
+                           if Proj.Proj.Library_Kind /= Static then
+                              Shared_Libs := True;
+                           end if;
                         end if;
                      end if;
                   end if;

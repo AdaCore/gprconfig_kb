@@ -447,7 +447,7 @@ package body Gprbuild is
       And_Project_Itself : Boolean := False)
    is
 
-      procedure Process_Project (Project : Project_Id; Is_Aggregate : Boolean);
+      procedure Process_Project (Project : Project_Id; Aggregated : Boolean);
       --  Process Project and its imported projects recursively.
       --  Add any library projects to table Library_Projs.
 
@@ -456,7 +456,7 @@ package body Gprbuild is
       ---------------------
 
       procedure Process_Project
-        (Project : Project_Id; Is_Aggregate : Boolean)
+        (Project : Project_Id; Aggregated : Boolean)
       is
          Imported : Project_List := Project.Imported_Projects;
 
@@ -472,15 +472,14 @@ package body Gprbuild is
             --  building the encapsulated library itself. Also, do not add
             --  libraries aggregated from an aggregate library.
 
-            if (For_Project.Standalone_Library = Encapsulated
-                 or else Project.Standalone_Library /= Encapsulated)
-              and then Project.Qualifier /= Aggregate_Library
+            if For_Project.Standalone_Library = Encapsulated
+                or else Project.Standalone_Library /= Encapsulated
             then
                while Imported /= null loop
                   if Imported.Project /= No_Project then
                      Process_Project
                        (Imported.Project,
-                        Is_Aggregate => Is_Aggregate);
+                        Aggregated => Project.Qualifier = Aggregate_Library);
                   end if;
 
                   Imported := Imported.Next;
@@ -490,7 +489,7 @@ package body Gprbuild is
             --  For an extending project, process the project being extended
 
             if Project.Extends /= No_Project then
-               Process_Project (Project.Extends, Is_Aggregate => False);
+               Process_Project (Project.Extends, Aggregated => Aggregated);
             end if;
 
             --  If it is a library project, add it to Library_Projs
@@ -506,7 +505,7 @@ package body Gprbuild is
                Library_Projs.Append
                  (Library_Project'
                     (Project,
-                     Is_Aggregate and then not Project.Externally_Built));
+                     Aggregated and then not Project.Externally_Built));
             end if;
          end if;
       end Process_Project;
@@ -518,7 +517,7 @@ package body Gprbuild is
       Library_Projs.Init;
       There_Are_SALs := False;
 
-      Process_Project (For_Project, Is_Aggregate => False);
+      Process_Project (For_Project, Aggregated => False);
    end Process_Imported_Libraries;
 
    ------------------------------------
