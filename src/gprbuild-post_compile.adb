@@ -234,8 +234,8 @@ package body Gprbuild.Post_Compile is
                        and then not Is_Subunit (Source)))
                  and then
                    (not Source.Project.Externally_Built
-                     or else not For_Project.Externally_Built
-                     or else Source.Project.Extended_By /= No_Project)
+                    or else not For_Project.Externally_Built
+                    or else Source.Project.Extended_By /= No_Project)
                then
                   Library_Objs.Append
                     ((Path  => Source.Object_Path,
@@ -307,8 +307,8 @@ package body Gprbuild.Post_Compile is
                        and then not Is_Subunit (Source)))
                  and then
                    (not Source.Project.Externally_Built
-                     or else not For_Project.Externally_Built
-                     or else Source.Project.Extended_By /= No_Project)
+                    or else not For_Project.Externally_Built
+                    or else Source.Project.Extended_By /= No_Project)
                then
                   if Source.Unit = No_Unit_Index then
                      OK := True;
@@ -361,15 +361,15 @@ package body Gprbuild.Post_Compile is
             --  Now, get the closure of the interface
 
             declare
-               Index : Natural := 0;
+               Index    : Natural := 0;
                The_ALI  : ALI.ALI_Id;
                Text     : Text_Buffer_Ptr;
                Dep_Path : Path_Name_Type;
                Dep_TS   : aliased File_Attributes := Unknown_Attributes;
-               Sfile  : File_Name_Type;
-               Afile  : File_Name_Type;
-               Src_Id : Prj.Source_Id;
-               OK     : Boolean;
+               Sfile    : File_Name_Type;
+               Afile    : File_Name_Type;
+               Src_Id   : Prj.Source_Id;
+               OK       : Boolean;
 
             begin
                while Index < Library_Sources.Last loop
@@ -417,7 +417,7 @@ package body Gprbuild.Post_Compile is
                                     when Spec =>
                                        declare
                                           Bdy : constant Prj.Source_Id :=
-                                            Other_Part (Src_Id);
+                                                  Other_Part (Src_Id);
                                        begin
                                           if Bdy /= No_Source
                                             and then not Bdy.Locally_Removed
@@ -444,15 +444,12 @@ package body Gprbuild.Post_Compile is
                               if Src_Id /= No_Source
                                 and then
                                   (Src_Id.Project = For_Project
-                                   or else
-                                   Src_Id.Project = Proj)
+                                   or else Src_Id.Project = Proj)
                               then
                                  OK := True;
 
                                  for J in 1 .. Library_Sources.Last loop
-                                    if Src_Id =
-                                      Library_Sources.Table (J)
-                                    then
+                                    if Src_Id = Library_Sources.Table (J) then
                                        OK := False;
                                        exit;
                                     end if;
@@ -483,7 +480,7 @@ package body Gprbuild.Post_Compile is
 
       begin
          Library_Objs.Init;
-            Library_Sources.Init;
+         Library_Sources.Init;
 
          if For_Project.Qualifier = Aggregate_Library then
             if For_Project.Standalone_Library = No then
@@ -1409,6 +1406,10 @@ package body Gprbuild.Post_Compile is
 
          procedure Add;
 
+         ---------
+         -- Add --
+         ---------
+
          procedure Add is
          begin
             if Source.Unit = No_Unit_Index
@@ -1441,7 +1442,7 @@ package body Gprbuild.Post_Compile is
                     and then Source.Dep_Path /= No_Path
                     and then
                       (not Source.Project.Externally_Built
-                        or else not For_Project.Externally_Built
+                       or else not For_Project.Externally_Built
                        or else Source.Project.Extended_By /= No_Project)
                   then
                      if Source.Kind = Spec then
@@ -1614,8 +1615,8 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Other_Interfaces is
          Interfaces : String_List_Id :=
-                            For_Project.Other_Interfaces;
-         Element        : String_Element;
+                        For_Project.Other_Interfaces;
+         Element    : String_Element;
       begin
          Put_Line (Exchange_File, Library_Label (Other_Interfaces));
 
@@ -1838,17 +1839,17 @@ package body Gprbuild.Post_Compile is
             Close (Exchange_File);
 
             if Opt.Verbose_Mode then
-               Write_Line ("      -> library exchange file " &
-                           Exchange_File_Name.all &
-                           " has wrong format");
+               Write_Line
+                 ("      -> library exchange file "
+                  & Exchange_File_Name.all & " has wrong format");
             end if;
 
          else
             Get_Line (Exchange_File, Name_Buffer, Name_Len);
 
             declare
-               Lib_File_Name : constant String :=
-                 Base_Name (Name_Buffer (1 .. Name_Len));
+               Lib_File_Name     : constant String :=
+                                     Base_Name (Name_Buffer (1 .. Name_Len));
                Shared_Lib_Prefix : String_Access := new String'("lib");
                Shared_Lib_Suffix : String_Access := new String'(".so");
                Archive_Suffix    : String_Access := new String'(".a");
@@ -1925,8 +1926,8 @@ package body Gprbuild.Post_Compile is
             Library_Needs_To_Be_Built := True;
 
             if Opt.Verbose_Mode then
-               Write_Line ("      -> library exchange file " &
-                           Exchange_File_Name.all & " has wrong format");
+               Write_Line ("      -> library exchange file "
+                           & Exchange_File_Name.all & " has wrong format");
             end if;
          end if;
 
@@ -2343,8 +2344,8 @@ package body Gprbuild.Post_Compile is
          end if;
       end Globalize_Dir;
 
-      procedure Globalize_Dirs is new
-        Prj.Env.For_All_Object_Dirs (Globalize_Dir);
+      procedure Globalize_Dirs is
+        new Prj.Env.For_All_Object_Dirs (Globalize_Dir);
 
    begin
       if Globalizer_Path = null then
@@ -2567,8 +2568,7 @@ package body Gprbuild.Post_Compile is
                       Source.Unit /= Main_Source.Unit
                     and then
                       (Source.Kind = Impl
-                       or else
-                         Other_Part (Source) = No_Source)
+                       or else Other_Part (Source) = No_Source)
                     and then not Is_Subunit (Source)))
               and then Is_Included_In_Global_Archive
                 (Source.Object, Source.Project)
@@ -2805,10 +2805,8 @@ package body Gprbuild.Post_Compile is
 
                      if Opt.Verbose_Mode then
                         Write_Line
-                          ("      -> previous gprbind failed, " &
-                           "or " &
-                           Bind_Exchange.all &
-                           " corrupted");
+                          ("      -> previous gprbind failed, "
+                           & "or " & Bind_Exchange.all & " corrupted");
                      end if;
 
                      exit;
@@ -2828,9 +2826,9 @@ package body Gprbuild.Post_Compile is
 
                         if Opt.Verbose_Mode then
                            Write_Line
-                             ("      -> project file " &
-                              Get_Name_String (Project_Path) &
-                              " has been modified");
+                             ("      -> project file "
+                              & Get_Name_String (Project_Path)
+                              & " has been modified");
                         end if;
 
                         exit;
@@ -2841,8 +2839,8 @@ package body Gprbuild.Post_Compile is
 
                      if Opt.Verbose_Mode then
                         Write_Line
-                          ("      -> unknown project file " &
-                           Get_Name_String (Project_Path));
+                          ("      -> unknown project file "
+                           & Get_Name_String (Project_Path));
                      end if;
 
                      exit;
@@ -2858,8 +2856,7 @@ package body Gprbuild.Post_Compile is
                   Binder_Driver_Needs_To_Be_Called := True;
 
                   if Opt.Verbose_Mode then
-                     Write_Line
-                       ("      -> more project files");
+                     Write_Line ("      -> more project files");
                   end if;
                end if;
             end if;
@@ -3089,8 +3086,8 @@ package body Gprbuild.Post_Compile is
                            Write_Str ("      -> ");
                            Write_Str (Get_Name_String (Dep_Path));
                            Write_Line
-                             (" is more recent that the binder " &
-                              "exchange file");
+                             (" is more recent that the binder "
+                              & "exchange file");
                         end if;
 
                         exit;
@@ -3225,10 +3222,10 @@ package body Gprbuild.Post_Compile is
             --  Then, the compiler path and required switches
 
             declare
-               Config  : Language_Config renames B_Data.Language.Config;
-               List    : Name_List_Index;
-               Nam_Nod : Name_Node;
-               Previous_Was_x : Boolean := False;
+               Config         : Language_Config renames B_Data.Language.Config;
+               List           : Name_List_Index;
+               Nam_Nod        : Name_Node;
+               Previous_Was_X : Boolean := False;
             begin
                --  Compiler path
 
@@ -3250,7 +3247,7 @@ package body Gprbuild.Post_Compile is
                   while List /= No_Name_List loop
                      Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
 
-                     if Opt.CodePeer_Mode and then Previous_Was_x then
+                     if Opt.CodePeer_Mode and then Previous_Was_X then
                         Put_Line (Exchange_File, "adascil");
 
                      else
@@ -3259,7 +3256,7 @@ package body Gprbuild.Post_Compile is
                            Get_Name_String (Nam_Nod.Name));
                      end if;
 
-                     Previous_Was_x := Get_Name_String (Nam_Nod.Name) = "-x";
+                     Previous_Was_X := Get_Name_String (Nam_Nod.Name) = "-x";
                      List := Nam_Nod.Next;
                   end loop;
 
@@ -3310,8 +3307,8 @@ package body Gprbuild.Post_Compile is
             --  Put the options, if any
 
             declare
-               The_Packages : constant Package_Id :=
-                                Main_Proj.Decl.Packages;
+               The_Packages   : constant Package_Id :=
+                                  Main_Proj.Decl.Packages;
 
                Binder_Package : constant Prj.Package_Id :=
                                   Prj.Util.Value_Of
@@ -3599,49 +3596,39 @@ package body Gprbuild.Post_Compile is
                              (Shared    => Project_Tree.Shared,
                               Path_FD   => FD,
                               Path_Name =>
-                                Main_Proj.
-                                  Objects_Path_File_Without_Libs);
+                                Main_Proj.Objects_Path_File_Without_Libs);
 
                            if FD = Invalid_FD then
                               Fail_Program
                                 (Project_Tree,
-                                 "could not create " &
-                                 "temporary path file");
+                                 "could not create temporary path file");
                            end if;
 
                            Path_Name :=
-                             Main_Proj.
-                               Objects_Path_File_Without_Libs;
+                             Main_Proj.Objects_Path_File_Without_Libs;
 
                            for Index in 1 .. Directories.Last loop
-                              Get_Name_String
-                                (Directories.Table (Index));
+                              Get_Name_String (Directories.Table (Index));
 
                               if Current_Verbosity = High then
-                                 Put_Line
-                                   (Name_Buffer (1 .. Name_Len));
+                                 Put_Line (Name_Buffer (1 .. Name_Len));
                               end if;
 
                               Name_Len := Name_Len + 1;
                               Name_Buffer (Name_Len) := ASCII.LF;
 
                               Len :=
-                                Write
-                                  (FD,
-                                   Name_Buffer (1)'Address,
-                                   Name_Len);
+                                Write (FD, Name_Buffer (1)'Address, Name_Len);
 
                               if Len /= Name_Len then
-                                 Fail_Program
-                                   (Project_Tree, "disk full");
+                                 Fail_Program (Project_Tree, "disk full");
                               end if;
                            end loop;
 
                            Close (FD, Status);
 
                            if not Status then
-                              Fail_Program
-                                (Project_Tree, "disk full");
+                              Fail_Program (Project_Tree, "disk full");
                            end if;
                         end;
                      end if;
@@ -3664,8 +3651,7 @@ package body Gprbuild.Post_Compile is
                      Name_Len := 0;
                      Add_Str_To_Name_Buffer
                        (Base_Name
-                          (Get_Name_String
-                             (B_Data.Binder_Driver_Name)));
+                          (Get_Name_String (B_Data.Binder_Driver_Name)));
 
                      if Executable_Suffix'Length /= 0
                        and then Name_Len > Executable_Suffix'Length

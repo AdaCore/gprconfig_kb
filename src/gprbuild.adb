@@ -617,9 +617,9 @@ package body Gprbuild is
               and then not Is_Absolute_Path
                 (Original (Inc_Switch'Last + 1 .. Original'Last))
             then
-                  Switch := new String'
-                    (Inc_Switch & Parent & Directory_Separator &
-                     Original (Inc_Switch'Last + 1 .. Original'Last));
+               Switch := new String'
+                 (Inc_Switch & Parent & Directory_Separator
+                  & Original (Inc_Switch'Last + 1 .. Original'Last));
             end if;
          end;
       end if;
