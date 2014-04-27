@@ -1395,16 +1395,16 @@ package body Gprbuild.Post_Compile is
       ----------------------------
 
       procedure Write_Dependency_Files is
-         Current_Proj : Project_Id := For_Project;
-         Source       : Source_Id;
 
-         procedure Add;
+         procedure Process (Proj : Project_Id; Tree : Project_Tree_Ref);
+
+         procedure Add (Source : Source_Id);
 
          ---------
          -- Add --
          ---------
 
-         procedure Add is
+         procedure Add (Source : Source_Id) is
          begin
             if Source.Unit = No_Unit_Index
               or else For_Project.Standalone_Library = No
@@ -1415,46 +1415,54 @@ package body Gprbuild.Post_Compile is
             end if;
          end Add;
 
+         procedure Process (Proj : Project_Id; Tree : Project_Tree_Ref) is
+            pragma Unreferenced (Tree);
+            Current_Proj : Project_Id := Proj;
+            Source       : Source_Id;
+
+         begin
+            while Current_Proj /= No_Project loop
+               declare
+                  Iter : Source_Iterator;
+               begin
+                  Iter := For_Each_Source (Project_Tree, Current_Proj);
+
+                  loop
+                     Source := Prj.Element (Iter);
+                     exit when Source = No_Source;
+
+                     if not Source.Locally_Removed
+                       and then Source.Dep_Path /= No_Path
+                       and then
+                         (not Source.Project.Externally_Built
+                          or else not For_Project.Externally_Built
+                          or else Source.Project.Extended_By /= No_Project)
+                     then
+                        if Source.Kind = Spec then
+                           if Other_Part (Source) = No_Source then
+                              Add (Source);
+                           end if;
+
+                        elsif not Is_Subunit (Source) then
+                           Add (Source);
+                        end if;
+                     end if;
+
+                     Next (Iter);
+                  end loop;
+               end;
+
+               Current_Proj := Current_Proj.Extends;
+            end loop;
+         end Process;
+
+         procedure Process_Aggregate_Library is
+           new For_Project_And_Aggregated (Process);
+
       begin
          Put_Line (Exchange_File, Library_Label (Dependency_Files));
 
-         while Current_Proj /= No_Project loop
-            declare
-               Iter : Source_Iterator;
-            begin
-               if Current_Proj.Qualifier = Aggregate_Library then
-                  Iter := For_Each_Source (Project_Tree);
-               else
-                  Iter := For_Each_Source (Project_Tree, Current_Proj);
-               end if;
-
-               loop
-                  Source := Prj.Element (Iter);
-                  exit when Source = No_Source;
-
-                  if not Source.Locally_Removed
-                    and then Source.Dep_Path /= No_Path
-                    and then
-                      (not Source.Project.Externally_Built
-                       or else not For_Project.Externally_Built
-                       or else Source.Project.Extended_By /= No_Project)
-                  then
-                     if Source.Kind = Spec then
-                        if Other_Part (Source) = No_Source then
-                           Add;
-                        end if;
-
-                     elsif not Is_Subunit (Source) then
-                        Add;
-                     end if;
-                  end if;
-
-                  Next (Iter);
-               end loop;
-
-               Current_Proj := Current_Proj.Extends;
-            end;
-         end loop;
+         Process_Aggregate_Library (For_Project, Project_Tree);
 
          if For_Project.Standalone_Library /= No then
             for J in 1 .. Library_Sources.Last loop
