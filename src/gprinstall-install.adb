@@ -822,6 +822,8 @@ package body Gprinstall.Install is
                      if Copy (Dependency)
                        and then Sid.Kind /= Sep
                        and then Is_Ada (Sid)
+                       and then (not Sid.Project.Externally_Built
+                                 or else Project = Sid.Project)
                      then
                         declare
                            Proj : Project_Id := Sid.Project;
