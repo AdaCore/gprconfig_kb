@@ -817,7 +817,8 @@ package body Gprinstall.Install is
                --  part of the interface for standalone libraries.
 
                if (Project.Qualifier /= Aggregate_Library
-                   or else Is_Part_Of_Aggregate_Lib (Project, Sid))
+                   or else (Is_Part_Of_Aggregate_Lib (Project, Sid)
+                            and then Is_Install_Active (Tree, Sid.Project)))
                  and then (Project.Standalone_Library = No
                            or else Sid.Declared_In_Interfaces)
                then
@@ -879,7 +880,9 @@ package body Gprinstall.Install is
 
          procedure Copy_Source (Sid : Source_Id) is
          begin
-            if Copy (Source) then
+            if Copy (Source)
+              and then Is_Install_Active (Tree, Sid.Project)
+            then
                declare
                   Prep_Filename : constant String :=
                                     Cat
