@@ -762,6 +762,12 @@ package body Gprinstall.Install is
             pragma Inline (Is_Ada);
             --  Returns True if Sid is an Ada source
 
+            function Is_Part_Of_Aggregate_Lib
+              (Aggregate_Lib_Project :  Project_Id;
+               Sid                   : Source_Id) return Boolean;
+            --  Returns True if Sid is part of the aggregate lib project. That
+            --  is, Sid project is one of the aggregated projects.
+
             ------------
             -- Is_Ada --
             ------------
@@ -772,14 +778,36 @@ package body Gprinstall.Install is
                  and then Get_Name_String (Sid.Language.Name) = "ada";
             end Is_Ada;
 
+            ------------------------------
+            -- Is_Part_Of_Aggregate_Lib --
+            ------------------------------
+
+            function Is_Part_Of_Aggregate_Lib
+              (Aggregate_Lib_Project :  Project_Id;
+               Sid                   : Source_Id) return Boolean
+            is
+               P : Aggregated_Project_List :=
+                     Aggregate_Lib_Project.Aggregated_Projects;
+            begin
+               while P /= null loop
+                  if P.Project = Sid.Project then
+                     return True;
+                  end if;
+                  P := P.Next;
+               end loop;
+
+               return False;
+            end Is_Part_Of_Aggregate_Lib;
+
             Iter : Source_Iterator;
             Sid  : Source_Id;
 
          begin
             if Project.Qualifier = Aggregate_Library then
-               Iter := For_Each_Source (Tree);
+               Iter := For_Each_Source (Tree, Locally_Removed => False);
             else
-               Iter := For_Each_Source (Tree, Project);
+               Iter := For_Each_Source
+                 (Tree, Project, Locally_Removed => False);
             end if;
 
             loop
@@ -789,7 +817,8 @@ package body Gprinstall.Install is
                --  Skip sources that are removed/excluded and sources not
                --  part of the interface for standalone libraries.
 
-               if not Sid.Locally_Removed
+               if (Project.Qualifier /= Aggregate_Library
+                   or else Is_Part_Of_Aggregate_Lib (Project, Sid))
                  and then (Project.Standalone_Library = No
                            or else Sid.Declared_In_Interfaces)
                then
@@ -822,8 +851,6 @@ package body Gprinstall.Install is
                      if Copy (Dependency)
                        and then Sid.Kind /= Sep
                        and then Is_Ada (Sid)
-                       and then (not Sid.Project.Externally_Built
-                                 or else Project = Sid.Project)
                      then
                         declare
                            Proj : Project_Id := Sid.Project;
