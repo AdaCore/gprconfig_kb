@@ -758,8 +758,7 @@ package body Gprinstall.Install is
          procedure Copy_Project_Sources
            (Project : Project_Id; Tree : Project_Tree_Ref)
          is
-            function Is_Ada (Sid : Source_Id) return Boolean;
-            pragma Inline (Is_Ada);
+            function Is_Ada (Sid : Source_Id) return Boolean with Inline;
             --  Returns True if Sid is an Ada source
 
             function Is_Part_Of_Aggregate_Lib
