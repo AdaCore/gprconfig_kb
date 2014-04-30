@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N429-037 gprinstall may fail to remove symbolic links
+
+  Problem:    Uninstalling using gprinstall may leave symbolic links (created
+              for shared libraries) dangling.
+
+  Status:     This was fixed in 2.2 on 2014-04-30
+
+  Workaround: Remove the file manually.
+
 KP-21-N423-036 Installation of aggregate SAL projects
 
   Problem:    gprinstall does not install properly aggregate Stand-Alone

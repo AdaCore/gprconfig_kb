@@ -118,12 +118,13 @@ package body Gprinstall.Uninstall is
       ---------------
 
       procedure Do_Delete (Filename : String) is
+         Success : Boolean;
       begin
          if Dry_Run then
             Write_Line ("delete " & Filename);
 
-         elsif Exists (Filename) then
-            Delete_File (Filename);
+         else
+            Delete_File (Filename, Success);
             Delete_Empty_Directory (Containing_Directory (Filename));
          end if;
       end Do_Delete;
