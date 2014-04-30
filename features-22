@@ -69,3 +69,8 @@ NF-22-N108-032 Add support for grouping installs with gprinstall (2014-01-22)
   comes with some tools for example, both built with different projects files.
   Yet, the library and the executables are tightly related and part of the
   same application.
+
+NF-22-K929-003 Limit SAL content to the closure of the interface (2014-04-29)
+
+  When using gprbuild to build a Stand-Alone Library, only the closure of the
+  Ada interface is compiled, bound and put in the library file.
