@@ -102,6 +102,15 @@ KP-21-N409-006 Truncated files on distributed builds
 
   Workaround: remove all files on the slaves using GPRclean.
 
+KP-21-N407-021 Hard killing a build master makes slaves unresponsive
+
+  Problem:    Hard killing with ctrl-c a build master while synchronization of
+              sources is in progress makes the slaves unresponsive.
+
+  Status:     This was fixed in 2.2 on 2014-05-01
+
+  Workaround: restart the remote slaves
+
 KP-21-N407-018 Fail to clean-up remote slave with gpr protocol
 
   Problem:    When using the gpr protocol it is not possible to clean-up the

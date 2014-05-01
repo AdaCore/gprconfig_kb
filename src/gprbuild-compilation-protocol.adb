@@ -429,6 +429,12 @@ package body Gprbuild.Compilation.Protocol is
 
          while Size > 0 loop
             Receive_Socket (Channel.Sock, Buffer (1 .. Size), Last);
+
+            if Last = 0  then
+               --  Last = First - 1 then socket closed by peer
+               raise Socket_Error;
+            end if;
+
             Stream_IO.Write (File, Buffer (1 .. Last));
             Size := Size - Last;
          end loop;
