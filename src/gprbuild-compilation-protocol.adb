@@ -447,15 +447,17 @@ package body Gprbuild.Compilation.Protocol is
          --  If the file was opened, let's close it
 
          if Stream_IO.Is_Open (File) then
-            Stream_IO.Close (File);
-         end if;
+            Stream_IO.Delete (File);
 
-         --  If the file has been created, make sure it is deleted as the
-         --  content may be truncated.
-
-         if Exists (Path_Name) then
+         elsif Exists (Path_Name) then
+            --  If the file has been created, make sure it is deleted as the
+            --  content may be truncated.
             Delete_File (Path_Name);
          end if;
+
+         Unchecked_Free (Buffer);
+
+         raise;
    end Get_RAW_File_Content;
 
    -----------
@@ -896,6 +898,16 @@ package body Gprbuild.Compilation.Protocol is
       Stream_IO.Close (File);
 
       Unchecked_Free (Buffer);
+
+   exception
+      when others =>
+         if Stream_IO.Is_Open (File) then
+            Stream_IO.Close (File);
+         end if;
+
+         Unchecked_Free (Buffer);
+
+         raise;
    end Send_RAW_File_Content;
 
    -----------------------
