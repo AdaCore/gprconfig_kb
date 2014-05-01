@@ -53,11 +53,10 @@ package Gprbuild.Compilation.Slave is
 
    procedure Unregister_Remote_Slaves;
    --  Unregister all slaves, send them notification about the end of the
-   --  current build. This routine also synchronize back the object code from
-   --  each slave to the build master. This routine must be called after the
-   --  compilation phase and before the bind and link ones. It is safe to call
-   --  this routine multiple times, the first call will do the clean-up, next
-   --  calls are just no-op.
+   --  current build. This routine must be called after the compilation phase
+   --  and before the bind and link ones. It is safe to call this routine
+   --  multiple times, the first call will do the clean-up, next calls are
+   --  just no-op.
 
    function Get_Max_Processes return Natural;
    --  Returns the maximum number of processes supported by the compilation
