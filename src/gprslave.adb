@@ -1443,7 +1443,8 @@ procedure Gprslave is
          Message ("  transferred :" & Natural'Image (Total_Transferred));
 
       exception
-         when Socket_Error =>
+         when others =>
+            Message ("Lost connection with " & Image (Address));
             Close (Builder.Channel);
             Builder.Socket := No_Socket;
       end Sync_Gpr;
