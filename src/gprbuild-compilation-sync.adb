@@ -26,6 +26,7 @@ with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
 
 with GNAT.Regexp;             use GNAT.Regexp;
+with GNAT.Sockets;            use GNAT.Sockets;
 
 with Gpr_Util; use Gpr_Util;
 with Output;   use Output;
@@ -342,6 +343,8 @@ package body Gprbuild.Compilation.Sync is
       accept Stop;
 
    exception
+      when Socket_Error =>
+         null;
       when E : others =>
          Write_Line (Exception_Information (E));
          OS_Exit (1);
