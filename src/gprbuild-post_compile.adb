@@ -74,7 +74,17 @@ package body Gprbuild.Post_Compile is
       Table_Initial        => 10,
       Table_Increment      => 100,
       Table_Name           => "Buildgpr.Library_Objs");
-   --  Library objects with their time stamps
+   --  Objects that are in the library file with their time stamps
+
+   package Library_SAL_Projs is new Table.Table
+     (Table_Component_Type => Project_Id,
+      Table_Index_Type     => Integer,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Buildgpr.Library_SAL_Projs");
+   --  List of non extended projects that are part of a Stand-Alone (aggregate)
+   --  library project.
 
    package Project_File_Paths is new GNAT.HTable.Simple_HTable
      (Header_Num => Prj.Header_Num,
@@ -184,6 +194,9 @@ package body Gprbuild.Post_Compile is
 
       procedure Get_Objects is
 
+         Never : constant Time_Stamp_Type := (others => '9');
+         --  A time stamp that is greater than any real one
+
          procedure Process
            (Proj : Project_Id;
             Tree : Project_Tree_Ref);
@@ -193,6 +206,10 @@ package body Gprbuild.Post_Compile is
            (Proj : Project_Id;
             Tree : Project_Tree_Ref);
          --  Get objects for a Stand-Alone Library
+
+         procedure Get_Closure;
+         --  For Stand-Alone libraries, get the closure of the ADA interface
+         --  and put the object files in Library_Objs.
 
          -------------
          -- Process --
@@ -271,9 +288,6 @@ package body Gprbuild.Post_Compile is
          is
             pragma Unreferenced (Tree);
 
-            Never : constant Time_Stamp_Type := (others => '9');
-            --  A time stamp that is greater than any real one
-
             Source : Source_Id;
             Iter   : Source_Iterator;
 
@@ -282,6 +296,12 @@ package body Gprbuild.Post_Compile is
             OK   : Boolean;
 
          begin
+            if Proj.Qualifier /= Aggregate_Library and then
+               Proj.Extended_By = No_Project
+            then
+               Library_SAL_Projs.Append (Proj);
+            end if;
+
             Iter := For_Each_Source (Project_Tree, Proj);
             loop
                Source := Prj.Element (Iter);
@@ -354,115 +374,158 @@ package body Gprbuild.Post_Compile is
                Next (Iter);
             end loop;
 
-            --  Now, get the closure of the interface
+         end Process_Standalone;
 
-            declare
-               Index    : Natural := 0;
-               The_ALI  : ALI.ALI_Id;
-               Text     : Text_Buffer_Ptr;
-               Dep_Path : Path_Name_Type;
-               Dep_TS   : aliased File_Attributes := Unknown_Attributes;
-               Sfile    : File_Name_Type;
-               Afile    : File_Name_Type;
-               Src_Id   : Prj.Source_Id;
-               OK       : Boolean;
+         -----------------
+         -- Get_Closure --
+         -----------------
 
-            begin
-               while Index < Library_Sources.Last loop
-                  Index := Index + 1;
-                  Dep_Path := Library_Sources.Table (Index).Dep_Path;
-                  Dep_TS   := Library_Sources.Table (Index).Dep_TS;
-                  Text := Read_Library_Info_From_Full
-                    (File_Name_Type (Dep_Path), Dep_TS'Access);
+         procedure Get_Closure is
+            Index    : Natural := 0;
+            The_ALI  : ALI.ALI_Id;
+            Text     : Text_Buffer_Ptr;
+            Dep_Path : Path_Name_Type;
+            Dep_TS   : aliased File_Attributes := Unknown_Attributes;
+            Sfile    : File_Name_Type;
+            Afile    : File_Name_Type;
+            Src_Id   : Prj.Source_Id;
+            OK       : Boolean;
 
-                  if Text /= null then
-                     The_ALI :=
-                       ALI.Scan_ALI
-                         (File_Name_Type (Dep_Path),
-                          Text,
-                          Ignore_ED     => False,
-                          Err           => True,
-                          Ignore_Errors => True,
-                          Read_Lines    => "W");
-                     Free (Text);
+         begin
+            while Index < Library_Sources.Last loop
+               Index := Index + 1;
+               Dep_Path := Library_Sources.Table (Index).Dep_Path;
+               Dep_TS   := Library_Sources.Table (Index).Dep_TS;
+               Text := Read_Library_Info_From_Full
+                 (File_Name_Type (Dep_Path), Dep_TS'Access);
 
-                     --  Get the withed sources from this project
+               if Text /= null then
+                  The_ALI :=
+                    ALI.Scan_ALI
+                      (File_Name_Type (Dep_Path),
+                       Text,
+                       Ignore_ED     => False,
+                       Err           => True,
+                       Ignore_Errors => True,
+                       Read_Lines    => "W");
+                  Free (Text);
 
-                     for J in ALI.ALIs.Table (The_ALI).First_Unit ..
-                       ALI.ALIs.Table (The_ALI).Last_Unit
+                  --  Get the withed sources
+
+                  for J in ALI.ALIs.Table (The_ALI).First_Unit ..
+                    ALI.ALIs.Table (The_ALI).Last_Unit
+                  loop
+                     for K in ALI.Units.Table (J).First_With ..
+                       ALI.Units.Table (J).Last_With
                      loop
-                        for K in ALI.Units.Table (J).First_With ..
-                          ALI.Units.Table (J).Last_With
-                        loop
-                           Sfile := ALI.Withs.Table (K).Sfile;
+                        Sfile := ALI.Withs.Table (K).Sfile;
 
-                           --  Skip generics
+                        --  Skip generics
 
-                           if Sfile /= No_File then
-                              Afile := ALI.Withs.Table (K).Afile;
+                        if Sfile /= No_File then
+                           Afile := ALI.Withs.Table (K).Afile;
 
-                              Src_Id := Source_Files_Htable.Get
-                                (Project_Tree.Source_Files_HT, Sfile);
-                              while Src_Id /= No_Source loop
-                                 Initialize_Source_Record (Src_Id);
+                           Src_Id := Source_Files_Htable.Get
+                             (Project_Tree.Source_Files_HT, Sfile);
+                           while Src_Id /= No_Source loop
+                              Initialize_Source_Record (Src_Id);
 
-                                 if Is_Compilable (Src_Id)
-                                   and then Src_Id.Dep_Name = Afile
-                                 then
-                                    case Src_Id.Kind is
-                                    when Spec =>
-                                       declare
-                                          Bdy : constant Prj.Source_Id :=
-                                                  Other_Part (Src_Id);
-                                       begin
-                                          if Bdy /= No_Source
-                                            and then not Bdy.Locally_Removed
-                                          then
-                                             Src_Id := Other_Part (Src_Id);
-                                          end if;
-                                       end;
-
-                                    when Impl =>
-                                       if Is_Subunit (Src_Id) then
-                                          Src_Id := No_Source;
-                                       end if;
-
-                                    when Sep =>
-                                       Src_Id := No_Source;
-                                    end case;
-
-                                    exit;
-                                 end if;
-
-                                 Src_Id := Src_Id.Next_With_File_Name;
-                              end loop;
-
-                              if Src_Id /= No_Source
-                                and then
-                                  (Src_Id.Project = For_Project
-                                   or else Src_Id.Project = Proj)
+                              if Is_Compilable (Src_Id)
+                                and then Src_Id.Dep_Name = Afile
                               then
-                                 OK := True;
+                                 case Src_Id.Kind is
+                                 when Spec =>
+                                    declare
+                                       Bdy : constant Prj.Source_Id :=
+                                         Other_Part (Src_Id);
+                                    begin
+                                       if Bdy /= No_Source
+                                         and then not Bdy.Locally_Removed
+                                       then
+                                          Src_Id := Other_Part (Src_Id);
+                                       end if;
+                                    end;
 
-                                 for J in 1 .. Library_Sources.Last loop
-                                    if Src_Id = Library_Sources.Table (J) then
-                                       OK := False;
+                                 when Impl =>
+                                    if Is_Subunit (Src_Id) then
+                                       Src_Id := No_Source;
+                                    end if;
+
+                                 when Sep =>
+                                    Src_Id := No_Source;
+                                 end case;
+
+                                 exit;
+                              end if;
+
+                              Src_Id := Src_Id.Next_With_File_Name;
+                           end loop;
+
+                           if Src_Id /= No_Source then
+                              declare
+                                 Proj : Project_Id := Src_Id.Project;
+                              begin
+                                 OK := False;
+
+                                 while Proj.Extended_By /= No_Project loop
+                                    Proj := Proj.Extended_By;
+                                 end loop;
+
+                                 for J in 1 .. Library_SAL_Projs.Last loop
+                                    if Proj = Library_SAL_Projs.Table (J) then
+                                       OK := True;
                                        exit;
                                     end if;
                                  end loop;
 
                                  if OK then
-                                    Library_Sources.Append (Src_Id);
-                                 end if;
-                              end if;
-                           end if;
-                        end loop;
-                     end loop;
+                                    for J in 1 .. Library_Sources.Last loop
+                                       if Src_Id = Library_Sources.Table (J)
+                                       then
+                                          OK := False;
+                                          exit;
+                                       end if;
+                                    end loop;
 
-                  end if;
-               end loop;
-            end;
-         end Process_Standalone;
+                                    if OK then
+                                       Library_Sources.Append (Src_Id);
+                                       Initialize_Source_Record (Src_Id);
+
+                                       if Src_Id.Object_TS = Empty_Time_Stamp
+                                       then
+                                          Latest_Object_TS := Never;
+
+                                          if not Library_Needs_To_Be_Built then
+                                             Library_Needs_To_Be_Built := True;
+
+                                             if Opt.Verbose_Mode then
+                                                Write_Str
+                                                  ("      ->" &
+                                                   "missing object file: ");
+                                                Get_Name_String
+                                                  (Src_Id.Object);
+                                                Write_Line
+                                                  (Name_Buffer
+                                                     (1 .. Name_Len));
+                                             end if;
+                                          end if;
+
+                                       elsif Src_Id.Object_TS >
+                                               Latest_Object_TS
+                                       then
+                                          Latest_Object_TS := Src_Id.Object_TS;
+                                       end if;
+                                    end if;
+                                 end if;
+                              end;
+                           end if;
+                        end if;
+                     end loop;
+                  end loop;
+
+               end if;
+            end loop;
+         end Get_Closure;
 
          procedure Process_Non_Standalone_Aggregate_Library is
            new For_Project_And_Aggregated (Process);
@@ -475,6 +538,7 @@ package body Gprbuild.Post_Compile is
       begin
          Library_Objs.Init;
          Library_Sources.Init;
+         Library_Projs.Init;
 
          if For_Project.Qualifier = Aggregate_Library then
             if For_Project.Standalone_Library = No then
@@ -498,6 +562,8 @@ package body Gprbuild.Post_Compile is
          end if;
 
          if For_Project.Standalone_Library /= No then
+            Get_Closure;
+
             --  Put all the object files in the closure in Library_Objs
 
             for J in 1 .. Library_Sources.Last loop
