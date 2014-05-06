@@ -95,7 +95,7 @@ copy_gnat_src: force
 	    $(LN) $(GNAT_SOURCE_DIR)/$(f) . ;\
            )
 
-complete: copy_gnat_src all install
+complete: copy_gnat_src all doc install
 
 gprbuild:
 	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprbuild-main.adb
