@@ -17,6 +17,18 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N505-036 Aggregate library directories
+
+  Problem:    In some cases, when an aggregate library project had its
+              library directory or its library ALI directory the same as the
+              object directory of library directory of one of its aggregated
+              projects, gprbuild is unable to build correctly the aggegate
+              library.
+
+  Status:     This was fixed in 2.2 on 2014-05-06
+
+  Workaround: Avoid the situation described above.
+
 KP-21-N429-037 gprinstall may fail to remove symbolic links
 
   Problem:    Uninstalling using gprinstall may leave symbolic links (created
