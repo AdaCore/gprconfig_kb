@@ -11,6 +11,8 @@ MKDIR=mkdir -p
 RMDIR=rmdir
 CP=cp
 EXE=
+GNATMAKE=gnatmake
+GNATCLEAN=gnatclean -q
 
 .PHONY: all txt info html pdf clean
 
@@ -54,14 +56,12 @@ pdf: prepare
 	cd pdf; $(MAKE_PDF) -c ../$(DOC).texi
 
 prepare:
-	gnatmake ../gnat/xgnatugn
-	xgnatugn${EXE} unw ../gnat/projects.texi ../gnat/ug_words projects_unw.texi
+	$(GNATMAKE) ../gnat/xgnatugn
+	./xgnatugn${EXE} unw ../gnat/projects.texi ../gnat/ug_words projects_unw.texi
 
 partial_clean:
-	${RM} ${DOC}.aux ${DOC}.cp ${DOC}.cps ${DOC}.cps ${DOC}.fn
-	${RM} ${DOC}.ky ${DOC}.log ${DOC}.pg ${DOC}.toc ${DOC}.tp
-	${RM} ${DOC}.vr
-	${RM} xgnatugn* projects_unw.texi
+	$(GNATCLEAN) ../gnat/xgnatugn
+	${RM} projects_unw.texi
 
 clean: partial_clean
 	${MKDIR} txt html info pdf
