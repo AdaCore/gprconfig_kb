@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N507-022 gprinstall fail to install executable in aggregated projects
+
+  Problem:    If the aggregated project is not using the default executable
+              name using a package Binder Executable attribute, gprinstall
+              will fail.
+
+  Status:     This was fixed in 2.2 on 2014-05-07
+
+  Workaround: Install the aggregated projects separately.
+
 KP-21-N505-036 Aggregate library directories
 
   Problem:    In some cases, when an aggregate library project had its

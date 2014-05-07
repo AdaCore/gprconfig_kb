@@ -501,7 +501,7 @@ package body Gprinstall.Install is
 
          Builder_Package  : constant Package_Id :=
                               Value_Of
-                                (Name_Builder, Main_Project.Decl.Packages,
+                                (Name_Builder, Project.Decl.Packages,
                                  Project_Tree.Shared);
          Value            : Variable_Value;
       begin
