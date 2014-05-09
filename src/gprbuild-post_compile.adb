@@ -614,7 +614,7 @@ package body Gprbuild.Post_Compile is
                   List : Aggregated_Project_List := Prj.Aggregated_Projects;
                begin
                   while List /= null loop
-                     Put_Object_Directory (List.Project);
+                     Put_Object_Directories (List.Project);
                      List := List.Next;
                   end loop;
                end;
