@@ -62,31 +62,36 @@ package body Gprinstall.Uninstall is
          Prj_Dir_Len : constant Natural := Global_Prefix_Dir.V'Length - 1;
          Search      : Search_Type;
          Element     : Directory_Entry_Type;
-         Empty       : Boolean := True;
+         To_Delete   : Boolean := True;
       begin
          --  Do not try to remove a directory past the project dir
 
          if Dir_Name'Length >= Prj_Dir_Len then
             --  Check whether the directory is empty or not
 
-            Start_Search (Search, Dir_Name, Pattern => "");
+            if Exists (Dir_Name) then
+               Start_Search (Search, Dir_Name, Pattern => "");
 
-            Check_Entry : while More_Entries (Search) loop
-               Get_Next_Entry (Search, Element);
+               Check_Entry : while More_Entries (Search) loop
+                  Get_Next_Entry (Search, Element);
 
-               if Simple_Name (Element) /= "."
-                 and then Simple_Name (Element) /= ".."
-               then
-                  Empty := False;
-                  exit Check_Entry;
-               end if;
-            end loop Check_Entry;
+                  if Simple_Name (Element) /= "."
+                    and then Simple_Name (Element) /= ".."
+                  then
+                     To_Delete := False;
+                     exit Check_Entry;
+                  end if;
+               end loop Check_Entry;
 
-            End_Search (Search);
+               End_Search (Search);
+
+            else
+               To_Delete := False;
+            end if;
 
             --  If empty delete it
 
-            if Empty then
+            if To_Delete then
                begin
                   Delete_Directory (Dir_Name);
                exception
@@ -95,11 +100,11 @@ package body Gprinstall.Uninstall is
                   when Text_IO.Use_Error =>
                      null;
                end;
-
-               --  And then try recursively with parent directory
-
-               Delete_Empty_Directory (Containing_Directory (Dir_Name));
             end if;
+
+            --  And then try recursively with parent directory
+
+            Delete_Empty_Directory (Containing_Directory (Dir_Name));
          end if;
       end Delete_Empty_Directory;
 
@@ -207,9 +212,6 @@ package body Gprinstall.Uninstall is
                  or else Force_Installations
                  or else Removed
                then
-                  --  Make sure we always destroy the symbolic links before the
-                  --  files itself.
-
                   Files.Include (F_Name);
 
                else
