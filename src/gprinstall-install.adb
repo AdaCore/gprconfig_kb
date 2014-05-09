@@ -1550,12 +1550,52 @@ package body Gprinstall.Install is
             procedure Linker_For (Pck : Package_Id);
             --  Handle the linker options for this package
 
+            procedure Append (Values : String_List_Id);
+            --  Add values if any
+
+            procedure Add_Library_Options (Proj : Project_Id);
+            --  For a library project, add the Library_Options
+
             Seen : Seen_Set.Set;
             --  Records the attribute generated to avoid duplicate when
             --  handling aggregated projects.
 
             R    : String_Vector.Vector;
             Opts : String_Vector.Vector;
+
+            -------------------------
+            -- Add_Library_Options --
+            -------------------------
+
+            procedure Add_Library_Options (Proj : Project_Id) is
+            begin
+               if Proj.Library then
+                  declare
+                     V : constant Variable_Value :=
+                           Value_Of (Name_Library_Options,
+                                     Proj.Decl.Attributes,
+                                     Tree.Shared);
+                  begin
+                     if V /= Nil_Variable_Value then
+                        Append (V.Values);
+                     end if;
+                  end;
+               end if;
+            end Add_Library_Options;
+
+            ------------
+            -- Append --
+            ------------
+
+            procedure Append (Values : String_List_Id) is
+               L : String_List_Id := Values;
+            begin
+               while L /= Nil_String loop
+                  Opts.Append (Get_Name_String (Strs (L).Value));
+                  Seen.Include (Get_Name_String (Strs (L).Value));
+                  L := Strs (L).Next;
+               end loop;
+            end Append;
 
             ----------------
             -- Linker_For --
@@ -1571,13 +1611,8 @@ package body Gprinstall.Install is
                      declare
                         Val : constant Variable_Value :=
                                 Tree.Shared.Variable_Elements.Table (V).Value;
-                        L   : String_List_Id := Val.Values;
                      begin
-                        while L /= Nil_String loop
-                           Opts.Append (Get_Name_String (Strs (L).Value));
-                           Seen.Include (Get_Name_String (Strs (L).Value));
-                           L := Strs (L).Next;
-                        end loop;
+                        Append (Val.Values);
                      end;
                   end if;
                   V := Tree.Shared.Variable_Elements.Table (V).Next;
@@ -1589,6 +1624,10 @@ package body Gprinstall.Install is
 
             Linker_For (Get_Package (Proj, Name_Linker));
 
+            --  For libraries we want to add the library options here
+
+            Add_Library_Options (Proj);
+
             if Proj.Qualifier = Aggregate_Library then
                declare
                   Agg : Aggregated_Project_List :=
@@ -1596,6 +1635,11 @@ package body Gprinstall.Install is
                begin
                   while Agg /= null loop
                      Linker_For (Get_Package (Agg.Project, Name_Linker));
+
+                     --  Likewise for all aggregated libraries
+
+                     Add_Library_Options (Agg.Project);
+
                      Agg := Agg.Next;
                   end loop;
                end;

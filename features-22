@@ -8,6 +8,12 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N505-024 Handles Library_Options in gprinstall (2014-05-07)
+
+  When generating a project for a library (standard or aggregate), gprinstall
+  now adds into the generated Linker_Options the options that were into
+  the Library_Options.
+
 NF-22-N418-025 New gprinstall option to copy only project sources (2014-04-19)
 
   Using gprinstall's --sources-only option it is now possible to install
