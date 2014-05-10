@@ -1523,10 +1523,10 @@ begin
          if Object_Directories.Last > 1 then
             declare
                Object_Path : String_Access :=
-                               new String'(Object_Directories.Table (2).all);
+                               new String'(Object_Directories.Table (1).all);
 
             begin
-               for J in 3 .. Object_Directories.Last loop
+               for J in 2 .. Object_Directories.Last loop
                   Object_Path :=
                     new String'
                       (Object_Path.all &

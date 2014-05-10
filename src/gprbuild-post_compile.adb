@@ -73,7 +73,7 @@ package body Gprbuild.Post_Compile is
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 100,
-      Table_Name           => "Buildgpr.Library_Objs");
+      Table_Name           => "Buildgpr.Post_Compile.Library_Objs");
    --  Objects that are in the library file with their time stamps
 
    package Library_SAL_Projs is new Table.Table
@@ -82,7 +82,7 @@ package body Gprbuild.Post_Compile is
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 100,
-      Table_Name           => "Buildgpr.Library_SAL_Projs");
+      Table_Name           => "Buildgpr.Post_Compile.Library_SAL_Projs");
    --  List of non extended projects that are part of a Stand-Alone (aggregate)
    --  library project.
 
@@ -100,9 +100,17 @@ package body Gprbuild.Post_Compile is
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 100,
-      Table_Name           => "Buildgpr.Library_Sources");
+      Table_Name           => "Buildgpr.Post_Compile.Library_Sources");
    --  Library Ada sources of Stand-Alone library, that is source of the
    --  project in the closure of the interface.
+
+   package Object_Projects is new Table.Table
+     (Table_Component_Type => Project_Id,
+      Table_Index_Type     => Integer,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100,
+      Table_Name           => "Buildgpr.Post_Compile.Object_Projects");
 
    procedure CodePeer_Globalize;
    --  Call the codepeer_globalizer for each of the object directories
@@ -597,24 +605,26 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Object_Directory is
 
-         procedure Put_Object_Directories (Prj : Project_Id);
-         --  Recursive procedure to put in the exchange file the object
-         --  directories. For an aggregate library project, the projects
-         --  involved are the aggregated projects that are not themselves
-         --  aggregate library projects.
+         Prj : Project_Id;
 
-         ----------------------------
-         -- Put_Object_Directories --
-         ----------------------------
+         procedure Get_Object_Projects (Prj : Project_Id);
+         --  Recursive procedure to collect the aggregated projects
 
-         procedure Put_Object_Directories (Prj : Project_Id) is
+         function Is_In_Object_Projects (Prj : Project_Id) return Boolean;
+         --  Returns True iff Prj is in table Object_Projects
+
+         -------------------------
+         -- Get_Object_Projects --
+         -------------------------
+
+         procedure Get_Object_Projects (Prj : Project_Id) is
          begin
             if Prj.Qualifier = Aggregate_Library then
                declare
                   List : Aggregated_Project_List := Prj.Aggregated_Projects;
                begin
                   while List /= null loop
-                     Put_Object_Directories (List.Project);
+                     Get_Object_Projects (List.Project);
                      List := List.Next;
                   end loop;
                end;
@@ -624,76 +634,102 @@ package body Gprbuild.Post_Compile is
 
                declare
                   Proj : Project_Id := Prj;
-
                begin
                   while Proj /= No_Project loop
-                     if Proj.Object_Directory /= No_Path_Information then
-                        Put_Line
-                          (Exchange_File,
-                           Get_Name_String
-                             (Proj.Object_Directory.Display_Name));
-                     end if;
-                     Proj := Proj.Extends;
-                  end loop;
-               end;
+                     if not Is_In_Object_Projects (Proj) then
+                        Object_Projects.Append (Proj);
 
-               --  Add object directories of imported non library projects
-
-               Process_Imported_Non_Libraries (Prj);
-
-               declare
-                  Proj : Project_Id;
-               begin
-                  for J in 1 .. Non_Library_Projs.Last loop
-                     Proj := Non_Library_Projs.Table (J);
-
-                     if Proj.Object_Directory /= No_Path_Information then
-                        Put_Line
-                          (Exchange_File,
-                           Get_Name_String
-                             (Proj.Object_Directory.Display_Name));
-                     end if;
-                  end loop;
-               end;
-
-               --  Add ALI dir directories of imported projects (only if it
-               --  is not an externally built project or if the project has
-               --  sources). This skip the library projects with no sources
-               --  used for example to add a system library to the linker.
-
-               declare
-                  List : Project_List := Prj.All_Imported_Projects;
-
-               begin
-                  while List /= null loop
-                     if not List.Project.Externally_Built
-                       or else List.Project.Source_Dirs /= Nil_String
-                     then
-                        if List.Project.Library_ALI_Dir /= No_Path_Information
-                        then
+                        if Proj.Object_Directory /= No_Path_Information then
                            Put_Line
                              (Exchange_File,
                               Get_Name_String
-                                (List.Project.Library_ALI_Dir.Display_Name));
-
-                        elsif List.Project.Library_Dir /= No_Path_Information
-                        then
-                           Put_Line
-                             (Exchange_File,
-                              Get_Name_String
-                                (List.Project.Library_Dir.Display_Name));
+                                (Proj.Object_Directory.Display_Name));
                         end if;
                      end if;
 
-                     List := List.Next;
+                     Proj := Proj.Extends;
                   end loop;
                end;
             end if;
-         end Put_Object_Directories;
+         end Get_Object_Projects;
+
+         ---------------------------
+         -- Is_In_Object_Projects --
+         ---------------------------
+
+         function Is_In_Object_Projects (Prj : Project_Id) return Boolean is
+         begin
+            for J in 1 .. Object_Projects.Last loop
+               if Prj = Object_Projects.Table (J) then
+                  return True;
+               end if;
+            end loop;
+
+            return False;
+         end Is_In_Object_Projects;
 
       begin
+         Object_Projects.Init;
          Put_Line (Exchange_File, Library_Label (Object_Directory));
-         Put_Object_Directories (For_Project);
+         Get_Object_Projects (For_Project);
+
+         for J in 1 .. Object_Projects.Last loop
+            Prj := Object_Projects.Table (J);
+
+            --  Add object directories of imported non library projects
+
+            Process_Imported_Non_Libraries (Prj);
+
+            declare
+               Proj : Project_Id;
+            begin
+               for J in 1 .. Non_Library_Projs.Last loop
+                  Proj := Non_Library_Projs.Table (J);
+
+                  if not Is_In_Object_Projects (Proj) and then
+                     Proj.Object_Directory /= No_Path_Information
+                  then
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String
+                          (Proj.Object_Directory.Display_Name));
+                  end if;
+               end loop;
+            end;
+
+            --  Add ALI dir directories of imported projects (only if it
+            --  is not an externally built project or if the project has
+            --  sources). This skip the library projects with no sources
+            --  used for example to add a system library to the linker.
+
+            declare
+               List : Project_List := Prj.All_Imported_Projects;
+            begin
+               while List /= null loop
+                  if not Is_In_Object_Projects (List.Project) and then
+                     (not List.Project.Externally_Built
+                      or else List.Project.Source_Dirs /= Nil_String)
+                  then
+                     if List.Project.Library_ALI_Dir /= No_Path_Information
+                     then
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String
+                             (List.Project.Library_ALI_Dir.Display_Name));
+
+                     elsif List.Project.Library_Dir /= No_Path_Information
+                     then
+                        Put_Line
+                          (Exchange_File,
+                           Get_Name_String
+                             (List.Project.Library_Dir.Display_Name));
+                     end if;
+                  end if;
+
+                  List := List.Next;
+               end loop;
+            end;
+         end loop;
       end Write_Object_Directory;
 
       ---------------------
