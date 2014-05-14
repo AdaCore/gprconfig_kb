@@ -179,17 +179,6 @@ KP-21-N310-027 gprbuild wait indefinitely for some compilation results
 
   Workaround: fix the Root_Dir attribute value.
 
-KP-21-N206-041 wrong permissions set by gprinstall for binaries
-
-  Problem:    On UNIX, a binary installed with gprinstall will have the
-              executable permission set only for the owner. This will prevent
-              others to execute this binary. It is a problem when installing
-              an application in a shared computer for example.
-
-  Status:     This was fixed in 2.2 on 2014-02-06
-
-  Workaround: change the permissions manually using chmod
-
 KP-21-N120-075 gprclean -r and cycles in externally built projects
 
   Problem:    When there are several externally built projects in the project
@@ -288,6 +277,18 @@ KP-21-N207-022 Fail to compile sources in distributed mode
   Status:     This was fixed in 2.1.2 on 2014-02-07
 
   Workaround: do not use the distributed compilation mode
+
+KP-21-N206-041 wrong permissions set by gprinstall for binaries
+
+  Problem:    On UNIX, a binary installed with gprinstall will have the
+              executable permission set only for the owner. This will prevent
+              others to execute this binary. It is a problem when installing
+              an application in a shared computer for example.
+
+  Status:     This was fixed in 2.2 on 2014-02-06
+              This was fixed in 2.1.2 on 2014-05-14
+
+  Workaround: change the permissions manually using chmod
 
 Known problems fixed in 2.1.1 and above
 ---------------------------------------
