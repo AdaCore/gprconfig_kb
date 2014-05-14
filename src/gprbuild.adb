@@ -121,7 +121,8 @@ package body Gprbuild is
       Simple_Name : Boolean := False)
    is
    begin
-      if Value'Length <= 2
+      if not Opt.CodePeer_Mode
+        or else Value'Length <= 2
         or else Value (Value'First .. Value'First + 1) /= "-m"
       then
          Add_Option_Internal (Value, To, Display, Simple_Name);

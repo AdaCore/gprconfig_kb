@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N514-009 Compilation switches -mxxx inhibited
+
+  Problem:    When gprbuild is invoked without --codepeer, compilation
+              switches of the form -mxxx are not transmitted to the compiler.
+
+  Status:     This was fixed in 2.2 on 2014-05-14
+
+  Workaround: Use gnatmake instead of gprbuild when using -mxxx switches.
+
 KP-21-N507-022 gprinstall fail to install executable in aggregated projects
 
   Problem:    If the aggregated project is not using the default executable
