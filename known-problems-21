@@ -86,16 +86,6 @@ KP-21-N422-023 gprinstall fails to properly install static SAL
 
   Workaround: install the library manually.
 
-KP-21-N421-002 Failing installing artifacts with gprinstall
-
-  Problem:    When installing a static and relocatable build of the same
-              libraries for a library project having some artifacts,
-              gprinstall complains that the artifacts are already installed.
-
-  Status:     This was fixed in 2.2 on 2014-04-21
-
-  Workaround: force installation for the second gprinstall call using -f
-
 KP-21-N416-050 Files not properly synchronized in distributed compilation
 
   Problem:    Some files are not properly synchronized when using two
@@ -278,6 +268,17 @@ KP-21-MA30-041 Aggregated libraries and gprinstall
 
 Known problems fixed in 2.1.2 and above
 ---------------------------------------
+
+KP-21-N421-002 Failing installing artifacts with gprinstall
+
+  Problem:    When installing a static and relocatable build of the same
+              libraries for a library project having some artifacts,
+              gprinstall complains that the artifacts are already installed.
+
+  Status:     This was fixed in 2.2 on 2014-04-21
+              This was fixed in 2.1.2 on 2014-05-14
+
+  Workaround: force installation for the second gprinstall call using -f
 
 KP-21-N207-022 Fail to compile sources in distributed mode
 
