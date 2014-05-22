@@ -13,7 +13,9 @@
     <executable prefix="1">(.*(-wrs-|-sysgo|-elf-|-eabi-|-eabispe-|avr-|-elinos-linux|-pc|-xcoff-|arm-linux-androideabi-|arm-linux-gnueabi-).*)?gcc</executable>
     <version>
       <external>${PREFIX}gcc -v</external>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+
+      <!--  'gcc version 4.4.3 (Ubuntu 4.4.3-4ubuntu5.1)' -->
+      <grep regexp="^gcc \S+ (\S+) \([^f]" group="1"></grep>
     </version>
     <languages>C</languages>
     <target>
@@ -262,8 +264,9 @@
     <executable>g\+\+</executable>
     <version>
       <external>g++ -v</external>
-      <nogrep regexp="for GNAT Pro"></nogrep>
-      <grep regexp="^gcc \S+ (\S+)" group="1"></grep>
+
+      <!--  'gcc version 4.4.3 (Ubuntu 4.4.3-4ubuntu5.1)' -->
+      <grep regexp="^gcc \S+ (\S+) \([^f]" group="1"></grep>
     </version>
     <languages>C++</languages>
     <target>
