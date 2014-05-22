@@ -192,28 +192,6 @@
      </config>
    </configuration>
 
-   <!-- Additional switch -fdump-xref for recent gcc for GNAT Pro compilers -->
-
-   <configuration>
-     <compilers>
-       <compiler name="GCC_Pro" language="C" />
-     </compilers>
-     <compilers negate="true">
-       <compiler version="4.1.2" />
-       <compiler version="4.1.3" />
-       <compiler version="4.3.3" />
-       <compiler version="4.5.2" />
-       <compiler version="4.5.4" />
-       <compiler version="4.9.0" />
-     </compilers>
-     <config>
-   package Compiler is
-      for Leading_Required_Switches   ("C") use
-         Compiler'Leading_Required_Switches ("C") &amp; ("-fdump-xref");
-   end Compiler;
-     </config>
-   </configuration>
-
    <!-- for cygming we make sure that the option -mno-cygwin is used -->
    <configuration>
      <compilers>
