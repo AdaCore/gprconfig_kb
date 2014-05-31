@@ -56,9 +56,6 @@ dummy:=$(shell $(MKDIR) $(objdir))
 PROCESSORS ?= 0
 
 GNATMAKE=gnatmake -p -m -j${PROCESSORS}
-ifeq ($(strip $(filter-out %vms%,$(host))),)
-GNATMAKE=${GNATMAKE} -XOS=vms
-endif
 
 ADA_GEN_SUBDIR=gnat
 

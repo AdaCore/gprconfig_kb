@@ -1,8 +1,6 @@
 with "xmlada";
 
 project Gprbuild is
-   type OS_Type is ("unix", "avms", "ivms", "Windows_NT");
-   OS : OS_Type := external ("OS", "unix");
 
    type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := external ("BUILD", "debug");
@@ -106,31 +104,19 @@ project Gprbuild is
       --  We use project'Object_Dir here instead of GprBuild'Object_Dir
       --  for compatibility with GNAT Pro 6.0.2.
 
-      Common_Switches_VMS :=
-           (project'Object_Dir & "/gprbuild_dummies.obj",
-            project'Object_Dir & "/link.obj");
-
       case Build_Tool is
          when "gnatmake" =>
             -- Link manually the C part
 
             case Bld is
-               when "production" | "debug" =>
-                  case OS is
-                     when "avms" | "ivms" =>
-                         for Default_Switches ("Ada") use Common_Switches_VMS;
-                     when others =>
-                         for Default_Switches ("Ada") use Common_Switches;
-                  end case;
+               when "production" =>
+                  for Default_Switches ("Ada") use Common_Switches;
+
+               when "debug" =>
+                  for Default_Switches ("Ada") use Common_Switches & ("-g");
 
                when "coverage"             =>
-                  case OS is
-                     when "avms" | "ivms" =>
-                         for Default_Switches ("Ada") use Common_Switches_VMS;
-                     when others =>
-                         for Default_Switches ("Ada") use
-                               Common_Switches & ("-lgcov");
-                  end case;
+                  for Default_Switches ("Ada") use Common_Switches & ("-lgcov");
 
                when "profiling"            =>
                   for Default_Switches ("Ada") use Common_Switches & ("-pg", "-g");
@@ -141,52 +127,6 @@ project Gprbuild is
             null;
       end case;
    end Linker;
-
-   Common_Excluded_Source_Files :=
-      ("gprlib-build_shared_lib.adb",
-       "gprlib-build_shared_lib-nosymbols.adb",
-       "gprlib-build_shared_lib-vms.adb",
-       "mlib-tgt-specific.adb",
-       "mlib-tgt-vms-alpha.adb",
-       "mlib-tgt-vms-ia64.adb");
-
-   case Build_Tool is
-      when "gprbuild" =>
-         case OS is
-            when "unix" | "Windows_NT" =>
-               for Locally_Removed_Files
-                 use Common_Excluded_Source_Files &
-                   ("mlib-tgt-vms.ads", "mlib-tgt-vms.adb");
-               --  Excluded_Source_File not supported by GNAT Pro 6.0.2
-
-            when "avms" | "ivms" =>
-               for Locally_Removed_Files
-                 use Common_Excluded_Source_Files;
-               --  Excluded_Source_File not supported by GNAT Pro 6.0.2
-         end case;
-      when "gnatmake" =>
-         null;
-   end case;
-
-   package Naming is
-      case OS is
-         when "unix" | "Windows_NT" =>
-            for Body ("gprlib.build_shared_lib")
-              use "gprlib-build_shared_lib-nosymbols.adb";
-            for Body ("mlib.tgt.specific")
-              use "mlib-tgt-specific.adb";
-         when "avms" =>
-            for Body ("gprlib.build_shared_lib")
-              use "gprlib-build_shared_lib-vms.adb";
-            for Body ("mlib.tgt.specific")
-              use "mlib-tgt-specific-vms-alpha.adb";
-         when "ivms" =>
-            for Body ("gprlib.build_shared_lib")
-              use "gprlib-build_shared_lib-vms.adb";
-            for Body ("mlib.tgt.specific")
-              use "mlib-tgt-specific-vms-ia64.adb";
-      end case;
-   end Naming;
 
    package IDE is
       for VCS_Kind use VCS_Kind;
