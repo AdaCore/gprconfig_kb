@@ -932,6 +932,9 @@ procedure Gprbuild.Main is
          elsif Arg = No_Object_Check_Switch then
             Object_Checked := False;
 
+         elsif Arg = Makeutl.No_Exit_Message_Option then
+            Opt.No_Exit_Message := True;
+
          elsif Arg = "--codepeer" then
             Forbidden_In_Package_Builder;
 
