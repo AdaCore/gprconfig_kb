@@ -311,7 +311,7 @@ Package Compiler
 @end menu
 @end ifnottex
 
-@include projects_unw.texi
+@include projects.texi
 
 @c ---------------------------------------------
 @node Gprbuild
