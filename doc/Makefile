@@ -29,41 +29,33 @@ all: txt info html pdf
 # therefore, we do ${MKDIR} first -- hence we do ${MKDIR} twice, which is a bit
 # odd, but successfully works around the bug in $(MAKE_PDF) (i.e. texi2pdf).
 
-txt: prepare
+txt:
 	${MKDIR} txt
 	${RM} txt/*
 	${RMDIR} txt
 	${MKDIR} txt
 	$(MAKE_TXT) -o txt/$(DOC).txt $(DOC).texi
-info: prepare
+info:
 	${MKDIR} info
 	${RM} info/*
 	${RMDIR} info
 	${MKDIR} info
 	$(MAKE_INFO) -o info/$(DOC).info $(DOC).texi
-html: prepare
+html:
 	${MKDIR} html
 	${RM} html/*
 	${RMDIR} html
 	${MKDIR} html
 	$(MAKE_INFO) ${MAKEINFO_HTML_FLAGS} -o html/$(DOC).html $(DOC).texi
 	$(CP) important.png note.png tip.png html/
-pdf: prepare
+pdf:
 	${MKDIR} pdf
 	${RM} pdf/*
 	${RMDIR} pdf
 	${MKDIR} pdf
 	cd pdf; $(MAKE_PDF) -c ../$(DOC).texi
 
-prepare:
-	$(GNATMAKE) ../gnat/xgnatugn
-	./xgnatugn${EXE} unw ../gnat/projects.texi ../gnat/ug_words projects_unw.texi
-
-partial_clean:
-	$(GNATCLEAN) ../gnat/xgnatugn
-	${RM} projects_unw.texi
-
-clean: partial_clean
+clean:
 	${MKDIR} txt html info pdf
 	${RM} txt/* html/* info/* pdf/*
 	${RMDIR} txt html info pdf
