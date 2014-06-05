@@ -38,7 +38,7 @@ package body Gprinstall.DB is
       type Stats is record
          N_Files           : Natural := 0;
          N_Files_Not_Found : Natural := 0;
-         Bytes             : File_Size := 0;
+         Bytes             : Directories.File_Size := 0;
       end record;
 
       function Project_Dir return String;
@@ -105,7 +105,7 @@ package body Gprinstall.DB is
          end if;
       end Project_Dir;
 
-      package File_Size_IO is new Text_IO.Integer_IO (File_Size);
+      package File_Size_IO is new Text_IO.Integer_IO (Directories.File_Size);
       use File_Size_IO;
 
       -------------
@@ -115,7 +115,7 @@ package body Gprinstall.DB is
       procedure Process (D_Entry : Directory_Entry_Type) is
          S    : Stats;
          Unit : String (1 .. 2) := "b ";
-         Size : File_Size;
+         Size : Directories.File_Size;
       begin
          Put ("   " & Simple_Name (D_Entry));
          Set_Col (25);
