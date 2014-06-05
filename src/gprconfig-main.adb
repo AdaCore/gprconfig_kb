@@ -89,11 +89,12 @@ procedure GprConfig.Main is
       end record;
 
    procedure Callback
-     (Iterator       : in out All_Iterator;
-      Base           : in out Knowledge_Base;
-      Comp           : Compiler;
-      From_Extra_Dir : Boolean;
-      Continue       : out Boolean);
+     (Iterator          : in out All_Iterator;
+      Base              : in out Knowledge_Base;
+      Comp              : Compiler;
+      Runtime_Specified : Boolean;
+      From_Extra_Dir    : Boolean;
+      Continue          : out Boolean);
    --  Search all compilers on path, preselecting the first one matching each
    --  of the filters.
 
@@ -117,15 +118,17 @@ procedure GprConfig.Main is
    --------------
 
    procedure Callback
-     (Iterator       : in out All_Iterator;
-      Base           : in out Knowledge_Base;
-      Comp           : Compiler;
-      From_Extra_Dir : Boolean;
-      Continue       : out Boolean)
+     (Iterator          : in out All_Iterator;
+      Base              : in out Knowledge_Base;
+      Comp              : Compiler;
+      Runtime_Specified : Boolean;
+      From_Extra_Dir    : Boolean;
+      Continue          : out Boolean)
    is
       New_Comp : Compiler := Comp;
       C        : Compiler_Lists.Cursor;
       Index    : Count_Type := 1;
+      pragma Unreferenced (Runtime_Specified);
    begin
       if Iterator.Filter_Matched /=
         (Iterator.Filter_Matched'Range => True)

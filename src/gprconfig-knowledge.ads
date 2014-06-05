@@ -265,17 +265,20 @@ package GprConfig.Knowledge is
    --  operation is called.
 
    procedure Callback
-     (Iterator       : in out Compiler_Iterator;
-      Base           : in out Knowledge_Base;
-      Comp           : Compiler;
-      From_Extra_Dir : Boolean;
-      Continue       : out Boolean) is abstract;
+     (Iterator          : in out Compiler_Iterator;
+      Base              : in out Knowledge_Base;
+      Comp              : Compiler;
+      Runtime_Specified : Boolean;
+      From_Extra_Dir    : Boolean;
+      Continue          : out Boolean) is abstract;
    --  Called whenever a new compiler is discovered.
    --  It might be discovered either in a path added through a --config
    --  parameter (in which case From_Extra_Dir is True), or in a path specified
    --  in the environment variable $PATH (in which case it is False). If the
    --  directory is both in Extra_Dirs and in $PATH, From_Extra_Dir is set to
    --  False.
+   --  If Runtime_Specified is True, only filters with a specified runtime are
+   --
    --  On exit, Continue should be set to False if there is no need to discover
    --  further compilers (however there will be no possibility to restart the
    --  search at the same point later on).

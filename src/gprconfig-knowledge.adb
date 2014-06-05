@@ -2236,17 +2236,33 @@ package body GprConfig.Knowledge is
             Comp.Language_Case := L;
             Comp.Language_LC   := Get_String (To_Lower (Get_Name_String (L)));
 
+            --  First check if a runtime specified with option --config= will
+            --  match.
+
+            Callback
+              (Iterator          => Iterator,
+               Base              => Base,
+               Comp              => Comp,
+               Runtime_Specified => True,
+               From_Extra_Dir    => From_Extra_Dir,
+               Continue          => Continue);
+
+            if not Continue then
+               return;
+            end if;
+
             if Is_Empty (Runtimes) then
                if Descr.Runtimes /= Null_External_Value then
                   Put_Verbose ("No runtime found where one is required for: "
                                & Get_Name_String (Comp.Path));
                else
                   Callback
-                    (Iterator       => Iterator,
-                     Base           => Base,
-                     Comp           => Comp,
-                     From_Extra_Dir => From_Extra_Dir,
-                     Continue       => Continue);
+                    (Iterator          => Iterator,
+                     Base              => Base,
+                     Comp              => Comp,
+                     Runtime_Specified => False,
+                     From_Extra_Dir    => From_Extra_Dir,
+                     Continue          => Continue);
                   if not Continue then
                      return;
                   end if;
@@ -2261,11 +2277,12 @@ package body GprConfig.Knowledge is
                   Comp.Runtime_Dir :=
                     External_Value_Lists.Element (C2).Extracted_From;
                   Callback
-                    (Iterator       => Iterator,
-                     Base           => Base,
-                     Comp           => Comp,
-                     From_Extra_Dir => From_Extra_Dir,
-                     Continue       => Continue);
+                    (Iterator          => Iterator,
+                     Base              => Base,
+                     Comp              => Comp,
+                     Runtime_Specified => False,
+                     From_Extra_Dir    => From_Extra_Dir,
+                     Continue          => Continue);
                   if not Continue then
                      return;
                   end if;
@@ -3619,11 +3636,12 @@ package body GprConfig.Knowledge is
          end record;
 
       procedure Callback
-        (Iterator       : in out Batch_Iterator;
-         Base           : in out Knowledge_Base;
-         Comp           : Compiler;
-         From_Extra_Dir : Boolean;
-         Continue       : out Boolean);
+        (Iterator          : in out Batch_Iterator;
+         Base              : in out Knowledge_Base;
+         Comp              : Compiler;
+         Runtime_Specified : Boolean;
+         From_Extra_Dir    : Boolean;
+         Continue          : out Boolean);
       --  Search the first compiler matching each --config command line
       --  argument.
 
@@ -3632,11 +3650,12 @@ package body GprConfig.Knowledge is
       --------------
 
       procedure Callback
-        (Iterator       : in out Batch_Iterator;
-         Base           : in out Knowledge_Base;
-         Comp           : Compiler;
-         From_Extra_Dir : Boolean;
-         Continue       : out Boolean)
+        (Iterator          : in out Batch_Iterator;
+         Base              : in out Knowledge_Base;
+         Comp              : Compiler;
+         Runtime_Specified : Boolean;
+         From_Extra_Dir    : Boolean;
+         Continue          : out Boolean)
       is
          C     : Compiler_Lists.Cursor := First (Iterator.Filters);
          Index : Count_Type := 1;
@@ -3654,6 +3673,7 @@ package body GprConfig.Knowledge is
 
             if (not From_Extra_Dir or else El.Path = Comp.Path)
               and then Filter_Match (Base, Comp => Comp, Filter => El.all)
+              and then (not Runtime_Specified or El.Runtime_Dir /= No_Name)
             then
                Ncomp := new Compiler'(Comp);
                if El.Runtime_Dir /= No_Name then
