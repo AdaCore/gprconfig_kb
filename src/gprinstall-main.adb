@@ -32,7 +32,6 @@ with Atree;       use Atree;
 with Csets;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
-with Hostparm;
 with Makeutl;     use Makeutl;
 with Namet;       use Namet;
 with Osint;       use Osint;
@@ -225,12 +224,6 @@ procedure Gprinstall.Main is
             end if;
 
          elsif Has_Prefix (Autoconf_Project_Option) then
-            if Hostparm.OpenVMS then
-               Fail_Program
-                 (Project_Tree,
-                  Autoconf_Project_Option & " cannot be used on VMS");
-            end if;
-
             if Config_Project_File_Name /= null
               and then (not Autoconf_Specified
                         or else Config_Project_File_Name.all /=
@@ -609,15 +602,13 @@ procedure Gprinstall.Main is
 
          --  Line for Autoconf_Project_Option
 
-         if not Hostparm.OpenVMS then
-            Write_Str ("  ");
-            Write_Str (Autoconf_Project_Option);
-            Write_Str ("file.cgpr");
-            Write_Eol;
-            Write_Str
-              ("           Specify/create the main config project file name");
-            Write_Eol;
-         end if;
+         Write_Str ("  ");
+         Write_Str (Autoconf_Project_Option);
+         Write_Str ("file.cgpr");
+         Write_Eol;
+         Write_Str
+           ("           Specify/create the main config project file name");
+         Write_Eol;
 
          --  Line for --prefix
 

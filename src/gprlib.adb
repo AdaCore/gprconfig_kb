@@ -34,7 +34,6 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gpr_Util;         use Gpr_Util;
 with Gprexch;          use Gprexch;
-with Hostparm;
 with Makeutl;          use Makeutl;
 with Namet;            use Namet;
 with Opt;              use Opt;
@@ -49,10 +48,6 @@ with Types;            use Types;
 
 procedure Gprlib is
 
-   Shared_Libgnat_Separator : Character := '-';
-   --  Character between "-lgnat" or "-lgnarl" and the toolchain version.
-   --  It is not a constant because it is changed to '_' on VMS.
-
    Size           : Natural;
 
    Partial_Number : Natural;
@@ -61,10 +56,6 @@ procedure Gprlib is
    Last_Object    : Natural;
 
    Gcc_Name : constant String := "gcc";
-
-   Preserve : Attribute := Time_Stamps;
-   --  Used by Copy_ALI_Files. Changed to None for OpenVMS, because
-   --  Copy_Attributes always fails on VMS.
 
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform
@@ -596,7 +587,7 @@ procedure Gprlib is
                      Library_Dependency_Directory.all,
                      Success,
                      Mode     => Overwrite,
-                     Preserve => Preserve);
+                     Preserve => Time_Stamps);
 
                else
                   Success := False;
@@ -647,8 +638,7 @@ procedure Gprlib is
 
                   S := new String (1 .. Len + 3);
 
-                  --  Read the file. Note that the loop is not necessary
-                  --  since the whole file is read at once except on VMS.
+                  --  Read the file.
 
                   Curr := 1;
                   Actual_Len := Len;
@@ -767,7 +757,7 @@ procedure Gprlib is
                   Copy_Source_Directory.all,
                   Success,
                   Mode     => Overwrite,
-                  Preserve => Preserve);
+                  Preserve => Time_Stamps);
                exit;
             end if;
          end loop;
@@ -860,13 +850,6 @@ begin
    Namet.Initialize;
    Snames.Initialize;
 
-   --  Copy_Attributes always fails on VMS
-
-   if Hostparm.OpenVMS then
-      Preserve := None;
-      Shared_Libgnat_Separator := '_';
-   end if;
-
    if Argument_Count /= 1 then
       Put_Line ("usage: gprlib <input file>");
 
@@ -887,7 +870,7 @@ begin
          Exchange_File_Name.all & "__saved",
          Success,
          Mode => Overwrite,
-         Preserve => Preserve);
+         Preserve => Time_Stamps);
    end if;
 
    begin
@@ -1158,27 +1141,12 @@ begin
                      GNAT_Version := new String'(Line (6 .. Last));
                      GNAT_Version_Set := True;
 
-                     --  On VMS, replace all '.' with '_', to avoid names with
-                     --  several dots.
-
-                     if Hostparm.OpenVMS then
-                        for J in 6 .. Last loop
-                           if Line (J) = '.' then
-                              Line (J) := '_';
-                           end if;
-                        end loop;
-                     end if;
-
                      Libgnat :=
                        new String'
-                         ("-lgnat" &
-                          Shared_Libgnat_Separator &
-                          Line (6 .. Last));
+                         ("-lgnat-" & Line (6 .. Last));
                      Libgnarl :=
                        new String'
-                         ("-lgnarl" &
-                          Shared_Libgnat_Separator &
-                          Line (6 .. Last));
+                         ("-lgnarl-" & Line (6 .. Last));
                   end if;
 
                else
@@ -2120,15 +2088,6 @@ begin
       then
          Options_Table.Append (new String'(PIC_Option.all));
       end if;
-
-      --  Get default search directories to locate system.ads when calling
-      --  Targparm.Get_Target_Parameters.
-
-      --  Osint.Add_Default_Search_Dirs;
-
-      --  Check if the platform is VMS and, if it is, change some variables
-
-      --  Targparm.Get_Target_Parameters;
 
       Prj.Initialize (Prj.No_Project_Tree);
 

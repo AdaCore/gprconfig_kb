@@ -37,7 +37,6 @@ with Gprbuild.Compilation.Slave; use Gprbuild.Compilation.Slave;
 with Csets;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
-with Hostparm;
 with Makeutl;     use Makeutl;
 with Namet;       use Namet;
 with Opt;         use Opt;
@@ -168,10 +167,10 @@ procedure Gprclean.Main is
 
                   case Arg (2) is
                      when '-' =>
-                        if not Hostparm.OpenVMS and then Arg = "--db-" then
+                        if Arg = "--db-" then
                            Load_Standard_Base := False;
 
-                        elsif not Hostparm.OpenVMS and then Arg = "--db" then
+                        elsif Arg = "--db" then
                            Db_Directory_Expected := True;
 
                         elsif Arg'Length > Config_Project_Option'Length
@@ -222,11 +221,9 @@ procedure Gprclean.Main is
                                    (Slave_Env_Option'Length + 2 .. Arg'Last));
                            end if;
 
-                        elsif not Hostparm.OpenVMS
+                        elsif Arg'Length > Autoconf_Project_Option'Length
                               and then
-                                Arg'Length > Autoconf_Project_Option'Length
-                              and then
-                                Arg (1 .. Autoconf_Project_Option'Length) =
+                              Arg (1 .. Autoconf_Project_Option'Length) =
                                 Autoconf_Project_Option
                         then
                            if Config_Project_File_Name /= null
@@ -250,9 +247,7 @@ procedure Gprclean.Main is
                               Autoconf_Specified := True;
                            end if;
 
-                        elsif not Hostparm.OpenVMS
-                          and then
-                            Arg'Length > Target_Project_Option'Length
+                        elsif Arg'Length > Target_Project_Option'Length
                           and then
                             Arg (1 .. Target_Project_Option'Length) =
                                Target_Project_Option
@@ -557,24 +552,16 @@ procedure Gprclean.Main is
          Put_Line ("  --config=file.cgpr");
          Put_Line ("           Specify the configuration project file name");
 
-         if not Hostparm.OpenVMS then
-            Put_Line ("  --autoconf=file.cgpr");
-            Put_Line
-              ("           Specify/create the main config project file name");
-         end if;
+         Put_Line ("  --autoconf=file.cgpr");
+         Put_Line
+           ("           Specify/create the main config project file name");
 
-         if not Hostparm.OpenVMS then
-            Put_Line ("  --target=targetname");
-            Put_Line ("           Specify a target for cross platforms");
-         end if;
+         Put_Line ("  --target=targetname");
+         Put_Line ("           Specify a target for cross platforms");
 
-         if not Hostparm.OpenVMS then
-            Put_Line ("  --db dir Parse dir as an additional knowledge base");
-         end if;
+         Put_Line ("  --db dir Parse dir as an additional knowledge base");
 
-         if not Hostparm.OpenVMS then
-            Put_Line ("  --db-    Do not load the standard knowledge base");
-         end if;
+         Put_Line ("  --db-    Do not load the standard knowledge base");
 
          Put_Line ("  --RTS=<runtime>");
          Put_Line ("           Use runtime <runtime> for language Ada");

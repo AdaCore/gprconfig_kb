@@ -35,7 +35,6 @@ with Csets;
 with Debug;       use Debug;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
-with Hostparm;
 with Makeutl;     use Makeutl;
 with Opt;         use Opt;
 with Osint;       use Osint;
@@ -683,23 +682,11 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "--db-" then
-            if Hostparm.OpenVMS then
-               Fail_Program
-                 (Project_Tree,
-                  "--db- cannot be used on VMS");
-            end if;
-
             Forbidden_In_Package_Builder;
 
             Load_Standard_Base := False;
 
          elsif Arg = "--db" then
-            if Hostparm.OpenVMS then
-               Fail_Program
-                 (Project_Tree,
-                  "--db cannot be used on VMS");
-            end if;
-
             Forbidden_In_Package_Builder;
 
             Db_Directory_Expected := True;
@@ -748,12 +735,6 @@ procedure Gprbuild.Main is
             Arg (1 .. Autoconf_Project_Option'Length) =
               Autoconf_Project_Option
          then
-            if Hostparm.OpenVMS then
-               Fail_Program
-                 (Project_Tree,
-                  Autoconf_Project_Option & " cannot be used on VMS");
-            end if;
-
             Forbidden_In_Package_Builder;
 
             if Config_Project_File_Name /= null
@@ -777,12 +758,6 @@ procedure Gprbuild.Main is
            and then
             Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
          then
-            if Hostparm.OpenVMS then
-               Fail_Program
-                 (Project_Tree,
-                  Target_Project_Option & " cannot be used on VMS");
-            end if;
-
             Forbidden_In_Package_Builder;
 
             if Target_Name /= null then
@@ -1637,41 +1612,33 @@ procedure Gprbuild.Main is
 
          --  Line for Autoconf_Project_Option
 
-         if not Hostparm.OpenVMS then
-            Write_Str ("  ");
-            Write_Str (Autoconf_Project_Option);
-            Write_Str ("file.cgpr");
-            Write_Eol;
-            Write_Str
-              ("           Specify/create the main config project file name");
-            Write_Eol;
-         end if;
+         Write_Str ("  ");
+         Write_Str (Autoconf_Project_Option);
+         Write_Str ("file.cgpr");
+         Write_Eol;
+         Write_Str
+           ("           Specify/create the main config project file name");
+         Write_Eol;
 
          --  Line for Target_Project_Option
 
-         if not Hostparm.OpenVMS then
-            Write_Str ("  ");
-            Write_Str (Target_Project_Option);
-            Write_Str ("targetname");
-            Write_Eol;
-            Write_Str
-              ("           Specify a target for cross platforms");
-            Write_Eol;
-         end if;
+         Write_Str ("  ");
+         Write_Str (Target_Project_Option);
+         Write_Str ("targetname");
+         Write_Eol;
+         Write_Str
+           ("           Specify a target for cross platforms");
+         Write_Eol;
 
          --  Line for --db
 
-         if not Hostparm.OpenVMS then
-            Write_Str ("  --db dir Parse dir as an additional knowledge base");
-            Write_Eol;
-         end if;
+         Write_Str ("  --db dir Parse dir as an additional knowledge base");
+         Write_Eol;
 
          --  Line for --db-
 
-         if not Hostparm.OpenVMS then
-            Write_Str ("  --db-    Do not load the standard knowledge base");
-            Write_Eol;
-         end if;
+         Write_Str ("  --db-    Do not load the standard knowledge base");
+         Write_Eol;
 
          --  Line for --subdirs=
 

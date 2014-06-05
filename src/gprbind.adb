@@ -33,7 +33,6 @@ with GNAT.OS_Lib;      use GNAT.OS_Lib;
 with ALI;      use ALI;
 with Gprexch;  use Gprexch;
 with Gpr_Util; use Gpr_Util;
-with Hostparm;
 with Makeutl;  use Makeutl;
 with Namet;    use Namet;
 with Osint;
@@ -48,10 +47,6 @@ procedure Gprbind is
    for Shared_Libgcc_Default'Size use Character'Size;
    pragma Import
      (C, Shared_Libgcc_Default, "__gnat_shared_libgcc_default");
-
-   Preserve : Attribute := Time_Stamps;
-   --  Used in calls to Copy_File. Changed to None for OpenVMS, because
-   --  Copy_Attributes always fails on VMS.
 
    Executable_Suffix : constant String_Access := Get_Executable_Suffix;
    --  The suffix of executables on this platforms
@@ -248,12 +243,6 @@ begin
 
    Namet.Initialize;
 
-   --  Copy_Attributes always fails on VMS
-
-   if Hostparm.OpenVMS then
-      Preserve := None;
-   end if;
-
    Exchange_File_Name := new String'(Argument (1));
 
    --  DEBUG: save a copy of the exchange file
@@ -268,7 +257,7 @@ begin
             Exchange_File_Name.all & "__saved",
             Success,
             Mode => Overwrite,
-            Preserve => Preserve);
+            Preserve => Time_Stamps);
       end if;
    end;
 
