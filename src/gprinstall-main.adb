@@ -241,6 +241,28 @@ procedure Gprinstall.Main is
                Autoconf_Specified := True;
             end if;
 
+         elsif Has_Prefix (RTS_Option) then
+            declare
+               Set : constant Boolean := Runtime_Name_Set_For (Name_Ada);
+               Old : constant String := Runtime_Name_For (Name_Ada);
+               RTS : constant String :=
+                       Arg (RTS_Option'Length + 1 .. Arg'Last);
+            begin
+               if Command_Line then
+                  if Set and then Old /= RTS then
+                     Fail_Program
+                       (Project_Tree,
+                        "several different run-times cannot be specified");
+                  end if;
+
+                  Set_Runtime_For (Name_Ada, RTS);
+               end if;
+
+               --  Ignore any --RTS= switch in package Builder. These are only
+               --  taken into account to create the config file in
+               --  auto-configuration.
+            end;
+
          elsif Arg = "-h" then
             Usage_Needed := True;
 
@@ -608,6 +630,11 @@ procedure Gprinstall.Main is
          Write_Eol;
          Write_Str
            ("           Specify/create the main config project file name");
+         Write_Eol;
+
+         Write_Str ("  --RTS=<runtime>");
+         Write_Eol;
+         Write_Str ("           Use runtime <runtime> for language Ada");
          Write_Eol;
 
          --  Line for --prefix
