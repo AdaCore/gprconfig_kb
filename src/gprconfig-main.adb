@@ -127,36 +127,40 @@ procedure GprConfig.Main is
       New_Comp : Compiler := Comp;
       C        : Compiler_Lists.Cursor;
       Index    : Count_Type := 1;
-      pragma Unreferenced (Runtime_Specified);
    begin
-      if Iterator.Filter_Matched /=
-        (Iterator.Filter_Matched'Range => True)
-      then
-         C := First (Iterator.Filters);
-         while Has_Element (C) loop
-            if not Iterator.Filter_Matched (Index)
-              and then Filter_Match
-                         (Base, Comp => Comp, Filter => Element (C).all)
-            then
-               Set_Selection (New_Comp, True);
-               Iterator.Filter_Matched (Index) := True;
-               exit;
-            end if;
+      --  Do nothing if a runtime needs to be specified, as this is only for
+      --  interactive use.
 
-            Index := Index + 1;
-            Next (C);
-         end loop;
-      end if;
+      if not Runtime_Specified then
+         if Iterator.Filter_Matched /=
+           (Iterator.Filter_Matched'Range => True)
+         then
+            C := First (Iterator.Filters);
+            while Has_Element (C) loop
+               if not Iterator.Filter_Matched (Index)
+                 and then Filter_Match
+                   (Base, Comp => Comp, Filter => Element (C).all)
+               then
+                  Set_Selection (New_Comp, True);
+                  Iterator.Filter_Matched (Index) := True;
+                  exit;
+               end if;
 
-      --  Ignore compilers from extra directories, unless they have been
-      --  selected because of a --config argument
+               Index := Index + 1;
+               Next (C);
+            end loop;
+         end if;
 
-      if Is_Selected (New_Comp) or else not From_Extra_Dir then
-         Put_Verbose
-           ("Adding compiler to interactive menu "
-            & To_String (Base, Comp, True)
-            & " selected=" & Is_Selected (New_Comp)'Img);
-         Append (Iterator.Compilers, new Compiler'(New_Comp));
+         --  Ignore compilers from extra directories, unless they have been
+         --  selected because of a --config argument
+
+         if Is_Selected (New_Comp) or else not From_Extra_Dir then
+            Put_Verbose
+              ("Adding compiler to interactive menu "
+               & To_String (Base, Comp, True)
+               & " selected=" & Is_Selected (New_Comp)'Img);
+            Append (Iterator.Compilers, new Compiler'(New_Comp));
+         end if;
       end if;
 
       Continue := True;
