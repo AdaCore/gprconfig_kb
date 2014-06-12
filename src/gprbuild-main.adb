@@ -1883,6 +1883,12 @@ procedure Gprbuild.Main is
          Write_Eol;
          Write_Eol;
 
+         --  Line for -dn
+
+         Write_Str ("-dn        Do not delete temporary files");
+         Write_Eol;
+         Write_Eol;
+
          --  Line for -cargs
 
          Write_Line ("  -cargs opts    opts are passed to all compilers");
