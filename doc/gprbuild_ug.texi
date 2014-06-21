@@ -1384,7 +1384,7 @@ invocation:
 @c ---------------------------------------------
 
 @noindent
-@subsection Description
+@subsubsection Description
 
 @noindent
 The @value{gprconfig} tool helps you generate the configuration
@@ -1396,7 +1396,7 @@ application, it generates the proper configuration file.
 explicitly. Instead, it is used implicitly by GPRbuild through the use
 of @code{--config} and @code{--autoconf} switches.}
 
-@subsection Command line arguments
+@subsubsection Command line arguments
 
 @noindent
 @value{gprconfig} supports the following command line switches:
@@ -1505,7 +1505,7 @@ of @code{--config} and @code{--autoconf} switches.}
 
 @end table
 
-@subsection Interactive use
+@subsubsection Interactive use
 
 @noindent
 When you launch @value{gprconfig}, it first searches for all compilers it
