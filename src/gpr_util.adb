@@ -2332,7 +2332,8 @@ package body Gpr_Util is
    --------------
 
    function UTC_Time return Time_Stamp_Type is
-      Now : constant Time := Clock - Duration (UTC_Time_Offset);
+      Now : constant Time := Clock - Duration (UTC_Time_Offset) * 60;
+      --  The UTC_Time_Offset is in minutes
    begin
       return Time_Stamp_Type (Image (Now, "%Y%m%d%H%M%S"));
    end UTC_Time;

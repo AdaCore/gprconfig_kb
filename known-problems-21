@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N626-044 Unexpected recompilation in distributed mode
+
+  Problem:    When building in distributed mode using slaves in a different
+              time-zone some unexpected recompilation are done.
+
+  Status:     This was fixed in 2.2 on 2014-06-27
+
+  Workaround: Use only compilation slaves in the same time-zone.
+
 KP-21-N514-009 Compilation switches -mxxx inhibited
 
   Problem:    When gprbuild is invoked without --codepeer, compilation
