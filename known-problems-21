@@ -26,6 +26,17 @@ KP-21-N626-044 Unexpected recompilation in distributed mode
 
   Workaround: Use only compilation slaves in the same time-zone.
 
+KP-21-N623-009 Missing link step in distributed mode
+
+  Problem:    When building in distributed mode projects with a user's
+              defined language it may happen that the final link step
+              is skipped.
+
+  Status:     This was fixed in 2.2 on 2014-06-30
+
+  Workaround: Avoid using the distributed compilation with user's
+              defined languages.
+
 KP-21-N514-009 Compilation switches -mxxx inhibited
 
   Problem:    When gprbuild is invoked without --codepeer, compilation

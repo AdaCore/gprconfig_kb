@@ -39,6 +39,7 @@ with System.Multiprocessors;                use System;
 with Csets;                         use Csets;
 with Gnatvsn;                       use Gnatvsn;
 with Namet;                         use Namet;
+with Opt;                           use Opt;
 with Prj;                           use Prj;
 with Prj.Env;                       use Prj.Env;
 with Prj.Part;                      use Prj.Part;
@@ -1607,6 +1608,11 @@ begin
    Snames.Initialize;
 
    Parse_Knowledge_Base (Base, Default_Knowledge_Base_Directory);
+
+   --  Always create the lib/object directories on the slave, this is needed
+   --  when parsing a projet file to retreive a specific driver.
+
+   Opt.Setup_Projects := True;
 
    --  Wait for a gprbuild connection on any addresses
 
