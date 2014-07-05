@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N704-034 Add build master id in log message (2014-07-05)
+
+  A unique id in front of all log messages is now output by gprslave.
+  This make it is easier to find all log for a specific build.
+
 NF-22-N505-024 Handles Library_Options in gprinstall (2014-05-07)
 
   When generating a project for a library (standard or aggregate), gprinstall
