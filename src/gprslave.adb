@@ -133,6 +133,9 @@ procedure Gprslave is
 
    function Get_Slave_Id return Remote_Id;
 
+   function Is_Active_Build_Master (Builder : Build_Master) return Boolean is
+      (Builder.Project_Name /= Null_Unbounded_String);
+
    task Wait_Completion;
    --  Waiting for job completion and sending back the response to the build
    --  masters.
@@ -1182,6 +1185,10 @@ procedure Gprslave is
 
          Wait_Process (Pid, Success);
 
+         --  Enter a critical section to:
+         --    - send atomic response to build master
+         --    - make sure the current directory is the work directory
+
          Mutex.Seize;
 
          Running.Get (Job, Pid);
@@ -1207,89 +1214,94 @@ procedure Gprslave is
             --  Now get the corresponding build master
 
             Builder := Builders.Get (Job.Build_Sock);
-            --  ???What to do if the builder is not found???
 
-            --  Enter a critical section to:
-            --    - send atomic response to build master
-            --    - make sure the current directory is the work directory
-
-            begin
-               Message
-                 (Builder,
-                  "# job " & Image (Job.Id) & " terminated",
-                  Is_Debug => True);
-
-               declare
-                  DS       : Character renames Directory_Separator;
-                  Dep_Dir  : constant String := To_String (Job.Dep_Dir);
-                  Dep_File : constant String := To_String (Job.Dep_File);
-                  Obj_File : constant String := To_String (Job.Obj_File);
-                  Out_File : constant String := To_String (Job.Output);
-                  S        : Boolean;
+            if Is_Active_Build_Master (Builder) then
                begin
-                  Send_Output (Builder.Channel, Out_File);
-
-                  OS_Lib.Delete_File (Out_File, S);
-
-                  if Success then
-                     --  No Dep_File to send back if the compilation was not
-                     --  successful.
-
-                     declare
-                        D_File : constant String :=
-                                   Work_Directory (Builder)
-                                 & (if Dep_Dir /= "" then DS & Dep_Dir else "")
-                                 & DS & Dep_File;
-                     begin
-                        if Exists (D_File)
-                          and then Kind (D_File) = Ordinary_File
-                        then
-                           Send_File
-                             (Builder.Channel, D_File, Rewrite => True);
-                        end if;
-                     end;
-
-                     declare
-                        O_File : constant String :=
-                                   Work_Directory (Builder)
-                                & (if Dep_Dir /= "" then DS & Dep_Dir else "")
-                                & DS & Obj_File;
-                     begin
-                        if Exists (O_File) then
-                           Send_File
-                             (Builder.Channel, O_File, Rewrite => False);
-                        end if;
-                     end;
-                  end if;
-               end;
-
-               Message
-                 (Builder,
-                  "# compilation status " & Boolean'Image (Success),
-                  Is_Debug => True);
-
-               if Success then
-                  Send_Ok (Builder.Channel, Job.Id);
-               else
-                  Send_Ko (Builder.Channel, Job.Id);
-               end if;
-            exception
-               when E : others =>
-                  --  An exception can be raised if the builder master has been
-                  --  terminated. In this case the comminication won't succeed.
                   Message
                     (Builder,
-                     "# cannot send response to build master "
-                     & Exception_Information (E),
+                     "# job " & Image (Job.Id) & " terminated",
                      Is_Debug => True);
-            end;
+
+                  declare
+                     DS       : Character renames Directory_Separator;
+                     Dep_Dir  : constant String := To_String (Job.Dep_Dir);
+                     Dep_File : constant String := To_String (Job.Dep_File);
+                     Obj_File : constant String := To_String (Job.Obj_File);
+                     Out_File : constant String := To_String (Job.Output);
+                     S        : Boolean;
+                  begin
+                     Send_Output (Builder.Channel, Out_File);
+
+                     OS_Lib.Delete_File (Out_File, S);
+
+                     if Success then
+                        --  No Dep_File to send back if the compilation was not
+                        --  successful.
+
+                        declare
+                           D_File : constant String :=
+                                      Work_Directory (Builder)
+                                    & (if Dep_Dir /= ""
+                                       then DS & Dep_Dir else "")
+                                    & DS & Dep_File;
+                        begin
+                           if Exists (D_File)
+                             and then Kind (D_File) = Ordinary_File
+                           then
+                              Send_File
+                                (Builder.Channel, D_File, Rewrite => True);
+                           end if;
+                        end;
+
+                        declare
+                           O_File : constant String :=
+                                      Work_Directory (Builder)
+                                    & (if Dep_Dir /= ""
+                                       then DS & Dep_Dir else "")
+                                    & DS & Obj_File;
+                        begin
+                           if Exists (O_File) then
+                              Send_File
+                                (Builder.Channel, O_File, Rewrite => False);
+                           end if;
+                        end;
+                     end if;
+                  end;
+
+                  Message
+                    (Builder,
+                     "# compilation status " & Boolean'Image (Success),
+                     Is_Debug => True);
+
+                  if Success then
+                     Send_Ok (Builder.Channel, Job.Id);
+                  else
+                     Send_Ko (Builder.Channel, Job.Id);
+                  end if;
+               exception
+                  when E : others =>
+                     --  An exception can be raised if the builder master has
+                     --  been terminated. In this case the comminication won't
+                     --  succeed.
+                     Message
+                       (Builder,
+                        "# cannot send response to build master "
+                        & Exception_Information (E),
+                        Is_Debug => True);
+               end;
+
+            else
+               Message
+                 ("# build master not found, cannot send response.",
+                  Is_Debug => True);
+            end if;
 
          else
             --  This is not necessarily an error as we could get a Pid of a a
             --  gprconfig run launched to generate a configuration file for a
             --  specific language. So we do not want to fail in this case.
 
-            Message (Builder, "# unknown job data for pid", Is_Debug => True);
+            Message ("# unknown job data for pid", Is_Debug => True);
          end if;
 
          Mutex.Release;
