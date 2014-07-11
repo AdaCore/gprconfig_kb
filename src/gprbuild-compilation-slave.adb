@@ -43,7 +43,6 @@ package body Gprbuild.Compilation.Slave is
 
    type Slave_Data is record
       Host : Unbounded_String;
---        User : Unbounded_String;
       Port : Port_Type;
    end record;
 
