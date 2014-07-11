@@ -24,6 +24,7 @@ with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;            use Ada;
 with Ada.Directories;                   use Ada.Directories;
 with Ada.Exceptions;                    use Ada.Exceptions;
+with Ada.Numerics.Float_Random;         use Ada.Numerics.Float_Random;
 with Ada.Strings.Fixed;                 use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants;        use Ada.Strings;
 with Ada.Strings.Unbounded;             use Ada.Strings.Unbounded;
@@ -111,6 +112,8 @@ package body Gprbuild.Compilation.Slave is
    Remote_Process : Shared_Counter;
    Slaves_Sockets : Socket_Set_Type;
    Max_Processes  : Natural := 0;
+
+   R_Gen          : Generator;
 
    protected Slaves is
 
@@ -731,14 +734,34 @@ package body Gprbuild.Compilation.Slave is
       --------------
 
       function Get_Free return Slave is
+         use type Containers.Count_Type;
+         S_Count : constant Containers.Count_Type := Pool.Length;
+         Index   : constant Positive :=
+                     Positive (Float (S_Count - 1) * Random (R_Gen));
+         --  Index of the slave to return if available
+         Result  : Slave := No_Slave;
+         K       : Positive := 1;
       begin
-         for S of Pool loop
-            if S.Current < S.Max_Processes then
-               return S;
-            end if;
-         end loop;
+         --  We want to have a random pcik of one slave
 
-         return No_Slave;
+         Search_Slaves : for S of Pool loop
+            if S.Current < S.Max_Processes then
+               Result := S;
+
+               --  Slave is ready and this is the one picked-up randomly, stop
+               --  searching now.
+
+               exit Search_Slaves when K = Index;
+            end if;
+            K := K + 1;
+
+            --  We are past the random slave and we have found one slave ready,
+            --  stop search here.
+
+            exit Search_Slaves when K > Index and Result /= No_Slave;
+         end loop Search_Slaves;
+
+         return Result;
       end Get_Free;
 
       -----------------------
