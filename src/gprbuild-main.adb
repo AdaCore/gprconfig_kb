@@ -59,6 +59,13 @@ procedure Gprbuild.Main is
 
    There_Are_Restricted_Languages : Boolean := False;
 
+   Dash_A_Warning : constant String :=
+     "warning: switch -a is ignored and no additional source is compiled";
+   --  Warning issued when gprbuild is invoked with switch -a
+
+   Dash_A_Warning_Issued : Boolean := False;
+   --  Flag used to avoid issuing the several times the warning for switch -a
+
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
    --  arguments.
@@ -944,6 +951,11 @@ procedure Gprbuild.Main is
             else
                Prj.Env.Add_Directories
                  (Root_Environment.Project_Path, Arg (4 .. Arg'Last));
+            end if;
+         elsif Arg = "-a" then
+            if not Dash_A_Warning_Issued then
+               Write_Line (Dash_A_Warning);
+               Dash_A_Warning_Issued := True;
             end if;
 
          elsif Arg = "-b" then
