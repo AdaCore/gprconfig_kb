@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 2.2 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-22-N717-033 Switch -a accepted with a warning (2014-07-17)
+
+  To ease migration from gnatmake to gprbuild, switch -a is now accepted by
+  gprbuild. However, this switch has no other effect than to issue this
+  warning:
+     warning: switch -a is ignored and no additional source is compiled
+
 NF-22-N704-034 Add build master id in log message (2014-07-05)
 
   A unique id in front of all log messages is now output by gprslave.
