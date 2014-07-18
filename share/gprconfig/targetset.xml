@@ -204,6 +204,12 @@
     <target>i386-elf-lynxos5.*</target>
   </targetset>
 
+  <!-- x86-vx7-.* (vxworks 7) -->
+  <targetset>
+    <target>x86-wrs-vxworks7</target>
+    <target>i.86-wrs-vxworks7</target>
+  </targetset>
+
   <!-- x86-vx6-.* (vxworks 6) -->
   <targetset>
     <target>x86-wrs-vxworks</target>

@@ -100,7 +100,7 @@
   <!-- We need to distinguish version to correctly report runtimes.  -->
   <compiler_description>
     <name>GCC-WRS7</name>
-    <executable prefix="1">cc(arm|pentium|sh|mips|ppc)</executable>
+    <executable prefix="1">cc(arm|sh|mips|ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
@@ -112,6 +112,19 @@
       <external>cc${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
     </target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>GCC-WRS7X86</name>
+    <executable prefix="1">cc(pentium)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>kernel,rtp</runtimes>
+    <target>i586-wrs-vxworks7</target>
   </compiler_description>
 
   <compiler_description>

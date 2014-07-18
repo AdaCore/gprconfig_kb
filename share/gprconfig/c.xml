@@ -61,6 +61,7 @@
        <compiler name="GCC-WRS6LEON" language="C" />
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
+       <compiler name="GCC-WRS7X86" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
        <compiler name="GCC-WRSMILSHAE" language="C" />
        <compiler name="GCC-WRSMILS-E500V2" language="C" />
@@ -111,6 +112,7 @@
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
+       <compiler name="GCC-WRS7X86" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
        <compiler name="GCC-WRSMILSHAE" language="C" />
        <compiler name="GCC-WRSMILS-E500V2" language="C" />
@@ -155,6 +157,7 @@
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
        <compiler name="GCC-WRS653" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
+       <compiler name="GCC-WRS7X86" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
        <compiler name="GCC-WRSMILSHAE" language="C" />
        <compiler name="GCC-WRSMILS-E500V2" language="C" />
