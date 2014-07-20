@@ -252,7 +252,7 @@ private
    end record;
 
    No_Channel : constant Communication_Channel :=
-                  (Sock    => <>,
+                  (Sock    => No_Socket,
                    Channel => null,
                    others  => Null_Unbounded_String);
 
