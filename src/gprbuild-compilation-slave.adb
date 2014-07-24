@@ -737,7 +737,7 @@ package body Gprbuild.Compilation.Slave is
          use type Containers.Count_Type;
          S_Count : constant Containers.Count_Type := Pool.Length;
          Index   : constant Positive :=
-                     Positive (Float (S_Count - 1) * Random (R_Gen));
+                     Natural (Float (S_Count - 1) * Random (R_Gen)) + 1;
          --  Index of the slave to return if available
          Result  : Slave := No_Slave;
          K       : Positive := 1;
