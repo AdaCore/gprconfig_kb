@@ -1564,6 +1564,29 @@ package body Gprbuild.Link is
       if Output_File_Name /= null then
          Name_Len := 0;
          Add_Str_To_Name_Buffer (Output_File_Name.all);
+
+         if Main_Proj.Config.Executable_Suffix /= No_Name
+            and then Length_Of_Name (Main_Proj.Config.Executable_Suffix) > 0
+         then
+            declare
+               Suffix : String := Get_Name_String
+                 (Main_Proj.Config.Executable_Suffix);
+               File_Name : String := Output_File_Name.all;
+
+            begin
+               Canonical_Case_File_Name (Suffix);
+               Canonical_Case_File_Name (File_Name);
+
+               if Name_Len <= Suffix'Length
+                  or else File_Name
+                        (File_Name'Last - Suffix'Length + 1 .. File_Name'Last)
+                            /= Suffix
+               then
+                  Add_Str_To_Name_Buffer (Suffix);
+               end if;
+            end;
+         end if;
+
          Exec_Name := Name_Find;
 
       else
