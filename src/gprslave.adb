@@ -79,11 +79,11 @@ procedure Gprslave is
       Id           : UID;
    end record;
 
-   function "<" (B1, B2 : Build_Master)
-      return Boolean is (To_C (B1.Socket) < To_C (B2.Socket));
+   function "<" (B1, B2 : Build_Master) return Boolean is
+     (To_C (B1.Socket) < To_C (B2.Socket));
 
-   function "="
-     (B1, B2 : Build_Master) return Boolean is (B1.Socket = B2.Socket);
+   function "=" (B1, B2 : Build_Master) return Boolean is
+     (B1.Socket = B2.Socket);
 
    package Builder_Set is new Containers.Ordered_Sets (Build_Master);
 

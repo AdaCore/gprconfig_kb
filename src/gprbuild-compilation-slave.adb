@@ -742,7 +742,7 @@ package body Gprbuild.Compilation.Slave is
          Result  : Slave := No_Slave;
          K       : Positive := 1;
       begin
-         --  We want to have a random pcik of one slave
+         --  We want to have a random pick of one slave
 
          Search_Slaves : for S of Pool loop
             if S.Current < S.Max_Processes then
