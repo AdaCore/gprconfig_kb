@@ -272,6 +272,11 @@ procedure Gprslave is
    --  Sending response to a build master may take some time as the object file
    --  is sent back over the socket with the corresponding dependency file.
 
+   Global_Lock : Mutex;
+   --  This global lock is used only to ensure that when spawning a compilation
+   --  there is no IO at the same time. This is needed as the spawned process
+   --  will inherit the standard IO descriptors.
+
    --------------
    -- Builders --
    --------------
@@ -416,8 +421,14 @@ procedure Gprslave is
       Force    : Boolean := False) is
    begin
       if Force or (Verbose and not Is_Debug) or (Debug and Is_Debug) then
-         Put_Line
-           ('[' & Calendar.Formatting.Image (Calendar.Clock) & "] " & Str);
+         Critical_Section : begin
+            Global_Lock.Seize;
+
+            Put_Line
+              ('[' & Calendar.Formatting.Image (Calendar.Clock) & "] " & Str);
+
+            Global_Lock.Release;
+         end Critical_Section;
       end if;
    end Message;
 
@@ -430,8 +441,15 @@ procedure Gprslave is
       package UID_IO is new Text_IO.Modular_IO (UID);
    begin
       if Force or (Verbose and not Is_Debug) or (Debug and Is_Debug) then
-         UID_IO.Put (Builder.Id, Width => 4);
-         Put (' ');
+         Critical_Section : begin
+            Global_Lock.Seize;
+
+            UID_IO.Put (Builder.Id, Width => 4);
+            Put (' ');
+
+            Global_Lock.Release;
+         end Critical_Section;
+
          Message (Str, Is_Debug, Force);
       end if;
    end Message;
@@ -1069,8 +1087,19 @@ procedure Gprslave is
 
                Set_Env (Env, Fail => False, Force => True);
 
-               Pid := Non_Blocking_Spawn
-                 (Get_Driver (Builder, Language, Project), O, Out_File);
+               --  It is critical to ensure that no IO is done while spawning
+               --  the process.
+
+               Critical_Section : declare
+                  Driver : constant String :=
+                             Get_Driver (Builder, Language, Project);
+               begin
+                  Global_Lock.Seize;
+
+                  Pid := Non_Blocking_Spawn (Driver, O, Out_File);
+
+                  Global_Lock.Release;
+               end Critical_Section;
 
                Message
                  (Builder, "#   pid" & Integer'Image (Pid_To_Integer (Pid)),
