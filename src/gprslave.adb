@@ -1357,6 +1357,8 @@ procedure Gprslave is
          --  Delete all files in the current working tree except those in
          --  Except set.
 
+         WD : constant String := Work_Directory (Builder);
+
          ------------------
          -- Delete_Files --
          ------------------
@@ -1388,22 +1390,14 @@ procedure Gprslave is
                      end if;
 
                   else
-                     declare
-                        R_Name : constant String :=
-                                   (if Path = "."
-                                    then ""
-                                    else Path (Path'First + 2 .. Path'Last)
-                                         & Directory_Separator) & S_Name;
-                     begin
-                        if not Except.Contains (R_Name) then
-                           Message
-                             (Builder,
-                              "# detele excluded '" & R_Name & ''',
-                              Is_Debug => True);
+                     if not Except.Contains (Entry_Name) then
+                        Message
+                          (Builder,
+                           "# detele excluded '" & Entry_Name & ''',
+                           Is_Debug => True);
 
-                           Delete_File (R_Name);
-                        end if;
-                     end;
+                        Delete_File (Entry_Name);
+                     end if;
                   end if;
                end Check;
 
@@ -1416,7 +1410,7 @@ procedure Gprslave is
             end Process;
 
          begin
-            Process (".");
+            Process (WD);
          end Delete_Files;
 
          Total_File        : Natural := 0;
@@ -1424,8 +1418,6 @@ procedure Gprslave is
          In_Master         : Files.Set;
 
       begin
-         Set_Directory (To_String (Builder.Project_Name));
-
          Check_Time_Stamps : loop
             declare
                To_Sync : File_Data_Set.Vector;
@@ -1454,23 +1446,25 @@ procedure Gprslave is
 
                      declare
                         Path_Name  : constant String := Args (Cmd) (K).all;
+                        Full_Path  : constant String :=
+                                       WD & Directory_Separator & Path_Name;
                         TS         : constant Time_Stamp_Type :=
                                        Time_Stamp_Type
                                          (Args (Cmd) (K + 1).all);
                         File_Stamp : Time_Stamp_Type;
                         Exists     : Boolean;
                      begin
-                        if Directories.Exists (Path_Name) then
+                        if Directories.Exists (Full_Path) then
                            File_Stamp :=
                              To_Time_Stamp
-                             (Modification_Time (Path_Name)
+                             (Modification_Time (Full_Path)
                               - Duration (Time_Zones.UTC_Time_Offset) * 60.0);
                            Exists := True;
                         else
                            Exists := False;
                         end if;
 
-                        In_Master.Insert (Path_Name);
+                        In_Master.Insert (Full_Path);
 
                         if not Exists or else File_Stamp /= TS then
                            To_Sync.Append
@@ -1497,12 +1491,16 @@ procedure Gprslave is
                      --  We then receive the files contents in the same order
 
                      for W of To_Sync loop
-                        Create_Path
-                          (Containing_Directory (To_String (W.Path_Name)));
+                        declare
+                           Full_Path : constant String :=
+                                         WD & Directory_Separator
+                                         & To_String (W.Path_Name);
+                        begin
+                           Create_Path (Containing_Directory (Full_Path));
 
-                        Get_RAW_File_Content
-                          (Builder.Channel,
-                           To_String (W.Path_Name), W.Timestamp);
+                           Get_RAW_File_Content
+                             (Builder.Channel, Full_Path, W.Timestamp);
+                        end;
                      end loop;
 
                      Total_Transferred :=
@@ -1603,32 +1601,15 @@ procedure Gprslave is
         (Builder, "Handling project : " & To_String (Builder.Project_Name));
       Message (Builder, "Compiling for    : " & To_String (Builder.Target));
 
-      Mutex.Seize;
+      --  Create slave environment if needed
 
-      --  Move to root directory before creating a new project environment
-
-      Set_Directory (Root_Directory.all);
-
-      if not Exists (To_String (Builder.Build_Env)) then
+      if not Exists (Work_Directory (Builder)) then
          Message
            (Builder,
-            "# create build environment directory '"
-            & To_String (Builder.Build_Env)
-            & "' in " & Current_Directory, Is_Debug => True);
+            "# create build environment directory: "
+            & Work_Directory (Builder), Is_Debug => True);
 
-         Create_Directory (To_String (Builder.Build_Env));
-      end if;
-
-      Set_Directory (To_String (Builder.Build_Env));
-
-      if not Exists (To_String (Builder.Project_Name)) then
-         Message
-           (Builder,
-            "# create project directory '"
-            & To_String (Builder.Project_Name)
-            & "' in " & Current_Directory, Is_Debug => True);
-
-         Create_Directory (To_String (Builder.Project_Name));
+         Create_Path (Work_Directory (Builder));
       end if;
 
       --  Configure slave, note that this does not need to be into the critical
@@ -1657,6 +1638,9 @@ procedure Gprslave is
               (Containing_Directory (Compiler_Path.all)));
       end if;
 
+      --  It is safe to write to this builder outside of a lock here as this
+      --  builder is not yet registered into the slave.
+
       Send_Slave_Config
         (Builder.Channel, Max_Processes,
          Compose (Root_Directory.all, To_String (Builder.Build_Env)),
@@ -1670,8 +1654,6 @@ procedure Gprslave is
          --  Move to projet directory
          Sync_Gpr (Builder);
       end if;
-
-      Mutex.Release;
 
       --  Register the new builder
 
