@@ -504,6 +504,26 @@ procedure Gprslave is
          Verbose := True;
       end if;
 
+      --  First ensure Root_Directory is an absolute path-name. This is
+      --  needed to be able to create directory for a specific builder without
+      --  enforcing that the current directory be in a critical section.
+      --  Indeed, it is then possible to create a directory under this
+      --  absolute path-name directly.
+
+      if not Is_Absolute_Path (Root_Directory.all) then
+
+         --  Not an absolute path, this means that we have passed a directory
+         --  relative to the current directory with option -d/--directory.
+
+         declare
+            RD : constant String := Root_Directory.all;
+         begin
+            Free (Root_Directory);
+            Root_Directory :=
+              new String'(Ensure_Directory (Current_Directory) & RD);
+         end;
+      end if;
+
       --  Ensure Root_Directory does not ends with a directory separator
 
       if Root_Directory (Root_Directory'Last) in '/' | '\' then
