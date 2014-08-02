@@ -150,7 +150,7 @@ procedure Gprslave is
    function Is_Active_Build_Master (Builder : Build_Master) return Boolean is
       (Builder.Project_Name /= Null_Unbounded_String);
 
-   task Wait_Completion;
+   task type Wait_Completion;
    --  Waiting for completion of compilation jobs and send back the response to
    --  the build masters.
 
@@ -265,6 +265,12 @@ procedure Gprslave is
 
    Base                 : Knowledge_Base;
    Selected_Targets_Set : Targets_Set_Id;
+
+   --  Handle response
+
+   Response_Handlers : array (1 .. 2) of Wait_Completion with Unreferenced;
+   --  Sending response to a build master may take some time as the object file
+   --  is sent back over the socket with the corresponding dependency file.
 
    --------------
    -- Builders --
