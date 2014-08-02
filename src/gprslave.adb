@@ -718,7 +718,7 @@ procedure Gprslave is
                exception
                   when Socket_Error =>
                      --  The build master has probably been killed. We cannot
-                     --  communicate with it. Just close the channal.
+                     --  communicate with it. Just close the channel.
                      Close (Builder.Channel);
                      Close_Socket (Builder.Socket);
 
