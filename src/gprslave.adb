@@ -123,8 +123,8 @@ procedure Gprslave is
 
    package To_Run_Set is new Containers.Vectors (Positive, Job_Data);
 
-   function Get_Arg (Builder : Build_Master; Value : String) return String;
-   pragma Inline (Get_Arg);
+   function Get_Arg
+     (Builder : Build_Master; Value : String) return String with Inline;
    --  Returns Value with possible translation of the local repositories
 
    function Get_Args
