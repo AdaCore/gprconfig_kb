@@ -151,8 +151,8 @@ procedure Gprslave is
       (Builder.Project_Name /= Null_Unbounded_String);
 
    task Wait_Completion;
-   --  Waiting for job completion and sending back the response to the build
-   --  masters.
+   --  Waiting for completion of compilation jobs and send back the response to
+   --  the build masters.
 
    task Protocol_Handler;
    --  Waiting for incoming requests from the masters, take corresponding
