@@ -33,6 +33,7 @@ with Ada.Strings.Fixed;                     use Ada.Strings;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;                 use Ada.Strings.Unbounded;
 with Ada.Text_IO;                           use Ada.Text_IO;
+with Ada.Unchecked_Deallocation;
 with Interfaces;
 with System.Multiprocessors;                use System;
 
@@ -67,6 +68,18 @@ procedure Gprslave is
 
    type UID is mod 9999;
 
+   --  A simple mutex object, this is used to ensure that communications in the
+   --  builder's channel are not interleaved.
+
+   protected type Mutex is
+      entry Seize;
+      procedure Release;
+   private
+      Free : Boolean := True;
+   end Mutex;
+
+   type Mutex_Access is access Mutex;
+
    --  Data for a build master
 
    type Build_Master is record
@@ -77,6 +90,7 @@ procedure Gprslave is
       Build_Env    : Unbounded_String;
       Sync         : Boolean;
       Id           : UID;
+      Lock         : Mutex_Access;
    end record;
 
    function "<" (B1, B2 : Build_Master) return Boolean is
@@ -148,11 +162,6 @@ procedure Gprslave is
    --  Task running a maximum of Max_Process compilation simultaneously. These
    --  jobs are taken from the To_Run protected object.
 
-   --  A mutex to avoid interweaved responses on the channel and keep the
-   --  working directory. Indeed the tasks are moving to some working directory
-   --  from where a compilation has to be run or where the builder environment
-   --  has to be created. We must ensure that all those actions are atomic.
-
    procedure Message
      (Builder  : Build_Master;
       Str      : String;
@@ -165,13 +174,6 @@ procedure Gprslave is
    --  Display a message (in verbose mode) and adds a leading timestamp. Also
    --  display the message in debug mode if Is_Debug is set.
 
-   protected Mutex is
-      entry Seize;
-      procedure Release;
-   private
-      Free : Boolean := True;
-   end Mutex;
-
    --  Protected builders data set (used by environment task and the
    --  Protocol_Handler).
 
@@ -180,7 +182,7 @@ procedure Gprslave is
       procedure Insert (Builder : Build_Master);
       --  Add Builder into the set
 
-      procedure Remove (Builder : Build_Master);
+      procedure Remove (Builder : in out Build_Master);
       --  Remove Builder from the set
 
       function Get (Socket : Socket_Type) return Build_Master;
@@ -189,9 +191,9 @@ procedure Gprslave is
       entry Get_Socket_Set (Socket_Set : out Socket_Set_Type);
       --  Get a socket set for all builders
 
-      procedure Set_Id (Builder : in out Build_Master);
+      procedure Initialize (Builder : in out Build_Master);
       --  Set the UID for this build master. This Id is only used in log
-      --  message to identify a specific build.
+      --  message to identify a specific build. Also initialize the lock.
 
    private
       Current_Id : UID := 0;
@@ -301,6 +303,18 @@ procedure Gprslave is
             Set (Socket_Set, B.Socket);
          end loop;
       end Get_Socket_Set;
+
+      ----------------
+      -- Initialize --
+      ----------------
+
+      procedure Initialize (Builder : in out Build_Master) is
+      begin
+         Builder.Lock := new Mutex;
+         Builder.Id := Current_Id;
+         Current_Id := Current_Id + 1;
+      end Initialize;
+
       ------------
       -- Insert --
       ------------
@@ -314,20 +328,14 @@ procedure Gprslave is
       -- Remove --
       ------------
 
-      procedure Remove (Builder : Build_Master) is
+      procedure Remove (Builder : in out Build_Master) is
+         procedure Free is
+           new Ada.Unchecked_Deallocation (Mutex, Mutex_Access);
       begin
+         Builder.Lock.Release;
+         Free (Builder.Lock);
          Builders.Delete (Builder);
       end Remove;
-
-      ------------
-      -- Set_Id --
-      ------------
-
-      procedure Set_Id (Builder : in out Build_Master) is
-      begin
-         Builder.Id := Current_Id;
-         Current_Id := Current_Id + 1;
-      end Set_Id;
 
    end Builders;
 
@@ -597,7 +605,7 @@ procedure Gprslave is
             if Socket /= No_Socket then
                Builder := Builders.Get (Socket);
 
-               Mutex.Seize;
+               Builder.Lock.Seize;
 
                declare
                   Cmd : constant Command := Get_Command (Builder.Channel);
@@ -701,7 +709,11 @@ procedure Gprslave is
                      Close (Builder.Channel);
                end;
 
-               Mutex.Release;
+               --  The lock is released and freed if we have an EC command
+
+               if Builder.Lock /= null then
+                  Builder.Lock.Release;
+               end if;
             end if;
          end if;
       end loop Handle_Commands;
@@ -986,11 +998,13 @@ procedure Gprslave is
             --     - register a new job and acknowledge
             --     - move back to working directory
 
-            Mutex.Seize;
-
             Message
               (Builder, "# move to work directory " & Work_Directory (Builder),
                Is_Debug => True);
+
+            --  It is safe to change directory here without a lock as this is
+            --  the only place where it happens and there is a single instance
+            --  of this task.
 
             Set_Directory (Work_Directory (Builder));
 
@@ -1068,15 +1082,12 @@ procedure Gprslave is
 
                Running.Register (Job);
 
-               Mutex.Release;
-
                for K in O'Range loop
                   Free (O (K));
                end loop;
             end Execute;
          exception
             when E : others =>
-               Mutex.Release;
                Message
                  (Builder,
                   "# Error in Run_Compilation: " & Exception_Information (E),
@@ -1205,12 +1216,6 @@ procedure Gprslave is
 
          Wait_Process (Pid, Success);
 
-         --  Enter a critical section to:
-         --    - send atomic response to build master
-         --    - make sure the current directory is the work directory
-
-         Mutex.Seize;
-
          Running.Get (Job, Pid);
 
          --  Note that if there is not such element it could be because the
@@ -1236,6 +1241,8 @@ procedure Gprslave is
             Builder := Builders.Get (Job.Build_Sock);
 
             if Is_Active_Build_Master (Builder) then
+               Builder.Lock.Seize;
+
                begin
                   Message
                     (Builder,
@@ -1310,6 +1317,8 @@ procedure Gprslave is
                         Is_Debug => True);
                end;
 
+               Builder.Lock.Release;
+
             else
                Message
                  ("# build master not found, cannot send response.",
@@ -1323,8 +1332,6 @@ procedure Gprslave is
 
             Message ("# unknown job data for pid", Is_Debug => True);
          end if;
-
-         Mutex.Release;
       end loop;
 
    exception
@@ -1561,7 +1568,7 @@ procedure Gprslave is
 
       Builder.Channel := Create (Builder.Socket);
 
-      Builders.Set_Id (Builder);
+      Builders.Initialize (Builder);
 
       Message (Builder, "Connecting with " & Image (Address));
 
