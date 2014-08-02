@@ -703,6 +703,7 @@ procedure Gprslave is
                      --  No more compilation for this project
 
                      Close (Builder.Channel);
+                     Close_Socket (Builder.Socket);
                      Builders.Remove (Builder);
 
                      Message
@@ -719,6 +720,7 @@ procedure Gprslave is
                      --  The build master has probably been killed. We cannot
                      --  communicate with it. Just close the channal.
                      Close (Builder.Channel);
+                     Close_Socket (Builder.Socket);
 
                   when E : others =>
                      Message
@@ -731,6 +733,7 @@ procedure Gprslave is
                      --  commands. Not doing that could make the slave
                      --  unresponding.
                      Close (Builder.Channel);
+                     Close_Socket (Builder.Socket);
                end;
 
                --  The lock is released and freed if we have an EC command
@@ -1564,6 +1567,7 @@ procedure Gprslave is
                   --  receive an end-of-compilation. Exit now.
 
                   Close (Builder.Channel);
+                  Close_Socket (Builder.Socket);
                   Builder.Socket := No_Socket;
 
                   exit Check_Time_Stamps;
@@ -1580,6 +1584,7 @@ procedure Gprslave is
          when others =>
             Message (Builder, "Lost connection with " & Image (Address));
             Close (Builder.Channel);
+            Close_Socket (Builder.Socket);
             Builder.Socket := No_Socket;
       end Sync_Gpr;
 

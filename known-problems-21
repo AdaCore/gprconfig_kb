@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N728-003 Resources not properly freed in distributed mode
+
+  Problem:    In distributed compilation mode the gprslave process was
+              not releasing the socket file descriptors. This in turn
+              was raising an exception after some time when some system
+              limits were reached.
+
+  Status:     This was fixed in 2.2 on 2014-07-28
+
+  Workaround: Restart the gprslave process every days.
+
 KP-21-N626-044 Unexpected recompilation in distributed mode
 
   Problem:    When building in distributed mode using slaves in a different
