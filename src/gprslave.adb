@@ -154,7 +154,7 @@ procedure Gprslave is
    --  Waiting for completion of compilation jobs and send back the response to
    --  the build masters.
 
-   task Protocol_Handler;
+   task Wait_Requests;
    --  Waiting for incoming requests from the masters, take corresponding
    --  actions.
 
@@ -554,11 +554,11 @@ procedure Gprslave is
          OS_Exit (1);
    end Parse_Command_Line;
 
-   ----------------------
-   -- Protocol_Handler --
-   ----------------------
+   -------------------
+   -- Wait_Requests --
+   -------------------
 
-   task body Protocol_Handler is
+   task body Wait_Requests is
 
       type Job_Number is mod 2**32;
       --  A 32bits integer which wrap around. This is no problem as we want
@@ -724,7 +724,7 @@ procedure Gprslave is
            (Builder, "Unrecoverable error: Protocol_Handler.", Force => True);
          Message (Builder, Exception_Information (E), Force => True);
          OS_Exit (1);
-   end Protocol_Handler;
+   end Wait_Requests;
 
    ---------------------
    -- Run_Compilation --
