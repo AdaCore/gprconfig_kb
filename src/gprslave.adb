@@ -685,17 +685,30 @@ procedure Gprslave is
                         Builder.Project_Name :=
                           To_Unbounded_String (Args (Cmd)(1).all);
 
-                        if Exists (Work_Directory (Builder)) then
-                           Message
-                             (Builder, "Delete " & Work_Directory (Builder));
+                        declare
+                           WD : constant String := Work_Directory (Builder);
+                        begin
+                           if Exists (WD) then
+                              Message (Builder, "Delete " & WD);
 
-                           Delete_Tree (Work_Directory (Builder));
-                        end if;
+                              --  Cannot delete if the process is still under
+                              --  the working directory, so move to the slave
+                              --  root directory.
+
+                              Set_Directory (Root_Directory.all);
+
+                              Delete_Tree (WD);
+                           end if;
+                        end;
 
                         Send_Ok (Builder.Channel);
 
                      exception
-                        when others =>
+                        when E : others =>
+                           Message
+                             (Builder,
+                              "# clean-up error " & Exception_Information (E),
+                              True);
                            Send_Ko (Builder.Channel);
                      end Clean_Up_Request;
 
