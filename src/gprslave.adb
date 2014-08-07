@@ -783,6 +783,9 @@ procedure Gprslave is
       procedure Output_Compilation (Builder : Build_Master; File : String);
       --  Output compilation information
 
+      procedure Do_Compile (Job : in out Job_Data);
+      --  Run a compilation job
+
       package Drivers_Cache is new Containers.Indefinite_Hashed_Maps
         (String, String,
          Ada.Strings.Hash_Case_Insensitive,
@@ -1016,6 +1019,129 @@ procedure Gprslave is
          end if;
       end Output_Compilation;
 
+      ----------------
+      -- Do_Compile --
+      ----------------
+
+      procedure Do_Compile (Job : in out Job_Data) is
+         Builder : constant Build_Master := Builders.Get (Job.Build_Sock);
+         Dir     : constant String := Args (Job.Cmd)(2).all;
+         List    : Slice_Set;
+         Pid     : Process_Id;
+      begin
+         --  Enter a critical section to:
+         --     - move to directory where the command is executed
+         --     - execute the compilation command
+         --     - register a new job and acknowledge
+         --     - move back to working directory
+
+         Message
+           (Builder, "# move to work directory " & Work_Directory (Builder),
+            Is_Debug => True);
+
+         --  It is safe to change directory here without a lock as this is
+         --  the only place where it happens and there is a single instance
+         --  of this task.
+
+         Set_Directory (Work_Directory (Builder));
+
+         --  Create/Move to object dir if any, note that if we
+         --  have an absolute path name here it is because the
+         --  Build_Root is probably not properly set. Try to fail
+         --  gracefully to report a proper error message to the
+         --  build master.
+         --
+         --  If we have an absolute pathname, just start the
+         --  process into the to directory. The output file will
+         --  be created there and will be reported to the master.
+         --
+         --  Note that the following block should never fail otherwise the
+         --  process won't be started. Even if we know the compilation will
+         --  fail we need to move forward as the result for this compilation
+         --  is waited for by the build master.
+
+         begin
+            if Dir /= "" then
+               if not Is_Absolute_Path (Dir)
+                 and then not Is_Directory (Dir)
+               then
+                  Create_Directory (Dir);
+               end if;
+
+               Message
+                 (Builder, "# move to directory " & Dir, Is_Debug => True);
+
+               Set_Directory (Dir);
+            end if;
+         exception
+            when others =>
+               Message
+                 (Builder, "# cannot move to object directory",
+                  Is_Debug => True);
+         end;
+
+         Create (List, Args (Job.Cmd) (6).all, String'(1 => Opts_Sep));
+
+         Execute  : declare
+            Project  : constant String :=
+                         Get_Arg (Builder, Args (Job.Cmd) (1).all);
+            Language : constant String := Args (Job.Cmd) (3).all;
+            Out_File : constant String :=
+                         Get_Output_File (Builder);
+            Obj_File : constant String := Args (Job.Cmd) (4).all;
+            Dep_File : constant String := Args (Job.Cmd) (5).all;
+            Env      : constant String :=
+                         Get_Arg (Builder, Args (Job.Cmd) (7).all);
+            O        : Argument_List := Get_Args (Builder, List);
+         begin
+            Output_Compilation (Builder, O (O'Last).all);
+
+            --  Set compiler environment
+
+            Set_Env (Env, Fail => False, Force => True);
+
+            --  It is critical to ensure that no IO is done while spawning
+            --  the process.
+
+            Critical_Section : declare
+               Driver : constant String :=
+                          Get_Driver (Builder, Language, Project);
+            begin
+               Global_Lock.Seize;
+
+               Pid := Non_Blocking_Spawn (Driver, O, Out_File);
+
+               Global_Lock.Release;
+            end Critical_Section;
+
+            Message
+              (Builder, "#   pid" & Integer'Image (Pid_To_Integer (Pid)),
+               Is_Debug => True);
+            Message (Builder, "#   dep_file " & Dep_File, Is_Debug => True);
+            Message (Builder, "#   out_file " & Out_File, Is_Debug => True);
+            Message (Builder, "#   obj_file " & Obj_File, Is_Debug => True);
+
+            Job.Pid      := Pid_To_Integer (Pid);
+            Job.Dep_File := To_Unbounded_String (Dep_File);
+            Job.Obj_File := To_Unbounded_String (Obj_File);
+            Job.Output   := To_Unbounded_String (Out_File);
+            Job.Dep_Dir  := To_Unbounded_String
+              ((if Is_Absolute_Path (Dir) then "" else Dir));
+
+            Running.Register (Job);
+
+            for K in O'Range loop
+               Free (O (K));
+            end loop;
+         end Execute;
+      exception
+         when E : others =>
+            Message
+              (Builder,
+               "# Error in Execute_Job: " & Exception_Information (E),
+               Is_Debug => True);
+      end Do_Compile;
+
       Job : Job_Data;
    begin
       loop
@@ -1026,124 +1152,7 @@ procedure Gprslave is
 
          To_Run.Pop (Job);
 
-         Process : declare
-            Builder : constant Build_Master := Builders.Get (Job.Build_Sock);
-            Dir     : constant String := Args (Job.Cmd)(2).all;
-            List    : Slice_Set;
-            Pid     : Process_Id;
-         begin
-            --  Enter a critical section to:
-            --     - move to directory where the command is executed
-            --     - execute the compilation command
-            --     - register a new job and acknowledge
-            --     - move back to working directory
-
-            Message
-              (Builder, "# move to work directory " & Work_Directory (Builder),
-               Is_Debug => True);
-
-            --  It is safe to change directory here without a lock as this is
-            --  the only place where it happens and there is a single instance
-            --  of this task.
-
-            Set_Directory (Work_Directory (Builder));
-
-            --  Create/Move to object dir if any, note that if we
-            --  have an absolute path name here it is because the
-            --  Build_Root is probably not properly set. Try to fail
-            --  gracefully to report a proper error message to the
-            --  build master.
-            --
-            --  If we have an absolute pathname, just start the
-            --  process into the to directory. The output file will
-            --  be created there and will be reported to the master.
-            --
-            --  Note that the following block should never fail otherwise the
-            --  process won't be started. Even if we know the compilation will
-            --  fail we need to move forward as the result for this compilation
-            --  is waited for by the build master.
-
-            begin
-               if Dir /= "" then
-                  if not Is_Absolute_Path (Dir)
-                    and then not Is_Directory (Dir)
-                  then
-                     Create_Directory (Dir);
-                  end if;
-
-                  Message
-                    (Builder, "# move to directory " & Dir, Is_Debug => True);
-
-                  Set_Directory (Dir);
-               end if;
-            exception
-               when others =>
-                  Message
-                    (Builder, "# cannot move to object directory",
-                     Is_Debug => True);
-            end;
-
-            Create (List, Args (Job.Cmd)(6).all, String'(1 => Opts_Sep));
-
-            Execute : declare
-               Project  : constant String :=
-                            Get_Arg (Builder, Args (Job.Cmd)(1).all);
-               Language : constant String := Args (Job.Cmd)(3).all;
-               Out_File : constant String :=
-                            Get_Output_File (Builder);
-               Obj_File : constant String := Args (Job.Cmd)(4).all;
-               Dep_File : constant String := Args (Job.Cmd)(5).all;
-               Env      : constant String :=
-                            Get_Arg (Builder, Args (Job.Cmd) (7).all);
-               O        : Argument_List := Get_Args (Builder, List);
-            begin
-               Output_Compilation (Builder, O (O'Last).all);
-
-               --  Set compiler environment
-
-               Set_Env (Env, Fail => False, Force => True);
-
-               --  It is critical to ensure that no IO is done while spawning
-               --  the process.
-
-               Critical_Section : declare
-                  Driver : constant String :=
-                             Get_Driver (Builder, Language, Project);
-               begin
-                  Global_Lock.Seize;
-
-                  Pid := Non_Blocking_Spawn (Driver, O, Out_File);
-
-                  Global_Lock.Release;
-               end Critical_Section;
-
-               Message
-                 (Builder, "#   pid" & Integer'Image (Pid_To_Integer (Pid)),
-                  Is_Debug => True);
-               Message (Builder, "#   dep_file " & Dep_File, Is_Debug => True);
-               Message (Builder, "#   out_file " & Out_File, Is_Debug => True);
-               Message (Builder, "#   obj_file " & Obj_File, Is_Debug => True);
-
-               Job.Pid      := Pid_To_Integer (Pid);
-               Job.Dep_File := To_Unbounded_String (Dep_File);
-               Job.Obj_File := To_Unbounded_String (Obj_File);
-               Job.Output   := To_Unbounded_String (Out_File);
-               Job.Dep_Dir  := To_Unbounded_String
-                 ((if Is_Absolute_Path (Dir) then "" else Dir));
-
-               Running.Register (Job);
-
-               for K in O'Range loop
-                  Free (O (K));
-               end loop;
-            end Execute;
-         exception
-            when E : others =>
-               Message
-                 (Builder,
-                  "# Error in Execute_Job: " & Exception_Information (E),
-                  Is_Debug => True);
-         end Process;
+         Do_Compile (Job);
       end loop;
 
    exception
