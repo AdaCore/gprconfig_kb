@@ -160,7 +160,9 @@ procedure Gprslave is
 
    task Execute_Job;
    --  Task running a maximum of Max_Process compilation simultaneously. These
-   --  jobs are taken from the To_Run protected object.
+   --  jobs are taken from the To_Run protected object. IMPORTANT NOTE: this is
+   --  the only task that can change the working directory (Set_Directory for
+   --  example). This makes locking circuitry lighter and more efficient.
 
    procedure Message
      (Builder  : Build_Master;
@@ -682,34 +684,15 @@ procedure Gprslave is
 
                   elsif Kind (Cmd) = CU then
                      Clean_Up_Request : begin
-                        Builder.Project_Name :=
-                          To_Unbounded_String (Args (Cmd)(1).all);
 
-                        declare
-                           WD : constant String := Work_Directory (Builder);
-                        begin
-                           if Exists (WD) then
-                              Message (Builder, "Delete " & WD);
-
-                              --  Cannot delete if the process is still under
-                              --  the working directory, so move to the slave
-                              --  root directory.
-
-                              Set_Directory (Root_Directory.all);
-
-                              Delete_Tree (WD);
-                           end if;
-                        end;
-
-                        Send_Ok (Builder.Channel);
-
-                     exception
-                        when E : others =>
-                           Message
-                             (Builder,
-                              "# clean-up error " & Exception_Information (E),
-                              True);
-                           Send_Ko (Builder.Channel);
+                        To_Run.Push
+                          (Job_Data'(Cmd,
+                           0, -1,
+                           Null_Unbounded_String,
+                           Null_Unbounded_String,
+                           Null_Unbounded_String,
+                           Null_Unbounded_String,
+                           Builder.Socket));
                      end Clean_Up_Request;
 
                   elsif Kind (Cmd) = EC then
@@ -785,6 +768,9 @@ procedure Gprslave is
 
       procedure Do_Compile (Job : in out Job_Data);
       --  Run a compilation job
+
+      procedure Do_Clean (Job : Job_Data);
+      --  Run  a clean job
 
       package Drivers_Cache is new Containers.Indefinite_Hashed_Maps
         (String, String,
@@ -1142,6 +1128,42 @@ procedure Gprslave is
                Is_Debug => True);
       end Do_Compile;
 
+      --------------
+      -- Do_Clean --
+      --------------
+
+      procedure Do_Clean (Job : Job_Data) is
+         Builder : Build_Master := Builders.Get (Job.Build_Sock);
+      begin
+         Builder.Project_Name :=
+           To_Unbounded_String (Args (Job.Cmd)(1).all);
+
+         declare
+            WD : constant String := Work_Directory (Builder);
+         begin
+            if Exists (WD) then
+               Message (Builder, "Delete " & WD);
+
+               --  Cannot delete if the process is still under
+               --  the working directory, so move to the slave
+               --  root directory.
+
+               Set_Directory (Root_Directory.all);
+
+               Delete_Tree (WD);
+            end if;
+         end;
+
+         Send_Ok (Builder.Channel);
+      exception
+         when E : others =>
+            Message
+              (Builder,
+               "# clean-up error " & Exception_Information (E),
+               True);
+            Send_Ko (Builder.Channel);
+      end Do_Clean;
+
       Job : Job_Data;
    begin
       loop
@@ -1152,7 +1174,11 @@ procedure Gprslave is
 
          To_Run.Pop (Job);
 
-         Do_Compile (Job);
+         if Kind (Job.Cmd) = EX then
+            Do_Compile (Job);
+         else
+            Do_Clean (Job);
+         end if;
       end loop;
 
    exception
@@ -1242,7 +1268,15 @@ procedure Gprslave is
 
       procedure Push (Job : Job_Data) is
       begin
-         Set.Append (Job);
+         --  Always adds the clean-up job in front of the queue, this is
+         --  friendler as we do not want the user to wait for all current
+         --  compilation to terminate.
+
+         if Kind (Job.Cmd) = CU then
+            Set.Prepend (Job);
+         else
+            Set.Append (Job);
+         end if;
       end Push;
 
       ---------
