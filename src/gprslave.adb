@@ -158,7 +158,7 @@ procedure Gprslave is
    --  Waiting for incoming requests from the masters, take corresponding
    --  actions.
 
-   task Run_Compilation;
+   task Execute_Job;
    --  Task running a maximum of Max_Process compilation simultaneously. These
    --  jobs are taken from the To_Run protected object.
 
@@ -766,11 +766,11 @@ procedure Gprslave is
          OS_Exit (1);
    end Wait_Requests;
 
-   ---------------------
-   -- Run_Compilation --
-   ---------------------
+   -----------------
+   -- Execute_Job --
+   -----------------
 
-   task body Run_Compilation is
+   task body Execute_Job is
 
       function Get_Driver
         (Builder : Build_Master; Language, Project : String) return String;
@@ -1141,17 +1141,17 @@ procedure Gprslave is
             when E : others =>
                Message
                  (Builder,
-                  "# Error in Run_Compilation: " & Exception_Information (E),
+                  "# Error in Execute_Job: " & Exception_Information (E),
                   Is_Debug => True);
          end Process;
       end loop;
 
    exception
       when E : others =>
-         Message ("Unrecoverable error: Run_Compilation.", Force => True);
+         Message ("Unrecoverable error: Execute_Job.", Force => True);
          Message (Exception_Information (E), Force => True);
          OS_Exit (1);
-   end Run_Compilation;
+   end Execute_Job;
 
    -------------
    -- Running --
