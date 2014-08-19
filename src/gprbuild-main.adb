@@ -767,7 +767,15 @@ procedure Gprbuild.Main is
          then
             Forbidden_In_Package_Builder;
 
-            if Target_Name /= null then
+            if CodePeer_Mode then
+               --  In CodePeer mode, the target is always the native one,
+               --  so no target may be specified.
+
+               Fail_Program
+                 (Project_Tree,
+                  "target cannot be specified in CodePeer mode");
+
+            elsif Target_Name /= null then
                if Target_Name.all /=
                  Arg (Target_Project_Option'Length + 1 .. Arg'Last)
                then
@@ -920,10 +928,17 @@ procedure Gprbuild.Main is
          elsif Arg = "--codepeer" then
             Forbidden_In_Package_Builder;
 
-            if not CodePeer_Mode then
+            if Target_Name /= null then
+               --  In CodePeer mode, the target is always the native one,
+               --  so no target may be specified.
+
+               Fail_Program
+                 (Project_Tree,
+                  "target cannot be specified in CodePeer mode");
+
+            elsif not CodePeer_Mode then
                CodePeer_Mode := True;
                Object_Checked := False;
-               Target_Name := new String'("codepeer");
 
                if Subdirs = null then
                   Subdirs := new String'("codepeer");
