@@ -140,6 +140,7 @@
        <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
+       <compiler name="GCC-WRS7X86" runtime="^kernel$" />
        <compiler name="G++-WRS6" runtime="^kernel$" />
        <compiler name="G++-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="G++-WRS6" runtime="^kernel-smp$" />
@@ -180,6 +181,7 @@
        <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
        <compiler name="GCC-WRS6" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp-smp$" />
+       <compiler name="GCC-WRS7X86" runtime="^rtp$" />
        <compiler name="G++-WRS6" runtime="^rtp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp$" />
        <compiler name="G++-WRS6" runtime="^rtp-smp$" />
