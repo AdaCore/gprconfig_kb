@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N814-013 Assembly languages and dependencies
+
+  Problem:    Dependencies were not taken into account for the assembly
+              languages Asm, Asm2 and Asm_Cpp.
+
+  Status:     This was fixed in 2.2 on 2014-08-20
+
+  Workaround: Add a Dependency_Switches declaration in package Compiler og the
+              project file.
+
 KP-21-N728-003 Resources not properly freed in distributed mode
 
   Problem:    In distributed compilation mode the gprslave process was
