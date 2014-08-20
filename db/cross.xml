@@ -64,6 +64,16 @@
      </config>
    </configuration>
 
+   <!-- Import VSB_DIR on some VxWorks targets.  -->
+   <configuration>
+     <targets>
+       <target name="^.*-wrs-vxworks7$" />
+     </targets>
+     <config>
+   VSB_Dir := external ("VSB_DIR");
+     </config>
+   </configuration>
+
    <!-- Import PIKEOS_TARGET_FILES on PikeOS targets.  -->
    <configuration>
      <targets>
@@ -389,6 +399,44 @@
       for Required_Switches use
 	Linker'Required_Switches &amp; ("-mrtp");
    end Linker;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS7X86" runtime="^rtp$" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworks7$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C") &amp; ("-mrtp")
+        &amp; ("-I" &amp; VSB_Dir &amp; "/h",
+               "-I" &amp; VSB_Dir &amp; "/share/h",
+               "-I" &amp; VSB_Dir &amp; "/usr/h/public",
+               "-I" &amp; VSB_Dir &amp; "/usr/h");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS7X86" runtime="^kernel$" />
+     </compilers>
+     <targets>
+       <target name="^.*-wrs-vxworks7$" />
+     </targets>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler'Leading_Required_Switches ("C")
+        &amp; ("-I" &amp; VSB_Dir &amp; "/h",
+               "-I" &amp; VSB_Dir &amp; "/share/h",
+               "-I" &amp; VSB_Dir &amp; "/krnl/h/system",
+               "-I" &amp; VSB_Dir &amp; "/krnl/h/public");
+   end Compiler;
      </config>
    </configuration>
 
