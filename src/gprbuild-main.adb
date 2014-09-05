@@ -59,6 +59,9 @@ procedure Gprbuild.Main is
 
    There_Are_Restricted_Languages : Boolean := False;
 
+   CodePeer_String : constant String := "codepeer";
+   --  Used in CopePeer mode for the target and the subdirs
+
    Dash_A_Warning : constant String :=
      "warning: switch -a is ignored and no additional source is compiled";
    --  Warning issued when gprbuild is invoked with switch -a
@@ -928,7 +931,9 @@ procedure Gprbuild.Main is
          elsif Arg = "--codepeer" then
             Forbidden_In_Package_Builder;
 
-            if Target_Name /= null then
+            if Target_Name /= null
+              and then Target_Name.all /= CodePeer_String
+            then
                --  In CodePeer mode, the target is always the native one,
                --  so no target may be specified.
 
@@ -939,9 +944,10 @@ procedure Gprbuild.Main is
             elsif not CodePeer_Mode then
                CodePeer_Mode := True;
                Object_Checked := False;
+               Target_Name := new String'(CodePeer_String);
 
                if Subdirs = null then
-                  Subdirs := new String'("codepeer");
+                  Subdirs := new String'(CodePeer_String);
                end if;
             end if;
 
@@ -2025,6 +2031,7 @@ begin
    --  following call with call Osint.Fail and never return
 
    begin
+      Main_Project := No_Project;
       Parse_Project_And_Apply_Config
         (Main_Project               => Main_Project,
          User_Project_Node          => User_Project_Node,
