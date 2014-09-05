@@ -24,7 +24,7 @@ KP-21-N814-013 Assembly languages and dependencies
 
   Status:     This was fixed in 2.2 on 2014-08-20
 
-  Workaround: Add a Dependency_Switches declaration in package Compiler og the
+  Workaround: Add a Dependency_Switches declaration in package Compiler of the
               project file.
 
 KP-21-N728-003 Resources not properly freed in distributed mode
@@ -36,7 +36,16 @@ KP-21-N728-003 Resources not properly freed in distributed mode
 
   Status:     This was fixed in 2.2 on 2014-07-28
 
-  Workaround: Restart the gprslave process every days.
+  Workaround: Restart the gprslave process every day.
+
+KP-21-N707-025 Empty value of 'Target
+
+  Problem:    When gprbuild is call with --target= and attribute Target
+              is not declared, the value of project'Target is the empty string.
+
+  Status:     This was fixed in 2.2 on 2014-09-05
+
+  Workaround: Declare attribute Target in the project file.
 
 KP-21-N626-044 Unexpected recompilation in distributed mode
 
