@@ -214,7 +214,7 @@ package body Gprbuild.Post_Compile is
          --  Get objects for a Stand-Alone Library
 
          procedure Get_Closure;
-         --  For Stand-Alone libraries, get the closure of the ADA interface
+         --  For Stand-Alone libraries, get the closure of the Ada interface
          --  and put the object files in Library_Objs.
 
          -------------
@@ -545,6 +545,7 @@ package body Gprbuild.Post_Compile is
          Library_Objs.Init;
          Library_Sources.Init;
          Library_Projs.Init;
+         Library_SAL_Projs.Init;
 
          if For_Project.Qualifier = Aggregate_Library then
             if For_Project.Standalone_Library = No then
