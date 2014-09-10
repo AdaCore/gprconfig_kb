@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N909-016 Cannot install extended projects
+
+  Problem:    Sources files and corresponding object and dependency files
+              from an extended projects are not properly install with
+              GPRinstall.
+
+  Status:     This was fixed in 2.2 on 2014-09-10
+
+  Workaround: Install the missing files manually
+
 KP-21-N814-013 Assembly languages and dependencies
 
   Problem:    Dependencies were not taken into account for the assembly

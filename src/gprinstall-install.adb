@@ -35,6 +35,7 @@ with GNAT.MD5;    use GNAT.MD5;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
 
+with Makeutl;
 with Namet;    use Namet;
 with Opt;
 with Osint;
@@ -813,6 +814,8 @@ package body Gprinstall.Install is
                Sid := Element (Iter);
                exit when Sid = No_Source;
 
+               Makeutl.Initialize_Source_Record (Sid);
+
                --  Skip sources that are removed/excluded and sources not
                --  part of the interface for standalone libraries.
 
@@ -841,7 +844,10 @@ package body Gprinstall.Install is
                         Copy_File
                           (From => Cat
                              (Get_Object_Directory
-                                (Sid.Project, False), Sid.Object),
+                                ((if Sid.Object_Project = No_Project
+                                  then Sid.Project
+                                  else Sid.Object_Project), False),
+                              Sid.Object),
                            To   => Lib_Dir,
                            File => Get_Name_String (Sid.Object));
                      end if;
@@ -861,7 +867,12 @@ package body Gprinstall.Install is
 
                            Copy_File
                              (From => Cat
-                                (Get_Object_Directory (Proj, Project.Library),
+                                (Get_Object_Directory
+                                  ((if Sid.Object_Project = No_Project
+                                      or else Project.Qualifier =
+                                        Aggregate_Library
+                                    then Proj
+                                    else Sid.Object_Project), Project.Library),
                                  Sid.Dep_Name),
                               To   => Lib_Dir,
                               File => Get_Name_String (Sid.Dep_Name));
@@ -1001,11 +1012,21 @@ package body Gprinstall.Install is
 
       begin
          if Has_Sources (Project) then
-            if not All_Sources then
-               Copy_Interfaces (Tree, Project);
-            end if;
+            --  Install the project and the extended projets if any
 
-            Copy_Project_Sources (Project, Tree);
+            declare
+               P : Project_Id := Project;
+            begin
+               while P /= No_Project loop
+                  if not All_Sources then
+                     Copy_Interfaces (Tree, P);
+                  end if;
+
+                  Copy_Project_Sources (P, Tree);
+
+                  P := P.Extends;
+               end loop;
+            end;
          end if;
 
          --  Copy library
