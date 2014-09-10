@@ -46,6 +46,7 @@ with Prj.Conf;    use Prj.Conf;
 with Prj.Env;
 with Prj.Err;
 with Prj.Ext;
+with Prj.Proc;    use Prj.Proc;
 with Prj.Tree;    use Prj.Tree;
 with Snames;
 with Stringt;
@@ -198,8 +199,10 @@ procedure Gprclean.Main is
                                         .. Arg'Last));
                            end if;
 
-                        elsif Arg (1 .. Distributed_Option'Length)
-                          = Distributed_Option
+                        elsif Arg'Length >  Distributed_Option'Length
+                                and then
+                              Arg (1 .. Distributed_Option'Length)
+                                  = Distributed_Option
                         then
                            Distributed_Mode := True;
 
@@ -290,6 +293,7 @@ procedure Gprclean.Main is
                               end if;
 
                               Set_Runtime_For (Snames.Name_Ada, RTS);
+                              Set_Default_Runtime_For (Snames.Name_Ada, RTS);
                            end;
 
                         elsif Arg'Length > RTS_Language_Option'Length
@@ -340,6 +344,8 @@ procedure Gprclean.Main is
 
                                     else
                                        Set_Runtime_For (Language_Name, RTS);
+                                       Set_Default_Runtime_For
+                                         (Language_Name, RTS);
                                     end if;
                                  end;
                               end if;
@@ -665,6 +671,7 @@ begin
    end if;
 
    begin
+      Main_Project := No_Project;
       Parse_Project_And_Apply_Config
         (Main_Project               => Main_Project,
          User_Project_Node          => User_Project_Node,

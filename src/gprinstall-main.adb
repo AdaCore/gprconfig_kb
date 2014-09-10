@@ -39,6 +39,7 @@ with Output;      use Output;
 with Prj.Conf;    use Prj.Conf;
 with Prj.Env;
 with Prj.Err;
+with Prj.Proc;    use Prj.Proc;
 with Prj.Tree;    use Prj.Tree;
 with Snames;      use Snames;
 with Stringt;
@@ -256,6 +257,7 @@ procedure Gprinstall.Main is
                   end if;
 
                   Set_Runtime_For (Name_Ada, RTS);
+                  Set_Default_Runtime_For (Name_Ada, RTS);
                end if;
 
                --  Ignore any --RTS= switch in package Builder. These are only
@@ -786,6 +788,7 @@ begin
 
    if Usage_Mode = Install_Mode then
       begin
+         Main_Project := No_Project;
          Parse_Project_And_Apply_Config
            (Main_Project               => Main_Project,
             User_Project_Node          => User_Project_Node,

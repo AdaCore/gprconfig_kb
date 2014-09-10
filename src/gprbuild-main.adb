@@ -40,6 +40,7 @@ with Opt;         use Opt;
 with Osint;       use Osint;
 with Output;      use Output;
 with Prj.Conf;    use Prj.Conf;
+with Prj.Proc;     use Prj.Proc;
 with Prj.Env;
 with Prj.Err;
 with Prj.Tree;    use Prj.Tree;
@@ -765,8 +766,8 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg'Length > Target_Project_Option'Length
-           and then
-            Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
+                 and then
+               Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
          then
             Forbidden_In_Package_Builder;
 
@@ -810,6 +811,7 @@ procedure Gprbuild.Main is
                   end if;
 
                   Set_Runtime_For (Name_Ada, RTS);
+                  Set_Default_Runtime_For (Name_Ada, RTS);
                end if;
 
                --  Ignore any --RTS= switch in package Builder. These are only
@@ -860,6 +862,7 @@ procedure Gprbuild.Main is
 
                      else
                         Set_Runtime_For (Language_Name, RTS);
+                        Set_Default_Runtime_For (Language_Name, RTS);
                      end if;
                   end;
                end if;
