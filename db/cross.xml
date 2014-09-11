@@ -803,6 +803,7 @@
        <target name="^.*-pc-mingw32$" />
        <target name="^arm-linux-androideabi$" />
        <target name="^arm-linux-gnueabi" />
+       <target name="^arm-.*darwin.*" />
      </targets>
      <compilers>
        <compiler name="GNAT" />
