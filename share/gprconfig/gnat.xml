@@ -233,7 +233,9 @@
       <target name="^.*sunos.*$" />
       <target name="^sparc-.*solaris.*$"/>
       <target name="^x86-solaris.*$"/>
-      <target name="^.*darwin.*$" />
+      <target name="^i.86-.*darwin.*$" />
+      <target name="^powerpc-.*darwin.*$" />
+      <target name="^x86_64-.*darwin.*$" />
       <target name="^.*android.*$" />
    </targets>
    <config>

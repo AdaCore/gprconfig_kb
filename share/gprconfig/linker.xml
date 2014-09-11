@@ -543,7 +543,9 @@
   <!--  Darwin -->
   <configuration>
     <targets>
-       <target name="^.*darwin.*$" />
+       <target name="^i.86-.*darwin.*$" />
+       <target name="^powerpc-.*darwin.*$" />
+       <target name="^x86_64-.*darwin.*$" />
     </targets>
     <config>
    for Library_Builder use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
@@ -572,7 +574,9 @@
 
   <configuration>
     <targets>
-       <target name="^.*darwin.*$" />
+       <target name="^i.86-.*darwin.*$" />
+       <target name="^powerpc-.*darwin.*$" />
+       <target name="^x86_64-.*darwin.*$" />
     </targets>
     <compilers>
         <compiler name="G++" language="C++" />

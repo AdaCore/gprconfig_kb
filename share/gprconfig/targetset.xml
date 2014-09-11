@@ -86,6 +86,12 @@
     <target>x86_64-.*mingw32.*</target>
   </targetset>
 
+  <!-- arm-darwin (iOS) -->
+  <targetset>
+    <target>arm-darwin</target>
+    <target>arm.*-darwin.*</target>
+  </targetset>
+
   <!-- ppc-darwin -->
   <targetset>
     <target>ppc-darwin</target>
