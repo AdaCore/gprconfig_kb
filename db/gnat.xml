@@ -232,7 +232,7 @@
       <target name="^i.86-.*linux.*$" />
       <target name="^.*sunos.*$" />
       <target name="^sparc-.*solaris.*$"/>
-      <target name="^x86-solaris.*$"/>
+      <target name="^i.86-.*-solaris.*$"/>
       <target name="^i.86-.*darwin.*$" />
       <target name="^powerpc-.*darwin.*$" />
       <target name="^x86_64-.*darwin.*$" />
