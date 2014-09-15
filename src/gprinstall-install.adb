@@ -907,7 +907,7 @@ package body Gprinstall.Install is
                      Copy_File
                        (From => (if Exists (Prep_Filename)
                                  then Prep_Filename
-                                 else Get_Name_String (Sid.Path.Name)),
+                                 else Get_Name_String (Sid.Path.Display_Name)),
                         To   => Sources_Dir,
                         File => Get_Name_String (Sid.File));
                   end if;
