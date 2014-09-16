@@ -1159,6 +1159,27 @@
     </config>
   </configuration>
 
+  <configuration>
+    <targets>
+      <target name="i.86-wrs-vxworks7$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS7X86" language="C" runtime="rtp"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-mrtp", "-L" &amp; VSB_Dir &amp; "/usr/lib/common");
+     end Linker;
+    </config>
+  </configuration>
+
   <!-- If no Ada and no C++, use C driver when there are C sources -->
   <configuration>
     <targets>
