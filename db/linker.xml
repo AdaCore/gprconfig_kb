@@ -363,6 +363,18 @@
 
    <configuration>
      <targets>
+       <target name="^powerpc-wrs-vxworks7$" />
+     </targets>
+     <config>
+   for Archive_Builder  use ("powerpc-wrs-vxworks7-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("powerpc-wrs-vxworks7-ranlib");
+   for Archive_Suffix   use ".a";
+     </config>
+   </configuration>
+
+   <configuration>
+     <targets>
        <target name="^leon-wrs-vxworks$" />
      </targets>
      <config>
@@ -1170,6 +1182,27 @@
     </compilers>
     <compilers>
        <compiler name="GCC-WRS7X86" language="C" runtime="rtp"/>
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-mrtp", "-L" &amp; VSB_Dir &amp; "/usr/lib/common");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="powerpc-wrs-vxworks7$" />
+    </targets>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+       <compiler name="GCC-WRS7PPC" language="C" runtime="rtp"/>
     </compilers>
     <config>
      package Linker is
