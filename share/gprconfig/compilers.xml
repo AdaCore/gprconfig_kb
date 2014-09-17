@@ -151,8 +151,8 @@
       <must_match>vxworks-7.*</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
-    <target>e500v2-wrs-vxworks</target>
+    <runtimes>kernel,rtp</runtimes>
+    <target>e500v2-wrs-vxworks7</target>
   </compiler_description>
 
 
