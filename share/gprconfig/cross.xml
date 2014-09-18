@@ -476,7 +476,9 @@
                "-DTOOL_FAMILY=gnu",
                "-DTOOL=gnu",
                "-D_WRS_KERNEL",
-               "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;");
+               "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;",
+               "-mno-powerpc-gfxopt",
+               "-mno-isel");
    end Compiler;
      </config>
    </configuration>
@@ -500,7 +502,9 @@
                "-DTOOL_FAMILY=gnu",
                "-DTOOL=gnu",
                "-D_WRS_KERNEL",
-               "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;");
+               "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;",
+               "-mno-powerpc-gfxopt",
+               "-mno-isel");
    end Compiler;
      </config>
    </configuration>
