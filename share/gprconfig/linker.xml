@@ -526,6 +526,7 @@
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
        <target name="^arm-eabi$" />
+       <target name="^arm-apple-darwin.*$" />
        <target name="^.*wrs-vxworks.*$" />
        <target name="^avr$" />
        <target name="^.*-pikeos$" />
