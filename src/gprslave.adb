@@ -197,6 +197,11 @@ procedure Gprslave is
       --  Set the UID for this build master. This Id is only used in log
       --  message to identify a specific build. Also initialize the lock.
 
+      function Working_Dir_Exists (Directory : String) return Boolean;
+      --  Returns True if Directory is already used by a registered build
+      --  master. This is to ensure that a unique build will happen in a
+      --  given directory.
+
    private
       Current_Id : UID := 0;
       Builders   : Builder_Set.Set;
@@ -349,6 +354,20 @@ procedure Gprslave is
          Free (Builder.Lock);
          Builders.Delete (Builder);
       end Remove;
+
+      ------------------------
+      -- Working_Dir_Exists --
+      ------------------------
+
+      function Working_Dir_Exists (Directory : String) return Boolean is
+      begin
+         for B of Builders loop
+            if Work_Directory (B) = Directory then
+               return True;
+            end if;
+         end loop;
+         return False;
+      end Working_Dir_Exists;
 
    end Builders;
 
@@ -1686,6 +1705,17 @@ procedure Gprslave is
               (Builder, "Reject non compatible build for "
                & To_String (Builder.Project_Name));
             Send_Ko (Builder.Channel);
+            return;
+         end if;
+
+         if Builders.Working_Dir_Exists (Work_Directory (Builder)) then
+            Message
+              (Builder, "Cannot use the same build environment for "
+               & To_String (Builder.Project_Name));
+            Send_Ko
+              (Builder.Channel,
+               "build environment "
+               & To_String (Builder.Build_Env) & " already in use");
             return;
          end if;
 

@@ -275,7 +275,11 @@ package body Gprbuild.Compilation.Slave is
 
          elsif Kind (Cmd) = KO then
             Write_Line
-              ("build slave is not compatible : " & To_String (S.Data.Host));
+              ((if Parameters'Length = 1
+               then Parameters (1).all
+               else "build slave is not compatible")
+               & " : " & To_String (S.Data.Host));
+
             OS_Exit (1);
 
          else
