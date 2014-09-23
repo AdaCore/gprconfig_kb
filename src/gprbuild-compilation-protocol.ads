@@ -222,7 +222,7 @@ package Gprbuild.Compilation.Protocol is
    procedure Send_Ok (Channel : Communication_Channel);
    --  Send Ok for a successful command (clean-up for example)
 
-   procedure Send_Ko (Channel : Communication_Channel);
+   procedure Send_Ko (Channel : Communication_Channel; Message : String := "");
    --  Send Ko to initial handshake (slave not compatible with master for
    --  example).
 

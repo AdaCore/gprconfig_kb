@@ -792,9 +792,11 @@ package body Gprbuild.Compilation.Protocol is
         (Channel.Channel, Command_Kind'Image (KO) & Process.Image (Pid));
    end Send_Ko;
 
-   procedure Send_Ko (Channel : Communication_Channel) is
+   procedure Send_Ko
+     (Channel : Communication_Channel;
+      Message : String := "") is
    begin
-      String'Output (Channel.Channel, Command_Kind'Image (KO));
+      String'Output (Channel.Channel, Command_Kind'Image (KO) & Message);
    end Send_Ko;
 
    procedure Send_Ko
