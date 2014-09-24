@@ -17,6 +17,18 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-N922-032 Detect wrong usage of distributed builds
+
+  Problem:    Compiling using the same build environment (directory) on
+              the a slave is erroneous and will at some point lock the
+              slave. This can happen if multiple distributed compilations
+              are started from the same computer using a project file with
+              the same name for example.
+
+  Status:     This was fixed in 2.2 on 2014-09-23
+
+  Workaround: Use --slave-env with different names
+
 KP-21-N909-016 Cannot install extended projects
 
   Problem:    Sources files and corresponding object and dependency files
