@@ -1565,6 +1565,10 @@ package body Gprbuild.Link is
          Name_Len := 0;
          Add_Str_To_Name_Buffer (Output_File_Name.all);
 
+         --  If an executable name was specified without an extension and
+         --  there is a non empty executable suffix, add the suffix to the
+         --  executable name.
+
          if Main_Proj.Config.Executable_Suffix /= No_Name
             and then Length_Of_Name (Main_Proj.Config.Executable_Suffix) > 0
          then
@@ -1574,15 +1578,17 @@ package body Gprbuild.Link is
                File_Name : String := Output_File_Name.all;
 
             begin
-               Canonical_Case_File_Name (Suffix);
-               Canonical_Case_File_Name (File_Name);
+               if Index (File_Name, ".") = 0 then
+                  Canonical_Case_File_Name (Suffix);
+                  Canonical_Case_File_Name (File_Name);
 
-               if Name_Len <= Suffix'Length
-                  or else File_Name
-                        (File_Name'Last - Suffix'Length + 1 .. File_Name'Last)
-                            /= Suffix
-               then
-                  Add_Str_To_Name_Buffer (Suffix);
+                  if Name_Len <= Suffix'Length
+                    or else File_Name
+                      (File_Name'Last - Suffix'Length + 1 .. File_Name'Last)
+                    /= Suffix
+                  then
+                     Add_Str_To_Name_Buffer (Suffix);
+                  end if;
                end if;
             end;
          end if;
