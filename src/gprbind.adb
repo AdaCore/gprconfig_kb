@@ -95,6 +95,9 @@ procedure Gprbind is
    Shared_Libgcc : constant String := "-shared-libgcc";
    Static_Libgcc : constant String := "-static-libgcc";
 
+   Libgcc_Specified : Boolean := False;
+   --  True if -shared-libgcc or -static-libgcc is used
+
    IO_File : File_Type;
    --  The file to get the inputs and to put the results of the binding
 
@@ -1298,12 +1301,21 @@ begin
                   end if;
                   Put_Line (IO_File, Line (1 .. Last));
 
+               elsif Line (1 .. Last) = Static_Libgcc then
+                  Put_Line (IO_File, Line (1 .. Last));
+                  Libgcc_Specified := True;
+
+               elsif Line (1 .. Last) = Shared_Libgcc then
+                  Put_Line (IO_File, Line (1 .. Last));
+                  Libgcc_Specified := True;
+
                elsif Line (1 .. Last) = "-static" then
                   Static_Libs := True;
                   Put_Line (IO_File, Line (1 .. Last));
 
                   if Shared_Libgcc_Default = 'T'
                     and then GCC_Version >= '3'
+                    and then not Libgcc_Specified
                   then
                      Put_Line (IO_File, Static_Libgcc);
                   end if;
@@ -1312,7 +1324,9 @@ begin
                   Static_Libs := False;
                   Put_Line (IO_File, Line (1 .. Last));
 
-                  if GCC_Version >= '3' then
+                  if GCC_Version >= '3'
+                    and then not Libgcc_Specified
+                  then
                      Put_Line (IO_File, Shared_Libgcc);
                   end if;
 
