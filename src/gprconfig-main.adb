@@ -41,11 +41,6 @@ procedure GprConfig.Main is
 
    Output_File : Unbounded_String := To_Unbounded_String (Default_Output_File);
 
-   Selected_Target : Unbounded_String;
-   --  Value of --target switch
-
-   Target_Specified : Boolean := False;
-
    Selected_Targets_Set : Targets_Set_Id;
    --  Targets set id for the selected target
 

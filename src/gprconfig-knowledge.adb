@@ -30,7 +30,6 @@ with Ada.IO_Exceptions;
 with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
 with Ada.Strings.Hash;
 with Ada.Strings.Hash_Case_Insensitive;
-with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 with DOM.Core.Nodes;            use DOM.Core, DOM.Core.Nodes;
 with DOM.Core.Documents;
@@ -3813,14 +3812,65 @@ package body GprConfig.Knowledge is
       C := First (Filters);
       for F in Iter.Found_One'Range loop
          if not Iter.Found_One (F) then
-            if not Opt.Quiet_Output then
-               Put_Line
+            declare
+               Comp : constant Compiler := Compiler_Lists.Element (C).all;
+               Specified_Target : Boolean := Target_Specified;
+
+            begin
+               if Specified_Target then
+                  declare
+                     Selected_Targets_Set : Targets_Set_Id;
+                  begin
+                     Get_Targets_Set
+                       (Base,
+                        GprConfig.Sdefault.Hostname,
+                        Selected_Targets_Set);
+
+                     declare
+                        Default_Target : constant String :=
+                          Normalized_Target (Base, Selected_Targets_Set);
+                     begin
+                        Get_Targets_Set
+                          (Base,
+                           To_String (Selected_Target),
+                           Selected_Targets_Set);
+
+                        Specified_Target :=
+                          Normalized_Target (Base, Selected_Targets_Set) /=
+                            Default_Target;
+                     end;
+                  end;
+               end if;
+
+               Put (Standard_Error, "Error: no ");
+
+               if not Specified_Target then
+                  Put (Standard_Error, "native ");
+               end if;
+
+               Put (Standard_Error, "compiler found for language '");
+               Put
                  (Standard_Error,
-                  "Error: no matching compiler found for --config="
-                  & To_String
-                    (Base, Compiler_Lists.Element (C).all,
-                     As_Config_Arg => True));
-            end if;
+                  Get_Name_String_Or_Null (Comp.Language_Case));
+               Put (Standard_Error, "'");
+
+               if Specified_Target then
+                  Put
+                    (Standard_Error,
+                     ", target = " & To_String (Selected_Target));
+               end if;
+
+               if Comp.Runtime = No_Name then
+                  Put (Standard_Error, ", default runtime");
+               else
+                  Put
+                    (Standard_Error,
+                     ", runtime = " & Get_Name_String (Comp.Runtime));
+               end if;
+
+               New_Line (Standard_Error);
+            end;
+
             Ada.Command_Line.Set_Exit_Status (1);
             Found_All := False;
          end if;
