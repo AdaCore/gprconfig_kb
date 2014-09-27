@@ -19,8 +19,8 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Calendar.Time_Zones;               use Ada.Calendar;
 with Ada.Calendar.Formatting;
+with Ada.Calendar.Time_Zones;               use Ada.Calendar;
 with Ada.Characters.Handling;               use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Indefinite_Ordered_Sets;
@@ -47,6 +47,7 @@ with Prj.Part;                      use Prj.Part;
 with Prj.Proc;                      use Prj.Proc;
 with Prj.Tree;                      use Prj.Tree;
 with Snames;                        use Snames;
+with Switch;                        use Switch;
 with Types;
 
 with GNAT.Command_Line;             use GNAT;
@@ -57,12 +58,11 @@ with GNAT.String_Split;             use GNAT.String_Split;
 with GNAT.Strings;
 
 with Gpr_Util;                      use Gpr_Util;
+with GPR_Version;
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Process;  use Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with GprConfig.Knowledge;           use GprConfig.Knowledge;
-with GPR_Version;
-with Switch; use Switch;
 
 procedure Gprslave is
 
