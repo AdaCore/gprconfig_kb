@@ -61,6 +61,8 @@ with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Process;  use Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with GprConfig.Knowledge;           use GprConfig.Knowledge;
+with GPR_Version;
+with Switch; use Switch;
 
 procedure Gprslave is
 
@@ -508,12 +510,32 @@ procedure Gprslave is
    procedure Parse_Command_Line is
       use GNAT.Command_Line;
 
+      procedure Usage;
+
+      procedure Check_Version_And_Help is new
+        Check_Version_And_Help_G (Usage);
+
       Config : Command_Line_Configuration;
+
+      -----------
+      -- Usage --
+      -----------
+
+      procedure Usage is
+      begin
+         Display_Help (Config);
+      end Usage;
+
    begin
       Define_Switch
         (Config, Help'Access,
          "-h", Long_Switch => "--help",
-         Help => "display this help message");
+         Help => "display this help message and exit");
+
+      Define_Switch
+        (Config, Verbose'Access,
+         "-V", Long_Switch => "--version",
+         Help => "display version and exit");
 
       Define_Switch
         (Config, Max_Processes'Access,
@@ -546,12 +568,12 @@ procedure Gprslave is
 
       Set_Usage (Config, Usage => "[switches]");
 
-      Getopt (Config);
+      Check_Version_And_Help
+        ("GPRSLAVE",
+         "2013",
+         Version_String => GPR_Version.Gpr_Version_String);
 
-      if Help then
-         Display_Help (Config);
-         OS_Exit (1);
-      end if;
+      Getopt (Config);
 
       if Debug then
          Verbose := True;
@@ -1844,10 +1866,8 @@ begin
       Address := Get_Socket_Name (Server);
    end if;
 
-   --  If verbose
-
    Put_Line
-     ("gprslave on " & Host_Name
+     ("GPRSLAVE " & GPR_Version.Gpr_Version_String & " on " & Host_Name
       & ":" & Image (Long_Integer (Address.Port)));
    Put_Line ("  max processes :" & Integer'Image (Max_Processes));
 
