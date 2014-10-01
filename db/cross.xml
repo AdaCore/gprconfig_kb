@@ -482,7 +482,6 @@
                "-DCPU=_VX_SIMNT",
                "-DTOOL_FAMILY=gnu",
                "-DTOOL=gnu",
-               "-D_WRS_KERNEL",
                "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;");
    end Compiler;
      </config>
@@ -530,7 +529,6 @@
                "-DCPU=_VX_PPCE500MC",
                "-DTOOL_FAMILY=gnu",
                "-DTOOL=gnu",
-               "-D_WRS_KERNEL",
                "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;",
                "-mno-powerpc-gfxopt",
                "-mno-isel");
@@ -582,7 +580,6 @@
                "-DCPU=_VX_PPCE500V2",
                "-DTOOL_FAMILY=gnu",
                "-DTOOL=gnu",
-               "-D_WRS_KERNEL",
                "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;");
    end Compiler;
      </config>
