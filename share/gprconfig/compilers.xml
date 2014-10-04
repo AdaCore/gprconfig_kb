@@ -672,7 +672,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-pc-mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|.*-darwin.*-)?gnatls</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-pc-mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|.*-darwin.*-)?gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v --version</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
