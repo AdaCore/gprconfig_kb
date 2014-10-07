@@ -419,23 +419,6 @@
     <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
-  <!-- G++ for VxWorks 7 -->
-  <compiler_description>
-    <name>G++-WRS7</name>
-    <executable prefix="1">c\+\+(arm|pentium|sh|mips|ppc|sparc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
-    <target>
-      <external>c++${PREFIX} -dumpmachine</external>
-      <grep regexp="[^\r\n]+"></grep>
-    </target>
-  </compiler_description>
-
   <!-- G++ for VxWorks 7 e500v2-->
   <compiler_description>
     <name>G++-WRS7E500V2</name>
