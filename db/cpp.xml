@@ -45,6 +45,7 @@
         <compiler name="G++-WRS6LEON" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
         <compiler name="G++-WRS6CERTE500V2" language="C++" />
+        <compiler name="G++-WRS7X86" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
         <compiler name="G++-WRSMILSHAE" language="C++" />
         <compiler name="G++-WRSMILS-E500V2" language="C++" />
@@ -72,6 +73,7 @@
         <compiler name="G++-WRS6LEON" language="C++" />
         <compiler name="G++-WRS6CERT" language="C++" />
         <compiler name="G++-WRS6CERTE500V2" language="C++" />
+        <compiler name="G++-WRS7X86" language="C++" />
         <compiler name="GCC-CYGMING" language="C++" />
        <compiler name="GCC-MINGW32" language="C++" />
      </compilers>
@@ -147,4 +149,121 @@
      </compilers>
      <config></config>
    </configuration>
+
+   <!-- VxWorks 7.x C++ support using the WRS compilers  -->
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS7ARM" runtime="^kernel$" />
+       <compiler name="G++-WRS7PPC" runtime="^kernel$" />
+       <compiler name="G++-WRS7E500V2" runtime="^kernel$" />
+       <compiler name="G++-WRS7X86" runtime="^kernel$" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-I" &amp; VSB_Dir &amp; "/h",
+               "-I" &amp; VSB_Dir &amp; "/share/h",
+               "-I" &amp; VSB_Dir &amp; "/krnl/h/system",
+               "-I" &amp; VSB_Dir &amp; "/krnl/h/public",
+               "-D_WRS_KERNEL");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS7ARM" runtime="^rtp$" />
+       <compiler name="G++-WRS7PPC" runtime="^rtp$" />
+       <compiler name="G++-WRS7E500V2" runtime="^rtp$" />
+       <compiler name="G++-WRS7X86" runtime="^rtp$" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++") &amp; ("-mrtp")
+        &amp; ("-I" &amp; VSB_Dir &amp; "/h",
+               "-I" &amp; VSB_Dir &amp; "/share/h",
+               "-I" &amp; VSB_Dir &amp; "/usr/h/public",
+               "-I" &amp; VSB_Dir &amp; "/usr/h");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS7ARM" />
+       <compiler name="G++-WRS7E500V2" />
+       <compiler name="G++-WRS7PPC" />
+       <compiler name="G++-WRS7X86" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-DTOOL_FAMILY=gnu",
+               "-DTOOL=gnu",
+               "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS7ARM" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-DCPU=_VX_ARMARCH7",
+               "-t7",
+               "-mfpu=vfp",
+               "-mfloat-abi=softfp");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS7E500V2" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-DCPU=_VX_PPCE500V2");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS7PPC" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-DCPU=_VX_PPCE500MC",
+               "-mno-powerpc-gfxopt",
+               "-mno-isel");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="G++-WRS7X86" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-DCPU=_VX_SIMNT");
+   end Compiler;
+     </config>
+   </configuration>
+
 </gprconfig>

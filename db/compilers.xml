@@ -419,20 +419,6 @@
     <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
-  <!-- G++ for VxWorks 7 e500v2-->
-  <compiler_description>
-    <name>G++-WRS7E500V2</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-    <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
-    </version>
-    <languages>C++</languages>
-    <runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>
-    <target>e500v2-wrs-vxworks</target>
-  </compiler_description>
-
   <!-- G++ for VxWorks 6 Cert -->
   <compiler_description>
     <name>G++-WRS6CERT</name>
@@ -491,6 +477,59 @@
     <languages>C++</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
     <target>e500v2-wrs-vxworksae</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS7ARM</name>
+    <executable prefix="1">c\+\+(arm)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,rtp</runtimes>
+    <target>arm-wrs-vxworks7</target>
+  </compiler_description>
+
+  <!-- G++ for VxWorks 7 e500v2-->
+  <compiler_description>
+    <name>G++-WRS7E500V2</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,rtp</runtimes>
+    <target>e500v2-wrs-vxworks</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS7PPC</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,rtp</runtimes>
+    <target>powerpc-wrs-vxworks7</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS7X86</name>
+    <executable prefix="1">cc(pentium)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>kernel,rtp</runtimes>
+    <target>i586-wrs-vxworks7</target>
   </compiler_description>
 
   <!-- G++ for VxWorks MILS -->
