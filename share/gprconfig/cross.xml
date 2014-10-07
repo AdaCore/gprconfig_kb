@@ -154,6 +154,7 @@
        <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
+       <compiler name="G++-WRS7X86" runtime="^kernel$" />
        <compiler name="GCC-WRS5" />
        <compiler name="G++-WRS5" />
      </compilers>
@@ -196,6 +197,7 @@
        <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="G++-WRS7X86" runtime="^rtp$" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworks$" />
