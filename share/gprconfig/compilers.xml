@@ -503,7 +503,7 @@
     </version>
     <languages>C++</languages>
     <runtimes>kernel,rtp</runtimes>
-    <target>e500v2-wrs-vxworks</target>
+    <target>e500v2-wrs-vxworks7</target>
   </compiler_description>
 
   <compiler_description>
