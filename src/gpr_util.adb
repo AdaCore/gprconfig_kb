@@ -614,9 +614,27 @@ package body Gpr_Util is
      (Project_Tree : Project_Tree_Ref;
       Language     : Name_Id)
    is
+      function Is_RTS_Directory (Path : String) return Boolean;
+      --  Returns True if Path is a directory for a runtime. This simply check
+      --  that Path has a "adalib" subdirectoy, which is a property for
+      --  runtimes on the project path.
 
       function Is_Base_Name (Path : String) return Boolean;
       --  Returns True if Path has no directory separator
+
+      ----------------------
+      -- Is_RTS_Directory --
+      ----------------------
+
+      function Is_RTS_Directory (Path : String) return Boolean is
+      begin
+         return Is_Directory (Path & Directory_Separator & "adalib");
+      end Is_RTS_Directory;
+
+      --  Local declarations
+
+      function Find_Rts_In_Path is new Prj.Env.Find_Name_In_Path
+        (Check_Filename => Is_RTS_Directory);
 
       ------------------
       -- Is_Base_Name --
@@ -632,23 +650,18 @@ package body Gpr_Util is
          return True;
       end Is_Base_Name;
 
-      function Find_Rts_In_Path is new Prj.Env.Find_Name_In_Path
-        (Check_Filename => Is_Directory);
-
       RTS_Name : constant String := Prj.Conf.Runtime_Name_For (Language);
 
       Full_Path : String_Access;
 
    begin
-      if not Is_Base_Name (RTS_Name) then
-         Full_Path := Find_Rts_In_Path (Root_Environment.Project_Path,
-                                        RTS_Name);
-         if Full_Path = null then
-            Fail_Program (Project_Tree, "cannot find RTS " & RTS_Name);
-         end if;
+      Full_Path := Find_Rts_In_Path (Root_Environment.Project_Path, RTS_Name);
+      if Full_Path /= null then
          Prj.Conf.Set_Runtime_For
            (Language, Normalize_Pathname (Full_Path.all));
          Free (Full_Path);
+      elsif not Is_Base_Name (RTS_Name) then
+         Fail_Program (Project_Tree, "cannot find RTS " & RTS_Name);
       end if;
    end Locate_Runtime;
 

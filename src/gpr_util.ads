@@ -193,9 +193,10 @@ package Gpr_Util is
    procedure Locate_Runtime
      (Project_Tree : Project_Tree_Ref;
       Language     : Name_Id);
-   --  Wrapper around Set_Runtime_For. If RTS_Name is a base name (a name
-   --  without path separator), then calls Set_Runtime_For. Otherwise, convert
-   --  it to an absolute path (possibly by searching it in the project path)
+   --  Wrapper around Set_Runtime_For. Search RTS name in the project path and
+   --  if found convert it to an absolute path. Emit an error message if a
+   --  full RTS name (an RTS name that contains a directory separator) is not
+   --  found.
 
    procedure Look_For_Default_Project;
    --  Check if default.gpr exists in the current directory. If it does, use
