@@ -548,6 +548,16 @@ First, the switches that may be specified only on the command line, but not in
 package Builder of the main project:
 
 @itemize @bullet
+@item @option{--complete-output}
+
+This switch is not compatible with @option{--distributed=}.
+
+When this switch is specified, the standard output and the standard error of
+the compilations are redirected to different text files. When a source is up to
+date, if such text files exist, their contents are send to standard output
+and standard error. This allows to redisplay any warning or info from the
+last invocation of gprbuild --complete-output.
+
 @item @option{--distributed=slave1[,slave2]}
 
 Activate the distributed compilation on the listed slaves nodes (IP or
