@@ -95,7 +95,8 @@
    end Binder;
 
    package Clean is
-      for Source_Artifact_Extensions ("Ada") use (".dg", ".rep");
+      for Source_Artifact_Extensions ("Ada")
+         use (".dg", ".rep", ".stdout", ".stderr");
       for Object_Artifact_Extensions ("Ada") use (".s", "ci", ".gcno");
    end Clean;
 
