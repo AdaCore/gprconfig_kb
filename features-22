@@ -45,6 +45,17 @@ NF-22-N626-040 Randomized distributed job dispatching (2014-07-11)
   picking the first with some compilation slots available. This will better
   distribute the load over all the slaves.
 
+NF-22-N602-030 Project path depends on compilers (2014-10-13)
+
+  For tools gprbuild, gprclean and gprinstall, the project path depends on the
+  compilers, not the prefix of the tool. For each compiler driver in a "bin"
+  subdirectory, the compiler root is the parent directory of this "bin"
+  subdirectory and the directories in the project path are, in order:
+     <compiler_root>/<target>/lib/gnat
+     <compiler_root>/<target>/share/gpr
+     <compiler_root>/share/gpr
+     <compiler_root>/lib/gnat
+
 NF-22-N505-024 Handles Library_Options in gprinstall (2014-05-07)
 
   When generating a project for a library (standard or aggregate), gprinstall
@@ -68,6 +79,15 @@ NF-22-N402-028 Short message when main library project up to date (2014-04-02)
   instead of running silently now displays a short message such as:
      "libmain.a" up to date
      "libmain.so" up to date
+
+NF-22-N327-028 Runtime specific directories in the project path (2014-10-13)
+
+  For each non default runtime, there are now two more directories in the
+  project path: <runtime_root>/lib/gnat and <runtime_root>/share/gpr,
+  where <runtime_root> is either:
+    - <runtime> ifthe runtime is explicitly specified as an absolute path
+    - <compiler_root>/<target>/<runtime> if the runtime is not explicitly
+      specified as an absolute path
 
 NF-22-N321-014 Add support for LLVM C compiler (2014-03-21)
 
