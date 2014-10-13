@@ -611,16 +611,8 @@ begin
 
    Parse_Cmd_Line;
 
-   --  Once we have parsed the command line, we might know the target, and
-   --  thus can initialize the default project path.
-
-   if Target_Name = null then
-      Prj.Env.Initialize_Default_Project_Path
-        (Root_Environment.Project_Path, Target_Name => "");
-   else
-      Prj.Env.Initialize_Default_Project_Path
-        (Root_Environment.Project_Path, Target_Name.all);
-   end if;
+   Prj.Env.Initialize_Default_Project_Path
+     (Root_Environment.Project_Path, Target_Name => "-");
 
    if Load_Standard_Base then
       Parse_Knowledge_Base (Project_Tree);

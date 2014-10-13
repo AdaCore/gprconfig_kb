@@ -517,17 +517,8 @@ procedure Gprinstall.Main is
 
       Mains.Set_Multi_Unit_Index (Project_Tree, Main_Index);
 
-      --  Target_Name has potentially been set when calling Scan_Arg, so we can
-      --  only initialize the project path after parsing the command line
-      --  arguments.
-
-      if Target_Name = null then
-         Prj.Env.Initialize_Default_Project_Path
-           (Root_Environment.Project_Path, Target_Name => "");
-      else
-         Prj.Env.Initialize_Default_Project_Path
-           (Root_Environment.Project_Path, Target_Name.all);
-      end if;
+      Prj.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path, Target_Name => "-");
 
       if Opt.Verbose_Mode then
          Copyright;
