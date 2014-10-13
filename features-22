@@ -21,6 +21,14 @@ NF-22-N725-033 gprconfig issues an error for compiler not found (2014-09-26)
   --conf, it now issues an error, even in quiet mode, indicating the language,
   the target and the runtime.
 
+NF-22-N718-026 New gprbuild option --complete-output (2014-10-13)
+
+  A new option --complete-output is added to gprbuild, allowed only on the
+  command line and incompatible with option --distributed=.
+  When this option is used, the standard output and standard error of the
+  compiler are redirected to text files. When these files exist for a source
+  that is up to date, their content is output to stdout and stderr.
+
 NF-22-N717-033 Switch -a accepted with a warning (2014-07-17)
 
   To ease migration from gnatmake to gprbuild, switch -a is now accepted by
