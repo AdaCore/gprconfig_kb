@@ -56,6 +56,7 @@ package Gprbuild.Compilation.Process is
       Options     : GNAT.OS_Lib.Argument_List;
       Project     : Project_Id;
       Obj_Name    : String;
+      Source      : String := "";
       Language    : String := "";
       Dep_Name    : String := "";
       Output_File : String := "";

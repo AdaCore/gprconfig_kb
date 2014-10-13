@@ -29,7 +29,7 @@
    end Compiler;
 
    package Clean is
-      for Source_Artifact_Extensions ("C++") use (".gli");
+      for Source_Artifact_Extensions ("C++") use (".gli", ".stdout", ".stderr");
       for Object_Artifact_Extensions ("C++") use (".s", "ci", ".gcno");
    end Clean;
      </config>

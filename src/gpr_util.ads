@@ -46,6 +46,11 @@ package Gpr_Util is
 
    Success : Boolean := False;
 
+   Complete_Output_Option : constant String := "--complete-output";
+
+   Complete_Output : Boolean := False;
+   --  Set to True with switch Complete_Output_Option
+
    --  Config project
 
    Config_Project_Option : constant String := "--config=";

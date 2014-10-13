@@ -202,6 +202,7 @@ package body Gprbuild.Compilation.Process is
       Options     : GNAT.OS_Lib.Argument_List;
       Project     : Project_Id;
       Obj_Name    : String;
+      Source      : String := "";
       Language    : String := "";
       Dep_Name    : String := "";
       Output_File : String := "";
@@ -233,11 +234,18 @@ package body Gprbuild.Compilation.Process is
          begin
             Set_Env (Env, Fail => True);
 
-            if Output_File = "" then
-               P.Pid := Non_Blocking_Spawn (Executable, Options);
-            else
+            if Output_File /= "" then
                P.Pid := Non_Blocking_Spawn
                  (Executable, Options, Output_File, Err_To_Out);
+
+            elsif Source /= "" and then Complete_Output then
+               P.Pid := Non_Blocking_Spawn
+                 (Executable, Options,
+                  Stdout_File => Source & ".stdout",
+                  Stderr_File => Source & ".stderr");
+
+            else
+               P.Pid := Non_Blocking_Spawn (Executable, Options);
             end if;
 
             Local_Process.Increment;

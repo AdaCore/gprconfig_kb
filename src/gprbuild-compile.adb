@@ -93,6 +93,10 @@ package body Gprbuild.Compile is
    --  Create a temporary file that contains the list of object directories
    --  in the correct order.
 
+   procedure Print_Compilation_Outputs (For_Source : Source_Id);
+   --  In complete output mode, put the outputs from last compilation to
+   --  standard output and/or standar error.
+
    function "<" (Left, Right : Source_Id) return Boolean
      is (Left.File < Right.File);
 
@@ -245,6 +249,7 @@ package body Gprbuild.Compile is
             Queue.Set_Obj_Dir_Free (Source.Id.Project.Object_Directory.Name);
 
             if Comp_Data.Purpose = Compilation then
+               Print_Compilation_Outputs (Source.Id);
 
                if OK then
                   --  We created a new ALI file, so reset the attributes of
@@ -1056,6 +1061,52 @@ package body Gprbuild.Compile is
 
       return False;
    end Directly_Imports;
+
+   -------------------------------
+   -- Print_Compilation_Outputs --
+   -------------------------------
+
+   procedure Print_Compilation_Outputs (For_Source : Source_Id) is
+   begin
+      if Complete_Output then
+         declare
+            File_Path : constant String :=
+              Get_Name_String
+                (For_Source.Project.Object_Directory.Name) &
+              Directory_Separator &
+              Get_Name_String (For_Source.File);
+
+            File : Ada.Text_IO.File_Type;
+            Line : String (1 .. 1_000);
+            Last : Natural;
+         begin
+            begin
+               Open (File, In_File, File_Path & ".stdout");
+
+               while not End_Of_File (File) loop
+                  Get_Line (File, Line, Last);
+                  Put_Line (Standard_Output, Line (1 .. Last));
+               end loop;
+
+               Close (File);
+
+               Open (File, In_File, File_Path & ".stderr");
+
+               while not End_Of_File (File) loop
+                  Get_Line (File, Line, Last);
+                  Put_Line (Standard_Error, Line (1 .. Last));
+               end loop;
+
+               Close (File);
+            exception
+                  --  Ignore any exception. Most likely it means that the
+                  --  files do no exist.
+
+               when others => null;
+            end;
+         end;
+      end if;
+   end Print_Compilation_Outputs;
 
    ---------
    -- Run --
@@ -2668,6 +2719,7 @@ package body Gprbuild.Compile is
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last),
             Source_Project,
+            Source => Get_Name_String (Source.Id.File),
             Language => Get_Language,
             Dep_Name => (if Source.Id.Dep_Name = No_File
                          then ""
@@ -3006,16 +3058,20 @@ package body Gprbuild.Compile is
                   Mapping_File_Path      => Mapping_File,
                   Last_Switches_For_File => Last_Switches_For_File);
 
-            elsif Builder_Data (Source.Tree).Closure_Needed
-              and then
-                (Id.Language.Config.Dependency_Kind = ALI_File
-                 or else Id.Language.Config.Dependency_Kind = ALI_Closure)
-            then
-               Record_ALI_For (Source, The_ALI);
-
             else
-               ALI.Initialize_ALI;
-               ALI.Util.Initialize_ALI_Source;
+               Print_Compilation_Outputs (Source.Id);
+
+               if Builder_Data (Source.Tree).Closure_Needed
+                 and then
+                   (Id.Language.Config.Dependency_Kind = ALI_File
+                    or else Id.Language.Config.Dependency_Kind = ALI_Closure)
+               then
+                  Record_ALI_For (Source, The_ALI);
+
+               else
+                  ALI.Initialize_ALI;
+                  ALI.Util.Initialize_ALI_Source;
+               end if;
             end if;
          end if;
       end Process_Project_Phase_1;

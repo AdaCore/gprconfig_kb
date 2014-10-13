@@ -666,10 +666,29 @@ procedure Gprbuild.Main is
 
       elsif Arg (1) = '-' then
 
-         if Arg'Length > Distributed_Option'Length
+         if Arg = Complete_Output_Option then
+            Forbidden_In_Package_Builder;
+
+            if Distributed_Mode then
+               Fail_Program
+                 (Project_Tree,
+                  "options " & Complete_Output_Option &
+                    Distributed_Option & " are not compatible");
+            end if;
+
+            Complete_Output := True;
+
+         elsif Arg'Length > Distributed_Option'Length
             and then
             Arg (1 .. Distributed_Option'Length) = Distributed_Option
          then
+            if Complete_Output then
+               Fail_Program
+                 (Project_Tree,
+                  "options " & Complete_Output_Option &
+                    Distributed_Option & " are not compatible");
+            end if;
+
             Distributed_Mode := True;
 
             --  In distributed mode we do not want to use temp directories
