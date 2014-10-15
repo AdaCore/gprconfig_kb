@@ -1572,7 +1572,7 @@ procedure Gprslave is
                exception
                   when E : others =>
                      --  An exception can be raised if the builder master has
-                     --  been terminated. In this case the comminication won't
+                     --  been terminated. In this case the communication won't
                      --  succeed.
 
                      Message
