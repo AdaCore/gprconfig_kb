@@ -3573,6 +3573,13 @@ The default for N is the number of cores.
 The default value is 8484. The same port must be specified for the
 build slaves on @code{GPRbuild} command line.
 
+@item @option{-r, --response-handler=N}: set maximum number of simultaneous responses
+
+with this option it is possible to control the number of simultaneous
+responses (sending back object code and ALI files) supported. The
+value must be between 2 and the maximum number of simultaneous
+compilations.
+
 @end itemize
 
 @c ---------------------------------------------

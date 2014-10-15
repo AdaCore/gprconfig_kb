@@ -279,6 +279,7 @@ procedure Gprslave is
 
    Port           : aliased Integer;
    Max_Processes  : aliased Integer;
+   Max_Responses  : aliased Integer;
    Help           : aliased Boolean;
    Verbose        : aliased Boolean;
    Debug          : aliased Boolean;
@@ -300,7 +301,10 @@ procedure Gprslave is
 
    --  Handle response
 
-   Response_Handlers : array (1 .. 2) of Wait_Completion with Unreferenced;
+   type Response_Handler_Set is array (Positive range <>) of Wait_Completion;
+   type Response_Handler_Set_Access is access Response_Handler_Set;
+
+   Response_Handlers : Response_Handler_Set_Access with Unreferenced;
    --  Sending response to a build master may take some time as the object file
    --  is sent back over the socket with the corresponding dependency file.
 
@@ -647,6 +651,13 @@ procedure Gprslave is
          Help    => "set the maximum simultaneous compilation");
 
       Define_Switch
+        (Config, Max_Responses'Access,
+         "-r:", Long_Switch => "--response-handler=",
+         Initial => Integer (2),
+         Default => Integer (2),
+         Help    => "maximum number of simultaneous responses sent back");
+
+      Define_Switch
         (Config, Root_Directory'Access,
          "-d:", Long_Switch => "--directory=",
          Help => "set the root directory");
@@ -897,6 +908,8 @@ procedure Gprslave is
                      --  sure we clean the slave state and we listen to new
                      --  commands. Not doing that could make the slave
                      --  unresponding.
+
+                     Builders.Remove (Builder);
                      Close (Builder.Channel);
                      Close_Socket (Builder.Socket);
                end;
@@ -1983,6 +1996,16 @@ begin
 
    Opt.Setup_Projects := True;
 
+   --  Setup the response handlers
+
+   if Max_Responses < 1 then
+      Max_Responses := 1;
+   elsif Max_Responses > Max_Processes then
+      Max_Responses := Max_Processes;
+   end if;
+
+   Response_Handlers := new Response_Handler_Set (1 .. Max_Responses);
+
    --  Wait for a gprbuild connection on any addresses
 
    Address.Addr := Any_Inet_Addr;
@@ -2002,6 +2025,7 @@ begin
      ("GPRSLAVE " & GPR_Version.Gpr_Version_String & " on " & Host_Name
       & ":" & Image (Long_Integer (Address.Port)));
    Put_Line ("  max processes :" & Integer'Image (Max_Processes));
+   Put_Line ("  max responses :" & Integer'Image (Max_Responses));
 
    --  Initialize the host key used to create unique pid
 
