@@ -350,6 +350,7 @@ procedure Gprslave is
          if Builder_Set.Has_Element (Pos) then
             Builder := Builder_Set.Element (Pos);
          end if;
+
          return Builder;
       end Get;
 
