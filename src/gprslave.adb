@@ -28,6 +28,7 @@ with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Directories;                       use Ada.Directories;
 with Ada.Exceptions;                        use Ada.Exceptions;
+with Ada.Finalization;                      use Ada.Finalization;
 with Ada.Strings.Equal_Case_Insensitive;
 with Ada.Strings.Fixed;                     use Ada.Strings;
 with Ada.Strings.Hash_Case_Insensitive;
@@ -70,21 +71,21 @@ procedure Gprslave is
 
    type UID is mod 9999;
 
-   --  A simple mutex object, this is used to ensure that communications in the
-   --  builder's channel are not interleaved.
+   --  The Status is shared by the same build master object. It first has a
+   --  reference counter to free the memory associated with this status and
+   --  a boolean used a a mutex to lock/unlock the object to allow proper
+   --  concurrent access.
 
-   protected type Mutex is
-      entry Seize;
-      procedure Release;
-   private
-      Free : Boolean := True;
-   end Mutex;
+   type Status is record
+      Locked : Boolean := False;
+      Count  : Natural := 0;
+   end record;
 
-   type Mutex_Access is access Mutex;
+   type Shared_Status is access Status;
 
    --  Data for a build master
 
-   type Build_Master is record
+   type Build_Master is new Finalization.Controlled with record
       Channel      : Communication_Channel; -- communication with build master
       Socket       : Socket_Type;
       Project_Name : Unbounded_String;
@@ -92,16 +93,26 @@ procedure Gprslave is
       Build_Env    : Unbounded_String;
       Sync         : Boolean;
       Id           : UID;
-      Lock         : Mutex_Access;
+      Status       : Shared_Status;
    end record;
 
-   function "<" (B1, B2 : Build_Master) return Boolean is
-     (To_C (B1.Socket) < To_C (B2.Socket));
+   overriding procedure Initialize (Builder : in out Build_Master);
+   overriding procedure Adjust     (Builder : in out Build_Master);
+   overriding procedure Finalize   (Builder : in out Build_Master);
 
-   function "=" (B1, B2 : Build_Master) return Boolean is
-     (B1.Socket = B2.Socket);
+   package Builder is
 
-   package Builder_Set is new Containers.Ordered_Sets (Build_Master);
+      function "<" (B1, B2 : Build_Master) return Boolean is
+        (To_C (B1.Socket) < To_C (B2.Socket));
+
+      function "=" (B1, B2 : Build_Master) return Boolean is
+        (B1.Socket = B2.Socket);
+
+      package Set is new Containers.Ordered_Sets (Build_Master);
+
+   end Builder;
+
+   package Builder_Set renames Builder.Set;
 
    --  Representation of a job data
 
@@ -204,9 +215,21 @@ procedure Gprslave is
       --  master. This is to ensure that a unique build will happen in a
       --  given directory.
 
+      entry Lock (Builder : in out Build_Master);
+      --  Lock builder against concurrent use, must be released
+
+      procedure Release (Builder : in out Build_Master);
+      --  Release builder locked with entry above
+
    private
+
+      entry Try_Lock (Builder : in out Build_Master);
+      --  The lock is already taken, the tasks are queued here to wait for the
+      --  builder to be released.
+
       Current_Id : UID := 0;
       Builders   : Builder_Set.Set;
+      To_Check   : Natural := 0; -- number of task to let go through Try_Lock
    end Builders;
 
    --  Queue of Job to run, A FIFO list
@@ -281,10 +304,25 @@ procedure Gprslave is
    --  Sending response to a build master may take some time as the object file
    --  is sent back over the socket with the corresponding dependency file.
 
-   Global_Lock : Mutex;
    --  This global lock is used only to ensure that when spawning a compilation
    --  there is no IO at the same time. This is needed as the spawned process
    --  will inherit the standard IO descriptors.
+
+   protected Global_Lock is
+      entry Seize;
+      procedure Release;
+   private
+      Free : Boolean := True;
+   end Global_Lock;
+
+   ------------
+   -- Adjust --
+   ------------
+
+   overriding procedure Adjust (Builder : in out Build_Master) is
+   begin
+      Builder.Status.Count := Builder.Status.Count + 1;
+   end Adjust;
 
    --------------
    -- Builders --
@@ -319,6 +357,7 @@ procedure Gprslave is
         when not Builders.Is_Empty is
       begin
          Empty (Socket_Set);
+
          for B of Builders loop
             Set (Socket_Set, B.Socket);
          end loop;
@@ -330,7 +369,6 @@ procedure Gprslave is
 
       procedure Initialize (Builder : in out Build_Master) is
       begin
-         Builder.Lock := new Mutex;
          Builder.Id := Current_Id;
          Current_Id := Current_Id + 1;
       end Initialize;
@@ -344,18 +382,55 @@ procedure Gprslave is
          Builders.Insert (Builder);
       end Insert;
 
+      ----------
+      -- Lock --
+      ----------
+
+      entry Lock (Builder : in out Build_Master) when True is
+      begin
+         if Builder.Status.Locked then
+            requeue Try_Lock;
+         else
+            Builder.Status.Locked := True;
+         end if;
+      end Lock;
+
+      -------------
+      -- Release --
+      -------------
+
+      procedure Release (Builder : in out Build_Master) is
+      begin
+         Builder.Status.Locked := False;
+         if Try_Lock'Count > 0 then
+            To_Check := To_Check + Try_Lock'Count;
+         end if;
+      end Release;
+
       ------------
       -- Remove --
       ------------
 
       procedure Remove (Builder : in out Build_Master) is
-         procedure Free is
-           new Ada.Unchecked_Deallocation (Mutex, Mutex_Access);
       begin
-         Builder.Lock.Release;
-         Free (Builder.Lock);
-         Builders.Delete (Builder);
+         Builders.Exclude (Builder);
+         Release (Builder);
       end Remove;
+
+      --------------
+      -- Try_Lock --
+      --------------
+
+      entry Try_Lock (Builder : in out Build_Master) when To_Check > 0 is
+      begin
+         To_Check := To_Check - 1;
+
+         if Builder.Status.Locked then
+            requeue Try_Lock;
+         else
+            Builder.Status.Locked := True;
+         end if;
+      end Try_Lock;
 
       ------------------------
       -- Working_Dir_Exists --
@@ -372,6 +447,24 @@ procedure Gprslave is
       end Working_Dir_Exists;
 
    end Builders;
+
+   --------------
+   -- Finalize --
+   --------------
+
+   overriding procedure Finalize (Builder : in out Build_Master) is
+      procedure Unchecked_Free is
+        new Unchecked_Deallocation (Status, Shared_Status);
+      S : Shared_Status := Builder.Status;
+   begin
+      Builder.Status := null;
+
+      S.Count := S.Count - 1;
+
+      if S.Count = 0 then
+         Unchecked_Free (S);
+      end if;
+   end Finalize;
 
    -------------
    -- Get_Arg --
@@ -422,6 +515,32 @@ procedure Gprslave is
       return Remote_Id (Get_Value (CRC)) * 2 ** 32;
    end Get_Slave_Id;
 
+   -----------------
+   -- Global_Lock --
+   -----------------
+
+   protected body Global_Lock is
+
+      -----------
+      -- Seize --
+      -----------
+
+      entry Seize when Free is
+      begin
+         Free := False;
+      end Seize;
+
+      -------------
+      -- Release --
+      -------------
+
+      procedure Release is
+      begin
+         Free := True;
+      end Release;
+
+   end Global_Lock;
+
    -----------
    -- Image --
    -----------
@@ -433,6 +552,15 @@ procedure Gprslave is
               then I
               else I (I'First + 1 .. I'Last));
    end Image;
+
+   ----------------
+   -- Initialize --
+   ----------------
+
+   overriding procedure Initialize (Builder : in out Build_Master) is
+   begin
+      Builder.Status := new Status'(False, 1);
+   end Initialize;
 
    -------------
    -- Message --
@@ -476,32 +604,6 @@ procedure Gprslave is
          Message (Str, Is_Debug, Force);
       end if;
    end Message;
-
-   -----------
-   -- Mutex --
-   -----------
-
-   protected body Mutex is
-
-      -----------
-      -- Seize --
-      -----------
-
-      entry Seize when Free is
-      begin
-         Free := False;
-      end Seize;
-
-      -------------
-      -- Release --
-      -------------
-
-      procedure Release is
-      begin
-         Free := True;
-      end Release;
-
-   end Mutex;
 
    ------------------------
    -- Parse_Command_Line --
@@ -634,6 +736,7 @@ procedure Gprslave is
 
       Selector     : Selector_Type;
       R_Socket_Set : Socket_Set_Type;
+      E_Socket_Set : Socket_Set_Type;
       Empty_Set    : Socket_Set_Type;
       Status       : Selector_Status;
       Builder      : Build_Master;
@@ -643,8 +746,8 @@ procedure Gprslave is
       --  Create selector
 
       Create_Selector (Selector);
-
       Empty (Empty_Set);
+
       --  For now do not check write status
 
       Handle_Commands : loop
@@ -653,9 +756,12 @@ procedure Gprslave is
 
          Builders.Get_Socket_Set (R_Socket_Set);
 
+         Copy (R_Socket_Set, E_Socket_Set);
+
          Wait_Incoming_Data : loop
             begin
-               Check_Selector (Selector, R_Socket_Set, Empty_Set, Status);
+               Check_Selector
+                 (Selector, R_Socket_Set, Empty_Set, E_Socket_Set, Status);
                exit Wait_Incoming_Data;
             exception
                when E : Socket_Error =>
@@ -667,12 +773,26 @@ procedure Gprslave is
          end loop Wait_Incoming_Data;
 
          if Status /= Aborted then
+            --  Check for socket error first, if a socket is in error just
+            --  close the builder and remove it from the list. From there
+            --  we abort any action.
+
+            Get (E_Socket_Set, Socket);
+
+            if Socket /= No_Socket then
+               Builder := Builders.Get (Socket);
+               Message (Builder, "# Error socket signaled", Is_Debug => True);
+               Builders.Remove (Builder);
+               Status := Aborted;
+            end if;
+         end if;
+
+         if Status /= Aborted then
             Get (R_Socket_Set, Socket);
 
             if Socket /= No_Socket then
                Builder := Builders.Get (Socket);
-
-               Builder.Lock.Seize;
+               Builders.Lock (Builder);
 
                declare
                   Cmd : constant Command := Get_Command (Builder.Channel);
@@ -756,8 +876,16 @@ procedure Gprslave is
                   when Socket_Error =>
                      --  The build master has probably been killed. We cannot
                      --  communicate with it. Just close the channel.
-                     Close (Builder.Channel);
-                     Close_Socket (Builder.Socket);
+
+                     Builders.Remove (Builder);
+
+                     begin
+                        Close (Builder.Channel);
+                        Close_Socket (Builder.Socket);
+                     exception
+                        when others =>
+                           null;
+                     end;
 
                   when E : others =>
                      Message
@@ -775,9 +903,7 @@ procedure Gprslave is
 
                --  The lock is released and freed if we have an EC command
 
-               if Builder.Lock /= null then
-                  Builder.Lock.Release;
-               end if;
+               Builders.Release (Builder);
             end if;
          end if;
       end loop Handle_Commands;
@@ -1376,7 +1502,7 @@ procedure Gprslave is
             Builder := Builders.Get (Job.Build_Sock);
 
             if Is_Active_Build_Master (Builder) then
-               Builder.Lock.Seize;
+               Builders.Lock (Builder);
 
                begin
                   Message
@@ -1440,19 +1566,25 @@ procedure Gprslave is
                   else
                      Send_Ko (Builder.Channel, Job.Id);
                   end if;
+
+                  Builders.Release (Builder);
+
                exception
                   when E : others =>
                      --  An exception can be raised if the builder master has
                      --  been terminated. In this case the comminication won't
                      --  succeed.
+
                      Message
                        (Builder,
                         "# cannot send response to build master "
                         & Exception_Information (E),
                         Is_Debug => True);
-               end;
 
-               Builder.Lock.Release;
+                     --  Remove it from the list
+
+                     Builders.Remove (Builder);
+               end;
 
             else
                Message

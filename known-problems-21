@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-NA01-037 GPRslave stall when compilation are interrupted
+
+  Problem:    When interrupting (ctrl-c) a distributed compilation it may
+              happen that the gprslave application becomes unresponsive.
+              The only solution is to restart the gprslave application.
+
+  Status:     This was fixed in 2.2 on 2014-10-14
+
+  Workaround: Avoid interrupting a distributed compilation
+
 KP-21-N922-032 Detect wrong usage of distributed builds
 
   Problem:    Compiling using the same build environment (directory) on
