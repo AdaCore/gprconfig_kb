@@ -673,12 +673,12 @@ procedure Gprslave is
       Define_Switch
         (Config, Verbose'Access,
          "-v", Long_Switch => "--verbose",
-         Help => "activate verbose mode, display extra information");
+         Help => "verbose mode, display extra information");
 
       Define_Switch
         (Config, Debug'Access,
          "-vv", Long_Switch => "--debug",
-         Help => "activate debug mode, display lot of information (imply -v)");
+         Help => "debug mode, display lot of information (imply -v)");
 
       Set_Usage (Config, Usage => "[switches]");
 
