@@ -3577,7 +3577,7 @@ build slaves on @code{GPRbuild} command line.
 
 with this option it is possible to control the number of simultaneous
 responses (sending back object code and ALI files) supported. The
-value must be between 2 and the maximum number of simultaneous
+value must be between 1 and the maximum number of simultaneous
 compilations.
 
 @end itemize

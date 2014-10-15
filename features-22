@@ -13,7 +13,7 @@ NF-22-NA15-003 GPRslave control of simultaneous responses (2014-10-15)
   A new option has been added to GPRslave to control the number of
   simultaneous responses (sending back object code and ALI files)
   supported. This was hard coded to 2, it is now possible to set this
-  value between 2 and the maximum number of simultaneous compilations.
+  value between 1 and the maximum number of simultaneous compilations.
 
 NF-22-N812-027 --target and CodePeer mode (2014-08-20)
 
