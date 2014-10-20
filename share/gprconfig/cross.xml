@@ -141,9 +141,9 @@
        <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
        <compiler name="GCC-WRS7ARM" runtime="^kernel$" />
-       <compiler name="GCC-WRS7X86" runtime="^kernel$" />
-       <compiler name="GCC-WRS7PPC" runtime="^kernel$" />
        <compiler name="GCC-WRS7E500V2" runtime="^kernel$" />
+       <compiler name="GCC-WRS7PPC" runtime="^kernel$" />
+       <compiler name="GCC-WRS7X86" runtime="^kernel$" />
        <compiler name="G++-WRS6" runtime="^kernel$" />
        <compiler name="G++-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="G++-WRS6" runtime="^kernel-smp$" />
@@ -154,6 +154,9 @@
        <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^kernel$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
+       <compiler name="G++-WRS7ARM" runtime="^kernel$" />
+       <compiler name="G++-WRS7E500V2" runtime="^kernel$" />
+       <compiler name="G++-WRS7PPC" runtime="^kernel$" />
        <compiler name="G++-WRS7X86" runtime="^kernel$" />
        <compiler name="GCC-WRS5" />
        <compiler name="G++-WRS5" />
@@ -186,9 +189,9 @@
        <compiler name="GCC-WRS6" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS7ARM" runtime="^rtp$" />
-       <compiler name="GCC-WRS7X86" runtime="^rtp$" />
-       <compiler name="GCC-WRS7PPC" runtime="^rtp$" />
        <compiler name="GCC-WRS7E500V2" runtime="^rtp$" />
+       <compiler name="GCC-WRS7PPC" runtime="^rtp$" />
+       <compiler name="GCC-WRS7X86" runtime="^rtp$" />
        <compiler name="G++-WRS6" runtime="^rtp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp$" />
        <compiler name="G++-WRS6" runtime="^rtp-smp$" />
@@ -197,6 +200,9 @@
        <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
+       <compiler name="G++-WRS7ARM" runtime="^rtp$" />
+       <compiler name="G++-WRS7E500V2" runtime="^rtp$" />
+       <compiler name="G++-WRS7PPC" runtime="^rtp$" />
        <compiler name="G++-WRS7X86" runtime="^rtp$" />
      </compilers>
      <targets>
