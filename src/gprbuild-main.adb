@@ -1574,7 +1574,7 @@ procedure Gprbuild.Main is
            (Project_Tree, "cannot use --slave-env in non distributed mode");
       end if;
 
-      --  Makes the Ada RTS is absolute if it is not a base name
+      --  Makes the Ada RTS absolute if it is not a base name
 
       if Runtime_Name_Set_For (Name_Ada) then
          Locate_Runtime (Project_Tree, Name_Ada);
