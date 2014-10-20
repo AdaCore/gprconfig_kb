@@ -747,6 +747,27 @@
      </config>
    </configuration>
 
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS7ARM" runtime="^rtp$" />
+       <compiler name="GCC-WRS7E500V2" runtime="^rtp$" />
+       <compiler name="GCC-WRS7PPC" runtime="^rtp$" />
+       <compiler name="G++-WRS7ARM" runtime="^rtp$" />
+       <compiler name="G++-WRS7PPC" runtime="^rtp$" />
+       <compiler name="G++-WRS7E500V2" runtime="^rtp$" />
+       <!-- On x86, Workbench does not specify the RTP base,
+            so we do not do it either.  -->
+     </compilers>
+     <config>
+   WRS_RTP_Base := external ("WRS_RTP_BASE", "0x80000000");
+   package Linker is
+      for Required_Switches use
+	Linker'Required_Switches
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+   end Linker;
+     </config>
+   </configuration>
+
    <!--  Set prefix of gnatbind -->
    <configuration>
      <targets>
