@@ -1197,59 +1197,16 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="arm-wrs-vxworks7$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
        <compiler language="Ada" />
     </compilers>
     <compilers>
-       <compiler name="GCC-WRS7X86" language="C" runtime="rtp"/>
-    </compilers>
-    <config>
-     package Linker is
-        for Required_Switches use
-          Linker'Required_Switches
-          &amp; ("-mrtp", "-L" &amp; VSB_Dir &amp; "/usr/lib/common");
-     end Linker;
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="i.86-wrs-vxworks7$" />
-    </targets>
-    <compilers negate="true">
-       <compiler language="C++" />
-       <compiler language="Fortran" />
-       <compiler language="Ada" />
-    </compilers>
-    <compilers>
-       <compiler name="GCC-WRS7X86" language="C" runtime="rtp"/>
-    </compilers>
-    <config>
-     package Linker is
-        for Required_Switches use
-          Linker'Required_Switches
-          &amp; ("-mrtp", "-L" &amp; VSB_Dir &amp; "/usr/lib/common");
-     end Linker;
-    </config>
-  </configuration>
-
-  <configuration>
-    <targets>
-      <target name="powerpc-wrs-vxworks7$" />
-    </targets>
-    <compilers negate="true">
-       <compiler language="C++" />
-       <compiler language="Fortran" />
-       <compiler language="Ada" />
-    </compilers>
-    <compilers>
-       <compiler name="GCC-WRS7PPC" language="C" runtime="rtp"/>
-       <compiler name="GCC-WRS7E500V2" language="C" runtime="rtp"/>
+       <compiler name="GCC-WRS7ARM" runtime="rtp"/>
+       <compiler name="GCC-WRS7E500V2" runtime="rtp"/>
+       <compiler name="GCC-WRS7PPC" runtime="rtp"/>
+       <compiler name="GCC-WRS7X86" runtime="rtp"/>
     </compilers>
     <config>
      package Linker is
