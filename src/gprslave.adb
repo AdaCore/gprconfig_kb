@@ -1270,16 +1270,12 @@ procedure Gprslave is
             --  It is critical to ensure that no IO is done while spawning
             --  the process.
 
-            Critical_Section : declare
-               Driver : constant String :=
-                          Get_Driver (Builder, Language, Project);
-            begin
-               Global_Lock.Seize;
+            Global_Lock.Seize;
 
-               Pid := Non_Blocking_Spawn (Driver, O, Out_File);
+            Pid := Non_Blocking_Spawn
+                     (Get_Driver (Builder, Language, Project), O, Out_File);
 
-               Global_Lock.Release;
-            end Critical_Section;
+            Global_Lock.Release;
 
             Message
               (Builder, "#   pid" & Integer'Image (Pid_To_Integer (Pid)),
