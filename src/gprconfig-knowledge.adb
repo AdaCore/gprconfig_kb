@@ -3836,6 +3836,8 @@ package body GprConfig.Knowledge is
                            Selected_Targets_Set);
 
                         Specified_Target :=
+                          Selected_Targets_Set = All_Target_Sets
+                            or else
                           Normalized_Target (Base, Selected_Targets_Set) /=
                             Default_Target;
                      end;
@@ -3855,9 +3857,17 @@ package body GprConfig.Knowledge is
                Put (Standard_Error, "'");
 
                if Specified_Target then
-                  Put
-                    (Standard_Error,
-                     ", target = " & To_String (Selected_Target));
+                  Put (Standard_Error, ", target = ");
+
+                  declare
+                     Tgt : constant String :=  To_String (Selected_Target);
+                  begin
+                     if Tgt = "" then
+                        Put (Standard_Error, "all");
+                     else
+                        Put (Standard_Error, Tgt);
+                     end if;
+                  end;
                end if;
 
                if Comp.Runtime = No_Name then
