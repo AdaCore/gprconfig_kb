@@ -1611,7 +1611,8 @@ procedure Gprslave is
             --  gprconfig run launched to generate a configuration file for a
             --  specific language. So we do not want to fail in this case.
 
-            Message ("# unknown job data for pid", Is_Debug => True);
+            Message ("# unknown job data for pid "
+                     & Integer'Image (Pid_To_Integer (Pid)), Is_Debug => True);
          end if;
       end loop;
 
