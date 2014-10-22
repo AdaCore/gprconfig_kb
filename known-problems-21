@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-NA22-018 Aggregate project, -k and compilation errors
+
+  Problem:    When gprbuild is invoked with -k on a main aggregate project,
+              the exit code is successful even when there were compilation
+              errors.
+
+  Status:     This was fixed in 2.2 on 2014-10-22
+
+  Workaround: Do not check exit code for gprbuild -k with a main aggregate
+              project.
+
 KP-21-NA01-037 GPRslave stall when compilation are interrupted
 
   Problem:    When interrupting (ctrl-c) a distributed compilation it may
