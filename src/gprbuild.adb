@@ -593,6 +593,8 @@ package body Gprbuild is
       if not Opt.Keep_Going then
          Stop_Spawning := True;
       end if;
+
+      Exit_Code := Osint.E_Fatal;
    end Record_Failure;
 
    ---------------------------

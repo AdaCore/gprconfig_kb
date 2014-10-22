@@ -32,6 +32,7 @@ private with Makeutl;
 with ALI;
 with Namet;       use Namet;
 with Opt;
+with Osint;
 with Prj;         use Prj;
 with Table;
 with Types;       use Types;
@@ -45,6 +46,9 @@ private
    use GNAT.OS_Lib;
 
    use type ALI.ALI_Id, Opt.Verbosity_Level_Type, Opt.Warning_Mode_Type;
+
+   Exit_Code : Osint.Exit_Code_Type := Osint.E_Success;
+   --  Exit code for gprbuild
 
    Object_Suffix : constant String := Get_Target_Object_Suffix.all;
    --  The suffix of object files on this platform

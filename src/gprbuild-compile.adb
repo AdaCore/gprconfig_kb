@@ -1162,6 +1162,7 @@ package body Gprbuild.Compile is
 
                if Opt.Keep_Going and then Project.Qualifier = Aggregate then
                   Bad_Compilations.Clear;
+                  Exit_Code := E_Fatal;
 
                else
                   if Distributed_Mode and then Slave_Initialized then

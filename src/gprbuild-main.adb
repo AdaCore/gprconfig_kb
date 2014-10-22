@@ -2223,7 +2223,7 @@ begin
 
    Namet.Finalize;
 
-   Finish_Program (Project_Tree, E_Success);
+   Finish_Program (Project_Tree, Exit_Code);
 
 exception
    when E : others =>
