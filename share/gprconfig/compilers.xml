@@ -702,7 +702,7 @@
 
   <compiler_description>
     <name>GNAT_CODEPEER</name>
-    <executable prefix="1">(.*codepeer-)gnatls</executable>
+    <executable prefix="1">(.*codepeer-)gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
@@ -722,7 +722,7 @@
 
   <compiler_description>
     <name>GNAT_DOTNET</name>
-    <executable prefix="1">(.*dotnet-)gnatls</executable>
+    <executable prefix="1">(.*dotnet-)gnatmake</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
