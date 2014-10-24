@@ -33,6 +33,7 @@ with Ada.Strings.Equal_Case_Insensitive;
 with Ada.Strings.Fixed;                     use Ada.Strings;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Strings.Unbounded;                 use Ada.Strings.Unbounded;
+with Ada.Task_Identification;               use Ada.Task_Identification;
 with Ada.Text_IO;                           use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 with Interfaces;
@@ -316,7 +317,9 @@ procedure Gprslave is
       entry Seize;
       procedure Release;
    private
-      Free : Boolean := True;
+      entry Wait;
+      Locker_Id : Task_Id;
+      Count     : Natural := 0;
    end Global_Lock;
 
    ------------
@@ -530,9 +533,14 @@ procedure Gprslave is
       -- Seize --
       -----------
 
-      entry Seize when Free is
+      entry Seize when True is
       begin
-         Free := False;
+         if Count = 0 or else Seize'Caller = Locker_Id then
+            Locker_Id := Seize'Caller;
+            Count := Count + 1;
+         else
+            requeue Wait;
+         end if;
       end Seize;
 
       -------------
@@ -541,8 +549,18 @@ procedure Gprslave is
 
       procedure Release is
       begin
-         Free := True;
+         Count := Count - 1;
       end Release;
+
+      ----------
+      -- Wait --
+      ----------
+
+      entry Wait when Count = 0 is
+      begin
+         Locker_Id := Wait'Caller;
+         Count := 1;
+      end Wait;
 
    end Global_Lock;
 
