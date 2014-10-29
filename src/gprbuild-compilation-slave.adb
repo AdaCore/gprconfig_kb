@@ -504,7 +504,7 @@ package body Gprbuild.Compilation.Slave is
                                  Write_Line
                                    ("error: " & To_String (Root_Dir)
                                     & " is not a directory"
-                                    & " or does not exists");
+                                    & " or does not exist");
                                  OS_Exit (1);
 
                               else
