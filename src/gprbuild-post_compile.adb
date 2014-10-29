@@ -3246,7 +3246,16 @@ package body Gprbuild.Post_Compile is
             end if;
 
          else
-            Create (Exchange_File, Out_File, Bind_Exchange.all);
+            begin
+               Create (Exchange_File, Out_File, Bind_Exchange.all);
+
+            exception
+               when others =>
+                  Fail_Program
+                    (Project_Tree,
+                     "unable to create binder exchange file " &
+                     Bind_Exchange.all);
+            end;
 
             --  Optional line: Quiet or Verbose
 
