@@ -52,6 +52,16 @@ with Sax.Readers;               use Sax.Readers;
 
 package body GprConfig.Knowledge is
 
+   package Known_Languages is new Ada.Containers.Hashed_Maps
+     (Key_Type        => Namet.Name_Id,
+      Element_Type    => Namet.Name_Id,
+      Hash            => Hash_Case_Insensitive,
+      Equivalent_Keys => Namet."=",
+      "="             => Namet."=");
+   Languages_Known : Known_Languages.Map;
+   --  Contains all the languages that are described in the database with a
+   --  real compiler.
+
    package String_Maps is new Ada.Containers.Indefinite_Hashed_Maps
      (String, Unbounded_String, Ada.Strings.Hash_Case_Insensitive, "=");
 
@@ -500,7 +510,7 @@ package body GprConfig.Knowledge is
 
    RTS_List : GNAT.OS_Lib.String_List_Access :=
      new GNAT.OS_Lib.String_List (1 .. 4);
-   --  List of the knowledge base directories that hac=ve already been parsed
+   --  List of the knowledge base directories that have already been parsed
 
    RTS_Last : Natural := 0;
    --  Index of the last directory in RTS_List
@@ -838,6 +848,37 @@ package body GprConfig.Knowledge is
 
          elsif Compiler.Name /= No_Name then
             CDM.Include (Base.Compilers, Compiler.Name, Compiler);
+
+            --  Include the language name in the Languages_Known hashed map,
+            --  if it is not already there.
+
+            declare
+               Languages : External_Value_Nodes.Cursor :=
+                 Compiler.Languages.First;
+               Lang : External_Value_Node;
+               Lang_Name : Name_Id;
+            begin
+               while Languages /= External_Value_Nodes.No_Element loop
+                  Lang := External_Value_Nodes.Element (Languages);
+                  if Lang.Typ = Value_Constant then
+                     Get_Name_String (Lang.Value);
+                     To_Lower (Name_Buffer (1 .. Name_Len));
+                     Lang_Name := Name_Find;
+
+                     if not Known_Languages.Contains
+                       (Container => Languages_Known,
+                        Key       => Name_Find)
+                     then
+                        Known_Languages.Include
+                          (Container => Languages_Known,
+                           Key       => Lang_Name,
+                           New_Item  => Lang_Name);
+                     end if;
+                  end if;
+
+                  Next (Languages);
+               end loop;
+            end;
          end if;
       end Parse_Compiler_Description;
 
@@ -3815,70 +3856,90 @@ package body GprConfig.Knowledge is
             declare
                Comp : constant Compiler := Compiler_Lists.Element (C).all;
                Specified_Target : Boolean := Target_Specified;
-
+               Language_Known : constant Boolean :=
+                                           Known_Languages.Contains
+                                             (Container => Languages_Known,
+                                              Key       => Comp.Language_Case);
             begin
-               if Specified_Target then
-                  declare
-                     Selected_Targets_Set : Targets_Set_Id;
-                  begin
-                     Get_Targets_Set
-                       (Base,
-                        GprConfig.Sdefault.Hostname,
-                        Selected_Targets_Set);
+               --  Display an error when not in quiet mode or when the language
+               --  is described in the database.
 
+               if not Language_Known then
+                  if not Opt.Quiet_Output then
+                     Put (Standard_Error, "Error: unkown language '");
+                     Put
+                       (Standard_Error,
+                        Get_Name_String_Or_Null (Comp.Language_Case));
+                     Put (Standard_Error, "'");
+                     New_Line (Standard_Error);
+
+                  end if;
+
+               else
+                  if Specified_Target then
                      declare
-                        Default_Target : constant String :=
-                          Normalized_Target (Base, Selected_Targets_Set);
+                        Selected_Targets_Set : Targets_Set_Id;
                      begin
                         Get_Targets_Set
                           (Base,
-                           To_String (Selected_Target),
+                           GprConfig.Sdefault.Hostname,
                            Selected_Targets_Set);
 
-                        Specified_Target :=
-                          Selected_Targets_Set = All_Target_Sets
-                            or else
-                          Normalized_Target (Base, Selected_Targets_Set) /=
-                            Default_Target;
+                        declare
+                           Default_Target : constant String :=
+                             Normalized_Target (Base, Selected_Targets_Set);
+                        begin
+                           Get_Targets_Set
+                             (Base,
+                              To_String (Selected_Target),
+                              Selected_Targets_Set);
+
+                           Specified_Target :=
+                             Selected_Targets_Set = All_Target_Sets
+                             or else
+                               Normalized_Target
+                                 (Base, Selected_Targets_Set) /=
+                               Default_Target;
+                        end;
                      end;
-                  end;
-               end if;
+                  end if;
 
-               Put (Standard_Error, "Error: no ");
+                  Put (Standard_Error, "Error: no ");
 
-               if not Specified_Target then
-                  Put (Standard_Error, "native ");
-               end if;
+                  if not Specified_Target then
+                     Put (Standard_Error, "native ");
+                  end if;
 
-               Put (Standard_Error, "compiler found for language '");
-               Put
-                 (Standard_Error,
-                  Get_Name_String_Or_Null (Comp.Language_Case));
-               Put (Standard_Error, "'");
-
-               if Specified_Target then
-                  Put (Standard_Error, ", target = ");
-
-                  declare
-                     Tgt : constant String :=  To_String (Selected_Target);
-                  begin
-                     if Tgt = "" then
-                        Put (Standard_Error, "all");
-                     else
-                        Put (Standard_Error, Tgt);
-                     end if;
-                  end;
-               end if;
-
-               if Comp.Runtime = No_Name then
-                  Put (Standard_Error, ", default runtime");
-               else
+                  Put (Standard_Error, "compiler found for language '");
                   Put
                     (Standard_Error,
-                     ", runtime = " & Get_Name_String (Comp.Runtime));
-               end if;
+                     Get_Name_String_Or_Null (Comp.Language_Case));
+                  Put (Standard_Error, "'");
 
-               New_Line (Standard_Error);
+                  if Specified_Target then
+                     Put (Standard_Error, ", target = ");
+
+                     declare
+                        Tgt : constant String :=  To_String (Selected_Target);
+                     begin
+                        if Tgt = "" then
+                           Put (Standard_Error, "all");
+                        else
+                           Put (Standard_Error, Tgt);
+                        end if;
+                     end;
+                  end if;
+
+                  if Comp.Runtime = No_Name then
+                     Put (Standard_Error, ", default runtime");
+                  else
+                     Put
+                       (Standard_Error,
+                        ", runtime = " & Get_Name_String (Comp.Runtime));
+                  end if;
+
+                  New_Line (Standard_Error);
+               end if;
             end;
 
             Ada.Command_Line.Set_Exit_Status (1);
