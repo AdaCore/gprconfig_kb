@@ -711,6 +711,13 @@ procedure Gprslave is
          Verbose := True;
       end if;
 
+      --  To avoid error messages for unknown languages that are not described
+      --  in the XML database, use the quiet mode if Verbose is not set.
+
+      if not Verbose then
+         Opt.Quiet_Output := True;
+      end if;
+
       --  First ensure Root_Directory is an absolute path-name. This is
       --  needed to be able to create directory for a specific builder without
       --  enforcing that the current directory be in a critical section.
