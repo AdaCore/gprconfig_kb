@@ -195,11 +195,18 @@ package body Gprbuild.Compilation.Protocol is
             Create_Directory (Dir);
          end if;
 
-         Create (File, Out_File, File_Name);
+         begin
+            Create (File, Out_File, File_Name);
 
-         Rewrite_Data.Rewrite (Rewriter, Input'Access, Output'Access);
+            Rewrite_Data.Rewrite (Rewriter, Input'Access, Output'Access);
 
-         Close (File);
+            Close (File);
+         exception
+            when others =>
+               if Is_Open (File) then
+                  Close (File);
+               end if;
+         end;
 
          return Get_Command (Channel);
       end Handle_File;
@@ -761,23 +768,30 @@ package body Gprbuild.Compilation.Protocol is
       Rewrite_Data.Link (Rewriter, Rewriter_CD'Unchecked_Access);
 
       if Exists (Path_Name) then
-         Open (File, In_File, Path_Name);
+         begin
+            Open (File, In_File, Path_Name);
 
-         --  First compute the file size as translated, note that this means
-         --  that we are parsing the file twice.
+            --  First compute the file size as translated, note that this
+            --  means that we are parsing the file twice.
 
-         F_Size := File_Size;
+            F_Size := File_Size;
 
-         String'Output
-           (Channel.Channel,
-            Command_Kind'Image (Cmd) & Image (F_Size)
-            & Args_Sep & Translate_Send (Channel, Path_Name));
+            String'Output
+              (Channel.Channel,
+               Command_Kind'Image (Cmd) & Image (F_Size)
+               & Args_Sep & Translate_Send (Channel, Path_Name));
 
-         if F_Size /= 0 then
-            Rewrite_Data.Rewrite (Rewriter, Input'Access, Output'Access);
-         end if;
+            if F_Size /= 0 then
+               Rewrite_Data.Rewrite (Rewriter, Input'Access, Output'Access);
+            end if;
 
-         Close (File);
+            Close (File);
+         exception
+            when others =>
+               if Is_Open (File) then
+                  Close (File);
+               end if;
+         end;
 
       else
          raise Constraint_Error with "File not found : " & Path_Name;
