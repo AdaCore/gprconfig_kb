@@ -3866,7 +3866,7 @@ package body GprConfig.Knowledge is
 
                if not Language_Known then
                   if not Opt.Quiet_Output then
-                     Put (Standard_Error, "Error: unkown language '");
+                     Put (Standard_Error, "Error: unknown language '");
                      Put
                        (Standard_Error,
                         Get_Name_String_Or_Null (Comp.Language_Case));
