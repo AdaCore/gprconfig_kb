@@ -602,6 +602,9 @@ procedure Gprslave is
               ('[' & Calendar.Formatting.Image (Calendar.Clock) & "] " & Str);
 
             Global_Lock.Release;
+         exception
+            when others =>
+               Global_Lock.Release;
          end Critical_Section;
       end if;
    end Message;
@@ -622,6 +625,9 @@ procedure Gprslave is
             Put (' ');
 
             Global_Lock.Release;
+         exception
+            when others =>
+               Global_Lock.Release;
          end Critical_Section;
 
          Message (Str, Is_Debug, Force);
