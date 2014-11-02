@@ -48,7 +48,6 @@ with Scans;
 with Scng;
 with Sinput.C;
 with Sinput.P;
-with Snames;   use Snames;
 with Styleg;
 with Table;
 with Tempdir;
@@ -452,21 +451,33 @@ package body Gpr_Util is
    begin
       if Lang.Config.Compiler_Driver_Path = null then
          declare
-            Compiler_Name : constant String :=
-              Get_Name_String (Lang.Config.Compiler_Driver);
-
+            Compiler : Name_Id := Compiler_Subst_HTable.Get (Lang.Name);
          begin
-            if Compiler_Name = "" then
-               return null;
+            --  If --compiler-subst was used to specify an alternate compiler,
+            --  then Compiler /= No_Name. In the usual case, Compiler =
+            --  No_Name, so we set Compiler to the Compiler_Driver from the
+            --  config file.
+
+            if Compiler = No_Name then
+               Compiler := Name_Id (Lang.Config.Compiler_Driver);
             end if;
 
-            Lang.Config.Compiler_Driver_Path :=
-              Locate_Exec_On_Path (Compiler_Name);
+            declare
+               Compiler_Name : constant String := Get_Name_String (Compiler);
+            begin
+               if Compiler_Name = "" then
+                  return null;
+               end if;
 
-            if Lang.Config.Compiler_Driver_Path = null then
-               Fail_Program
-                 (Project_Tree, "unable to locate """ & Compiler_Name & '"');
-            end if;
+               Lang.Config.Compiler_Driver_Path :=
+                 Locate_Exec_On_Path (Compiler_Name);
+
+               if Lang.Config.Compiler_Driver_Path = null then
+                  Fail_Program
+                    (Project_Tree,
+                     "unable to locate """ & Compiler_Name & '"');
+               end if;
+            end;
          end;
       end if;
 

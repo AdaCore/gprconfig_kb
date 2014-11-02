@@ -45,7 +45,7 @@ with Gprbuild.Compilation.Slave;
 package body Gprbuild.Compile is
 
    procedure Add_Compilation_Switches (Source : Source_Id);
-   --  Add to the compilation option, the switches clared in
+   --  Add to the compilation option, the switches declared in
    --  Compiler'Switches(<source file name>), if it is defined, otherwise in
    --  Compiler'Default_Switches (<language name>), if it is defined.
 
@@ -190,7 +190,7 @@ package body Gprbuild.Compile is
       Is_Default : Boolean;
    begin
       Makeutl.Get_Switches
-        (Source, Name_Compiler, Project_Tree, Options, Is_Default);
+        (Source, Compiler_Pkg_Subst, Project_Tree, Options, Is_Default);
       if Options /= Nil_Variable_Value then
          declare
             List            : String_List_Id := Options.Values;
@@ -3054,8 +3054,8 @@ package body Gprbuild.Compile is
                Spawn_Compiler_And_Register
                  (Source                 => Source,
                   Source_Project         => Source_Project,
-                  Compiler_Path          => Get_Compiler_Driver_Path
-                    (Project_Tree, Id.Language).all,
+                  Compiler_Path          =>
+                    Get_Compiler_Driver_Path (Project_Tree, Id.Language).all,
                   Mapping_File_Path      => Mapping_File,
                   Last_Switches_For_File => Last_Switches_For_File);
 

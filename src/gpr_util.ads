@@ -24,6 +24,7 @@
 
 with Ada.Calendar; use Ada;
 
+with GNAT.HTable;
 with GNAT.MD5;     use GNAT.MD5;
 with GNAT.OS_Lib;  use GNAT.OS_Lib;
 
@@ -31,6 +32,7 @@ with ALI;
 with Namet;    use Namet;
 with Prj;      use Prj;
 with Prj.Tree; use Prj.Tree;
+with Snames;   use Snames;
 with Types;
 
 package Gpr_Util is
@@ -194,6 +196,10 @@ package Gpr_Util is
    --  looked for on the PATH if needed.
    --  Returns "null" if no compiler driver was specified for the language, and
    --  exit with an error if one was specified but not found.
+   --
+   --  The --compiler-subst switch is taken into account. For example, if
+   --  "--compiler-subst=ada,gnatpp" was given, and Lang is the Ada language,
+   --  this will return the full path name for gnatpp.
 
    procedure Locate_Runtime
      (Project_Tree : Project_Tree_Ref;
@@ -315,5 +321,39 @@ package Gpr_Util is
 
    function To_Time_Stamp (Time : Calendar.Time) return Types.Time_Stamp_Type;
    --  Returns Time as a time stamp type
+
+   --  Compiler and package substitutions
+
+   --  The following are used to support the --compiler-subst and
+   --  --compiler-pkg-subst switches, which are used by tools such as gnatpp to
+   --  have gprbuild drive gnatpp, thus calling gnatpp only on files that need
+   --  it.
+   --
+   --  gnatpp will pass --compiler-subst=ada,gnatpp to tell gprbuild to run
+   --  gnatpp instead of gcc. It will also pass
+   --  --compiler-pkg-subst=pretty_printer to tell gprbuild to get switches
+   --  from "package Pretty_Printer" instead of from "package Compiler".
+
+   Compiler_Subst_Option     : constant String := "--compiler-subst=";
+   Compiler_Pkg_Subst_Option : constant String := "--compiler-pkg-subst=";
+
+   package Compiler_Subst_HTable is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Name_Id,
+      No_Element => No_Name,
+      Key        => Name_Id,
+      Hash       => Prj.Hash,
+      Equal      => "=");
+   --  A hash table to get the compiler to substitute from the from the
+   --  language name. For example, if the command line option
+   --  "--compiler-subst=ada,gnatpp" was given, then this mapping will include
+   --  the key-->value pair "ada" --> "gnatpp". This causes gprbuild to call
+   --  gnatpp instead of gcc.
+
+   Compiler_Pkg_Subst : Name_Id := Name_Compiler;
+   --  The package name to be used when invoking the compiler. Normally, this
+   --  is Compiler_Name, but it can be set by the --compiler-pkg-subst
+   --  option. For example, if --compiler-pkg-subst=pretty_printer was given,
+   --  then this will be "pretty_printer".
 
 end Gpr_Util;

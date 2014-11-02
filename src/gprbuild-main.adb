@@ -70,6 +70,11 @@ procedure Gprbuild.Main is
    Dash_A_Warning_Issued : Boolean := False;
    --  Flag used to avoid issuing the several times the warning for switch -a
 
+   Subst_Switch_Present : Boolean := False;
+   --  True if --compiler-subst=... or --compiler-pkg-subst=... appears on the
+   --  command line. Used to detect switches that are incompatible with these.
+   --  Also used to prevent passing builder args to the "compiler".
+
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
    --  arguments.
@@ -486,6 +491,9 @@ procedure Gprbuild.Main is
       procedure Forbidden_In_Package_Builder;
       --  Fail if switch Arg is found in package Builder
 
+      procedure Forbidden_With_Subst;
+      --  Fail if an incompatibility with -compiler-[pkg]-subst is found
+
       ----------------------------------
       -- Forbidden_In_Package_Builder --
       ----------------------------------
@@ -498,6 +506,19 @@ procedure Gprbuild.Main is
                Arg & " can only be used on the command line");
          end if;
       end Forbidden_In_Package_Builder;
+
+      ----------------------------------
+      -- Forbidden_With_Subst --
+      ----------------------------------
+
+      procedure Forbidden_With_Subst is
+      begin
+         if Subst_Switch_Present then
+            Fail_Program
+              (Project_Tree,
+               Arg & " is not compatible with compiler-[pkg-]subst");
+         end if;
+      end Forbidden_With_Subst;
 
    begin
       pragma Assert (Arg'First = 1);
@@ -606,12 +627,14 @@ procedure Gprbuild.Main is
          --  -bargs     all binder arguments
 
       elsif Arg = "-bargs" then
+         Forbidden_With_Subst;
          Current_Processor := Binder;
          Current_Bind_Option_Table := No_Bind_Option_Table;
 
          --  -bargs:lang    arguments for binder of language lang
 
       elsif Arg'Length > 7 and then Arg (1 .. 7) = "-bargs:" then
+         Forbidden_With_Subst;
          Current_Processor := Binder;
 
          Name_Len := 0;
@@ -635,6 +658,7 @@ procedure Gprbuild.Main is
          --  -largs     linker arguments
 
       elsif Arg = "-largs" then
+         Forbidden_With_Subst;
          Current_Processor := Linker;
 
          --  -gargs/margs     options directly for gprbuild
@@ -682,6 +706,8 @@ procedure Gprbuild.Main is
             and then
             Arg (1 .. Distributed_Option'Length) = Distributed_Option
          then
+            Forbidden_With_Subst;
+
             if Complete_Output then
                Fail_Program
                  (Project_Tree,
@@ -702,6 +728,8 @@ procedure Gprbuild.Main is
             and then
             Arg (1 .. Slave_Env_Option'Length) = Slave_Env_Option
          then
+            Forbidden_With_Subst;
+
             if Arg = Slave_Env_Option then
                --  Just --slave-env, it is up to gprbuild to build a sensible
                --  slave environment value.
@@ -710,6 +738,97 @@ procedure Gprbuild.Main is
                Slave_Env :=
                  new String'(Arg (Slave_Env_Option'Length + 2 .. Arg'Last));
             end if;
+
+         elsif Arg'Length >= Compiler_Subst_Option'Length
+            and then
+            Arg (1 .. Compiler_Subst_Option'Length) = Compiler_Subst_Option
+         then
+            Forbidden_In_Package_Builder;
+
+            --  We should have Arg set to something like:
+            --     "compiler-subst=ada,gnatpp".
+            --  We need to pick out the "ada" and "gnatpp".
+
+            declare
+               function Scan_To_Comma (Start : Positive) return Positive;
+               --  Scan forward from Start until we find a comma or end of
+               --  string. Return the index just before the ",", or Arg'Last.
+
+               function Scan_To_Comma (Start : Positive) return Positive is
+               begin
+                  if Start >= Arg'Last then
+                     return Arg'Last;
+                  end if;
+
+                  return Result : Positive := Start do
+                     while Result < Arg'Last
+                       and then Arg (Result + 1) /= ','
+                     loop
+                        Result := Result + 1;
+                     end loop;
+                  end return;
+               end Scan_To_Comma;
+
+               Lang_Start : constant Positive :=
+                 Compiler_Subst_Option'Length + 1;
+               Lang_End : constant Positive := Scan_To_Comma (Lang_Start);
+               Comp_Start : constant Positive := Lang_End + 2;
+               Comp_End : constant Positive := Scan_To_Comma (Comp_Start);
+
+               Lang : String renames Arg (Lang_Start .. Lang_End);
+               Comp : String renames Arg (Comp_Start .. Comp_End);
+
+            begin
+               if Lang = "" or else Comp = "" then
+                  Fail_Program (Project_Tree, "invalid switch " & Arg);
+                  --  This switch is intended for internal use by ASIS tools,
+                  --  so a friendlier error message isn't needed here.
+               end if;
+
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Lang);
+               To_Lower (Name_Buffer (1 .. Name_Len));
+
+               declare
+                  Lang_Id : constant Name_Id := Name_Find;
+               begin
+                  Name_Len := 0;
+                  Add_Str_To_Name_Buffer (Comp);
+                  To_Lower (Name_Buffer (1 .. Name_Len));
+
+                  declare
+                     Comp_Id : constant Name_Id := Name_Find;
+                  begin
+                     Compiler_Subst_HTable.Set (Lang_Id, Comp_Id);
+                  end;
+               end;
+            end;
+
+         elsif Arg'Length >= Compiler_Pkg_Subst_Option'Length
+            and then
+            Arg (1 .. Compiler_Pkg_Subst_Option'Length) =
+              Compiler_Pkg_Subst_Option
+         then
+            Forbidden_In_Package_Builder;
+
+            declare
+               Package_Name : String renames
+                 Arg (Compiler_Pkg_Subst_Option'Length + 1 .. Arg'Last);
+            begin
+               if Package_Name = "" then
+                  Fail_Program (Project_Tree, "invalid switch " & Arg);
+                  --  This switch is intended for internal use by ASIS tools,
+                  --  so a friendly error message isn't needed here.
+                  --  No error if the package doesn't exist; gnatpp might pass
+                  --  --compiler-pkg-subst=pretty_printer even when there is no
+                  --  package Pretty_Printer in the project file.
+               end if;
+
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Package_Name);
+               To_Lower (Name_Buffer (1 .. Name_Len));
+               Compiler_Pkg_Subst := Name_Find;
+            end;
 
          elsif Arg = "--db-" then
             Forbidden_In_Package_Builder;
@@ -974,6 +1093,7 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = Create_Map_File_Switch then
+            Forbidden_With_Subst;
             Map_File := new String'("");
 
          elsif Arg'Length > Create_Map_File_Switch'Length + 1
@@ -982,6 +1102,7 @@ procedure Gprbuild.Main is
            and then
              Arg (Create_Map_File_Switch'Length + 1) = '='
          then
+            Forbidden_With_Subst;
             Map_File :=
               new String'(Arg (Create_Map_File_Switch'Length + 2 .. Arg'Last));
 
@@ -1002,6 +1123,7 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-b" then
+            Forbidden_With_Subst;
             Opt.Bind_Only  := True;
 
          elsif Arg = "-c" then
@@ -1032,6 +1154,7 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg'Length > 3 and then Arg (1 .. 3) = "-eI" then
+            Forbidden_With_Subst;
             Forbidden_In_Package_Builder;
 
             begin
@@ -1110,6 +1233,7 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-l" then
+            Forbidden_With_Subst;
             Opt.Link_Only  := True;
 
             if Opt.Compile_Only then
@@ -1117,6 +1241,7 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-m" then
+            Forbidden_With_Subst;
             Opt.Minimal_Recompilation := True;
 
          elsif Arg = "-o" then
@@ -1162,6 +1287,7 @@ procedure Gprbuild.Main is
             Recursive := True;
 
          elsif Arg = "-R" then
+            Forbidden_With_Subst;
             Opt.Run_Path_Option := False;
 
          elsif Arg = "-s" then
@@ -1272,6 +1398,7 @@ procedure Gprbuild.Main is
             null;
 
          elsif (Language = No_Name or else Language = Name_Ada)
+            and then not Subst_Switch_Present
             and then
              (Arg = "-fstack-check"
               or else Arg = "-fno-inline"
@@ -1280,7 +1407,9 @@ procedure Gprbuild.Main is
                  and then (Arg (2) = 'O' or else Arg (2) = 'g')))
          then
             --  For compatibility with gnatmake, use switch to compile Ada
-            --  code.
+            --  code. We don't do this if the --compiler-pkg-subst switch was
+            --  given, because the tool won't understand normal compiler
+            --  options.
 
             if Command_Line then
                Current_Comp_Option_Table :=
@@ -1388,10 +1517,17 @@ procedure Gprbuild.Main is
                "illegal option """ & Arg & """ on the command line");
 
          else
+            --  If --compiler-pkg-subst was given, we don't want to pass
+            --  builder switches down to the "compiler", which probably won't
+            --  understand them, because it's likely some tool like gnatpp.
+
+            if Subst_Switch_Present then
+               null;
+
             --  If we have a switch and there is a Builder Switches language
             --  set, pass this switch to the compiler of the language.
 
-            if Arg (1) = '-' and then Builder_Switches_Lang /= No_Name then
+            elsif Arg (1) = '-' and then Builder_Switches_Lang /= No_Name then
                Current_Builder_Comp_Option_Table :=
                  Builder_Compiling_Options_HTable.Get (Builder_Switches_Lang);
 
@@ -1475,6 +1611,25 @@ procedure Gprbuild.Main is
          Do_Not_Care : Boolean;
 
       begin
+         for Next_Arg in 1 .. Argument_Count loop
+            declare
+               Arg : constant String := Argument (Next_Arg);
+            begin
+               if (Arg'Length >= Compiler_Subst_Option'Length
+                     and then
+                   Arg (1 .. Compiler_Subst_Option'Length) =
+                     Compiler_Subst_Option)
+                 or else
+                 (Arg'Length >= Compiler_Pkg_Subst_Option'Length
+                    and then
+                  Arg (1 .. Compiler_Pkg_Subst_Option'Length) =
+                    Compiler_Pkg_Subst_Option)
+               then
+                  Subst_Switch_Present := True;
+               end if;
+            end;
+         end loop;
+
          Scan_Args : for Next_Arg in 1 .. Argument_Count loop
             Scan_Arg
               (Argument (Next_Arg),
@@ -1927,6 +2082,17 @@ procedure Gprbuild.Main is
          Write_Str ("  -Xnm=val Specify an external reference for " &
                     "Project Files");
          Write_Eol;
+         Write_Eol;
+
+         --  Line for --compiler-subst
+
+         Write_Line ("  --compiler-subst=lang,tool    Specify alternate " &
+                     "compiler");
+
+         --  Line for --compiler-pkg-subst
+
+         Write_Line ("  --compiler-pkg-subst=pkg    Specify alternate " &
+                     "package");
          Write_Eol;
 
          --  Line for -dn

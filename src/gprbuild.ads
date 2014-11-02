@@ -22,6 +22,10 @@
 --  The following package implements the facilities to compile, bind and/or
 --  link a set of Ada and non Ada sources, specified in Project Files.
 
+with Namet; use Namet;
+with Prj;   use Prj;
+with Types; use Types;
+
 private with Ada.Unchecked_Deallocation;
 
 private with GNAT.Dynamic_Tables;
@@ -29,13 +33,10 @@ private with GNAT.HTable;
 private with GNAT.OS_Lib;
 private with Makeutl;
 
-with ALI;
-with Namet;       use Namet;
-with Opt;
-with Osint;
-with Prj;         use Prj;
-with Table;
-with Types;       use Types;
+private with ALI;
+private with Opt;
+private with Osint;
+private with Table;
 
 package Gprbuild is
 
