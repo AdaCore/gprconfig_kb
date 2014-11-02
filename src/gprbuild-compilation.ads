@@ -65,13 +65,13 @@ package Gprbuild.Compilation is
      (Env   : String;
       Fail  : Boolean;
       Force : Boolean := False);
-   --  Set environemnt given an Env variable containing a set of name=value
+   --  Set environment given an Env variable containing a set of name=value
    --  separated with Opts_Sep.
    --
    --  name=value[<opts_sep>name=value]
    --
    --  If Fail is true the program will exit if the a format error is detected.
-   --  If Force is set to True the environement will always be set otherwise it
+   --  If Force is set to True the environment will always be set otherwise it
    --  will be set only if not already set.
 
    --  The set of files for a given project (associated with a synchronization

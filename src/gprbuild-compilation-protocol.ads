@@ -152,7 +152,7 @@ package Gprbuild.Compilation.Protocol is
    --  all relatives to the root directory. The build master root in full path
    --  is replaced by Full_Path_Tag. The slaves will change back this tag to
    --  the actual full path on their working environment. The Env string is a
-   --  set of environement variables (name=value[;name=value]) to set before
+   --  set of environment variables (name=value[;name=value]) to set before
    --  spawning the process.
 
    procedure Send_File

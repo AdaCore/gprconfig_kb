@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2012-2013, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,7 +29,7 @@ with GNAT.String_Split; use GNAT.String_Split;
 package body Gprbuild.Compilation is
 
    Last_Env_MD5 : MD5.Message_Digest := (others => <>);
-   --  Keep last environement variable set to avoid too many system calls.
+   --  Keep last environment variable set to avoid too many system calls.
    --  ??? Ideally, we should set them when spawning the process, in
    --  which case it would be less expensive to set and could be set
    --  every time.

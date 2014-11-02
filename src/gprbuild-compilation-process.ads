@@ -48,7 +48,7 @@ package Gprbuild.Compilation.Process is
      (Project     : Project_Id;
       Language    : Name_Id;
       Name, Value : String);
-   --  Record an environement variable to set when spawning a compilation. This
+   --  Record an environment variable to set when spawning a compilation. This
    --  is for example to set CPATH if needed for the compilation of C sources.
 
    function Run
