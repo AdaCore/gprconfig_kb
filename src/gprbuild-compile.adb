@@ -3087,6 +3087,9 @@ package body Gprbuild.Compile is
          Source_Identity : Queue.Source_Info;
          Compilation_OK  : Boolean;
          Slave           : Unbounded_String;
+
+         Cur : Bad_Compilations_Set.Cursor;
+         OK  : Boolean;
       begin
          if not Bad_Compilations.Is_Empty and then not Opt.Keep_Going then
             while Outstanding_Compiles > 0 loop
@@ -3094,7 +3097,7 @@ package body Gprbuild.Compile is
 
                if not Compilation_OK then
                   Bad_Compilations.Insert
-                    (Source_Identity.Id, To_String (Slave));
+                    (Source_Identity.Id, To_String (Slave), Cur, OK);
                end if;
             end loop;
 
@@ -3132,6 +3135,9 @@ package body Gprbuild.Compile is
          No_Check        : Boolean;
          Slave           : Unbounded_String;
          use Queue;
+
+         Cur : Bad_Compilations_Set.Cursor;
+         OK  : Boolean;
       begin
          if Outstanding_Compiles = Get_Maximum_Processes
            or else (Queue.Is_Virtually_Empty and then Outstanding_Compiles > 0)
@@ -3181,7 +3187,8 @@ package body Gprbuild.Compile is
             end if;
 
             if not Compilation_OK then
-               Bad_Compilations.Insert (Source_Identity.Id, To_String (Slave));
+               Bad_Compilations.Insert
+                 (Source_Identity.Id, To_String (Slave), Cur, OK);
             end if;
          end if;
       end Wait_For_Available_Slot;
