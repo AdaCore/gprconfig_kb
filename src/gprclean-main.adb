@@ -778,6 +778,7 @@ begin
       end Do_Clean;
 
       procedure For_All is new For_Project_And_Aggregated (Do_Clean);
+
    begin
       --  For an aggregate project, we always cleanup all aggregated
       --  projects, whether "-r" was specified or not. But for those
