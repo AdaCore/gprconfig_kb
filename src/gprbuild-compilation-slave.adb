@@ -205,6 +205,16 @@ package body Gprbuild.Compilation.Slave is
 
          Protocol.Send_End_Of_Compilation (S.Channel);
 
+         --  Wait for acknowledge to ensure the clean-up is terminated on the
+         --  slave.
+
+         declare
+            Cmd : constant Command :=
+                    Get_Command (S.Channel) with Unreferenced;
+         begin
+            null;
+         end;
+
          Close (S.Channel);
       end Clean_Up_Remote_Slave;
 
@@ -844,6 +854,17 @@ package body Gprbuild.Compilation.Slave is
       procedure Unregister (S : in out Slave) is
       begin
          Send_End_Of_Compilation (S.Channel);
+
+         --  Wait for acknowledge to ensure the clean-up is terminated on the
+         --  slave.
+
+         declare
+            Cmd : constant Command :=
+                    Get_Command (S.Channel) with Unreferenced;
+         begin
+            null;
+         end;
+
          Close (S.Channel);
       end Unregister;
 

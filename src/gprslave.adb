@@ -902,9 +902,11 @@ procedure Gprslave is
                   elsif Kind (Cmd) = EC then
                      --  No more compilation for this project
 
+                     Builders.Remove (Builder);
+                     Send_Ok (Builder.Channel);
+
                      Close (Builder.Channel);
                      Close_Socket (Builder.Socket);
-                     Builders.Remove (Builder);
 
                      Message
                        (Builder,
@@ -1836,6 +1838,8 @@ procedure Gprslave is
                elsif Kind (Cmd) = EC then
                   --  Cannot communicate with build master anymore, we then
                   --  receive an end-of-compilation. Exit now.
+
+                  Send_Ok (Builder.Channel);
 
                   Close (Builder.Channel);
                   Close_Socket (Builder.Socket);
