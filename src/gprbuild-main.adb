@@ -794,7 +794,6 @@ procedure Gprbuild.Main is
                begin
                   Name_Len := 0;
                   Add_Str_To_Name_Buffer (Comp);
-                  To_Lower (Name_Buffer (1 .. Name_Len));
 
                   declare
                      Comp_Id : constant Name_Id := Name_Find;
