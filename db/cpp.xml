@@ -239,7 +239,10 @@
    package Compiler is
       for Leading_Required_Switches ("C++") use
         Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-DCPU=_VX_PPCE500V2");
+        &amp; ("-DCPU=_VX_PPCE500V2",
+               "-te500v2",
+               "-mhard-float",
+               "-mstrict-align");
    end Compiler;
      </config>
    </configuration>
