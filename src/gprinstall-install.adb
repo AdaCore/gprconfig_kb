@@ -1240,24 +1240,28 @@ package body Gprinstall.Install is
             -------------------
 
             procedure Create_Naming (Proj : Project_Id) is
+               P : constant Package_Id := Get_Package (Proj, Name_Naming);
             begin
                Content.Append ("   package Naming is");
 
-               --  Attributes
+               if P /= No_Package then
+                  --  Attributes
 
-               declare
-                  V : Variable_Id := Pcks
-                        (Get_Package (Proj, Name_Naming)).Decl.Attributes;
-               begin
-                  while V /= No_Variable loop
-                     Content.Append ("      " & Image (V));
-                     V := Tree.Shared.Variable_Elements.Table (V).Next;
-                  end loop;
-               end;
+                  declare
+                     V : Variable_Id := Pcks (P).Decl.Attributes;
+                  begin
+                     while V /= No_Variable loop
+                        Content.Append ("      " & Image (V));
+                        V := Tree.Shared.Variable_Elements.Table (V).Next;
+                     end loop;
+                  end;
+               end if;
 
                Content.Append ("      case BUILD is");
 
-               Content.Append (Naming_Case_Alternative (Proj));
+               if P /= No_Package then
+                  Content.Append (Naming_Case_Alternative (Proj));
+               end if;
 
                Content.Append ("      end case;");
                Content.Append ("   end Naming;");
@@ -1269,13 +1273,16 @@ package body Gprinstall.Install is
             -------------------
 
             procedure Create_Linker (Proj : Project_Id) is
+               P : constant Package_Id := Get_Package (Proj, Name_Linker);
             begin
                Content.Append ("   package Linker is");
 
                Content.Append ("      case BUILD is");
                --  Attribute Linker_Options only if set
 
-               Content.Append (Linker_Case_Alternative (Proj));
+               if P /= No_Package then
+                  Content.Append (Linker_Case_Alternative (Proj));
+               end if;
 
                Content.Append ("      end case;");
                Content.Append ("   end Linker;");
@@ -1805,6 +1812,10 @@ package body Gprinstall.Install is
             File : aliased File_Type;
          begin
             if not Dry_Run then
+               if not Exists (Project_Dir) then
+                  Create_Path (Project_Dir);
+               end if;
+
                Create (File, Out_File, Filename);
                F := File'Unchecked_Access;
             end if;
