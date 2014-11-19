@@ -262,17 +262,4 @@
      </config>
    </configuration>
 
-   <configuration>
-     <compilers>
-       <compiler name="G++-WRS7X86" />
-     </compilers>
-     <config>
-   package Compiler is
-      for Leading_Required_Switches ("C++") use
-        Compiler'Leading_Required_Switches ("C++")
-        &amp; ("-DCPU=_VX_SIMNT");
-   end Compiler;
-     </config>
-   </configuration>
-
 </gprconfig>
