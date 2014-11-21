@@ -2116,16 +2116,23 @@ package body Gprinstall.Install is
                Content.Append
                  ("   type BUILD_KIND is (""" & Build_Name.all & """);");
 
-               Line := +"   BUILD : BUILD_KIND := external(""";
+               Line := +"   BUILD : BUILD_KIND := ";
 
-               if Build_Var /= null then
-                  Line := Line & Build_Var.all;
-               else
-                  Line := Line & To_Upper (Dir_Name (Suffix => False));
-                  Line := Line & "_BUILD";
+               if not No_Build_Var then
+                  Line := Line & "external(""";
+
+                  if Build_Var /= null then
+                     Line := Line & Build_Var.all;
+                  else
+                     Line := Line & To_Upper (Dir_Name (Suffix => False));
+                     Line := Line & "_BUILD";
+                  end if;
+
+                  Line := Line & """, ";
                end if;
 
-               Line := Line & """, """ & Build_Name.all & """);";
+               Line := Line & '"' & Build_Name.all & '"'
+                 & (if No_Build_Var then ";" else ");");
                Content.Append (-Line);
 
                --  Add languages, for an aggregate library we want all unique

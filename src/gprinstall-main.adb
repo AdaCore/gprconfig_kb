@@ -59,6 +59,7 @@ procedure Gprinstall.Main is
    --  Options specific to gprinstall
 
    Build_Var_Option       : constant String := "--build-var";
+   No_Build_Var_Option    : constant String := "--no-build-var";
    Build_Name_Option      : constant String := "--build-name";
    Install_Name_Option    : constant String := "--install-name";
    Uninstall_Option       : constant String := "--uninstall";
@@ -345,6 +346,9 @@ procedure Gprinstall.Main is
                Build_Var := new String'
                  (Arg (Build_Var_Option'Length + 2 .. Arg'Last));
 
+            elsif Has_Prefix (No_Build_Var_Option) then
+               No_Build_Var := True;
+
             elsif Has_Prefix (Build_Name_Option) then
                Free (Build_Name);
                Build_Name := new String'
@@ -548,6 +552,11 @@ procedure Gprinstall.Main is
       if Build_Var /= null and then Usage_Mode = Uninstall_Mode then
          Fail_Program
            (Project_Tree, "cannot specify --build-var in uninstall mode");
+      end if;
+
+      if Build_Var /= null and then No_Build_Var then
+         Fail_Program
+           (Project_Tree, "cannot specify --build-var and --no-build-var");
       end if;
 
       if Output_Stats and then Usage_Mode /= List_Mode then

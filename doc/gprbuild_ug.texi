@@ -3338,6 +3338,11 @@ they want to use (link against).
 @item @option{--build-var} : Specify the name of the build variable in
 the installed project. The default value being @code{<PROJECT_NAME>_BUILD}.
 
+@item @option{--no-build-var} : Specify that no build/scenario
+variable should be generated. This option can be use for a project
+where there is single configuration, so a single installation. This
+option cannot be used with @option{--build-var}.
+
 @item @option{--dry-run} : Install nothing, just display the actions
 that would have been done.
 

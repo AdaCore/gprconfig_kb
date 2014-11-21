@@ -83,6 +83,9 @@ private
    Build_Var  : String_Access;
    --  Name of the build variable for installed project file
 
+   No_Build_Var : Boolean := False;
+   --  Wether a build variable is to be generated
+
    Build_Name : String_Access := new String'("default");
    --  Name of the current build
 

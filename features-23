@@ -8,3 +8,8 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-NA15-003 GPRinstall new --no-build-var option (2014-11-21)
+
+  A new option --no-build-var has been introduced and is meant to be
+  use for project with a single configuration (single installation).
+  In this case there is no build/scenario variable generated.
