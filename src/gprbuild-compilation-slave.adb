@@ -807,7 +807,7 @@ package body Gprbuild.Compilation.Slave is
                S : Slave := Slave_S.Element (C);
             begin
                Proc (S);
-               Pool (C) := S;
+               Pool.Replace_Element (C, S);
             end;
          end loop;
       end Iterate;
