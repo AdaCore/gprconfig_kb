@@ -26,3 +26,14 @@ KP-22-NB04-012 aggregate project and illegal source compiled several times
   Status:     This was fixed in 2.3 on 2014-11-04
 
   Workaround: Invoke gprbuild without -jnnn.
+
+KP-22-NA16-016 aggregate project, extended projects and sources not compiled
+
+  Problem:    When an aggregate project aggregated two project trees and the
+              same project is in both tree and is extended in at least one of
+              the two trees, immediate sources of the project may not be
+              properly compiled in both trees.
+
+  Status:     This was fixed in 2.3 on 2014-11-25
+
+  Workaround: Invoke gprbuild on the two different project trees.
