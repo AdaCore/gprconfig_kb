@@ -770,29 +770,6 @@
 
    <!--  Set prefix of gnatbind -->
    <configuration>
-     <targets>
-       <target name="^.*-wrs-vxworks.*$" />
-       <target name="^.*-wrs-linux.*$" />
-       <target name="^.*-elf-lynx.*$" />
-       <target name="^visium-elf$" />
-       <target name="^powerpc-elf$" />
-       <target name="^powerpc-eabispe$" />
-       <target name="^powerpc-xcoff-lynxos178$" />
-       <target name="^erc32-elf$" />
-       <target name="^leon-elf$" />
-       <target name="^leon3-elf$" />
-       <target name="^arm-eabi$" />
-       <target name="^arm-elf$" />
-       <target name="^avr$" />
-       <target name="^.*-elinos-linux$" />
-       <target name="^.*-pikeos$" />
-       <target name="^dotnet$" />
-       <target name="^codepeer$" />
-       <target name="^.*-pc-mingw32$" />
-       <target name="^arm-linux-androideabi$" />
-       <target name="^arm-linux-gnueabi" />
-       <target name="^arm-.*darwin.*" />
-     </targets>
      <compilers>
        <compiler name="GNAT" />
        <compiler name="GNAT_DOTNET" />
