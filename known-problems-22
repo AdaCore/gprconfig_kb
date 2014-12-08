@@ -17,6 +17,18 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-NC05-016 References from incomplete withs
+
+  Problem:    When a project file references an attribute, a variable or
+              a package from an imported project that has not yet be found
+              before the project search path has been updated, an error is
+              reported and no processing is done by gprbuild.
+
+  Status:     This was fixed in 2.3 on 2014-12-08
+
+  Workaround: Set the project search path so that the imported project will be
+              found, before invoking gprbuild.
+
 KP-22-NB04-012 aggregate project and illegal source compiled several times
 
   Problem:    When gprbuild is invoked with -jnn on a main aggregate project,
