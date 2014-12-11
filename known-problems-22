@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-NC10-018 GPRbuild distributed recompile all sources
+
+  Problem:    When a project is using a global configuration pragmas file
+              (using -gnatec option or with Global_Configuration_Pragmas
+              project's attribute) GPRbuild in distributed mode will always
+              recompile all sources
+
+  Status:     This was fixed in 2.3 on 2014-12-11
+
+  Workaround: Do not use the distributed compilation mode for such projects.
+
 KP-22-NC05-016 References from incomplete withs
 
   Problem:    When a project file references an attribute, a variable or

@@ -206,6 +206,14 @@ package body Gprbuild.Compilation.Protocol is
             Rewrite_Data.Rewrite (Rewriter, Input'Access, Output'Access);
 
             Close (File);
+
+            --  Set time stamp if any
+
+            if Cmd.Args'Length = 3 then
+               Set_File_Stamp
+                 (File_Name, Time_Stamp_Type (Args (Cmd) (3).all));
+            end if;
+
          exception
             when others =>
                if Is_Open (File) then
@@ -221,15 +229,21 @@ package body Gprbuild.Compilation.Protocol is
       ---------------------
 
       function Handle_RAW_File (Cmd : Command) return Command is
-         File_Name : constant String :=
+         File_Name  : constant String :=
                        Translate_Receive (Channel, Cmd.Args (1).all);
-         Dir       : constant String := Containing_Directory (File_Name);
+         Dir        : constant String := Containing_Directory (File_Name);
+         Time_Stamp : Time_Stamp_Type := Empty_Time_Stamp;
       begin
          if Dir /= "" and then not Exists (Dir) then
             Create_Directory (Dir);
          end if;
 
-         Get_RAW_File_Content (Channel, File_Name);
+         if Cmd.Args'Length = 2 then
+            --  We have a time-stamp, use it
+            Time_Stamp := Time_Stamp_Type (Args (Cmd) (2).all);
+         end if;
+
+         Get_RAW_File_Content (Channel, File_Name, Time_Stamp);
 
          return Get_Command (Channel);
       end Handle_RAW_File;
@@ -425,7 +439,7 @@ package body Gprbuild.Compilation.Protocol is
       Stream_IO.Close (File);
 
       if Timestamp /= Empty_Time_Stamp then
-         Set_Stamp (Path_Name, Timestamp);
+         Set_File_Stamp (Path_Name, Timestamp);
       end if;
 
       Unchecked_Free (Buffer);

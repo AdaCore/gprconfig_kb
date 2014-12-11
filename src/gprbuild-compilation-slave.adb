@@ -630,7 +630,10 @@ package body Gprbuild.Compilation.Slave is
                   File_Name : constant String := O (O'First + 8 .. O'Last);
                begin
                   if Exists (File_Name) then
-                     Send_File (S.Channel, File_Name, Rewrite => True);
+                     Send_File
+                       (S.Channel, File_Name,
+                        Rewrite         => True,
+                        Keep_Time_Stamp => True);
                   else
                      Write_Line
                        ("File not found " & File_Name);
