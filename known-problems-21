@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.2.1 and above
 ---------------------------------------
 
+KP-21-NB04-012 aggregate project and illegal source compiled several times
+
+  Problem:    When gprbuild is invoked with -jnn on a main aggregate project,
+              and the same illegal source in different projects in different
+              project trees needs to be compiled, gprbuild may crash.
+
+  Status:     This was fixed in 2.3 on 2014-11-04
+              This was fixed in 2.2.1 on 2014-12-11
+
+  Workaround: Invoke gprbuild without -jnnn.
+
 KP-21-NA22-018 Aggregate project, -k and compilation errors
 
   Problem:    When gprbuild is invoked with -k on a main aggregate project,

@@ -29,16 +29,6 @@ KP-22-NC05-016 References from incomplete withs
   Workaround: Set the project search path so that the imported project will be
               found, before invoking gprbuild.
 
-KP-22-NB04-012 aggregate project and illegal source compiled several times
-
-  Problem:    When gprbuild is invoked with -jnn on a main aggregate project,
-              and the same illegal source in different projects in different
-              project trees needs to be compiled, gprbuild may crash.
-
-  Status:     This was fixed in 2.3 on 2014-11-04
-
-  Workaround: Invoke gprbuild without -jnnn.
-
 KP-22-NA16-016 aggregate project, extended projects and sources not compiled
 
   Problem:    When an aggregate project aggregated two project trees and the
