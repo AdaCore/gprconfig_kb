@@ -40,9 +40,10 @@ package body Gprbuild.Compilation.Protocol is
    --  Returns string representation of N without leading space
 
    procedure Send_File_Internal
-     (Channel   : Communication_Channel;
-      Path_Name : String;
-      Cmd       : Command_Kind);
+     (Channel    : Communication_Channel;
+      Path_Name  : String;
+      Cmd        : Command_Kind;
+      Time_Stamp : Time_Stamp_Type);
    --  Send file Path_Name over the channel with rewritting if needed
 
    procedure Send_RAW_File_Content
@@ -583,18 +584,30 @@ package body Gprbuild.Compilation.Protocol is
    ---------------
 
    procedure Send_File
-     (Channel   : Communication_Channel;
-      Path_Name : String;
-      Rewrite   : Boolean) is
+     (Channel         : Communication_Channel;
+      Path_Name       : String;
+      Rewrite         : Boolean;
+      Keep_Time_Stamp : Boolean := False)
+   is
+      Time_Stamp : Time_Stamp_Type := Empty_Time_Stamp;
    begin
+      if Keep_Time_Stamp then
+         Time_Stamp := To_Time_Stamp
+           (Modification_Time (Path_Name)
+            - Duration (Time_Zones.UTC_Time_Offset) * 60.0);
+      end if;
+
       if Rewrite then
-         Send_File_Internal (Channel, Path_Name, FL);
+         Send_File_Internal (Channel, Path_Name, FL, Time_Stamp);
 
       else
          if Exists (Path_Name) then
             String'Output
               (Channel.Channel,
-               Command_Kind'Image (FR) & Translate_Send (Channel, Path_Name));
+               Command_Kind'Image (FR)
+               & Translate_Send (Channel, Path_Name)
+               & (if Keep_Time_Stamp then Args_Sep & String (Time_Stamp)
+                 else ""));
 
             Send_RAW_File_Content (Channel, Path_Name);
          end if;
@@ -652,9 +665,10 @@ package body Gprbuild.Compilation.Protocol is
    ------------------------
 
    procedure Send_File_Internal
-     (Channel   : Communication_Channel;
-      Path_Name : String;
-      Cmd       : Command_Kind)
+     (Channel    : Communication_Channel;
+      Path_Name  : String;
+      Cmd        : Command_Kind;
+      Time_Stamp : Time_Stamp_Type)
    is
       use Ada.Streams.Stream_IO;
 
@@ -750,7 +764,9 @@ package body Gprbuild.Compilation.Protocol is
             String'Output
               (Channel.Channel,
                Command_Kind'Image (Cmd) & Image (F_Size)
-               & Args_Sep & Translate_Send (Channel, Path_Name));
+               & Args_Sep & Translate_Send (Channel, Path_Name)
+               & (if Time_Stamp /= Empty_Time_Stamp
+                 then Args_Sep & String (Time_Stamp) else ""));
 
             if F_Size /= 0 then
                Rewrite_Data.Rewrite (Rewriter, Input'Access, Output'Access);
@@ -859,7 +875,7 @@ package body Gprbuild.Compilation.Protocol is
    procedure Send_Output
      (Channel : Communication_Channel; File_Name : String) is
    begin
-      Send_File_Internal (Channel, File_Name, DP);
+      Send_File_Internal (Channel, File_Name, DP, Empty_Time_Stamp);
    end Send_Output;
 
    ---------------------------

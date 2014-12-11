@@ -156,9 +156,10 @@ package Gprbuild.Compilation.Protocol is
    --  spawning the process.
 
    procedure Send_File
-     (Channel   : Communication_Channel;
-      Path_Name : String;
-      Rewrite   : Boolean);
+     (Channel         : Communication_Channel;
+      Path_Name       : String;
+      Rewrite         : Boolean;
+      Keep_Time_Stamp : Boolean := False);
    --  Path_Name is the full path name to the local filename
 
    procedure Sync_Files
