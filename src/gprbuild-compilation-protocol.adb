@@ -50,6 +50,10 @@ package body Gprbuild.Compilation.Protocol is
       Path_Name : String);
    --  Send the file content untranslated
 
+   procedure Set_File_Stamp
+     (Path_Name : String; Time_Stamp : Time_Stamp_Type) with Inline;
+   --  Set modification time stamp to the given file
+
    Buffer_Size : constant := 256 * 1_024; --  256Kb
 
    type Buffer_Access is access Stream_Element_Array;
@@ -385,39 +389,6 @@ package body Gprbuild.Compilation.Protocol is
       Path_Name : String;
       Timestamp : Time_Stamp_Type := Empty_Time_Stamp)
    is
-      procedure Set_Stamp
-        (Path_Name : String; Time_Stamp : Time_Stamp_Type)
-      with Inline;
-      --  Set modification time stamp to the given file
-
-      ---------------
-      -- Set_Stamp --
-      ---------------
-
-      procedure Set_Stamp
-        (Path_Name : String; Time_Stamp : Time_Stamp_Type)
-      is
-         use type Time_Zones.Time_Offset;
-
-         TS : constant String := String (Time_Stamp);
-         H  : Hour_Type := Hour_Type'Value (TS (9 .. 10));
-      begin
-         --  GM_Time_Of expect a local time, we are receiving a GM time in the
-         --  Timestamp variable.
-
-         H := H + Hour_Type (Time_Zones.UTC_Time_Offset / 60);
-
-         Set_File_Last_Modify_Time_Stamp
-           (Path_Name,
-            GM_Time_Of
-              (Year   => Year_Type'Value (TS (1 .. 4)),
-               Month  => Month_Type'Value (TS (5 .. 6)),
-               Day    => Day_Type'Value (TS (7 .. 8)),
-               Hour   => H,
-               Minute => Minute_Type'Value (TS (11 .. 12)),
-               Second => Second_Type'Value (TS (13 .. 14))));
-      end Set_Stamp;
-
       Buffer : Buffer_Access;
       Last   : Stream_Element_Offset;
       Size   : Stream_Element_Offset;
@@ -797,6 +768,34 @@ package body Gprbuild.Compilation.Protocol is
          raise Constraint_Error with "File not found : " & Path_Name;
       end if;
    end Send_File_Internal;
+
+   --------------------
+   -- Set_File_Stamp --
+   --------------------
+
+   procedure Set_File_Stamp
+     (Path_Name : String; Time_Stamp : Time_Stamp_Type)
+   is
+      use type Time_Zones.Time_Offset;
+
+      TS : constant String := String (Time_Stamp);
+      H  : Hour_Type := Hour_Type'Value (TS (9 .. 10));
+   begin
+      --  GM_Time_Of expect a local time, we are receiving a GM time in the
+      --  Timestamp variable.
+
+      H := H + Hour_Type (Time_Zones.UTC_Time_Offset / 60);
+
+      Set_File_Last_Modify_Time_Stamp
+        (Path_Name,
+         GM_Time_Of
+           (Year   => Year_Type'Value (TS (1 .. 4)),
+            Month  => Month_Type'Value (TS (5 .. 6)),
+            Day    => Day_Type'Value (TS (7 .. 8)),
+            Hour   => H,
+            Minute => Minute_Type'Value (TS (11 .. 12)),
+            Second => Second_Type'Value (TS (13 .. 14))));
+   end Set_File_Stamp;
 
    -------------
    -- Send_Ko --
