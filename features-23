@@ -19,3 +19,10 @@ NF-23-NA15-003 GPRinstall new --no-build-var option (2014-11-21)
   A new option --no-build-var has been introduced and is meant to be
   use for project with a single configuration (single installation).
   In this case there is no build/scenario variable generated.
+
+NF-23-NA14-036 GPRinstall Mode & Install_Name attributes (2014-12-10)
+
+  It is now possible to set the Mode and Install_Name value in the
+  package Install of a project. These attributes are equivalent to the
+  GPSinstall command line options but allow per project fine tuning of
+  the installation setup.

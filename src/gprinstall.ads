@@ -80,6 +80,16 @@ private
                              (new String'("share" & DS & "gpr" & DS), True);
    --  Subdirectory used for the installed generated project file
 
+   Global_Install_Mode : Param := (new String'("dev"), True);
+   --  Either dev or usage.
+   --  "dev" if the installation is for developers (source of the libraries
+   --  are also installed). If set to "usage" only the shared libraries are
+   --  installed and/or the main executables.
+
+   Global_Install_Name : Param := (new String'("default"), True);
+   --  The installation name, the default value is the project name without
+   --  extension.
+
    Build_Var  : String_Access;
    --  Name of the build variable for installed project file
 
@@ -88,18 +98,6 @@ private
 
    Build_Name : String_Access := new String'("default");
    --  Name of the current build
-
-   Install_Name         : String_Access;
-   --  The installation name
-
-   Install_Name_Default : Boolean := True;
-   --  Wether the Install_Name has been specified on the command line. If
-   --  specified then Install_Name_Default will be false.
-
-   For_Dev : Boolean := True;
-   --  True if the installation is for developers (source of the libraries
-   --  are also installed). If set to False (for usage) only the shared
-   --  libraries are installed and/or the main executables.
 
    Search_Project_Dir_Expected : Boolean := False;
    --  True when last switch was -aP

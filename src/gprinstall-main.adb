@@ -133,7 +133,8 @@ procedure Gprinstall.Main is
       function Has_Prefix (Name : String) return Boolean;
       --  Returns True if Arg start with Name
 
-      procedure Set_Param (P : in out Param; Name : String);
+      procedure Set_Param
+        (P : in out Param; Name : String; Is_Dir : Boolean := True);
       --  Set P with value for option Name
 
       ----------------
@@ -151,10 +152,13 @@ procedure Gprinstall.Main is
       -- Set_Param --
       ---------------
 
-      procedure Set_Param (P : in out Param; Name : String) is
+      procedure Set_Param
+        (P : in out Param; Name : String; Is_Dir : Boolean := True)
+      is
+         Value : constant String := Arg (Name'Length + 2 .. Arg'Last);
       begin
          P := (new String'
-                 (Ensure_Directory (Arg (Name'Length + 2 .. Arg'Last))),
+                 ((if Is_Dir then Ensure_Directory (Value) else Value)),
                False);
       end Set_Param;
 
@@ -355,10 +359,8 @@ procedure Gprinstall.Main is
                  (Arg (Build_Name_Option'Length + 2 .. Arg'Last));
 
             elsif Has_Prefix (Install_Name_Option) then
-               Free (Install_Name);
-               Install_Name := new String'
-                 (Arg (Install_Name_Option'Length + 2 .. Arg'Last));
-               Install_Name_Default := False;
+               Set_Param
+                 (Global_Install_Name, Install_Name_Option, Is_Dir => False);
 
             elsif Has_Prefix (Sources_Only_Option) then
                Sources_Only := True;
@@ -378,10 +380,8 @@ procedure Gprinstall.Main is
                begin
                   To_Lower (Mode);
 
-                  if Mode = "dev" then
-                     For_Dev := True;
-                  elsif Mode = "usage" then
-                     For_Dev := False;
+                  if Mode in "dev" | "usage" then
+                     Set_Param (Global_Install_Mode, Mode_Option);
                   else
                      Processed := False;
                   end if;
@@ -861,12 +861,11 @@ begin
       DB.List;
 
    else
-      if Install_Name = null then
-         Install_Name := new String'
-           (Ada.Directories.Base_Name (Project_File_Name.all));
+      if Global_Install_Name.Default then
+         Uninstall.Process (Ada.Directories.Base_Name (Project_File_Name.all));
+      else
+         Uninstall.Process (Global_Install_Name.V.all);
       end if;
-
-      Uninstall.Process (Install_Name.all);
    end if;
 
    Namet.Finalize;

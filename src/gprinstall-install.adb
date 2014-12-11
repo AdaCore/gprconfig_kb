@@ -80,6 +80,8 @@ package body Gprinstall.Install is
       Link_Lib_Subdir : Param := Dup (Global_Link_Lib_Subdir);
       Sources_Subdir  : Param := Dup (Global_Sources_Subdir);
       Project_Subdir  : Param := Dup (Global_Project_Subdir);
+      Install_Mode    : Param := Dup (Global_Install_Mode);
+      Install_Name    : Param := Dup (Global_Install_Name);
 
       type Items is (Source, Object, Dependency, Library, Executable);
 
@@ -173,6 +175,8 @@ package body Gprinstall.Install is
       procedure Open_Check_Manifest;
       --  Check that manifest file can be used
 
+      function For_Dev return Boolean is (Install_Mode.V.all = "dev");
+
       ---------------------
       -- Add_To_Manifest --
       ---------------------
@@ -226,7 +230,8 @@ package body Gprinstall.Install is
       procedure Check_Install_Package is
          Pck : Package_Id := Project.Decl.Packages;
 
-         procedure Replace (P : in out Param; Val : Name_Id);
+         procedure Replace
+           (P : in out Param; Val : Name_Id; Is_Dir : Boolean := True);
          pragma Inline (Replace);
          --  Set Var with Value, free previous pointer
 
@@ -234,12 +239,15 @@ package body Gprinstall.Install is
          -- Replace --
          -------------
 
-         procedure Replace (P : in out Param; Val : Name_Id) is
-            V : constant String := Ensure_Directory (Get_Name_String (Val));
+         procedure Replace
+           (P : in out Param; Val : Name_Id; Is_Dir : Boolean := True)
+         is
+            V : constant String := Get_Name_String (Val);
          begin
             if V /= "" then
                Free (P.V);
-               P := (new String'(V), Default => False);
+               P := (new String'((if Is_Dir then Ensure_Directory (V) else V)),
+                     Default => False);
             end if;
          end Replace;
 
@@ -287,6 +295,17 @@ package body Gprinstall.Install is
                           and then Global_Project_Subdir.Default
                         then
                            Replace (Project_Subdir, V.Value.Value);
+
+                        elsif V.Name = Name_Mode
+                          and then Global_Install_Mode.Default
+                        then
+                           Replace (Install_Mode, V.Value.Value);
+
+                        elsif V.Name = Name_Install_Name
+                          and then Global_Install_Name.Default
+                        then
+                           Replace
+                             (Install_Name, V.Value.Value, Is_Dir => False);
 
                         elsif V.Name = Name_Active then
                            declare
@@ -2228,7 +2247,7 @@ package body Gprinstall.Install is
 
       procedure Open_Check_Manifest is
          Dir     : constant String := Project_Dir & "manifests";
-         Name    : constant String := Dir & DS & Install_Name.all;
+         Name    : constant String := Dir & DS & Install_Name.V.all;
          Prj_Sig : constant String :=
                      File_MD5 (Get_Name_String (Project.Path.Display_Name));
          Buf     : String (1 .. 128);
@@ -2243,7 +2262,7 @@ package body Gprinstall.Install is
             if Last >= Message_Digest'Length
               and then (Buf (1 .. 2) /= Sig_Line
                         or else Buf (3 .. Message_Digest'Last + 2) /= Prj_Sig)
-              and then Install_Name_Default
+              and then Install_Name.Default
             then
                Write_Line
                  ("Project already installed, either:");
@@ -2253,7 +2272,7 @@ package body Gprinstall.Install is
                  ("   - install under another name, use --install-name");
                Write_Line
                  ("   - force installation under the same name, "
-                  & "use --install-name=" & Install_Name.all);
+                  & "use --install-name=" & Install_Name.V.all);
                OS_Exit (1);
             end if;
 
@@ -2300,9 +2319,8 @@ package body Gprinstall.Install is
          --  The default install name is the name of the project without
          --  extension.
 
-         if Install_Name = null or else Install_Name_Default then
-            Free (Install_Name);
-            Install_Name :=
+         if Install_Name.Default then
+            Install_Name.V :=
               new String'((Base_Name (Get_Name_String (Project.Path.Name))));
          end if;
 
