@@ -71,7 +71,7 @@ package body Gprinstall.Install is
       --  default values. It is updated using the Install package found in the
       --  project if any.
 
-      Active         : Boolean := True;
+      Active          : Boolean := True;
       --  Whether installation is active or not (Install package's attribute)
 
       Prefix_Dir      : Param := Dup (Global_Prefix_Dir);
