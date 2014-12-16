@@ -2039,8 +2039,8 @@ package body Gprbuild.Compile is
             Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
 
             if Nam_Nod.Name /= Empty_String then
-               Add_Option
-                 (Value   => Nam_Nod.Name,
+               Add_Option_Internal_Codepeer
+                 (Value   => new String'(Get_Name_String (Nam_Nod.Name)),
                   To      => Compilation_Options,
                   Display => First or Opt.Verbose_Mode);
                First := False;
@@ -2121,8 +2121,8 @@ package body Gprbuild.Compile is
             List := Config.Compilation_PIC_Option;
             while List /= No_Name_List loop
                Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
-               Add_Option
-                 (Value   => Nam_Nod.Name,
+               Add_Option_Internal_Codepeer
+                 (Value   => new String'(Get_Name_String (Nam_Nod.Name)),
                   To      => Compilation_Options,
                   Display => True);
                List := Nam_Nod.Next;
