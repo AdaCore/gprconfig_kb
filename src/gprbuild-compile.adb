@@ -185,36 +185,66 @@ package body Gprbuild.Compile is
    -- Add_Compilation_Switches --
    ------------------------------
 
+   Inner_Cargs : aliased String := "-inner-cargs";
+   --  When the --compiler-pkg-subst switch is given, this is used to pass
+   --  switches from "package Compiler" to the ASIS tool and thence through to
+   --  the actual compiler.
+
    procedure Add_Compilation_Switches (Source : Source_Id) is
-      Options : Variable_Value;
-      Is_Default : Boolean;
+      procedure Process_One_Package (Pkg_Name : Name_Id);
+      --  Get the switches for the named package
+
+      procedure Process_One_Package (Pkg_Name : Name_Id) is
+         Options : Variable_Value;
+         Ignored : Boolean;
+      begin
+         Makeutl.Get_Switches
+           (Source, Pkg_Name, Project_Tree, Options, Ignored);
+
+         if Options /= Nil_Variable_Value then
+            declare
+               List            : String_List_Id := Options.Values;
+               Element         : String_Element;
+               Option          : GNAT.OS_Lib.String_Access;
+            begin
+               while List /= Nil_String loop
+                  Element := Project_Tree.Shared.String_Elements.Table (List);
+
+                  --  Ignore empty options
+
+                  if Element.Value /= Empty_String then
+                     Option := Get_Option (Element.Value);
+
+                     Add_Option_Internal_Codepeer
+                       (Value       => Option,
+                        To          => Compilation_Options,
+                        Display     => True);
+                  end if;
+
+                  List := Element.Next;
+               end loop;
+            end;
+         end if;
+      end Process_One_Package;
+
    begin
-      Makeutl.Get_Switches
-        (Source, Compiler_Pkg_Subst, Project_Tree, Options, Is_Default);
-      if Options /= Nil_Variable_Value then
-         declare
-            List            : String_List_Id := Options.Values;
-            Element         : String_Element;
-            Option          : GNAT.OS_Lib.String_Access;
-         begin
-            while List /= Nil_String loop
-               Element := Project_Tree.Shared.String_Elements.Table (List);
+      --  If the --compiler-pkg-subst switch was given, get switches from the
+      --  relevant package (e.g. "package Pretty_Printer").
 
-               --  Ignore empty options
-
-               if Element.Value /= Empty_String then
-                  Option := Get_Option (Element.Value);
-
-                  Add_Option_Internal_Codepeer
-                    (Value       => Option,
-                     To          => Compilation_Options,
-                     Display     => True);
-               end if;
-
-               List := Element.Next;
-            end loop;
-         end;
+      if Compiler_Pkg_Subst /= No_Name then
+         Process_One_Package (Compiler_Pkg_Subst);
+         Add_Option_Internal_Codepeer
+           (Value       => Inner_Cargs'Unchecked_Access,
+            To          => Compilation_Options,
+            Display     => True);
       end if;
+
+      --  Always get switches from "package Compiler". If the
+      --  --compiler-pkg-subst switch was given, these are preceded by
+      --  -inner-cargs (see above) to indicate that the ASIS tool should pass
+      --  them along to gcc.
+
+      Process_One_Package (Name_Compiler);
    end Add_Compilation_Switches;
 
    -------------------

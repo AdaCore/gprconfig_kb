@@ -32,7 +32,6 @@ with ALI;
 with Namet;    use Namet;
 with Prj;      use Prj;
 with Prj.Tree; use Prj.Tree;
-with Snames;   use Snames;
 with Types;
 
 package Gpr_Util is
@@ -350,10 +349,13 @@ package Gpr_Util is
    --  the key-->value pair "ada" --> "gnatpp". This causes gprbuild to call
    --  gnatpp instead of gcc.
 
-   Compiler_Pkg_Subst : Name_Id := Name_Compiler;
-   --  The package name to be used when invoking the compiler. Normally, this
-   --  is Compiler_Name, but it can be set by the --compiler-pkg-subst
-   --  option. For example, if --compiler-pkg-subst=pretty_printer was given,
-   --  then this will be "pretty_printer".
+   Compiler_Pkg_Subst : Name_Id := No_Name;
+   --  A package name to be used when invoking the compiler, in addition to
+   --  "package Compiler". Normally, this is No_Name, indicating no additional
+   --  package, but it can be set by the --compiler-pkg-subst option. For
+   --  example, if --compiler-pkg-subst=pretty_printer was given, then this
+   --  will be "pretty_printer", and gnatpp will be invoked with switches from
+   --  "package Pretty_Printer", and -inner-cargs followed by switches from
+   --  "package Compiler".
 
 end Gpr_Util;

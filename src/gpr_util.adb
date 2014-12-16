@@ -48,6 +48,7 @@ with Scans;
 with Scng;
 with Sinput.C;
 with Sinput.P;
+with Snames;   use Snames;
 with Styleg;
 with Table;
 with Tempdir;
