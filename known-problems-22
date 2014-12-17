@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-NC17-037 No warnings in project files if no errors
+
+  Problem:    When gprbuild is invoked without -q and there are warnings
+              during parsing of the project files, but no errors, the
+              warnings are not displayed.
+
+  Status:     This was fixed in 2.2 on 2014-12-17
+
+  Workaround: None needed, as there is no error here, just a display problem.
+
 KP-22-NC10-018 GPRbuild distributed recompile all sources
 
   Problem:    When a project is using a global configuration pragmas file
