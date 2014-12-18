@@ -2372,6 +2372,8 @@ package body Gprbuild.Link is
          --  the project file or on the command line will always be the first
          --  one. And any subsequent stack setting option will overwrite the
          --  previous one.
+         --  Also, if Opt.Maximum_Processes is greater than one, check for
+         --  switches --lto or -flto and add =nn to the switch.
 
          Clean_Link_Option_Set : declare
             J        : Natural := Last_Object_Index + 1;
@@ -2412,6 +2414,19 @@ package body Gprbuild.Link is
 
                   else
                      Stack_Op := True;
+                  end if;
+               end if;
+
+               if Opt.Maximum_Processes > 1 then
+                  if Arguments (J).all = "--lto" or else
+                     Arguments (J).all = "-flto"
+                  then
+                     declare
+                        Img : String := Opt.Maximum_Processes'Img;
+                     begin
+                        Img (1) := '=';
+                        Arguments (J) := new String'(Arguments (J).all & Img);
+                     end;
                   end if;
                end if;
 
