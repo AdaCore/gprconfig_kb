@@ -11,7 +11,8 @@ User's Guide.
 NF-23-NC04-012 Linking with --lto=nn when -jnn and --lto are used (2014-12-18)
 
   When gprbuild is invoked with -jnn (nn > 1) and with the linker switch
-  --lto, the linker is invoked with --lto=nn to speed up linking.
+  --lto (or -flto), the linker is invoked with --lto=nn (or -flto=nn) to speed
+  up linking.
 
 NF-23-NC03-007 Invoke the correct gnatbind for unknown targets (2014-02-03)
 
