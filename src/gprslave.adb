@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -825,12 +825,31 @@ procedure Gprslave is
             if Socket /= No_Socket then
                Builder := Builders.Get (Socket);
                Message (Builder, "# Error socket signaled", Is_Debug => True);
-               Builders.Remove (Builder);
                Status := Aborted;
             end if;
          end if;
 
-         if Status /= Aborted then
+         if Status = Aborted then
+            --  Either the selector has been aborted or the Socket was not
+            --  found in the response. We can suppose that in this case the
+            --  client is killed and we do not have to keep it in the registry.
+
+            Get (R_Socket_Set, Socket);
+
+            if Socket /= No_Socket then
+               Builder := Builders.Get (Socket);
+               Builders.Remove (Builder);
+
+               begin
+                  Close (Builder.Channel);
+                  Close_Socket (Builder.Socket);
+               exception
+                  when others =>
+                     null;
+               end;
+            end if;
+
+         else
             Get (R_Socket_Set, Socket);
 
             if Socket /= No_Socket then

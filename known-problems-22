@@ -2,7 +2,7 @@
 Known problems in GPRBUILD version 2.2
 ======================================
 
-Copyright (C) 2014, AdaCore
+Copyright (C) 2014-2015, AdaCore
 
 The following is a listing of known problems in releases 2.2.1 and 2.2.2.
 Each entry contains a status line stating when the problem was fixed, and on
@@ -16,6 +16,17 @@ in this document.
 
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
+
+KP-22-O107-015 Freeze of GPRbuild in distributed mode.
+
+  Problem:    After hard-killing a GPRbuild distributed compilation it
+              may happen that the GPRslave is not properly notified and
+              does not release the client. This in turn make it impossible
+              for the same client to connect to the slave.
+
+  Status:     This was fixed in 2.2 on 2015-01-11
+
+  Workaround: Do not hard-kill (ctrl-c) a GPRbuild distributed compilation.
 
 KP-22-NC17-037 No warnings in project files if no errors
 
