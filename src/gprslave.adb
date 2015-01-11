@@ -1856,7 +1856,9 @@ procedure Gprslave is
 
                elsif Kind (Cmd) = EC then
                   --  Cannot communicate with build master anymore, we then
-                  --  receive an end-of-compilation. Exit now.
+                  --  receive an end-of-compilation. Exit now. Note that we do
+                  --  not need to remove the builder from the list as it is not
+                  --  yet registered.
 
                   Send_Ok (Builder.Channel);
 
