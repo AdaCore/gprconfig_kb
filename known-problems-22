@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O113-051 Wrong configuration project file with gprconfig interactive
+
+  Problem:    When gprconfig is invoked interactively and there are several
+              runtimes with XML files for compilers on the path, all these
+              XML files are taken into account and the resulting configuration
+              project file may be incorrect or even illegal.
+
+  Status:     This was fixed in 2.3 on 2015-01-14
+
+  Workaround: Invoke gprconfig in batch mode.
+
 KP-22-O107-015 Freeze of GPRbuild in distributed mode.
 
   Problem:    After hard-killing a GPRbuild distributed compilation it
@@ -24,7 +35,7 @@ KP-22-O107-015 Freeze of GPRbuild in distributed mode.
               does not release the client. This in turn make it impossible
               for the same client to connect to the slave.
 
-  Status:     This was fixed in 2.2 on 2015-01-11
+  Status:     This was fixed in 2.3 on 2015-01-11
 
   Workaround: Do not hard-kill (ctrl-c) a GPRbuild distributed compilation.
 
@@ -34,7 +45,7 @@ KP-22-NC17-037 No warnings in project files if no errors
               during parsing of the project files, but no errors, the
               warnings are not displayed.
 
-  Status:     This was fixed in 2.2 on 2014-12-17
+  Status:     This was fixed in 2.3 on 2014-12-17
 
   Workaround: None needed, as there is no error here, just a display problem.
 
