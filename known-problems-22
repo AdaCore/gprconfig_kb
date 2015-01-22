@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O122-017 Reference to variable in missing predefined project
+
+  Problem:    When a project imports a predefined project and refers to a
+              variable in this imported project, gprbuild may fail before
+              being able to update the project path and finding the predefined
+              project during its second parsing.
+
+  Status:     This was fixed in 2.3 on 2015-01-22
+
+  Workaround: Put the directory of the predefined project in GPR_PROJECT_PATH.
+
 KP-22-O116-019 Reference to missing predefined imported project
 
   Problem:    When a project imports a predefined project and refers to this
