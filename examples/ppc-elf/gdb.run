@@ -1,5 +1,0 @@
-target sim -e bug -r 0x400000
-load objs/hello
-set confirm off
-run
-quit
