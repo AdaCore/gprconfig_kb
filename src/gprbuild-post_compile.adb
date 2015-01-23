@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -2023,17 +2023,22 @@ package body Gprbuild.Post_Compile is
                end if;
             end;
 
-            if not Library_Needs_To_Be_Built
-              and then String (File_Stamp (File_Name_Type'(Name_Find))) <
-                         String (Latest_Object_TS)
-            then
-               Library_Needs_To_Be_Built := True;
-               Close (Exchange_File);
+            if not Library_Needs_To_Be_Built then
+               For_Project.Library_TS :=
+                 File_Stamp (File_Name_Type'(Name_Find));
 
-               if Opt.Verbose_Mode then
-                  Write_Line
-                    ("      -> object file(s) more recent than library file " &
-                     Exchange_File_Name.all);
+               if String (For_Project.Library_TS) <
+                  String (Latest_Object_TS)
+               then
+                  Library_Needs_To_Be_Built := True;
+                  Close (Exchange_File);
+
+                  if Opt.Verbose_Mode then
+                     Write_Line
+                       ("      -> " &
+                        "object file(s) more recent than library file " &
+                        Exchange_File_Name.all);
+                  end if;
                end if;
             end if;
          end if;
@@ -2153,6 +2158,48 @@ package body Gprbuild.Post_Compile is
                end if;
             end loop;
          end if;
+      end if;
+
+      if not Library_Needs_To_Be_Built then
+         --  Check if in a project imported directly or indirectly the time
+         --  stamp of a library is greater than the time stamp of this library.
+
+         declare
+            List    : Project_List;
+            Proj2   : Project_Id;
+
+            Lib_Timestamp1 : constant Time_Stamp_Type :=
+                               For_Project.Library_TS;
+
+         begin
+            List := For_Project.All_Imported_Projects;
+            while List /= null loop
+               Proj2 := List.Project;
+
+               if Proj2.Library then
+                  if Proj2.Need_To_Build_Lib
+                    or else
+                      (Lib_Timestamp1 < Proj2.Library_TS)
+                  then
+                     Library_Needs_To_Be_Built := True;
+
+                     if Opt.Verbose_Mode then
+                        Write_Str
+                          ("      -> library file for project ");
+                        Write_Str (Get_Name_String (Proj2.Display_Name));
+                        Write_Str
+                          (" is more recent than library file for project ");
+                        Write_Line
+                          (Get_Name_String (For_Project.Display_Name));
+                     end if;
+
+                     exit;
+                  end if;
+               end if;
+
+               List := List.Next;
+            end loop;
+         end;
       end if;
 
       if not Library_Needs_To_Be_Built then
