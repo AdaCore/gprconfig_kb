@@ -2,11 +2,17 @@
 GPRBUILD 2.3 NEW FEATURES LIST
 ==============================
 
-Copyright (C) 2014, AdaCore
+Copyright (C) 2014-2015, AdaCore
 
 This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
+
+NF-23-O126-001 Warnings when interface of a SAL is incomplete (2015-01-27)
+
+  When gprbuild is invoked without -q, it check if the interface of a SAL
+  is complete, and warn if units of the project that are imported by the
+  interface units are not themselves in the interface.
 
 NF-23-NC04-012 Linking with --lto=nn when -jnn and --lto are used (2014-12-18)
 
