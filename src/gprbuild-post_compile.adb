@@ -22,6 +22,7 @@
 with Ada.Containers.Ordered_Sets;
 with Ada.Text_IO;                  use Ada, Ada.Text_IO;
 
+with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with Debug;       use Debug;
@@ -111,6 +112,37 @@ package body Gprbuild.Post_Compile is
       Table_Initial        => 10,
       Table_Increment      => 100,
       Table_Name           => "Buildgpr.Post_Compile.Object_Projects");
+
+   --  The ALI files of the Stand-Alone Library project
+
+   package Library_ALIs is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => File_Name_Type,
+      Hash       => Prj.Hash,
+      Equal      => "=");
+
+   --  The ALI files in the interface sets
+
+   package Interface_ALIs is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => File_Name_Type,
+      Hash       => Prj.Hash,
+      Equal      => "=");
+
+   --  The ALI files that have been processed to check if the corresponding
+   --  library unit is in the interface set.
+
+   package Processed_ALIs is new GNAT.HTable.Simple_HTable
+     (Header_Num => Prj.Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => File_Name_Type,
+      Hash       => Prj.Hash,
+      Equal      => "=");
 
    procedure CodePeer_Globalize;
    --  Call the codepeer_globalizer for each of the object directories
@@ -208,6 +240,13 @@ package body Gprbuild.Post_Compile is
             Tree : Project_Tree_Ref);
          --  Get objects for non Stand-Alone library
 
+         procedure Process_ALI
+           (The_ALI : File_Name_Type;
+            Proj    : Project_Id);
+         --  Check if the closure of a library unit which is or should be in
+         --  the interface set is also in the interface set. Issue a warning
+         --  for each missing library unit.
+
          procedure Process_Standalone
            (Proj : Project_Id;
             Tree : Project_Tree_Ref);
@@ -284,6 +323,118 @@ package body Gprbuild.Post_Compile is
             end loop;
          end Process;
 
+         -----------------
+         -- Process_ALI --
+         -----------------
+
+         Warning_For_Library : Boolean := False;
+
+         procedure Process_ALI
+           (The_ALI : File_Name_Type;
+            Proj    : Project_Id)
+         is
+            use ALI;
+            Text       : Text_Buffer_Ptr;
+            Idread     : ALI_Id;
+            First_Unit : Unit_Id;
+            Last_Unit  : ALI.Unit_Id;
+            Unit_Data  : ALI.Unit_Record;
+            Afile      : File_Name_Type;
+
+         begin
+            --  Nothing to do if the ALI file has already been processed.
+            --  This happens if an interface imports another interface.
+
+            if not Processed_ALIs.Get (The_ALI) then
+               Processed_ALIs.Set (The_ALI, True);
+               Text := Read_Library_Info (The_ALI);
+
+               if Text /= null then
+                  Idread :=
+                    Scan_ALI
+                      (F         => The_ALI,
+                       T         => Text,
+                       Ignore_ED => False,
+                       Err       => True);
+                  Free (Text);
+
+                  if Idread /= No_ALI_Id then
+                     First_Unit := ALI.ALIs.Table (Idread).First_Unit;
+                     Last_Unit  := ALI.ALIs.Table (Idread).Last_Unit;
+
+                     --  Process both unit (spec and body) if the body is
+                     --  needed by the spec (inline or generic). Otherwise,
+                     --  just process the spec.
+
+                     if First_Unit /= Last_Unit and then
+                       not ALI.Units.Table (Last_Unit).Body_Needed_For_SAL
+                     then
+                        First_Unit := Last_Unit;
+                     end if;
+
+                     for Unit in First_Unit .. Last_Unit loop
+                        Unit_Data := ALI.Units.Table (Unit);
+
+                        --  Check if each withed unit which is in the library
+                        --  is also in the interface set, if it has not yet
+                        --  been processed.
+
+                        for W in Unit_Data.First_With ..
+                                 Unit_Data.Last_With
+                        loop
+                           Afile := Withs.Table (W).Afile;
+
+                           if Afile /= No_File
+                             and then Library_ALIs.Get (Afile)
+                             and then not Processed_ALIs.Get (Afile)
+                           then
+                              if not Interface_ALIs.Get (Afile) then
+                                 if not Warning_For_Library then
+                                    Write_Str
+                                      ("Warning: In library project """);
+                                    Get_Name_String (Proj.Name);
+                                    To_Mixed (Name_Buffer (1 .. Name_Len));
+                                    Write_Str (Name_Buffer (1 .. Name_Len));
+                                    Write_Line ("""");
+                                    Warning_For_Library := True;
+                                 end if;
+
+                                 Write_Str ("         Unit """);
+                                 Get_Name_String (Withs.Table (W).Uname);
+                                 To_Mixed (Name_Buffer (1 .. Name_Len - 2));
+                                 Write_Str (Name_Buffer (1 .. Name_Len - 2));
+                                 Write_Line (""" is not in the interface set");
+                                 Write_Str ("         but it is needed by ");
+
+                                 case Unit_Data.Utype is
+                                 when Is_Spec =>
+                                    Write_Str ("the spec of ");
+
+                                 when Is_Body =>
+                                    Write_Str ("the body of ");
+
+                                 when others =>
+                                    null;
+                                 end case;
+
+                                 Write_Str ("""");
+                                 Get_Name_String (Unit_Data.Uname);
+                                 To_Mixed (Name_Buffer (1 .. Name_Len - 2));
+                                 Write_Str (Name_Buffer (1 .. Name_Len - 2));
+                                 Write_Line ("""");
+                              end if;
+
+                              --  Now, process this unit
+
+                              Process_ALI (Afile, Proj);
+                           end if;
+                        end loop;
+                     end loop;
+                  end if;
+               end if;
+            end if;
+         end Process_ALI;
+
          ------------------------
          -- Process_Standalone --
          ------------------------
@@ -292,8 +443,6 @@ package body Gprbuild.Post_Compile is
            (Proj : Project_Id;
             Tree : Project_Tree_Ref)
          is
-            pragma Unreferenced (Tree);
-
             Source : Source_Id;
             Iter   : Source_Iterator;
 
@@ -302,6 +451,11 @@ package body Gprbuild.Post_Compile is
             OK   : Boolean;
 
          begin
+            Processed_ALIs.Reset;
+            Library_ALIs.Reset;
+            Interface_ALIs.Reset;
+            Warning_For_Library := False;
+
             if Proj.Qualifier /= Aggregate_Library and then
                Proj.Extended_By = No_Project
             then
@@ -340,6 +494,8 @@ package body Gprbuild.Post_Compile is
                          Known => False));
 
                   else
+                     Library_ALIs.Set (Source.Dep_Name, True);
+
                      --  Check if it is an interface and record if it is one
 
                      OK := False;
@@ -352,6 +508,7 @@ package body Gprbuild.Post_Compile is
                         then
                            OK := True;
                            Library_Sources.Append (Source);
+                           Interface_ALIs.Set (Source.Dep_Name, True);
                            exit;
                         end if;
 
@@ -380,6 +537,24 @@ package body Gprbuild.Post_Compile is
                Next (Iter);
             end loop;
 
+            --  In not quiet mode, check if the interface set is complete
+
+            if not Opt.Quiet_Output then
+               declare
+                  Iface : String_List_Id := Proj.Lib_Interface_ALIs;
+                  ALI   : File_Name_Type;
+
+               begin
+                  while Iface /= Nil_String loop
+                     ALI :=
+                       File_Name_Type
+                         (Tree.Shared.String_Elements.Table (Iface).Value);
+                     Process_ALI (ALI, Proj);
+                     Iface :=
+                       Tree.Shared.String_Elements.Table (Iface).Next;
+                  end loop;
+               end;
+            end if;
          end Process_Standalone;
 
          -----------------
@@ -3577,6 +3752,8 @@ package body Gprbuild.Post_Compile is
                  or else All_Language_Binder_Options.Last > 0
                  or else Options_Instance /= No_Bind_Option_Table
                  or else Opt.CodePeer_Mode
+                 or else (B_Data.Language_Name = Name_Ada
+                          and then Opt.No_Main_Subprogram)
                then
                   Put_Line
                     (Exchange_File, Binding_Label (Gprexch.Binding_Options));
@@ -3651,6 +3828,14 @@ package body Gprbuild.Post_Compile is
                        (Exchange_File,
                         All_Language_Binder_Options.Table (J).all);
                   end loop;
+
+                  --  Then -z if specified
+
+                  if B_Data.Language_Name = Name_Ada
+                    and then Opt.No_Main_Subprogram
+                  then
+                     Put_Line (Exchange_File, "-z");
+                  end if;
 
                   --  Finally those on the command line for the
                   --  binder driver of the language
