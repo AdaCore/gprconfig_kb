@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1377,6 +1377,9 @@ procedure Gprbuild.Main is
          elsif Arg = "-x" then
             Opt.Use_Include_Path_File := True;
 
+         elsif Arg = "-z" then
+            Opt.No_Main_Subprogram := True;
+
          elsif Arg'Length >= 3
            and then Arg (2) = 'X'
            and then Is_External_Assignment (Root_Environment, Arg)
@@ -2081,6 +2084,11 @@ procedure Gprbuild.Main is
          Write_Str ("  -Xnm=val Specify an external reference for " &
                     "Project Files");
          Write_Eol;
+         Write_Eol;
+
+         --  Line for -z
+
+         Write_Str ("  -z       No main subprogram (zero main)");
          Write_Eol;
 
          --  Line for --compiler-subst

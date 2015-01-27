@@ -8,9 +8,14 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-O127-044 New gprbuild switch -z (2015-01-26)
+
+  gprbuild now accepts the switch -z to build executable with no main
+  subprogram, as gnatmake already does.
+
 NF-23-O126-001 Warnings when interface of a SAL is incomplete (2015-01-27)
 
-  When gprbuild is invoked without -q, it check if the interface of a SAL
+  When gprbuild is invoked without -q, it checks if the interface of a SAL
   is complete, and warn if units of the project that are imported by the
   interface units are not themselves in the interface.
 
