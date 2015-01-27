@@ -119,47 +119,10 @@
 
    <!-- vxworks kernel executables have a .out extension -->
    <configuration>
-     <compilers>
-       <compiler name="GNAT" runtime="^default$" />
-       <compiler name="GNAT" runtime="^kernel$" />
-       <compiler name="GNAT" runtime="^kernel-sjlj$" />
-       <compiler name="GNAT" runtime="^kernel-smp$" />
-       <compiler name="GNAT" runtime="^ravenscar-cert$" />
-       <compiler name="GCC" runtime="^default$" />
-       <compiler name="GCC" runtime="^kernel$" />
-       <compiler name="GCC" runtime="^kernel-sjlj$" />
-       <compiler name="GCC" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6" runtime="^kernel$" />
-       <compiler name="GCC-WRS6" runtime="^kernel-sjlj$" />
-       <compiler name="GCC-WRS6" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6E500V2" runtime="^kernel$" />
-       <compiler name="GCC-WRS6E500V2" runtime="^kernel-sjlj$" />
-       <compiler name="GCC-WRS6E500V2" runtime="^kernel-smp$" />
-       <compiler name="GCC-WRS6LEON" runtime="^kernel$" />
-       <compiler name="GCC-WRS6CERT" runtime="^kernel$" />
-       <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^kernel$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
-       <compiler name="GCC-WRS7ARM" runtime="^kernel$" />
-       <compiler name="GCC-WRS7E500V2" runtime="^kernel$" />
-       <compiler name="GCC-WRS7PPC" runtime="^kernel$" />
-       <compiler name="GCC-WRS7X86" runtime="^kernel$" />
-       <compiler name="G++-WRS6" runtime="^kernel$" />
-       <compiler name="G++-WRS6" runtime="^kernel-sjlj$" />
-       <compiler name="G++-WRS6" runtime="^kernel-smp$" />
-       <compiler name="G++-WRS6E500V2" runtime="^kernel$" />
-       <compiler name="G++-WRS6E500V2" runtime="^kernel-sjlj$" />
-       <compiler name="G++-WRS6E500V2" runtime="^kernel-smp$" />
-       <compiler name="G++-WRS6CERT" runtime="^kernel$" />
-       <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^kernel$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert$" />
-       <compiler name="G++-WRS7ARM" runtime="^kernel$" />
-       <compiler name="G++-WRS7E500V2" runtime="^kernel$" />
-       <compiler name="G++-WRS7PPC" runtime="^kernel$" />
-       <compiler name="G++-WRS7X86" runtime="^kernel$" />
-       <compiler name="GCC-WRS5" />
-       <compiler name="G++-WRS5" />
+     <compilers negate="true">
+       <compiler runtime="^rtp$" />
+       <compiler runtime="^rtp-smp$" />
+       <compiler runtime="^ravenscar-cert-rtp$" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworks$" />
@@ -175,35 +138,9 @@
    <!-- vx6/rtp executables have a .vxe extension -->
    <configuration>
      <compilers>
-       <compiler name="GNAT" runtime="^rtp$" />
-       <compiler name="GNAT" runtime="^rtp-smp$" />
-       <compiler name="GNAT" runtime="^ravenscar-cert-rtp$" />
-       <compiler name="GCC" runtime="^rtp$" />
-       <compiler name="GCC" runtime="^rtp-smp$" />
-       <compiler name="GCC-WRS6" runtime="^rtp$" />
-       <compiler name="GCC-WRS6E500V2" runtime="^rtp$" />
-       <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
-       <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^rtp$" />
-       <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
-       <compiler name="GCC-WRS6" runtime="^rtp-smp$" />
-       <compiler name="GCC-WRS6E500V2" runtime="^rtp-smp$" />
-       <compiler name="GCC-WRS7ARM" runtime="^rtp$" />
-       <compiler name="GCC-WRS7E500V2" runtime="^rtp$" />
-       <compiler name="GCC-WRS7PPC" runtime="^rtp$" />
-       <compiler name="GCC-WRS7X86" runtime="^rtp$" />
-       <compiler name="G++-WRS6" runtime="^rtp$" />
-       <compiler name="G++-WRS6E500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS6" runtime="^rtp-smp$" />
-       <compiler name="G++-WRS6E500V2" runtime="^rtp-smp$" />
-       <compiler name="G++-WRS6CERT" runtime="^rtp$" />
-       <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
-       <compiler name="G++-WRS7ARM" runtime="^rtp$" />
-       <compiler name="G++-WRS7E500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS7PPC" runtime="^rtp$" />
-       <compiler name="G++-WRS7X86" runtime="^rtp$" />
+       <compiler runtime="^rtp$" />
+       <compiler runtime="^rtp-smp$" />
+       <compiler runtime="^ravenscar-cert-rtp$" />
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworks$" />
