@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1460,8 +1460,8 @@ begin
 
          ALI_First_Index := Last_Bind_Option + 1;
 
-         for J in 1 .. Interface_ALIs.Last loop
-            Add (Interface_ALIs.Table (J), Bind_Options, Last_Bind_Option);
+         for J in 1 .. ALIs.Last loop
+            Add (ALIs.Table (J), Bind_Options, Last_Bind_Option);
          end loop;
 
          if not Quiet_Output then
