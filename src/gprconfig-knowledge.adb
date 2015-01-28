@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1122,10 +1122,6 @@ package body GprConfig.Knowledge is
 
       RTS_Last := RTS_Last + 1;
       RTS_List (RTS_Last) := new String'(Dir);
-
-      if Current_Verbosity = High then
-         Standard.Schema.Set_Debug_Output (True);
-      end if;
 
       Reader.Set_Feature (Schema_Validation_Feature, Validate);
       Reader.Set_Feature (Validation_Feature, False);  --  Do not use DTD
