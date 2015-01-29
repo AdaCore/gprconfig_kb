@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -238,7 +238,7 @@ package body Gprclean is
                                      "lib" & Lib_Filename
                                      & Get_Name_String
                                        (Project.Config.Archive_Suffix);
-      Library_Exchange_File_Name : constant String :=
+      Library_Exchange_File_Name : String :=
                                      Lib_Filename & Library_Exchange_Suffix;
 
       Direc        : Dir_Type;
@@ -252,6 +252,7 @@ package body Gprclean is
       if Project.Library then
          Osint.Canonical_Case_File_Name (DLL_Name);
          Osint.Canonical_Case_File_Name (Archive_Name);
+         Osint.Canonical_Case_File_Name (Library_Exchange_File_Name);
 
          declare
             Obj_Directory     : String_Access := null;
