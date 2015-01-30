@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O129-033 gprclean does not always remove .lexch file
+
+  Problem:    On Windows and Darwin, when the name of a shared library
+              includes uppercase letter, gprclean does not delete the library
+              exchange file (.lexch).
+
+  Status:     This was fixed in 2.3 on 2015-01-29
+
+  Workaround: Delete manually the .lexch file.
+
 KP-22-O122-017 Reference to variable in missing predefined project
 
   Problem:    When a project imports a predefined project and refers to a
