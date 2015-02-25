@@ -6,6 +6,7 @@ import sys
 import os
 import time
 import re
+import datetime
 
 sys.path.append('.')
 
@@ -18,65 +19,30 @@ import latex_elements
 DOCS = {
     'gprbuild_ug': {
         'title': u'GPRbuild User\'s Guide'}}
+doc_name = 'gprbuild_ug'
 
 # Then retrieve the source directory
 root_source_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# ##gnatvsn_spec = os.path.join(root_source_dir, '..', 'gnatvsn.ads')
-# ##basever = os.path.join(root_source_dir, '..', '..', 'BASE-VER')
+gpr_version_spec = os.path.join(root_source_dir,
+                                '../src', 'gpr_version.ads')
 texi_fsf = True  # Set to False when FSF doc is switched to sphinx by default
 
-# ##with open(gnatvsn_spec, 'rb') as fd:
-# ##    gnatvsn_content = fd.read()
+with open(gpr_version_spec, 'rb') as fd:
+    gpr_version_content = fd.read()
 
 
 def get_copyright():
     return u'2008-%s, Free Software Foundation' % time.strftime('%Y')
 
 
-def get_gnat_version():
-    return '1.0'  # ## TEMPORARY FUNCTION BODY
-# ##    m = re.search(r'Gnat_Static_Version_String : ' +
-# ##                  r'constant String := "([^\(\)]+)\(.*\)?";',
-# ##                  gnatvsn_content)
-# ##    if m:
-# ##        return m.group(1).strip()
-# ##    else:
-# ##        if texi_fsf and os.path.exists(basever):
-# ##            return ''
-# ##
-# ##        try:
-# ##            with open(basever, 'rb') as fd:
-# ##                return fd.read()
-# ##        except:
-# ##            pass
-# ##
-# ##    print 'cannot find GNAT version in gnatvsn.ads or in ' + basever
-# ##    sys.exit(1)
-
-
-def get_gnat_build_type():
-    return 'PRO'  # ## TEMPORARY FUNCTION BODY
-# ##    m = re.search(r'Build_Type : constant Gnat_Build_Type := (.+);',
-# ##                  gnatvsn_content)
-# ##    if m:
-# ##        return {'Gnatpro': 'PRO',
-# ##                'FSF': 'FSF',
-# ##                'GPL': 'GPL'}[m.group(1).strip()]
-# ##    else:
-# ##        print 'cannot compute GNAT build type'
-# ##        sys.exit(1)
-
-
-# First retrieve the name of the documentation we are building
-doc_name = os.environ.get('DOC_NAME', None)
-if doc_name is None:
-    print 'DOC_NAME environment variable should be set'
-    sys.exit(1)
-
-if doc_name not in DOCS:
-    print '%s is not a valid documentation name' % doc_name
-    sys.exit(1)
-
+def get_gpr_version():
+    m = re.search(r'Gpr_Version : ' +
+                  r'constant String := "([^\(\)]+)";',
+                  gpr_version_content)
+    if m:
+        return m.group(1).strip()
+    print 'cannot find GPR version in ' + gpr_version_spec
+    return 'unknown'
 
 # Exclude sources that are not part of the current documentation
 exclude_patterns = []
@@ -95,11 +61,12 @@ project = DOCS[doc_name]['title']
 
 copyright = get_copyright()
 
-version = get_gnat_version()
-release = get_gnat_version()
+version = get_gpr_version()
+now = datetime.date.today()
+date = now.strftime('%Y%m%d')
+release = get_gpr_version() + ' (' + date + ')'
 
 pygments_style = 'sphinx'
-tags.add(get_gnat_build_type())
 html_theme = 'sphinxdoc'
 if os.path.isfile('adacore_transparent.png'):
     html_logo = 'adacore_transparent.png'
@@ -114,7 +81,7 @@ latex_elements = {
     latex_elements.TOC_CMD +
     latex_elements.LATEX_HYPHEN +
     latex_elements.doc_settings(DOCS[doc_name]['title'],
-                                get_gnat_version()),
+                                version),
     'tableofcontents': latex_elements.TOC}
 
 latex_documents = [

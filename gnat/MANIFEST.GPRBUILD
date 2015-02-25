@@ -152,3 +152,11 @@ widechar.ads
 xsnamest.adb
 xutil.adb
 xutil.ads
+doc/gnat_ugn/gnat_project_manager.rst
+doc/gnat_ugn/project-manager-figure.png
+doc/share/gnu_free_documentation_license.rst
+doc/share/ada_pygments.py
+doc/share/favicon.ico
+doc/share/latex_elements.py
+doc/share/sphinx.sty
+

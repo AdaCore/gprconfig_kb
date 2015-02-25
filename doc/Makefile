@@ -1,64 +1,68 @@
-## The documentation packages are built in subdirectories, to match
-## what is done in AdaCore's automatic packaging
+# Makefile for Sphinx documentation
 
-DOC=gprbuild_ug
-MAKEINFO_HTML_FLAGS=--html --number-sections --css-include=gprbuild.css --no-headers --no-split
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+PAPER         =
+BUILDDIR      = build
+SOURCEDIR     = .
 
-MAKE_INFO=makeinfo --force --no-split
-MAKE_TXT=$(MAKE_INFO) --no-headers --fill-column=79
-MAKE_PDF=texi2pdf -q
-MKDIR=mkdir -p
-RMDIR=rmdir
+# Internal variables.
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) \
+		  -c $(SOURCEDIR)/share \
+		  -d $(BUILDDIR)/$*/doctrees \
+		  $(SOURCEDIR)
+FMT_LIST=html txt info pdf
+DOC_NAME=gprbuild_ug
 CP=cp
-EXE=
-GNATMAKE=gnatmake
-GNATCLEAN=gnatclean -q
 
-.PHONY: all txt info html pdf clean
+.PHONY: help clean
 
-all: txt info html pdf
+all: $(foreach fmt, $(FMT_LIST), $(fmt))
 
-# The following are written to make sure the build fails if the output file
-# already exists, and cannot be overwritten. For example, if we have
-# pdf/gprbuild_ug.pdf open in a browser on windows, the $(MAKE_PDF) command
-# will complain:
-#    cp: cannot create regular file `.../gprbuild_ug.pdf': Device or resource busy
-# but still returns a zero (successful) exit status. Therefore, we delete the
-# output first, so the ${RMDIR} will correctly return a non-zero status.
-# But if pdf does not exist, then the ${RMDIR} command will incorrectly fail;
-# therefore, we do ${MKDIR} first -- hence we do ${MKDIR} twice, which is a bit
-# odd, but successfully works around the bug in $(MAKE_PDF) (i.e. texi2pdf).
-
-txt: prepare
-	${MKDIR} txt
-	${RM} txt/*
-	${RMDIR} txt
-	${MKDIR} txt
-	$(MAKE_TXT) -o txt/$(DOC).txt $(DOC).texi
-info: prepare
-	${MKDIR} info
-	${RM} info/*
-	${RMDIR} info
-	${MKDIR} info
-	$(MAKE_INFO) -o info/$(DOC).info $(DOC).texi
-html: prepare
-	${MKDIR} html
-	${RM} html/*
-	${RMDIR} html
-	${MKDIR} html
-	$(MAKE_INFO) ${MAKEINFO_HTML_FLAGS} -o html/$(DOC).html $(DOC).texi
-	$(CP) important.png note.png tip.png html/
-pdf: prepare
-	${MKDIR} pdf
-	${RM} pdf/*
-	${RMDIR} pdf
-	${MKDIR} pdf
-	cd pdf; $(MAKE_PDF) -c ../$(DOC).texi
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  html       to make standalone HTML files"
+	@echo "  pdf        to make LaTeX files and run them through pdflatex"
+	@echo "  txt        to make text files"
+	@echo "  texinfo    to make Texinfo files"
+	@echo "  info       to make info files"
+	@echo "  all                 to build documentation in all formats"
+	@echo ""
+	@echo "source and location can be overriden using SOURCEDIR and BUILDDIR variables"
 
 prepare:
-	$(CP) ../gnat/projects.texi .
+	$(CP) ../gnat/gnat_project_manager.rst share/.
+	$(CP) ../gnat/project-manager-figure.png share/.
+	$(CP) ../gnat/gnu_free_documentation_license.rst share/.
+	$(CP) ../gnat/ada_pygments.py share/.
+	$(CP) ../gnat/favicon.ico share/.
+	$(CP) ../gnat/latex_elements.py share/.
+	$(CP) ../gnat/sphinx.sty share/.
 
 clean:
-	${MKDIR} txt html info pdf
-	${RM} txt/* html/* info/* pdf/*
-	${RMDIR} txt html info pdf
+	-rm -rf $(BUILDDIR)/html \
+		$(BUILDDIR)/pdf \
+		$(BUILDDIR)/txt \
+		$(BUILDDIR)/info
+
+html: prepare
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+
+pdf: prepare
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/pdf
+	cp $(SOURCEDIR)/share/sphinx.sty $(BUILDDIR)/pdf
+	$(MAKE) -C $(BUILDDIR)/pdf all-pdf LATEXOPTS="-interaction=nonstopmode"
+
+txt: prepare
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/txt
+	$(MAKE) -C $(BUILDDIR)/txt plaintext
+
+info: prepare
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/info
+	$(MAKE) -C $(BUILDDIR)/info info
+
+texinfo:
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/texinfo
