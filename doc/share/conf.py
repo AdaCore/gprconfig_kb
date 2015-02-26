@@ -62,9 +62,10 @@ project = DOCS[doc_name]['title']
 copyright = get_copyright()
 
 version = get_gpr_version()
-now = datetime.date.today()
-date = now.strftime('%Y%m%d')
-release = get_gpr_version() + ' (' + date + ')'
+# now = datetime.date.today()
+# date = now.strftime('%Y%m%d')
+# release = get_gpr_version() + ' (' + date + ')'
+release = get_gpr_version()
 
 pygments_style = 'sphinx'
 html_theme = 'sphinxdoc'

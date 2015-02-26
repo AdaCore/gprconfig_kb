@@ -1,7 +1,10 @@
 GPRbuild User's Guide
 =====================
 
-*GPRbuild, the multi-purpose GNAT builder*
+*GPRbuild, the Multi-Purpose GNAT Builder*
+
+| Version |version|
+| Date: |today|
 
 AdaCore
 
