@@ -81,6 +81,7 @@ procedure Gprslave is
    --  concurrent access.
 
    type Status is record
+      Id     : UID;
       Locked : Boolean := False;
       Count  : Natural := 0;
    end record;
@@ -96,7 +97,6 @@ procedure Gprslave is
       Target       : Unbounded_String;
       Build_Env    : Unbounded_String;
       Sync         : Boolean;
-      Id           : UID;
       Status       : Shared_Status;
    end record;
 
@@ -367,7 +367,6 @@ procedure Gprslave is
          Pos     : Builder_Set.Cursor;
       begin
          Builder.Socket := Socket;
-         Builder.Id := 0;
 
          Pos := Builders.Find (Builder);
 
@@ -398,7 +397,7 @@ procedure Gprslave is
 
       procedure Initialize (Builder : in out Build_Master) is
       begin
-         Builder.Id := Current_Id;
+         Builder.Status.Id := Current_Id;
          Current_Id := Current_Id + 1;
       end Initialize;
 
@@ -512,6 +511,8 @@ procedure Gprslave is
       S.Count := S.Count - 1;
 
       if S.Count = 0 then
+         Message
+           ("# finalize builder" & UID'Image (S.Id), Is_Debug => True);
          Unchecked_Free (S);
       end if;
    end Finalize;
@@ -624,7 +625,10 @@ procedure Gprslave is
 
    overriding procedure Initialize (Builder : in out Build_Master) is
    begin
-      Builder.Status := new Status'(False, 1);
+      Builder.Status := new Status'(0, False, 1);
+      Message
+        ("# initialize builder"
+         & UID'Image (Builder.Status.Id), Is_Debug => True);
    end Initialize;
 
    -------------
@@ -663,7 +667,7 @@ procedure Gprslave is
          Critical_Section : begin
             Global_Lock.Seize;
 
-            UID_IO.Put (Builder.Id, Width => 4);
+            UID_IO.Put (Builder.Status.Id, Width => 4);
             Put (' ');
 
             Global_Lock.Release;
@@ -1925,6 +1929,13 @@ procedure Gprslave is
       end loop Wait_Incoming_Master;
 
       Builder.Channel := Create (Builder.Socket);
+
+      --  We must call explicitely Initialize here to ensure that the Builder
+      --  object Status access will be changed for this new builder.
+
+      Initialize (Builder);
+
+      --  Then initialize the new builder Id
 
       Builders.Initialize (Builder);
 
