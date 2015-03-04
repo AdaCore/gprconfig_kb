@@ -82,6 +82,11 @@ project Gprbuild is
          when "production" =>
             for Default_Switches ("Ada") use common_switches &
               ("-O2", "-gnatpn", "-gnatws");
+
+            --  Compile all GPRbuild sources to support symbolic-traceback
+
+            for Switches ("gpr*") use
+              Compiler'Default_Switches ("Ada") & ("-g1");
       end case;
    end Compiler;
 
