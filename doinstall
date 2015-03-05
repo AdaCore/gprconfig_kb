@@ -23,10 +23,13 @@ then
       fi
     done
     IFS="$saved_IFS"
-    machine=`$prefix/bin/gcc -dumpmachine || true`
+    machine=`$prefix/gcc -dumpmachine || true`
 fi
 
 gprbuild="gprbuild"
+
+# remove last 'bin' from prefix as it's not expected
+prefix=`echo $prefix | sed 's/\/bin$//'`
 
 clear
 cat << EOF
