@@ -1756,7 +1756,7 @@ procedure Gprslave is
                      if not Except.Contains (Entry_Name) then
                         Message
                           (Builder,
-                           "# detele excluded '" & Entry_Name & ''',
+                           "# delete excluded '" & Entry_Name & ''',
                            Is_Debug => True);
 
                         Delete_File (Entry_Name);
