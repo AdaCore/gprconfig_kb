@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -282,8 +282,8 @@ package body Gprbuild.Compile is
                Print_Compilation_Outputs (Source.Id);
 
                if OK then
-                  --  We created a new ALI file, so reset the attributes of
-                  --  the old one.
+                  --  We created a new dependency file, so reset the attributes
+                  --  of the old one.
 
                   Source.Id.Dep_TS := Unknown_Attributes;
 
@@ -291,13 +291,13 @@ package body Gprbuild.Compile is
                     and then Source.Id.Switches_Path /= No_Path
                     and then Opt.Check_Switches
                   then
-                     --  First, update the time stamp of the object file
-                     --  that will be written in the switches file.
+                     --  First, update the time stamp of the object file that
+                     --  will be written in the switches file.
 
                      Source.Id.Object_TS := File_Stamp (Source.Id.Object_Path);
 
-                     --  Write the switches file, now that we have the
-                     --  updated time stamp for the object file.
+                     --  Write the switches file, now that we have the updated
+                     --  time stamp for the object file.
 
                      declare
                         File : Text_IO.File_Type;
@@ -327,8 +327,8 @@ package body Gprbuild.Compile is
                      --  For all languages other than Ada, update the time
                      --  stamp of the object file as it is written in the
                      --  global archive dependency file. For all languages,
-                     --  update the time stamp of the object file if it is
-                     --  in a library project.
+                     --  update the time stamp of the object file if it is in
+                     --  a library project.
 
                   elsif Source.Id.Language.Config.Dependency_Kind /= ALI_File
                     or else Source.Id.Project.Library
@@ -1468,8 +1468,50 @@ package body Gprbuild.Compile is
       ----------------------
 
       function Phase_2_Makefile
-        (Src_Data : Queue.Source_Info) return Boolean
-      is
+        (Src_Data : Queue.Source_Info) return Boolean is
+
+         Object_Path : GNAT.OS_Lib.String_Access;
+
+         type Src_Record;
+         type Src_Access is access Src_Record;
+         type Src_Record is record
+            File : GNAT.OS_Lib.String_Access;
+            TS   : Time_Stamp_Type;
+            Next : Src_Access;
+         end record;
+
+         First_Src : Src_Access := null;
+         Last_Src  : Src_Access := null;
+
+         procedure Free is new Unchecked_Deallocation (Src_Record, Src_Access);
+
+         procedure Purge;
+         --  Deallocate Object_Path and the list of sources rooted at
+         --  First_Src.
+
+         -----------
+         -- Purge --
+         -----------
+
+         procedure Purge is
+            Curr : Src_Access := First_Src;
+            Next : Src_Access := null;
+
+         begin
+            Free (Object_Path);
+
+            Curr := First_Src;
+            First_Src := null;
+            Last_Src  := null;
+
+            while Curr /= null loop
+               Next := Curr.Next;
+               Free (Curr.File);
+               Free (Curr);
+               Curr := Next;
+            end loop;
+         end Purge;
+
          Compilation_OK : Boolean := True;
       begin
          Open (Dep_File, Get_Name_String (Src_Data.Id.Dep_Path));
@@ -1528,6 +1570,8 @@ package body Gprbuild.Compile is
                loop
                   Start := Start + 1;
                end loop;
+
+               Object_Path := new String'(Name_Buffer (Start .. Last_Obj));
 
                Start := Finish + 2;
 
@@ -1609,26 +1653,30 @@ package body Gprbuild.Compile is
                            Src_Name : constant String :=
                              Normalize_Pathname
                                (Name           =>
-                                    Line (Start .. Finish),
+                                  Line (Start .. Finish),
                                 Resolve_Links  => False,
                                 Case_Sensitive => False);
                            Source_2   : Source_Id;
+                           Src_TS     : Time_Stamp_Type;
+                           Src_Name_Id : Name_Id;
 
                         begin
                            Name_Len := 0;
                            Add_Str_To_Name_Buffer (Src_Name);
+                           Src_Name_Id := Name_Find;
                            Source_2 := Source_Paths_Htable.Get
                              (Src_Data.Tree.Source_Paths_HT,
-                              Name_Find);
+                              Path_Name_Type (Src_Name_Id));
+                           Src_TS := File_Stamp (File_Name_Type (Src_Name_Id));
 
                            if Source_2 /= No_Source then
                               --  It is a source of a project
 
                               if not Project_Extends
-                                   (Src_Data.Id.Project, Source_2.Project)
+                                (Src_Data.Id.Project, Source_2.Project)
                                 and then
                                   not Project_Extends
-                                   (Source_2.Project, Src_Data.Id.Project)
+                                    (Source_2.Project, Src_Data.Id.Project)
                               then
                                  --  It is not a source of the same project
                                  --  as the source just compiled. Check if
@@ -1679,6 +1727,23 @@ package body Gprbuild.Compile is
                                  end if;
                               end if;
                            end if;
+
+                           if First_Src = null then
+                              First_Src :=
+                                new Src_Record'
+                                  (File => new String'(Src_Name),
+                                   TS   => Src_TS,
+                                   Next => null);
+                              Last_Src := First_Src;
+
+                           else
+                              Last_Src.Next :=
+                                new Src_Record'
+                                  (File => new String'(Src_Name),
+                                   TS   => Src_TS,
+                                   Next => null);
+                              Last_Src := Last_Src.Next;
+                           end if;
                         end;
 
                         exit Line_Loop when Finish = Last;
@@ -1686,6 +1751,7 @@ package body Gprbuild.Compile is
                         --  Go get the next source on the line
 
                         Start := Finish + 1;
+
                      end loop Name_Loop;
                   end;
 
@@ -1729,7 +1795,7 @@ package body Gprbuild.Compile is
                   for J in 1 .. Included_Sources.Last loop
                      declare
                         Included : constant Source_Id :=
-                                     Included_Sources.Table (J);
+                          Included_Sources.Table (J);
                      begin
                         if not Imports.Get (Included.Project) then
                            --  This source is either directly imported or
@@ -1762,6 +1828,35 @@ package body Gprbuild.Compile is
                end;
             end if;
          end if;
+
+         if Compilation_OK then
+            Create (Dep_File, Get_Name_String (Src_Data.Id.Dep_Path));
+            Put (Dep_File, Object_Path.all);
+            Put (Dep_File, ": ");
+
+            declare
+               S : Src_Access := First_Src;
+            begin
+               while S /= null loop
+                  Put (Dep_File, S.File.all);
+                  Put (Dep_File, " ");
+                  Put (Dep_File, String (S.TS));
+
+                  if S.Next /= null then
+                     Put (Dep_File, " \");
+                  end if;
+
+                  Put_Line (Dep_File, "");
+
+                  S := S.Next;
+               end loop;
+
+               Close (Dep_File);
+            end;
+         end if;
+
+         Purge;
+
          return Compilation_OK;
       end Phase_2_Makefile;
 

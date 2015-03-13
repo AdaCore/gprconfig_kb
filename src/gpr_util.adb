@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2007-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2007-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -972,6 +972,33 @@ package body Gpr_Util is
         (Dep_Name, Obj_Dir : String) return Boolean
       is
          Dep_File : Prj.Util.Text_File;
+         Last_Source : String_Access;
+         Last_TS     : Time_Stamp_Type := Empty_Time_Stamp;
+
+         function Is_Time_Stamp (S : String) return Boolean;
+         --  Return True iff S has the format of a Time_Stamp_Type
+
+         -------------------
+         -- Is_Time_Stamp --
+         -------------------
+
+         function Is_Time_Stamp (S : String) return Boolean is
+            Result : Boolean := False;
+         begin
+            if S'Length = Time_Stamp_Length then
+               Result := True;
+
+               for J in S'Range loop
+                  if S (J) not in '0' .. '9' then
+                     Result := False;
+                     exit;
+                  end if;
+               end loop;
+            end if;
+
+            return Result;
+         end Is_Time_Stamp;
+
       begin
          Open (Dep_File, Dep_Name);
 
@@ -1178,85 +1205,123 @@ package body Gpr_Util is
                            end if;
                         end loop;
 
-                        --  Check this source
+                        if Last_Source /= null
+                          and then Is_Time_Stamp (Line (Start .. Finish))
+                        then
+                           --  If we have a time stamp, check if it is the
+                           --  same as the source time stamp.
 
-                        declare
-                           Src_Name : constant String :=
-                             Normalize_Pathname
-                               (Name           => Line (Start .. Finish),
-                                Directory      => Obj_Dir,
-                                Resolve_Links  => False);
-                           C_Src_Name : String := Src_Name;
-                           Src_TS   : Time_Stamp_Type;
-                           Source_2 : Prj.Source_Id;
+                           declare
+                              Tstring : constant
+                                String (1 .. Time_Stamp_Length) :=
+                                Line (Start .. Finish);
+                              TS : constant Time_Stamp_Type :=
+                                Time_Stamp_Type (Tstring);
+                              OK : constant Boolean := Last_TS = TS;
 
-                        begin
-                           Canonical_Case_File_Name (C_Src_Name);
-
-                           --  If it is original source, set
-                           --  Source_In_Dependencies.
-
-                           if C_Src_Name = C_Source_Path then
-                              Source_In_Dependencies := True;
-                           end if;
-
-                           --  Get the time stamp of the source, which is not
-                           --  necessarily a source of any project.
-
-                           Name_Len := 0;
-                           Add_Str_To_Name_Buffer (Src_Name);
-                           Src_TS := File_Stamp (File_Name_Type'(Name_Find));
-
-                           --  If the source does not exist, we need to
-                           --  recompile.
-
-                           if Src_TS = Empty_Time_Stamp then
-                              if Verbose_Mode then
-                                 Write_Str  ("      -> source ");
-                                 Write_Str  (Src_Name);
-                                 Write_Line (" does not exist");
-                              end if;
-
-                              Close (Dep_File);
-                              return True;
-
-                              --  If the source has been modified after the
-                              --  object file, we need to recompile.
-
-                           elsif Src_TS > Source.Object_TS
-                             and then Object_Check
-                             and then Source.Language.Config.Object_Generated
-                           then
-                              if Verbose_Mode then
-                                 Write_Str  ("      -> source ");
-                                 Write_Str  (Src_Name);
+                           begin
+                              if not OK and then Verbose_Mode then
+                                 Write_Str ("      -> source ");
+                                 Write_Str  (Last_Source.all);
                                  Write_Line
-                                   (" has time stamp later than object file");
+                                   (" has modified time stamp");
                               end if;
 
-                              Close (Dep_File);
-                              return True;
+                              Free (Last_Source);
 
-                           else
-                              Name_Len := Src_Name'Length;
-                              Name_Buffer (1 .. Name_Len) := Src_Name;
-                              Source_2 := Source_Paths_Htable.Get
-                                (Tree.Source_Paths_HT, Name_Find);
+                              if not OK then
+                                 Close (Dep_File);
+                                 return True;
+                              end if;
+                           end;
 
-                              if Source_2 /= No_Source
-                                and then Source_2.Replaced_By /= No_Source
-                              then
+                        else
+                           --  Check this source
+
+                           declare
+                              Src_Name : constant String :=
+                                Normalize_Pathname
+                                  (Name           => Line (Start .. Finish),
+                                   Directory      => Obj_Dir,
+                                   Resolve_Links  => False);
+                              C_Src_Name : String := Src_Name;
+                              Src_TS   : Time_Stamp_Type;
+                              Source_2 : Prj.Source_Id;
+
+                           begin
+                              Canonical_Case_File_Name (C_Src_Name);
+
+                              --  If it is original source, set
+                              --  Source_In_Dependencies.
+
+                              if C_Src_Name = C_Source_Path then
+                                 Source_In_Dependencies := True;
+                              end if;
+
+                              --  Get the time stamp of the source, which is
+                              --  not necessarily a source of any project.
+
+                              Name_Len := 0;
+                              Add_Str_To_Name_Buffer (Src_Name);
+                              Src_TS := File_Stamp
+                                           (File_Name_Type'(Name_Find));
+
+                              --  If the source does not exist, we need to
+                              --  recompile.
+
+                              if Src_TS = Empty_Time_Stamp then
                                  if Verbose_Mode then
                                     Write_Str  ("      -> source ");
                                     Write_Str  (Src_Name);
-                                    Write_Line (" has been replaced");
+                                    Write_Line (" does not exist");
                                  end if;
 
                                  Close (Dep_File);
                                  return True;
+
+                                 --  If the source has been modified after the
+                                 --  object file, we need to recompile.
+
+                              elsif Src_TS > Source.Object_TS
+                                and then Object_Check
+                                and then
+                                   Source.Language.Config.Object_Generated
+                              then
+                                 if Verbose_Mode then
+                                    Write_Str  ("      -> source ");
+                                    Write_Str  (Src_Name);
+                                    Write_Line
+                                    (" has time stamp later than object file");
+                                 end if;
+
+                                 Close (Dep_File);
+                                 return True;
+
+                              else
+                                 Name_Len := Src_Name'Length;
+                                 Name_Buffer (1 .. Name_Len) := Src_Name;
+                                 Source_2 := Source_Paths_Htable.Get
+                                   (Tree.Source_Paths_HT, Name_Find);
+
+                                 if Source_2 /= No_Source
+                                   and then Source_2.Replaced_By /= No_Source
+                                 then
+                                    if Verbose_Mode then
+                                       Write_Str  ("      -> source ");
+                                       Write_Str  (Src_Name);
+                                       Write_Line (" has been replaced");
+                                    end if;
+
+                                    Close (Dep_File);
+                                    return True;
+
+                                 else
+                                    Last_Source := new String'(Src_Name);
+                                    Last_TS     := Src_TS;
+                                 end if;
                               end if;
-                           end if;
-                        end;
+                           end;
+                        end if;
 
                         --  If the source path name ends the line, we are
                         --  done.
