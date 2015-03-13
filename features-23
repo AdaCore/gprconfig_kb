@@ -43,3 +43,9 @@ NF-23-NA14-036 GPRinstall Mode & Install_Name attributes (2014-12-10)
   package Install of a project. These attributes are equivalent to the
   GPSinstall command line options but allow per project fine tuning of
   the installation setup.
+
+NF-23-NA07-058 Dependency with different timestamp (2015-03-13)
+
+  gprbuild now recompiles a file based source if one of its dependency source
+  has a different time stamp, even when the time stamp is before the one of
+  the object file.
