@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2012-2014, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2015, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -693,6 +693,9 @@ procedure Gprinstall.Main is
 
          Write_Line ("  --build-var=<name>");
          Write_Line ("           Name of the variable which identify a build");
+
+         Write_Line ("  --no-build-var");
+         Write_Line ("           Do not generate external build variable");
 
          --  Line for --build-name
 
