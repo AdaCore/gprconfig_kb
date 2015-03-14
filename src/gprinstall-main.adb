@@ -694,6 +694,8 @@ procedure Gprinstall.Main is
          Write_Line ("  --build-var=<name>");
          Write_Line ("           Name of the variable which identify a build");
 
+         --  Line for --no-build-var
+
          Write_Line ("  --no-build-var");
          Write_Line ("           Do not generate external build variable");
 
