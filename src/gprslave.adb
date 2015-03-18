@@ -291,9 +291,9 @@ procedure Gprslave is
    Port           : aliased Integer;
    Max_Processes  : aliased Integer;
    Max_Responses  : aliased Integer;
-   Help           : aliased Boolean;
-   Verbose        : aliased Boolean;
-   Debug          : aliased Boolean;
+   Help           : aliased Boolean := False;
+   Verbose        : aliased Boolean := False;
+   Debug          : aliased Boolean := False;
    Root_Directory : aliased GNAT.Strings.String_Access :=
                        new String'(Current_Directory);
    --  Root directoty for the gprslave environment. All projects sources and
