@@ -1512,7 +1512,8 @@ package body Gprbuild.Compile is
             end loop;
          end Purge;
 
-         Compilation_OK : Boolean := True;
+         Compilation_OK  : Boolean := True;
+         Dep_File_OK     : Boolean := False;
       begin
          Open (Dep_File, Get_Name_String (Src_Data.Id.Dep_Path));
 
@@ -1572,6 +1573,7 @@ package body Gprbuild.Compile is
                end loop;
 
                Object_Path := new String'(Name_Buffer (Start .. Last_Obj));
+               Dep_File_OK := True;
 
                Start := Finish + 2;
 
@@ -1829,7 +1831,7 @@ package body Gprbuild.Compile is
             end if;
          end if;
 
-         if Compilation_OK then
+         if Compilation_OK and Dep_File_OK then
             Create (Dep_File, Get_Name_String (Src_Data.Id.Dep_Path));
             Put (Dep_File, Object_Path.all);
             Put (Dep_File, ": ");
