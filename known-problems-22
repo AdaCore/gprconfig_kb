@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O302-010 gprbuild distributed won't exit after ctrl-c
+
+  Problem:    When interrupting a distributed build with a ctrl-c signal,
+              gprbuild may not exit and freeze.
+
+  Status:     This was fixed in 2.3 on 2015-03-19
+
+  Workaround: Do not interrupt the build or do not build in distributed mode.
+
 KP-22-O129-033 gprclean does not always remove .lexch file
 
   Problem:    On Windows and Darwin, when the name of a shared library

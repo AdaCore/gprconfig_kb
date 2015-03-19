@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -51,12 +51,13 @@ package Gprbuild.Compilation.Slave is
    --  Send a compilation job to one slave that has still some free slot. There
    --  is also free slot when this routine is called (gprbuild ensure this).
 
-   procedure Unregister_Remote_Slaves;
+   procedure Unregister_Remote_Slaves (From_Signal : Boolean := False);
    --  Unregister all slaves, send them notification about the end of the
    --  current build. This routine must be called after the compilation phase
    --  and before the bind and link ones. It is safe to call this routine
    --  multiple times, the first call will do the clean-up, next calls are
-   --  just no-op.
+   --  just no-op. From_Signal must be set when called from a signal, for
+   --  example when calling this routine from the ctrl-c handler.
 
    function Get_Max_Processes return Natural;
    --  Returns the maximum number of processes supported by the compilation

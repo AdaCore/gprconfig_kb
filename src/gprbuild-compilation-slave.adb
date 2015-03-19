@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -843,7 +843,7 @@ package body Gprbuild.Compilation.Slave is
    -- Unregister_Remote_Slaves --
    ------------------------------
 
-   procedure Unregister_Remote_Slaves is
+   procedure Unregister_Remote_Slaves (From_Signal : Boolean := False) is
 
       procedure Unregister (S : in out Slave);
       --  Unregister given slave
@@ -856,19 +856,24 @@ package body Gprbuild.Compilation.Slave is
 
       procedure Unregister (S : in out Slave) is
       begin
-         Send_End_Of_Compilation (S.Channel);
+         if not From_Signal then
+            Send_End_Of_Compilation (S.Channel);
 
-         --  Wait for acknowledge to ensure the clean-up is terminated on the
-         --  slave.
+            --  Wait for acknowledge to ensure the clean-up is terminated on
+            --  on the slave.
 
-         declare
-            Cmd : constant Command :=
-                    Get_Command (S.Channel) with Unreferenced;
-         begin
-            null;
-         end;
+            declare
+               Cmd : constant Command :=
+                       Get_Command (S.Channel) with Unreferenced;
+            begin
+               null;
+            end;
+         end if;
 
          Close (S.Channel);
+      exception
+         when others =>
+            null;
       end Unregister;
 
    begin
@@ -876,11 +881,16 @@ package body Gprbuild.Compilation.Slave is
 
       Slaves.Iterate (Unregister'Access);
 
-      Sync.Wait;
+      if not From_Signal then
+         Sync.Wait;
+      end if;
 
       Stop := Clock;
 
-      if Opt.Verbose_Mode and then Slaves.Count > 0 then
+      if not From_Signal
+        and then Opt.Verbose_Mode
+        and then Slaves.Count > 0
+      then
          Write_Str ("  All data synchronized in ");
          Write_Str (Duration'Image (Stop - Start));
          Write_Line (" seconds");

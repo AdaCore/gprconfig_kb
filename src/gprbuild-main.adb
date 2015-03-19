@@ -1565,7 +1565,7 @@ procedure Gprbuild.Main is
       Delete_All_Temp_Files (Project_Tree.Shared);
 
       if Distributed_Mode then
-         Compilation.Slave.Unregister_Remote_Slaves;
+         Compilation.Slave.Unregister_Remote_Slaves (From_Signal => True);
       end if;
 
       OS_Exit (1);
