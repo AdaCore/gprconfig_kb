@@ -1,17 +1,16 @@
-with "xmlada";
+with "xmlada.gpr";
 
 project Gprbuild is
 
    type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := external ("BUILD", "debug");
 
-   type Build_Tool_Type is ("gnatmake", "gprbuild");
-   Build_Tool : Build_Tool_Type := external ("BUILD_TOOL", "gnatmake");
-
    type VCS_Type is ("Subversion", "Git", "auto");
    VCS_Kind : VCS_Type := external ("PRJ_VCS", "Subversion");
 
    Processors := external ("PROCESSORS", "1");
+
+   for Languages use ("Ada", "C");
 
    for Main use
        ("gprconfig-main.adb",
@@ -24,34 +23,14 @@ project Gprbuild is
 
    for Source_Dirs use ("src", "gnat");
 
-   case Build_Tool is
-      when "gprbuild" =>
-         case Bld is
-            when "production" => for Object_Dir use "bootstrap/obj";
-            when "coverage"   => for Object_Dir use "bootstrap/obj-cov";
-            when "profiling"  => for Object_Dir use "bootstrap/obj-prof";
-            when "debug"      => for Object_Dir use "bootstrap/obj-debug";
-         end case;
-         for Exec_Dir use "bootstrap";
-
-      when "gnatmake" =>
-         case Bld is
-            when "production" => for Object_Dir use "obj";
-            when "coverage"   => for Object_Dir use "obj-cov";
-            when "profiling"  => for Object_Dir use "obj-prof";
-            when "debug"      => for Object_Dir use "obj-debug";
-         end case;
-         for Exec_Dir use ".";
+   case Bld is
+      when "production" => for Object_Dir use "obj";
+      when "coverage"   => for Object_Dir use "obj-cov";
+      when "profiling"  => for Object_Dir use "obj-prof";
+      when "debug"      => for Object_Dir use "obj-debug";
    end case;
 
-   case Build_Tool is
-      when "gprbuild" =>
-         for Languages use ("Ada", "C");
-      when "gnatmake"  =>
-         for Languages use ("Ada", "C");
-         -- We only build the Ada part with projects so that we do not
-         -- have boostrap issues with gprbuild.
-   end case;
+   for Exec_Dir use ".";
 
    package Builder is
       for Executable ("gprconfig-main.adb") use "gprconfig";
@@ -59,7 +38,6 @@ project Gprbuild is
       for Executable ("gprclean-main.adb") use "gprclean";
       for Executable ("gprinstall-main.adb") use "gprinstall";
       for Default_Switches ("Ada") use ("-m", "-j" & Processors);
-      for Switches ("Ada") use ();
    end Builder;
 
    package Compiler is
@@ -85,7 +63,7 @@ project Gprbuild is
 
             --  Compile all GPRbuild sources to support symbolic-traceback
 
-            for Switches ("gpr*") use
+            for Switches ("gpr*.ad?") use
               Compiler'Default_Switches ("Ada") & ("-g1");
       end case;
    end Compiler;
@@ -104,32 +82,19 @@ project Gprbuild is
    end Binder;
 
    package Linker is
-      Common_Switches := (project'Object_Dir & "/gprbuild_dummies.o",
-                          project'Object_Dir & "/link.o");
-      --  We use project'Object_Dir here instead of GprBuild'Object_Dir
-      --  for compatibility with GNAT Pro 6.0.2.
-
-      case Build_Tool is
-         when "gnatmake" =>
-            -- Link manually the C part
-
-            case Bld is
-               when "production" =>
-                  for Default_Switches ("Ada") use Common_Switches;
-
-               when "debug" =>
-                  for Default_Switches ("Ada") use Common_Switches & ("-g");
-
-               when "coverage"             =>
-                  for Default_Switches ("Ada") use Common_Switches & ("-lgcov");
-
-               when "profiling"            =>
-                  for Default_Switches ("Ada") use Common_Switches & ("-pg", "-g");
-
-            end case;
-
-         when "gprbuild" =>
+      case Bld is
+         when "production" =>
             null;
+
+         when "debug" =>
+            for Default_Switches ("Ada") use ("-g");
+
+         when "coverage"             =>
+            for Default_Switches ("Ada") use ("-lgcov");
+
+         when "profiling"            =>
+            for Default_Switches ("Ada") use ("-pg", "-g");
+
       end case;
    end Linker;
 

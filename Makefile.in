@@ -55,17 +55,17 @@ dummy:=$(shell $(MKDIR) $(objdir))
 
 PROCESSORS ?= 0
 
-GNATMAKE=gnatmake -p -m -j${PROCESSORS}
+BUILDER=gprbuild -p -m -j${PROCESSORS}
 
 ADA_GEN_SUBDIR=gnat
 
 .PHONY: all distall gprbuild gprconfig gprclean gprinstall \
 	copy_gnat_src complete bootstrap
 all: $(xmlada_build_target) $(ADA_GEN_SUBDIR)/stamp-snames
-	${GNATMAKE} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
+	${BUILDER} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
 distall:
-	make GNATMAKE="$(GNATMAKE)" BUILD="$(BUILD)"
+	make BUILDER="$(BUILDER)" BUILD="$(BUILD)"
 	make BUILD="$(BUILD)" install
 	if [ "$(IS_WINDOWS)" = "false" ]; then \
 	  $(CP) $(srcdir)/doinstall $(prefix) && \
@@ -81,7 +81,7 @@ ifeq ($(BUILD), production)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
 endif
 
-all gprconfig gprbuild gprclean: $(objdir)/gprbuild_dummies.o $(objdir)/link.o force
+all gprconfig gprbuild gprclean: force
 
 MOVE_IF_CHANGE=mv -f
 -include $(srcdir)/gnat/Make-generated.in
@@ -92,19 +92,19 @@ copy_gnat_src: force
 	    $(LN) $(GNAT_SOURCE_DIR)/$(f) . ;\
            )
 
-complete: copy_gnat_src all doc install
+complete: copy_gnat_src all install
 
 gprbuild:
-	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprbuild-main.adb
+	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprbuild-main.adb
 
 gprinstall:
-	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprinstall-main.adb
+	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprinstall-main.adb
 
 gprclean:
-	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprclean-main.adb
+	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprclean-main.adb
 
 gprconfig:
-	${GNATMAKE} -Pgprbuild -XBUILD=${BUILD} gprconfig-main
+	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprconfig-main
 
 bootstrap: gprconfig gprbuild
 	echo
@@ -161,12 +161,6 @@ endif
 	${INSTALL_PROGRAM} gprbind${EXEXT} ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} gprlib${EXEXT} ${libexecdir}/gprbuild/
 
-$(objdir)/gprbuild_dummies.o: src/gprbuild_dummies.c
-	gcc -c -o $@ $<
-
-$(objdir)/link.o: gnat/link.c
-	gcc -c -o $@ $<
-
 .PHONY: build_xmlada
 build_xmlada:
 	cd $(srcdir)/xmlada && ./configure --build=$(build) \
@@ -174,10 +168,9 @@ build_xmlada:
 	cd $(srcdir)/xmlada && make LIBRARY_TYPE=static static install_static
 
 clean:
-	gnat clean -q -r -Pgprbuild
+	gprclean -q -r -Pgprbuild -XBUILD=$(BUILD)
 
-distclean:
-	gnat clean -q -r -Pgprbuild
+distclean: clean
 	@${RM} config.log config.status src/gprconfig-sdefault.ads
 	@${RM} Makefile
 	@${RM} $(objdir)/*
