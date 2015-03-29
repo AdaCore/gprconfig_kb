@@ -1012,6 +1012,25 @@ procedure Gprbuild.Main is
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
+         elsif Arg'Length >= In_Place_Option'Length
+           and then Arg (1 .. In_Place_Option'Length) = In_Place_Option
+         then
+            Forbidden_In_Package_Builder;
+
+            Obj_Root_Dir := new String'(Get_Current_Dir);
+
+            if Arg'Length > In_Place_Option'Length + 1 then
+               --  Use specified directory for the root source-tree
+               Root_Src_Tree :=
+                 new String'
+                   (Ensure_Directory
+                      (Arg (In_Place_Option'Length + 2 .. Arg'Last)));
+            end if;
+
+            --  In place compilation also imply -p (create missing dirs)
+
+            Opt.Setup_Projects := True;
+
          elsif Command_Line
            and then Arg'Length > Restricted_To_Languages_Option'Length
            and then Arg (1 .. Restricted_To_Languages_Option'Length) =
@@ -1843,6 +1862,13 @@ procedure Gprbuild.Main is
          Write_Str ("  --db-    Do not load the standard knowledge base");
          Write_Eol;
 
+         --  Line for --in-place=
+
+         Write_Str ("  --in-place[=source-tree]");
+         Write_Eol;
+         Write_Str ("           Root obj/lib/exec dirs are current-directory");
+         Write_Eol;
+
          --  Line for --subdirs=
 
          Write_Str ("  --subdirs=dir");
@@ -2208,6 +2234,17 @@ begin
             Ada.Directories.Create_Path (Config_Path);
          end if;
       end;
+   end if;
+
+   --  Building in-place, if the root source tree is not set yet (not specified
+   --  with the --in-place option, just set it to the absolute path of the main
+   --  directory.
+
+   if Obj_Root_Dir /= null and then Root_Src_Tree = null then
+      Root_Src_Tree := new String'
+        (Ada.Directories.Containing_Directory
+           (Normalize_Pathname (Project_File_Name.all, Obj_Root_Dir.all))
+         & Dir_Separator);
    end if;
 
    --  Then, parse the user's project and the configuration file. Apply the

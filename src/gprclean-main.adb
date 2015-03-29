@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2011-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -23,6 +23,7 @@
 --  See gprclean.adb
 
 with Ada.Command_Line;           use Ada.Command_Line;
+with Ada.Directories;
 with Ada.Exceptions;             use Ada.Exceptions;
 
 with System.Case_Util;           use System.Case_Util;
@@ -51,6 +52,7 @@ with Prj.Tree;    use Prj.Tree;
 with Snames;
 with Stringt;
 with Switch;      use Switch;
+with Types;       use Types;
 
 procedure Gprclean.Main is
 
@@ -359,6 +361,21 @@ procedure Gprclean.Main is
                              new String'
                                (Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
+                        elsif Arg'Length >= In_Place_Option'Length
+                          and then
+                            Arg (1 .. In_Place_Option'Length) = In_Place_Option
+                        then
+                           Obj_Root_Dir := new String'(Get_Current_Dir);
+
+                           if Arg'Length > In_Place_Option'Length + 1 then
+                              --  Use current directory
+                              Root_Src_Tree :=
+                                new String'
+                                  (Ensure_Directory
+                                     (Arg (In_Place_Option'Length + 2
+                                           .. Arg'Last)));
+                           end if;
+
                         elsif Arg = Makeutl.Unchecked_Shared_Lib_Imports then
                            Opt.Unchecked_Shared_Lib_Imports := True;
 
@@ -574,6 +591,9 @@ procedure Gprclean.Main is
          Put_Line ("  --RTS:<lang>=<runtime>");
          Put_Line ("           Use runtime <runtime> for language <lang>");
 
+         Put_Line ("  --in-place[=source-tree]");
+         Put_Line ("           Root obj/lib/exec dirs are current-directory");
+
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
          Put_Line ("  " & Makeutl.Unchecked_Shared_Lib_Imports);
@@ -631,6 +651,17 @@ begin
       Fail_Program
         (Project_Tree,
          "no project file specified and no default project file");
+   end if;
+
+   --  Building in-place, if the root source tree is not set yet (not specified
+   --  with the --in-place option, just set it to the absolute path of the main
+   --  directory.
+
+   if Obj_Root_Dir /= null and then Root_Src_Tree = null then
+      Root_Src_Tree := new String'
+        (Ada.Directories.Containing_Directory
+           (Normalize_Pathname (Project_File_Name.all, Obj_Root_Dir.all))
+         & Dir_Separator);
    end if;
 
    if Verbose_Mode then

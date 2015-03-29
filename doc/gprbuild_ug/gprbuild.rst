@@ -259,6 +259,14 @@ package Builder of the main project:
   in particular to object directories, library directories and exec directories.
   If the directories do not exist, they are created automatically.
 
+* :samp:`--in-place[={dir}]`
+
+  Real object, library or exec directories are relocated to the
+  current working directory. If the project file is not at the root
+  directory of the source-tree, `dir` must be specified to point to
+  this root directory. This is required to be able to relocate
+  properly artifact directories in the build directory.
+
 * :samp:`--unchecked-shared-lib-imports`
 
   Allow shared library projects to import projects that are not shared
@@ -2684,6 +2692,14 @@ The switches for GPRclean are:
 
   Real object, library or exec directories are subdirectories `dir` of the specified ones.
 
+* :samp:`--in-place[={dir}]`
+
+  Real object, library or exec directories are relocated to the
+  current working directory. If the project file is not at the root
+  directory of the source-tree, `dir` must be specified to point to
+  this root directory. This is required to be able to relocate
+  properly artifact directories in the build directory.
+
 * :samp:`--unchecked-shared-lib-imports`
 
   Shared library projects may import any project.
@@ -3021,6 +3037,14 @@ The switches for GPRinstall are:
   in particular to object directories, library directories and exec directories.
   If the directories do not exist, they are created automatically. It is
   expected that the sub-dir option value here is the one used with gprbuild.
+
+* :samp:`--in-place[={dir}]`
+
+  Real object, library or exec directories are relocated to the
+  current working directory. If the project file is not at the root
+  directory of the source-tree, `dir` must be specified to point to
+  this root directory. This is required to be able to relocate
+  properly artifact directories in the build directory.
 
 * :samp:`-q`
 

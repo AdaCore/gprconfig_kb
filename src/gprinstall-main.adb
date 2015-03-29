@@ -397,6 +397,19 @@ procedure Gprinstall.Main is
                Subdirs :=
                  new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
+            elsif Arg'Length >= In_Place_Option'Length
+              and then Arg (1 .. In_Place_Option'Length) = In_Place_Option
+            then
+               Obj_Root_Dir := new String'(Get_Current_Dir);
+
+               if Arg'Length > In_Place_Option'Length + 1 then
+                  --  Use current directory
+                  Root_Src_Tree :=
+                    new String'
+                      (Ensure_Directory
+                         (Arg (In_Place_Option'Length + 2 .. Arg'Last)));
+               end if;
+
             elsif Has_Prefix (Target_Project_Option) then
                if Target_Name /= null then
                   if Target_Name.all /=
@@ -669,6 +682,13 @@ procedure Gprinstall.Main is
          Write_Line ("  --sources-only");
          Write_Line ("           Copy project sources only");
 
+         --  Line for --in-place=
+
+         Write_Str ("  --in-place[=source-tree]");
+         Write_Eol;
+         Write_Str ("           Root obj/lib/exec dirs are current-directory");
+         Write_Eol;
+
          --  Line for --subdirs=
 
          Write_Line ("  --subdirs=dir");
@@ -783,6 +803,17 @@ begin
    if Config_Project_File_Name = null then
       Config_Project_File_Name :=
         new String'((if Sources_Only then "auto.cgpr" else ""));
+   end if;
+
+   --  Building in-place, if the root source tree is not set yet (not specified
+   --  with the --in-place option, just set it to the absolute path of the main
+   --  directory.
+
+   if Obj_Root_Dir /= null and then Root_Src_Tree = null then
+      Root_Src_Tree := new String'
+        (Ada.Directories.Containing_Directory
+           (Normalize_Pathname (Project_File_Name.all, Obj_Root_Dir.all))
+         & Dir_Separator);
    end if;
 
    --  Then, parse the user's project and the configuration file. Apply the

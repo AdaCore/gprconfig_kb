@@ -8,6 +8,15 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-O325-017 Out of tree build (2015-03-29)
+
+  gprbuild can now build a project file out of a the source tree. That is,
+  all artefacts (object, executable, ALI files) are relocated to the directory
+  where gprbuild is launched when using the new --in-place option.
+
+  The --in-place option is also available with gprinstall and gprclean to
+  install artifacts or delete them from the out-of-tree build directory.
+
 NF-23-O127-044 New gprbuild switch -z (2015-01-26)
 
   gprbuild now accepts the switch -z to build executable with no main
