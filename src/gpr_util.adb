@@ -26,7 +26,6 @@ with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Directories;         use Ada.Directories;
 with Ada.Streams.Stream_IO;   use Ada.Streams;
 with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
-with Ada.Strings.Maps;        use Ada.Strings.Maps;
 with Interfaces.C.Strings;
 with System;
 
@@ -2370,52 +2369,6 @@ package body Gpr_Util is
    begin
       null;
    end Post_Scan;
-
-   -------------------
-   -- Relative_Path --
-   -------------------
-
-   function Relative_Path (Pathname, To : String) return String is
-      Dir_Sep_Map : constant Character_Mapping := To_Mapping ("\", "/");
-
-      P  : String (1 .. Pathname'Length) := Pathname;
-      T  : String (1 .. To'Length) := To;
-
-      Pi : Natural; -- common prefix ending
-      N  : Natural := 0;
-
-   begin
-      pragma Assert (Is_Absolute_Path (Pathname));
-      pragma Assert (Is_Absolute_Path (To));
-
-      --  Use canonical directory separator
-
-      Translate (Source => P, Mapping => Dir_Sep_Map);
-      Translate (Source => T, Mapping => Dir_Sep_Map);
-
-      --  First check for common prefix
-
-      Pi := 1;
-      while Pi < P'Last and then Pi < T'Last and then P (Pi) = T (Pi) loop
-         Pi := Pi + 1;
-      end loop;
-
-      --  Cut common prefix at a directory separator
-
-      while Pi > P'First and then P (Pi) /= '/' loop
-         Pi := Pi - 1;
-      end loop;
-
-      --  Count directory under prefix in P, these will be replaced by the
-      --  corresponding number of "..".
-
-      N := Count (T (Pi + 1 .. T'Last), "/");
-      if T (T'Last) /= '/' then
-         N := N + 1;
-      end if;
-
-      return N * "../" & Ensure_Directory (P (Pi + 1 .. P'Last));
-   end Relative_Path;
 
    --------------
    -- UTC_Time --

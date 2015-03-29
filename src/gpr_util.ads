@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 2007-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 2007-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -289,10 +289,6 @@ package Gpr_Util is
    function File_MD5 (Pathname : String) return Message_Digest;
    --  Returns the file MD5 signature. Raises Name_Error if Pathname does not
    --  exists.
-
-   function Relative_Path (Pathname, To : String) return String;
-   --  Returns the relative pathname which corresponds to Pathname when
-   --  starting from directory to. Both Pathname and To must be absolute paths.
 
    procedure Create_Sym_Link (From, To : String);
    --  Create a relative symlink in From pointing to To
