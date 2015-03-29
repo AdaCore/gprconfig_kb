@@ -40,7 +40,7 @@ with Opt;         use Opt;
 with Osint;       use Osint;
 with Output;      use Output;
 with Prj.Conf;    use Prj.Conf;
-with Prj.Proc;     use Prj.Proc;
+with Prj.Proc;    use Prj.Proc;
 with Prj.Env;
 with Prj.Err;
 with Prj.Tree;    use Prj.Tree;
