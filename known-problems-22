@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O331-001 cannot link encapsulated libraries on Windows
+
+  Problem:    On Windows encapsulated libraries may fail to link
+              due to unresolved symbols for OS dependent libraries.
+
+  Status:     This was fixed in 2.3 on 2015-04-01
+
+  Workaround: Use a Library_Options attribute and specify manually the
+              static GNAT run-time and the required libraries after.
+
 KP-22-O302-010 gprbuild distributed won't exit after ctrl-c
 
   Problem:    When interrupting a distributed build with a ctrl-c signal,
