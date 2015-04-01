@@ -2212,6 +2212,25 @@ begin
 
             Library_Options_Table.Append (Libgnat);
 
+            declare
+               I : constant Natural := Object_Files.Last;
+            begin
+               --  Then adds back all libraries already on the command-line
+               --  after libgnat to fulfill dependencies on OS libraries
+               --  that may be used by the GNAT runtime. These are libraries
+               --  added with a pragma Linker_Options in sources.
+
+               for K in 1 .. I loop
+                  declare
+                     O : constant String := Object_Files.Table (K).all;
+                  begin
+                     if O (O'First .. O'First + 1) = "-l" then
+                        Library_Options_Table.Append (new String'(O));
+                     end if;
+                  end;
+               end loop;
+            end;
+
          else
             Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
 
