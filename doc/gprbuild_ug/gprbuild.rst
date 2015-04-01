@@ -259,13 +259,20 @@ package Builder of the main project:
   in particular to object directories, library directories and exec directories.
   If the directories do not exist, they are created automatically.
 
-* :samp:`--in-place[={dir}]`
+* :samp:`--relocate-build-tree[={dir}]`
 
-  Real object, library or exec directories are relocated to the
-  current working directory. If the project file is not at the root
-  directory of the source-tree, `dir` must be specified to point to
-  this root directory. This is required to be able to relocate
-  properly artifact directories in the build directory.
+  With this option it is possible to achieve out-of-tree build. That
+  is, real object, library or exec directories are relocated to the
+  current working directory or dir if specificed.
+
+* :samp:`--root-dir={dir}`
+
+  This option is to be used with --relocate-build-tree above and
+  cannot be specified alone. This option specify the root directory
+  for artifacts for proper relocation. The default value is the main
+  project directory. This may not be suitable for relocation if for the
+  example some artifact directories are in a directory upper. The
+  specified directory must be a parent of all artifact directories.
 
 * :samp:`--unchecked-shared-lib-imports`
 
@@ -2692,13 +2699,20 @@ The switches for GPRclean are:
 
   Real object, library or exec directories are subdirectories `dir` of the specified ones.
 
-* :samp:`--in-place[={dir}]`
+* :samp:`--relocate-build-tree[={dir}]`
 
-  Real object, library or exec directories are relocated to the
-  current working directory. If the project file is not at the root
-  directory of the source-tree, `dir` must be specified to point to
-  this root directory. This is required to be able to relocate
-  properly artifact directories in the build directory.
+  With this option it is possible to achieve out-of-tree build. That
+  is, real object, library or exec directories are relocated to the
+  current working directory or dir if specificed.
+
+* :samp:`--root-dir={dir}`
+
+  This option is to be used with --relocate-build-tree above and
+  cannot be specified alone. This option specify the root directory
+  for artifacts for proper relocation. The default value is the main
+  project directory. This may not be suitable for relocation if for the
+  example some artifact directories are in a directory upper. The
+  specified directory must be a parent of all artifact directories.
 
 * :samp:`--unchecked-shared-lib-imports`
 
@@ -3038,13 +3052,20 @@ The switches for GPRinstall are:
   If the directories do not exist, they are created automatically. It is
   expected that the sub-dir option value here is the one used with gprbuild.
 
-* :samp:`--in-place[={dir}]`
+* :samp:`--relocate-build-tree[={dir}]`
 
-  Real object, library or exec directories are relocated to the
-  current working directory. If the project file is not at the root
-  directory of the source-tree, `dir` must be specified to point to
-  this root directory. This is required to be able to relocate
-  properly artifact directories in the build directory.
+  With this option it is possible to achieve out-of-tree build. That
+  is, real object, library or exec directories are relocated to the
+  current working directory or dir if specificed.
+
+* :samp:`--root-dir={dir}`
+
+  This option is to be used with --relocate-build-tree above and
+  cannot be specified alone. This option specify the root directory
+  for artifacts for proper relocation. The default value is the main
+  project directory. This may not be suitable for relocation if for the
+  example some artifact directories are in a directory upper. The
+  specified directory must be a parent of all artifact directories.
 
 * :samp:`-q`
 

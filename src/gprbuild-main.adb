@@ -1012,24 +1012,38 @@ procedure Gprbuild.Main is
             Subdirs :=
               new String'(Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
-         elsif Arg'Length >= In_Place_Option'Length
-           and then Arg (1 .. In_Place_Option'Length) = In_Place_Option
+         elsif Arg'Length >= Relocate_Build_Tree_Option'Length
+           and then Arg (1 .. Relocate_Build_Tree_Option'Length)
+                    = Relocate_Build_Tree_Option
          then
             Forbidden_In_Package_Builder;
 
-            Obj_Root_Dir := new String'(Get_Current_Dir);
+            if Arg'Length = Relocate_Build_Tree_Option'Length then
+               Build_Tree_Dir := new String'(Current_Working_Dir);
 
-            if Arg'Length > In_Place_Option'Length + 1 then
-               --  Use specified directory for the root source-tree
-               Root_Src_Tree :=
+            else
+               Build_Tree_Dir :=
                  new String'
-                   (Ensure_Directory
-                      (Arg (In_Place_Option'Length + 2 .. Arg'Last)));
+                   (Normalize_Pathname
+                      (Arg (Relocate_Build_Tree_Option'Length + 2 .. Arg'Last),
+                       Current_Working_Dir));
             end if;
 
-            --  In place compilation also imply -p (create missing dirs)
+            --  Out-of-tree compilation also imply -p (create missing dirs)
 
             Opt.Setup_Projects := True;
+
+         elsif Arg'Length >= Root_Dir_Option'Length
+           and then Arg (1 .. Root_Dir_Option'Length) = Root_Dir_Option
+         then
+            Forbidden_In_Package_Builder;
+
+            Root_Dir :=
+              new String'
+                (Normalize_Pathname
+                   (Arg (Root_Dir_Option'Length + 2 .. Arg'Last),
+                    Current_Working_Dir)
+                & Dir_Separator);
 
          elsif Command_Line
            and then Arg'Length > Restricted_To_Languages_Option'Length
@@ -1779,6 +1793,23 @@ procedure Gprbuild.Main is
            (Project_Tree,
             "no project file specified and no default project file");
       end if;
+
+      --  Check consistency of out-of-tree build options.
+
+      if Root_Dir /= null and then Build_Tree_Dir = null then
+         Fail_Program
+           (Project_Tree,
+            "cannot use --root-dir without --relocate-build-tree option");
+      end if;
+
+      --  Set default Root_Dir
+
+      if Build_Tree_Dir /= null and then Root_Dir = null then
+         Root_Dir := new String'
+           (Ada.Directories.Containing_Directory
+              (Normalize_Pathname (Project_File_Name.all))
+            & Dir_Separator);
+      end if;
    end Initialize;
 
    -----------
@@ -1862,11 +1893,19 @@ procedure Gprbuild.Main is
          Write_Str ("  --db-    Do not load the standard knowledge base");
          Write_Eol;
 
-         --  Line for --in-place=
+         --  Line for --relocate-build-tree=
 
-         Write_Str ("  --in-place[=source-tree]");
+         Write_Str ("  --relocate-build-tree[=dir]");
          Write_Eol;
-         Write_Str ("           Root obj/lib/exec dirs are current-directory");
+         Write_Str ("           Root obj/lib/exec dirs are current-directory" &
+                    " or dir");
+         Write_Eol;
+
+         --  Line for --root-dir=
+
+         Write_Str ("  --root-dir=dir");
+         Write_Eol;
+         Write_Str ("           Root directory of obj/lib/exec to relocate");
          Write_Eol;
 
          --  Line for --subdirs=
@@ -2234,17 +2273,6 @@ begin
             Ada.Directories.Create_Path (Config_Path);
          end if;
       end;
-   end if;
-
-   --  Building in-place, if the root source tree is not set yet (not specified
-   --  with the --in-place option, just set it to the absolute path of the main
-   --  directory.
-
-   if Obj_Root_Dir /= null and then Root_Src_Tree = null then
-      Root_Src_Tree := new String'
-        (Ada.Directories.Containing_Directory
-           (Normalize_Pathname (Project_File_Name.all, Obj_Root_Dir.all))
-         & Dir_Separator);
    end if;
 
    --  Then, parse the user's project and the configuration file. Apply the

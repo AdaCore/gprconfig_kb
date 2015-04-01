@@ -361,20 +361,41 @@ procedure Gprclean.Main is
                              new String'
                                (Arg (Subdirs_Option'Length + 1 .. Arg'Last));
 
-                        elsif Arg'Length >= In_Place_Option'Length
-                          and then
-                            Arg (1 .. In_Place_Option'Length) = In_Place_Option
+                        elsif Arg'Length >= Relocate_Build_Tree_Option'Length
+                          and then Arg (1 .. Relocate_Build_Tree_Option'Length)
+                          = Relocate_Build_Tree_Option
                         then
-                           Obj_Root_Dir := new String'(Get_Current_Dir);
+                           if Arg'Length
+                             = Relocate_Build_Tree_Option'Length
+                           then
+                              Build_Tree_Dir := new String'(Get_Current_Dir);
 
-                           if Arg'Length > In_Place_Option'Length + 1 then
-                              --  Use current directory
-                              Root_Src_Tree :=
-                                new String'
-                                  (Ensure_Directory
-                                     (Arg (In_Place_Option'Length + 2
-                                           .. Arg'Last)));
+                           else
+                              declare
+                                 Dir : constant String := Ensure_Directory
+                                   (Arg (Relocate_Build_Tree_Option'Length + 2
+                                         .. Arg'Last));
+                              begin
+                                 if Is_Absolute_Path (Dir) then
+                                    Build_Tree_Dir := new String'(Dir);
+                                 else
+                                    Build_Tree_Dir :=
+                                      new String'(Get_Current_Dir & Dir);
+                                 end if;
+                              end;
                            end if;
+
+                        elsif Arg'Length >= Root_Dir_Option'Length
+                          and then Arg (1 .. Root_Dir_Option'Length)
+                                   = Root_Dir_Option
+                        then
+                           Root_Dir :=
+                             new String'
+                               (Normalize_Pathname
+                                  (Arg
+                                     (Root_Dir_Option'Length + 2 .. Arg'Last),
+                                   Get_Current_Dir)
+                                & Dir_Separator);
 
                         elsif Arg = Makeutl.Unchecked_Shared_Lib_Imports then
                            Opt.Unchecked_Shared_Lib_Imports := True;
@@ -591,8 +612,11 @@ procedure Gprclean.Main is
          Put_Line ("  --RTS:<lang>=<runtime>");
          Put_Line ("           Use runtime <runtime> for language <lang>");
 
-         Put_Line ("  --in-place[=source-tree]");
-         Put_Line ("           Root obj/lib/exec dirs are current-directory");
+         Put_Line ("  --relocate-build-tree[=dir]");
+         Put_Line ("           Root obj/lib/exec dirs are current-directory" &
+                    " or dir");
+         Put_Line ("  --root-dir=dir");
+         Put_Line ("           Root directory of obj/lib/exec to relocate");
 
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
@@ -653,14 +677,20 @@ begin
          "no project file specified and no default project file");
    end if;
 
-   --  Building in-place, if the root source tree is not set yet (not specified
-   --  with the --in-place option, just set it to the absolute path of the main
-   --  directory.
+   --  Check consistency of out-of-tree build options.
 
-   if Obj_Root_Dir /= null and then Root_Src_Tree = null then
-      Root_Src_Tree := new String'
+   if Root_Dir /= null and then Build_Tree_Dir = null then
+      Fail_Program
+        (Project_Tree,
+         "cannot use --root-dir without --relocate-build-tree option");
+   end if;
+
+   --  Set default Root_Dir
+
+   if Build_Tree_Dir /= null and then Root_Dir = null then
+      Root_Dir := new String'
         (Ada.Directories.Containing_Directory
-           (Normalize_Pathname (Project_File_Name.all, Obj_Root_Dir.all))
+           (Normalize_Pathname (Project_File_Name.all))
          & Dir_Separator);
    end if;
 
