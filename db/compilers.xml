@@ -284,7 +284,7 @@
 
   <!-- PikeOS -->
   <compiler_description>
-    <name>GCC-SYSGO</name>
+    <name>GCC-SYSGO-X86</name>
     <executable prefix="1">(x86_i586-)gcc</executable>
     <version>
       <getenv name="PIKEOS_VERSION" />
@@ -294,7 +294,7 @@
   </compiler_description>
 
   <compiler_description>
-    <name>GCC-SYSGO</name>
+    <name>GCC-SYSGO-PPC</name>
     <executable prefix="1">(ppc_oea-)gcc</executable>
     <version>
       <getenv name="PIKEOS_VERSION" />

@@ -21,7 +21,8 @@
        <compiler name="GCC_Pro" language="C" />
        <compiler name="GCC-28" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
-       <compiler name="GCC-SYSGO" language="C" />
+       <compiler name="GCC-SYSGO-X86" language="C" />
+       <compiler name="GCC-SYSGO-PPC" language="C" />
      </compilers>
      <config>
    package Compiler is
@@ -106,7 +107,8 @@
        <compiler name="GCC-28" language="C" />
        <compiler name="GCC-CYGMING" language="C" />
        <compiler name="GCC-MINGW32" language="C" />
-       <compiler name="GCC-SYSGO" language="C" />
+       <compiler name="GCC-SYSGO-X86" language="C" />
+       <compiler name="GCC-SYSGO-PPC" language="C" />
        <compiler name="GCC-WRS5" language="C" />
        <compiler name="GCC-WRS6" language="C" />
        <compiler name="GCC-WRS6E500V2" language="C" />
