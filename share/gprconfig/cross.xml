@@ -267,7 +267,8 @@
      <compilers>
        <compiler name="GNAT"/>
        <compiler name="GCC"/>
-       <compiler name="GCC-SYSGO"/>
+       <compiler name="GCC-SYSGO-X86"/>
+       <compiler name="GCC-SYSGO-PPC"/>
        <compiler name="G++"/>
      </compilers>
      <targets>
