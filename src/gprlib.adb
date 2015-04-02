@@ -2212,6 +2212,11 @@ begin
 
             Library_Options_Table.Append (Libgnat);
 
+            --  ?? The proper implementation for the following code is to
+            --  add only the libraries that libgnat is using. This information
+            --  is not readily available but we should be able to compute
+            --  this from the ALI files.
+
             declare
                I : constant Natural := Object_Files.Last;
             begin
