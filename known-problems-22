@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O403-014 static library not installed with --mode=dev
+
+  Problem:    When --mode=dev is explicitly specified on the gprinstall
+              command line for a library project nothing gets installed.
+
+  Status:     This was fixed in 2.3 on 2015-04-03
+
+  Workaround: Do not set explicitly the --mode=dev, let the default value.
+
 KP-22-O331-001 cannot link encapsulated libraries on Windows
 
   Problem:    On Windows encapsulated libraries may fail to link

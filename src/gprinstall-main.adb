@@ -63,7 +63,7 @@ procedure Gprinstall.Main is
    Build_Name_Option      : constant String := "--build-name";
    Install_Name_Option    : constant String := "--install-name";
    Uninstall_Option       : constant String := "--uninstall";
-   Mode_Option            : constant String := "--mode=";
+   Mode_Option            : constant String := "--mode";
    Lib_Subdir_Option      : constant String := "--lib-subdir";
    Link_Lib_Subdir_Option : constant String := "--link-lib-subdir";
    Exec_Subdir_Option     : constant String := "--exec-subdir";
@@ -376,12 +376,13 @@ procedure Gprinstall.Main is
 
             elsif Has_Prefix (Mode_Option) then
                declare
-                  Mode : String := Arg (Mode_Option'Length + 1 .. Arg'Last);
+                  Mode : String := Arg (Mode_Option'Length + 2 .. Arg'Last);
                begin
                   To_Lower (Mode);
 
                   if Mode in "dev" | "usage" then
-                     Set_Param (Global_Install_Mode, Mode_Option);
+                     Set_Param
+                       (Global_Install_Mode, Mode_Option, Is_Dir => False);
                   else
                      Processed := False;
                   end if;
