@@ -1,11 +1,11 @@
 ------------------------------------------------------------------------------
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                      G P R I N S T A L L . M A I N                       --
+--                           G P R I N S T A L L                            --
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 2012-2014, Free Software Foundation, Inc.         --
+--          Copyright (C) 2012-2015, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
