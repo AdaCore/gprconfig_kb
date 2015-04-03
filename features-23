@@ -11,7 +11,7 @@ User's Guide.
 NF-23-O325-017 Out of tree build (2015-03-29)
 
   gprbuild can now build a project file out of a the source tree. That is,
-  all artefacts (object, executable, ALI files) are relocated to the directory
+  all artifacts (object, executable, ALI files) are relocated to the directory
   where gprbuild is launched when using the new --relocate-build-tree option.
 
   The --relocate-build-tree option is also available with gprinstall and
