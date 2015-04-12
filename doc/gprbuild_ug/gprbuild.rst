@@ -78,7 +78,7 @@ The general syntax is thus:
 
    gprbuild [<proj>.gpr] [switches] [names]
     {[-cargs opts] [-cargs:lang opts] [-largs opts] [-gargs opts]}
-  
+
 
 GPRbuild requires a project file, which may be specified on the
 command line either directly or through the :samp:`-P` switch. If not
@@ -602,7 +602,7 @@ Examples:
 
   $ gprbuild -P c_main.gpr -WW
   gprbuild: illegal option "-WW"
-  
+
 
 GPRbuild looks for the configuration project file first in the current
 working directory, then in the default configuration project directory.
@@ -622,7 +622,7 @@ Example:
 ::
 
   $ gprbuild --config=my_standard.cgpr -P my_project.gpr
-  
+
 
 If GPRbuild cannot find the main configuration project on the configuration
 project path, then it will look for all the languages specified in the user
@@ -647,7 +647,7 @@ incorrect then GPRbuild will fail with the appropriate error messages:
   $ gprbuild -P my_project.gpr
   ada_main.gpr:3:26: "src" is not a valid directory
   gprbuild: "my_project.gpr" processing failed
-  
+
 
 Once the user project files have been dealt with successfully, GPRbuild
 will start its processing.
@@ -705,7 +705,7 @@ Example:
 ::
 
      for Roots ("main.c") use ("pkga", "pkgb");
-  
+
 Package PkgA and PkgB will be considered, and all the Ada units in their
 closure will also be considered.
 
@@ -810,7 +810,7 @@ Example:
         for Languages use ("Ada", "C");
         for Interfaces use ("pkg.ads", "toto.h");
      end Prj;
-  
+
 If a source from a project importing project Prj imports sources from Prj other
 than package Pkg or includes header files from Prj other than "toto.h", then
 its compilation will be invalidated.
@@ -848,7 +848,7 @@ Example:
      package Binder is
         for Switches ("Ada") use ("--gnatbind_path=/toto/gnatbind");
      end Binder;
-  
+
 If GPRbuild can determine that the artifacts from a previous
 post-compilation phase are already up to date, the binder driver is not called.
 
@@ -987,14 +987,14 @@ invocation:
 
       gprconfig -o path/my_config.cgpr
       gprbuild --config=path/my_config.cgpr
-    
+
 * The following command again triggers interactive mode, and only the
   relevant cross compilers for target ppc-elf will be proposed.
 
   ::
 
       gprconfig --target=ppc-elf
-    
+
 * The next command triggers batch mode and generates at the default location
   a configuration file using the first native Ada and C compilers on
   the path.
@@ -1002,7 +1002,7 @@ invocation:
   ::
 
       gprconfig --config=Ada --config=C --batch
-    
+
 * The next command, a combination of the previous examples, creates in
   batch mode a configuration file named :file:`x.cgpr` for cross-compiling
   Ada with a run-time called `hi` and using C for the LEON
@@ -1011,7 +1011,7 @@ invocation:
   ::
 
       gprconfig --target=leon-elf --config=Ada,,hi --config=C --batch -o x.cgpr
-    
+
 
 .. _Using_GPRconfig:
 
@@ -1360,13 +1360,13 @@ are evaluated (if necessary) in the same order as they are documented below.
       <compilers>
        <compiler language="name"/>
       </compilers>
-    
+
 
   ::
 
       <executable prefix="1">(powerpc-wrs-vxworks-)?gnatmake</executable>
       <version><external>${PREFIX}gnatls -v</external></version>
-    
+
   GPRconfig searches in all directories listed on the PATH for such
   an executable. When one is found, the rest of the `<compiler_description>`
   children are checked to know whether the compiler is valid. The directory
@@ -1453,7 +1453,7 @@ of the `<directory>` and `<external>` nodes.
       <executable>gnatmake</executable>
       <languages>Ada</languages>
       </compiler_description>
- 
+
   for the GNAT compiler, since this is an Ada-only compiler.
 
   Variables can be referenced in simple strings.
@@ -1626,7 +1626,7 @@ language of the compiler you are interested in.
 For instance, the following is invalid:
 
 ::
-  
+
     <configuration>
     <compilers>
     <compiler name="GNAT" />
@@ -1648,7 +1648,7 @@ issues, you need to use the following syntax instead when inside a
 `<configuration>` node:
 
 .. code-block:: gpr
-  
+
     for Driver ("Ada") use "${PATH(ada)gcc";   --  Correct
 
 Predefined variables are always in upper case.  Here is the list of
@@ -1784,7 +1784,7 @@ The chunks are described in a `<configuration>` XML node. The most
 important child of such a node is `<config>`, which contains the
 chunk itself. For instance, you would write:
 
-:: 
+::
 
    <configuration>
      ...  list of filters, see below
@@ -1957,7 +1957,7 @@ General Attributes
   .. code-block:: gpr
 
        for Default_Language use "ada";
-    
+
 * Run_Path_Option
 
   Specifies a 'run path option'; i.e., an option to use when linking an
@@ -1971,7 +1971,7 @@ General Attributes
   .. code-block:: gpr
 
         for Run_Path_Option  use ("-Wl,-rpath,");
-    
+
 * Run_Path_Origin
 
   Specifies the string to be used in an Rpath to indicate the directory
@@ -1982,7 +1982,7 @@ General Attributes
   .. code-block:: gpr
 
         for Run_Path_Origin use "$ORIGIN";
-    
+
 * Toolchain_Version (<language>)
 
   Specifies a version for a toolchain, as a single string. This toolchain
@@ -1991,7 +1991,7 @@ General Attributes
   .. code-block:: gpr
 
         for Toolchain_Version ("Ada") use "GNAT 6.1";
-    
+
   This attribute is used by GPRbind to decide on the names of the shared GNAT
   runtime libraries.
 
@@ -2004,7 +2004,7 @@ General Attributes
   .. code-block:: gpr
 
         for Toolchain_Description ("C") use "gcc version 4.1.3 20070425";
-    
+
 
 .. _General_Library_Related_Attributes:
 
@@ -2020,7 +2020,7 @@ General Library Related Attributes
   .. code-block:: gpr
 
        for Library_Support use "full";
-    
+
 * Library_Builder
 
   Specifies the name of the executable for the library builder. Example:
@@ -2028,7 +2028,7 @@ General Library Related Attributes
   .. code-block:: gpr
 
        for Library_Builder use "/.../gprlib";
-    
+
 
 .. _Archive_Related_Attributes:
 
@@ -2043,7 +2043,7 @@ Archive Related Attributes
   .. code-block:: gpr
 
        for Archive_Builder use ("ar", "cr");
-    
+
 * Archive_Indexer
 
   Specifies the name of the executable of the archive indexer with the minimum
@@ -2053,7 +2053,7 @@ Archive Related Attributes
   .. code-block:: gpr
 
         for Archive_Indexer use ("ranlib");
-    
+
 * Archive_Suffix
 
   Specifies the suffix of the archives. If this attribute is not specified, then
@@ -2062,7 +2062,7 @@ Archive Related Attributes
   .. code-block:: gpr
 
        for Archive_Suffix use ".olb"; --  for VMS
-    
+
 * Library_Partial_Linker
 
   Specifies the name of the executable of the partial linker with the options
@@ -2072,7 +2072,7 @@ Archive Related Attributes
   .. code-block:: gpr
 
        for Library_Partial_Linker use ("gcc", "-nostdlib", "-Wl,-r", "-o");
-    
+
 
 .. _Shared_Library_Related_Attributes:
 
@@ -2087,7 +2087,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Shared_Library_Prefix use ""; --  for Windows, if needed
-    
+
 * Shared_Library_Suffix
 
   Specifies the suffix of the file names of shared libraries. When this attribute
@@ -2096,7 +2096,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Shared_Library_Suffix use ".dll"; --  for Windows
-    
+
 * Symbolic_Link_Supported
 
   Specifies if symbolic links are supported by the platforms. The possible values
@@ -2106,7 +2106,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Symbolic_Link_Supported use "true";
-    
+
 * Library_Major_Minor_ID_Supported
 
   Specifies if major and minor IDs are supported for shared libraries.
@@ -2116,7 +2116,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Library_Major_Minor_ID_Supported use "True";
-    
+
 * Library_Auto_Init_Supported
 
   Specifies if library auto initialization is supported. The possible values of
@@ -2126,7 +2126,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Library_Auto_Init_Supported use "true";
-    
+
 * Shared_Library_Minimum_Switches
 
   Specifies the minimum options to be used when building a shared
@@ -2136,7 +2136,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Shared_Library_Minimum_Switches use  ("-shared");
-    
+
 * Library_Version_Switches
 
   Specifies the option or options to be used when a library version is used.
@@ -2146,7 +2146,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Library_Version_Switches use ("-Wl,-soname,");
-    
+
 * Runtime_Library_Dir (<language>)
 
   Specifies the directory for the runtime libraries for the language.
@@ -2155,7 +2155,7 @@ Shared Library Related Attributes
   .. code-block:: gpr
 
        for Runtime_Library_Dir ("Ada") use "/path/to/adalib";
-    
+
   This attribute is used by GPRlib to link shared libraries with Ada code.
 
 
@@ -2179,7 +2179,7 @@ file:
        for Spec_Suffix ("Ada") use ".ads";
        for Spec_Suffix ("C")   use ".h";
        for Spec_Suffix ("C++") use ".hh";
-    
+
 * Body_Suffix (<language>)
 
   Specifies the default suffix for a 'body' or a source file. Examples:
@@ -2189,7 +2189,7 @@ file:
        for Body_Suffix ("Ada") use ".adb";
        for Body_Suffix ("C")   use ".c";
        for Body_Suffix ("C++") use ".cpp";
-    
+
 * Separate_Suffix
 
   Specifies the suffix for a subunit source file (separate) in Ada. If attribute
@@ -2199,7 +2199,7 @@ file:
   .. code-block:: gpr
 
        for Separate_Suffix use ".sep";
-    
+
 * Casing
 
   Specifies the casing of spec and body files in a unit based language
@@ -2220,7 +2220,7 @@ file:
   .. code-block:: gpr
 
        for Dot_Replacement use "-";
-    
+
 
 .. _Package_Builder:
 
@@ -2237,7 +2237,7 @@ Package Builder
   .. code-block:: gpr
 
        for Executable_Suffix use ".exe";
-    
+
 
 .. _Package_Compiler:
 
@@ -2264,7 +2264,7 @@ General Compilation Attributes
        for Driver ("C++") use "g++";
        for Driver ("Ada") use "/.../bin/gcc";
        for Driver ("Project file") use "";
-    
+
 * Required_Switches (<language>)
 
   Specifies the minimum options that must be used when invoking the compiler
@@ -2274,7 +2274,7 @@ General Compilation Attributes
 
        for Required_Switches ("C")   use ("-c", "-x", "c");
        for Required_Switches ("Ada") use ("-c", "-x", "ada", "-gnatA");
-    
+
 * PIC_Option (<language>)
 
   Specifies the option or options that must be used when compiling a source of
@@ -2283,7 +2283,7 @@ General Compilation Attributes
   .. code-block:: gpr
 
        for PIC_Option ("C") use ("-fPIC");
-    
+
 
 .. _Mapping_File_Related_Attributes:
 
@@ -2301,7 +2301,7 @@ Mapping File Related Attributes
   .. code-block:: gpr
 
        for Mapping_File_Switches ("Ada") use ("-gnatem=");
-    
+
 * Mapping_Spec_Suffix (<language>)
 
   Specifies, for unit based languages that support mapping files, the suffix in
@@ -2310,7 +2310,7 @@ Mapping File Related Attributes
   .. code-block:: gpr
 
         for Mapping_Spec_Suffix ("Ada") use "%s";
-   
+
 * Mapping_Body_Suffix (<language>)
 
   Specifies, for unit based languages that support mapping files, the suffix in
@@ -2319,7 +2319,7 @@ Mapping File Related Attributes
   .. code-block:: gpr
 
         for Mapping_Spec_Suffix ("Ada") use "%b";
-    
+
 
 .. _Config_File_Related_Attributes:
 
@@ -2354,7 +2354,7 @@ Attributes:
   .. code-block:: gpr
 
        for Config_File_Switches ("Ada") use ("-gnatec=");
-    
+
 * Config_Body_File_Name (<language>)
 
   Specifies the line to be put in a config file to indicate the file name of a
@@ -2364,7 +2364,7 @@ Attributes:
 
        for Config_Body_File_Name ("Ada") use
            "pragma Source_File_Name_Project (%u, Body_File_Name => ""%f"");";
-  
+
 * Config_Spec_File_Name (<language>)
 
   Specifies the line to be put in a config file to indicate the file name of a
@@ -2374,7 +2374,7 @@ Attributes:
 
        for Config_Spec_File_Name ("Ada") use
            "pragma Source_File_Name_Project (%u, Spec_File_Name => ""%f"");";
-    
+
 * Config_Body_File_Name_Pattern (<language>)
 
   Specifies the line to be put in a config file to indicate a body file name
@@ -2387,7 +2387,7 @@ Attributes:
            "  (Body_File_Name  => ""*%b""," &
            "   Casing          => %c," &
            "   Dot_Replacement => ""%d"");";
-    
+
 * Config_Spec_File_Name_Pattern (<language>)
 
   Specifies the line to be put in a config file to indicate a spec file name
@@ -2400,7 +2400,7 @@ Attributes:
            "  (Spec_File_Name  => ""*%s""," &
            "   Casing          => %c," &
            "   Dot_Replacement => ""%d"");";
-    
+
 * Config_File_Unique (<language>)
 
   Specifies, for languages that support config files, if several config files
@@ -2413,7 +2413,7 @@ Attributes:
   .. code-block:: gpr
 
        for Config_File_Unique ("Ada") use "True";
-    
+
 
 .. _Dependency_Related_Attributes:
 
@@ -2437,7 +2437,7 @@ the object file or the switch file.
   .. code-block:: gpr
 
        for Dependency_Switches ("C") use ("-Wp,-MD,");
-    
+
   With these `Dependency_Switches`, when compiling :file:`file.c` the compiler will be
   invoked with the option :samp:`-Wp,-MD,file.d`.
 
@@ -2450,7 +2450,7 @@ the object file or the switch file.
   .. code-block:: gpr
 
        for Dependency_Driver ("C") use ("gcc", "-E", "-Wp,-M", "");
-    
+
   Usually, attributes `Dependency_Switches` and `Dependency_Driver` are not both
   specified.
 
@@ -2470,7 +2470,7 @@ Search Path Related Attributes
   .. code-block:: gpr
 
        for Include_Switches ("C") use ("-I");
-    
+
   Attribute `Include_Switches` is ignored if either one of the attributes
   `Include_Path` or `Include_Path_File` are specified.
 
@@ -2484,7 +2484,7 @@ Search Path Related Attributes
 
        for Include_Path ("C")   use "CPATH";
        for Include_Path ("Ada") use "ADA_INCLUDE_PATH";
-    
+
   Attribute `Include_Path` is ignored if attribute `Include_Path_File` is declared
   for the language.
 
@@ -2498,7 +2498,7 @@ Search Path Related Attributes
   .. code-block:: gpr
 
        for Include_Path_File ("Ada") use "ADA_PRJ_INCLUDE_FILE";
-    
+
 
 .. _Package_Binder:
 
@@ -2513,7 +2513,7 @@ Package Binder
   .. code-block:: gpr
 
        for Driver ("Ada") use "/.../gprbind";
-    
+
 * Required_Switches (<language>)
 
   Specifies the minimum options to be used when invoking the binder driver.
@@ -2523,7 +2523,7 @@ Package Binder
   .. code-block:: gpr
 
        for Required_Switches ("Ada") use ("--prefix=<prefix>");
-    
+
 * Prefix (<language>)
 
   Specifies the prefix to be used in the name of the binder exchange file.
@@ -2532,7 +2532,7 @@ Package Binder
   .. code-block:: gpr
 
        for Prefix ("C++") use ("c__");
-    
+
 * Objects_Path (<language>)
 
   Specifies the name of an environment variable that is used by the compiler to
@@ -2542,7 +2542,7 @@ Package Binder
   .. code-block:: gpr
 
        for Objects_Path ("Ada") use "ADA_OBJECTS_PATH";
-    
+
 * Objects_Path_File (<language>)
 
   Specifies the name of an environment variable that is used by the compiler to
@@ -2553,7 +2553,7 @@ Package Binder
   .. code-block:: gpr
 
        for Objects_Path_File ("Ada") use "ADA_PRJ_OBJECTS_FILE";
-    
+
 
 .. _Package_Linker:
 
@@ -2567,7 +2567,7 @@ Package Linker
   .. code-block:: gpr
 
        for Driver use "g++";
-    
+
 * Required_Switches
 
   Specifies the minimum options to be used when invoking the linker. Those
@@ -2582,7 +2582,7 @@ Package Linker
   .. code-block:: gpr
 
        for Map_File_Option use "-Wl,-Map,";
-    
+
 * Max_Command_Line_Length
 
   Specifies the maximum length of the command line to invoke the linker.
@@ -2593,7 +2593,7 @@ Package Linker
   .. code-block:: gpr
 
        for Max_Command_Line_Length use "8000";
-    
+
 * Response_File_Format
 
   Specifies the format of the response file to be generated when the maximum
@@ -2617,7 +2617,7 @@ Package Linker
   .. code-block:: gpr
 
        for Response_File_Format use "GCC_GNU";
-    
+
 * Response_File_Switches
 
   Specifies the option(s) that must precede the response file name when
@@ -2627,7 +2627,7 @@ Package Linker
   .. code-block:: gpr
 
         for Response_File_Switches  use ("-Wl,-f,");
-    
+
 
 .. _Cleaning_up_with_GPRclean:
 
@@ -2644,7 +2644,7 @@ Examples of invocation of GPRclean:
 
      gprclean -r prj1.gpr
      gprclean -c -P prj2.gpr
-  
+
 
 .. _Switches_for_GPRclean:
 
@@ -2852,7 +2852,7 @@ Examples of invocation of GPRinstall:
 
      gprinstall prj1.gpr
      gprinstall -r --prefix=/my/root/install -P prj2.gpr
-  
+
 GPRinstall will record the installation under the *install name*
 which is by default the name of the project without the
 extension. That is above the project install names are `prj1` and
@@ -2871,7 +2871,7 @@ Examples of installation under the same name:
 
      gprinstall --install-name=myapp lib.gpr
      gprinstall --install-name=myapp --mode=usage tools/tools.gpr
-  
+
 Note the `--mode=usage` option above. This tells GPRinstall to
 only install the executable built as part of the project.
 
@@ -2882,13 +2882,13 @@ option. In this case we just pass the install name to GPRinstall:
 
      gprinstall --uninstall prj1
      gprinstall --uninstall prj2
-  
+
 And both `lib.gpr` and `tools.gpr` above will be uninstalled with:
 
 ::
 
      gprinstall --uninstall myapp
-  
+
 
 Note that GPRinstall does not deal with dependencies between projects.
 
@@ -2966,7 +2966,7 @@ The switches for GPRinstall are:
     The installation is done in usage mode. This means that only the
     library or the executable is installed. In this installation mode
     there is no project generated, nor specs or ALI files installed.
-  
+
   ======== ================================================================
   Mode     Interpretation
   -------- ----------------------------------------------------------------
@@ -3148,7 +3148,7 @@ support is the following:
       package Remote is
          for Root_Dir use "..";
       end Remote;
-    
+
 * Launch a slave driver on each build slave
 
   The build master will communicate with each build slave with a specific driver
@@ -3167,7 +3167,7 @@ support is the following:
   ::
 
       $ gprslave
-    
+
 When all this is done, the remote compilation can be used simply by
 running GPRbuild in distributed mode from the build master:
 
@@ -3182,7 +3182,7 @@ The build slaves are specified with the following form:
 
     <machine_name>[:port]
 
-  
+
 .. _GPRslave:
 
 GPRslave
@@ -3219,7 +3219,7 @@ The current options are:
 
 * :samp:`-j{N}`, :samp:`--jobs={N}`
 
-  Set the maximum simultaneous compilation. 
+  Set the maximum simultaneous compilation.
   The default for `N` is the number of cores.
 
 * :samp:`-p`, :samp:`--port={N}`
@@ -3235,5 +3235,3 @@ The current options are:
   responses (sending back object code and ALI files) supported. The
   value must be between 1 and the maximum number of simultaneous
   compilations.
-
-
