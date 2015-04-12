@@ -201,15 +201,28 @@ procedure Gprclean.Main is
                                         .. Arg'Last));
                            end if;
 
-                        elsif Arg'Length >  Distributed_Option'Length
+                        elsif Arg'Length >= Distributed_Option'Length
                                 and then
                               Arg (1 .. Distributed_Option'Length)
                                   = Distributed_Option
                         then
                            Distributed_Mode := True;
 
-                           Gprbuild.Compilation.Slave.Record_Slaves
-                             (Arg (Distributed_Option'Length + 1 .. Arg'Last));
+                           declare
+                              Hosts : constant String :=
+                                        Get_Slaves_Hosts (Project_Tree, Arg);
+                           begin
+                              if Hosts = "" then
+                                 Fail_Program
+                                   (Project_Tree,
+                                    "missing hosts for distributed"
+                                    & " mode compilation");
+
+                              else
+                                 Gprbuild.Compilation.Slave.Record_Slaves
+                                   (Hosts);
+                              end if;
+                           end;
 
                         elsif Arg'Length >= Slave_Env_Option'Length
                           and then

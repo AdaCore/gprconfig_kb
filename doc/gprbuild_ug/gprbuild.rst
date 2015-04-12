@@ -202,10 +202,12 @@ package Builder of the main project:
   and standard error. This allows to redisplay any warning or info from the
   last invocation of gprbuild --complete-output.
 
-* :samp:`--distributed={slave1}[,{slave2}]`
+* :samp:`--distributed[={slave1}[,{slave2}]]`
 
   Activate the distributed compilation on the listed slaves nodes (IP or
-  name).
+  name). Or if no slave are specified they are search in `GPR_SLAVES` or
+  `GPR_SLAVES_FILE` environment variables.
+  see :ref:`Distributed_compilation`.
 
 * :samp:`--slave-env={name}`
 
@@ -3174,7 +3176,27 @@ running GPRbuild in distributed mode from the build master:
 ::
 
     $ gprbuild --distributed=comp1.xyz.com,comp2.xyz.com prj.gpr
-  
+
+Alternatively the slaves can be set using the `GPR_SLAVES` environment
+variable. So the following command is equivalent to the above:
+
+::
+
+    $ export GPR_SLAVES=comp1.xyz.com,comp2.xyz.com
+    $ gprbuild --distributed prj.gpr
+
+A third alternative is proposed using a list of slaves in a file (one
+per line). In this case the `GPR_SLAVES_FILE` environment variable
+must contain the path name to this file:
+
+::
+
+    $ export GPR_SLAVES_FILE=$HOME/slave-list.txt
+    $ gprbuild --distributed prj.gpr
+
+Finally note that the search for the slaves are in this specific
+order. First the command line values, then `GPR_SLAVES` if set and
+finally `GPR_SLAVES_FILES`.
 
 The build slaves are specified with the following form:
 

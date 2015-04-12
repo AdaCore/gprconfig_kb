@@ -67,7 +67,7 @@ package Gpr_Util is
    Restricted_To_Languages_Option : constant String :=
                                                "--restricted-to-languages=";
 
-   Distributed_Option : constant String := "--distributed=";
+   Distributed_Option : constant String := "--distributed";
 
    Slave_Env_Option : constant String := "--slave-env";
    Slave_Env_Auto   : Boolean := False;
@@ -304,6 +304,13 @@ package Gpr_Util is
    --  the project variables. We want the same slave environment for identical
    --  build. Data is a string that must be taken into account in the returned
    --  value.
+
+   function Get_Slaves_Hosts
+     (Project_Tree : Project_Tree_Ref;
+      Arg          : String) return String;
+   --  Given the actual argument "--distributed[=...]" return the coma
+   --  separated list of slave hosts. This routine handle the GPR_SLAVE and
+   --  GPR_SLAVES_FILE environment variables.
 
    function UTC_Time return Types.Time_Stamp_Type;
    --  Returns the UTC time

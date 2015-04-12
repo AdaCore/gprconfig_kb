@@ -21,11 +21,14 @@
 
 with Ada.Containers.Indefinite_Ordered_Sets;
 
-with Ada.Calendar.Time_Zones; use Ada.Calendar; use Ada.Calendar.Time_Zones;
-with Ada.Command_Line;        use Ada.Command_Line;
-with Ada.Directories;         use Ada.Directories;
-with Ada.Streams.Stream_IO;   use Ada.Streams;
-with Ada.Strings.Fixed;       use Ada.Strings.Fixed;
+with Ada.Calendar.Time_Zones;   use Ada.Calendar; use Ada.Calendar.Time_Zones;
+with Ada.Command_Line;          use Ada.Command_Line;
+with Ada.Directories;           use Ada.Directories;
+with Ada.Environment_Variables; use Ada.Environment_Variables;
+with Ada.Streams.Stream_IO;     use Ada.Streams;
+with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
+with Ada.Strings.Unbounded;
+with Ada.Text_IO;               use Ada.Text_IO;
 with Interfaces.C.Strings;
 with System;
 
@@ -483,6 +486,61 @@ package body Gpr_Util is
 
       return Lang.Config.Compiler_Driver_Path;
    end Get_Compiler_Driver_Path;
+
+   ----------------------
+   -- Get_Slaves_Hosts --
+   ----------------------
+
+   function Get_Slaves_Hosts
+     (Project_Tree : Project_Tree_Ref;
+      Arg          : String) return String
+   is
+      use Ada.Strings.Unbounded;
+      Hosts : Unbounded_String;
+   begin
+      if Arg'Length > Distributed_Option'Length
+        and then Arg (Arg'First + Distributed_Option'Length) = '='
+      then
+         --  The hosts are specified on the command-line
+         Hosts := To_Unbounded_String
+           (Arg (Arg'First + Distributed_Option'Length + 1 .. Arg'Last));
+
+      elsif Environment_Variables.Exists ("GPR_SLAVES") then
+         Hosts := To_Unbounded_String (Value ("GPR_SLAVES"));
+
+      elsif Environment_Variables.Exists ("GPR_SLAVES_FILE") then
+         declare
+            F_Name : constant String := Value ("GPR_SLAVES_FILE");
+            F      : Text_IO.File_Type;
+            Buffer : String (1 .. 100);
+            Last   : Natural;
+         begin
+            if Ada.Directories.Exists (F_Name) then
+               Open (F, In_File, F_Name);
+
+               while not Text_IO.End_Of_File (F) loop
+                  Text_IO.Get_Line (F, Buffer, Last);
+
+                  if Last > 0 then
+                     if Hosts /= Null_Unbounded_String then
+                        Append (Hosts, ",");
+                     end if;
+                     Append (Hosts, Buffer (1 .. Last));
+                  end if;
+               end loop;
+
+               Text_IO.Close (F);
+
+            else
+               Fail_Program
+                 (Project_Tree,
+                  "hosts distributed file " & F_Name & " not found");
+            end if;
+         end;
+      end if;
+
+      return To_String (Hosts);
+   end Get_Slaves_Hosts;
 
    ----------------------------
    -- Find_Binding_Languages --

@@ -18,6 +18,13 @@ NF-23-O325-017 Out of tree build (2015-03-29)
   gprclean to install artifacts or delete them from the out-of-tree build
   directory.
 
+NF-23-O224-040 GPRbuild distributed environment variables (2015-04-12)
+
+  gprbuild and gprslave now accepts slaves to be specified using environment
+  variables. Either GPR_SLAVES which contains a coma separated list of host
+  names or GPR_SLAVES_FILE with specify a file whose content must be an host
+  name per line.
+
 NF-23-O127-044 New gprbuild switch -z (2015-01-26)
 
   gprbuild now accepts the switch -z to build executable with no main

@@ -19,9 +19,9 @@
 -- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Command_Line;       use Ada.Command_Line;
+with Ada.Command_Line;          use Ada.Command_Line;
 with Ada.Directories;
-with Ada.Exceptions;         use Ada.Exceptions;
+with Ada.Exceptions;            use Ada.Exceptions;
 
 with System;
 with System.Case_Util;          use System.Case_Util;
@@ -702,7 +702,7 @@ procedure Gprbuild.Main is
 
             Complete_Output := True;
 
-         elsif Arg'Length > Distributed_Option'Length
+         elsif Arg'Length >= Distributed_Option'Length
             and then
             Arg (1 .. Distributed_Option'Length) = Distributed_Option
          then
@@ -721,8 +721,18 @@ procedure Gprbuild.Main is
 
             Use_Temp_Dir (Status => False);
 
-            Compilation.Slave.Record_Slaves
-              (Arg (Distributed_Option'Length + 1 .. Arg'Last));
+            declare
+               Hosts : constant String := Get_Slaves_Hosts (Project_Tree, Arg);
+            begin
+               if Hosts = "" then
+                  Fail_Program
+                    (Project_Tree,
+                     "missing hosts for distributed mode compilation");
+
+               else
+                  Compilation.Slave.Record_Slaves (Hosts);
+               end if;
+            end;
 
          elsif Arg'Length >= Slave_Env_Option'Length
             and then
