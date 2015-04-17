@@ -1,0 +1,57 @@
+library project GPR is
+   type Build_Type is ("debug", "production", "coverage", "profiling");
+   Bld : Build_Type := external ("BUILD", "production");
+
+   for Source_Dirs use ("src");
+   for Library_Name use "gpr";
+
+   case Bld is
+      when "production" =>
+         for Object_Dir use "obj";
+         for Library_Dir use "lib";
+
+      when "coverage"   =>
+         for Object_Dir use "obj-cov";
+         for Library_Dir use "lib-cov";
+
+      when "profiling"  =>
+         for Object_Dir use "obj-prof";
+         for Library_Dir use "lib-prof";
+
+      when "debug"      =>
+         for Object_Dir use "obj-debug";
+         for Library_Dir use "lib-debug";
+   end case;
+
+   for Library_Name use "gpr";
+
+   package Compiler is
+      common_switches := ("-gnat12", "-gnaty", "-gnatQ");
+      case Bld is
+         when "debug" =>
+            for Default_Switches ("Ada") use common_switches &
+            ("-g", "-gnata", "-gnatVa", "-gnatwaCJI"
+             , "-gnatwe"
+             , "-gnatyg"
+             );
+
+            for Local_Configuration_Pragmas use "debug.adc";
+         when "coverage" =>
+            for Default_Switches ("Ada") use common_switches &
+              ("-ftest-coverage", "-fprofile-arcs");
+         when "profiling" =>
+            for Default_Switches ("Ada") use common_switches &
+              ("-pg", "-g");
+         when "production" =>
+            for Default_Switches ("Ada") use common_switches &
+              ("-O2", "-gnatpn", "-gnatws");
+
+            --  Compile all Ada sources to support symbolic-traceback
+
+            for Switches ("gpr*.ad?") use
+              Compiler'Default_Switches ("Ada") & ("-g1");
+      end case;
+   end Compiler;
+
+end GPR;
+
