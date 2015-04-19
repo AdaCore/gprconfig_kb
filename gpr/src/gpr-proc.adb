@@ -22,6 +22,12 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Containers.Vectors;
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+
+with GNAT.Case_Util; use GNAT.Case_Util;
+with GNAT.HTable;
+
 with GPR.Opt;     use GPR.Opt;
 with GPR.Attr;    use GPR.Attr;
 with GPR.Env;
@@ -33,12 +39,6 @@ with GPR.Osint;   use GPR.Osint;
 with GPR.Part;
 with GPR.Util;
 with GPR.Snames;
-
-with Ada.Containers.Vectors;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
-
-with GNAT.Case_Util; use GNAT.Case_Util;
-with GNAT.HTable;
 
 package body GPR.Proc is
 

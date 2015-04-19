@@ -28,9 +28,6 @@
 --  Children of these package implements various services on these data types.
 --  See in particular Prj.Pars and Prj.Env.
 
---  with Prj_Support; use Prj_Support;
-
-with System;
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
 with Ada.Text_IO; use Ada.Text_IO;

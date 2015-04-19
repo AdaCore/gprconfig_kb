@@ -24,7 +24,7 @@
 
 --  Implements the parsing of project files into a tree
 
-with GPR.Tree;  use GPR.Tree;
+with GPR.Tree; use GPR.Tree;
 
 package GPR.Part is
 

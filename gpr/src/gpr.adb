@@ -22,17 +22,17 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Opt;
-with GPR.Attr;
-with GPR.Err;      use GPR.Err;
-with GPR.Snames;   use GPR.Snames;
-
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
 with Ada.Containers.Ordered_Sets;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.HTable;
+
+with GPR.Opt;
+with GPR.Attr;
+with GPR.Err;    use GPR.Err;
+with GPR.Snames; use GPR.Snames;
 
 package body GPR is
 

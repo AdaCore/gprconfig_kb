@@ -22,14 +22,14 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Snames; use GPR.Snames;
-
 pragma Warnings (Off);
 with System.CRC32;
 with System.UTF_32;  use System.UTF_32;
 with System.WCh_Con; use System.WCh_Con;
 with System.WCh_Cnv; use System.WCh_Cnv;
 pragma Warnings (On);
+
+with GPR.Snames; use GPR.Snames;
 
 separate (GPR.Err)
 package body Scanner is

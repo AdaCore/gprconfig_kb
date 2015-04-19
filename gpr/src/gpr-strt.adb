@@ -22,12 +22,12 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with GNAT.Table;
+
 with GPR.Attr; use GPR.Attr;
 with GPR.Err;  use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Snames;
-
-with GNAT.Table;
 
 package body GPR.Strt is
 

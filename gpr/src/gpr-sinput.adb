@@ -22,10 +22,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Err;
-with GPR.Opt; use GPR.Opt;
-with GPR.Erroutc; use GPR.Erroutc;
-
 with Ada.Unchecked_Deallocation;
 
 with GNAT.Byte_Order_Mark; use GNAT.Byte_Order_Mark;
@@ -37,6 +33,10 @@ with System.WCh_Con; use System.WCh_Con;
 with System.WCh_Cnv; use System.WCh_Cnv;
 with System.Memory;
 pragma Warnings (On);
+
+with GPR.Err;
+with GPR.Opt; use GPR.Opt;
+with GPR.Erroutc; use GPR.Erroutc;
 
 package body GPR.Sinput is
 

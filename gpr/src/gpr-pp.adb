@@ -22,9 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Snames;
-
 with Ada.Characters.Handling; use Ada.Characters.Handling;
+
+with GPR.Snames;
 
 package body GPR.PP is
 

@@ -22,6 +22,11 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with GNAT;                  use GNAT;
+with GNAT.Case_Util;        use GNAT.Case_Util;
+with GNAT.Spelling_Checker; use GNAT.Spelling_Checker;
+with GNAT.Strings;
+
 with GPR.Opt;     use GPR.Opt;
 with GPR.Attr;    use GPR.Attr;
 with GPR.Attr.PM; use GPR.Attr.PM;
@@ -30,11 +35,6 @@ with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Strt;    use GPR.Strt;
 with GPR.Tree;    use GPR.Tree;
 with GPR.Snames;
-
-with GNAT;                  use GNAT;
-with GNAT.Case_Util;        use GNAT.Case_Util;
-with GNAT.Spelling_Checker; use GNAT.Spelling_Checker;
-with GNAT.Strings;
 
 package body GPR.Dect is
 

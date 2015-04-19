@@ -22,14 +22,14 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Opt;    use GPR.Opt;
-with GPR.Sinput; use GPR.Sinput;
-
 with Interfaces; use Interfaces;
 
 pragma Warnings (Off);
 with System.WCh_Con; use System.WCh_Con;
 pragma Warnings (On);
+
+with GPR.Opt;    use GPR.Opt;
+with GPR.Sinput; use GPR.Sinput;
 
 package body GPR.Erroutc is
 

@@ -24,6 +24,7 @@
 with Ada.Command_Line; use Ada.Command_Line;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
+
 with System.CRTL;
 
 package body GPR.Osint is

@@ -26,7 +26,6 @@
 
 with GNAT.Dynamic_HTables;
 with GNAT.Dynamic_Tables;
-
 with GNAT.Table;
 
 with GPR.Attr; use GPR.Attr;
