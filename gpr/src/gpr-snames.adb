@@ -22,6 +22,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with GPR.Names; use GPR.Names;
+
 package body GPR.Snames is
 
    Dummy : Name_Id;

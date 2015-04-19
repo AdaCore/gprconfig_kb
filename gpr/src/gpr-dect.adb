@@ -32,6 +32,7 @@ with GPR.Attr;    use GPR.Attr;
 with GPR.Attr.PM; use GPR.Attr.PM;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Names;   use GPR.Names;
 with GPR.Strt;    use GPR.Strt;
 with GPR.Tree;    use GPR.Tree;
 with GPR.Scans;   use GPR.Scans;

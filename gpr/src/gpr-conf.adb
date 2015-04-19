@@ -24,14 +24,16 @@
 
 with Ada.Directories; use Ada.Directories;
 with Ada.Exceptions;  use Ada.Exceptions;
+with Ada.Text_IO;     use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;    use GNAT.HTable;
 with GNAT.Table;
 
-with GPR.Opt;    use GPR.Opt;
 with GPR.Env;
 with GPR.Err;
+with GPR.Names;  use GPR.Names;
+with GPR.Opt;    use GPR.Opt;
 with GPR.Part;
 with GPR.Proc;   use GPR.Proc;
 with GPR.Tree;   use GPR.Tree;

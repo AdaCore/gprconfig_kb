@@ -22,6 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with GPR.Names; use GPR.Names;
+with GPR.Osint; use GPR.Osint;
+
 package GPR.Scans is
 
    type Token_Type is

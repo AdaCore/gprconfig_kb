@@ -23,6 +23,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Deallocation;
+with Ada.Text_IO;                use Ada.Text_IO;
 
 with GNAT.Byte_Order_Mark; use GNAT.Byte_Order_Mark;
 
@@ -35,8 +36,9 @@ with System.Memory;
 pragma Warnings (On);
 
 with GPR.Err;
-with GPR.Opt; use GPR.Opt;
 with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Names;   use GPR.Names;
+with GPR.Opt;     use GPR.Opt;
 
 package body GPR.Sinput is
 

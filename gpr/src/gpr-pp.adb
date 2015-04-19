@@ -22,8 +22,11 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Text_IO; use Ada.Text_IO;
+
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 
+with GPR.Names; use GPR.Names;
 with GPR.Snames;
 
 package body GPR.PP is

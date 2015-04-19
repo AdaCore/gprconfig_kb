@@ -28,6 +28,8 @@
 
 with GNAT.Table;
 
+with GPR.Osint; use GPR.Osint;
+
 package GPR.ALI is
 
    --------------

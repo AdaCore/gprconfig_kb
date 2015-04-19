@@ -22,9 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
 
-with GPR.Osint; use GPR.Osint;
+with GPR.Names; use GPR.Names;
 
 package body GPR.ALI is
 
@@ -1323,7 +1323,7 @@ package body GPR.ALI is
                      Add_Char_To_Name_Buffer (Getc);
                   end loop;
 
-                  Sdep.Table (Sdep.Last).Rfile := Name_Enter;
+                  Sdep.Table (Sdep.Last).Rfile := File_Name_Type (Name_Enter);
                end if;
             end if;
 

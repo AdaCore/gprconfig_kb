@@ -27,6 +27,8 @@
 
 with GNAT.Table;
 
+with GPR.Osint; use GPR.Osint;
+
 package GPR.Erroutc is
 
    Continuation : Boolean := False;

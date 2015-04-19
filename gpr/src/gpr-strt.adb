@@ -27,6 +27,7 @@ with GNAT.Table;
 with GPR.Attr;    use GPR.Attr;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Names;   use GPR.Names;
 with GPR.Scans;   use GPR.Scans;
 with GPR.Snames;
 with GPR.Util;    use GPR.Util;

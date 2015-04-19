@@ -24,6 +24,7 @@
 
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Exceptions;          use Ada.Exceptions;
+with Ada.Text_IO;             use Ada.Text_IO;
 
 with GNAT.HTable;               use GNAT.HTable;
 with GNAT.Table;
@@ -34,6 +35,7 @@ with GPR.Dect;
 with GPR.Env;     use GPR.Env;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Names;   use GPR.Names;
 with GPR.Osint;   use GPR.Osint;
 with GPR.Scans;   use GPR.Scans;
 with GPR.Sinput;  use GPR.Sinput;

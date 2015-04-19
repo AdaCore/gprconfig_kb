@@ -23,18 +23,20 @@
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Vectors;
-with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+with Ada.Strings.Fixed;      use Ada.Strings.Fixed;
+with Ada.Text_IO;            use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;
 
-with GPR.Opt;     use GPR.Opt;
 with GPR.Attr;    use GPR.Attr;
 with GPR.Env;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Ext;     use GPR.Ext;
+with GPR.Names;   use GPR.Names;
 with GPR.Nmsc;    use GPR.Nmsc;
+with GPR.Opt;     use GPR.Opt;
 with GPR.Osint;   use GPR.Osint;
 with GPR.Part;
 with GPR.Util;

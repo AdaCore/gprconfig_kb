@@ -22,9 +22,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Text_IO; use Ada.Text_IO;
+
 with GPR.Cset;    use GPR.Cset;
 with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Names;   use GPR.Names;
 with GPR.Opt;     use GPR.Opt;
+with GPR.Osint;   use GPR.Osint;
 with GPR.Scans;   use GPR.Scans;
 with GPR.Sinput;  use GPR.Sinput;
 
@@ -443,7 +447,7 @@ package body GPR.Err is
       if Sfile /= Current_Error_Source_File then
          Put ("==============Error messages for file: ");
 
-         Write_Name (Full_File_Name (Sfile));
+         Write_Name (Name_Id (Full_File_Name (Sfile)));
          New_Line;
 
          Current_Error_Source_File := Sfile;

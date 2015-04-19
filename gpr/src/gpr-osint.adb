@@ -21,11 +21,15 @@
 -- <http://www.gnu.org/licenses/>.                                          --
 --                                                                          --
 ------------------------------------------------------------------------------
+
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Text_IO;      use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 
 with System.CRTL;
+
+with GPR.Names; use GPR.Names;
 
 package body GPR.Osint is
 
@@ -643,7 +647,7 @@ package body GPR.Osint is
 
          if Name_Buffer (J) = '.' then
             Name_Len := J - 1;
-            return Name_Enter;
+            return File_Name_Type (Name_Enter);
          end if;
       end loop;
 

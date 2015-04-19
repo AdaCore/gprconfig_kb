@@ -22,8 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Characters.Handling;    use Ada.Characters.Handling;
+with Ada.Characters.Handling;     use Ada.Characters.Handling;
 with Ada.Containers.Ordered_Sets;
+with Ada.Text_IO;                 use Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -31,12 +32,12 @@ with GNAT.HTable;
 
 with GPR.Opt;
 with GPR.Attr;
+with GPR.Names;  use GPR.Names;
 with GPR.Snames; use GPR.Snames;
 
 package body GPR is
 
    package body Stamps is separate;
-   package body Names is separate;
 
    type Restricted_Lang;
    type Restricted_Lang_Access is access Restricted_Lang;

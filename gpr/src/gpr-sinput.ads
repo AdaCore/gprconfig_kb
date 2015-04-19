@@ -56,6 +56,7 @@
 with GNAT.Table;
 
 with GPR.Scans; use GPR.Scans;
+with GPR.Osint; use GPR.Osint;
 
 package GPR.Sinput is
 

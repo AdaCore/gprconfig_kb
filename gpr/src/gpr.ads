@@ -25,12 +25,10 @@
 --  The following package declares the data types for GNAT project.
 --  These data types may be used by GNAT Project-aware tools.
 
---  Children of these package implements various services on these data types.
---  See in particular Prj.Pars and Prj.Env.
+--  Children of this package implement various services on these data types.
 
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
-with Ada.Text_IO; use Ada.Text_IO;
 
 with GNAT.Dynamic_HTables; use GNAT.Dynamic_HTables;
 with GNAT.Dynamic_Tables;
@@ -75,14 +73,6 @@ package GPR is
    type Word is mod 2 ** 32;
    --  Unsigned 32-bit integer
 
-   type Short is range -32768 .. +32767;
-   for Short'Size use 16;
-   --  16-bit signed integer
-
---     type Byte is mod 2 ** 8;
---     for Byte'Size use 8;
---     --  8-bit unsigned integer
-
    type Character_Ptr is access all Character;
    type String_Ptr    is access all String;
    --  Standard character and string pointers
@@ -94,73 +84,7 @@ package GPR is
      Character range Character'Val (16#80#) .. Character'Val (16#FF#);
    --  8-bit Characters with the upper bit set
 
-   -----------------------------------------
-   -- Types Used for Text Buffer Handling --
-   -----------------------------------------
-
-   --  We can not use type String for text buffers, since we must use the
-   --  standard 32-bit integer as an index value, since we count on all
-   --  index values being the same size.
-
-   type Text_Ptr is new Int;
-   --  Type used for subscripts in text buffer
-
-   type Text_Buffer is array (Text_Ptr range <>) of Character;
-   --  Text buffer used to hold source file or library information file
-
-   type Text_Buffer_Ptr is access all Text_Buffer;
-   --  Text buffers for input files are allocated dynamically and this type
-   --  is used to reference these text buffers.
-
-   procedure Free is
-     new Ada.Unchecked_Deallocation (Text_Buffer, Text_Buffer_Ptr);
-   --  Procedure for freeing dynamically allocated text buffers
-
-   ------------------------------------------
-   -- Types Used for Source Input Handling --
-   ------------------------------------------
-
-   type Line_Number is range 0 .. Int'Last;
-   for Line_Number'Size use 32;
-   No_Line_Number : constant Line_Number := 0;
-   --  Special value used to indicate no line number
-
-   type Column_Number is range 0 .. 32767;
-   for Column_Number'Size use 16;
-   --  Column number (assume that 2**15 - 1 is large enough). The range for
-   --  this type is used to compute Hostparm.Max_Line_Length. See also the
-   --  processing for -gnatyM in Stylesw).
-
-   No_Column_Number : constant Column_Number := 0;
-   --  Special value used to indicate no column number
-
-   Source_Align : constant := 2 ** 12;
-   --  Alignment requirement for source buffers (by keeping source buffers
-   --  aligned, we can optimize the implementation of Get_Source_File_Index.
-   --  See this routine in Sinput for details.
-
-   subtype Source_Buffer is Text_Buffer;
-   --  Type used to store text of a source file. The buffer for the main source
-   --  (the source specified on the command line) has a lower bound starting
-   --  at zero. Subsequent subsidiary sources have lower bounds which are
-   --  one greater than the previous upper bound, rounded up to a multiple
-   --  of Source_Align.
-
-   subtype Big_Source_Buffer is Text_Buffer (0 .. Text_Ptr'Last);
-   --  This is a virtual type used as the designated type of the access type
-   --  Source_Buffer_Ptr, see Osint.Read_Source_File for details.
-
-   type Source_Buffer_Ptr is access all Big_Source_Buffer;
-   --  Pointer to source buffer. We use virtual origin addressing for source
-   --  buffers, with thin pointers. The pointer points to a virtual instance
-   --  of type Big_Source_Buffer, where the actual type is in fact of type
-   --  Source_Buffer. The address is adjusted so that the virtual origin
-   --  addressing works correctly. See Osint.Read_Source_Buffer for further
-   --  details. Again, as for Big_String_Ptr, we should never allocate using
-   --  this type, but we don't give a storage size clause of zero, since we
-   --  may end up doing deallocations of instances allocated manually.
-
-   subtype Source_Ptr is Text_Ptr;
+   type Source_Ptr is new Int;
    --  Type used to represent a source location, which is a subscript of a
    --  character in the source buffer. As noted above, different source buffers
    --  have different ranges, so it is possible to tell from a Source_Ptr value
@@ -179,23 +103,8 @@ package GPR is
    First_Source_Ptr : constant Source_Ptr := 0;
    --  Starting source pointer index value for first source program
 
-   ---------------------------------------
-   -- Types used for Library Management --
-   ---------------------------------------
-
-   type Unit_Number_Type is new Int;
-   --  Unit number. The main source is unit 0, and subsidiary sources have
-   --  non-zero numbers starting with 1. Unit numbers are used to index the
-   --  Units table in package Lib.
-
-   Main_Unit : constant Unit_Number_Type := 0;
-   --  Unit number value for main unit
-
-   No_Unit : constant Unit_Number_Type := -1;
-   --  Special value used to signal no unit
-
    type Source_File_Index is new Int range -1 .. Int'Last;
-   --  Type used to index the source file table (see package Sinput)
+   --  Type used to index the source file table (see package GPR.Sinput)
 
    No_Source_File : constant Source_File_Index := 0;
    --  Value used to indicate no source file present
@@ -284,210 +193,54 @@ package GPR is
 
    use Stamps;
 
-   package Names is
-      -----------
-      -- Names --
-      -----------
+   type Name_Id is range 0 .. 99_999_999;
+   No_Name : constant Name_Id := 0;
+   Error_Name : constant Name_Id := 1;
 
-      Name_Buffer : String (1 .. 32767);
-      Name_Len    : Natural := 0;
+   First_Name_Id : constant Name_Id := 2;
+   --  Subscript of first entry in names table
 
-      type Name_Id is range 0 .. 99_999_999;
-      No_Name : constant Name_Id := 0;
-      Error_Name : constant Name_Id := 1;
-      subtype Error_Name_Or_No_Name is Name_Id range No_Name .. Error_Name;
-      --  Used to test for either error name or no name
+   type Unit_Name_Type is new Name_Id;
+   --  Unit names are stored in the names table and this type is used to
+   --  indicate that a Name_Id value is being used to hold a unit name,
+   --  which terminates in %b for a body or %s for a spec.
 
-      First_Name_Id : constant Name_Id := 2;
-      --  Subscript of first entry in names table
+   No_Unit_Name : constant Unit_Name_Type := Unit_Name_Type (No_Name);
+   --  Constant used to indicate no file name present
 
-      procedure Get_Name_String (Id : Name_Id);
-      --  Get_Name_String is used to retrieve the string associated with
-      --  an entry in the names table. The resulting string is stored
-      --  in Name_Buffer and Name_Len is set. It is an error to call
-      --  Get_Name_String with one of the special name Id values (No_Name
-      --  or Error_Name).
+   Error_Unit_Name : constant Unit_Name_Type := Unit_Name_Type (Error_Name);
+   --  The special Unit_Name_Type value Error_Unit_Name is used to indicate
+   --  a unit name where some previous processing has found an error.
 
-      function Get_Name_String (Id : Name_Id) return String;
-      --  This functional form returns the result as a string without affecting
-      --  the contents of either Name_Buffer or Name_Len. The lower bound is 1.
+   ------------------------------
+   -- File and Path Name Types --
+   ------------------------------
 
-      procedure Get_Name_String_And_Append (Id : Name_Id);
-      --  Like Get_Name_String but the resulting characters are appended to the
-      --  current contents of the entry stored in Name_Buffer, and Name_Len is
-      --  incremented to include the added characters.
+   --  These are defined here in Namet rather than Fname and Uname to avoid
+   --  problems with dependencies, and to avoid dragging in Fname and Uname
+   --  into many more files, but it would be cleaner to move to Fname/Uname.
 
-      function Length_Of_Name (Id : Name_Id) return Nat;
-      pragma Inline (Length_Of_Name);
+   type File_Name_Type is new Name_Id;
+   --  File names are stored in the names table and this type is used to
+   --  indicate that a Name_Id value is being used to hold a simple file
+   --  name (which does not include any directory information).
 
-      function Name_Find return Name_Id;
+   No_File : constant File_Name_Type := File_Name_Type (No_Name);
+   --  Constant used to indicate no file is present (this is used for
+   --  example when a search for a file indicates that no file of the
+   --  name exists).
 
-      function Name_Enter return Name_Id;
+   Error_File_Name : constant File_Name_Type := File_Name_Type (Error_Name);
+   --  The special File_Name_Type value Error_File_Name is used to indicate
+   --  a unit name where some previous processing has found an error.
 
-      procedure Add_Char_To_Name_Buffer (C : Character);
-      pragma Inline (Add_Char_To_Name_Buffer);
-      --  Add given character to the end of the string currently stored in the
-      --  Name_Buffer, incrementing Name_Len.
+   type Path_Name_Type is new Name_Id;
+   --  Path names are stored in the names table and this type is used to
+   --  indicate that a Name_Id value is being used to hold a path name (that
+   --  may contain directory information).
 
-      procedure Add_Nat_To_Name_Buffer (V : Nat);
-      --  Add decimal representation of given value to the end of the string
-      --  currently stored in Name_Buffer, incrementing Name_Len as required.
-
-      procedure Add_Str_To_Name_Buffer (S : String);
-      --  Add characters of string S to the end of the string currently stored
-      --  in the Name_Buffer, incrementing Name_Len by the length of the
-      --  string.
-
-      function Get_Name_Table_Int (Id : Name_Id) return Int;
-      pragma Inline (Get_Name_Table_Int);
-      --  Fetches the Int value associated with the given name
-
-      procedure Set_Name_Table_Int (Id : Name_Id; Val : Int);
-      pragma Inline (Set_Name_Table_Int);
-      --  Sets the Int value associated with the given name
-
-      type Char_Code_Base is mod 2 ** 32;
-      for Char_Code_Base'Size use 32;
-
-      subtype Char_Code is Char_Code_Base range 0 .. 16#7FFF_FFFF#;
-      for Char_Code'Value_Size use 32;
-      for Char_Code'Object_Size use 32;
-
-      function Get_Char_Code (C : Character) return Char_Code;
-      pragma Inline (Get_Char_Code);
-      --  Function to obtain internal character code from source character.
-      --  For the moment, the internal character code is simply the Pos value
-      --  of the input source character, but we provide this interface for
-      --  possible later support of alternative character sets.
-
-      function In_Character_Range (C : Char_Code) return Boolean;
-      pragma Inline (In_Character_Range);
-      --  Determines if the given character code is in range of type Character,
-      --  and if so, returns True. If not, returns False.
-
-      function Get_Character (C : Char_Code) return Character;
-      pragma Inline (Get_Character);
-      --  For a character C that is in Character range (see above function),
-      --  this function returns the corresponding Character value. It is an
-      --  error to call Get_Character if C is not in Character range.
-
-      procedure Store_Encoded_Character (C : Char_Code);
-      --  Stores given character code at the end of Name_Buffer, updating the
-      --  value in Name_Len appropriately. Lower case letters and digits are
-      --  stored unchanged. Other 8-bit characters are stored using the Uhh
-      --  encoding (hh = hex code), other 16-bit wide character values are
-      --  stored using the Whhhh (hhhh = hex code) encoding, and other 32-bit
-      --  wide wide character values are stored using the WWhhhhhhhh (hhhhhhhh
-      --  = hex code). Note that this procedure does not fold upper case
-      --  letters (they are stored using the Uhh encoding). If folding is
-      --  required, it must be done by the caller prior to the call.
-
-      procedure Write_Name (Id : Name_Id; File : File_Type := Standard_Output);
-      --  Write_Name writes the characters of the specified name Id to the
-      --  specific file File. No end of line is written, just the characters of
-      --  the name. On return Name_Buffer and Name_Len are set as for a call to
-      --  Get_Name_String. The name is written in encoded form (i.e. including
-      --  Uhh, Whhh, Qx, _op as they appear in the name table). If Id is
-      --  Error_Name, or No_Name, no text is output.
-
-      ------------------------------
-      -- File and Path Name Types --
-      ------------------------------
-
-      --  These are defined here in Namet rather than Fname and Uname to avoid
-      --  problems with dependencies, and to avoid dragging in Fname and Uname
-      --  into many more files, but it would be cleaner to move to Fname/Uname.
-
-      type File_Name_Type is new Name_Id;
-      --  File names are stored in the names table and this type is used to
-      --  indicate that a Name_Id value is being used to hold a simple file
-      --  name (which does not include any directory information).
-
-      No_File : constant File_Name_Type := File_Name_Type (No_Name);
-      --  Constant used to indicate no file is present (this is used for
-      --  example when a search for a file indicates that no file of the
-      --  name exists).
-
-      Error_File_Name : constant File_Name_Type := File_Name_Type (Error_Name);
-      --  The special File_Name_Type value Error_File_Name is used to indicate
-      --  a unit name where some previous processing has found an error.
-
-      subtype Error_File_Name_Or_No_File is
-        File_Name_Type range No_File .. Error_File_Name;
-      --  Used to test for either error file name or no file
-
-      type Path_Name_Type is new Name_Id;
-      --  Path names are stored in the names table and this type is used to
-      --  indicate that a Name_Id value is being used to hold a path name (that
-      --  may contain directory information).
-
-      No_Path : constant Path_Name_Type := Path_Name_Type (No_Name);
-      --  Constant used to indicate no path name is present
-
-      type Unit_Name_Type is new Name_Id;
-      --  Unit names are stored in the names table and this type is used to
-      --  indicate that a Name_Id value is being used to hold a unit name,
-      --  which terminates in %b for a body or %s for a spec.
-
-      No_Unit_Name : constant Unit_Name_Type := Unit_Name_Type (No_Name);
-      --  Constant used to indicate no file name present
-
-      Error_Unit_Name : constant Unit_Name_Type := Unit_Name_Type (Error_Name);
-      --  The special Unit_Name_Type value Error_Unit_Name is used to indicate
-      --  a unit name where some previous processing has found an error.
-
-      subtype Error_Unit_Name_Or_No_Unit_Name is
-        Unit_Name_Type range No_Unit_Name .. Error_Unit_Name;
-
-      procedure Write_Unit_Name
-        (U    : Unit_Name_Type;
-         File : File_Type := Current_Output);
-      --  Output unit name with (body) or (spec) after as required. On return
-      --  Name_Len is set to the number of characters which were output.
-
-      procedure Write_Int (Val : Int; File : File_Type := Current_Output);
-      --  Write an integer value with no leading blanks or zeroes. Negative
-      --  values are preceded by a minus sign).
-
-      ------------------------
-      -- Debugging Routines --
-      ------------------------
-
-      procedure wn (Id : Name_Id);
-      pragma Export (Ada, wn);
-
-      -------------------------------
-      -- Case Control Declarations --
-      -------------------------------
-
-      --  Declaration of type for describing casing convention
-
-      type Casing_Type is
-        (All_Upper_Case,
-         --  All letters are upper case
-
-         All_Lower_Case,
-         --  All letters are lower case
-
-         Mixed_Case,
-         --  The initial letter, and any letters after underlines are upper
-         --  case. All other letters are lower case
-
-         Unknown
-         --  Used if an identifier does not distinguish between the above
-         --  cases, (e.g. X, Y_3, M4, A_B, or if it is inconsistent ABC_def).
-        );
-
-      subtype Known_Casing is Casing_Type range All_Upper_Case .. Mixed_Case;
-      --  Exclude Unknown casing
-
-      procedure Set_Casing (C : Casing_Type);
-      --  Takes the name stored in the first Name_Len positions of Name_Buffer
-      --  and modifies it to be consistent with the casing given by C.
-
-   end Names;
-
-   use Names;
+   No_Path : constant Path_Name_Type := Path_Name_Type (No_Name);
+   --  Constant used to indicate no path name is present
 
    File_Attributes_Size : constant Natural := 32;
    type File_Attributes is

@@ -28,6 +28,7 @@ with Ada.Directories;
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.Fixed;                      use Ada.Strings.Fixed;
 with Ada.Strings.Maps;                       use Ada.Strings.Maps;
+with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;
@@ -37,6 +38,7 @@ with GNAT.Table;
 with GPR.ALI;    use GPR.ALI;
 with GPR.Debug;
 with GPR.Err;
+with GPR.Names;  use GPR.Names;
 with GPR.Opt;
 with GPR.Com;
 with GPR.Sinput;

@@ -26,6 +26,72 @@
 
 package GPR.Osint is
 
+   -----------------------------------------
+   -- Types Used for Text Buffer Handling --
+   -----------------------------------------
+
+   --  We can not use type String for text buffers, since we must use the
+   --  standard 32-bit integer as an index value, since we count on all
+   --  index values being the same size.
+
+   subtype Text_Ptr is Source_Ptr;
+   --  Type used for subscripts in text buffer
+
+   type Text_Buffer is array (Text_Ptr range <>) of Character;
+   --  Text buffer used to hold source file or library information file
+
+   type Text_Buffer_Ptr is access all Text_Buffer;
+   --  Text buffers for input files are allocated dynamically and this type
+   --  is used to reference these text buffers.
+
+   procedure Free is
+     new Ada.Unchecked_Deallocation (Text_Buffer, Text_Buffer_Ptr);
+   --  Procedure for freeing dynamically allocated text buffers
+
+   ------------------------------------------
+   -- Types Used for Source Input Handling --
+   ------------------------------------------
+
+   type Line_Number is range 0 .. Int'Last;
+   for Line_Number'Size use 32;
+   No_Line_Number : constant Line_Number := 0;
+   --  Special value used to indicate no line number
+
+   type Column_Number is range 0 .. 32767;
+   for Column_Number'Size use 16;
+   --  Column number (assume that 2**15 - 1 is large enough). The range for
+   --  this type is used to compute Hostparm.Max_Line_Length. See also the
+   --  processing for -gnatyM in Stylesw).
+
+   No_Column_Number : constant Column_Number := 0;
+   --  Special value used to indicate no column number
+
+   Source_Align : constant := 2 ** 12;
+   --  Alignment requirement for source buffers (by keeping source buffers
+   --  aligned, we can optimize the implementation of Get_Source_File_Index.
+   --  See this routine in Sinput for details.
+
+   subtype Source_Buffer is Text_Buffer;
+   --  Type used to store text of a source file. The buffer for the main source
+   --  (the source specified on the command line) has a lower bound starting
+   --  at zero. Subsequent subsidiary sources have lower bounds which are
+   --  one greater than the previous upper bound, rounded up to a multiple
+   --  of Source_Align.
+
+   subtype Big_Source_Buffer is Text_Buffer (0 .. Text_Ptr'Last);
+   --  This is a virtual type used as the designated type of the access type
+   --  Source_Buffer_Ptr, see Osint.Read_Source_File for details.
+
+   type Source_Buffer_Ptr is access all Big_Source_Buffer;
+   --  Pointer to source buffer. We use virtual origin addressing for source
+   --  buffers, with thin pointers. The pointer points to a virtual instance
+   --  of type Big_Source_Buffer, where the actual type is in fact of type
+   --  Source_Buffer. The address is adjusted so that the virtual origin
+   --  addressing works correctly. See Osint.Read_Source_Buffer for further
+   --  details. Again, as for Big_String_Ptr, we should never allocate using
+   --  this type, but we don't give a storage size clause of zero, since we
+   --  may end up doing deallocations of instances allocated manually.
+
       function Is_Directory_Separator (C : Character) return Boolean;
       --  Return True iff C is a directory separator inj a path
 

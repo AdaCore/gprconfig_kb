@@ -22,12 +22,15 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Text_IO; use Ada.Text_IO;
+
 with Interfaces; use Interfaces;
 
 pragma Warnings (Off);
 with System.WCh_Con; use System.WCh_Con;
 pragma Warnings (On);
 
+with GPR.Names;  use GPR.Names;
 with GPR.Opt;    use GPR.Opt;
 with GPR.Sinput; use GPR.Sinput;
 

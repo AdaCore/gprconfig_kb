@@ -22,10 +22,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Text_IO; use Ada.Text_IO;
+
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with GPR.Opt;
 with GPR.Com;     use GPR.Com;
+with GPR.Names;   use GPR.Names;
 with GPR.Osint;   use GPR.Osint;
 with GPR.Tempdir;
 with GPR.Util;    use GPR.Util;

@@ -27,8 +27,7 @@ with Interfaces; use Interfaces;
 
 with GPR.Cset; use GPR.Cset;
 
-separate (GPR)
-package body Names is
+package body GPR.Names is
 
    Name_Chars_Initial   : constant := 50_000;
    Name_Chars_Increment : constant := 100;
@@ -72,7 +71,7 @@ package body Names is
       --  for the bias of one is that indexes in Name_Buffer are one's origin,
       --  so this avoids unnecessary adds and subtracts of 1.
 
-      Name_Len : Short;
+      Name_Len : Natural;
       --  Length of this name in characters
 
       Hash_Link : Name_Id;
@@ -174,11 +173,26 @@ package body Names is
       pragma Assert (Id in Name_Entries.First .. Name_Entries.Last);
 
       S := Name_Entries.Table (Id).Name_Chars_Index;
-      Name_Len := Natural (Name_Entries.Table (Id).Name_Len);
+      Name_Len := Name_Entries.Table (Id).Name_Len;
 
       for J in 1 .. Name_Len loop
          Name_Buffer (J) := Name_Chars.Table (S + Int (J));
       end loop;
+   end Get_Name_String;
+
+   procedure Get_Name_String (Id : Unit_Name_Type) is
+   begin
+      Get_Name_String (Name_Id (Id));
+   end Get_Name_String;
+
+   procedure Get_Name_String (Id : File_Name_Type) is
+   begin
+      Get_Name_String (Name_Id (Id));
+   end Get_Name_String;
+
+   procedure Get_Name_String (Id : Path_Name_Type) is
+   begin
+      Get_Name_String (Name_Id (Id));
    end Get_Name_String;
 
    ---------------------
@@ -195,7 +209,7 @@ package body Names is
       S := Name_Entries.Table (Id).Name_Chars_Index;
 
       declare
-         R : String (1 .. Natural (Name_Entries.Table (Id).Name_Len));
+         R : String (1 .. Name_Entries.Table (Id).Name_Len);
 
       begin
          for J in R'Range loop
@@ -204,6 +218,21 @@ package body Names is
 
          return R;
       end;
+   end Get_Name_String;
+
+   function Get_Name_String (Id : Unit_Name_Type) return String is
+   begin
+      return Get_Name_String (Name_Id (Id));
+   end Get_Name_String;
+
+   function Get_Name_String (Id : File_Name_Type) return String is
+   begin
+      return Get_Name_String (Name_Id (Id));
+   end Get_Name_String;
+
+   function Get_Name_String (Id : Path_Name_Type) return String is
+   begin
+      return Get_Name_String (Name_Id (Id));
    end Get_Name_String;
 
    --------------------------------
@@ -218,7 +247,7 @@ package body Names is
 
       S := Name_Entries.Table (Id).Name_Chars_Index;
 
-      for J in 1 .. Natural (Name_Entries.Table (Id).Name_Len) loop
+      for J in 1 .. Name_Entries.Table (Id).Name_Len loop
          Name_Len := Name_Len + 1;
          Name_Buffer (Name_Len) := Name_Chars.Table (S + Int (J));
       end loop;
@@ -232,6 +261,16 @@ package body Names is
    begin
       pragma Assert (Id in Name_Entries.First .. Name_Entries.Last);
       return Name_Entries.Table (Id).Int_Info;
+   end Get_Name_Table_Int;
+
+   function Get_Name_Table_Int (Id : Unit_Name_Type) return Int is
+   begin
+      return Get_Name_Table_Int (Name_Id (Id));
+   end Get_Name_Table_Int;
+
+   function Get_Name_Table_Int (Id : File_Name_Type) return Int is
+   begin
+      return Get_Name_Table_Int (Name_Id (Id));
    end Get_Name_Table_Int;
 
    ----------
@@ -289,6 +328,11 @@ package body Names is
       return Int (Name_Entries.Table (Id).Name_Len);
    end Length_Of_Name;
 
+   function Length_Of_Name (Id : File_Name_Type) return Nat is
+   begin
+      return Int (Name_Entries.Table (Name_Id (Id)).Name_Len);
+   end Length_Of_Name;
+
    ----------------
    -- Name_Enter --
    ----------------
@@ -297,7 +341,7 @@ package body Names is
    begin
       Name_Entries.Append
         ((Name_Chars_Index      => Name_Chars.Last,
-          Name_Len              => Short (Name_Len),
+          Name_Len              => Name_Len,
           Int_Info              => 0,
           Hash_Link             => No_Name));
 
@@ -370,7 +414,7 @@ package body Names is
 
       Name_Entries.Append
         ((Name_Chars_Index      => Name_Chars.Last,
-          Name_Len              => Short (Name_Len),
+          Name_Len              => Name_Len,
           Hash_Link             => No_Name,
           Int_Info              => 0));
 
@@ -383,6 +427,27 @@ package body Names is
       Name_Chars.Append (ASCII.NUL);
 
       return Name_Entries.Last;
+   end Name_Find;
+
+   function Name_Find return Unit_Name_Type is
+      Id : Name_Id;
+   begin
+      Id := Name_Find;
+      return Unit_Name_Type (Id);
+   end Name_Find;
+
+   function Name_Find return File_Name_Type is
+      Id : Name_Id;
+   begin
+      Id := Name_Find;
+      return File_Name_Type (Id);
+   end Name_Find;
+
+   function Name_Find return Path_Name_Type is
+      Id : Name_Id;
+   begin
+      Id := Name_Find;
+      return Path_Name_Type (Id);
    end Name_Find;
 
    ----------------
@@ -455,6 +520,16 @@ package body Names is
    begin
       pragma Assert (Id in Name_Entries.First .. Name_Entries.Last);
       Name_Entries.Table (Id).Int_Info := Val;
+   end Set_Name_Table_Int;
+
+   procedure Set_Name_Table_Int (Id : Unit_Name_Type; Val : Int) is
+   begin
+      Set_Name_Table_Int (Name_Id (Id), Val);
+   end Set_Name_Table_Int;
+
+   procedure Set_Name_Table_Int (Id : File_Name_Type; Val : Int) is
+   begin
+      Set_Name_Table_Int (Name_Id (Id), Val);
    end Set_Name_Table_Int;
 
    -----------------------------
@@ -532,7 +607,7 @@ package body Names is
 
       else
          S := Name_Entries.Table (Id).Name_Chars_Index;
-         Name_Len := Natural (Name_Entries.Table (Id).Name_Len);
+         Name_Len := Name_Entries.Table (Id).Name_Len;
 
          for J in 1 .. Name_Len loop
             Put (Name_Chars.Table (S + Int (J)));
@@ -573,6 +648,20 @@ package body Names is
       end if;
    end Write_Name;
 
+   procedure Write_Name
+     (Id   : Path_Name_Type;
+      File : File_Type := Standard_Output) is
+   begin
+      Write_Name (Name_Id (Id), File);
+   end Write_Name;
+
+   procedure Write_Name
+     (Id   : File_Name_Type;
+      File : File_Type := Standard_Output) is
+   begin
+      Write_Name (Name_Id (Id), File);
+   end Write_Name;
+
    ---------------------
    -- Write_Unit_Name --
    ---------------------
@@ -604,4 +693,4 @@ begin
       Hash_Table (J) := No_Name;
    end loop;
 
-end Names;
+end GPR.Names;

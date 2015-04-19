@@ -28,6 +28,7 @@ with Ada.Directories;            use Ada.Directories;
 with Ada.Strings;                use Ada.Strings;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps.Constants;
+with Ada.Text_IO;                use Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -39,6 +40,7 @@ with GPR.Com;
 with GPR.Env;     use GPR.Env;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Names;   use GPR.Names;
 with GPR.Opt;     use GPR.Opt;
 with GPR.Osint;   use GPR.Osint;
 with GPR.Sinput;  use GPR.Sinput;
@@ -7790,7 +7792,8 @@ package body GPR.Nmsc is
                            --  so no need to add one.
 
                            Get_Name_String (Element.Display_Value);
-                           Get_Name_String_And_Append (Display_File_Name);
+                           Get_Name_String_And_Append
+                             (Name_Id (Display_File_Name));
 
                            Check_File
                              (Project           => Project,

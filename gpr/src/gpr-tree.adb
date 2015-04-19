@@ -26,6 +26,7 @@ with Ada.Unchecked_Deallocation;
 
 with GPR.Env;   use GPR.Env;
 with GPR.Err;
+with GPR.Names; use GPR.Names;
 with GPR.Osint; use GPR.Osint;
 with GPR.Scans; use GPR.Scans;
 

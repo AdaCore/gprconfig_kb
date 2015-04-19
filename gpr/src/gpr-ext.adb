@@ -24,6 +24,7 @@
 
 with Ada.Unchecked_Deallocation;
 
+with GPR.Names; use GPR.Names;
 with GPR.Osint; use GPR.Osint;
 
 package body GPR.Ext is
