@@ -25,6 +25,7 @@
 --  Utilities for use in processing project files
 
 with GPR.Osint; use GPR.Osint;
+with GPR.Scans; use GPR.Scans;
 
 package GPR.Util is
 
@@ -87,6 +88,10 @@ package GPR.Util is
    --
    --  What is Ada_Main???
    --  What is Language???
+
+   procedure Expect (The_Token : Token_Type; Token_Image : String);
+   --  Check that the current token is The_Token. If it is not, then output
+   --  an error message.
 
    function Executable_Prefix_Path return String;
    --  Return the absolute path parent directory of the directory where the

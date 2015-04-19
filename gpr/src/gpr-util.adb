@@ -500,6 +500,20 @@ package body GPR.Util is
       end;
    end Executable_Prefix_Path;
 
+   ------------
+   -- Expect --
+   ------------
+
+   procedure Expect (The_Token : Token_Type; Token_Image : String) is
+   begin
+      if Token /= The_Token then
+
+         --  ??? Should pass user flags here instead
+
+         Err.Error_Msg (Gprbuild_Flags, Token_Image & " expected", Token_Ptr);
+      end if;
+   end Expect;
+
    ------------------
    -- Fail_Program --
    ------------------

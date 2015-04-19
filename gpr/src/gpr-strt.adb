@@ -24,10 +24,12 @@
 
 with GNAT.Table;
 
-with GPR.Attr; use GPR.Attr;
-with GPR.Err;  use GPR.Err;
+with GPR.Attr;    use GPR.Attr;
+with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Scans;   use GPR.Scans;
 with GPR.Snames;
+with GPR.Util;    use GPR.Util;
 
 package body GPR.Strt is
 

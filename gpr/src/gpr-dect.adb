@@ -34,7 +34,9 @@ with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Strt;    use GPR.Strt;
 with GPR.Tree;    use GPR.Tree;
+with GPR.Scans;   use GPR.Scans;
 with GPR.Snames;
+with GPR.Util;    use GPR.Util;
 
 package body GPR.Dect is
 

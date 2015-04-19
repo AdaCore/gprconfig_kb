@@ -55,6 +55,8 @@
 
 with GNAT.Table;
 
+with GPR.Scans; use GPR.Scans;
+
 package GPR.Sinput is
 
    function Last_Source_File return Source_File_Index;

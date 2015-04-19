@@ -25,6 +25,7 @@
 with GPR.Cset;    use GPR.Cset;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Opt;     use GPR.Opt;
+with GPR.Scans;   use GPR.Scans;
 with GPR.Sinput;  use GPR.Sinput;
 
 package body GPR.Err is

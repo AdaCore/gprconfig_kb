@@ -22,11 +22,12 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Unchecked_Deallocation;
+
 with GPR.Env;   use GPR.Env;
 with GPR.Err;
 with GPR.Osint; use GPR.Osint;
-
-with Ada.Unchecked_Deallocation;
+with GPR.Scans; use GPR.Scans;
 
 package body GPR.Tree is
 

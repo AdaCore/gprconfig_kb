@@ -31,14 +31,12 @@ with GNAT.HTable;
 
 with GPR.Opt;
 with GPR.Attr;
-with GPR.Err;    use GPR.Err;
 with GPR.Snames; use GPR.Snames;
 
 package body GPR is
 
    package body Stamps is separate;
    package body Names is separate;
-   package body Scans is separate;
 
    type Restricted_Lang;
    type Restricted_Lang_Access is access Restricted_Lang;
@@ -355,20 +353,6 @@ package body GPR is
    begin
       return The_Empty_String;
    end Empty_String;
-
-   ------------
-   -- Expect --
-   ------------
-
-   procedure Expect (The_Token : Token_Type; Token_Image : String) is
-   begin
-      if Token /= The_Token then
-
-         --  ??? Should pass user flags here instead
-
-         Error_Msg (Gprbuild_Flags, Token_Image & " expected", Token_Ptr);
-      end if;
-   end Expect;
 
    -----------------
    -- Extend_Name --

@@ -35,8 +35,10 @@ with GPR.Env;     use GPR.Env;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Osint;   use GPR.Osint;
+with GPR.Scans;   use GPR.Scans;
 with GPR.Sinput;  use GPR.Sinput;
 with GPR.Snames;
+with GPR.Util;    use GPR.Util;
 
 package body GPR.Part is
 

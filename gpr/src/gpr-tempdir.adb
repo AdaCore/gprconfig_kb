@@ -22,9 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Opt; use GPR.Opt;
-
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+
+with GPR.Opt; use GPR.Opt;
 
 package body GPR.Tempdir is
 

@@ -22,8 +22,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-separate (GPR)
-package body Scans is
+package body GPR.Scans is
 
    ------------------------
    -- Restore_Scan_State --
@@ -63,4 +62,4 @@ package body Scans is
       Saved_State.Save_Prev_Token_Ptr           := Prev_Token_Ptr;
    end Save_Scan_State;
 
-end Scans;
+end GPR.Scans;
