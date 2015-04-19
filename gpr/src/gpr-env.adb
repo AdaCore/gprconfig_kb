@@ -1861,8 +1861,8 @@ package body GPR.Env is
       --  The path name(s) of directories where project files may reside.
       --  May be empty.
 
-      Prefix  : String_Ptr;
-      Runtime : String_Ptr;
+      Prefix  : String_Access;
+      Runtime : String_Access;
 
       procedure Add_Target;
       --  Add :<prefix>/<target> to the project path

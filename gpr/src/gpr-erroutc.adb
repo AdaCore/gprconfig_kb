@@ -460,7 +460,7 @@ package body GPR.Erroutc is
       Offs : constant Nat := Nat (Col) - 1;
       --  Offset to start of message, used for continuations
 
-      Txt   : String_Ptr := Errors.Table (E).Text;
+      Txt   : String_Access := Errors.Table (E).Text;
 
    begin
       --  Deal with warning case
@@ -506,8 +506,8 @@ package body GPR.Erroutc is
    ----------------
 
    function Same_Error (M1, M2 : Error_Msg_Id) return Boolean is
-      Msg1 : constant String_Ptr := Errors.Table (M1).Text;
-      Msg2 : constant String_Ptr := Errors.Table (M2).Text;
+      Msg1 : constant String_Access := Errors.Table (M1).Text;
+      Msg2 : constant String_Access := Errors.Table (M2).Text;
 
       Msg2_Len : constant Integer := Msg2'Length;
       Msg1_Len : constant Integer := Msg1'Length;

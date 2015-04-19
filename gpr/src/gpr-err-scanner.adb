@@ -34,6 +34,11 @@ with GPR.Snames; use GPR.Snames;
 separate (GPR.Err)
 package body Scanner is
 
+   subtype Line_Terminator is Character range ASCII.LF .. ASCII.CR;
+   --  Line terminator characters (LF, VT, FF, CR)
+
+   subtype Graphic_Character is Character range ' ' .. '~';
+
    Language_For_Scanner : Language := Project;
 
    Special_Characters : array (Character) of Boolean := (others => False);

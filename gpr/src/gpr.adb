@@ -25,6 +25,7 @@
 with Ada.Characters.Handling;     use Ada.Characters.Handling;
 with Ada.Containers.Ordered_Sets;
 with Ada.Text_IO;                 use Ada.Text_IO;
+with Ada.Unchecked_Deallocation;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;

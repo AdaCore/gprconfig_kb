@@ -135,7 +135,7 @@ package GPR.Erroutc is
    --  messages, with one entry in the table being allocated for each message.
 
    type Error_Msg_Object is record
-      Text : String_Ptr;
+      Text : String_Access;
       --  Text of error message, fully expanded with all insertions
 
       Next : Error_Msg_Id;

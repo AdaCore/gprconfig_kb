@@ -28,7 +28,6 @@
 --  Children of this package implement various services on these data types.
 
 with Ada.Unchecked_Conversion;
-with Ada.Unchecked_Deallocation;
 
 with GNAT.Dynamic_HTables; use GNAT.Dynamic_HTables;
 with GNAT.Dynamic_Tables;
@@ -47,11 +46,6 @@ package GPR is
    --  between tokens, and as an illegal character otherwise. This makes
    --  life easier dealing with files that originated from DOS, including
    --  concatenated files with interspersed EOF characters.
-
-   subtype Line_Terminator is Character range ASCII.LF .. ASCII.CR;
-   --  Line terminator characters (LF, VT, FF, CR)
-
-   subtype Graphic_Character is Character range ' ' .. '~';
 
    -----------
    -- Types --
@@ -72,13 +66,6 @@ package GPR is
 
    type Word is mod 2 ** 32;
    --  Unsigned 32-bit integer
-
-   type Character_Ptr is access all Character;
-   type String_Ptr    is access all String;
-   --  Standard character and string pointers
-
-   procedure Free is new Ada.Unchecked_Deallocation (String, String_Ptr);
-   --  Procedure for freeing dynamically allocated String values
 
    subtype Upper_Half_Character is
      Character range Character'Val (16#80#) .. Character'Val (16#FF#);
@@ -216,10 +203,6 @@ package GPR is
    -- File and Path Name Types --
    ------------------------------
 
-   --  These are defined here in Namet rather than Fname and Uname to avoid
-   --  problems with dependencies, and to avoid dragging in Fname and Uname
-   --  into many more files, but it would be cleaner to move to Fname/Uname.
-
    type File_Name_Type is new Name_Id;
    --  File names are stored in the names table and this type is used to
    --  indicate that a Name_Id value is being used to hold a simple file
@@ -273,15 +256,15 @@ package GPR is
    --  Name used to replace others as an index of an associative array
    --  attribute in situations where this is allowed.
 
-   Subdirs : String_Ptr := null;
+   Subdirs : String_Access := null;
    --  The value after the equal sign in switch --subdirs=...
    --  Contains the relative subdirectory.
 
-   Build_Tree_Dir : String_Ptr := null;
+   Build_Tree_Dir : String_Access := null;
    --  A root directory for building out-of-tree projects. All relative object
    --  directories will be rooted at this location.
 
-   Root_Dir : String_Ptr := null;
+   Root_Dir : String_Access := null;
    --  When using out-of-tree build we need to keep information about the root
    --  directory of artifacts to properly relocate them. Note that the root
    --  directory is not necessarily the directory of the main project.
@@ -2211,7 +2194,7 @@ package GPR is
    Warnings_Detected : Nat := 0;
 
 private
-   Tool_Name : String_Ptr := null;
+   Tool_Name : String_Access := null;
 
    Serious_Errors_Detected : Nat := 0;
 

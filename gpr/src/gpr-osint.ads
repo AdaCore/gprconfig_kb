@@ -24,6 +24,8 @@
 
 --  This package contains low level, operating system routines
 
+with Ada.Unchecked_Deallocation;
+
 package GPR.Osint is
 
    -----------------------------------------

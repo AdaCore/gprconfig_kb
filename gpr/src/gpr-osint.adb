@@ -36,45 +36,13 @@ package body GPR.Osint is
    function Is_Regular_File
      (Name : C_File_Name;
       Attr : access File_Attributes) return Boolean;
---     function Is_Symbolic_Link
---       (Name : C_File_Name;
---        Attr : access File_Attributes) return Boolean;
-   --  Return the type of the file,
 
    function File_Length
      (Name : C_File_Name;
       Attr : access File_Attributes) return Long_Integer;
    --  Return the length (number of bytes) of the file
 
---     function File_Time_Stamp
---       (Name : C_File_Name;
---        Attr : access File_Attributes) return OS_Time;
---     function File_Time_Stamp
---       (Name : Path_Name_Type;
---        Attr : access File_Attributes) return Time_Stamp_Type;
---     --  Return the time stamp of the file
-
---     function Is_Readable_File
---       (Name : C_File_Name;
---        Attr : access File_Attributes) return Boolean;
---     function Is_Executable_File
---       (Name : C_File_Name;
---        Attr : access File_Attributes) return Boolean;
---     function Is_Writable_File
---       (Name : C_File_Name;
---        Attr : access File_Attributes) return Boolean;
-   --  Return the access rights for the file
-
    Current_Full_Lib_Name     : File_Name_Type  := No_File;
-   --  Respectively full name (with directory info) and time stamp of the
-   --  latest source, library and object files opened by Read_Source_File and
-   --  Read_Library_Info.
-
---     function Executable_Name
---       (Name              : String;
---        Only_If_No_Suffix : Boolean := False) return String;
-
---     function Object_File_Name (N : File_Name_Type) return File_Name_Type;
 
    function OS_Time_To_GNAT_Time (T : OS_Time) return Time_Stamp_Type;
 
@@ -555,8 +523,6 @@ package body GPR.Osint is
       Status : Boolean;
       pragma Warnings (Off, Status);
       --  For the calls to Close
-
-      EOF : constant Character := ASCII.SUB;
 
    begin
       Current_Full_Lib_Name := Full_Lib_File;

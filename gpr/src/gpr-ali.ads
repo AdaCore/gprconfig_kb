@@ -436,7 +436,7 @@ package GPR.ALI is
    --  Id of first actual entry in table
 
    package Args is new GNAT.Table (
-     Table_Component_Type => String_Ptr,
+     Table_Component_Type => String_Access,
      Table_Index_Type     => Arg_Id,
      Table_Low_Bound      => First_Arg_Entry,
      Table_Initial        => 1000,
