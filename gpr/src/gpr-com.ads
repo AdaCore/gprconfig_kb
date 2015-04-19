@@ -25,6 +25,8 @@
 --  The following package declares a Fail procedure that is used in the
 --  Project Manager.
 
+with GPR.Osint;
+
 package GPR.Com is
 
    type Fail_Proc is access procedure (S : String);

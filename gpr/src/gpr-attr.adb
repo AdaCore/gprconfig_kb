@@ -24,6 +24,8 @@
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 
+with GPR.Osint; use GPR.Osint;
+
 package body GPR.Attr is
 
    use GNAT;

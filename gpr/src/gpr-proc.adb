@@ -29,6 +29,7 @@ with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Ext;     use GPR.Ext;
 with GPR.Nmsc;    use GPR.Nmsc;
+with GPR.Osint;   use GPR.Osint;
 with GPR.Part;
 with GPR.Util;
 with GPR.Snames;

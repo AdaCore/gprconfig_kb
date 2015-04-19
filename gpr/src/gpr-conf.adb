@@ -22,21 +22,21 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Opt;      use GPR.Opt;
-with GPR.Env;
-with GPR.Err;
-with GPR.Part;
-with GPR.Proc; use GPR.Proc;
-with GPR.Tree; use GPR.Tree;
-with GPR.Util; use GPR.Util;
-with GPR.Snames;   use GPR.Snames;
-
 with Ada.Directories; use Ada.Directories;
 with Ada.Exceptions;  use Ada.Exceptions;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;    use GNAT.HTable;
 with GNAT.Table;
+
+with GPR.Opt;    use GPR.Opt;
+with GPR.Env;
+with GPR.Err;
+with GPR.Part;
+with GPR.Proc;   use GPR.Proc;
+with GPR.Tree;   use GPR.Tree;
+with GPR.Util;   use GPR.Util;
+with GPR.Snames; use GPR.Snames;
 
 package body GPR.Conf is
 

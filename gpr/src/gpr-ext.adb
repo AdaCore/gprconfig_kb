@@ -22,9 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  with Osint;    use Osint;
-
 with Ada.Unchecked_Deallocation;
+
+with GPR.Osint; use GPR.Osint;
 
 package body GPR.Ext is
 

@@ -22,16 +22,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Com;
-with GPR.Env;  use GPR.Env;
-with GPR.Err;  use GPR.Err;
-with GPR.Erroutc; use GPR.Erroutc;
-with GPR.Opt;  use GPR.Opt;
-with GPR.Sinput; use GPR.Sinput;
-with GPR.Tree; use GPR.Tree;
-with GPR.Util; use GPR.Util;
-with GPR.Snames;   use GPR.Snames;
-
 with Ada;                        use Ada;
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
 with Ada.Directories;            use Ada.Directories;
@@ -44,6 +34,17 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;
 with GNAT.Regexp;               use GNAT.Regexp;
 with GNAT.Table;
+
+with GPR.Com;
+with GPR.Env;     use GPR.Env;
+with GPR.Err;     use GPR.Err;
+with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Opt;     use GPR.Opt;
+with GPR.Osint;   use GPR.Osint;
+with GPR.Sinput;  use GPR.Sinput;
+with GPR.Tree;    use GPR.Tree;
+with GPR.Util;    use GPR.Util;
+with GPR.Snames;  use GPR.Snames;
 
 package body GPR.Nmsc is
 

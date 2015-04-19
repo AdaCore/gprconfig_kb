@@ -22,11 +22,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+
 with GPR.Opt;
 with GPR.Com;     use GPR.Com;
+with GPR.Osint;   use GPR.Osint;
 with GPR.Tempdir;
 with GPR.Util;    use GPR.Util;
-with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 package body GPR.Env is
 

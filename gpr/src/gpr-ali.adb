@@ -24,6 +24,8 @@
 
 with Ada.Text_IO;
 
+with GPR.Osint; use GPR.Osint;
+
 package body GPR.ALI is
 
    use ASCII;

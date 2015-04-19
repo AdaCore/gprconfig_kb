@@ -1002,7 +1002,7 @@ package body GPR.Util is
                                Directory     => Obj_Dir);
             begin
                Source.Dep_Path := Create_Name (Dep_Path);
-               Source.Dep_TS   := Osint.Unknown_Attributes;
+               Source.Dep_TS   := Unknown_Attributes;
             end;
          end if;
 
@@ -1129,7 +1129,7 @@ package body GPR.Util is
                  Directory     => Object_Dir);
          begin
             Source.Dep_Path := Create_Name (Dep_Path);
-            Source.Dep_TS   := Osint.Unknown_Attributes;
+            Source.Dep_TS   := Unknown_Attributes;
          end;
       end if;
 

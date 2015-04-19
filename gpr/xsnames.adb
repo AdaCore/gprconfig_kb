@@ -81,8 +81,12 @@ begin
 
    Close (File_In);
    New_Line (Body_File);
+   Put_Line (Body_File, "   Initialized : Boolean := False;");
+   New_Line (Body_File);
    Put_Line (Body_File, "   procedure Initialize is");
    Put_Line (Body_File, "   begin");
+   Put_Line (Body_File, "      if Initialized then return; end if;");
+   New_Line (Body_File);
 
    --  First the single characters
 
@@ -145,6 +149,8 @@ begin
 
    --  Finish the body
 
+   New_Line (Body_File);
+   Put_Line (Body_File, "      Initialized := True;");
    Put_Line (Body_File, "   end Initialize;");
    New_Line (Body_File);
    Put_Line (Body_File, "end GPR.Snames;");

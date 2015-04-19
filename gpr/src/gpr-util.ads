@@ -24,6 +24,8 @@
 
 --  Utilities for use in processing project files
 
+with GPR.Osint; use GPR.Osint;
+
 package GPR.Util is
 
    Default_Config_Name : constant String := "default.cgpr";

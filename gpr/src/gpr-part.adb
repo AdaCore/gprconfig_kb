@@ -22,20 +22,21 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GPR.Opt;      use GPR.Opt;
-with GPR.Com;  use GPR.Com;
-with GPR.Dect;
-with GPR.Env;  use GPR.Env;
-with GPR.Err; use GPR.Err;
-with GPR.Erroutc; use GPR.Erroutc;
-with GPR.Sinput;   use GPR.Sinput;
-with GPR.Snames;
-
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Exceptions;          use Ada.Exceptions;
 
 with GNAT.HTable;               use GNAT.HTable;
 with GNAT.Table;
+
+with GPR.Opt;     use GPR.Opt;
+with GPR.Com;     use GPR.Com;
+with GPR.Dect;
+with GPR.Env;     use GPR.Env;
+with GPR.Err;     use GPR.Err;
+with GPR.Erroutc; use GPR.Erroutc;
+with GPR.Osint;   use GPR.Osint;
+with GPR.Sinput;  use GPR.Sinput;
+with GPR.Snames;
 
 package body GPR.Part is
 

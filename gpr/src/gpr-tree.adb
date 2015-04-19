@@ -22,9 +22,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  with Osint;   use Osint;
-with GPR.Env; use GPR.Env;
+with GPR.Env;   use GPR.Env;
 with GPR.Err;
+with GPR.Osint; use GPR.Osint;
 
 with Ada.Unchecked_Deallocation;
 

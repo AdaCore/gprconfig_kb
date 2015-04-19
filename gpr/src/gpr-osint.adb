@@ -22,12 +22,11 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 with Ada.Command_Line; use Ada.Command_Line;
-with GNAT.OS_Lib;      use GNAT.OS_Lib;
 
+with GNAT.Case_Util; use GNAT.Case_Util;
 with System.CRTL;
 
-separate (GPR)
-package body Osint is
+package body GPR.Osint is
 
    function Is_Regular_File
      (Name : C_File_Name;
@@ -659,4 +658,4 @@ package body Osint is
 
 begin
    Reset_File_Attributes (Unknown_Attributes'Address);
-end Osint;
+end GPR.Osint;
