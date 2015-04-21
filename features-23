@@ -8,6 +8,10 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-O420-012 --create-map-file for cross targets (2015-04-21)
+
+  This is now supported on cross platforms that use GNU ld to link.
+
 NF-23-O325-017 Out of tree build (2015-03-29)
 
   gprbuild can now build a project file out of a the source tree. That is,
