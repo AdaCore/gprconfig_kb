@@ -1049,6 +1049,24 @@
     </config>
   </configuration>
 
+  <!-- cross targets that use GNU ld -->
+  <configuration>
+    <targets>
+       <target name="^.*-vxworks.*$" />
+       <target name="^.*-lynxos.*$" />
+       <target name="^.*-pikeos$" />
+       <target name="^.*-elf$" />
+       <target name="^.*-eabispe$" />
+       <target name="^.*-eabi$" />
+       <target name="^avr$" />
+    </targets>
+    <config>
+     package Linker is
+        for Map_File_Option use "-Wl,-Map,";
+     end Linker;
+    </config>
+  </configuration>>
+
   <configuration>
     <targets>
       <target name="^powerpc-wrs-vxworks.*$" />
