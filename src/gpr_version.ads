@@ -5,7 +5,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---         Copyright (C) 1992-2014, Free Software Foundation, Inc.          --
+--         Copyright (C) 1992-2015, Free Software Foundation, Inc.          --
 --                                                                          --
 -- This is free software;  you can redistribute it  and/or modify it  under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -26,6 +26,8 @@ package GPR_Version is
 
    Gpr_Version : constant String := "2.3.0w";
    --  Static string identifying this version
+
+   Date : constant String := "19940713";
 
    function Gpr_Version_String return String;
    --  Version output when GPRBUILD or its related tools, including
