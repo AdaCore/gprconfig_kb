@@ -43,6 +43,7 @@
        <target name="^.*-pikeos$" />
        <target name="^arm-linux-androideabi" />
        <target name="^arm-linux-gnueabi" />
+       <target name="^arm-linux-gnueabihf" />
      </targets>
      <config>
    package Builder is

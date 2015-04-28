@@ -176,6 +176,18 @@
 
   <configuration>
     <targets>
+      <target name="^arm-linux-gnueabihf$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("arm-linux-gnueabihf-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("arm-linux-gnueabihf-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^erc32-elf$" />
     </targets>
     <config>
@@ -475,6 +487,7 @@
       <target name="^.*pc-mingw32$" />
       <target name="^.*-pikeos$" />
       <target name="^arm-linux-androideabi$" />
+      <target name="^.*-gnueabihf$" />
       <target name="^.*-gnueabi$" />
     </targets>
     <config>
