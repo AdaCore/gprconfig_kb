@@ -25,6 +25,31 @@ library project GPR is
 
    for Library_Name use "gpr";
 
+   for Library_Interface use
+      ("GPR",
+       "GPR.ALI",
+       "GPR.Attr",
+       "GPR.Com",
+       "GPR.Conf",
+       "GPR.Cset",
+       "GPR.Debug",
+       "GPR.Env",
+       "GPR.Err",
+       "GPR.Erroutc",
+       "GPR.Ext",
+       "GPR.Names",
+       "GPR.Opt",
+       "GPR.Osint",
+       "GPR.Part",
+       "GPR.PP",
+       "GPR.Proc",
+       "GPR.Scans",
+       "GPR.Sinput",
+       "GPR.Snames",
+       "GPR.Tempdir",
+       "GPR.Tree",
+       "GPR.Util");
+
    package Compiler is
       common_switches := ("-gnat12", "-gnaty", "-gnatQ");
       case Bld is
