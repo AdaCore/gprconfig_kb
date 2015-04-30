@@ -1710,81 +1710,81 @@ package body Scanner is
 
       <<Scan_Wide_Character>>
 
-         declare
-            Code : Char_Code;
-            Cat  : Category;
-            Err  : Boolean;
+      declare
+         Code : Char_Code;
+         Cat  : Category;
+         Err  : Boolean;
 
-         begin
-            Wptr := Scan_Ptr;
-            Scan_Wide (Source, Scan_Ptr, Code, Err);
+      begin
+         Wptr := Scan_Ptr;
+         Scan_Wide (Source, Scan_Ptr, Code, Err);
 
-            --  If bad wide character, signal error and continue scan
+         --  If bad wide character, signal error and continue scan
 
-            if Err then
-               goto Scan_Next_Character;
-            end if;
+         if Err then
+            goto Scan_Next_Character;
+         end if;
 
-            Cat := Get_Category (UTF_32 (Code));
+         Cat := Get_Category (UTF_32 (Code));
 
-            --  If OK letter, reset scan ptr and go scan identifier
+         --  If OK letter, reset scan ptr and go scan identifier
 
-            if Is_UTF_32_Letter (Cat) then
-               Scan_Ptr := Wptr;
-               Name_Len := 0;
-               Underline_Found := False;
-               goto Scan_Identifier;
+         if Is_UTF_32_Letter (Cat) then
+            Scan_Ptr := Wptr;
+            Name_Len := 0;
+            Underline_Found := False;
+            goto Scan_Identifier;
 
             --  If OK wide space, ignore and keep scanning (we do not include
             --  any ignored spaces in checksum)
 
-            elsif Is_UTF_32_Space (Cat) then
-               goto Scan_Next_Character;
+         elsif Is_UTF_32_Space (Cat) then
+            goto Scan_Next_Character;
 
             --  If other format character, ignore and keep scanning (again we
             --  do not include in the checksum) (this is for AI-0079).
 
-            elsif Is_UTF_32_Other (Cat) then
-               goto Scan_Next_Character;
+         elsif Is_UTF_32_Other (Cat) then
+            goto Scan_Next_Character;
 
             --  If OK wide line terminator, terminate current line
 
-            elsif Is_UTF_32_Line_Terminator (UTF_32 (Code)) then
-               Scan_Ptr := Wptr;
-               goto Scan_Line_Terminator;
+         elsif Is_UTF_32_Line_Terminator (UTF_32 (Code)) then
+            Scan_Ptr := Wptr;
+            goto Scan_Line_Terminator;
 
             --  Punctuation is an error (at start of identifier)
 
-            elsif Is_UTF_32_Punctuation (Cat) then
-               Scan_Ptr := Wptr;
-               Name_Len := 0;
-               Underline_Found := False;
-               goto Scan_Identifier;
+         elsif Is_UTF_32_Punctuation (Cat) then
+            Scan_Ptr := Wptr;
+            Name_Len := 0;
+            Underline_Found := False;
+            goto Scan_Identifier;
 
             --  Mark character is an error (at start of identifier)
 
-            elsif Is_UTF_32_Mark (Cat) then
-               Scan_Ptr := Wptr;
-               Name_Len := 0;
-               Underline_Found := False;
-               goto Scan_Identifier;
+         elsif Is_UTF_32_Mark (Cat) then
+            Scan_Ptr := Wptr;
+            Name_Len := 0;
+            Underline_Found := False;
+            goto Scan_Identifier;
 
             --  Extended digit character is an error. Could be bad start of
             --  identifier or bad literal. Not worth doing too much to try to
             --  distinguish these cases, but we will do a little bit.
 
-            elsif Is_UTF_32_Digit (Cat) then
-               Scan_Ptr := Wptr;
-               Name_Len := 0;
-               Underline_Found := False;
-               goto Scan_Identifier;
+         elsif Is_UTF_32_Digit (Cat) then
+            Scan_Ptr := Wptr;
+            Name_Len := 0;
+            Underline_Found := False;
+            goto Scan_Identifier;
 
             --  All other wide characters are illegal here
 
-            else
-               goto Scan_Next_Character;
-            end if;
-         end;
+         else
+            goto Scan_Next_Character;
+         end if;
+      end;
 
       --  Routine to scan line terminator. On entry Scan_Ptr points to a
       --  character which is one of FF,LR,CR,VT, or one of the wide characters
@@ -1792,38 +1792,45 @@ package body Scanner is
 
       <<Scan_Line_Terminator>>
 
-         --  Set Token_Ptr, if End_Of_Line is a token, for the case when it is
-         --  a physical line.
+      if Scan_Ptr - Current_Line_Start > 32766 then
+         Error_Msg
+           ("this line is longer than 32766 characters",
+            Current_Line_Start);
+         raise Unrecoverable_Error;
+      end if;
 
-         if End_Of_Line_Is_Token then
-            Token_Ptr := Scan_Ptr;
-         end if;
+      --  Set Token_Ptr, if End_Of_Line is a token, for the case when it is
+      --  a physical line.
 
-         declare
-            Physical : Boolean;
+      if End_Of_Line_Is_Token then
+         Token_Ptr := Scan_Ptr;
+      end if;
 
-         begin
-            Skip_Line_Terminators (Scan_Ptr, Physical);
+      declare
+         Physical : Boolean;
 
-            --  If we are at start of physical line, update scan pointers to
-            --  reflect the start of the new line.
+      begin
+         Skip_Line_Terminators (Scan_Ptr, Physical);
 
-            if Physical then
-               Current_Line_Start       := Scan_Ptr;
-               Start_Column             := Set_Start_Column;
-               First_Non_Blank_Location := Scan_Ptr;
+         --  If we are at start of physical line, update scan pointers to
+         --  reflect the start of the new line.
 
-               --  If End_Of_Line is a token, we return it as it is a
-               --  physical line.
+         if Physical then
+            Current_Line_Start       := Scan_Ptr;
+            Start_Column             := Set_Start_Column;
+            First_Non_Blank_Location := Scan_Ptr;
 
-               if End_Of_Line_Is_Token then
-                  Token := Tok_End_Of_Line;
-                  return;
-               end if;
+            --  If End_Of_Line is a token, we return it as it is a
+            --  physical line.
+
+            if End_Of_Line_Is_Token then
+               Token := Tok_End_Of_Line;
+               return;
             end if;
-         end;
+         end if;
+      end;
 
-         goto Scan_Next_Character;
+      goto Scan_Next_Character;
 
       --  Identifier scanning routine. On entry, some initial characters of
       --  the identifier may have already been stored in Name_Buffer. If so,
@@ -1832,250 +1839,251 @@ package body Scanner is
 
       <<Scan_Identifier>>
 
-         --  This loop scans as fast as possible past lower half letters and
-         --  digits, which we expect to be the most common characters.
+      --  This loop scans as fast as possible past lower half letters and
+      --  digits, which we expect to be the most common characters.
 
-         loop
-            if Source (Scan_Ptr) in 'a' .. 'z'
-              or else Source (Scan_Ptr) in '0' .. '9'
-            then
-               Name_Buffer (Name_Len + 1) := Source (Scan_Ptr);
-               Accumulate_Checksum (Source (Scan_Ptr));
+      loop
+         if Source (Scan_Ptr) in 'a' .. 'z'
+           or else Source (Scan_Ptr) in '0' .. '9'
+         then
+            Name_Buffer (Name_Len + 1) := Source (Scan_Ptr);
+            Accumulate_Checksum (Source (Scan_Ptr));
 
-            elsif Source (Scan_Ptr) in 'A' .. 'Z' then
-               Name_Buffer (Name_Len + 1) :=
-                 Character'Val (Character'Pos (Source (Scan_Ptr)) + 32);
-               Accumulate_Checksum (Name_Buffer (Name_Len + 1));
+         elsif Source (Scan_Ptr) in 'A' .. 'Z' then
+            Name_Buffer (Name_Len + 1) :=
+              Character'Val (Character'Pos (Source (Scan_Ptr)) + 32);
+            Accumulate_Checksum (Name_Buffer (Name_Len + 1));
 
-            else
-               exit;
+         else
+            exit;
+         end if;
+
+         Underline_Found := False;
+         Scan_Ptr := Scan_Ptr + 1;
+         Name_Len := Name_Len + 1;
+      end loop;
+
+      --  If we fall through, then we have encountered either an underline
+      --  character, or an extended identifier character (i.e. one from the
+      --  upper half), or a wide character, or an identifier terminator. The
+      --  initial test speeds us up in the most common case where we have
+      --  an identifier terminator. Note that ESC is an identifier character
+      --  only if a wide character encoding method that uses ESC encoding
+      --  is active, so if we find an ESC character we know that we have a
+      --  wide character.
+
+      if Identifier_Char (Source (Scan_Ptr))
+        or else (Source (Scan_Ptr) in Upper_Half_Character
+                 and then Upper_Half_Encoding)
+      then
+         --  Case of underline
+
+         if Source (Scan_Ptr) = '_' then
+            Accumulate_Checksum ('_');
+
+            if not Underline_Found then
+               Underline_Found := True;
+               Name_Len := Name_Len + 1;
+               Name_Buffer (Name_Len) := '_';
             end if;
 
-            Underline_Found := False;
             Scan_Ptr := Scan_Ptr + 1;
-            Name_Len := Name_Len + 1;
-         end loop;
-
-         --  If we fall through, then we have encountered either an underline
-         --  character, or an extended identifier character (i.e. one from the
-         --  upper half), or a wide character, or an identifier terminator. The
-         --  initial test speeds us up in the most common case where we have
-         --  an identifier terminator. Note that ESC is an identifier character
-         --  only if a wide character encoding method that uses ESC encoding
-         --  is active, so if we find an ESC character we know that we have a
-         --  wide character.
-
-         if Identifier_Char (Source (Scan_Ptr))
-           or else (Source (Scan_Ptr) in Upper_Half_Character
-                     and then Upper_Half_Encoding)
-         then
-            --  Case of underline
-
-            if Source (Scan_Ptr) = '_' then
-               Accumulate_Checksum ('_');
-
-               if not Underline_Found then
-                  Underline_Found := True;
-                  Name_Len := Name_Len + 1;
-                  Name_Buffer (Name_Len) := '_';
-               end if;
-
-               Scan_Ptr := Scan_Ptr + 1;
-               goto Scan_Identifier;
+            goto Scan_Identifier;
 
             --  Upper half character
 
-            elsif Source (Scan_Ptr) in Upper_Half_Character
-              and then not Upper_Half_Encoding
-            then
-               Accumulate_Checksum (Source (Scan_Ptr));
-               Store_Encoded_Character
-                 (Get_Char_Code (Fold_Lower (Source (Scan_Ptr))));
-               Scan_Ptr := Scan_Ptr + 1;
-               Underline_Found := False;
-               goto Scan_Identifier;
+         elsif Source (Scan_Ptr) in Upper_Half_Character
+           and then not Upper_Half_Encoding
+         then
+            Accumulate_Checksum (Source (Scan_Ptr));
+            Store_Encoded_Character
+              (Get_Char_Code (Fold_Lower (Source (Scan_Ptr))));
+            Scan_Ptr := Scan_Ptr + 1;
+            Underline_Found := False;
+            goto Scan_Identifier;
 
             --  Left bracket not followed by a quote terminates an identifier.
             --  This is an error, but we don't want to give a junk error msg
             --  about wide characters in this case.
 
-            elsif Source (Scan_Ptr) = '['
-              and then Source (Scan_Ptr + 1) /= '"'
-            then
-               null;
+         elsif Source (Scan_Ptr) = '['
+           and then Source (Scan_Ptr + 1) /= '"'
+         then
+            null;
 
             --  We know we have a wide character encoding here (the current
             --  character is either ESC, left bracket, or an upper half
             --  character depending on the encoding method).
 
-            else
-               --  Scan out the wide character and insert the appropriate
-               --  encoding into the name table entry for the identifier.
+         else
+            --  Scan out the wide character and insert the appropriate
+            --  encoding into the name table entry for the identifier.
 
-               declare
-                  Code : Char_Code;
-                  Err  : Boolean;
-                  Chr  : Character;
-                  Cat  : Category;
+            declare
+               Code : Char_Code;
+               Err  : Boolean;
+               Chr  : Character;
+               Cat  : Category;
 
-               begin
-                  Wptr := Scan_Ptr;
-                  Scan_Wide (Source, Scan_Ptr, Code, Err);
+            begin
+               Wptr := Scan_Ptr;
+               Scan_Wide (Source, Scan_Ptr, Code, Err);
 
-                  --  If error, signal error
+               --  If error, signal error
 
-                  if Err then
-                     null;
+               if Err then
+                  null;
 
                   --  If the character scanned is a normal identifier
                   --  character, then we treat it that way.
 
-                  elsif In_Character_Range (Code)
-                    and then Identifier_Char (Get_Character (Code))
-                  then
-                     Chr := Get_Character (Code);
-                     Accumulate_Checksum (Chr);
-                     Store_Encoded_Character
-                       (Get_Char_Code (Fold_Lower (Chr)));
-                     Underline_Found := False;
+               elsif In_Character_Range (Code)
+                 and then Identifier_Char (Get_Character (Code))
+               then
+                  Chr := Get_Character (Code);
+                  Accumulate_Checksum (Chr);
+                  Store_Encoded_Character
+                    (Get_Char_Code (Fold_Lower (Chr)));
+                  Underline_Found := False;
 
                   --  Here if not a normal identifier character
 
-                  else
-                     Cat := Get_Category (UTF_32 (Code));
+               else
+                  Cat := Get_Category (UTF_32 (Code));
 
-                     --  Wide character in Unicode category "Other, Format"
-                     --  is not accepted in an identifier. This is because it
-                     --  it is considered a security risk (AI-0091).
+                  --  Wide character in Unicode category "Other, Format"
+                  --  is not accepted in an identifier. This is because it
+                  --  it is considered a security risk (AI-0091).
 
-                     --  However, it is OK for such a character to appear at
-                     --  the end of an identifier.
+                  --  However, it is OK for such a character to appear at
+                  --  the end of an identifier.
 
-                     if Is_UTF_32_Other (Cat) then
-                        if not Identifier_Char (Source (Scan_Ptr)) then
-                           goto Scan_Identifier_Complete;
-                        else
-                           goto Scan_Identifier;
-                        end if;
+                  if Is_UTF_32_Other (Cat) then
+                     if not Identifier_Char (Source (Scan_Ptr)) then
+                        goto Scan_Identifier_Complete;
+                     else
+                        goto Scan_Identifier;
+                     end if;
 
                      --  Wide character in category Separator,Space terminates
 
-                     elsif Is_UTF_32_Space (Cat) then
-                        goto Scan_Identifier_Complete;
-                     end if;
+                  elsif Is_UTF_32_Space (Cat) then
+                     goto Scan_Identifier_Complete;
+                  end if;
 
-                     --  Here if wide character is part of the identifier
+                  --  Here if wide character is part of the identifier
 
-                     --  Make sure we are allowing wide characters in
-                     --  identifiers. Note that we allow wide character
-                     --  notation for an OK identifier character. This in
-                     --  particular allows bracket or other notation to be
-                     --  used for upper half letters.
+                  --  Make sure we are allowing wide characters in
+                  --  identifiers. Note that we allow wide character
+                  --  notation for an OK identifier character. This in
+                  --  particular allows bracket or other notation to be
+                  --  used for upper half letters.
 
-                     --  If OK letter, store it folding to upper case. Note
-                     --  that we include the folded letter in the checksum.
+                  --  If OK letter, store it folding to upper case. Note
+                  --  that we include the folded letter in the checksum.
 
-                     if Is_UTF_32_Letter (Cat) then
-                        Code :=
-                          Char_Code (UTF_32_To_Upper_Case (UTF_32 (Code)));
-                        Accumulate_Checksum (Code);
-                        Store_Encoded_Character (Code);
-                        Underline_Found := False;
+                  if Is_UTF_32_Letter (Cat) then
+                     Code :=
+                       Char_Code (UTF_32_To_Upper_Case (UTF_32 (Code)));
+                     Accumulate_Checksum (Code);
+                     Store_Encoded_Character (Code);
+                     Underline_Found := False;
 
                      --  If OK extended digit or mark, then store it
 
-                     elsif Is_UTF_32_Digit (Cat)
-                       or else Is_UTF_32_Mark (Cat)
-                     then
-                        Accumulate_Checksum (Code);
-                        Store_Encoded_Character (Code);
-                        Underline_Found := False;
+                  elsif Is_UTF_32_Digit (Cat)
+                    or else Is_UTF_32_Mark (Cat)
+                  then
+                     Accumulate_Checksum (Code);
+                     Store_Encoded_Character (Code);
+                     Underline_Found := False;
 
                      --  Wide punctuation is also stored, but counts as an
                      --  underline character for error checking purposes.
 
-                     elsif Is_UTF_32_Punctuation (Cat) then
-                        Accumulate_Checksum (Code);
+                  elsif Is_UTF_32_Punctuation (Cat) then
+                     Accumulate_Checksum (Code);
 
-                        if Underline_Found then
-                           declare
-                              Cend : constant Source_Ptr := Scan_Ptr;
-                           begin
-                              Scan_Ptr := Wptr;
-                              Scan_Ptr := Cend;
-                           end;
+                     if Underline_Found then
+                        declare
+                           Cend : constant Source_Ptr := Scan_Ptr;
+                        begin
+                           Scan_Ptr := Wptr;
+                           Scan_Ptr := Cend;
+                        end;
 
-                        else
-                           Store_Encoded_Character (Code);
-                           Underline_Found := True;
-                        end if;
+                     else
+                        Store_Encoded_Character (Code);
+                        Underline_Found := True;
+                     end if;
 
                      --  Any other wide character is not acceptable
 
-                     else
-                        null;
-                     end if;
+                  else
+                     null;
                   end if;
+               end if;
 
-                  goto Scan_Identifier;
-               end;
-            end if;
+               goto Scan_Identifier;
+            end;
          end if;
+      end if;
 
       --  Scan of identifier is complete. The identifier is stored in
       --  Name_Buffer, and Scan_Ptr points past the last character.
 
       <<Scan_Identifier_Complete>>
-         Token_Name := Name_Find;
 
-         --  Check for identifier ending with underline or punctuation char
+      Token_Name := Name_Find;
 
-         if Underline_Found then
-            Underline_Found := False;
-         end if;
+      --  Check for identifier ending with underline or punctuation char
 
-         --  We will assume it is an identifier, not a keyword, so that the
-         --  checksum is independent of the Ada version.
+      if Underline_Found then
+         Underline_Found := False;
+      end if;
 
-         Token := Tok_Identifier;
+      --  We will assume it is an identifier, not a keyword, so that the
+      --  checksum is independent of the Ada version.
 
-         --  Here is where we check if it was a keyword
+      Token := Tok_Identifier;
 
-         if Is_Keyword_Name (Token_Name) then
-            if Opt.Checksum_GNAT_6_3 then
-               Token := Token_Value (Token_Name);
+      --  Here is where we check if it was a keyword
 
-               if Checksum_Accumulate_Token_Checksum then
-                  if Checksum_GNAT_5_03 then
-                     Accumulate_Token_Checksum_GNAT_5_03;
-                  else
-                     Accumulate_Token_Checksum_GNAT_6_3;
-                  end if;
+      if Is_Keyword_Name (Token_Name) then
+         if Opt.Checksum_GNAT_6_3 then
+            Token := Token_Value (Token_Name);
+
+            if Checksum_Accumulate_Token_Checksum then
+               if Checksum_GNAT_5_03 then
+                  Accumulate_Token_Checksum_GNAT_5_03;
+               else
+                  Accumulate_Token_Checksum_GNAT_6_3;
                end if;
-
-            else
-               Accumulate_Token_Checksum;
-               Token := Token_Value (Token_Name);
             end if;
 
-            --  We must reset Token_Name since this is not an identifier and
-            --  if we leave Token_Name set, the parser gets confused because
-            --  it thinks it is dealing with an identifier instead of the
-            --  corresponding keyword.
+         else
+            Accumulate_Token_Checksum;
+            Token := Token_Value (Token_Name);
+         end if;
 
-            Token_Name := No_Name;
-            return;
+         --  We must reset Token_Name since this is not an identifier and
+         --  if we leave Token_Name set, the parser gets confused because
+         --  it thinks it is dealing with an identifier instead of the
+         --  corresponding keyword.
+
+         Token_Name := No_Name;
+         return;
 
          --  It is an identifier after all
 
-         else
-            if Checksum_Accumulate_Token_Checksum then
-               Accumulate_Token_Checksum;
-            end if;
-
-            Post_Scan;
-            return;
+      else
+         if Checksum_Accumulate_Token_Checksum then
+            Accumulate_Token_Checksum;
          end if;
+
+         Post_Scan;
+         return;
+      end if;
    end Scan;
 
    --------------------------
