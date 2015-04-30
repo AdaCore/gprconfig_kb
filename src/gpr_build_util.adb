@@ -373,17 +373,31 @@ package body Gpr_Build_Util is
                      Project   => No_Project,
                      Base_Name => SD.Sfile) = No_Source
                then
-                  if Verbose_Mode then
-                     Put_Line
-                       ("While parsing ALI file, file "
-                        & Get_Name_String (SD.Sfile)
-                        & " is indicated as containing subunit "
-                        & Get_Name_String (Unit_Name)
-                        & " but this does not match what was found while"
-                        & " parsing the project. Will recompile");
-                  end if;
+                  Get_Name_String (SD.Sfile);
 
-                  return No_Name;
+                  if Name_Len < 3
+                    or else Name_Buffer (2) /= '-'
+                    or else
+                      (Name_Buffer (1) /= 'a'
+                       and then
+                       Name_Buffer (1) /= 'g'
+                       and then
+                       Name_Buffer (1) /= 'i'
+                       and then
+                       Name_Buffer (1) /= 's')
+                  then
+                     if Verbose_Mode then
+                        Put_Line
+                          ("While parsing ALI file, file "
+                           & Get_Name_String (SD.Sfile)
+                           & " is indicated as containing subunit "
+                           & Get_Name_String (Unit_Name)
+                           & " but this does not match what was found while"
+                           & " parsing the project. Will recompile");
+                     end if;
+
+                     return No_Name;
+                  end if;
                end if;
             end if;
          end;
