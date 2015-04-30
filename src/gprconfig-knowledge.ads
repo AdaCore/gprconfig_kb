@@ -1,22 +1,19 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                            G P R C O N F I G                             --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 S p e c                                  --
+--                     Copyright (C) 2006-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2006-2014, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 --  This unit is responsible for parsing the gprconfig knowledge base
@@ -27,8 +24,10 @@ with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers.Vectors;
 with Ada.Strings.Unbounded;
+
 with GNAT.Regpat;
-with Namet;
+
+with GPR; use GPR;
 
 package GprConfig.Knowledge is
 
@@ -117,7 +116,7 @@ package GprConfig.Knowledge is
    type Compiler is private;
    type Compiler_Access is access all Compiler;
 
-   function Runtime_Dir_Of (Comp : Compiler_Access) return Namet.Name_Id;
+   function Runtime_Dir_Of (Comp : Compiler_Access) return Name_Id;
    --  Return the name of the runtime directory for the compiler. Returns
    --  No_Name if Comp is null.
 
@@ -126,7 +125,7 @@ package GprConfig.Knowledge is
    --  A list of compilers
 
    function Is_Selected (Comp : Compiler) return Boolean;
-   function Target      (Comp : Compiler) return Namet.Name_Id;
+   function Target      (Comp : Compiler) return Name_Id;
 
    procedure Set_Selection
      (Compilers : in out Compiler_Lists.List;
@@ -235,13 +234,13 @@ package GprConfig.Knowledge is
    -----------------------------
 
    function Hash_Case_Insensitive
-     (Name : Namet.Name_Id) return Ada.Containers.Hash_Type;
+     (Name : Name_Id) return Ada.Containers.Hash_Type;
    package Variables_Maps is new Ada.Containers.Hashed_Maps
-     (Key_Type        => Namet.Name_Id,
-      Element_Type    => Namet.Name_Id,
+     (Key_Type        => Name_Id,
+      Element_Type    => Name_Id,
       Hash            => Hash_Case_Insensitive,
-      Equivalent_Keys => Namet."=",
-      "="             => Namet."=");
+      Equivalent_Keys => "=",
+      "="             => "=");
 
    No_Compiler : constant Compiler;
    --  Describes one of the compilers found on the PATH.
@@ -332,34 +331,34 @@ private
    Unknown_Targets_Set : constant Targets_Set_Id := 0;
 
    type Compiler is record
-      Name        : Namet.Name_Id := Namet.No_Name;
+      Name        : Name_Id := No_Name;
       --  The name of the compiler, as specified in the <name> node of the
       --  knowledge base. If Compiler represents a filter as defined on through
       --  --config switch, then name can also be the base name of the
       --  executable we are looking for. In such a case, it never includes the
       --  exec suffix (.exe on Windows)
 
-      Executable  : Namet.Name_Id := Namet.No_Name;
-      Target      : Namet.Name_Id := Namet.No_Name;
+      Executable  : Name_Id := No_Name;
+      Target      : Name_Id := No_Name;
       Targets_Set : Targets_Set_Id;
-      Path        : Namet.Name_Id := Namet.No_Name;
+      Path        : Name_Id := No_Name;
 
-      Base_Name   : Namet.Name_Id := Namet.No_Name;
+      Base_Name   : Name_Id := No_Name;
       --  Base name of the executable. This does not include the exec suffix
 
-      Version     : Namet.Name_Id := Namet.No_Name;
+      Version     : Name_Id := No_Name;
       Variables   : Variables_Maps.Map;
-      Prefix      : Namet.Name_Id := Namet.No_Name;
-      Runtime     : Namet.Name_Id := Namet.No_Name;
-      Alt_Runtime : Namet.Name_Id := Namet.No_Name;
-      Runtime_Dir : Namet.Name_Id := Namet.No_Name;
+      Prefix      : Name_Id := No_Name;
+      Runtime     : Name_Id := No_Name;
+      Alt_Runtime : Name_Id := No_Name;
+      Runtime_Dir : Name_Id := No_Name;
       Path_Order  : Integer;
 
-      Language_Case : Namet.Name_Id := Namet.No_Name;
+      Language_Case : Name_Id := No_Name;
       --  The supported language, with the casing read from the compiler. This
       --  is for display purposes only
 
-      Language_LC : Namet.Name_Id := Namet.No_Name;
+      Language_LC : Name_Id := No_Name;
       --  The supported language, always lower case
 
       Selectable   : Boolean := True;
@@ -368,20 +367,20 @@ private
    end record;
 
    No_Compiler : constant Compiler :=
-                   (Name          => Namet.No_Name,
-                    Target        => Namet.No_Name,
+                   (Name          => No_Name,
+                    Target        => No_Name,
                     Targets_Set   => Unknown_Targets_Set,
-                    Executable    => Namet.No_Name,
-                    Base_Name     => Namet.No_Name,
-                    Path          => Namet.No_Name,
+                    Executable    => No_Name,
+                    Base_Name     => No_Name,
+                    Path          => No_Name,
                     Variables     => Variables_Maps.Empty_Map,
-                    Version       => Namet.No_Name,
-                    Prefix        => Namet.No_Name,
-                    Runtime       => Namet.No_Name,
-                    Alt_Runtime   => Namet.No_Name,
-                    Runtime_Dir   => Namet.No_Name,
-                    Language_Case => Namet.No_Name,
-                    Language_LC   => Namet.No_Name,
+                    Version       => No_Name,
+                    Prefix        => No_Name,
+                    Runtime       => No_Name,
+                    Alt_Runtime   => No_Name,
+                    Runtime_Dir   => No_Name,
+                    Language_Case => No_Name,
+                    Language_LC   => No_Name,
                     Selectable    => False,
                     Selected      => False,
                     Complete      => True,
@@ -403,13 +402,13 @@ private
       record
          case Typ is
             when Value_Constant  =>
-               Value           : Namet.Name_Id;
+               Value           : Name_Id;
             when Value_Shell     =>
-               Command         : Namet.Name_Id;
+               Command         : Name_Id;
             when Value_Directory  =>
-               Directory       : Namet.Name_Id;
+               Directory       : Name_Id;
                Directory_Group : Integer;
-               Dir_If_Match    : Namet.Name_Id;
+               Dir_If_Match    : Name_Id;
                Contents        : Pattern_Matcher_Access;
             when Value_Grep       =>
                Regexp_Re       : Pattern_Matcher_Access;
@@ -417,11 +416,11 @@ private
             when Value_Nogrep     =>
                Regexp_No       : Pattern_Matcher_Access;
             when Value_Filter     =>
-               Filter          : Namet.Name_Id;
+               Filter          : Name_Id;
             when Value_Must_Match =>
-               Must_Match      : Namet.Name_Id;
+               Must_Match      : Name_Id;
             when Value_Variable =>
-               Var_Name        : Namet.Name_Id;
+               Var_Name        : Name_Id;
             when Value_Done =>
                null;
          end case;
@@ -436,8 +435,8 @@ private
                            External_Value_Nodes.Empty_List;
 
    type Compiler_Description is record
-      Name             : Namet.Name_Id := Namet.No_Name;
-      Executable       : Namet.Name_Id := Namet.No_Name;
+      Name             : Name_Id := No_Name;
+      Executable       : Name_Id := No_Name;
       Executable_Re    : Pattern_Matcher_Access;
       Prefix_Index     : Integer := -1;
       Target           : External_Value;
@@ -452,16 +451,16 @@ private
 
    package Compiler_Description_Maps is new
      Ada.Containers.Indefinite_Hashed_Maps
-       (Namet.Name_Id, Compiler_Description,
-        Hash_Case_Insensitive, Namet."=");
+       (Name_Id, Compiler_Description,
+        Hash_Case_Insensitive, "=");
 
    type Compiler_Filter is record
-      Name        : Namet.Name_Id;
-      Version     : Namet.Name_Id;
+      Name        : Name_Id;
+      Version     : Name_Id;
       Version_Re  : Pattern_Matcher_Access;
-      Runtime     : Namet.Name_Id;
+      Runtime     : Name_Id;
       Runtime_Re  : Pattern_Matcher_Access;
-      Language_LC : Namet.Name_Id;
+      Language_LC : Name_Id;
    end record;
    --  Representation for a <compiler> node (in <configuration>)
 
@@ -486,7 +485,7 @@ private
       Compilers_Filters : Compilers_Filter_Lists.List;
       Targets_Filters   : String_Lists.List;  --  these are regexps
       Negate_Targets    : Boolean  := False;
-      Config            : Namet.Name_Id;
+      Config            : Name_Id;
 
       Supported         : Boolean;
       --  Whether the combination of compilers is supported
@@ -499,7 +498,7 @@ private
      (Pattern_Matcher_Access);
 
    type Target_Set_Description is record
-      Name     : Namet.Name_Id;
+      Name     : Name_Id;
       Patterns : Target_Lists.List;
    end record;
 

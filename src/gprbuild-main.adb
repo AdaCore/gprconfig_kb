@@ -1,60 +1,59 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                        G P R B U I L D . M A I N                         --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2011-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Command_Line;          use Ada.Command_Line;
+with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
-with Ada.Exceptions;            use Ada.Exceptions;
+with Ada.Exceptions;   use Ada.Exceptions;
+with Ada.Text_IO;      use Ada.Text_IO;
 
+pragma Warnings (Off);
 with System;
-with System.Case_Util;          use System.Case_Util;
-with System.Multiprocessors;    use System.Multiprocessors;
+with System.Case_Util;       use System.Case_Util;
+with System.Multiprocessors; use System.Multiprocessors;
+pragma Warnings (On);
 
 with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with Atree;       use Atree;
-with Csets;
-with Debug;       use Debug;
-with Gpr_Util;    use Gpr_Util;
-with GPR_Version; use GPR_Version;
-with Makeutl;     use Makeutl;
-with Opt;         use Opt;
-with Osint;       use Osint;
-with Output;      use Output;
-with Prj.Conf;    use Prj.Conf;
-with Prj.Proc;    use Prj.Proc;
-with Prj.Env;
-with Prj.Err;
-with Prj.Tree;    use Prj.Tree;
-with Snames;      use Snames;
-with Stringt;
-with Switch;      use Switch;
-with Tempdir;     use Tempdir;
-
+with Gpr_Build_Util;             use Gpr_Build_Util;
+with Gpr_Util;                   use Gpr_Util;
 with Gprbuild.Compile;
 with Gprbuild.Link;
 with Gprbuild.Post_Compile;
 with Gprbuild.Compilation.Slave;
+with GPR;                        use GPR;
+with GPR.Debug;                  use GPR.Debug;
+with GPR_Version;                use GPR_Version;
+with GPR.Conf;                   use GPR.Conf;
+with GPR.Names;                  use GPR.Names;
+with GPR.Osint;                  use GPR.Osint;
+with GPR.Proc;                   use GPR.Proc;
+with GPR.Env;
+with GPR.Err;
+with GPR.Opt;                    use GPR.Opt;
+with GPR.Snames;                 use GPR.Snames;
+with GPR.Tempdir;                use GPR.Tempdir;
+with GPR.Tree;                   use GPR.Tree;
+with GPR.Util;                   use GPR.Util;
 
 procedure Gprbuild.Main is
+
+   use Stamps;
 
    use Gpr_Util.Knowledge;
 
@@ -198,8 +197,7 @@ procedure Gprbuild.Main is
 
             if Is_Allowed_Language (Main_Id.Source.Language.Name) then
                Queue.Insert
-                 (Source     => (Format  => Format_Gprbuild,
-                                 Tree    => Main_Id.Tree,
+                 (Source     => (Tree    => Main_Id.Tree,
                                  Id      => Main_Id.Source,
                                  Closure => False),
                   With_Roots => Builder_Data (Main_Id.Tree).Closure_Needed);
@@ -396,13 +394,12 @@ procedure Gprbuild.Main is
          Value  : Natural := 0;
       end record;
 
-      package Command_Line_Options is new Table.Table
+      package Command_Line_Options is new GNAT.Table
         (Table_Component_Type => Option_Data,
          Table_Index_Type     => Natural,
          Table_Low_Bound      => 1,
          Table_Initial        => 10,
-         Table_Increment      => 100,
-         Table_Name           => "Makegpr.Opt.Command_Line_Options");
+         Table_Increment      => 100);
       --  Table to store the command line options
 
       ----------------------------------
@@ -559,7 +556,7 @@ procedure Gprbuild.Main is
               (Project_Tree, "directory name missing after -aP");
          else
             Search_Project_Dir_Expected := False;
-            Prj.Env.Add_Directories (Root_Environment.Project_Path, Arg);
+            GPR.Env.Add_Directories (Root_Environment.Project_Path, Arg);
          end if;
 
       elsif Db_Directory_Expected then
@@ -568,7 +565,7 @@ procedure Gprbuild.Main is
 
          Name_Len := 0;
          Add_Str_To_Name_Buffer (Arg);
-         Db_Switch_Args.Append (Name_Find);
+         Add_Db_Switch_Arg (Name_Find);
 
          --  Set the processor/language for the following switches
 
@@ -871,6 +868,7 @@ procedure Gprbuild.Main is
                Arg (1 .. Config_Project_Option'Length) = Config_Project_Option
          then
             if Config_Project_File_Name /= null
+              and then Command_Line
               and then (Autoconf_Specified
                         or else Config_Project_File_Name.all /=
                           Arg (Config_Project_Option'Length + 1 .. Arg'Last))
@@ -1101,14 +1099,14 @@ procedure Gprbuild.Main is
                Register_Command_Line_Option (Options.Indirect_Imports, 0);
             end if;
 
-         elsif Arg = Makeutl.Unchecked_Shared_Lib_Imports then
+         elsif Arg = Gpr_Build_Util.Unchecked_Shared_Lib_Imports then
             Forbidden_In_Package_Builder;
             Opt.Unchecked_Shared_Lib_Imports := True;
 
          elsif Arg = No_Object_Check_Switch then
             Object_Checked := False;
 
-         elsif Arg = Makeutl.No_Exit_Message_Option then
+         elsif Arg = No_Exit_Message_Option then
             Opt.No_Exit_Message := True;
 
          elsif Arg = "--codepeer" then
@@ -1155,12 +1153,12 @@ procedure Gprbuild.Main is
                Search_Project_Dir_Expected := True;
 
             else
-               Prj.Env.Add_Directories
+               GPR.Env.Add_Directories
                  (Root_Environment.Project_Path, Arg (4 .. Arg'Last));
             end if;
          elsif Arg = "-a" then
             if not Dash_A_Warning_Issued then
-               Write_Line (Dash_A_Warning);
+               Put_Line (Dash_A_Warning);
                Dash_A_Warning_Issued := True;
             end if;
 
@@ -1216,8 +1214,6 @@ procedure Gprbuild.Main is
             Forbidden_In_Package_Builder;
 
             --  Accept switch for compatibility with gnatmake
-
-            Opt.Commands_To_Stdout := True;
 
          elsif Arg = "-f" then
             Opt.Force_Compilations := True;
@@ -1381,11 +1377,11 @@ procedure Gprbuild.Main is
             if Arg'Length = 4 and then  Arg (4) in '0' .. '2' then
                case Arg (4) is
                when '0' =>
-                  Current_Verbosity := Prj.Default;
+                  Current_Verbosity := GPR.Default;
                when '1' =>
-                  Current_Verbosity := Prj.Medium;
+                  Current_Verbosity := GPR.Medium;
                when '2' =>
-                  Current_Verbosity := Prj.High;
+                  Current_Verbosity := GPR.High;
                when others =>
                   null;
                end case;
@@ -1604,7 +1600,7 @@ procedure Gprbuild.Main is
 
    procedure Sigint_Intercepted is
    begin
-      Write_Line ("*** Interrupted ***");
+      Put_Line ("*** Interrupted ***");
       Delete_All_Temp_Files (Project_Tree.Shared);
 
       if Distributed_Mode then
@@ -1624,15 +1620,14 @@ procedure Gprbuild.Main is
    begin
       --  Do some necessary package initializations
 
-      Csets.Initialize;
-      Namet.Initialize;
       Snames.Initialize;
-      Stringt.Initialize;
 
-      Prj.Tree.Initialize (Root_Environment, Gprbuild_Flags);
-      Prj.Tree.Initialize (Project_Node_Tree);
+      Set_Program_Name ("gprbuild");
 
-      Prj.Initialize (Project_Tree);
+      GPR.Tree.Initialize (Root_Environment, Gprbuild_Flags);
+      GPR.Tree.Initialize (Project_Node_Tree);
+
+      GPR.Initialize (Project_Tree);
       Mains.Delete;
 
       --  Get the name id for "-L";
@@ -1708,14 +1703,14 @@ procedure Gprbuild.Main is
 
       Current_Processor := None;
 
-      Prj.Env.Initialize_Default_Project_Path
+      GPR.Env.Initialize_Default_Project_Path
         (Root_Environment.Project_Path, Target_Name => "-");
 
       --  If --display-paths was specified, display the config and the user
       --  project paths and exit.
 
       if Display_Paths then
-         Write_Char ('.');
+         Put ('.');
 
          declare
             Prefix_Path : constant String := Executable_Prefix_Path;
@@ -1723,17 +1718,17 @@ procedure Gprbuild.Main is
 
          begin
             if Prefix_Path'Length /= 0 then
-               Write_Char (Path_Separator);
-               Write_Str (Prefix_Path);
-               Write_Str ("share");
-               Write_Char (Directory_Separator);
-               Write_Str ("gpr");
+               Put (Path_Separator);
+               Put (Prefix_Path);
+               Put ("share");
+               Put (Directory_Separator);
+               Put ("gpr");
             end if;
 
-            Write_Eol;
+            New_Line;
 
-            Prj.Env.Get_Path (Root_Environment.Project_Path, Path => P);
-            Write_Line (P.all);
+            GPR.Env.Get_Path (Root_Environment.Project_Path, Path => P);
+            Put_Line (P.all);
             Exit_Program (E_Success);
          end;
       end if;
@@ -1831,419 +1826,418 @@ procedure Gprbuild.Main is
       if not Usage_Output then
          Usage_Output := True;
 
-         Write_Str ("Usage: ");
-         Osint.Write_Program_Name;
-         Write_Str (" [-P<proj>] [<proj>.gpr] [opts] [name]");
-         Write_Eol;
-         Write_Str ("    {[-cargs opts] [-cargs:lang opts] [-largs opts]" &
+         Put ("Usage: ");
+         Put ("gprbuild [-P<proj>] [<proj>.gpr] [opts] [name]");
+         New_Line;
+         Put ("    {[-cargs opts] [-cargs:lang opts] [-largs opts]" &
                     " [-gargs opts]}");
-         Write_Eol;
-         Write_Eol;
-         Write_Str ("  name is zero or more file names");
-         Write_Eol;
-         Write_Eol;
+         New_Line;
+         New_Line;
+         Put ("  name is zero or more file names");
+         New_Line;
+         New_Line;
 
          --  GPRBUILD switches
 
-         Write_Str ("gprbuild switches:");
-         Write_Eol;
+         Put ("gprbuild switches:");
+         New_Line;
 
          Display_Usage_Version_And_Help;
 
          --  Line for --distributed
 
-         Write_Str ("  --distributed=slave1[,slave2]");
-         Write_Eol;
-         Write_Str ("           Activate the remote/distributed compilations");
-         Write_Eol;
+         Put ("  --distributed=slave1[,slave2]");
+         New_Line;
+         Put ("           Activate the remote/distributed compilations");
+         New_Line;
 
          --  Line for --slave-env
 
-         Write_Str ("  --slave-env[=name]");
-         Write_Eol;
-         Write_Str ("           Use a specific slave's environment");
-         Write_Eol;
+         Put ("  --slave-env[=name]");
+         New_Line;
+         Put ("           Use a specific slave's environment");
+         New_Line;
 
          --  Line for Config_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Config_Project_Option);
-         Write_Str ("file.cgpr");
-         Write_Eol;
-         Write_Str ("           Specify the main config project file name");
-         Write_Eol;
+         Put ("  ");
+         Put (Config_Project_Option);
+         Put ("file.cgpr");
+         New_Line;
+         Put ("           Specify the main config project file name");
+         New_Line;
 
          --  Line for Autoconf_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Autoconf_Project_Option);
-         Write_Str ("file.cgpr");
-         Write_Eol;
-         Write_Str
+         Put ("  ");
+         Put (Autoconf_Project_Option);
+         Put ("file.cgpr");
+         New_Line;
+         Put
            ("           Specify/create the main config project file name");
-         Write_Eol;
+         New_Line;
 
          --  Line for Target_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Target_Project_Option);
-         Write_Str ("targetname");
-         Write_Eol;
-         Write_Str
+         Put ("  ");
+         Put (Target_Project_Option);
+         Put ("targetname");
+         New_Line;
+         Put
            ("           Specify a target for cross platforms");
-         Write_Eol;
+         New_Line;
 
          --  Line for --db
 
-         Write_Str ("  --db dir Parse dir as an additional knowledge base");
-         Write_Eol;
+         Put ("  --db dir Parse dir as an additional knowledge base");
+         New_Line;
 
          --  Line for --db-
 
-         Write_Str ("  --db-    Do not load the standard knowledge base");
-         Write_Eol;
+         Put ("  --db-    Do not load the standard knowledge base");
+         New_Line;
 
          --  Line for --relocate-build-tree=
 
-         Write_Str ("  --relocate-build-tree[=dir]");
-         Write_Eol;
-         Write_Str ("           Root obj/lib/exec dirs are current-directory" &
+         Put ("  --relocate-build-tree[=dir]");
+         New_Line;
+         Put ("           Root obj/lib/exec dirs are current-directory" &
                     " or dir");
-         Write_Eol;
+         New_Line;
 
          --  Line for --root-dir=
 
-         Write_Str ("  --root-dir=dir");
-         Write_Eol;
-         Write_Str ("           Root directory of obj/lib/exec to relocate");
-         Write_Eol;
+         Put ("  --root-dir=dir");
+         New_Line;
+         Put ("           Root directory of obj/lib/exec to relocate");
+         New_Line;
 
          --  Line for --subdirs=
 
-         Write_Str ("  --subdirs=dir");
-         Write_Eol;
-         Write_Str ("           Real obj/lib/exec dirs are subdirs");
-         Write_Eol;
+         Put ("  --subdirs=dir");
+         New_Line;
+         Put ("           Real obj/lib/exec dirs are subdirs");
+         New_Line;
 
          --  Line for --single-compile-per-obj-dir
 
-         Write_Str ("  ");
-         Write_Str (Single_Compile_Per_Obj_Dir_Switch);
-         Write_Eol;
-         Write_Str
+         Put ("  ");
+         Put (Single_Compile_Per_Obj_Dir_Switch);
+         New_Line;
+         Put
            ("           No simultaneous compilations for the same obj dir");
-         Write_Eol;
+         New_Line;
 
-         Write_Str ("  ");
-         Write_Str (No_Indirect_Imports_Switch);
-         Write_Eol;
-         Write_Str
+         Put ("  ");
+         Put (No_Indirect_Imports_Switch);
+         New_Line;
+         Put
            ("           Sources can import only from directly imported " &
             "projects");
-         Write_Eol;
+         New_Line;
 
-         Write_Str ("  ");
-         Write_Str (Indirect_Imports_Switch);
-         Write_Eol;
-         Write_Str
+         Put ("  ");
+         Put (Indirect_Imports_Switch);
+         New_Line;
+         Put
            ("           Sources can import from directly and indirectly " &
             "imported projects");
-         Write_Eol;
+         New_Line;
 
-         Write_Str ("  --RTS=<runtime>");
-         Write_Eol;
-         Write_Str ("           Use runtime <runtime> for language Ada");
-         Write_Eol;
+         Put ("  --RTS=<runtime>");
+         New_Line;
+         Put ("           Use runtime <runtime> for language Ada");
+         New_Line;
 
-         Write_Str ("  --RTS:<lang>=<runtime>");
-         Write_Eol;
-         Write_Str ("           Use runtime <runtime> for language <lang>");
-         Write_Eol;
+         Put ("  --RTS:<lang>=<runtime>");
+         New_Line;
+         Put ("           Use runtime <runtime> for language <lang>");
+         New_Line;
 
-         Write_Str ("  ");
-         Write_Str (Makeutl.Unchecked_Shared_Lib_Imports);
-         Write_Eol;
-         Write_Str ("           Shared lib projects may import any project");
-         Write_Eol;
+         Put ("  ");
+         Put (Gpr_Build_Util.Unchecked_Shared_Lib_Imports);
+         New_Line;
+         Put ("           Shared lib projects may import any project");
+         New_Line;
 
-         Write_Str ("  ");
-         Write_Str (No_Object_Check_Switch);
-         Write_Eol;
-         Write_Str ("           Do not check object files");
-         Write_Eol;
+         Put ("  ");
+         Put (No_Object_Check_Switch);
+         New_Line;
+         Put ("           Do not check object files");
+         New_Line;
 
-         Write_Str ("  ");
-         Write_Str (Restricted_To_Languages_Option);
-         Write_Str ("<list of languages>");
-         Write_Eol;
-         Write_Str ("           Restrict the languages of the sources");
-         Write_Eol;
-         Write_Eol;
+         Put ("  ");
+         Put (Restricted_To_Languages_Option);
+         Put ("<list of languages>");
+         New_Line;
+         Put ("           Restrict the languages of the sources");
+         New_Line;
+         New_Line;
 
-         Write_Str ("  ");
-         Write_Str (Create_Map_File_Switch);
-         Write_Eol;
-         Write_Str ("           Create map file mainprog.map");
-         Write_Eol;
-         Write_Str ("  ");
-         Write_Str (Create_Map_File_Switch);
-         Write_Str ("=mapfile");
-         Write_Eol;
-         Write_Str ("           Create map file mapfile");
-         Write_Eol;
-         Write_Eol;
+         Put ("  ");
+         Put (Create_Map_File_Switch);
+         New_Line;
+         Put ("           Create map file mainprog.map");
+         New_Line;
+         Put ("  ");
+         Put (Create_Map_File_Switch);
+         Put ("=mapfile");
+         New_Line;
+         Put ("           Create map file mapfile");
+         New_Line;
+         New_Line;
 
          --  Line for -aP
 
-         Write_Str ("  -aP dir  Add directory dir to project search path");
-         Write_Eol;
+         Put ("  -aP dir  Add directory dir to project search path");
+         New_Line;
 
          --  Line for -b
 
-         Write_Str ("  -b       Bind only");
-         Write_Eol;
+         Put ("  -b       Bind only");
+         New_Line;
 
          --  Line for -c
 
-         Write_Str ("  -c       Compile only");
-         Write_Eol;
+         Put ("  -c       Compile only");
+         New_Line;
 
          --  Line for -d
 
-         Write_Str ("  -d       Display compilation progress");
-         Write_Eol;
+         Put ("  -d       Display compilation progress");
+         New_Line;
 
          --  Line for -eInn
 
-         Write_Str ("  -eInn    Index of main unit in multi-unit source file");
-         Write_Eol;
+         Put ("  -eInn    Index of main unit in multi-unit source file");
+         New_Line;
 
          --  Line for -eL
 
-         Write_Str ("  -eL      " &
+         Put ("  -eL      " &
                     "Follow symbolic links when processing project files");
-         Write_Eol;
+         New_Line;
 
          --  Line for -eS
 
-         Write_Str ("  -eS      " &
+         Put ("  -eS      " &
                     "(no action, for compatibility with gnatmake only)");
-         Write_Eol;
+         New_Line;
 
          --  Line for -f
 
-         Write_Str ("  -f       Force recompilations");
-         Write_Eol;
+         Put ("  -f       Force recompilations");
+         New_Line;
 
          --  Line for -F
 
-         Write_Str
+         Put
            ("  -F       Full project path name in brief error messages");
-         Write_Eol;
+         New_Line;
 
          --  Line for -jnnn
 
-         Write_Str ("  -jnum    Use num processes to compile");
-         Write_Eol;
+         Put ("  -jnum    Use num processes to compile");
+         New_Line;
 
          --  Line for -k
 
-         Write_Str ("  -k       Keep going after compilation errors");
-         Write_Eol;
+         Put ("  -k       Keep going after compilation errors");
+         New_Line;
 
          --  Line for -l
 
-         Write_Str ("  -l       Link only");
-         Write_Eol;
+         Put ("  -l       Link only");
+         New_Line;
 
          --  Line for -m
 
-         Write_Str ("  -m       Minimum Ada recompilation");
-         Write_Eol;
+         Put ("  -m       Minimum Ada recompilation");
+         New_Line;
 
          --  Line for -o
 
-         Write_Str ("  -o name  Choose an alternate executable name");
-         Write_Eol;
+         Put ("  -o name  Choose an alternate executable name");
+         New_Line;
 
          --  Line for -p
 
-         Write_Str ("  -p       Create missing obj, lib and exec dirs");
-         Write_Eol;
+         Put ("  -p       Create missing obj, lib and exec dirs");
+         New_Line;
 
          --  Line for -P
 
-         Write_Str ("  -P proj  Use Project File proj");
-         Write_Eol;
+         Put ("  -P proj  Use Project File proj");
+         New_Line;
 
          --  Line for -q
 
-         Write_Str ("  -q       Be quiet/terse");
-         Write_Eol;
+         Put ("  -q       Be quiet/terse");
+         New_Line;
 
          --  Line for -r
 
-         Write_Str ("  -r       Recursive (default except when using -c)");
-         Write_Eol;
+         Put ("  -r       Recursive (default except when using -c)");
+         New_Line;
 
          --  Line for -R
 
-         Write_Str ("  -R       Do not use run path option");
-         Write_Eol;
+         Put ("  -R       Do not use run path option");
+         New_Line;
 
          --  Line for -s
 
-         Write_Str ("  -s       Recompile if compiler switches have changed");
-         Write_Eol;
+         Put ("  -s       Recompile if compiler switches have changed");
+         New_Line;
 
          --  Line for -u
 
-         Write_Str
+         Put
            ("  -u       Unique compilation, only compile the given files");
-         Write_Eol;
+         New_Line;
 
          --  Line for -U
 
-         Write_Str
+         Put
            ("  -U       Unique compilation for all sources of all projects");
-         Write_Eol;
+         New_Line;
 
          --  Line for -v
 
-         Write_Str ("  -v       Verbose output");
-         Write_Eol;
+         Put ("  -v       Verbose output");
+         New_Line;
 
          --  Line for -vl
 
-         Write_Str ("  -vl      Verbose output (low verbosity)");
-         Write_Eol;
+         Put ("  -vl      Verbose output (low verbosity)");
+         New_Line;
 
          --  Line for -vm
 
-         Write_Str ("  -vm      Verbose output (medium verbosity)");
-         Write_Eol;
+         Put ("  -vm      Verbose output (medium verbosity)");
+         New_Line;
 
          --  Line for -vh
 
-         Write_Str ("  -vh      Verbose output (high verbosity)");
-         Write_Eol;
+         Put ("  -vh      Verbose output (high verbosity)");
+         New_Line;
 
          --  Line for -vPx
 
-         Write_Str ("  -vPx     Specify verbosity when parsing Project Files" &
+         Put ("  -vPx     Specify verbosity when parsing Project Files" &
                     " (x = 0/1/2)");
-         Write_Eol;
+         New_Line;
 
          --  Line for -we
 
-         Write_Str ("  -we      Treat all warnings as errors");
-         Write_Eol;
+         Put ("  -we      Treat all warnings as errors");
+         New_Line;
 
          --  Line for -wn
 
-         Write_Str ("  -wn      Treat warnings as warnings");
-         Write_Eol;
+         Put ("  -wn      Treat warnings as warnings");
+         New_Line;
 
          --  Line for -ws
 
-         Write_Str ("  -ws      Suppress all warnings");
-         Write_Eol;
+         Put ("  -ws      Suppress all warnings");
+         New_Line;
 
          --  Line for -x
 
-         Write_Str ("  -x       Always create include path file");
-         Write_Eol;
+         Put ("  -x       Always create include path file");
+         New_Line;
 
          --  Line for -X
 
-         Write_Str ("  -Xnm=val Specify an external reference for " &
+         Put ("  -Xnm=val Specify an external reference for " &
                     "Project Files");
-         Write_Eol;
-         Write_Eol;
+         New_Line;
+         New_Line;
 
          --  Line for -z
 
-         Write_Str ("  -z       No main subprogram (zero main)");
-         Write_Eol;
+         Put ("  -z       No main subprogram (zero main)");
+         New_Line;
 
          --  Line for --compiler-subst
 
-         Write_Line ("  --compiler-subst=lang,tool    Specify alternate " &
+         Put_Line ("  --compiler-subst=lang,tool    Specify alternate " &
                      "compiler");
 
          --  Line for --compiler-pkg-subst
 
-         Write_Line ("  --compiler-pkg-subst=pkg    Specify alternate " &
+         Put_Line ("  --compiler-pkg-subst=pkg    Specify alternate " &
                      "package");
-         Write_Eol;
+         New_Line;
 
          --  Line for -dn
 
-         Write_Str ("  -dn      Do not delete temporary files");
-         Write_Eol;
-         Write_Eol;
+         Put ("  -dn      Do not delete temporary files");
+         New_Line;
+         New_Line;
 
          --  Line for -cargs
 
-         Write_Line ("  -cargs opts    opts are passed to all compilers");
+         Put_Line ("  -cargs opts    opts are passed to all compilers");
 
          --  Line for -cargs:lang
 
-         Write_Line ("  -cargs:<lang> opts");
-         Write_Line ("                 opts are passed to the compiler " &
+         Put_Line ("  -cargs:<lang> opts");
+         Put_Line ("                 opts are passed to the compiler " &
                      "for language <lang> ");
 
          --  Line for -bargs
 
-         Write_Line ("  -bargs opts    opts are passed to all binders");
+         Put_Line ("  -bargs opts    opts are passed to all binders");
 
          --  Line for -cargs:lang
 
-         Write_Line ("  -bargs:<lang> opts");
-         Write_Line ("                 opts are passed to the binder " &
+         Put_Line ("  -bargs:<lang> opts");
+         Put_Line ("                 opts are passed to the binder " &
                      "for language <lang> ");
 
          --  Line for -largs
 
-         Write_Str ("  -largs opts    opts are passed to the linker");
-         Write_Eol;
+         Put ("  -largs opts    opts are passed to the linker");
+         New_Line;
 
          --  Line for -gargs
 
-         Write_Str ("  -gargs opts    opts directly interpreted by gprbuild");
-         Write_Eol;
+         Put ("  -gargs opts    opts directly interpreted by gprbuild");
+         New_Line;
 
          --  Line for -margs
 
-         Write_Str ("  -margs opts    equivalent to -gargs opts");
-         Write_Eol;
+         Put ("  -margs opts    equivalent to -gargs opts");
+         New_Line;
 
-         Write_Eol;
+         New_Line;
 
-         Write_Str
+         Put
            ("For compatibility with gnatmake, these switches are passed " &
             "to the Ada compiler:");
-         Write_Eol;
+         New_Line;
 
-         Write_Str ("  -nostdlib");
-         Write_Eol;
+         Put ("  -nostdlib");
+         New_Line;
 
-         Write_Str ("  -nostdinc");
-         Write_Eol;
+         Put ("  -nostdinc");
+         New_Line;
 
-         Write_Str ("  -fstack-check");
-         Write_Eol;
+         Put ("  -fstack-check");
+         New_Line;
 
-         Write_Str ("  -fno-inline");
-         Write_Eol;
+         Put ("  -fno-inline");
+         New_Line;
 
-         Write_Str ("  -gxxx");
-         Write_Eol;
+         Put ("  -gxxx");
+         New_Line;
 
-         Write_Str ("  -Oxx");
-         Write_Eol;
+         Put ("  -Oxx");
+         New_Line;
 
-         Write_Eol;
+         New_Line;
       end if;
    end Usage;
 
@@ -2289,7 +2283,7 @@ begin
    --  configuration file to the project so that its settings are
    --  automatically inherited by the project.
    --  If either the project or the configuration file contains errors, the
-   --  following call with call Osint.Fail and never return
+   --  following call with call Fail_Program and never return
 
    begin
       Main_Project := No_Project;
@@ -2310,8 +2304,8 @@ begin
          Normalized_Hostname        => Normalized_Hostname,
          Implicit_Project           => No_Project_File_Found);
    exception
-      when E : Prj.Conf.Invalid_Config =>
-         Osint.Fail (Exception_Message (E));
+      when E : GPR.Conf.Invalid_Config =>
+         Fail_Program (Project_Tree, Exception_Message (E));
    end;
 
    if Main_Project = No_Project then
@@ -2322,7 +2316,7 @@ begin
       Fail_Program
         (Project_Tree,
          """" & Project_File_Name.all & """ processing failed",
-         Flush_Messages => User_Project_Node /= Empty_Node);
+         Flush_Messages => User_Project_Node /= Empty_Project_Node);
    end if;
 
    if Configuration_Project_Path /= null then
@@ -2332,7 +2326,7 @@ begin
    end if;
 
    if Total_Errors_Detected > 0 then
-      Prj.Err.Finalize;
+      GPR.Err.Finalize;
       Fail_Program
         (Project_Tree,
          "problems while getting the configuration",
@@ -2343,8 +2337,8 @@ begin
      new String'(Get_Name_String (Main_Project.Directory.Display_Name));
 
    if Warnings_Detected > 0 then
-      Prj.Err.Finalize;
-      Prj.Err.Initialize;
+      GPR.Err.Finalize;
+      GPR.Err.Initialize;
    end if;
 
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
@@ -2402,8 +2396,8 @@ begin
       if not Opt.Quiet_Output
         and then not Main_Project.Externally_Built
       then
-         Osint.Write_Program_Name;
-         Write_Line (": no sources to compile");
+         Write_Program_Name;
+         Put_Line (": no sources to compile");
       end if;
 
       Finish_Program (Project_Tree, E_Success);
@@ -2421,7 +2415,7 @@ begin
    Options.Process_Command_Line_Options;
 
    if Debug.Debug_Flag_M then
-      Write_Line ("Maximum number of simultaneous compilations =" &
+      Put_Line ("Maximum number of simultaneous compilations =" &
                     Opt.Maximum_Processes'Img);
    end if;
 
@@ -2430,16 +2424,11 @@ begin
    if Map_File /= null
      and then Main_Project.Config.Map_File_Option = No_Name
    then
-      Write_Str ("warning: option ");
-      Write_Str (Create_Map_File_Switch);
-      Write_Str (" is not supported in this configuration");
-      Write_Eol;
+      Put ("warning: option ");
+      Put (Create_Map_File_Switch);
+      Put (" is not supported in this configuration");
+      New_Line;
    end if;
-
-   --  Source file lookups should be cached for efficiency.
-   --  Source files are not supposed to change.
-
-   Osint.Source_File_Data (Cache => True);
 
    --  If switch --no-object-check is used, then there is no check for the
    --  switches.
@@ -2455,9 +2444,9 @@ begin
         new String'(Compute_Slave_Env (Project_Tree, Slave_Env_Auto));
 
       if Slave_Env_Auto and not Opt.Quiet_Output then
-         Write_Str ("slave environment is ");
-         Write_Str (Slave_Env.all);
-         Write_Eol;
+         Put ("slave environment is ");
+         Put (Slave_Env.all);
+         New_Line;
       end if;
    end if;
 
@@ -2466,14 +2455,12 @@ begin
    Link.Run;
 
    if Warnings_Detected /= 0 then
-      Prj.Err.Finalize;
+      GPR.Err.Finalize;
    end if;
-
-   Namet.Finalize;
 
    Finish_Program (Project_Tree, Exit_Code);
 
 exception
    when E : others =>
-      Osint.Fail (Exception_Information (E));
+      Fail_Program (Project_Tree, Exception_Information (E));
 end Gprbuild.Main;

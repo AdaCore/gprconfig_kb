@@ -1,22 +1,19 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             G P R C L E A N                              --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2006-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Text_IO;
@@ -25,16 +22,14 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.IO;                   use GNAT.IO;
 with GNAT.Regexp;               use GNAT.Regexp;
 
-with Gpr_Util;    use Gpr_Util;
-with Gprexch;     use Gprexch;
-with MLib;        use MLib;
-with Makeutl;     use Makeutl;
-with Namet;       use Namet;
-with Opt;         use Opt;
-with Osint;
-with Prj.Util;    use Prj.Util;
-with Snames;
-with Types;       use Types;
+with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Util;       use Gpr_Util;
+with Gprexch;        use Gprexch;
+with GPR.Opt;        use GPR.Opt;
+with GPR.Osint;
+with GPR.Names;      use GPR.Names;
+with GPR.Snames;
+with GPR.Util;       use GPR.Util;
 
 package body Gprclean is
 
@@ -145,7 +140,7 @@ package body Gprclean is
 
       Delete_File : Boolean;
 
-      Source      : Prj.Source_Id;
+      Source      : GPR.Source_Id;
 
       File_Name   : File_Name_Type;
 
@@ -183,7 +178,7 @@ package body Gprclean is
                      Iter := For_Each_Source (Project_Tree);
 
                      loop
-                        Source := Prj.Element (Iter);
+                        Source := GPR.Element (Iter);
                         exit when Source = No_Source;
 
                         if Ultimate_Extension_Of (Source.Project) = Project
@@ -478,7 +473,7 @@ package body Gprclean is
 
                      if Last > 4 and then Name (Last - 3 .. Last) = ".ali" then
                         declare
-                           Source   : Prj.Source_Id;
+                           Source   : GPR.Source_Id;
                            Iter     : Source_Iterator;
                            Proj     : Project_Id := Project;
                         begin
@@ -490,7 +485,7 @@ package body Gprclean is
                               end if;
 
                               loop
-                                 Source := Prj.Element (Iter);
+                                 Source := GPR.Element (Iter);
                                  exit when Source = No_Source;
 
                                  if Source.Dep_Name /= No_File
@@ -561,7 +556,7 @@ package body Gprclean is
       Current_Dir : constant Dir_Name_Str := Get_Current_Dir;
       Project2    : Project_Id;
 
-      Source_Id   : Prj.Source_Id;
+      Source_Id   : GPR.Source_Id;
 
       Partial_Number : Natural;
 
@@ -677,8 +672,9 @@ package body Gprclean is
         and then Mains.Number_Of_Mains (null) /= 0
         and then Project.Library
       then
-         Osint.Fail
-           ("Cannot specify executable(s) for a Library Project File");
+         Fail_Program
+           (Project_Tree,
+            "Cannot specify executable(s) for a Library Project File");
       end if;
 
       --  Add project to the list of processed projects
@@ -757,7 +753,7 @@ package body Gprclean is
 
                   Iter := For_Each_Source (Project_Tree, Project2);
                   loop
-                     Source_Id := Prj.Element (Iter);
+                     Source_Id := GPR.Element (Iter);
                      exit when Source_Id = No_Source;
 
                      if Source_Id.Object /= No_File

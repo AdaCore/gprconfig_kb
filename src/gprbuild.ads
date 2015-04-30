@@ -1,44 +1,41 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             G P R B U I L D                              --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 S p e c                                  --
+--                     Copyright (C) 2004-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2004-2014, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 --  The following package implements the facilities to compile, bind and/or
 --  link a set of Ada and non Ada sources, specified in Project Files.
-
-with Namet; use Namet;
-with Prj;   use Prj;
-with Types; use Types;
 
 private with Ada.Unchecked_Deallocation;
 
 private with GNAT.Dynamic_Tables;
 private with GNAT.HTable;
 private with GNAT.OS_Lib;
-private with Makeutl;
+private with GNAT.Table;
 
-private with ALI;
-private with Opt;
-private with Osint;
-private with Table;
+with GPR;       use GPR;
+with GPR.Osint; use GPR.Osint;
+
+private with Gpr_Build_Util;
+private with GPR.ALI;
+private with GPR.Opt;
 
 package Gprbuild is
+
+   use Stamps;
 
    --  Everyting private so only accessible to child packages
 
@@ -122,25 +119,22 @@ private
    --  Used to decide to what compiler the Builder'Default_Switches that
    --  are not recognized by gprbuild should be given.
 
-   package All_Language_Builder_Compiling_Options is new Table.Table
+   package All_Language_Builder_Compiling_Options is new GNAT.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100,
-      Table_Name           =>
-        "Makegpr.All_Language_Builder_Compiling_Options");
+      Table_Increment      => 100);
    --  Table to store the options for all compilers, that is those that
    --  follow the switch "-cargs" without any mention of language in the
    --  Builder switches.
 
-   package All_Language_Compiling_Options is new Table.Table
+   package All_Language_Compiling_Options is new GNAT.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.All_Language_Compiling_Options");
+      Table_Increment      => 100);
    --  Table to store the options for all compilers, that is those that
    --  follow the switch "-cargs" without any mention of language on the
    --  command line.
@@ -201,32 +195,31 @@ private
                                     null;
 
    package Compiling_Options_HTable is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
+     (Header_Num => GPR.Header_Num,
       Element    => Comp_Option_Table_Ref,
       No_Element => No_Comp_Option_Table,
       Key        => Name_Id,
-      Hash       => Prj.Hash,
+      Hash       => GPR.Hash,
       Equal      => "=");
    --  A hash table to get the command line compilation option table from the
    --  language name.
 
    package Builder_Compiling_Options_HTable is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
+     (Header_Num => GPR.Header_Num,
       Element    => Builder_Comp_Option_Table_Ref,
       No_Element => No_Builder_Comp_Option_Table,
       Key        => Name_Id,
-      Hash       => Prj.Hash,
+      Hash       => GPR.Hash,
       Equal      => "=");
    --  A hash table to get the builder compilation option table from the
    --  language name.
 
-   package All_Language_Binder_Options is new Table.Table
+   package All_Language_Binder_Options is new GNAT.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.All_Language_Binder_Options");
+      Table_Increment      => 100);
    --  Table to store the options for all binders, that is those that
    --  follow the switch "-bargs" without any mention of language.
 
@@ -245,30 +238,28 @@ private
    Current_Bind_Option_Table : Bind_Option_Table_Ref := No_Bind_Option_Table;
 
    package Binder_Options_HTable is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
+     (Header_Num => GPR.Header_Num,
       Element    => Bind_Option_Table_Ref,
       No_Element => No_Bind_Option_Table,
       Key        => Name_Id,
-      Hash       => Prj.Hash,
+      Hash       => GPR.Hash,
       Equal      => "=");
    --  A hash table to get the compilation option table from the language name
 
-   package Binding_Options is new Table.Table
+   package Binding_Options is new GNAT.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 20,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.Binding_Options");
+      Table_Increment      => 100);
    --  Table to store the linking options coming from the binder
 
-   package Command_Line_Linker_Options is new Table.Table
+   package Command_Line_Linker_Options is new GNAT.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 20,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.Command_Line_Linker_Options");
+      Table_Increment      => 100);
    --  Table to store the linking options
 
    type Linker_Options_Data is record
@@ -276,13 +267,12 @@ private
       Options : String_List_Id;
    end record;
 
-   package Linker_Opts is new Table.Table
+   package Linker_Opts is new GNAT.Table
      (Table_Component_Type => Linker_Options_Data,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 20,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.Linker_Opts");
+      Table_Increment      => 100);
    --  Table to store the Linker'Linker_Options in the project files
 
    Project_Of_Current_Object_Directory : Project_Id := No_Project;
@@ -310,22 +300,20 @@ private
       Is_Aggregated : Boolean;
    end record;
 
-   package Library_Projs is new Table.Table (
+   package Library_Projs is new GNAT.Table (
      Table_Component_Type => Library_Project,
      Table_Index_Type     => Integer,
      Table_Low_Bound      => 1,
      Table_Initial        => 10,
-     Table_Increment      => 10,
-     Table_Name           => "Buildgpr.Library_Projs");
+     Table_Increment      => 10);
    --  Library projects imported directly or indirectly
 
-   package Non_Library_Projs is new Table.Table (
+   package Non_Library_Projs is new GNAT.Table (
      Table_Component_Type => Project_Id,
      Table_Index_Type     => Integer,
      Table_Low_Bound      => 1,
      Table_Initial        => 10,
-     Table_Increment      => 10,
-     Table_Name           => "Buildgpr.Non_Library_Projs");
+     Table_Increment      => 10);
    --  Non library projects imported directly or indirectly
 
    procedure Add_Option
@@ -395,15 +383,14 @@ private
    --  Change to the object directory of project Project, if this is not
    --  already the current working directory.
 
-   use Makeutl;
+   use Gpr_Build_Util;
 
-   package Bad_Processes is new Table.Table
+   package Bad_Processes is new GNAT.Table
      (Table_Component_Type => Main_Info,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100,
-      Table_Name           => "Gprbuild.Bad_Processes");
+      Table_Increment      => 100);
    --  Info for all the mains where binding fails
 
    Outstanding_Processes : Natural := 0;

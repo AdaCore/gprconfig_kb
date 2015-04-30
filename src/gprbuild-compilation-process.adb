@@ -1,33 +1,30 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---         G P R B U I L D . C O M P I L A T I O N . P R O C E S S          --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2012-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2012-2014, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Indefinite_Ordered_Maps;
 with Ada.Exceptions;                         use Ada.Exceptions;
 with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
-
-with Output; use Output;
+with Ada.Text_IO;                            use Ada.Text_IO;
 
 with Gpr_Util;                    use Gpr_Util;
 with Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Slave;
+with GPR.Names;                   use GPR.Names;
 
 package body Gprbuild.Compilation.Process is
 
@@ -276,7 +273,7 @@ package body Gprbuild.Compilation.Process is
       end loop;
    exception
       when E : others =>
-         Write_Line (Exception_Information (E));
+         Put_Line (Exception_Information (E));
          OS_Exit (1);
    end Wait_Local;
 
