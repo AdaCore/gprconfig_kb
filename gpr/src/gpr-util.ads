@@ -70,7 +70,6 @@ package GPR.Util is
       Shared         : Shared_Project_Tree_Data_Access;
       Main           : File_Name_Type;
       Index          : Int;
-      Ada_Main       : Boolean := True;
       Language       : String := "";
       Include_Suffix : Boolean := True) return File_Name_Type;
    --  Return the value of the attribute Builder'Executable for file Main in
@@ -79,15 +78,14 @@ package GPR.Util is
    --  Executable_Suffix is specified, add this suffix, otherwise add the
    --  standard executable suffix for the platform.
    --
+   --  Language is the name of the programing language of the Main.
+   --
    --  If Include_Suffix is true, then the ".exe" suffix (or any suffix defined
    --  in the config) will be added. The suffix defined by the user in his own
    --  project file is always taken into account. Otherwise, such a suffix is
    --  not added. In particular, the prefix should not be added if you are
    --  potentially testing for cross-platforms, since the suffix might not be
    --  known (its default value comes from the ...-gnatmake prefix).
-   --
-   --  What is Ada_Main???
-   --  What is Language???
 
    procedure Expect (The_Token : Token_Type; Token_Image : String);
    --  Check that the current token is The_Token. If it is not, then output

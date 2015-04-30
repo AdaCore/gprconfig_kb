@@ -28,7 +28,6 @@ with Gprexch;        use Gprexch;
 with GPR.Opt;        use GPR.Opt;
 with GPR.Osint;
 with GPR.Names;      use GPR.Names;
-with GPR.Snames;
 with GPR.Util;       use GPR.Util;
 
 package body Gprclean is
@@ -930,9 +929,7 @@ package body Gprclean is
                          (Project  => Project,
                           Shared   => Project_Tree.Shared,
                           Main     => Main_File.File,
-                          Index    => Main_File.Index,
-                          Ada_Main =>
-                            Main_File.Source.Language.Name = Snames.Name_Ada);
+                          Index    => Main_File.Index);
 
                      declare
                         Exec_File_Name : constant String :=

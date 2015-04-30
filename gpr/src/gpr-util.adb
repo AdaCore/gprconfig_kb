@@ -211,7 +211,6 @@ package body GPR.Util is
       Shared   : Shared_Project_Tree_Data_Access;
       Main     : File_Name_Type;
       Index    : Int;
-      Ada_Main : Boolean := True;
       Language : String := "";
       Include_Suffix : Boolean := True) return File_Name_Type
    is
@@ -319,9 +318,7 @@ package body GPR.Util is
    --  Start of processing for Executable_Of
 
    begin
-      if Ada_Main then
-         Lang := Get_Language_From_Name (Project, "ada");
-      elsif Language /= "" then
+      if Language /= "" then
          Lang := Get_Language_From_Name (Project, Language);
       end if;
 
@@ -332,7 +329,7 @@ package body GPR.Util is
       end if;
 
       if Builder_Package /= No_Package then
-         if Executable = Nil_Variable_Value and then Ada_Main then
+         if Executable = Nil_Variable_Value then
             Get_Name_String (Main);
 
             --  Try as index the name minus the implementation suffix or minus

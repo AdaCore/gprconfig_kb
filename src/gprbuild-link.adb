@@ -1595,7 +1595,6 @@ package body Gprbuild.Link is
             Shared   => Main_File.Tree.Shared,
             Main     => Main_Id,
             Index    => Main_Source.Index,
-            Ada_Main => False,
             Language => Get_Name_String (Main_Source.Language.Name));
       end if;
 
