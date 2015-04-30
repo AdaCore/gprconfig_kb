@@ -5229,7 +5229,7 @@ package body GPR.Nmsc is
 
       function Is_Reserved (Name : Name_Id) return Boolean is
       begin
-         if Name in Name_Abort .. Name_External_As_List then
+         if Name in Reserved_Ada_95 then
             Unit := No_Name;
             Debug_Output ("project reserved word: ", Name);
             return True;
