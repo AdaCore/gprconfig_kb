@@ -2397,7 +2397,7 @@ begin
         and then not Main_Project.Externally_Built
       then
          Write_Program_Name;
-         Put_Line (": no sources to compile");
+         Put_Line ("no sources to compile");
       end if;
 
       Finish_Program (Project_Tree, E_Success);
