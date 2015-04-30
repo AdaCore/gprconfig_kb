@@ -7637,7 +7637,11 @@ package body GPR.Nmsc is
    begin
       while Pattern_Id /= Nil_String loop
          Element := Shared.String_Elements.Table (Pattern_Id);
-         Find_Pattern (Element.Value, Rank, Element.Location);
+
+         if Element.Value /= No_Name then
+            Find_Pattern (Element.Value, Rank, Element.Location);
+         end if;
+
          Rank := Rank + 1;
          Pattern_Id := Element.Next;
       end loop;
