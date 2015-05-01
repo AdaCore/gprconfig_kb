@@ -2271,6 +2271,8 @@ private
       --  gnatmake only
    end record;
 
+   Executable_Extension_On_Target : Name_Id := No_Name;
+
    --  The following type is used to hold processing flags which show what
    --  functions are required for the various tools that are handled.
 

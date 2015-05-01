@@ -265,22 +265,21 @@ package body GPR.Err is
 
       if Brief_Output or not Verbose_Mode then
          E := First_Error_Msg;
+         Set_Output (File => Standard_Error);
 
          while E /= No_Error_Msg loop
             if not Errors.Table (E).Deleted then
                if Full_Path_Name_For_Brief_Errors then
-                  Put (Standard_Error,
-                       Get_Name_String
+                  Put (Get_Name_String
                        (Full_Ref_Name (Errors.Table (E).Sfile)));
                else
-                  Put (Standard_Error,
-                       Get_Name_String
+                  Put (Get_Name_String
                          (Reference_Name (Errors.Table (E).Sfile)));
                end if;
 
-               Put (Standard_Error, ':');
-               Write_Int (Int (Errors.Table (E).Line), Standard_Error);
-               Put (Standard_Error, ':');
+               Put (':');
+               Write_Int (Int (Errors.Table (E).Line));
+               Put (':');
 
                if Errors.Table (E).Col < 10 then
                   Put ('0');
@@ -294,6 +293,8 @@ package body GPR.Err is
 
             E := Errors.Table (E).Next;
          end loop;
+
+         Set_Output (File => Standard_Output);
       end if;
 
       --  Verbose mode (error lines only with error flags)

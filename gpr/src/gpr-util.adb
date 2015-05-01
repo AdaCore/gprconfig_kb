@@ -48,8 +48,6 @@ package body GPR.Util is
 
    Program_Name : String_Access := null;
 
-   Executable_Extension_On_Target : Name_Id := No_Name;
-
    package Source_Info_Table is new GNAT.Table
      (Table_Component_Type => Source_Info_Iterator,
       Table_Index_Type     => Natural,

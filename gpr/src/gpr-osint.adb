@@ -89,12 +89,12 @@ package body GPR.Osint is
          return No_File;
       end if;
 
-      --  if Executable_Extension_On_Target = No_Name then
-      Exec_Suffix := Get_Target_Executable_Suffix;
-      --  else
-      --     Get_Name_String (Executable_Extension_On_Target);
-      --     Exec_Suffix := new String'(Name_Buffer (1 .. Name_Len));
-      --  end if;
+      if Executable_Extension_On_Target = No_Name then
+         Exec_Suffix := Get_Target_Executable_Suffix;
+      else
+         Get_Name_String (Executable_Extension_On_Target);
+         Exec_Suffix := new String'(Name_Buffer (1 .. Name_Len));
+      end if;
 
       if Exec_Suffix'Length /= 0 then
          Get_Name_String (Name);

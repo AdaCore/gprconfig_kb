@@ -929,7 +929,9 @@ package body Gprclean is
                          (Project  => Project,
                           Shared   => Project_Tree.Shared,
                           Main     => Main_File.File,
-                          Index    => Main_File.Index);
+                          Index    => Main_File.Index,
+                          Language =>
+                            Get_Name_String (Main_File.Source.Language.Name));
 
                      declare
                         Exec_File_Name : constant String :=
