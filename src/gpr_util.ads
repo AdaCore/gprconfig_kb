@@ -1,19 +1,22 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                             G P R _ U T I L                              --
 --                                                                          --
---                     Copyright (C) 2007-2015, AdaCore                     --
+--                                 S p e c                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2007-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 --  This package contains constants, variable and subprograms used by gprbuild
@@ -25,9 +28,11 @@ with GNAT.HTable;
 with GNAT.MD5;     use GNAT.MD5;
 with GNAT.OS_Lib;  use GNAT.OS_Lib;
 
-with GPR.ALI;
-with GPR;       use GPR;
-with GPR.Tree;  use GPR.Tree;
+with ALI;
+with Namet;    use Namet;
+with Prj;      use Prj;
+with Prj.Tree; use Prj.Tree;
+with Types;
 
 package Gpr_Util is
 
@@ -173,31 +178,6 @@ package Gpr_Util is
    -- Misc --
    ----------
 
-   procedure Create_Sym_Links
-     (Lib_Path    : String;
-      Lib_Version : String;
-      Lib_Dir     : String;
-      Maj_Version : String);
-
-   procedure Display_Usage_Version_And_Help;
-   --  Output the two lines of usage for switches --version and --help
-
-   procedure Display_Version
-     (Tool_Name      : String;
-      Initial_Year   : String;
-      Version_String : String);
-   --  Display version of a tool when switch --version is used
-
-   generic
-      with procedure Usage;
-      --  Print tool-specific part of --help message
-   procedure Check_Version_And_Help_G
-     (Tool_Name      : String;
-      Initial_Year   : String;
-      Version_String : String);
-   --  Check if switches --version or --help is used. If one of this switch is
-   --  used, issue the proper messages and end the process.
-
    procedure Find_Binding_Languages
      (Tree         : Project_Tree_Ref;
       Root_Project : Project_Id);
@@ -231,13 +211,6 @@ package Gpr_Util is
    procedure Look_For_Default_Project;
    --  Check if default.gpr exists in the current directory. If it does, use
    --  it. Otherwise, if there is only one file ending with .gpr, use it.
-
-   function Major_Id_Name
-     (Lib_Filename : String;
-      Lib_Version  : String) return String;
-   --  Returns the major id library file name, if it exists.
-   --  For example, if Lib_Filename is "libtoto.so" and Lib_Version is
-   --  "libtoto.so.1.2", then "libtoto.so.1" is returned.
 
    function Object_Project (Project : Project_Id) return Project_Id;
    --  For a non aggregate project, returns the project.
@@ -339,16 +312,16 @@ package Gpr_Util is
    --  separated list of slave hosts. This routine handle the GPR_SLAVE and
    --  GPR_SLAVES_FILE environment variables.
 
-   function UTC_Time return Stamps.Time_Stamp_Type;
+   function UTC_Time return Types.Time_Stamp_Type;
    --  Returns the UTC time
 
    function Check_Diff
-     (Ts1, Ts2  : Stamps.Time_Stamp_Type;
+     (Ts1, Ts2  : Types.Time_Stamp_Type;
       Max_Drift : Duration := 5.0) return Boolean;
    --  Check two time stamps, returns True if both time are in a range of
    --  Max_Drift seconds maximum.
 
-   function To_Time_Stamp (Time : Calendar.Time) return Stamps.Time_Stamp_Type;
+   function To_Time_Stamp (Time : Calendar.Time) return Types.Time_Stamp_Type;
    --  Returns Time as a time stamp type
 
    --  Compiler and package substitutions
@@ -367,11 +340,11 @@ package Gpr_Util is
    Compiler_Pkg_Subst_Option : constant String := "--compiler-pkg-subst=";
 
    package Compiler_Subst_HTable is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
+     (Header_Num => Prj.Header_Num,
       Element    => Name_Id,
       No_Element => No_Name,
       Key        => Name_Id,
-      Hash       => GPR.Hash,
+      Hash       => Prj.Hash,
       Equal      => "=");
    --  A hash table to get the compiler to substitute from the from the
    --  language name. For example, if the command line option

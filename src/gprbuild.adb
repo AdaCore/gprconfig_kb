@@ -1,33 +1,35 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                             G P R B U I L D                              --
 --                                                                          --
---                     Copyright (C) 2004-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2004-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Text_IO;       use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with Gpr_Util;  use Gpr_Util;
-with GPR.Names; use GPR.Names;
-with GPR.Util;  use GPR.Util;
+with Output;      use Output;
+with Gpr_Util;    use Gpr_Util;
 
 package body Gprbuild is
 
    package Processed_Projects is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
+     (Header_Num => Prj.Header_Num,
       Element    => Boolean,
       No_Element => False,
       Key        => Name_Id,
@@ -233,11 +235,11 @@ package body Gprbuild is
          Change_Dir (Get_Name_String (Proj.Object_Directory.Display_Name));
 
          if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
-            Put  ("Changing to object directory of """);
+            Write_Str  ("Changing to object directory of """);
             Write_Name (Proj.Display_Name);
-            Put  (""": """);
+            Write_Str  (""": """);
             Write_Name (Proj.Object_Directory.Display_Name);
-            Put_Line ("""");
+            Write_Line ("""");
          end if;
       end if;
 
@@ -387,15 +389,15 @@ package body Gprbuild is
         and then Opt.Verbose_Mode
         and then Current_Verbosity = High
       then
-         Put ("   ");
-         Put (Outstanding_Processes'Img);
-         Put (' ');
-         Put (Name);
+         Write_Str ("   ");
+         Write_Str (Outstanding_Processes'Img);
+         Write_Char (' ');
+         Write_Str (Name);
 
          if Outstanding_Processes <= 1 then
-            Put_Line (" process");
+            Write_Line (" process");
          else
-            Put_Line (" processes");
+            Write_Line (" processes");
          end if;
       end if;
    end Display_Processes;

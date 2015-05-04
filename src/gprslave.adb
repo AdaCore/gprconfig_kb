@@ -1,19 +1,22 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                             G P R S L A V E                              --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Calendar.Formatting;
@@ -36,15 +39,28 @@ with Ada.Unchecked_Deallocation;
 with Interfaces;
 with System.Multiprocessors;                use System;
 
-with GNAT.Command_Line;       use GNAT;
+with Csets;                         use Csets;
+with Gnatvsn;                       use Gnatvsn;
+with Namet;                         use Namet;
+with Opt;                           use Opt;
+with Prj;                           use Prj;
+with Prj.Env;                       use Prj.Env;
+with Prj.Part;                      use Prj.Part;
+with Prj.Proc;                      use Prj.Proc;
+with Prj.Tree;                      use Prj.Tree;
+with Snames;                        use Snames;
+with Switch;                        use Switch;
+with Types;
+
+with GNAT.Command_Line;             use GNAT;
 with GNAT.CRC32;
 with GNAT.Exception_Traces;
-with GNAT.OS_Lib;             use GNAT.OS_Lib;
-with GNAT.Sockets;            use GNAT.Sockets;
-with GNAT.String_Split;       use GNAT.String_Split;
+with GNAT.OS_Lib;                   use GNAT.OS_Lib;
+with GNAT.Sockets;                  use GNAT.Sockets;
+with GNAT.String_Split;             use GNAT.String_Split;
 with GNAT.Strings;
-with GNAT.Traceback.Symbolic; use GNAT.Traceback;
-                              use GNAT.Traceback.Symbolic;
+with GNAT.Traceback.Symbolic;       use GNAT.Traceback;
+                                    use GNAT.Traceback.Symbolic;
 
 with Gpr_Util;                      use Gpr_Util;
 with GPR_Version;
@@ -52,14 +68,6 @@ with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Process;  use Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with GprConfig.Knowledge;           use GprConfig.Knowledge;
-with GPR;                           use GPR;
-with GPR.Opt;                       use GPR.Opt;
-with GPR.Env;                       use GPR.Env;
-with GPR.Names;                     use GPR.Names;
-with GPR.Part;                      use GPR.Part;
-with GPR.Proc;                      use GPR.Proc;
-with GPR.Tree;                      use GPR.Tree;
-with GPR.Snames;                    use GPR.Snames;
 
 procedure Gprslave is
 
@@ -1057,24 +1065,24 @@ procedure Gprslave is
 
          procedure Look_Driver (Project_Name : String; Is_Config : Boolean) is
             Project_Node_Tree : Project_Node_Tree_Ref;
-            Project_Node      : Project_Node_Id := Empty_Project_Node;
+            Project_Node      : Project_Node_Id := Empty_Node;
             Project_Tree      : Project_Tree_Ref;
             Project           : Project_Id;
          begin
             Project_Node_Tree := new Project_Node_Tree_Data;
-            GPR.Tree.Initialize (Project_Node_Tree);
+            Prj.Tree.Initialize (Project_Node_Tree);
 
-            GPR.Part.Parse
+            Prj.Part.Parse
               (Project_Node_Tree, Project_Node,
                Project_Name,
-               Errout_Handling   => GPR.Part.Finalize_If_Error,
+               Errout_Handling   => Prj.Part.Finalize_If_Error,
                Packages_To_Check => null,
                Is_Config_File    => Is_Config,
                Target_Name       => To_String (Builder.Target),
                Env               => Env);
 
             Project_Tree := new Project_Tree_Data;
-            GPR.Initialize (Project_Tree);
+            Prj.Initialize (Project_Tree);
 
             Proc.Process
               (Project_Tree, Project, null, Success,
@@ -1171,10 +1179,10 @@ procedure Gprslave is
             Generate_Configuration
               (Base, Compilers, "slave_tmp.cgpr", To_String (Builder.Target));
 
-            GPR.Tree.Initialize (Env, GPR.Gprbuild_Flags);
-            GPR.Initialize (GPR.No_Project_Tree);
+            Prj.Tree.Initialize (Env, Prj.Gprbuild_Flags);
+            Prj.Initialize (Prj.No_Project_Tree);
 
-            GPR.Env.Initialize_Default_Project_Path
+            Prj.Env.Initialize_Default_Project_Path
               (Env.Project_Path, Target_Name => To_String (Builder.Target));
 
             --  Parse it to find the driver for this language
@@ -1694,7 +1702,7 @@ procedure Gprslave is
    ---------------------
 
    procedure Wait_For_Master is
-      use Stamps;
+      use Types;
 
       procedure Sync_Gpr (Builder : in out Build_Master);
 
@@ -1946,7 +1954,7 @@ procedure Gprslave is
 
          Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
 
-         if To_String (Version) /= GPR_Version.Gpr_Version_String then
+         if To_String (Version) /= Gnat_Static_Version_String then
             Message
               (Builder, "Reject non compatible build for "
                & To_String (Builder.Project_Name));
@@ -2064,6 +2072,8 @@ begin
 
    --  Initialize the project support
 
+   Namet.Initialize;
+   Csets.Initialize;
    Snames.Initialize;
 
    Parse_Knowledge_Base (Base, Default_Knowledge_Base_Directory);

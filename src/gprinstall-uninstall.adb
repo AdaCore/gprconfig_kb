@@ -1,19 +1,22 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                 G P R I N S T A L L . U N I N S T A L L                  --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Indefinite_Ordered_Sets; use Ada;
@@ -22,10 +25,11 @@ with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.MD5; use GNAT.MD5;
 
-with Gpr_Util;  use Gpr_Util;
-with GPR.Opt;
-with GPR.Osint; use GPR;
-with GPR.Util;  use GPR.Util;
+with Gpr_Util; use Gpr_Util;
+
+with Opt;
+with Osint;
+with Output; use Output;
 
 package body Gprinstall.Uninstall is
 
@@ -122,7 +126,7 @@ package body Gprinstall.Uninstall is
          Success : Boolean;
       begin
          if Dry_Run then
-            Put_Line ("delete " & Filename);
+            Write_Line ("delete " & Filename);
 
          else
             Delete_File (Filename, Success);
@@ -167,13 +171,13 @@ package body Gprinstall.Uninstall is
 
       if not Exists (Name) then
          if not Opt.Quiet_Output then
-            Fail_Program (Project_Tree, "Project " & Name & " not found.");
+            Osint.Fail ("Project " & Name & " not found.");
          end if;
          Osint.Exit_Program (Osint.E_Errors);
       end if;
 
       if not Opt.Quiet_Output then
-         Put_Line ("Uninstall project " & Install_Name);
+         Write_Line ("Uninstall project " & Install_Name);
       end if;
 
       --  Check each file to be deleted
@@ -230,7 +234,7 @@ package body Gprinstall.Uninstall is
 
       else
          if not Opt.Quiet_Output then
-            Put_Line ("Following files have been changed:");
+            Write_Line ("Following files have been changed:");
 
             declare
                procedure Display (Position : File_Set.Cursor);
@@ -244,7 +248,7 @@ package body Gprinstall.Uninstall is
                   F_Name : constant String := File_Set.Element (Position);
                begin
                   if not Files.Contains (F_Name) then
-                     Put_Line (F_Name);
+                     Write_Line (F_Name);
                   end if;
                end Display;
 
@@ -252,7 +256,7 @@ package body Gprinstall.Uninstall is
                Changed.Iterate (Display'Access);
             end;
 
-            Put_Line ("use option -f to force file deletion.");
+            Write_Line ("use option -f to force file deletion.");
          end if;
       end if;
    end Process;

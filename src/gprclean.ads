@@ -1,28 +1,31 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                             G P R C L E A N                              --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                                 S p e c                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 --  This package contains the implementation of gprclean.
 --  See gprclean.adb
 
 with GNAT.OS_Lib; use GNAT.OS_Lib;
-with GNAT.Table;
 
-with GPR; use GPR;
+with Prj;    use Prj;
+with Table;
 
 package Gprclean is
 
@@ -62,12 +65,13 @@ private
    --  Set to True when option -r is used, so that all projects in the project
    --  tree are cleaned.
 
-   package Processed_Projects is new GNAT.Table
+   package Processed_Projects is new Table.Table
      (Table_Component_Type => Project_Id,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100);
+      Table_Increment      => 100,
+      Table_Name           => "Cleangpr.Processed_Projects");
    --  Table to keep track of what project files have been processed, when
    --  switch -r is specified.
 

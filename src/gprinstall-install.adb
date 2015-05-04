@@ -1,19 +1,22 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                   G P R I N S T A L L . I N S T A L L                    --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Characters.Handling;                use Ada.Characters.Handling;
@@ -28,15 +31,17 @@ with Ada.Strings.Less_Case_Insensitive;
 with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 with Ada.Text_IO;                            use Ada.Text_IO;
 
-with GNAT.MD5; use GNAT.MD5;
-
+with GNAT.MD5;    use GNAT.MD5;
 with Gpr_Util;    use Gpr_Util;
 with GPR_Version; use GPR_Version;
-with GPR.Opt;
-with GPR.Osint;   use GPR.Osint;
-with GPR.Util;    use GPR.Util;
-with GPR.Names;   use GPR.Names;
-with GPR.Snames;  use GPR.Snames;
+
+with Makeutl;
+with Namet;    use Namet;
+with Opt;
+with Osint;
+with Output;   use Output;
+with Prj.Util; use Prj.Util;
+with Snames;   use Snames;
 
 package body Gprinstall.Install is
 
@@ -45,15 +50,13 @@ package body Gprinstall.Install is
    Installed : Name_Id_Set.Set;
    --  Record already installed project
 
-   Prep_Suffix : constant String := ".prep";
-
    -------------
    -- Process --
    -------------
 
    procedure Process
-     (Tree    : GPR.Project_Tree_Ref;
-      Project : GPR.Project_Id)
+     (Tree    : Project_Tree_Ref;
+      Project : Project_Id)
    is
 
       Windows_Target : constant Boolean :=
@@ -670,32 +673,32 @@ package body Gprinstall.Install is
            and then not Force_Installations
            and then File_MD5 (From) /= File_MD5 (Dest_Filename)
          then
-            Put ("file ");
-            Put (File);
-            Put (" exists, use -f to overwrite");
-            New_Line;
+            Write_Str ("file ");
+            Write_Str (File);
+            Write_Str (" exists, use -f to overwrite");
+            Write_Eol;
             OS_Exit (1);
          end if;
 
          if Dry_Run or else Opt.Verbose_Mode then
             if Sym_Link then
-               Put ("ln -s ");
+               Write_Str ("ln -s ");
             else
-               Put ("cp ");
+               Write_Str ("cp ");
             end if;
 
-            Put (From);
-            Put (" ");
-            Put (Dest_Filename);
-            New_Line;
+            Write_Str (From);
+            Write_Str (" ");
+            Write_Str (Dest_Filename);
+            Write_Eol;
          end if;
 
          if not Dry_Run then
             if not Sym_Link and then not Exists (From) then
-               Put ("file ");
-               Put (From);
-               Put (" does not exist, build may not be complete");
-               New_Line;
+               Write_Str ("file ");
+               Write_Str (From);
+               Write_Str (" does not exist, build may not be complete");
+               Write_Eol;
                OS_Exit (1);
             end if;
 
@@ -710,9 +713,8 @@ package body Gprinstall.Install is
                   end if;
 
                else
-                  Put_Line
-                    (Standard_Error,
-                     "directory does not exist, use -p to create");
+                  Set_Standard_Error;
+                  Write_Line ("directory does not exist, use -p to create");
                   OS_Exit (1);
                end if;
             end if;
@@ -728,13 +730,13 @@ package body Gprinstall.Install is
 
             else
                begin
-                  Ada.Directories.Copy_File
+                  Directories.Copy_File
                     (Source_Name => From,
                      Target_Name => Dest_Filename,
                      Form        => "preserve=timestamps");
                exception
                   when Text_IO.Use_Error =>
-                     Put_Line
+                     Write_Line
                        ("cannot overwrite file " & Dest_Filename
                         & " check permissions.");
                      OS_Exit (1);
@@ -831,7 +833,7 @@ package body Gprinstall.Install is
                Sid := Element (Iter);
                exit when Sid = No_Source;
 
-               Initialize_Source_Record (Sid);
+               Makeutl.Initialize_Source_Record (Sid);
 
                --  Skip sources that are removed/excluded and sources not
                --  part of the interface for standalone libraries.
@@ -916,7 +918,7 @@ package body Gprinstall.Install is
                                     Cat
                                       (Get_Object_Directory
                                          (Sid.Project, False),
-                                       Sid.File) & Prep_Suffix;
+                                       Sid.File) & Osint.Prep_Suffix;
                begin
                   if not Source_Copied.Contains (Name_Id (Sid.Path.Name)) then
                      Source_Copied.Insert (Name_Id (Sid.Path.Name));
@@ -983,7 +985,7 @@ package body Gprinstall.Install is
                K : Natural := Fullname'Last;
             begin
                while K > 0
-                 and then not Is_Directory_Separator (Fullname (K))
+                 and then not Osint.Is_Directory_Separator (Fullname (K))
                loop
                   K := K - 1;
                end loop;
@@ -1001,7 +1003,7 @@ package body Gprinstall.Install is
                K : Natural := Pathname'Last;
             begin
                while K > 0
-                 and then not Is_Directory_Separator (Pathname (K))
+                 and then not Osint.Is_Directory_Separator (Pathname (K))
                loop
                   K := K - 1;
                end loop;
@@ -1014,7 +1016,7 @@ package body Gprinstall.Install is
             end Get_Pattern;
 
          begin
-            Ada.Directories.Search
+            Directories.Search
               (Directory => Get_Directory (Pathname),
                Pattern   => Get_Pattern,
                Process   => Copy_Entry'Access);
@@ -1855,17 +1857,17 @@ package body Gprinstall.Install is
 
       begin
          if Dry_Run or else Opt.Verbose_Mode then
-            New_Line;
-            Put ("Project ");
-            Put (Filename);
+            Write_Eol;
+            Write_Str ("Project ");
+            Write_Str (Filename);
 
             if Dry_Run then
-               Put_Line (" would be installed");
+               Write_Line (" would be installed");
             else
-               Put_Line (" installed");
+               Write_Line (" installed");
             end if;
 
-            New_Line;
+            Write_Eol;
          end if;
 
          --  If project exists, read it and check the generated status
@@ -1891,10 +1893,10 @@ package body Gprinstall.Install is
             end loop Check_Generated_Status;
 
             if not Generated and then not Force_Installations then
-               Put ("non gprinstall project file ");
-               Put (Filename);
-               Put (" exists, use -f to overwrite");
-               New_Line;
+               Write_Str ("non gprinstall project file ");
+               Write_Str (Filename);
+               Write_Str (" exists, use -f to overwrite");
+               Write_Eol;
                OS_Exit (1);
             end if;
          end if;
@@ -1906,7 +1908,7 @@ package body Gprinstall.Install is
             end if;
 
             if Opt.Verbose_Mode then
-               Put_Line ("project file exists, merging new build");
+               Write_Line ("project file exists, merging new build");
             end if;
 
             --  Do merging for new build, we need to add an entry into the
@@ -1931,7 +1933,7 @@ package body Gprinstall.Install is
                         P := Fixed.Index (Line, ");");
 
                         if P = 0 then
-                           Put_Line ("cannot parse the BUILD_KIND line");
+                           Write_Line ("cannot parse the BUILD_KIND line");
                            OS_Exit (1);
 
                         else
@@ -1950,7 +1952,7 @@ package body Gprinstall.Install is
                      P := Fixed.Index (Line, """");
 
                      if P = 0 then
-                        Put_Line ("cannot parse the BUILD line");
+                        Write_Line ("cannot parse the BUILD line");
                         OS_Exit (1);
 
                      else
@@ -1960,7 +1962,7 @@ package body Gprinstall.Install is
                         end loop;
 
                         if Line (L) /= '"' then
-                           Put_Line ("cannot parse the BUILD line");
+                           Write_Line ("cannot parse the BUILD line");
                            OS_Exit (1);
 
                         else
@@ -2262,13 +2264,13 @@ package body Gprinstall.Install is
                         or else Buf (3 .. Message_Digest'Last + 2) /= Prj_Sig)
               and then Install_Name.Default
             then
-               Put_Line
+               Write_Line
                  ("Project already installed, either:");
-               Put_Line
+               Write_Line
                  ("   - uninstall first using --uninstall option");
-               Put_Line
+               Write_Line
                  ("   - install under another name, use --install-name");
-               Put_Line
+               Write_Line
                  ("   - force installation under the same name, "
                   & "use --install-name=" & Install_Name.V.all);
                OS_Exit (1);
@@ -2330,25 +2332,25 @@ package body Gprinstall.Install is
 
          if not Opt.Quiet_Output then
             if Install_Project then
-               Put ("Install");
+               Write_Str ("Install");
             elsif Opt.Verbose_Mode then
-               Put ("Skip");
+               Write_Str ("Skip");
             end if;
 
             if Install_Project or Opt.Verbose_Mode then
-               Put (" project ");
-               Put (Get_Name_String (Project.Display_Name));
+               Write_Str (" project ");
+               Write_Str (Get_Name_String (Project.Display_Name));
                if Build_Name.all /= "default" then
-                  Put (" - " & Build_Name.all);
+                  Write_Str (" - " & Build_Name.all);
                end if;
             end if;
 
             if not Install_Project and Opt.Verbose_Mode then
-               Put (" (not active)");
+               Write_Str (" (not active)");
             end if;
 
             if Install_Project or Opt.Verbose_Mode then
-               New_Line;
+               Write_Eol;
             end if;
          end if;
 

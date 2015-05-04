@@ -1,19 +1,22 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                            G P R C O N F I G                             --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line;
@@ -21,21 +24,17 @@ with Ada.Containers;            use Ada.Containers;
 with Ada.Exceptions;            use Ada.Exceptions;
 with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
-
 with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
-
-with Gpr_Util;            use Gpr_Util;
-with GPR_Version;
-with GprConfig.Knowledge; use GprConfig.Knowledge;
+with GprConfig.Knowledge;       use GprConfig.Knowledge;
 with GprConfig.Sdefault;
-with GPR;                 use GPR;
-with GPR.Names;           use GPR.Names;
-with GPR.Opt;
-with GPR.Util;
+with GPR_Version;
+with Namet;                     use Namet;
+with Opt;
+with Prj;                       use Prj;
+with Switch;
 
 procedure GprConfig.Main is
-
    Default_Output_File : constant String := "default.cgpr";
    --  Name of the configuration file used by gprbuild by default
    --  ??? Should be shared with gprbuild
@@ -58,7 +57,7 @@ procedure GprConfig.Main is
    --  when switch --help is used.
 
    procedure Check_Version_And_Help is
-     new Check_Version_And_Help_G (Usage);
+     new Switch.Check_Version_And_Help_G (Usage);
 
    procedure Display_Compilers_For_Parser
      (Base      : in out Knowledge_Base;
@@ -313,7 +312,7 @@ procedure GprConfig.Main is
 
    procedure Usage is
    begin
-      Display_Usage_Version_And_Help;
+      Switch.Display_Usage_Version_And_Help;
       Put_Line (" --target=target (" & Sdefault.Hostname & " by default)");
       Put_Line
         ("            Select specified target or ""all"" for any target.");
@@ -343,7 +342,7 @@ procedure GprConfig.Main is
    Saved_Verbosity : Verbosity := Default;
 
 begin
-   Util.Set_Program_Name ("gprconfig");
+   Namet.Initialize;
 
    Selected_Target := To_Unbounded_String (Sdefault.Hostname);
 

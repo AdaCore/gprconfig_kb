@@ -1,19 +1,22 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                        G P R B U I L D . L I N K                         --
 --                                                                          --
---                     Copyright (C) 2011-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Deallocation; use Ada;
@@ -22,13 +25,14 @@ with Ada.Text_IO;                use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with Gpr_Build_Util; use Gpr_Build_Util;
-with Gpr_Util;       use Gpr_Util;
-with Gprexch;        use Gprexch;
-with GPR.Debug;      use GPR.Debug;
-with GPR.Util;       use GPR.Util;
-with GPR.Names;      use GPR.Names;
-with GPR.Snames;     use GPR.Snames;
+with Debug;       use Debug;
+with Gpr_Util;    use Gpr_Util;
+with Gprexch;     use Gprexch;
+with Makeutl;     use Makeutl;
+with Osint;       use Osint;
+with Output;      use Output;
+with Prj.Util;    use Prj.Util;
+with Snames;      use Snames;
 
 package body Gprbuild.Link is
 
@@ -116,34 +120,36 @@ package body Gprbuild.Link is
                         Exists         => False);
 
    package Global_Archives_Built is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
+     (Header_Num => Prj.Header_Num,
       Element    => Archive_Data,
       No_Element => No_Archive_Data,
       Key        => Name_Id,
-      Hash       => GPR.Hash,
+      Hash       => Prj.Hash,
       Equal      => "=");
    --  A hash table to record what global archives have been already built
 
-   package Cache_Args is new GNAT.Table
+   package Cache_Args is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 200,
-      Table_Increment      => 100);
+      Table_Increment      => 100,
+      Table_Name           => "Buildgpr.Cache_Args");
    --  A table to cache arguments, to avoid multiple allocation of the same
    --  strings. It is not possible to use a hash table, because String is
    --  an unconstrained type.
 
-   package Rpaths is new GNAT.Table
+   package Rpaths is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 200,
-      Table_Increment      => 50);
+      Table_Increment      => 50,
+      Table_Name           => "Makegpr.Rpaths");
    --  Directories to be put in the run path option
 
    package Library_Dirs is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
+     (Header_Num => Prj.Header_Num,
       Element    => Boolean,
       No_Element => False,
       Key        => Path_Name_Type,
@@ -371,7 +377,7 @@ package body Gprbuild.Link is
                            & Get_Name_String (For_Project.Name) & ".deps";
       --  The name of the archive dependency file for this project
 
-      File : GPR.Util.Text_File;
+      File : Prj.Util.Text_File;
 
       Object_Path  : Path_Name_Type;
       Time_Stamp   : Time_Stamp_Type;
@@ -443,7 +449,7 @@ package body Gprbuild.Link is
          while Project /= No_Project loop
             Iter := For_Each_Source (Project_Tree, Project);
             loop
-               Id := GPR.Element (Iter);
+               Id := Prj.Element (Iter);
                exit when Id = No_Source;
 
                if Is_Compilable (Id)
@@ -568,7 +574,7 @@ package body Gprbuild.Link is
                else
                   Iter := For_Each_Source (Project_Tree, Project);
                   loop
-                     Id := GPR.Element (Iter);
+                     Id := Prj.Element (Iter);
                      exit when Id = No_Source;
 
                      if Object_To_Global_Archive (Id) then
@@ -644,9 +650,9 @@ package body Gprbuild.Link is
 
             if not Need_To_Build then
                if Opt.Verbose_Mode then
-                  Put  ("   Checking ");
-                  Put  (Archive_Name);
-                  Put_Line (" ...");
+                  Write_Str  ("   Checking ");
+                  Write_Str  (Archive_Name);
+                  Write_Line (" ...");
                end if;
 
                --  If the archive does not exist, of course it needs to be
@@ -656,7 +662,7 @@ package body Gprbuild.Link is
                   Need_To_Build := True;
 
                   if Opt.Verbose_Mode then
-                     Put_Line ("      -> archive does not exist");
+                     Write_Line ("      -> archive does not exist");
                   end if;
 
                else
@@ -673,9 +679,9 @@ package body Gprbuild.Link is
                      Need_To_Build := True;
 
                      if Opt.Verbose_Mode then
-                        Put  ("      -> archive dependency file ");
-                        Put  (Archive_Dep_Name);
-                        Put_Line (" does not exist");
+                        Write_Str  ("      -> archive dependency file ");
+                        Write_Str  (Archive_Dep_Name);
+                        Write_Line (" does not exist");
                      end if;
 
                   else
@@ -713,9 +719,9 @@ package body Gprbuild.Link is
                         if Src_Id = No_Source then
                            Need_To_Build := True;
                            if Opt.Verbose_Mode then
-                              Put  ("      -> ");
-                              Put  (Get_Name_String (Object_Path));
-                              Put_Line (" is not an object of any project");
+                              Write_Str  ("      -> ");
+                              Write_Str  (Get_Name_String (Object_Path));
+                              Write_Line (" is not an object of any project");
                            end if;
 
                            exit;
@@ -730,8 +736,8 @@ package body Gprbuild.Link is
                            Need_To_Build := True;
 
                            if Opt.Verbose_Mode then
-                              Put  ("      -> archive dependency file ");
-                              Put_Line (" is truncated");
+                              Write_Str  ("      -> archive dependency file ");
+                              Write_Line (" is truncated");
                            end if;
 
                            exit;
@@ -747,8 +753,8 @@ package body Gprbuild.Link is
                            Need_To_Build := True;
 
                            if Opt.Verbose_Mode then
-                              Put  ("      -> archive dependency file ");
-                              Put_Line
+                              Write_Str  ("      -> archive dependency file ");
+                              Write_Line
                                 (" is incorrectly formatted (time stamp)");
                            end if;
 
@@ -772,27 +778,27 @@ package body Gprbuild.Link is
                            Need_To_Build := True;
 
                            if Opt.Verbose_Mode then
-                              Put  ("      -> time stamp of ");
-                              Put  (Get_Name_String (Object_Path));
-                              Put  (" is incorrect in the archive");
-                              Put_Line (" dependency file");
-                              Put  ("         recorded time stamp: ");
-                              Put_Line (String (Time_Stamp));
-                              Put  ("           actual time stamp: ");
-                              Put_Line (String (Src_Id.Object_TS));
+                              Write_Str  ("      -> time stamp of ");
+                              Write_Str  (Get_Name_String (Object_Path));
+                              Write_Str  (" is incorrect in the archive");
+                              Write_Line (" dependency file");
+                              Write_Str  ("         recorded time stamp: ");
+                              Write_Line (String (Time_Stamp));
+                              Write_Str  ("           actual time stamp: ");
+                              Write_Line (String (Src_Id.Object_TS));
                            end if;
 
                            exit;
 
                         elsif Debug_Flag_T then
-                           Put  ("      -> time stamp of ");
-                           Put  (Get_Name_String (Object_Path));
-                           Put  (" is correct in the archive");
-                           Put_Line (" dependency file");
-                           Put  ("         recorded time stamp: ");
-                           Put_Line (String (Time_Stamp));
-                           Put  ("           actual time stamp: ");
-                           Put_Line (String (Src_Id.Object_TS));
+                           Write_Str  ("      -> time stamp of ");
+                           Write_Str  (Get_Name_String (Object_Path));
+                           Write_Str  (" is correct in the archive");
+                           Write_Line (" dependency file");
+                           Write_Str  ("         recorded time stamp: ");
+                           Write_Line (String (Time_Stamp));
+                           Write_Str  ("           actual time stamp: ");
+                           Write_Line (String (Src_Id.Object_TS));
                         end if;
                      end loop;
 
@@ -809,10 +815,10 @@ package body Gprbuild.Link is
                      Need_To_Build := True;
 
                      if Opt.Verbose_Mode then
-                        Put ("      -> object file ");
-                        Put (Get_Name_String
+                        Write_Str ("      -> object file ");
+                        Write_Str (Get_Name_String
                                    (Source_Indexes (S).Id.Object_Path));
-                        Put_Line (" is not in the dependency file");
+                        Write_Line (" is not in the dependency file");
                      end if;
 
                      exit;
@@ -822,7 +828,7 @@ package body Gprbuild.Link is
 
             if not Need_To_Build then
                if Opt.Verbose_Mode then
-                  Put_Line  ("      -> up to date");
+                  Write_Line  ("      -> up to date");
                end if;
 
                Exists         := True;
@@ -878,7 +884,7 @@ package body Gprbuild.Link is
                   Exists         := False;
 
                   if Opt.Verbose_Mode then
-                     Put_Line ("      -> there is no global archive");
+                     Write_Line ("      -> there is no global archive");
                   end if;
 
                else
@@ -1047,10 +1053,10 @@ package body Gprbuild.Link is
                         Delete_File (Archive_Dep_Name, Success);
                      end if;
 
-                     Put ("global archive for project ");
-                     Put
+                     Write_Str ("global archive for project ");
+                     Write_Str
                        (Get_Name_String (For_Project.Display_Name));
-                     Put_Line (" could not be built");
+                     Write_Line (" could not be built");
                      OK := False;
                      return;
                   end if;
@@ -1085,7 +1091,7 @@ package body Gprbuild.Link is
          --  In Verbose Mode output the full path of the spawned process
 
          if Opt.Verbose_Mode then
-            Put (Path.all);
+            Write_Str (Path.all);
 
          elsif Executable_Suffix'Length > 0
            and then Name'Length > Executable_Suffix'Length
@@ -1103,7 +1109,7 @@ package body Gprbuild.Link is
             Put (Base_Name (Name_Buffer (1 .. Name_Len)));
 
          else
-            Put (Base_Name (Name));
+            Write_Str (Base_Name (Name));
          end if;
 
          --  Display only the arguments for which the display flag is set
@@ -1111,22 +1117,22 @@ package body Gprbuild.Link is
 
          for Arg in 1 .. Last_Argument loop
             if Arguments_Displayed (Arg) then
-               Put (' ');
+               Write_Char (' ');
 
                if Arguments_Simple_Name (Arg) then
-                  Put (Base_Name (Arguments (Arg).all));
+                  Write_Str (Base_Name (Arguments (Arg).all));
 
                else
-                  Put (Arguments (Arg).all);
+                  Write_Str (Arguments (Arg).all);
                end if;
 
             elsif Display_Ellipse then
-               Put (" ...");
+               Write_Str (" ...");
                Display_Ellipse := False;
             end if;
          end loop;
 
-         New_Line;
+         Write_Eol;
       end if;
    end Display_Command;
 
@@ -1160,12 +1166,12 @@ package body Gprbuild.Link is
       begin
          if Proj /= For_Project then
             Linker_Package :=
-              GPR.Util.Value_Of
+              Prj.Util.Value_Of
                 (Name        => Name_Linker,
                  In_Packages => Proj.Decl.Packages,
                  Shared      => Tree.Shared);
             Options :=
-              GPR.Util.Value_Of
+              Prj.Util.Value_Of
                 (Name                    => Name_Ada,
                  Index                   => 0,
                  Attribute_Or_Array_Name => Name_Linker_Options,
@@ -1295,7 +1301,7 @@ package body Gprbuild.Link is
    begin
       Iter := For_Each_Source (Project_Tree);
       loop
-         Src := GPR.Element (Iter);
+         Src := Prj.Element (Iter);
          exit when Src = No_Source;
 
          if Src.Object_Path = Path_Id then
@@ -1550,9 +1556,9 @@ package body Gprbuild.Link is
         Base_Name_Index_For (Main, Main_File.Index, Index_Separator);
 
       if not Linker_Needs_To_Be_Called and then Opt.Verbose_Mode then
-         Put ("   Checking executable for ");
-         Put (Get_Name_String (Main_Source.File));
-         Put_Line (" ...");
+         Write_Str ("   Checking executable for ");
+         Write_Str (Get_Name_String (Main_Source.File));
+         Write_Line (" ...");
       end if;
 
       if Output_File_Name /= null then
@@ -1595,6 +1601,7 @@ package body Gprbuild.Link is
             Shared   => Main_File.Tree.Shared,
             Main     => Main_Id,
             Index    => Main_Source.Index,
+            Ada_Main => False,
             Language => Get_Name_String (Main_Source.Language.Name));
       end if;
 
@@ -1617,7 +1624,7 @@ package body Gprbuild.Link is
          Linker_Needs_To_Be_Called := True;
 
          if Opt.Verbose_Mode then
-            Put_Line ("      -> executable does not exist");
+            Write_Line ("      -> executable does not exist");
          end if;
       end if;
 
@@ -1650,14 +1657,14 @@ package body Gprbuild.Link is
       if not Linker_Needs_To_Be_Called then
          if Main_Object_TS = Empty_Time_Stamp then
             if Opt.Verbose_Mode then
-               Put_Line ("      -> main object does not exist");
+               Write_Line ("      -> main object does not exist");
             end if;
 
             Linker_Needs_To_Be_Called := True;
 
          elsif String (Main_Object_TS) > String (Executable_TS) then
             if Opt.Verbose_Mode then
-               Put_Line
+               Write_Line
                  ("      -> main object more recent than executable");
             end if;
 
@@ -1666,9 +1673,9 @@ package body Gprbuild.Link is
       end if;
 
       if Main_Object_TS = Empty_Time_Stamp then
-         Put ("main object for ");
-         Put (Get_Name_String (Main_Source.File));
-         Put_Line (" does not exist");
+         Write_Str ("main object for ");
+         Write_Str (Get_Name_String (Main_Source.File));
+         Write_Line (" does not exist");
          Record_Failure (Main_File);
          return;
       end if;
@@ -1684,8 +1691,8 @@ package body Gprbuild.Link is
       declare
          The_Packages   : constant Package_Id :=
                             Main_Proj.Decl.Packages;
-         Linker_Package : constant GPR.Package_Id :=
-                            GPR.Util.Value_Of
+         Linker_Package : constant Prj.Package_Id :=
+                            Prj.Util.Value_Of
                               (Name        => Name_Linker,
                                In_Packages => The_Packages,
                                Shared      => Main_File.Tree.Shared);
@@ -1698,7 +1705,7 @@ package body Gprbuild.Link is
          if Linker_Package /= No_Package then
             declare
                Switches_Array : constant Array_Element_Id :=
-                                  GPR.Util.Value_Of
+                                  Prj.Util.Value_Of
                                     (Name      => Name_Leading_Switches,
                                      In_Arrays =>
                                        Main_File.Tree.Shared.Packages.Table
@@ -1708,7 +1715,7 @@ package body Gprbuild.Link is
 
             begin
                Switches :=
-                 GPR.Util.Value_Of
+                 Prj.Util.Value_Of
                    (Index     => Name_Id (Main_Id),
                     Src_Index => 0,
                     In_Array  => Switches_Array,
@@ -1716,7 +1723,7 @@ package body Gprbuild.Link is
 
                if Switches = Nil_Variable_Value then
                   Switches :=
-                    GPR.Util.Value_Of
+                    Prj.Util.Value_Of
                       (Index                  =>
                            Main_Source.Language.Name,
                        Src_Index              => 0,
@@ -1727,7 +1734,7 @@ package body Gprbuild.Link is
 
                if Switches = Nil_Variable_Value then
                   Switches :=
-                    GPR.Util.Value_Of
+                    Prj.Util.Value_Of
                       (Index                  => All_Other_Names,
                        Src_Index              => 0,
                        In_Array               => Switches_Array,
@@ -1739,7 +1746,7 @@ package body Gprbuild.Link is
                   when Undefined | Single =>
                      null;
 
-                  when GPR.List =>
+                  when Prj.List =>
                      Switch_List := Switches.Values;
 
                      while Switch_List /= Nil_String loop
@@ -1791,9 +1798,9 @@ package body Gprbuild.Link is
                      Linker_Needs_To_Be_Called := True;
 
                      if Opt.Verbose_Mode then
-                        Put ("      -> binder exchange file """);
-                        Put (Exchange_File_Name);
-                        Put_Line (""" is more recent than executable");
+                        Write_Str ("      -> binder exchange file """);
+                        Write_Str (Exchange_File_Name);
+                        Write_Line (""" is more recent than executable");
                      end if;
                   end if;
 
@@ -1869,12 +1876,12 @@ package body Gprbuild.Link is
                      if not Linker_Needs_To_Be_Called
                        and then Opt.Verbose_Mode
                      then
-                        Put_Line
+                        Write_Line
                           ("      -> no binder generated object file");
                      end if;
 
-                     Put ("no binder generated object file for ");
-                     Put_Line (Get_Name_String (Main_File.File));
+                     Write_Str ("no binder generated object file for ");
+                     Write_Line (Get_Name_String (Main_File.File));
                      Record_Failure (Main_File);
                      return;
 
@@ -1885,16 +1892,16 @@ package body Gprbuild.Link is
                      Linker_Needs_To_Be_Called := True;
 
                      if Opt.Verbose_Mode then
-                        Put_Line
+                        Write_Line
                           ("      -> binder generated object is more " &
                              "recent than executable");
                      end if;
                   end if;
 
                else
-                  Put ("binder exchange file ");
-                  Put (Exchange_File_Name);
-                  Put_Line (" does not exist");
+                  Write_Str ("binder exchange file ");
+                  Write_Str (Exchange_File_Name);
+                  Write_Line (" does not exist");
                   Record_Failure (Main_File);
                   return;
                end if;
@@ -1918,12 +1925,12 @@ package body Gprbuild.Link is
             if not Linker_Needs_To_Be_Called
               and then Opt.Verbose_Mode
             then
-               Put_Line ("      -> global archive does not exist");
+               Write_Line ("      -> global archive does not exist");
             end if;
 
-            Put ("global archive for project file ");
-            Put (Get_Name_String (Main_Proj.Name));
-            Put_Line (" does not exist");
+            Write_Str ("global archive for project file ");
+            Write_Str (Get_Name_String (Main_Proj.Name));
+            Write_Line (" does not exist");
          end if;
       end if;
 
@@ -1933,7 +1940,7 @@ package body Gprbuild.Link is
          Linker_Needs_To_Be_Called := True;
 
          if Opt.Verbose_Mode then
-            Put_Line ("      -> global archive has just been built");
+            Write_Line ("      -> global archive has just been built");
          end if;
       end if;
 
@@ -1944,7 +1951,7 @@ package body Gprbuild.Link is
          Linker_Needs_To_Be_Called := True;
 
          if Opt.Verbose_Mode then
-            Put_Line ("      -> global archive is more recent than " &
+            Write_Line ("      -> global archive is more recent than " &
                           "executable");
          end if;
       end if;
@@ -2015,9 +2022,9 @@ package body Gprbuild.Link is
                      Linker_Needs_To_Be_Called := True;
 
                      if Opt.Verbose_Mode then
-                        Put ("      -> library file """);
-                        Put (Name_Buffer (1 .. Name_Len));
-                        Put_Line (""" not found");
+                        Write_Str ("      -> library file """);
+                        Write_Str (Name_Buffer (1 .. Name_Len));
+                        Write_Line (""" not found");
                      end if;
 
                      exit;
@@ -2026,9 +2033,9 @@ package body Gprbuild.Link is
                      Linker_Needs_To_Be_Called := True;
 
                      if Opt.Verbose_Mode then
-                        Put ("      -> library file """);
-                        Put (Name_Buffer (1 .. Name_Len));
-                        Put_Line
+                        Write_Str ("      -> library file """);
+                        Write_Str (Name_Buffer (1 .. Name_Len));
+                        Write_Line
                           (""" is more recent than executable");
                      end if;
 
@@ -2043,7 +2050,7 @@ package body Gprbuild.Link is
 
       if not Linker_Needs_To_Be_Called then
          if Opt.Verbose_Mode then
-            Put_Line ("      -> up to date");
+            Write_Line ("      -> up to date");
 
          elsif not Opt.Quiet_Output then
             Inform (Exec_Name, "up to date");
@@ -2139,8 +2146,8 @@ package body Gprbuild.Link is
             The_Packages : constant Package_Id :=
                              Main_Proj.Decl.Packages;
 
-            Linker_Package : constant GPR.Package_Id :=
-                               GPR.Util.Value_Of
+            Linker_Package : constant Prj.Package_Id :=
+                               Prj.Util.Value_Of
                                  (Name        => Name_Linker,
                                   In_Packages => The_Packages,
                                   Shared      => Main_File.Tree.Shared);
@@ -2153,14 +2160,14 @@ package body Gprbuild.Link is
             if Linker_Package /= No_Package then
                declare
                   Defaults       : constant Array_Element_Id :=
-                                     GPR.Util.Value_Of
+                                     Prj.Util.Value_Of
                                        (Name      => Name_Default_Switches,
                                         In_Arrays =>
                                           Main_File.Tree.Shared.Packages.Table
                                             (Linker_Package).Decl.Arrays,
                                         Shared    => Main_File.Tree.Shared);
                   Switches_Array : constant Array_Element_Id :=
-                                     GPR.Util.Value_Of
+                                     Prj.Util.Value_Of
                                        (Name      => Name_Switches,
                                         In_Arrays =>
                                           Main_File.Tree.Shared.Packages.Table
@@ -2170,7 +2177,7 @@ package body Gprbuild.Link is
 
                begin
                   Switches :=
-                    GPR.Util.Value_Of
+                    Prj.Util.Value_Of
                       (Index           => Name_Id (Main_Id),
                        Src_Index       => 0,
                        In_Array        => Switches_Array,
@@ -2179,7 +2186,7 @@ package body Gprbuild.Link is
 
                   if Switches = Nil_Variable_Value then
                      Switches :=
-                       GPR.Util.Value_Of
+                       Prj.Util.Value_Of
                          (Index                  =>
                               Main_Source.Language.Name,
                           Src_Index              => 0,
@@ -2190,7 +2197,7 @@ package body Gprbuild.Link is
 
                   if Switches = Nil_Variable_Value then
                      Switches :=
-                       GPR.Util.Value_Of
+                       Prj.Util.Value_Of
                          (Index                  => All_Other_Names,
                           Src_Index              => 0,
                           In_Array               => Switches_Array,
@@ -2200,7 +2207,7 @@ package body Gprbuild.Link is
 
                   if Switches = Nil_Variable_Value then
                      Switches :=
-                       GPR.Util.Value_Of
+                       Prj.Util.Value_Of
                          (Index     =>
                               Main_Source.Language.Name,
                           Src_Index => 0,
@@ -2212,7 +2219,7 @@ package body Gprbuild.Link is
                      when Undefined | Single =>
                         null;
 
-                     when GPR.List =>
+                     when Prj.List =>
                         Switch_List := Switches.Values;
 
                         while Switch_List /= Nil_String loop
@@ -2281,8 +2288,8 @@ package body Gprbuild.Link is
          declare
             The_Packages   : constant Package_Id :=
               Main_Proj.Decl.Packages;
-            Linker_Package : constant GPR.Package_Id :=
-              GPR.Util.Value_Of
+            Linker_Package : constant Prj.Package_Id :=
+              Prj.Util.Value_Of
                 (Name        => Name_Linker,
                  In_Packages => The_Packages,
                  Shared      => Main_File.Tree.Shared);
@@ -2295,7 +2302,7 @@ package body Gprbuild.Link is
             if Linker_Package /= No_Package then
                declare
                   Switches_Array : constant Array_Element_Id :=
-                    GPR.Util.Value_Of
+                    Prj.Util.Value_Of
                       (Name      => Name_Trailing_Switches,
                        In_Arrays =>
                          Main_File.Tree.Shared.Packages.Table
@@ -2305,7 +2312,7 @@ package body Gprbuild.Link is
 
                begin
                   Switches :=
-                    GPR.Util.Value_Of
+                    Prj.Util.Value_Of
                       (Index     => Name_Id (Main_Id),
                        Src_Index => 0,
                        In_Array  => Switches_Array,
@@ -2313,7 +2320,7 @@ package body Gprbuild.Link is
 
                   if Switches = Nil_Variable_Value then
                      Switches :=
-                       GPR.Util.Value_Of
+                       Prj.Util.Value_Of
                          (Index                  =>
                               Main_Source.Language.Name,
                           Src_Index              => 0,
@@ -2324,7 +2331,7 @@ package body Gprbuild.Link is
 
                   if Switches = Nil_Variable_Value then
                      Switches :=
-                       GPR.Util.Value_Of
+                       Prj.Util.Value_Of
                          (Index                  => All_Other_Names,
                           Src_Index              => 0,
                           In_Array               => Switches_Array,
@@ -2336,7 +2343,7 @@ package body Gprbuild.Link is
                   when Undefined | Single =>
                      null;
 
-                  when GPR.List =>
+                  when Prj.List =>
                      Switch_List := Switches.Values;
 
                      while Switch_List /= Nil_String loop
@@ -2658,7 +2665,7 @@ package body Gprbuild.Link is
          --  a response file if needed.
 
          if Main_Proj.Config.Max_Command_Line_Length > 0
-           and then Main_Proj.Config.Resp_File_Format /= GPR.None
+           and then Main_Proj.Config.Resp_File_Format /= Prj.None
            and then First_Object_Index > 0
          then
             declare
@@ -2940,9 +2947,9 @@ package body Gprbuild.Link is
       elsif Bad_Processes.Last > 1 then
          for J in 1 .. Bad_Processes.Last loop
             Main := Bad_Processes.Table (J);
-            Put ("   link of ");
-            Put (Get_Name_String (Main.File));
-            Put_Line (" failed");
+            Write_Str ("   link of ");
+            Write_Str (Get_Name_String (Main.File));
+            Write_Line (" failed");
          end loop;
 
          Fail_Program (Main.Tree, "*** link phase failed");

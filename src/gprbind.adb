@@ -1,42 +1,45 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                              G P R B I N D                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
 --  gprbind is the executable called by gprmake to bind Ada sources. It is
 --  the driver for gnatbind. It gets its input from gprmake through the
 --  binding exchange file and gives back its results through the same file.
 
-with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
-with Ada.Text_IO;      use Ada.Text_IO;
+with Ada.Text_IO;     use Ada.Text_IO;
 
+with Ada.Command_Line; use Ada.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
-with GNAT.OS_Lib;               use GNAT.OS_Lib;
+with GNAT.OS_Lib;      use GNAT.OS_Lib;
 
-with Gprexch;        use Gprexch;
-with Gpr_Build_Util; use Gpr_Build_Util;
-with Gpr_Util;       use Gpr_Util;
-with GPR;            use GPR;
-with GPR.ALI;        use GPR.ALI;
-with GPR.Names;      use GPR.Names;
-with GPR.Osint;      use GPR.Osint;
-with GPR.Tempdir;
-with GNAT.Table;
-with GPR.Util;       use GPR.Util;
+with ALI;      use ALI;
+with Gprexch;  use Gprexch;
+with Gpr_Util; use Gpr_Util;
+with Makeutl;  use Makeutl;
+with Namet;    use Namet;
+with Osint;
+with Switch;
+with Tempdir;
+with Table;
+with Types;
 
 procedure Gprbind is
 
@@ -161,12 +164,13 @@ procedure Gprbind is
    procedure Add_To_Display_Line (S : String);
    --  Add an argument to the Display_Line
 
-   package Binding_Options_Table is new GNAT.Table
+   package Binding_Options_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100);
+      Table_Increment      => 100,
+      Table_Name           => "Gprbind.Binding_Options_Table");
 
    Binding_Option_Dash_V_Specified : Boolean := False;
    --  Set to True if -v is specified in the binding options
@@ -178,24 +182,26 @@ procedure Gprbind is
    --  Set to True when GNAT_6_Or_Higher is True and if GNAT version is 6.xy
    --  with x >= 4.
 
-   package ALI_Files_Table is new GNAT.Table
+   package ALI_Files_Table is new Table.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100);
+      Table_Increment      => 100,
+      Table_Name           => "Gprbind.ALI_File_Table");
 
    type Path_And_Stamp is record
       Path : String_Access;
       Stamp : String_Access;
    end record;
 
-   package Project_Paths is new GNAT.Table
+   package Project_Paths is new Table.Table
      (Table_Component_Type => Path_And_Stamp,
       Table_Index_Type     => Natural,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100);
+      Table_Increment      => 100,
+      Table_Name           => "Gprbind.Project_Paths");
 
    type Bound_File;
    type Bound_File_Access is access Bound_File;
@@ -234,11 +240,11 @@ procedure Gprbind is
    end Add_To_Display_Line;
 
 begin
-   Set_Program_Name ("gprbind");
-
    if Argument_Count /= 1 then
-      Fail_Program (null, "incorrect invocation");
+      Osint.Fail ("incorrect invocation");
    end if;
+
+   Namet.Initialize;
 
    Exchange_File_Name := new String'(Argument (1));
 
@@ -264,7 +270,7 @@ begin
       Open (IO_File, In_File, Exchange_File_Name.all);
    exception
       when others =>
-         Fail_Program (null, "could not read " & Exchange_File_Name.all);
+         Osint.Fail ("could not read " & Exchange_File_Name.all);
    end;
 
    --  Get the information from the binding exchange file
@@ -278,8 +284,7 @@ begin
 
             case Current_Section is
                when No_Binding_Section =>
-                  Fail_Program
-                    (null, "unknown section: " & Line (1 .. Last));
+                  Osint.Fail ("unknown section: " & Line (1 .. Last));
 
                when Quiet =>
                   Quiet_Output := True;
@@ -302,27 +307,24 @@ begin
          else
             case Current_Section is
                when No_Binding_Section =>
-                  Fail_Program
-                    (null, "no section specified: " & Line (1 .. Last));
+                  Osint.Fail ("no section specified: " & Line (1 .. Last));
 
                when Quiet =>
-                  Fail_Program (null, "quiet section should be empty");
+                  Osint.Fail ("quiet section should be empty");
 
                when Verbose =>
-                  Fail_Program (null, "verbose section should be empty");
+                  Osint.Fail ("verbose section should be empty");
 
                when Shared_Libs =>
-                  Fail_Program
-                    (null, "shared libs section should be empty");
+                  Osint.Fail ("shared libs section should be empty");
 
                when Gprexch.There_Are_Stand_Alone_Libraries =>
-                  Fail_Program
-                    (null, "stand-alone libraries section should be empty");
+                  Osint.Fail ("stand-alone libraries section should be empty");
 
                when Gprexch.Main_Base_Name =>
                   if Main_Base_Name /= null then
-                     Fail_Program
-                       (null, "main base name specified multiple times");
+                     Osint.Fail
+                       ("main base name specified multiple times");
                   end if;
 
                   Main_Base_Name := new String'(Line (1 .. Last));
@@ -332,8 +334,8 @@ begin
 
                when Compiler_Path =>
                   if Ada_Compiler_Path /= null then
-                     Fail_Program
-                       (null, "compiler path specified multiple times");
+                     Osint.Fail
+                       ("compiler path specified multiple times");
                   end if;
 
                   Ada_Compiler_Path := new String'(Line (1 .. Last));
@@ -350,8 +352,7 @@ begin
 
                when Main_Dependency_File =>
                   if Main_ALI /= null then
-                     Fail_Program
-                       (null, "main ALI file specified multiple times");
+                     Osint.Fail ("main ALI file specified multiple times");
                   end if;
 
                   Main_ALI := new String'(Line (1 .. Last));
@@ -415,8 +416,7 @@ begin
 
                when Project_Files =>
                   if End_Of_File (IO_File) then
-                     Fail_Program
-                       (null, "no time stamp for " & Line (1 .. Last));
+                     Osint.Fail ("no time stamp for " & Line (1 .. Last));
 
                   else
                      declare
@@ -432,9 +432,8 @@ begin
 
                when Gprexch.Toolchain_Version =>
                   if End_Of_File (IO_File) then
-                     Fail_Program
-                       (null,
-                        "no toolchain version for language " &
+                     Osint.Fail
+                       ("no toolchain version for language " &
                         Line (1 .. Last));
 
                   elsif Line (1 .. Last) = "ada" then
@@ -460,9 +459,8 @@ begin
 
                when Gprexch.Object_File_Suffix =>
                   if End_Of_File (IO_File) then
-                     Fail_Program
-                       (null,
-                        "no object file suffix for language " &
+                     Osint.Fail
+                       ("no object file suffix for language " &
                         Line (1 .. Last));
 
                   elsif Line (1 .. Last) = "ada" then
@@ -485,7 +483,7 @@ begin
    end loop;
 
    if Main_Base_Name = null then
-      Fail_Program (null, "no main base name specified");
+      Osint.Fail ("no main base name specified");
 
    else
       Binder_Generated_File :=
@@ -569,7 +567,7 @@ begin
       Last_Gnatbind_Option);
 
    if not Is_Regular_File (Ada_Compiler_Path.all) then
-      Fail_Program (null, "could not find the Ada compiler");
+      Osint.Fail ("could not find the Ada compiler");
    end if;
 
    if Main_ALI /= null then
@@ -651,19 +649,12 @@ begin
 
       Name_Len := 0;
 
-      declare
-         Path_Of_Gnatbind : String_Access := GNATBIND;
-      begin
+      if Gnatbind_Path_Specified then
+         Osint.Fail ("could not locate " & FULL_GNATBIND.all);
 
-         if Gnatbind_Path_Specified then
-            Path_Of_Gnatbind := FULL_GNATBIND;
-         end if;
-
-         Finish_Program
-           (null,
-            Osint.E_Fatal,
-           "could not locate " & Path_Of_Gnatbind.all);
-      end;
+      else
+         Osint.Fail ("could not locate " & GNATBIND.all);
+      end if;
 
    else
       --  Normalize the path, so that gnaampbind does not complain about not
@@ -846,13 +837,13 @@ begin
                end if;
 
                if Status /= Last_Char then
-                  Fail_Program (null, "disk full");
+                  Osint.Fail ("disk full");
                end if;
 
                Status := Write (FD, EOL (1)'Address, 1);
 
                if Status /= 1 then
-                  Fail_Program (null, "disk full");
+                  Osint.Fail ("disk full");
                end if;
             end loop;
 
@@ -894,7 +885,7 @@ begin
          Delete_File (Get_Name_String (Objects_Path), Success);
       end if;
 
-      Fail_Program (null, "invocation of gnatbind failed");
+      Osint.Fail ("invocation of gnatbind failed");
    end if;
 
    Add (Dash_c, Compiler_Options, Last_Compiler_Option);
@@ -919,6 +910,7 @@ begin
       end if;
 
       declare
+         use Types;
          F : constant File_Name_Type := Name_Find;
          T : Text_Buffer_Ptr;
          A : ALI_Id;
@@ -938,6 +930,7 @@ begin
                 T,
                 Ignore_ED     => False,
                 Err           => False,
+                Ignore_Errors => True,
                 Read_Lines    => "A");
 
          if A /= No_ALI_Id then
@@ -950,12 +943,13 @@ begin
                --  file need to compiled with the same switch.
 
                declare
-                  Arg : String_Access renames Args.Table (Index);
-                  Argv : constant String (1 .. Arg'Length) := Arg.all;
+                  Arg : String_Ptr renames Args.Table (Index);
                begin
-                  if (Argv'Last <= 2 or else Argv (1 .. 2) /= "-I")
-                    and then
-                     (Argv'Last <= 5 or else Argv (1 .. 5) /= "-gnat")
+                  if (not Switch.Is_Front_End_Switch (Arg.all))
+                     or else
+                     (Arg'Length > 5
+                      and then
+                      Arg (Arg'First + 2 .. Arg'First + 5) = "RTS=")
                   then
                      Add
                        (String_Access (Arg),
@@ -1039,7 +1033,7 @@ begin
          Success);
 
       if not Success then
-         Fail_Program (null, "compilation of binder generated file failed");
+         Osint.Fail ("compilation of binder generated file failed");
       end if;
 
       --  Find the GCC version

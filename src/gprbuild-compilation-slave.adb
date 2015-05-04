@@ -1,41 +1,44 @@
 ------------------------------------------------------------------------------
+--                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--           G P R B U I L D . C O M P I L A T I O N . S L A V E            --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                                 B o d y                                  --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
+--         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
+--                                                                          --
+-- This is free software;  you can redistribute it  and/or modify it  under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
+-- License for  more details.  You should have  received  a copy of the GNU --
+-- General  Public  License  distributed  with  this  software;   see  file --
+-- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
+-- of the license.                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Calendar;                use Ada.Calendar;
+with Ada.Calendar;                      use Ada.Calendar;
 with Ada.Containers.Ordered_Sets;
-with Ada.Containers.Vectors;      use Ada;
-with Ada.Directories;             use Ada.Directories;
-with Ada.Exceptions;              use Ada.Exceptions;
-with Ada.Numerics.Float_Random;   use Ada.Numerics.Float_Random;
-with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
-with Ada.Strings.Maps.Constants;  use Ada.Strings;
-with Ada.Strings.Unbounded;       use Ada.Strings.Unbounded;
-with Ada.Text_IO;                 use Ada.Text_IO;
+with Ada.Containers.Vectors;            use Ada;
+with Ada.Directories;                   use Ada.Directories;
+with Ada.Exceptions;                    use Ada.Exceptions;
+with Ada.Numerics.Float_Random;         use Ada.Numerics.Float_Random;
+with Ada.Strings.Fixed;                 use Ada.Strings.Fixed;
+with Ada.Strings.Maps.Constants;        use Ada.Strings;
+with Ada.Strings.Unbounded;             use Ada.Strings.Unbounded;
 
 with GNAT.Sockets;      use GNAT; use GNAT.Sockets;
 with GNAT.String_Split; use GNAT.String_Split;
+
+with Output; use Output;
+with Snames; use Snames;
 
 with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Sync;
-with GPR.Names;                     use GPR.Names;
-with GPR.Snames;                    use GPR.Snames;
 
 package body Gprbuild.Compilation.Slave is
 
@@ -185,16 +188,16 @@ package body Gprbuild.Compilation.Slave is
          begin
             if Kind (Cmd) = OK then
                if Opt.Verbose_Mode then
-                  Put_Line
+                  Write_Line
                     ("Clean-up done on " & To_String (S_Data.Host));
                end if;
 
             elsif Kind (Cmd) = KO then
-               Put_Line ("Slave cannot clean-up " & To_String (S_Data.Host));
+               Write_Line ("Slave cannot clean-up " & To_String (S_Data.Host));
                OS_Exit (1);
 
             else
-               Put_Line
+               Write_Line
                  ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
                OS_Exit (1);
             end if;
@@ -239,7 +242,7 @@ package body Gprbuild.Compilation.Slave is
       S.Data := S_Data;
 
       if S.Data.Host = Null_Unbounded_String then
-         Put_Line ("A slave must have a name, aborting");
+         Write_Line ("A slave must have a name, aborting");
          OS_Exit (1);
       end if;
 
@@ -253,7 +256,7 @@ package body Gprbuild.Compilation.Slave is
       Connect_Socket (Sock, Address, Timeout => 2.0, Status => Status);
 
       if Status in Expired .. Aborted then
-         Put_Line
+         Write_Line
            ("Cannot connect to slave "
             & To_String (S.Data.Host) & ", aborting");
          OS_Exit (1);
@@ -275,13 +278,13 @@ package body Gprbuild.Compilation.Slave is
             S.Root_Dir := To_Unbounded_String (Parameters (2).all);
 
             if not Boolean'Value (Parameters (3).all) then
-               Put_Line
+               Write_Line
                  ("warning: non synchronized clock detected for "
                   & To_String (S.Data.Host));
             end if;
 
          elsif Kind (Cmd) = KO then
-            Put_Line
+            Write_Line
               ((if Parameters'Length = 1
                then Parameters (1).all
                else "build slave is not compatible")
@@ -290,7 +293,7 @@ package body Gprbuild.Compilation.Slave is
             OS_Exit (1);
 
          else
-            Put_Line ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
+            Write_Line ("protocol error: " & Command_Kind'Image (Kind (Cmd)));
             OS_Exit (1);
          end if;
       end;
@@ -344,7 +347,7 @@ package body Gprbuild.Compilation.Slave is
                then
                   Port := Port_Type'Value (V (I + 1 .. V'Last));
                else
-                  Put_Line ("error: invalid port value in " & V);
+                  Write_Line ("error: invalid port value in " & V);
                   OS_Exit (1);
                end if;
             end;
@@ -430,10 +433,10 @@ package body Gprbuild.Compilation.Slave is
          Max_Processes := Max_Processes + S.Max_Processes;
 
          if Opt.Verbose_Mode then
-            Put ("Register slave " & To_String (S_Data.Host) & ",");
-            Put (Integer'Image (S.Max_Processes));
-            Put_Line (" process(es)");
-            Put_Line ("  location: " & To_String (S.Root_Dir));
+            Write_Str ("Register slave " & To_String (S_Data.Host) & ",");
+            Write_Str (Integer'Image (S.Max_Processes));
+            Write_Line (" process(es)");
+            Write_Line ("  location: " & To_String (S.Root_Dir));
          end if;
 
          --  Let's double check that Root_Dir and Projet_Name are not empty,
@@ -441,12 +444,12 @@ package body Gprbuild.Compilation.Slave is
          --  as rsync is using the --delete options.
 
          if Length (S.Root_Dir) = 0 then
-            Put_Line ("error: Root_Dir cannot be empty");
+            Write_Line ("error: Root_Dir cannot be empty");
             OS_Exit (1);
          end if;
 
          if Project_Name = "" then
-            Put_Line ("error: Project_Name cannot be empty");
+            Write_Line ("error: Project_Name cannot be empty");
             OS_Exit (1);
          end if;
 
@@ -508,14 +511,14 @@ package body Gprbuild.Compilation.Slave is
                               if not Exists (To_String (Root_Dir))
                                 or else not Is_Directory (To_String (Root_Dir))
                               then
-                                 Put_Line
+                                 Write_Line
                                    ("error: " & To_String (Root_Dir)
                                     & " is not a directory"
                                     & " or does not exist");
                                  OS_Exit (1);
 
                               else
-                                 Put_Line
+                                 Write_Line
                                    ("root dir : " & To_String (Root_Dir));
                               end if;
                            end;
@@ -545,7 +548,7 @@ package body Gprbuild.Compilation.Slave is
       if Included_Patterns.Length /= 0
         and then Excluded_Patterns.Length /= 0
       then
-         Put_Line
+         Write_Line
            ("error: Excluded_Patterns and Included_Patterns are exclusive");
          OS_Exit (1);
       end if;
@@ -563,9 +566,9 @@ package body Gprbuild.Compilation.Slave is
       Stop := Calendar.Clock;
 
       if Opt.Verbose_Mode then
-         Put ("  All data synchronized in ");
-         Put (Duration'Image (Stop - Start));
-         Put_Line (" seconds");
+         Write_Str ("  All data synchronized in ");
+         Write_Str (Duration'Image (Stop - Start));
+         Write_Line (" seconds");
       end if;
 
       --  We are in remote mode, the initialization was successful, start tasks
@@ -632,9 +635,9 @@ package body Gprbuild.Compilation.Slave is
                         Rewrite         => True,
                         Keep_Time_Stamp => True);
                   else
-                     Put_Line
+                     Write_Line
                        ("File not found " & File_Name);
-                     Put_Line
+                     Write_Line
                        ("Please check that Built_Root is properly set");
                   end if;
 
@@ -681,7 +684,7 @@ package body Gprbuild.Compilation.Slave is
 
    exception
       when E : others =>
-         Put_Line ("Unexpected exception: " & Exception_Information (E));
+         Write_Line ("Unexpected exception: " & Exception_Information (E));
          OS_Exit (1);
    end Run;
 
@@ -888,9 +891,9 @@ package body Gprbuild.Compilation.Slave is
         and then Opt.Verbose_Mode
         and then Slaves.Count > 0
       then
-         Put ("  All data synchronized in ");
-         Put (Duration'Image (Stop - Start));
-         Put_Line (" seconds");
+         Write_Str ("  All data synchronized in ");
+         Write_Str (Duration'Image (Stop - Start));
+         Write_Line (" seconds");
       end if;
 
       Slaves.Clear;
@@ -975,7 +978,7 @@ package body Gprbuild.Compilation.Slave is
                   if Kind (Cmd) = DP then
                      --  Write output to the console
 
-                     Put (To_String (Protocol.Output (Cmd)));
+                     Write_Str (To_String (Protocol.Output (Cmd)));
 
                      Get_Pid (S.Channel, Pid, Success);
 
@@ -1009,7 +1012,7 @@ package body Gprbuild.Compilation.Slave is
 
          else
             if Opt.Verbose_Mode and then Opt.Verbosity_Level = Opt.High then
-               Put_Line
+               Write_Line
                  ("warning: selector in " & Selector_Status'Image (Status)
                   & " state");
             end if;
@@ -1019,7 +1022,7 @@ package body Gprbuild.Compilation.Slave is
       end loop;
    exception
       when E : others =>
-         Put_Line (Exception_Information (E));
+         Write_Line (Exception_Information (E));
          OS_Exit (1);
    end Wait_Remote;
 
