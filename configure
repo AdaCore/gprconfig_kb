@@ -2002,12 +2002,15 @@ echo "${ECHO_T}yes (sources in gprbuild tree)" >&6; }
      mkdir $tmp/lib
      cat > $tmp/conftest.gpr << EOF
 with "xmlada.gpr";
-
 project Conftest is
-  for Source_Dirs use ();
+  for Main use ("main.adb");
 end Conftest;
 EOF
-     if gnatmake -P$tmp/conftest.gpr >&5 2>&1; then
+     cat > $tmp/main.adb << EOF
+procedure Main is
+begin null; end;
+EOF
+     if gprbuild -c -P$tmp/conftest.gpr >&5 2>&1; then
         { echo "$as_me:$LINENO: result: yes (precompiled)" >&5
 echo "${ECHO_T}yes (precompiled)" >&6; }
      else

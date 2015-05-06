@@ -23,12 +23,15 @@ AC_DEFUN(AM_CHECK_XMLADA,
      mkdir $tmp/lib
      cat > $tmp/conftest.gpr << EOF
 with "xmlada.gpr";
-
 project Conftest is
-  for Source_Dirs use ();
+  for Main use ("main.adb");
 end Conftest;
 EOF
-     if gnatmake -P$tmp/conftest.gpr >&AS_MESSAGE_LOG_FD 2>&1; then
+     cat > $tmp/main.adb << EOF
+procedure Main is
+begin null; end;
+EOF
+     if gprbuild -c -P$tmp/conftest.gpr >&5 2>&1; then
         AC_MSG_RESULT(yes (precompiled))
      else
         AC_MSG_RESULT(no)
