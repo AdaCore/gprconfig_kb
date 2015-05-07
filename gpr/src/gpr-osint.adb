@@ -377,7 +377,7 @@ package body GPR.Osint is
 
    function Is_Directory_Separator (C : Character) return Boolean is
    begin
-      return C = Directory_Separator;
+      return C = Directory_Separator or else C = '/';
    end Is_Directory_Separator;
 
    ---------------------

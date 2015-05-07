@@ -229,9 +229,9 @@ package GPR is
    type File_Attributes is
      array (1 .. File_Attributes_Size)
      of System.Storage_Elements.Storage_Element;
-   --  for File_Attributes'Alignment use Standard'Maximum_Alignment; A cache
-   --  for various attributes for a file (length, accessibility,...) This
-   --  must be initialized to Unknown_Attributes prior to the first call.
+   for File_Attributes'Alignment use Standard'Maximum_Alignment;
+   --  A cache for various attributes for a file (length, accessibility,...)
+   --  This must be initialized to Unknown_Attributes prior to the first call.
 
    Unknown_Attributes : constant File_Attributes := (others => 0);
 
