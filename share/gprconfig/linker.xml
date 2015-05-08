@@ -341,6 +341,44 @@
      <targets>
        <target name="^i586-wrs-vxworks$" />
      </targets>
+    <compilers>
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+      <compiler version="6.0" />
+      <compiler version="6.1" />
+      <compiler version="6.2" />
+      <compiler version="6.3" />
+      <compiler version="6.4" />
+    </compilers>
+     <config>
+   for Archive_Builder  use ("arpentium", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlibpentium");
+   for Archive_Suffix   use ".a";
+     </config>
+   </configuration>
+
+   <configuration>
+     <targets>
+       <target name="^i586-wrs-vxworks$" />
+     </targets>
+    <compilers negate="true" >
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+      <compiler version="6.0" />
+      <compiler version="6.1" />
+      <compiler version="6.2" />
+      <compiler version="6.3" />
+      <compiler version="6.4" />
+    </compilers>
      <config>
    for Archive_Builder  use ("i586-wrs-vxworks-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -401,6 +439,44 @@
      <targets>
        <target name="^powerpc-wrs-vxworks$" />
      </targets>
+    <compilers>
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+      <compiler version="6.0" />
+      <compiler version="6.1" />
+      <compiler version="6.2" />
+      <compiler version="6.3" />
+      <compiler version="6.4" />
+    </compilers>
+     <config>
+   for Archive_Builder  use ("arppc", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("ranlibppc");
+   for Archive_Suffix   use ".a";
+     </config>
+   </configuration>
+
+   <configuration>
+     <targets>
+       <target name="^powerpc-wrs-vxworks$" />
+     </targets>
+    <compilers negate="true">
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+      <compiler version="6.0" />
+      <compiler version="6.1" />
+      <compiler version="6.2" />
+      <compiler version="6.3" />
+      <compiler version="6.4" />
+    </compilers>
      <config>
    for Archive_Builder  use ("powerpc-wrs-vxworks-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
