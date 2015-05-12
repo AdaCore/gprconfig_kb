@@ -33,23 +33,23 @@ with GPR.Names; use GPR.Names;
 
 package body GPR.Osint is
 
-   function Is_Regular_File
-     (Name : C_File_Name;
-      Attr : access File_Attributes) return Boolean;
+   Current_Full_Lib_Name     : File_Name_Type  := No_File;
 
    function File_Length
      (Name : C_File_Name;
       Attr : access File_Attributes) return Long_Integer;
    --  Return the length (number of bytes) of the file
 
-   Current_Full_Lib_Name     : File_Name_Type  := No_File;
-
-   function OS_Time_To_GNAT_Time (T : OS_Time) return Time_Stamp_Type;
-
    procedure Find_File
      (N         : File_Name_Type;
       Found     : out File_Name_Type;
       Attr      : access File_Attributes);
+
+   function Is_Regular_File
+     (Name : C_File_Name;
+      Attr : access File_Attributes) return Boolean;
+
+   function OS_Time_To_GNAT_Time (T : OS_Time) return Time_Stamp_Type;
 
    ------------------------------
    -- Canonical_Case_File_Name --
@@ -105,12 +105,9 @@ package body GPR.Osint is
                if Name_Buffer (J) = '.' then
                   Add_Suffix := False;
                   exit;
-
-               elsif Name_Buffer (J) = '/' or else
-                     Name_Buffer (J) = Directory_Separator
-               then
-                  exit;
                end if;
+
+               exit when Is_Directory_Separator (Name_Buffer (J));
             end loop;
          end if;
 
@@ -273,25 +270,6 @@ package body GPR.Osint is
    -- Find_File --
    ---------------
 
---     procedure Find_File
---       (N         : File_Name_Type;
---        Found     : out File_Name_Type)
---     is
---     begin
---        Get_Name_String (N);
---
---        declare
---           Full_Name : constant String := Name_Buffer (1 .. Name_Len);
---
---        begin
---           if not Is_Regular_File (Full_Name) then
---              Found := No_File;
---
---           else
---              Found := N;
---           end if;
---        end;
---     end Find_File;
    procedure Find_File
      (N         : File_Name_Type;
       Found     : out File_Name_Type;
@@ -332,45 +310,6 @@ package body GPR.Osint is
       return Name_Find;
    end Get_Directory;
 
-   ------------------
-   -- Is_Directory --
-   ------------------
-
---     function Is_Directory
---       (Name : C_File_Name; Attr : access File_Attributes) return Boolean
---     is
---     function Internal (N : C_File_Name; A : System.Address) return Integer;
---        pragma Import (C, Internal, "__gnat_is_directory_attr");
---     begin
---        return Internal (Name, Attr.all'Address) /= 0;
---     end Is_Directory;
-
-   ------------------------
-   -- Is_Executable_File --
-   ------------------------
-
---     function Is_Executable_File
---       (Name : C_File_Name; Attr : access File_Attributes) return Boolean
---     is
---     function Internal (N : C_File_Name; A : System.Address) return Integer;
---        pragma Import (C, Internal, "__gnat_is_executable_file_attr");
---     begin
---        return Internal (Name, Attr.all'Address) /= 0;
---     end Is_Executable_File;
-
-   ----------------------
-   -- Is_Readable_File --
-   ----------------------
-
---     function Is_Readable_File
---       (Name : C_File_Name; Attr : access File_Attributes) return Boolean
---     is
---     function Internal (N : C_File_Name; A : System.Address) return Integer;
---        pragma Import (C, Internal, "__gnat_is_readable_file_attr");
---     begin
---        return Internal (Name, Attr.all'Address) /= 0;
---     end Is_Readable_File;
-
    ----------------------------
    -- Is_Directory_Separator --
    ----------------------------
@@ -392,53 +331,6 @@ package body GPR.Osint is
    begin
       return Internal (Name, Attr.all'Address) /= 0;
    end Is_Regular_File;
-
-   ----------------------
-   -- Is_Symbolic_Link --
-   ----------------------
-
---     function Is_Symbolic_Link
---       (Name : C_File_Name; Attr : access File_Attributes) return Boolean
---     is
---     function Internal (N : C_File_Name; A : System.Address) return Integer;
---        pragma Import (C, Internal, "__gnat_is_symbolic_link_attr");
---     begin
---        return Internal (Name, Attr.all'Address) /= 0;
---     end Is_Symbolic_Link;
-
-   ----------------------
-   -- Is_Writable_File --
-   ----------------------
-
---     function Is_Writable_File
---       (Name : C_File_Name; Attr : access File_Attributes) return Boolean
---     is
---     function Internal (N : C_File_Name; A : System.Address) return Integer;
---        pragma Import (C, Internal, "__gnat_is_writable_file_attr");
---     begin
---        return Internal (Name, Attr.all'Address) /= 0;
---     end Is_Writable_File;
-
-   ----------------------
-   -- Object_File_Name --
-   ----------------------
-
---     function Object_File_Name (N : File_Name_Type) return File_Name_Type is
---     begin
---        if N = No_File then
---           return No_File;
---        end if;
---
---        Get_Name_String (N);
---        Name_Len := Name_Len - 4;
---
---        for J in Target_Object_Suffix'Range loop
---           Name_Len := Name_Len + 1;
---           Name_Buffer (Name_Len) := Target_Object_Suffix (J);
---        end loop;
---
---        return Name_Enter;
---     end Object_File_Name;
 
    --------------------------
    -- OS_Time_To_GNAT_Time --
