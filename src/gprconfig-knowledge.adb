@@ -1,22 +1,19 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                            G P R C O N F I G                             --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2006-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Deallocation;
@@ -31,33 +28,35 @@ with Ada.Strings.Fixed;         use Ada.Strings.Fixed;
 with Ada.Strings.Hash;
 with Ada.Strings.Hash_Case_Insensitive;
 with Ada.Text_IO;               use Ada.Text_IO;
-with DOM.Core.Nodes;            use DOM.Core, DOM.Core.Nodes;
-with DOM.Core.Documents;
-with Schema.Dom_Readers;        use Schema.Dom_Readers;
-with Schema.Schema_Readers;     use Schema.Schema_Readers;
-with Schema.Validators;         use Schema.Validators;
-with Input_Sources.File;        use Input_Sources.File;
+
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Expect;               use GNAT.Expect;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Regpat;               use GNAT.Regpat;
 with GNAT.Strings;              use GNAT.Strings;
-with GprConfig.Sdefault;        use GprConfig.Sdefault;
-with Makeutl;                   use Makeutl;
-with Namet;                     use Namet;
-with Opt;
-with Prj;                       use Prj;
-with Sax.Readers;               use Sax.Readers;
+
+with DOM.Core.Nodes;        use DOM.Core, DOM.Core.Nodes;
+with DOM.Core.Documents;
+with Input_Sources.File;    use Input_Sources.File;
+with Sax.Readers;           use Sax.Readers;
+with Schema.Dom_Readers;    use Schema.Dom_Readers;
+with Schema.Schema_Readers; use Schema.Schema_Readers;
+with Schema.Validators;     use Schema.Validators;
+
+with GprConfig.Sdefault; use GprConfig.Sdefault;
+with GPR.Names;          use GPR.Names;
+with GPR.Opt;
+with GPR.Util;           use GPR.Util;
 
 package body GprConfig.Knowledge is
 
    package Known_Languages is new Ada.Containers.Hashed_Maps
-     (Key_Type        => Namet.Name_Id,
-      Element_Type    => Namet.Name_Id,
+     (Key_Type        => Name_Id,
+      Element_Type    => Name_Id,
       Hash            => Hash_Case_Insensitive,
-      Equivalent_Keys => Namet."=",
-      "="             => Namet."=");
+      Equivalent_Keys => "=",
+      "="             => "=");
    Languages_Known : Known_Languages.Map;
    --  Contains all the languages that are described in the database with a
    --  real compiler.
@@ -157,7 +156,7 @@ package body GprConfig.Knowledge is
 
    procedure Get_Words
      (Words                : String;
-      Filter               : Namet.Name_Id;
+      Filter               : Name_Id;
       Separator1           : Character;
       Separator2           : Character;
       Map                  : out String_Lists.List;
@@ -171,11 +170,11 @@ package body GprConfig.Knowledge is
    function Name_As_Directory (Dir : String) return String;
    --  Ensure that Dir ends with a directory separator
 
-   function Get_String_No_Adalib (Str : String) return Namet.Name_Id;
+   function Get_String_No_Adalib (Str : String) return Name_Id;
    --  Return the name without "adalib" at the end
 
-   function Get_String (Str : String) return Namet.Name_Id;
-   function Get_String_Or_No_Name (Str : String) return Namet.Name_Id;
+   function Get_String (Str : String) return Name_Id;
+   function Get_String_Or_No_Name (Str : String) return Name_Id;
    --  Same as Name_Find, but does not require the user to modify
    --  Name_Buffer manually.
    --  The second version returns No_Name is the string is empty
@@ -2020,7 +2019,7 @@ package body GprConfig.Knowledge is
 
    procedure Get_Words
      (Words                : String;
-      Filter               : Namet.Name_Id;
+      Filter               : Name_Id;
       Separator1           : Character;
       Separator2           : Character;
       Map                  : out String_Lists.List;
@@ -3513,7 +3512,7 @@ package body GprConfig.Knowledge is
    -- Get_String --
    ----------------
 
-   function Get_String (Str : String) return Namet.Name_Id is
+   function Get_String (Str : String) return Name_Id is
    begin
       Name_Len := Str'Length;
       Name_Buffer (1 .. Name_Len) := Str;
@@ -3524,7 +3523,7 @@ package body GprConfig.Knowledge is
    -- Get_String_No_Adalib --
    --------------------------
 
-   function Get_String_No_Adalib (Str : String) return Namet.Name_Id is
+   function Get_String_No_Adalib (Str : String) return Name_Id is
       Name : constant String (1 .. Str'Length) := Str;
       Last : Natural := Name'Last;
    begin
@@ -3554,7 +3553,7 @@ package body GprConfig.Knowledge is
    -- Get_String_Or_No_Name --
    ---------------------------
 
-   function Get_String_Or_No_Name (Str : String) return Namet.Name_Id is
+   function Get_String_Or_No_Name (Str : String) return Name_Id is
    begin
       if Str = "" then
          return No_Name;
@@ -3570,7 +3569,7 @@ package body GprConfig.Knowledge is
    ---------------------------
 
    function Hash_Case_Insensitive
-     (Name : Namet.Name_Id) return Ada.Containers.Hash_Type is
+     (Name : Name_Id) return Ada.Containers.Hash_Type is
    begin
       return Hash_Type (Name);
    end Hash_Case_Insensitive;
@@ -3934,11 +3933,12 @@ package body GprConfig.Knowledge is
                         ", runtime = " & Get_Name_String (Comp.Runtime));
                   end if;
 
+                  Ada.Command_Line.Set_Exit_Status (1);
+
                   New_Line (Standard_Error);
                end if;
             end;
 
-            Ada.Command_Line.Set_Exit_Status (1);
             Found_All := False;
          end if;
          Next (C);
@@ -4001,14 +4001,14 @@ package body GprConfig.Knowledge is
    function Display_Before (Comp1, Comp2 : Compiler_Access) return Boolean is
 
       type Compare_Type is (Before, Equal, After);
-      function Compare (Name1, Name2 : Namet.Name_Id) return Compare_Type;
+      function Compare (Name1, Name2 : Name_Id) return Compare_Type;
       --  Compare alphabetically two strings
 
       -------------
       -- Compare --
       -------------
 
-      function Compare (Name1, Name2 : Namet.Name_Id) return Compare_Type is
+      function Compare (Name1, Name2 : Name_Id) return Compare_Type is
       begin
          if Name1 = No_Name then
             if Name2 = No_Name then
@@ -4288,7 +4288,7 @@ package body GprConfig.Knowledge is
    -- Target --
    ------------
 
-   function Target (Comp : Compiler) return Namet.Name_Id is
+   function Target (Comp : Compiler) return Name_Id is
    begin
       return Comp.Target;
    end Target;
@@ -4297,10 +4297,10 @@ package body GprConfig.Knowledge is
    -- Runtime_Dir_Of --
    --------------------
 
-   function Runtime_Dir_Of (Comp : Compiler_Access) return Namet.Name_Id is
+   function Runtime_Dir_Of (Comp : Compiler_Access) return Name_Id is
    begin
       if Comp = null then
-         return Namet.No_Name;
+         return No_Name;
 
       else
          return Comp.Runtime_Dir;

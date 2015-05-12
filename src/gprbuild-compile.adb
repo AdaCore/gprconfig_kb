@@ -1,46 +1,39 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                     G P R B U I L D . C O M P I L E                      --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2011-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Indefinite_Ordered_Maps;
-with Ada.Strings.Fixed;         use Ada, Ada.Strings.Fixed;
-with Ada.Strings.Unbounded;     use Ada.Strings.Unbounded;
-with Ada.Text_IO;               use Ada.Text_IO;
+with Ada.Strings.Fixed;                      use Ada, Ada.Strings.Fixed;
+with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
+with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT, GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 
-with Atree;       use Atree;
-with ALI.Util;
-with Gpr_Util;    use Gpr_Util;
-with Makeutl;     use Makeutl;
-with Osint;       use Osint;
-with Output;      use Output;
-with Prj.Env;
-with Prj.Util;    use Prj.Util;
-with Snames;      use Snames;
-with Tempdir;
-
+with Gpr_Build_Util;               use Gpr_Build_Util;
+with Gpr_Util;                     use Gpr_Util;
 with Gprbuild.Compilation.Process; use Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Result;  use Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Slave;
+with GPR.Env;
+with GPR.Names;                    use GPR.Names;
+with GPR.Snames;                   use GPR.Snames;
+with GPR.Tempdir;
+with GPR.Util;                     use GPR.Util;
 
 package body Gprbuild.Compile is
 
@@ -145,17 +138,16 @@ package body Gprbuild.Compile is
       Equal      => "=");
    --  Hash table to keep data for all spawned jobs
 
-   package Naming_Datas is new Table.Table
+   package Naming_Datas is new GNAT.Table
      (Table_Component_Type => Lang_Naming_Data,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.Naming_Datas");
+      Table_Increment      => 100);
    --  Naming data when creating config files
 
    package Imports is new GNAT.HTable.Simple_HTable
-     (Header_Num => Prj.Header_Num,
+     (Header_Num => GPR.Header_Num,
       Element    => Boolean,
       No_Element => False,
       Key        => Project_Id,
@@ -164,21 +156,19 @@ package body Gprbuild.Compile is
    --  When --direct-import-only is used, contains the project ids a non Ada
    --  source is allowed to import source from.
 
-   package Included_Sources is new Table.Table
+   package Included_Sources is new GNAT.Table
      (Table_Component_Type => Source_Id,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.Included_Sources");
+      Table_Increment      => 100);
 
-   package Subunits is new Table.Table
+   package Subunits is new GNAT.Table
      (Table_Component_Type => GNAT.OS_Lib.String_Access,
       Table_Index_Type     => Integer,
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
-      Table_Increment      => 100,
-      Table_Name           => "Makegpr.Subunits");
+      Table_Increment      => 100);
    --  A table to store the subunit names when switch --no-split-units ia used
 
    ------------------------------
@@ -198,7 +188,7 @@ package body Gprbuild.Compile is
          Options : Variable_Value;
          Ignored : Boolean;
       begin
-         Makeutl.Get_Switches
+         Get_Switches
            (Source, Pkg_Name, Project_Tree, Options, Ignored);
 
          if Options /= Nil_Variable_Value then
@@ -419,22 +409,22 @@ package body Gprbuild.Compile is
 
                      if not Opt.Quiet_Output then
                         if Opt.Verbose_Mode then
-                           Write_Str (Exec_Path.all);
+                           Put (Exec_Path.all);
                         else
-                           Write_Str (Exec_Name);
+                           Put (Exec_Name);
                         end if;
 
-                        Write_Str (" ");
+                        Put (" ");
 
                         for Option in 1 .. Compilation_Options.Last loop
                            if Compilation_Options.Visible (Option) then
-                              Write_Str
+                              Put
                                 (Compilation_Options.Options (Option).all);
-                              Write_Str (" ");
+                              Put (" ");
                            end if;
                         end loop;
 
-                        Write_Eol;
+                        New_Line;
                      end if;
 
                      Comp_Data.Process :=
@@ -688,10 +678,10 @@ package body Gprbuild.Compile is
 
       begin
          if Current_Verbosity = High then
-            Write_Str ("Checking project file """);
-            Write_Str (Namet.Get_Name_String (Project.Name));
-            Write_Str (""".");
-            Write_Eol;
+            Put ("Checking project file """);
+            Put (Get_Name_String (Project.Name));
+            Put (""".");
+            New_Line;
          end if;
 
          while Lang_Id /= No_Language_Index loop
@@ -748,9 +738,9 @@ package body Gprbuild.Compile is
                Record_Temp_File (Project_Tree.Shared, File_Name);
 
                if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
-                  Write_Str ("Creating temp file """);
-                  Write_Str (Get_Name_String (File_Name));
-                  Write_Line ("""");
+                  Put ("Creating temp file """);
+                  Put (Get_Name_String (File_Name));
+                  Put_Line ("""");
                end if;
             end if;
          end if;
@@ -822,7 +812,7 @@ package body Gprbuild.Compile is
          end if;
 
          if Current_Verbosity = High then
-            Write_Line (S);
+            Put_Line (S);
          end if;
       end Put_Line;
 
@@ -863,7 +853,7 @@ package body Gprbuild.Compile is
       Iter := For_Each_Source (Project_Tree);
 
       loop
-         Source := Prj.Element (Iter);
+         Source := GPR.Element (Iter);
          exit when Source = No_Source;
 
          if Source.Language.Name = Language
@@ -1165,7 +1155,7 @@ package body Gprbuild.Compile is
                if (Opt.Keep_Going or else Get_Maximum_Processes > 1)
                  and then not Bad_Compilations.Is_Empty
                then
-                  Write_Eol;
+                  New_Line;
 
                   for Index in Bad_Compilations.Iterate loop
                      declare
@@ -1175,19 +1165,19 @@ package body Gprbuild.Compile is
                                    Bad_Compilations_Set.Element (Index);
                      begin
                         if Source /= No_Source then
-                           Write_Str ("   compilation of ");
-                           Write_Str
+                           Put ("   compilation of ");
+                           Put
                              (Get_Name_String (Source.Display_File));
-                           Write_Str (" failed");
+                           Put (" failed");
                            if Slave /= "" then
-                              Write_Str (" on " & Slave);
+                              Put (" on " & Slave);
                            end if;
-                           Write_Eol;
+                           New_Line;
                         end if;
                      end;
                   end loop;
 
-                  Write_Eol;
+                  New_Line;
                end if;
 
                if Opt.Keep_Going and then Project.Qualifier = Aggregate then
@@ -1253,11 +1243,11 @@ package body Gprbuild.Compile is
                                  Include_Path_File      => No_Path);
 
       package Local_Projects_HT is new Simple_HTable
-        (Header_Num => Prj.Header_Num,
+        (Header_Num => GPR.Header_Num,
          Element    => Local_Project_Data,
          No_Element => No_Local_Project_Data,
          Key        => Project_Id,
-         Hash       => Prj.Hash,
+         Hash       => GPR.Hash,
          Equal      => "=");
 
       Local_Projects : Local_Projects_HT.Instance;
@@ -1449,7 +1439,6 @@ package body Gprbuild.Compile is
                     Text,
                     Ignore_ED     => False,
                     Err           => True,
-                    Ignore_Errors => True,
                     Read_Lines    => "W");
                Free (Text);
             end if;
@@ -1459,7 +1448,7 @@ package body Gprbuild.Compile is
             Queue.Insert_Withed_Sources_For (Local_ALI, Source_Identity.Tree);
 
             ALI.Initialize_ALI;
-            ALI.Util.Initialize_ALI_Source;
+            --  ALI.Util.Initialize_ALI_Source;
          end if;
       end Record_ALI_For;
 
@@ -1709,21 +1698,21 @@ package body Gprbuild.Compile is
                                     --  of its project. Report an error and
                                     --  invalidate the compilation.
 
-                                    Write_Char ('"');
-                                    Write_Str
+                                    Put ('"');
+                                    Put
                                       (Get_Name_String
                                          (Src_Data.Id.Path.Display_Name));
-                                    Write_Str (""" cannot import """);
-                                    Write_Str (Src_Name);
-                                    Write_Line (""":");
+                                    Put (""" cannot import """);
+                                    Put (Src_Name);
+                                    Put_Line (""":");
 
-                                    Write_Str
+                                    Put
                                       ("  it is not part of the "
                                        & "interfaces of its project """);
-                                    Write_Str
+                                    Put
                                       (Get_Name_String
                                          (Source_2.Project.Display_Name));
-                                    Write_Line ("""");
+                                    Put_Line ("""");
 
                                     Compilation_OK := False;
                                  end if;
@@ -1805,23 +1794,23 @@ package body Gprbuild.Compile is
                            --  imported. Report an error and invalidate the
                            --  compilation.
 
-                           Write_Char ('"');
-                           Write_Str
+                           Put ('"');
+                           Put
                              (Get_Name_String (Src_Data.Id.Path.Display_Name));
-                           Write_Str (""" cannot import """);
-                           Write_Str
+                           Put (""" cannot import """);
+                           Put
                              (Get_Name_String (Included.Path.Display_Name));
-                           Write_Line (""":");
+                           Put_Line (""":");
 
-                           Write_Str ("  """);
-                           Write_Str
+                           Put ("  """);
+                           Put
                              (Get_Name_String
                                 (Src_Data.Id.Project.Display_Name));
-                           Write_Str
+                           Put
                              (""" does not directly import project """);
-                           Write_Str
+                           Put
                              (Get_Name_String (Included.Project.Display_Name));
-                           Write_Line ("""");
+                           Put_Line ("""");
 
                            Compilation_OK := False;
                         end if;
@@ -1892,22 +1881,22 @@ package body Gprbuild.Compile is
 
          begin
             if Source_3 = No_Source then
-               Write_Str ("source ");
-               Write_Str (Get_Name_String (Sfile));
-               Write_Line (" is not a source of a project");
+               Put ("source ");
+               Put (Get_Name_String (Sfile));
+               Put_Line (" is not a source of a project");
                Compilation_OK := False;
 
             elsif Ultimate_Extending_Project_Of (Source_3.Project) /=
               Ultimate_Extending_Project_Of (Src_Data.Id.Project)
             then
-               Write_Str ("sources ");
-               Write_Str (Get_Name_String (Source_3.File));
-               Write_Str (" and ");
-               Write_Str (Get_Name_String (Src_Data.Id.File));
-               Write_Str (" belong to different projects: ");
-               Write_Str (Get_Name_String (Source_3.Project.Display_Name));
-               Write_Str (" and ");
-               Write_Line (Get_Name_String (Src_Data.Id.Project.Display_Name));
+               Put ("sources ");
+               Put (Get_Name_String (Source_3.File));
+               Put (" and ");
+               Put (Get_Name_String (Src_Data.Id.File));
+               Put (" belong to different projects: ");
+               Put (Get_Name_String (Source_3.Project.Display_Name));
+               Put (" and ");
+               Put_Line (Get_Name_String (Src_Data.Id.Project.Display_Name));
                Compilation_OK := False;
             end if;
          end Check_Source;
@@ -1922,7 +1911,6 @@ package body Gprbuild.Compile is
                  Text,
                  Ignore_ED     => False,
                  Err           => True,
-                 Ignore_Errors => True,
                  Read_Lines    => "DW");
 
             if The_ALI /= ALI.No_ALI_Id then
@@ -1988,26 +1976,26 @@ package body Gprbuild.Compile is
                                     --  imported. Report an error and
                                     --  invalidate the compilation.
 
-                                    Write_Str ("Unit """);
-                                    Write_Str
+                                    Put ("Unit """);
+                                    Put
                                       (Get_Name_String
                                          (Src_Data.Id.Unit.Name));
-                                    Write_Str (""" cannot import unit """);
-                                    Write_Str
+                                    Put (""" cannot import unit """);
+                                    Put
                                       (Get_Name_String (Source_2.Unit.Name));
-                                    Write_Line (""":");
+                                    Put_Line (""":");
 
-                                    Write_Str ("  """);
-                                    Write_Str
+                                    Put ("  """);
+                                    Put
                                       (Get_Name_String
                                          (Src_Data.Id.Project.Display_Name));
-                                    Write_Str
+                                    Put
                                       (""" does not directly"
                                        & " import project """);
-                                    Write_Str
+                                    Put
                                       (Get_Name_String
                                          (Source_2.Project.Display_Name));
-                                    Write_Line ("""");
+                                    Put_Line ("""");
 
                                     Compilation_OK := False;
 
@@ -2016,22 +2004,22 @@ package body Gprbuild.Compile is
                                     --  Report an error and invalidate the
                                     --  compilation.
 
-                                    Write_Str ("Unit """);
-                                    Write_Str
+                                    Put ("Unit """);
+                                    Put
                                       (Get_Name_String
                                          (Src_Data.Id.Unit.Name));
-                                    Write_Str (""" cannot import unit """);
-                                    Write_Str
+                                    Put (""" cannot import unit """);
+                                    Put
                                       (Get_Name_String (Source_2.Unit.Name));
-                                    Write_Line (""":");
+                                    Put_Line (""":");
 
-                                    Write_Str
+                                    Put
                                       ("  it is not part of the "
                                        & "interfaces of its project """);
-                                    Write_Str
+                                    Put
                                       (Get_Name_String
                                          (Source_2.Project.Display_Name));
-                                    Write_Line ("""");
+                                    Put_Line ("""");
                                     Compilation_OK := False;
                                  end if;
                               end if;
@@ -2307,7 +2295,7 @@ package body Gprbuild.Compile is
          begin
             if End_Of_File (File) then
                if Opt.Verbose_Mode then
-                  Write_Line ("    -> switches file has fewer switches");
+                  Put_Line ("    -> switches file has fewer switches");
                end if;
 
                Close (File);
@@ -2318,11 +2306,11 @@ package body Gprbuild.Compile is
 
             if Line (1 .. Last) /= Current then
                if Opt.Verbose_Mode then
-                  Write_Line ("    -> switches file '"
+                  Put_Line ("    -> switches file '"
                               & Get_Name_String (Id.Switches_Path)
                               & "' has different line");
-                  Write_Line ("       " & Line (1 .. Last));
-                  Write_Line ("       " & Current);
+                  Put_Line ("       " & Line (1 .. Last));
+                  Put_Line ("       " & Current);
                end if;
 
                Close (File);
@@ -2360,7 +2348,7 @@ package body Gprbuild.Compile is
 
          if not End_Of_File (File) then
             if Opt.Verbose_Mode then
-               Write_Line ("    -> switches file has more switches");
+               Put_Line ("    -> switches file has more switches");
             end if;
 
             Close (File);
@@ -2373,7 +2361,7 @@ package body Gprbuild.Compile is
       exception
          when others =>
             if Opt.Verbose_Mode then
-               Write_Line ("    -> no switches file");
+               Put_Line ("    -> no switches file");
             end if;
             return True;
       end Check_Switches_File;
@@ -2610,7 +2598,7 @@ package body Gprbuild.Compile is
                --  Create a new temporary mapping file, as there are
                --  none that can be reused.
 
-               Prj.Env.Create_Mapping_File
+               GPR.Env.Create_Mapping_File
                  (Project  => Source_Project,
                   Language => Source.Id.Language.Name,
                   In_Tree  => Source.Tree,
@@ -2728,13 +2716,13 @@ package body Gprbuild.Compile is
 
          Get_Name_String (Id.Path.Display_Name);
 
-         case Id.Language.Config.Path_Syntax is
-            when Canonical =>
-               Source_Path := new String'(Name_Buffer (1 .. Name_Len));
+--           case Id.Language.Config.Path_Syntax is
+--              when Canonical =>
+         Source_Path := new String'(Name_Buffer (1 .. Name_Len));
 
-            when Host =>
-               Source_Path := To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
-         end case;
+--              when Host =>
+--             Source_Path := To_Host_File_Spec (Name_Buffer (1 .. Name_Len));
+--           end case;
 
          if Node.Name = No_Name then
             Add_Option_Internal
@@ -2808,7 +2796,7 @@ package body Gprbuild.Compile is
       begin
          if not Opt.Quiet_Output then
             if Opt.Verbose_Mode then
-               Write_Str (Compiler_Path);
+               Put (Compiler_Path);
 
             else
                Name_Len := 0;
@@ -2823,24 +2811,24 @@ package body Gprbuild.Compile is
                   Name_Len := Name_Len - Executable_Suffix'Length;
                end if;
 
-               Write_Str (Name_Buffer (1 .. Name_Len));
+               Put (Name_Buffer (1 .. Name_Len));
             end if;
 
             for Option in 1 .. Compilation_Options.Last loop
                if Compilation_Options.Visible (Option) then
-                  Write_Char (' ');
+                  Put (' ');
 
                   if Compilation_Options.Simple_Name (Option) then
-                     Write_Str
+                     Put
                        (Base_Name (Compilation_Options.Options (Option).all));
 
                   else
-                     Write_Str (Compilation_Options.Options (Option).all);
+                     Put (Compilation_Options.Options (Option).all);
                   end if;
                end if;
             end loop;
 
-            Write_Eol;
+            New_Line;
          end if;
 
          Process := Run
@@ -2916,7 +2904,7 @@ package body Gprbuild.Compile is
             Activity     => Compilation,
             Languages    => Get_Compatible_Languages (Lang));
 
-         Prj.Env.Create_New_Path_File
+         GPR.Env.Create_New_Path_File
            (Shared    => Project_Tree.Shared,
             Path_FD   => FD,
             Path_Name => Data.Include_Path_File);
@@ -2959,7 +2947,7 @@ package body Gprbuild.Compile is
                        Length
                          (Project_Tree.Shared.Name_Lists,
                           Lang.Config.Include_Option);
-         Host_Path : OS_Lib.String_Access;
+--           Host_Path : OS_Lib.String_Access;
          Last      : Natural := 0;
          List      : Name_List_Index;
          Nam       : Name_Node;
@@ -2998,18 +2986,18 @@ package body Gprbuild.Compile is
 
             --  Concatenate the last switch and the path in a single option
 
-            case Lang.Config.Path_Syntax is
-               when Canonical =>
-                  Data.Imported_Dirs_Switches (Last) := new String'
-                    (Get_Name_String (Nam.Name) & Name_Buffer (1 .. Name_Len));
+--              case Lang.Config.Path_Syntax is
+--                 when Canonical =>
+            Data.Imported_Dirs_Switches (Last) := new String'
+              (Get_Name_String (Nam.Name) & Name_Buffer (1 .. Name_Len));
 
-               when Host =>
-                  Host_Path := To_Host_Dir_Spec
-                    (Name_Buffer (1 .. Name_Len), False);
-                  Data.Imported_Dirs_Switches (Last) := new String'
-                    (Get_Name_String (Nam.Name) & Host_Path.all);
-                  Free (Host_Path);
-            end case;
+--                 when Host =>
+--                    Host_Path := To_Host_Dir_Spec
+--                      (Name_Buffer (1 .. Name_Len), False);
+--                    Data.Imported_Dirs_Switches (Last) := new String'
+--                      (Get_Name_String (Nam.Name) & Host_Path.all);
+--                    Free (Host_Path);
+--              end case;
          end loop;
       end Prepare_Imported_Dirs_Switches;
 
@@ -3079,10 +3067,10 @@ package body Gprbuild.Compile is
                   Data.Include_Path.all);
 
                if Opt.Verbose_Mode then
-                  Write_Str
+                  Put
                     (Get_Name_String (Id.Language.Config.Include_Path));
-                  Write_Str (" = ");
-                  Write_Line (Data.Include_Path.all);
+                  Put (" = ");
+                  Put_Line (Data.Include_Path.all);
                end if;
             end if;
          end if;
@@ -3198,7 +3186,7 @@ package body Gprbuild.Compile is
 
                else
                   ALI.Initialize_ALI;
-                  ALI.Util.Initialize_ALI_Source;
+                  --  ALI.Util.Initialize_ALI_Source;
                end if;
             end if;
          end if;
@@ -3335,14 +3323,14 @@ package body Gprbuild.Compile is
          Wait_For_Available_Slot;
 
          if Opt.Display_Compilation_Progress then
-            Write_Str ("completed ");
+            Put ("completed ");
             Write_Int (Int (Queue.Processed));
-            Write_Str (" out of ");
+            Put (" out of ");
             Write_Int (Int (Queue.Size));
-            Write_Str (" (");
+            Put (" (");
             Write_Int (Int (((Queue.Processed) * 100) / Queue.Size));
-            Write_Str ("%)...");
-            Write_Eol;
+            Put ("%)...");
+            New_Line;
          end if;
       end loop Compilation_Loop;
 

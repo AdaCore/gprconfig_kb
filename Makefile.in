@@ -19,7 +19,7 @@ EXEXT=
 endif
 CP=cp -p
 MKDIR=mkdir -p
-BUILD=production
+BUILD ?= production
 
 prefix=@prefix@
 srcdir=@srcdir@
@@ -59,9 +59,8 @@ BUILDER=gprbuild -p -m -j${PROCESSORS}
 
 ADA_GEN_SUBDIR=gnat
 
-.PHONY: all distall gprbuild gprconfig gprclean gprinstall \
-	copy_gnat_src complete bootstrap
-all: $(xmlada_build_target) $(ADA_GEN_SUBDIR)/stamp-snames
+.PHONY: all distall gprbuild gprconfig gprclean gprinstall copy_gnat_src
+all: $(xmlada_build_target)
 	${BUILDER} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
 distall:
@@ -92,7 +91,7 @@ copy_gnat_src: force
 	    $(LN) $(GNAT_SOURCE_DIR)/$(f) . ;\
            )
 
-complete: copy_gnat_src all install
+complete: all install
 
 gprbuild:
 	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprbuild-main.adb

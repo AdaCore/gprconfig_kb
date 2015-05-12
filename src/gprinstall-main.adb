@@ -1,53 +1,44 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                      G P R I N S T A L L . M A I N                       --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2012-2015, AdaCore                     --
 --                                                                          --
---          Copyright (C) 2012-2015, Free Software Foundation, Inc.         --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
 with Ada.Exceptions;   use Ada.Exceptions;
+with Ada.Text_IO;      use Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
-with Atree;       use Atree;
-with Csets;
-with Gpr_Util;    use Gpr_Util;
-with GPR_Version; use GPR_Version;
-with Makeutl;     use Makeutl;
-with Namet;       use Namet;
-with Osint;       use Osint;
-with Output;      use Output;
-with Prj.Conf;    use Prj.Conf;
-with Prj.Env;
-with Prj.Err;
-with Prj.Proc;    use Prj.Proc;
-with Prj.Tree;    use Prj.Tree;
-with Snames;      use Snames;
-with Stringt;
-with Switch;      use Switch;
-
-with Opt;         use Opt;
-with Types;       use Types;
-
+with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Util;       use Gpr_Util;
+with GPR_Version;    use GPR_Version;
+with GPR.Conf;       use GPR.Conf;
+with GPR.Env;
+with GPR.Err;
+with GPR.Names;      use GPR.Names;
+with GPR.Opt;        use GPR.Opt;
+with GPR.Osint;      use GPR.Osint;
+with GPR.Proc;       use GPR.Proc;
+with GPR.Tree;       use GPR.Tree;
+with GPR.Snames;     use GPR.Snames;
+with GPR.Util;       use GPR.Util;
 with Gprinstall.DB;
 with Gprinstall.Install;
 with Gprinstall.Uninstall;
@@ -193,7 +184,7 @@ procedure Gprinstall.Main is
               (Project_Tree, "directory name missing after -aP");
          else
             Search_Project_Dir_Expected := False;
-            Prj.Env.Add_Directories (Root_Environment.Project_Path, Arg);
+            GPR.Env.Add_Directories (Root_Environment.Project_Path, Arg);
          end if;
 
       elsif Db_Directory_Expected then
@@ -294,7 +285,7 @@ procedure Gprinstall.Main is
                Search_Project_Dir_Expected := True;
 
             else
-               Prj.Env.Add_Directories
+               GPR.Env.Add_Directories
                  (Root_Environment.Project_Path, Arg (4 .. Arg'Last));
             end if;
 
@@ -510,7 +501,7 @@ procedure Gprinstall.Main is
 
    procedure Sigint_Intercepted is
    begin
-      Write_Line ("*** Interrupted ***");
+      Put_Line ("*** Interrupted ***");
       Delete_All_Temp_Files (Project_Tree.Shared);
       OS_Exit (1);
    end Sigint_Intercepted;
@@ -524,15 +515,14 @@ procedure Gprinstall.Main is
    begin
       --  Do some necessary package initializations
 
-      Csets.Initialize;
-      Namet.Initialize;
       Snames.Initialize;
-      Stringt.Initialize;
 
-      Prj.Tree.Initialize (Root_Environment, Gprinstall_Flags);
-      Prj.Tree.Initialize (Project_Node_Tree);
+      Set_Program_Name ("gprinstall");
 
-      Prj.Initialize (Project_Tree);
+      GPR.Tree.Initialize (Root_Environment, Gprinstall_Flags);
+      GPR.Tree.Initialize (Project_Node_Tree);
+
+      GPR.Initialize (Project_Tree);
       Mains.Delete;
 
       --  Get the command line arguments, starting with --version and --help
@@ -556,9 +546,7 @@ procedure Gprinstall.Main is
          end loop Scan_Args;
       end;
 
-      Mains.Set_Multi_Unit_Index (Project_Tree, Main_Index);
-
-      Prj.Env.Initialize_Default_Project_Path
+      GPR.Env.Initialize_Default_Project_Path
         (Root_Environment.Project_Path, Target_Name => "-");
 
       if Opt.Verbose_Mode then
@@ -662,172 +650,172 @@ procedure Gprinstall.Main is
       if not Usage_Output then
          Usage_Output := True;
 
-         Write_Str ("Usage: ");
-         Osint.Write_Program_Name;
-         Write_Str (" [-P<proj>] [<proj>.gpr] [opts]");
-         Write_Eol;
-         Write_Eol;
+         Put ("Usage: ");
+         Write_Program_Name;
+         Put (" [-P<proj>] [<proj>.gpr] [opts]");
+         New_Line;
+         New_Line;
 
          --  GPRINSTALL switches
 
-         Write_Str ("gprinstall switches:");
-         Write_Eol;
+         Put ("gprinstall switches:");
+         New_Line;
 
          Display_Usage_Version_And_Help;
 
          --  Line for Config_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Config_Project_Option);
-         Write_Str ("file.cgpr");
-         Write_Eol;
-         Write_Str ("           Specify the main config project file name");
-         Write_Eol;
+         Put ("  ");
+         Put (Config_Project_Option);
+         Put ("file.cgpr");
+         New_Line;
+         Put ("           Specify the main config project file name");
+         New_Line;
 
          --  Line for Autoconf_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Autoconf_Project_Option);
-         Write_Str ("file.cgpr");
-         Write_Eol;
-         Write_Str
+         Put ("  ");
+         Put (Autoconf_Project_Option);
+         Put ("file.cgpr");
+         New_Line;
+         Put
            ("           Specify/create the main config project file name");
-         Write_Eol;
+         New_Line;
 
-         Write_Str ("  --RTS=<runtime>");
-         Write_Eol;
-         Write_Str ("           Use runtime <runtime> for language Ada");
-         Write_Eol;
+         Put ("  --RTS=<runtime>");
+         New_Line;
+         Put ("           Use runtime <runtime> for language Ada");
+         New_Line;
 
          --  Line for --prefix
 
-         Write_Line ("  --prefix=<dir>");
-         Write_Line ("           Install destination directory");
-         Write_Line ("  --install-name=<name>");
-         Write_Line ("           The name of the installation");
-         Write_Line ("  --sources-subdir=<dir>");
-         Write_Line ("           The sources directory/sub-directory");
-         Write_Line ("  --lib-subdir=<dir>");
-         Write_Line ("           The library directory/sub-directory");
-         Write_Line ("  --link-lib-subdir=<dir>");
-         Write_Line
+         Put_Line ("  --prefix=<dir>");
+         Put_Line ("           Install destination directory");
+         Put_Line ("  --install-name=<name>");
+         Put_Line ("           The name of the installation");
+         Put_Line ("  --sources-subdir=<dir>");
+         Put_Line ("           The sources directory/sub-directory");
+         Put_Line ("  --lib-subdir=<dir>");
+         Put_Line ("           The library directory/sub-directory");
+         Put_Line ("  --link-lib-subdir=<dir>");
+         Put_Line
            ("           The symlib directory/sub-directory to libraries");
-         Write_Line ("  --exec-subdir=<dir>");
-         Write_Line ("           The executbales directory/sub-directory");
-         Write_Line ("  --project-subdir=<dir>");
-         Write_Line ("           The project directory/sub-directory");
-         Write_Line ("  --no-lib-link");
-         Write_Line
+         Put_Line ("  --exec-subdir=<dir>");
+         Put_Line ("           The executbales directory/sub-directory");
+         Put_Line ("  --project-subdir=<dir>");
+         Put_Line ("           The project directory/sub-directory");
+         Put_Line ("  --no-lib-link");
+         Put_Line
            ("           Do not copy shared lib in exec/lib directory");
 
-         Write_Line ("  --sources-only");
-         Write_Line ("           Copy project sources only");
+         Put_Line ("  --sources-only");
+         Put_Line ("           Copy project sources only");
 
          --  Line for --relocate-build-tree=
 
-         Write_Str ("  --relocate-build-tree[=dir]");
-         Write_Eol;
-         Write_Str ("           Root obj/lib/exec dirs are current-directory" &
+         Put ("  --relocate-build-tree[=dir]");
+         New_Line;
+         Put ("           Root obj/lib/exec dirs are current-directory" &
                     " or dir");
-         Write_Eol;
+         New_Line;
 
          --  Line for --root-dir=
 
-         Write_Str ("  --root-dir=dir");
-         Write_Eol;
-         Write_Str ("           Root directory of obj/lib/exec to relocate");
-         Write_Eol;
+         Put ("  --root-dir=dir");
+         New_Line;
+         Put ("           Root directory of obj/lib/exec to relocate");
+         New_Line;
 
          --  Line for --subdirs=
 
-         Write_Line ("  --subdirs=dir");
-         Write_Line ("           Real obj/lib/exec dirs are subdirs");
+         Put_Line ("  --subdirs=dir");
+         Put_Line ("           Real obj/lib/exec dirs are subdirs");
 
          --  Line for Target_Project_Option
 
-         Write_Str ("  ");
-         Write_Str (Target_Project_Option);
-         Write_Str ("targetname");
-         Write_Eol;
-         Write_Str
+         Put ("  ");
+         Put (Target_Project_Option);
+         Put ("targetname");
+         New_Line;
+         Put
            ("           Specify a target for cross platforms");
-         Write_Eol;
+         New_Line;
 
          --  Line for --dry-run
 
-         Write_Line ("  -d, --dry-run");
-         Write_Line ("           Execute nothing, display commands");
+         Put_Line ("  -d, --dry-run");
+         Put_Line ("           Execute nothing, display commands");
 
          --  Line for --build-var
 
-         Write_Line ("  --build-var=<name>");
-         Write_Line ("           Name of the variable which identify a build");
+         Put_Line ("  --build-var=<name>");
+         Put_Line ("           Name of the variable which identify a build");
 
          --  Line for --no-build-var
 
-         Write_Line ("  --no-build-var");
-         Write_Line ("           Do not generate external build variable");
+         Put_Line ("  --no-build-var");
+         Put_Line ("           Do not generate external build variable");
 
          --  Line for --build-name
 
-         Write_Line ("  --build-name=<name>");
-         Write_Line ("           Build name value (default is ""Default"")");
+         Put_Line ("  --build-name=<name>");
+         Put_Line ("           Build name value (default is ""Default"")");
 
          --  Line for --mode
 
-         Write_Line ("  --mode=[dev|usage]");
-         Write_Line
+         Put_Line ("  --mode=[dev|usage]");
+         Put_Line
            ("           Kind of installation (default is ""dev"")");
 
          --  Line for --uninstall
 
-         Write_Line ("  --uninstall");
-         Write_Line
+         Put_Line ("  --uninstall");
+         Put_Line
            ("           Remove all previously installed files");
 
          --  Line for -aP
 
-         Write_Line ("  -aP dir  Add directory dir to project search path");
+         Put_Line ("  -aP dir  Add directory dir to project search path");
 
          --  Line for -eL
 
-         Write_Line ("  -eL      "
+         Put_Line ("  -eL      "
                      & "Follow symbolic links when processing project files");
 
          --  Line for -P
 
-         Write_Line ("  -P proj  Use Project File proj");
+         Put_Line ("  -P proj  Use Project File proj");
 
          --  Line for -p
 
-         Write_Line ("  -p, --create-missing-dirs");
-         Write_Line ("           Create missing directories");
+         Put_Line ("  -p, --create-missing-dirs");
+         Put_Line ("           Create missing directories");
 
          --  Line for -q
 
-         Write_Line ("  -q       Be quiet/terse");
+         Put_Line ("  -q       Be quiet/terse");
 
          --  Line for -r
 
-         Write_Line ("  -r       Recursive");
+         Put_Line ("  -r       Recursive");
 
          --  Line for -a
 
-         Write_Line ("  -a       Force copy of all sources");
+         Put_Line ("  -a       Force copy of all sources");
 
          --  Line for -f
 
-         Write_Line ("  -f       Force installaion, overwrite files");
+         Put_Line ("  -f       Force installaion, overwrite files");
 
          --  Line for -v
 
-         Write_Line ("  -v       Verbose output");
+         Put_Line ("  -v       Verbose output");
 
          --  Line for -X
 
-         Write_Line ("  -Xnm=val Specify an external reference for "
+         Put_Line ("  -Xnm=val Specify an external reference for "
                      & "Project Files");
-         Write_Eol;
+         New_Line;
       end if;
    end Usage;
 
@@ -858,7 +846,7 @@ begin
    --  configuration file to the project so that its settings are
    --  automatically inherited by the project.
    --  If either the project or the configuration file contains errors, the
-   --  following call with call Osint.Fail and never return
+   --  following call with call Fail_Program and never return
 
    if Usage_Mode = Install_Mode then
       begin
@@ -879,8 +867,8 @@ begin
             Target_Name                => Target_Name.all,
             Normalized_Hostname        => Normalized_Hostname);
       exception
-         when E : Prj.Conf.Invalid_Config =>
-            Osint.Fail (Exception_Message (E));
+         when E : GPR.Conf.Invalid_Config =>
+            Fail_Program (Project_Tree, Exception_Message (E));
       end;
 
       if Main_Project = No_Project then
@@ -891,7 +879,7 @@ begin
          Fail_Program
            (Project_Tree,
             """" & Project_File_Name.all & """ processing failed",
-            Flush_Messages => User_Project_Node /= Empty_Node);
+            Flush_Messages => User_Project_Node /= Empty_Project_Node);
       end if;
 
       if Configuration_Project_Path /= null then
@@ -901,7 +889,7 @@ begin
       end if;
 
       if Total_Errors_Detected > 0 then
-         Prj.Err.Finalize;
+         GPR.Err.Finalize;
          Fail_Program
            (Project_Tree,
             "problems while getting the configuration",
@@ -912,23 +900,18 @@ begin
         new String'(Get_Name_String (Main_Project.Directory.Display_Name));
 
       if Warnings_Detected > 0 then
-         Prj.Err.Finalize;
-         Prj.Err.Initialize;
+         GPR.Err.Finalize;
+         GPR.Err.Initialize;
       end if;
 
       Mains.Fill_From_Project (Main_Project, Project_Tree);
 
       Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
-      --  Source file lookups should be cached for efficiency.
-      --  Source files are not supposed to change.
-
-      Osint.Source_File_Data (Cache => True);
-
       Install.Process (Project_Tree, Main_Project);
 
       if Warnings_Detected /= 0 then
-         Prj.Err.Finalize;
+         GPR.Err.Finalize;
       end if;
 
    elsif Usage_Mode = List_Mode then
@@ -942,9 +925,7 @@ begin
       end if;
    end if;
 
-   Namet.Finalize;
-
    if Usage_Mode = Install_Mode then
-      Finish_Program (Project_Tree, E_Success);
+      Finish_Program (Project_Tree);
    end if;
 end Gprinstall.Main;

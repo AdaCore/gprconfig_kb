@@ -1,29 +1,23 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---              G P R L I B . B U I L D _ S H A R E D _ L I B               --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2006-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2006-2015, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 --  This is the version of the body of procedure Build_Shared_Lib for most
 --  where shared libraries are supported.
-
-with MLib;   use MLib;
-with Output; use Output;
 
 separate (Gprlib)
 procedure Build_Shared_Lib is
@@ -79,10 +73,10 @@ procedure Build_Shared_Lib is
          if not Opt.Quiet_Output then
 
             if Opt.Verbose_Mode then
-               Write_Str (Driver.all);
+               Put (Driver.all);
 
             else
-               Write_Str (Base_Name (Driver.all));
+               Put (Base_Name (Driver.all));
             end if;
 
             for J in 1 .. Last_Arg loop
@@ -90,19 +84,19 @@ procedure Build_Shared_Lib is
                  J <= Lib_Index or else
                  J = First_Object
                then
-                  Write_Char (' ');
-                  Write_Str  (Arguments (J).all);
+                  Put (' ');
+                  Put  (Arguments (J).all);
 
                elsif J > First_Object then
-                  Write_Str (" ...");
+                  Put (" ...");
                   exit;
 
                elsif J = Lib_Index + 1 then
-                  Write_Str (" ...");
+                  Put (" ...");
                end if;
             end loop;
 
-            Write_Eol;
+            New_Line;
          end if;
       end Display_Linking_Command;
 
@@ -113,14 +107,15 @@ procedure Build_Shared_Lib is
          Driver := Locate_Exec_On_Path (Gcc_Name);
 
          if Driver = null then
-            Osint.Fail (Gcc_Name & " not found in path");
+            Fail_Program (null, Gcc_Name & " not found in path");
          end if;
 
       else
          Driver := Locate_Exec_On_Path (Get_Name_String (Driver_Name));
 
          if Driver = null then
-            Osint.Fail (Get_Name_String (Driver_Name) & " not found in path");
+            Fail_Program
+              (null, Get_Name_String (Driver_Name) & " not found in path");
          end if;
       end if;
 
@@ -167,11 +162,12 @@ procedure Build_Shared_Lib is
          Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
 
          if Partial_Linker_Path = null then
-            Osint.Fail ("unable to locate linker " & Partial_Linker.all);
+            Fail_Program
+              (null, "unable to locate linker " & Partial_Linker.all);
          end if;
       end if;
 
-      if Resp_File_Format = Prj.None
+      if Resp_File_Format = GPR.None
         and then Partial_Linker_Path /= null
       then
          --  If partial linker is used, do a partial link first
@@ -249,8 +245,9 @@ procedure Build_Shared_Lib is
                   Success);
 
                if not Success then
-                  Osint.Fail
-                    ("call to linker driver " &
+                  Fail_Program
+                    (null,
+                     "call to linker driver " &
                      Partial_Linker.all & " failed");
                end if;
 
@@ -299,7 +296,7 @@ procedure Build_Shared_Lib is
 
       if Max_Command_Line_Length > 0
         and then Argument_Length > Max_Command_Line_Length
-        and then Resp_File_Format /= Prj.None
+        and then Resp_File_Format /= GPR.None
       then
          declare
             --  Preserve the options, if any
@@ -376,10 +373,11 @@ procedure Build_Shared_Lib is
 
       if not Success then
          if Driver_Name = No_Name then
-            Osint.Fail (Gcc_Name & " execution error");
+            Fail_Program (null, Gcc_Name & " execution error");
 
          else
-            Osint.Fail (Get_Name_String (Driver_Name) & " execution error");
+            Fail_Program
+              (null, Get_Name_String (Driver_Name) & " execution error");
          end if;
       end if;
    end Build;
@@ -388,8 +386,8 @@ procedure Build_Shared_Lib is
 
 begin
    if Opt.Verbose_Mode then
-      Write_Str ("building relocatable shared library ");
-      Write_Line (Lib_File);
+      Put ("building relocatable shared library ");
+      Put_Line (Lib_File);
    end if;
 
    if Library_Version.all = "" or else not Symbolic_Link_Supported then

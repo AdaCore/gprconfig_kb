@@ -1,58 +1,50 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                        G P R C L E A N . M A I N                         --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2011-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2011-2015, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 --  This package contains the implementation of gprclean.
 --  See gprclean.adb
 
-with Ada.Command_Line;           use Ada.Command_Line;
+with Ada.Command_Line; use Ada.Command_Line;
 with Ada.Directories;
-with Ada.Exceptions;             use Ada.Exceptions;
+with Ada.Exceptions;   use Ada.Exceptions;
 
-with System.Case_Util;           use System.Case_Util;
-
-with GNAT.Command_Line;          use GNAT.Command_Line;
-with GNAT.Directory_Operations;  use GNAT.Directory_Operations;
-with GNAT.IO;                    use GNAT.IO;
-with GNAT.OS_Lib;                use GNAT.OS_Lib;
+with GNAT.Case_Util;            use GNAT.Case_Util;
+with GNAT.Command_Line;         use GNAT.Command_Line;
+with GNAT.Directory_Operations; use GNAT.Directory_Operations;
+with GNAT.IO;                   use GNAT.IO;
+with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gprbuild.Compilation.Slave; use Gprbuild.Compilation.Slave;
-
-with Csets;
-with Gpr_Util;    use Gpr_Util;
-with GPR_Version; use GPR_Version;
-with Makeutl;     use Makeutl;
-with Namet;       use Namet;
-with Opt;         use Opt;
-with Osint;
-with Prj;         use Prj;
-with Prj.Conf;    use Prj.Conf;
-with Prj.Env;
-with Prj.Err;
-with Prj.Ext;
-with Prj.Proc;    use Prj.Proc;
-with Prj.Tree;    use Prj.Tree;
-with Snames;
-with Stringt;
-with Switch;      use Switch;
-with Types;       use Types;
+with Gpr_Build_Util;             use Gpr_Build_Util;
+with Gpr_Util;                   use Gpr_Util;
+with GPR_Version;                use GPR_Version;
+with GPR;                        use GPR;
+with GPR.Conf;                   use GPR.Conf;
+with GPR.Env;
+with GPR.Err;
+with GPR.Ext;
+with GPR.Names;                  use GPR.Names;
+with GPR.Opt;                    use GPR.Opt;
+with GPR.Osint;
+with GPR.Proc;                   use GPR.Proc;
+with GPR.Snames;
+with GPR.Tree;                   use GPR.Tree;
+with GPR.Util;                   use GPR.Util;
 
 procedure Gprclean.Main is
 
@@ -98,13 +90,12 @@ procedure Gprclean.Main is
 
          --  Initialize some packages
 
-         Csets.Initialize;
-         Namet.Initialize;
          Snames.Initialize;
-         Stringt.Initialize;
 
-         Prj.Tree.Initialize (Root_Environment, Gprclean_Flags);
-         Prj.Tree.Initialize (Project_Node_Tree);
+         Set_Program_Name ("gprclean");
+
+         GPR.Tree.Initialize (Root_Environment, Gprclean_Flags);
+         GPR.Tree.Initialize (Project_Node_Tree);
       end if;
 
       --  Reset global variables
@@ -114,7 +105,7 @@ procedure Gprclean.Main is
       Copyright_Displayed := False;
       Usage_Displayed := False;
       Free (Project_File_Name);
-      Main_Project := Prj.No_Project;
+      Main_Project := GPR.No_Project;
       All_Projects := False;
       Mains.Delete;
    end Initialize;
@@ -150,7 +141,7 @@ procedure Gprclean.Main is
 
             procedure Bad_Argument is
             begin
-               Osint.Fail ("invalid argument """ & Arg & '"');
+               Fail_Program (Project_Tree, "invalid argument """ & Arg & '"');
             end Bad_Argument;
 
          begin
@@ -160,7 +151,7 @@ procedure Gprclean.Main is
 
                Name_Len := 0;
                Add_Str_To_Name_Buffer (Arg);
-               Db_Switch_Args.Append (Name_Find);
+               Add_Db_Switch_Arg (Name_Find);
 
             elsif Arg'Length /= 0 then
                if Arg (1) = '-' then
@@ -201,7 +192,7 @@ procedure Gprclean.Main is
                                         .. Arg'Last));
                            end if;
 
-                        elsif Arg'Length >= Distributed_Option'Length
+                        elsif Arg'Length >=  Distributed_Option'Length
                                 and then
                               Arg (1 .. Distributed_Option'Length)
                                   = Distributed_Option
@@ -410,7 +401,9 @@ procedure Gprclean.Main is
                                    Get_Current_Dir)
                                 & Dir_Separator);
 
-                        elsif Arg = Makeutl.Unchecked_Shared_Lib_Imports then
+                        elsif
+                          Arg = Gpr_Build_Util.Unchecked_Shared_Lib_Imports
+                        then
                            Opt.Unchecked_Shared_Lib_Imports := True;
 
                         else
@@ -423,7 +416,7 @@ procedure Gprclean.Main is
                         end if;
 
                         if Arg (3) = 'P' then
-                           Prj.Env.Add_Directories
+                           GPR.Env.Add_Directories
                              (Root_Environment.Project_Path,
                               Arg (4 .. Arg'Last));
 
@@ -459,7 +452,7 @@ procedure Gprclean.Main is
 
                      when 'P' =>
                         if Project_File_Name /= null then
-                           Osint.Fail ("multiple -P switches");
+                           Fail_Program (Project_Tree, "multiple -P switches");
                         end if;
 
                         if Arg'Length > 2 then
@@ -479,7 +472,9 @@ procedure Gprclean.Main is
 
                         else
                            if Index = Last then
-                              Osint.Fail ("no project specified after -P");
+                              Fail_Program
+                                (Project_Tree,
+                                 "no project specified after -P");
                            end if;
 
                            Index := Index + 1;
@@ -497,13 +492,13 @@ procedure Gprclean.Main is
                            Verbose_Mode := True;
 
                         elsif Arg = "-vP0" then
-                           Current_Verbosity := Prj.Default;
+                           Current_Verbosity := GPR.Default;
 
                         elsif Arg = "-vP1" then
-                           Current_Verbosity := Prj.Medium;
+                           Current_Verbosity := GPR.Medium;
 
                         elsif Arg = "-vP2" then
-                           Current_Verbosity := Prj.High;
+                           Current_Verbosity := GPR.High;
 
                         else
                            Bad_Argument;
@@ -531,12 +526,13 @@ procedure Gprclean.Main is
                            end if;
 
                            if not OK
-                             or else not Prj.Ext.Check
+                             or else not GPR.Ext.Check
                                (Root_Environment.External,
                                 Declaration => Ext_Asgn (Start .. Stop))
                            then
-                              Osint.Fail
-                                ("illegal external assignment '"
+                              Fail_Program
+                                (Project_Tree,
+                                 "illegal external assignment '"
                                  & Ext_Asgn & ''');
                            end if;
                         end;
@@ -561,8 +557,9 @@ procedure Gprclean.Main is
                            .. File_Name'Last) = Project_File_Extension
                      then
                         if Project_File_Name /= null then
-                           Osint.Fail
-                             ("cannot have several project files specified");
+                           Fail_Program
+                             (Project_Tree,
+                              "cannot have several project files specified");
 
                         else
                            Project_File_Name := new String'(File_Name);
@@ -633,7 +630,7 @@ procedure Gprclean.Main is
 
          Put_Line ("  --subdirs=dir");
          Put_Line ("           Real obj/lib/exec dirs are subdirs");
-         Put_Line ("  " & Makeutl.Unchecked_Shared_Lib_Imports);
+         Put_Line ("  " & Gpr_Build_Util.Unchecked_Shared_Lib_Imports);
          Put_Line ("           Shared lib projects may import any project");
          New_Line;
 
@@ -668,7 +665,7 @@ begin
 
    Parse_Cmd_Line;
 
-   Prj.Env.Initialize_Default_Project_Path
+   GPR.Env.Initialize_Default_Project_Path
      (Root_Environment.Project_Path, Target_Name => "-");
 
    if Load_Standard_Base then
@@ -756,14 +753,14 @@ begin
          Implicit_Project           => No_Project_File_Found);
 
       --  Print warnings that might have occurred while parsing the project
-      Prj.Err.Finalize;
+      GPR.Err.Finalize;
 
       --  But avoid duplicate warnings later on
-      Prj.Err.Initialize;
+      GPR.Err.Initialize;
 
    exception
-      when E : Prj.Conf.Invalid_Config =>
-         Osint.Fail (Exception_Message (E));
+      when E : GPR.Conf.Invalid_Config =>
+         Fail_Program (Project_Tree, Exception_Message (E));
    end;
 
    if Main_Project = No_Project then
@@ -774,7 +771,7 @@ begin
       Fail_Program
         (Project_Tree,
          """" & Project_File_Name.all & """ processing failed",
-         Flush_Messages => User_Project_Node /= Empty_Node);
+         Flush_Messages => User_Project_Node /= Empty_Project_Node);
    end if;
 
    --  Update info on all sources
@@ -783,8 +780,8 @@ begin
       Iter : Source_Iterator;
    begin
       Iter := For_Each_Source (Project_Tree);
-      while Prj.Element (Iter) /= No_Source loop
-         Initialize_Source_Record (Prj.Element (Iter));
+      while GPR.Element (Iter) /= No_Source loop
+         Initialize_Source_Record (GPR.Element (Iter));
          Next (Iter);
       end loop;
    end;

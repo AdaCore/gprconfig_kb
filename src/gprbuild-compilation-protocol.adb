@@ -1,35 +1,32 @@
 ------------------------------------------------------------------------------
---                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---        G P R B U I L D . C O M P I L A T I O N . P R O T O C O L         --
+--                             GPR TECHNOLOGY                               --
 --                                                                          --
---                                 B o d y                                  --
+--                     Copyright (C) 2012-2015, AdaCore                     --
 --                                                                          --
---         Copyright (C) 2012-2015, Free Software Foundation, Inc.          --
---                                                                          --
--- This is free software;  you can redistribute it  and/or modify it  under --
--- terms of the  GNU General Public License as published  by the Free Soft- --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
 -- ware  Foundation;  either version 3,  or (at your option) any later ver- --
 -- sion.  This software is distributed in the hope  that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
 -- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for  more details.  You should have  received  a copy of the GNU --
--- General  Public  License  distributed  with  this  software;   see  file --
--- COPYING3.  If not, go to http://www.gnu.org/licenses for a complete copy --
--- of the license.                                                          --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Calendar.Time_Zones;     use Ada.Calendar;
-with Ada.Directories;             use Ada.Directories;
-with Ada.Streams.Stream_IO;       use Ada.Streams;
-with Ada.Strings.Fixed;           use Ada.Strings.Fixed;
-with Ada.Strings.Maps.Constants;  use Ada.Strings.Maps;
+with Ada.Calendar.Time_Zones;    use Ada.Calendar;
+with Ada.Directories;            use Ada.Directories;
+with Ada.Streams.Stream_IO;      use Ada.Streams;
+with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
+with Ada.Strings.Maps.Constants; use Ada.Strings.Maps;
 
 with GNAT.Rewrite_Data;
-with GNAT.String_Split;     use GNAT.String_Split;
+with GNAT.String_Split; use GNAT.String_Split;
 
-with Gnatvsn;      use Gnatvsn;
-with Gpr_Util;     use Gpr_Util;
+with Gpr_Util;          use Gpr_Util;
+with GPR_Version;       use GPR_Version;
 
 package body Gprbuild.Compilation.Protocol is
 
@@ -529,7 +526,7 @@ package body Gprbuild.Compilation.Protocol is
          & Args_Sep & Build_Env
          & Args_Sep & Boolean'Image (Sync)
          & Args_Sep & String (UTC_Time)
-         & Args_Sep & Gnat_Static_Version_String);
+         & Args_Sep & Gpr_Version_String);
    end Send_Context;
 
    -----------------------------
