@@ -298,9 +298,13 @@ package GPR.Util is
    function Is_Subunit (Source : Source_Id) return Boolean;
    --  Return True if source is a subunit
 
-   procedure Initialize_Source_Record (Source : Source_Id);
+   procedure Initialize_Source_Record
+     (Source : Source_Id;
+      Always : Boolean := False);
    --  Get information either about the source file, or the object and
    --  dependency file, as well as their timestamps.
+   --  When Always is True, initialize Source even if it has already been
+   --  initialized.
 
    procedure Get_Switches
      (Source       : Source_Id;

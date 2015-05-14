@@ -980,7 +980,10 @@ package body GPR.Util is
    -- Initialize_Source_Record --
    ------------------------------
 
-   procedure Initialize_Source_Record (Source : GPR.Source_Id) is
+   procedure Initialize_Source_Record
+     (Source : GPR.Source_Id;
+      Always : Boolean := False)
+   is
 
       procedure Set_Object_Project
         (Obj_Dir  : String;
@@ -1042,7 +1045,7 @@ package body GPR.Util is
    begin
       --  Nothing to do if source record has already been fully initialized
 
-      if Source.Initialized then
+      if Source.Initialized and not Always then
          return;
       end if;
 
