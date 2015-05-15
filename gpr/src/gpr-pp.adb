@@ -527,7 +527,8 @@ package body GPR.PP is
                   if Project_Of_Renamed_Package_Of (Node, In_Tree) /=
                        Empty_Project_Node
                   then
-                     if First_Declarative_Item_Of (Node, In_Tree) = Empty_Node
+                     if First_Declarative_Item_Of (Node, In_Tree) =
+                          Empty_Project_Node
                      then
                         Write_String (" renames ", Indent);
                      else
@@ -544,9 +545,10 @@ package body GPR.PP is
                   end if;
 
                   if Project_Of_Renamed_Package_Of (Node, In_Tree) /=
-                      Empty_Node
+                       Empty_Project_Node
                     and then
-                     First_Declarative_Item_Of (Node, In_Tree) = Empty_Node
+                     First_Declarative_Item_Of (Node, In_Tree) =
+                       Empty_Project_Node
                   then
                      Write_String (";", Indent);
                      Write_End_Of_Line_Comment (Node);
