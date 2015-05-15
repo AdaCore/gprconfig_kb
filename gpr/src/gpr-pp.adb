@@ -527,7 +527,13 @@ package body GPR.PP is
                   if Project_Of_Renamed_Package_Of (Node, In_Tree) /=
                        Empty_Project_Node
                   then
-                     Write_String (" renames ", Indent);
+                     if First_Declarative_Item_Of (Node, In_Tree) = Empty_Node
+                     then
+                        Write_String (" renames ", Indent);
+                     else
+                        Write_String (" extends ", Indent);
+                     end if;
+
                      Output_Name
                        (Name_Of
                           (Project_Of_Renamed_Package_Of (Node, In_Tree),
@@ -535,6 +541,13 @@ package body GPR.PP is
                         Indent);
                      Write_String (".", Indent);
                      Output_Name (Name_Of (Node, In_Tree), Indent);
+                  end if;
+
+                  if Project_Of_Renamed_Package_Of (Node, In_Tree) /=
+                      Empty_Node
+                    and then
+                     First_Declarative_Item_Of (Node, In_Tree) = Empty_Node
+                  then
                      Write_String (";", Indent);
                      Write_End_Of_Line_Comment (Node);
                      Print (First_Comment_After_End (Node, In_Tree), Indent);
