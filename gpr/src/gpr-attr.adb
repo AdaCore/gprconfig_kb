@@ -378,6 +378,16 @@ package body GPR.Attr is
    "Pstack#" &
    "LVswitches#" &
 
+   --  package Codepeer
+
+   "Pcodepeer#" &
+   "SVoutput_directory#" &
+   "SVdatabase_directory#" &
+   "SVmessage_patterns#" &
+   "SVadditional_patterns#" &
+   "LVswitches#" &
+   "LVexcluded_source_files#" &
+
    "#";
 
    Initialized : Boolean := False;
