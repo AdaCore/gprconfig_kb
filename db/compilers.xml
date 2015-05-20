@@ -145,9 +145,17 @@
   </compiler_description>
 
   <!-- VxWorks 653 -->
+  <!-- WRS gcc -v or -dumpmachine have different results depending on
+       the version: on 2.3.0.1 and before, it would return
+       powerpc-wrs-vxworksae; on 2.4 and later it would return
+       powerpc-wrs-vxworks. That (plus the fact the e500v2 and ppc
+       compilers use the same executables: ccppc and c++ppc) makes
+       us specify one compiler description per CPU. In each of these
+       descriptions, the target is hard-coded instead of being deduced
+       from cc${PREFIX} -v.  -->
   <compiler_description>
-    <name>GCC-WRS653</name>
-    <executable prefix="1">cc(ppc|pentium)</executable>
+    <name>GCC-WRS653-PPC</name>
+    <executable prefix="1">cc(ppc)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
       <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
@@ -155,10 +163,21 @@
     </version>
     <languages>C</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>
-      <external>cc${PREFIX} -dumpmachine</external>
-      <grep regexp="[^\r\n]+"></grep>
-    </target>
+    <target>powerpc-wrs-vxworksae</target>
+  </compiler_description>
+
+  <!-- VxWorks 653 -->
+  <compiler_description>
+    <name>GCC-WRS653-X86</name>
+    <executable prefix="1">cc(pentium)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
+    <target>i586-wrs-vxworksae</target>
   </compiler_description>
 
   <compiler_description>
@@ -461,7 +480,20 @@
 
   <!-- G++ for VxWorks 653 -->
   <compiler_description>
-    <name>G++-WRS653</name>
+    <name>G++-WRS653-PPC</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks653-[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks653.*</must_match>
+    </version>
+    <languages>C++</languages>
+    <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
+    <target>powerpc-wrs-vxworksae</target>
+  </compiler_description>
+
+  <compiler_description>
+    <name>G++-WRS653-X86</name>
     <executable prefix="1">c\+\+(ppc|pentium)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
@@ -470,10 +502,7 @@
     </version>
     <languages>C++</languages>
     <runtimes>full,cert,ravenscar-cert,zfp</runtimes>
-    <target>
-      <external>c++${PREFIX} -dumpmachine</external>
-      <grep regexp="[^\r\n]+"></grep>
-    </target>
+    <target>i586-wrs-vxworksae</target>
   </compiler_description>
 
   <compiler_description>
