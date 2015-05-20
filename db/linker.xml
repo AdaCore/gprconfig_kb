@@ -440,6 +440,9 @@
        <target name="^powerpc-wrs-vxworks$" />
      </targets>
     <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
       <compiler version="3.16" />
       <compiler version="5.00" />
       <compiler version="5.01" />
@@ -464,6 +467,9 @@
      <targets>
        <target name="^powerpc-wrs-vxworks$" />
      </targets>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
     <compilers negate="true">
       <compiler version="3.16" />
       <compiler version="5.00" />
