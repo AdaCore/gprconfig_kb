@@ -60,7 +60,8 @@
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
        <compiler name="GCC-WRS6E500V2" language="C" />
        <compiler name="GCC-WRS6LEON" language="C" />
-       <compiler name="GCC-WRS653" language="C" />
+       <compiler name="GCC-WRS653-X86" language="C" />
+       <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRS7ARM" language="C" />
        <compiler name="GCC-WRS7E500V2" language="C" />
@@ -115,7 +116,8 @@
        <compiler name="GCC-WRS6LEON" language="C" />
        <compiler name="GCC-WRS6CERT" language="C" />
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
-       <compiler name="GCC-WRS653" language="C" />
+       <compiler name="GCC-WRS653-X86" language="C" />
+       <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRS7ARM" language="C" />
        <compiler name="GCC-WRS7E500V2" language="C" />
@@ -163,7 +165,8 @@
        <compiler name="GCC-WRS6LEON" language="C" />
        <compiler name="GCC-WRS6CERT" language="C" />
        <compiler name="GCC-WRS6CERTE500V2" language="C" />
-       <compiler name="GCC-WRS653" language="C" />
+       <compiler name="GCC-WRS653-X86" language="C" />
+       <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRS7X86" language="C" />
        <compiler name="GCC-WRS7PPC" language="C" />

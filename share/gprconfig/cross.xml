@@ -379,7 +379,8 @@
    <configuration>
      <compilers>
        <compiler name="GCC" language="C" />
-       <compiler name="GCC-WRS653" language="C" />
+       <compiler name="GCC-WRS653-X86" language="C" />
+       <compiler name="GCC-WRS653-PPC" language="C" />
        <compiler name="GCC-WRS653-E500V2" language="C" />
        <compiler name="GCC-WRSMILS" language="C" />
        <compiler name="GCC-WRSMILS-E500V2" language="C" />
@@ -561,7 +562,8 @@
 
    <configuration>
      <compilers>
-        <compiler name="G++-WRS653" language="C++" />
+        <compiler name="G++-WRS653-X86" language="C++" />
+        <compiler name="G++-WRS653-PPC" language="C++" />
         <compiler name="G++-WRS653-E500V2" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
         <compiler name="G++-WRSMILS-E500V2" language="C++" />
@@ -603,8 +605,10 @@
      <compilers>
        <compiler name="GCC" language="C" runtime="^zfp$" />
        <compiler name="GCC" language="C" runtime="cert" />
-       <compiler name="GCC-WRS653" runtime="^zfp$" />
-       <compiler name="GCC-WRS653" runtime="cert" />
+       <compiler name="GCC-WRS653-X86" runtime="^zfp$" />
+       <compiler name="GCC-WRS653-X86" runtime="cert" />
+       <compiler name="GCC-WRS653-PPC" runtime="^zfp$" />
+       <compiler name="GCC-WRS653-PPC" runtime="cert" />
        <compiler name="GCC-WRS653-E500V2" runtime="^zfp$" />
        <compiler name="GCC-WRS653-E500V2" runtime="cert" />
        <compiler name="GCC-WRSMILS" runtime="^zfp$" />
@@ -638,8 +642,10 @@
      <compilers>
        <compiler name="G++" language="C++" runtime="^zfp$" />
        <compiler name="G++" language="C++" runtime="cert" />
-       <compiler name="G++-WRS653" runtime="^zfp$" />
-       <compiler name="G++-WRS653" runtime="cert" />
+       <compiler name="G++-WRS653-X86" runtime="^zfp$" />
+       <compiler name="G++-WRS653-X86" runtime="cert" />
+       <compiler name="G++-WRS653-PPC" runtime="^zfp$" />
+       <compiler name="G++-WRS653-PPC" runtime="cert" />
        <compiler name="G++-WRS653-E500V2" runtime="^zfp$" />
        <compiler name="G++-WRS653-E500V2" runtime="cert" />
        <compiler name="G++-WRSMILS" runtime="^zfp$" />

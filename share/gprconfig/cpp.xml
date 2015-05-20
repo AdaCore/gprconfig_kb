@@ -37,7 +37,8 @@
 
    <configuration>
      <compilers>
-        <compiler name="G++-WRS653" language="C++" />
+        <compiler name="G++-WRS653-X86" language="C++" />
+        <compiler name="G++-WRS653-PPC" language="C++" />
         <compiler name="G++-WRS653-E500V2" language="C++" />
         <compiler name="G++-WRS5" language="C++" />
         <compiler name="G++-WRS6" language="C++" />
@@ -65,7 +66,8 @@
      <compilers>
         <compiler name="G++" language="C++" />
         <compiler name="G++_Pro" language="C++" />
-        <compiler name="G++-WRS653" language="C++" />
+        <compiler name="G++-WRS653-X86" language="C++" />
+        <compiler name="G++-WRS653-PPC" language="C++" />
         <compiler name="G++-WRS653-E500V2" language="C++" />
         <compiler name="G++-WRSMILS" language="C++" />
         <compiler name="G++-WRSMILSHAE" language="C++" />
