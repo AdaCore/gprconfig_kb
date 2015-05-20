@@ -5593,7 +5593,10 @@ package body GPR.Nmsc is
                Must_Exist       => False,
                Externally_Built => Project.Externally_Built);
 
-            if not Dir_Exists and then not Project.Externally_Built then
+            if not Dir_Exists
+              and then not Project.Externally_Built
+              and then not (Project.Qualifier = Abstract_Project)
+            then
                if Opt.Directories_Must_Exist_In_Projects then
 
                   --  The object directory does not exist, report an error if
@@ -5681,7 +5684,10 @@ package body GPR.Nmsc is
                Location         => Exec_Dir.Location,
                Externally_Built => Project.Externally_Built);
 
-            if not Dir_Exists then
+            if not Dir_Exists
+              and then not Project.Externally_Built
+              and then not (Project.Qualifier = Abstract_Project)
+            then
                if Opt.Directories_Must_Exist_In_Projects then
                   Error_Msg_File_1 := File_Name_Type (Exec_Dir.Value);
                   Error_Or_Warning

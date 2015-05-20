@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O520-006 gprinstall issue with Exec_Dir in abstract projects
+
+  Problem:    When an Exec_Dir attribute is defined in an abstract project
+              gprinstall complains for a missing directory and stop processing
+              the project tree.
+
+  Status:     This was fixed in 2.3 on 2015-05-20
+
+  Workaround: Create the missing directory manually.
+
 KP-22-O511-004 libraries built several times with aggregate projects
 
   Problem:    When the same library project is in several project trees
