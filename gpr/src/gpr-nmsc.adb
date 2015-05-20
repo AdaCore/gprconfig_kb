@@ -5663,6 +5663,7 @@ package body GPR.Nmsc is
                Path             => Project.Exec_Directory,
                Dir_Exists       => Dir_Exists,
                Data             => Data,
+               Must_Exist       => False,
                Location         => Exec_Dir.Location,
                Externally_Built => Project.Externally_Built);
 
@@ -5676,6 +5677,7 @@ package body GPR.Nmsc is
                Dir_Exists       => Dir_Exists,
                Data             => Data,
                Create           => "exec",
+               Must_Exist       => False,
                Location         => Exec_Dir.Location,
                Externally_Built => Project.Externally_Built);
 
