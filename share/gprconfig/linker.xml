@@ -342,6 +342,9 @@
        <target name="^i586-wrs-vxworks$" />
      </targets>
     <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
       <compiler version="3.16" />
       <compiler version="5.00" />
       <compiler version="5.01" />
@@ -366,6 +369,9 @@
      <targets>
        <target name="^i586-wrs-vxworks$" />
      </targets>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
     <compilers negate="true" >
       <compiler version="3.16" />
       <compiler version="5.00" />
@@ -378,6 +384,21 @@
       <compiler version="6.2" />
       <compiler version="6.3" />
       <compiler version="6.4" />
+    </compilers>
+     <config>
+   for Archive_Builder  use ("i586-wrs-vxworks-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("i586-wrs-vxworks-ranlib");
+   for Archive_Suffix   use ".a";
+     </config>
+   </configuration>
+
+   <configuration>
+     <targets>
+       <target name="^i586-wrs-vxworks$" />
+     </targets>
+    <compilers negate="true" >
+       <compiler language="Ada" />
     </compilers>
      <config>
    for Archive_Builder  use ("i586-wrs-vxworks-ar", "cr");
@@ -482,6 +503,21 @@
       <compiler version="6.2" />
       <compiler version="6.3" />
       <compiler version="6.4" />
+    </compilers>
+     <config>
+   for Archive_Builder  use ("powerpc-wrs-vxworks-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("powerpc-wrs-vxworks-ranlib");
+   for Archive_Suffix   use ".a";
+     </config>
+   </configuration>
+
+   <configuration>
+     <targets>
+       <target name="^powerpc-wrs-vxworks$" />
+     </targets>
+    <compilers negate="true" >
+       <compiler language="Ada" />
     </compilers>
      <config>
    for Archive_Builder  use ("powerpc-wrs-vxworks-ar", "cr");
