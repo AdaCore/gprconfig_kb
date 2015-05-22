@@ -39,6 +39,18 @@ KP-22-O511-004 libraries built several times with aggregate projects
 
   Workaround: Avoid having the same library project in several project trees.
 
+KP-22-O428-014 VxWorks6 with older compilers
+
+  Problem:    When gprbuild is invoked in auto-configuration for a VxWorks
+              target and a compiler with version 6.4.2 or older, building
+              libraries and linking may fail as the archive builder cannot be
+              found.
+
+  Status:     This was fixed in 2.3 on 2015-05-21
+
+  Workaround: Create a valid configuration project file with gprconfig
+              corresponding to the compiler and use it when invoking gprbuild.
+
 KP-22-O403-014 static library not installed with --mode=dev
 
   Problem:    When --mode=dev is explicitly specified on the gprinstall
