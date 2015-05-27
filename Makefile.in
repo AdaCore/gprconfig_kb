@@ -120,6 +120,7 @@ bootstrap-clean:
 	  -XBUILD_TOOL=gprbuild
 
 install: install.data install.bin
+	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f
 	-${MKDIR} ${datadir}/gpr
 	$(RM) -r ${datadir}/examples/gprbuild
 	-${MKDIR} ${datadir}/examples/gprbuild
