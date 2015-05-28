@@ -90,17 +90,6 @@ KP-22-O122-017 Reference to variable in missing predefined project
 
   Workaround: Put the directory of the predefined project in GPR_PROJECT_PATH.
 
-KP-22-O116-019 Reference to missing predefined imported project
-
-  Problem:    When a project imports a predefined project and refers to this
-              imported project, gprbuild may fail before being able to
-              update the project path and finding the predefined project
-              during its second parsing.
-
-  Status:     This was fixed in 2.3 on 2015-01-19
-
-  Workaround: Put the directory of the predefined project in GPR_PROJECT_PATH.
-
 KP-22-O113-051 Wrong configuration project file with gprconfig interactive
 
   Problem:    When gprconfig is invoked interactively and there are several
@@ -180,3 +169,15 @@ KP-22-O331-001 cannot link encapsulated libraries on Windows
 
   Workaround: Use a Library_Options attribute and specify manually the
               static GNAT run-time and the required libraries after.
+
+KP-22-O116-019 Reference to missing predefined imported project
+
+  Problem:    When a project imports a predefined project and refers to this
+              imported project, gprbuild may fail before being able to
+              update the project path and finding the predefined project
+              during its second parsing.
+
+  Status:     This was fixed in 2.3 on 2015-01-19
+              This was fixed in 2.2.2 on 2015-05-27
+
+  Workaround: Put the directory of the predefined project in GPR_PROJECT_PATH.
