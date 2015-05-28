@@ -133,18 +133,6 @@ KP-22-NC10-018 GPRbuild distributed recompile all sources
 
   Workaround: Do not use the distributed compilation mode for such projects.
 
-KP-22-NC05-016 References from incomplete withs
-
-  Problem:    When a project file references an attribute, a variable or
-              a package from an imported project that has not yet be found
-              before the project search path has been updated, an error is
-              reported and no processing is done by gprbuild.
-
-  Status:     This was fixed in 2.3 on 2014-12-08
-
-  Workaround: Set the project search path so that the imported project will be
-              found, before invoking gprbuild.
-
 KP-22-NA16-016 aggregate project, extended projects and sources not compiled
 
   Problem:    When an aggregate project aggregated two project trees and the
@@ -181,3 +169,16 @@ KP-22-O116-019 Reference to missing predefined imported project
               This was fixed in 2.2.2 on 2015-05-27
 
   Workaround: Put the directory of the predefined project in GPR_PROJECT_PATH.
+
+KP-22-NC05-016 References from incomplete withs
+
+  Problem:    When a project file references an attribute, a variable or
+              a package from an imported project that has not yet be found
+              before the project search path has been updated, an error is
+              reported and no processing is done by gprbuild.
+
+  Status:     This was fixed in 2.3 on 2014-12-08
+              This was fixed in 2.2.2 on 2015-05-28
+
+  Workaround: Set the project search path so that the imported project will be
+              found, before invoking gprbuild.
