@@ -680,6 +680,7 @@
        <target name="^erc32-elf$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^aarch64-apple-darwin.*$" />
        <target name="^arm-eabi$" />
        <target name="^arm-apple-darwin.*$" />
        <target name="^.*wrs-vxworks.*$" />
