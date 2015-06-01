@@ -97,6 +97,13 @@
     <target>x86_64-.*mingw32.*</target>
   </targetset>
 
+  <!-- aarch64-darwin (iOS 64bit) -->
+  <targetset>
+    <target>aarch64-ios</target>
+    <target>aarch64-darwin</target>
+    <target>aarch64.*-darwin.*</target>
+  </targetset>
+
   <!-- arm-darwin (iOS) -->
   <targetset>
     <target>arm-ios</target>
