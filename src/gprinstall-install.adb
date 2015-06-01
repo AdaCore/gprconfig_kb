@@ -1075,7 +1075,7 @@ package body Gprinstall.Install is
 
                   Copy_File
                     (From     => Lib_Dir
-                     & Get_Name_String (Get_Library_Filename),
+                                   & Get_Name_String (Get_Library_Filename),
                      To       => Lib_Dir,
                      File     => Get_Name_String (Project.Lib_Internal_Name),
                      Sym_Link => True);
