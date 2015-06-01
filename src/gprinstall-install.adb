@@ -1111,6 +1111,21 @@ package body Gprinstall.Install is
                      To         => Lib_Dir,
                      File       => Get_Name_String (Get_Library_Filename),
                      Sym_Link   => True);
+
+                  --  Copy also the versioned library if any
+
+                  if Project.Lib_Internal_Name /= No_Name
+                    and then Project.Library_Name /= Project.Lib_Internal_Name
+                  then
+                     Copy_File
+                       (From       =>
+                          Link_Lib_Dir
+                            & Get_Name_String (Project.Lib_Internal_Name),
+                        To         => Lib_Dir,
+                        File       =>
+                          Get_Name_String (Project.Lib_Internal_Name),
+                        Sym_Link   => True);
+                  end if;
                end if;
             end if;
          end if;
