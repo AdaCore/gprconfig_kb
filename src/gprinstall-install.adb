@@ -587,16 +587,21 @@ package body Gprinstall.Install is
       -------------
 
       function Lib_Dir (Build_Name : Boolean := True) return String is
+         Install_Name_Dir : constant String :=
+                              (if Install_Name.Default
+                               then ""
+                               else Install_Name.V.all & "/");
       begin
          if Is_Absolute_Path (Lib_Subdir.V.all) then
-            return Lib_Subdir.V.all;
+            return Lib_Subdir.V.all & Install_Name_Dir;
 
          elsif not Lib_Subdir.Default or else not Build_Name then
-            return Prefix_Dir.V.all & Lib_Subdir.V.all;
+            return Prefix_Dir.V.all & Lib_Subdir.V.all & Install_Name_Dir;
 
          else
             return Ensure_Directory
-              (Prefix_Dir.V.all & Lib_Subdir.V.all & Dir_Name);
+              (Prefix_Dir.V.all & Lib_Subdir.V.all & Install_Name_Dir
+               & Dir_Name);
          end if;
       end Lib_Dir;
 
@@ -618,16 +623,21 @@ package body Gprinstall.Install is
       -----------------
 
       function Sources_Dir (Build_Name : Boolean := True) return String is
+         Install_Name_Dir : constant String :=
+                              (if Install_Name.Default
+                               then ""
+                               else Install_Name.V.all & "/");
       begin
          if Is_Absolute_Path (Sources_Subdir.V.all) then
-            return Sources_Subdir.V.all;
+            return Sources_Subdir.V.all & Install_Name_Dir;
 
          elsif not Sources_Subdir.Default or else not Build_Name then
-            return Prefix_Dir.V.all & Sources_Subdir.V.all;
+            return Prefix_Dir.V.all & Sources_Subdir.V.all & Install_Name_Dir;
 
          else
             return Ensure_Directory
-              (Prefix_Dir.V.all & Sources_Subdir.V.all & Dir_Name);
+              (Prefix_Dir.V.all & Sources_Subdir.V.all & Install_Name_Dir
+               & Dir_Name);
          end if;
       end Sources_Dir;
 

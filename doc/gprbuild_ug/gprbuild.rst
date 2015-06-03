@@ -2865,7 +2865,8 @@ The installation name can be specified with the option
 installation of multiple projects under the same name. This is handy
 if an application comes with a library and a set of tools built with
 multiple projects. In this case we may want to record the installation
-under the same name.
+under the same name. The install name is also used as a suffix to
+group include and library directories.
 
 Examples of installation under the same name:
 
@@ -2996,7 +2997,9 @@ The switches for GPRinstall are:
 * :samp:`--install-name={name}`
 
   Specify the name to use for recording the installation.
-  The default is the project name without the extension.
+  The default is the project name without the extension. If set this
+  option is also used as include or library directories' suffix to
+  group all related installations under a common directory.
 
 * :samp:`--sources-subdir={path}`
 
