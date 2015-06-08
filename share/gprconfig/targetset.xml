@@ -269,6 +269,12 @@
     <target>i.86-wrs-vxworks7</target>
   </targetset>
 
+  <!-- x86_64-vx7 (vxworks 7) -->
+  <targetset>
+    <target>x86_64-wrs-vxworks7</target>
+    <target>x86_64-vx7</target>
+  </targetset>
+
   <!-- arm-vx6 (vxworks 6) -->
   <targetset>
     <target>arm-vx6</target>
