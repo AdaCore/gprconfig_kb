@@ -59,7 +59,7 @@ BUILDER=gprbuild -p -m -j${PROCESSORS}
 
 ADA_GEN_SUBDIR=gnat
 
-.PHONY: all distall gprbuild gprconfig gprclean gprinstall copy_gnat_src
+.PHONY: all distall gprbuild gprconfig gprclean gprinstall gprname copy_gnat_src
 all: $(xmlada_build_target)
 	${BUILDER} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
@@ -75,6 +75,7 @@ ifeq ($(BUILD), production)
 	strip $(prefix)/bin/gprclean$(EXEXT)
 	strip $(prefix)/bin/gprconfig$(EXEXT)
 	strip $(prefix)/bin/gprinstall$(EXEXT)
+	strip $(prefix)/bin/gprname$(EXEXT)
 	strip $(prefix)/bin/gprslave$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprbind$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
@@ -104,6 +105,9 @@ gprclean:
 
 gprconfig:
 	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprconfig-main
+
+gprname:
+	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprname
 
 bootstrap: gprconfig gprbuild
 	echo
@@ -156,6 +160,7 @@ ifeq ($(IS_WINDOWS),true)
 	${CP} src/gprinstall.exe.manifest ${bindir}
 	chmod +x ${bindir}/gprinstall.exe.manifest
 endif
+	${INSTALL_PROGRAM} gprname${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} gprslave${EXEXT} ${bindir}
 	-${MKDIR} ${libexecdir}/gprbuild
 	${INSTALL_PROGRAM} gprbind${EXEXT} ${libexecdir}/gprbuild/

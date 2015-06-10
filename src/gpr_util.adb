@@ -39,6 +39,7 @@ with Gpr_Build_Util;     use Gpr_Build_Util;
 with GprConfig.Sdefault;
 with GPR_Version;        use GPR_Version;
 with GPR.ALI;            use GPR.ALI;
+with GPR.Com;
 with GPR.Debug;
 with GPR.Opt;            use GPR.Opt;
 with GPR.Osint;          use GPR.Osint;
@@ -2622,5 +2623,43 @@ package body Gpr_Util is
    begin
       return Time_Stamp_Type (Image (Time, "%Y%m%d%H%M%S"));
    end To_Time_Stamp;
+
+   package body Maker is
+      ----------------
+      -- Write_Char --
+      ----------------
+      procedure Write_A_Char (C : Character) is
+      begin
+         Write_A_String ((1 => C));
+      end Write_A_Char;
+
+      ---------------
+      -- Write_Eol --
+      ---------------
+
+      procedure Write_Eol is
+      begin
+         Write_A_String ((1 => ASCII.LF));
+      end Write_Eol;
+
+      --------------------
+      -- Write_A_String --
+      --------------------
+
+      procedure Write_A_String (S : String) is
+         Str : String (1 .. S'Length);
+
+      begin
+         if S'Length > 0 then
+            Str := S;
+
+            if Write (Output_FD, Str (1)'Address, Str'Length) /= Str'Length
+            then
+               GPR.Com.Fail ("disk full");
+            end if;
+         end if;
+      end Write_A_String;
+
+   end Maker;
 
 end Gpr_Util;

@@ -144,6 +144,10 @@ package GPR.Opt is
    Minimal_Recompilation : Boolean := False;
    --  Set to True if minimal recompilation mode requested
 
+   No_Backup : Boolean := False;
+   --  Do not create backup copies of project files in gprname.
+   --  Set by switch --no-backup.
+
    No_Split_Units : Boolean := False;
    --  Set to True with switch --no-split-units. When True, unit sources, spec,
    --  body and subunits, must all be in the same project. This is checked

@@ -20,7 +20,8 @@ project Gprbuild is
         "gprlib.adb",
         "gprclean-main.adb",
         "gprinstall-main.adb",
-        "gprslave.adb");
+        "gprslave.adb",
+        "gprname.adb");
 
    for Source_Dirs use ("src");
 

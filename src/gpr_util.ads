@@ -149,6 +149,11 @@ package Gpr_Util is
    Packages_To_Check : constant String_List_Access := List_Of_Packages'Access;
    --  List of the packages to be checked when parsing/processing project files
 
+   Gprname_Packages : aliased String_List := (1 => Naming_String'Access);
+
+   Packages_To_Check_By_Gprname : constant String_List_Access :=
+                                    Gprname_Packages'Access;
+
    --  Local subprograms
 
    function Binder_Exchange_File_Name
@@ -387,5 +392,21 @@ package Gpr_Util is
    --  will be "pretty_printer", and gnatpp will be invoked with switches from
    --  "package Pretty_Printer", and -inner-cargs followed by switches from
    --  "package Compiler".
+
+   package Maker is
+      --  Support for Gprname
+
+      Output_FD : File_Descriptor;
+      --  To save the project file and its naming project file
+
+      procedure Write_Eol;
+      --  Output an empty line
+
+      procedure Write_A_Char (C : Character);
+      --  Write one character to Output_FD
+
+      procedure Write_A_String (S : String);
+      --  Write a String to Output_FD
+   end Maker;
 
 end Gpr_Util;
