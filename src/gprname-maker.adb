@@ -494,7 +494,7 @@ package body Maker is
          Set_First_Declarative_Item_Of
            (Project_Declaration, Tree, To => Decl_Item);
          Set_Current_Item_Node (Decl_Item, Tree, To => Attribute);
-         Set_Name_Of (Attribute, Tree, To => Name_Source_Files);
+         Set_Name_Of (Attribute, Tree, To => Name_Source_List_File);
 
          Expression :=
            Default_Project_Node
@@ -786,138 +786,153 @@ package body Maker is
             Put_Line ("""");
          end if;
 
-         Part.Parse
-           (In_Tree                => Tree,
-            Project                => Project_Node,
-            Project_File_Name      => Output_Name.all,
-            Errout_Handling        => Part.Finalize_If_Error,
-            Store_Comments         => True,
-            Is_Config_File         => False,
-            Env                    => Root_Environment,
-            Current_Directory      => Get_Current_Dir,
-            Packages_To_Check      => Packages_To_Check_By_Gprname);
+      else
+         declare
+            File : File_Type;
+         begin
+            Create (File, Out_File, Output_Name.all);
+            Put (File, "project ");
+            Put (File, Path_Name (Directory_Last + 1 .. Output_Name_Last));
+            Put_Line (File, " is");
+            Put (File, "end ");
+            Put (File, Path_Name (Directory_Last + 1 .. Output_Name_Last));
+            Put_Line (File, ";");
+            Close (File);
+            Opt.No_Backup := True;
+         end;
+      end if;
 
-         --  Fail if parsing was not successful
+      Part.Parse
+        (In_Tree                => Tree,
+         Project                => Project_Node,
+         Project_File_Name      => Output_Name.all,
+         Errout_Handling        => Part.Finalize_If_Error,
+         Store_Comments         => True,
+         Is_Config_File         => False,
+         Env                    => Root_Environment,
+         Current_Directory      => Get_Current_Dir,
+         Packages_To_Check      => Packages_To_Check_By_Gprname);
 
-         if No (Project_Node) then
-            GPR.Com.Fail ("parsing of existing project file failed");
+      --  Fail if parsing was not successful
 
-         elsif Project_Qualifier_Of (Project_Node, Tree) = Aggregate then
-            GPR.Com.Fail ("aggregate projects are not supported");
+      if No (Project_Node) then
+         GPR.Com.Fail ("parsing of existing project file failed");
 
-         elsif Project_Qualifier_Of (Project_Node, Tree) =
-           Aggregate_Library
-         then
-            GPR.Com.Fail ("aggregate library projects are not supported");
+      elsif Project_Qualifier_Of (Project_Node, Tree) = Aggregate then
+         GPR.Com.Fail ("aggregate projects are not supported");
 
-         else
-            --  If parsing was successful, remove the components that are
-            --  automatically generated, if any, so that they will be
-            --  unconditionally added later.
+      elsif Project_Qualifier_Of (Project_Node, Tree) =
+        Aggregate_Library
+      then
+         GPR.Com.Fail ("aggregate library projects are not supported");
 
-            --  Remove the with clause for the naming project file
+      else
+         --  If parsing was successful, remove the components that are
+         --  automatically generated, if any, so that they will be
+         --  unconditionally added later.
 
-            declare
-               With_Clause : Project_Node_Id :=
-                 First_With_Clause_Of (Project_Node, Tree);
-               Previous    : Project_Node_Id := Empty_Project_Node;
+         --  Remove the with clause for the naming project file
 
-            begin
-               while Present (With_Clause) loop
-                  if GPR.Tree.Name_Of (With_Clause, Tree) =
-                    Project_Naming_Id
+         declare
+            With_Clause : Project_Node_Id :=
+              First_With_Clause_Of (Project_Node, Tree);
+            Previous    : Project_Node_Id := Empty_Project_Node;
+
+         begin
+            while Present (With_Clause) loop
+               if GPR.Tree.Name_Of (With_Clause, Tree) =
+                 Project_Naming_Id
+               then
+                  if No (Previous) then
+                     Set_First_With_Clause_Of
+                       (Project_Node, Tree,
+                        To => Next_With_Clause_Of (With_Clause, Tree));
+                  else
+                     Set_Next_With_Clause_Of
+                       (Previous, Tree,
+                        To => Next_With_Clause_Of (With_Clause, Tree));
+                  end if;
+
+                  exit;
+               end if;
+
+               Previous := With_Clause;
+               With_Clause := Next_With_Clause_Of (With_Clause, Tree);
+            end loop;
+         end;
+
+         --  Remove attribute declarations of Source_Files,
+         --  Source_List_File, Source_Dirs, and the declaration of
+         --  package Naming, if they exist, but preserve the comments
+         --  attached to these nodes.
+
+         declare
+            Declaration  : Project_Node_Id :=
+              First_Declarative_Item_Of
+                (Project_Declaration_Of
+                   (Project_Node, Tree),
+                 Tree);
+            Previous     : Project_Node_Id := Empty_Project_Node;
+            Current_Node : Project_Node_Id := Empty_Project_Node;
+
+            Name         : Name_Id;
+            Kind_Of_Node : Project_Node_Kind;
+            Comments     : Project_Node_Id;
+
+         begin
+            while Present (Declaration) loop
+               Current_Node := Current_Item_Node (Declaration, Tree);
+
+               Kind_Of_Node := Kind_Of (Current_Node, Tree);
+
+               if Kind_Of_Node = N_Attribute_Declaration or else
+                 Kind_Of_Node = N_Package_Declaration
+               then
+                  Name := GPR.Tree.Name_Of (Current_Node, Tree);
+
+                  if Name = Name_Source_Files or else
+                    Name = Name_Source_List_File or else
+                    Name = Name_Source_Dirs or else
+                    Name = Name_Naming
                   then
+                     Comments :=
+                       Tree.Project_Nodes.Table (Current_Node).Comments;
+
+                     if Name = Name_Source_Files then
+                        Source_Files_Comments := Comments;
+
+                     elsif Name = Name_Source_List_File then
+                        Source_List_File_Comments := Comments;
+
+                     elsif Name = Name_Source_Dirs then
+                        Source_Dirs_Comments := Comments;
+
+                     elsif Name = Name_Naming then
+                        Naming_Package_Comments := Comments;
+                     end if;
+
                      if No (Previous) then
-                        Set_First_With_Clause_Of
-                          (Project_Node, Tree,
-                           To => Next_With_Clause_Of (With_Clause, Tree));
+                        Set_First_Declarative_Item_Of
+                          (Project_Declaration_Of (Project_Node, Tree),
+                           Tree,
+                           To => Next_Declarative_Item
+                             (Declaration, Tree));
+
                      else
-                        Set_Next_With_Clause_Of
+                        Set_Next_Declarative_Item
                           (Previous, Tree,
-                           To => Next_With_Clause_Of (With_Clause, Tree));
+                           To => Next_Declarative_Item
+                             (Declaration, Tree));
                      end if;
 
-                     exit;
+                  else
+                     Previous := Declaration;
                   end if;
+               end if;
 
-                  Previous := With_Clause;
-                  With_Clause := Next_With_Clause_Of (With_Clause, Tree);
-               end loop;
-            end;
-
-            --  Remove attribute declarations of Source_Files,
-            --  Source_List_File, Source_Dirs, and the declaration of
-            --  package Naming, if they exist, but preserve the comments
-            --  attached to these nodes.
-
-            declare
-               Declaration  : Project_Node_Id :=
-                 First_Declarative_Item_Of
-                   (Project_Declaration_Of
-                      (Project_Node, Tree),
-                    Tree);
-               Previous     : Project_Node_Id := Empty_Project_Node;
-               Current_Node : Project_Node_Id := Empty_Project_Node;
-
-               Name         : Name_Id;
-               Kind_Of_Node : Project_Node_Kind;
-               Comments     : Project_Node_Id;
-
-            begin
-               while Present (Declaration) loop
-                  Current_Node := Current_Item_Node (Declaration, Tree);
-
-                  Kind_Of_Node := Kind_Of (Current_Node, Tree);
-
-                  if Kind_Of_Node = N_Attribute_Declaration or else
-                    Kind_Of_Node = N_Package_Declaration
-                  then
-                     Name := GPR.Tree.Name_Of (Current_Node, Tree);
-
-                     if Name = Name_Source_Files or else
-                        Name = Name_Source_List_File or else
-                        Name = Name_Source_Dirs or else
-                        Name = Name_Naming
-                     then
-                        Comments :=
-                          Tree.Project_Nodes.Table (Current_Node).Comments;
-
-                        if Name = Name_Source_Files then
-                           Source_Files_Comments := Comments;
-
-                        elsif Name = Name_Source_List_File then
-                           Source_List_File_Comments := Comments;
-
-                        elsif Name = Name_Source_Dirs then
-                           Source_Dirs_Comments := Comments;
-
-                        elsif Name = Name_Naming then
-                           Naming_Package_Comments := Comments;
-                        end if;
-
-                        if No (Previous) then
-                           Set_First_Declarative_Item_Of
-                             (Project_Declaration_Of (Project_Node, Tree),
-                              Tree,
-                              To => Next_Declarative_Item
-                                (Declaration, Tree));
-
-                        else
-                           Set_Next_Declarative_Item
-                             (Previous, Tree,
-                              To => Next_Declarative_Item
-                                (Declaration, Tree));
-                        end if;
-
-                     else
-                        Previous := Declaration;
-                     end if;
-                  end if;
-
-                  Declaration := Next_Declarative_Item (Declaration, Tree);
-               end loop;
-            end;
-         end if;
+               Declaration := Next_Declarative_Item (Declaration, Tree);
+            end loop;
+         end;
       end if;
 
       if Directory_Last /= 0 then
