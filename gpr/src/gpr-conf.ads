@@ -216,8 +216,8 @@ package GPR.Conf is
    --  --config switch then automatically generating a configuration file.
 
    function Runtime_Name_For (Language : Name_Id) return String;
-   --  Returns the runtime name for a language. Returns an empty string if no
-   --  runtime was specified for the language using option --RTS.
+   --  Returns the runtime name for a language. Returns the value set by the
+   --  last call to Set_Runtime_For, if any, otherwise returns an empty string.
 
    function Runtime_Name_Set_For (Language : Name_Id) return Boolean;
    --  Returns True only if Set_Runtime_For has been called for the Language
