@@ -1786,8 +1786,10 @@ package body GPR.Nmsc is
                      --  Attribute Casing
 
                      begin
-                        Casing :=
-                          Value (Get_Name_String (Attribute.Value.Value));
+                        if Attribute.Value.Value /= No_Name then
+                           Casing :=
+                             Value (Get_Name_String (Attribute.Value.Value));
+                        end if;
 
                      exception
                         when Constraint_Error =>
@@ -3939,7 +3941,7 @@ package body GPR.Nmsc is
       begin
          Sep_Suffix_Loc := No_Location;
 
-         if not Dot_Repl.Default then
+         if not Dot_Repl.Default and then Dot_Repl.Value /= No_Name then
             pragma Assert
               (Dot_Repl.Kind = Single, "Dot_Replacement is not a string");
 
@@ -3991,7 +3993,9 @@ package body GPR.Nmsc is
 
          Casing_Defined := False;
 
-         if not Casing_String.Default then
+         if not Casing_String.Default
+            and then Casing_String.Value /= No_Name
+         then
             pragma Assert
               (Casing_String.Kind = Single, "Casing is not a string");
 
