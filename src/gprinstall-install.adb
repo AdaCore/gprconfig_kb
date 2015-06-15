@@ -750,7 +750,7 @@ package body Gprinstall.Install is
                      OS_Exit (1);
                end;
 
-               if Executable or else Is_Executable_File (From) then
+               if Executable then
                   Set_Executable
                     (Dest_Filename, Mode => S_Owner + S_Group + S_Others);
                end if;
@@ -979,9 +979,10 @@ package body Gprinstall.Install is
 
                elsif Kind (E) = Ordinary_File then
                   Copy_File
-                    (From => Fullname,
-                     To   => Dest_Dir,
-                     File => Simple_Name (Fullname));
+                    (From       => Fullname,
+                     To         => Dest_Dir,
+                     File       => Simple_Name (Fullname),
+                     Executable => Is_Executable_File (Fullname));
                end if;
             end Copy_Entry;
 
