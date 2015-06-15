@@ -750,7 +750,7 @@ package body Gprinstall.Install is
                      OS_Exit (1);
                end;
 
-               if Executable then
+               if Executable or else Is_Executable_File (From) then
                   Set_Executable
                     (Dest_Filename, Mode => S_Owner + S_Group + S_Others);
                end if;
