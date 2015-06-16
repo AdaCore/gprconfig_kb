@@ -1217,6 +1217,9 @@ package body Gprinstall.Install is
          --  Create packages that are needed, currently Naming and part of
          --  Linker is generated for the installed project.
 
+         procedure Create_Variables;
+         --  Create global variables
+
          function Image
            (Name : Name_Id;
             Id   : Array_Element_Id) return String;
@@ -1336,6 +1339,28 @@ package body Gprinstall.Install is
             Create_Naming (Project);
             Create_Linker (Project);
          end Create_Packages;
+
+         ----------------------
+         -- Create_Variables --
+         ----------------------
+
+         procedure Create_Variables is
+            Vars : Variable_Id := Project.Decl.Variables;
+         begin
+            while Vars /= No_Variable loop
+               declare
+                  V : constant Variable :=
+                        Tree.Shared.Variable_Elements.Table (Vars);
+               begin
+                  if V.Value.Kind in Single | List then
+                     Content.Append
+                       ("   " & Get_Name_String (V.Name) & " := "
+                        & Image (V.Value));
+                  end if;
+                  Vars := V.Next;
+               end;
+            end loop;
+         end Create_Variables;
 
          ---------------------
          -- Data_Attributes --
@@ -2218,6 +2243,11 @@ package body Gprinstall.Install is
                         & """;");
                   end if;
                end if;
+
+               --  Variables
+
+               Add_Empty_Line;
+               Create_Variables;
 
                --  Packages
 

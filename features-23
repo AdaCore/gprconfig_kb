@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-O612-022 Add variables in gprinstall's generated projects (2015-06-15)
+
+   Project generated with gprinstall will now contains global variables
+   as found in the original project.
+
 NF-23-O601-024 Create a symlink for the versioned libraries (2015-06-01)
 
    A symlink is now created on the main library directory for a library
