@@ -393,7 +393,7 @@ package Gpr_Util is
    --  "package Pretty_Printer", and -inner-cargs followed by switches from
    --  "package Compiler".
 
-   package Maker is
+   package Project_Output is
       --  Support for Gprname
 
       Output_FD : File_Descriptor;
@@ -407,6 +407,6 @@ package Gpr_Util is
 
       procedure Write_A_String (S : String);
       --  Write a String to Output_FD
-   end Maker;
+   end Project_Output;
 
 end Gpr_Util;

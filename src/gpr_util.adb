@@ -2624,7 +2624,7 @@ package body Gpr_Util is
       return Time_Stamp_Type (Image (Time, "%Y%m%d%H%M%S"));
    end To_Time_Stamp;
 
-   package body Maker is
+   package body Project_Output is
       ----------------
       -- Write_Char --
       ----------------
@@ -2660,6 +2660,6 @@ package body Gpr_Util is
          end if;
       end Write_A_String;
 
-   end Maker;
+   end Project_Output;
 
 end Gpr_Util;
