@@ -2244,11 +2244,6 @@ package body Gprinstall.Install is
                   end if;
                end if;
 
-               --  Variables
-
-               Add_Empty_Line;
-               Create_Variables;
-
                --  Packages
 
                if Has_Sources (Project) then
@@ -2277,6 +2272,11 @@ package body Gprinstall.Install is
 
                Content.Append ("   for Source_Dirs use ();");
             end if;
+
+            --  Variables
+
+            Add_Empty_Line;
+            Create_Variables;
 
             --  Close project
 
