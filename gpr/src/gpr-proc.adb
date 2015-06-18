@@ -923,6 +923,18 @@ package body GPR.Proc is
                            Add_Str_To_Name_Buffer (Opt.Target_Value.all);
                            The_Variable.Value := Name_Find;
 
+                        --  Check special value for Runtime (<lang>): --RTS=
+                        --  overrides declaration of Runtime (<lang>).
+
+                        elsif The_Default = Runtime_Value then
+                           Get_Name_String (Index);
+                           To_Lower (Name_Buffer (1 .. Name_Len));
+
+                           if Runtime_Defaults.Get (Name_Find) /= No_Name then
+                              The_Variable.Value :=
+                                Runtime_Defaults.Get (Name_Find);
+                           end if;
+
                         --  Check the defaults
 
                         elsif The_Variable.Default then
@@ -963,14 +975,7 @@ package body GPR.Proc is
                                     end if;
 
                                  when Runtime_Value =>
-                                    Get_Name_String (Index);
-                                    To_Lower (Name_Buffer (1 .. Name_Len));
-                                    The_Variable.Value :=
-                                      Runtime_Defaults.Get (Name_Find);
-                                    if The_Variable.Value = No_Name then
-                                       The_Variable.Value := Empty_String;
-                                    end if;
-
+                                    null;
                               end case;
 
                            when List =>
