@@ -645,12 +645,12 @@ package body GPR.Proc is
                        String_Element_Table.Last (Shared.String_Elements);
 
                      Shared.String_Elements.Table (Last) :=
-                       (Value    => Value.Value,
+                       (Value         => Value.Value,
                         Display_Value => No_Name,
-                        Location => Value.Location,
-                        Flag     => False,
-                        Next     => Nil_String,
-                        Index    => Value.Index);
+                        Location      => Value.Location,
+                        Flag          => False,
+                        Next          => Nil_String,
+                        Index         => Value.Index);
 
                      loop
                         --  Add the other element of the literal string list
@@ -682,12 +682,12 @@ package body GPR.Proc is
                         Last := String_Element_Table.Last
                           (Shared.String_Elements);
                         Shared.String_Elements.Table (Last) :=
-                          (Value    => Value.Value,
+                          (Value         => Value.Value,
                            Display_Value => No_Name,
-                           Location => Value.Location,
-                           Flag     => False,
-                           Next     => Nil_String,
-                           Index    => Value.Index);
+                           Location      => Value.Location,
+                           Flag          => False,
+                           Next          => Nil_String,
+                           Index         => Value.Index);
                      end loop;
                   end if;
                end;
