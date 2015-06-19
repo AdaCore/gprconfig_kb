@@ -23,13 +23,13 @@
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line; use Ada.Command_Line;
-with Ada.Text_IO;      use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 
 with System.CRTL;
 
-with GPR.Names; use GPR.Names;
+with GPR.Names;  use GPR.Names;
+with GPR.Output; use GPR.Output;
 
 package body GPR.Osint is
 
@@ -182,11 +182,12 @@ package body GPR.Osint is
    procedure Fail (S : String) is
       Fatal_Exit : constant := 4;
    begin
-      Put (Standard_Error, Command_Name);
-      Put (": ");
-      Put_Line (S);
+      Set_Standard_Error;
+      Write_Str (Command_Name);
+      Write_Str (": ");
+      Write_Line (S);
 
-      GNAT.OS_Lib.OS_Exit (Fatal_Exit);
+      OS_Exit (Fatal_Exit);
    end Fail;
 
    -----------------

@@ -2361,8 +2361,8 @@ package body Gpr_Util is
          Put  (Source_Path);
 
          if Source.Index /= 0 then
-            Put (" at ");
-            Write_Int (Source.Index);
+            Put (" at");
+            Put (Source.Index'Img);
          end if;
 
          Put_Line (" ... ");

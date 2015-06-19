@@ -28,7 +28,6 @@ with Ada.Directories;            use Ada.Directories;
 with Ada.Strings;                use Ada.Strings;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps.Constants;
-with Ada.Text_IO;                use Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -43,6 +42,7 @@ with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Names;   use GPR.Names;
 with GPR.Opt;     use GPR.Opt;
 with GPR.Osint;   use GPR.Osint;
+with GPR.Output;  use GPR.Output;
 with GPR.Sinput;  use GPR.Sinput;
 with GPR.Tree;    use GPR.Tree;
 with GPR.Util;    use GPR.Util;
@@ -808,28 +808,28 @@ package body GPR.Nmsc is
 
       if Current_Verbosity = High then
          Debug_Indent;
-         Put ("adding source File: ");
-         Put (Get_Name_String (Display_File));
+         Write_Str ("adding source File: ");
+         Write_Str (Get_Name_String (Display_File));
 
          if Index /= 0 then
-            Put (" at" & Index'Img);
+            Write_Str (" at" & Index'Img);
          end if;
 
          if Lang_Id.Config.Kind = Unit_Based then
-            Put (" Unit: ");
+            Write_Str (" Unit: ");
 
             --  ??? in gprclean, it seems we sometimes pass an empty Unit name
             --  (see test extended_projects).
 
             if Unit /= No_Name then
-               Put (Get_Name_String (Unit));
+               Write_Str (Get_Name_String (Unit));
             end if;
 
-            Put (" Kind: ");
-            Put (Source_Kind'Image (Kind));
+            Write_Str (" Kind: ");
+            Write_Str (Source_Kind'Image (Kind));
          end if;
 
-         New_Line;
+         Write_Eol;
       end if;
 
       Id.Project             := Project;
@@ -3296,7 +3296,7 @@ package body GPR.Nmsc is
            and then Project.Library_Name = No_Name
          then
             Debug_Indent;
-            Put_Line ("no library name");
+            Write_Line ("no library name");
          end if;
 
       else
@@ -5273,10 +5273,10 @@ package body GPR.Nmsc is
 
                if Current_Verbosity = High then
                   Debug_Indent;
-                  Put  (Index'Img);
-                  Put  (": '");
-                  Put (The_Name (Index));
-                  Put_Line ("' is not a letter.");
+                  Write_Str (Index'Img);
+                  Write_Str (": '");
+                  Write_Char (The_Name (Index));
+                  Write_Line ("' is not a letter.");
                end if;
 
                exit;
@@ -5292,10 +5292,10 @@ package body GPR.Nmsc is
 
             if Current_Verbosity = High then
                Debug_Indent;
-               Put (Index'Img);
-               Put  (": '");
-               Put (The_Name (Index));
-               Put_Line ("' is illegal here.");
+               Write_Str (Index'Img);
+               Write_Str (": '");
+               Write_Char (The_Name (Index));
+               Write_Line ("' is illegal here.");
             end if;
 
             exit;
@@ -5327,10 +5327,10 @@ package body GPR.Nmsc is
 
                if Current_Verbosity = High then
                   Debug_Indent;
-                  Put (Index'Img);
-                  Put  (": '");
-                  Put (The_Name (Index));
-                  Put_Line ("' is not alphanumeric.");
+                  Write_Str (Index'Img);
+                  Write_Str (": '");
+                  Write_Char (The_Name (Index));
+                  Write_Line ("' is not alphanumeric.");
                end if;
 
                exit;
@@ -6128,17 +6128,17 @@ package body GPR.Nmsc is
          if Masked then
             if Current_Verbosity = High then
                Debug_Indent;
-               Put ("   """ & Filename & """ contains the ");
+               Write_Str ("   """ & Filename & """ contains the ");
 
                if Kind = Spec then
-                  Put ("spec of a unit found in """);
-                  Put (Get_Name_String (Unit_Except.Spec));
+                  Write_Str ("spec of a unit found in """);
+                  Write_Str (Get_Name_String (Unit_Except.Spec));
                else
-                  Put ("body of a unit found in """);
-                  Put (Get_Name_String (Unit_Except.Impl));
+                  Write_Str ("body of a unit found in """);
+                  Write_Str (Get_Name_String (Unit_Except.Impl));
                end if;
 
-               Put_Line (""" (ignored)");
+               Write_Line (""" (ignored)");
             end if;
 
             Unit := No_Name;
@@ -6300,11 +6300,11 @@ package body GPR.Nmsc is
 
       if Current_Verbosity = High then
          Debug_Indent;
-         Put ("Locate_Directory (""");
-         Put (Get_Name_String (The_Name));
-         Put (""", in """);
-         Put (The_Parent);
-         Put_Line (""")");
+         Write_Str ("Locate_Directory (""");
+         Write_Str (Get_Name_String (The_Name));
+         Write_Str (""", in """);
+         Write_Str (The_Parent);
+         Write_Line (""")");
       end if;
 
       Path := No_Path_Information;
@@ -6352,15 +6352,15 @@ package body GPR.Nmsc is
                      Create_Path (Full_Path_Name.all);
 
                      if not GPR.Opt.Quiet_Output then
-                        Put (Create);
-                        Put (" directory """);
-                        Put (Full_Path_Name.all);
-                        Put (""" created for project ");
-                        Put_Line (Get_Name_String (Project.Name));
+                        Write_Str (Create);
+                        Write_Str (" directory """);
+                        Write_Str (Full_Path_Name.all);
+                        Write_Str (""" created for project ");
+                        Write_Line (Get_Name_String (Project.Name));
                      end if;
 
                   exception
-                     when Ada.Text_IO.Use_Error =>
+                     when Use_Error =>
 
                         --  Output message with name of directory. Note that we
                         --  use the ~ insertion method here in case the name
@@ -7558,10 +7558,10 @@ package body GPR.Nmsc is
 
             if Current_Verbosity = High then
                Debug_Indent;
-               Put ("file_pattern=");
-               Put (Pattern (Pattern_End + 1 .. Pattern'Last));
-               Put (" dir_pattern=");
-               Put_Line (Pattern (Pattern'First .. Pattern_End));
+               Write_Str ("file_pattern=");
+               Write_Str (Pattern (Pattern_End + 1 .. Pattern'Last));
+               Write_Str (" dir_pattern=");
+               Write_Line (Pattern (Pattern'First .. Pattern_End));
             end if;
 
             File_Pattern := Compile
@@ -8072,8 +8072,8 @@ package body GPR.Nmsc is
 
                      if Current_Verbosity = High then
                         Debug_Indent;
-                        Put ("removing file ");
-                        Put_Line
+                        Write_Str ("removing file ");
+                        Write_Line
                           (Get_Name_String (Excluded.File)
                            & " " & Get_Name_String (Source.Project.Name));
                      end if;
@@ -8377,14 +8377,14 @@ package body GPR.Nmsc is
    begin
       if Current_Verbosity = High then
          Debug_Indent;
-         Put ("removing source ");
-         Put (Get_Name_String (Id.File));
+         Write_Str ("removing source ");
+         Write_Str (Get_Name_String (Id.File));
 
          if Id.Index /= 0 then
-            Put (" at" & Id.Index'Img);
+            Write_Str (" at" & Id.Index'Img);
          end if;
 
-         New_Line;
+         Write_Eol;
       end if;
 
       if Replaced_By /= No_Source then

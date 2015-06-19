@@ -22,13 +22,14 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO; use Ada.Text_IO;
+--  with Ada.Text_IO; use Ada.Text_IO;
 
 with GPR.Cset;    use GPR.Cset;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Names;   use GPR.Names;
 with GPR.Opt;     use GPR.Opt;
 with GPR.Osint;   use GPR.Osint;
+with GPR.Output;  use GPR.Output;
 with GPR.Scans;   use GPR.Scans;
 with GPR.Sinput;  use GPR.Sinput;
 
@@ -265,36 +266,36 @@ package body GPR.Err is
 
       if Brief_Output or not Verbose_Mode then
          E := First_Error_Msg;
-         Set_Output (File => Standard_Error);
+         Set_Standard_Error;
 
          while E /= No_Error_Msg loop
             if not Errors.Table (E).Deleted then
                if Full_Path_Name_For_Brief_Errors then
-                  Put (Get_Name_String
+                  Write_Str (Get_Name_String
                        (Full_Ref_Name (Errors.Table (E).Sfile)));
                else
-                  Put (Get_Name_String
+                  Write_Str (Get_Name_String
                          (Reference_Name (Errors.Table (E).Sfile)));
                end if;
 
-               Put (':');
+               Write_Char (':');
                Write_Int (Int (Errors.Table (E).Line));
-               Put (':');
+               Write_Char (':');
 
                if Errors.Table (E).Col < 10 then
-                  Put ('0');
+                  Write_Char ('0');
                end if;
 
                Write_Int (Int (Errors.Table (E).Col));
-               Put (": ");
+               Write_Str (": ");
                Output_Msg_Text (E);
-               New_Line;
+               Write_Eol;
             end if;
 
             E := Errors.Table (E).Next;
          end loop;
 
-         Set_Output (File => Standard_Output);
+         Set_Standard_Output;
       end if;
 
       --  Verbose mode (error lines only with error flags)
@@ -305,7 +306,7 @@ package body GPR.Err is
          --  Loop through error lines
 
          while E /= No_Error_Msg loop
-            New_Line;
+            Write_Eol;
             Output_Source_Line
               (Errors.Table (E).Line,
                Errors.Table (E).Sfile,
@@ -321,7 +322,7 @@ package body GPR.Err is
          --  Extra blank line if error messages or source listing were output
 
          if Total_Errors_Detected + Warnings_Detected > 0 then
-            New_Line;
+            Write_Eol;
          end if;
 
          --  Message giving number of lines read and number of errors detected.
@@ -340,53 +341,53 @@ package body GPR.Err is
            and then not Brief_Output
            and then Verbose_Mode
          then
-            Set_Output (Standard_Error);
+            Set_Standard_Error;
          end if;
 
          --  Message giving total number of lines
 
-         Put (" ");
+         Write_Str (" ");
          Write_Int (Num_Source_Lines (Main_Source_File));
 
          if Num_Source_Lines (Main_Source_File) = 1 then
-            Put (" line: ");
+            Write_Str (" line: ");
          else
-            Put (" lines: ");
+            Write_Str (" lines: ");
          end if;
 
          if Total_Errors_Detected = 0 then
-            Put ("No errors");
+            Write_Str ("No errors");
 
          elsif Total_Errors_Detected = 1 then
-            Put ("1 error");
+            Write_Str ("1 error");
 
          else
             Write_Int (Total_Errors_Detected);
-            Put (" errors");
+            Write_Str (" errors");
          end if;
 
          if Warnings_Detected - Info_Messages  /= 0 then
-            Put (", ");
+            Write_Str (", ");
             Write_Int (Warnings_Detected - Info_Messages);
-            Put (" warning");
+            Write_Str (" warning");
 
             if Warnings_Detected - Info_Messages /= 1 then
-               Put ('s');
+               Write_Char ('s');
             end if;
 
             if Warning_Mode = Treat_As_Error then
-               Put (" (treated as error");
+               Write_Str (" (treated as error");
 
                if Warnings_Detected - Info_Messages /= 1 then
-                  Put ('s');
+                  Write_Char ('s');
                end if;
 
-               Put (')');
+               Write_Char (')');
             end if;
          end if;
 
-         New_Line;
-         Set_Output (Standard_Output);
+         Write_Eol;
+         Set_Standard_Output;
       end if;
 
       if Warning_Mode = Treat_As_Error then
@@ -446,10 +447,10 @@ package body GPR.Err is
 
    begin
       if Sfile /= Current_Error_Source_File then
-         Put ("==============Error messages for file: ");
+         Write_Str ("==============Error messages for file: ");
 
          Write_Name (Name_Id (Full_File_Name (Sfile)));
-         New_Line;
+         Write_Eol;
 
          Current_Error_Source_File := Sfile;
       end if;
@@ -466,7 +467,7 @@ package body GPR.Err is
          exit when C = ASCII.LF or else C = ASCII.CR or else C = EOF;
 
          if Errs then
-            Put (C);
+            Write_Char (C);
          end if;
 
          S := S + 1;
@@ -476,7 +477,7 @@ package body GPR.Err is
       --  training spaces preserved (so we output the line exactly as input).
 
       if Line_Number_Output then
-         New_Line;
+         Write_Eol;
       end if;
    end Output_Source_Line;
 
@@ -489,12 +490,12 @@ package body GPR.Err is
 
    begin
       if Debug_Tokens then
-         Put_Line (Token_Type'Image (Token));
+         Write_Line (Token_Type'Image (Token));
 
          if Token = Tok_Identifier
            or else Token = Tok_String_Literal
          then
-            Put_Line ("  " & Get_Name_String (Token_Name));
+            Write_Line ("  " & Get_Name_String (Token_Name));
          end if;
       end if;
    end Post_Scan;

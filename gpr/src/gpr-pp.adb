@@ -22,11 +22,10 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO; use Ada.Text_IO;
-
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 
-with GPR.Names; use GPR.Names;
+with GPR.Names;  use GPR.Names;
+with GPR.Output; use GPR.Output;
 with GPR.Snames;
 
 package body GPR.PP is
@@ -986,16 +985,16 @@ package body GPR.PP is
 
    procedure Output_Statistics is
    begin
-      Put_Line ("Project_Node_Kinds not tested:");
+      Write_Line ("Project_Node_Kinds not tested:");
 
       for Kind in Project_Node_Kind loop
          if Kind /= N_Comment_Zones and then Not_Tested (Kind) then
-            Put ("   ");
-            Put_Line (Project_Node_Kind'Image (Kind));
+            Write_Str ("   ");
+            Write_Line (Project_Node_Kind'Image (Kind));
          end if;
       end loop;
 
-      New_Line;
+      Write_Eol;
    end Output_Statistics;
 
    ---------
@@ -1016,7 +1015,7 @@ package body GPR.PP is
 
    procedure Write_Char_Default (C : Character) is
    begin
-      Put (C);
+      Write_Char (C);
    end Write_Char_Default;
 
    -----------------------
@@ -1025,7 +1024,7 @@ package body GPR.PP is
 
    procedure Write_Str_Default (S : String) is
    begin
-      Put (S);
+      Write_Str (S);
    end Write_Str_Default;
 
    -----------------------
@@ -1034,7 +1033,7 @@ package body GPR.PP is
 
    procedure Write_Eol_Default is
    begin
-      New_Line;
+      Write_Eol;
    end Write_Eol_Default;
 
 end GPR.PP;

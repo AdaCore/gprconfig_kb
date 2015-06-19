@@ -24,7 +24,6 @@
 
 with Ada.Characters.Handling;     use Ada.Characters.Handling;
 with Ada.Containers.Ordered_Sets;
-with Ada.Text_IO;                 use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
@@ -34,6 +33,7 @@ with GNAT.HTable;
 with GPR.Opt;
 with GPR.Attr;
 with GPR.Names;  use GPR.Names;
+with GPR.Output; use GPR.Output;
 with GPR.Snames; use GPR.Snames;
 
 package body GPR is
@@ -188,7 +188,7 @@ package body GPR is
    begin
       if not Opt.Keep_Temporary_Files  then
          if Current_Verbosity = High then
-            Put_Line ("Removing temp file: " & Get_Name_String (Path));
+            Write_Line ("Removing temp file: " & Get_Name_String (Path));
          end if;
 
          Delete_File (Get_Name_String (Path), Dont_Care);
@@ -261,7 +261,7 @@ package body GPR is
 
             if Path /= No_Path then
                if Current_Verbosity = High then
-                  Put_Line ("Removing temp file: "
+                  Write_Line ("Removing temp file: "
                               & Get_Name_String (Path));
                end if;
 
@@ -1931,9 +1931,9 @@ package body GPR is
    procedure Debug_Output (Str : String) is
    begin
       if Current_Verbosity > Default then
-         --  Set_Standard_Error;
-         Put_Line (Standard_Error, (1 .. Debug_Level * 2 => ' ') & Str);
-         --  Set_Standard_Output;
+         Set_Standard_Error;
+         Write_Line ((1 .. Debug_Level * 2 => ' ') & Str);
+         Set_Standard_Output;
       end if;
    end Debug_Output;
 
@@ -1944,9 +1944,9 @@ package body GPR is
    procedure Debug_Indent is
    begin
       if Current_Verbosity = High then
-         --  Set_Standard_Error;
-         Put (Standard_Error, (1 .. Debug_Level * 2 => ' '));
-         --  Set_Standard_Output;
+         Set_Standard_Error;
+         Write_Str ((1 .. Debug_Level * 2 => ' '));
+         Set_Standard_Output;
       end if;
    end Debug_Indent;
 
@@ -1958,16 +1958,16 @@ package body GPR is
    begin
       if Current_Verbosity > Default then
          Debug_Indent;
-         --  Set_Standard_Error;
-         Put (Standard_Error, Str);
+         Set_Standard_Error;
+         Write_Str (Str);
 
          if Str2 = No_Name then
-            Put_Line (Standard_Error, " <no_name>");
+            Write_Line (" <no_name>");
          else
-            Put_Line (Standard_Error, " """ & Get_Name_String (Str2) & '"');
+            Write_Line (" """ & Get_Name_String (Str2) & '"');
          end if;
 
-         --  Set_Standard_Output;
+         Set_Standard_Output;
       end if;
    end Debug_Output;
 

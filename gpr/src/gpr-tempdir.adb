@@ -22,12 +22,11 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO; use Ada.Text_IO;
-
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with GPR.Names; use GPR.Names;
-with GPR.Opt;   use GPR.Opt;
+with GPR.Names;  use GPR.Names;
+with GPR.Opt;    use GPR.Opt;
+with GPR.Output; use GPR.Output;
 
 package body GPR.Tempdir is
 
@@ -73,9 +72,9 @@ package body GPR.Tempdir is
          --  where temp files are supposed to be created.
 
          if Verbose_Mode and then Tmpdir_Needs_To_Be_Displayed then
-            Put ("TMPDIR = """);
-            Put (Temp_Dir.all);
-            Put_Line ("""");
+            Write_Str ("TMPDIR = """);
+            Write_Str (Temp_Dir.all);
+            Write_Line ("""");
             Tmpdir_Needs_To_Be_Displayed := False;
          end if;
 
@@ -91,7 +90,7 @@ package body GPR.Tempdir is
       end if;
 
       if FD = Invalid_FD then
-         Put_Line ("could not create temporary file in " & Directory);
+         Write_Line ("could not create temporary file in " & Directory);
          Name := No_Path;
 
       else

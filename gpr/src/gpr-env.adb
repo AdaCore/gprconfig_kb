@@ -30,6 +30,7 @@ with GPR.Opt;
 with GPR.Com;     use GPR.Com;
 with GPR.Names;   use GPR.Names;
 with GPR.Osint;   use GPR.Osint;
+with GPR.Output;  use GPR.Output;
 with GPR.Tempdir;
 with GPR.Util;    use GPR.Util;
 
@@ -654,7 +655,7 @@ package body GPR.Env is
          Add_To_Buffer (S, Buffer, Buffer_Last);
 
          if Current_Verbosity = High then
-            Put (S);
+            Write_Str (S);
          end if;
       end Put;
 
@@ -736,9 +737,9 @@ package body GPR.Env is
          Write_Temp_File;
 
          if Opt.Verbose_Mode then
-            Put ("Created configuration file """);
-            Put (Get_Name_String (File_Name));
-            Put_Line ("""");
+            Write_Str ("Created configuration file """);
+            Write_Str (Get_Name_String (File_Name));
+            Write_Line ("""");
          end if;
 
          For_Project.Config_File_Name := File_Name;
@@ -944,7 +945,7 @@ package body GPR.Env is
 
       if Path_Name /= No_Path then
          if Current_Verbosity = High then
-            Put_Line ("Create temp file (" & File_Use & ") "
+            Write_Line ("Create temp file (" & File_Use & ") "
                         & Get_Name_String (Path_Name));
          end if;
 
@@ -1029,18 +1030,18 @@ package body GPR.Env is
       end if;
 
       if Current_Verbosity = High then
-         Put  ("Looking for file name of """);
-         Put  (Name);
-         Put ('"');
-         New_Line;
-         Put  ("   Extended Spec Name = """);
-         Put  (Get_Name_String (The_Spec_Name));
-         Put ('"');
-         New_Line;
-         Put  ("   Extended Body Name = """);
-         Put  (Get_Name_String (The_Body_Name));
-         Put ('"');
-         New_Line;
+         Write_Str  ("Looking for file name of """);
+         Write_Str  (Name);
+         Write_Char ('"');
+         Write_Eol;
+         Write_Str  ("   Extended Spec Name = """);
+         Write_Str  (Get_Name_String (The_Spec_Name));
+         Write_Char ('"');
+         Write_Eol;
+         Write_Str ("   Extended Body Name = """);
+         Write_Str (Get_Name_String (The_Body_Name));
+         Write_Char ('"');
+         Write_Eol;
       end if;
 
       --  For extending project, search in the extended project if the source
@@ -1070,10 +1071,10 @@ package body GPR.Env is
                      Current_Name := Unit.File_Names (Impl).File;
 
                      if Current_Verbosity = High then
-                        Put  ("   Comparing with """);
-                        Put  (Get_Name_String (Current_Name));
-                        Put ('"');
-                        New_Line;
+                        Write_Str  ("   Comparing with """);
+                        Write_Str  (Get_Name_String (Current_Name));
+                        Write_Char ('"');
+                        Write_Eol;
                      end if;
 
                      --  If it has the name of the original name, return the
@@ -1084,7 +1085,7 @@ package body GPR.Env is
                          Current_Name = File_Name_Type (The_Original_Name)
                      then
                         if Current_Verbosity = High then
-                           Put_Line ("   OK");
+                           Write_Line ("   OK");
                         end if;
 
                         if Full_Path then
@@ -1100,7 +1101,7 @@ package body GPR.Env is
 
                      elsif Current_Name = File_Name_Type (The_Body_Name) then
                         if Current_Verbosity = High then
-                           Put_Line ("   OK");
+                           Write_Line ("   OK");
                         end if;
 
                         if Full_Path then
@@ -1135,10 +1136,10 @@ package body GPR.Env is
                   if Unit.File_Names (Spec) /= null then
                      Current_Name := Unit.File_Names (Spec).File;
                      if Current_Verbosity = High then
-                        Put  ("   Comparing with """);
-                        Put  (Get_Name_String (Current_Name));
-                        Put ('"');
-                        New_Line;
+                        Write_Str  ("   Comparing with """);
+                        Write_Str  (Get_Name_String (Current_Name));
+                        Write_Char ('"');
+                        Write_Eol;
                      end if;
 
                      --  If name same as original name, return original name
@@ -1148,7 +1149,7 @@ package body GPR.Env is
                          Current_Name = File_Name_Type (The_Original_Name)
                      then
                         if Current_Verbosity = High then
-                           Put_Line ("   OK");
+                           Write_Line ("   OK");
                         end if;
 
                         if Full_Path then
@@ -1163,7 +1164,7 @@ package body GPR.Env is
 
                      elsif Current_Name = File_Name_Type (The_Spec_Name) then
                         if Current_Verbosity = High then
-                           Put_Line ("   OK");
+                           Write_Line ("   OK");
                         end if;
 
                         if Full_Path then
@@ -1175,7 +1176,7 @@ package body GPR.Env is
 
                      else
                         if Current_Verbosity = High then
-                           Put_Line ("   not good");
+                           Write_Line ("   not good");
                         end if;
                      end if;
                   end if;
@@ -1308,9 +1309,9 @@ package body GPR.Env is
       --  Body below could use some comments ???
 
       if Current_Verbosity > Default then
-         Put ("Getting Reference_Of (""");
-         Put (Source_File_Name);
-         Put (""") ... ");
+         Write_Str ("Getting Reference_Of (""");
+         Write_Str (Source_File_Name);
+         Write_Str (""") ... ");
       end if;
 
       declare
@@ -1340,8 +1341,8 @@ package body GPR.Env is
                Path := Unit.File_Names (Spec).Path.Display_Name;
 
                if Current_Verbosity > Default then
-                  Put ("Done: Spec.");
-                  New_Line;
+                  Write_Str ("Done: Spec.");
+                  Write_Eol;
                end if;
 
                return;
@@ -1363,8 +1364,8 @@ package body GPR.Env is
                Path := Unit.File_Names (Impl).Path.Display_Name;
 
                if Current_Verbosity > Default then
-                  Put ("Done: Body.");
-                  New_Line;
+                  Write_Str ("Done: Body.");
+                  Write_Eol;
                end if;
 
                return;
@@ -1378,8 +1379,8 @@ package body GPR.Env is
       Path    := No_Path;
 
       if Current_Verbosity > Default then
-         Put ("Cannot be found.");
-         New_Line;
+         Write_Str ("Cannot be found.");
+         Write_Eol;
       end if;
    end Get_Reference;
 
@@ -1417,50 +1418,47 @@ package body GPR.Env is
       Unit : Unit_Index;
 
    begin
-      Put_Line ("List of Sources:");
+      Write_Line ("List of Sources:");
 
       Unit := Units_Htable.Get_First (In_Tree.Units_HT);
       while Unit /= No_Unit_Index loop
-         Put  ("   ");
-         Put_Line (Get_Name_String (Unit.Name));
+         Write_Str  ("   ");
+         Write_Line (Get_Name_String (Unit.Name));
 
          if Unit.File_Names (Spec).File /= No_File then
             if Unit.File_Names (Spec).Project = No_Project then
-               Put_Line ("   No project");
+               Write_Line ("   No project");
 
             else
-               Put  ("   Project: ");
+               Write_Str ("   Project: ");
                Get_Name_String
                  (Unit.File_Names (Spec).Project.Path.Name);
-               Put_Line (Name_Buffer (1 .. Name_Len));
+               Write_Line (Name_Buffer (1 .. Name_Len));
             end if;
 
-            Put  ("      spec: ");
-            Put_Line
-              (Get_Name_String
-               (Unit.File_Names (Spec).File));
+            Write_Str ("      spec: ");
+            Write_Line (Get_Name_String (Unit.File_Names (Spec).File));
          end if;
 
          if Unit.File_Names (Impl).File /= No_File then
             if Unit.File_Names (Impl).Project = No_Project then
-               Put_Line ("   No project");
+               Write_Line ("   No project");
 
             else
-               Put  ("   Project: ");
+               Write_Str ("   Project: ");
                Get_Name_String
                  (Unit.File_Names (Impl).Project.Path.Name);
-               Put_Line (Name_Buffer (1 .. Name_Len));
+               Write_Line (Name_Buffer (1 .. Name_Len));
             end if;
 
-            Put  ("      body: ");
-            Put_Line
-              (Get_Name_String (Unit.File_Names (Impl).File));
+            Write_Str  ("      body: ");
+            Write_Line (Get_Name_String (Unit.File_Names (Impl).File));
          end if;
 
          Unit := Units_Htable.Get_Next (In_Tree.Units_HT);
       end loop;
 
-      Put_Line ("end of List of Sources.");
+      Write_Line ("end of List of Sources.");
    end Print_Sources;
 
    ----------------
@@ -1943,9 +1941,9 @@ package body GPR.Env is
 
          exception
             when others =>
-               Put ("warning: could not read project path file """);
-               Put (Gpr_Prj_Path_File.all);
-               Put_Line ("""");
+               Write_Str  ("warning: could not read project path file """);
+               Write_Str  (Gpr_Prj_Path_File.all);
+               Write_Line ("""");
          end;
 
       end if;

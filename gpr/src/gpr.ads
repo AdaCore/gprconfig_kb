@@ -31,7 +31,9 @@ with Ada.Unchecked_Conversion;
 
 with GNAT.Dynamic_HTables; use GNAT.Dynamic_HTables;
 with GNAT.Dynamic_Tables;
-with GNAT.OS_Lib;          use GNAT.OS_Lib;
+
+pragma Warnings (Off);
+with System.OS_Lib; use System.OS_Lib;
 
 with System.Storage_Elements;
 

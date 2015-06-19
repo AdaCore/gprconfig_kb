@@ -22,9 +22,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO; use Ada.Text_IO;
-
-with GPR.Names; use GPR.Names;
+with GPR.Names;  use GPR.Names;
+with GPR.Output; use GPR.Output;
 
 package body GPR.ALI is
 
@@ -865,26 +864,26 @@ package body GPR.ALI is
                --  definitely diagnose this as an error.
 
                else
-                  Ada.Text_IO.Put
-                    (Standard_Error, "error: duplicate unit name: ");
-                  Ada.Text_IO.New_Line (Standard_Error);
+                  Set_Standard_Error;
+                  Write_Str ("error: duplicate unit name: ");
+                  Write_Eol;
 
-                  Ada.Text_IO.Put (Standard_Error, "error: unit """);
-                  Write_Unit_Name
-                    (Units.Table (Units.Last).Uname, Standard_Error);
-                  Ada.Text_IO.Put (Standard_Error, """ found in file """);
-                  Write_Name (Units.Table (Units.Last).Sfile, Standard_Error);
-                  Ada.Text_IO.Put (Standard_Error, '"');
-                  Ada.Text_IO.New_Line (Standard_Error);
+                  Write_Str ("error: unit """);
+                  Write_Unit_Name (Units.Table (Units.Last).Uname);
+                  Write_Str (""" found in file """);
+                  Write_Name (Units.Table (Units.Last).Sfile);
+                  Write_Char ('"');
+                  Write_Eol;
 
-                  Ada.Text_IO.Put (Standard_Error, "error: unit """);
+                  Write_Str ("error: unit """);
                   Write_Unit_Name
-                    (Units.Table (Unit_Id (Info)).Uname, Standard_Error);
-                  Ada.Text_IO.Put (Standard_Error, """ found in file """);
+                    (Units.Table (Unit_Id (Info)).Uname);
+                  Write_Str (""" found in file """);
                   Write_Name
-                    (Units.Table (Unit_Id (Info)).Sfile, Standard_Error);
-                  Ada.Text_IO.Put (Standard_Error, '"');
-                  Ada.Text_IO.New_Line (Standard_Error);
+                    (Units.Table (Unit_Id (Info)).Sfile);
+                  Write_Char ('"');
+                  Write_Eol;
+                  Set_Standard_Output;
 
                   return No_ALI_Id;
                end if;

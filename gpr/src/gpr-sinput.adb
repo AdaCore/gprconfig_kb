@@ -23,7 +23,6 @@
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Deallocation;
-with Ada.Text_IO;                use Ada.Text_IO;
 
 with GNAT.Byte_Order_Mark; use GNAT.Byte_Order_Mark;
 
@@ -39,6 +38,7 @@ with GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Names;   use GPR.Names;
 with GPR.Opt;     use GPR.Opt;
+with GPR.Output;  use GPR.Output;
 
 package body GPR.Sinput is
 
@@ -118,11 +118,13 @@ package body GPR.Sinput is
             Upper_Half_Encoding := True;
 
          when UTF16_LE | UTF16_BE =>
-            Put_Line (Standard_Error, "UTF-16 encoding format not recognized");
+            Set_Standard_Error;
+            Write_Line ("UTF-16 encoding format not recognized");
             raise Unrecoverable_Error;
 
          when UTF32_LE | UTF32_BE =>
-            Put_Line (Standard_Error, "UTF-32 encoding format not recognized");
+            Set_Standard_Error;
+            Write_Line ("UTF-32 encoding format not recognized");
             raise Unrecoverable_Error;
 
          when Unknown =>

@@ -39,6 +39,7 @@ with GPR.ALI;    use GPR.ALI;
 with GPR.Debug;
 with GPR.Err;
 with GPR.Names;  use GPR.Names;
+with GPR.Output; use GPR.Output;
 with GPR.Opt;
 with GPR.Com;
 with GPR.Sinput;
@@ -117,7 +118,7 @@ package body GPR.Util is
       File_Name (1 .. Name'Length) := Name;
       File_Name (File_Name'Last) := ASCII.NUL;
       FD := Create_File (Name => File_Name'Address,
-                         Fmode => GNAT.OS_Lib.Text);
+                         Fmode => System.OS_Lib.Text);
 
       if FD = Invalid_FD then
          File := null;
@@ -552,13 +553,13 @@ package body GPR.Util is
          if Exit_Code /= E_Success then
             if not Opt.No_Exit_Message then
                Write_Program_Name;
-               Put_Line (S);
+               Write_Line (S);
             end if;
 
             Exit_Program (E_Fatal);
 
          elsif not Opt.No_Exit_Message then
-            Put (S);
+            Write_Str (S);
          end if;
       end if;
 
@@ -1216,7 +1217,7 @@ package body GPR.Util is
       File_Name (1 .. Name'Length) := Name;
       File_Name (File_Name'Last) := ASCII.NUL;
       FD := Open_Read (Name => File_Name'Address,
-                       Fmode => GNAT.OS_Lib.Text);
+                       Fmode => System.OS_Lib.Text);
 
       if FD = Invalid_FD then
          File := null;
@@ -1346,7 +1347,7 @@ package body GPR.Util is
 
       procedure Report_Error is
       begin
-         Put_Line ("errors in source info file """ &
+         Write_Line ("errors in source info file """ &
                      Tree.Source_Info_File_Name.all & '"');
          Tree.Source_Info_File_Exists := False;
       end Report_Error;
@@ -1364,7 +1365,7 @@ package body GPR.Util is
 
       if not Is_Valid (File) then
          if Opt.Verbose_Mode then
-            Put_Line ("source info file " & Tree.Source_Info_File_Name.all &
+            Write_Line ("source info file " & Tree.Source_Info_File_Name.all &
                         " does not exist");
          end if;
 
@@ -1375,7 +1376,7 @@ package body GPR.Util is
       Tree.Source_Info_File_Exists := True;
 
       if Opt.Verbose_Mode then
-         Put_Line ("Reading source info file " &
+         Write_Line ("Reading source info file " &
                      Tree.Source_Info_File_Name.all);
       end if;
 
@@ -1842,14 +1843,14 @@ package body GPR.Util is
 
    begin
       if Opt.Verbose_Mode then
-         Put_Line ("Writing new source info file " &
+         Write_Line ("Writing new source info file " &
                      Tree.Source_Info_File_Name.all);
       end if;
 
       Create (File, Tree.Source_Info_File_Name.all);
 
       if not Is_Valid (File) then
-         Put_Line ("warning: unable to create source info file """ &
+         Write_Line ("warning: unable to create source info file """ &
                      Tree.Source_Info_File_Name.all & '"');
          return;
       end if;
@@ -1940,19 +1941,19 @@ package body GPR.Util is
          --  Start on a new line if current line is already longer than
          --  Max_Length.
 
-         if Positive (Col (Standard_Output)) >= Max_Length then
-            New_Line;
+         if Positive (Column) >= Max_Length then
+            Write_Eol;
          end if;
 
          --  If length of remainder is longer than Max_Length, we need to
          --  cut the remainder in several lines.
 
-         while Positive (Col (Standard_Output)) + S'Last - First > Max_Length
+         while Positive (Column) + S'Last - First > Max_Length
          loop
 
             --  Try the maximum length possible
 
-            Last := First + Max_Length - Positive (Col (Standard_Output));
+            Last := First + Max_Length - Positive (Column);
 
             --  Look for last Separator in the line
 
@@ -1964,10 +1965,10 @@ package body GPR.Util is
             --  possible.
 
             if Last < First then
-               Last := First + Max_Length - Positive (Col (Standard_Output));
+               Last := First + Max_Length - Positive (Column);
             end if;
 
-            Put_Line (S (First .. Last));
+            Write_Line (S (First .. Last));
 
             --  Set the beginning of the new remainder
 
@@ -1976,13 +1977,13 @@ package body GPR.Util is
 
          --  What is left goes to the buffer, without EOL
 
-         Put (S (First .. S'Last));
+         Write_Str (S (First .. S'Last));
       end if;
    end Write_Str;
 
 begin
    declare
-      Ext : String_Access := GNAT.OS_Lib.Get_Target_Executable_Suffix;
+      Ext : String_Access := System.OS_Lib.Get_Target_Executable_Suffix;
    begin
       Name_Len := 0;
       Add_Str_To_Name_Buffer (Ext.all);

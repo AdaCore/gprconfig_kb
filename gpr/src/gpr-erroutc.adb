@@ -22,8 +22,6 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO; use Ada.Text_IO;
-
 with Interfaces; use Interfaces;
 
 pragma Warnings (Off);
@@ -32,6 +30,7 @@ pragma Warnings (On);
 
 with GPR.Names;  use GPR.Names;
 with GPR.Opt;    use GPR.Opt;
+with GPR.Output; use GPR.Output;
 with GPR.Sinput; use GPR.Sinput;
 
 package body GPR.Erroutc is
@@ -306,7 +305,7 @@ package body GPR.Erroutc is
       --  characters in the original line are properly accounted for. The
       --  eight blanks at the start are to match the line number.
 
-      Put ("        ");
+      Write_Str ("        ");
       P := Line_Start (Errors.Table (E).Sptr);
       Flag_Num := 1;
 
@@ -329,7 +328,7 @@ package body GPR.Erroutc is
                --  Horizontal tab case, just echo the tab
 
                if Src (P) = ASCII.HT then
-                  Put (ASCII.HT);
+                  Write_Char (ASCII.HT);
                   P := P + 1;
 
                   --  Deal with wide character case, but don't include brackets
@@ -340,13 +339,13 @@ package body GPR.Erroutc is
                  and then Is_Start_Of_Wide_Char (Src, P)
                then
                   Skip_Wide (Src, P);
-                  Put (' ');
+                  Write_Char (' ');
 
                   --  Normal non-wide character case (or bracket)
 
                else
                   P := P + 1;
-                  Put (' ');
+                  Write_Char (' ');
                end if;
             end loop;
 
@@ -357,10 +356,9 @@ package body GPR.Erroutc is
                if (Flag_Num = 1 and then not Mult_Flags)
                  or else Flag_Num > 9
                then
-                  Put ('|');
+                  Write_Char ('|');
                else
-                  Put
-                    (Character'Val (Character'Pos ('0') + Flag_Num));
+                  Write_Char (Character'Val (Character'Pos ('0') + Flag_Num));
                end if;
 
                --  Skip past the corresponding source text character
@@ -369,7 +367,7 @@ package body GPR.Erroutc is
                --  so now we output a tab to match up with the text.
 
                if Src (P) = ASCII.HT then
-                  Put (ASCII.HT);
+                  Write_Char (ASCII.HT);
                   P := P + 1;
 
                   --  Skip wide character other than left bracket
@@ -391,7 +389,7 @@ package body GPR.Erroutc is
          Flag_Num := Flag_Num + 1;
       end loop;
 
-      New_Line;
+      Write_Eol;
 
       --  Now output the error messages
 
@@ -400,10 +398,10 @@ package body GPR.Erroutc is
         and then Errors.Table (T).Line = Errors.Table (E).Line
         and then Errors.Table (T).Sfile = Errors.Table (E).Sfile
       loop
-         Put ("        >>> ");
+         Write_Str ("        >>> ");
          Output_Msg_Text (T);
 
-         New_Line;
+         Write_Eol;
          Set_Next_Non_Deleted_Msg (T);
       end loop;
 
@@ -422,7 +420,7 @@ package body GPR.Erroutc is
 
    begin
       if L = No_Line_Number then
-         Put ("        ");
+         Write_Str ("        ");
 
       else
          Z := False;
@@ -445,10 +443,10 @@ package body GPR.Erroutc is
                C := Character'Val (D + 48);
             end if;
 
-            Put (C);
+            Write_Char (C);
          end loop;
 
-         Put (". ");
+         Write_Str (". ");
       end if;
    end Output_Line_Number;
 
@@ -457,7 +455,7 @@ package body GPR.Erroutc is
    ---------------------
 
    procedure Output_Msg_Text (E : Error_Msg_Id) is
-      Offs : constant Nat := Nat (Col) - 1;
+      Offs : constant Nat := Column - 1;
       --  Offset to start of message, used for continuations
 
       Txt   : String_Access := Errors.Table (E).Text;
@@ -493,10 +491,10 @@ package body GPR.Erroutc is
 
       for J in 1 .. Txt'Length loop
          if Txt (J) = ASCII.LF then
-            New_Line;
+            Write_Eol;
             Write_Spaces (Offs);
          else
-            Put (Txt (J));
+            Write_Char (Txt (J));
          end if;
       end loop;
    end Output_Msg_Text;
@@ -962,7 +960,7 @@ package body GPR.Erroutc is
    procedure Write_Spaces (N : Nat) is
    begin
       for J in 1 .. N loop
-         Put (' ');
+         Write_Char (' ');
       end loop;
    end Write_Spaces;
 

@@ -16,24 +16,33 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Command_Line;          use Ada.Command_Line;
-with Ada.Text_IO;               use Ada.Text_IO;
+with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Exceptions;   use Ada.Exceptions;
+with Ada.Text_IO;      use Ada.Text_IO;
 
-with GNAT.Command_Line;         use GNAT.Command_Line;
+with GNAT.Command_Line;   use GNAT.Command_Line;
 with GNAT.Dynamic_Tables;
-with GNAT.OS_Lib;               use GNAT.OS_Lib;
+with GNAT.OS_Lib;         use GNAT.OS_Lib;
 with GNAT.Table;
 
+with GPR;
+with GPR.Conf;
+with GPR.Env;
 with GPR.Opt;
-with GPR.Osint;   use GPR.Osint;
-with GPR.Util;    use GPR.Util;
+with GPR.Osint;  use GPR.Osint;
+with GPR.Snames;
+with GPR.Tree;   use GPR.Tree;
+with GPR.Util;   use GPR.Util;
 
-with Gpr_Util;    use Gpr_Util;
-with GPR_Version; use GPR_Version;
+with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Util;       use Gpr_Util;
+with GPR_Version;    use GPR_Version;
 
-with System.Regexp;    use System.Regexp;
+with System.Regexp; use System.Regexp;
 
 procedure GPRName.Main is
+
+   use Gpr_Util.Knowledge;
 
    Flags   : constant Processing_Flags :=
                 Create_Flags
@@ -69,6 +78,21 @@ procedure GPRName.Main is
    --  Set to True by -P switch.
    --  Used to detect multiple -P switches.
 
+   Project_File_Name_Expected : Boolean := False;
+   --  True when switch "-P" has just been scanned
+
+   Directory_Expected : Boolean := False;
+   --  True when switch "-d" has just been scanned
+
+   Dir_File_Name_Expected : Boolean := False;
+   --  True when switch "-D" has just been scanned
+
+   Foreign_Pattern_Expected : Boolean := False;
+   --  True when switch "-f" has just been scanned
+
+   Excluded_Pattern_Expected : Boolean := False;
+   --  True when switch "-x" has just been scanned
+
    package Patterns is new GNAT.Dynamic_Tables
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,
@@ -101,20 +125,27 @@ procedure GPRName.Main is
    --  Table to store the preprocessor switches to be used in the call
    --  to the compiler.
 
-   procedure Output_Version;
-   --  Print name and version
-
-   procedure Usage;
-   --  Print usage
-
-   procedure Scan_Args;
-   --  Scan the command line arguments
-
    procedure Add_Source_Directory (S : String);
    --  Add S in the Source_Directories table
 
+   procedure Check_Regular_Expression (S : String);
+   --  Compile string S into a Regexp, fail if any error
+
    procedure Get_Directories (From_File : String);
    --  Read a source directory text file
+
+   procedure Initialize;
+   --  Do the necessary package intialization and process the command line
+   --  arguments.
+
+   procedure Output_Version;
+   --  Print name and version
+
+   procedure Scan_Arg (Arg : String);
+   --  Process on of the command line argument
+
+   procedure Usage;
+   --  Print usage
 
    --------------------------
    -- Add_Source_Directory --
@@ -125,6 +156,20 @@ procedure GPRName.Main is
       Patterns.Append
         (Arguments.Table (Arguments.Last).Directories, new String'(S));
    end Add_Source_Directory;
+
+   -----------------------------
+   -- Check_Regular_Expression--
+   -----------------------------
+
+   procedure Check_Regular_Expression (S : String) is
+      Dummy : Regexp;
+      pragma Warnings (Off, Dummy);
+   begin
+      Dummy := Compile (S, Glob => True);
+   exception
+      when Error_In_Regexp =>
+         Fail ("invalid regular expression """ & S & """");
+   end Check_Regular_Expression;
 
    ---------------------
    -- Get_Directories --
@@ -153,58 +198,52 @@ procedure GPRName.Main is
          Fail ("cannot open source directory file """ & From_File & '"');
    end Get_Directories;
 
-   --------------------
-   -- Output_Version --
-   --------------------
+   ----------------
+   -- Initialize --
+   ----------------
 
-   procedure Output_Version is
-   begin
-      if not Version_Output then
-         Version_Output := True;
-         New_Line;
-         Display_Version
-           ("GPRNAME", "2001", Version_String => Gpr_Version_String);
-      end if;
-   end Output_Version;
-
-   ---------------
-   -- Scan_Args --
-   ---------------
-
-   procedure Scan_Args is
+   procedure Initialize is
 
       procedure Check_Version_And_Help is new Check_Version_And_Help_G (Usage);
 
-      Project_File_Name_Expected : Boolean;
-
-      Directory_Expected : Boolean;
-
-      Dir_File_Name_Expected : Boolean;
-
-      Foreign_Pattern_Expected : Boolean;
-
-      Excluded_Pattern_Expected : Boolean;
-
-      procedure Check_Regular_Expression (S : String);
-      --  Compile string S into a Regexp, fail if any error
-
-      -----------------------------
-      -- Check_Regular_Expression--
-      -----------------------------
-
-      procedure Check_Regular_Expression (S : String) is
-         Dummy : Regexp;
-         pragma Warnings (Off, Dummy);
-      begin
-         Dummy := Compile (S, Glob => True);
-      exception
-         when Error_In_Regexp =>
-            Fail ("invalid regular expression """ & S & """");
-      end Check_Regular_Expression;
-
-   --  Start of processing for Scan_Args
+      User_Project_Node : Project_Node_Id;
+      --  Used to call Parse_Project_And_Apply_Config
 
    begin
+      --  Do some necessary package initializations
+
+      GPR.Snames.Initialize;
+
+      Set_Program_Name ("gprname");
+
+      GPR.Tree.Initialize (Root_Environment, Gprbuild_Flags);
+      GPR.Tree.Initialize (Project_Node_Tree);
+
+      GPR.Initialize (Project_Tree);
+
+      --  Initialize tables
+
+      Arguments.Set_Last (0);
+      declare
+         New_Arguments : Argument_Data;
+         pragma Warnings (Off, New_Arguments);
+         --  Declaring this defaulted initialized object ensures that the new
+         --  allocated component of table Arguments is correctly initialized.
+      begin
+         Arguments.Append (New_Arguments);
+      end;
+
+      Patterns.Init (Arguments.Table (1).Directories);
+      Patterns.Set_Last (Arguments.Table (1).Directories, 0);
+      Patterns.Init (Arguments.Table (1).Name_Patterns);
+      Patterns.Set_Last (Arguments.Table (1).Name_Patterns, 0);
+      Patterns.Init (Arguments.Table (1).Excluded_Patterns);
+      Patterns.Set_Last (Arguments.Table (1).Excluded_Patterns, 0);
+      Patterns.Init (Arguments.Table (1).Foreign_Patterns);
+      Patterns.Set_Last (Arguments.Table (1).Foreign_Patterns, 0);
+
+      Preprocessor_Switches.Set_Last (0);
+
       --  First check for --version or --help
 
       Check_Version_And_Help
@@ -221,255 +260,330 @@ procedure GPRName.Main is
       for Next_Arg in 1 .. Argument_Count loop
          declare
             Next_Argv : constant String := Argument (Next_Arg);
-            Arg       : String (1 .. Next_Argv'Length) := Next_Argv;
+            Arg       : constant String (1 .. Next_Argv'Length) := Next_Argv;
 
          begin
-            if Arg'Length > 0 then
-
-               --  -P xxx
-
-               if Project_File_Name_Expected then
-                  if Arg (1) = '-' then
-                     Fail ("project file name missing");
-
-                  else
-                     File_Set       := True;
-                     File_Path      := new String'(Arg);
-                     Project_File_Name_Expected := False;
-                  end if;
-
-               --  -d xxx
-
-               elsif Directory_Expected then
-                  Add_Source_Directory (Arg);
-                  Directory_Expected := False;
-
-               --  -D xxx
-
-               elsif Dir_File_Name_Expected then
-                  Get_Directories (Arg);
-                  Dir_File_Name_Expected := False;
-
-               --  -f xxx
-
-               elsif Foreign_Pattern_Expected then
-                  Patterns.Append
-                    (Arguments.Table (Arguments.Last).Foreign_Patterns,
-                     new String'(Arg));
-                  Check_Regular_Expression (Arg);
-                  Foreign_Pattern_Expected := False;
-
-               --  -x xxx
-
-               elsif Excluded_Pattern_Expected then
-                  Patterns.Append
-                    (Arguments.Table (Arguments.Last).Excluded_Patterns,
-                     new String'(Arg));
-                  Check_Regular_Expression (Arg);
-                  Excluded_Pattern_Expected := False;
-
-               --  There must be at least one Ada pattern or one foreign
-               --  pattern for the previous section.
-
-               --  --and
-
-               elsif Arg = "--and" then
-
-                  if Patterns.Last
-                    (Arguments.Table (Arguments.Last).Name_Patterns) = 0
-                    and then
-                      Patterns.Last
-                        (Arguments.Table (Arguments.Last).Foreign_Patterns) = 0
-                  then
-                     Try_Help;
-                     return;
-                  end if;
-
-                  --  If no directory were specified for the previous section,
-                  --  then the directory is the project directory.
-
-                  if Patterns.Last
-                    (Arguments.Table (Arguments.Last).Directories) = 0
-                  then
-                     Patterns.Append
-                       (Arguments.Table (Arguments.Last).Directories,
-                        new String'("."));
-                  end if;
-
-                  --  Add and initialize another component to Arguments table
-
-                  declare
-                     New_Arguments : Argument_Data;
-                     pragma Warnings (Off, New_Arguments);
-                     --  Declaring this defaulted initialized object ensures
-                     --  that the new allocated component of table Arguments
-                     --  is correctly initialized.
-
-                     --  This is VERY ugly, Table should never be used with
-                     --  data requiring default initialization. We should
-                     --  find a way to avoid violating this rule ???
-
-                  begin
-                     Arguments.Append (New_Arguments);
-                  end;
-
-                  Patterns.Init
-                    (Arguments.Table (Arguments.Last).Directories);
-                  Patterns.Set_Last
-                    (Arguments.Table (Arguments.Last).Directories, 0);
-                  Patterns.Init
-                    (Arguments.Table (Arguments.Last).Name_Patterns);
-                  Patterns.Set_Last
-                    (Arguments.Table (Arguments.Last).Name_Patterns, 0);
-                  Patterns.Init
-                    (Arguments.Table (Arguments.Last).Excluded_Patterns);
-                  Patterns.Set_Last
-                    (Arguments.Table (Arguments.Last).Excluded_Patterns, 0);
-                  Patterns.Init
-                    (Arguments.Table (Arguments.Last).Foreign_Patterns);
-                  Patterns.Set_Last
-                    (Arguments.Table (Arguments.Last).Foreign_Patterns, 0);
-
-               --  Subdirectory switch
-
-               elsif Arg'Length > Subdirs_Switch'Length
-                 and then Arg (1 .. Subdirs_Switch'Length) = Subdirs_Switch
-               then
-                  Subdirs :=
-                    new String'(Arg (Subdirs_Switch'Length + 1 .. Arg'Last));
-
-               --  --no-backup
-
-               elsif Arg = "--no-backup" then
-                  Opt.No_Backup := True;
-
-               --  -d
-
-               elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-d" then
-                  if Arg'Length = 2 then
-                     Directory_Expected := True;
-
-                     if Next_Arg = Argument_Count then
-                        Fail ("directory name missing");
-                     end if;
-
-                  else
-                     Add_Source_Directory (Arg (3 .. Arg'Last));
-                  end if;
-
-               --  -D
-
-               elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-D" then
-                  if Arg'Length = 2 then
-                     Dir_File_Name_Expected := True;
-
-                     if Next_Arg = Argument_Count then
-                        Fail ("directory list file name missing");
-                     end if;
-
-                  else
-                     Get_Directories (Arg (3 .. Arg'Last));
-                  end if;
-
-               --  -eL
-
-               elsif Arg = "-eL" then
-                  Opt.Follow_Links_For_Files := True;
-                  Opt.Follow_Links_For_Dirs  := True;
-
-               --  -f
-
-               elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-f" then
-                  if Arg'Length = 2 then
-                     Foreign_Pattern_Expected := True;
-
-                     if Next_Arg = Argument_Count then
-                        Fail ("foreign pattern missing");
-                     end if;
-
-                  else
-                     Patterns.Append
-                       (Arguments.Table (Arguments.Last).Foreign_Patterns,
-                        new String'(Arg (3 .. Arg'Last)));
-                     Check_Regular_Expression (Arg (3 .. Arg'Last));
-                  end if;
-
-               --  -gnatep or -gnateD
-
-               elsif Arg'Length > 7 and then
-                 (Arg  (1 .. 7) = "-gnatep" or else Arg (1 .. 7) = "-gnateD")
-               then
-                  Preprocessor_Switches.Append (new String'(Arg));
-
-               --  -h
-
-               elsif Arg = "-h" then
-                  Usage_Needed := True;
-
-               --  -p
-
-               elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-P" then
-                  if File_Set then
-                     Fail ("only one -c or -P switch may be specified");
-                  end if;
-
-                  if Arg'Length = 2 then
-                     if Next_Arg = Argument_Count then
-                        Fail ("project file name missing");
-
-                     else
-                        Project_File_Name_Expected := True;
-                     end if;
-
-                  else
-                     File_Set       := True;
-                     File_Path      := new String'(Arg (3 .. Arg'Last));
-                  end if;
-
-               --  -v
-
-               elsif Arg = "-v" then
-                  if Opt.Verbose_Mode then
-                     Very_Verbose := True;
-                  else
-                     Opt.Verbose_Mode := True;
-                  end if;
-
-               --  -x
-
-               elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-x" then
-                  if Arg'Length = 2 then
-                     Excluded_Pattern_Expected := True;
-
-                     if Next_Arg = Argument_Count then
-                        Fail ("excluded pattern missing");
-                     end if;
-
-                  else
-                     Patterns.Append
-                       (Arguments.Table (Arguments.Last).Excluded_Patterns,
-                        new String'(Arg (3 .. Arg'Last)));
-                     Check_Regular_Expression (Arg (3 .. Arg'Last));
-                  end if;
-
-               --  Junk switch starting with minus
-
-               elsif Arg (1) = '-' then
-                  Fail ("wrong switch: " & Arg);
-
-               --  Not a recognized switch, assume file name
-
-               else
-                  Canonical_Case_File_Name (Arg);
-                  Patterns.Append
-                    (Arguments.Table (Arguments.Last).Name_Patterns,
-                     new String'(Arg));
-                  Check_Regular_Expression (Arg);
-               end if;
-            end if;
+            Scan_Arg (Arg);
          end;
       end loop;
-   end Scan_Args;
+
+      if Project_File_Name_Expected or else not File_Set then
+         Fail ("project file name missing");
+
+      elsif File_Path = null then
+         Try_Help;
+         Fail_Program (null, "no project file specified");
+
+      elsif Directory_Expected then
+         Fail ("directory name missing");
+
+      elsif Dir_File_Name_Expected then
+         Fail ("directory list file name missing");
+
+      elsif Foreign_Pattern_Expected then
+         Fail ("foreign pattern missing");
+
+      elsif Excluded_Pattern_Expected then
+         Fail ("excluded pattern missing");
+      end if;
+
+      GPR.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path, Target_Name => "-");
+
+      if Load_Standard_Base then
+         --  We need to parse the knowledge base so that we are able to
+         --  normalize the target names. Unfortunately, if we have to spawn
+         --  gprconfig, it will also have to parse that knowledge base on
+         --  its own.
+         Parse_Knowledge_Base (Project_Tree);
+      end if;
+
+      if Target_Name = null then
+         Target_Name := new String'("");
+      end if;
+
+      if Config_Project_File_Name = null then
+         Config_Project_File_Name := new String'("");
+      end if;
+
+      begin
+         GPR.Opt.Warning_Mode  := GPR.Opt.Suppress;
+         GPR.Conf.Parse_Project_And_Apply_Config
+           (Main_Project               => Main_Project,
+            User_Project_Node          => User_Project_Node,
+            Config_File_Name           => Config_Project_File_Name.all,
+            Autoconf_Specified         => Autoconf_Specified,
+            Project_File_Name          => File_Path.all,
+            Project_Tree               => Project_Tree,
+            Env                        => Root_Environment,
+            Project_Node_Tree          => Project_Node_Tree,
+            Packages_To_Check          => Packages_To_Check,
+            Allow_Automatic_Generation => Autoconfiguration,
+            Automatically_Generated    => Delete_Autoconf_File,
+            Config_File_Path           => Configuration_Project_Path,
+            Target_Name                => Target_Name.all,
+            Normalized_Hostname        => Normalized_Hostname);
+      exception
+         when E : GPR.Conf.Invalid_Config =>
+            Fail_Program (Project_Tree, Exception_Message (E));
+      end;
+
+      if Main_Project = No_Project then
+         --  Don't flush messages in case of parsing error. This has already
+         --  been taken care when parsing the tree. Otherwise, it results in
+         --  the same message being displayed twice.
+
+         Fail_Program
+           (Project_Tree,
+            """" & File_Path.all & """ processing failed",
+            Flush_Messages => User_Project_Node /= Empty_Project_Node);
+      end if;
+   end Initialize;
+
+   --------------------
+   -- Output_Version --
+   --------------------
+
+   procedure Output_Version is
+   begin
+      if not Version_Output then
+         Version_Output := True;
+         New_Line;
+         Display_Version
+           ("GPRNAME", "2001", Version_String => Gpr_Version_String);
+      end if;
+   end Output_Version;
+
+   --------------
+   -- Scan_Arg --
+   --------------
+
+   procedure Scan_Arg (Arg : String) is
+      pragma Assert (Arg'First = 1);
+   begin
+      if Arg'Length > 0 then
+
+         --  -P xxx
+
+         if Project_File_Name_Expected then
+            if Arg (1) = '-' then
+               Fail ("project file name missing");
+
+            else
+               File_Set       := True;
+               File_Path      := new String'(Arg);
+               Project_File_Name_Expected := False;
+            end if;
+
+         --  -d xxx
+
+         elsif Directory_Expected then
+            Add_Source_Directory (Arg);
+            Directory_Expected := False;
+
+         --  -D xxx
+
+         elsif Dir_File_Name_Expected then
+            Get_Directories (Arg);
+            Dir_File_Name_Expected := False;
+
+         --  -f xxx
+
+         elsif Foreign_Pattern_Expected then
+            Patterns.Append
+              (Arguments.Table (Arguments.Last).Foreign_Patterns,
+               new String'(Arg));
+            Check_Regular_Expression (Arg);
+            Foreign_Pattern_Expected := False;
+
+         --  -x xxx
+
+         elsif Excluded_Pattern_Expected then
+            Patterns.Append
+              (Arguments.Table (Arguments.Last).Excluded_Patterns,
+               new String'(Arg));
+            Check_Regular_Expression (Arg);
+            Excluded_Pattern_Expected := False;
+
+         --  There must be at least one Ada pattern or one foreign pattern for
+         --  the previous section.
+
+         --  --and
+
+         elsif Arg = "--and" then
+
+            if Patterns.Last
+              (Arguments.Table (Arguments.Last).Name_Patterns) = 0
+              and then
+                Patterns.Last
+                  (Arguments.Table (Arguments.Last).Foreign_Patterns) = 0
+            then
+               Try_Help;
+               return;
+            end if;
+
+            --  If no directory were specified for the previous section, then
+            --  the directory is the project directory.
+
+            if Patterns.Last
+              (Arguments.Table (Arguments.Last).Directories) = 0
+            then
+               Patterns.Append
+                 (Arguments.Table (Arguments.Last).Directories,
+                  new String'("."));
+            end if;
+
+            --  Add and initialize another component to Arguments table
+
+            declare
+               New_Arguments : Argument_Data;
+               pragma Warnings (Off, New_Arguments);
+               --  Declaring this defaulted initialized object ensures that
+               --  the new allocated component of table Arguments is correctly
+               --  initialized.
+
+            begin
+               Arguments.Append (New_Arguments);
+            end;
+
+            Patterns.Init
+              (Arguments.Table (Arguments.Last).Directories);
+            Patterns.Set_Last
+              (Arguments.Table (Arguments.Last).Directories, 0);
+            Patterns.Init
+              (Arguments.Table (Arguments.Last).Name_Patterns);
+            Patterns.Set_Last
+              (Arguments.Table (Arguments.Last).Name_Patterns, 0);
+            Patterns.Init
+              (Arguments.Table (Arguments.Last).Excluded_Patterns);
+            Patterns.Set_Last
+              (Arguments.Table (Arguments.Last).Excluded_Patterns, 0);
+            Patterns.Init
+              (Arguments.Table (Arguments.Last).Foreign_Patterns);
+            Patterns.Set_Last
+              (Arguments.Table (Arguments.Last).Foreign_Patterns, 0);
+
+         --  --subdir=
+
+         elsif Arg'Length > Subdirs_Switch'Length
+           and then Arg (1 .. Subdirs_Switch'Length) = Subdirs_Switch
+         then
+            Subdirs :=
+              new String'(Arg (Subdirs_Switch'Length + 1 .. Arg'Last));
+
+         --  --no-backup
+
+         elsif Arg = "--no-backup" then
+            Opt.No_Backup := True;
+
+         --  -d
+
+         elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-d" then
+            if Arg'Length = 2 then
+               Directory_Expected := True;
+
+            else
+               Add_Source_Directory (Arg (3 .. Arg'Last));
+            end if;
+
+         --  -D
+
+         elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-D" then
+            if Arg'Length = 2 then
+               Dir_File_Name_Expected := True;
+
+            else
+               Get_Directories (Arg (3 .. Arg'Last));
+            end if;
+
+         --  -eL
+
+         elsif Arg = "-eL" then
+            Opt.Follow_Links_For_Files := True;
+            Opt.Follow_Links_For_Dirs  := True;
+
+         --  -f
+
+         elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-f" then
+            if Arg'Length = 2 then
+               Foreign_Pattern_Expected := True;
+
+            else
+               Patterns.Append
+                 (Arguments.Table (Arguments.Last).Foreign_Patterns,
+                  new String'(Arg (3 .. Arg'Last)));
+               Check_Regular_Expression (Arg (3 .. Arg'Last));
+            end if;
+
+         --  -gnatep or -gnateD
+
+         elsif Arg'Length > 7 and then
+           (Arg  (1 .. 7) = "-gnatep" or else Arg (1 .. 7) = "-gnateD")
+         then
+            Preprocessor_Switches.Append (new String'(Arg));
+
+         --  -h
+
+         elsif Arg = "-h" then
+            Usage_Needed := True;
+
+         --  -P
+
+         elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-P" then
+            if File_Set then
+               Fail ("only one -c or -P switch may be specified");
+            end if;
+
+            if Arg'Length = 2 then
+               Project_File_Name_Expected := True;
+
+            else
+               File_Set       := True;
+               File_Path      := new String'(Arg (3 .. Arg'Last));
+            end if;
+
+            --  -v
+
+         elsif Arg = "-v" then
+            if Opt.Verbose_Mode then
+               Very_Verbose := True;
+            else
+               Opt.Verbose_Mode := True;
+            end if;
+
+            --  -x
+
+         elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-x" then
+            if Arg'Length = 2 then
+               Excluded_Pattern_Expected := True;
+
+            else
+               Patterns.Append
+                 (Arguments.Table (Arguments.Last).Excluded_Patterns,
+                  new String'(Arg (3 .. Arg'Last)));
+               Check_Regular_Expression (Arg (3 .. Arg'Last));
+            end if;
+
+            --  Junk switch starting with minus
+
+         elsif Arg (1) = '-' then
+            Fail ("wrong switch: " & Arg);
+
+            --  Not a recognized switch, assume file name
+
+         else
+            declare
+               File_Name : String := Arg;
+            begin
+               Canonical_Case_File_Name (File_Name);
+               Patterns.Append
+                 (Arguments.Table (Arguments.Last).Name_Patterns,
+                  new String'(File_Name));
+               Check_Regular_Expression (File_Name);
+            end;
+         end if;
+      end if;
+   end Scan_Arg;
 
    -----------
    -- Usage --
@@ -514,39 +628,7 @@ procedure GPRName.Main is
 --  Start of processing for Gnatname
 
 begin
-   Set_Program_Name ("gprname");
-
-   --  Initialize tables
-
-   Arguments.Set_Last (0);
-   declare
-      New_Arguments : Argument_Data;
-      pragma Warnings (Off, New_Arguments);
-      --  Declaring this defaulted initialized object ensures that the new
-      --  allocated component of table Arguments is correctly initialized.
-   begin
-      Arguments.Append (New_Arguments);
-   end;
-
-   Patterns.Init (Arguments.Table (1).Directories);
-   Patterns.Set_Last (Arguments.Table (1).Directories, 0);
-   Patterns.Init (Arguments.Table (1).Name_Patterns);
-   Patterns.Set_Last (Arguments.Table (1).Name_Patterns, 0);
-   Patterns.Init (Arguments.Table (1).Excluded_Patterns);
-   Patterns.Set_Last (Arguments.Table (1).Excluded_Patterns, 0);
-   Patterns.Init (Arguments.Table (1).Foreign_Patterns);
-   Patterns.Set_Last (Arguments.Table (1).Foreign_Patterns, 0);
-
-   Preprocessor_Switches.Set_Last (0);
-
-   --  Get the arguments
-
-   Scan_Args;
-
-   if File_Path = null then
-      Try_Help;
-      Fail_Program (null, "no project file specified");
-   end if;
+   Initialize;
 
    if Opt.Verbose_Mode then
       Output_Version;

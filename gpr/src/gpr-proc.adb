@@ -24,7 +24,6 @@
 
 with Ada.Containers.Vectors;
 with Ada.Strings.Fixed;      use Ada.Strings.Fixed;
-with Ada.Text_IO;            use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;
@@ -38,6 +37,7 @@ with GPR.Names;   use GPR.Names;
 with GPR.Nmsc;    use GPR.Nmsc;
 with GPR.Opt;     use GPR.Opt;
 with GPR.Osint;   use GPR.Osint;
+with GPR.Output;  use GPR.Output;
 with GPR.Part;
 with GPR.Util;
 with GPR.Snames;
@@ -1472,7 +1472,7 @@ package body GPR.Proc is
 
          --  Should never happen
 
-         Put_Line
+         Write_Line
            ("package """ & Get_Name_String (With_Name) & """ not found");
          raise Program_Error;
 
@@ -2376,7 +2376,7 @@ package body GPR.Proc is
                --  during parsing.
 
                else
-                  Put_Line
+                  Write_Line
                     ("variable """ & Get_Name_String (Name) & """ not found");
                   raise Program_Error;
                end if;
@@ -2391,7 +2391,7 @@ package body GPR.Proc is
                --  Should never happen, because this has already been checked
                --  during parsing.
 
-               Put_Line ("variable""" & Get_Name_String (Name) &
+               Write_Line ("variable""" & Get_Name_String (Name) &
                            """ is not a single string variable");
                raise Program_Error;
             end if;
@@ -2480,7 +2480,7 @@ package body GPR.Proc is
                Process_Case_Construction (Current);
 
             when others =>
-               Put_Line ("Illegal declarative item: " & Kind'Img);
+               Write_Line ("Illegal declarative item: " & Kind'Img);
                raise Program_Error;
          end case;
       end loop;

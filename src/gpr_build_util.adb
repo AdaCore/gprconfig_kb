@@ -1779,8 +1779,8 @@ package body Gpr_Build_Util is
          Write_Name (S.Id.File);
 
          if S.Id.Index /= 0 then
-            Put (", ");
-            Write_Int (S.Id.Index);
+            Put (",");
+            Put (S.Id.Index'Img);
          end if;
       end Debug_Display;
 
@@ -1834,11 +1834,11 @@ package body Gpr_Build_Util is
             New_Line;
 
             Ada.Text_IO.Put ("   Q_First =");
-            Write_Int (Int (Q_First));
+            Ada.Text_IO.Put (Q_First'Img);
             New_Line;
 
             Ada.Text_IO.Put ("   Q.Last =");
-            Write_Int (Int (Q.Last));
+            Ada.Text_IO.Put (Q.Last'Img);
             New_Line;
          end if;
       end Extract;
@@ -1924,11 +1924,11 @@ package body Gpr_Build_Util is
             New_Line;
 
             Ada.Text_IO.Put ("   Q_First =");
-            Write_Int (Int (Q_First));
+            Ada.Text_IO.Put (Q_First'Img);
             New_Line;
 
             Ada.Text_IO.Put ("   Q.Last =");
-            Write_Int (Int (Q.Last));
+            Ada.Text_IO.Put (Q.Last'Img);
             New_Line;
          end if;
 

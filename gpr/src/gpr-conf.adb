@@ -24,7 +24,6 @@
 
 with Ada.Directories; use Ada.Directories;
 with Ada.Exceptions;  use Ada.Exceptions;
-with Ada.Text_IO;     use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;    use GNAT.HTable;
@@ -34,6 +33,7 @@ with GPR.Env;
 with GPR.Err;
 with GPR.Names;  use GPR.Names;
 with GPR.Opt;    use GPR.Opt;
+with GPR.Output; use GPR.Output;
 with GPR.Part;
 with GPR.Proc;   use GPR.Proc;
 with GPR.Tree;   use GPR.Tree;
@@ -501,7 +501,7 @@ package body GPR.Conf is
       if not OK then
          if Autoconf_Specified then
             if Verbose_Mode then
-               Put_Line ("inconsistent targets, performing autoconf");
+               Write_Line ("inconsistent targets, performing autoconf");
             end if;
 
             return False;
@@ -930,9 +930,9 @@ package body GPR.Conf is
                   Create_Path (Obj_Dir);
 
                   if not Quiet_Output then
-                     Put ("object directory """);
-                     Put (Obj_Dir);
-                     Put_Line (""" created");
+                     Write_Str ("object directory """);
+                     Write_Str (Obj_Dir);
+                     Write_Line (""" created");
                   end if;
 
                exception
@@ -997,7 +997,7 @@ package body GPR.Conf is
                                         Containing_Directory
                                           (Get_Name_String (Path_Name));
                         begin
-                           GNAT.OS_Lib.Close (Path_FD);
+                           Close (Path_FD);
                            Args (3) :=
                              new String'(Temp_Dir &
                                          Directory_Separator &
@@ -1042,24 +1042,24 @@ package body GPR.Conf is
             end if;
 
             if Verbose_Mode then
-               Put (Gprconfig_Name);
+               Write_Str (Gprconfig_Name);
 
                for J in 1 .. Arg_Last loop
-                  Put (' ');
-                  Put (Args (J).all);
+                  Write_Char (' ');
+                  Write_Str (Args (J).all);
                end loop;
 
                for J in Config_Switches'Range loop
-                  Put (' ');
-                  Put (Config_Switches (J).all);
+                  Write_Char (' ');
+                  Write_Str (Config_Switches (J).all);
                end loop;
 
                for J in Db_Switches'Range loop
-                  Put (' ');
-                  Put (Db_Switches (J).all);
+                  Write_Char (' ');
+                  Write_Str (Db_Switches (J).all);
                end loop;
 
-               New_Line;
+               Write_Eol;
 
             elsif not Quiet_Output then
 
@@ -1067,9 +1067,9 @@ package body GPR.Conf is
                --  verbose mode.
 
                if Config_File_Name'Length > 0 or else Verbose_Mode then
-                  Put ("creating ");
-                  Put (Simple_Name (Args (3).all));
-                  New_Line;
+                  Write_Str ("creating ");
+                  Write_Str (Simple_Name (Args (3).all));
+                  Write_Eol;
                end if;
             end if;
 
@@ -1409,7 +1409,7 @@ package body GPR.Conf is
         and then Opt.Warning_Mode /= Opt.Suppress
         and then On_Load_Config = null
       then
-         Put_Line
+         Write_Line
            ("warning: " &
               "runtimes are taken into account only in auto-configuration");
       end if;
@@ -1417,8 +1417,8 @@ package body GPR.Conf is
       --  Parse the configuration file
 
       if Verbose_Mode and then Config_File_Path /= null then
-         Put  ("Checking configuration ");
-         Put_Line (Config_File_Path.all);
+         Write_Str  ("Checking configuration ");
+         Write_Line (Config_File_Path.all);
       end if;
 
       if Config_File_Path /= null then
@@ -1539,7 +1539,7 @@ package body GPR.Conf is
       procedure Add_Directory (Dir : String) is
       begin
          if Opt.Verbose_Mode then
-            Put_Line ("   Adding directory """ & Dir & """");
+            Write_Line ("   Adding directory """ & Dir & """");
          end if;
 
          GPR.Env.Add_Directories (Env.Project_Path, Dir);
@@ -1704,15 +1704,15 @@ package body GPR.Conf is
 
          begin
             if Opt.Verbose_Mode then
-               Put_Line ("Setting the default project search directories");
+               Write_Line ("Setting the default project search directories");
 
                if GPR.Current_Verbosity = High then
                   if Path_Value = null or else Path_Value'Length = 0 then
-                     Put_Line ("No environment variable PATH");
+                     Write_Line ("No environment variable PATH");
 
                   else
-                     Put_Line ("PATH =");
-                     Put_Line ("   " & Path_Value.all);
+                     Write_Line ("PATH =");
+                     Write_Line ("   " & Path_Value.all);
                   end if;
                end if;
             end if;

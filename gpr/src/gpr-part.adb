@@ -24,7 +24,6 @@
 
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Exceptions;          use Ada.Exceptions;
-with Ada.Text_IO;             use Ada.Text_IO;
 
 with GNAT.HTable;               use GNAT.HTable;
 with GNAT.Table;
@@ -37,6 +36,7 @@ with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Names;   use GPR.Names;
 with GPR.Osint;   use GPR.Osint;
+with GPR.Output;  use GPR.Output;
 with GPR.Scans;   use GPR.Scans;
 with GPR.Sinput;  use GPR.Sinput;
 with GPR.Snames;
@@ -47,7 +47,7 @@ package body GPR.Part is
    Buffer      : String_Access;
    Buffer_Last : Natural := 0;
 
-   Dir_Sep : Character renames GNAT.OS_Lib.Directory_Separator;
+   Dir_Sep : Character renames System.OS_Lib.Directory_Separator;
 
    ------------------------------------
    -- Local Packages and Subprograms --
@@ -727,10 +727,10 @@ package body GPR.Part is
 
          --  Internal error
 
-         Put_Line (Exception_Information (X));
-         Put  ("Exception ");
-         Put  (Exception_Name (X));
-         Put_Line (" raised, while processing project file");
+         Write_Line (Exception_Information (X));
+         Write_Str  ("Exception ");
+         Write_Str  (Exception_Name (X));
+         Write_Line (" raised, while processing project file");
          Project := Empty_Project_Node;
    end Parse;
 

@@ -25,7 +25,8 @@
 with GNAT.Table;
 with Interfaces; use Interfaces;
 
-with GPR.Cset; use GPR.Cset;
+with GPR.Cset;   use GPR.Cset;
+with GPR.Output; use GPR.Output;
 
 package body GPR.Names is
 
@@ -597,90 +598,63 @@ package body GPR.Names is
 
    begin
       if not Id'Valid then
-         Put ("<invalid name_id>");
+         Write_Str ("<invalid name_id>");
 
       elsif Id = No_Name then
-         Put ("<No_Name>");
+         Write_Str ("<No_Name>");
 
       elsif Id = Error_Name then
-         Put ("<Error_Name>");
+         Write_Str ("<Error_Name>");
 
       else
          S := Name_Entries.Table (Id).Name_Chars_Index;
          Name_Len := Name_Entries.Table (Id).Name_Len;
 
          for J in 1 .. Name_Len loop
-            Put (Name_Chars.Table (S + Int (J)));
+            Write_Char (Name_Chars.Table (S + Int (J)));
          end loop;
       end if;
 
-      New_Line;
+      Write_Eol;
    end wn;
-
-   ---------------
-   -- Write_Int --
-   ---------------
-
-   procedure Write_Int (Val : Int; File : File_Type := Current_Output) is
-   begin
-      if Val < 0 then
-         Put (File, '-');
-         Write_Int (-Val, File);
-
-      else
-         if Val > 9 then
-            Write_Int (Val / 10, File);
-         end if;
-
-         Put (File, Character'Val ((Val mod 10) + Character'Pos ('0')));
-      end if;
-   end Write_Int;
 
    ----------------
    -- Write_Name --
    ----------------
 
-   procedure Write_Name (Id : Name_Id; File : File_Type := Standard_Output) is
+   procedure Write_Name (Id : Name_Id) is
    begin
       if Id >= First_Name_Id then
          Get_Name_String (Id);
-         Put (File, Name_Buffer (1 .. Name_Len));
+         Write_Str (Name_Buffer (1 .. Name_Len));
       end if;
    end Write_Name;
 
-   procedure Write_Name
-     (Id   : Path_Name_Type;
-      File : File_Type := Standard_Output) is
+   procedure Write_Name (Id : Path_Name_Type) is
    begin
-      Write_Name (Name_Id (Id), File);
+      Write_Name (Name_Id (Id));
    end Write_Name;
 
-   procedure Write_Name
-     (Id   : File_Name_Type;
-      File : File_Type := Standard_Output) is
+   procedure Write_Name (Id : File_Name_Type) is
    begin
-      Write_Name (Name_Id (Id), File);
+      Write_Name (Name_Id (Id));
    end Write_Name;
 
    ---------------------
    -- Write_Unit_Name --
    ---------------------
 
-   procedure Write_Unit_Name
-     (U    : Unit_Name_Type;
-      File : File_Type := Current_Output)
+   procedure Write_Unit_Name (U : Unit_Name_Type)
    is
    begin
       Get_Name_String (U);
-      Put (File, Name_Buffer (1 .. Name_Len - 2));
+      Write_Str (Name_Buffer (1 .. Name_Len - 2));
 
       if Name_Buffer (Name_Len) = 's' then
-         Put (File, " (spec)");
+         Write_Str (" (spec)");
       else
-         Put (File, " (body)");
+         Write_Str (" (body)");
       end if;
-
-      Name_Len := Name_Len + 5;
    end Write_Unit_Name;
 
 begin
