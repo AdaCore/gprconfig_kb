@@ -234,9 +234,9 @@ package body Gprbuild is
 
          if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
             Put  ("Changing to object directory of """);
-            Write_Name (Proj.Display_Name);
+            Put (Get_Name_String (Proj.Display_Name));
             Put  (""": """);
-            Write_Name (Proj.Object_Directory.Display_Name);
+            Put (Get_Name_String (Proj.Object_Directory.Display_Name));
             Put_Line ("""");
          end if;
       end if;
