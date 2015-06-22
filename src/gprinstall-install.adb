@@ -1411,7 +1411,7 @@ package body Gprinstall.Install is
                Pretty_Print
                  (Project                            => Current.String_Type,
                   In_Tree                            => Project_Node_Tree,
-                  Increment                          => 3,
+                  Increment                          => 2,
                   Eliminate_Empty_Case_Constructions => False,
                   Minimize_Empty_Lines               => False,
                   W_Char                             => Write_Char'Access,
