@@ -1377,6 +1377,7 @@ package body Gprinstall.Install is
             Vars    : Variable_Id;
             Types   : Type_Node_Ref := null;
             Current : Type_Node_Ref;
+            Max_Len : Natural := 0;
 
          begin
             Vars := Project.Decl.Variables;
@@ -1386,6 +1387,15 @@ package body Gprinstall.Install is
                   V : constant Variable :=
                         Tree.Shared.Variable_Elements.Table (Vars);
                begin
+                  --  Compute variable's name maximum length
+
+                  if V.Value.Kind in Single | List then
+                     Max_Len := Natural'Max
+                       (Max_Len, Get_Name_String (V.Name)'Length);
+                  end if;
+
+                  --  Check if a typed variable
+
                   if V.Value.String_Type /= Empty_Project_Node then
                      Current := Types;
                      Type_Loop :
@@ -1434,6 +1444,9 @@ package body Gprinstall.Install is
                begin
                   if V.Value.Kind in Single | List then
                      Write_Str ("   " & Get_Name_String (V.Name));
+                     Write_Str
+                       (To_String
+                          ((Max_Len - Get_Name_String (V.Name)'Length) * ' '));
 
                      if V.Value.String_Type /= Empty_Project_Node then
                         Write_Str (" : ");
