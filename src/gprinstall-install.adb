@@ -64,14 +64,14 @@ package body Gprinstall.Install is
    --  Double the size of the Buffer
 
    procedure Write_Char (C : Character);
-   --  Append character C to the Buffer. Double the buffer if needed.
+   --  Append character C to the Buffer. Double the buffer if needed
 
    procedure Write_Eol;
    --  Append the content of the Buffer as a line to Content and empty the
    --  Buffer.
 
    procedure Write_Str (S : String);
-   --  Append S to the buffer. Double the buffer if needed.
+   --  Append S to the buffer. Double the buffer if needed
 
    Installed : Name_Id_Set.Set;
    --  Record already installed project
