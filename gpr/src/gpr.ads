@@ -119,6 +119,33 @@ package GPR is
 
    Unrecoverable_Error : exception;
 
+   -------------------
+   -- Project nodes --
+   -------------------
+
+   Project_Nodes_Initial   : constant := 1_000;
+   Project_Nodes_Increment : constant := 100;
+   --  Allocation parameters for initializing and extending number
+   --  of nodes in table Tree_Private_Part.Project_Nodes
+
+   Project_Node_Low_Bound  : constant := 0;
+   Project_Node_High_Bound : constant := 099_999_999;
+   --  Range of values for project node id's (in practice infinite)
+
+   type Project_Node_Id is range
+     Project_Node_Low_Bound .. Project_Node_High_Bound;
+   --  The index of table Tree_Private_Part.Project_Nodes
+
+   Empty_Project_Node : constant Project_Node_Id := Project_Node_Low_Bound;
+   --  Designates no node in table Project_Nodes
+
+   First_Project_Node_Id : constant Project_Node_Id :=
+                                      Project_Node_Low_Bound + 1;
+
+   ------------
+   -- Stamps --
+   ------------
+
    package Stamps is
 
       -----------------------------------
@@ -392,9 +419,10 @@ package GPR is
    --  processing the project tree (unknown package name).
 
    type Variable_Value (Kind : Variable_Kind := Undefined) is record
-      Project  : Project_Id := No_Project;
-      Location : Source_Ptr := No_Location;
-      Default  : Boolean    := False;
+      Project     : Project_Id := No_Project;
+      Location    : Source_Ptr := No_Location;
+      String_Type : Project_Node_Id := Empty_Project_Node;
+      Default     : Boolean    := False;
       case Kind is
          when Undefined =>
             null;
@@ -406,7 +434,9 @@ package GPR is
       end case;
    end record;
    --  Values for variables and array elements. Default is True if the
-   --  current value is the default one for the variable.
+   --  current value is the default one for the variable. String_Type is
+   --  Empty_Project_Node, except for typed variables where it designates
+   --  the string type node.
 
    Nil_Variable_Value : constant Variable_Value;
    --  Value of a non existing variable or array element
@@ -2211,10 +2241,11 @@ private
    Ignored : constant Variable_Kind := Single;
 
    Nil_Variable_Value : constant Variable_Value :=
-                          (Project  => No_Project,
-                           Kind     => Undefined,
-                           Location => No_Location,
-                           Default  => False);
+                          (Project     => No_Project,
+                           Kind        => Undefined,
+                           Location    => No_Location,
+                           Default     => False,
+                           String_Type => Empty_Project_Node);
 
    type Source_Iterator is record
       In_Tree : Project_Tree_Ref;

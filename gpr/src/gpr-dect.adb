@@ -1526,6 +1526,7 @@ package body GPR.Dect is
           (Of_Kind => N_String_Type_Declaration, In_Tree => In_Tree);
 
       Set_Location_Of (String_Type, In_Tree, To => Token_Ptr);
+      Set_Project_Node_Of (String_Type, In_Tree, To => Current_Project);
 
       --  Scan past "type"
 
@@ -1637,8 +1638,9 @@ package body GPR.Dect is
 
          Scan (In_Tree);
          Set_Kind_Of (Variable, In_Tree, N_Typed_Variable_Declaration);
-         Expect (Tok_Identifier, "identifier");
+         Set_Project_Node_Of (Variable, In_Tree, To => Current_Project);
 
+         Expect (Tok_Identifier, "identifier");
          OK := Token = Tok_Identifier;
 
          if OK then

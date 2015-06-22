@@ -30,9 +30,9 @@ private package GPR.Dect is
 
    procedure Parse
      (In_Tree           : GPR.Tree.Project_Node_Tree_Ref;
-      Declarations      : out GPR.Tree.Project_Node_Id;
-      Current_Project   : GPR.Tree.Project_Node_Id;
-      Extends           : GPR.Tree.Project_Node_Id;
+      Declarations      : out GPR.Project_Node_Id;
+      Current_Project   : GPR.Project_Node_Id;
+      Extends           : GPR.Project_Node_Id;
       Packages_To_Check : String_List_Access;
       Is_Config_File    : Boolean;
       Flags             : Processing_Flags);

@@ -30,7 +30,7 @@ with GPR.Proc;
 package GPR.Conf is
 
    type Config_File_Hook is access procedure
-     (Config_File       : in out GPR.Tree.Project_Node_Id;
+     (Config_File       : in out GPR.Project_Node_Id;
       Project_Node_Tree : GPR.Tree.Project_Node_Tree_Ref);
    --  Hook called after the config file has been parsed. This lets the
    --  application do last minute changes to it (GPS uses this to add the
@@ -51,7 +51,7 @@ package GPR.Conf is
 
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out GPR.Project_Id;
-      User_Project_Node          : out GPR.Tree.Project_Node_Id;
+      User_Project_Node          : out GPR.Project_Node_Id;
       Config_File_Name           : String                        := "";
       Autoconf_Specified         : Boolean;
       Project_File_Name          : String;
@@ -113,7 +113,7 @@ package GPR.Conf is
 
    procedure Process_Project_And_Apply_Config
      (Main_Project               : out GPR.Project_Id;
-      User_Project_Node          : GPR.Tree.Project_Node_Id;
+      User_Project_Node          : GPR.Project_Node_Id;
       Config_File_Name           : String                        := "";
       Autoconf_Specified         : Boolean;
       Project_Tree               : GPR.Project_Tree_Ref;

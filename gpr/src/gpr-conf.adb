@@ -1499,7 +1499,7 @@ package body GPR.Conf is
 
    procedure Parse_Project_And_Apply_Config
      (Main_Project               : out GPR.Project_Id;
-      User_Project_Node          : out GPR.Tree.Project_Node_Id;
+      User_Project_Node          : out GPR.Project_Node_Id;
       Config_File_Name           : String := "";
       Autoconf_Specified         : Boolean;
       Project_File_Name          : String;
@@ -1866,7 +1866,7 @@ package body GPR.Conf is
 
    procedure Process_Project_And_Apply_Config
      (Main_Project               : out GPR.Project_Id;
-      User_Project_Node          : GPR.Tree.Project_Node_Id;
+      User_Project_Node          : GPR.Project_Node_Id;
       Config_File_Name           : String := "";
       Autoconf_Specified         : Boolean;
       Project_Tree               : GPR.Project_Tree_Ref;

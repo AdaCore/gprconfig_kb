@@ -56,7 +56,7 @@ package body GPR.PP is
    ------------------
 
    procedure Pretty_Print
-     (Project                            : GPR.Tree.Project_Node_Id;
+     (Project                            : GPR.Project_Node_Id;
       In_Tree                            : GPR.Tree.Project_Node_Tree_Ref;
       Increment                          : Positive       := 3;
       Eliminate_Empty_Case_Constructions : Boolean        := False;
@@ -68,7 +68,8 @@ package body GPR.PP is
       Id                                 : GPR.Project_Id :=
                                              GPR.No_Project;
       Max_Line_Length                    : Max_Length_Of_Line :=
-                                             Max_Length_Of_Line'Last)
+                                             Max_Length_Of_Line'Last;
+      Initial_Indent                     : Natural := 0)
    is
       procedure Print (Node : Project_Node_Id; Indent : Natural);
       --  A recursive procedure that traverses a project file tree and outputs
@@ -682,20 +683,31 @@ package body GPR.PP is
                   Print (First_Comment_After (Node, In_Tree), Indent);
 
                when N_Typed_Variable_Declaration =>
-                  pragma Debug
-                    (Indicate_Tested (N_Typed_Variable_Declaration));
-                  Print (First_Comment_Before (Node, In_Tree), Indent);
-                  Start_Line (Indent);
-                  Output_Name (Name_Of (Node, In_Tree), Indent);
-                  Write_String (" : ", Indent);
-                  Output_Name
-                    (Name_Of (String_Type_Of (Node, In_Tree), In_Tree),
-                     Indent);
-                  Write_String (" := ", Indent);
-                  Print (Expression_Of (Node, In_Tree), Indent);
-                  Write_String (";", Indent);
-                  Write_End_Of_Line_Comment (Node);
-                  Print (First_Comment_After (Node, In_Tree), Indent);
+                  declare
+                     Type_Node : constant Project_Node_Id :=
+                       String_Type_Of (Node, In_Tree);
+                     Type_Project : constant Project_Node_Id :=
+                       Project_Node_Of (Type_Node, In_Tree);
+                  begin
+                     pragma Debug
+                       (Indicate_Tested (N_Typed_Variable_Declaration));
+                     Print (First_Comment_Before (Node, In_Tree), Indent);
+                     Start_Line (Indent);
+                     Output_Name (Name_Of (Node, In_Tree), Indent);
+                     Write_String (" : ", Indent);
+
+                     if Project_Node_Of (Node, In_Tree) /= Type_Project then
+                        Output_Name (Name_Of (Type_Project, In_Tree), Indent);
+                        Write_Char ('.');
+                     end if;
+
+                     Output_Name (Name_Of (Type_Node, In_Tree), Indent);
+                     Write_String (" := ", Indent);
+                     Print (Expression_Of (Node, In_Tree), Indent);
+                     Write_String (";", Indent);
+                     Write_End_Of_Line_Comment (Node);
+                     Print (First_Comment_After (Node, In_Tree), Indent);
+                  end;
 
                when N_Variable_Declaration =>
                   pragma Debug (Indicate_Tested (N_Variable_Declaration));
@@ -976,7 +988,7 @@ package body GPR.PP is
          Write_Str := W_Str;
       end if;
 
-      Print (Project, 0);
+      Print (Project, Initial_Indent);
    end Pretty_Print;
 
    -----------------------
@@ -1002,7 +1014,7 @@ package body GPR.PP is
    ---------
 
    procedure wpr
-     (Project : GPR.Tree.Project_Node_Id;
+     (Project : GPR.Project_Node_Id;
       In_Tree : GPR.Tree.Project_Node_Tree_Ref)
    is
    begin

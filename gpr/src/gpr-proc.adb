@@ -251,12 +251,13 @@ package body GPR.Proc is
 
                   when Single =>
                      New_Attribute :=
-                       (Project  => Project,
-                        Kind     => Single,
-                        Location => No_Location,
-                        Default  => True,
-                        Value    => Empty_String,
-                        Index    => 0);
+                       (Project     => Project,
+                        Kind        => Single,
+                        Location    => No_Location,
+                        Default     => True,
+                        String_Type => Empty_Project_Node,
+                        Value       => Empty_String,
+                        Index       => 0);
 
                      --  Special cases of <project>'Name and
                      --  <project>'Project_Dir.
@@ -278,11 +279,12 @@ package body GPR.Proc is
 
                   when List =>
                      New_Attribute :=
-                       (Project  => Project,
-                        Kind     => List,
-                        Location => No_Location,
-                        Default  => True,
-                        Values   => Nil_String);
+                       (Project     => Project,
+                        Kind        => List,
+                        Location    => No_Location,
+                        Default     => True,
+                        String_Type => Empty_Project_Node,
+                        Values      => Nil_String);
 
                end case;
 
@@ -887,19 +889,21 @@ package body GPR.Proc is
                                                                        List
                            then
                               The_Variable :=
-                                (Project  => Project,
-                                 Kind     => List,
-                                 Location => No_Location,
-                                 Default  => True,
-                                 Values   => Nil_String);
+                                (Project     => Project,
+                                 Kind        => List,
+                                 Location    => No_Location,
+                                 Default     => True,
+                                 String_Type => Empty_Project_Node,
+                                 Values      => Nil_String);
                            else
                               The_Variable :=
-                                (Project  => Project,
-                                 Kind     => Single,
-                                 Location => No_Location,
-                                 Default  => True,
-                                 Value    => Empty_String,
-                                 Index    => 0);
+                                (Project     => Project,
+                                 Kind        => Single,
+                                 Location    => No_Location,
+                                 Default     => True,
+                                 String_Type => Empty_Project_Node,
+                                 Value       => Empty_String,
+                                 Index       => 0);
                            end if;
                         end if;
                      end;
@@ -1631,6 +1635,9 @@ package body GPR.Proc is
                   when Silent =>
                      Reset_Value := True;
                end case;
+
+            else
+               Value.String_Type := String_Type_Of (Declaration, Node_Tree);
             end if;
          end if;
 
@@ -2750,7 +2757,7 @@ package body GPR.Proc is
 
       procedure Process_Aggregated_Projects is
          List           : Aggregated_Project_List;
-         Loaded_Project : GPR.Tree.Project_Node_Id;
+         Loaded_Project : GPR.Project_Node_Id;
          Success        : Boolean := True;
          Tree           : Project_Tree_Ref;
          Node_Tree      : Project_Node_Tree_Ref;

@@ -78,32 +78,10 @@ package GPR.Tree is
    --  error handler is likely to be a local subprogram in this case (which
    --  can't be stored when the flags are created).
 
-   -------------------
-   -- Project nodes --
-   -------------------
-
    type Project_Node_Tree_Data;
    type Project_Node_Tree_Ref is access all Project_Node_Tree_Data;
    --  Type to designate a project node tree, so that several project node
    --  trees can coexist in memory.
-
-   Project_Nodes_Initial   : constant := 1_000;
-   Project_Nodes_Increment : constant := 100;
-   --  Allocation parameters for initializing and extending number
-   --  of nodes in table Tree_Private_Part.Project_Nodes
-
-   Project_Node_Low_Bound  : constant := 0;
-   Project_Node_High_Bound : constant := 099_999_999;
-   --  Range of values for project node id's (in practice infinite)
-
-   type Project_Node_Id is range
-     Project_Node_Low_Bound .. Project_Node_High_Bound;
-   --  The index of table Tree_Private_Part.Project_Nodes
-
-   Empty_Project_Node : constant Project_Node_Id := Project_Node_Low_Bound;
-   --  Designates no node in table Project_Nodes
-
-   First_Node_Id : constant Project_Node_Id := Project_Node_Low_Bound + 1;
 
    subtype Variable_Node_Id is Project_Node_Id;
    --  Used to designate a node whose expected kind is one of
@@ -441,8 +419,9 @@ package GPR.Tree is
      (Node    : Project_Node_Id;
       In_Tree : Project_Node_Tree_Ref) return Project_Node_Id;
    pragma Inline (Project_Node_Of);
-   --  Only valid for N_With_Clause, N_Variable_Reference and
-   --  N_Attribute_Reference nodes.
+   --  Only valid for N_With_Clause, N_Variable_Reference,
+   --  N_Attribute_Reference, N_String_Type_Declaration and
+   --  N_Typed_Variable_Declaration nodes.
 
    function Non_Limited_Project_Node_Of
      (Node    : Project_Node_Id;
@@ -934,8 +913,9 @@ package GPR.Tree is
       To           : Project_Node_Id;
       Limited_With : Boolean := False);
    pragma Inline (Set_Project_Node_Of);
-   --  Only valid for N_With_Clause, N_Variable_Reference and
-   --  N_Attribute_Reference nodes.
+   --  Only valid for N_With_Clause, N_Variable_Reference,
+   --  N_Attribute_Reference, N_String_Type_Declaration and
+   --  N_Typed_Variable_Declaration nodes.
 
    procedure Set_Next_With_Clause_Of
      (Node    : Project_Node_Id;
@@ -1324,7 +1304,7 @@ package GPR.Tree is
       --    --  Expr_Kind: Undefined
       --    --  Field1:    first literal string
       --    --  Field2:    next string type
-      --    --  Field3:    not used
+      --    --  Field3:    project node
       --    --  Field4:    not used
       --    --  Value:     not used
 
@@ -1356,7 +1336,7 @@ package GPR.Tree is
       --    --  Field1:    expression
       --    --  Field2:    type of variable (N_String_Type_Declaration)
       --    --  Field3:    next variable
-      --    --  Field4:    not used
+      --    --  Field4:    project node
       --    --  Value:     not used
 
       --    N_Variable_Declaration,
@@ -1484,7 +1464,7 @@ package GPR.Tree is
         GNAT.Dynamic_Tables
           (Table_Component_Type => Project_Node_Record,
            Table_Index_Type     => Project_Node_Id,
-           Table_Low_Bound      => First_Node_Id,
+           Table_Low_Bound      => First_Project_Node_Id,
            Table_Initial        => Project_Nodes_Initial,
            Table_Increment      => Project_Nodes_Increment);
       --  Table contains the syntactic tree of project data from project files

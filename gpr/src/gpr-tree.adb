@@ -1582,12 +1582,38 @@ package body GPR.Tree is
       pragma Assert
         (Present (Node)
           and then
-           (In_Tree.Project_Nodes.Table (Node).Kind = N_With_Clause
-              or else
-            In_Tree.Project_Nodes.Table (Node).Kind = N_Variable_Reference
-              or else
-            In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Reference));
-      return In_Tree.Project_Nodes.Table (Node).Field1;
+            (In_Tree.Project_Nodes.Table (Node).Kind = N_With_Clause
+               or else
+             In_Tree.Project_Nodes.Table (Node).Kind = N_Variable_Reference
+               or else
+             In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Reference
+               or else
+             In_Tree.Project_Nodes.Table (Node).Kind =
+               N_String_Type_Declaration
+               or else
+             In_Tree.Project_Nodes.Table (Node).Kind =
+               N_Typed_Variable_Declaration));
+
+      declare
+         The_Node : Project_Node_Record renames
+                      In_Tree.Project_Nodes.Table (Node);
+      begin
+         case The_Node.Kind is
+            when N_With_Clause |
+                 N_Variable_Reference |
+                 N_Attribute_Reference =>
+               return The_Node.Field1;
+
+            when N_String_Type_Declaration =>
+               return The_Node.Field3;
+
+            when N_Typed_Variable_Declaration =>
+               return The_Node.Field3;
+
+            when others =>
+               return Empty_Project_Node;
+         end case;
+      end;
    end Project_Node_Of;
 
    -----------------------------------
@@ -2775,14 +2801,39 @@ package body GPR.Tree is
                or else
              In_Tree.Project_Nodes.Table (Node).Kind = N_Variable_Reference
                or else
-             In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Reference));
-      In_Tree.Project_Nodes.Table (Node).Field1 := To;
+             In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Reference
+               or else
+             In_Tree.Project_Nodes.Table (Node).Kind =
+               N_String_Type_Declaration
+               or else
+             In_Tree.Project_Nodes.Table (Node).Kind =
+               N_Typed_Variable_Declaration));
 
-      if In_Tree.Project_Nodes.Table (Node).Kind = N_With_Clause
-        and then not Limited_With
-      then
-         In_Tree.Project_Nodes.Table (Node).Field3 := To;
-      end if;
+      declare
+         The_Node : Project_Node_Record renames
+                      In_Tree.Project_Nodes.Table (Node);
+      begin
+         case The_Node.Kind is
+            when N_With_Clause =>
+               The_Node.Field1 := To;
+
+               if not Limited_With then
+                  The_Node.Field3 := To;
+               end if;
+
+            when N_Variable_Reference | N_Attribute_Reference =>
+               The_Node.Field1 := To;
+
+            when N_String_Type_Declaration =>
+               The_Node.Field3 := To;
+
+            when N_Typed_Variable_Declaration =>
+               The_Node.Field3 := To;
+
+            when others =>
+               null;
+         end case;
+      end;
    end Set_Project_Node_Of;
 
    ---------------------------------------

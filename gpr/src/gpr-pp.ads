@@ -45,7 +45,7 @@ package GPR.PP is
    subtype Max_Length_Of_Line is Positive range 50 .. 255;
 
    procedure Pretty_Print
-     (Project                            : GPR.Tree.Project_Node_Id;
+     (Project                            : GPR.Project_Node_Id;
       In_Tree                            : GPR.Tree.Project_Node_Tree_Ref;
       Increment                          : Positive       := 3;
       Eliminate_Empty_Case_Constructions : Boolean        := False;
@@ -56,7 +56,8 @@ package GPR.PP is
       Backward_Compatibility             : Boolean;
       Id                                 : Project_Id     := No_Project;
       Max_Line_Length                    : Max_Length_Of_Line :=
-                                             Max_Length_Of_Line'Last);
+                                             Max_Length_Of_Line'Last;
+      Initial_Indent                     : Natural := 0);
    --  Output a project file, using either the default output routines, or the
    --  ones specified by W_Char, W_Eol and W_Str.
    --
@@ -82,6 +83,8 @@ package GPR.PP is
    --  proper casing.
    --
    --  Max_Line_Length is the maximum line length in the project file
+   --
+   --  Initial_Indent is the initial indentation
 
 private
 
@@ -91,7 +94,7 @@ private
    --  to Pretty_Print. It is used only for testing purposes.
 
    procedure wpr
-     (Project : GPR.Tree.Project_Node_Id;
+     (Project : GPR.Project_Node_Id;
       In_Tree : GPR.Tree.Project_Node_Tree_Ref);
    --  Wrapper for use from gdb: call Pretty_Print with default parameters
 
