@@ -62,7 +62,7 @@ package body GPR.Tempdir is
          end if;
       end Directory;
 
-   --  Start of processing Tempdir
+   --  Start of processing for Create_Temp_File
 
    begin
       if Temp_Dir'Length /= 0 then
