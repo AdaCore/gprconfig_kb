@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O629-023 an attribute cannot be used as a case variable
+
+  Problem:    The project manager was not detecting that an attribute was
+              use illegally as a case variable in a case construction, causing
+              crash in gprbuild.
+
+  Status:     This was fixed in 2.3 on 2015-06-30
+
+  Workaround: Do not use the attribute as the case variable. Instead use
+              a variable that has the value of the attribute.
+
 KP-22-O520-006 gprinstall issue with Exec_Dir in abstract projects
 
   Problem:    When an Exec_Dir attribute is defined in an abstract project
