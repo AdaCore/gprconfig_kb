@@ -137,8 +137,8 @@ package GPR.Names is
    -- Debugging Routines --
    ------------------------
 
-   procedure wn (Id : Name_Id);
-   pragma Export (Ada, wn);
+   procedure wn2 (Id : Name_Id);
+   pragma Export (Ada, wn2);
 
    -------------------------------
    -- Case Control Declarations --

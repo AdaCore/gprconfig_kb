@@ -593,7 +593,7 @@ package body GPR.Names is
    -- wn --
    --------
 
-   procedure wn (Id : Name_Id) is
+   procedure wn2 (Id : Name_Id) is
       S : Int;
 
    begin
@@ -616,7 +616,7 @@ package body GPR.Names is
       end if;
 
       Write_Eol;
-   end wn;
+   end wn2;
 
    ----------------
    -- Write_Name --
