@@ -729,7 +729,8 @@ package body GPR.Strt is
       Variable        : out Project_Node_Id;
       Current_Project : Project_Node_Id;
       Current_Package : Project_Node_Id;
-      Flags           : Processing_Flags)
+      Flags           : Processing_Flags;
+      Allow_Attribute : Boolean := True)
    is
       Current_Variable : Project_Node_Id := Empty_Project_Node;
 
@@ -743,6 +744,8 @@ package body GPR.Strt is
       Variable_Name     : Name_Id;
 
    begin
+      Variable := Empty_Project_Node;
+
       Names.Init;
 
       loop
@@ -762,6 +765,10 @@ package body GPR.Strt is
       if Look_For_Variable then
 
          if Token = Tok_Apostrophe then
+            if not Allow_Attribute then
+               Error_Msg (Flags, "attribute reference not allowed here",
+                          Names.Table (1).Location);
+            end if;
 
             --  Attribute reference
 

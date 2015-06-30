@@ -97,13 +97,15 @@ private package GPR.Strt is
       Variable        : out Project_Node_Id;
       Current_Project : Project_Node_Id;
       Current_Package : Project_Node_Id;
-      Flags           : Processing_Flags);
+      Flags           : Processing_Flags;
+      Allow_Attribute : Boolean := True);
    --  Parse variable or attribute reference. Used internally (in expressions)
-   --  and for case variables (in Prj.Dect). Current_Package is the node of the
-   --  package being parsed, or Empty_Node when we are at the project level
-   --  (not in a package). On exit, Variable is the node of the variable or
-   --  attribute reference. A variable reference is made of one to three simple
-   --  names. An attribute reference is made of one or two simple names,
-   --  followed by an apostrophe, followed by the attribute simple name.
+   --  and for case variables (in Prj.Dect). Current_Package is the node of
+   --  the package being parsed, or Empty_Node when we are at the project
+   --  level (not in a package). On exit, Variable is the node of the variable
+   --  or attribute reference. A variable reference is made of one to three
+   --  simple names. An attribute reference is made of one or two simple names,
+   --  followed by an apostrophe, followed by the attribute simple name. If
+   --  Allow_Attribute is False, it is illegal to parse an attribute reference.
 
 end GPR.Strt;

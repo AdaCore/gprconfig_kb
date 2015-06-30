@@ -849,7 +849,13 @@ package body GPR.Dect is
             Variable        => Case_Variable,
             Flags           => Flags,
             Current_Project => Current_Project,
-            Current_Package => Current_Package);
+            Current_Package => Current_Package,
+            Allow_Attribute => False);
+
+         if Kind_Of (Case_Variable, In_Tree) = N_Attribute_Reference then
+            Case_Variable := Empty_Project_Node;
+         end if;
+
          Set_Case_Variable_Reference_Of
            (Case_Construction, In_Tree, To => Case_Variable);
 
