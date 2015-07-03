@@ -211,7 +211,7 @@ procedure Gprslave is
 
       procedure Initialize (Builder : in out Build_Master);
       --  Set the UID for this build master. This Id is only used in log
-      --  message to identify a specific build. Also initialize the lock.
+      --  message to identify a specific build.
 
       function Working_Dir_Exists (Directory : String) return Boolean;
       --  Returns True if Directory is already used by a registered build
@@ -1673,7 +1673,7 @@ procedure Gprslave is
             end if;
 
          else
-            --  This is not necessarily an error as we could get a Pid of a a
+            --  This is not necessarily an error as we could get a Pid of a
             --  gprconfig run launched to generate a configuration file for a
             --  specific language. So we do not want to fail in this case.
 
