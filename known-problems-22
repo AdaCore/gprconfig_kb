@@ -28,6 +28,16 @@ KP-22-O629-023 an attribute cannot be used as a case variable
   Workaround: Do not use the attribute as the case variable. Instead use
               a variable that has the value of the attribute.
 
+KP-22-O626-022 GPRslave may hang or crash.
+
+  Problem:    A small race condition exists when multiple Wait_Completion
+              tasks are used. This creates memory corruptions and may
+              crash or freeze GPRslave.
+
+  Status:     This was fixed in 2.3 on 2015-07-03
+
+  Workaround: Launch gprslave with option --response-handler=1.
+
 KP-22-O520-006 gprinstall issue with Exec_Dir in abstract projects
 
   Problem:    When an Exec_Dir attribute is defined in an abstract project

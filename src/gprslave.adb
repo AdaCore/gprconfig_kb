@@ -96,6 +96,12 @@ procedure Gprslave is
    overriding procedure Adjust     (Builder : in out Build_Master);
    overriding procedure Finalize   (Builder : in out Build_Master);
 
+   protected Controlled_Build_Master is
+      procedure Initialize (Builder : in out Build_Master);
+      procedure Adjust     (Builder : in out Build_Master);
+      procedure Finalize   (Builder : in out Build_Master);
+   end Controlled_Build_Master;
+
    package Builder is
 
       function "<" (B1, B2 : Build_Master) return Boolean is
@@ -330,7 +336,7 @@ procedure Gprslave is
 
    overriding procedure Adjust (Builder : in out Build_Master) is
    begin
-      Builder.Status.Count := Builder.Status.Count + 1;
+      Controlled_Build_Master.Adjust (Builder);
    end Adjust;
 
    ---------------------------------
@@ -489,24 +495,57 @@ procedure Gprslave is
       Builders.Remove (Builder);
    end Close_Builder;
 
+   -----------------------------
+   -- Controlled_Build_Master --
+   -----------------------------
+
+   protected body Controlled_Build_Master is
+
+      ------------
+      -- Adjust --
+      ------------
+
+      procedure Adjust (Builder : in out Build_Master) is
+      begin
+         Builder.Status.Count := Builder.Status.Count + 1;
+      end Adjust;
+
+      --------------
+      -- Finalize --
+      --------------
+
+      procedure Finalize (Builder : in out Build_Master) is
+         procedure Unchecked_Free is
+           new Unchecked_Deallocation (Status, Shared_Status);
+         S : Shared_Status := Builder.Status;
+      begin
+         Builder.Status := null;
+
+         S.Count := S.Count - 1;
+
+         if S.Count = 0 then
+            Unchecked_Free (S);
+         end if;
+      end Finalize;
+
+      ----------------
+      -- Initialize --
+      ----------------
+
+      procedure Initialize (Builder : in out Build_Master) is
+      begin
+         Builder.Status := new Status'(0, False, 1);
+      end Initialize;
+
+   end Controlled_Build_Master;
+
    --------------
    -- Finalize --
    --------------
 
    overriding procedure Finalize (Builder : in out Build_Master) is
-      procedure Unchecked_Free is
-        new Unchecked_Deallocation (Status, Shared_Status);
-      S : Shared_Status := Builder.Status;
    begin
-      Builder.Status := null;
-
-      S.Count := S.Count - 1;
-
-      if S.Count = 0 then
-         Message
-           ("# finalize builder" & UID'Image (S.Id), Is_Debug => True);
-         Unchecked_Free (S);
-      end if;
+      Controlled_Build_Master.Finalize (Builder);
    end Finalize;
 
    -------------
@@ -617,10 +656,7 @@ procedure Gprslave is
 
    overriding procedure Initialize (Builder : in out Build_Master) is
    begin
-      Builder.Status := new Status'(0, False, 1);
-      Message
-        ("# initialize builder"
-         & UID'Image (Builder.Status.Id), Is_Debug => True);
+      Controlled_Build_Master.Initialize (Builder);
    end Initialize;
 
    -------------
@@ -1925,7 +1961,7 @@ procedure Gprslave is
       --  We must call explicitely Initialize here to ensure that the Builder
       --  object Status access will be changed for this new builder.
 
-      Initialize (Builder);
+      Controlled_Build_Master.Initialize (Builder);
 
       --  Then initialize the new builder Id
 
