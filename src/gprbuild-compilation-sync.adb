@@ -341,7 +341,7 @@ package body Gprbuild.Compilation.Sync is
 
    exception
       when Socket_Error =>
-         null;
+         accept Stop;
       when E : others =>
          Put_Line (Exception_Information (E));
          OS_Exit (1);
