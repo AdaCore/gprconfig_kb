@@ -44,19 +44,6 @@ procedure GPRName.Main is
 
    use Gpr_Util.Knowledge;
 
-   Flags   : constant Processing_Flags :=
-                Create_Flags
-                  (Report_Error               => null,
-                   When_No_Sources            => Error,
-                  Require_Sources_Other_Lang => False,
-                  Allow_Duplicate_Basenames  => False,
-                  Compiler_Driver_Mandatory  => False,
-                  Error_On_Unknown_Language  => False,
-                  Require_Obj_Dirs           => Error,
-                  Allow_Invalid_External     => Error,
-                  Missing_Source_Files       => Error,
-                  Ignore_Missing_With        => False);
-
    Subdirs_Switch : constant String := "--subdirs=";
 
    Usage_Output : Boolean := False;
@@ -216,7 +203,7 @@ procedure GPRName.Main is
 
       Set_Program_Name ("gprname");
 
-      GPR.Tree.Initialize (Root_Environment, Gprbuild_Flags);
+      GPR.Tree.Initialize (Root_Environment, Gprname_Flags);
       GPR.Tree.Initialize (Project_Node_Tree);
 
       GPR.Initialize (Project_Tree);
@@ -476,6 +463,22 @@ procedure GPRName.Main is
          elsif Arg = "--no-backup" then
             Opt.No_Backup := True;
 
+         --  --target=
+
+         elsif Arg'Length > Target_Project_Option'Length and then
+               Arg (1 .. Target_Project_Option'Length) = Target_Project_Option
+         then
+            if Target_Name = null then
+               Target_Name :=
+                 new String'
+                   (Arg (Target_Project_Option'Length + 1 .. Arg'Last));
+
+            elsif Target_Name.all /=
+                  Arg (Target_Project_Option'Length + 1 .. Arg'Last)
+            then
+               Fail ("multiple targets");
+            end if;
+
          --  -d
 
          elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-d" then
@@ -680,7 +683,7 @@ begin
         (File_Path         => File_Path.all,
          Preproc_Switches  => Prep_Switches,
          Very_Verbose      => Very_Verbose,
-         Flags             => Flags);
+         Flags             => Gprname_Flags);
    end;
 
    --  Process each section successively

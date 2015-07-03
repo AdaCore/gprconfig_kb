@@ -1885,7 +1885,8 @@ package body GPR is
       Require_Obj_Dirs           : Error_Warning := Error;
       Allow_Invalid_External     : Error_Warning := Error;
       Missing_Source_Files       : Error_Warning := Error;
-      Ignore_Missing_With        : Boolean       := False)
+      Ignore_Missing_With        : Boolean       := False;
+      Check_Configuration_Only   : Boolean       := False)
       return Processing_Flags
    is
    begin
@@ -1900,7 +1901,8 @@ package body GPR is
          Allow_Invalid_External     => Allow_Invalid_External,
          Missing_Source_Files       => Missing_Source_Files,
          Ignore_Missing_With        => Ignore_Missing_With,
-         Incomplete_Withs           => False);
+         Incomplete_Withs           => False,
+         Check_Configuration_Only   => Check_Configuration_Only);
    end Create_Flags;
 
    ------------

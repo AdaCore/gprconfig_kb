@@ -8608,31 +8608,35 @@ package body GPR.Nmsc is
 
          Check_Configuration (Project, Data);
 
-         if Project.Qualifier /= Aggregate then
-            Check_Library_Attributes (Project, Data);
-            Check_Package_Naming (Project, Data);
+         if not Data.Flags.Check_Configuration_Only then
+            if Project.Qualifier /= Aggregate then
+               Check_Library_Attributes (Project, Data);
+               Check_Package_Naming (Project, Data);
 
-            --  An aggregate library has no source, no need to look for them
+               --  An aggregate library has no source, no need to look for them
 
-            if Project.Qualifier /= Aggregate_Library then
-               Look_For_Sources (Prj_Data, Data);
+               if Project.Qualifier /= Aggregate_Library then
+                  Look_For_Sources (Prj_Data, Data);
+               end if;
+
+               Check_Interfaces (Project, Data);
+
+               --  If this library is part of an aggregated library don't check
+               --  it as it has no sources by itself and so interface won't be
+               --  found.
+
+               if Project.Library and not In_Aggregate_Lib then
+                  Check_Stand_Alone_Library (Project, Data);
+               end if;
+
+               Get_Mains (Project, Data);
             end if;
 
-            Check_Interfaces (Project, Data);
-
-            --  If this library is part of an aggregated library don't check it
-            --  as it has no sources by itself and so interface won't be found.
-
-            if Project.Library and not In_Aggregate_Lib then
-               Check_Stand_Alone_Library (Project, Data);
-            end if;
-
-            Get_Mains (Project, Data);
+            Free (Prj_Data);
          end if;
 
-         Free (Prj_Data);
-
          Debug_Decrease_Indent ("done check");
+
       end Check;
 
       ---------------------
