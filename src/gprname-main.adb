@@ -605,6 +605,10 @@ procedure GPRName.Main is
 
          Display_Usage_Version_And_Help;
 
+         Put_Line
+           ("  --target=<targ> indicates the target of the GNAT compiler");
+         New_Line;
+
          Put_Line ("  --subdirs=dir real obj/lib/exec dirs are subdirs");
          Put_Line ("  --no-backup   do not create backup of project file");
          New_Line;
