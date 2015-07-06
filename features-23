@@ -18,6 +18,11 @@ NF-23-O601-024 Create a symlink for the versioned libraries (2015-06-01)
    A symlink is now created on the main library directory for a library
    name with a version (Library_Version attribute).
 
+NF-23-O528-047 New tool gprname (2015-07-06)
+
+   A new GPR tool, gprname, is now available. It is the replacement of
+   "gnatname -P".
+
 NF-23-O420-012 --create-map-file for cross targets (2015-04-21)
 
   This is now supported on cross platforms that use GNU ld to link.
