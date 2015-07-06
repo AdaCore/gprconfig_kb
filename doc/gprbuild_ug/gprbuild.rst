@@ -3260,3 +3260,225 @@ The current options are:
   responses (sending back object code and ALI files) supported. The
   value must be between 1 and the maximum number of simultaneous
   compilations.
+
+.. _Specific Naming Scheme with GPRname
+
+Specific Naming Scheme with GPRname
+===================================
+
+When the Ada source file names do not follow a regular naming
+scheme, the mapping of Ada units to source file names must be indicated
+in package Naming with attributes Spec and Body.
+
+To help maintain the correspondence between compilation unit names and
+source file names within the compiler,
+the tool `gprname` may be used to generate automatically these attributes.
+
+.. _Running_gprname:
+
+Running `gprname`
+-----------------
+
+The usual form of the `gprname` command is:
+
+.. code-block:: sh
+
+      $ gprname [`switches`] `naming_pattern` [`naming_patterns`]
+          [--and [`switches`] `naming_pattern` [`naming_patterns`]]
+
+
+Most of the arguments are optional: switch *-P* must be specified to indicate
+the project file and at least one Naming Pattern.
+
+`gprname` will attempt to
+find all the compilation units in files that follow at least one of the
+naming patterns. To find these compilation units,
+`gprname` will use the GNAT compiler in syntax-check-only mode on all
+regular files.
+
+One or several Naming Patterns may be given as arguments to `gprname`.
+Each Naming Pattern is enclosed between double quotes (or single
+quotes on Windows).
+A Naming Pattern is a regular expression similar to the wildcard patterns
+used in file names by the Unix shells or the DOS prompt.
+
+`gprname` may be called with several sections of directories/patterns.
+Sections are separated by switch `--and`. In each section, there must be
+at least one pattern. If no directory is specified in a section, the
+project directory is implied.
+The options other that the directory switches and the patterns apply globally
+even if they are in different sections.
+
+Examples of Naming Patterns are::
+
+     "*.[12].ada"
+     "*.ad[sb]*"
+     "body_*"    "spec_*"
+
+For a more complete description of the syntax of Naming Patterns,
+see the second kind of regular expressions described in :file:`g-regexp.ads`
+(the 'Glob' regular expressions).
+
+When invoked with no switch `-P`, `gprname` will create a
+configuration pragmas file :file:`gnat.adc` in the current working directory,
+with pragmas `Source_File_Name` for each file that contains a valid Ada
+unit.
+
+.. _Switches_for_pgprname:
+
+Switches for GPRname
+---------------------
+
+Switches for `gprname` must precede any specified Naming Pattern.
+
+You may specify any of the following switches to `gprname`:
+
+.. index:: --version (gprname)
+
+* :samp:`--version`
+
+  Display Copyright and version, then exit disregarding all other options.
+
+.. undex:: --target= (gprname)
+
+* :samp:`--target=<targ>`
+
+  Indicates the target of the GNAT compiler. This may be needed if there is
+  no native compiler available.
+
+.. index:: --help (gprname)
+
+* :samp:`--help`
+
+  If *--version* was not used, display usage, then exit disregarding
+  all other options.
+
+* :samp:`--subdirs={dir}`
+
+  Real object, library or exec directories are subdirectories <dir> of the
+  specified ones.
+
+* :samp:`--no-backup`
+
+  Do not create a backup copy of the project file if it already exists.
+
+* :samp:`--and`
+
+  Start another section of directories/patterns.
+
+.. index:: -d (gprname)
+
+* :samp:`-d{dir}`
+
+  Look for source files in directory :file:`dir`. There may be zero, one or more
+  spaces between *-d* and :file:`dir`.
+  :file:`dir` may end with `/**`, that is it may be of the form
+  `root_dir/**`. In this case, the directory `root_dir` and all of its
+  subdirectories, recursively, have to be searched for sources.
+  When a switch *-d*
+  is specified, the current working directory will not be searched for source
+  files, unless it is explicitly specified with a *-d*
+  or *-D* switch.
+  Several switches *-d* may be specified.
+  If :file:`dir` is a relative path, it is relative to the directory of
+  the project file specified with switch *-P*. The directory
+  specified with switch *-d* must exist and be readable.
+
+.. index:: -D (gprname)
+
+* :samp:`-D{filename}`
+
+  Look for source files in all directories listed in text file :file:`filename`.
+  There may be zero, one or more spaces between *-D*
+  and :file:`filename`.
+  :file:`filename` must be an existing, readable text file.
+  Each nonempty line in :file:`filename` must be a directory.
+  Specifying switch *-D* is equivalent to specifying as many
+  switches *-d* as there are nonempty lines in
+  :file:`file`.
+
+* :samp:`-eL`
+
+  Follow symbolic links when processing project files.
+
+  .. index:: -f (gprname)
+
+* :samp:`-f{pattern}`
+
+  Foreign patterns. Using this switch, it is possible to add sources of languages
+  other than Ada to the list of sources of a project file.
+  For example,
+
+  .. code-block:: sh
+
+     gprname -P prj.gpr -f"*.c" "*.ada"
+
+  will look for Ada units in all files with the :file:`.ada` extension,
+  and will add to the list of file for project :file:`prj.gpr` the C files
+  with extension :file:`.c`.
+
+  .. index:: -h (gprname)
+
+* :samp:`-h`
+
+  Output usage (help) information. The output is written to :file:`stdout`.
+
+  .. index:: -P (gprname)
+
+* :samp:`-P{proj}`
+
+  Create or update project file :file:`proj`. There may be zero, one or more space
+  between *-P* and :file:`proj`. :file:`proj` may include directory
+  information. :file:`proj` must be writable.
+  There must be only one switch *-P*.
+  If switch *--no-backup* is not specified, a backup copy of the project file is created
+  in the project directory with file name <proj>.gpr.saved_x. 'x' is the first
+  non negative number that makes this backup copy a new file.
+
+  .. index:: -v (gprname)
+
+* :samp:`-v`
+
+  Verbose mode. Output detailed explanation of behavior to :file:`stdout`.
+  This includes name of the file written, the name of the directories to search
+  and, for each file in those directories whose name matches at least one of
+  the Naming Patterns, an indication of whether the file contains a unit,
+  and if so the name of the unit.
+
+.. index:: -v -v (gprname)
+
+* :samp:`-v -v`
+
+  Very Verbose mode. In addition to the output produced in verbose mode,
+  for each file in the searched directories whose name matches none of
+  the Naming Patterns, an indication is given that there is no match.
+
+  .. index:: -x (gprname)
+
+* :samp:`-x{pattern}`
+
+  Excluded patterns. Using this switch, it is possible to exclude some files
+  that would match the name patterns. For example,
+
+  .. code-block:: sh
+
+      gprname -P prj.gpr -x "*_nt.ada" "*.ada"
+
+  will look for Ada units in all files with the :file:`.ada` extension,
+  except those whose names end with :file:`_nt.ada`.
+
+.. _Example_of_gprname_Usage:
+
+Example of `gprname` Usage
+--------------------------
+
+.. code-block:: sh
+
+     $ gprname -P/home/me/proj.gpr -x "*_nt_body.ada"
+     -dsources -dsources/plus -Dcommon_dirs.txt "body_*" "spec_*"
+
+Note that several switches *-d* may be used,
+even in conjunction with one or several switches
+*-D*. Several Naming Patterns and one excluded pattern
+are used in this example.
+
