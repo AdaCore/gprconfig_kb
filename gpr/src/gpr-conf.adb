@@ -2017,27 +2017,25 @@ package body GPR.Conf is
 
       Apply_Config_File (Main_Config_Project, Project_Tree);
 
-      if not Env.Flags.Check_Configuration_Only then
-         --  Finish processing the user's project
+      GPR.Proc.Process_Project_Tree_Phase_2
+        (In_Tree                => Project_Tree,
+         Project                => Main_Project,
+         Success                => Success,
+         From_Project_Node      => User_Project_Node,
+         From_Project_Node_Tree => Project_Node_Tree,
+         Env                    => Env);
 
-         GPR.Proc.Process_Project_Tree_Phase_2
-           (In_Tree                => Project_Tree,
-            Project                => Main_Project,
-            Success                => Success,
-            From_Project_Node      => User_Project_Node,
-            From_Project_Node_Tree => Project_Node_Tree,
-            Env                    => Env);
-
-         if Success then
+      if Success then
+         if not Env.Flags.Check_Configuration_Only then
             if Project_Tree.Source_Info_File_Name /= null
               and then not Project_Tree.Source_Info_File_Exists
             then
                Write_Source_Info_File (Project_Tree);
             end if;
-
-         else
-            Main_Project := No_Project;
          end if;
+
+      else
+         Main_Project := No_Project;
       end if;
    end Process_Project_And_Apply_Config;
 
