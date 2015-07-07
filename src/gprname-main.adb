@@ -554,6 +554,25 @@ procedure GPRName.Main is
                Opt.Verbose_Mode := True;
             end if;
 
+            --  -vP?
+
+         elsif Arg'Length = 4 and then
+               Arg (1 .. 3) = "-vP" and then
+               Arg (4) in '0' .. '2'
+         then
+            case Arg (4) is
+               when '0' =>
+                  Current_Verbosity := Default;
+
+               when '1' =>
+                  Current_Verbosity := Medium;
+
+               when '2' =>
+                  Current_Verbosity := High;
+
+               when others =>
+                  null;
+            end case;
             --  -x
 
          elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-x" then
@@ -628,6 +647,8 @@ procedure GPRName.Main is
          Put_Line ("  -Pproj       update or create project file proj");
          Put_Line ("  -v           verbose output");
          Put_Line ("  -v -v        very verbose output");
+         Put_Line ("  -vPx         " &
+                   "Specify verbosity when parsing Project Files (x = 0/1/2)");
          Put_Line ("  -xpat        exclude pattern pat");
       end if;
    end Usage;
