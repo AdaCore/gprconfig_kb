@@ -18,7 +18,7 @@ import latex_elements
 
 DOCS = {
     'gprbuild_ug': {
-        'title': u'GPRbuild User\'s Guide'}}
+        'title': u'GPRbuild and GPR Companion Tools User\'s Guide'}}
 doc_name = 'gprbuild_ug'
 
 # Then retrieve the source directory

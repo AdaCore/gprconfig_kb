@@ -872,44 +872,157 @@ If switch :samp:`-j{nnn}` is used, with `nnn` other than 1, gprbuild will attemp
 simultaneously up to `nnn` executables.
 
 
-.. _Incompatibilities_with_gnatmake:
+.. _Distributed_compilation:
 
-Incompatibilities with gnatmake
--------------------------------
+Distributed compilation
+-----------------------
 
-Here is a list of incompatibilities between gnatmake invoked with a
-project file and gprbuild:
+.. _Introduction_to_distributed_compilation:
 
-* gprbuild never recompiles the runtime sources.
+Introduction to distributed compilation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* gnatmake switches that are not recognized by gprbuild:
+For large projects the compilation time can become a limitation in
+the development cycle. To cope with that, GPRbuild supports
+distributed compilation.
 
-  * :samp:`-a` (Consider all files, even readonly ali files)
-  * :samp:`-M` (List object file dependences for Makefile)
-  * :samp:`-n` (Check objects up to date, output next file to compile if not)
-  * :samp:`-x` (Allow compilation of needed units external to the projects)
-  * :samp:`-z` No main subprogram (zero main)
-  * :samp:`--GCC={command}`
-  * :samp:`--GNATBIND={command}`
-  * :samp:`--GNATLINK={command}`
-  * :samp:`-aL{dir}` (Skip missing library sources if ali in `dir`)
-  * :samp:`-A{dir}` (like :samp:`-aL{dir}` :samp:`-aI{dir}`)
-  * :samp:`-aO{dir}` (Specify library/object files search path)
-  * :samp:`-aI{dir}` (Specify source files search path)
-  * :samp:`-I{dir}` (Like :samp:`-aI{dir}` :samp:`-aO{dir}`)
-  * :samp:`-I-` (Don't look for sources & library files in the default directory)
-  * :samp:`-L{dir}` (Look for program libraries also in `dir`)
+In the distributed mode, the local machine (called the build master)
+compile locally but also sends compilation requests to some remote
+machines (called the build slaves). The compilation process can use
+one or more build slaves. Once the compilation phase is done, the
+build master will conduct the binding and linking phases locally.
 
-* The switches that are not directly recognized by gprbuild and passed to
-  the Ada compiler are only:
+.. _Setup_build_environments:
 
-  * :samp:`-nostdlib`
-  * :samp:`-nostdinc`
-  * :samp:`-fstack-check`
-  * :samp:`-fno-inline`
-  * :samp:`-O{xxx}` (any switch starting with :samp:`-O`)
-  * :samp:`-g{xxx}` (any switch starting with :samp:`-g`)
+Setup build environments
+^^^^^^^^^^^^^^^^^^^^^^^^
 
+The configuration process to be able to use the distributed compilation
+support is the following:
+
+* Optionaly add a Remote package in the main project file
+
+  This Remote package is to be placed into the project file that is passed
+  to GPRbuild to build the application.
+
+  The Root_Dir default value is the project's directory. This attribute
+  designates the sources root directory. That is, the directory from which
+  all the sources are to be found to build the application. If the project
+  passed to GPRbuild to build the application is not at the top-level
+  directory but in a direct sub-directory the Remote package should be:
+
+  .. code-block:: gpr
+
+      package Remote is
+         for Root_Dir use "..";
+      end Remote;
+
+* Launch a slave driver on each build slave
+
+  The build master will communicate with each build slave with a specific driver
+  in charge of running the compilation process and returning statuses. This
+  driver is *gprslave*, :ref:`GPRslave`.
+
+  The requirement for the slaves are:
+
+  * The same build environment must be setup (same compiler version).
+  * The same libraries must be installed. That is, if the GNAT
+    project makes use of external libraries the corresponding C headers or
+    Ada units must be installed on the remote slaves.
+
+  When all the requirement are set, just launch the slave driver:
+
+  ::
+
+      $ gprslave
+
+When all this is done, the remote compilation can be used simply by
+running GPRbuild in distributed mode from the build master:
+
+::
+
+    $ gprbuild --distributed=comp1.xyz.com,comp2.xyz.com prj.gpr
+
+Alternatively the slaves can be set using the `GPR_SLAVES` environment
+variable. So the following command is equivalent to the above:
+
+::
+
+    $ export GPR_SLAVES=comp1.xyz.com,comp2.xyz.com
+    $ gprbuild --distributed prj.gpr
+
+A third alternative is proposed using a list of slaves in a file (one
+per line). In this case the `GPR_SLAVES_FILE` environment variable
+must contain the path name to this file:
+
+::
+
+    $ export GPR_SLAVES_FILE=$HOME/slave-list.txt
+    $ gprbuild --distributed prj.gpr
+
+Finally note that the search for the slaves are in this specific
+order. First the command line values, then `GPR_SLAVES` if set and
+finally `GPR_SLAVES_FILES`.
+
+The build slaves are specified with the following form:
+
+::
+
+    <machine_name>[:port]
+
+
+.. _GPRslave:
+
+GPRslave
+^^^^^^^^
+
+This is the slave driver in charge of running the compilation
+jobs as request by the build master. One instance of this tool must be
+launched in each build slaves referenced in the project file.
+
+Compilations for a specific project is conducted under a sub-directory
+from where the slave is launched by default. This can be overriden
+with the `-d` option below.
+
+The current options are:
+
+* :samp:`-v, --verbose`
+
+  Activate the verbose mode
+
+* :samp:`-vv`, :samp:`--debug`
+
+  Activate the debug mode (very verbose)
+
+* :samp:`-h`, :samp:`--help`
+
+  Display the usage
+
+* :samp:`-d`, :samp:`--directory=`
+
+  Set the work directory for the
+  slave. This is where the sources will be copied and where the
+  compilation will take place. A sub-directory will be created for each
+  root project built.
+
+* :samp:`-j{N}`, :samp:`--jobs={N}`
+
+  Set the maximum simultaneous compilation.
+  The default for `N` is the number of cores.
+
+* :samp:`-p`, :samp:`--port={N}`
+
+  Set the port the slave will listen to.
+  The default value is 8484. The same port must be specified for the
+  build slaves on `GPRbuild` command line.
+
+* :samp:`-r`, :samp:`--response-handler={N}`
+
+  Set maximum number of simultaneous responses.
+  With this option it is possible to control the number of simultaneous
+  responses (sending back object code and ALI files) supported. The
+  value must be between 1 and the maximum number of simultaneous
+  compilations.
 
 .. _Configuring_with_GPRconfig:
 
@@ -3109,159 +3222,7 @@ The switches for GPRinstall are:
   Specify an external reference for Project Files.
 
 
-.. _Distributed_compilation:
-
-Distributed compilation
-=======================
-
-.. _Introduction_to_distributed_compilation:
-
-Introduction to distributed compilation
----------------------------------------
-
-For large projects the compilation time can become a limitation in
-the development cycle. To cope with that, GPRbuild supports
-distributed compilation.
-
-In the distributed mode, the local machine (called the build master)
-compile locally but also sends compilation requests to some remote
-machines (called the build slaves). The compilation process can use
-one or more build slaves. Once the compilation phase is done, the
-build master will conduct the binding and linking phases locally.
-
-.. _Setup_build_environments:
-
-Setup build environments
-------------------------
-
-The configuration process to be able to use the distributed compilation
-support is the following:
-
-* Optionaly add a Remote package in the main project file
-
-  This Remote package is to be placed into the project file that is passed
-  to GPRbuild to build the application.
-
-  The Root_Dir default value is the project's directory. This attribute
-  designates the sources root directory. That is, the directory from which
-  all the sources are to be found to build the application. If the project
-  passed to GPRbuild to build the application is not at the top-level
-  directory but in a direct sub-directory the Remote package should be:
-
-  .. code-block:: gpr
-
-      package Remote is
-         for Root_Dir use "..";
-      end Remote;
-
-* Launch a slave driver on each build slave
-
-  The build master will communicate with each build slave with a specific driver
-  in charge of running the compilation process and returning statuses. This
-  driver is *gprslave*, :ref:`GPRslave`.
-
-  The requirement for the slaves are:
-
-  * The same build environment must be setup (same compiler version).
-  * The same libraries must be installed. That is, if the GNAT
-    project makes use of external libraries the corresponding C headers or
-    Ada units must be installed on the remote slaves.
-
-  When all the requirement are set, just launch the slave driver:
-
-  ::
-
-      $ gprslave
-
-When all this is done, the remote compilation can be used simply by
-running GPRbuild in distributed mode from the build master:
-
-::
-
-    $ gprbuild --distributed=comp1.xyz.com,comp2.xyz.com prj.gpr
-
-Alternatively the slaves can be set using the `GPR_SLAVES` environment
-variable. So the following command is equivalent to the above:
-
-::
-
-    $ export GPR_SLAVES=comp1.xyz.com,comp2.xyz.com
-    $ gprbuild --distributed prj.gpr
-
-A third alternative is proposed using a list of slaves in a file (one
-per line). In this case the `GPR_SLAVES_FILE` environment variable
-must contain the path name to this file:
-
-::
-
-    $ export GPR_SLAVES_FILE=$HOME/slave-list.txt
-    $ gprbuild --distributed prj.gpr
-
-Finally note that the search for the slaves are in this specific
-order. First the command line values, then `GPR_SLAVES` if set and
-finally `GPR_SLAVES_FILES`.
-
-The build slaves are specified with the following form:
-
-::
-
-    <machine_name>[:port]
-
-
-.. _GPRslave:
-
-GPRslave
---------
-
-This is the slave driver in charge of running the compilation
-jobs as request by the build master. One instance of this tool must be
-launched in each build slaves referenced in the project file.
-
-Compilations for a specific project is conducted under a sub-directory
-from where the slave is launched by default. This can be overriden
-with the `-d` option below.
-
-The current options are:
-
-* :samp:`-v, --verbose`
-
-  Activate the verbose mode
-
-* :samp:`-vv`, :samp:`--debug`
-
-  Activate the debug mode (very verbose)
-
-* :samp:`-h`, :samp:`--help`
-
-  Display the usage
-
-* :samp:`-d`, :samp:`--directory=`
-
-  Set the work directory for the
-  slave. This is where the sources will be copied and where the
-  compilation will take place. A sub-directory will be created for each
-  root project built.
-
-* :samp:`-j{N}`, :samp:`--jobs={N}`
-
-  Set the maximum simultaneous compilation.
-  The default for `N` is the number of cores.
-
-* :samp:`-p`, :samp:`--port={N}`
-
-  Set the port the slave will listen to.
-  The default value is 8484. The same port must be specified for the
-  build slaves on `GPRbuild` command line.
-
-* :samp:`-r`, :samp:`--response-handler={N}`
-
-  Set maximum number of simultaneous responses.
-  With this option it is possible to control the number of simultaneous
-  responses (sending back object code and ALI files) supported. The
-  value must be between 1 and the maximum number of simultaneous
-  compilations.
-
-.. _Specific Naming Scheme with GPRname
+.. _Specific Naming Scheme with GPRname:
 
 Specific Naming Scheme with GPRname
 ===================================
@@ -3339,7 +3300,7 @@ You may specify any of the following switches to `gprname`:
 
   Display Copyright and version, then exit disregarding all other options.
 
-.. undex:: --target= (gprname)
+.. index:: --target= (gprname)
 
 * :samp:`--target=<targ>`
 
