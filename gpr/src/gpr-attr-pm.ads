@@ -35,6 +35,10 @@ package GPR.Attr.PM is
    --  Add a new unknown package. The Name cannot be the name of a predefined
    --  or already registered package, but this is not checked.
 
+   procedure Remove_Unknown_Packages;
+   --  Remove from the package table all packages that have been added using
+   --  procedure Add_Unknown_Package above.
+
    procedure Add_Attribute
      (To_Package     : Package_Node_Id;
       Attribute_Name : Name_Id;

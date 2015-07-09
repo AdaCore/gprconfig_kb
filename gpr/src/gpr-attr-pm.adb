@@ -24,6 +24,8 @@
 
 package body GPR.Attr.PM is
 
+   Last_Known_Package : Pkg_Node_Id := Empty_Pkg;
+
    -------------------
    -- Add_Attribute --
    -------------------
@@ -62,6 +64,10 @@ package body GPR.Attr.PM is
 
    procedure Add_Unknown_Package (Name : Name_Id; Id : out Package_Node_Id) is
    begin
+      if Last_Known_Package = Empty_Pkg then
+         Last_Known_Package := Package_Attributes.Last;
+      end if;
+
       Package_Attributes.Increment_Last;
       Id := (Value => Package_Attributes.Last);
       Package_Attributes.Table (Id.Value) :=
@@ -69,5 +75,16 @@ package body GPR.Attr.PM is
          Known            => False,
          First_Attribute  => Empty_Attr);
    end Add_Unknown_Package;
+
+   -----------------------------
+   -- Remove_Unknown_Packages --
+   -----------------------------
+
+   procedure Remove_Unknown_Packages is
+   begin
+      if Last_Known_Package /= Empty_Pkg then
+         Package_Attributes.Set_Last (Last_Known_Package);
+      end if;
+   end Remove_Unknown_Packages;
 
 end GPR.Attr.PM;
