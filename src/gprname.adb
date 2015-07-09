@@ -1233,6 +1233,18 @@ package body GPRName is
 
                         --  And spawn the compiler
 
+                        if Very_Verbose then
+                           Put (Gcc_Path.all);
+
+                           for J in Args'Range loop
+                              if Args (J)'Length > 0 then
+                                 Put (" " & Args (J).all);
+                              end if;
+                           end loop;
+
+                           New_Line;
+                        end if;
+
                         Spawn (Gcc_Path.all, Args.all, Success);
 
                         --  Restore the standard output and error
@@ -1282,6 +1294,10 @@ package body GPRName is
                            else
                               Line_Loop : while not End_Of_File (File) loop
                                  Get_Line (File, Text_Line, Text_Last);
+
+                                 if Very_Verbose then
+                                    Put_Line (Text_Line (1 .. Text_Last));
+                                 end if;
 
                                  --  Find the first closing parenthesis
 
