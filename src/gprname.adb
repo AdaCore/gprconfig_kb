@@ -108,10 +108,6 @@ package body GPRName is
    procedure Dup2 (Old_Fd, New_Fd : File_Descriptor);
    --  Close New_Fd if necessary and copy Old_Fd into New_Fd
 
-   Gcc      : constant String := "gcc";
-   Gcc_Path : String_Access := null;
-   --  Path of the Ada compiler
-
    Non_Empty_Node : constant Project_Node_Id := 1;
    --  Used for the With_Clause of the naming project
 

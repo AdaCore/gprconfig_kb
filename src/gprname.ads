@@ -78,4 +78,10 @@ package GPRName is
    --  Write the project file indicated in a call to procedure Initialize,
    --  after one or several calls to procedure Process.
 
+private
+
+   Gcc      : constant String := "gcc";
+   Gcc_Path : String_Access := null;
+   --  Path of the Ada compiler
+
 end GPRName;
