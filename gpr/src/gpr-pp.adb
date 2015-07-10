@@ -696,7 +696,10 @@ package body GPR.PP is
                      Output_Name (Name_Of (Node, In_Tree), Indent);
                      Write_String (" : ", Indent);
 
-                     if Project_Node_Of (Node, In_Tree) /= Type_Project then
+                     if Project_Node_Of (Node, In_Tree) /= Empty_Project_Node
+                         and then
+                        Project_Node_Of (Node, In_Tree) /= Type_Project
+                     then
                         Output_Name (Name_Of (Type_Project, In_Tree), Indent);
                         Write_Char ('.');
                      end if;
