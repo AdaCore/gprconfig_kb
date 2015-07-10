@@ -16,9 +16,10 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Command_Line; use Ada.Command_Line;
-with Ada.Exceptions;   use Ada.Exceptions;
-with Ada.Text_IO;      use Ada.Text_IO;
+with Ada.Characters.Handling; use Ada.Characters.Handling;
+with Ada.Command_Line;        use Ada.Command_Line;
+with Ada.Exceptions;          use Ada.Exceptions;
+with Ada.Text_IO;             use Ada.Text_IO;
 
 with GNAT.Command_Line;   use GNAT.Command_Line;
 with GNAT.Dynamic_Tables;
@@ -291,6 +292,73 @@ procedure GPRName.Main is
 
       if Config_Project_File_Name = null then
          Config_Project_File_Name := new String'("");
+      end if;
+
+      --  Check if the project file already exists
+
+      declare
+         Path_Name : String
+                       (1 .. File_Path'Length + Project_File_Extension'Length);
+         Path_Last : Positive := File_Path'Length;
+
+      begin
+         if File_Names_Case_Sensitive then
+            Path_Name (1 .. Path_Last) := File_Path.all;
+         else
+            Path_Name (1 .. Path_Last) := To_Lower (File_Path.all);
+         end if;
+
+         Path_Name (Path_Last + 1 .. Path_Name'Last) :=
+           Project_File_Extension;
+
+         if Path_Last < Project_File_Extension'Length + 1
+           or else Path_Name
+           (Path_Last - Project_File_Extension'Length + 1 .. Path_Last)
+           /= Project_File_Extension
+         then
+            Path_Last := Path_Name'Last;
+         end if;
+
+         File_Path := new String'(Path_Name (1 .. Path_Last));
+      end;
+
+      if Is_Regular_File (File_Path.all) then
+         if Opt.Verbose_Mode then
+            Put_Line
+              ("Parsing already existing project file """ &
+               File_Path.all & "");
+         end if;
+
+      else
+         --  The project file does not exist; create an empty one
+
+         declare
+            File : File_Type;
+            File_Name_Start : Positive := File_Path'First;
+            File_Name_Last : constant Positive :=
+                               File_Path'Last - Project_File_Extension'Length;
+
+         begin
+            for J in reverse File_Path'Range loop
+               if File_Path (J) = Directory_Separator then
+                  File_Name_Start := J + 1;
+                  exit;
+               end if;
+            end loop;
+
+            Create (File, Out_File, File_Path.all);
+            Put (File, "project ");
+            Put (File, File_Path (File_Name_Start .. File_Name_Last));
+            Put_Line (File, " is");
+            Put (File, "end ");
+            Put (File, File_Path (File_Name_Start .. File_Name_Last));
+            Put_Line (File, ";");
+            Close (File);
+
+         exception
+            when others =>
+               Fail ("could not create project file " & File_Path.all);
+         end;
       end if;
 
       begin
