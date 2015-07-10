@@ -392,6 +392,16 @@ procedure GPRName.Main is
            (Project_Tree,
             """" & File_Path.all & """ processing failed",
             Flush_Messages => User_Project_Node /= Empty_Project_Node);
+
+      else
+         declare
+            Ada_Lang : constant Language_Ptr :=
+              Get_Language_From_Name (Main_Project, "ada");
+         begin
+            if Ada_Lang /= No_Language_Index then
+               Gcc_Path := Get_Compiler_Driver_Path (Project_Tree, Ada_Lang);
+            end if;
+         end;
       end if;
    end Initialize;
 
