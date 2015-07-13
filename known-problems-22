@@ -26,6 +26,18 @@ KP-22-O709-013 gprinstall overwrite read only files
 
   Workaround: Remove the read-only attribute manually.
 
+KP-22-O702-010 gprinstall cut too long lines in generated project
+
+  Problem:    GPRinstall do not properly write properly a second instance of
+              the same project (build-name) containing lines whose length
+              are above 1024 characters. This can happen with long set of
+              arguments in Linker_Options attribute for example.
+
+  Status:     This was fixed in 2.3 on 2015-07-13
+
+  Workaround: Do not install multiple build-name for the same project or
+              edit manually the generated project.
+
 KP-22-O629-023 an attribute cannot be used as a case variable
 
   Problem:    The project manager was not detecting that an attribute was

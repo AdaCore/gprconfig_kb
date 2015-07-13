@@ -1980,15 +1980,26 @@ package body Gprinstall.Install is
          ------------------
 
          procedure Read_Project is
-            File   : File_Type;
-            Buffer : String (1 .. 1_024);
-            Last   : Natural;
+            Max_Buffer : constant := 1_024;
+            File       : File_Type;
+            Buffer     : String (1 .. Max_Buffer);
+            Last       : Natural;
          begin
             Open (File, In_File, Filename);
 
             while not End_Of_File (File) loop
-               Get_Line (File, Buffer, Last);
-               Content.Append (Buffer (1 .. Last));
+               declare
+                  L : Unbounded_String;
+               begin
+                  loop
+                     Get_Line (File, Buffer, Last);
+                     Append (L, Buffer (1 .. Last));
+                     exit when Last < Max_Buffer
+                       or else End_Of_Line (File);
+                  end loop;
+
+                  Content.Append (To_String (L));
+               end;
             end loop;
 
             Close (File);
