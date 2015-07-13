@@ -740,6 +740,27 @@ package body Gprinstall.Install is
          end if;
 
          if not Dry_Run then
+            --  If file exists and is read-only, first remove it
+
+            if Exists (Dest_Filename)
+              and then not Is_Writable_File (Dest_Filename)
+            then
+               declare
+                  Success : Boolean;
+               begin
+                  Set_Writable (Dest_Filename);
+                  Delete_File (Dest_Filename, Success);
+
+                  if not Success then
+                     Put ("cannot overwrite ");
+                     Put (Dest_Filename);
+                     Put (" check permissions");
+                     New_Line;
+                     OS_Exit (1);
+                  end if;
+               end;
+            end if;
+
             if not Sym_Link and then not Exists (From) then
                Put ("file ");
                Put (From);
