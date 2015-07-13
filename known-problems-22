@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-O709-013 gprinstall overwrite read only files
+
+  Problem:    GPRinstall fails to install a project if some files are
+              read only on the destination directory.
+
+  Status:     This was fixed in 2.3 on 2015-07-13
+
+  Workaround: Remove the read-only attribute manually.
+
 KP-22-O629-023 an attribute cannot be used as a case variable
 
   Problem:    The project manager was not detecting that an attribute was
