@@ -29,9 +29,10 @@ with GNAT.Table;
 with GPR;
 with GPR.Conf;
 with GPR.Env;
+with GPR.Names;  use GPR.Names;
 with GPR.Opt;
 with GPR.Osint;  use GPR.Osint;
-with GPR.Snames;
+with GPR.Snames; use GPR.Snames;
 with GPR.Tree;   use GPR.Tree;
 with GPR.Util;   use GPR.Util;
 
@@ -78,6 +79,8 @@ procedure GPRName.Main is
    Foreign_Pattern_Expected : Boolean := False;
    --  True when switch "-f" has just been scanned
 
+   Foreign_Language : Name_Id := No_Name;
+
    Excluded_Pattern_Expected : Boolean := False;
    --  True when switch "-x" has just been scanned
 
@@ -87,13 +90,27 @@ procedure GPRName.Main is
       Table_Low_Bound      => 0,
       Table_Initial        => 10,
       Table_Increment      => 100);
-   --  Table to accumulate the patterns
+   --  Table to accumulate the patterns for directories, Ada sources and
+   --  excluded sources.
+
+   type Foreign_Pattern is record
+      Language : Name_Id := No_Name;
+      Pattern  : String_Access := null;
+   end record;
+
+   package Foreign_Patterns is new GNAT.Dynamic_Tables
+     (Table_Component_Type => Foreign_Pattern,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 0,
+      Table_Initial        => 10,
+      Table_Increment      => 100);
+   --  Table to accumulate the patterns for non Ada sources
 
    type Argument_Data is record
-      Directories       : Patterns.Instance;
-      Name_Patterns     : Patterns.Instance;
-      Excluded_Patterns : Patterns.Instance;
-      Foreign_Patterns  : Patterns.Instance;
+      Directories               : Patterns.Instance;
+      Name_Patterns             : Patterns.Instance;
+      Excluded_Patterns         : Patterns.Instance;
+      Foreign_Sources_Patterns  : Foreign_Patterns.Instance;
    end record;
 
    package Arguments is new GNAT.Table
@@ -227,8 +244,9 @@ procedure GPRName.Main is
       Patterns.Set_Last (Arguments.Table (1).Name_Patterns, 0);
       Patterns.Init (Arguments.Table (1).Excluded_Patterns);
       Patterns.Set_Last (Arguments.Table (1).Excluded_Patterns, 0);
-      Patterns.Init (Arguments.Table (1).Foreign_Patterns);
-      Patterns.Set_Last (Arguments.Table (1).Foreign_Patterns, 0);
+      Foreign_Patterns.Init (Arguments.Table (1).Foreign_Sources_Patterns);
+      Foreign_Patterns.Set_Last
+        (Arguments.Table (1).Foreign_Sources_Patterns, 0);
 
       Preprocessor_Switches.Set_Last (0);
 
@@ -455,9 +473,9 @@ procedure GPRName.Main is
          --  -f xxx
 
          elsif Foreign_Pattern_Expected then
-            Patterns.Append
-              (Arguments.Table (Arguments.Last).Foreign_Patterns,
-               new String'(Arg));
+            Foreign_Patterns.Append
+              (Arguments.Table (Arguments.Last).Foreign_Sources_Patterns,
+               (Foreign_Language, new String'(Arg)));
             Check_Regular_Expression (Arg);
             Foreign_Pattern_Expected := False;
 
@@ -480,8 +498,9 @@ procedure GPRName.Main is
             if Patterns.Last
               (Arguments.Table (Arguments.Last).Name_Patterns) = 0
               and then
-                Patterns.Last
-                  (Arguments.Table (Arguments.Last).Foreign_Patterns) = 0
+                Foreign_Patterns.Last
+                  (Arguments.Table
+                     (Arguments.Last).Foreign_Sources_Patterns) = 0
             then
                Try_Help;
                return;
@@ -523,10 +542,10 @@ procedure GPRName.Main is
               (Arguments.Table (Arguments.Last).Excluded_Patterns);
             Patterns.Set_Last
               (Arguments.Table (Arguments.Last).Excluded_Patterns, 0);
-            Patterns.Init
-              (Arguments.Table (Arguments.Last).Foreign_Patterns);
-            Patterns.Set_Last
-              (Arguments.Table (Arguments.Last).Foreign_Patterns, 0);
+            Foreign_Patterns.Init
+              (Arguments.Table (Arguments.Last).Foreign_Sources_Patterns);
+            Foreign_Patterns.Set_Last
+              (Arguments.Table (Arguments.Last).Foreign_Sources_Patterns, 0);
 
          --  --subdir=
 
@@ -588,11 +607,24 @@ procedure GPRName.Main is
          elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-f" then
             if Arg'Length = 2 then
                Foreign_Pattern_Expected := True;
+               Foreign_Language := Name_C;
+
+            elsif Arg (3) = ':' then
+               if Arg'Length = 3 then
+                  Fail ("wrong switch: " & Arg);
+
+               else
+                  Name_Len := Arg'Length - 3;
+                  Name_Buffer (1 .. Name_Len) :=
+                    To_Lower (Arg (4 .. Arg'Last));
+                  Foreign_Language := Name_Find;
+                  Foreign_Pattern_Expected := True;
+               end if;
 
             else
-               Patterns.Append
-                 (Arguments.Table (Arguments.Last).Foreign_Patterns,
-                  new String'(Arg (3 .. Arg'Last)));
+               Foreign_Patterns.Append
+                 (Arguments.Table (Arguments.Last).Foreign_Sources_Patterns,
+                  (Name_C, new String'(Arg (3 .. Arg'Last))));
                Check_Regular_Expression (Arg (3 .. Arg'Last));
             end if;
 
@@ -748,7 +780,8 @@ begin
 
    if Patterns.Last (Arguments.Table (Arguments.Last).Name_Patterns) = 0
       and then
-      Patterns.Last (Arguments.Table (Arguments.Last).Foreign_Patterns) = 0
+       Foreign_Patterns.Last
+         (Arguments.Table (Arguments.Last).Foreign_Sources_Patterns) = 0
    then
       if Argument_Count = 0 then
          Usage;
@@ -802,9 +835,10 @@ begin
          Excl_Patterns : Regexp_List
            (1 .. Integer
                    (Patterns.Last (Arguments.Table (J).Excluded_Patterns)));
-         Frgn_Patterns : Regexp_List
+         Frgn_Patterns : Foreign_Regexp_List
            (1 .. Integer
-                   (Patterns.Last (Arguments.Table (J).Foreign_Patterns)));
+              (Foreign_Patterns.Last
+                   (Arguments.Table (J).Foreign_Sources_Patterns)));
 
       begin
          --  Build the Directories and Patterns arguments
@@ -830,9 +864,13 @@ begin
 
          for Index in Frgn_Patterns'Range loop
             Frgn_Patterns (Index) :=
-              Compile
-                (Arguments.Table (J).Foreign_Patterns.Table (Index).all,
-                 Glob => True);
+              (Language => Arguments.Table
+                   (J).Foreign_Sources_Patterns.Table (Index).Language,
+               Pattern =>
+                 Compile
+                   (Arguments.Table
+                        (J).Foreign_Sources_Patterns.Table (Index).Pattern.all,
+                    Glob => True));
          end loop;
 
          --  Call Process where the real work is done

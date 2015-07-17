@@ -48,11 +48,17 @@ package GPRName is
 
    type Regexp_List is array (Positive range <>) of Regexp;
 
+   type Foreign_Regexp is record
+      Language : Name_Id;
+      Pattern  : Regexp;
+   end record;
+   type Foreign_Regexp_List is array (Positive range <>) of Foreign_Regexp;
+
    procedure Process
      (Directories       : Argument_List;
       Name_Patterns     : Regexp_List;
       Excluded_Patterns : Regexp_List;
-      Foreign_Patterns  : Regexp_List);
+      Foreign_Patterns  : Foreign_Regexp_List);
    --  Look for source files in the specified directories, with the specified
    --  patterns.
    --
