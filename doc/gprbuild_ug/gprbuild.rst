@@ -3235,6 +3235,8 @@ To help maintain the correspondence between compilation unit names and
 source file names within the compiler,
 the tool `gprname` may be used to generate automatically these attributes.
 
+
+
 .. _Running_gprname:
 
 Running `gprname`
@@ -3253,7 +3255,7 @@ the project file and at least one Naming Pattern.
 
 `gprname` will attempt to
 find all the compilation units in files that follow at least one of the
-naming patterns. To find these compilation units,
+naming patterns. To find Ada compilation units,
 `gprname` will use the GNAT compiler in syntax-check-only mode on all
 regular files.
 
@@ -3279,11 +3281,6 @@ Examples of Naming Patterns are::
 For a more complete description of the syntax of Naming Patterns,
 see the second kind of regular expressions described in :file:`g-regexp.ads`
 (the 'Glob' regular expressions).
-
-When invoked with no switch `-P`, `gprname` will create a
-configuration pragmas file :file:`gnat.adc` in the current working directory,
-with pragmas `Source_File_Name` for each file that contains a valid Ada
-unit.
 
 .. _Switches_for_pgprname:
 
@@ -3366,17 +3363,35 @@ You may specify any of the following switches to `gprname`:
 
 * :samp:`-f{pattern}`
 
-  Foreign patterns. Using this switch, it is possible to add sources of languages
-  other than Ada to the list of sources of a project file.
+  Foreign C language patterns. Using this switch, it is possible to add sources
+  of language C to the list of sources of a project file.
+
   For example,
 
   .. code-block:: sh
 
-     gprname -P prj.gpr -f"*.c" "*.ada"
+     gprname -P prj.gpr -f"*.c" "*.ada" -f "*.clang"
 
   will look for Ada units in all files with the :file:`.ada` extension,
   and will add to the list of file for project :file:`prj.gpr` the C files
-  with extension :file:`.c`.
+  with extensions :file:`.c` and :file:`.clang`. Attribute Languages will be
+  declared with the list of languages with sources. In the above example,
+  it will be ("Ada", "C") if Ada and C sources have been found.
+
+* :samp:`-f:{<lang>} {pattern}`
+
+  Foreign language {<lang>} patterns. Using this switch, it is possible to add
+  sources of language <lang> to the list of sources of a project file.
+
+  For example,
+
+  .. code-block:: sh
+
+     gprname -P prj.gpr "*.ada" -f:C++ "*.cpp" -f:C++ "*.CPP"
+
+  Files with extensions :file:`.cpp` and :file:`*.CPP` are C++ sources.
+  Attribute Languages will have value ("Ada", "C++") if Ada and C++ sources
+  are found.
 
   .. index:: -h (gprname)
 
@@ -3388,8 +3403,8 @@ You may specify any of the following switches to `gprname`:
 
 * :samp:`-P{proj}`
 
-  Create or update project file :file:`proj`. There may be zero, one or more space
-  between *-P* and :file:`proj`. :file:`proj` may include directory
+  Create or update project file :file:`proj`. There may be zero, one or more
+  space between *-P* and :file:`proj`. :file:`proj` may include directory
   information. :file:`proj` must be writable.
   There must be only one switch *-P*.
   If switch *--no-backup* is not specified, a backup copy of the project file is created
