@@ -108,7 +108,7 @@
       <must_match>vxworks-cert-6.*</must_match>
     </version>
     <languages>C</languages>
-    <runtimes>kernel,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
+    <runtimes>kernel,cert,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
     <target>
       <external>cc${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
@@ -458,7 +458,7 @@
       <must_match>vxworks-cert-6.*</must_match>
     </version>
     <languages>C++</languages>
-    <runtimes>kernel,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
+    <runtimes>kernel,cert,ravenscar-cert,zfp,rtp,ravenscar-cert-rtp</runtimes>
     <target>
       <external>c++${PREFIX} -dumpmachine</external>
       <grep regexp="[^\r\n]+"></grep>
