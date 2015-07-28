@@ -163,7 +163,8 @@ procedure Gprslave is
    function Get_Slave_Id return Remote_Id;
 
    function Is_Active_Build_Master (Builder : Build_Master) return Boolean is
-      (Builder.Project_Name /= Null_Unbounded_String);
+     (Builder.Project_Name /= Null_Unbounded_String
+      and then Builder.Status /= null);
 
    procedure Close_Builder (Builder : in out Build_Master);
    --  Close the channel and socket and remove the builder from the slave. This
@@ -920,110 +921,124 @@ procedure Gprslave is
 
             if Socket /= No_Socket then
                Builder := Builders.Get (Socket);
-               Builders.Lock (Builder);
 
-               declare
-                  Cmd : constant Command := Get_Command (Builder.Channel);
-                  V   : Unbounded_String;
-               begin
-                  if Debug then
-                     V := To_Unbounded_String
-                       ("# command: " & Command_Kind'Image (Kind (Cmd)));
+               if Is_Active_Build_Master (Builder) then
+                  Builders.Lock (Builder);
 
-                     declare
-                        List : constant Argument_List_Access := Args (Cmd);
-                     begin
-                        if List /= null then
-                           for K in List'Range loop
-                              Append (V, ", " & List (K).all);
-                           end loop;
-                        end if;
-                     end;
+                  declare
+                     Cmd : constant Command := Get_Command (Builder.Channel);
+                     V   : Unbounded_String;
+                  begin
+                     if Debug then
+                        V := To_Unbounded_String
+                          ("# command: " & Command_Kind'Image (Kind (Cmd)));
 
-                     Message (Builder, To_String (V), Is_Debug => True);
-                  end if;
+                        declare
+                           List : constant Argument_List_Access := Args (Cmd);
+                        begin
+                           if List /= null then
+                              for K in List'Range loop
+                                 Append (V, ", " & List (K).all);
+                              end loop;
+                           end if;
+                        end;
 
-                  if Kind (Cmd) = EX then
-                     Record_Job : declare
-                        Id : constant Remote_Id := Slave_Id + Remote_Id (Jid);
-                        --  Note that the Id above should be unique across all
-                        --  running slaves. This is not the process id, but an
-                        --  id sent back to the build master to identify the
-                        --  actual job.
-                     begin
-                        Jid := Jid + 1;
+                        Message (Builder, To_String (V), Is_Debug => True);
+                     end if;
+
+                     if Kind (Cmd) = EX then
+                        Record_Job : declare
+                           Id : constant Remote_Id :=
+                                  Slave_Id + Remote_Id (Jid);
+                           --  Note that the Id above should be unique across
+                           --  all running slaves. This is not the process
+                           --  id, but an id sent back to the build master
+                           --  to identify the actual job.
+                        begin
+                           Jid := Jid + 1;
+                           Message
+                             (Builder,
+                              "# register compilation " & Image (Id), True);
+
+                           To_Run.Push
+                             (Job_Data'(Cmd,
+                              Id, -1,
+                              Null_Unbounded_String,
+                              Null_Unbounded_String,
+                              Null_Unbounded_String,
+                              Null_Unbounded_String,
+                              Builder.Socket));
+
+                           Message (Builder, "BREAK NOW", Force => True);
+                           delay 2.0;
+
+                           Send_Ack (Builder.Channel, Id);
+                        end Record_Job;
+
+                     elsif Kind (Cmd) = FL then
+                        null;
+
+                     elsif Kind (Cmd) = CU then
+                        Clean_Up_Request : begin
+
+                           To_Run.Push
+                             (Job_Data'(Cmd,
+                              0, -1,
+                              Null_Unbounded_String,
+                              Null_Unbounded_String,
+                              Null_Unbounded_String,
+                              Null_Unbounded_String,
+                              Builder.Socket));
+                        end Clean_Up_Request;
+
+                     elsif Kind (Cmd) = EC then
+                        --  No more compilation for this project
+
+                        Send_Ok (Builder.Channel);
+
+                        Close_Builder (Builder);
+
                         Message
                           (Builder,
-                           "# register compilation " & Image (Id), True);
+                           "End project : "
+                           & To_String (Builder.Project_Name));
 
-                        To_Run.Push
-                          (Job_Data'(Cmd,
-                           Id, -1,
-                           Null_Unbounded_String,
-                           Null_Unbounded_String,
-                           Null_Unbounded_String,
-                           Null_Unbounded_String,
-                           Builder.Socket));
+                     else
+                        raise Constraint_Error with "unexpected command "
+                          & Command_Kind'Image (Kind (Cmd));
+                     end if;
 
-                        Send_Ack (Builder.Channel, Id);
-                     end Record_Job;
+                  exception
+                     when Socket_Error =>
+                        --  The build master has probably been killed. We
+                        --  cannot communicate with it. Just close the channel.
 
-                  elsif Kind (Cmd) = FL then
-                     null;
+                        Close_Builder (Builder);
 
-                  elsif Kind (Cmd) = CU then
-                     Clean_Up_Request : begin
+                     when E : others =>
+                        Message
+                          (Builder,
+                           "Error: "
+                           & Exception_Information (E), Force => True);
 
-                        To_Run.Push
-                          (Job_Data'(Cmd,
-                           0, -1,
-                           Null_Unbounded_String,
-                           Null_Unbounded_String,
-                           Null_Unbounded_String,
-                           Null_Unbounded_String,
-                           Builder.Socket));
-                     end Clean_Up_Request;
+                        --  In case of an exception, communication endded
+                        --  prematurately or some wrong command received, make
+                        --  sure we clean the slave state and we listen to new
+                        --  commands. Not doing that could make the slave
+                        --  unresponding.
 
-                  elsif Kind (Cmd) = EC then
-                     --  No more compilation for this project
+                        Close_Builder (Builder);
+                  end;
 
-                     Send_Ok (Builder.Channel);
+                  --  The lock is released and freed if we have an EC command
 
-                     Close_Builder (Builder);
+                  Builders.Release (Builder);
 
-                     Message
-                       (Builder,
-                        "End project : " & To_String (Builder.Project_Name));
-
-                  else
-                     raise Constraint_Error with "unexpected command "
-                       & Command_Kind'Image (Kind (Cmd));
-                  end if;
-
-               exception
-                  when Socket_Error =>
-                     --  The build master has probably been killed. We cannot
-                     --  communicate with it. Just close the channel.
-
-                     Close_Builder (Builder);
-
-                  when E : others =>
-                     Message
-                       (Builder,
-                        "Error: " & Exception_Information (E), Force => True);
-
-                     --  In case of an exception, communication endded
-                     --  prematurately or some wrong command received, make
-                     --  sure we clean the slave state and we listen to new
-                     --  commands. Not doing that could make the slave
-                     --  unresponding.
-
-                     Close_Builder (Builder);
-               end;
-
-               --  The lock is released and freed if we have an EC command
-
-               Builders.Release (Builder);
+               else
+                  Message
+                    ("# build master not found, cannot handle request.",
+                     Is_Debug => True);
+               end if;
             end if;
          end if;
       end loop Handle_Commands;
