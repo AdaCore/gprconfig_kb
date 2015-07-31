@@ -23,6 +23,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Directories;  use Ada.Directories;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 
@@ -183,7 +184,7 @@ package body GPR.Osint is
       Fatal_Exit : constant := 4;
    begin
       Set_Standard_Error;
-      Write_Str (Command_Name);
+      Write_Str (Simple_Name (Command_Name));
       Write_Str (": ");
       Write_Line (S);
 

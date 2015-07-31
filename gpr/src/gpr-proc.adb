@@ -1473,12 +1473,11 @@ package body GPR.Proc is
       end loop;
 
       if Result = No_Package then
-
-         --  Should never happen
-
-         Write_Line
-           ("package """ & Get_Name_String (With_Name) & """ not found");
-         raise Program_Error;
+         GPR.Osint.Fail
+           ("no package " &
+            Get_Name_String (With_Name) &
+            " in project " &
+            Get_Name_String (Project.Display_Name));
 
       else
          return Result;
