@@ -99,8 +99,8 @@ KP-22-O428-014 VxWorks6 with older compilers
 
   Status:     This was fixed in 2.3 on 2015-05-21
 
-  Workaround: Create a valid configuration project file with gprconfig
-              corresponding to the compiler and use it when invoking gprbuild.
+  Workaround: Copy vxWorks ar (e.g. arppc) in GNAT's installation with
+              the corresponding target prefix (e.g. powerpc-wrs-vxworks-ar).
 
 KP-22-O403-014 static library not installed with --mode=dev
 
