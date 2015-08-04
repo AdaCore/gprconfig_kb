@@ -30,7 +30,8 @@ with GPR.Debug;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Ext;
-with GPR.Names;  use GPR.Names;
+with GPR.Names;   use GPR.Names;
+with GPR.Output;  use GPR.Output;
 with GPR.Tempdir;
 with GPR.Util;    use GPR.Util;
 
@@ -869,23 +870,22 @@ package body Gpr_Build_Util is
       Write_Program_Name;
 
       if N /= No_Name then
-         Put ("""");
+         Write_Char ('"');
 
          declare
             Name : constant String := Get_Name_String (N);
          begin
             if Debug.Debug_Flag_F and then Is_Absolute_Path (Name) then
-               Put (File_Name (Name));
+               Write_Str (File_Name (Name));
             else
-               Put (Name);
+               Write_Str (Name);
             end if;
          end;
 
-         Put (""" ");
+         Write_Str (""" ");
       end if;
 
-      Put (Msg);
-      New_Line;
+      Write_Line (Msg);
    end Inform;
 
    ----------------------------

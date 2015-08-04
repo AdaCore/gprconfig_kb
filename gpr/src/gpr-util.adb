@@ -28,7 +28,6 @@ with Ada.Directories;
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.Fixed;                      use Ada.Strings.Fixed;
 with Ada.Strings.Maps;                       use Ada.Strings.Maps;
-with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;
@@ -1829,7 +1828,7 @@ package body GPR.Util is
    procedure Write_Program_Name is
    begin
       if Program_Name /= null then
-         Put (Program_Name.all & ": ");
+         Write_Str (Program_Name.all & ": ");
       end if;
    end Write_Program_Name;
 
