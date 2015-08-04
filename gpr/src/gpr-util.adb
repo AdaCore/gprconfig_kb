@@ -552,6 +552,7 @@ package body GPR.Util is
       if S'Length > 0 then
          if Exit_Code /= E_Success then
             if not Opt.No_Exit_Message then
+               Set_Standard_Error;
                Write_Program_Name;
                Write_Line (S);
             end if;
