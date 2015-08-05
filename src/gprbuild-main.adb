@@ -42,6 +42,7 @@ with GPR_Version;                use GPR_Version;
 with GPR.Conf;                   use GPR.Conf;
 with GPR.Names;                  use GPR.Names;
 with GPR.Osint;                  use GPR.Osint;
+with GPR.Output;                 use GPR.Output;
 with GPR.Proc;                   use GPR.Proc;
 with GPR.Env;
 with GPR.Err;
