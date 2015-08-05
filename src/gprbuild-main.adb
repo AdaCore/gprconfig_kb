@@ -62,6 +62,9 @@ procedure Gprbuild.Main is
    CodePeer_String : constant String := "codepeer";
    --  Used in CopePeer mode for the target and the subdirs
 
+   Dumpmachine : constant String := "--dumpmachine";
+   --  Switch to display the normalized hostname
+
    Dash_A_Warning : constant String :=
      "warning: switch -a is ignored and no additional source is compiled";
    --  Warning issued when gprbuild is invoked with switch -a
@@ -1643,6 +1646,17 @@ procedure Gprbuild.Main is
          "2004",
          Version_String => Gpr_Version_String);
 
+      --  Check for switch --dumpmachine and, if found, output the normalized
+      --  hostname and exit.
+
+      for Arg in 1 .. Argument_Count loop
+         if Argument (Arg) = Dumpmachine then
+            Gpr_Util.Knowledge.Parse_Knowledge_Base (Project_Tree);
+            Put_Line (Gpr_Util.Knowledge.Normalized_Hostname);
+            OS_Exit (0);
+         end if;
+      end loop;
+
       --  Now process the other options
 
       Autoconfiguration := True;
@@ -2397,7 +2411,7 @@ begin
         and then not Main_Project.Externally_Built
       then
          Write_Program_Name;
-         Put_Line ("no sources to compile");
+         Write_Line ("no sources to compile");
       end if;
 
       Finish_Program (Project_Tree, E_Success);
