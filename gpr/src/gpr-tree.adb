@@ -1608,7 +1608,7 @@ package body GPR.Tree is
                return The_Node.Field3;
 
             when N_Typed_Variable_Declaration =>
-               return The_Node.Field3;
+               return The_Node.Field4;
 
             when others =>
                return Empty_Project_Node;
@@ -2828,7 +2828,7 @@ package body GPR.Tree is
                The_Node.Field3 := To;
 
             when N_Typed_Variable_Declaration =>
-               The_Node.Field3 := To;
+               The_Node.Field4 := To;
 
             when others =>
                null;
