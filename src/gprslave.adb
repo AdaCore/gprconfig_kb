@@ -969,9 +969,6 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Builder.Socket));
 
-                           Message (Builder, "BREAK NOW", Force => True);
-                           delay 2.0;
-
                            Send_Ack (Builder.Channel, Id);
                         end Record_Job;
 
