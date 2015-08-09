@@ -739,7 +739,9 @@ package body GPR.Erroutc is
 
    procedure Set_Msg_Quote is
    begin
-      Set_Msg_Char ('"');
+      if not Manual_Quote_Mode then
+         Set_Msg_Char ('"');
+      end if;
    end Set_Msg_Quote;
 
    -----------------
