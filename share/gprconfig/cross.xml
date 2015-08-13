@@ -44,6 +44,7 @@
        <target name="^arm-linux-androideabi" />
        <target name="^arm-linux-gnueabi" />
        <target name="^arm-linux-gnueabihf" />
+       <target name="^e500v2-gnu-linux" />
      </targets>
      <config>
    package Builder is
