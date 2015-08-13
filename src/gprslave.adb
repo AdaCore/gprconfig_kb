@@ -169,9 +169,9 @@ procedure Gprslave is
      (Builder.Project_Name /= Null_Unbounded_String
       and then Builder.Status /= null);
 
-   procedure Close_Builder (Builder : in out Build_Master);
+   procedure Close_Builder (Builder : in out Build_Master; Ack : Boolean);
    --  Close the channel and socket and remove the builder from the slave. This
-   --  procedure never fails.
+   --  procedure never fails. Send a OK message if Ack is True.
 
    task type Wait_Completion;
    --  Waiting for completion of compilation jobs and send back the response to
@@ -503,11 +503,21 @@ procedure Gprslave is
    -- Close_Builder --
    -------------------
 
-   procedure Close_Builder (Builder : in out Build_Master) is
+   procedure Close_Builder (Builder : in out Build_Master; Ack : Boolean) is
    begin
-      --  This routine is used when the builder has encountered an error, so
-      --  the associated socket may be in a bad state. Make sure we do not fail
-      --  here.
+      --  First unregister the builder
+
+      Builders.Remove (Builder);
+
+      --  Send an Ack message before closing if requested
+
+      if Ack then
+         Send_Ok (Builder.Channel);
+      end if;
+
+      --  Now close the channel/socket. This routine is used when the builder
+      --  has encountered an error, so the associated socket may be in a bad
+      --  state. Make sure we do not fail here.
 
       begin
          Close (Builder.Channel);
@@ -516,8 +526,6 @@ procedure Gprslave is
          when others =>
             null;
       end;
-
-      Builders.Remove (Builder);
    end Close_Builder;
 
    -----------------------------
@@ -937,7 +945,7 @@ procedure Gprslave is
 
             if Socket /= No_Socket then
                Builder := Builders.Get (Socket);
-               Close_Builder (Builder);
+               Close_Builder (Builder, Ack => False);
             end if;
 
          else
@@ -1015,9 +1023,7 @@ procedure Gprslave is
                      elsif Kind (Cmd) = EC then
                         --  No more compilation for this project
 
-                        Send_Ok (Builder.Channel);
-
-                        Close_Builder (Builder);
+                        Close_Builder (Builder, Ack => True);
 
                         Message
                           (Builder,
@@ -1034,7 +1040,7 @@ procedure Gprslave is
                         --  The build master has probably been killed. We
                         --  cannot communicate with it. Just close the channel.
 
-                        Close_Builder (Builder);
+                        Close_Builder (Builder, Ack => False);
 
                      when E : others =>
                         Message
@@ -1048,7 +1054,7 @@ procedure Gprslave is
                         --  commands. Not doing that could make the slave
                         --  unresponding.
 
-                        Close_Builder (Builder);
+                        Close_Builder (Builder, Ack => False);
                   end;
 
                   --  The lock is released and freed if we have an EC command
