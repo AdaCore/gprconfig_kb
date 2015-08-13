@@ -149,10 +149,6 @@ procedure Gprslave is
      (Builder : Build_Master; Slices : Slice_Set) return Argument_List;
    --  Returns an Argument_List corresponding to the Slice_Set
 
-   procedure Wait_For_Master;
-   --  Wait for a build master to connect, initialize the globval communication
-   --  channel below. Send the slave config to the build master.
-
    function Image (Value : Long_Integer) return String;
    --  Return Value string representation without the leading space
 
@@ -173,20 +169,6 @@ procedure Gprslave is
    --  Close the channel and socket and remove the builder from the slave. This
    --  procedure never fails. Send a OK message if Ack is True.
 
-   task type Wait_Completion;
-   --  Waiting for completion of compilation jobs and send back the response to
-   --  the build masters.
-
-   task Wait_Requests;
-   --  Waiting for incoming requests from the masters, take corresponding
-   --  actions.
-
-   task Execute_Job;
-   --  Task running a maximum of Max_Process compilation simultaneously. These
-   --  jobs are taken from the To_Run protected object. IMPORTANT NOTE: this is
-   --  the only task that can change the working directory (Set_Directory for
-   --  example). This makes locking circuitry lighter and more efficient.
-
    procedure Message
      (Builder  : Build_Master;
       Str      : String;
@@ -202,10 +184,63 @@ procedure Gprslave is
    procedure Activate_Symbolic_Traceback;
    --  Activate symbolic trace-back
 
-   --  Protected builders data set (used by environment task and the
-   --  Protocol_Handler).
+   --
+   --  Belows are the main objects which handle the concurrent requests
+   --
+
+   procedure Wait_For_Master;
+   --  Wait for a build master to connect, initialize the global communication
+   --  channel. This procedure is run under the environment task. Send the
+   --  slave config to the build master. Either a builder object is created and
+   --  inserted into the Builders protected object or the builder is rejected
+   --  because of inconsistent state:
+   --
+   --  1. the builder and the slave are not using the same compiler.
+   --  2. the slave is already handling compilation for this project
+   --     environment.
+
+   task Wait_Requests;
+   --  Waiting for incoming requests from the masters, take corresponding
+   --  actions. Three actions are handled here:
+   --
+   --  1. EX - execute a compilation
+   --     A compilation request is inserted into To_Run protected object.
+   --
+   --  2. CU - execute a clean-up
+   --     A clean-up request is inserted into To_Run protected object.
+   --
+   --  3. EC - stop execution for the given builder
+
+   task Execute_Job;
+   --  Task running a maximum of Max_Process compilation simultaneously. These
+   --  jobs are taken from the To_Run protected object (a FIFO list).
+   --
+   --  Jobs taken from To_Run protected object are removed, executed
+   --  asynchronously and inserted into the Running protected object with
+   --  the corresponding process Id and builder.
+   --
+   --  IMPORTANT NOTE : this is the only task that can change the working
+   --  directory (Set_Directory for example). This makes locking circuitry
+   --  lighter and more efficient.
+
+   task type Wait_Completion;
+   --  Waiting for completion of compilation jobs. The Pid is retreived with
+   --  the corresponding builder, then it sends back the response to the build
+   --  masters. The response is OK or NOK depending on compilation result. If
+   --  OK the auxiliaries files (.ali, .o) are sent back to the build master.
+   --
+   --  This is the only task with multiple instance. As sending back resulting
+   --  objects and ALI files can take some time haaving multiple instance
+   --  permit to send results to different builders simultaneously.
 
    protected Builders is
+
+      --  Protected builders data set (used by environment task and the
+      --  Protocol_Handler).
+      --
+      --  The list of builder, one for each build master. Inserted here when a
+      --  compilation starts and removed when an end-of-compilation message is
+      --  received or a master is interrupted.
 
       procedure Insert (Builder : Build_Master);
       --  Add Builder into the set
@@ -249,9 +284,10 @@ procedure Gprslave is
       To_Check   : Natural := 0; -- number of task to let go through Try_Lock
    end Builders;
 
-   --  Queue of Job to run, A FIFO list
-
    protected To_Run is
+
+      --  Queue of Job to run, A FIFO list of jobs comming from all registered
+      --  builders.
 
       procedure Push (Job : Job_Data);
 
@@ -261,9 +297,10 @@ procedure Gprslave is
       Set : To_Run_Set.Vector;
    end To_Run;
 
-   --  Set of running jobs
-
    protected Running is
+
+      --  Set of running jobs. Removed when the compilation terminates or when
+      --  killed because of a builder is interrupted.
 
       procedure Register (Job : Job_Data);
       --  Register a running Job
