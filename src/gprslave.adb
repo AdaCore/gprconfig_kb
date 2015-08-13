@@ -121,7 +121,7 @@ procedure Gprslave is
    type Job_Data is record
       Cmd        : Command;
       Id         : Remote_Id;         -- job id must be uniq across all slaves
-      Pid        : Integer;           -- the OS process id
+      Pid        : Process_Id;        -- the OS process id
       Dep_Dir    : Unbounded_String;
       Dep_File   : Unbounded_String;
       Obj_File   : Unbounded_String;
@@ -131,8 +131,11 @@ procedure Gprslave is
 
    No_Job : constant Job_Data := (Id => -1, others => <>);
 
-   function "<" (J1, J2 : Job_Data) return Boolean is (J1.Pid < J2.Pid);
-   function "=" (J1, J2 : Job_Data) return Boolean is (J1.Pid = J2.Pid);
+   function "<" (J1, J2 : Job_Data) return Boolean is
+     (Pid_To_Integer (J1.Pid) < Pid_To_Integer (J2.Pid));
+
+   function "=" (J1, J2 : Job_Data) return Boolean is
+     (Pid_To_Integer (J1.Pid) = Pid_To_Integer (J2.Pid));
 
    package Job_Data_Set is new Containers.Ordered_Sets (Job_Data);
 
@@ -276,6 +279,11 @@ procedure Gprslave is
 
       entry Wait;
       --  Wait for at least one running process
+
+      procedure Kill_Processes (Socket : Socket_Type);
+      --  Kill all processes whose builder is registered with Socket. This
+      --  is used when a builder is interrupted to kill all corresponding
+      --  processes.
 
    private
       Set   : Job_Data_Set.Set;
@@ -456,6 +464,7 @@ procedure Gprslave is
       procedure Remove (Builder : in out Build_Master) is
       begin
          Builders.Exclude (Builder);
+         Running.Kill_Processes (Builder.Socket);
          Release (Builder);
       end Remove;
 
@@ -977,7 +986,7 @@ procedure Gprslave is
 
                            To_Run.Push
                              (Job_Data'(Cmd,
-                              Id, -1,
+                              Id, OS_Lib.Invalid_Pid,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
@@ -995,7 +1004,7 @@ procedure Gprslave is
 
                            To_Run.Push
                              (Job_Data'(Cmd,
-                              0, -1,
+                              0, OS_Lib.Invalid_Pid,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
@@ -1417,7 +1426,7 @@ procedure Gprslave is
             Message (Builder, "#   out_file " & Out_File, Is_Debug => True);
             Message (Builder, "#   obj_file " & Obj_File, Is_Debug => True);
 
-            Job.Pid      := Pid_To_Integer (Pid);
+            Job.Pid      := Pid;
             Job.Dep_File := To_Unbounded_String (Dep_File);
             Job.Obj_File := To_Unbounded_String (Obj_File);
             Job.Output   := To_Unbounded_String (Out_File);
@@ -1510,6 +1519,36 @@ procedure Gprslave is
 
    protected body Running is
 
+      --------------------
+      -- Kill_Processes --
+      --------------------
+
+      procedure Kill_Processes (Socket : Socket_Type) is
+         To_Kill : Job_Data_Set.Set;
+      begin
+         --  First pass, record all job for the given builder
+
+         for Job of Set loop
+            if Job.Build_Sock = Socket then
+               To_Kill.Insert (Job);
+            end if;
+         end loop;
+
+         --  Second pass, kill processes and remove from queue of running jobs.
+         --  Note that we remove the jobs here as we do not want them to be
+         --  handled by the Get in Wait_Completion. Those jobs are interrupted
+         --  and the builder removed, so there is no point to try to send back
+         --  the compilation result to the master.
+         --
+         --  This also ensure a faster termination of the build master.
+
+         for Job of To_Kill loop
+            Kill (Job.Pid, Hard_Kill => False);
+            Set.Delete (Job);
+            Count := Count - 1;
+         end loop;
+      end Kill_Processes;
+
       --------------
       -- Register --
       --------------
@@ -1527,7 +1566,7 @@ procedure Gprslave is
       procedure Get (Job : out Job_Data; Pid : Process_Id) is
          Pos : Job_Data_Set.Cursor;
       begin
-         Job.Pid := Pid_To_Integer (Pid);
+         Job.Pid := Pid;
          Pos := Set.Find (Job);
 
          --  Not that a job could be not found here because the Pid is one of

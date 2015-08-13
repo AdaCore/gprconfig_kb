@@ -8,6 +8,12 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-O720-008 Proper process clean-up in distributed build (2015-08-06)
+
+   When a builder is interrupted (ctrl-c), GPRslave will kill all
+   corresponding processes. By doing this we ensure faster and cleaner
+   restart of the same compilation.
+
 NF-23-O612-022 Add variables in gprinstall's generated projects (2015-06-15)
 
    Project generated with gprinstall will now contains global variables
