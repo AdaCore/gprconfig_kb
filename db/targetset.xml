@@ -40,6 +40,11 @@
     <target>arm-linux-gnueabi</target>
   </targetset>
 
+  <targetset>
+    <target>e500v2-linux</target>
+    <target>e500v2-gnu-linux</target>
+  </targetset>
+
 <!-- Native ports -->
 <!-- ************ -->
 
