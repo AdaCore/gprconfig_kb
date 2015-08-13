@@ -213,6 +213,10 @@ procedure Gprslave is
       function Get (Socket : Socket_Type) return Build_Master;
       --  Get the builder using Socket
 
+      function Exists (Socket : Socket_Type) return Boolean;
+      --  Returns True if the build master corresponding to socket is found.
+      --  False otherwise.
+
       entry Get_Socket_Set (Socket_Set : out Socket_Set_Type);
       --  Get a socket set for all builders
 
@@ -356,6 +360,17 @@ procedure Gprslave is
    --------------
 
    protected body Builders is
+
+      ------------
+      -- Exists --
+      ------------
+
+      function Exists (Socket : Socket_Type) return Boolean is
+         Builder : Build_Master;
+      begin
+         Builder.Socket := Socket;
+         return Builder_Set.Has_Element (Builders.Find (Builder));
+      end Exists;
 
       ---------
       -- Get --
@@ -1469,10 +1484,16 @@ procedure Gprslave is
 
          To_Run.Pop (Job);
 
-         if Kind (Job.Cmd) = EX then
-            Do_Compile (Job);
-         else
-            Do_Clean (Job);
+         --  Only launch the job if the corresponding builder is still active.
+         --  It could be the case that the builder has been interrupted
+         --  (ctrl-c) and so removed from the set.
+
+         if Builders.Exists (Job.Build_Sock) then
+            if Kind (Job.Cmd) = EX then
+               Do_Compile (Job);
+            else
+               Do_Clean (Job);
+            end if;
          end if;
       end loop;
 
