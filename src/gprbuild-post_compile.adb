@@ -2960,7 +2960,10 @@ package body Gprbuild.Post_Compile is
          else
             --  Put the Roots
             while Roots /= null loop
-               Put_Dependency_File (Roots.Root);
+               if Roots.Root /= No_Source then
+                  Put_Dependency_File (Roots.Root);
+               end if;
+
                Roots := Roots.Next;
             end loop;
          end if;
