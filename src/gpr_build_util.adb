@@ -1910,9 +1910,9 @@ package body Gpr_Build_Util is
          end loop;
 
          if Current_Verbosity = High then
-            Ada.Text_IO.Put ("Adding """);
+            Write_Str ("Adding """);
             Debug_Display (Source);
-            Put_Line (""" to the queue");
+            Write_Line (""" to the queue");
          end if;
 
          Q.Append (New_Val => (Info => Source, Processed => False));
@@ -2013,6 +2013,14 @@ package body Gpr_Build_Util is
 
             else
                List := Roots.Values;
+
+               --  case of empty root list
+               if List = Nil_String then
+                  Source.Id.Roots :=
+                    new Source_Roots'
+                      (Root => No_Source,
+                       Next => null);
+               end if;
 
                Pattern_Loop :
                while List /= Nil_String loop
