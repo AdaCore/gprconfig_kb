@@ -1,14 +1,24 @@
 library project GPR is
    type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := external ("BUILD", "production");
+   
+   type Library_Type_Type is ("relocatable", "static");
+   Gnat_Lib_Type : Library_Type_Type := external ("LIBRARY_TYPE", "static");
+   
+   case Gnat_Lib_Type is
+      when "relocatable" =>
+        for Library_Kind use "relocatable";
+      when "static" =>
+        for Library_Kind use "static";
+   end case; 
 
    for Source_Dirs use ("src");
    for Library_Name use "gpr";
 
    case Bld is
       when "production" =>
-         for Object_Dir use "obj";
-         for Library_Dir use "lib";
+         for Object_Dir use "obj/" & Gnat_Lib_Type;
+         for Library_Dir use "lib/" & Gnat_Lib_Type;
 
       when "coverage"   =>
          for Object_Dir use "obj-cov";

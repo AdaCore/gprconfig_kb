@@ -41,3 +41,30 @@ EOF
   AC_SUBST(xmlada_build_target)
   AC_SUBST(xmlada_prj_flags)
 ])
+
+AC_DEFUN(AM_GNAT_BUILDS_SHARED,
+[
+   AC_MSG_CHECKING(whether gnat can build shared libs)
+   gnat_builds_shared=
+
+   mkdir conftest conftest/lib
+   echo "package Foo is end Foo;" > conftest/foo.ads
+   cat > conftest/lib.gpr <<EOF
+project Lib is
+   for Source_Dirs use (".");
+   for Library_Dir use "lib";
+   for Library_Name use "lib";
+   for Library_Kind use "relocatable";
+end Lib;
+EOF
+
+   if AC_TRY_COMMAND([gprbuild -c -q -Pconftest/lib]); then
+      gnat_builds_shared=yes
+   else
+      gnat_builds_shared=no
+   fi
+      rm -rf conftest
+      AC_MSG_RESULT($gnat_builds_shared)
+
+   AC_SUBST(gnat_builds_shared)
+]) 

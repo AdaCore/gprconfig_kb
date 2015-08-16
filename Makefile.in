@@ -6,6 +6,7 @@ host=@host@
 target=@target@
 build=@build@
 IS_WINDOWS=@is_windows@
+GNAT_BUILDS_SHARED=@gnat_builds_shared@
 
 # Relative to the gnat/ subdirectory (or absolute path)
 GNAT_SOURCE_DIR=../gnat_src
@@ -123,8 +124,15 @@ bootstrap-clean:
 	bootstrap/install/bin/gprclean -Pgprbuild -XBUILD=${BUILD} \
 	  -XBUILD_TOOL=gprbuild
 
-install: install.data install.bin
-	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f
+install: libgpr.uninstall libgpr.shared install.data install.bin
+	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f \
+		-XLIBRARY_TYPE=static --lib-subdir=lib/gpr/static \
+		--build-var=LIBRARY_TYPE --build-name=static
+ifeq ($(GNAT_BUILDS_SHARED), yes)
+	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f \
+		-XLIBRARY_TYPE=relocatable --lib-subdir=lib/gpr/relocatable \
+		--build-var=LIBRARY_TYPE --build-name=relocatable
+endif
 	-${MKDIR} ${datadir}/gpr
 	$(RM) -r ${datadir}/examples/gprbuild
 	-${MKDIR} ${datadir}/examples/gprbuild
@@ -142,6 +150,17 @@ install: install.data install.bin
 	     fi; \
 	  fi; \
 	done
+
+.PHONY: libgpr.uninstall libgpr.shared
+
+libgpr.uninstall:
+	-gprinstall --uninstall gpr
+
+libgpr.shared:
+ifeq ($(GNAT_BUILDS_SHARED), yes)
+	${BUILDER} -XBUILD=${BUILD} -XLIBRARY_TYPE=relocatable -Pgpr/gpr.gpr -p
+endif
+
 
 install.data: force
 	-${MKDIR} ${datadir}/gprconfig
