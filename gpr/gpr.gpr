@@ -21,16 +21,16 @@ library project GPR is
          for Library_Dir use "lib/" & Gnat_Lib_Type;
 
       when "coverage"   =>
-         for Object_Dir use "obj-cov";
-         for Library_Dir use "lib-cov";
+         for Object_Dir use "obj-cov/" & Gnat_Lib_Type;
+         for Library_Dir use "lib-cov/" & Gnat_Lib_Type;
 
       when "profiling"  =>
-         for Object_Dir use "obj-prof";
-         for Library_Dir use "lib-prof";
+         for Object_Dir use "obj-prof/" & Gnat_Lib_Type;
+         for Library_Dir use "lib-prof/" & Gnat_Lib_Type;
 
       when "debug"      =>
-         for Object_Dir use "obj-debug";
-         for Library_Dir use "lib-debug";
+         for Object_Dir use "obj-debug/" & Gnat_Lib_Type;
+         for Library_Dir use "lib-debug/" & Gnat_Lib_Type;
    end case;
 
    for Library_Name use "gpr";
