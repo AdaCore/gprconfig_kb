@@ -127,11 +127,11 @@ bootstrap-clean:
 install: libgpr.uninstall libgpr.shared install.data install.bin
 	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f \
 		-XLIBRARY_TYPE=static --lib-subdir=lib/gpr/static \
-		--build-var=LIBRARY_TYPE --build-name=static
+		--build-var=LIBRARY_TYPE --build-name=static --install-name=gpr
 ifeq ($(GNAT_BUILDS_SHARED), yes)
 	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f \
 		-XLIBRARY_TYPE=relocatable --lib-subdir=lib/gpr/relocatable \
-		--build-var=LIBRARY_TYPE --build-name=relocatable
+		--build-var=LIBRARY_TYPE --build-name=relocatable --install-name=gpr
 endif
 	-${MKDIR} ${datadir}/gpr
 	$(RM) -r ${datadir}/examples/gprbuild
@@ -154,7 +154,7 @@ endif
 .PHONY: libgpr.uninstall libgpr.shared
 
 libgpr.uninstall:
-	-gprinstall --uninstall gpr
+	-gprinstall --uninstall gpr -f
 
 libgpr.shared:
 ifeq ($(GNAT_BUILDS_SHARED), yes)
