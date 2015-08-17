@@ -171,19 +171,19 @@ install.data: force
 
 install.bin: force
 	-${MKDIR} ${bindir}
-	${INSTALL_PROGRAM} gprconfig${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} gprbuild${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} gprclean${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} gprinstall${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} exe/gprconfig${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} exe/gprbuild${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} exe/gprclean${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} exe/gprinstall${EXEXT} ${bindir}
 ifeq ($(IS_WINDOWS),true)
 	${CP} src/gprinstall.exe.manifest ${bindir}
 	chmod +x ${bindir}/gprinstall.exe.manifest
 endif
-	${INSTALL_PROGRAM} gprname${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} gprslave${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} exe/gprname${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} exe/gprslave${EXEXT} ${bindir}
 	-${MKDIR} ${libexecdir}/gprbuild
-	${INSTALL_PROGRAM} gprbind${EXEXT} ${libexecdir}/gprbuild/
-	${INSTALL_PROGRAM} gprlib${EXEXT} ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} exe/gprbind${EXEXT} ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} exe/gprlib${EXEXT} ${libexecdir}/gprbuild/
 
 .PHONY: build_xmlada
 build_xmlada:
