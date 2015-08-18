@@ -8,9 +8,6 @@ build=@build@
 IS_WINDOWS=@is_windows@
 GNAT_BUILDS_SHARED=@gnat_builds_shared@
 
-# Relative to the gnat/ subdirectory (or absolute path)
-GNAT_SOURCE_DIR=../gnat_src
-
 ifeq ($(IS_WINDOWS),true)
 LN=cp -p
 EXEXT=.exe
@@ -58,9 +55,7 @@ PROCESSORS ?= 0
 
 BUILDER=gprbuild -p -m -j${PROCESSORS}
 
-ADA_GEN_SUBDIR=gnat
-
-.PHONY: all distall gprbuild gprconfig gprclean gprinstall gprname copy_gnat_src
+.PHONY: all distall gprbuild gprconfig gprclean gprinstall gprname
 all: $(xmlada_build_target)
 	${BUILDER} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
@@ -85,13 +80,6 @@ endif
 all gprconfig gprbuild gprclean: force
 
 MOVE_IF_CHANGE=mv -f
--include $(srcdir)/gnat/Make-generated.in
-
-copy_gnat_src: force
-	-cd $(ADA_GEN_SUBDIR); \
-	$(foreach f,$(shell cat $(ADA_GEN_SUBDIR)/MANIFEST.GPRBUILD), \
-	    $(LN) $(GNAT_SOURCE_DIR)/$(f) . ;\
-           )
 
 complete: all install
 
