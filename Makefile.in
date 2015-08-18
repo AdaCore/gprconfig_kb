@@ -212,6 +212,15 @@ tests: force
 	cd internal/gprtests_python; python ./run-gprconfig-test.py
 	cd internal/gprtests_python; python ./run-gprbuild-test.py
 
+.PHONY: copy_gnat_src
+
+GNAT_SOURCE_DIR=../gnat_src
+
+copy_gnat_src:
+	-cd gnat; \
+	$(foreach f,$(shell cat gnat/MANIFEST.GPRBUILD), \
+	          $(LN) $(GNAT_SOURCE_DIR)/$(f) . ;)
+
 ######################
 # Running tests locally
 # Run tests with the locally compiled gprbuild (no "make install" necessary)
