@@ -2,63 +2,49 @@ library project GPR is
    type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := external ("BUILD", "production");
    
-   type Library_Type_Type is ("relocatable", "static");
+   type Library_Type_Type is ("relocatable", "static", "static-pic");
    Gnat_Lib_Type : Library_Type_Type := external ("LIBRARY_TYPE", "static");
-   
+   Root_Obj_Dir := external ("OBJDIR", ".");
+
    case Gnat_Lib_Type is
       when "relocatable" =>
         for Library_Kind use "relocatable";
-      when "static" =>
+      when "static" | "static-pic" =>
         for Library_Kind use "static";
    end case; 
 
    for Source_Dirs use ("src");
+
    for Library_Name use "gpr";
 
    case Bld is
       when "production" =>
-         for Object_Dir use "obj/" & Gnat_Lib_Type;
-         for Library_Dir use "lib/" & Gnat_Lib_Type;
+         for Object_Dir use Root_Obj_Dir & "/libobj/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "/lib/" & Gnat_Lib_Type;
 
       when "coverage"   =>
-         for Object_Dir use "obj-cov/" & Gnat_Lib_Type;
-         for Library_Dir use "lib-cov/" & Gnat_Lib_Type;
+         for Object_Dir use Root_Obj_Dir & "/libobj-cov/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "lib-cov/" & Gnat_Lib_Type;
 
       when "profiling"  =>
-         for Object_Dir use "obj-prof/" & Gnat_Lib_Type;
-         for Library_Dir use "lib-prof/" & Gnat_Lib_Type;
+         for Object_Dir use Root_Obj_Dir & "/libobj-prof/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "/lib-prof/" & Gnat_Lib_Type;
 
       when "debug"      =>
-         for Object_Dir use "obj-debug/" & Gnat_Lib_Type;
-         for Library_Dir use "lib-debug/" & Gnat_Lib_Type;
+         for Object_Dir use Root_Obj_Dir & "/libobj-debug/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "/lib-debug/" & Gnat_Lib_Type;
    end case;
 
    for Library_Name use "gpr";
 
---   for Library_Interface use
---      ("GPR",
---       "GPR.ALI",
---       "GPR.Attr",
---       "GPR.Com",
---       "GPR.Conf",
---       "GPR.Cset",
---       "GPR.Debug",
---       "GPR.Env",
---       "GPR.Err",
---       "GPR.Erroutc",
---       "GPR.Ext",
---       "GPR.Names",
---       "GPR.Opt",
---       "GPR.Osint",
---       "GPR.Part",
---       "GPR.PP",
---       "GPR.Proc",
---       "GPR.Scans",
---       "GPR.Sinput",
---       "GPR.Snames",
---       "GPR.Tempdir",
---       "GPR.Tree",
---       "GPR.Util");
+   package Builder is
+      case Gnat_Lib_Type is
+         when "static-pic" =>
+            for Global_Compilation_Switches ("Ada") use ("-fPIC");
+         when others =>
+            null;
+      end case;
+   end Builder;
 
    package Compiler is
       common_switches := ("-gnat12", "-gnaty", "-gnatQ");

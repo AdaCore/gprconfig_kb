@@ -1,67 +1,135 @@
-SHELL=/bin/sh
+# Makefile targets
+# ----------------
+#
+# Build gprbuild:          make all
+# Install gprbuild:        make install
+# Create gprbuild package: make distall
+# Build tool <TOOL>:       make <TOOL>
+# Build libgpr:            make libgpr.build
+# Install libgpr:          make libgpr.install
+# (for libgpr you can add ".type" where type is static, static-pic or shared
+#  build a specific version of the lib. by default all supported variants are
+#  built).
+
+# Variables set by configure
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
 INSTALL_DATA=@INSTALL_DATA@
+IS_WINDOWS=@is_windows@
+GNAT_BUILDS_SHARED=@gnat_builds_shared@
+ifeq ($(GNAT_BUILDS_SHARED), yes)
+   LIBGPR_TYPES=static shared static-pic
+else
+   LIBGPR_TYPES=static
+endif
+
 host=@host@
 target=@target@
 build=@build@
-IS_WINDOWS=@is_windows@
-GNAT_BUILDS_SHARED=@gnat_builds_shared@
-
-ifeq ($(IS_WINDOWS),true)
-LN=cp -p
-EXEXT=.exe
-else
-LN=ln -s -f
-EXEXT=
-endif
-CP=cp -p
-MKDIR=mkdir -p
-BUILD ?= production
-
 prefix=@prefix@
 srcdir=@srcdir@
-root_objdir=@objdir@
+objdir=@objdir@
 exec_prefix=@exec_prefix@
 datarootdir=@datarootdir@
 datadir=@datadir@
 bindir=@bindir@
 libdir=@libdir@
 libexecdir=@libexecdir@
-docdir=${datadir}/doc/@PACKAGE_TARNAME@
 
-# Are xmlada sources in our source tree
-xmlada_build_target=@xmlada_build_target@
-xmlada_prj_flags=@xmlada_prj_flags@
-
-# How do we want to use XML/Ada ?
-LIBRARY_TYPE=static
-export LIBRARY_TYPE
-
-objdir=obj
-ifeq ($(BUILD), debug)
-objdir=obj-debug
+ifeq ($(IS_WINDOWS),true)
+  EXEXT=.exe
+else
+  EXEXT=
 endif
-ifeq ($(BUILD), coverage)
-objdir=obj-cov
-endif
-ifeq ($(BUILD), profiling)
-objdir=obj-prof
-endif
+CP=cp -p
+MKDIR=mkdir -p
+BUILD=production
+PROCESSORS=0
 
-dummy:=$(shell $(MKDIR) $(objdir))
-
-PROCESSORS ?= 0
-
-BUILDER=gprbuild -p -m -j${PROCESSORS}
+BUILDER=gprbuild -p -m -j${PROCESSORS} -XOBJDIR=$(objdir) -XBUILD=${BUILD}
+GPRBUILD_BUILDER=$(BUILDER) -P$(srcdir)/gprbuild -XLIBRARY_TYPE=static
+LIBGPR_BUILDER=$(BUILDER) -P$(srcdir)/gpr/gpr.gpr
+LIBGPR_INSTALLER=gprinstall $(srcdir)/gpr/gpr.gpr --prefix=${prefix} -p -f \
+   -XOBJDIR=$(objdir) --install-name=gpr --build-var=LIBRARY_TYPE 
+LIBGPR_UNINSTALLER=gprinstall $(srcdir)/gpr/gpr.gpr --prefix=${prefix} -p -f \
+   -XOBJDIR=$(objdir) --install-name=gpr --uninstall 
 
 .PHONY: all distall gprbuild gprconfig gprclean gprinstall gprname
-all: $(xmlada_build_target)
-	${BUILDER} $(xmlada_prj_flags) -Pgprbuild -XBUILD=${BUILD}
 
-distall:
-	make BUILDER="$(BUILDER)" BUILD="$(BUILD)"
-	make BUILD="$(BUILD)" install
+all:
+	$(GPRBUILD_BUILDER)
+
+distall: all install install.dist
+
+gprbuild:
+	$(GPRBUILD_BUILDER) gprbuild-main.adb
+
+gprinstall:
+	$(GPRBUILD_BUILDER) gprinstall-main.adb
+
+gprclean:
+	$(GPRBUILD_BUILDER) gprclean-main.adb
+
+gprconfig:
+	$(GPRBUILD_BUILDER) gprconfig-main
+
+gprname:
+	$(GPRBUILD_BUILDER) gprname
+
+
+#################################
+# Gprbuild installation targets #
+#################################
+
+.PHONY: install install.data install.bin install.examples install.docs install.dist
+
+install: install.data install.bin install.docs install.examples
+
+install.data:
+	-${MKDIR} ${datadir}/gprconfig
+	${CP} $(srcdir)/share/gprconfig/*.xml ${datadir}/gprconfig
+	${CP} $(srcdir)/share/gprconfig/gprconfig.xsd ${datadir}/gprconfig
+	-${MKDIR} ${datadir}/gpr
+	${CP} $(srcdir)/share/_default.gpr ${datadir}/gpr
+
+install.bin:
+	-${MKDIR} ${bindir}
+	${INSTALL_PROGRAM} $(objdir)/exe/gprconfig${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} $(objdir)/exe/gprbuild${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} $(objdir)/exe/gprclean${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} $(objdir)/exe/gprinstall${EXEXT} ${bindir}
+ifeq ($(IS_WINDOWS),true)
+	${CP} $(srcdir)/src/gprinstall.exe.manifest ${bindir}
+	chmod +x ${bindir}/gprinstall.exe.manifest
+endif
+	${INSTALL_PROGRAM} $(objdir)/exe/gprname${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} $(objdir)/exe/gprslave${EXEXT} ${bindir}
+	-${MKDIR} ${libexecdir}/gprbuild
+	${INSTALL_PROGRAM} $(objdir)/exe/gprbind${EXEXT} ${libexecdir}/gprbuild/
+	${INSTALL_PROGRAM} $(objdir)/exe/gprlib${EXEXT} ${libexecdir}/gprbuild/
+
+install.examples:
+	-${MKDIR} ${datadir}/gpr
+	$(RM) -r ${datadir}/examples/gprbuild
+	-${MKDIR} ${datadir}/examples/gprbuild
+	${CP} -r $(srcdir)/examples/* ${datadir}/examples/gprbuild
+
+install.docs:
+	${RM} -r ${datadir}/doc/gprbuild
+	-${MKDIR} ${datadir}/doc/gprbuild
+	for format in html txt pdf info; do \
+	  if [ -d $(srcdir)/doc/$$format ] ; then \
+	     ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
+	     ${CP} -r $(srcdir)/doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
+	     if [ $$format = html ] ; then \
+	        ${CP} $(srcdir)/doc/*.png ${datadir}/doc/gprbuild/html; \
+	        sed -e "s/<doc_path>.*//" $(srcdir)/doc/gprbuild_gps.xml \
+	           > ${datadir}/doc/gprbuild/html/gps_index.xml; \
+	     fi; \
+	  fi; \
+	done
+
+install.dist:
 	if [ "$(IS_WINDOWS)" = "false" ]; then \
 	  $(CP) $(srcdir)/doinstall $(prefix) && \
 	  chmod a+x $(prefix)/doinstall; \
@@ -77,126 +145,68 @@ ifeq ($(BUILD), production)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
 endif
 
-all gprconfig gprbuild gprclean: force
+##########
+# Libgpr #
+##########
 
-MOVE_IF_CHANGE=mv -f
+.PHONY: libgpr.build libgpr.build.static libgpr.build.shared libgpr.build.static-pic
+.PHONY: libgpr.install libgpr.install.static libgpr.install.shared libgpr.install.static-pic
+.PHONY: libgpr.uninstall
 
-complete: all install
+libgpr.build: $(foreach t, $(LIBGPR_TYPES), libgpr.build.$(t))
 
-gprbuild:
-	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprbuild-main.adb
+libgpr.build.shared:
+	${BUILDER} -XLIBRARY_TYPE=relocatable -P$(srcdir)/gpr/gpr.gpr
 
-gprinstall:
-	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprinstall-main.adb
+libgpr.build.static:
+	${BUILDER} -XLIBRARY_TYPE=static -P$(srcdir)/gpr/gpr.gpr
 
-gprclean:
-	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprclean-main.adb
+libgpr.build.static-pic:
+	${BUILDER} -XLIBRARY_TYPE=static-pic -P$(srcdir)/gpr/gpr.gpr
 
-gprconfig:
-	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprconfig-main
+libgpr.install: $(foreach t, $(LIBGPR_TYPES), libgpr.install.$(t))
 
-gprname:
-	${BUILDER} -Pgprbuild -XBUILD=${BUILD} gprname
+libgpr.install.static:
+	$(LIBGPR_INSTALLER) \
+	   -XLIBRARY_TYPE=static \
+	   --lib-subdir=lib/gpr/static \
+	   --build-name=static
 
-bootstrap: gprconfig gprbuild
-	echo
-	echo "=== Bootstraping grpbuild"
-	make install prefix=bootstrap/install
-	-${MKDIR} bootstrap/${objdir}
-	bootstrap/install/bin/gprbuild -Pgprbuild -XBUILD=${BUILD} \
-	  -XBUILD_TOOL=gprbuild
+libgpr.install.static-pic:
+	$(LIBGPR_INSTALLER) \
+	   -XLIBRARY_TYPE=static-pic \
+	   --lib-subdir=lib/gpr/static-pic \
+	   --build-name=static-pic
 
-.PHONY: install clean distclean bootstrap-clean
-
-bootstrap-clean:
-	bootstrap/install/bin/gprclean -Pgprbuild -XBUILD=${BUILD} \
-	  -XBUILD_TOOL=gprbuild
-
-install: libgpr.uninstall libgpr.shared install.data install.bin
-	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f \
-		-XLIBRARY_TYPE=static --lib-subdir=lib/gpr/static \
-		--build-var=LIBRARY_TYPE --build-name=static --install-name=gpr
-ifeq ($(GNAT_BUILDS_SHARED), yes)
-	gprinstall gpr/gpr.gpr --prefix=${prefix} -p -f \
-		-XLIBRARY_TYPE=relocatable --lib-subdir=lib/gpr/relocatable \
-		--build-var=LIBRARY_TYPE --build-name=relocatable --install-name=gpr
-endif
-	-${MKDIR} ${datadir}/gpr
-	$(RM) -r ${datadir}/examples/gprbuild
-	-${MKDIR} ${datadir}/examples/gprbuild
-	${CP} -r examples/* ${datadir}/examples/gprbuild
-	${RM} -r ${datadir}/doc/gprbuild
-	-${MKDIR} ${datadir}/doc/gprbuild
-	for format in html txt pdf info; do \
-	  if [ -d doc/$$format ] ; then \
-	     ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
-	     ${CP} -r doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
-	     if [ $$format = html ] ; then \
-	        ${CP} doc/*.png ${datadir}/doc/gprbuild/html; \
-	        sed -e "s/<doc_path>.*//" doc/gprbuild_gps.xml \
-	           > ${datadir}/doc/gprbuild/html/gps_index.xml; \
-	     fi; \
-	  fi; \
-	done
-
-.PHONY: libgpr.uninstall libgpr.shared
+libgpr.install.shared:
+	$(LIBGPR_INSTALLER) \
+	   -XLIBRARY_TYPE=relocatable \
+	   --lib-subdir=lib/gpr/relocatable \
+	   --build-name=relocatable
 
 libgpr.uninstall:
-	-gprinstall --uninstall gpr -f
+	-$(LIBGPR_UNINSTALLER)
 
-libgpr.shared:
-ifeq ($(GNAT_BUILDS_SHARED), yes)
-	${BUILDER} -XBUILD=${BUILD} -XLIBRARY_TYPE=relocatable -Pgpr/gpr.gpr -p
-endif
+###################
+# Cleanup targets #
+###################
 
-
-install.data: force
-	-${MKDIR} ${datadir}/gprconfig
-	${CP} share/gprconfig/*.xml ${datadir}/gprconfig
-	${CP} share/gprconfig/gprconfig.xsd ${datadir}/gprconfig
-	-${MKDIR} ${datadir}/gpr
-	${CP} share/_default.gpr ${datadir}/gpr
-
-install.bin: force
-	-${MKDIR} ${bindir}
-	${INSTALL_PROGRAM} exe/gprconfig${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} exe/gprbuild${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} exe/gprclean${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} exe/gprinstall${EXEXT} ${bindir}
-ifeq ($(IS_WINDOWS),true)
-	${CP} src/gprinstall.exe.manifest ${bindir}
-	chmod +x ${bindir}/gprinstall.exe.manifest
-endif
-	${INSTALL_PROGRAM} exe/gprname${EXEXT} ${bindir}
-	${INSTALL_PROGRAM} exe/gprslave${EXEXT} ${bindir}
-	-${MKDIR} ${libexecdir}/gprbuild
-	${INSTALL_PROGRAM} exe/gprbind${EXEXT} ${libexecdir}/gprbuild/
-	${INSTALL_PROGRAM} exe/gprlib${EXEXT} ${libexecdir}/gprbuild/
-
-.PHONY: build_xmlada
-build_xmlada:
-	cd $(srcdir)/xmlada && ./configure --build=$(build) \
-	  --prefix=$(root_objdir)/xmlada/install
-	cd $(srcdir)/xmlada && make LIBRARY_TYPE=static static install_static
-
+.PHONY: clean distclean
 clean:
-	gprclean -q -r -Pgprbuild -XBUILD=$(BUILD)
+	-gprclean -q -r -XOBJDIR=$(objdir) -P$(srcdir)/gprbuild -XBUILD=$(BUILD)
+	-gprclean -q -r -XOBJDIR=$(objdir) -XBUILD=${BUILD} -XLIBRARY_TYPE=relocatable -P$(srcdir)/gpr/gpr.gpr
+	-gprclean -q -r -XOBJDIR=$(objdir) -XBUILD=${BUILD} -XLIBRARY_TYPE=static-pic -P$(srcdir)/gpr/gpr.gpr
+	-gprclean -q -r -XOBJDIR=$(objdir) -XBUILD=${BUILD} -XLIBRARY_TYPE=static -P$(srcdir)/gpr/gpr.gpr
 
 distclean: clean
 	@${RM} config.log config.status src/gprconfig-sdefault.ads
 	@${RM} Makefile
-	@${RM} $(objdir)/*
-	@${RM} -r bootstrap
 	make -C doc clean
 	make -C examples clean
 
-.PHONY: doc install-doc tests examples force
+.PHONY: doc tests examples
 doc:
 	make -C doc
-
-install-doc:
-	-$(MKDIR) ${docdir}/html
-	${CP} doc/*.html ${docdir}/html
 
 tests: force
 	cd internal/gprtests_python; python ./run-gprconfig-test.py

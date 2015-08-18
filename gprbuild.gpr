@@ -5,6 +5,7 @@ project Gprbuild is
 
    type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := external ("BUILD", "debug");
+   Root_Obj_Dir := external ("OBJDIR", ".");
 
    type VCS_Type is ("Subversion", "Git", "auto");
    VCS_Kind : VCS_Type := external ("PRJ_VCS", "Subversion");
@@ -23,16 +24,16 @@ project Gprbuild is
         "gprslave.adb",
         "gprname-main.adb");
 
-   for Source_Dirs use ("src");
+   for Source_Dirs use (Root_Obj_Dir & "/src", "src");
 
    case Bld is
-      when "production" => for Object_Dir use "obj";
-      when "coverage"   => for Object_Dir use "obj-cov";
-      when "profiling"  => for Object_Dir use "obj-prof";
-      when "debug"      => for Object_Dir use "obj-debug";
+      when "production" => for Object_Dir use Root_Obj_Dir & "/obj";
+      when "coverage"   => for Object_Dir use Root_Obj_Dir & "/obj-cov";
+      when "profiling"  => for Object_Dir use Root_Obj_Dir & "/obj-prof";
+      when "debug"      => for Object_Dir use Root_Obj_Dir & "/obj-debug";
    end case;
 
-   for Exec_Dir use "exe";
+   for Exec_Dir use Root_Obj_Dir & "/exe";
 
    package Builder is
       for Executable ("gprconfig-main.adb")  use "gprconfig";
