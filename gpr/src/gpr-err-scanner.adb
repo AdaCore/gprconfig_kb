@@ -96,6 +96,10 @@ package body Scanner is
 
    function End_String return Name_Id;
 
+   procedure Error_Illegal_Character;
+   --  Give illegal character error, Scan_Ptr points to character. On return,
+   --  Scan_Ptr is bumped past the illegal character.
+
    procedure Initialize_Checksum;
    pragma Inline (Initialize_Checksum);
    --  Initialize checksum value
@@ -338,6 +342,16 @@ package body Scanner is
 
       return Name_Find;
    end End_String;
+
+   -----------------------------
+   -- Error_Illegal_Character --
+   -----------------------------
+
+   procedure Error_Illegal_Character is
+   begin
+      Error_Msg ("illegal character", Scan_Ptr);
+      Scan_Ptr := Scan_Ptr + 1;
+   end Error_Illegal_Character;
 
    -------------------------
    -- Initialize_Checksum --
@@ -1693,6 +1707,9 @@ package body Scanner is
                      Scan_Ptr := Scan_Ptr + 1;
                   end if;
                end loop;
+
+            else
+               Error_Illegal_Character;
             end if;
 
          --  End switch on non-blank character
