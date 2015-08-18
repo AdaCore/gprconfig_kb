@@ -197,6 +197,9 @@ clean:
 	-gprclean -q -r -XOBJDIR=$(objdir) -XBUILD=${BUILD} -XLIBRARY_TYPE=relocatable -P$(srcdir)/gpr/gpr.gpr
 	-gprclean -q -r -XOBJDIR=$(objdir) -XBUILD=${BUILD} -XLIBRARY_TYPE=static-pic -P$(srcdir)/gpr/gpr.gpr
 	-gprclean -q -r -XOBJDIR=$(objdir) -XBUILD=${BUILD} -XLIBRARY_TYPE=static -P$(srcdir)/gpr/gpr.gpr
+ifeq ($(GNAT_BUILDS_SHARED), yes)
+	gprclean -q -Pgpr/gpr.gpr -XBUILD=$(BUILD) -XLIBRARY_TYPE=relocatable
+endif
 
 distclean: clean
 	@${RM} config.log config.status src/gprconfig-sdefault.ads
