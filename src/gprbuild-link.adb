@@ -2716,6 +2716,16 @@ package body Gprbuild.Link is
                            Name_1            => Response_File_Name,
                            Name_2            => Response_2);
 
+                        Record_Temp_File
+                          (Shared => Main_File.Tree.Shared,
+                           Path   => Response_File_Name);
+
+                        if Response_2 /= No_Path then
+                           Record_Temp_File
+                             (Shared => Main_File.Tree.Shared,
+                              Path   => Response_2);
+                        end if;
+
                         if Main_Proj.Config.Resp_File_Format = GCC
                           or else
                             Main_Proj.Config.Resp_File_Format = GCC_GNU
