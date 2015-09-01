@@ -1393,6 +1393,7 @@
        <compiler name="GCC-WRS7E500V2" runtime="rtp"/>
        <compiler name="GCC-WRS7PPC" runtime="rtp"/>
        <compiler name="GCC-WRS7X86" runtime="rtp"/>
+       <compiler name="GCC-WRS7X86_64" runtime="rtp"/>
     </compilers>
     <config>
      package Linker is
