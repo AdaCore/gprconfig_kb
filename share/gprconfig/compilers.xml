@@ -220,6 +220,19 @@
   </compiler_description>
 
   <compiler_description>
+    <name>GCC-WRS7X86_64</name>
+    <executable prefix="1">cc(pentium)</executable>
+    <version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-7.*</must_match>
+    </version>
+    <languages>C</languages>
+    <runtimes>kernel,rtp</runtimes>
+    <target>x86_64-wrs-vxworks7</target>
+  </compiler_description>
+
+  <compiler_description>
     <name>GCC-WRS7PPC</name>
     <executable prefix="1">cc(ppc)</executable>
     <version>
