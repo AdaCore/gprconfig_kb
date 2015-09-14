@@ -3502,10 +3502,14 @@ package body GprConfig.Knowledge is
      (Base : Knowledge_Base;
       Set  : Targets_Set_Id) return String
    is
-      Result : constant Target_Set_Description :=
-                 Targets_Set_Vectors.Element (Base.Targets_Sets, Set);
+      Result : Target_Set_Description;
    begin
+      Result := Targets_Set_Vectors.Element (Base.Targets_Sets, Set);
       return Get_Name_String (Result.Name);
+
+   exception
+      when others =>
+         return "unknown";
    end Normalized_Target;
 
    ----------------
