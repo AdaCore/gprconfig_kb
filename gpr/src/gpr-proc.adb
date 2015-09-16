@@ -29,7 +29,7 @@ with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;
 
 with GPR.Attr;    use GPR.Attr;
-with GPR.Env;
+with GPR.Env;     use GPR.Env;
 with GPR.Err;     use GPR.Err;
 with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Ext;     use GPR.Ext;
@@ -3072,9 +3072,12 @@ package body GPR.Proc is
 
             elsif Project.Qualifier = Aggregate_Library then
 
-               --  The child environment is the same as the current one
+               --  The child environment is the same as the current one.
+               --  Copy the Project_Path, so that if it is freed, the project
+               --  path of the parent is not modified.
 
-               Child_Env := Env;
+               Child_Env := (Env.External, No_Project_Search_Path, Env.Flags);
+               Copy (Env.Project_Path, Child_Env.Project_Path);
 
             else
                --  No need to initialize Child_Env, since it will not be
