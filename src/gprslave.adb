@@ -127,6 +127,7 @@ procedure Gprslave is
       Obj_File   : Unbounded_String;
       Output     : Unbounded_String;
       Build_Sock : Socket_Type; -- key used to get the corresponding builder
+      Killed     : Boolean;
    end record;
 
    No_Job : constant Job_Data := (Id => -1, others => <>);
@@ -546,17 +547,17 @@ procedure Gprslave is
 
       Builders.Remove (Builder);
 
-      --  Send an Ack message before closing if requested
-
-      if Ack then
-         Send_Ok (Builder.Channel);
-      end if;
-
       --  Now close the channel/socket. This routine is used when the builder
       --  has encountered an error, so the associated socket may be in a bad
       --  state. Make sure we do not fail here.
 
       begin
+         --  Send an Ack message before closing if requested
+
+         if Ack then
+            Send_Ok (Builder.Channel);
+         end if;
+
          Close (Builder.Channel);
          Close_Socket (Builder.Socket);
       exception
@@ -1036,7 +1037,7 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
-                              Builder.Socket));
+                              Builder.Socket, False));
 
                            Send_Ack (Builder.Channel, Id);
                         end Record_Job;
@@ -1054,7 +1055,7 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
-                              Builder.Socket));
+                              Builder.Socket, False));
                         end Clean_Up_Request;
 
                      elsif Kind (Cmd) in EC | SI then
@@ -1081,6 +1082,11 @@ procedure Gprslave is
                         --  cannot communicate with it. Just close the channel.
 
                         Close_Builder (Builder, Ack => False);
+
+                        Message
+                          (Builder,
+                           "Interrupted project : "
+                           & To_String (Builder.Project_Name));
 
                      when E : others =>
                         Message
@@ -1571,6 +1577,7 @@ procedure Gprslave is
 
       procedure Kill_Processes (Socket : Socket_Type) is
          To_Kill : Job_Data_Set.Set;
+         C       : Job_Data_Set.Cursor;
       begin
          --  First pass, record all job for the given builder
 
@@ -1580,18 +1587,21 @@ procedure Gprslave is
             end if;
          end loop;
 
-         --  Second pass, kill processes and remove from queue of running jobs.
-         --  Note that we remove the jobs here as we do not want them to be
-         --  handled by the Get in Wait_Completion. Those jobs are interrupted
-         --  and the builder removed, so there is no point to try to send back
-         --  the compilation result to the master.
+         --  Second pass, kill processes and mark them as killed. Those jobs
+         --  are interrupted and the builder removed, so there is no point to
+         --  try to send back the compilation result to the master.
          --
          --  This also ensure a faster termination of the build master.
 
          for Job of To_Kill loop
-            Kill (Job.Pid, Hard_Kill => False);
-            Set.Delete (Job);
-            Count := Count - 1;
+            --  Mark job as killed into the set
+            C := Set.Find (Job);
+            Set (C).Killed := True;
+
+            Kill (Job.Pid, Hard_Kill => True);
+            Message
+              ("kill job" & Integer'Image (Pid_To_Integer (Job.Pid)),
+               Is_Debug => True);
          end loop;
       end Kill_Processes;
 
@@ -1601,7 +1611,35 @@ procedure Gprslave is
 
       procedure Register (Job : Job_Data) is
       begin
-         Set.Insert (Job);
+         --  Let's ensure that while the job was prepared the builder was not
+         --  hard-killed. If so we kill the process right now. The result won't
+         --  be used anyway and we do not want it to linger here and possibly
+         --  corrupt a new launched compilation for the same object file.
+         --
+         --  Note that it is still inserted into the job set for the job exit
+         --  status to be read. This ensure that the job is properly terminated
+         --  by the OS (on Linux the process would stay as <defunct> for
+         --  example).
+
+         if not Builders.Exists (Job.Build_Sock) then
+            Message
+              ("kill job (missing builder)"
+               & Integer'Image (Pid_To_Integer (Job.Pid)),
+               Is_Debug => True);
+
+            Kill (Job.Pid, Hard_Kill => True);
+
+            Insert_Killed_Job : declare
+               Killed_Job : Job_Data := Job;
+            begin
+               Killed_Job.Killed := True;
+               Set.Insert (Killed_Job);
+            end Insert_Killed_Job;
+
+         else
+            Set.Insert (Job);
+         end if;
+
          Count := Count + 1;
       end Register;
 
@@ -1623,6 +1661,16 @@ procedure Gprslave is
             Job := Job_Data_Set.Element (Pos);
             Set.Delete (Job);
             Count := Count - 1;
+
+            --  If this is a job which has been killed (see Kill_Processes
+            --  above), set to No_Job. We do this as the Wait_Completion task
+            --  must not do anything with such a process (no need to send back
+            --  answers as anyway the build master is not running anymore).
+
+            if Job.Killed then
+               Job := No_Job;
+            end if;
+
          else
             Job := No_Job;
          end if;
