@@ -334,7 +334,7 @@ package body Gprbuild.Compilation.Protocol is
       when others =>
          --  Any exception means that the channel has been closed. Return an
          --  EC command (which has no parameter).
-         Result.Cmd := EC;
+         Result.Cmd := SI;
          Free (Result.Args);
          Result.Args := new Argument_List (1 .. 0);
          return Result;

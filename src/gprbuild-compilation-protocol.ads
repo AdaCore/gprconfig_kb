@@ -101,7 +101,8 @@ package Gprbuild.Compilation.Protocol is
       CX,  -- master context
       CU,  -- clean-up request
       DP,  -- display output
-      EC); -- end of compilation
+      EC,  -- end of compilation
+      SI); -- a signal as been detected (like EC but no ACK needed)
 
    function Kind (Cmd : Command) return Command_Kind;
    pragma Inline (Kind);

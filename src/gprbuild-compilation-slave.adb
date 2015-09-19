@@ -997,7 +997,7 @@ package body Gprbuild.Compilation.Slave is
                         Wait_Ack.Set (Pid);
                      end;
 
-                  elsif Kind (Cmd) = EC then
+                  elsif Kind (Cmd) in EC | SI then
                      null;
 
                   else

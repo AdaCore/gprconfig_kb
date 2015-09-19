@@ -1057,10 +1057,13 @@ procedure Gprslave is
                               Builder.Socket));
                         end Clean_Up_Request;
 
-                     elsif Kind (Cmd) = EC then
-                        --  No more compilation for this project
+                     elsif Kind (Cmd) in EC | SI then
+                        --  No more compilation for this project. Send an
+                        --  Ack only if we are not handling a kill signal
+                        --  (receiving SI means that the socket has been
+                        --  detected to be closed).
 
-                        Close_Builder (Builder, Ack => True);
+                        Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
 
                         Message
                           (Builder,
