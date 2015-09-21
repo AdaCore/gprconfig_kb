@@ -31,6 +31,7 @@ with Gprbuild.Compilation.Result;  use Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Slave;
 with GPR.Env;
 with GPR.Names;                    use GPR.Names;
+with GPR.Opt;                      use GPR.Opt;
 with GPR.Snames;                   use GPR.Snames;
 with GPR.Tempdir;
 with GPR.Util;                     use GPR.Util;
@@ -1934,6 +1935,18 @@ package body Gprbuild.Compile is
                            Afile := ALI.Withs.Table (K).Afile;
                            Source_2 := Source_Files_Htable.Get
                              (Src_Data.Tree.Source_Files_HT, Sfile);
+
+                           if Source_2 = No_Source and then
+                             not Is_Ada_Predefined_File_Name (Sfile)
+                           then
+                              if Verbose_Mode then
+                                 Put ("  -> """);
+                                 Put (Get_Name_String (Sfile));
+                                 Put_Line (""" missing");
+                              end if;
+
+                              return False;
+                           end if;
 
                            while Source_2 /= No_Source loop
                               if Is_Compilable (Source_2)

@@ -1151,6 +1151,71 @@ package body GPR.Util is
       Source.Initialized := True;
    end Initialize_Source_Record;
 
+   function Is_Ada_Predefined_File_Name (Fname : File_Name_Type) return Boolean
+   is
+      subtype Str8 is String (1 .. 8);
+
+      Predef_Names : constant array (1 .. 12) of Str8 :=
+        ("ada     ",       -- Ada
+         "interfac",       -- Interfaces
+         "system  ",       -- System
+         "gnat    ",       -- GNAT
+         "calendar",       -- Calendar
+         "machcode",       -- Machine_Code
+         "unchconv",       -- Unchecked_Conversion
+         "unchdeal",       -- Unchecked_Deallocation
+         "directio",       -- Direct_IO
+         "ioexcept",       -- IO_Exceptions
+         "sequenio",       -- Sequential_IO
+         "text_io ");      -- Text_IO
+   begin
+      Get_Name_String (Fname);
+
+      --  Remove extension (if present)
+
+      if Name_Len > 4 and then Name_Buffer (Name_Len - 3) = '.' then
+         Name_Len := Name_Len - 4;
+      end if;
+
+      --  Definitely false if longer than 12 characters (8.3)
+
+      if Name_Len > 8 then
+         return False;
+
+      --  Definitely predefined if prefix is a- i- or s- followed by letter
+
+      elsif Name_Len >=  3
+        and then Name_Buffer (2) = '-'
+        and then (Name_Buffer (1) = 'a'
+                    or else
+                  Name_Buffer (1) = 'g'
+                    or else
+                  Name_Buffer (1) = 'i'
+                    or else
+                  Name_Buffer (1) = 's')
+        and then (Name_Buffer (3) in 'a' .. 'z'
+                    or else
+                  Name_Buffer (3) in 'A' .. 'Z')
+      then
+         return True;
+      end if;
+
+      --  Otherwise check against special list, first padding to 8 characters
+
+      while Name_Len < 8 loop
+         Name_Len := Name_Len + 1;
+         Name_Buffer (Name_Len) := ' ';
+      end loop;
+
+      for J in Predef_Names'Range loop
+         if Name_Buffer (1 .. 8) = Predef_Names (J) then
+            return True;
+         end if;
+      end loop;
+
+      return False;
+   end Is_Ada_Predefined_File_Name;
+
    ----------------
    -- Is_Subunit --
    ----------------

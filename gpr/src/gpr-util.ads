@@ -274,6 +274,10 @@ package GPR.Util is
    procedure Next (Iter : in out Source_Info_Iterator);
    --  Advance the iterator to the next source in the project
 
+   function Is_Ada_Predefined_File_Name (Fname : File_Name_Type)
+              return Boolean;
+   --  Return True if Fname is a runtime source file name
+
    generic
       with procedure Action (Source : Source_Id);
    procedure For_Interface_Sources

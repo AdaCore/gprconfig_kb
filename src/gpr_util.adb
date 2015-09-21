@@ -1714,6 +1714,19 @@ package body Gpr_Util is
                     (Tree.Source_Files_HT, Sfile);
                   Found := False;
 
+                  if Dep_Src = No_Source and then
+                    ALI.Sdep.Table (D).Checksum /= 0 and then
+                    not Is_Ada_Predefined_File_Name (Sfile)
+                  then
+                     if Verbose_Mode then
+                        Put ("  -> """);
+                        Put (Get_Name_String (Sfile));
+                        Put_Line (""" missing");
+                     end if;
+
+                     return True;
+                  end if;
+
                   while Dep_Src /= No_Source loop
                      Initialize_Source_Record (Dep_Src);
 
