@@ -1423,6 +1423,24 @@
     </config>
   </configuration>
 
+  <!-- On x86_64 vxWorks, when Linker'Driver is WRS gcc, -m64 has to
+       specified explicitely. When Linker'Driver is GNAT, this is
+       the default already, so it is harmless to pass it twice.  -->
+
+  <configuration>
+    <compilers>
+       <compiler name="GCC-WRS7X86_64"/>
+       <compiler name="G++-WRS7X86_64"/>
+    </compilers>
+    <config>
+   package Linker is
+        for Required_Switches use
+          Linker'Required_Switches
+          &amp; ("-m64");
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  Define the right response file mechanism for linking
         when possible use both the GCC @response file (available starting with
         GNAT Pro 6) and the GNU linker mechanism. The latter can be used with
