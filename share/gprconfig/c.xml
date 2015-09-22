@@ -306,7 +306,7 @@
    package Compiler is
       for Leading_Required_Switches ("C") use
         Compiler'Leading_Required_Switches ("C")
-        &amp; ("-m64");
+        &amp; ("-m64", "-mcmodel=large");
    end Compiler;
      </config>
    </configuration>
