@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE gprconfig [
-  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /><compiler name="GNAT_DOTNET" /><compiler name="GNAT_CODEPEER" /></compilers>'>
+  <!ENTITY filter_gnat '<compilers><compiler name="GNAT" /><compiler name="GNAT_DOTNET" /><compiler name="GNAT_CODEPEER" /><compiler name="GNAT_C" /></compilers>'>
 ] >
 
 <gprconfig>
@@ -115,6 +115,20 @@
    package Compiler is
       for Object_File_Suffix       ("Ada") use ".il";
       for Driver                   ("Ada") use "${PATH(ada)}${PREFIX(ada)}gnatcompile";
+   end Compiler;
+   </config>
+  </configuration>
+
+  <!-- C Target -->
+  <configuration>
+   <compilers>
+    <compiler name="GNAT_C"/>
+   </compilers>
+   <config>
+   package Compiler is
+      for Object_File_Suffix        ("Ada") use ".c";
+      for Leading_Required_Switches ("Ada") use
+        Compiler'Leading_Required_Switches ("Ada") &amp; ("-gnatceg");
    end Compiler;
    </config>
   </configuration>
