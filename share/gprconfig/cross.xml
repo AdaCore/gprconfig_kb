@@ -711,6 +711,7 @@
      <compilers>
        <compiler name="GNAT" />
        <compiler name="GNAT_DOTNET" />
+       <compiler name="GNAT_C" />
        <compiler name="GNAT_CODEPEER" />
      </compilers>
      <config>
