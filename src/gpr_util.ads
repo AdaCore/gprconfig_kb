@@ -184,6 +184,9 @@ package Gpr_Util is
       Lib_Dir     : String;
       Maj_Version : String);
 
+   procedure Create_Sym_Link (From, To : String);
+   --  Create a relative symlink in From pointing to To
+
    procedure Display_Usage_Version_And_Help;
    --  Output the two lines of usage for switches --version and --help
 
@@ -321,9 +324,6 @@ package Gpr_Util is
    function File_MD5 (Pathname : String) return Message_Digest;
    --  Returns the file MD5 signature. Raises Name_Error if Pathname does not
    --  exists.
-
-   procedure Create_Sym_Link (From, To : String);
-   --  Create a relative symlink in From pointing to To
 
    --  Architecture
 
