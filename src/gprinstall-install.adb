@@ -141,6 +141,7 @@ package body Gprinstall.Install is
 
       procedure Copy_File
         (From, To, File : String;
+         From_Ver       : String  := "";
          Sym_Link       : Boolean := False;
          Executable     : Boolean := False);
       --  Copy file From into To, if Sym_Link is set a symbolic link is
@@ -709,6 +710,7 @@ package body Gprinstall.Install is
 
       procedure Copy_File
         (From, To, File : String;
+         From_Ver       : String  := "";
          Sym_Link       : Boolean := False;
          Executable     : Boolean := False)
       is
@@ -795,6 +797,11 @@ package body Gprinstall.Install is
                --  Add file to manifest
 
                Add_To_Manifest (From);
+
+               if From_Ver /= "" then
+                  Create_Sym_Link (From_Ver, To & File);
+                  Add_To_Manifest (From_Ver);
+               end if;
 
             else
                begin
