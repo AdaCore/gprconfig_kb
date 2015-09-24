@@ -183,6 +183,9 @@ package Gpr_Util is
       Lib_Version : String;
       Lib_Dir     : String;
       Maj_Version : String);
+   --  Copy Lib_Version to Lib_Path (removing Lib_Path if it exists). If
+   --  Maj_Version is set it also link Lib_Version into Lib_Dir with the
+   --  specified Maj_Version.
 
    procedure Create_Sym_Link (From, To : String);
    --  Create a relative symlink in From pointing to To
