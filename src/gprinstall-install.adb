@@ -1105,6 +1105,10 @@ package body Gprinstall.Install is
 
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
 
+         function Cat (Dir, File : String) return String is
+           (if File = "" then "" else Dir & File);
+         --  Returns Dir & File if File is not empty or "" otherwise
+
       begin
          if Has_Sources (Project) then
             --  Install the project and the extended projets if any
@@ -1156,6 +1160,10 @@ package body Gprinstall.Install is
                                    & Get_Name_String (Get_Library_Filename),
                      To       => Lib_Dir,
                      File     => Get_Name_String (Project.Lib_Internal_Name),
+                     From_Ver => Cat (Lib_Dir,
+                        Major_Id_Name
+                           (Get_Name_String (Get_Library_Filename),
+                            Get_Name_String (Project.Lib_Internal_Name))),
                      Sym_Link => True);
                end if;
 
@@ -1202,6 +1210,10 @@ package body Gprinstall.Install is
                         To         => Lib_Dir,
                         File       =>
                           Get_Name_String (Project.Lib_Internal_Name),
+                        From_Ver   => Cat (Link_Lib_Dir,
+                            Major_Id_Name
+                              (Get_Name_String (Get_Library_Filename),
+                               Get_Name_String (Project.Lib_Internal_Name))),
                         Sym_Link   => True);
                   end if;
                end if;

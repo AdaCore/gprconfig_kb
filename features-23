@@ -8,6 +8,10 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-O921-014 Generate symlink for library major version (2015-09-24)
+
+   GPRinstall now creates symlink for the library major version if needed.
+
 NF-23-O720-008 Proper process clean-up in distributed build (2015-08-06)
 
    When a builder is interrupted (ctrl-c), GPRslave will kill all
