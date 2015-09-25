@@ -337,6 +337,7 @@
      </compilers>
      <targets>
        <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworks7$" />
      </targets>
      <config>
    package Compiler is
