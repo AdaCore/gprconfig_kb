@@ -2356,6 +2356,17 @@ begin
       GPR.Err.Initialize;
    end if;
 
+   --  Adjust switches for "c" target: never perform the link phase
+
+   if Get_Target = "c" then
+      Opt.Link_Only := False;
+
+      if not Opt.Compile_Only and not Opt.Bind_Only then
+         Opt.Compile_Only := True;
+         Opt.Bind_Only    := True;
+      end if;
+   end if;
+
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
    if Mains.Number_Of_Mains (Project_Tree) = 0
