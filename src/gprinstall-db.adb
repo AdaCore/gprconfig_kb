@@ -156,8 +156,9 @@ package body Gprinstall.DB is
             --  Files not found if any
 
             if S.N_Files_Not_Found > 0 then
+               Put (" (");
                Put (S.N_Files_Not_Found, Width => 0);
-               Put (" files missing.");
+               Put (" files missing)");
             end if;
          end if;
 
