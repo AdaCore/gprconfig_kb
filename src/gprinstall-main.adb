@@ -65,6 +65,9 @@ procedure Gprinstall.Main is
    Stat_Option            : constant String := "--stat";
    Sources_Only_Option    : constant String := "--sources-only";
 
+   Opt_A_Set : Boolean := False; -- to detect if -a and -m are used together
+   Opt_M_Set : Boolean := False; -- likewise
+
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
    --  arguments.
@@ -154,6 +157,7 @@ procedure Gprinstall.Main is
       end Set_Param;
 
       Processed : Boolean := True;
+
    begin
       pragma Assert (Arg'First = 1);
 
@@ -304,7 +308,22 @@ procedure Gprinstall.Main is
             Force_Installations := True;
 
          elsif Arg = "-a" then
-            All_Sources := True;
+            if Opt_M_Set then
+               Fail_Program
+                 (Project_Tree, "cannot use -a and -m together");
+            else
+               All_Sources := True;
+               Opt_A_Set := True;
+            end if;
+
+         elsif Arg = "-m" then
+            if Opt_A_Set then
+               Fail_Program
+                 (Project_Tree, "cannot use -m and -a together");
+            else
+               All_Sources := False;
+               Opt_M_Set := True;
+            end if;
 
          elsif Arg = "-d" then
             Dry_Run := True;
@@ -810,9 +829,9 @@ procedure Gprinstall.Main is
 
          Put_Line ("  -r       Recursive");
 
-         --  Line for -a
+         --  Line for -m
 
-         Put_Line ("  -a       Force copy of all sources");
+         Put_Line ("  -m       Minimal copy of sources (only those needed)");
 
          --  Line for -f
 

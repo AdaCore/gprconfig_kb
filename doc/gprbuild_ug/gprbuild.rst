@@ -3054,9 +3054,9 @@ The switches for GPRinstall are:
   Install nothing, just display the actions
   that would have been done.
 
-* :samp:`-a`
+* :samp:`-m`
 
-  Install all sources and not only the interface sources
+  Install only the interface sources (minimal set of sources).
 
 * :samp:`-f`
 
@@ -3457,4 +3457,3 @@ Note that several switches *-d* may be used,
 even in conjunction with one or several switches
 *-D*. Several Naming Patterns and one excluded pattern
 are used in this example.
-
