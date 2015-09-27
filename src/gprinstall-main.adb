@@ -773,6 +773,17 @@ procedure Gprinstall.Main is
          Put_Line
            ("           Remove all previously installed files");
 
+         --  Lines for --list/--stat
+
+         Put_Line ("  --list");
+         Put_Line
+           ("           List all installed projects");
+
+         Put_Line ("  --stat");
+         Put_Line
+           ("           Display stats about installed projects, must be "
+            & "used with --list");
+
          --  Line for -aP
 
          Put_Line ("  -aP dir  Add directory dir to project search path");
