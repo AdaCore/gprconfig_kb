@@ -2358,14 +2358,32 @@ begin
 
    --  Adjust switches for "c" target: never perform the link phase
 
-   if Get_Target = "c" then
-      Opt.Link_Only := False;
+   declare
+      C_Target : Boolean := False;
+      Variable : Variable_Value;
+   begin
+      if Target_Name.all = "c" then
+         C_Target := True;
+      else
+         Variable := GPR.Util.Value_Of
+           (Name_Target, Main_Project.Decl.Attributes, Project_Tree.Shared);
 
-      if not Opt.Compile_Only and not Opt.Bind_Only then
-         Opt.Compile_Only := True;
-         Opt.Bind_Only    := True;
+         if Variable /= Nil_Variable_Value
+           and then Get_Name_String (Variable.Value) = "c"
+         then
+            C_Target := True;
+         end if;
       end if;
-   end if;
+
+      if C_Target then
+         Opt.Link_Only := False;
+
+         if not Opt.Compile_Only and not Opt.Bind_Only then
+            Opt.Compile_Only := True;
+            Opt.Bind_Only    := True;
+         end if;
+      end if;
+   end;
 
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
