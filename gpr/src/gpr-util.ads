@@ -341,7 +341,7 @@ private
    type Text_File_Data is record
       FD                  : File_Descriptor := Invalid_FD;
       Out_File            : Boolean := False;
-      Buffer              : String (1 .. 1_000);
+      Buffer              : String (1 .. 100_000);
       Buffer_Len          : Natural := 0;
       Cursor              : Natural := 0;
       End_Of_File_Reached : Boolean := False;

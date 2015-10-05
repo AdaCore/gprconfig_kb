@@ -73,7 +73,7 @@ procedure Gprlib is
    IO_File : File_Type;
    --  The file to get the inputs and to put the results
 
-   Line : String (1 .. 1_000);
+   Line : String (1 .. 100_000);
    Last : Natural;
 
    Exchange_File_Name : String_Access;
