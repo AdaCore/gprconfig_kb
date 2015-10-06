@@ -35,6 +35,7 @@ with Gpr_Util;                   use Gpr_Util;
 with Gprbuild.Compile;
 with Gprbuild.Link;
 with Gprbuild.Post_Compile;
+with Gprbuild.Compilation.Process.Waiter;
 with Gprbuild.Compilation.Slave;
 with GPR;                        use GPR;
 with GPR.Debug;                  use GPR.Debug;

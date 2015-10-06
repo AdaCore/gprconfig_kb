@@ -32,7 +32,6 @@ with GNAT.String_Split; use GNAT.String_Split;
 
 with Gpr_Util;                      use Gpr_Util;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
-with Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Sync;
 with GPR.Names;                     use GPR.Names;
 with GPR.Snames;                    use GPR.Snames;
@@ -984,7 +983,8 @@ package body Gprbuild.Compilation.Slave is
                      Remote_Process.Decrement;
                      Slaves.Decrement_Current (S);
 
-                     Result.Add (Proc, Success, To_String (S.Data.Host));
+                     Process.Add_Result
+                       (Proc, Success, To_String (S.Data.Host));
 
                   --  An acknowledgment of an compilation job
 

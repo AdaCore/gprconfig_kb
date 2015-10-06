@@ -16,19 +16,18 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Ordered_Maps;
-with Ada.Exceptions;                         use Ada.Exceptions;
 with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
-with Ada.Text_IO;                            use Ada.Text_IO;
 
 with Gpr_Util;                    use Gpr_Util;
-with Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Slave;
 with GPR.Names;                   use GPR.Names;
 
 package body Gprbuild.Compilation.Process is
 
    use Ada;
+   use type Containers.Count_Type;
 
    package Env_Maps is
      new Containers.Indefinite_Ordered_Maps (String, String);
@@ -47,13 +46,38 @@ package body Gprbuild.Compilation.Process is
    function Get_Env (Project : Project_Id; Language : String) return String;
    --  Get the environment for a specific project and language
 
-   task type Wait_Local;
-   type Wait_Local_Ref is access Wait_Local;
+   Environments : Prj_Maps.Map;
+   Failed_Proc  : Failures_Slave_Set.Map;
 
-   WL            : Wait_Local_Ref;
-   Local_Process : Shared_Counter;
-   Environments  : Prj_Maps.Map;
-   Failed_Proc   : Failures_Slave_Set.Map;
+   type Process_Data is record
+      Process : Id;
+      Status  : Boolean;
+   end record;
+
+   package Endded_Process is new Containers.Doubly_Linked_Lists (Process_Data);
+
+   protected Results is
+      procedure Add (Result : Process_Data);
+      entry Get (Result : out Process_Data);
+   private
+      List : Endded_Process.List;
+   end Results;
+
+   ----------------
+   -- Add_Result --
+   ----------------
+
+   procedure Add_Result
+     (Process : Id; Status : Boolean; Slave : String := "") is
+   begin
+      Results.Add (Process_Data'(Process, Status));
+
+      --  For a compilation failure records the slave to be able to report it
+
+      if not Status and then Slave /= "" then
+         Record_Remote_Failure (Process, Slave);
+      end if;
+   end Add_Result;
 
    ------------------
    -- Create_Local --
@@ -190,6 +214,33 @@ package body Gprbuild.Compilation.Process is
       Failed_Proc.Insert (Pid, Slave);
    end Record_Remote_Failure;
 
+   -------------
+   -- Results --
+   -------------
+
+   protected body Results is
+
+      ---------
+      -- Add --
+      ---------
+
+      procedure Add (Result : Process_Data) is
+      begin
+         List.Append (Result);
+      end Add;
+
+      ---------
+      -- Get --
+      ---------
+
+      entry Get (Result : out Process_Data) when List.Length /= 0 is
+      begin
+         Result := List.First_Element;
+         List.Delete_First;
+      end Get;
+
+   end Results;
+
    ---------
    -- Run --
    ---------
@@ -208,14 +259,6 @@ package body Gprbuild.Compilation.Process is
    is
       Env : constant String := Get_Env (Project, Language);
    begin
-      --  Initialize the task waiting for local process only in distributed
-      --  mode. In standard mode, the process are waited for in the
-      --  Compilation.Result.Wait procedure.
-
-      if Distributed_Mode and then WL = null then
-         WL := new Wait_Local;
-      end if;
-
       --  Run locally first, then send jobs to remote slaves. Note that to
       --  build remotely we need an output file and a language, if one of
       --  this requirement is not fulfilled we just run the process locally.
@@ -256,25 +299,16 @@ package body Gprbuild.Compilation.Process is
       end if;
    end Run;
 
-   ----------------
-   -- Wait_Local --
-   ----------------
+   -----------------
+   -- Wait_Result --
+   -----------------
 
-   task body Wait_Local is
-      Pid    : Process_Id;
-      Status : Boolean;
+   procedure Wait_Result (Process : out Id; Status : out Boolean) is
+      Data : Process_Data;
    begin
-      loop
-         Local_Process.Wait_Non_Zero;
-
-         Wait_Process (Pid, Status);
-         Local_Process.Decrement;
-         Result.Add (Id'(Local, Pid), Status);
-      end loop;
-   exception
-      when E : others =>
-         Put_Line (Exception_Information (E));
-         OS_Exit (1);
-   end Wait_Local;
+      Results.Get (Data);
+      Process := Data.Process;
+      Status := Data.Status;
+   end Wait_Result;
 
 end Gprbuild.Compilation.Process;

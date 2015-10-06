@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                       Copyright (C) 2015, AdaCore                        --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -16,15 +16,32 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Gprbuild.Compilation.Process; use Gprbuild.Compilation.Process;
+with Ada.Exceptions; use Ada.Exceptions;
+with Ada.Text_IO;    use Ada.Text_IO;
 
-package Gprbuild.Compilation.Result is
+package body Gprbuild.Compilation.Process.Waiter is
 
-   procedure Add (Process : Id; Status : Boolean; Slave : String := "");
-   --  Add process Id with the given status into the list of results
+   task Wait_Local;
 
-   procedure Wait (Process : out Id; Status : out Boolean);
-   --  Wait for a process to terminate (so a compilation process result) to be
-   --  available and returns the process Id and the corresponding status.
+   ----------------
+   -- Wait_Local --
+   ----------------
 
-end Gprbuild.Compilation.Result;
+   task body Wait_Local is
+      Pid    : Process_Id;
+      Status : Boolean;
+   begin
+      loop
+         Local_Process.Wait_Non_Zero;
+
+         Wait_Process (Pid, Status);
+         Local_Process.Decrement;
+         Add_Result (Create_Local (Pid), Status);
+      end loop;
+   exception
+      when E : others =>
+         Put_Line (Exception_Information (E));
+         OS_Exit (1);
+   end Wait_Local;
+
+end Gprbuild.Compilation.Process.Waiter;

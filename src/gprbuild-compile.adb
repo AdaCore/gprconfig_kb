@@ -27,7 +27,6 @@ with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 with Gpr_Build_Util;               use Gpr_Build_Util;
 with Gpr_Util;                     use Gpr_Util;
 with Gprbuild.Compilation.Process; use Gprbuild.Compilation.Process;
-with Gprbuild.Compilation.Result;  use Gprbuild.Compilation.Result;
 with Gprbuild.Compilation.Slave;
 with GPR.Env;
 with GPR.Names;                    use GPR.Names;
@@ -256,7 +255,7 @@ package body Gprbuild.Compile is
       loop
          Source := Queue.No_Source_Info;
 
-         Wait (Process, OK);
+         Wait_Result (Process, OK);
 
          if Process = Invalid_Process then
             return;

@@ -86,6 +86,13 @@ package Gprbuild.Compilation.Process is
    --  Returns the slave for the given compilation, or the empty string if the
    --  compilation was successful or conducted locally.
 
+   procedure Add_Result (Process : Id; Status : Boolean; Slave : String := "");
+   --  Add process Id with the given status into the list of results
+
+   procedure Wait_Result (Process : out Id; Status : out Boolean);
+   --  Wait for a process to terminate (so a compilation process result) to be
+   --  available and returns the process Id and the corresponding status.
+
 private
 
    type Process_Kind is (Local, Remote);
@@ -98,5 +105,7 @@ private
    end record;
 
    Invalid_Process : constant Id := (Local, Pid => Invalid_Pid);
+
+   Local_Process   : Shared_Counter;
 
 end Gprbuild.Compilation.Process;
