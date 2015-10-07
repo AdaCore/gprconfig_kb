@@ -1598,7 +1598,7 @@ procedure Gprslave is
             C := Set.Find (Job);
             Set (C).Killed := True;
 
-            Kill (Job.Pid, Hard_Kill => True);
+            Kill_Process_Tree (Job.Pid, Hard_Kill => True);
             Message
               ("kill job" & Integer'Image (Pid_To_Integer (Job.Pid)),
                Is_Debug => True);
