@@ -578,7 +578,9 @@ package body Gpr_Util is
 
    function Get_Compiler_Driver_Path
      (Project_Tree : Project_Tree_Ref;
-      Lang         : Language_Ptr) return String_Access is
+      Lang         : Language_Ptr) return String_Access
+   is
+      pragma Unreferenced (Project_Tree);
    begin
       if Lang.Config.Compiler_Driver_Path = null then
          declare
@@ -604,9 +606,8 @@ package body Gpr_Util is
                  Locate_Exec_On_Path (Compiler_Name);
 
                if Lang.Config.Compiler_Driver_Path = null then
-                  Fail_Program
-                    (Project_Tree,
-                     "unable to locate """ & Compiler_Name & '"');
+                  raise Constraint_Error
+                    with "unable to locate """ & Compiler_Name & '"';
                end if;
             end;
          end;

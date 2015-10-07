@@ -2506,6 +2506,13 @@ begin
    Finish_Program (Project_Tree, Exit_Code);
 
 exception
+   when C : Constraint_Error =>
+      if Distributed_Mode then
+         Compilation.Slave.Unregister_Remote_Slaves (From_Signal => True);
+      end if;
+
+      Fail_Program (Project_Tree, Exception_Message (C));
+
    when E : others =>
       Fail_Program (Project_Tree, Exception_Information (E));
 end Gprbuild.Main;
