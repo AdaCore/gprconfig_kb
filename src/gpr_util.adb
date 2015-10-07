@@ -195,7 +195,6 @@ package body Gpr_Util is
          declare
             Next_Argv : constant String := Argument (Next_Arg);
          begin
-
             if Next_Argv = Version_Switch then
                Version_Switch_Present := True;
 
