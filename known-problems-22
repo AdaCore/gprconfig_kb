@@ -47,6 +47,16 @@ KP-22-O702-010 gprinstall cut too long lines in generated project
   Workaround: Do not install multiple build-name for the same project or
               edit manually the generated project.
 
+KP-22-O630-034 Source files deleted not detected by gprbuild
+
+  Problem:    If sources in the closure of a main are deleted, but not the
+              ALI sources or the object files, an invocation of gprbuild to
+              build a main may still succeed.
+
+  Status:     This was fixed in 2.3 on 2015-09-21
+
+  Workaround: Delete the ALI file and the object file when deleting a source.
+
 KP-22-O629-023 an attribute cannot be used as a case variable
 
   Problem:    The project manager was not detecting that an attribute was
