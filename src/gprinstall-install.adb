@@ -60,6 +60,9 @@ package body Gprinstall.Install is
    Buffer : GNAT.OS_Lib.String_Access := new String (1 .. Initial_Buffer_Size);
    Buffer_Last : Natural := 0;
 
+   Agg_Manifest : Text_IO.File_Type;
+   --  Manifest file for main aggregate project
+
    procedure Double_Buffer;
    --  Double the size of the Buffer
 
@@ -209,7 +212,7 @@ package body Gprinstall.Install is
       --  Returns True if the Project is active, that is there is no attribute
       --  Activer set to False in the Install package.
 
-      procedure Open_Check_Manifest;
+      procedure Open_Check_Manifest (File : out Text_IO.File_Type);
       --  Check that manifest file can be used
 
       function For_Dev return Boolean is (Install_Mode.V.all = "dev");
@@ -222,17 +225,24 @@ package body Gprinstall.Install is
          Prefix_Len : constant Natural := Prefix_Dir.V'Length;
       begin
          if not Is_Open (Man) then
-            Open_Check_Manifest;
+            Open_Check_Manifest (Man);
          end if;
 
          --  Append entry into manifest
 
-         Put_Line
-           (Man,
-            File_MD5 (Pathname) & " "
-            --  Remove the prefix, we want to store the pathname relative to
-            --  the prefix of installation.
-            & Pathname (Pathname'First + Prefix_Len .. Pathname'Last));
+         declare
+            Line : constant String :=
+                     File_MD5 (Pathname) & " "
+                     --  Remove the prefix, we want to store the pathname
+                     --  relative to the prefix of installation.
+                     & Pathname (Pathname'First + Prefix_Len .. Pathname'Last);
+         begin
+            Put_Line (Man, Line);
+
+            if Is_Open (Agg_Manifest) then
+               Put_Line (Agg_Manifest, Line);
+            end if;
+         end;
       end Add_To_Manifest;
 
       -------------------
@@ -2452,7 +2462,7 @@ package body Gprinstall.Install is
       -- Open_Check_Manifest --
       -------------------------
 
-      procedure Open_Check_Manifest is
+      procedure Open_Check_Manifest (File : out Text_IO.File_Type) is
          Dir     : constant String := Project_Dir & "manifests";
          Name    : constant String := Dir & DS & Install_Name.V.all;
          Prj_Sig : constant String :=
@@ -2463,8 +2473,8 @@ package body Gprinstall.Install is
          --  Check wether the manifest does not exist in this case
 
          if Exists (Name) then
-            Open (Man, In_File, Name);
-            Get_Line (Man, Buf, Last);
+            Open (File, In_File, Name);
+            Get_Line (File, Buf, Last);
 
             if Last >= Message_Digest'Length
               and then (Buf (1 .. 2) /= Sig_Line
@@ -2483,13 +2493,13 @@ package body Gprinstall.Install is
                OS_Exit (1);
             end if;
 
-            Reset (Man, Append_File);
+            Reset (File, Append_File);
 
          else
             Create_Path (Dir);
-            Create (Man, Out_File, Name);
+            Create (File, Out_File, Name);
 
-            Put_Line (Man, Sig_Line & Prj_Sig);
+            Put_Line (File, Sig_Line & Prj_Sig);
          end if;
       end Open_Check_Manifest;
 
@@ -2501,10 +2511,38 @@ package body Gprinstall.Install is
 
       Content.Delete_First (Count => Ada.Containers.Count_Type'Last);
 
+      --  First look for the Install package and set up the local values
+      --  accordingly.
+
+      Check_Install_Package;
+
+      --  The default install name is the name of the project without
+      --  extension.
+
+      if Install_Name.Default then
+         Install_Name.V :=
+           new String'((Base_Name (Get_Name_String (Project.Path.Name))));
+      end if;
+
+      --  Skip non active project and externally built ones
+
+      Install_Project := Active
+        and (Bring_Sources (Project)
+             or Project.Externally_Built);
+
       --  If we have an aggregate project we just install separately all
       --  aggregated projects.
 
       if Project.Qualifier = Aggregate then
+         --  If this is the main project and is an aggregate project, create
+         --  the corresponding manifest.
+
+         if Project = Main_Project
+           and then Main_Project.Qualifier = Aggregate
+         then
+            Open_Check_Manifest (Agg_Manifest);
+         end if;
+
          declare
             L : Aggregated_Project_List := Project.Aggregated_Projects;
          begin
@@ -2521,25 +2559,6 @@ package body Gprinstall.Install is
 
       if not Installed.Contains (Project.Name) then
          Installed.Include (Project.Name);
-
-         --  First look for the Install package and set up the local values
-         --  accordingly.
-
-         Check_Install_Package;
-
-         --  The default install name is the name of the project without
-         --  extension.
-
-         if Install_Name.Default then
-            Install_Name.V :=
-              new String'((Base_Name (Get_Name_String (Project.Path.Name))));
-         end if;
-
-         --  Skip non active project and externally built ones
-
-         Install_Project := Active
-           and (Bring_Sources (Project)
-                or Project.Externally_Built);
 
          if not Opt.Quiet_Output then
             if Install_Project then
@@ -2597,10 +2616,24 @@ package body Gprinstall.Install is
             Create_Project (Project);
          end if;
 
-         --  Close manifest file if needed
+         --  Add manifest into the main aggregate project manifest
 
-         if Is_Open (Man) then
-            Close (Man);
+         if Is_Open (Man) and then Is_Open (Agg_Manifest) then
+            declare
+               Prefix_Len : constant Natural := Prefix_Dir.V'Length;
+               Filename   : constant String :=
+                              Project_Dir & "manifests"
+                              & DS & Simple_Name (Name (Man));
+            begin
+               Close (Man);
+
+               Put_Line
+                 (Agg_Manifest,
+                  File_MD5 (Filename) & " "
+                  --  Remove the prefix, we want to store the pathname
+                  --  relative to the prefix of installation.
+                  & Filename (Filename'First + Prefix_Len .. Filename'Last));
+            end;
          end if;
 
          --  Handle all projects recursivelly if needed

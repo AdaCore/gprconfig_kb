@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-OA08-029 GPRinstall now uninstall aggregate projects (2015-10-10)
+
+   GPRinstall now has support for uninstalling aggregate projects. In this
+   case all libraries/projects part of the aggregate project are uninstalled.
+
 NF-23-O924-030 GPRinstall now installs all sources by default (2015-09-27)
 
    GPRinstall now installs all sources by default. To revert to the previous
