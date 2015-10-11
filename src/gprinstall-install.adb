@@ -237,7 +237,9 @@ package body Gprinstall.Install is
                      --  relative to the prefix of installation.
                      & Pathname (Pathname'First + Prefix_Len .. Pathname'Last);
          begin
-            Put_Line (Man, Line);
+            if Is_Open (Man) then
+               Put_Line (Man, Line);
+            end if;
 
             if Is_Open (Agg_Manifest) then
                Put_Line (Agg_Manifest, Line);
@@ -2473,27 +2475,35 @@ package body Gprinstall.Install is
          --  Check wether the manifest does not exist in this case
 
          if Exists (Name) then
-            Open (File, In_File, Name);
-            Get_Line (File, Buf, Last);
+            --  If this manifest is the same of the current aggregate
+            --  one, do not try to reopen it.
 
-            if Last >= Message_Digest'Length
-              and then (Buf (1 .. 2) /= Sig_Line
-                        or else Buf (3 .. Message_Digest'Last + 2) /= Prj_Sig)
-              and then Install_Name.Default
+            if not Is_Open (Agg_Manifest)
+              or else Text_IO.Name (Agg_Manifest) /= Name
             then
-               Put_Line
-                 ("Project already installed, either:");
-               Put_Line
-                 ("   - uninstall first using --uninstall option");
-               Put_Line
-                 ("   - install under another name, use --install-name");
-               Put_Line
-                 ("   - force installation under the same name, "
-                  & "use --install-name=" & Install_Name.V.all);
-               OS_Exit (1);
-            end if;
+               Open (File, In_File, Name);
+               Get_Line (File, Buf, Last);
 
-            Reset (File, Append_File);
+               if Last >= Message_Digest'Length
+                 and then
+                   (Buf (1 .. 2) /= Sig_Line
+                    or else Buf (3 .. Message_Digest'Last + 2) /= Prj_Sig)
+                 and then Install_Name.Default
+               then
+                  Put_Line
+                    ("Project already installed, either:");
+                  Put_Line
+                    ("   - uninstall first using --uninstall option");
+                  Put_Line
+                    ("   - install under another name, use --install-name");
+                  Put_Line
+                    ("   - force installation under the same name, "
+                       & "use --install-name=" & Install_Name.V.all);
+                  OS_Exit (1);
+               end if;
+
+               Reset (File, Append_File);
+            end if;
 
          else
             Create_Path (Dir);
@@ -2626,6 +2636,7 @@ package body Gprinstall.Install is
                                  Project_Dir & "manifests"
                                    & DS & Simple_Name (Name (Man));
                begin
+                  Close (Man);
 
                   Put_Line
                     (Agg_Manifest,
@@ -2635,9 +2646,10 @@ package body Gprinstall.Install is
                      & Filename
                          (Filename'First + Prefix_Len .. Filename'Last));
                end;
-            end if;
 
-            Close (Man);
+            else
+               Close (Man);
+            end if;
          end if;
 
          --  Handle all projects recursivelly if needed
