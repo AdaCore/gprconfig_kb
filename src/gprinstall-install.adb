@@ -2618,22 +2618,26 @@ package body Gprinstall.Install is
 
          --  Add manifest into the main aggregate project manifest
 
-         if Is_Open (Man) and then Is_Open (Agg_Manifest) then
-            declare
-               Prefix_Len : constant Natural := Prefix_Dir.V'Length;
-               Filename   : constant String :=
-                              Project_Dir & "manifests"
-                              & DS & Simple_Name (Name (Man));
-            begin
-               Close (Man);
+         if Is_Open (Man) then
+            if Is_Open (Agg_Manifest) then
+               declare
+                  Prefix_Len : constant Natural := Prefix_Dir.V'Length;
+                  Filename   : constant String :=
+                                 Project_Dir & "manifests"
+                                   & DS & Simple_Name (Name (Man));
+               begin
 
-               Put_Line
-                 (Agg_Manifest,
-                  File_MD5 (Filename) & " "
-                  --  Remove the prefix, we want to store the pathname
-                  --  relative to the prefix of installation.
-                  & Filename (Filename'First + Prefix_Len .. Filename'Last));
-            end;
+                  Put_Line
+                    (Agg_Manifest,
+                     File_MD5 (Filename) & " "
+                     --  Remove the prefix, we want to store the pathname
+                     --  relative to the prefix of installation.
+                     & Filename
+                         (Filename'First + Prefix_Len .. Filename'Last));
+               end;
+            end if;
+
+            Close (Man);
          end if;
 
          --  Handle all projects recursivelly if needed
