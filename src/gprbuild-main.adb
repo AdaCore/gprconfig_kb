@@ -1039,7 +1039,7 @@ procedure Gprbuild.Main is
                  new String'
                    (Normalize_Pathname
                       (Arg (Relocate_Build_Tree_Option'Length + 2 .. Arg'Last),
-                       Current_Working_Dir));
+                       Current_Working_Dir) & Directory_Separator);
             end if;
 
             --  Out-of-tree compilation also imply -p (create missing dirs)

@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-OA12-019 wrong directory for relocated build tree
+
+  Problem:    When the --relocate-build-tree option is used with a specified
+              parameter, an incorrect path is used.
+
+  Status:     This was fixed in 2.3 on 2015-10-12
+
+  Workaround: Move to the build directory and call gprbuild without directory
+              specified for --relocate-build-tree.
+
 KP-22-O731-029 crash when renaming a non existent package
 
   Problem:    In some circumstances, gprbuild crashes when renaming a package
