@@ -205,6 +205,16 @@ KP-22-NA16-016 aggregate project, extended projects and sources not compiled
 
   Workaround: Invoke gprbuild on the two different project trees.
 
+KP-22-N612-010 Unable to link with very long object file paths
+
+  Problem:    When object file paths are very long (more than 1_000 character
+              long), linking an executable may fail.
+
+  Status:     This was fixed in 2.3 on 2015-10-05
+
+  Workaround: Reduce the length of object file paths, for example using shorter
+              directory names.
+
 Known problems fixed in 2.2.2 and above
 ---------------------------------------
 
