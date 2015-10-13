@@ -46,13 +46,22 @@ MKDIR=mkdir -p
 BUILD=production
 PROCESSORS=0
 
-BUILDER=gprbuild -p -m -j${PROCESSORS} -XOBJDIR=$(objdir) -XBUILD=${BUILD}
+# target options for cross-build
+ifeq ($(host),$(target))
+GTARGET=
+else
+GTARGET=--target=$(target)
+endif
+
+BUILDER=gprbuild -p -m $(GTARGET) -j${PROCESSORS} \
+	-XOBJDIR=$(objdir) -XBUILD=${BUILD}
+
 GPRBUILD_BUILDER=$(BUILDER) -P$(srcdir)/gprbuild -XLIBRARY_TYPE=static
 LIBGPR_BUILDER=$(BUILDER) -P$(srcdir)/gpr/gpr.gpr
 LIBGPR_INSTALLER=gprinstall $(srcdir)/gpr/gpr.gpr --prefix=${prefix} -p -f \
-   -XOBJDIR=$(objdir) --install-name=gpr --build-var=LIBRARY_TYPE 
+   -XOBJDIR=$(objdir) --install-name=gpr --build-var=LIBRARY_TYPE $(GTARGET)
 LIBGPR_UNINSTALLER=gprinstall $(srcdir)/gpr/gpr.gpr --prefix=${prefix} -p -f \
-   -XOBJDIR=$(objdir) --install-name=gpr --uninstall 
+   -XOBJDIR=$(objdir) --install-name=gpr --uninstall
 
 .PHONY: all distall gprbuild gprconfig gprclean gprinstall gprname
 

@@ -4,7 +4,7 @@ AC_PREFIX_PROGRAM(gnatmake)
 AC_PROG_INSTALL
 objdir=`pwd`
 AC_SUBST(objdir)
-case $host in
+case $target in
    *mingw*|*cygwin*) is_windows="true";;
                   *) is_windows="false";;
 esac
