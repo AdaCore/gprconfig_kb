@@ -644,8 +644,12 @@ exception
       Ada.Command_Line.Set_Exit_Status (4);
    when End_Error =>
       null;
-   when Invalid_Switch | Invalid_Parameter =>
+   when Invalid_Switch =>
       Put_Line ("Invalid command line switch: -" & Full_Switch);
+      Try_Help;
+      Ada.Command_Line.Set_Exit_Status (2);
+   when Invalid_Parameter =>
+      Put_Line ("Missing parameter for switch: -" & Full_Switch);
       Try_Help;
       Ada.Command_Line.Set_Exit_Status (2);
 end GprConfig.Main;
