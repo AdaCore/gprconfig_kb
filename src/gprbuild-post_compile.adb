@@ -140,6 +140,43 @@ package body Gprbuild.Post_Compile is
    procedure CodePeer_Globalize;
    --  Call the codepeer_globalizer for each of the object directories
 
+   --  Dependency Files
+
+   type Dep_Name;
+   type Dep_Ptr is access Dep_Name;
+   type Dep_Name is record
+      Name : String_Access;
+      Next : Dep_Ptr;
+   end record;
+
+   First_Dep : Dep_Ptr;
+   --  Head of the list of dependency file path names
+
+   procedure Add_Dep (Name : String);
+   --  Insert a dependency file path name in the list starting at First_Dep,
+   --  at the right place so that the list is sorted.
+
+   ----------------
+   -- Add_Dep --
+   ----------------
+
+   procedure Add_Dep (Name : String) is
+      Next : Dep_Ptr := First_Dep;
+   begin
+      if Next = null or else Name < Next.Name.all then
+         First_Dep := new Dep_Name'(new String'(Name), Next);
+
+      else
+         while Next.Next /= null and then
+           Name > Next.Next.Name.all
+         loop
+            Next := Next.Next;
+         end loop;
+
+         Next.Next := new Dep_Name'(new String'(Name), Next.Next);
+      end if;
+   end Add_Dep;
+
    -------------------
    -- Build_Library --
    -------------------
@@ -1703,11 +1740,13 @@ package body Gprbuild.Post_Compile is
             if Source.Unit = No_Unit_Index
               or else For_Project.Standalone_Library = No
             then
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (Source.Dep_Path));
+               Add_Dep (Get_Name_String (Source.Dep_Path));
             end if;
          end Add;
+
+         -------------
+         -- Process --
+         -------------
 
          procedure Process (Proj : Project_Id; Tree : Project_Tree_Ref) is
             pragma Unreferenced (Tree);
@@ -1755,18 +1794,21 @@ package body Gprbuild.Post_Compile is
 
       begin
          Put_Line (Exchange_File, Library_Label (Dependency_Files));
+         First_Dep := null;
 
          Process_Aggregate_Library (For_Project, Project_Tree);
 
          if For_Project.Standalone_Library /= No then
             for J in 1 .. Library_Sources.Last loop
                Source := Library_Sources.Table (J);
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (Source.Dep_Path));
+               Add_Dep (Get_Name_String (Source.Dep_Path));
             end loop;
          end if;
 
+         while First_Dep /= null loop
+            Put_Line (Exchange_File, First_Dep.Name.all);
+            First_Dep := First_Dep.Next;
+         end loop;
       end Write_Dependency_Files;
 
       -----------------------------
@@ -2916,14 +2958,14 @@ package body Gprbuild.Post_Compile is
                  or not Source.Project.Library
                  or Config.Kind = File_Based
                then
-                  Put_Line (Exchange_File, Get_Name_String (Source.Dep_Path));
+                  Add_Dep (Get_Name_String (Source.Dep_Path));
                   Dep_Files := True;
 
                elsif Source.Project.Standalone_Library = No then
                   Get_Name_String
                     (Source.Project.Library_ALI_Dir.Display_Name);
                   Get_Name_String_And_Append (Name_Id (Source.Dep_Name));
-                  Put_Line (Exchange_File, Name_Buffer (1 .. Name_Len));
+                  Add_Dep (Name_Buffer (1 .. Name_Len));
                   Dep_Files := True;
                end if;
             end if;
@@ -3636,9 +3678,15 @@ package body Gprbuild.Post_Compile is
             --  specified .
 
             Put_Line (Exchange_File, Binding_Label (Dependency_Files));
+            First_Dep := null;
 
             Add_Dependency_Files
               (Main_Proj, B_Data.Language, Main_Source, Dep_Files);
+
+            while First_Dep /= null loop
+               Put_Line (Exchange_File, First_Dep.Name.all);
+               First_Dep := First_Dep.Next;
+            end loop;
 
             --  Put the options, if any
 
