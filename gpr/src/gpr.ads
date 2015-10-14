@@ -2159,6 +2159,7 @@ package GPR is
    Gprinstall_Flags : constant Processing_Flags;
    Gprclean_Flags   : constant Processing_Flags;
    Gprname_Flags    : constant Processing_Flags;
+   Gprls_Flags      : constant Processing_Flags;
    --  Flags used by the various tools. They all display the error messages
    --  through Prj.Err.
 
@@ -2385,4 +2386,18 @@ private
                          Ignore_Missing_With        => False,
                          Incomplete_Withs           => False,
                          Check_Configuration_Only   => True);
+
+   Gprls_Flags      : constant Processing_Flags :=
+                        (Report_Error               => null,
+                         When_No_Sources            => Warning,
+                         Require_Sources_Other_Lang => True,
+                         Allow_Duplicate_Basenames  => False,
+                         Compiler_Driver_Mandatory  => True,
+                         Error_On_Unknown_Language  => True,
+                         Require_Obj_Dirs           => Error,
+                         Allow_Invalid_External     => Error,
+                         Missing_Source_Files       => Error,
+                         Ignore_Missing_With        => False,
+                         Incomplete_Withs           => False,
+                         Check_Configuration_Only   => False);
 end GPR;
