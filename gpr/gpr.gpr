@@ -35,8 +35,6 @@ library project GPR is
          for Library_Dir use Root_Obj_Dir & "/lib-debug/" & Gnat_Lib_Type;
    end case;
 
-   for Library_Name use "gpr";
-
    package Builder is
       case Gnat_Lib_Type is
          when "static-pic" =>
