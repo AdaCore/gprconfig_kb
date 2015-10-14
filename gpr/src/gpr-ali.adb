@@ -659,7 +659,8 @@ package body GPR.ALI is
         Time_Slice_Value             => -1,
         WC_Encoding                  => 'b',
         Unit_Exception_Table         => False,
-        Zero_Cost_Exceptions         => False);
+        Zero_Cost_Exceptions         => False,
+        Restrictions                 => No_Restrictions);
 
       --  Now we acquire the input lines from the ALI file. Note that the
       --  convention in the following code is that as we enter each section,
