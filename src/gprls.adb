@@ -18,17 +18,12 @@
 
 with Ada.Text_IO; use Ada.Text_IO;
 
-with GNAT.Case_Util; use GNAT.Case_Util;
-
 with GPR.Names; use GPR.Names;
 with GPR.Opt;   use GPR.Opt;
 
 package body Gprls is
 
    use Rident;
-
-   function Image (Restriction : Restriction_Id) return String;
-   --  Returns the capitalized image of Restriction
 
    function Is_Internal_Unit return Boolean;
    --  Given a unit name stored in Name_Buffer with length in Name_Len,
@@ -56,7 +51,8 @@ package body Gprls is
          File_Names := new File_Name_Array'(File_Names.all & File_Names.all);
       end if;
 
-      File_Names (Number_File_Names) := (new String'(File_Name), Source);
+      File_Names (Number_File_Names) :=
+        (new String'(File_Name), Source, No_ALI_Id);
    end Add_File;
 
    ------------------------------
@@ -93,40 +89,40 @@ package body Gprls is
 
       Len : Integer;
       --  FS  : File_Name_Type;
-
+      FN_Source : File_Name_Source;
+      Id        : ALI_Id;
    begin
       --  Compute maximum of each column
 
-      for Id in ALIs.First .. ALIs.Last loop
-         Get_Name_String (Units.Table (ALIs.Table (Id).First_Unit).Uname);
+      for J in 1 .. Number_File_Names loop
+         FN_Source := File_Names (J);
 
-         if not Is_Internal_Unit then
+         Id := FN_Source.The_ALI;
+         if Id /= No_ALI_Id then
+            Get_Name_String (Units.Table (ALIs.Table (Id).First_Unit).Uname);
 
-            if Print_Unit then
-               Len := Name_Len - 1;
-               Max_Unit_Length := Integer'Max (Max_Unit_Length, Len);
-            end if;
+            if not Is_Internal_Unit then
 
-            if Print_Source then
-               --  FS := Full_Source_Name (ALIs.Table (Id).Sfile);
+               if Print_Unit then
+                  Len := Name_Len - 1;
+                  Max_Unit_Length := Integer'Max (Max_Unit_Length, Len);
+               end if;
 
-               --  if FS = No_File then
-               Get_Name_String (ALIs.Table (Id).Sfile);
-               Name_Len := Name_Len + 13;
-               --  else
-               --     Get_Name_String (FS);
-               --  end if;
+               if Print_Source then
+                  Get_Name_String (FN_Source.Source.Path.Display_Name);
+                  Max_Src_Length := Integer'Max (Max_Src_Length, Name_Len + 1);
+               end if;
 
-               Max_Src_Length := Integer'Max (Max_Src_Length, Name_Len + 1);
-            end if;
-
-            if Print_Object then
-               if ALIs.Table (Id).No_Object then
-                  Max_Obj_Length :=
-                    Integer'Max (Max_Obj_Length, No_Obj'Length);
-               else
-                  Get_Name_String (ALIs.Table (Id).Ofile_Full_Name);
-                  Max_Obj_Length := Integer'Max (Max_Obj_Length, Name_Len + 1);
+               if Print_Object then
+                  if ALIs.Table (Id).No_Object then
+                     Max_Obj_Length :=
+                       Integer'Max (Max_Obj_Length, No_Obj'Length);
+                  else
+                     Get_Name_String
+                       (FN_Source.Source.Object_Path);
+                     Max_Obj_Length :=
+                       Integer'Max (Max_Obj_Length, Name_Len + 1);
+                  end if;
                end if;
             end if;
          end if;
@@ -168,79 +164,6 @@ package body Gprls is
       end if;
    end Find_General_Layout;
 
-   -----------------
-   -- Find_Status --
-   -----------------
-
-   procedure Find_Status
-     (FS       : in out File_Name_Type;
-      Stamp    : Time_Stamp_Type;
-      Checksum : Word;
-      Status   : out File_Status)
-   is
-      pragma Unreferenced (Checksum);
-
-      Tmp1 : File_Name_Type;
-      --  Tmp2 : File_Name_Type;
-
-   begin
-      --  Tmp1 := Full_Source_Name (FS);
-      Tmp1 := FS;
-
-      --  if Tmp1 = No_File then
-      --     Status := Not_Found;
-
-         --  els
-      if File_Stamp (Tmp1) = Stamp then
-         FS     := Tmp1;
-         Status := OK;
-
-      else
-         Status := Not_Found;
-
-      --  elsif Checksums_Match (Get_File_Checksum (FS), Checksum) then
-      --   FS := Tmp1;
-      --   Status := Checksum_OK;
-
-      --  else
-      --     Tmp2 := Matching_Full_Source_Name (FS, Stamp);
-
-      --     if Tmp2 = No_File then
-      --        Status := Not_Same;
-      --        FS     := Tmp1;
-
-      --     else
-      --        Status := Not_First_On_PATH;
-      --        FS := Tmp2;
-      --     end if;
-      end if;
-   end Find_Status;
-
-   -----------
-   -- Image --
-   -----------
-
-   function Image (Restriction : Restriction_Id) return String is
-      Result : String := Restriction'Img;
-      Skip   : Boolean := True;
-
-   begin
-      for J in Result'Range loop
-         if Skip then
-            Skip := False;
-            Result (J) := To_Upper (Result (J));
-
-         elsif Result (J) = '_' then
-            Skip := True;
-
-         else
-            Result (J) := To_Lower (Result (J));
-         end if;
-      end loop;
-
-      return Result;
-   end Image;
-
    ----------------------
    -- Is_Internal_Unit --
    ----------------------
@@ -268,84 +191,6 @@ package body Gprls is
    end Is_Internal_Unit;
 
    -------------------
-   -- Output_Object --
-   -------------------
-
-   procedure Output_Object (O : File_Name_Type) is
-      Object_Name : String_Access;
-
-   begin
-      if Print_Object then
-         if O /= No_File then
-            Get_Name_String (O);
-            Object_Name := new String'(Name_Buffer (1 .. Name_Len));
-         else
-            Object_Name := No_Obj'Unchecked_Access;
-         end if;
-
-         Put (Object_Name.all);
-
-         if Print_Source or else Print_Unit then
-            if Too_Long then
-               New_Line;
-               Put ("   ");
-            else
-               Put (Spaces (Object_Start + Object_Name'Length .. Object_End));
-            end if;
-         end if;
-      end if;
-   end Output_Object;
-
-   -------------------
-   -- Output_Source --
-   -------------------
-
-   procedure Output_Source (Sdep_I : Sdep_Id) is
-      Stamp       : Time_Stamp_Type;
-      Checksum    : Word;
-      FS          : File_Name_Type;
-      Status      : File_Status;
-      Object_Name : String_Access;
-
-   begin
-      if Sdep_I = No_Sdep_Id then
-         return;
-      end if;
-
-      Stamp    := Sdep.Table (Sdep_I).Stamp;
-      Checksum := Sdep.Table (Sdep_I).Checksum;
-      FS       := Sdep.Table (Sdep_I).Sfile;
-
-      if Print_Source then
-         Find_Status (FS, Stamp, Checksum, Status);
-         Get_Name_String (FS);
-
-         Object_Name := new String'(Name_Buffer (1 .. Name_Len));
-
-         if Verbose_Mode then
-            Put ("  Source => ");
-            Put (Object_Name.all);
-
-            if not Too_Long then
-               Put
-                 (Spaces (Source_Start + Object_Name'Length .. Source_End));
-            end if;
-
-            Output_Status (Status, Verbose => True);
-            New_Line;
-            Put ("   ");
-
-         else
-            if not Selective_Output then
-               Output_Status (Status, Verbose => False);
-            end if;
-
-            Put (Object_Name.all);
-         end if;
-      end if;
-   end Output_Source;
-
-   -------------------
    -- Output_Status --
    -------------------
 
@@ -360,13 +205,10 @@ package body Gprls is
                Put (" slightly modified");
 
             when Not_Found =>
-               Put (" file not found");
+               Put (" dependency file not found");
 
             when Not_Same =>
                Put (" modified");
-
-            when Not_First_On_PATH =>
-               Put (" unchanged version not first on PATH");
          end case;
 
       else
@@ -382,218 +224,9 @@ package body Gprls is
 
             when Not_Same =>
                Put (" DIF ");
-
-            when Not_First_On_PATH =>
-               Put (" HID ");
          end case;
       end if;
    end Output_Status;
-
-   -----------------
-   -- Output_Unit --
-   -----------------
-
-   procedure Output_Unit (ALI : ALI_Id; U_Id : Unit_Id) is
-      Kind : Character;
-      U    : Unit_Record renames Units.Table (U_Id);
-
-   begin
-      if Print_Unit then
-         Get_Name_String (U.Uname);
-         Kind := Name_Buffer (Name_Len);
-         Name_Len := Name_Len - 2;
-
-         if not Verbose_Mode then
-            Put (Name_Buffer (1 .. Name_Len));
-
-         else
-            Put ("Unit => ");
-            New_Line;
-            Put ("     Name   => ");
-            Put (Name_Buffer (1 .. Name_Len));
-            New_Line;
-            Put ("     Kind   => ");
-
-            if Units.Table (U_Id).Unit_Kind = 'p' then
-               Put ("package ");
-            else
-               Put ("subprogram ");
-            end if;
-
-            if Kind = 's' then
-               Put ("spec");
-            else
-               Put ("body");
-            end if;
-         end if;
-
-         if Verbose_Mode then
-            if U.Preelab             or else
-               U.No_Elab             or else
-               U.Pure                or else
-               U.Dynamic_Elab        or else
-               U.Has_RACW            or else
-               U.Remote_Types        or else
-               U.Shared_Passive      or else
-               U.RCI                 or else
-               U.Predefined          or else
-               U.Internal            or else
-               U.Is_Generic          or else
-               U.Init_Scalars        or else
-               U.SAL_Interface       or else
-               U.Body_Needed_For_SAL or else
-               U.Elaborate_Body
-            then
-               New_Line;
-               Put ("     Flags  =>");
-
-               if U.Preelab then
-                  Put (" Preelaborable");
-               end if;
-
-               if U.No_Elab then
-                  Put (" No_Elab_Code");
-               end if;
-
-               if U.Pure then
-                  Put (" Pure");
-               end if;
-
-               if U.Dynamic_Elab then
-                  Put (" Dynamic_Elab");
-               end if;
-
-               if U.Has_RACW then
-                  Put (" Has_RACW");
-               end if;
-
-               if U.Remote_Types then
-                  Put (" Remote_Types");
-               end if;
-
-               if U.Shared_Passive then
-                  Put (" Shared_Passive");
-               end if;
-
-               if U.RCI then
-                  Put (" RCI");
-               end if;
-
-               if U.Predefined then
-                  Put (" Predefined");
-               end if;
-
-               if U.Internal then
-                  Put (" Internal");
-               end if;
-
-               if U.Is_Generic then
-                  Put (" Is_Generic");
-               end if;
-
-               if U.Init_Scalars then
-                  Put (" Init_Scalars");
-               end if;
-
-               if U.SAL_Interface then
-                  Put (" SAL_Interface");
-               end if;
-
-               if U.Body_Needed_For_SAL then
-                  Put (" Body_Needed_For_SAL");
-               end if;
-
-               if U.Elaborate_Body then
-                  Put (" Elaborate Body");
-               end if;
-
-               if U.Remote_Types then
-                  Put (" Remote_Types");
-               end if;
-
-               if U.Shared_Passive then
-                  Put (" Shared_Passive");
-               end if;
-
-               if U.Predefined then
-                  Put (" Predefined");
-               end if;
-            end if;
-
-            declare
-               Restrictions : constant Restrictions_Info :=
-                                ALIs.Table (ALI).Restrictions;
-
-            begin
-               --  If the source was compiled with pragmas Restrictions,
-               --  Display these restrictions.
-
-               if Restrictions.Set /= (All_Restrictions => False) then
-                  New_Line;
-                  Put ("     pragma Restrictions  =>");
-
-                  --  For boolean restrictions, just display the name of the
-                  --  restriction; for valued restrictions, also display the
-                  --  restriction value.
-
-                  for Restriction in All_Restrictions loop
-                     if Restrictions.Set (Restriction) then
-                        New_Line;
-                        Put ("       ");
-                        Put (Image (Restriction));
-
-                        if Restriction in All_Parameter_Restrictions then
-                           Put (" =>");
-                           Put (Restrictions.Value (Restriction)'Img);
-                        end if;
-                     end if;
-                  end loop;
-               end if;
-
-               --  If the unit violates some Restrictions, display the list of
-               --  these restrictions.
-
-               if Restrictions.Violated /= (All_Restrictions => False) then
-                  New_Line;
-                  Put ("     Restrictions violated =>");
-
-                  --  For boolean restrictions, just display the name of the
-                  --  restriction. For valued restrictions, also display the
-                  --  restriction value.
-
-                  for Restriction in All_Restrictions loop
-                     if Restrictions.Violated (Restriction) then
-                        New_Line;
-                        Put ("       ");
-                        Put (Image (Restriction));
-
-                        if Restriction in All_Parameter_Restrictions then
-                           if Restrictions.Count (Restriction) > 0 then
-                              Put (" =>");
-
-                              if Restrictions.Unknown (Restriction) then
-                                 Put (" at least");
-                              end if;
-
-                              Put (Restrictions.Count (Restriction)'Img);
-                           end if;
-                        end if;
-                     end if;
-                  end loop;
-               end if;
-            end;
-         end if;
-
-         if Print_Source then
-            if Too_Long then
-               New_Line;
-               Put ("   ");
-            else
-               Put (Spaces (Unit_Start + Name_Len + 1 .. Unit_End));
-            end if;
-         end if;
-      end if;
-   end Output_Unit;
 
    -----------------
    -- Reset_Print --
@@ -608,17 +241,5 @@ package body Gprls is
          Print_Unit   := False;
       end if;
    end Reset_Print;
-
-   --  procedure Search_RTS (Name : String);
-   --  Find include and objects path for the RTS name.
-
-   ---------------
-   -- Normalize --
-   ---------------
-
-   function Normalize (Path : String) return String is
-   begin
-      return Normalize_Pathname (Path);
-   end Normalize;
 
 end Gprls;

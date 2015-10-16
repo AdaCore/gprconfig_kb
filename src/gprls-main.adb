@@ -24,19 +24,23 @@ with GNAT.Command_Line; use GNAT.Command_Line;
 
 with GPR.Conf;  use GPR.Conf;
 with GPR.Env;   use GPR.Env;
+with GPR.Err;
 with GPR.Names; use GPR.Names;
 with GPR.Opt;   use GPR.Opt;
 with GPR.Osint;
+with GPR.Scans;
+with GPR.Sinput;
 with GPR.Snames;
 with GPR.Tree;
 with GPR.Util;  use GPR.Util;
 
---  with Gpr_Build_Util; use Gpr_Build_Util;
 with Gpr_Util;       use Gpr_Util;
 with GprConfig.Sdefault;
 with GPR_Version;    use GPR_Version;
 
 procedure Gprls.Main is
+
+   Debug : Boolean := False;
 
    use GPR;
 
@@ -377,6 +381,7 @@ procedure Gprls.Main is
                when 'o' => Reset_Print; Print_Object := True;
                when 'v' => Verbose_Mode              := True;
                when 'd' => Dependable                := True;
+               when 'D' => Debug                     := True;
 
                when 'P' =>
                   if File_Set then
@@ -926,21 +931,143 @@ begin
 
       else
          declare
-            Text  : Text_Buffer_Ptr;
-            Dummy : ALI_Id := No_ALI_Id;
+            Text    : Text_Buffer_Ptr;
          begin
             Text := Osint.Read_Library_Info
               (File_Name_Type (File_Names (J).Source.Dep_Path));
-            Dummy := Scan_ALI
-              (F          => File_Name_Type (File_Names (J).Source.Dep_Path),
-               T          => Text,
-               Ignore_ED  => False,
-               Err        => False,
-               Read_Lines => "WD");
-            Free (Text);
+
+            if Text /= null then
+               File_Names (J).The_ALI := Scan_ALI
+                 (F          => File_Name_Type
+                                  (File_Names (J).Source.Dep_Path),
+                  T          => Text,
+                  Ignore_ED  => False,
+                  Err        => True,
+                  Read_Lines => "WD");
+               Free (Text);
+
+            else
+               File_Names (J).The_ALI := No_ALI_Id;
+            end if;
          end;
       end if;
    end loop;
 
    Find_General_Layout;
+
+   if Debug then
+      Put_Line ("Unit start:  " & Unit_Start'Img);
+      Put_Line ("Unit end:    " & Unit_End'Img);
+      Put_Line ("Source start:" & Source_Start'Img);
+      Put_Line ("Source end:  " & Source_End'Img);
+      Put_Line ("Object start:" & Object_Start'Img);
+      Put_Line ("Object end:  " & Object_End'Img);
+
+      if Too_Long then
+         Put_Line ("Too long");
+      end if;
+   end if;
+
+   for J in 1 .. Number_File_Names loop
+      declare
+         FN_Source : File_Name_Source renames File_Names (J);
+      begin
+         if FN_Source.Source /= No_Source then
+            if Print_Object then
+               Get_Name_String (FN_Source.Source.Object_Path);
+               Put (Name_Buffer (1 .. Name_Len));
+
+               if Print_Unit or else Print_Source then
+                  if Too_Long then
+                     New_Line;
+                     Put ("   ");
+
+                  else
+                     Put
+                       (Spaces (Object_Start + Name_Len .. Object_End));
+                  end if;
+               end if;
+            end if;
+
+            if Print_Unit and then FN_Source.Source.Unit /= No_Unit_Index then
+               Get_Name_String (FN_Source.Source.Unit.Name);
+               Put (Name_Buffer (1 .. Name_Len));
+
+               if Print_Source then
+                  if Too_Long then
+                     New_Line;
+                     Put ("      ");
+
+                  else
+                     Put
+                       (Spaces (Unit_Start + Name_Len .. Unit_End));
+                  end if;
+               end if;
+            end if;
+
+            if Print_Source then
+               --  Get the status
+
+               if FN_Source.The_ALI = No_ALI_Id then
+                  Put (" ??? ");
+
+               else
+                  declare
+                     Stamp : constant GPR.Stamps.Time_Stamp_Type :=
+                       File_Stamp (FN_Source.Source.Path.Name);
+                     Id : constant ALI_Id := FN_Source.The_ALI;
+                     U  : constant Unit_Id := ALIs.Table (Id). First_Unit;
+                     SD : constant Sdep_Id := Corresponding_Sdep_Entry (Id, U);
+                     Source_Index : Source_File_Index;
+                     Checksums_Match : Boolean;
+                     use GPR.Scans;
+                     use GPR.Stamps;
+                  begin
+                     if Stamp = Sdep.Table (SD).Stamp then
+                        Put ("  OK ");
+
+                     else
+                        Checksums_Match := False;
+                        Source_Index :=
+                          Sinput.Load_File
+                            (Get_Name_String
+                               (FN_Source.Source.Path.Display_Name));
+
+                        if Source_Index /= No_Source_File then
+
+                           Err.Scanner.Initialize_Scanner
+                             (Source_Index, Err.Scanner.Ada);
+
+                           --  Scan the complete file to compute its
+                           --  checksum.
+
+                           loop
+                              Err.Scanner.Scan;
+                              exit when Token = Tok_EOF;
+                           end loop;
+
+                           if Scans.Checksum = Sdep.Table (SD).Checksum then
+                              Checksums_Match := True;
+                           end if;
+                        end if;
+
+                        if Checksums_Match then
+                           Put (" MOK ");
+
+                        else
+                           Put (" DIF ");
+                        end if;
+                     end if;
+                  end;
+               end if;
+
+               Get_Name_String (FN_Source.Source.Path.Display_Name);
+               Put (Name_Buffer (1 .. Name_Len));
+            end if;
+
+            New_Line;
+         end if;
+      end;
+   end loop;
+
 end Gprls.Main;

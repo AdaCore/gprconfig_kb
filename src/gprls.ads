@@ -29,10 +29,6 @@ with GPR.Tree;  use GPR.Tree;
 package Gprls is
 
 private
-   --  NOTE : The following string may be used by other tools, such as GPS. So
-   --  it can only be modified if these other uses are checked and coordinated.
-
-   use GPR.Stamps;
 
    Initialized : Boolean := False;
    --  Set to True by the first call to Initialize.
@@ -57,8 +53,7 @@ private
      OK,                  --  matching timestamp
      Checksum_OK,         --  only matching checksum
      Not_Found,           --  file not found on source PATH
-     Not_Same,            --  neither checksum nor timestamp matching
-     Not_First_On_PATH);  --  matching file hidden by Not_Same file on path
+     Not_Same);           --  neither checksum nor timestamp matching
 
    type Dir_Data;
    type Dir_Ref is access Dir_Data;
@@ -119,6 +114,7 @@ private
    type File_Name_Source is record
       File_Name : String_Access;
       Source    : GPR.Source_Id;
+      The_ALI   : ALI_Id;
    end record;
 
    type File_Name_Array is array (Positive range <>) of File_Name_Source;
@@ -162,41 +158,18 @@ private
    procedure Find_General_Layout;
    --  Determine the structure of the output (multi columns or not, etc)
 
-   procedure Find_Status
-     (FS       : in out File_Name_Type;
-      Stamp    : Time_Stamp_Type;
-      Checksum : Word;
-      Status   : out File_Status);
-   --  Determine the file status (Status) of the file represented by FS with
-   --  the expected Stamp and checksum given as argument. FS will be updated
-   --  to the full file name if available.
-
    function Corresponding_Sdep_Entry (A : ALI_Id; U : Unit_Id) return Sdep_Id;
    --  Give the Sdep entry corresponding to the unit U in ali record A
-
-   procedure Output_Object (O : File_Name_Type);
-   --  Print out the name of the object when requested
-
-   procedure Output_Source (Sdep_I : Sdep_Id);
-   --  Print out the name and status of the source corresponding to this
-   --  sdep entry.
 
    procedure Output_Status (FS : File_Status; Verbose : Boolean);
    --  Print out FS either in a coded form if verbose is false or in an
    --  expanded form otherwise.
-
-   procedure Output_Unit (ALI : ALI_Id; U_Id : Unit_Id);
-   --  Print out information on the unit when requested
 
    procedure Reset_Print;
    --  Reset Print flags properly when selective output is chosen
 
    --  procedure Search_RTS (Name : String);
    --  Find include and objects path for the RTS name.
-
-   function Normalize (Path : String) return String;
-   --  Returns a normalized path name. On Windows, the directory separators are
-   --  set to '\' in Normalize_Pathname.\
 
    Project_Tree : constant Project_Tree_Ref :=
                     new Project_Tree_Data (Is_Root_Tree => True);
