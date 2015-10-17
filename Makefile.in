@@ -63,7 +63,7 @@ LIBGPR_INSTALLER=gprinstall $(srcdir)/gpr/gpr.gpr --prefix=${prefix} -p -f \
 LIBGPR_UNINSTALLER=gprinstall $(srcdir)/gpr/gpr.gpr --prefix=${prefix} -p -f \
    -XOBJDIR=$(objdir) --install-name=gpr --uninstall
 
-.PHONY: all distall gprbuild gprconfig gprclean gprinstall gprname
+.PHONY: all distall gprbuild gprconfig gprclean gprinstall gprname gprls
 
 all:
 	$(GPRBUILD_BUILDER)
@@ -80,11 +80,13 @@ gprclean:
 	$(GPRBUILD_BUILDER) gprclean-main.adb
 
 gprconfig:
-	$(GPRBUILD_BUILDER) gprconfig-main
+	$(GPRBUILD_BUILDER) gprconfig-main.adb
 
 gprname:
-	$(GPRBUILD_BUILDER) gprname
+	$(GPRBUILD_BUILDER) gprname-main.adb
 
+gprls:
+	$(GPRBUILD_BUILDER) gprls-main.adb
 
 #################################
 # Gprbuild installation targets #
