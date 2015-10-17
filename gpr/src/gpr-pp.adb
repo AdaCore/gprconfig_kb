@@ -93,8 +93,12 @@ package body GPR.PP is
       procedure Output_Project_File (S : Name_Id);
       --  Output a project file name in one single string literal
 
-      procedure Output_String (S : Name_Id; Indent : Natural);
-      --  Outputs a string using the default output procedures
+      procedure Output_String
+        (S           : Name_Id;
+         Indent      : Natural;
+         Single_Line : Boolean := False);
+      --  Outputs a string using the default output procedures. If Single_Line
+      --  is True, do not split the string on several lines.
 
       procedure Write_Empty_Line (Always : Boolean := False);
       --  Outputs an empty line, only if the previous line was not empty
@@ -231,7 +235,11 @@ package body GPR.PP is
       -- Output_String --
       -------------------
 
-      procedure Output_String (S : Name_Id; Indent : Natural) is
+      procedure Output_String
+        (S           : Name_Id;
+         Indent      : Natural;
+         Single_Line : Boolean := False)
+      is
       begin
          if Column = 0 and then Indent /= 0 then
             Start_Line (Indent + Increment);
@@ -270,7 +278,10 @@ package body GPR.PP is
             --  If the string does not fit on one line, cut it in parts and
             --  concatenate.
 
-            if J < Name_Len and then Column >= Max_Line_Length then
+            if (not Single_Line) and then
+               J < Name_Len and then
+               Column >= Max_Line_Length
+            then
                Write_Str (""" &");
                Write_Eol.all;
                Column := 0;
@@ -595,7 +606,9 @@ package body GPR.PP is
                   begin
                      while Present (String_Node) loop
                         Output_String
-                          (String_Value_Of (String_Node, In_Tree), Indent);
+                          (String_Value_Of (String_Node, In_Tree),
+                           Indent,
+                           Single_Line => True);
                         String_Node :=
                           Next_Literal_String (String_Node, In_Tree);
 
@@ -629,7 +642,9 @@ package body GPR.PP is
                   if Associative_Array_Index_Of (Node, In_Tree) /= No_Name then
                      Write_String (" (", Indent);
                      Output_String
-                       (Associative_Array_Index_Of (Node, In_Tree), Indent);
+                       (Associative_Array_Index_Of (Node, In_Tree),
+                        Indent,
+                        Single_Line => True);
 
                      if Source_Index_Of (Node, In_Tree) /= 0 then
                         Write_String (" at", Indent);
@@ -830,7 +845,7 @@ package body GPR.PP is
                   begin
                      if Index /= No_Name then
                         Write_String (" (", Indent);
-                        Output_String (Index, Indent);
+                        Output_String (Index, Indent, Single_Line => True);
                         Write_String (")", Indent);
                      end if;
                   end;
