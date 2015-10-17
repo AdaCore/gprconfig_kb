@@ -113,6 +113,7 @@ ifeq ($(IS_WINDOWS),true)
 endif
 	${INSTALL_PROGRAM} $(objdir)/exe/gprname${EXEXT} ${bindir}
 	${INSTALL_PROGRAM} $(objdir)/exe/gprslave${EXEXT} ${bindir}
+	${INSTALL_PROGRAM} $(objdir)/exe/gprls${EXEXT} ${bindir}
 	-${MKDIR} ${libexecdir}/gprbuild
 	${INSTALL_PROGRAM} $(objdir)/exe/gprbind${EXEXT} ${libexecdir}/gprbuild/
 	${INSTALL_PROGRAM} $(objdir)/exe/gprlib${EXEXT} ${libexecdir}/gprbuild/
@@ -150,6 +151,7 @@ ifeq ($(BUILD), production)
 	strip $(prefix)/bin/gprinstall$(EXEXT)
 	strip $(prefix)/bin/gprname$(EXEXT)
 	strip $(prefix)/bin/gprslave$(EXEXT)
+	strip $(prefix)/bin/gprls$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprbind$(EXEXT)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
 endif
