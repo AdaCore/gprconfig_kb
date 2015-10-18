@@ -594,6 +594,12 @@ package body Gpr_Util is
                Compiler := Name_Id (Lang.Config.Compiler_Driver);
             end if;
 
+            --  No compiler found, return now
+
+            if Compiler = No_Name then
+               return null;
+            end if;
+
             declare
                Compiler_Name : constant String := Get_Name_String (Compiler);
             begin
