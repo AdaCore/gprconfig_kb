@@ -533,81 +533,75 @@ procedure Gprls.Main is
    begin
       --  Usage line
 
-      Put ("Usage: gprls switches  [list of object files]");
-      New_Line;
+      Put_Line ("Usage: gprls switches  [list of object files]");
       New_Line;
 
       --  GPRLS switches
 
-      Put ("switches:");
-      New_Line;
+      Put_Line ("switches:");
 
       Display_Usage_Version_And_Help;
 
       --  Line for -Pproj
 
-      Put ("  -Pproj     use project file proj");
-      New_Line;
+      Put_Line ("  -Pproj       use project file proj");
 
       --  Line for -u
 
-      Put ("  -u         output only relevant unit names");
-      New_Line;
+      Put_Line ("  -u           output only relevant unit names");
+
+      --  Line for -U
+
+      Put_Line ("  -U           list sources for all projects");
 
       --  Line for -h
 
-      Put ("  -h         output this help message");
-      New_Line;
+      Put_Line ("  -h           output this help message");
 
       --  Line for -s
 
-      Put ("  -s         output only relevant source names");
-      New_Line;
+      Put_Line ("  -s           output only relevant source names");
 
       --  Line for -o
 
-      Put ("  -o         output only relevant object names");
-      New_Line;
+      Put_Line ("  -o           output only relevant object names");
 
       --  Line for -d
 
-      Put ("  -d         output sources on which specified units " &
+      Put_Line ("  -d           output sources on which specified units " &
                                "depend");
-      New_Line;
 
       --  Line for -v
 
-      Put ("  -v         verbose output, full path and unit " &
+      Put_Line ("  -v           verbose output, full path and unit " &
                                "information");
-      New_Line;
 
       --  Line for -vPx
 
-      Put ("  -vPx       specify verbosity when parsing project files " &
-                               "(x = 0/1/2)");
+      Put_Line ("  -vPx         specify verbosity when parsing project " &
+                               "files (x = 0/1/2)");
 
-      New_Line;
       New_Line;
       --  Line for -files=
 
-      Put ("  -files=fil files are listed in text file 'fil'");
-      New_Line;
+      Put_Line ("  -files=fil   files are listed in text file 'fil'");
 
       --  Line for -aP switch
 
-      Put ("  -aPdir     specify project search path");
-      New_Line;
+      Put_Line ("  -aPdir       specify project search path");
+
+      --  Line for --target=
+
+      Put_Line ("  --target=xxx specify target xxx");
 
       --  Line for --RTS
 
-      Put ("  --RTS=dir  specify the Ada runtime");
-      New_Line;
+      Put_Line ("  --RTS=dir    specify the Ada runtime");
 
       --  File Status explanation
 
       New_Line;
-      Put (" file status can be:");
-      New_Line;
+      Put_Line (" file status can be:");
 
       for ST in File_Status loop
          Put ("   ");
@@ -633,9 +627,18 @@ procedure Gprls.Main is
 
          GPR.Tree.Initialize (Root_Environment, Gprls_Flags);
          GPR.Tree.Initialize (Project_Node_Tree);
-         GPR.Env.Initialize_Default_Project_Path
-           (Root_Environment.Project_Path,
-            Target_Name => GprConfig.Sdefault.Hostname);
+
+         GPR.Initialize (Project_Tree);
+
+         if Target_Name = null then
+            GPR.Env.Initialize_Default_Project_Path
+              (Root_Environment.Project_Path,
+               Target_Name => GprConfig.Sdefault.Hostname);
+
+         else
+            GPR.Env.Initialize_Default_Project_Path
+           (Root_Environment.Project_Path, Target_Name.all);
+         end if;
 
          GPR.Tree.Initialize (Tree);
       end if;
