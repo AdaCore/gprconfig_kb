@@ -707,6 +707,21 @@
      </config>
    </configuration>
 
+   <configuration>
+     <compilers>
+       <compiler name="GCC-WRS7X86_64" runtime="^rtp$" />
+       <compiler name="G++-WRS7X86_64" runtime="^rtp$" />
+     </compilers>
+     <config>
+   WRS_RTP_Base := external ("WRS_RTP_BASE", "0x200000");
+   package Linker is
+      for Required_Switches use
+	Linker'Required_Switches
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+   end Linker;
+     </config>
+   </configuration>
+
    <!--  Set prefix of gnatbind -->
    <configuration>
      <compilers>
