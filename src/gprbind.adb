@@ -955,7 +955,7 @@ begin
                     and then
                      (Argv'Last <= 5 or else Argv (1 .. 5) /= "-gnat")
                     and then
-                     (Argv'Last <= 6 or else Argv (1 .. 5) /= "--RTS=")
+                     (Argv'Last <= 6 or else Argv (1 .. 6) /= "--RTS=")
                   then
                      Add
                        (String_Access (Arg),
