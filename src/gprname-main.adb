@@ -644,7 +644,7 @@ procedure GPRName.Main is
 
          elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-P" then
             if File_Set then
-               Fail ("only one -c or -P switch may be specified");
+               Fail ("only one -P switch may be specified");
             end if;
 
             if Arg'Length = 2 then
@@ -750,7 +750,8 @@ procedure GPRName.Main is
          Put_Line ("  -Dfile       get source directories from file");
          Put_Line ("  -eL          follow symbolic links when processing " &
                      "project files");
-         Put_Line ("  -fpat        foreign pattern");
+         Put_Line ("  -fpat        pattern for C source");
+         Put_Line ("  -f:lang pat  pattern for source of language lang");
          Put_Line ("  -gnateDsym=v preprocess with symbol definition");
          Put_Line ("  -gnatep=data preprocess files with data file");
          Put_Line ("  -h           output this help message");
