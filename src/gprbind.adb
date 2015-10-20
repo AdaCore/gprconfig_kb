@@ -945,9 +945,7 @@ begin
               Index in Units.Table (ALIs.Table (A).First_Unit).First_Arg ..
                        Units.Table (ALIs.Table (A).First_Unit).Last_Arg
             loop
-               --  Do not compile with the front end switches. However, --RTS
-               --  is to be dealt with specially because the binder-generated
-               --  file need to compiled with the same switch.
+               --  Do not compile with the front end switches
 
                declare
                   Arg : String_Access renames Args.Table (Index);
@@ -956,6 +954,8 @@ begin
                   if (Argv'Last <= 2 or else Argv (1 .. 2) /= "-I")
                     and then
                      (Argv'Last <= 5 or else Argv (1 .. 5) /= "-gnat")
+                    and then
+                     (Argv'Last <= 6 or else Argv (1 .. 5) /= "--RTS=")
                   then
                      Add
                        (String_Access (Arg),
