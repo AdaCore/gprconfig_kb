@@ -13,6 +13,13 @@ NF-23-OA08-029 GPRinstall now uninstall aggregate projects (2015-10-10)
    GPRinstall now has support for uninstalling aggregate projects. In this
    case all libraries/projects part of the aggregate project are uninstalled.
 
+NF-23-O930-025 Improve reproducibility of builds (2015-10-14)
+
+   When gprbuild is used to build the same executable with the same project
+   files and sources, with the same paths on two different but similar
+   platforms, the executables will be the same and will have the same behavior.
+   In particular, the elaboration orders of the Ada code will be the same.
+
 NF-23-O924-030 GPRinstall now installs all sources by default (2015-09-27)
 
    GPRinstall now installs all sources by default. To revert to the previous
@@ -22,6 +29,13 @@ NF-23-O924-030 GPRinstall now installs all sources by default (2015-09-27)
 NF-23-O921-014 Generate symlink for library major version (2015-09-24)
 
    GPRinstall now creates symlink for the library major version if needed.
+
+NF-23-O902-041 Improve usability of code compiled on other machine (2015-10-20)
+
+   When Ada code that has been compiled on machine A for a specific runtime is
+   used to build an executable on machine B for the same runtime, the build
+   will now succeed in all cases, even though the path of the runtime on
+   machine A is not the same as the path of the runtime on machine B.
 
 NF-23-O720-008 Proper process clean-up in distributed build (2015-08-06)
 
