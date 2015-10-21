@@ -13,6 +13,11 @@ NF-23-OA08-029 GPRinstall now uninstall aggregate projects (2015-10-10)
    GPRinstall now has support for uninstalling aggregate projects. In this
    case all libraries/projects part of the aggregate project are uninstalled.
 
+NF-23-OA08-010 Builder switches in aggregate projects (2015-10-21)
+
+   Switches specified in Builder'Switches (others) in a main aggregate or
+   aggregate library project are now taken into account by gprbuild.
+
 NF-23-O930-025 Improve reproducibility of builds (2015-10-14)
 
    When gprbuild is used to build the same executable with the same project
