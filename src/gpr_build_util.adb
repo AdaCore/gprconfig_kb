@@ -2605,6 +2605,12 @@ package body Gpr_Build_Util is
       Success          : Boolean := False;
    begin
       if Builder_Package /= No_Package then
+         Global_Compilation_Array := Value_Of
+           (Name      => Name_Global_Compilation_Switches,
+            In_Arrays => Project_Tree.Shared.Packages.Table
+              (Builder_Package).Decl.Arrays,
+            Shared    => Project_Tree.Shared);
+
          if Main_Project.Qualifier = Aggregate or else
            Main_Project.Qualifier = Aggregate_Library
          then
@@ -2690,12 +2696,6 @@ package body Gpr_Build_Util is
                   end if;
                end loop;
             end if;
-
-            Global_Compilation_Array := Value_Of
-              (Name      => Name_Global_Compilation_Switches,
-               In_Arrays => Project_Tree.Shared.Packages.Table
-                 (Builder_Package).Decl.Arrays,
-               Shared    => Project_Tree.Shared);
 
             Default_Switches_Array :=
               Project_Tree.Shared.Packages.Table (Builder_Package).Decl.Arrays;
