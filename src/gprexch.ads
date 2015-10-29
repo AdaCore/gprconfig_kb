@@ -30,6 +30,7 @@ package Gprexch is
      (No_Binding_Section,
       Quiet,
       Verbose,
+      Nothing_To_Bind,
       Shared_Libs,
       Main_Base_Name,
       Mapping_File,

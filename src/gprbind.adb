@@ -473,10 +473,11 @@ begin
                      Skip_Line (IO_File);
                   end if;
 
-               when Generated_Object_File |
+               when Nothing_To_Bind        |
+                    Generated_Object_File  |
                     Generated_Source_Files |
-                    Bound_Object_Files |
-                    Resulting_Options |
+                    Bound_Object_Files     |
+                    Resulting_Options      |
                     Run_Path_Option =>
                   null;
             end case;

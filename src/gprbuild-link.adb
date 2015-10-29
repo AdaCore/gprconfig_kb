@@ -1771,12 +1771,14 @@ package body Gprbuild.Link is
 
          B_Data := Builder_Data (Main_File.Tree).Binding;
 
+         Binding_Loop :
          while B_Data /= null loop
             declare
                Exchange_File_Name : constant String :=
                                       Binder_Exchange_File_Name
                                         (Main_Base_Name_Index,
                                          B_Data.Binder_Prefix).all;
+               Binding_Not_Necessary : Boolean;
 
             begin
                if Is_Regular_File (Exchange_File_Name) then
@@ -1785,6 +1787,16 @@ package body Gprbuild.Link is
                     File_Stamp
                       (Path_Name_Type'(Create_Name
                        (Exchange_File_Name)));
+
+                  Open (Exchange_File, In_File, Exchange_File_Name);
+                  Get_Line (Exchange_File, Line, Last);
+                  Binding_Not_Necessary :=
+                    Line (1 .. Last) = Binding_Label (Nothing_To_Bind);
+                  Close (Exchange_File);
+
+                  if Binding_Not_Necessary then
+                     goto No_Binding;
+                  end if;
 
                   if not Linker_Needs_To_Be_Called
                     and then
@@ -1902,8 +1914,9 @@ package body Gprbuild.Link is
                end if;
             end;
 
+            <<No_Binding>>
             B_Data := B_Data.Next;
-         end loop;
+         end loop Binding_Loop;
 
          Last_Object_Index := Last_Argument;
       end if;

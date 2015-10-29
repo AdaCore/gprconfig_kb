@@ -3920,14 +3920,30 @@ package body Gprbuild.Post_Compile is
                Proj_List := Proj_List.Next;
             end loop;
 
-            Close (Exchange_File);
-
             if Main_Source.Unit = No_Unit_Index and then (not Dep_Files) then
+               Delete (Exchange_File);
+
+               begin
+                  Create (Exchange_File, Out_File, Bind_Exchange.all);
+
+               exception
+                  when others =>
+                     Fail_Program
+                       (Project_Tree,
+                        "unable to create binder exchange file " &
+                          Bind_Exchange.all);
+               end;
+
+               Put_Line (Exchange_File, Binding_Label (Nothing_To_Bind));
+               Close (Exchange_File);
+
                if Opt.Verbose_Mode then
                   Put_Line ("      -> nothing to bind");
                end if;
 
             else
+               Close (Exchange_File);
+
                if B_Data.Language.Config.Objects_Path /= No_Name then
                   declare
                      Env_Var   : constant String :=
