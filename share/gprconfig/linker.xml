@@ -1423,10 +1423,10 @@
     </config>
   </configuration>
 
-  <!-- On x86_64 vxWorks, when Linker'Driver is WRS gcc, -m64 and
-       -mcmodel=large has to be specified explicitely. When
-       Linker'Driver is GNAT, this is the default already, so it is
-       harmless to pass it twice.  -->
+  <!-- On x86_64 vxWorks, when Linker'Driver is WRS gcc, -m64,
+       -mcmodel=large and -mno-red-zone have to be specified
+       explicitely. When Linker'Driver is GNAT, this is the default
+       already, so it is harmless to pass it twice.  -->
 
   <configuration>
     <compilers>
@@ -1437,7 +1437,7 @@
    package Linker is
         for Required_Switches use
           Linker'Required_Switches
-          &amp; ("-m64", "-mcmodel=large");
+          &amp; ("-m64", "-mcmodel=large", "-mno-red-zone");
    end Linker;
     </config>
   </configuration>
