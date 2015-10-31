@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-OA25-001 Relinking when nothing to bind
+
+  Problem:    When there is Ada code, but there is nothing to bind
+              (for example when the main is in C and has no Roots),
+              gprbuild is always relinking, even though it is not necessary.
+
+  Status:     This was fixed in 2.3 on 2015-10-29
+
+  Workaround: Let gprbuild relink.
+
 KP-22-OA16-060 Project modified by gprname may be unusable
 
   Problem:    When a project has very long literal strings as indexes of
