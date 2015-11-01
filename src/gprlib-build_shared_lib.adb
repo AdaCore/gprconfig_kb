@@ -19,6 +19,8 @@
 --  This is the version of the body of procedure Build_Shared_Lib for most
 --  where shared libraries are supported.
 
+with Ada.Strings.Fixed; use Ada.Strings; use Ada.Strings.Fixed;
+
 separate (Gprlib)
 procedure Build_Shared_Lib is
 
@@ -60,6 +62,7 @@ procedure Build_Shared_Lib is
 
       Response_File_Name : Path_Name_Type := No_Path;
       Response_2         : Path_Name_Type := No_Path;
+      Export_File        : Path_Name_Type := No_Path;
 
       procedure Display_Linking_Command;
       --  Display the linking command, depending on verbosity and quiet output
@@ -352,24 +355,98 @@ procedure Build_Shared_Lib is
          Display_Linking_Command;
       end if;
 
+      --  For a standalone shared library, create an export symbols file if
+      --  supported.
+
+      if Standalone /= No
+        and then Object_Lister /= null
+        and then Object_Lister_Matcher /= null
+        and then Export_File_Switch /= null
+      then
+         declare
+            List : String_List
+              (1 ..
+                 Interface_ALIs.Last + Other_Interfaces.Last
+                 + (if Auto_Init then 0 else Generated_Objects.Last));
+         begin
+            --  Ada unit interfaces
+
+            for K in 1 .. Interface_ALIs.Last loop
+               declare
+                  Filename : constant String := Interface_ALIs.Table (K).all;
+               begin
+                  List (K) := new String'
+                    (Filename (Filename'First .. Filename'Last - 4)
+                     & Object_Suffix);
+               end;
+            end loop;
+
+            --  Unit from Interfaces attribute
+
+            for K in 1 .. Other_Interfaces.Last loop
+               declare
+                  Filename : constant String := Other_Interfaces.Table (K).all;
+                  I        : constant Positive :=
+                               Index (Filename, ".", Backward);
+               begin
+                  List (Interface_ALIs.Last + K) := new String'
+                    (Filename (Filename'First .. I - 1) & Object_Suffix);
+               end;
+            end loop;
+
+            --  When a library is not auto-init, we need to add the binder
+            --  generated object file which contains the library initilization
+            --  code to be explicitely called by the main application.
+
+            if not Auto_Init then
+               for K in 1 .. Generated_Objects.Last loop
+                  List (Interface_ALIs.Last + Other_Interfaces.Last + K) :=
+                    new String'(Generated_Objects.Table (K).all);
+               end loop;
+            end if;
+
+            Create_Export_Symbols_File
+              (Driver_Path      => Object_Lister.all,
+               Options          => OL_Options (1 .. Last_OL_Option),
+               Sym_Matcher      => Object_Lister_Matcher.all,
+               Format           => Export_File_Format,
+               Objects          => List,
+               Export_File_Name => Export_File);
+
+            if Export_File /= No_Path then
+               Add_Arg
+                 (new String'(Export_File_Switch.all
+                  & Get_Name_String (Export_File)));
+            end if;
+         end;
+      end if;
+
       --  Finally spawn the library builder driver
 
       Spawn (Driver.all, Arguments (1 .. Last_Arg), Success);
 
-      --  Delete response file, if any, except when asked not to
+      --  Delete temporary files
 
-      if Response_File_Name /= No_Path and then Delete_Response_File then
-         declare
-            Dont_Care : Boolean;
-            pragma Warnings (Off, Dont_Care);
-         begin
+      declare
+         Dont_Care : Boolean;
+         pragma Warnings (Off, Dont_Care);
+      begin
+         --  Delete response file, if any, except when asked not
+
+         if Response_File_Name /= No_Path and then Delete_Response_File then
             Delete_File (Get_Name_String (Response_File_Name), Dont_Care);
 
             if Response_2 /= No_Path then
                Delete_File (Get_Name_String (Response_2), Dont_Care);
             end if;
-         end;
-      end if;
+         end if;
+
+         --  Delete export file
+
+         if Standalone /= No and then Export_File /= No_Path then
+            Delete_File (Get_Name_String (Export_File), Dont_Care);
+         end if;
+      end;
 
       if not Success then
          if Driver_Name = No_Name then

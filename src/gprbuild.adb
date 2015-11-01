@@ -330,6 +330,86 @@ package body Gprbuild is
       end if;
    end Check_Archive_Builder;
 
+   -----------------------
+   -- Check_Export_File --
+   -----------------------
+
+   procedure Check_Export_File is
+   begin
+      if Main_Project.Config.Export_File_Switch /= No_Name then
+         Export_File_Switch :=
+           new String'
+             (Get_Name_String (Main_Project.Config.Export_File_Switch));
+      end if;
+
+      Export_File_Format := Main_Project.Config.Export_File_Format;
+
+      if Export_File_Switch /= null
+        and then Export_File_Format = None
+      then
+         Fail_Program
+           (Project_Tree,
+            "attribute export_file_format must be defined"
+            & " when export_file_switch is set.");
+      end if;
+   end Check_Export_File;
+
+   -------------------------
+   -- Check_Object_Lister --
+   -------------------------
+
+   procedure Check_Object_Lister is
+      List : Name_List_Index;
+   begin
+      --  First, make sure that the archive builder (nm) is on the path
+
+      if Object_Lister_Path = null then
+         List := Main_Project.Config.Object_Lister;
+
+         if List /= No_Name_List then
+            Object_Lister_Name :=
+              new String'(Get_Name_String
+                          (Project_Tree.Shared.Name_Lists.Table (List).Name));
+
+            Object_Lister_Path :=
+              Locate_Exec_On_Path (Object_Lister_Name.all);
+
+            if Object_Lister_Path = null then
+               Fail_Program
+                 (Project_Tree,
+                  "unable to locate object lister """ &
+                  Object_Lister_Name.all & '"');
+            end if;
+
+            loop
+               List := Project_Tree.Shared.Name_Lists.Table (List).Next;
+               exit when List = No_Name_List;
+               Add_Option
+                 (Value   => Project_Tree.Shared.Name_Lists.Table (List).Name,
+                  To      => Object_Lister_Opts,
+                  Display => True);
+            end loop;
+         end if;
+
+         --  Check object matcher
+
+         if Main_Project.Config.Object_Lister_Matcher /= No_Name then
+            Object_Lister_Matcher :=
+              new String'
+                (Get_Name_String (Main_Project.Config.Object_Lister_Matcher));
+         end if;
+
+         if Object_Lister_Path /= null
+           and then Object_Lister_Matcher = null
+         then
+            Fail_Program
+              (Project_Tree,
+               "attribute object_lister_matcher must be defined"
+               & " when object_lister is set.");
+         end if;
+      end if;
+   end Check_Object_Lister;
+
    ---------------------------
    -- Create_Path_From_Dirs --
    ---------------------------

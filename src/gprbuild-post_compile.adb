@@ -2085,6 +2085,10 @@ package body Gprbuild.Post_Compile is
 
       if For_Project.Library_Kind = Static then
          Check_Archive_Builder;
+
+      elsif For_Project.Standalone_Library /= No then
+         Check_Object_Lister;
+         Check_Export_File;
       end if;
 
       Library_Needs_To_Be_Built := Opt.Force_Compilations;
@@ -2646,6 +2650,30 @@ package body Gprbuild.Post_Compile is
             Put_Line
               (Exchange_File,
                Standalone'Image (For_Project.Standalone_Library));
+
+            if Object_Lister_Path /= null then
+               --  Write object lister
+
+               Put_Line (Exchange_File, Library_Label (Object_Lister));
+               Put_Line (Exchange_File, Object_Lister_Path.all);
+
+               for J in 1 .. Object_Lister_Opts.Last loop
+                  Put_Line (Exchange_File, Object_Lister_Opts.Options (J).all);
+               end loop;
+
+               Put_Line
+                 (Exchange_File,
+                  Library_Label (Gprexch.Object_Lister_Matcher));
+               Put_Line (Exchange_File, Object_Lister_Matcher.all);
+
+               --  Write export symbols format
+
+               Put_Line (Exchange_File, Library_Label (Export_File));
+               Put_Line
+                 (Exchange_File,
+                GPR.Export_File_Format'Image (Export_File_Format));
+               Put_Line (Exchange_File, Export_File_Switch.all);
+            end if;
 
          elsif For_Project.Other_Interfaces /= Nil_String then
             Write_Other_Interfaces;

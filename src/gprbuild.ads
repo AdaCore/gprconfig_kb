@@ -293,6 +293,18 @@ private
    Archive_Indexer_Path : String_Access := null;
    Archive_Indexer_Opts : Options_Data;
 
+   --  Object lister name and options
+
+   Object_Lister_Name    : String_Access := null;
+   Object_Lister_Path    : String_Access := null;
+   Object_Lister_Opts    : Options_Data;
+   Object_Lister_Matcher : String_Access;
+
+   --  Export file
+
+   Export_File_Switch    : String_Access := null;
+   Export_File_Format    : GPR.Export_File_Format := GPR.None;
+
    --  Libraries
 
    type Library_Project is record
@@ -374,6 +386,12 @@ private
 
    procedure Check_Archive_Builder;
    --  Check if the archive builder (ar) is there
+
+   procedure Check_Object_Lister;
+   --  Check object lister (nm) is there
+
+   procedure Check_Export_File;
+   --  Check for export file option and format
 
    function Archive_Suffix (For_Project : Project_Id) return String;
    --  Return the archive suffix for the project, if defined, otherwise

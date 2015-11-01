@@ -299,6 +299,17 @@ procedure Gprlib is
    Last_AI_Option : Natural := 0;
    --  Options of the archive indexer
 
+   Object_Lister : String_Access := null;
+   --  Object lister
+
+   OL_Options : String_List_Access := new String_List (1 .. 10);
+   Last_OL_Option : Natural := 0;
+   --  Object lister options
+
+   Object_Lister_Matcher : String_Access := null;
+   --  Object lister matcher, the pattern matcher to get the symbols name from
+   --  the output of the object lister.
+
    Partial_Linker : String_Access := null;
    --  Name of the library partial linker
 
@@ -394,6 +405,10 @@ procedure Gprlib is
    Response_File_Switches : String_List_Access := new String_List (1 .. 0);
 
    Delete_Response_File : Boolean := True;
+
+   Export_File_Format : GPR.Export_File_Format := GPR.None;
+
+   Export_File_Switch : String_Access;
 
    procedure Add_Arg (Arg : String_Access);
    --  Add one argument to the Arguments list. Increase the size of the list
@@ -1159,6 +1174,20 @@ begin
                      Last_AI_Option);
                end if;
 
+            when Gprexch.Object_Lister =>
+               if Object_Lister = null then
+                  Object_Lister := new String'(Line (1 .. Last));
+
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     OL_Options,
+                     Last_OL_Option);
+               end if;
+
+            when Gprexch.Object_Lister_Matcher =>
+               Object_Lister_Matcher := new String'(Line (1 .. Last));
+
             when Gprexch.Partial_Linker =>
                if Partial_Linker = null then
                   Partial_Linker := new String'(Line (1 .. Last));
@@ -1282,6 +1311,26 @@ begin
 
                Response_File_Switches (Response_File_Switches'Last) :=
                  new String'(Line (1 .. Last));
+
+            when Gprexch.Export_File =>
+
+               --  First the format
+               begin
+                  Export_File_Format :=
+                    GPR.Export_File_Format'Value (Line (1 .. Last));
+
+               exception
+                  when Constraint_Error =>
+                     Fail_Program
+                       (null,
+                        "incorrect value for export file format: " &
+                        Line (1 .. Last));
+               end;
+
+               --  Followed by the corresponding linker switch
+
+               Get_Line (IO_File, Line, Last);
+               Export_File_Switch := new String'(Line (1 .. Last));
          end case;
       end if;
    end loop;
