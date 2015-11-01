@@ -22,7 +22,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Text_IO;    use Ada.Text_IO;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 
@@ -44,6 +44,10 @@ procedure Xsnames is
    Counter : Natural := 0;
 
    function Image (N : Natural) return String;
+
+   -----------
+   -- Image --
+   -----------
 
    function Image (N : Natural) return String is
       Img : constant String := N'Img;
@@ -83,9 +87,15 @@ begin
    New_Line (Body_File);
    Put_Line (Body_File, "   Initialized : Boolean := False;");
    New_Line (Body_File);
+   Put_Line (Body_File, "   ----------------");
+   Put_Line (Body_File, "   -- Initialize --");
+   Put_Line (Body_File, "   ----------------");
+   New_Line (Body_File);
    Put_Line (Body_File, "   procedure Initialize is");
    Put_Line (Body_File, "   begin");
-   Put_Line (Body_File, "      if Initialized then return; end if;");
+   Put_Line (Body_File, "      if Initialized then");
+   Put_Line (Body_File, "         return;");
+   Put_Line (Body_File, "      end if;");
    New_Line (Body_File);
 
    --  First the single characters
@@ -155,6 +165,4 @@ begin
    New_Line (Body_File);
    Put_Line (Body_File, "end GPR.Snames;");
    Close (Body_File);
-
-   --  That's it!
 end Xsnames;

@@ -25,9 +25,7 @@
 --  The following package declares the data types for GNAT project.
 --  These data types may be used by GNAT Project-aware tools.
 
---  Children of this package implement various services on these data types.
-
-with Ada.Unchecked_Conversion;
+--  Children of this package implement various services on these data types
 
 with GNAT.Dynamic_HTables; use GNAT.Dynamic_HTables;
 with GNAT.Dynamic_Tables;
@@ -1423,7 +1421,6 @@ package GPR is
       Artifacts_In_Object_Dir : Name_List_Index := No_Name_List;
       --  List of regexp file names to be cleaned in the object directory of
       --  all projects.
-
    end record;
 
    Default_Project_Config : constant Project_Configuration :=

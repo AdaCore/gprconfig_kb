@@ -26,12 +26,15 @@ with GPR.Names; use GPR.Names;
 
 package body GPR.Snames is
 
-   Dummy : Name_Id;
-   pragma Warnings (Off, Dummy);
-
    procedure Add_Name (S : String);
 
+   --------------
+   -- Add_Name --
+   --------------
+
    procedure Add_Name (S : String) is
+      Dummy : Name_Id;
+      pragma Warnings (Off, Dummy);
    begin
       Name_Len := 0;
       Add_Str_To_Name_Buffer (S);

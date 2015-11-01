@@ -121,8 +121,8 @@ package GPR.Names is
    --  done by the caller prior to the call.
 
    procedure Write_Name (Id : Name_Id);
-   procedure Write_Name (Id   : File_Name_Type);
-   procedure Write_Name (Id   : Path_Name_Type);
+   procedure Write_Name (Id : File_Name_Type);
+   procedure Write_Name (Id : Path_Name_Type);
    --  Write_Name writes the characters of the specified name Id to the
    --  specific file File. No end of line is written, just the characters of
    --  the name. On return Name_Buffer and Name_Len are set as for a call to

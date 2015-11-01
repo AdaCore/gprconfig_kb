@@ -1448,7 +1448,7 @@ package body Gprbuild.Link is
    -- Link_Main --
    ---------------
 
-   procedure Link_Main (Main_File  : Main_Info) is
+   procedure Link_Main (Main_File : Main_Info) is
 
       function Global_Archive_Name (For_Project : Project_Id) return String;
       --  Returns the name of the global archive for a project
@@ -2691,7 +2691,7 @@ package body Gprbuild.Link is
                      Min_Number_Of_Objects := 1;
                   end if;
 
-                  --  Don't create a project file if there would not be
+                  --  Don't create a response file if there would not be
                   --  a smaller number of arguments.
 
                   if Last_Object_Index - First_Object_Index + 1 >

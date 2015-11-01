@@ -17,7 +17,7 @@
 ------------------------------------------------------------------------------
 
 --  These package defines sections and the corresponding labels for exchange
---  files between gprmake and gprbind (binding exchange files) and gprlib
+--  files between gprbuild and gprbind (binding exchange files) and gprlib
 --  (library exchange files).
 
 --  All labels start with '[' and end with ']'

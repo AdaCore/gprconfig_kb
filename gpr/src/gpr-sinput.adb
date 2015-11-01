@@ -23,6 +23,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Unchecked_Deallocation;
+with Ada.Unchecked_Conversion;
 
 with GNAT.Byte_Order_Mark; use GNAT.Byte_Order_Mark;
 

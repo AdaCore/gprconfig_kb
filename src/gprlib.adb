@@ -674,8 +674,7 @@ procedure Gprlib is
                         Success := Status and Actual_Len = Len + 3;
 
                         if Success then
-                           Set_Read_Only
-                             (Name_Buffer (1 .. Name_Len - 1));
+                           Set_Read_Only (Name_Buffer (1 .. Name_Len - 1));
                         end if;
                      end if;
                   end if;
@@ -687,7 +686,6 @@ procedure Gprlib is
       if not Success then
          Fail_Program (null, "could not copy ALI files to library directory");
       end if;
-
    end Copy_ALI_Files;
 
    ------------------

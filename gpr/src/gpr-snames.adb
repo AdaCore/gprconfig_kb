@@ -26,20 +26,33 @@ with GPR.Names; use GPR.Names;
 
 package body GPR.Snames is
 
-   Dummy : Name_Id;
-   pragma Warnings (Off, Dummy);
-
    procedure Add_Name (S : String);
 
+   --------------
+   -- Add_Name --
+   --------------
+
    procedure Add_Name (S : String) is
+      Dummy : Name_Id;
+      pragma Warnings (Off, Dummy);
    begin
       Name_Len := 0;
       Add_Str_To_Name_Buffer (S);
       Dummy := Name_Find;
    end Add_Name;
 
+   Initialized : Boolean := False;
+
+   ----------------
+   -- Initialize --
+   ----------------
+
    procedure Initialize is
    begin
+      if Initialized then
+         return;
+      end if;
+
       Add_Name ("a");
       Add_Name ("b");
       Add_Name ("c");
@@ -315,6 +328,8 @@ package body GPR.Snames is
       Add_Name ("runtime");
       Add_Name ("mode");
       Add_Name ("install_name");
+
+      Initialized := True;
    end Initialize;
 
 end GPR.Snames;
