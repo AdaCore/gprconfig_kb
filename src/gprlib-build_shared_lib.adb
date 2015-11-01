@@ -19,8 +19,6 @@
 --  This is the version of the body of procedure Build_Shared_Lib for most
 --  where shared libraries are supported.
 
-with Ada.Strings.Fixed; use Ada.Strings; use Ada.Strings.Fixed;
-
 separate (Gprlib)
 procedure Build_Shared_Lib is
 
@@ -366,32 +364,13 @@ procedure Build_Shared_Lib is
          declare
             List : String_List
               (1 ..
-                 Interface_ALIs.Last + Other_Interfaces.Last
+                 Interface_Objs.Last
                  + (if Auto_Init then 0 else Generated_Objects.Last));
          begin
             --  Ada unit interfaces
 
-            for K in 1 .. Interface_ALIs.Last loop
-               declare
-                  Filename : constant String := Interface_ALIs.Table (K).all;
-               begin
-                  List (K) := new String'
-                    (Filename (Filename'First .. Filename'Last - 4)
-                     & Object_Suffix);
-               end;
-            end loop;
-
-            --  Unit from Interfaces attribute
-
-            for K in 1 .. Other_Interfaces.Last loop
-               declare
-                  Filename : constant String := Other_Interfaces.Table (K).all;
-                  I        : constant Positive :=
-                               Index (Filename, ".", Backward);
-               begin
-                  List (Interface_ALIs.Last + K) := new String'
-                    (Filename (Filename'First .. I - 1) & Object_Suffix);
-               end;
+            for K in 1 .. Interface_Objs.Last loop
+               List (K) := Interface_Objs.Table (K);
             end loop;
 
             --  When a library is not auto-init, we need to add the binder
@@ -400,7 +379,7 @@ procedure Build_Shared_Lib is
 
             if not Auto_Init then
                for K in 1 .. Generated_Objects.Last loop
-                  List (Interface_ALIs.Last + Other_Interfaces.Last + K) :=
+                  List (Interface_Objs.Last + K) :=
                     new String'(Generated_Objects.Table (K).all);
                end loop;
             end if;

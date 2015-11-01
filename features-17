@@ -8,3 +8,8 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-O331-015 GPRbuild now restrict symbols from a SAL (2015-10-31)
+
+   GPRbuild now restricts the symbols exported out of a SAL. The exported
+   symbols are those part of the SAL's interface as specified by the
+   Library_Interface or Interfaces attributes.

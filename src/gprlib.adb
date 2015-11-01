@@ -169,7 +169,7 @@ procedure Gprlib is
       Table_Low_Bound      => 1,
       Table_Initial        => 50,
       Table_Increment      => 100);
-   --  A table to store the ALI files of the interfaces of an SAL
+   --  A table to store the ALI files of the interfaces of a SAL
 
    package Other_Interfaces is new GNAT.Table
      (Table_Component_Type => String_Access,
@@ -178,6 +178,15 @@ procedure Gprlib is
       Table_Initial        => 50,
       Table_Increment      => 100);
    --  A table to store the interface files other than the ALI files
+
+   package Interface_Objs is new GNAT.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 50,
+      Table_Increment      => 100);
+   --  A table to store the object files of the interfaces of a SAL. The
+   --  symbols in these files are the only ones exported from a SAL.
 
    package Binding_Options_Table is new GNAT.Table
      (Table_Component_Type => String_Access,
@@ -1225,6 +1234,9 @@ begin
 
             when Gprexch.Other_Interfaces =>
                Other_Interfaces.Append (new String'(Line (1 .. Last)));
+
+            when Interface_Obj_Files =>
+               Interface_Objs.Append (new String'(Line (1 .. Last)));
 
             when Gprexch.Standalone_Mode =>
                Standalone := GPR.Standalone'Value (Line (1 .. Last));

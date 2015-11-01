@@ -101,6 +101,7 @@ package Gprexch is
       Auto_Init,
       Interface_Dep_Files,
       Other_Interfaces,
+      Interface_Obj_Files,
       Standalone_Mode,
       Dependency_Files,
       Binding_Options,

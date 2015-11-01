@@ -230,6 +230,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_Toolchain_Version;
       procedure Write_Interface_Dep_Files;
       procedure Write_Other_Interfaces;
+      procedure Write_Interface_Obj_Files;
       procedure Write_Sources;
       procedure Write_Response_Files;
 
@@ -1966,6 +1967,116 @@ package body Gprbuild.Post_Compile is
          end loop;
       end Write_Other_Interfaces;
 
+      -------------------------------
+      -- Write_Interface_Obj_Files --
+      -------------------------------
+
+      procedure Write_Interface_Obj_Files is
+         List      : String_List_Id :=
+                       For_Project.Lib_Interface_ALIs;
+         Element   : String_Element;
+         Other_Int : Boolean := False;
+
+         function Base_Name (Name : Name_Id) return String;
+         --  File name without path nor extension
+
+         ---------------
+         -- Base_Name --
+         ---------------
+
+         function Base_Name (Name : Name_Id) return String is
+            N : constant String := Get_Name_String (Name);
+         begin
+            return Base_Name (N, File_Extension (N));
+         end Base_Name;
+
+      begin
+         Put_Line (Exchange_File, Library_Label (Interface_Obj_Files));
+
+         while List /= Nil_String loop
+            Element :=
+              Project_Tree.Shared.String_Elements.Table (List);
+
+            --  Find the source to get the absolute path of the ALI file
+
+            declare
+               Next_Proj : Project_Id;
+               Iter      : Source_Iterator;
+            begin
+               Next_Proj := For_Project.Extends;
+
+               if For_Project.Qualifier = Aggregate_Library then
+                  Iter := For_Each_Source (Project_Tree);
+               else
+                  Iter := For_Each_Source (Project_Tree, For_Project);
+               end if;
+
+               loop
+                  --  Look for the Source_Id corresponding to this unit
+
+                  while GPR.Element (Iter) /= No_Source
+                    and then
+                       --  Either an foreign language, we need the
+                       --  implementation of this unit.
+                      ((Other_Int
+                        and then
+                        (Base_Name (Name_Id (GPR.Element (Iter).Object)) /=
+                             Base_Name (Element.Value)
+                         or else GPR.Element (Iter).Kind = Spec))
+                       --  Or and Ada unit, when need the dependency file
+                       or else
+                         (not Other_Int and then
+                            (GPR.Element (Iter).Unit = null
+                             or else GPR.Element (Iter).Dep_Name /=
+                                 File_Name_Type (Element.Value))))
+                  loop
+                     Next (Iter);
+                  end loop;
+
+                  Source := GPR.Element (Iter);
+
+                  exit when Source /= No_Source
+                    or else Next_Proj = No_Project;
+
+                  Iter := For_Each_Source (Project_Tree, Next_Proj);
+                  Next_Proj := Next_Proj.Extends;
+               end loop;
+
+               if Source /= No_Source then
+                  if Source.Kind = Sep then
+                     Source := No_Source;
+
+                  elsif Source.Kind = Spec
+                    and then Other_Part (Source) /= No_Source
+                  then
+                     Source := Other_Part (Source);
+                  end if;
+               end if;
+
+               if Source /= No_Source then
+                  if Source.Project /= Project
+                    and then not Is_Extending (For_Project, Source.Project)
+                    and then not (For_Project.Qualifier = Aggregate_Library)
+                  then
+                     Source := No_Source;
+                  end if;
+               end if;
+
+               if Source /= No_Source then
+                  Put_Line
+                    (Exchange_File, Get_Name_String (Source.Object_Path));
+               end if;
+            end;
+
+            List := Element.Next;
+
+            if List = Nil_String and then not Other_Int then
+               List := For_Project.Other_Interfaces;
+               Other_Int := True;
+            end if;
+         end loop;
+      end Write_Interface_Obj_Files;
+
       -------------------
       -- Write_Sources --
       -------------------
@@ -2632,6 +2743,8 @@ package body Gprbuild.Post_Compile is
             if For_Project.Other_Interfaces /= Nil_String then
                Write_Other_Interfaces;
             end if;
+
+            Write_Interface_Obj_Files;
 
             if For_Project.Library_Src_Dir /= No_Path_Information then
                --  Copy_Source_Dir
