@@ -6,6 +6,116 @@
         derived from gcc -->
 
 
+  <!--  Export File / Object Lister  -->
+
+  <configuration>
+    <targets>
+      <target name="^i686-pc-mingw32$" />
+    </targets>
+    <hosts negate="true">
+      <host name="^i686-pc-mingw32$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("i686-pc-mingw32-nm", "-g", "--demangle");
+   for Object_Lister_Matcher use " T (.*)";
+
+   package Linker is
+      for Export_File_Format use "DEF";
+      for Export_File_Switch use "-Wl,";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^x86_64-pc-mingw32$" />
+    </targets>
+    <hosts negate="true">
+      <host name="^x86_64-pc-mingw32$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("x86_64-pc-mingw32-nm", "-g", "--demangle");
+   for Object_Lister_Matcher use " T (.*)";
+
+   package Linker is
+      for Export_File_Format use "DEF";
+      for Export_File_Switch use "-Wl,";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^i686-pc-mingw32$" />
+    </targets>
+    <hosts>
+      <host name="^i686-pc-mingw32$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("nm", "-g", "--demangle");
+   for Object_Lister_Matcher use " T (.*)";
+
+   package Linker is
+      for Export_File_Format use "DEF";
+      for Export_File_Switch use "-Wl,";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^x86_64-pc-mingw32$" />
+    </targets>
+    <hosts>
+      <host name="^x86_64-pc-mingw32$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("nm", "-g", "--demangle");
+   for Object_Lister_Matcher use " T (.*)";
+
+   package Linker is
+      for Export_File_Format use "DEF";
+      for Export_File_Switch use "-Wl,";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^x86_64.*-linux-gnu$" />
+    </targets>
+    <hosts>
+      <host name="^x86_64.*-linux-gnu$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("nm", "-g");
+   for Object_Lister_Matcher use " T (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
+      <target name="^i686.*-linux-gnu$" />
+    </targets>
+    <hosts>
+      <host name="^i686.*-linux-gnu$" />
+    </hosts>
+    <config>
+   for Object_Lister use ("nm", "-g");
+   for Object_Lister_Matcher use " T (.*)";
+
+   package Linker is
+      for Export_File_Format use "GNU";
+      for Export_File_Switch use "-Wl,--version-script=";
+   end Linker;
+    </config>
+  </configuration>
+
   <!--  Archiver.  -->
   <configuration>
     <targets>
