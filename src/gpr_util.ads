@@ -174,6 +174,22 @@ package Gpr_Util is
    --  arguments. It is the responsibility of the caller to delete this
    --  temporary file if needed.
 
+   procedure Create_Export_Symbols_File
+     (Driver_Path      : String;
+      Options          : Argument_List;
+      Sym_Matcher      : String;
+      Format           : Export_File_Format;
+      Objects          : String_List;
+      Export_File_Name : out Path_Name_Type);
+   --  Create an export symbols file for the linker. The symbols from the
+   --  listed object files will get exported from a shared libraries. All other
+   --  symbols will remain local to the shared library. Driver_Path is the tool
+   --  used to list the symbols from an object file. Options are the options
+   --  needed by the driver. Sym_Matcher is the regular expression used to
+   --  match the symbol out of the tool output. Format the the export file
+   --  format to generate. Objects is the list of object files to use. Finally
+   --  the generated export filename is returned in Export_File.
+
    ----------
    -- Misc --
    ----------

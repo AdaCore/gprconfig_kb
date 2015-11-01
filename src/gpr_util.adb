@@ -31,6 +31,7 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 with GNAT.Sockets;
 with GNAT.Table;
+with GNAT.Regpat;               use GNAT.Regpat;
 
 with Interfaces.C.Strings;
 with System;
@@ -226,6 +227,178 @@ package body Gpr_Util is
          OS_Exit (0);
       end if;
    end Check_Version_And_Help_G;
+
+   --------------------------------
+   -- Create_Export_Symbols_File --
+   --------------------------------
+
+   procedure Create_Export_Symbols_File
+     (Driver_Path      : String;
+      Options          : Argument_List;
+      Sym_Matcher      : String;
+      Format           : Export_File_Format;
+      Objects          : String_List;
+      Export_File_Name : out Path_Name_Type)
+   is
+      use type Containers.Count_Type;
+
+      package Syms_List is new Containers.Indefinite_Ordered_Sets (String);
+
+      procedure Get_Syms (Object_File : String);
+      --  Read exported symbols from Object_File and add them into Syms
+
+      procedure Write (Str : String);
+      --  Write Str into the export file
+
+      Pattern : constant Pattern_Matcher := Compile (Sym_Matcher);
+
+      Syms : Syms_List.Set;
+      FD   : File_Descriptor;
+
+      --------------
+      -- Get_Syms --
+      --------------
+
+      procedure Get_Syms (Object_File : String) is
+         Success   : Boolean;
+         Ret       : Integer;
+         Opts      : Argument_List (1 .. Options'Length + 1);
+         File      : File_Type;
+         Buffer    : String (1 .. 512);
+         Last      : Natural;
+         File_Name : Temp_File_Name;
+         Matches   : Match_Array (0 .. 1);
+
+         function Filename return String
+           is (File_Name (File_Name'First .. File_Name'Last - 1));
+         --  Remove the ASCII.NUL from end of temporary file-name
+
+      begin
+         Opts (1 .. Options'Length) := Options;
+         Opts (Opts'Last) := new String'(Object_File);
+
+         Create_Temp_File (FD, File_Name);
+         Close (FD);
+
+         Spawn (Driver_Path, Opts, Filename, Success, Ret);
+
+         if Success then
+            Open (File, In_File, Filename);
+
+            while not End_Of_File (File) loop
+               Get_Line (File, Buffer, Last);
+
+               Match (Pattern, Buffer (1 .. Last), Matches);
+
+               if Matches (1) /= No_Match then
+                  Syms.Insert
+                    (Buffer (Matches (1).First .. Matches (1).Last));
+               end if;
+            end loop;
+
+            Close (File);
+         end if;
+
+         Delete_File (Filename);
+
+         Free (Opts (Opts'Last));
+      end Get_Syms;
+
+      -----------
+      -- Write --
+      -----------
+
+      procedure Write (Str : String) is
+         S : constant String := Str & ASCII.LF;
+         R : Integer with Unreferenced;
+      begin
+         R := Write (FD, S (S'First)'Address, S'Length);
+      end Write;
+
+   begin
+      Export_File_Name := No_Path;
+
+      if Format = None then
+         return;
+      end if;
+
+      --  Get the exported symbols from every object files, first get the nm
+      --  tool for the target.
+
+      for K in Objects'Range loop
+         Get_Syms (Objects (K).all);
+      end loop;
+
+      if Syms.Length = 0 then
+         return;
+      end if;
+
+      --  Now create the export file, either GNU or DEF format
+
+      Create_Export_File : declare
+         File_Name : Temp_File_Name;
+      begin
+         --  Create (Export_File, Out_File);
+
+         Create_Temp_File (FD, File_Name);
+
+         Name_Len := File_Name'Length;
+         Name_Buffer (1 .. Name_Len) := File_Name;
+
+         --  Always add .def at the end, this is needed for Windows
+
+         Name_Buffer (Name_Len .. Name_Len + 3) := ".def";
+         Name_Len := Name_Len + 3;
+         Export_File_Name := Name_Find;
+
+         --  Header
+
+         case Format is
+            when GNU =>
+               Write ("SYMS {");
+               Write ("   global:");
+
+            when Def =>
+               Write ("EXPORTS");
+
+            when others =>
+               null;
+         end case;
+
+         --  Symbols
+
+         for Sym of Syms loop
+            case Format is
+               when GNU =>
+                  Write (Sym & ";");
+
+               when Def =>
+                  Write (Sym);
+
+               when others =>
+                  null;
+            end case;
+         end loop;
+
+         --  Footer
+
+         case Format is
+            when GNU =>
+               Write ("   local: *;");
+               Write ("};");
+
+            when Def =>
+               null;
+
+            when others =>
+               null;
+         end case;
+
+         Close (FD);
+
+         Rename_File (File_Name, Get_Name_String (Export_File_Name), Success);
+      end Create_Export_File;
+   end Create_Export_Symbols_File;
 
    --------------------------
    -- Create_Response_File --
