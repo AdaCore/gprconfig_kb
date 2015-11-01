@@ -150,6 +150,11 @@ package body GPR.Attr is
    "SVarchive_suffix#" &
    "LVlibrary_partial_linker#" &
 
+   --  Configuration - Object Lister
+
+   "LVobject_lister#" &
+   "SVobject_lister_matcher#" &
+
    --  Configuration - Shared libraries
 
    "SVshared_library_prefix#" &
@@ -285,6 +290,11 @@ package body GPR.Attr is
    "SVmax_command_line_length#" &
    "SVresponse_file_format#" &
    "LVresponse_file_switches#" &
+
+   --  Configuration - Export file
+
+   "SVexport_file_format#" &
+   "SVexport_file_switch#" &
 
    --  package Clean
 

@@ -1982,6 +1982,38 @@ package body GPR.Nmsc is
                      Put (Into_List => Project.Config.Resp_File_Options,
                           From_List => Attribute.Value.Values,
                           In_Tree   => Data.Tree);
+
+                  elsif Attribute.Name = Name_Export_File_Switch then
+
+                     Project.Config.Export_File_Switch :=
+                       Attribute.Value.Value;
+
+                  elsif Attribute.Name = Name_Export_File_Format then
+
+                     declare
+                        Name  : Name_Id;
+
+                     begin
+                        Get_Name_String (Attribute.Value.Value);
+                        To_Lower (Name_Buffer (1 .. Name_Len));
+                        Name := Name_Find;
+
+                        if Name = Name_None then
+                           Project.Config.Export_File_Format := None;
+
+                        elsif Name = Name_Gnu then
+                           Project.Config.Export_File_Format := GNU;
+
+                        elsif Name_Buffer (1 .. Name_Len) = "def" then
+                           Project.Config.Export_File_Format := Def;
+
+                        else
+                           Error_Msg
+                             (Data.Flags,
+                              "illegal export file format",
+                              Attribute.Value.Location, Project);
+                        end if;
+                     end;
                   end if;
                end if;
 
@@ -2122,6 +2154,32 @@ package body GPR.Nmsc is
                   Put (Into_List => Project.Config.Archive_Indexer,
                        From_List => List,
                        In_Tree   => Data.Tree);
+
+               elsif Attribute.Name = Name_Object_Lister then
+
+                  --  Attribute Object_Lister: the optional object
+                  --  lister (usually "nm") with its minimum options.
+
+                  List := Attribute.Value.Values;
+
+                  if List = Nil_String then
+                     Error_Msg
+                       (Data.Flags,
+                        "object lister cannot be null",
+                        Attribute.Value.Location, Project);
+                  end if;
+
+                  Put (Into_List => Project.Config.Object_Lister,
+                       From_List => List,
+                       In_Tree   => Data.Tree);
+
+               elsif Attribute.Name = Name_Object_Lister_Matcher then
+
+                  --  Attribute Object_Lister_Matcher: mandatory when
+                  --  object lister (usually "nm") is defined.
+
+                  Project.Config.Object_Lister_Matcher :=
+                    Attribute.Value.Value;
 
                elsif Attribute.Name = Name_Library_Partial_Linker then
 

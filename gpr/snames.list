@@ -273,3 +273,7 @@ Linker_Options
 Runtime
 Mode
 Install_Name
+Object_Lister
+Object_Lister_Matcher
+Export_File_Format
+Export_File_Switch

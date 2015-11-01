@@ -1285,6 +1285,12 @@ package GPR is
       GCC_Option_List);
    --  The format of the different response files
 
+   type Export_File_Format is
+     (None,
+      GNU,
+      Def);
+   --  The format of the different exported symbol files
+
    type Project_Configuration is record
       Target : Name_Id := No_Name;
       --  The target of the configuration, when specified
@@ -1377,6 +1383,18 @@ package GPR is
       --  The suffix of archives. Specified in the configuration. When not
       --  specified, defaults to ".a".
 
+      Object_Lister : Name_List_Index := No_Name_List;
+      --  The object lister if any defined
+
+      Object_Lister_Matcher : Name_Id := No_Name;
+      --  Pattern to match symbols out of the object lister output
+
+      Export_File_Format : GPR.Export_File_Format := GPR.None;
+      --  The format of the expor file
+
+      Export_File_Switch : Name_Id := No_Name;
+      --  Swicth to pass the export file to the linker
+
       Lib_Partial_Linker : Name_List_Index := No_Name_List;
 
       --  Shared libraries
@@ -1447,6 +1465,10 @@ package GPR is
                                Archive_Builder_Append_Option  => No_Name_List,
                                Archive_Indexer                => No_Name_List,
                                Archive_Suffix                 => No_File,
+                               Object_Lister                  => No_Name_List,
+                               Object_Lister_Matcher          => No_Name,
+                               Export_File_Format             => GPR.None,
+                               Export_File_Switch             => No_Name,
                                Lib_Partial_Linker             => No_Name_List,
                                Shared_Lib_Driver              => No_File,
                                Shared_Lib_Prefix              => No_File,

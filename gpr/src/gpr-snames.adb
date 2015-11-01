@@ -328,6 +328,10 @@ package body GPR.Snames is
       Add_Name ("runtime");
       Add_Name ("mode");
       Add_Name ("install_name");
+      Add_Name ("object_lister");
+      Add_Name ("object_lister_matcher");
+      Add_Name ("export_file_format");
+      Add_Name ("export_file_switch");
 
       Initialized := True;
    end Initialize;

@@ -2273,6 +2273,42 @@ Shared Library Related Attributes
 
   This attribute is used by GPRlib to link shared libraries with Ada code.
 
+* Object_Lister
+
+  Specifies the name of the executable of the object lister with the
+  minimum options, if any. This tool is used to list symbols out of
+  object code to create a list of the symbols to export. Example:
+
+  .. code-block:: gpr
+
+       for Object_Lister use ("nm", "-g", "--demangle");
+
+* Object_Lister_Matcher
+
+  A regular expression pattern for matching symbols out of the output
+  of Object_Lister tool. Example:
+
+  .. code-block:: gpr
+
+       for Object_Lister_Matcher use " T (.*)";
+
+* Export_File_Format
+
+  The export file format to generate, this is either DEF (Windows)
+  or (GNU). Example:
+
+  .. code-block:: gpr
+
+       for Export_File_Format use "GNU";
+
+* Export_File_Switch
+
+  The required switch to pass the export file to the linker. Example:
+
+  .. code-block:: gpr
+
+       for Export_File_Switch use "-Wl,--version-script=";
+
 
 .. _Package_Naming:
 

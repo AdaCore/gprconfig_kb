@@ -301,6 +301,10 @@ package GPR.Snames is
    Name_Runtime                          : constant Name_Id := N + 273;
    Name_Mode                             : constant Name_Id := N + 274;
    Name_Install_Name                     : constant Name_Id := N + 275;
+   Name_Object_Lister                    : constant Name_Id := N + 276;
+   Name_Object_Lister_Matcher            : constant Name_Id := N + 277;
+   Name_Export_File_Format               : constant Name_Id := N + 278;
+   Name_Export_File_Switch               : constant Name_Id := N + 279;
 
    subtype Reserved_Ada_95 is Name_Id
       range Name_Abort .. Name_Tagged;
