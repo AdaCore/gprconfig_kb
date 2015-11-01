@@ -1287,6 +1287,7 @@ package GPR is
 
    type Export_File_Format is
      (None,
+      Flat,
       GNU,
       Def);
    --  The format of the different exported symbol files

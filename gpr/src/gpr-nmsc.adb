@@ -2007,6 +2007,9 @@ package body GPR.Nmsc is
                         elsif Name_Buffer (1 .. Name_Len) = "def" then
                            Project.Config.Export_File_Format := Def;
 
+                        elsif Name_Buffer (1 .. Name_Len) = "flat" then
+                           Project.Config.Export_File_Format := Flat;
+
                         else
                            Error_Msg
                              (Data.Flags,

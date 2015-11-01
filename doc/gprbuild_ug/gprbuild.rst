@@ -2294,8 +2294,8 @@ Shared Library Related Attributes
 
 * Export_File_Format
 
-  The export file format to generate, this is either DEF (Windows)
-  or (GNU). Example:
+  The export file format to generate, this is either DEF (Windows),
+  Flat or GNU. Example:
 
   .. code-block:: gpr
 

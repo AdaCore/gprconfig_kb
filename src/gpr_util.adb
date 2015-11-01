@@ -361,7 +361,7 @@ package body Gpr_Util is
             when Def =>
                Write ("EXPORTS");
 
-            when others =>
+            when None | Flat =>
                null;
          end case;
 
@@ -372,10 +372,10 @@ package body Gpr_Util is
                when GNU =>
                   Write (Sym & ";");
 
-               when Def =>
+               when Def | Flat =>
                   Write (Sym);
 
-               when others =>
+               when None =>
                   null;
             end case;
          end loop;
@@ -387,10 +387,7 @@ package body Gpr_Util is
                Write ("   local: *;");
                Write ("};");
 
-            when Def =>
-               null;
-
-            when others =>
+            when None | Def | Flat =>
                null;
          end case;
 
