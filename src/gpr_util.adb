@@ -291,7 +291,7 @@ package body Gpr_Util is
                Match (Pattern, Buffer (1 .. Last), Matches);
 
                if Matches (1) /= No_Match then
-                  Syms.Insert
+                  Syms.Include
                     (Buffer (Matches (1).First .. Matches (1).Last));
                end if;
             end loop;
