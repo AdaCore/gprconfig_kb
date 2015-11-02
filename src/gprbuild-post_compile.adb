@@ -2764,7 +2764,9 @@ package body Gprbuild.Post_Compile is
               (Exchange_File,
                Standalone'Image (For_Project.Standalone_Library));
 
-            if Object_Lister_Path /= null then
+            if Object_Lister_Path /= null
+              and then For_Project.Symbol_Data.Symbol_Policy = Restricted
+            then
                --  Write object lister
 
                Put_Line (Exchange_File, Library_Label (Object_Lister));
