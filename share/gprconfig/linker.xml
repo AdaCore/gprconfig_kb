@@ -5,7 +5,6 @@
         application with GNAT and either GCC or toolchains
         derived from gcc -->
 
-
   <!--  Export File / Object Lister  -->
 
   <configuration>
@@ -17,7 +16,7 @@
     </hosts>
     <config>
    for Object_Lister use ("i686-pc-mingw32-nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TD] (.*)";
+   for Object_Lister_Matcher use " [TDR] (.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -35,7 +34,7 @@
     </hosts>
     <config>
    for Object_Lister use ("x86_64-pc-mingw32-nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TD] (.*)";
+   for Object_Lister_Matcher use " [TDR] (.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -53,7 +52,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TD] (.*)";
+   for Object_Lister_Matcher use " [TDR] (.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -71,7 +70,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TD] (.*)";
+   for Object_Lister_Matcher use " [TDR] (.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -89,7 +88,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
-   for Object_Lister_Matcher use " [TD] (.*)";
+   for Object_Lister_Matcher use " [TDR] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
@@ -107,7 +106,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
-   for Object_Lister_Matcher use " [TD] (.*)";
+   for Object_Lister_Matcher use " [TDR] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
@@ -123,7 +122,7 @@
     </targets>
     <config>
    for Object_Lister use ("nm", "-g");
-   for Object_Lister_Matcher use " [TD] (.*)";
+   for Object_Lister_Matcher use " [TDS] (.*)";
 
    package Linker is
       for Export_File_Format use "FLAT";
