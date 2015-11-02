@@ -2744,8 +2744,6 @@ package body Gprbuild.Post_Compile is
                Write_Other_Interfaces;
             end if;
 
-            Write_Interface_Obj_Files;
-
             if For_Project.Library_Src_Dir /= No_Path_Information then
                --  Copy_Source_Dir
 
@@ -2767,6 +2765,10 @@ package body Gprbuild.Post_Compile is
             if Object_Lister_Path /= null
               and then For_Project.Symbol_Data.Symbol_Policy = Restricted
             then
+               --  Write interface objects
+
+               Write_Interface_Obj_Files;
+
                --  Write object lister
 
                Put_Line (Exchange_File, Library_Label (Object_Lister));
