@@ -1204,26 +1204,20 @@ package GPR is
 
    type Lib_Kind is (Static, Dynamic, Relocatable);
 
-   type Policy is (Autonomous, Compliant, Controlled, Restricted, Direct);
+   type Policy is (Restricted, Unrestricted);
    --  Type to specify the symbol policy, when symbol control is supported.
-   --  See full explanation about this type in package Symbols.
-   --    Autonomous: Create a symbol file without considering any reference
-   --    Compliant:  Try to be as compatible as possible with an existing ref
-   --    Controlled: Fail if symbols are not the same as those in the reference
-   --    Restricted: Restrict the symbols to those in the symbol file
-   --    Direct:     The symbol file is used as is
+   --    Restricted:    Restrict the symbols to those in the symbol file
+   --    Unrestrictedt: All symbols are exported
 
    type Symbol_Record is record
       Symbol_File   : Path_Name_Type := No_Path;
-      Reference     : Path_Name_Type := No_Path;
-      Symbol_Policy : Policy  := Autonomous;
+      Symbol_Policy : Policy  := Restricted;
    end record;
    --  Type to keep the symbol data to be used when building a shared library
 
    No_Symbols : constant Symbol_Record :=
      (Symbol_File   => No_Path,
-      Reference     => No_Path,
-      Symbol_Policy => Autonomous);
+      Symbol_Policy => Restricted);
    --  The default value of the symbol data
 
    function Image (The_Casing : Casing_Type) return String;

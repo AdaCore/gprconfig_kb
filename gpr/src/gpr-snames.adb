@@ -236,7 +236,6 @@ package body GPR.Snames is
       Add_Name ("library_major_minor_id_supported");
       Add_Name ("library_options");
       Add_Name ("library_partial_linker");
-      Add_Name ("library_reference_symbol_file");
       Add_Name ("library_rpath_options");
       Add_Name ("library_standalone");
       Add_Name ("library_encapsulated_options");

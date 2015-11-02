@@ -181,7 +181,6 @@ Library_Name
 Library_Major_Minor_Id_Supported
 Library_Options
 Library_Partial_Linker
-Library_Reference_Symbol_File
 Library_Rpath_Options
 Library_Standalone
 Library_Encapsulated_Options

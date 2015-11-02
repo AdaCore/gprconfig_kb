@@ -4787,14 +4787,7 @@ package body GPR.Nmsc is
                                  Project.Decl.Attributes,
                                  Shared);
 
-      Lib_Ref_Symbol_File : constant GPR.Variable_Value :=
-                              GPR.Util.Value_Of
-                                (Snames.Name_Library_Reference_Symbol_File,
-                                 Project.Decl.Attributes,
-                                 Shared);
-
       Auto_Init_Supported : Boolean;
-      OK                  : Boolean := True;
 
    begin
       Auto_Init_Supported := Project.Config.Auto_Init_Supported;
@@ -5064,7 +5057,10 @@ package body GPR.Nmsc is
 
          --  First, the symbol policy
 
-         if not Lib_Symbol_Policy.Default then
+         if Lib_Symbol_Policy.Default then
+            Project.Symbol_Data.Symbol_Policy := Restricted;
+
+         else
             declare
                Value : constant String :=
                          To_Lower
@@ -5073,20 +5069,11 @@ package body GPR.Nmsc is
             begin
                --  Symbol policy must have one of a limited number of values
 
-               if Value = "autonomous" or else Value = "default" then
-                  Project.Symbol_Data.Symbol_Policy := Autonomous;
-
-               elsif Value = "compliant" then
-                  Project.Symbol_Data.Symbol_Policy := Compliant;
-
-               elsif Value = "controlled" then
-                  Project.Symbol_Data.Symbol_Policy := Controlled;
+               if Value = "unrestricted" then
+                  Project.Symbol_Data.Symbol_Policy := Unrestricted;
 
                elsif Value = "restricted" then
                   Project.Symbol_Data.Symbol_Policy := Restricted;
-
-               elsif Value = "direct" then
-                  Project.Symbol_Data.Symbol_Policy := Direct;
 
                else
                   Error_Msg
@@ -5097,20 +5084,8 @@ package body GPR.Nmsc is
             end;
          end if;
 
-         --  If attribute Library_Symbol_File is not specified, symbol policy
-         --  cannot be Restricted.
-
-         if Lib_Symbol_File.Default then
-            if Project.Symbol_Data.Symbol_Policy = Restricted then
-               Error_Msg
-                 (Data.Flags,
-                  "Library_Symbol_File needs to be defined when " &
-                  "symbol policy is Restricted",
-                  Lib_Symbol_Policy.Location, Project);
-            end if;
-
-         else
-            --  Library_Symbol_File is defined
+         if not Lib_Symbol_File.Default then
+            --  Library_Symbol_File is defined, check file exists
 
             Project.Symbol_Data.Symbol_File :=
               Path_Name_Type (Lib_Symbol_File.Value);
@@ -5124,133 +5099,28 @@ package body GPR.Nmsc is
                   Lib_Symbol_File.Location, Project);
 
             else
-               OK := not Is_Absolute_Path (Name_Buffer (1 .. Name_Len));
-
-               if OK then
-                  for J in 1 .. Name_Len loop
-                     if Is_Directory_Separator (Name_Buffer (J)) then
-                        OK := False;
-                        exit;
-                     end if;
-                  end loop;
-               end if;
-
-               if not OK then
-                  Error_Msg_File_1 := File_Name_Type (Lib_Symbol_File.Value);
-                  Error_Msg
-                    (Data.Flags,
-                     "symbol file name { is illegal. " &
-                     "Name cannot include directory info.",
-                     Lib_Symbol_File.Location, Project);
-               end if;
-            end if;
-         end if;
-
-         --  If attribute Library_Reference_Symbol_File is not defined,
-         --  symbol policy cannot be Compliant or Controlled.
-
-         if Lib_Ref_Symbol_File.Default then
-            if Project.Symbol_Data.Symbol_Policy = Compliant
-              or else Project.Symbol_Data.Symbol_Policy = Controlled
-            then
-               Error_Msg
-                 (Data.Flags,
-                  "a reference symbol file needs to be defined",
-                  Lib_Symbol_Policy.Location, Project);
-            end if;
-
-         else
-            --  Library_Reference_Symbol_File is defined, check file exists
-
-            Project.Symbol_Data.Reference :=
-              Path_Name_Type (Lib_Ref_Symbol_File.Value);
-
-            Get_Name_String (Lib_Ref_Symbol_File.Value);
-
-            if Name_Len = 0 then
-               Error_Msg
-                 (Data.Flags,
-                  "reference symbol file name cannot be an empty string",
-                  Lib_Symbol_File.Location, Project);
-
-            else
                if not Is_Absolute_Path (Name_Buffer (1 .. Name_Len)) then
                   Name_Len := 0;
                   Add_Str_To_Name_Buffer
                     (Get_Name_String (Project.Directory.Name));
                   Add_Str_To_Name_Buffer
-                    (Get_Name_String (Lib_Ref_Symbol_File.Value));
-                  Project.Symbol_Data.Reference := Name_Find;
+                    (Get_Name_String (Lib_Symbol_File.Value));
+                  Project.Symbol_Data.Symbol_File := Name_Find;
                end if;
 
                if not Is_Regular_File
-                        (Get_Name_String (Project.Symbol_Data.Reference))
+                 (Get_Name_String (Project.Symbol_Data.Symbol_File))
                then
                   Error_Msg_File_1 :=
-                    File_Name_Type (Lib_Ref_Symbol_File.Value);
+                    File_Name_Type (Lib_Symbol_File.Value);
 
-                  --  For controlled and direct symbol policies, it is an error
-                  --  if the reference symbol file does not exist. For other
-                  --  symbol policies, this is just a warning
-
-                  Error_Msg_Warn :=
-                    Project.Symbol_Data.Symbol_Policy /= Controlled
-                      and then Project.Symbol_Data.Symbol_Policy /= Direct;
+                  Error_Msg_Warn := False;
 
                   Error_Msg
                     (Data.Flags,
-                     "<library reference symbol file { does not exist",
-                     Lib_Ref_Symbol_File.Location, Project);
+                     "<library symbol file { does not exist",
+                     Lib_Symbol_File.Location, Project);
 
-                  --  In addition in the non-controlled case, if symbol policy
-                  --  is Compliant, it is changed to Autonomous, because there
-                  --  is no reference to check against, and we don't want to
-                  --  fail in this case.
-
-                  if Project.Symbol_Data.Symbol_Policy /= Controlled then
-                     if Project.Symbol_Data.Symbol_Policy = Compliant then
-                        Project.Symbol_Data.Symbol_Policy := Autonomous;
-                     end if;
-                  end if;
-               end if;
-
-               --  If both the reference symbol file and the symbol file are
-               --  defined, then check that they are not the same file.
-
-               if Project.Symbol_Data.Symbol_File /= No_Path then
-                  Get_Name_String (Project.Symbol_Data.Symbol_File);
-
-                  if Name_Len > 0 then
-                     declare
-                        --  We do not need to pass a Directory to
-                        --  Normalize_Pathname, since the path_information
-                        --  already contains absolute information.
-
-                        Symb_Path : constant String :=
-                                      Normalize_Pathname
-                                        (Get_Name_String
-                                           (Project.Object_Directory.Name) &
-                                         Name_Buffer (1 .. Name_Len),
-                                         Directory     => "/",
-                                         Resolve_Links =>
-                                           Opt.Follow_Links_For_Files);
-                        Ref_Path  : constant String :=
-                                      Normalize_Pathname
-                                        (Get_Name_String
-                                           (Project.Symbol_Data.Reference),
-                                         Directory     => "/",
-                                         Resolve_Links =>
-                                           Opt.Follow_Links_For_Files);
-                     begin
-                        if Symb_Path = Ref_Path then
-                           Error_Msg
-                             (Data.Flags,
-                              "library reference symbol file and library" &
-                              " symbol file cannot be the same file",
-                              Lib_Ref_Symbol_File.Location, Project);
-                        end if;
-                     end;
-                  end if;
                end if;
             end if;
          end if;
