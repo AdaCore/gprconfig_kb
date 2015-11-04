@@ -291,8 +291,6 @@ procedure Build_Shared_Lib is
          Add_Arg (Library_Options_Table.Table (J));
       end loop;
 
-      Display_Linking_Command;
-
       --  Check if a response file is needed
 
       if Max_Command_Line_Length > 0
@@ -349,8 +347,6 @@ procedure Build_Shared_Lib is
                end loop;
             end if;
          end;
-
-         Display_Linking_Command;
       end if;
 
       --  For a standalone shared library, create an export symbols file if
@@ -399,6 +395,8 @@ procedure Build_Shared_Lib is
             end if;
          end;
       end if;
+
+      Display_Linking_Command;
 
       --  Finally spawn the library builder driver
 

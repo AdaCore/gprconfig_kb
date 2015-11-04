@@ -280,6 +280,15 @@ package body Gpr_Util is
          Create_Temp_File (FD, File_Name);
          Close (FD);
 
+         if Verbose_Mode then
+            Put  (Driver_Path);
+            for O of Opts loop
+               Put (' ');
+               Put (O.all);
+            end loop;
+            New_Line;
+         end if;
+
          Spawn (Driver_Path, Opts, Filename, Success, Ret);
 
          if Success then
