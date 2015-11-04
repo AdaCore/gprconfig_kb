@@ -369,16 +369,14 @@ procedure Build_Shared_Lib is
                List (K) := Interface_Objs.Table (K);
             end loop;
 
-            --  When a library is not auto-init, we need to add the binder
-            --  generated object file which contains the library initilization
-            --  code to be explicitely called by the main application.
+            --  We need to add the binder generated object file which contains
+            --  the library initilization code to be explicitely called by the
+            --  main application.
 
-            if not Auto_Init then
-               for K in 1 .. Generated_Objects.Last loop
-                  List (Interface_Objs.Last + K) :=
-                    new String'(Generated_Objects.Table (K).all);
-               end loop;
-            end if;
+            for K in 1 .. Generated_Objects.Last loop
+               List (Interface_Objs.Last + K) :=
+                 new String'(Generated_Objects.Table (K).all);
+            end loop;
 
             Create_Export_Symbols_File
               (Driver_Path      => Object_Lister.all,
