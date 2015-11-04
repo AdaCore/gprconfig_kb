@@ -15,8 +15,8 @@
       <host name="^i686-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("i686-pc-mingw32-nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister use ("i686-pc-mingw32-nm", "-g");
+   for Object_Lister_Matcher use " [TDR] _(.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -33,8 +33,8 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("x86_64-pc-mingw32-nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister use ("x86_64-pc-mingw32-nm", "-g");
+   for Object_Lister_Matcher use " [TDR] _(.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -51,8 +51,8 @@
       <host name="^i686-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister use ("nm", "-g");
+   for Object_Lister_Matcher use " [TDR] _(.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -69,8 +69,8 @@
       <host name="^x86_64-pc-mingw32$" />
     </hosts>
     <config>
-   for Object_Lister use ("nm", "-g", "--demangle");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister use ("nm", "-g");
+   for Object_Lister_Matcher use " [TDR] _(.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
