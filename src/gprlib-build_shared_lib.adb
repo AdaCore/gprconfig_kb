@@ -359,9 +359,7 @@ procedure Build_Shared_Lib is
       then
          declare
             List : String_List
-              (1 ..
-                 Interface_Objs.Last
-                 + (if Auto_Init then 0 else Generated_Objects.Last));
+                     (1 .. Interface_Objs.Last + Generated_Objects.Last);
          begin
             --  Ada unit interfaces
 
@@ -374,8 +372,7 @@ procedure Build_Shared_Lib is
             --  main application.
 
             for K in 1 .. Generated_Objects.Last loop
-               List (Interface_Objs.Last + K) :=
-                 new String'(Generated_Objects.Table (K).all);
+               List (Interface_Objs.Last + K) := Generated_Objects.Table (K);
             end loop;
 
             Create_Export_Symbols_File
