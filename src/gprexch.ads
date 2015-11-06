@@ -113,7 +113,7 @@ package Gprexch is
       Max_Command_Line_Length,
       Response_File_Format,
       Response_File_Switches,
-      Keep_Response_File,
+      Keep_Temporary_Files,
       Object_Lister,
       Object_Lister_Matcher,
       Export_File);

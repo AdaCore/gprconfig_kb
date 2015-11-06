@@ -413,7 +413,7 @@ procedure Gprlib is
 
    Response_File_Switches : String_List_Access := new String_List (1 .. 0);
 
-   Delete_Response_File : Boolean := True;
+   Delete_Temporary_Files : Boolean := True;
 
    Export_File_Format : GPR.Export_File_Format := GPR.None;
 
@@ -926,8 +926,8 @@ begin
             when Gprexch.Major_Minor_Id_Supported =>
                Major_Minor_Id_Supported := True;
 
-            when Gprexch.Keep_Response_File =>
-               Delete_Response_File := False;
+            when Gprexch.Keep_Temporary_Files =>
+               Delete_Temporary_Files := False;
 
             when Gprexch.Separate_Run_Path_Options =>
                Separate_Run_Path_Options := True;
@@ -967,9 +967,9 @@ begin
             when Gprexch.Static =>
                Fail_Program (null, "static section should be empty");
 
-            when Gprexch.Keep_Response_File =>
+            when Gprexch.Keep_Temporary_Files =>
                Fail_Program
-                 (null, "keep response file section should be empty");
+                 (null, "keep temporary files section should be empty");
 
             when Gprexch.Separate_Run_Path_Options =>
                Fail_Program
@@ -1663,7 +1663,7 @@ begin
 
                   Spawn (Gnatbind_Path.all, Args, Success);
 
-                  if Delete_Response_File then
+                  if Delete_Temporary_Files then
                      declare
                         Succ : Boolean;
                         pragma Warnings (Off, Succ);

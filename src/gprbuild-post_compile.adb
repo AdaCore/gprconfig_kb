@@ -2134,10 +2134,6 @@ package body Gprbuild.Post_Compile is
                  (Exchange_File, Response_File_Switches,
                   For_Project.Config.Resp_File_Options);
             end if;
-
-            if Debug.Debug_Flag_N then
-               Put_Line (Exchange_File, Library_Label (Keep_Response_File));
-            end if;
          end if;
       end Write_Response_Files;
 
@@ -2797,6 +2793,10 @@ package body Gprbuild.Post_Compile is
          end if;
 
          Write_Response_Files;
+
+         if Debug.Debug_Flag_N then
+            Put_Line (Exchange_File, Library_Label (Keep_Temporary_Files));
+         end if;
 
          Close (Exchange_File);
 
