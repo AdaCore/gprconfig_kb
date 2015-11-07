@@ -359,7 +359,7 @@ package body Gprbuild.Post_Compile is
          -- Process_ALI --
          -----------------
 
-         Warning_For_Library : Boolean := False;
+         Interface_Incomplete : Boolean := False;
 
          procedure Process_ALI
            (The_ALI : File_Name_Type;
@@ -422,14 +422,14 @@ package body Gprbuild.Post_Compile is
                              and then not Processed_ALIs.Get (Afile)
                            then
                               if not Interface_ALIs.Get (Afile) then
-                                 if not Warning_For_Library then
+                                 if not Interface_Incomplete then
                                     Put
-                                      ("Warning: In library project """);
+                                      ("Error: In library project """);
                                     Get_Name_String (Proj.Name);
                                     To_Mixed (Name_Buffer (1 .. Name_Len));
                                     Put (Name_Buffer (1 .. Name_Len));
                                     Put_Line ("""");
-                                    Warning_For_Library := True;
+                                    Interface_Incomplete := True;
                                  end if;
 
                                  Put ("         Unit """);
@@ -487,7 +487,7 @@ package body Gprbuild.Post_Compile is
             Processed_ALIs.Reset;
             Library_ALIs.Reset;
             Interface_ALIs.Reset;
-            Warning_For_Library := False;
+            Interface_Incomplete := False;
 
             if Proj.Qualifier /= Aggregate_Library and then
                Proj.Extended_By = No_Project
@@ -570,23 +570,26 @@ package body Gprbuild.Post_Compile is
                Next (Iter);
             end loop;
 
-            --  In not quiet mode, check if the interface set is complete
+            --  Check if the interface set is complete
 
-            if not Opt.Quiet_Output then
-               declare
-                  Iface : String_List_Id := Proj.Lib_Interface_ALIs;
-                  ALI   : File_Name_Type;
+            declare
+               Iface : String_List_Id := Proj.Lib_Interface_ALIs;
+               ALI   : File_Name_Type;
 
-               begin
-                  while Iface /= Nil_String loop
-                     ALI :=
-                       File_Name_Type
-                         (Tree.Shared.String_Elements.Table (Iface).Value);
-                     Process_ALI (ALI, Proj);
-                     Iface :=
-                       Tree.Shared.String_Elements.Table (Iface).Next;
-                  end loop;
-               end;
+            begin
+               while Iface /= Nil_String loop
+                  ALI :=
+                    File_Name_Type
+                      (Tree.Shared.String_Elements.Table (Iface).Value);
+                  Process_ALI (ALI, Proj);
+                  Iface :=
+                    Tree.Shared.String_Elements.Table (Iface).Next;
+               end loop;
+            end;
+
+            if Interface_Incomplete then
+               Fail_Program
+                 (Project_Tree, "incomplete Stand-Alone Library interface");
             end if;
          end Process_Standalone;
 
