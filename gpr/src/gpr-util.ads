@@ -50,15 +50,19 @@ package GPR.Util is
    procedure Fail_Program
      (Project_Tree   : Project_Tree_Ref;
       S              : String;
-      Flush_Messages : Boolean := True);
-   --  Terminate program with a message and a fatal status code
+      Flush_Messages : Boolean := True;
+      No_Message     : Boolean := False);
+   --  Terminate program with a message and a fatal status code. Do not issue
+   --  any message when No_Message is True.
 
    procedure Finish_Program
      (Project_Tree : Project_Tree_Ref;
       Exit_Code    : Exit_Code_Type := E_Success;
-      S            : String := "");
+      S            : String := "";
+      No_Message   : Boolean := False);
    --  Terminate program, with or without a message, setting the status code
-   --  according to Fatal. This properly removes all temporary files.
+   --  according to Fatal. This properly removes all temporary files. Do not
+   --  issue any message when No_Message is True.
 
    procedure Duplicate
      (This   : in out Name_List_Index;

@@ -1154,6 +1154,7 @@ package body Gprbuild.Compile is
 
                if (Opt.Keep_Going or else Get_Maximum_Processes > 1)
                  and then not Bad_Compilations.Is_Empty
+                 and then not Opt.No_Exit_Message
                then
                   New_Line;
 
@@ -1189,7 +1190,9 @@ package body Gprbuild.Compile is
                      Gprbuild.Compilation.Slave.Unregister_Remote_Slaves;
                   end if;
 
-                  Fail_Program (Tree, "*** compilation phase failed");
+                  Fail_Program
+                    (Tree, "*** compilation phase failed",
+                     No_Message => Opt.No_Exit_Message);
                end if;
             end if;
          end if;

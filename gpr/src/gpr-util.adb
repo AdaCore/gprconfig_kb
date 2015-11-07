@@ -518,16 +518,17 @@ package body GPR.Util is
    procedure Fail_Program
      (Project_Tree   : Project_Tree_Ref;
       S              : String;
-      Flush_Messages : Boolean := True)
+      Flush_Messages : Boolean := True;
+      No_Message     : Boolean := False)
    is
    begin
-      if Flush_Messages and not Opt.No_Exit_Message then
+      if Flush_Messages and not No_Message then
          if Total_Errors_Detected /= 0 or else Warnings_Detected /= 0 then
             Err.Finalize;
          end if;
       end if;
 
-      Finish_Program (Project_Tree, E_Fatal, S => S);
+      Finish_Program (Project_Tree, E_Fatal, S => S, No_Message => No_Message);
    end Fail_Program;
 
    --------------------
@@ -537,7 +538,8 @@ package body GPR.Util is
    procedure Finish_Program
      (Project_Tree : Project_Tree_Ref;
       Exit_Code    : Exit_Code_Type := E_Success;
-      S            : String := "")
+      S            : String := "";
+      No_Message   : Boolean := False)
    is
    begin
       if not Debug.Debug_Flag_N then
@@ -550,7 +552,7 @@ package body GPR.Util is
 
       if S'Length > 0 then
          if Exit_Code /= E_Success then
-            if not Opt.No_Exit_Message then
+            if not No_Message then
                Set_Standard_Error;
                Write_Program_Name;
                Write_Line (S);
@@ -558,7 +560,7 @@ package body GPR.Util is
 
             Exit_Program (E_Fatal);
 
-         elsif not Opt.No_Exit_Message then
+         elsif not No_Message then
             Write_Str (S);
          end if;
       end if;
