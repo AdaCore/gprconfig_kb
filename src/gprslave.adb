@@ -323,10 +323,13 @@ procedure Gprslave is
       --  is used when a builder is interrupted to kill all corresponding
       --  processes.
 
+      function Count return Natural;
+      --  Number of job running
+
    private
-      Set   : Job_Data_Set.Set;
-      Count : Natural := 0;
-      Max   : Natural := 0;
+      Set     : Job_Data_Set.Set;
+      N_Count : Natural := 0; -- actual number of running process
+      Max     : Natural := 0;
    end Running;
 
    Compiler_Path : constant OS_Lib.String_Access :=
@@ -1364,7 +1367,24 @@ procedure Gprslave is
         (Builder : Build_Master;
          File    : String)
       is
+
+         function Prefix return String;
+         --  Returns a prefix for the display with a progress indication
+
+         ------------
+         -- Prefix --
+         ------------
+
+         function Prefix return String is
+            Active : constant String := Natural'Image (Running.Count + 1);
+            Max    : constant String := Natural'Image (Max_Processes);
+         begin
+            return "Compiling (" & Active (Active'First + 1 .. Active'Last)
+              & '/' & Max (Max'First + 1 .. Max'Last) & ") : ";
+         end Prefix;
+
          RDL : constant Natural := Root_Directory'Length;
+
       begin
          if Verbose then
             if File'Length > RDL
@@ -1373,9 +1393,9 @@ procedure Gprslave is
             then
                Message
                  (Builder,
-                  "Compiling: " & File (File'First + RDL + 1 .. File'Last));
+                  Prefix & File (File'First + RDL + 1 .. File'Last));
             else
-               Message (Builder, "Compiling: " & File);
+               Message (Builder, Prefix & File);
             end if;
          end if;
       end Output_Compilation;
@@ -1571,6 +1591,15 @@ procedure Gprslave is
 
    protected body Running is
 
+      -----------
+      -- Count --
+      -----------
+
+      function Count return Natural is
+      begin
+         return N_Count;
+      end Count;
+
       --------------------
       -- Kill_Processes --
       --------------------
@@ -1640,7 +1669,7 @@ procedure Gprslave is
             Set.Insert (Job);
          end if;
 
-         Count := Count + 1;
+         N_Count := N_Count + 1;
       end Register;
 
       ---------
@@ -1660,7 +1689,7 @@ procedure Gprslave is
          if Job_Data_Set.Has_Element (Pos) then
             Job := Job_Data_Set.Element (Pos);
             Set.Delete (Job);
-            Count := Count - 1;
+            N_Count := N_Count - 1;
 
             --  If this is a job which has been killed (see Kill_Processes
             --  above), set to No_Job. We do this as the Wait_Completion task
@@ -2047,18 +2076,33 @@ procedure Gprslave is
 
                      --  We then receive the files contents in the same order
 
-                     for W of To_Sync loop
-                        declare
-                           Full_Path : constant String :=
-                                         WD & Directory_Separator
-                                         & To_String (W.Path_Name);
-                        begin
-                           Create_Path (Containing_Directory (Full_Path));
+                     Get_RAW_Data : declare
+                        Max : constant String :=
+                                Containers.Count_Type'Image (To_Sync.Length);
+                        N   : Natural := 0;
+                     begin
+                        for W of To_Sync loop
+                           declare
+                              Full_Path : constant String :=
+                                            WD & Directory_Separator
+                                            & To_String (W.Path_Name);
+                           begin
+                              Create_Path (Containing_Directory (Full_Path));
 
-                           Get_RAW_File_Content
-                             (Builder.Channel, Full_Path, W.Timestamp);
-                        end;
-                     end loop;
+                              Get_RAW_File_Content
+                                (Builder.Channel, Full_Path, W.Timestamp);
+                           end;
+
+                           N := N + 1;
+
+                           if N mod 100 = 0 then
+                              Message
+                                (Builder,
+                                 "File transfered"
+                                 & Natural'Image (N) & "/" & Max);
+                           end if;
+                        end loop;
+                     end Get_RAW_Data;
 
                      Total_Transferred :=
                        Total_Transferred + Natural (To_Sync.Length);
