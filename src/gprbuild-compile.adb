@@ -184,6 +184,10 @@ package body Gprbuild.Compile is
       procedure Process_One_Package (Pkg_Name : Name_Id);
       --  Get the switches for the named package
 
+      -------------------------
+      -- Process_One_Package --
+      -------------------------
+
       procedure Process_One_Package (Pkg_Name : Name_Id) is
          Options : Variable_Value;
          Ignored : Boolean;
