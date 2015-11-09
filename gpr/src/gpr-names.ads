@@ -24,7 +24,7 @@
 
 package GPR.Names is
 
-   Name_Buffer : String (1 .. 32767);
+   Name_Buffer : String (1 .. 1_000_000);
    Name_Len    : Natural := 0;
 
    procedure Get_Name_String (Id : Name_Id);
