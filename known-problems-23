@@ -16,3 +16,13 @@ in this document.
 
 Known problems fixed in 17.1 and above
 --------------------------------------
+
+KP-23-OB09-005 Crash when project path is too large
+
+  Problem:    gprbuild crashes when the project path is too large, for example
+              when environment variable GPR_PROJECT_PATH_FILE points to
+              a text file with more than 33,000 characters.
+
+  Status:     This was fixed in 17 on 2015-11-09
+
+  Workaround: Reduce the number of directories in the project path.
