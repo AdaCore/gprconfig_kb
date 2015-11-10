@@ -3814,7 +3814,8 @@ package body GPR.Nmsc is
 
                Check_Library (Project.Extends, Extends => True);
 
-               Imported_Project_List := Project.Imported_Projects;
+               Compute_All_Imported_Projects (Project, Data.Tree);
+               Imported_Project_List := Project.All_Imported_Projects;
                while Imported_Project_List /= null loop
                   Check_Library
                     (Imported_Project_List.Project,
