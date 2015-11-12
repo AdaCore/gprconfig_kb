@@ -13,6 +13,11 @@ NF-17-OB06-018 Add progress indication on the GPRslave (2015-11-08)
    GPRslave will now display (in verbose mode) a progress indicator during
    the synchronization and the compilation.
 
+NF-17-OB03-010 Incomplete Ada interface of SAL is now an error (2015-11-07)
+
+   When the Ada interface of a Stand-Alone Library project is incomplete,
+   gprbuild now reports an error instead of a warning.
+
 NF-17-O331-015 GPRbuild now restrict symbols from a SAL (2015-10-31)
 
    GPRbuild now restricts the symbols exported out of a SAL. The exported
