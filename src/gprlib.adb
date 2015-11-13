@@ -319,6 +319,9 @@ procedure Gprlib is
    --  Object lister matcher, the pattern matcher to get the symbols name from
    --  the output of the object lister.
 
+   Library_Symbol_File : String_Access;
+   --  The file containing the symbols to export from the shared library
+
    Partial_Linker : String_Access := null;
    --  Name of the library partial linker
 
@@ -1325,8 +1328,8 @@ begin
                  new String'(Line (1 .. Last));
 
             when Gprexch.Export_File =>
-
                --  First the format
+
                begin
                   Export_File_Format :=
                     GPR.Export_File_Format'Value (Line (1 .. Last));
@@ -1343,6 +1346,9 @@ begin
 
                Get_Line (IO_File, Line, Last);
                Export_File_Switch := new String'(Line (1 .. Last));
+
+            when Gprexch.Library_Symbol_File =>
+               Library_Symbol_File := new String'(Line (1 .. Last));
          end case;
       end if;
    end loop;

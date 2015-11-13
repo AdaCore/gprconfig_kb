@@ -2199,6 +2199,7 @@ package body Gprbuild.Post_Compile is
       elsif For_Project.Standalone_Library /= No then
          Check_Object_Lister;
          Check_Export_File;
+         Check_Library_Symbol_File;
       end if;
 
       Library_Needs_To_Be_Built := Opt.Force_Compilations;
@@ -2761,34 +2762,43 @@ package body Gprbuild.Post_Compile is
               (Exchange_File,
                Standalone'Image (For_Project.Standalone_Library));
 
-            if Object_Lister_Path /= null
-              and then For_Project.Symbol_Data.Symbol_Policy = Restricted
-            then
-               --  Write interface objects
+            if For_Project.Symbol_Data.Symbol_Policy = Restricted then
+               if Library_Symbol_File /= null then
+                  Put_Line
+                    (Exchange_File,
+                     Library_Label (Gprexch.Library_Symbol_File));
+                  Put_Line (Exchange_File, Library_Symbol_File.all);
 
-               Write_Interface_Obj_Files;
+               elsif Object_Lister_Path /= null then
+                  --  Write interface objects
 
-               --  Write object lister
+                  Write_Interface_Obj_Files;
 
-               Put_Line (Exchange_File, Library_Label (Object_Lister));
-               Put_Line (Exchange_File, Object_Lister_Path.all);
+                  --  Write object lister
 
-               for J in 1 .. Object_Lister_Opts.Last loop
-                  Put_Line (Exchange_File, Object_Lister_Opts.Options (J).all);
-               end loop;
+                  Put_Line (Exchange_File, Library_Label (Object_Lister));
+                  Put_Line (Exchange_File, Object_Lister_Path.all);
 
-               Put_Line
-                 (Exchange_File,
-                  Library_Label (Gprexch.Object_Lister_Matcher));
-               Put_Line (Exchange_File, Object_Lister_Matcher.all);
+                  for J in 1 .. Object_Lister_Opts.Last loop
+                     Put_Line
+                       (Exchange_File, Object_Lister_Opts.Options (J).all);
+                  end loop;
 
-               --  Write export symbols format
+                  Put_Line
+                    (Exchange_File,
+                     Library_Label (Gprexch.Object_Lister_Matcher));
+                  Put_Line (Exchange_File, Object_Lister_Matcher.all);
+               end if;
 
-               Put_Line (Exchange_File, Library_Label (Export_File));
-               Put_Line
-                 (Exchange_File,
-                GPR.Export_File_Format'Image (Export_File_Format));
-               Put_Line (Exchange_File, Export_File_Switch.all);
+               if Export_File_Switch /= null then
+                  --  Write export symbols format
+
+                  Put_Line (Exchange_File, Library_Label (Export_File));
+                  Put_Line
+                    (Exchange_File,
+                     GPR.Export_File_Format'Image (Export_File_Format));
+                  Put_Line (Exchange_File, Export_File_Switch.all);
+               end if;
             end if;
 
          elsif For_Project.Other_Interfaces /= Nil_String then

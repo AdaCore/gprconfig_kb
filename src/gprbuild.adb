@@ -354,6 +354,19 @@ package body Gprbuild is
       end if;
    end Check_Export_File;
 
+   -------------------------------
+   -- Check_Library_Symbol_File --
+   -------------------------------
+
+   procedure Check_Library_Symbol_File is
+   begin
+      if Main_Project.Symbol_Data.Symbol_File /= No_Path then
+         Library_Symbol_File :=
+           new String'
+             (Get_Name_String (Main_Project.Symbol_Data.Symbol_File));
+      end if;
+   end Check_Library_Symbol_File;
+
    -------------------------
    -- Check_Object_Lister --
    -------------------------

@@ -299,6 +299,7 @@ private
    Object_Lister_Path    : String_Access := null;
    Object_Lister_Opts    : Options_Data;
    Object_Lister_Matcher : String_Access;
+   Library_Symbol_File   : String_Access;
 
    --  Export file
 
@@ -392,6 +393,9 @@ private
 
    procedure Check_Export_File;
    --  Check for export file option and format
+
+   procedure Check_Library_Symbol_File;
+   --  Check for the library symbol file
 
    function Archive_Suffix (For_Project : Project_Id) return String;
    --  Return the archive suffix for the project, if defined, otherwise

@@ -350,45 +350,68 @@ procedure Build_Shared_Lib is
       end if;
 
       --  For a standalone shared library, create an export symbols file if
-      --  supported.
+      --  supported. We need a support for an export file and either:
+      --
+      --  A library symbol file to be defined
+      --    or
+      --  An object lister and the corresponding matcher
 
-      if Standalone /= No
-        and then Object_Lister /= null
-        and then Object_Lister_Matcher /= null
-        and then Export_File_Switch /= null
-      then
-         declare
-            List : String_List
-                     (1 .. Interface_Objs.Last + Generated_Objects.Last);
-         begin
-            --  Ada unit interfaces
-
-            for K in 1 .. Interface_Objs.Last loop
-               List (K) := Interface_Objs.Table (K);
-            end loop;
-
-            --  We need to add the binder generated object file which contains
-            --  the library initilization code to be explicitely called by the
-            --  main application.
-
-            for K in 1 .. Generated_Objects.Last loop
-               List (Interface_Objs.Last + K) := Generated_Objects.Table (K);
-            end loop;
+      if Standalone /= No and then Export_File_Switch /= null then
+         if Library_Symbol_File /= null then
+            --  The exported symbols are to be taken from the symbol file
 
             Create_Export_Symbols_File
-              (Driver_Path      => Object_Lister.all,
-               Options          => OL_Options (1 .. Last_OL_Option),
-               Sym_Matcher      => Object_Lister_Matcher.all,
-               Format           => Export_File_Format,
-               Objects          => List,
-               Export_File_Name => Export_File);
+              (Driver_Path         => "",
+               Options             => OL_Options (1 .. Last_OL_Option),
+               Sym_Matcher         => "",
+               Format              => Export_File_Format,
+               Objects             => String_List'(1 .. 0 => null),
+               Library_Symbol_File => Library_Symbol_File.all,
+               Export_File_Name    => Export_File);
 
-            if Export_File /= No_Path then
-               Add_Arg
-                 (new String'(Export_File_Switch.all
-                  & Get_Name_String (Export_File)));
-            end if;
-         end;
+         elsif Object_Lister /= null
+           and then Object_Lister_Matcher /= null
+         then
+            --  The exported symbols are to be read from the object artifacts
+            --  of the library interface.
+
+            declare
+               List : String_List
+                 (1 .. Interface_Objs.Last + Generated_Objects.Last);
+            begin
+               --  Ada unit interfaces
+
+               for K in 1 .. Interface_Objs.Last loop
+                  List (K) := Interface_Objs.Table (K);
+               end loop;
+
+               --  We need to add the binder generated object file which
+               --  contains the library initilization code to be explicitely
+               --  called by the main application.
+
+               for K in 1 .. Generated_Objects.Last loop
+                  List (Interface_Objs.Last + K) :=
+                    Generated_Objects.Table (K);
+               end loop;
+
+               Create_Export_Symbols_File
+                 (Driver_Path         => Object_Lister.all,
+                  Options             => OL_Options (1 .. Last_OL_Option),
+                  Sym_Matcher         => Object_Lister_Matcher.all,
+                  Format              => Export_File_Format,
+                  Objects             => List,
+                  Library_Symbol_File => "",
+                  Export_File_Name    => Export_File);
+            end;
+         end if;
+
+         --  If the export file has been created properly pass it to the linker
+
+         if Export_File /= No_Path then
+            Add_Arg
+              (new String'(Export_File_Switch.all
+               & Get_Name_String (Export_File)));
+         end if;
       end if;
 
       Display_Linking_Command;

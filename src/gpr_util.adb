@@ -233,12 +233,13 @@ package body Gpr_Util is
    --------------------------------
 
    procedure Create_Export_Symbols_File
-     (Driver_Path      : String;
-      Options          : Argument_List;
-      Sym_Matcher      : String;
-      Format           : Export_File_Format;
-      Objects          : String_List;
-      Export_File_Name : out Path_Name_Type)
+     (Driver_Path         : String;
+      Options             : Argument_List;
+      Sym_Matcher         : String;
+      Format              : Export_File_Format;
+      Objects             : String_List;
+      Library_Symbol_File : String;
+      Export_File_Name    : out Path_Name_Type)
    is
       use type Containers.Count_Type;
 
@@ -331,12 +332,42 @@ package body Gpr_Util is
          return;
       end if;
 
-      --  Get the exported symbols from every object files, first get the nm
-      --  tool for the target.
+      if Library_Symbol_File = "" then
+         --  Get the exported symbols from every object files, first get the nm
+         --  tool for the target.
 
-      for K in Objects'Range loop
-         Get_Syms (Objects (K).all);
-      end loop;
+         for K in Objects'Range loop
+            Get_Syms (Objects (K).all);
+         end loop;
+
+      else
+         --  Get the symbols from the symbol file, one symbol per line
+
+         if Is_Readable_File (Library_Symbol_File) then
+            declare
+               File : File_Type;
+               Line : String (1 .. 1_024);
+               Last : Natural;
+            begin
+               Open (File, In_File, Library_Symbol_File);
+
+               while not End_Of_File (File) loop
+                  Get_Line (File, Line, Last);
+
+                  if Last > 0 then
+                     Syms.Include (Line (1 .. Last));
+                  end if;
+               end loop;
+
+               Close (File);
+            end;
+
+         else
+            raise Constraint_Error
+              with "unable to locate Library_Symbol_File"""
+                   & Library_Symbol_File & '"';
+         end if;
+      end if;
 
       if Syms.Length = 0 then
          return;
