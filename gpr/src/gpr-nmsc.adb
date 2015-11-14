@@ -7465,7 +7465,6 @@ package body GPR.Nmsc is
          Dir         : File_Name_Type;
          Path_Name   : Path_Information;
          Dir_Exists  : Boolean;
-         Has_Error   : Boolean := False;
          Success     : Boolean;
 
       begin
@@ -7536,13 +7535,13 @@ package body GPR.Nmsc is
 
          if not Dir_Exists then
             Error_Msg_File_1 := Dir;
-            Error_Or_Warning
-              (Data.Flags, Data.Flags.Missing_Source_Files,
-               "{ is not a valid directory", Location, Project);
-            Has_Error := Data.Flags.Missing_Source_Files = Error;
-         end if;
+            Error_Msg
+              (Data.Flags,
+               "{ is not a valid directory",
+               Location,
+               Project);
 
-         if not Has_Error then
+         else
 
             --  Links have been resolved if necessary, and Path_Name
             --  always ends with a directory separator.
