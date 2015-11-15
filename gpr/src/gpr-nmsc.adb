@@ -3406,8 +3406,8 @@ package body GPR.Nmsc is
 
                   Error_Msg_File_1 :=
                     File_Name_Type (Project.Library_Dir.Display_Name);
-                  Error_Msg
-                    (Data.Flags,
+                  Error_Or_Warning
+                    (Data.Flags, Data.Flags.Require_Obj_Dirs,
                      "library directory { does not exist",
                      Lib_Dir.Location, Project);
                end if;
@@ -3593,15 +3593,16 @@ package body GPR.Nmsc is
                   Location         => Lib_ALI_Dir.Location,
                   Externally_Built => Project.Externally_Built);
 
-               if not Dir_Exists then
-
+               if not Dir_Exists and then
+                  Opt.Directories_Must_Exist_In_Projects
+               then
                   --  Get the absolute name of the library ALI directory that
                   --  does not exist, to report an error.
 
                   Error_Msg_File_1 :=
                     File_Name_Type (Project.Library_ALI_Dir.Display_Name);
-                  Error_Msg
-                    (Data.Flags,
+                  Error_Or_Warning
+                    (Data.Flags, Data.Flags.Require_Obj_Dirs,
                      "library 'A'L'I directory { does not exist",
                      Lib_ALI_Dir.Location, Project);
                end if;
@@ -4946,16 +4947,17 @@ package body GPR.Nmsc is
                --  If directory does not exist, report an error
 
                if not Dir_Exists then
+                  if Opt.Directories_Must_Exist_In_Projects then
+                     --  Get the absolute name of the library directory that
+                     --  does not exist, to report an error.
 
-                  --  Get the absolute name of the library directory that does
-                  --  not exist, to report an error.
-
-                  Error_Msg_File_1 :=
-                    File_Name_Type (Project.Library_Src_Dir.Display_Name);
-                  Error_Msg
-                    (Data.Flags,
-                     "Directory { does not exist",
-                     Lib_Src_Dir.Location, Project);
+                     Error_Msg_File_1 :=
+                       File_Name_Type (Project.Library_Src_Dir.Display_Name);
+                     Error_Or_Warning
+                       (Data.Flags, Data.Flags.Require_Obj_Dirs,
+                        "Directory { does not exist",
+                        Lib_Src_Dir.Location, Project);
+                  end if;
 
                   --  Report error if it is the same as the object directory
 
@@ -5543,7 +5545,7 @@ package body GPR.Nmsc is
                   Error_Or_Warning
                     (Data.Flags, Data.Flags.Require_Obj_Dirs,
                      "object directory { not found",
-                     Project.Location, Project);
+                     Object_Dir.Location, Project);
                end if;
             end if;
          end if;
@@ -5627,7 +5629,7 @@ package body GPR.Nmsc is
                if Opt.Directories_Must_Exist_In_Projects then
                   Error_Msg_File_1 := File_Name_Type (Exec_Dir.Value);
                   Error_Or_Warning
-                    (Data.Flags, Data.Flags.Missing_Source_Files,
+                    (Data.Flags, Data.Flags.Require_Obj_Dirs,
                      "exec directory { not found", Project.Location, Project);
 
                else
@@ -7535,17 +7537,13 @@ package body GPR.Nmsc is
 
          if not Dir_Exists then
             Error_Msg_File_1 := Dir;
-            Error_Msg
-              (Data.Flags,
-               "{ is not a valid directory",
-               Location,
-               Project);
+            Error_Or_Warning
+              (Data.Flags, Data.Flags.Missing_Source_Files,
+               "{ is not a valid directory", Location, Project);
 
          else
-
             --  Links have been resolved if necessary, and Path_Name
             --  always ends with a directory separator.
-
             if Recursive then
                Success := Recursive_Find_Dirs (Path_Name, Rank);
             else
