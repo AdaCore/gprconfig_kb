@@ -7336,6 +7336,7 @@ package body GPR.Nmsc is
 
             when Search_Files =>
                Open (Dir, Get_Name_String (Path.Display_Name));
+
                loop
                   Read (Dir, Name, Last);
                   exit when Last = 0;
@@ -7360,6 +7361,10 @@ package body GPR.Nmsc is
 
                return Success;
          end case;
+
+      exception
+         when Directory_Error =>
+            return False;
       end Subdirectory_Matches;
 
       -------------------------
@@ -7468,6 +7473,7 @@ package body GPR.Nmsc is
          Path_Name   : Path_Information;
          Dir_Exists  : Boolean;
          Success     : Boolean;
+         Has_Error   : Boolean := False;
 
       begin
          Debug_Increase_Indent ("Find_Pattern", Pattern_Id);
@@ -7540,10 +7546,13 @@ package body GPR.Nmsc is
             Error_Or_Warning
               (Data.Flags, Data.Flags.Missing_Source_Files,
                "{ is not a valid directory", Location, Project);
+            Has_Error := Data.Flags.Missing_Source_Files = Error;
+         end if;
 
-         else
+         if not Has_Error then
             --  Links have been resolved if necessary, and Path_Name
             --  always ends with a directory separator.
+
             if Recursive then
                Success := Recursive_Find_Dirs (Path_Name, Rank);
             else
