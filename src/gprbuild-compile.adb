@@ -3330,17 +3330,16 @@ package body Gprbuild.Compile is
          Wait_For_Available_Slot;
 
          if Opt.Display_Compilation_Progress then
-            Put ("completed");
-            Put (Queue.Processed'Img);
-            Put (" out of");
-            Put (Queue.Size'Img);
-            Put (" (");
-            Put
-              (Trim
+            Put_Line
+              ("completed" &
+               Queue.Processed'Img &
+               " out of" &
+               Queue.Size'Img &
+               " (" &
+               Trim
                  (Source => Int (((Queue.Processed) * 100) / Queue.Size)'Img,
-                  Side => Ada.Strings.Left));
-            Put ("%)...");
-            New_Line;
+                  Side => Ada.Strings.Left) &
+               "%)...");
          end if;
       end loop Compilation_Loop;
 
