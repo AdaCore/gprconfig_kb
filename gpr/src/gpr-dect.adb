@@ -212,13 +212,20 @@ package body GPR.Dect is
       Qualif : constant Project_Qualifier :=
                  Project_Qualifier_Of (Project, In_Tree);
       Name   : constant Name_Id := Name_Of (Current_Package, In_Tree);
+
+      use GPR.Snames;
    begin
-      if Name /= Snames.Name_Ide
+      --  Packages Naming, Compiler, Binder and Linker are not allowed in
+      --  aggregate projects and aggregate library projects.
+
+      if (Qualif = Aggregate
+          or else
+          Qualif = Aggregate_Library)
         and then
-          ((Qualif = Aggregate         and then Name /= Snames.Name_Builder)
-              or else
-           (Qualif = Aggregate_Library and then Name /= Snames.Name_Builder
-                                       and then Name /= Snames.Name_Install))
+          (Name = Name_Naming or else
+           Name = Name_Compiler or else
+           Name = Name_Binder or else
+           Name = Name_Linker)
       then
          Error_Msg_Name_1 := Name;
          Error_Msg
