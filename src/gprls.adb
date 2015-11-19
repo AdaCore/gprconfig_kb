@@ -18,17 +18,42 @@
 
 with Ada.Text_IO; use Ada.Text_IO;
 
+with GPR.Err;
 with GPR.Names; use GPR.Names;
 with GPR.Opt;   use GPR.Opt;
+with GPR.Scans;
+with GPR.Sinput;
 
 package body Gprls is
 
+   No_Obj : aliased String := "<no_obj>";
+
+   use GPR.Stamps;
+
+   procedure Find_Status
+     (Source   : GPR.Source_Id;
+      Stamp    : Time_Stamp_Type;
+      Checksum : Word;
+      Status   : out File_Status);
+   --  Determine the file status (Status) of the file represented by FS with
+   --  the expected Stamp and checksum given as argument. FS will be updated
+   --  to the full file name if available.
+
    use Rident;
 
-   function Is_Internal_Unit return Boolean;
-   --  Given a unit name stored in Name_Buffer with length in Name_Len,
-   --  returns True if this is the name of an internal unit or a child of
-   --  an internal unit.
+   -------------
+   -- Add_ALI --
+   -------------
+
+   procedure Add_ALI
+     (ALI_Name : File_Name_Type;
+      Spec     : Boolean;
+      Source   : GPR.Source_Id)
+   is
+      A : constant ALI_Kind := (File => ALI_Name, Spec => Spec);
+   begin
+      ALI_Names.Set (A, Source);
+   end Add_ALI;
 
    --------------
    -- Add_File --
@@ -78,117 +103,266 @@ package body Gprls is
       return No_Sdep_Id;
    end Corresponding_Sdep_Entry;
 
-   -------------------------
-   -- Find_General_Layout --
-   -------------------------
+   --------------
+   -- Find_ALI --
+   --------------
 
-   procedure Find_General_Layout is
-      Max_Unit_Length : Integer := 11;
-      Max_Src_Length  : Integer := 11;
-      Max_Obj_Length  : Integer := 11;
-
-      Len : Integer;
-      --  FS  : File_Name_Type;
-      FN_Source : File_Name_Source;
-      Id        : ALI_Id;
+   function Find_ALI (Source : GPR.Source_Id) return ALI_Id is
+      Text    : Text_Buffer_Ptr;
+      Result  : ALI_Id;
    begin
-      --  Compute maximum of each column
+      Text := Osint.Read_Library_Info (File_Name_Type (Source.Dep_Path));
 
-      for J in 1 .. Number_File_Names loop
-         FN_Source := File_Names (J);
+      if Text /= null then
+         Result := Scan_ALI
+           (F          => File_Name_Type (Source.Dep_Path),
+            T          => Text,
+            Ignore_ED  => False,
+            Err        => True,
+            Read_Lines => "WD");
+         Free (Text);
+         return Result;
 
-         Id := FN_Source.The_ALI;
-         if Id /= No_ALI_Id then
-            Get_Name_String (Units.Table (ALIs.Table (Id).First_Unit).Uname);
+      else
+         return No_ALI_Id;
+      end if;
+   end Find_ALI;
 
-            if not Is_Internal_Unit then
+   -----------------
+   -- Find_Source --
+   -----------------
 
-               if Print_Unit then
-                  Len := Name_Len - 1;
-                  Max_Unit_Length := Integer'Max (Max_Unit_Length, Len);
-               end if;
+   function Find_Source
+     (ALI_Name : File_Name_Type;
+      Spec     : Boolean)
+      return GPR.Source_Id
+   is
+      A : constant ALI_Kind := (File => ALI_Name, Spec => Spec);
+   begin
+      return ALI_Names.Get (A);
+   end Find_Source;
 
-               if Print_Source then
-                  Get_Name_String (FN_Source.Source.Path.Display_Name);
-                  Max_Src_Length := Integer'Max (Max_Src_Length, Name_Len + 1);
-               end if;
+   -----------------
+   -- Find_Status --
+   -----------------
 
-               if Print_Object then
-                  if ALIs.Table (Id).No_Object then
-                     Max_Obj_Length :=
-                       Integer'Max (Max_Obj_Length, No_Obj'Length);
-                  else
-                     Get_Name_String
-                       (FN_Source.Source.Object_Path);
-                     Max_Obj_Length :=
-                       Integer'Max (Max_Obj_Length, Name_Len + 1);
-                  end if;
-               end if;
+   procedure Find_Status
+     (Source : GPR.Source_Id;
+      ALI    : ALI_Id;
+      Status : out File_Status)
+   is
+      U : Unit_Id;
+   begin
+      if ALI = No_ALI_Id then
+         Status := Not_Found;
+      else
+         if Source.Kind = Spec then
+            U := ALIs.Table (ALI).Last_Unit;
+         else
+            U := ALIs.Table (ALI).First_Unit;
+         end if;
+
+         Find_Status (Source, ALI, U, Status);
+      end if;
+   end Find_Status;
+
+   procedure Find_Status
+     (Source : GPR.Source_Id;
+      ALI    : ALI_Id;
+      U      : Unit_Id;
+      Status : out File_Status)
+   is
+      use GPR.Scans;
+      Stamp : constant Time_Stamp_Type := File_Stamp (Source.Path.Name);
+      SD : constant Sdep_Id := Corresponding_Sdep_Entry (ALI, U);
+      Source_Index : Source_File_Index;
+      Checksums_Match : Boolean;
+   begin
+      if Stamp = Sdep.Table (SD).Stamp then
+         Status := OK;
+
+      else
+         Checksums_Match := False;
+         Source_Index :=
+           Sinput.Load_File (Get_Name_String (Source.Path.Name));
+
+         if Source_Index /= No_Source_File then
+
+            Err.Scanner.Initialize_Scanner
+              (Source_Index, Err.Scanner.Ada);
+
+            --  Scan the complete file to compute its
+            --  checksum.
+
+            loop
+               Err.Scanner.Scan;
+               exit when Token = Tok_EOF;
+            end loop;
+
+            if Scans.Checksum = Sdep.Table (SD).Checksum then
+               Checksums_Match := True;
             end if;
          end if;
-      end loop;
 
-      --  Verify is output is not wider than maximum number of columns
+         if Checksums_Match then
+            Status := Checksum_OK;
 
-      Too_Long :=
-        Verbose_Mode
-          or else
-            (Max_Unit_Length + Max_Src_Length + Max_Obj_Length) > Max_Column;
+         else
+            Status := Not_Same;
+         end if;
+      end if;
+   end Find_Status;
 
-      --  Set start and end of columns
+   procedure Find_Status
+     (Source   : GPR.Source_Id;
+      Stamp    : Time_Stamp_Type;
+      Checksum : Word;
+      Status   : out File_Status)
+   is
+      Source_Index : Source_File_Index;
+      Checksums_Match : Boolean;
+      use GPR.Scans;
 
-      Object_Start := 1;
-      Object_End   := Object_Start - 1;
+   begin
+      if Source = No_Source then
+         Status := Not_Found;
 
+      elsif File_Stamp (Source.Path.Name) = Stamp then
+         Status := OK;
+
+      else
+         Checksums_Match := False;
+         Source_Index :=
+           Sinput.Load_File (Get_Name_String (Source.Path.Name));
+
+         if Source_Index /= No_Source_File then
+
+            Err.Scanner.Initialize_Scanner
+              (Source_Index, Err.Scanner.Ada);
+
+            --  Scan the complete file to compute its
+            --  checksum.
+
+            loop
+               Err.Scanner.Scan;
+               exit when Token = Tok_EOF;
+            end loop;
+
+            if Scans.Checksum = Checksum then
+               Checksums_Match := True;
+            end if;
+         end if;
+
+         if Checksums_Match then
+            Status := Checksum_OK;
+
+         else
+            Status := Not_Same;
+         end if;
+      end if;
+   end Find_Status;
+
+   ----------
+   -- Hash --
+   ----------
+
+   function Hash (A : ALI_Kind) return GPR.Header_Num is
+   begin
+      return GPR.Hash (A.File);
+   end Hash;
+
+   -------------------
+   -- Output_Object --
+   -------------------
+
+   procedure Output_Object (O : File_Name_Type) is
+      Object_Name : String_Access;
+
+   begin
       if Print_Object then
-         Object_End   := Object_Start + Max_Obj_Length;
+         if O /= No_File then
+            Get_Name_String (O);
+            Object_Name := new String'(Name_Buffer (1 .. Name_Len));
+         else
+            Object_Name := No_Obj'Unchecked_Access;
+         end if;
+
+         Put_Line (Object_Name.all);
+
+      end if;
+   end Output_Object;
+
+   -------------------
+   -- Output_Source --
+   -------------------
+
+   procedure Output_Source
+     (Source : GPR.Source_Id; ALI : ALI_Id; U : Unit_Id := No_Unit_Id)
+   is
+      Status : File_Status;
+   begin
+      if U = No_Unit_Id then
+         Find_Status (Source, ALI, Status);
+      else
+         Find_Status (Source, ALI, U, Status);
       end if;
 
-      Unit_Start := Object_End + 1;
-      Unit_End   := Unit_Start - 1;
+      Put ("     ");
 
-      if Print_Unit then
-         Unit_End   := Unit_Start + Max_Unit_Length;
+      if Verbose_Mode then
+         Put ("Source => ");
+         Put (Get_Name_String (Source.Path.Display_Name));
+         Output_Status (Status, True);
+         New_Line;
+
+      else
+         Output_Status (Status, False);
+         Put_Line (Get_Name_String (Source.Path.Display_Name));
+      end if;
+   end Output_Source;
+
+   procedure Output_Source (Sdep_I : Sdep_Id) is
+      Stamp       : GPR.Stamps.Time_Stamp_Type;
+      Checksum    : Word;
+      FS          : File_Name_Type;
+      Source      : GPR.Source_Id;
+      Status      : File_Status;
+      Source_Name : String_Access;
+
+   begin
+      if Sdep_I = No_Sdep_Id then
+         return;
       end if;
 
-      Source_Start := Unit_End + 1;
+      Stamp    := Sdep.Table (Sdep_I).Stamp;
+      Checksum := Sdep.Table (Sdep_I).Checksum;
+      FS       := Sdep.Table (Sdep_I).Sfile;
 
-      if Source_Start > Spaces'Last then
-         Source_Start := Spaces'Last;
-      end if;
-
-      Source_End := Source_Start - 1;
+      Source := Source_Files_Htable.Get (Project_Tree.Source_Files_HT, FS);
 
       if Print_Source then
-         Source_End := Source_Start + Max_Src_Length;
+         Find_Status (Source, Stamp, Checksum, Status);
+         Get_Name_String (FS);
+
+         Source_Name := new String'(Name_Buffer (1 .. Name_Len));
+
+         if Verbose_Mode then
+            Put ("   Source => ");
+            Put (Source_Name.all);
+
+            Output_Status (Status, Verbose => True);
+            New_Line;
+
+         else
+            if not Selective_Output then
+               Put ("   ");
+               Output_Status (Status, Verbose => False);
+            end if;
+
+            Put_Line (Source_Name.all);
+         end if;
       end if;
-   end Find_General_Layout;
-
-   ----------------------
-   -- Is_Internal_Unit --
-   ----------------------
-
-   function Is_Internal_Unit return Boolean is
-      L : Natural renames Name_Len;
-      B : String  renames Name_Buffer;
-   begin
-      return    (L >  3 and then B (1 ..  4) = "ada.")
-        or else (L >  6 and then B (1 ..  7) = "system.")
-        or else (L > 10 and then B (1 .. 11) = "interfaces.")
-        or else (L >  3 and then B (1 ..  4) = "ada%")
-        or else (L >  8 and then B (1 ..  9) = "calendar%")
-        or else (L >  9 and then B (1 .. 10) = "direct_io%")
-        or else (L > 10 and then B (1 .. 11) = "interfaces%")
-        or else (L > 13 and then B (1 .. 14) = "io_exceptions%")
-        or else (L > 12 and then B (1 .. 13) = "machine_code%")
-        or else (L > 13 and then B (1 .. 14) = "sequential_io%")
-        or else (L >  6 and then B (1 ..  7) = "system%")
-        or else (L >  7 and then B (1 ..  8) = "text_io%")
-        or else (L > 20 and then B (1 .. 21) = "unchecked_conversion%")
-        or else (L > 22 and then B (1 .. 23) = "unchecked_deallocation%")
-        or else (L >  4 and then B (1 ..  5) = "gnat%")
-        or else (L >  4 and then B (1 ..  5) = "gnat.");
-   end Is_Internal_Unit;
+   end Output_Source;
 
    -------------------
    -- Output_Status --
@@ -227,6 +401,140 @@ package body Gprls is
          end case;
       end if;
    end Output_Status;
+
+   -----------------
+   -- Output_Unit --
+   -----------------
+
+   procedure Output_Unit (U_Id : Unit_Id) is
+      Kind : Character;
+      U    : Unit_Record renames Units.Table (U_Id);
+
+   begin
+      Get_Name_String (U.Uname);
+      Kind := Name_Buffer (Name_Len);
+      Name_Len := Name_Len - 2;
+
+      if not Verbose_Mode then
+         Put_Line ("   " & Name_Buffer (1 .. Name_Len));
+
+      else
+         Put ("   Unit => ");
+         New_Line;
+         Put ("     Name   => ");
+         Put (Name_Buffer (1 .. Name_Len));
+         New_Line;
+         Put ("     Kind   => ");
+
+         if Units.Table (U_Id).Unit_Kind = 'p' then
+            Put ("package ");
+         else
+            Put ("subprogram ");
+         end if;
+
+         if Kind = 's' then
+            Put ("spec");
+         else
+            Put ("body");
+         end if;
+      end if;
+
+      if Verbose_Mode then
+         if U.Preelab            or else
+           U.No_Elab             or else
+           U.Pure                or else
+           U.Dynamic_Elab        or else
+           U.Has_RACW            or else
+           U.Remote_Types        or else
+           U.Shared_Passive      or else
+           U.RCI                 or else
+           U.Predefined          or else
+           U.Internal            or else
+           U.Is_Generic          or else
+           U.Init_Scalars        or else
+           U.SAL_Interface       or else
+           U.Body_Needed_For_SAL or else
+           U.Elaborate_Body
+         then
+            New_Line;
+            Put ("     Flags  =>");
+
+            if U.Preelab then
+               Put (" Preelaborable");
+            end if;
+
+            if U.No_Elab then
+               Put (" No_Elab_Code");
+            end if;
+
+            if U.Pure then
+               Put (" Pure");
+            end if;
+
+            if U.Dynamic_Elab then
+               Put (" Dynamic_Elab");
+            end if;
+
+            if U.Has_RACW then
+               Put (" Has_RACW");
+            end if;
+
+            if U.Remote_Types then
+               Put (" Remote_Types");
+            end if;
+
+            if U.Shared_Passive then
+               Put (" Shared_Passive");
+            end if;
+
+            if U.RCI then
+               Put (" RCI");
+            end if;
+
+            if U.Predefined then
+               Put (" Predefined");
+            end if;
+
+            if U.Internal then
+               Put (" Internal");
+            end if;
+
+            if U.Is_Generic then
+               Put (" Is_Generic");
+            end if;
+
+            if U.Init_Scalars then
+               Put (" Init_Scalars");
+            end if;
+
+            if U.SAL_Interface then
+               Put (" SAL_Interface");
+            end if;
+
+            if U.Body_Needed_For_SAL then
+               Put (" Body_Needed_For_SAL");
+            end if;
+
+            if U.Elaborate_Body then
+               Put (" Elaborate Body");
+            end if;
+
+            if U.Remote_Types then
+               Put (" Remote_Types");
+            end if;
+
+            if U.Shared_Passive then
+               Put (" Shared_Passive");
+            end if;
+
+            if U.Predefined then
+               Put (" Predefined");
+            end if;
+
+            New_Line;
+         end if;
+      end if;
+   end Output_Unit;
 
    -----------------
    -- Reset_Print --

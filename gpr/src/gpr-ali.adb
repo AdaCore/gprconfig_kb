@@ -84,11 +84,12 @@ package body GPR.ALI is
    --------------
 
    function Scan_ALI
-     (F                : File_Name_Type;
-      T                : Text_Buffer_Ptr;
-      Ignore_ED        : Boolean;
-      Err              : Boolean;
-      Read_Lines       : String) return ALI_Id
+     (F           : File_Name_Type;
+      T           : Text_Buffer_Ptr;
+      Ignore_ED   : Boolean;
+      Err         : Boolean;
+      Read_Lines  : String;
+      Object_Path : File_Name_Type := No_File) return ALI_Id
    is
       P         : Text_Ptr    := T'First;
       Line      : Line_Number := 1;
@@ -619,6 +620,14 @@ package body GPR.ALI is
    --  Start of processing for Scan_ALI
 
    begin
+--        --  Return the ALI_Id if already in the ALIs table
+--
+--        for J in 1 .. ALIs.Last loop
+--           if F = ALIs.Table (J).Afile then
+--              return J;
+--           end if;
+--        end loop;
+
       First_Sdep_Entry := Sdep.Last + 1;
 
       --  Acquire lines to be read
@@ -649,7 +658,7 @@ package body GPR.ALI is
         Main_Program                 => None,
         No_Object                    => False,
         Normalize_Scalars            => False,
-        Ofile_Full_Name              => No_File,
+        Ofile_Full_Name              => Object_Path,
         Partition_Elaboration_Policy => ' ',
         Queuing_Policy               => ' ',
         SAL_Interface                => False,

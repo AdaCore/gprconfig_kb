@@ -18,6 +18,7 @@
 
 with Ada.Command_Line; use Ada.Command_Line;
 
+with GNAT.HTable;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
 with GPR; use GPR;
@@ -29,6 +30,21 @@ with GPR.Tree;  use GPR.Tree;
 package Gprls is
 
 private
+
+   type ALI_Kind is record
+      File : File_Name_Type;
+      Spec : Boolean;
+   end record;
+
+   function Hash (A : ALI_Kind) return GPR.Header_Num;
+
+   package ALI_Names is new GNAT.HTable.Simple_HTable
+     (Header_Num => GPR.Header_Num,
+      Element    => GPR.Source_Id,
+      No_Element => GPR.No_Source,
+      Key        => ALI_Kind,
+      Hash       => Hash,
+      Equal      => "=");
 
    Initialized : Boolean := False;
    --  Set to True by the first call to Initialize.
@@ -43,8 +59,6 @@ private
    Prj_Path : GPR.Env.Project_Search_Path;
 
    Max_Column : constant := 80;
-
-   No_Obj : aliased String := "<no_obj>";
 
    No_Runtime : Boolean := False;
    --  Set to True if there is no default runtime and --RTS= is not specified
@@ -81,10 +95,6 @@ private
    Text      : Text_Buffer_Ptr;
    Next_Arg  : Positive;
 
-   Too_Long : Boolean := False;
-   --  When True, lines are too long for multi-column output and each
-   --  item of information is on a different line.
-
    Selective_Output : Boolean := False;
    Print_Usage      : Boolean := False;
    Print_Unit       : Boolean := True;
@@ -94,16 +104,6 @@ private
 
    Dependable        : Boolean := False;  --  -d
    --  Command line flags
-
-   Unit_Start   : Integer;
-   Unit_End     : Integer;
-   Source_Start : Integer;
-   Source_End   : Integer;
-   Object_Start : Integer;
-   Object_End   : Integer;
-   --  Various column starts and ends
-
-   Spaces : constant String (1 .. Max_Column) := (others => ' ');
 
    RTS_Specified : String_Access := null;
    --  Used to detect multiple use of --RTS= switch
@@ -151,19 +151,55 @@ private
    Packages_To_Check : constant String_List_Access := List_Of_Packages'Access;
    --  List of the packages to be checked when parsing/processing project files
 
+   procedure Add_ALI
+     (ALI_Name : File_Name_Type;
+      Spec     : Boolean;
+      Source : GPR.Source_Id);
+   --  Add ALI_Name to hash table ALI_Names
+
    procedure Add_File
      (File_Name : String; Source : GPR.Source_Id := No_Source);
    --  Add File_Name to File_Names
 
-   procedure Find_General_Layout;
-   --  Determine the structure of the output (multi columns or not, etc)
+   function Find_ALI (Source : GPR.Source_Id) return ALI_Id;
+   --  Get the ALI_Id for the source
+
+   function Find_Source
+     (ALI_Name : File_Name_Type;
+      Spec     : Boolean)
+      return GPR.Source_Id;
+   --  Find the source corresponding to an ALI file name
+
+   procedure Find_Status
+     (Source : GPR.Source_Id;
+      ALI    : ALI_Id;
+      Status : out File_Status);
+   procedure Find_Status
+     (Source : GPR.Source_Id;
+      ALI    : ALI_Id;
+      U      : Unit_Id;
+      Status : out File_Status);
+   --  Determine the file status (Status) of a source file
 
    function Corresponding_Sdep_Entry (A : ALI_Id; U : Unit_Id) return Sdep_Id;
    --  Give the Sdep entry corresponding to the unit U in ali record A
 
+   procedure Output_Object (O : File_Name_Type);
+   --  Print out the name of the object when requested
+
+   procedure Output_Source (Sdep_I : Sdep_Id);
+   --  Print out the name and status of the source corresponding to this
+   --  sdep entry.
+
+   procedure Output_Source
+     (Source : GPR.Source_Id; ALI : ALI_Id; U : Unit_Id := No_Unit_Id);
+
    procedure Output_Status (FS : File_Status; Verbose : Boolean);
    --  Print out FS either in a coded form if verbose is false or in an
    --  expanded form otherwise.
+
+   procedure Output_Unit (U_Id : Unit_Id);
+   --  Print out information on the unit when requested
 
    procedure Reset_Print;
    --  Reset Print flags properly when selective output is chosen

@@ -24,12 +24,9 @@ with GNAT.Command_Line; use GNAT.Command_Line;
 
 with GPR.Conf;  use GPR.Conf;
 with GPR.Env;   use GPR.Env;
-with GPR.Err;
 with GPR.Names; use GPR.Names;
 with GPR.Opt;   use GPR.Opt;
 with GPR.Osint;
-with GPR.Scans;
-with GPR.Sinput;
 with GPR.Snames;
 with GPR.Tree;
 with GPR.Util;  use GPR.Util;
@@ -39,8 +36,6 @@ with GprConfig.Sdefault;
 with GPR_Version;    use GPR_Version;
 
 procedure Gprls.Main is
-
-   Debug : Boolean := False;
 
    use GPR;
 
@@ -374,6 +369,7 @@ procedure Gprls.Main is
 
          elsif Argv'Length = 2 then
             case Argv (2) is
+               when 'a' => null; -- ??? To be implemented
                when 'h' => Print_Usage               := True;
                when 'u' => Reset_Print; Print_Unit   := True;
                when 'U' => All_Projects              := True;
@@ -381,7 +377,6 @@ procedure Gprls.Main is
                when 'o' => Reset_Print; Print_Object := True;
                when 'v' => Verbose_Mode              := True;
                when 'd' => Dependable                := True;
-               when 'D' => Debug                     := True;
 
                when 'P' =>
                   if File_Set then
@@ -545,6 +540,10 @@ procedure Gprls.Main is
       --  Line for -Pproj
 
       Put_Line ("  -Pproj       use project file proj");
+
+      --  Line for -a
+
+      Put_Line ("  -a           also output relevant predefined units");
 
       --  Line for -u
 
@@ -926,6 +925,54 @@ begin
       end loop;
    end if;
 
+   --  Create mapping of ALI files to Source_Id
+
+   --  Get all the compilable sources of the projects
+   declare
+      Unit    : GPR.Unit_Index;
+      Subunit : Boolean := False;
+   begin
+      Unit := Units_Htable.Get_First (Project_Tree.Units_HT);
+      while Unit /= No_Unit_Index loop
+
+         --  We only need to put the library units, body or spec, but not
+         --  the subunits.
+
+         if Unit.File_Names (Impl) /= null
+           and then not Unit.File_Names (Impl).Locally_Removed
+         then
+            Subunit := False;
+
+            if Unit.File_Names (Spec) = null
+              or else Unit.File_Names (Spec).Locally_Removed
+            then
+               --  We have a body with no spec: we need to check if this is
+               --  a subunit.
+
+               Subunit := Is_Subunit (Unit.File_Names (Impl));
+            end if;
+
+            if not Subunit then
+               Add_ALI
+                 (Unit.File_Names (Impl).File,
+                  Spec   => False,
+                  Source => Unit.File_Names (Impl));
+            end if;
+         end if;
+
+         if Unit.File_Names (Spec) /= null
+           and then not Unit.File_Names (Spec).Locally_Removed
+         then
+            Add_ALI
+              (Unit.File_Names (Spec).File,
+               Spec   => True,
+               Source => Unit.File_Names (Spec));
+         end if;
+
+         Unit := Units_Htable.Get_Next (Project_Tree.Units_HT);
+      end loop;
+   end;
+
    for J in 1 .. Number_File_Names loop
       if File_Names (J).Source = No_Source then
          Put_Line
@@ -946,130 +993,175 @@ begin
                   T          => Text,
                   Ignore_ED  => False,
                   Err        => True,
-                  Read_Lines => "WD");
+                  Read_Lines => "WD",
+                  Object_Path => File_Name_Type
+                                  (File_Names (J).Source.Object_Path));
                Free (Text);
 
             else
                File_Names (J).The_ALI := No_ALI_Id;
+               Put_Line
+                 (Standard_Error,
+                  "Can't find ALI file for " &
+                    Get_Name_String (File_Names (J).Source.Path.Display_Name));
+
             end if;
          end;
       end if;
    end loop;
 
-   Find_General_Layout;
-
-   if Debug then
-      Put_Line ("Unit start:  " & Unit_Start'Img);
-      Put_Line ("Unit end:    " & Unit_End'Img);
-      Put_Line ("Source start:" & Source_Start'Img);
-      Put_Line ("Source end:  " & Source_End'Img);
-      Put_Line ("Object start:" & Object_Start'Img);
-      Put_Line ("Object end:  " & Object_End'Img);
-
-      if Too_Long then
-         Put_Line ("Too long");
-      end if;
-   end if;
-
    for J in 1 .. Number_File_Names loop
       declare
          FN_Source : File_Name_Source renames File_Names (J);
+         Id        : ALI_Id;
+         Last_U    : Unit_Id;
+
       begin
          if FN_Source.Source /= No_Source then
-            if Print_Object then
-               Get_Name_String (FN_Source.Source.Object_Path);
-               Put (Name_Buffer (1 .. Name_Len));
+            Id := FN_Source.The_ALI;
 
-               if Print_Unit or else Print_Source then
-                  if Too_Long then
-                     New_Line;
-                     Put ("   ");
+            if Id = No_ALI_Id then
+               null;
 
-                  else
-                     Put
-                       (Spaces (Object_Start + Name_Len .. Object_End));
-                  end if;
-               end if;
-            end if;
+               --  Output_Object (No_File);
 
-            if Print_Unit and then FN_Source.Source.Unit /= No_Unit_Index then
-               Get_Name_String (FN_Source.Source.Unit.Name);
-               Put (Name_Buffer (1 .. Name_Len));
+            else
+               Get_Name_String
+                 (Units.Table (ALIs.Table (Id).First_Unit).Uname);
 
-               if Print_Source then
-                  if Too_Long then
-                     New_Line;
-                     Put ("      ");
-
-                  else
-                     Put
-                       (Spaces (Unit_Start + Name_Len .. Unit_End));
-                  end if;
-               end if;
-            end if;
-
-            if Print_Source then
-               --  Get the status
-
-               if FN_Source.The_ALI = No_ALI_Id then
-                  Put (" ??? ");
-
+               if ALIs.Table (Id).No_Object then
+                  Output_Object (No_File);
                else
-                  declare
-                     Stamp : constant GPR.Stamps.Time_Stamp_Type :=
-                       File_Stamp (FN_Source.Source.Path.Name);
-                     Id : constant ALI_Id := FN_Source.The_ALI;
-                     U  : constant Unit_Id := ALIs.Table (Id). First_Unit;
-                     SD : constant Sdep_Id := Corresponding_Sdep_Entry (Id, U);
-                     Source_Index : Source_File_Index;
-                     Checksums_Match : Boolean;
-                     use GPR.Scans;
-                     use GPR.Stamps;
-                  begin
-                     if Stamp = Sdep.Table (SD).Stamp then
-                        Put ("  OK ");
+                  Output_Object (ALIs.Table (Id).Ofile_Full_Name);
+               end if;
 
-                     else
-                        Checksums_Match := False;
-                        Source_Index :=
-                          Sinput.Load_File
-                            (Get_Name_String
-                               (FN_Source.Source.Path.Display_Name));
+               --  In verbose mode print all main units in the ALI file,
+               --  otherwise just print the first one to ease columnwise
+               --  printout.
 
-                        if Source_Index /= No_Source_File then
+               if Verbose_Mode then
+                  Last_U := ALIs.Table (Id).Last_Unit;
+               else
+                  Last_U := ALIs.Table (Id).First_Unit;
+               end if;
 
-                           Err.Scanner.Initialize_Scanner
-                             (Source_Index, Err.Scanner.Ada);
+               for U in ALIs.Table (Id).First_Unit .. Last_U loop
+                  Output_Unit (U);
 
-                           --  Scan the complete file to compute its
-                           --  checksum.
+                  --  Output source now, unless if it will be done as part of
+                  --  outputing dependencies.
 
-                           loop
-                              Err.Scanner.Scan;
-                              exit when Token = Tok_EOF;
-                           end loop;
+                  if not (Dependable and then Print_Source) then
+                     Output_Source (Corresponding_Sdep_Entry (Id, U));
+                  end if;
+               end loop;
 
-                           if Scans.Checksum = Sdep.Table (SD).Checksum then
-                              Checksums_Match := True;
-                           end if;
-                        end if;
+               --  Print out list of units on which this unit depends (D lines)
 
-                        if Checksums_Match then
-                           Put (" MOK ");
+               if Dependable and then Print_Source then
+                  if Verbose_Mode then
+                     Put_Line ("   depends upon");
+                  end if;
 
-                        else
-                           Put (" DIF ");
+                  for D in
+                    ALIs.Table (Id).First_Sdep .. ALIs.Table (Id).Last_Sdep
+                  loop
+                     if not Is_Ada_Predefined_File_Name (Sdep.Table (D).Sfile)
+                     then
+                        Put ("   ");
+                        Output_Source (D);
+
+                        if not Verbose_Mode then
+                           New_Line;
                         end if;
                      end if;
-                  end;
+                  end loop;
                end if;
-
-               Get_Name_String (FN_Source.Source.Path.Display_Name);
-               Put (Name_Buffer (1 .. Name_Len));
             end if;
-
-            New_Line;
          end if;
+
+            --  if Print_Object then
+            --     Get_Name_String (FN_Source.Source.Object_Path);
+            --     Put_Line (Name_Buffer (1 .. Name_Len));
+            --  end if;
+            --
+            --  if Print_Unit and then FN_Source.Source.Unit /= No_Unit_Index
+            --  then
+            --     if FN_Source.The_ALI = No_ALI_Id then
+            --                    Get_Name_String (FN_Source.Source.Unit.Name);
+            --                    Put ("   ");
+            --                    Put (Name_Buffer (1 .. Name_Len));
+            --
+            --                 else
+            --                    declare
+            --                       Id : constant ALI_Id := FN_Source.The_ALI;
+            --                      U  : Unit_Id := ALIs.Table (Id).First_Unit;
+            --
+            --                    begin
+            --                       Put ("   ");
+            --                       Output_Unit (U);
+            --
+            --                       if not (Dependable and Print_Source) then
+            --          Output_Source (FN_Source.Source, FN_Source.The_ALI, U);
+            --                       end if;
+            --
+            --         if U /= ALIs.Table (Id).Last_Unit and then Verbose_Mode
+            --                       then
+            --                          U := ALIs.Table (Id).Last_Unit;
+            --                          Put ("   ");
+            --                          Output_Unit (U);
+            --
+            --                      if not (Dependable and Print_Source) then
+            --                             declare
+            --                      Urec : Unit_Record renames Units.Table (U);
+            --                                Src : constant GPR.Source_Id :=
+            --                                  Find_Source
+            --                                    (Units.Table (U).Sfile,
+            --                                     Spec =>
+            --                                    Urec.Utype = Is_Spec or else
+            --                                    Urec.Utype = Is_Spec_Only);
+            --                             begin
+            --                                if Src /= GPR.No_Source then
+            --                    Output_Source (Src, FN_Source.The_ALI, U);
+            --                                end if;
+            --                             end;
+            --                          end if;
+            --                       end if;
+            --                    end;
+            --                 end if;
+            --              end if;
+            --
+            --    if Dependable and then FN_Source.The_ALI /= No_ALI_Id then
+            --                 if Verbose_Mode then
+            --                    Put_Line ("depends upon");
+            --                 end if;
+            --
+            --          for D in ALIs.Table (FN_Source.The_ALI).First_Sdep ..
+            --                   ALIs.Table (FN_Source.The_ALI).Last_Sdep
+            --                 loop
+            --        if not Is_Ada_Predefined_File_Name (Sdep.Table (D).Sfile)
+            --                    then
+            --                       declare
+            --                          Src : GPR.Source_Id :=
+            --                    Find_Source (Sdep.Table (D).Sfile, True);
+            --                          ALI : ALI_Id := No_ALI_Id;
+            --                       begin
+            --                          if Src = No_Source then
+            --               Src := Find_Source (Sdep.Table (D).Sfile, False);
+            --                          end if;
+            --
+            --                          if Src /= No_Source then
+            --                             ALI := Find_ALI (Src);
+            --                          end if;
+            --
+            --                          if ALI /= No_ALI_Id then
+            --                             Output_Source (Src, ALI);
+            --                          end if;
+            --                       end;
+            --                    end if;
+            --                 end loop;
+            --              end if;
+            --  end if;
       end;
    end loop;
 
