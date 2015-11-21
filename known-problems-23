@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-OB10-028 Shared libraries importing static libraries
+
+  Problem:    When a shared library project imports an abstract project that
+              itself imports static libraries, the Project Manager does not
+              report an error, as it should.
+
+  Status:     This was fixed in 17 on 2015-11-10
+
+  Workaround: Import directly the static libraries.
+
 KP-23-OB09-005 Crash when project path is too large
 
   Problem:    gprbuild crashes when the project path is too large, for example
