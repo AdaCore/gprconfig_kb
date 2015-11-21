@@ -1597,7 +1597,7 @@ package body Scanner is
             if Upper_Half_Encoding then
                goto Scan_Wide_Character;
 
-            --  Otherwise we have OK Latin-1 character
+            --  Otherwise we have Latin-1 character
 
             else
                --  Upper half characters may possibly be identifier letters
@@ -1608,6 +1608,9 @@ package body Scanner is
                   Name_Len := 0;
                   Underline_Found := False;
                   goto Scan_Identifier;
+
+               else
+                  Error_Illegal_Character;
                end if;
             end if;
 
