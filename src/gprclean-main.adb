@@ -425,6 +425,10 @@ procedure Gprclean.Main is
                         end if;
 
                      when 'c'    =>
+                        if Arg'Length /= 2 then
+                           Bad_Argument;
+                        end if;
+
                         Compile_Only := True;
 
                      when 'e' =>
@@ -437,17 +441,33 @@ procedure Gprclean.Main is
                         end if;
 
                      when 'f' =>
+                        if Arg'Length /= 2 then
+                           Bad_Argument;
+                        end if;
+
                         Force_Deletions := True;
                         Opt.Directories_Must_Exist_In_Projects := False;
 
                      when 'F' =>
+                        if Arg'Length /= 2 then
+                           Bad_Argument;
+                        end if;
+
                         Full_Path_Name_For_Brief_Errors := True;
 
                      when 'h' =>
+                        if Arg'Length /= 2 then
+                           Bad_Argument;
+                        end if;
+
                         Display_Copyright;
                         Usage;
 
                      when 'n' =>
+                        if Arg'Length /= 2 then
+                           Bad_Argument;
+                        end if;
+
                         Do_Nothing := True;
 
                      when 'P' =>
@@ -482,9 +502,17 @@ procedure Gprclean.Main is
                         end if;
 
                      when 'q' =>
+                        if Arg'Length /= 2 then
+                           Bad_Argument;
+                        end if;
+
                         Quiet_Output := True;
 
                      when 'r' =>
+                        if Arg'Length /= 2 then
+                           Bad_Argument;
+                        end if;
+
                         All_Projects := True;
 
                      when 'v' =>
