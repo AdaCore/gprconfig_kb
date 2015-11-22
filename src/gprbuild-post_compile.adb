@@ -1410,6 +1410,86 @@ package body Gprbuild.Post_Compile is
       ---------------------------
 
       procedure Write_Library_Options is
+
+         procedure Write_All_Linker_Options (Project : Project_Id);
+         --  Write all linker options for all project imported by Project. This
+         --  is called only when building an encapsulated library.
+
+         ------------------------------
+         -- Write_All_Linker_Options --
+         ------------------------------
+
+         procedure Write_All_Linker_Options (Project : Project_Id) is
+            Section_Out : Boolean := Current_Section = Gprexch.Library_Options;
+            L           : Project_List := Project.All_Imported_Projects;
+         begin
+            --  For all imported projects
+
+            while L /= null loop
+               Check_Package : declare
+                  P              : constant Project_Id := L.Project;
+                  Linker_Package : constant Package_Id :=
+                                     Value_Of
+                                       (Name        => Name_Linker,
+                                        In_Packages => P.Decl.Packages,
+                                        Shared      => Project_Tree.Shared);
+               begin
+                  --  Check linker package for a definition of Linker_Options
+
+                  if Linker_Package /= No_Package then
+                     Check_Attribute : declare
+                        Opts : constant Variable_Value :=
+                                 Value_Of
+                                   (Variable_Name     => Name_Linker_Options,
+                                    In_Variables =>
+                                      Project_Tree.Shared.Packages.Table
+                                        (Linker_Package).Decl.Attributes,
+                                    Shared       => Project_Tree.Shared);
+
+                     begin
+                        --  If a Linker_Options attribute is found, output it
+                        --  into the Library_Options section.
+
+                        if not Opts.Default then
+                           Output_Options : declare
+                              List : String_List_Id := Opts.Values;
+                              Elem : String_Element;
+                           begin
+                              while List /= Nil_String loop
+                                 Elem :=
+                                   Project_Tree.Shared.
+                                     String_Elements.Table (List);
+
+                                 --  First ensure the section is opended
+
+                                 if not Section_Out then
+                                    Put_Line
+                                      (Exchange_File,
+                                       Library_Label
+                                         (Gprexch.Library_Options));
+                                    Section_Out := True;
+                                 end if;
+
+                                 Put_Line
+                                   (Exchange_File,
+                                    "-L"
+                                    & Get_Name_String (P.Library_Dir.Name));
+                                 Put_Line
+                                   (Exchange_File,
+                                    Get_Name_String (Elem.Value));
+
+                                 List := Elem.Next;
+                              end loop;
+                           end Output_Options;
+                        end if;
+                     end Check_Attribute;
+                  end if;
+               end Check_Package;
+
+               L := L.Next;
+            end loop;
+         end Write_All_Linker_Options;
+
          Library_Options : Variable_Value := Nil_Variable_Value;
       begin
          --  If attribute Library_Options was specified, add these
@@ -1424,6 +1504,13 @@ package body Gprbuild.Post_Compile is
             Write_List
               (Exchange_File,
                Gprexch.Library_Options, Library_Options.Values);
+         end if;
+
+         --  For encapsulated libraries we also want to add the Linker_Options
+         --  for all imported projects.
+
+         if For_Project.Standalone_Library = Encapsulated then
+            Write_All_Linker_Options (For_Project);
          end if;
       end Write_Library_Options;
 

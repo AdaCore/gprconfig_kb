@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-OB20-001 Encapsulated libraries and external libraries
+
+  Problem:    When building an encapsulated library importing (directly or
+              indirectly) projects with a Linker_Options, the encapsulated
+              library fails to build because of undefined symbols.
+
+  Status:     This was fixed in 17 on 2015-11-22
+
+  Workaround: Add the necessary options into the Library_Options of the
+              encapsulated library.
+
 KP-23-OB10-028 Shared libraries importing static libraries
 
   Problem:    When a shared library project imports an abstract project that
