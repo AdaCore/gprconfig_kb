@@ -253,6 +253,10 @@ package body GPR is
       Path : Path_Name_Type;
 
    begin
+      if Shared = null then
+         return;
+      end if;
+
       if not Opt.Keep_Temporary_Files then
          for Index in
            1 .. Temp_Files_Table.Last (Shared.Private_Part.Temp_Files)
