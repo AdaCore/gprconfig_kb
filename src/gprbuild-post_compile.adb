@@ -489,8 +489,8 @@ package body Gprbuild.Post_Compile is
             Interface_ALIs.Reset;
             Interface_Incomplete := False;
 
-            if Proj.Qualifier /= Aggregate_Library and then
-               Proj.Extended_By = No_Project
+            if Proj.Qualifier /= Aggregate_Library
+              and then Proj.Extended_By = No_Project
             then
                Library_SAL_Projs.Append (Proj);
             end if;
@@ -738,7 +738,6 @@ package body Gprbuild.Post_Compile is
                         end if;
                      end loop;
                   end loop;
-
                end if;
             end loop;
          end Get_Closure;
