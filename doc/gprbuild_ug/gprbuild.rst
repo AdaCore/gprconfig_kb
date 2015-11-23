@@ -3493,3 +3493,258 @@ Note that several switches *-d* may be used,
 even in conjunction with one or several switches
 *-D*. Several Naming Patterns and one excluded pattern
 are used in this example.
+
+.. _The_Library_Browser_gprls:
+
+The Library Browser GPRls
+=========================
+
+.. index:: Library browser
+.. index:: ! gprls
+
+`gprls` is a tool that outputs information about compiled sources. It gives the
+relationship between objects, unit names and source files. It can also be used
+to check source dependencies as well as various characteristics.
+
+.. _Running_gprls:
+
+Running `gprls`
+----------------
+
+The `gprls` command has the form
+
+  ::
+
+      $ gprls switches `object_or_dependency_files`
+
+The main argument is the list of object files or :file:`ali` files for Ada
+sources for which information is requested.
+
+`gprls` uses a project file, either specified through a single switch -P,
+or the default project file. If no `object_or_dependency_files` is specified.
+then all the object files corresponding to the sources of the project are
+deemed to be specified.
+
+In normal mode, without option other that -P <project file>, `gprls` produces
+information for each object/dependency file: the full path of the object,
+the name of the principal unit in this object if the source is in Ada,
+the status of the source and the full path of the source.
+
+Here is a simple example of use:
+
+
+  ::
+
+     $ gprls -P prj.gpr
+     /home/celier/bugs/O528-046/obj/pkg.o
+        pkg
+          DIF pkg.adb
+     /home/celier/bugs/O528-046/obj/main.o
+        main
+          MOK main.adb
+
+The first three lines can be interpreted as follows: the main unit which is
+contained in
+object file :file:`pkg.o` is pkg, whose main source is in
+:file:`pkg.adb`. Furthermore, the version of the source used for the
+compilation of pkg has been modified (DIF). Each source file has a status
+qualifier which can be:
+
+*OK (unchanged)*
+  The version of the source file used for the compilation of the
+  specified unit corresponds exactly to the actual source file.
+
+*MOK (slightly modified)*
+  The version of the source file used for the compilation of the
+  specified unit differs from the actual source file but not enough to
+  require recompilation. If you use `gprbuild` with the qualifier
+  *-m (minimal recompilation)*, a file marked
+  MOK will not be recompiled.
+
+*DIF (modified)*
+  The source used to build this object has been modified and need to be
+  recompiled.
+
+*??? (dependency file not found)*
+  The object/dependency file cannot be found.
+
+
+.. _Switches_for_gprls:
+
+Switches for GPRls
+------------------
+
+`gprls` recognizes the following switches:
+
+
+.. index:: --version (gprls)
+
+:samp:`--version`
+  Display Copyright and version, then exit disregarding all other options.
+
+
+.. index:: --help (gprls)
+
+:samp:`*--help`
+  If *--version* was not used, display usage, then exit disregarding
+  all other options.
+
+
+.. index:: -P (gprls)
+
+:samp:`-P <project file>`
+  Use this project file. This switch may only be specified once.
+
+
+.. index:: -a (gprls)
+
+:samp:`-a`
+  Consider all units, including those of the predefined Ada library.
+  Especially useful with *-d*.
+
+
+.. index:: -d (gprls)
+
+:samp:`-d`
+  List sources from which specified units depend on.
+
+
+.. index:: -h (gprls)
+
+:samp:`-h`
+  Output the list of options.
+
+
+.. index:: -o (gprls)
+
+:samp:`-o`
+  Only output information about object files.
+
+
+.. index:: -s (gprls)
+
+:samp:`-s`
+  Only output information about source files.
+
+
+.. index:: -u (gprls)
+
+:samp:`-u`
+  Only output information about compilation units.
+
+
+.. index:: -U (gprls)
+
+:samp:`-U`
+  If no object/dependency file is specified, list information forthe sources
+  of all the projects in the project tree.
+
+
+.. index:: -files (gprls)
+
+:samp:`-files={file}`
+  Take as arguments the files listed in text file `file`.
+  Text file `file` may contain empty lines that are ignored.
+  Each nonempty line should contain the name of an existing object/dependency
+  file.
+  Several such switches may be specified simultaneously.
+
+
+.. index:: -aP (gprls)
+
+:samp:`-aP{dir}`
+  Add `dir` at the beginning of the project search dir.
+
+
+.. index:: --RTS (gprls)
+
+:samp:`--RTS={rts-path}``
+  Specifies the default location of the Ada runtime library.
+  Same meaning as the equivalent *gprbuild* switch.
+
+
+.. index:: -v (gprls)
+
+:samp:`-v`
+  Verbose mode. Output the complete source, object and project paths.
+  For each Ada source, include special characteristics such as:
+
+  * *Preelaborable*: The unit is preelaborable in the Ada sense.
+
+  * *No_Elab_Code*:  No elaboration code has been produced by the compiler for this unit.
+
+  * *Pure*: The unit is pure in the Ada sense.
+
+  * *Elaborate_Body*: The unit contains a pragma Elaborate_Body.
+
+  * *Remote_Types*: The unit contains a pragma Remote_Types.
+
+  * *Shared_Passive*: The unit contains a pragma Shared_Passive.
+
+  * *Predefined*: This unit is part of the predefined environment and cannot be modified
+    by the user.
+
+  * *Remote_Call_Interface*: The unit contains a pragma Remote_Call_Interface.
+
+
+.. _Example_of_gprls_Usage:
+
+Examples of `gprls` Usage
+-------------------------
+
+  ::
+
+      $ gprls -v -P prj.gpr
+
+       5 lines: No errors
+      gprconfig --batch -o /home/celier/bugs/O528-046/obj/auto.cgpr --target=x86_64-linux --config=ada,,
+      Creating configuration file: /home/celier/bugs/O528-046/obj/auto.cgpr
+      Checking configuration /home/celier/bugs/O528-046/obj/auto.cgpr
+
+      GPRLS Pro 17.0w (20151120) (x86_64-unknown-linux-gnu)
+      Copyright (C) 2015-2015, AdaCore
+
+      Source Search Path:
+         <Current directory>
+         /home/celier/local/lib/gcc/x86_64-pc-linux-gnu/4.9.4//adainclude/
+
+      Object Search Path:
+         <Current directory>
+         /home/celier/local/lib/gcc/x86_64-pc-linux-gnu/4.9.4//adalib/
+
+      Project Search Path:
+         <Current_Directory>
+         /home/celier/local/x86_64-unknown-linux-gnu/lib/gnat
+         /home/celier/local/x86_64-unknown-linux-gnu/share/gpr
+         /home/celier/local/share/gpr
+         /home/celier/local/lib/gnat
+
+      /home/celier/bugs/O528-046/obj/pkg.o
+         Unit =>
+           Name   => pkg
+           Kind   => package body
+           Flags  => No_Elab_Code
+         Source => pkg.adb unchanged
+         Unit =>
+           Name   => pkg
+           Kind   => package spec
+           Flags  => No_Elab_Code
+         Source => pkg.ads unchanged
+      /home/celier/bugs/O528-046/obj/main.o
+         Unit =>
+           Name   => main
+           Kind   => subprogram body
+           Flags  => No_Elab_Code
+         Source => main.adb slightly modified
+
+      $ gprls -d -P prj.gpr main.o
+      /home/celier/bugs/O528-046/obj/main.o
+         main
+             MOK main.adb
+
+              OK pkg.ads
+
+      $ gprls -s -P prj.gpr main.o
+         main
+      main.adb
+
