@@ -24,6 +24,10 @@ NF-17-OA08-016 Allow more packages in aggregate projects (2015-11-18)
    projects and aggregate library projects. In addition, package Install is
    not allowed in aggregate projects. All other packages are allowed.
 
+NF-17-O528-046 New tool GPRls (2015-11-23)
+
+   A new GPR tool is added: gprls. It is similar to gnatls for project files.
+
 NF-17-O331-015 GPRbuild now restrict symbols from a SAL (2015-10-31)
 
    GPRbuild now restricts the symbols exported out of a SAL. The exported
