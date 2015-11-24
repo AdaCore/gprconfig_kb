@@ -152,6 +152,18 @@ KP-22-O403-014 static library not installed with --mode=dev
 
   Workaround: Do not set explicitly the --mode=dev, let the default value.
 
+KP-22-O312-038 VxWorks 653 2.4.x and 2.5
+
+  Problem:    gprconfig is not able to detect ccppc and ccpentium on these
+              versions, for target ppc-vx653 and x86-vx653. Note that this
+              does not affect e500v2-vx653.
+
+  Status:     This was fixed in 2.3 on 2015-04-20
+
+  Workaround: Create an entry in the knowledge base for these two compilers.
+              GCC-WRS653-PPC and GCC-WRS653-X86 from gprbuild 2.3 can be
+              a good starting point for that.
+
 KP-22-O302-010 gprbuild distributed won't exit after ctrl-c
 
   Problem:    When interrupting a distributed build with a ctrl-c signal,
