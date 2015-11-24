@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 2.3.1 and above
 ---------------------------------------
 
+KP-22-OB02-041 gprclean invalid switches not recognized
+
+  Problem:    When gprbuild is invoked with a switch with several characters
+              that starts with the character of a single character switch, such
+              as -nobody or -reverse, the switch is not recognized as invalid
+              and is taken as the single character switch.
+
+  Status:     This was fixed in 2.3 on 2015-11-22
+
+  Workaround: Avoid such switches.
+
 KP-22-OA25-001 Relinking when nothing to bind
 
   Problem:    When there is Ada code, but there is nothing to bind
