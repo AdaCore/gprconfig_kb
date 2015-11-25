@@ -1629,7 +1629,7 @@ procedure Gprslave is
 
             Kill_Process_Tree (Job.Pid, Hard_Kill => True);
             Message
-              ("kill job" & Integer'Image (Pid_To_Integer (Job.Pid)),
+              ("# kill job" & Integer'Image (Pid_To_Integer (Job.Pid)),
                Is_Debug => True);
          end loop;
       end Kill_Processes;
@@ -1652,7 +1652,7 @@ procedure Gprslave is
 
          if not Builders.Exists (Job.Build_Sock) then
             Message
-              ("kill job (missing builder)"
+              ("# kill job (missing builder)"
                & Integer'Image (Pid_To_Integer (Job.Pid)),
                Is_Debug => True);
 
