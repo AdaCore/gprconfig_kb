@@ -718,7 +718,8 @@ procedure Gprslave is
       begin
          if Force or (Verbose and not Is_Debug) or (Debug and Is_Debug) then
             Put_Line
-              ('[' & Calendar.Formatting.Image (Calendar.Clock) & "] " & Str);
+              ('[' & Calendar.Formatting.Image (Calendar.Clock) & "] "
+               & (if Is_Debug then "# " else " ") & Str);
          end if;
       end Message;
 
@@ -942,8 +943,7 @@ procedure Gprslave is
 
             if Socket /= No_Socket then
                Builder := Builders.Get (Socket);
-               IO.Message
-                 (Builder, "# Error socket signaled", Is_Debug => True);
+               IO.Message (Builder, "Error socket signaled", Is_Debug => True);
                Status := Aborted;
             end if;
          end if;
@@ -975,7 +975,7 @@ procedure Gprslave is
                   begin
                      if Debug then
                         V := To_Unbounded_String
-                          ("# command: " & Command_Kind'Image (Kind (Cmd)));
+                          ("command: " & Command_Kind'Image (Kind (Cmd)));
 
                         declare
                            List : constant Argument_List_Access := Args (Cmd);
@@ -1002,7 +1002,7 @@ procedure Gprslave is
                            Jid := Jid + 1;
                            IO.Message
                              (Builder,
-                              "# register compilation " & Image (Id), True);
+                              "register compilation " & Image (Id), True);
 
                            To_Run.Push
                              (Job_Data'(Cmd,
@@ -1083,7 +1083,7 @@ procedure Gprslave is
 
                else
                   IO.Message
-                    ("# build master not found, cannot handle request.",
+                    ("build master not found, cannot handle request.",
                      Is_Debug => True);
                end if;
             end if;
@@ -1304,7 +1304,7 @@ procedure Gprslave is
 
             IO.Message
               (Builder,
-               "# driver for " & Language & " is : " & To_String (Driver),
+               "driver for " & Language & " is : " & To_String (Driver),
                Is_Debug => True);
 
             return To_String (Driver);
@@ -1387,7 +1387,7 @@ procedure Gprslave is
          --     - move back to working directory
 
          IO.Message
-           (Builder, "# move to work directory " & Work_Directory (Builder),
+           (Builder, "move to work directory " & Work_Directory (Builder),
             Is_Debug => True);
 
          --  It is safe to change directory here without a lock as this is
@@ -1420,14 +1420,14 @@ procedure Gprslave is
                end if;
 
                IO.Message
-                 (Builder, "# move to directory " & Dir, Is_Debug => True);
+                 (Builder, "move to directory " & Dir, Is_Debug => True);
 
                Set_Directory (Dir);
             end if;
          exception
             when others =>
                IO.Message
-                 (Builder, "# cannot move to object directory",
+                 (Builder, "cannot move to object directory",
                   Is_Debug => True);
          end;
 
@@ -1466,11 +1466,11 @@ procedure Gprslave is
                Pid      => Pid);
 
             IO.Message
-              (Builder, "#   pid" & Integer'Image (Pid_To_Integer (Pid)),
+              (Builder, "  pid" & Integer'Image (Pid_To_Integer (Pid)),
                Is_Debug => True);
-            IO.Message (Builder, "#   dep_file " & Dep_File, Is_Debug => True);
-            IO.Message (Builder, "#   out_file " & Out_File, Is_Debug => True);
-            IO.Message (Builder, "#   obj_file " & Obj_File, Is_Debug => True);
+            IO.Message (Builder, "  dep_file " & Dep_File, Is_Debug => True);
+            IO.Message (Builder, "  out_file " & Out_File, Is_Debug => True);
+            IO.Message (Builder, "  obj_file " & Obj_File, Is_Debug => True);
 
             for K in O'Range loop
                Free (O (K));
@@ -1480,7 +1480,7 @@ procedure Gprslave is
          when E : others =>
             IO.Message
               (Builder,
-               "# Error in Execute_Job: " & Symbolic_Traceback (E),
+               "Error in Execute_Job: " & Symbolic_Traceback (E),
                Is_Debug => True);
       end Do_Compile;
 
@@ -1515,7 +1515,7 @@ procedure Gprslave is
          when E : others =>
             IO.Message
               (Builder,
-               "# clean-up error " & Symbolic_Traceback (E),
+               "clean-up error " & Symbolic_Traceback (E),
                True);
             Send_Ko (Builder.Channel);
       end Do_Clean;
@@ -1597,7 +1597,7 @@ procedure Gprslave is
 
             Kill_Process_Tree (Job.Pid, Hard_Kill => True);
             IO.Message
-              ("# kill job" & Integer'Image (Pid_To_Integer (Job.Pid)),
+              ("kill job" & Integer'Image (Pid_To_Integer (Job.Pid)),
                Is_Debug => True);
          end loop;
       end Kill_Processes;
@@ -1620,7 +1620,7 @@ procedure Gprslave is
 
          if not Builders.Exists (Job.Build_Sock) then
             IO.Message
-              ("# kill job (missing builder)"
+              ("kill job (missing builder)"
                & Integer'Image (Pid_To_Integer (Job.Pid)),
                Is_Debug => True);
 
@@ -1832,7 +1832,7 @@ procedure Gprslave is
                begin
                   IO.Message
                     (Builder,
-                     "# job " & Image (Job.Id) & " terminated",
+                     "job " & Image (Job.Id) & " terminated",
                      Is_Debug => True);
 
                   declare
@@ -1885,7 +1885,7 @@ procedure Gprslave is
 
                   IO.Message
                     (Builder,
-                     "# compilation status " & Boolean'Image (Success),
+                     "compilation status " & Boolean'Image (Success),
                      Is_Debug => True);
 
                   if Success then
@@ -1904,7 +1904,7 @@ procedure Gprslave is
 
                      IO.Message
                        (Builder,
-                        "# cannot send response to build master "
+                        "cannot send response to build master "
                         & Exception_Information (E),
                         Is_Debug => True);
 
@@ -1915,7 +1915,7 @@ procedure Gprslave is
 
             else
                IO.Message
-                 ("# build master not found, cannot send response.",
+                 ("build master not found, cannot send response.",
                   Is_Debug => True);
             end if;
 
@@ -1924,8 +1924,9 @@ procedure Gprslave is
             --  gprconfig run launched to generate a configuration file for a
             --  specific language. So we do not want to fail in this case.
 
-            IO.Message ("# unknown job data for pid "
-                     & Integer'Image (Pid_To_Integer (Pid)), Is_Debug => True);
+            IO.Message
+              ("unknown job data for pid "
+               & Integer'Image (Pid_To_Integer (Pid)), Is_Debug => True);
          end if;
       end loop;
 
@@ -1995,7 +1996,7 @@ procedure Gprslave is
                      if not Except.Contains (Entry_Name) then
                         IO.Message
                           (Builder,
-                           "# delete excluded '" & Entry_Name & ''',
+                           "delete excluded '" & Entry_Name & ''',
                            Is_Debug => True);
 
                         Delete_File (Entry_Name);
@@ -2031,8 +2032,7 @@ procedure Gprslave is
 
                if Debug then
                   Message := To_Unbounded_String
-                    ("# command: "
-                     & Command_Kind'Image (Kind (Cmd)));
+                    ("command: " & Command_Kind'Image (Kind (Cmd)));
 
                   if Args (Cmd) /= null then
                      for K in Args (Cmd)'Range loop
@@ -2247,7 +2247,7 @@ procedure Gprslave is
       if not Exists (Work_Directory (Builder)) then
          IO.Message
            (Builder,
-            "# create build environment directory: "
+            "create build environment directory: "
             & Work_Directory (Builder), Is_Debug => True);
 
          Create_Path (Work_Directory (Builder));
@@ -2263,11 +2263,11 @@ procedure Gprslave is
       --  For Ada compilers, rewrite the root directory
 
       if Compiler_Path = null then
-         IO.Message (Builder, "# compiler path is null.", Is_Debug => True);
+         IO.Message (Builder, "compiler path is null.", Is_Debug => True);
       else
          IO.Message
            (Builder,
-            "# compiler path is : "
+            "compiler path is : "
             & Containing_Directory (Containing_Directory (Compiler_Path.all)),
             Is_Debug => True);
       end if;
@@ -2372,7 +2372,7 @@ begin
 
    Slave_Id := Get_Slave_Id;
 
-   IO.Message ("# slave id " & Image (Slave_Id), Is_Debug => True);
+   IO.Message ("slave id " & Image (Slave_Id), Is_Debug => True);
 
    Listen_Socket (Server);
 
