@@ -2110,7 +2110,6 @@ procedure Gprslave is
                   Builder.Socket := No_Socket;
 
                   exit Check_Time_Stamps;
-
                end if;
             end;
          end loop Check_Time_Stamps;
