@@ -31,6 +31,7 @@ with GPR.Snames;
 with GPR.Tree;
 with GPR.Util;  use GPR.Util;
 
+with Gpr_Build_Util; use Gpr_Build_Util;
 with Gpr_Util;       use Gpr_Util;
 with GprConfig.Sdefault;
 with GPR_Version;    use GPR_Version;
@@ -507,6 +508,14 @@ procedure Gprls.Main is
                end if;
             end if;
 
+         elsif Argv'Length >= 3
+           and then Argv (2) = 'X'
+           and then Is_External_Assignment (Root_Environment, Argv)
+         then
+            --  Is_External_Assignment has side effects when it returns True
+
+            null;
+
          else
             OK := False;
          end if;
@@ -607,6 +616,11 @@ procedure Gprls.Main is
       Put_Line ("  --unchecked-shared-lib-imports");
       Put_Line
         ("               shared library projects may import any project");
+
+      --  Line for -X
+
+      Put_Line ("  -Xnm=val     specify an external reference for " &
+                  "project files");
 
       --  File Status explanation
 
