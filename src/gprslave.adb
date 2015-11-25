@@ -117,19 +117,39 @@ procedure Gprslave is
 
    --  Representation of a job data
 
+   type Stages is
+     (J_None, J_Created, J_Waiting, J_Running, J_Terminated, J_Killed);
+
    type Job_Data is record
       Cmd        : Command;
-      Id         : Remote_Id;         -- job id must be uniq across all slaves
-      Pid        : Process_Id;        -- the OS process id
+      Id         : Remote_Id := -1; -- job id must be uniq across all slaves
+      Pid        : Process_Id := OS_Lib.Invalid_Pid; -- the OS process id
       Dep_Dir    : Unbounded_String;
       Dep_File   : Unbounded_String;
       Obj_File   : Unbounded_String;
       Output     : Unbounded_String;
       Build_Sock : Socket_Type; -- key used to get the corresponding builder
-      Killed     : Boolean;
-   end record;
+      Stage      : Stages := J_None;
+   end record with Dynamic_Predicate =>
+     (case Job_Data.Stage is
+         when J_None =>
+           Job_Data.Id = -1,
 
-   No_Job : constant Job_Data := (Id => -1, others => <>);
+         when J_Created | J_Waiting =>
+           Job_Data.Pid = OS_Lib.Invalid_Pid
+           and then Kind (Job_Data.Cmd) in EX | CU
+           and then Job_Data.Build_Sock /= No_Socket,
+
+         when J_Running | J_Terminated | J_Killed =>
+           Job_Data.Pid /= OS_Lib.Invalid_Pid
+           and then Kind (Job_Data.Cmd) in EX | CU
+           and then Job_Data.Build_Sock /= No_Socket);
+
+   No_Job : constant Job_Data :=
+              (Id     => -1,
+               Pid    => OS_Lib.Invalid_Pid,
+               Stage  => J_None,
+               others => <>);
 
    function "<" (J1, J2 : Job_Data) return Boolean is
      (Pid_To_Integer (J1.Pid) < Pid_To_Integer (J2.Pid));
@@ -277,9 +297,13 @@ procedure Gprslave is
       --  Queue of Job to run, A FIFO list of jobs comming from all registered
       --  builders.
 
-      procedure Push (Job : Job_Data);
+      procedure Push (Job : Job_Data)
+        with Pre => Job.Stage = J_Created;
 
       entry Pop (Job : out Job_Data);
+      --  with Post => Job.Stage = J_Waiting;
+      --  ??? with the post condition we have a warning for Pop not being
+      --  referenced.
 
    private
       Set : To_Run_Set.Vector;
@@ -298,10 +322,12 @@ procedure Gprslave is
          Obj_File : String;
          Dep_File : String;
          Dep_Dir  : String;
-         Pid      : out Process_Id);
+         Pid      : out Process_Id)
+        with Pre => Job.Stage = J_Waiting, Post => Job.Stage = J_Running;
       --  Start and register a new running job
 
-      procedure Get (Job : out Job_Data; Pid : Process_Id);
+      procedure Get (Job : out Job_Data; Pid : Process_Id)
+        with Post => Job = No_Job or else Job.Stage = J_Terminated;
       --  Get Job having the given Pid
 
       procedure Set_Max (Max : Positive);
@@ -1011,7 +1037,7 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
-                              Builder.Socket, False));
+                              Builder.Socket, J_Created));
 
                            Send_Ack (Builder.Channel, Id);
                         end Record_Job;
@@ -1029,7 +1055,7 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
-                              Builder.Socket, False));
+                              Builder.Socket, J_Created));
                         end Clean_Up_Request;
 
                      elsif Kind (Cmd) in EC | SI then
@@ -1556,7 +1582,8 @@ procedure Gprslave is
 
    protected body Running is
 
-      procedure Register (Job : Job_Data);
+      procedure Register (Job : Job_Data)
+        with Pre => Job.Stage = J_Running;
       --  Register a running Job
 
       -----------
@@ -1593,7 +1620,7 @@ procedure Gprslave is
          for Job of To_Kill loop
             --  Mark job as killed into the set
             C := Set.Find (Job);
-            Set (C).Killed := True;
+            Set (C).Stage := J_Killed;
 
             Kill_Process_Tree (Job.Pid, Hard_Kill => True);
             IO.Message
@@ -1629,7 +1656,7 @@ procedure Gprslave is
             Insert_Killed_Job : declare
                Killed_Job : Job_Data := Job;
             begin
-               Killed_Job.Killed := True;
+               Killed_Job.Stage := J_Killed;
                Set.Insert (Killed_Job);
             end Insert_Killed_Job;
 
@@ -1663,6 +1690,7 @@ procedure Gprslave is
          Job.Obj_File := To_Unbounded_String (Obj_File);
          Job.Output   := To_Unbounded_String (Out_File);
          Job.Dep_Dir  := To_Unbounded_String (Dep_Dir);
+         Job.Stage    := J_Running;
 
          --  Note that we want to register the job even if Pid is
          --  Invalid_Process. We want it to be recorded into the running
@@ -1680,6 +1708,7 @@ procedure Gprslave is
          Pos : Job_Data_Set.Cursor;
       begin
          if Dead.Is_Empty then
+            Job := No_Job;
             Job.Pid := Pid;
             Pos := Set.Find (Job);
 
@@ -1698,8 +1727,10 @@ procedure Gprslave is
                --  send back answers as anyway the build master is not running
                --  anymore).
 
-               if Job.Killed then
+               if Job.Stage = J_Killed then
                   Job := No_Job;
+               else
+                  Job.Stage := J_Terminated;
                end if;
 
             else
@@ -1708,6 +1739,7 @@ procedure Gprslave is
 
          else
             Job := Dead.First_Element;
+            Job.Stage := J_Terminated;
             Dead.Delete_First;
             N_Count := N_Count - 1;
          end if;
@@ -1753,15 +1785,18 @@ procedure Gprslave is
       ----------
 
       procedure Push (Job : Job_Data) is
+         J : Job_Data := Job;
       begin
          --  Always adds the clean-up job in front of the queue, this is
          --  friendler as we do not want the user to wait for all current
          --  compilation to terminate.
 
+         J.Stage := J_Waiting;
+
          if Kind (Job.Cmd) = CU then
-            Set.Prepend (Job);
+            Set.Prepend (J);
          else
-            Set.Append (Job);
+            Set.Append (J);
          end if;
       end Push;
 
