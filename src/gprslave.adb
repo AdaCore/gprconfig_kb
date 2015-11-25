@@ -506,7 +506,6 @@ procedure Gprslave is
       procedure Remove (Builder : in out Build_Master) is
       begin
          Builders.Exclude (Builder);
-         Running.Kill_Processes (Builder.Socket);
          Release (Builder);
       end Remove;
 
@@ -550,6 +549,7 @@ procedure Gprslave is
       --  First unregister the builder
 
       Builders.Remove (Builder);
+      Running.Kill_Processes (Builder.Socket);
 
       --  Now close the channel/socket. This routine is used when the builder
       --  has encountered an error, so the associated socket may be in a bad
@@ -1876,7 +1876,7 @@ procedure Gprslave is
 
                      --  Remove it from the list
 
-                     Builders.Remove (Builder);
+                     Close_Builder (Builder, Ack => False);
                end;
 
             else
@@ -2106,10 +2106,7 @@ procedure Gprslave is
                   --  not need to remove the builder from the list as it is not
                   --  yet registered.
 
-                  Send_Ok (Builder.Channel);
-
-                  Close (Builder.Channel);
-                  Close_Socket (Builder.Socket);
+                  Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
                   Builder.Socket := No_Socket;
 
                   exit Check_Time_Stamps;
