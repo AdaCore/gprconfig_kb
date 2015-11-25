@@ -365,6 +365,11 @@ procedure Gprls.Main is
                Argv (4 .. Argv'Last),
                Prepend => True);
 
+         --  Processing for --unchecked-shared-lib-imports
+
+         elsif Argv = "--unchecked-shared-lib-imports" then
+            Opt.Unchecked_Shared_Lib_Imports := True;
+
          --  Processing for one character switches
 
          elsif Argv'Length = 2 then
@@ -597,6 +602,12 @@ procedure Gprls.Main is
 
       Put_Line ("  --RTS=dir    specify the Ada runtime");
 
+      --  Line for --unchecked-shared-lib-imports
+
+      Put_Line ("  --unchecked-shared-lib-imports");
+      Put_Line
+        ("               shared library projects may import any project");
+
       --  File Status explanation
 
       New_Line;
@@ -770,6 +781,10 @@ begin
       Target_Name                => Target_Name.all,
       Normalized_Hostname        => Gpr_Util.Knowledge.Normalized_Hostname,
       Implicit_Project           => No_Project_File_Found);
+
+   if Main_Project = No_Project then
+      Fail_Program (Project_Tree, "unable to process project file");
+   end if;
 
    Verbose_Mode := Save_Verbose;
    Quiet_Output := False;
@@ -1029,10 +1044,12 @@ begin
                Get_Name_String
                  (Units.Table (ALIs.Table (Id).First_Unit).Uname);
 
-               if ALIs.Table (Id).No_Object then
-                  Output_Object (No_File);
-               else
-                  Output_Object (ALIs.Table (Id).Ofile_Full_Name);
+               if Print_Object then
+                  if ALIs.Table (Id).No_Object then
+                     Output_Object (No_File);
+                  else
+                     Output_Object (ALIs.Table (Id).Ofile_Full_Name);
+                  end if;
                end if;
 
                --  In verbose mode print all main units in the ALI file,
@@ -1046,7 +1063,9 @@ begin
                end if;
 
                for U in ALIs.Table (Id).First_Unit .. Last_U loop
-                  Output_Unit (U);
+                  if Print_Unit then
+                     Output_Unit (U);
+                  end if;
 
                   --  Output source now, unless if it will be done as part of
                   --  outputing dependencies.
@@ -1079,89 +1098,6 @@ begin
                end if;
             end if;
          end if;
-
-            --  if Print_Object then
-            --     Get_Name_String (FN_Source.Source.Object_Path);
-            --     Put_Line (Name_Buffer (1 .. Name_Len));
-            --  end if;
-            --
-            --  if Print_Unit and then FN_Source.Source.Unit /= No_Unit_Index
-            --  then
-            --     if FN_Source.The_ALI = No_ALI_Id then
-            --                    Get_Name_String (FN_Source.Source.Unit.Name);
-            --                    Put ("   ");
-            --                    Put (Name_Buffer (1 .. Name_Len));
-            --
-            --                 else
-            --                    declare
-            --                       Id : constant ALI_Id := FN_Source.The_ALI;
-            --                      U  : Unit_Id := ALIs.Table (Id).First_Unit;
-            --
-            --                    begin
-            --                       Put ("   ");
-            --                       Output_Unit (U);
-            --
-            --                       if not (Dependable and Print_Source) then
-            --          Output_Source (FN_Source.Source, FN_Source.The_ALI, U);
-            --                       end if;
-            --
-            --         if U /= ALIs.Table (Id).Last_Unit and then Verbose_Mode
-            --                       then
-            --                          U := ALIs.Table (Id).Last_Unit;
-            --                          Put ("   ");
-            --                          Output_Unit (U);
-            --
-            --                      if not (Dependable and Print_Source) then
-            --                             declare
-            --                      Urec : Unit_Record renames Units.Table (U);
-            --                                Src : constant GPR.Source_Id :=
-            --                                  Find_Source
-            --                                    (Units.Table (U).Sfile,
-            --                                     Spec =>
-            --                                    Urec.Utype = Is_Spec or else
-            --                                    Urec.Utype = Is_Spec_Only);
-            --                             begin
-            --                                if Src /= GPR.No_Source then
-            --                    Output_Source (Src, FN_Source.The_ALI, U);
-            --                                end if;
-            --                             end;
-            --                          end if;
-            --                       end if;
-            --                    end;
-            --                 end if;
-            --              end if;
-            --
-            --    if Dependable and then FN_Source.The_ALI /= No_ALI_Id then
-            --                 if Verbose_Mode then
-            --                    Put_Line ("depends upon");
-            --                 end if;
-            --
-            --          for D in ALIs.Table (FN_Source.The_ALI).First_Sdep ..
-            --                   ALIs.Table (FN_Source.The_ALI).Last_Sdep
-            --                 loop
-            --        if not Is_Ada_Predefined_File_Name (Sdep.Table (D).Sfile)
-            --                    then
-            --                       declare
-            --                          Src : GPR.Source_Id :=
-            --                    Find_Source (Sdep.Table (D).Sfile, True);
-            --                          ALI : ALI_Id := No_ALI_Id;
-            --                       begin
-            --                          if Src = No_Source then
-            --               Src := Find_Source (Sdep.Table (D).Sfile, False);
-            --                          end if;
-            --
-            --                          if Src /= No_Source then
-            --                             ALI := Find_ALI (Src);
-            --                          end if;
-            --
-            --                          if ALI /= No_ALI_Id then
-            --                             Output_Source (Src, ALI);
-            --                          end if;
-            --                       end;
-            --                    end if;
-            --                 end loop;
-            --              end if;
-            --  end if;
       end;
    end loop;
 
