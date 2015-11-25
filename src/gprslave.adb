@@ -2138,7 +2138,7 @@ procedure Gprslave is
 
                   exit Check_Time_Stamps;
 
-               elsif Kind (Cmd) = EC then
+               elsif Kind (Cmd) in EC | SI then
                   --  Cannot communicate with build master anymore, we then
                   --  receive an end-of-compilation. Exit now. Note that we do
                   --  not need to remove the builder from the list as it is not
