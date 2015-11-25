@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-OB20-022 GPRslave could run into an endless loop
+
+  Problem:    In some rare cases, GPRslave could be stuck in an endless loop
+              after an interrupted build.
+
+  Status:     This was fixed in 17 on 2015-11-25
+
+  Workaround: Avoid interrupting distributed builds.
+
 KP-23-OB20-001 Encapsulated libraries and external libraries
 
   Problem:    When building an encapsulated library importing (directly or
