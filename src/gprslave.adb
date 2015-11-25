@@ -290,8 +290,16 @@ procedure Gprslave is
       --  Set of running jobs. Removed when the compilation terminates or when
       --  killed because of a builder is interrupted.
 
-      procedure Register (Job : Job_Data);
-      --  Register a running Job
+      procedure Start
+        (Job      : in out Job_Data;
+         Driver   : String;
+         Options  : Argument_List;
+         Out_File : String;
+         Obj_File : String;
+         Dep_File : String;
+         Dep_Dir  : String;
+         Pid      : out Process_Id);
+      --  Start and register a new running job
 
       procedure Get (Job : out Job_Data; Pid : Process_Id);
       --  Get Job having the given Pid
@@ -1371,7 +1379,6 @@ procedure Gprslave is
          Builder : constant Build_Master := Builders.Get (Job.Build_Sock);
          Dir     : constant String := Args (Job.Cmd)(2).all;
          List    : Slice_Set;
-         Pid     : Process_Id;
       begin
          --  Enter a critical section to:
          --     - move to directory where the command is executed
@@ -1437,6 +1444,7 @@ procedure Gprslave is
             Env      : constant String :=
                          Get_Arg (Builder, Args (Job.Cmd) (7).all);
             O        : Argument_List := Get_Args (Builder, List);
+            Pid      : Process_Id;
          begin
             Output_Compilation (Builder, O (O'Last).all);
 
@@ -1447,8 +1455,15 @@ procedure Gprslave is
             --  It is critical to ensure that no IO is done while spawning
             --  the process.
 
-            IO.Spawn
-              (Get_Driver (Builder, Language, Project), O, Out_File, Pid);
+            Running.Start
+              (Job      => Job,
+               Driver   => Get_Driver (Builder, Language, Project),
+               Options  => O,
+               Out_File => Out_File,
+               Obj_File => Obj_File,
+               Dep_File => Dep_File,
+               Dep_Dir  => (if Is_Absolute_Path (Dir) then "" else Dir),
+               Pid      => Pid);
 
             IO.Message
               (Builder, "#   pid" & Integer'Image (Pid_To_Integer (Pid)),
@@ -1456,20 +1471,6 @@ procedure Gprslave is
             IO.Message (Builder, "#   dep_file " & Dep_File, Is_Debug => True);
             IO.Message (Builder, "#   out_file " & Out_File, Is_Debug => True);
             IO.Message (Builder, "#   obj_file " & Obj_File, Is_Debug => True);
-
-            Job.Pid      := Pid;
-            Job.Dep_File := To_Unbounded_String (Dep_File);
-            Job.Obj_File := To_Unbounded_String (Obj_File);
-            Job.Output   := To_Unbounded_String (Out_File);
-            Job.Dep_Dir  := To_Unbounded_String
-              ((if Is_Absolute_Path (Dir) then "" else Dir));
-
-            --  Note that we want to register the job even if Pid is
-            --  Invalid_Process. We want it to be recorded into the running
-            --  process to be able to be retrieved by the Wait_Completion
-            --  task and a proper NOK message to be sent to the builder.
-
-            Running.Register (Job);
 
             for K in O'Range loop
                Free (O (K));
@@ -1555,6 +1556,9 @@ procedure Gprslave is
 
    protected body Running is
 
+      procedure Register (Job : Job_Data);
+      --  Register a running Job
+
       -----------
       -- Count --
       -----------
@@ -1637,6 +1641,36 @@ procedure Gprslave is
 
          N_Count := N_Count + 1;
       end Register;
+
+      -----------
+      -- Start --
+      -----------
+
+      procedure Start
+        (Job      : in out Job_Data;
+         Driver   : String;
+         Options  : Argument_List;
+         Out_File : String;
+         Obj_File : String;
+         Dep_File : String;
+         Dep_Dir  : String;
+         Pid      : out Process_Id) is
+      begin
+         IO.Spawn (Driver, Options, Out_File, Pid);
+
+         Job.Pid      := Pid;
+         Job.Dep_File := To_Unbounded_String (Dep_File);
+         Job.Obj_File := To_Unbounded_String (Obj_File);
+         Job.Output   := To_Unbounded_String (Out_File);
+         Job.Dep_Dir  := To_Unbounded_String (Dep_Dir);
+
+         --  Note that we want to register the job even if Pid is
+         --  Invalid_Process. We want it to be recorded into the running
+         --  process to be able to be retrieved by the Wait_Completion
+         --  task and a proper NOK message to be sent to the builder.
+
+         Register (Job);
+      end Start;
 
       ---------
       -- Get --
