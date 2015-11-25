@@ -2025,18 +2025,22 @@ procedure Gprslave is
                To_Sync : File_Data_Set.Vector;
                Cmd     : Command;
                K       : Positive := 1;
+               Message : Unbounded_String;
             begin
                Cmd := Get_Command (Builder.Channel);
 
                if Debug then
-                  Put ("# command: " & Command_Kind'Image (Kind (Cmd)));
+                  Message := To_Unbounded_String
+                    ("# command: "
+                     & Command_Kind'Image (Kind (Cmd)));
 
                   if Args (Cmd) /= null then
                      for K in Args (Cmd)'Range loop
-                        Put (", " & Args (Cmd) (K).all);
+                        Append (Message, ", " & Args (Cmd) (K).all);
                      end loop;
                   end if;
-                  New_Line;
+
+                  IO.Message (To_String (Message), Is_Debug => True);
                end if;
 
                if Kind (Cmd) = TS then
