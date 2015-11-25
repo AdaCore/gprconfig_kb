@@ -328,7 +328,8 @@ procedure Gprslave is
 
    private
       Set     : Job_Data_Set.Set;
-      N_Count : Natural := 0; -- actual number of running process
+      Dead    : Job_Data_Set.Set; -- job which failed to start
+      N_Count : Natural := 0;     -- actual number of running process
       Max     : Natural := 0;
    end Running;
 
@@ -1505,6 +1506,11 @@ procedure Gprslave is
             Job.Dep_Dir  := To_Unbounded_String
               ((if Is_Absolute_Path (Dir) then "" else Dir));
 
+            --  Note that we want to register the job even if Pid is
+            --  Invalid_Process. We want it to be recorded into the running
+            --  process to be able to be retrieved by the Wait_Completion
+            --  task and a proper NOK message to be sent to the builder.
+
             Running.Register (Job);
 
             for K in O'Range loop
@@ -1665,6 +1671,8 @@ procedure Gprslave is
                Set.Insert (Killed_Job);
             end Insert_Killed_Job;
 
+         elsif Job.Pid = OS_Lib.Invalid_Pid then
+            Dead.Insert (Job);
          else
             Set.Insert (Job);
          end if;
@@ -1679,29 +1687,37 @@ procedure Gprslave is
       procedure Get (Job : out Job_Data; Pid : Process_Id) is
          Pos : Job_Data_Set.Cursor;
       begin
-         Job.Pid := Pid;
-         Pos := Set.Find (Job);
+         if Dead.Is_Empty then
+            Job.Pid := Pid;
+            Pos := Set.Find (Job);
 
-         --  Not that a job could be not found here because the Pid is one of
-         --  gprconfig runned to generate a configuration file for a specific
-         --  language.
+            --  Not that a job could be not found here because the Pid is one
+            --  of gprconfig runned to generate a configuration file for a
+            --  specific language.
 
-         if Job_Data_Set.Has_Element (Pos) then
-            Job := Job_Data_Set.Element (Pos);
-            Set.Delete (Job);
-            N_Count := N_Count - 1;
+            if Job_Data_Set.Has_Element (Pos) then
+               Job := Job_Data_Set.Element (Pos);
+               Set.Delete (Job);
+               N_Count := N_Count - 1;
 
-            --  If this is a job which has been killed (see Kill_Processes
-            --  above), set to No_Job. We do this as the Wait_Completion task
-            --  must not do anything with such a process (no need to send back
-            --  answers as anyway the build master is not running anymore).
+               --  If this is a job which has been killed (see Kill_Processes
+               --  above), set to No_Job. We do this as the Wait_Completion
+               --  task must not do anything with such a process (no need to
+               --  send back answers as anyway the build master is not running
+               --  anymore).
 
-            if Job.Killed then
+               if Job.Killed then
+                  Job := No_Job;
+               end if;
+
+            else
                Job := No_Job;
             end if;
 
          else
-            Job := No_Job;
+            Job := Dead.First_Element;
+            Dead.Delete_First;
+            N_Count := N_Count - 1;
          end if;
       end Get;
 
@@ -1787,6 +1803,12 @@ procedure Gprslave is
          Running.Wait;
 
          Wait_Process (Pid, Success);
+
+         --  If a "dead" jobs is returned success is forced to False
+
+         if Pid = OS_Lib.Invalid_Pid then
+            Success := False;
+         end if;
 
          Running.Get (Job, Pid);
 
