@@ -1829,7 +1829,9 @@ procedure Gprslave is
                      Out_File : constant String := To_String (Job.Output);
                      S        : Boolean;
                   begin
-                     Send_Output (Builder.Channel, Out_File);
+                     if Exists (Out_File) then
+                        Send_Output (Builder.Channel, Out_File);
+                     end if;
 
                      OS_Lib.Delete_File (Out_File, S);
 
