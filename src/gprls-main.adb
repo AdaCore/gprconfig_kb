@@ -54,7 +54,7 @@ procedure Gprls.Main is
 
    Path_Last : Natural;
 
-   Output_Name      : String_Access;
+   Output_Name : String_Access;
 
    User_Project_Node : Project_Node_Id;
 
@@ -762,14 +762,7 @@ begin
       Path_Last := Path_Name'Last;
    end if;
 
-   Output_Name := new String'(To_Lower (Path_Name (1 .. Path_Last)));
-
-   if not Is_Regular_File (Output_Name (1 .. Path_Last)) then
-      Fail ("cannot find project file " & Output_Name (1 .. Path_Last));
-   end if;
-
-   --  Check command line arguments. These will be overridden when looking
-   --  for the configuration file
+   Output_Name := new String'(Path_Name (1 .. Path_Last));
 
    if Target_Name = null then
       Target_Name := new String'("");
@@ -797,7 +790,9 @@ begin
       Implicit_Project           => No_Project_File_Found);
 
    if Main_Project = No_Project then
-      Fail_Program (Project_Tree, "unable to process project file");
+      Fail_Program
+        (Project_Tree,
+         "unable to process project file " & Output_Name.all);
    end if;
 
    Verbose_Mode := Save_Verbose;
