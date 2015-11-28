@@ -5105,7 +5105,7 @@ package body GPR.Nmsc is
                if not Is_Absolute_Path (Name_Buffer (1 .. Name_Len)) then
                   Name_Len := 0;
                   Add_Str_To_Name_Buffer
-                    (Get_Name_String (Project.Directory.Name));
+                    (Get_Name_String (Project.Directory.Display_Name));
                   Add_Str_To_Name_Buffer
                     (Get_Name_String (Lib_Symbol_File.Value));
                   Project.Symbol_Data.Symbol_File := Name_Find;
