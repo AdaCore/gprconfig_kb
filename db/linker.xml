@@ -81,10 +81,10 @@
 
   <configuration>
     <targets>
-      <target name="^x86_64.*-linux-gnu$" />
+      <target name="^x86_64.*-linux.*" />
     </targets>
     <hosts>
-      <host name="^x86_64.*-linux-gnu$" />
+      <host name="^x86_64.*-linux.*" />
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
@@ -99,10 +99,10 @@
 
   <configuration>
     <targets>
-      <target name="^i686.*-linux-gnu$" />
+      <target name="^i686.*-linux.*$" />
     </targets>
     <hosts>
-      <host name="^i686.*-linux-gnu$" />
+      <host name="^i686.*-linux.*$" />
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
