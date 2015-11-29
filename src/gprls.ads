@@ -192,7 +192,7 @@ private
    --  sdep entry.
 
    procedure Output_Source
-     (Source : GPR.Source_Id; ALI : ALI_Id; U : Unit_Id := No_Unit_Id);
+     (Source : GPR.Source_Id; Sdep_I : Sdep_Id);
 
    procedure Output_Status (FS : File_Status; Verbose : Boolean);
    --  Print out FS either in a coded form if verbose is false or in an

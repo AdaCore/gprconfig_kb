@@ -297,35 +297,44 @@ package body Gprls is
    -------------------
 
    procedure Output_Source
-     (Source : GPR.Source_Id; ALI : ALI_Id; U : Unit_Id := No_Unit_Id)
+     (Source : GPR.Source_Id; Sdep_I : Sdep_Id)
    is
-      Status : File_Status;
+      Stamp    : GPR.Stamps.Time_Stamp_Type;
+      Checksum : Word;
+      Status   : File_Status;
    begin
-      if U = No_Unit_Id then
-         Find_Status (Source, ALI, Status);
-      else
-         Find_Status (Source, ALI, U, Status);
+      if Sdep_I = No_Sdep_Id then
+         return;
       end if;
 
-      Put ("     ");
+      Stamp    := Sdep.Table (Sdep_I).Stamp;
+      Checksum := Sdep.Table (Sdep_I).Checksum;
 
-      if Verbose_Mode then
-         Put ("Source => ");
-         Put (Get_Name_String (Source.Path.Display_Name));
-         Output_Status (Status, True);
-         New_Line;
+      if Print_Source then
+         Find_Status (Source, Stamp, Checksum, Status);
 
-      else
-         Output_Status (Status, False);
-         Put_Line (Get_Name_String (Source.Path.Display_Name));
+         if Verbose_Mode then
+            Put ("    Source => ");
+            Put (Get_Name_String (Source.Path.Display_Name));
+            Output_Status (Status, True);
+            New_Line;
+
+         else
+            if not Selective_Output then
+               Put ("    ");
+               Output_Status (Status, Verbose => False);
+            end if;
+
+            Put_Line (Get_Name_String (Source.Path.Display_Name));
+         end if;
       end if;
    end Output_Source;
 
    procedure Output_Source (Sdep_I : Sdep_Id) is
       Stamp       : GPR.Stamps.Time_Stamp_Type;
       Checksum    : Word;
-      FS          : File_Name_Type;
       Source      : GPR.Source_Id;
+      FS          : File_Name_Type;
       Status      : File_Status;
       Source_Name : String_Access;
 

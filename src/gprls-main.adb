@@ -654,16 +654,6 @@ procedure Gprls.Main is
 
          GPR.Initialize (Project_Tree);
 
-         if Target_Name = null then
-            GPR.Env.Initialize_Default_Project_Path
-              (Root_Environment.Project_Path,
-               Target_Name => GprConfig.Sdefault.Hostname);
-
-         else
-            GPR.Env.Initialize_Default_Project_Path
-           (Root_Environment.Project_Path, Target_Name.all);
-         end if;
-
          GPR.Tree.Initialize (Tree);
       end if;
    end Initialize;
@@ -688,6 +678,16 @@ begin
 
       Next_Arg := Next_Arg + 1;
    end loop Scan_Args;
+
+   if Target_Name = null then
+      GPR.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path,
+         Target_Name => GprConfig.Sdefault.Hostname);
+
+   else
+      GPR.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path, Target_Name.all);
+   end if;
 
    if Project_File_Name_Expected then
       Fail ("project file name missing");
@@ -1080,7 +1080,9 @@ begin
                   --  outputing dependencies.
 
                   if not (Dependable and then Print_Source) then
-                     Output_Source (Corresponding_Sdep_Entry (Id, U));
+                     Output_Source
+                       (FN_Source.Source,
+                        Corresponding_Sdep_Entry (Id, U));
                   end if;
                end loop;
 
