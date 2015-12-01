@@ -169,7 +169,7 @@ package body Gprbuild.Compile is
       Table_Low_Bound      => 1,
       Table_Initial        => 10,
       Table_Increment      => 100);
-   --  A table to store the subunit names when switch --no-split-units ia used
+   --  A table to store the subunit names when switch --no-split-units is used
 
    ------------------------------
    -- Add_Compilation_Switches --
@@ -2235,7 +2235,8 @@ package body Gprbuild.Compile is
             end loop;
          end if;
 
-         --  4) The PIC option if it exists, for shared libraries
+         --  4) The PIC option if it exists, for shared and "static-pic"
+         --     libraries.
 
          if Id.Project.Library
            and then Id.Project.Library_Kind /= Static

@@ -226,6 +226,13 @@ package GPR is
    --  The special Unit_Name_Type value Error_Unit_Name is used to indicate
    --  a unit name where some previous processing has found an error.
 
+   type Added_Rec;
+   type Added_Ptr is access Added_Rec;
+   type Added_Rec is record
+      Name : Name_Id;
+      Next : Added_Ptr;
+   end record;
+
    ------------------------------
    -- File and Path Name Types --
    ------------------------------
@@ -1202,7 +1209,7 @@ package GPR is
       Equal      => "=");
    --  Mapping of source paths to source ids
 
-   type Lib_Kind is (Static, Dynamic, Relocatable);
+   type Lib_Kind is (Static, Static_Pic, Dynamic, Relocatable);
 
    type Policy is (Restricted, Unrestricted);
    --  Type to specify the symbol policy, when symbol control is supported.
@@ -1916,6 +1923,8 @@ package GPR is
 
       Appdata : Project_Tree_Appdata_Access;
       --  Application-specific data for this tree
+
+      Added_Projects : Added_Ptr;
 
       case Is_Root_Tree is
          when True =>

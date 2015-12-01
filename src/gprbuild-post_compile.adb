@@ -2244,7 +2244,8 @@ package body Gprbuild.Post_Compile is
          Fail_Program (Project_Tree,
                        "library projects not supported on this platform");
 
-      elsif For_Project.Library_Kind /= Static
+      elsif (For_Project.Library_Kind /= Static or else
+             For_Project.Library_Kind /= Static_Pic)
         and then For_Project.Config.Lib_Support /= Full
       then
          Fail_Program
@@ -2279,7 +2280,9 @@ package body Gprbuild.Post_Compile is
          end if;
       end if;
 
-      if For_Project.Library_Kind = Static then
+      if For_Project.Library_Kind = Static
+        or else For_Project.Library_Kind = Static_Pic
+      then
          Check_Archive_Builder;
 
       elsif For_Project.Standalone_Library /= No then
@@ -2389,7 +2392,9 @@ package body Gprbuild.Post_Compile is
                Shared_Lib_Suffix : String_Access := new String'(".so");
                Archive_Suffix    : String_Access := new String'(".a");
             begin
-               if For_Project.Library_Kind = Static then
+               if For_Project.Library_Kind = Static
+                 or else For_Project.Library_Kind = Static_Pic
+               then
                   if For_Project.Config.Archive_Suffix /= No_File then
                      Archive_Suffix :=
                        new String'
@@ -2692,7 +2697,9 @@ package body Gprbuild.Post_Compile is
             Put_Line (Exchange_File, Library_Label (Gprexch.No_Create));
          end if;
 
-         if For_Project.Library_Kind = Static then
+         if For_Project.Library_Kind = Static
+           or else For_Project.Library_Kind = Static_Pic
+         then
             Put_Line (Exchange_File, Library_Label (Static));
 
             Put_Line (Exchange_File, Library_Label (Archive_Builder));
@@ -2784,7 +2791,9 @@ package body Gprbuild.Post_Compile is
 
             --  Relocatable
 
-            if For_Project.Library_Kind /= Static then
+            if For_Project.Library_Kind /= Static
+              and then For_Project.Library_Kind /= Static_Pic
+            then
                Put_Line (Exchange_File, Library_Label (Relocatable));
             end if;
 
@@ -4402,7 +4411,9 @@ package body Gprbuild.Post_Compile is
                                  No_Create => Proj.Is_Aggregated);
                            end if;
 
-                           if Proj.Proj.Library_Kind /= Static then
+                           if Proj.Proj.Library_Kind /= Static
+                             and then Proj.Proj.Library_Kind /= Static_Pic
+                           then
                               Shared_Libs := True;
                            end if;
                         end if;

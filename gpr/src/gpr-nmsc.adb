@@ -3737,6 +3737,9 @@ package body GPR.Nmsc is
                   if Kind_Name = "static" then
                      Project.Library_Kind := Static;
 
+                  elsif Kind_Name = "static-pic" then
+                     Project.Library_Kind := Static_Pic;
+
                   elsif Kind_Name = "dynamic" then
                      Project.Library_Kind := Dynamic;
 
