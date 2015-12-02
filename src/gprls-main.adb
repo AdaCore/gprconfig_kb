@@ -246,8 +246,23 @@ procedure Gprls.Main is
       With_State : in out Paths)
    is
       pragma Unreferenced (Tree);
-      Name : constant Path_Name_Type := Project.Object_Directory.Display_Name;
+      Name : Path_Name_Type := No_Path;
    begin
+      case Project.Qualifier is
+         when Aggregate | Abstract_Project | Configuration =>
+            null;
+
+         when Library | Aggregate_Library =>
+            Name := Project.Library_ALI_Dir.Display_Name;
+
+            if Name = No_Path then
+               Name := Project.Library_Dir.Display_Name;
+            end if;
+
+         when Unspecified | GPR.Standard =>
+            Name := Project.Object_Directory.Display_Name;
+      end case;
+
       if Name /= No_Path then
          Add (Get_Name_String (Name),  With_State);
       end if;
@@ -266,7 +281,7 @@ procedure Gprls.Main is
       List : Language_Ptr := Project.Languages;
    begin
       while List /= No_Language_Index loop
-         if List.Config.Runtime_Source_Dir /= No_Name then
+         if List.Config.Runtime_Library_Dir /= No_Name then
             Add
               (Get_Name_String (List.Config.Runtime_Library_Dir),
                With_State);
