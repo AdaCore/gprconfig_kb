@@ -976,7 +976,7 @@ package body GPR.Conf is
             --  If no config file was specified, set the auto.cgpr one
 
             if Conf_File_Name'Length = 0 then
-               if Obj_Dir_Exists then
+               if Obj_Dir_Exists and then Is_Writable_File (Obj_Dir) then
                   Args (3) := new String'(Obj_Dir & Auto_Cgpr);
 
                else
