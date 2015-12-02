@@ -2244,9 +2244,8 @@ package body Gprbuild.Post_Compile is
          Fail_Program (Project_Tree,
                        "library projects not supported on this platform");
 
-      elsif (For_Project.Library_Kind /= Static and then
-             For_Project.Library_Kind /= Static_Pic)
-        and then For_Project.Config.Lib_Support /= Full
+      elsif For_Project.Library_Kind not in Static | Static_Pic
+            and then For_Project.Config.Lib_Support /= Full
       then
          Fail_Program
            (Project_Tree,
