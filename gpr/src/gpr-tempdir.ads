@@ -22,10 +22,10 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This package is used by gnatmake and by the Project Manager to create
---  temporary files.  If environment variable TMPDIR is defined and
---  designates an absolute path, temporary files are create in this directory.
---  Otherwise, temporary files are created in the current working directory.
+--  This package is used by the Project Manager to create temporary files. If
+--  environment variable TMPDIR is defined and designates an absolute path,
+--  temporary files are create in this directory. Otherwise, temporary files
+--  are created in the current working directory.
 
 package GPR.Tempdir is
 
