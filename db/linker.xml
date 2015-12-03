@@ -137,7 +137,7 @@
     </targets>
     <config>
    for Object_Lister use ("arm-linux-gnueabi-nm", "-g");
-   for Object_Lister_Matcher use " [TDS] (.*)";
+   for Object_Lister_Matcher use " [TDSR] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
