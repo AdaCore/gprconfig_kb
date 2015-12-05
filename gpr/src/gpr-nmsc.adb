@@ -719,6 +719,22 @@ package body GPR.Nmsc is
                            "\duplicate unit %%",
                            Location,
                            Project);
+
+                        if Verbose_Mode then
+                           Error_Msg_Name_1 := Name_Id (Source.Path.Name);
+                           Error_Msg
+                             (Data.Flags,
+                              "\   %%",
+                              Location,
+                              Project);
+                           Error_Msg_Name_1 := Name_Id (Path.Name);
+                           Error_Msg
+                             (Data.Flags,
+                              "\   %%",
+                              Location,
+                              Project);
+                        end if;
+
                         Source.Duplicate_Unit := True;
                      end if;
 

@@ -30,6 +30,11 @@ NF-17-OA08-016 Allow more packages in aggregate projects (2015-11-18)
    projects and aggregate library projects. In addition, package Install is
    not allowed in aggregate projects. All other packages are allowed.
 
+NF-17-O916-065 Path names of duplicate unit sources (2015-12-05)
+
+   In verbose mode,  when a duplicate unit is found in two sources, the path
+   names of the two sources are now output.
+
 NF-17-O528-046 New tool GPRls (2015-11-23)
 
    A new GPR tool is added: gprls. It is similar to gnatls for project files.
