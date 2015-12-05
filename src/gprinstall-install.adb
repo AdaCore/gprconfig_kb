@@ -583,23 +583,30 @@ package body Gprinstall.Install is
 
             if Value = Nil_Variable_Value then
 
-               --  If not found and name has an extension, try without
+               --  If not found and name has an extension, try without.
+               --  Otherwise try with .adb extension.
 
                declare
                   Name : constant String := Get_Name_String (Source);
                   S    : Name_Id;
                begin
-                  if Name /= Base_Name (Name) then
+                  if Name = Base_Name (Name) then
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Base_Name (Name));
+                     Add_Str_To_Name_Buffer (".adb");
+                     S := Name_Find;
+
+                  else
                      Name_Len := 0;
                      Add_Str_To_Name_Buffer (Base_Name (Name));
                      S := Name_Find;
-
-                     Value := Value_Of
-                       (Name                    => S,
-                        Attribute_Or_Array_Name => Name_Executable,
-                        In_Package              => Builder_Package,
-                        Shared                  => Project_Tree.Shared);
                   end if;
+
+                  Value := Value_Of
+                    (Name                    => S,
+                     Attribute_Or_Array_Name => Name_Executable,
+                     In_Package              => Builder_Package,
+                     Shared                  => Project_Tree.Shared);
                end;
             end if;
          end if;

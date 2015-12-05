@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-OB30-037 GPRinstall fails installing main with specific naming
+
+  Problem:    When the Main attribute was specified without extension and
+              the Binder's Executable attribute with an extension the
+              specified name was not found. In this case GPRinstall failed
+              as it was not able to find the executable to install.
+
+  Status:     This was fixed in 17 on 2015-12-05
+
+  Workaround: Install the main with standard tools.
+
 KP-23-OB20-022 GPRslave could run into an endless loop
 
   Problem:    In some rare cases, GPRslave could be stuck in an endless loop
