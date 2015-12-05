@@ -8,6 +8,12 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-OC01-014 New Library_Kind "static-pic" (2015-12-02)
+
+   A new library kind "static-pic" is introduced. static-pic libraries are
+   static libraries, but their code is compiled with the PIC option, if it
+   exists.
+
 NF-17-OB06-018 Add progress indication on the GPRslave (2015-11-08)
 
    GPRslave will now display (in verbose mode) a progress indicator during
