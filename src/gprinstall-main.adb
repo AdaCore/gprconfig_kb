@@ -937,6 +937,9 @@ begin
 
       Mains.Fill_From_Project (Main_Project, Project_Tree);
 
+      Mains.Complete_Mains
+        (Root_Environment.Flags, Main_Project, Project_Tree);
+
       Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
       Install.Process (Project_Tree, Main_Project);

@@ -31,6 +31,7 @@ with Ada.Text_IO;                            use Ada.Text_IO;
 with GNAT.MD5; use GNAT.MD5;
 
 with Gpr_Util;    use Gpr_Util;
+with Gpr_Build_Util; use Gpr_Build_Util;
 with GPR_Version; use GPR_Version;
 with GPR.Opt;
 with GPR.PP;      use GPR.PP;
@@ -573,6 +574,7 @@ package body Gprinstall.Install is
                                 (Name_Builder, Project.Decl.Packages,
                                  Project_Tree.Shared);
          Value            : Variable_Value;
+
       begin
          if Builder_Package /= No_Package then
             Value := Value_Of
@@ -583,30 +585,23 @@ package body Gprinstall.Install is
 
             if Value = Nil_Variable_Value then
 
-               --  If not found and name has an extension, try without.
-               --  Otherwise try with .adb extension.
+               --  If not found and name has an extension,
 
                declare
                   Name : constant String := Get_Name_String (Source);
                   S    : Name_Id;
                begin
-                  if Name = Base_Name (Name) then
+                  if Name /= Base_Name (Name) then
                      Name_Len := 0;
                      Add_Str_To_Name_Buffer (Base_Name (Name));
-                     Add_Str_To_Name_Buffer (".adb");
                      S := Name_Find;
 
-                  else
-                     Name_Len := 0;
-                     Add_Str_To_Name_Buffer (Base_Name (Name));
-                     S := Name_Find;
+                     Value := Value_Of
+                       (Name                    => S,
+                        Attribute_Or_Array_Name => Name_Executable,
+                        In_Package              => Builder_Package,
+                        Shared                  => Project_Tree.Shared);
                   end if;
-
-                  Value := Value_Of
-                    (Name                    => S,
-                     Attribute_Or_Array_Name => Name_Executable,
-                     In_Package              => Builder_Package,
-                     Shared                  => Project_Tree.Shared);
                end;
             end if;
          end if;
@@ -1242,23 +1237,28 @@ package body Gprinstall.Install is
          --  Copy executable(s)
 
          if Copy (Executable) and not Sources_Only then
-            declare
-               M : String_List_Id := Project.Mains;
-            begin
-               while M /= Nil_String loop
-                  declare
-                     Bin : constant String := Main_Binary (Strs (M).Value);
-                  begin
-                     Copy_File
-                       (From       =>
-                          Get_Name_String
-                            (Project.Exec_Directory.Display_Name) & Bin,
-                        To         => Exec_Dir,
-                        File       => Bin,
-                        Executable => True);
-                  end;
+            Mains.Reset;
 
-                  M := Strs (M).Next;
+            declare
+               M : Main_Info := Mains.Next_Main;
+            begin
+               while M /= No_Main_Info loop
+                  if M.Project = Project then
+                     declare
+                        Bin : constant String :=
+                                Main_Binary (Name_Id (M.File));
+                     begin
+                        Copy_File
+                          (From       =>
+                             Get_Name_String
+                               (Project.Exec_Directory.Display_Name) & Bin,
+                           To         => Exec_Dir,
+                           File       => Bin,
+                           Executable => True);
+                     end;
+                  end if;
+
+                  M := Mains.Next_Main;
                end loop;
             end;
          end if;
