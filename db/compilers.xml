@@ -786,7 +786,7 @@
       <grep regexp="^[-\w]*gcc \S+ (\S+)" group="1"></grep>
     </variable>
     <runtimes default="default">
-       <directory group="default" >\.\./lib/gcc/.*/$gcc_version/adalib/</directory>
+       <directory group="default" >\.\./libexec/spark2c/lib/gcc/.*/$gcc_version/adalib/</directory>
        <directory group="1" >\.\./lib/gnat/(.*)/adalib/</directory>
     </runtimes>
     <target>c</target>
