@@ -24,12 +24,6 @@ NF-17-OB03-010 Incomplete Ada interface of SAL is now an error (2015-11-07)
    When the Ada interface of a Stand-Alone Library project is incomplete,
    gprbuild now reports an error instead of a warning.
 
-NF-17-OA08-016 Allow more packages in aggregate projects (2015-11-18)
-
-   Packages Naming, Compiler, Binder and Linker are not allowed in aggregate
-   projects and aggregate library projects. In addition, package Install is
-   not allowed in aggregate projects. All other packages are allowed.
-
 NF-17-O916-065 Path names of duplicate unit sources (2015-12-05)
 
    In verbose mode,  when a duplicate unit is found in two sources, the path

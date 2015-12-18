@@ -13,6 +13,12 @@ NF-23-OA08-029 GPRinstall now uninstall aggregate projects (2015-10-10)
    GPRinstall now has support for uninstalling aggregate projects. In this
    case all libraries/projects part of the aggregate project are uninstalled.
 
+NF-23-OA08-016 Allow more packages in aggregate projects (2015-11-18)
+
+   Packages Naming, Compiler, Binder and Linker are not allowed in aggregate
+   projects and aggregate library projects. In addition, package Install is
+   not allowed in aggregate projects. All other packages are allowed.
+
 NF-23-OA08-010 Builder switches in aggregate projects (2015-10-21)
 
    Switches specified in Builder'Switches (others) in a main aggregate or
