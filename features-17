@@ -29,10 +29,6 @@ NF-17-O916-065 Path names of duplicate unit sources (2015-12-05)
    In verbose mode,  when a duplicate unit is found in two sources, the path
    names of the two sources are now output.
 
-NF-17-O528-046 New tool GPRls (2015-11-23)
-
-   A new GPR tool is added: gprls. It is similar to gnatls for project files.
-
 NF-17-O331-015 GPRbuild now restrict symbols from a SAL (2015-10-31)
 
    GPRbuild now restricts the symbols exported out of a SAL. The exported
