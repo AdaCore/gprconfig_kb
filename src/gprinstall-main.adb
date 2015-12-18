@@ -829,6 +829,10 @@ procedure Gprinstall.Main is
 
          Put_Line ("  -r       Recursive");
 
+         --  Line for -a
+
+         Put_Line ("  -a       Copy all source files (default)");
+
          --  Line for -m
 
          Put_Line ("  -m       Minimal copy of sources (only those needed)");

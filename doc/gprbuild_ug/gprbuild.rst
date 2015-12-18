@@ -3090,9 +3090,14 @@ The switches for GPRinstall are:
   Install nothing, just display the actions
   that would have been done.
 
+* :samp:`-a`
+
+  Install all the sources (default). Cannot be used with `-m` below.
+
 * :samp:`-m`
 
-  Install only the interface sources (minimal set of sources).
+  Install only the interface sources (minimal set of sources). Cannot
+  be used with `-a` above.
 
 * :samp:`-f`
 
@@ -3747,4 +3752,3 @@ Examples of `gprls` Usage
       $ gprls -s -P prj.gpr main.o
          main
       main.adb
-
