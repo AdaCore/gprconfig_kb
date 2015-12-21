@@ -1260,65 +1260,74 @@ package body GPR.Conf is
 
          Result := new String_List (1 .. Count);
 
-         Count := 1;
+         Count := 0;
          Name  := Language_Htable.Get_First;
          while Name /= No_Name loop
+            if (CodePeer_Mode and then Name = Name_Ada)
+              or else
+               (not CodePeer_Mode and then Is_Allowed_Language (Name))
+            then
+               Count := Count + 1;
 
-            --  Check if IDE'Compiler_Command is declared for the language.
-            --  If it is, use its value to invoke gprconfig.
+               --  Check if IDE'Compiler_Command is declared for the language.
+               --  If it is, use its value to invoke gprconfig.
 
-            Variable :=
-              Value_Of
-                (Name,
-                 Attribute_Or_Array_Name => Name_Compiler_Command,
-                 In_Package              => IDE,
-                 Shared                  => Shared,
-                 Force_Lower_Case_Index  => True);
+               Variable :=
+                 Value_Of
+                   (Name,
+                    Attribute_Or_Array_Name => Name_Compiler_Command,
+                    In_Package              => IDE,
+                    Shared                  => Shared,
+                    Force_Lower_Case_Index  => True);
 
-            declare
-               Config_Command : constant String :=
-                                  "--config=" & Get_Name_String (Name);
+               declare
+                  Config_Command : constant String :=
+                    "--config=" & Get_Name_String (Name);
 
-               Runtime_Name : constant String := Runtime_Name_For (Name);
+                  Runtime_Name : constant String := Runtime_Name_For (Name);
 
-            begin
-               --  In CodePeer mode, we do not take into account any compiler
-               --  command from the package IDE.
+               begin
+                  --  In CodePeer mode, we do not take into account any
+                  --  compiler command from the package IDE.
 
-               if CodePeer_Mode
-                 or else Variable = Nil_Variable_Value
-                 or else Length_Of_Name (Variable.Value) = 0
-               then
-                  Result (Count) :=
-                    new String'(Config_Command & ",," & Runtime_Name);
+                  if CodePeer_Mode
+                    or else Variable = Nil_Variable_Value
+                    or else Length_Of_Name (Variable.Value) = 0
+                  then
+                     Result (Count) :=
+                       new String'(Config_Command & ",," & Runtime_Name);
 
-               else
-                  At_Least_One_Compiler_Command := True;
+                  else
+                     At_Least_One_Compiler_Command := True;
 
-                  declare
-                     Compiler_Command : constant String :=
-                                          Get_Name_String (Variable.Value);
+                     declare
+                        Compiler_Command : constant String :=
+                          Get_Name_String (Variable.Value);
 
-                  begin
-                     if Is_Absolute_Path (Compiler_Command) then
-                        Result (Count) :=
-                          new String'
-                            (Config_Command & ",," & Runtime_Name & ","
-                             & Containing_Directory (Compiler_Command) & ","
-                             & Simple_Name (Compiler_Command));
-                     else
-                        Result (Count) :=
-                          new String'
-                            (Config_Command & ",," & Runtime_Name & ",,"
-                             & Compiler_Command);
-                     end if;
-                  end;
-               end if;
-            end;
+                     begin
+                        if Is_Absolute_Path (Compiler_Command) then
+                           Result (Count) :=
+                             new String'
+                               (Config_Command & ",," & Runtime_Name & ","
+                                & Containing_Directory (Compiler_Command) & ","
+                                & Simple_Name (Compiler_Command));
+                        else
+                           Result (Count) :=
+                             new String'
+                               (Config_Command & ",," & Runtime_Name & ",,"
+                                & Compiler_Command);
+                        end if;
+                     end;
+                  end if;
+               end;
+            end if;
 
-            Count := Count + 1;
             Name  := Language_Htable.Get_Next;
          end loop;
+
+         if Count /= Result'Last then
+            Result := new String_List'(Result (1 .. Count));
+         end if;
 
          return Result;
       end Get_Config_Switches;
