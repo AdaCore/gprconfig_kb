@@ -17,6 +17,18 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-OC21-017 Restricted languages and auto configuration
+
+  Problem:    When gprbuild is invoked with switches --restricted-to-languages=
+              or --codepeer, the languages that should be used for the
+              invocation of gprconfig in auto configuration are the restricted
+              languages.
+              In CodePeer mode, the only language to consider is Ada.
+
+  Status:     This was fixed in 17 on 2015-12-21
+
+  Workaround: Do not declare languages other than the restricted ones.
+
 KP-23-OB30-037 GPRinstall fails installing main with specific naming
 
   Problem:    When the Main attribute was specified without extension and
