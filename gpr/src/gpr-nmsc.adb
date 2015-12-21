@@ -2671,72 +2671,75 @@ package body GPR.Nmsc is
 
       Lang_Index := Project.Languages;
       while Lang_Index /= No_Language_Index loop
+         if Is_Allowed_Language (Lang_Index.Name) then
+            --  For all languages, Compiler_Driver needs to be specified.
+            --  This is only needed if we do intend to compile (not in GPS
+            --  for instance).
 
-         --  For all languages, Compiler_Driver needs to be specified. This is
-         --  only needed if we do intend to compile (not in GPS for instance).
-
-         if Data.Flags.Compiler_Driver_Mandatory
-           and then Lang_Index.Config.Compiler_Driver = No_File
-           and then not Project.Externally_Built
-         then
-            Error_Msg_Name_1 := Lang_Index.Display_Name;
-            Error_Msg
-              (Data.Flags,
-               "?\no compiler specified for language %%" &
-                 ", ignoring all its sources",
-               No_Location, Project);
-
-            if Lang_Index = Project.Languages then
-               Project.Languages := Lang_Index.Next;
-            else
-               Prev_Index.Next := Lang_Index.Next;
-            end if;
-
-         elsif Lang_Index.Config.Kind = Unit_Based then
-            Prev_Index := Lang_Index;
-
-            --  For unit based languages, Dot_Replacement, Spec_Suffix and
-            --  Body_Suffix need to be specified.
-
-            if Lang_Index.Config.Naming_Data.Dot_Replacement = No_File then
-               Error_Msg
-                 (Data.Flags,
-                  "Dot_Replacement not specified for " &
-                  Get_Name_String (Lang_Index.Name),
-                  No_Location, Project);
-            end if;
-
-            if Lang_Index.Config.Naming_Data.Spec_Suffix = No_File then
-               Error_Msg
-                 (Data.Flags,
-                  "\Spec_Suffix not specified for " &
-                  Get_Name_String (Lang_Index.Name),
-                  No_Location, Project);
-            end if;
-
-            if Lang_Index.Config.Naming_Data.Body_Suffix = No_File then
-               Error_Msg
-                 (Data.Flags,
-                  "\Body_Suffix not specified for " &
-                  Get_Name_String (Lang_Index.Name),
-                  No_Location, Project);
-            end if;
-
-         else
-            Prev_Index := Lang_Index;
-
-            --  For file based languages, either Spec_Suffix or Body_Suffix
-            --  need to be specified.
-
-            if Data.Flags.Require_Sources_Other_Lang
-              and then Lang_Index.Config.Naming_Data.Spec_Suffix = No_File
-              and then Lang_Index.Config.Naming_Data.Body_Suffix = No_File
+            if Data.Flags.Compiler_Driver_Mandatory
+              and then Lang_Index.Config.Compiler_Driver = No_File
+              and then not Project.Externally_Built
+              and then Is_Allowed_Language (Lang_Index.Name)
             then
                Error_Msg_Name_1 := Lang_Index.Display_Name;
                Error_Msg
                  (Data.Flags,
-                  "\no suffixes specified for %%",
+                  "?\no compiler specified for language %%" &
+                    ", ignoring all its sources",
                   No_Location, Project);
+
+               if Lang_Index = Project.Languages then
+                  Project.Languages := Lang_Index.Next;
+               else
+                  Prev_Index.Next := Lang_Index.Next;
+               end if;
+
+            elsif Lang_Index.Config.Kind = Unit_Based then
+               Prev_Index := Lang_Index;
+
+               --  For unit based languages, Dot_Replacement, Spec_Suffix and
+               --  Body_Suffix need to be specified.
+
+               if Lang_Index.Config.Naming_Data.Dot_Replacement = No_File then
+                  Error_Msg
+                    (Data.Flags,
+                     "Dot_Replacement not specified for " &
+                       Get_Name_String (Lang_Index.Name),
+                     No_Location, Project);
+               end if;
+
+               if Lang_Index.Config.Naming_Data.Spec_Suffix = No_File then
+                  Error_Msg
+                    (Data.Flags,
+                     "\Spec_Suffix not specified for " &
+                       Get_Name_String (Lang_Index.Name),
+                     No_Location, Project);
+               end if;
+
+               if Lang_Index.Config.Naming_Data.Body_Suffix = No_File then
+                  Error_Msg
+                    (Data.Flags,
+                     "\Body_Suffix not specified for " &
+                       Get_Name_String (Lang_Index.Name),
+                     No_Location, Project);
+               end if;
+
+            else
+               Prev_Index := Lang_Index;
+
+               --  For file based languages, either Spec_Suffix or Body_Suffix
+               --  need to be specified.
+
+               if Data.Flags.Require_Sources_Other_Lang
+                 and then Lang_Index.Config.Naming_Data.Spec_Suffix = No_File
+                 and then Lang_Index.Config.Naming_Data.Body_Suffix = No_File
+               then
+                  Error_Msg_Name_1 := Lang_Index.Display_Name;
+                  Error_Msg
+                    (Data.Flags,
+                     "\no suffixes specified for %%",
+                     No_Location, Project);
+               end if;
             end if;
          end if;
 
@@ -7919,38 +7922,39 @@ package body GPR.Nmsc is
          if not Project.Project.Externally_Built and then not Extending then
             Language := Project.Project.Languages;
             while Language /= No_Language_Index loop
+               if Is_Allowed_Language (Language.Name) then
+                  --  If there are no sources for this language, check if there
+                  --  are sources for which this is an alternate language.
 
-               --  If there are no sources for this language, check if there
-               --  are sources for which this is an alternate language.
+                  if Language.First_Source = No_Source
+                    and then (Data.Flags.Require_Sources_Other_Lang
+                              or else Language.Name = Name_Ada)
+                  then
+                     Iter := For_Each_Source (In_Tree => Data.Tree,
+                                              Project => Project.Project);
+                     Source_Loop : loop
+                        Source := Element (Iter);
+                        exit Source_Loop when Source = No_Source
+                          or else Source.Language = Language;
 
-               if Language.First_Source = No_Source
-                 and then (Data.Flags.Require_Sources_Other_Lang
-                            or else Language.Name = Name_Ada)
-               then
-                  Iter := For_Each_Source (In_Tree => Data.Tree,
-                                           Project => Project.Project);
-                  Source_Loop : loop
-                     Source := Element (Iter);
-                     exit Source_Loop when Source = No_Source
-                       or else Source.Language = Language;
+                        Alt_Lang := Source.Alternate_Languages;
+                        while Alt_Lang /= null loop
+                           exit Source_Loop when Alt_Lang.Language = Language;
+                           Alt_Lang := Alt_Lang.Next;
+                        end loop;
 
-                     Alt_Lang := Source.Alternate_Languages;
-                     while Alt_Lang /= null loop
-                        exit Source_Loop when Alt_Lang.Language = Language;
-                        Alt_Lang := Alt_Lang.Next;
-                     end loop;
+                        Next (Iter);
+                     end loop Source_Loop;
 
-                     Next (Iter);
-                  end loop Source_Loop;
-
-                  if Source = No_Source then
-                     Report_No_Sources
-                       (Project.Project,
-                        Get_Name_String (Language.Display_Name),
-                        Data,
-                        Project.Source_List_File_Location,
-                        Continuation);
-                     Continuation := True;
+                     if Source = No_Source then
+                        Report_No_Sources
+                          (Project.Project,
+                           Get_Name_String (Language.Display_Name),
+                           Data,
+                           Project.Source_List_File_Location,
+                           Continuation);
+                        Continuation := True;
+                     end if;
                   end if;
                end if;
 
