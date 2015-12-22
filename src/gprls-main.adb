@@ -33,7 +33,6 @@ with GPR.Util;  use GPR.Util;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
 with Gpr_Util;       use Gpr_Util;
-with GprConfig.Sdefault;
 with GPR_Version;    use GPR_Version;
 
 procedure Gprls.Main is
@@ -694,16 +693,6 @@ begin
       Next_Arg := Next_Arg + 1;
    end loop Scan_Args;
 
-   if Target_Name = null then
-      GPR.Env.Initialize_Default_Project_Path
-        (Root_Environment.Project_Path,
-         Target_Name => GprConfig.Sdefault.Hostname);
-
-   else
-      GPR.Env.Initialize_Default_Project_Path
-        (Root_Environment.Project_Path, Target_Name.all);
-   end if;
-
    if Project_File_Name_Expected then
       Fail ("project file name missing");
    end if;
@@ -745,10 +734,18 @@ begin
       Gpr_Util.Knowledge.Parse_Knowledge_Base (Project_Tree);
    end if;
 
+   if Target_Name = null then
+      GPR.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path,
+         Target_Name => Gpr_Util.Knowledge.Normalized_Hostname);
+
+   else
+      GPR.Env.Initialize_Default_Project_Path
+        (Root_Environment.Project_Path, Target_Name.all);
+   end if;
+
    if Project_File_Name = null then
-      Quiet_Output := False;
-      Look_For_Default_Project;
-      Quiet_Output := True;
+      Look_For_Default_Project (Never_Fail => True);
    end if;
 
    if Project_File_Name = null then
@@ -786,6 +783,8 @@ begin
    if Config_Project_File_Name = null then
       Config_Project_File_Name := new String'("");
    end if;
+
+   Opt.Warning_Mode := Suppress;
 
    Parse_Project_And_Apply_Config
      (Main_Project               => Main_Project,

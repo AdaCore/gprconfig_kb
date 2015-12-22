@@ -44,6 +44,8 @@ package Gpr_Util is
 
    Complete_Output_Option : constant String := "--complete-output";
 
+   Added_Project : constant String := "--added-project=";
+
    Complete_Output : Boolean := False;
    --  Set to True with switch Complete_Output_Option
 
@@ -258,9 +260,12 @@ package Gpr_Util is
    --  full RTS name (an RTS name that contains a directory separator) is not
    --  found.
 
-   procedure Look_For_Default_Project;
+   procedure Look_For_Default_Project (Never_Fail : Boolean := False);
    --  Check if default.gpr exists in the current directory. If it does, use
    --  it. Otherwise, if there is only one file ending with .gpr, use it.
+   --  Otherwise, if there is no file ending with .gpr or if Never_Fail is
+   --  True, use the project file _default.gpr in <prefix>/share/gpr. Fail
+   --  if Never_Fail is False and there are several files ending with .gpr.
 
    function Major_Id_Name
      (Lib_Filename : String;

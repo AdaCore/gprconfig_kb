@@ -1082,7 +1082,7 @@ package body Gpr_Util is
    -- Look_For_Default_Project --
    ------------------------------
 
-   procedure Look_For_Default_Project is
+   procedure Look_For_Default_Project (Never_Fail : Boolean := False) is
    begin
       No_Project_File_Found := False;
 
@@ -1137,7 +1137,9 @@ package body Gpr_Util is
             Project_File_Name := Single;
          end;
 
-         if No_Project_File_Found then
+         if No_Project_File_Found or else
+            (Never_Fail and then Project_File_Name = null)
+         then
             Project_File_Name :=
               new String'(Executable_Prefix_Path & Implicit_Project_File_Path);
 
