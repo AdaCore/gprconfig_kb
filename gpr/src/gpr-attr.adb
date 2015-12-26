@@ -245,7 +245,7 @@ package body GPR.Attr is
    "Pbuilder#" &
    "Ladefault_switches#" &
    "LcOswitches#" &
-   "Lcglobal_compilation_switches#" &
+   "Laglobal_compilation_switches#" &
    "Scexecutable#" &
    "SVexecutable_suffix#" &
    "SVglobal_configuration_pragmas#" &
