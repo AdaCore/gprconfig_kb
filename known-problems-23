@@ -40,6 +40,18 @@ KP-23-OB30-037 GPRinstall fails installing main with specific naming
 
   Workaround: Install the main with standard tools.
 
+KP-23-OB29-002 Index case-sensitivity for attribute Global_Compilation_Switches
+
+  Problem:    When the value of attribute Builder'Global_Compilation_Switches
+              is asked through GNATCOLL.Projects.Attribute_Value, the wrong
+              result may be returned as the index is incorrectly
+              case-sensitive.
+
+  Status:     This was fixed in 17 on 2015-12-26
+
+  Workaround: Use the exact same language name as in the declaration in the
+              project file.
+
 KP-23-OB20-022 GPRslave could run into an endless loop
 
   Problem:    In some rare cases, GPRslave could be stuck in an endless loop
