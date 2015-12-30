@@ -29,18 +29,7 @@ KP-23-OC21-017 Restricted languages and auto configuration
 
   Workaround: Do not declare languages other than the restricted ones.
 
-KP-23-OB30-037 GPRinstall fails installing main with specific naming
-
-  Problem:    When the Main attribute was specified without extension and
-              the Binder's Executable attribute with an extension the
-              specified name was not found. In this case GPRinstall failed
-              as it was not able to find the executable to install.
-
-  Status:     This was fixed in 17 on 2015-12-05
-
-  Workaround: Install the main with standard tools.
-
-KP-23-OB29-002 Index case-sensitivity for attribute Global_Compilation_Switches
+KP-23-OC17-040 Index case-sensitivity for attribute Global_Compilation_Switches
 
   Problem:    When the value of attribute Builder'Global_Compilation_Switches
               is asked through GNATCOLL.Projects.Attribute_Value, the wrong
@@ -51,6 +40,17 @@ KP-23-OB29-002 Index case-sensitivity for attribute Global_Compilation_Switches
 
   Workaround: Use the exact same language name as in the declaration in the
               project file.
+
+KP-23-OB30-037 GPRinstall fails installing main with specific naming
+
+  Problem:    When the Main attribute was specified without extension and
+              the Binder's Executable attribute with an extension the
+              specified name was not found. In this case GPRinstall failed
+              as it was not able to find the executable to install.
+
+  Status:     This was fixed in 17 on 2015-12-05
+
+  Workaround: Install the main with standard tools.
 
 KP-23-OB20-022 GPRslave could run into an endless loop
 
