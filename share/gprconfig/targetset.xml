@@ -435,6 +435,12 @@
   </targetset>
 
   <!-- ppc-pikeos  -->
+
+  <targetset>
+    <target>arm-pikeos</target>
+    <target>arm-.*-pikeos</target>
+  </targetset>
+
   <targetset>
     <target>ppc-pikeos</target>
     <target>powerpc-.*-pikeos</target>
