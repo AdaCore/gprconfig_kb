@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2014-2015, AdaCore                     --
+--                     Copyright (C) 2014-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -403,6 +403,7 @@ begin
    Default_Excluded_Patterns.Append ("*.exe");
    Default_Excluded_Patterns.Append (".git");
    Default_Excluded_Patterns.Append (".svn");
+   Default_Excluded_Patterns.Append (".hg");
    Default_Excluded_Patterns.Append ("CVS");
    Default_Excluded_Patterns.Append ("gnatinspect.db*");
    Default_Excluded_Patterns.Append ("GNAT-TEMP*.TMP");
