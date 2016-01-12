@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2014-2015, AdaCore                     --
+--                     Copyright (C) 2014-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -33,8 +33,7 @@ private package Gprbuild.Compilation.Sync is
       Host              : String;
       Excluded_Patterns : Str_Vect.Vector;
       Included_Patterns : Str_Vect.Vector);
-   --  Synchronize from from the build master to the slave depending on the
-   --  Sync method.
+   --  Synchronize from the build master to the slave
 
    procedure Wait;
    --  Wait for all synchronization to be terminated
