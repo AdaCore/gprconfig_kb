@@ -416,12 +416,6 @@
     <target>avr</target>
   </targetset>
 
-  <!-- arm-android  -->
-  <targetset>
-    <target>arm-android</target>
-    <target>arm-linux-androideabi</target>
-  </targetset>
-
   <!-- ia64-openvms -->
   <targetset>
     <target>ia64-openvms</target>
