@@ -875,7 +875,13 @@
        <compiler name="GNAT" />
     </compilers>
     <config>
-   for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
+   Target_Name := project'Target;
+   case Target_Name is
+      when "arm-android" | "arm-linux-androideabi" =>
+         null;
+      when others =>
+         for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(ada)}gcc", "-nostdlib", "-Wl,-r", "-o");
+   end case;
     </config>
   </configuration>
 
