@@ -19,15 +19,19 @@ The other GPR tools are:
 * :samp:`GPRconfig`
 
   A configuration project file generator
+  (see :ref:`Configuring with GPRconfig<Configuring_with_GPRconfig>`).
 
 * :samp:`GPRclean`
 
-  A tool to remove compilation artifacts created by GPRbuild.
+  A tool to remove compilation artifacts created by GPRbuild
+  (see :ref:`Cleaning up with GPRclean<Cleaning_up_with_GPRclean>`).
 
 * :samp:`GPRinstall`
 
-  Executable and library installer using GPR files.
+  Executable and library installer using GPR files
+  (see :ref:`Installing with GPRinstall<Installing_with_GPRinstall>`).
 
 * :samp:`GPRname`
 
-  Naming scheme generator.
+  Naming scheme generator
+  (see :ref:`Specific Naming Scheme with GPRname`).
