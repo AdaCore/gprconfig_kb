@@ -18,7 +18,7 @@ included in the section entitled :ref:`gnu_fdl`.
    :numbered:
    :maxdepth: 3
 
-   gprbuild_ug/gpr_intro
+   gprbuild_ug/introduction
    share/gnat_project_manager
    gprbuild_ug/gprbuild
 
