@@ -213,7 +213,11 @@ package Builder of the main project:
 
   Specify an hash string. This is just a value which is checked against the
   GPRslave hash value. If GPRslave has a hash value specified this string
-  must match, otherwise it is ignored.
+  must match, otherwise it is ignored. For example:
+
+::
+
+  $ gprbuild --hash=$(echo $ADA_PROJECT_PATH | shasum) --distributed=...
 
 * :samp:`--slave-env={name}`
 
@@ -1015,7 +1019,11 @@ The current options are:
 
   Specify an hash string. This is just a value which is checked against the
   GPRbuild hash value. If set, GPRbuild hash value must match, otherwise the
-  connection with the slave is aborted.
+  connection with the slave is aborted. For example:
+
+::
+
+  $ gprslave --hash=$(echo $ADA_PROJECT_PATH | shasum)
 
 * :samp:`-j{N}`, :samp:`--jobs={N}`
 
