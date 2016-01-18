@@ -102,7 +102,8 @@ package Gprbuild.Compilation.Protocol is
       CU,  -- clean-up request
       DP,  -- display output
       EC,  -- end of compilation
-      SI); -- a signal as been detected (like EC but no ACK needed)
+      SI,  -- a signal as been detected (like EC but no ACK needed)
+      PG); -- PING just to know if the slave is listening
 
    function Kind (Cmd : Command) return Command_Kind;
    pragma Inline (Kind);
@@ -198,7 +199,8 @@ package Gprbuild.Compilation.Protocol is
       Sync         : out Boolean;
       Timestamp    : out Time_Stamp_Type;
       Version      : out Unbounded_String;
-      Hash         : out Unbounded_String);
+      Hash         : out Unbounded_String;
+      Is_Ping      : out Boolean);
    --  Wait for an initial context from a build master
 
    procedure Send_Slave_Config

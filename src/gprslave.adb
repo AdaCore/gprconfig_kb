@@ -2242,11 +2242,18 @@ procedure Gprslave is
          Master_Timestamp : Time_Stamp_Type;
          Version          : Unbounded_String;
          Hash             : Unbounded_String;
+         Is_Ping          : Boolean;
       begin
          Get_Context
            (Builder.Channel, Builder.Target,
             Builder.Project_Name, Builder.Build_Env, Builder.Sync,
-            Master_Timestamp, Version, Hash);
+            Master_Timestamp, Version, Hash, Is_Ping);
+
+         if Is_Ping then
+            IO.Message (Builder, "just a ping, closing", Is_Debug => True);
+            Shutdown_Socket (Builder.Socket);
+            return;
+         end if;
 
          Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
 
@@ -2287,8 +2294,13 @@ procedure Gprslave is
       exception
          when E : others =>
             IO.Message (Builder, Exception_Information (E));
-            --  Do not try to go further
-            Send_Ko (Builder.Channel);
+            --  Do not try to go further, just close the socket
+            begin
+               Shutdown_Socket (Builder.Socket);
+            exception
+               when others =>
+                  null;
+            end;
             return;
       end;
 

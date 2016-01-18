@@ -289,7 +289,7 @@ package body Gprbuild.Compilation.Protocol is
       begin
          if C in
            "EX" | "AK" | "TS" | "ES" | "FL" | "FR" | "OK" | "KO"
-           | "CX" | "CU" | "DP" | "EC"
+           | "CX" | "CU" | "DP" | "EC" | "PG"
          then
             Result.Cmd := Command_Kind'Value (C);
 
@@ -352,10 +352,13 @@ package body Gprbuild.Compilation.Protocol is
       Sync         : out Boolean;
       Timestamp    : out Time_Stamp_Type;
       Version      : out Unbounded_String;
-      Hash         : out Unbounded_String)
+      Hash         : out Unbounded_String;
+      Is_Ping      : out Boolean)
    is
       Line : constant Command := Get_Command (Channel);
    begin
+      Is_Ping := False;
+
       if Line.Cmd = CX
         and then Line.Args'Length = 7
       then
@@ -366,6 +369,10 @@ package body Gprbuild.Compilation.Protocol is
          Timestamp    := Time_Stamp_Type (Line.Args (5).all);
          Version      := To_Unbounded_String (Line.Args (6).all);
          Hash         := To_Unbounded_String (Line.Args (7).all);
+
+      elsif Line.Cmd = PG then
+         Is_Ping := True;
+         return;
 
       else
          raise Wrong_Command
