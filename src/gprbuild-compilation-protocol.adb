@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -351,12 +351,13 @@ package body Gprbuild.Compilation.Protocol is
       Build_Env    : out Unbounded_String;
       Sync         : out Boolean;
       Timestamp    : out Time_Stamp_Type;
-      Version      : out Unbounded_String)
+      Version      : out Unbounded_String;
+      Hash         : out Unbounded_String)
    is
       Line : constant Command := Get_Command (Channel);
    begin
       if Line.Cmd = CX
-        and then Line.Args'Length = 6
+        and then Line.Args'Length = 7
       then
          Target       := To_Unbounded_String (Line.Args (1).all);
          Project_Name := To_Unbounded_String (Line.Args (2).all);
@@ -364,6 +365,8 @@ package body Gprbuild.Compilation.Protocol is
          Sync         := Boolean'Value (Line.Args (4).all);
          Timestamp    := Time_Stamp_Type (Line.Args (5).all);
          Version      := To_Unbounded_String (Line.Args (6).all);
+         Hash         := To_Unbounded_String (Line.Args (7).all);
+
       else
          raise Wrong_Command
            with "Expected CX found " & Command_Kind'Image (Line.Cmd);
@@ -518,7 +521,8 @@ package body Gprbuild.Compilation.Protocol is
       Target       : String;
       Project_Name : String;
       Build_Env    : String;
-      Sync         : Boolean) is
+      Sync         : Boolean;
+      Hash         : String) is
    begin
       String'Output
         (Channel.Channel,
@@ -526,7 +530,8 @@ package body Gprbuild.Compilation.Protocol is
          & Args_Sep & Build_Env
          & Args_Sep & Boolean'Image (Sync)
          & Args_Sep & String (UTC_Time)
-         & Args_Sep & Gpr_Version_String);
+         & Args_Sep & Gpr_Version_String
+         & Args_Sep & Hash);
    end Send_Context;
 
    -----------------------------

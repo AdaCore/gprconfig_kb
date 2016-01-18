@@ -209,6 +209,12 @@ package Builder of the main project:
   `GPR_SLAVES_FILE` environment variables.
   see :ref:`Distributed_compilation`.
 
+* :samp:`--hash={string}`
+
+  Specify an hash string. This is just a value which is checked against the
+  GPRslave hash value. If GPRslave has a hash value specified this string
+  must match, otherwise it is ignored.
+
 * :samp:`--slave-env={name}`
 
   Use name as the slave's environment directory instead of the default one.
@@ -1004,6 +1010,12 @@ The current options are:
   slave. This is where the sources will be copied and where the
   compilation will take place. A sub-directory will be created for each
   root project built.
+
+* :samp:`-s`, :samp:`--hash={string}`
+
+  Specify an hash string. This is just a value which is checked against the
+  GPRbuild hash value. If set, GPRbuild hash value must match, otherwise the
+  connection with the slave is aborted.
 
 * :samp:`-j{N}`, :samp:`--jobs={N}`
 

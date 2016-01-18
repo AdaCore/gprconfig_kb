@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2007-2015, AdaCore                     --
+--                     Copyright (C) 2007-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -65,6 +65,8 @@ package Gpr_Util is
                                                "--restricted-to-languages=";
 
    Distributed_Option : constant String := "--distributed";
+   Hash_Option        : constant String := "--hash";
+   Hash_Value         : String_Access;
 
    Slave_Env_Option : constant String := "--slave-env";
    Slave_Env_Auto   : Boolean := False;

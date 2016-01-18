@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -263,7 +263,8 @@ package body Gprbuild.Compilation.Slave is
       --  Do initial handshake
 
       Protocol.Send_Context
-        (S.Channel, Get_Target, Project_Name, Slave_Env.all, Sync);
+        (S.Channel, Get_Target, Project_Name, Slave_Env.all, Sync,
+         (if Hash_Value = null then "" else Hash_Value.all));
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);

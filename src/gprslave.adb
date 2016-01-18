@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -398,6 +398,7 @@ procedure Gprslave is
                        new String'(Current_Directory);
    --  Root directoty for the gprslave environment. All projects sources and
    --  compilations are done under this directory.
+   Hash           : aliased GNAT.Strings.String_Access;
 
    --  Running instances statuses
 
@@ -848,6 +849,11 @@ procedure Gprslave is
         (Config, Debug'Access,
          "-vv", Long_Switch => "--debug",
          Help => "debug mode, display lot of information (imply -v)");
+
+      Define_Switch
+        (Config, Hash'Access,
+         "-s:", Long_Switch => "--hash=",
+         Help => "specifiy a hash, must match with master");
 
       Set_Usage (Config, Usage => "[switches]");
 
@@ -2235,11 +2241,12 @@ procedure Gprslave is
       declare
          Master_Timestamp : Time_Stamp_Type;
          Version          : Unbounded_String;
+         Hash             : Unbounded_String;
       begin
          Get_Context
            (Builder.Channel, Builder.Target,
             Builder.Project_Name, Builder.Build_Env, Builder.Sync,
-            Master_Timestamp, Version);
+            Master_Timestamp, Version, Hash);
 
          Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
 
@@ -2259,6 +2266,21 @@ procedure Gprslave is
               (Builder.Channel,
                "build environment "
                & To_String (Builder.Build_Env) & " already in use");
+            return;
+         end if;
+
+         --  If a hash has been specified, it must match the one from the
+         --  master.
+
+         if Gprslave.Hash /= null
+           and then Gprslave.Hash.all /= To_String (Hash)
+         then
+            IO.Message
+              (Builder, "hash does not match "
+               & To_String (Builder.Project_Name));
+            Send_Ko
+              (Builder.Channel,
+               "hash does not match, slave is " & Gprslave.Hash.all);
             return;
          end if;
 

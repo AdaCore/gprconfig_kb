@@ -13,6 +13,12 @@ NF-23-P112-018 GPRbuild distributed ignore Mercurial metadata (2016-01-12)
    The Mercurial metadata directory has been added into the excluded
    patterns by default.
 
+NF-23-P112-012 GPRbuild distributed environment consistency (2016-01-18)
+
+   A new option (--hash) has been added in GPRbuild and GPRslave. The
+   value specified can be used to ensure that the environement is consistent
+   on both side.
+
 NF-23-OA08-029 GPRinstall now uninstall aggregate projects (2015-10-10)
 
    GPRinstall now has support for uninstalling aggregate projects. In this

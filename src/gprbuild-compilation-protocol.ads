@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -129,7 +129,8 @@ package Gprbuild.Compilation.Protocol is
       Target       : String;
       Project_Name : String;
       Build_Env    : String;
-      Sync         : Boolean);
+      Sync         : Boolean;
+      Hash         : String);
    --  Send initial context to the slave
 
    procedure Send_Exec
@@ -196,7 +197,8 @@ package Gprbuild.Compilation.Protocol is
       Build_Env    : out Unbounded_String;
       Sync         : out Boolean;
       Timestamp    : out Time_Stamp_Type;
-      Version      : out Unbounded_String);
+      Version      : out Unbounded_String;
+      Hash         : out Unbounded_String);
    --  Wait for an initial context from a build master
 
    procedure Send_Slave_Config

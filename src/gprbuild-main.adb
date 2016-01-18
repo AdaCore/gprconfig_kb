@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2015, AdaCore                     --
+--                     Copyright (C) 2011-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -735,6 +735,14 @@ procedure Gprbuild.Main is
                   Compilation.Slave.Record_Slaves (Hosts);
                end if;
             end;
+
+         elsif Arg'Length >= Hash_Option'Length
+            and then Arg (1 .. Hash_Option'Length) = Hash_Option
+         then
+            Forbidden_With_Subst;
+
+            Hash_Value :=
+              new String'(Arg (Hash_Option'Length + 2 .. Arg'Last));
 
          elsif Arg'Length >= Slave_Env_Option'Length
             and then
@@ -1865,6 +1873,13 @@ procedure Gprbuild.Main is
          Put ("  --distributed=slave1[,slave2]");
          New_Line;
          Put ("           Activate the remote/distributed compilations");
+         New_Line;
+
+         --  Line for --hash
+
+         Put ("  --hash=string");
+         New_Line;
+         Put ("           Set an hash string to identified environment");
          New_Line;
 
          --  Line for --slave-env
