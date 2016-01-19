@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2015, AdaCore                     --
+--                     Copyright (C) 2011-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -2802,8 +2802,8 @@ package body Gprbuild.Post_Compile is
 
             --  Gprexch.Install_Name
 
-            if
-              For_Project.Config.Library_Install_Name_Option /= No_Name
+            if Opt.Run_Path_Option and then
+               For_Project.Config.Library_Install_Name_Option /= No_Name
             then
                Put_Line (Exchange_File, Library_Label (Gprexch.Install_Name));
                Put_Line
