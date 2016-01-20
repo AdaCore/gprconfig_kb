@@ -1949,11 +1949,13 @@ procedure Gprslave is
                         --  compilation was not successful.
 
                         declare
-                           D_File : constant String :=
-                                      Work_Directory (Builder)
-                                    & (if Dep_Dir /= ""
-                                       then DS & Dep_Dir else "")
-                                    & DS & Dep_File;
+                           R_Dir    : constant String :=
+                                        Work_Directory (Builder)
+                                        & (if Dep_Dir /= ""
+                                           then DS & Dep_Dir else "")
+                                        & DS;
+                           D_File : constant String := R_Dir & Dep_File;
+                           O_File : constant String := R_Dir & Obj_File;
                         begin
                            if Exists (D_File)
                              and then Kind (D_File) = Ordinary_File
@@ -1961,35 +1963,26 @@ procedure Gprslave is
                               Send_File
                                 (Builder.Channel, D_File, Rewrite => True);
                            end if;
-                        end;
 
-                        declare
-                           O_File : constant String :=
-                                      Work_Directory (Builder)
-                                    & (if Dep_Dir /= ""
-                                       then DS & Dep_Dir else "")
-                                    & DS & Obj_File;
-                        begin
                            if Exists (O_File) then
                               Send_File
                                 (Builder.Channel, O_File, Rewrite => False);
                            end if;
+
+                           --  We also check for any artifacts based on the
+                           --  user's patterns if any.
+
+                           for Artifact of
+                             Expand_Artifacts
+                               (Root      => R_Dir,
+                                Base_Name => Base_Name (Obj_File),
+                                Patterns  =>
+                                  Builder.Included_Artifact_Patterns)
+                           loop
+                              Send_File
+                                (Builder.Channel, Artifact, Rewrite => False);
+                           end loop;
                         end;
-
-                        --  We also check for any artifacts based on the
-                        --  user's patterns if any.
-
-                        for Artifact of
-                          Expand_Artifacts
-                            (Root      => Work_Directory (Builder)
-                                          & (if Dep_Dir /= ""
-                                             then DS & Dep_Dir else "") & DS,
-                             Base_Name => Base_Name (Obj_File),
-                             Patterns  => Builder.Included_Artifact_Patterns)
-                        loop
-                           Send_File
-                             (Builder.Channel, Artifact, Rewrite => False);
-                        end loop;
                      end if;
                   end;
 
