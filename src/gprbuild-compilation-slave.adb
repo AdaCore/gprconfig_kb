@@ -51,14 +51,13 @@ package body Gprbuild.Compilation.Slave is
    Slaves_Data : Slaves_N.Vector;
 
    type Slave is record
-      Sock                       : Integer;
-      Data                       : Slave_Data;
-      Channel                    : Communication_Channel;
-      Current                    : Natural := 0;
-      Max_Processes              : Positive := 1;
-      Root_Dir                   : Unbounded_String;
-      Rsync_Pid                  : Process_Id;
-      Included_Artifact_Patterns : Str_Vect.Vector;
+      Sock          : Integer;
+      Data          : Slave_Data;
+      Channel       : Communication_Channel;
+      Current       : Natural := 0;
+      Max_Processes : Positive := 1;
+      Root_Dir      : Unbounded_String;
+      Rsync_Pid     : Process_Id;
    end record;
 
    function "<" (K1, K2 : Slave) return Boolean is (K1.Sock < K2.Sock);
@@ -71,9 +70,10 @@ package body Gprbuild.Compilation.Slave is
    --  The key is the C socket number
 
    function Connect_Slave
-     (S_Data       : Slave_Data;
-      Project_Name : String;
-      Sync         : Boolean) return Slave;
+     (S_Data                     : Slave_Data;
+      Project_Name               : String;
+      Sync                       : Boolean;
+      Included_Artifact_Patterns : String := "") return Slave;
    --  Connect to the slave and return the corresponding object
 
    --  Ack transient signal stored into this variable
@@ -225,9 +225,10 @@ package body Gprbuild.Compilation.Slave is
    -------------------
 
    function Connect_Slave
-     (S_Data       : Slave_Data;
-      Project_Name : String;
-      Sync         : Boolean) return Slave
+     (S_Data                     : Slave_Data;
+      Project_Name               : String;
+      Sync                       : Boolean;
+      Included_Artifact_Patterns : String := "") return Slave
    is
       Address : Sock_Addr_Type;
       Sock    : Socket_Type;
@@ -264,7 +265,8 @@ package body Gprbuild.Compilation.Slave is
 
       Protocol.Send_Context
         (S.Channel, Get_Target, Project_Name, Slave_Env.all, Sync,
-         (if Hash_Value = null then "" else Hash_Value.all));
+         (if Hash_Value = null then "" else Hash_Value.all),
+         Included_Artifact_Patterns);
 
       declare
          Cmd        : constant Command := Get_Command (S.Channel);
@@ -418,10 +420,21 @@ package body Gprbuild.Compilation.Slave is
         (S_Data       : Slave_Data;
          Project_Name : String)
       is
-         S : Slave;
+         S   : Slave;
+         IAP : Unbounded_String;
 
       begin
-         S := Connect_Slave (S_Data, Project_Name, Sync => True);
+         for P of Included_Artifact_Patterns loop
+            if IAP /= Null_Unbounded_String then
+               Append (IAP, "|");
+            end if;
+            Append (IAP, P);
+         end loop;
+
+         S := Connect_Slave
+           (S_Data, Project_Name,
+            Sync                       => True,
+            Included_Artifact_Patterns => To_String (IAP));
 
          Set (Slaves_Sockets, Sock (S.Channel));
 
@@ -462,7 +475,6 @@ package body Gprbuild.Compilation.Slave is
          --  Now that all slave's data is known and set, record it
 
          S.Sock := To_C (Sock (S.Channel));
-         S.Included_Artifact_Patterns := Included_Artifact_Patterns;
 
          Slaves.Insert (S);
       end Register_Remote_Slave;

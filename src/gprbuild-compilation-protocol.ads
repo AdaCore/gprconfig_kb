@@ -126,12 +126,13 @@ package Gprbuild.Compilation.Protocol is
    --
 
    procedure Send_Context
-     (Channel      : Communication_Channel;
-      Target       : String;
-      Project_Name : String;
-      Build_Env    : String;
-      Sync         : Boolean;
-      Hash         : String);
+     (Channel                    : Communication_Channel;
+      Target                     : String;
+      Project_Name               : String;
+      Build_Env                  : String;
+      Sync                       : Boolean;
+      Hash                       : String;
+      Included_Artifact_Patterns : String);
    --  Send initial context to the slave
 
    procedure Send_Exec
@@ -192,15 +193,16 @@ package Gprbuild.Compilation.Protocol is
    --
 
    procedure Get_Context
-     (Channel      : Communication_Channel;
-      Target       : out Unbounded_String;
-      Project_Name : out Unbounded_String;
-      Build_Env    : out Unbounded_String;
-      Sync         : out Boolean;
-      Timestamp    : out Time_Stamp_Type;
-      Version      : out Unbounded_String;
-      Hash         : out Unbounded_String;
-      Is_Ping      : out Boolean);
+     (Channel                    : Communication_Channel;
+      Target                     : out Unbounded_String;
+      Project_Name               : out Unbounded_String;
+      Build_Env                  : out Unbounded_String;
+      Sync                       : out Boolean;
+      Timestamp                  : out Time_Stamp_Type;
+      Version                    : out Unbounded_String;
+      Hash                       : out Unbounded_String;
+      Included_Artifact_Patterns : out Unbounded_String;
+      Is_Ping                    : out Boolean);
    --  Wait for an initial context from a build master
 
    procedure Send_Slave_Config

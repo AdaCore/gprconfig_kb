@@ -2,7 +2,7 @@
 Known problems in GPRBUILD version 2.3
 ======================================
 
-Copyright (C) 2015, AdaCore
+Copyright (C) 2015-2016, AdaCore
 
 The following is a listing of known problems in releases 2.3.1 and 2.3.2.
 Each entry contains a status line stating when the problem was fixed, and on
@@ -16,6 +16,15 @@ in this document.
 
 Known problems fixed in 17.1 and above
 --------------------------------------
+
+KP-23-P112-067 Included_Artifact_Patterns ignored
+
+  Problem:    The GPRbuild distributed attribute Included_Artifact_Patterns
+              is not taken into account.
+
+  Status:     This was fixed in 17 on 2016-01-20
+
+  Workaround: Copy manually the artifacts from the slaves (e.g using rsync)
 
 KP-23-OC21-017 Restricted languages and auto configuration
 

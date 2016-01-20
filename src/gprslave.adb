@@ -21,6 +21,7 @@ with Ada.Calendar.Time_Zones;               use Ada.Calendar;
 with Ada.Characters.Handling;               use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Hashed_Maps;
 with Ada.Containers.Indefinite_Ordered_Sets;
+with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Directories;                       use Ada.Directories;
@@ -79,16 +80,20 @@ procedure Gprslave is
 
    type Shared_Status is access Status;
 
+   package String_Set is new Containers.Indefinite_Vectors (Positive, String);
+
    --  Data for a build master
 
    type Build_Master is new Finalization.Controlled with record
-      Channel      : Communication_Channel; -- communication with build master
-      Socket       : Socket_Type;
-      Project_Name : Unbounded_String;
-      Target       : Unbounded_String;
-      Build_Env    : Unbounded_String;
-      Sync         : Boolean;
-      Status       : Shared_Status;
+      Channel                    : Communication_Channel;
+      --  Communication with build master
+      Socket                     : Socket_Type;
+      Project_Name               : Unbounded_String;
+      Target                     : Unbounded_String;
+      Build_Env                  : Unbounded_String;
+      Included_Artifact_Patterns : String_Split.Slice_Set;
+      Sync                       : Boolean;
+      Status                     : Shared_Status;
    end record;
 
    overriding procedure Initialize (Builder : in out Build_Master);
@@ -1829,6 +1834,55 @@ procedure Gprslave is
       Job     : Job_Data;
       Builder : Build_Master;
 
+      function Expand_Artifacts
+        (Root      : String;
+         Base_Name : String;
+         Patterns  : String_Split.Slice_Set) return String_Set.Vector;
+      --  Returns the set of artifacts for the Base_Name based on the patterns
+      --  given by attribute Included_Artifact_Patterns.
+
+      ----------------------
+      -- Expand_Artifacts --
+      ----------------------
+
+      function Expand_Artifacts
+        (Root      : String;
+         Base_Name : String;
+         Patterns  : String_Split.Slice_Set) return String_Set.Vector
+      is
+         Count  : constant Slice_Number := Slice_Count (Patterns);
+         Result : String_Set.Vector;
+      begin
+         for K in 1 .. Count loop
+            declare
+               Item : constant String := String_Split.Slice (Patterns, K);
+               Star : constant Natural := Fixed.Index (Item, "*");
+               Name : Unbounded_String;
+            begin
+               if Item'Length > 0 then
+                  --  No start to replace, this is a plain file-name
+
+                  if Star = 0 then
+                     Name := To_Unbounded_String (Item);
+
+                  else
+                     --  We have a star, replace it with the base name
+
+                     Name := To_Unbounded_String
+                       (Item (Item'First .. Star - 1)
+                        & Base_Name & Item (Star + 1 .. Item'Last));
+                  end if;
+
+                  if Exists (Root & To_String (Name)) then
+                     Result.Append (Root & To_String (Name));
+                  end if;
+               end if;
+            end;
+         end loop;
+
+         return Result;
+      end Expand_Artifacts;
+
    begin
       loop
          --  Wait for a job to complete only if there is job running
@@ -1891,8 +1945,8 @@ procedure Gprslave is
                      OS_Lib.Delete_File (Out_File, S);
 
                      if Success then
-                        --  No Dep_File to send back if the compilation was not
-                        --  successful.
+                        --  No dependency or object files to send back if the
+                        --  compilation was not successful.
 
                         declare
                            D_File : constant String :=
@@ -1921,6 +1975,21 @@ procedure Gprslave is
                                 (Builder.Channel, O_File, Rewrite => False);
                            end if;
                         end;
+
+                        --  We also check for any artifacts based on the
+                        --  user's patterns if any.
+
+                        for Artifact of
+                          Expand_Artifacts
+                            (Root      => Work_Directory (Builder)
+                                          & (if Dep_Dir /= ""
+                                             then DS & Dep_Dir else "") & DS,
+                             Base_Name => Base_Name (Obj_File),
+                             Patterns  => Builder.Included_Artifact_Patterns)
+                        loop
+                           Send_File
+                             (Builder.Channel, Artifact, Rewrite => False);
+                        end loop;
                      end if;
                   end;
 
@@ -2242,12 +2311,19 @@ procedure Gprslave is
          Master_Timestamp : Time_Stamp_Type;
          Version          : Unbounded_String;
          Hash             : Unbounded_String;
+         Patterns         : Unbounded_String;
          Is_Ping          : Boolean;
       begin
          Get_Context
            (Builder.Channel, Builder.Target,
             Builder.Project_Name, Builder.Build_Env, Builder.Sync,
-            Master_Timestamp, Version, Hash, Is_Ping);
+            Master_Timestamp, Version, Hash, Patterns, Is_Ping);
+
+         --  Set included artifact patterns
+
+         String_Split.Create
+           (Builder.Included_Artifact_Patterns,
+            To_String (Patterns), Separators => "|");
 
          if Is_Ping then
             IO.Message (Builder, "just a ping, closing", Is_Debug => True);

@@ -345,30 +345,32 @@ package body Gprbuild.Compilation.Protocol is
    -----------------
 
    procedure Get_Context
-     (Channel      : Communication_Channel;
-      Target       : out Unbounded_String;
-      Project_Name : out Unbounded_String;
-      Build_Env    : out Unbounded_String;
-      Sync         : out Boolean;
-      Timestamp    : out Time_Stamp_Type;
-      Version      : out Unbounded_String;
-      Hash         : out Unbounded_String;
-      Is_Ping      : out Boolean)
+     (Channel                    : Communication_Channel;
+      Target                     : out Unbounded_String;
+      Project_Name               : out Unbounded_String;
+      Build_Env                  : out Unbounded_String;
+      Sync                       : out Boolean;
+      Timestamp                  : out Time_Stamp_Type;
+      Version                    : out Unbounded_String;
+      Hash                       : out Unbounded_String;
+      Included_Artifact_Patterns : out Unbounded_String;
+      Is_Ping                    : out Boolean)
    is
       Line : constant Command := Get_Command (Channel);
    begin
       Is_Ping := False;
 
       if Line.Cmd = CX
-        and then Line.Args'Length = 7
+        and then Line.Args'Length = 8
       then
-         Target       := To_Unbounded_String (Line.Args (1).all);
-         Project_Name := To_Unbounded_String (Line.Args (2).all);
-         Build_Env    := To_Unbounded_String (Line.Args (3).all);
-         Sync         := Boolean'Value (Line.Args (4).all);
-         Timestamp    := Time_Stamp_Type (Line.Args (5).all);
-         Version      := To_Unbounded_String (Line.Args (6).all);
-         Hash         := To_Unbounded_String (Line.Args (7).all);
+         Target                     := To_Unbounded_String (Line.Args (1).all);
+         Project_Name               := To_Unbounded_String (Line.Args (2).all);
+         Build_Env                  := To_Unbounded_String (Line.Args (3).all);
+         Sync                       := Boolean'Value (Line.Args (4).all);
+         Timestamp                  := Time_Stamp_Type (Line.Args (5).all);
+         Version                    := To_Unbounded_String (Line.Args (6).all);
+         Hash                       := To_Unbounded_String (Line.Args (7).all);
+         Included_Artifact_Patterns := To_Unbounded_String (Line.Args (8).all);
 
       elsif Line.Cmd = PG then
          Is_Ping := True;
@@ -524,12 +526,13 @@ package body Gprbuild.Compilation.Protocol is
    ------------------
 
    procedure Send_Context
-     (Channel      : Communication_Channel;
-      Target       : String;
-      Project_Name : String;
-      Build_Env    : String;
-      Sync         : Boolean;
-      Hash         : String) is
+     (Channel                    : Communication_Channel;
+      Target                     : String;
+      Project_Name               : String;
+      Build_Env                  : String;
+      Sync                       : Boolean;
+      Hash                       : String;
+      Included_Artifact_Patterns : String) is
    begin
       String'Output
         (Channel.Channel,
@@ -538,7 +541,8 @@ package body Gprbuild.Compilation.Protocol is
          & Args_Sep & Boolean'Image (Sync)
          & Args_Sep & String (UTC_Time)
          & Args_Sep & Gpr_Version_String
-         & Args_Sep & Hash);
+         & Args_Sep & Hash
+         & Args_Sep & Included_Artifact_Patterns);
    end Send_Context;
 
    -----------------------------
