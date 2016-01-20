@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 2.3 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-23-P116-001 GPRbuild distributed slave error messages (2016-01-20)
+
+   Now GPRbuild gives a clearer error messages when it cannot connect
+   to a specific slave. The slave machine is given in the error message.
+
 NF-23-P112-018 GPRbuild distributed ignore Mercurial metadata (2016-01-12)
 
    The Mercurial metadata directory has been added into the excluded

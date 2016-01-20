@@ -477,6 +477,11 @@ package body Gprbuild.Compilation.Slave is
          S.Sock := To_C (Sock (S.Channel));
 
          Slaves.Insert (S);
+
+      exception
+         when Host_Error =>
+            raise Constraint_Error
+              with "cannot connect to " & To_String (S_Data.Host);
       end Register_Remote_Slave;
 
       Pcks : Package_Table.Table_Ptr renames Tree.Shared.Packages.Table;

@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2015, AdaCore                     --
+--                     Copyright (C) 2011-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -17,6 +17,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Indefinite_Ordered_Maps;
+with Ada.Exceptions;                         use Ada.Exceptions;
 with Ada.Strings.Fixed;                      use Ada, Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 with Ada.Text_IO;                            use Ada.Text_IO;
@@ -3146,9 +3147,14 @@ package body Gprbuild.Compile is
                --  register and initialize the slaves.
 
                if Distributed_Mode and then not Slave_Initialized then
-                  Gprbuild.Compilation.Slave.Register_Remote_Slaves
-                    (Project_Tree, Main_Project);
-                  Slave_Initialized := True;
+                  begin
+                     Gprbuild.Compilation.Slave.Register_Remote_Slaves
+                       (Project_Tree, Main_Project);
+                     Slave_Initialized := True;
+                  exception
+                     when E : Constraint_Error =>
+                        Fail_Program (Project_Tree, Exception_Message (E));
+                  end;
                end if;
 
                Update_Object_Path (Source.Id, Source_Project);
