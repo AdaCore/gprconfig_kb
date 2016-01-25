@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1610,24 +1610,34 @@ package body Gprinstall.Install is
                   Line := +"         for Library_Interface use (";
 
                   declare
-                     L     : String_List_Id := Project.Lib_Interface_ALIs;
                      First : Boolean := True;
-                  begin
-                     while L /= Nil_String loop
+
+                     procedure Source_Interface (Source : Source_Id);
+
+                     ----------------------
+                     -- Source_Interface --
+                     ----------------------
+
+                     procedure Source_Interface (Source : Source_Id) is
+                     begin
                         if not First then
                            Append (Line, ", ");
                         else
                            First := False;
                         end if;
+
                         Append (Line, """");
-                        --  Removes the trailing .ali extension
-                        Append
-                          (Line,
-                           Base_Name (Get_Name_String (Strs (L).Value)));
+                        Append (Line, Get_Name_String (Source.Unit.Name));
                         Append (Line, """");
-                        L := Strs (L).Next;
-                     end loop;
+                     end Source_Interface;
+
+                     procedure List_Interfaces is
+                       new For_Interface_Sources (Source_Interface);
+
+                  begin
+                     List_Interfaces (Tree, Project);
                   end;
+
                   Append (Line, ");");
                   V.Append (-Line);
                end if;

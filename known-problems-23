@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P125-003 Standalone library with child units installation issue
+
+  Problem:    GPRinstall won't install a compilable standalone library
+              project if a child unit is part of the interface.
+
+  Status:     This was fixed in 17 on 2016-01-25
+
+  Workaround: Fix manually the generated Library_Interface attribute.
+
 KP-23-P112-067 Included_Artifact_Patterns ignored
 
   Problem:    The GPRbuild distributed attribute Included_Artifact_Patterns
