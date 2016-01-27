@@ -1620,15 +1620,17 @@ package body Gprinstall.Install is
 
                      procedure Source_Interface (Source : Source_Id) is
                      begin
-                        if not First then
-                           Append (Line, ", ");
-                        else
-                           First := False;
-                        end if;
+                        if Source.Unit /= No_Unit_Index then
+                           if not First then
+                              Append (Line, ", ");
+                           else
+                              First := False;
+                           end if;
 
-                        Append (Line, """");
-                        Append (Line, Get_Name_String (Source.Unit.Name));
-                        Append (Line, """");
+                           Append (Line, """");
+                           Append (Line, Get_Name_String (Source.Unit.Name));
+                           Append (Line, """");
+                        end if;
                      end Source_Interface;
 
                      procedure List_Interfaces is
