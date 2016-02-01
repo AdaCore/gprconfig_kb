@@ -2498,8 +2498,10 @@ package body Gprinstall.Install is
             --  one, do not try to reopen it.
 
             if not Is_Open (Agg_Manifest)
-              or else Normalize_Pathname (Text_IO.Name (Agg_Manifest))
-                      /= Normalize_Pathname (Name)
+              or else Normalize_Pathname
+                        (Text_IO.Name (Agg_Manifest),
+                         Case_Sensitive => False)
+                      /= Normalize_Pathname (Name, Case_Sensitive => False)
             then
                Open (File, In_File, Name);
                Get_Line (File, Buf, Last);
