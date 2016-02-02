@@ -572,7 +572,7 @@
   </compiler_description>
 
   <compiler_description>
-    <name>G++-WRS7X86</name>
+    <name>G++-WRS7X86_64</name>
     <executable prefix="1">cc(pentium)</executable>
     <version>
       <getenv name="WIND_BASE"></getenv>
@@ -581,7 +581,7 @@
     </version>
     <languages>C++</languages>
     <runtimes>kernel,rtp</runtimes>
-    <target>i586-wrs-vxworks7</target>
+    <target>x86_64-wrs-vxworks7</target>
   </compiler_description>
 
   <!-- G++ for VxWorks MILS -->
