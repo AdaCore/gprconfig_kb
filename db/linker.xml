@@ -16,7 +16,7 @@
     </hosts>
     <config>
    for Object_Lister use ("i686-pc-mingw32-nm", "-g", "--no-demangle");
-   for Object_Lister_Matcher use " [TDR] _(.*)";
+   for Object_Lister_Matcher use " [TDRB] _(.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -34,7 +34,7 @@
     </hosts>
     <config>
    for Object_Lister use ("x86_64-pc-mingw32-nm", "-g", "--no-demangle");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
@@ -52,7 +52,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g", "--no-demangle");
-   for Object_Lister_Matcher use " [TDR] _(.*)";
+   for Object_Lister_Matcher use " [TDRB] _(.*)";
 
    package Linker is
       for Export_File_Format use "DEF";
@@ -70,7 +70,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g", "--no-demangle");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
@@ -88,7 +88,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
@@ -106,7 +106,7 @@
     </hosts>
     <config>
    for Object_Lister use ("nm", "-g");
-   for Object_Lister_Matcher use " [TDR] (.*)";
+   for Object_Lister_Matcher use " [TDRB] (.*)";
 
    package Linker is
       for Export_File_Format use "GNU";
