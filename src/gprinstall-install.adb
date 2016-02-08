@@ -459,7 +459,7 @@ package body Gprinstall.Install is
 
          Name_Len := 0;
 
-         if Project.Library_Kind /= Static
+         if not Is_Static (Project)
            and then Project.Config.Shared_Lib_Prefix /= No_File
          then
             Add_Str_To_Name_Buffer
@@ -474,13 +474,13 @@ package body Gprinstall.Install is
 
          --  Library suffix
 
-         if Project.Library_Kind = Static
+         if Is_Static (Project)
            and then Project.Config.Archive_Suffix /= No_File
          then
             Add_Str_To_Name_Buffer
               (Get_Name_String (Project.Config.Archive_Suffix));
 
-         elsif Project.Library_Kind /= Static
+         elsif not Is_Static (Project)
            and then Project.Config.Shared_Lib_Suffix /= No_File
          then
             Add_Str_To_Name_Buffer
@@ -1145,7 +1145,7 @@ package body Gprinstall.Install is
          --  Copy library
 
          if Copy (Library) and not Sources_Only then
-            if Project.Library_Kind /= Static
+            if not Is_Static (Project)
               and then Project.Lib_Internal_Name /= No_Name
               and then Project.Library_Name /= Project.Lib_Internal_Name
             then
@@ -1158,7 +1158,7 @@ package body Gprinstall.Install is
                         Get_Library_Filename),
                      To         => Lib_Dir,
                      File       => Get_Name_String (Get_Library_Filename),
-                     Executable => Project.Library_Kind /= Static);
+                     Executable => True);
 
                else
                   Copy_File
@@ -1167,7 +1167,7 @@ package body Gprinstall.Install is
                         File_Name_Type (Project.Lib_Internal_Name)),
                      To         => Lib_Dir,
                      File       => Get_Name_String (Project.Lib_Internal_Name),
-                     Executable => Project.Library_Kind /= Static);
+                     Executable => True);
 
                   Copy_File
                     (From     => Lib_Dir
@@ -1188,14 +1188,14 @@ package body Gprinstall.Install is
                      Get_Library_Filename),
                   To         => Lib_Dir,
                   File       => Get_Name_String (Get_Library_Filename),
-                  Executable => Project.Library_Kind /= Static);
+                  Executable => not Is_Static (Project));
             end if;
 
             --  On Windows copy the shared libraries into the bin directory
             --  for it to be found in the PATH when running executable. On non
             --  Windows platforms add a symlink into the lib directory.
 
-            if Project.Library_Kind /= Static and then Add_Lib_Link then
+            if not Is_Static (Project) and then Add_Lib_Link then
                if Windows_Target then
                   Copy_File
                     (From       => Lib_Dir
@@ -1597,7 +1597,7 @@ package body Gprinstall.Install is
                V.Append (-Line);
 
                if Project.Standalone_Library /= No then
-                  if Project.Library_Kind /= Static then
+                  if not Is_Static (Project) then
                      Line := +"         for Library_Standalone use """;
                      Line := Line & To_Lower
                        (Standalone'Image (Project.Standalone_Library));
@@ -2417,7 +2417,7 @@ package body Gprinstall.Install is
 
                   --  Issue the Library_Version only if needed
 
-                  if Project.Library_Kind /= Static
+                  if not Is_Static (Project)
                     and then Project.Lib_Internal_Name /= No_Name
                     and then Project.Library_Name /= Project.Lib_Internal_Name
                   then
@@ -2634,8 +2634,8 @@ package body Gprinstall.Install is
             Dependency => For_Dev and then Project.Mains = Nil_String,
             Library    => Project.Library
                             and then
-                              ((For_Dev and then Project.Library_Kind = Static)
-                                or else Project.Library_Kind /= Static),
+                              ((For_Dev and then Is_Static (Project))
+                                or else not Is_Static (Project)),
             Executable => Project.Mains /= Nil_String);
 
          --  Copy all files from the project

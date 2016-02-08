@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2015, AdaCore                     --
+--                     Copyright (C) 2004-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -189,6 +189,11 @@ package Gpr_Build_Util is
 
    function Path_Or_File_Name (Path : Path_Name_Type) return String;
    --  Returns a file name if -df is used, otherwise return a path name
+
+   function Is_Static (Project : Project_Id) return Boolean
+       is (Project.Library_Kind = Static or else Project.Library_Kind =
+             Static_Pic);
+   --  Return True if the library project correspond to a static library.
 
    --------------
    -- Switches --

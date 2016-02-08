@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -357,7 +357,7 @@ package body Gprclean is
                   then
                      Osint.Canonical_Case_File_Name (Name (1 .. Last));
 
-                     if (Project.Library_Kind = Static
+                     if (Is_Static (Project)
                          and then Name (1 .. Last) =  Archive_Name)
                        or else
                          ((Project.Library_Kind = Dynamic

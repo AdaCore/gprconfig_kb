@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2015, AdaCore                     --
+--                     Copyright (C) 2011-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1980,14 +1980,14 @@ package body Gprbuild.Link is
             if Proj.Extended_By = No_Project
               and then Proj.Library
               and then Proj.Object_Directory /= No_Path_Information
-              and then (Proj.Library_Kind = Static
+              and then (Is_Static (Proj)
                         or else Proj.Standalone_Library = No)
             then
                --  Put the full path name of the library file in Name_Buffer
 
                Get_Name_String (Proj.Library_Dir.Display_Name);
 
-               if Proj.Library_Kind = Static then
+               if Is_Static (Proj) then
                   Add_Str_To_Name_Buffer ("lib");
                   Add_Str_To_Name_Buffer (Get_Name_String (Proj.Library_Name));
 
@@ -2077,7 +2077,7 @@ package body Gprbuild.Link is
 
          for J in reverse 1 .. Library_Projs.Last loop
             if not Library_Projs.Table (J).Is_Aggregated then
-               if Library_Projs.Table (J).Proj.Library_Kind = Static then
+               if Is_Static (Library_Projs.Table (J).Proj) then
                   Add_Argument
                     (Get_Name_String
                        (Library_Projs.Table (J).Proj.Library_Dir.Display_Name)
@@ -2119,8 +2119,6 @@ package body Gprbuild.Link is
                      if Opt.Run_Path_Option
                        and then
                          Main_Proj.Config.Run_Path_Option /= No_Name_List
-                       and then
-                         Library_Projs.Table (J).Proj.Library_Kind /= Static
                      then
                         Add_Rpath
                           (Get_Name_String
