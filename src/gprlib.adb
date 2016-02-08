@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -2247,10 +2247,21 @@ begin
          if Standalone = Encapsulated then
 
             --  For encapsulated library we want to link against the static
-            --  GNAT runtime.
+            --  GNAT runtime. For sufficiently recent compilers a static pic
+            --  version of the runtime might be present. Fallback on the
+            --  regular static libgnat otherwise.
 
-            Libgnat  := new String'(Runtime_Library_Dir.all & "libgnat.a");
-            Libgnarl := new String'(Runtime_Library_Dir.all & "libgnarl.a");
+            if Is_Regular_File (Runtime_Library_Dir.all & "libgnat_pic.a")
+            then
+               Libgnat  := new String'
+                 (Runtime_Library_Dir.all & "libgnat_pic.a");
+               Libgnarl := new String'
+                 (Runtime_Library_Dir.all & "libgnarl_pic.a");
+            else
+               Libgnat  := new String'(Runtime_Library_Dir.all & "libgnat.a");
+               Libgnarl := new String'
+                 (Runtime_Library_Dir.all & "libgnarl.a");
+            end if;
 
             if not Is_Regular_File (Libgnat.all) then
                Fail_Program

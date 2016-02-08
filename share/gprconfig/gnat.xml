@@ -244,7 +244,7 @@
    &filter_gnat;
    <targets>
       <target name="^.*mingw.*$" />
-      <target name="^i.86-.*linux.*$" />
+      <target name="^.*linux.*$" />
       <target name="^.*sunos.*$" />
       <target name="^sparc-.*solaris.*$"/>
       <target name="^i.86-.*-solaris.*$"/>
