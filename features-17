@@ -2,11 +2,16 @@
 GPRBUILD 17 NEW FEATURES LIST
 =============================
 
-Copyright (C) 2015, AdaCore
+Copyright (C) 2016, AdaCore
 
 This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
+
+NF-17-P208-011 GPRbuild encapsulated libraries on all linux (2016-02-08)
+
+   Now GPRbuild supports encapsulated libraries for all linux platforms
+   when using a recent GNAT Pro compiler.
 
 NF-17-OC01-014 New Library_Kind "static-pic" (2015-12-02)
 
