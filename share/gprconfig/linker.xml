@@ -1818,4 +1818,20 @@
     </config>
   </configuration>
 
+  <!-- When using the (Ada) ios-simulator runtime, some additional
+       arguments are needed to complete the link.  -->
+
+   <configuration>
+     <compilers>
+       <compiler language="Ada" runtime="ios-simulator" />
+     </compilers>
+     <config>
+   package Linker is
+      for Required_Switches use Linker'Required_Switches
+        &amp; ("-mios-version-min=8.0",
+               "-Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk");
+   end Linker;
+     </config>
+   </configuration>
+
 </gprconfig>
