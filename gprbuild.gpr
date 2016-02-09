@@ -7,9 +7,6 @@ project Gprbuild is
    Bld : Build_Type := external ("BUILD", "debug");
    Root_Obj_Dir := external ("OBJDIR", ".");
 
-   type VCS_Type is ("Subversion", "Git", "auto");
-   VCS_Kind : VCS_Type := external ("PRJ_VCS", "Subversion");
-
    Processors := external ("PROCESSORS", "1");
 
    for Languages use ("Ada", "C");
@@ -105,7 +102,7 @@ project Gprbuild is
    end Linker;
 
    package IDE is
-      for VCS_Kind use VCS_Kind;
+      for VCS_Kind use "Git";
    end IDE;
 
 end Gprbuild;
