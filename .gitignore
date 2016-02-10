@@ -26,8 +26,6 @@
 /gnat_src
 /obj-debug
 
-/src/gprconfig-sdefault.ads
-
 /doc/txt
 /doc/html
 /doc/info

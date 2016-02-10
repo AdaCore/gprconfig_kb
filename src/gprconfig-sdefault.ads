@@ -2,7 +2,7 @@
 --                                                                          --
 --                              GPR TECHNOLOGY                              --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -16,7 +16,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with System.OS_Constants;
+
 package GprConfig.Sdefault is
-   pragma Warnings (Off);
-   Hostname : constant String := "@host@";
+   Hostname : constant String := System.OS_Constants.Target_Name;
 end GprConfig.Sdefault;

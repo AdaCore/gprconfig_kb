@@ -1,4 +1,4 @@
-AC_INIT(gprbuild,2.1,report@adacore.com,gprbuild)
+AC_INIT(gprbuild,17,report@adacore.com,gprbuild)
 AC_CANONICAL_SYSTEM
 AC_PREFIX_PROGRAM(gnatmake)
 AC_PROG_INSTALL
@@ -11,4 +11,4 @@ esac
 AC_SUBST(is_windows)
 AM_CHECK_XMLADA
 AM_GNAT_BUILDS_SHARED
-AC_OUTPUT(src/gprconfig-sdefault.ads Makefile)
+AC_OUTPUT(Makefile)
