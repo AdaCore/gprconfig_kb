@@ -143,6 +143,17 @@ package body Gprinstall.Install is
 
       Artifacts : Artifacts_Set.Vector;
 
+      Excluded_Naming : Seen_Set.Set;
+      --  This set contains names of Ada unit to exclude from the generated
+      --  package Naming. This is needed to avoid renaming for bodies which
+      --  are not installed when the minimum installation (-m) is used. In
+      --  this case there is two points to do:
+      --
+      --  1. the installed .ali must use the spec naming
+      --
+      --  2. the naming convention for the body must be execluded from the
+      --     generated project.
+
       procedure Copy_File
         (From, To, File : String;
          From_Ver       : String  := "";
@@ -933,14 +944,14 @@ package body Gprinstall.Install is
                  and then (Project.Standalone_Library = No
                            or else Sid.Declared_In_Interfaces)
                then
-                  --  If the unit has a naming exception we install it
-                  --  regardless of the fact that it is part of the interface
-                  --  or not. This is because the installed project will have
-                  --  a Naming package referencing this file. The .ali is
-                  --  looked based on the name of the renamed body.
-
-                  if All_Sources or else Sid.Naming_Exception = Yes then
+                  if All_Sources then
                      Copy_Source (Sid);
+
+                  elsif Sid.Naming_Exception = Yes then
+                     --  When a naming exception is present for a body which
+                     --  is not installed we must exclude the Naming from the
+                     --  generated project.
+                     Excluded_Naming.Include (Get_Name_String (Sid.Unit.Name));
                   end if;
 
                   --  Objects / Deps
@@ -960,7 +971,8 @@ package body Gprinstall.Install is
                            File => Get_Name_String (Sid.Object));
                      end if;
 
-                     --  Only install Ada .ali files
+                     --  Only install Ada .ali files (always name the .ali
+                     --  against the spec file).
 
                      if Copy (Dependency)
                        and then Sid.Kind /= Sep
@@ -968,7 +980,17 @@ package body Gprinstall.Install is
                      then
                         declare
                            Proj : Project_Id := Sid.Project;
+                           Ssid : Source_Id;
                         begin
+                           if Other_Part (Sid) = null
+                             or else Sid.Naming_Exception = No
+                             or else All_Sources
+                           then
+                              Ssid := Sid;
+                           else
+                              Ssid := Other_Part (Sid);
+                           end if;
+
                            if Project.Qualifier = Aggregate_Library then
                               Proj := Project;
                            end if;
@@ -983,7 +1005,7 @@ package body Gprinstall.Install is
                                     else Sid.Object_Project), Project.Library),
                                  Sid.Dep_Name),
                               To   => Lib_Dir,
-                              File => Get_Name_String (Sid.Dep_Name));
+                              File => Get_Name_String (Ssid.Dep_Name));
                         end;
                      end if;
                   end if;
@@ -1979,25 +2001,36 @@ package body Gprinstall.Install is
             ----------------
 
             procedure Naming_For (Pck : Package_Id) is
-               A : Array_Id := Pcks (Pck).Decl.Arrays;
-               N : Name_Id;
-               E : Array_Element_Id;
+               A    : Array_Id := Pcks (Pck).Decl.Arrays;
+               N, I : Name_Id;
+               E   : Array_Element_Id;
             begin
                --  Arrays
 
                while A /= No_Array loop
                   N := Tree.Shared.Arrays.Table (A).Name;
                   E := Tree.Shared.Arrays.Table (A).Value;
+                  I := Tree.Shared.Array_Elements.Table (E).Index;
 
                   while E /= No_Array_Element loop
-                     declare
-                        Decl : constant String := Image (N, E);
-                     begin
-                        if not Seen.Contains (Decl) then
-                           V.Append ("            " & Image (N, E));
-                           Seen.Include (Decl);
-                        end if;
-                     end;
+                     --  Check if this naming is not to be filtered-out. This
+                     --  is a specical case when a renaming is given for a
+                     --  body. See Excluded_Name comments.
+
+                     if N /= Name_Body
+                       or else
+                         not Excluded_Naming.Contains (Get_Name_String (I))
+                     then
+                        declare
+                           Decl : constant String := Image (N, E);
+                        begin
+                           if not Seen.Contains (Decl) then
+                              V.Append ("            " & Decl);
+                              Seen.Include (Decl);
+                           end if;
+                        end;
+                     end if;
+
                      E := Tree.Shared.Array_Elements.Table (E).Next;
                   end loop;
 
