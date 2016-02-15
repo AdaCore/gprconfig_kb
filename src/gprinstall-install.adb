@@ -30,16 +30,16 @@ with Ada.Text_IO;                            use Ada.Text_IO;
 
 with GNAT.MD5; use GNAT.MD5;
 
-with Gpr_Util;    use Gpr_Util;
-with Gpr_Build_Util; use Gpr_Build_Util;
-with GPR_Version; use GPR_Version;
+with GPR.Names;      use GPR.Names;
 with GPR.Opt;
-with GPR.PP;      use GPR.PP;
-with GPR.Osint;   use GPR.Osint;
+with GPR.Osint;      use GPR.Osint;
+with GPR.PP;         use GPR.PP;
+with GPR.Snames;     use GPR.Snames;
 with GPR.Tree;
-with GPR.Util;    use GPR.Util;
-with GPR.Names;   use GPR.Names;
-with GPR.Snames;  use GPR.Snames;
+with GPR.Util;       use GPR.Util;
+with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Util;       use Gpr_Util;
+with GPR_Version;    use GPR_Version;
 
 package body Gprinstall.Install is
 
