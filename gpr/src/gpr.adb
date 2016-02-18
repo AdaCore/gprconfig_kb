@@ -1038,7 +1038,7 @@ package body GPR is
 
    function Image (Kind : Lib_Kind) return String is
    begin
-      case The_Lib_Kind is
+      case Kind is
          when Static      => return "static";
          when Dynamic     => return "dynamic";
          when Relocatable => return "relocatable";
