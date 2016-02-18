@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1210,6 +1210,9 @@ package GPR is
    --  Mapping of source paths to source ids
 
    type Lib_Kind is (Static, Static_Pic, Dynamic, Relocatable);
+
+   function Image (Kind : Lib_Kind) return String;
+   --  Return image of Lib_kind as used in project files
 
    type Policy is (Restricted, Unrestricted);
    --  Type to specify the symbol policy, when symbol control is supported.

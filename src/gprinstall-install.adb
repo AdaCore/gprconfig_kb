@@ -1614,7 +1614,7 @@ package body Gprinstall.Install is
 
             if Project.Library then
                Line := +"         for Library_Kind use """;
-               Line := Line & To_Lower (Lib_Kind'Image (Project.Library_Kind));
+               Line := Line & Image (Project.Library_Kind);
                Line := Line & """;";
                V.Append (-Line);
 
