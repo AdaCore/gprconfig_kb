@@ -97,7 +97,7 @@
    package Clean is
       for Source_Artifact_Extensions ("Ada")
          use (".dg", ".rep", ".stdout", ".stderr");
-      for Object_Artifact_Extensions ("Ada") use (".s", "ci", ".gcno");
+      for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno");
    end Clean;
 
    for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
