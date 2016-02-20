@@ -19,9 +19,9 @@ Known problems fixed in 17.1 and above
 
 KP-23-P218-003 gprclean not cleaning .ci files
 
-  Problem:    gprclean was not cleaning the .ci files in the object directories.
-              Those files are created when the Ada compiler is invoked with
-              switch -fcallgraph-info=su
+  Problem:    gprclean was not cleaning the .ci files in the object
+              directories. Those files are created when the Ada compiler is
+              invoked with switch -fcallgraph-info=su
 
   Status      This was fixed in 17 on 2016-02-19
 
