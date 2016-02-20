@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P218-003 gprclean not cleaning .ci files
+
+  Problem:    gprclean was not cleaning the .ci files in the object directories.
+              Those files are created when the Ada compiler is invoked with
+              switch -fcallgraph-info=su
+
+  Status      This was fixed in 17 on 2016-02-19
+
+  Workaround: Delete manually the .ci files.
+
 KP-23-P202-046 Export symbols in the BSS section when needed
 
   Problem:    GPRbuild fails to export symbols in the BSS section
