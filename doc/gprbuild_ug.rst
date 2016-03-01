@@ -19,7 +19,7 @@ included in the section entitled :ref:`gnu_fdl`.
    :maxdepth: 3
 
    gprbuild_ug/introduction
-   share/gnat_project_manager
+   gprbuild_ug/gnat_project_manager
    gprbuild_ug/gprbuild
 
 .. raw:: latex

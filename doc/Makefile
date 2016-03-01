@@ -34,8 +34,6 @@ help:
 	@echo "source and location can be overriden using SOURCEDIR and BUILDDIR variables"
 
 prepare:
-	$(CP) ../gnat/gnat_project_manager.rst share/.
-	$(CP) ../gnat/project-manager-figure.png share/.
 	$(CP) ../gnat/gnu_free_documentation_license.rst share/.
 	$(CP) ../gnat/ada_pygments.py share/.
 	$(CP) ../gnat/favicon.ico share/.
