@@ -158,6 +158,8 @@ ifeq ($(BUILD), production)
 	strip $(prefix)/libexec/gprbuild/gprlib$(EXEXT)
 endif
 
+complete: all install libgpr.install.static
+
 ##########
 # Libgpr #
 ##########
