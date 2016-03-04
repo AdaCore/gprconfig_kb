@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2000-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2000-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1145,6 +1145,9 @@ package body GPR.Nmsc is
          procedure Process_Clean  (Arrays : Array_Id);
          --  Process the associated array attributes of package Clean
 
+         procedure Process_Compiler (Attributes : Variable_Id);
+         --  Process the simple attributes of package Compiler
+
          procedure Process_Compiler (Arrays : Array_Id);
          --  Process the associated array attributes of package Compiler
 
@@ -1157,6 +1160,13 @@ package body GPR.Nmsc is
          procedure Process_Linker (Attributes : Variable_Id);
          --  Process the simple attributes of package Linker of a
          --  configuration project.
+
+         procedure Resp_File_Format
+           (Name    : Name_Id;
+            Format  : out Response_File_Format;
+            Success : out Boolean);
+         --  Get a response file format named Name. Success is True if Name is
+         --  a valine response file format name.
 
          --------------------
          -- Process_Binder --
@@ -1383,6 +1393,47 @@ package body GPR.Nmsc is
          -- Process_Compiler --
          ----------------------
 
+         procedure Process_Compiler (Attributes : Variable_Id) is
+            Attribute_Id : Variable_Id;
+            Attribute    : Variable;
+
+         begin
+            --  Process non associated array attributes from package Compiler
+
+            Attribute_Id := Attributes;
+            while Attribute_Id /= No_Variable loop
+               Attribute := Shared.Variable_Elements.Table (Attribute_Id);
+
+               if not Attribute.Value.Default then
+                  if Attribute.Name = Name_Max_Command_Line_Length then
+                     declare
+                        Value : Natural;
+
+                     begin
+                        Value :=
+                          Natural'Value (Get_Name_String
+                                         (Attribute.Value.Value));
+
+                        if Project.Config.Max_Command_Line_Length = 0 or else
+                          Value < Project.Config.Max_Command_Line_Length
+                        then
+                           Project.Config.Max_Command_Line_Length := Value;
+                        end if;
+
+                     exception
+                        when Constraint_Error =>
+                           Error_Msg
+                             (Data.Flags,
+                              "value must be positive or equal to 0",
+                              Attribute.Value.Location, Project);
+                     end;
+                  end if;
+               end if;
+
+               Attribute_Id := Attribute.Next;
+            end loop;
+         end Process_Compiler;
+
          procedure Process_Compiler (Arrays : Array_Id) is
             Current_Array_Id : Array_Id;
             Current_Array    : Array_Data;
@@ -1514,6 +1565,9 @@ package body GPR.Nmsc is
                            Lang_Index.Config.Compiler_Driver :=
                              File_Name_Type (Element.Value.Value);
 
+                           --  Attributes Required_Switches (<language>) and
+                           --  Leading_Required_Switches (<language>.
+
                         elsif Current_Array.Name = Name_Required_Switches
                           or else
                             Current_Array.Name = Name_Leading_Required_Switches
@@ -1524,6 +1578,8 @@ package body GPR.Nmsc is
                                 From_List => Element.Value.Values,
                                 In_Tree   => Data.Tree);
 
+                           --  Attribute Trailing_Required_Switches (<language>
+
                         elsif
                           Current_Array.Name = Name_Trailing_Required_Switches
                         then
@@ -1533,6 +1589,8 @@ package body GPR.Nmsc is
                                 From_List => Element.Value.Values,
                                 In_Tree   => Data.Tree);
 
+                           --  Attribute Multi_Unit_Switches (<language>)
+
                         elsif
                           Current_Array.Name = Name_Multi_Unit_Switches
                         then
@@ -1540,6 +1598,8 @@ package body GPR.Nmsc is
                                   Lang_Index.Config.Multi_Unit_Switches,
                                 From_List => Element.Value.Values,
                                 In_Tree   => Data.Tree);
+
+                           --  Attribute Multi_Unit_Object_Separator (lang)
 
                         elsif
                           Current_Array.Name = Name_Multi_Unit_Object_Separator
@@ -1565,6 +1625,8 @@ package body GPR.Nmsc is
                                 Name_Buffer (1);
                            end if;
 
+                           --  Attribute Path_Syntax (<language>)
+
                         elsif Current_Array.Name = Name_Path_Syntax then
                            begin
                               Lang_Index.Config.Path_Syntax :=
@@ -1579,6 +1641,8 @@ package body GPR.Nmsc is
                                     Element.Value.Location, Project);
                            end;
 
+                           --  Attribute Source_File_Switches (<language>)
+
                         elsif
                           Current_Array.Name = Name_Source_File_Switches
                         then
@@ -1586,6 +1650,8 @@ package body GPR.Nmsc is
                                   Lang_Index.Config.Source_File_Switches,
                                 From_List => Element.Value.Values,
                                 In_Tree   => Data.Tree);
+
+                           --  Attribute Object_File_Suffix (<language>)
 
                         elsif Current_Array.Name = Name_Object_File_Suffix then
                            if Get_Name_String (Element.Value.Value) = "" then
@@ -1599,6 +1665,8 @@ package body GPR.Nmsc is
                                 Element.Value.Value;
                            end if;
 
+                           --  Attribute Object_File_Switches (<language>)
+
                         elsif
                           Current_Array.Name = Name_Object_File_Switches
                         then
@@ -1606,6 +1674,8 @@ package body GPR.Nmsc is
                                   Lang_Index.Config.Object_File_Switches,
                                 From_List => Element.Value.Values,
                                 In_Tree   => Data.Tree);
+
+                           --  Attribute Object_Path_Switches (<language>)
 
                         elsif
                           Current_Array.Name = Name_Object_Path_Switches
@@ -1762,6 +1832,37 @@ package body GPR.Nmsc is
                                     "illegal value for Config_File_Unique",
                                     Element.Value.Location, Project);
                            end;
+
+                           --  Attribute Response_File_Format (<language>)
+
+                        elsif
+                          Current_Array.Name = Name_Response_File_Format
+                        then
+                           declare
+                              Success : Boolean;
+                           begin
+                              Resp_File_Format
+                                (Element.Value.Value,
+                                 Lang_Index.Config.Resp_File_Format,
+                                 Success);
+
+                              if not Success then
+                                 Error_Msg
+                                   (Data.Flags,
+                                    "illegal response file format",
+                                    Element.Value.Location, Project);
+                              end if;
+                           end;
+
+                           --  Attribute Response_File_Switches (<language>)
+
+                        elsif
+                          Current_Array.Name = Name_Response_File_Switches
+                        then
+                           Put
+                             (Into_List => Lang_Index.Config.Resp_File_Options,
+                              From_List => Element.Value.Values,
+                              In_Tree   => Data.Tree);
                         end if;
                      end if;
                   end if;
@@ -1936,10 +2037,19 @@ package body GPR.Nmsc is
                      Project.Config.Map_File_Option := Attribute.Value.Value;
 
                   elsif Attribute.Name = Name_Max_Command_Line_Length then
+                     declare
+                        Value : Natural;
+
                      begin
-                        Project.Config.Max_Command_Line_Length :=
+                        Value :=
                           Natural'Value (Get_Name_String
                                          (Attribute.Value.Value));
+
+                        if Project.Config.Max_Command_Line_Length = 0 or else
+                          Value < Project.Config.Max_Command_Line_Length
+                        then
+                           Project.Config.Max_Command_Line_Length := Value;
+                        end if;
 
                      exception
                         when Constraint_Error =>
@@ -2040,6 +2150,52 @@ package body GPR.Nmsc is
             end loop;
          end Process_Linker;
 
+         procedure Resp_File_Format
+           (Name    : Name_Id;
+            Format  : out Response_File_Format;
+            Success : out Boolean)
+         is
+            Low_Name : Name_Id;
+         begin
+            Success := True;
+            Get_Name_String (Name);
+            To_Lower (Name_Buffer (1 .. Name_Len));
+            Low_Name := Name_Find;
+
+            if Low_Name = Name_None then
+               Format := None;
+
+            elsif Low_Name = Name_Gnu then
+               Format := GNU;
+
+            elsif Low_Name = Name_Object_List then
+               Format := Object_List;
+
+            elsif Low_Name = Name_Option_List then
+               Format := Option_List;
+
+            elsif Name_Buffer (1 .. Name_Len) = "gcc" then
+               Format := GCC;
+
+            elsif Name_Buffer (1 .. Name_Len) = "gcc_gnu" then
+               Format := GCC_GNU;
+
+            elsif
+              Name_Buffer (1 .. Name_Len) = "gcc_option_list"
+            then
+               Format := GCC_Option_List;
+
+            elsif
+              Name_Buffer (1 .. Name_Len) = "gcc_object_list"
+            then
+               Format := GCC_Object_List;
+
+            else
+               Success := False;
+               Format  := None;
+            end if;
+         end Resp_File_Format;
+
       --  Start of processing for Process_Packages
 
       begin
@@ -2070,6 +2226,7 @@ package body GPR.Nmsc is
 
                --  Process attributes of package Compiler
 
+               Process_Compiler (Element.Decl.Attributes);
                Process_Compiler (Element.Decl.Arrays);
 
             elsif Element.Name = Name_Linker then

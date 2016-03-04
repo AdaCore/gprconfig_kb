@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -49,20 +49,22 @@ package Gprbuild.Compilation.Process is
    --  is for example to set CPATH if needed for the compilation of C sources.
 
    function Run
-     (Executable  : String;
-      Options     : GNAT.OS_Lib.Argument_List;
-      Project     : Project_Id;
-      Obj_Name    : String;
-      Source      : String := "";
-      Language    : String := "";
-      Dep_Name    : String := "";
-      Output_File : String := "";
-      Err_To_Out  : Boolean := False;
-      Force_Local : Boolean := False) return Id;
+     (Executable    : String;
+      Options       : GNAT.OS_Lib.Argument_List;
+      Project       : Project_Id;
+      Obj_Name      : String;
+      Source        : String := "";
+      Language      : String := "";
+      Dep_Name      : String := "";
+      Output_File   : String := "";
+      Err_To_Out    : Boolean := False;
+      Force_Local   : Boolean := False;
+      Response_File : Path_Name_Type := No_Path) return Id;
    --  Run Executable with the given options locally or on a remote slave.
    --  Dep_File name is the name of the file that is expected to be generated
    --  if the compilation is successful. If Force_Local is set then the
-   --  compilation will happen on the local machine.
+   --  compilation will happen on the local machine. If Response_File is
+   --  not No_Path, use it to invoke the compiler, instead of the Options.
 
    function Get_Maximum_Processes return Positive;
    --  The maximum number of simultaneous compilation supported. This is the

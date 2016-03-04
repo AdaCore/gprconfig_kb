@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -239,6 +239,11 @@ package body GPR.Attr is
    "Sainclude_path#" &
    "Sainclude_path_file#" &
    "Laobject_path_switches#" &
+
+   --  Configuraation - Response Files
+   "SVmax_command_line_length#" &
+   "Saresponse_file_format#" &
+   "Laresponse_file_switches#" &
 
    --  package Builder
 

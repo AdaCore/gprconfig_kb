@@ -140,6 +140,17 @@ package GPR is
    First_Project_Node_Id : constant Project_Node_Id :=
                                       Project_Node_Low_Bound + 1;
 
+   type Response_File_Format is
+     (None,
+      GNU,
+      Object_List,
+      Option_List,
+      GCC,
+      GCC_GNU,
+      GCC_Object_List,
+      GCC_Option_List);
+   --  The format of the different response files
+
    ------------
    -- Stamps --
    ------------
@@ -898,6 +909,14 @@ package GPR is
       Clean_Source_Artifacts : Name_List_Index := No_Name_List;
       --  List of source artifact extensions to be deleted by gprclean
 
+      Resp_File_Format : Response_File_Format := None;
+      --  The format of a response file, when compiling with a response file is
+      --  supported.
+
+      Resp_File_Options : Name_List_Index := No_Name_List;
+      --  The switches, if any, that precede the path name of the response
+      --  file in the invocation of the compiler.
+
    end record;
 
    No_Language_Config : constant Language_Config :=
@@ -948,7 +967,9 @@ package GPR is
                            Toolchain_Version            => No_Name,
                            Toolchain_Description        => No_Name,
                            Clean_Object_Artifacts       => No_Name_List,
-                           Clean_Source_Artifacts       => No_Name_List);
+                           Clean_Source_Artifacts       => No_Name_List,
+                           Resp_File_Format             => None,
+                           Resp_File_Options            => No_Name_List);
 
    type Language_Data is record
       Name : Name_Id := No_Name;
@@ -1278,17 +1299,6 @@ package GPR is
       Free_Project : Boolean);
    --  Free the list of projects, if Free_Project, each project is also freed
 
-   type Response_File_Format is
-     (None,
-      GNU,
-      Object_List,
-      Option_List,
-      GCC,
-      GCC_GNU,
-      GCC_Object_List,
-      GCC_Option_List);
-   --  The format of the different response files
-
    type Export_File_Format is
      (None,
       Flat,
@@ -1352,6 +1362,7 @@ package GPR is
       --  When positive and when Resp_File_Format (see below) is not None,
       --  if the command line for the invocation of the linker would be greater
       --  than this value, a response file is used to invoke the linker.
+      --  Also used for compiler supporting response files.
 
       Resp_File_Format : Response_File_Format := None;
       --  The format of a response file, when linking with a response file is

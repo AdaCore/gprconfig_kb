@@ -2799,8 +2799,11 @@ package body Gprbuild.Compile is
             then Get_Name_String (Source.Id.Language.Name)
             else "");
 
-         Process : Id;
-         Options : String_List_Access;
+         Process       : Id;
+         Options       : GNAT.OS_Lib.Argument_List_Access;
+         Response_File : Path_Name_Type := No_Path;
+
+      --  Start of processing of Spawn_Compiler_And_Register
 
       begin
          if not Opt.Quiet_Output then
@@ -2840,6 +2843,52 @@ package body Gprbuild.Compile is
             New_Line;
          end if;
 
+         if Source_Project.Config.Max_Command_Line_Length > 0 and then
+           Source.Id.Language.Config.Resp_File_Format = GCC_GNU
+         then
+            declare
+               Arg_Length : Natural := 0;
+            begin
+               for J in 1 .. Compilation_Options.Last loop
+                  Arg_Length :=
+                    Arg_Length + 1 + Compilation_Options.Options (J)'Length;
+               end loop;
+
+               if Arg_Length > Source_Project.Config.Max_Command_Line_Length
+               then
+                  declare
+                     use GPR.Tempdir;
+                     FD : File_Descriptor;
+                     Status    : Integer;
+                     pragma Warnings (Off, Status);
+                     Closing_Status : Boolean;
+                     pragma Warnings (Off, Closing_Status);
+
+                  begin
+                     Create_Temp_File (FD, Response_File);
+                     Record_Temp_File
+                       (Shared => Source.Tree.Shared,
+                        Path   => Response_File);
+
+                     for J in 1 .. Compilation_Options.Last loop
+                        Status :=
+                          Write
+                            (FD,
+                             Compilation_Options.Options (J) (1)'Address,
+                             Compilation_Options.Options (J)'Length);
+                        Status := Write (FD, ASCII.LF'Address, 1);
+                     end loop;
+
+                     Close (FD, Closing_Status);
+                  end;
+
+                  if Verbose_Mode then
+                     Put_Line ("using a response file");
+                  end if;
+               end if;
+            end;
+         end if;
+
          Process := Run
            (Compiler_Path,
             Compilation_Options.Options (1 .. Compilation_Options.Last),
@@ -2851,7 +2900,8 @@ package body Gprbuild.Compile is
                          else Get_Name_String (Source.Id.Dep_Name)),
             Obj_Name => (if Source.Id.Object = No_File
                          then ""
-                         else Get_Name_String (Source.Id.Object)));
+                         else Get_Name_String (Source.Id.Object)),
+            Response_File => Response_File);
 
          if Last_Switches_For_File >= 0 then
             Compilation_Options.Last := Last_Switches_For_File;

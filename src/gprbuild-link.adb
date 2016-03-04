@@ -2666,7 +2666,7 @@ package body Gprbuild.Link is
             end if;
          end;
 
-         --  If response file are supported, check the length of the
+         --  If response files are supported, check the length of the
          --  command line and the number of object files, then create
          --  a response file if needed.
 

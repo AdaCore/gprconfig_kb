@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -246,16 +246,17 @@ package body Gprbuild.Compilation.Process is
    ---------
 
    function Run
-     (Executable  : String;
-      Options     : GNAT.OS_Lib.Argument_List;
-      Project     : Project_Id;
-      Obj_Name    : String;
-      Source      : String := "";
-      Language    : String := "";
-      Dep_Name    : String := "";
-      Output_File : String := "";
-      Err_To_Out  : Boolean := False;
-      Force_Local : Boolean := False) return Id
+     (Executable    : String;
+      Options       : GNAT.OS_Lib.Argument_List;
+      Project       : Project_Id;
+      Obj_Name      : String;
+      Source        : String := "";
+      Language      : String := "";
+      Dep_Name      : String := "";
+      Output_File   : String := "";
+      Err_To_Out    : Boolean := False;
+      Force_Local   : Boolean := False;
+      Response_File : Path_Name_Type := No_Path) return Id
    is
       Env : constant String := Get_Env (Project, Language);
    begin
@@ -274,7 +275,15 @@ package body Gprbuild.Compilation.Process is
          begin
             Set_Env (Env, Fail => True);
 
-            if Output_File /= "" then
+            if Response_File /= No_Path then
+               declare
+                  Opts : constant GNAT.OS_Lib.Argument_List :=
+                    (1 => new String'("@" & Get_Name_String (Response_File)));
+               begin
+                  P.Pid := Non_Blocking_Spawn (Executable, Opts);
+               end;
+
+            elsif Output_File /= "" then
                P.Pid := Non_Blocking_Spawn
                  (Executable, Options, Output_File, Err_To_Out);
 
