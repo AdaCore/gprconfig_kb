@@ -897,7 +897,7 @@ the development cycle. To cope with that, GPRbuild supports
 distributed compilation.
 
 In the distributed mode, the local machine (called the build master)
-compile locally but also sends compilation requests to some remote
+compiles locally but also sends compilation requests to remote
 machines (called the build slaves). The compilation process can use
 one or more build slaves. Once the compilation phase is done, the
 build master will conduct the binding and linking phases locally.
@@ -987,10 +987,10 @@ GPRslave
 ^^^^^^^^
 
 This is the slave driver in charge of running the compilation
-jobs as request by the build master. One instance of this tool must be
-launched in each build slaves referenced in the project file.
+jobs as requested by the build master. One instance of this tool must be
+launched in each build slave referenced in the project file.
 
-Compilations for a specific project is conducted under a sub-directory
+Compilations for a specific project are conducted under a sub-directory
 from where the slave is launched by default. This can be overriden
 with the `-d` option below.
 
@@ -2957,13 +2957,13 @@ also removes the need for OS specific commands (like `cp`,
 `mkdir` on UNIXs) and so makes the installation process easier on
 all supported platforms.
 
-After building a project it is often needed to install the project to
+After building a project it is often necessary to install the project to
 make it accessible to other projects. GPRinstall installs only what is
-necessary and nothing more. That is for a library projects the library
+necessary and nothing more. That is, for a library project the library
 itself is installed with the corresponding ALI files for Ada
-sources. But the object code is not installed as not needed. Also if
-the Ada specs are installed the bodies are not as not needed in most
-cases. The cases where the bodies are required (if the spec has inline
+sources, but the object code is not installed as it not needed. Also if
+the Ada specs are installed the bodies are not, because they are not needed 
+in most cases. The cases where the bodies are required (if the spec has inline
 routines or is a generic) are properly detected by GPRinstall.
 
 Furthermore, we can note that GPRinstall handles the pre-processed
@@ -3546,7 +3546,7 @@ The main argument is the list of object files or :file:`ali` files for Ada
 sources for which information is requested.
 
 `gprls` uses a project file, either specified through a single switch -P,
-or the default project file. If no `object_or_dependency_files` is specified.
+or the default project file. If no `object_or_dependency_files` is specified
 then all the object files corresponding to the sources of the project are
 deemed to be specified.
 
@@ -3610,7 +3610,7 @@ Switches for GPRls
 
 .. index:: --help (gprls)
 
-:samp:`*--help`
+:samp:`--help`
   If *--version* was not used, display usage, then exit disregarding
   all other options.
 
@@ -3661,7 +3661,7 @@ Switches for GPRls
 .. index:: -U (gprls)
 
 :samp:`-U`
-  If no object/dependency file is specified, list information forthe sources
+  If no object/dependency file is specified, list information for the sources
   of all the projects in the project tree.
 
 

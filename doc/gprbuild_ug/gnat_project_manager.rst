@@ -2082,7 +2082,7 @@ automatically.
 Suppose we now want to supply an alternate version of :file:`pack.adb` but use
 the existing versions of :file:`pack.ads` and :file:`proc.adb`.  We can create
 the new file in Work's current directory (likely by copying the one from the
-`Build` project and making changes to it. If new packages are needed at
+`Build` project and making changes to it). If new packages are needed at
 the same time, we simply create new files in the source directory of the
 extending project.
 
@@ -2128,7 +2128,7 @@ line.
      end Work;
 
 
-All packages that are not declared in the extending project are inherited from
+All tool packages that are not declared in the extending project are inherited from
 the project being extended, with their attributes, with the exception of
 `Linker'Linker_Options` which is never inherited. In particular, an
 extending project retains all the switches specified in the project being
@@ -2349,7 +2349,7 @@ all systems often make it hard to read.
 An aggregate project can be used to set the environment for all
 projects built through that aggregate. One of the nice aspects is that
 you can put the aggregate project under configuration management, and
-make sure all your user have a consistent environment when
+make sure all your users have a consistent environment when
 building. The syntax looks like
 
 .. code-block:: gpr
@@ -2589,7 +2589,7 @@ The following three attributes can be used only in an aggregate project:
   This attribute affects the external values as seen in the rest of
   the aggregate project, and in the aggregated projects.
 
-  The exact value of external a variable comes from one of three
+  The exact value of an external variable comes from one of three
   sources (each level overrides the previous levels):
 
   * An External attribute in aggregate project, for instance
@@ -2671,7 +2671,7 @@ are valid:
 
   The rules are meant to avoid ambiguities when compiling. For
   instance, aggregate project Agg groups the projects A and B, that
-  both depend on C. Here is an extra for all of these projects:
+  both depend on C. Here is an example for all of these projects:
 
 
   .. code-block:: gpr
