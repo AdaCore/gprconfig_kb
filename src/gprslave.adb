@@ -2260,8 +2260,9 @@ procedure Gprslave is
            (Builder, "  transferred :" & Natural'Image (Total_Transferred));
 
       exception
-         when others =>
+         when E : others =>
             IO.Message (Builder, "Lost connection with " & Image (Address));
+            IO.Message (Builder, Exception_Information (E), Is_Debug => True);
             Close (Builder.Channel);
             Close_Socket (Builder.Socket);
             Builder.Socket := No_Socket;
@@ -2319,8 +2320,16 @@ procedure Gprslave is
             To_String (Patterns), Separators => "|");
 
          if Is_Ping then
-            IO.Message (Builder, "just a ping, closing", Is_Debug => True);
-            Shutdown_Socket (Builder.Socket);
+            Send_Ping_Response
+              (Builder.Channel,
+               GPR_Version.Gpr_Version_String,
+               UTC_Time,
+               Gprslave.Hash.all);
+
+            IO.Message (Builder, "Ping response to " & Image (Address));
+            Close (Builder.Channel);
+            Close_Socket (Builder.Socket);
+            Builder.Socket := No_Socket;
             return;
          end if;
 
@@ -2365,7 +2374,9 @@ procedure Gprslave is
             IO.Message (Builder, Exception_Information (E));
             --  Do not try to go further, just close the socket
             begin
-               Shutdown_Socket (Builder.Socket);
+               Close (Builder.Channel);
+               Close_Socket (Builder.Socket);
+               Builder.Socket := No_Socket;
             exception
                when others =>
                   null;

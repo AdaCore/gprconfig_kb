@@ -250,7 +250,15 @@ package body Gprbuild.Compilation.Slave is
       Create_Socket (Sock);
       Set_Socket_Option (Sock, Socket_Level, (Reuse_Address, True));
 
-      Connect_Socket (Sock, Address, Timeout => 2.0, Status => Status);
+      begin
+         Connect_Socket (Sock, Address, Timeout => 2.0, Status => Status);
+      exception
+         when Socket_Error =>
+            Put_Line
+              ("Cannot connect to slave "
+               & To_String (S.Data.Host) & ", aborting");
+            raise;
+      end;
 
       if Status in Expired .. Aborted then
          Put_Line

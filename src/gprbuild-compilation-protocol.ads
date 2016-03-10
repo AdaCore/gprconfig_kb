@@ -236,6 +236,13 @@ package Gprbuild.Compilation.Protocol is
       Files   : File_Data_Set.Vector);
    --  Send a Ko message with a list of file names
 
+   procedure Send_Ping_Response
+     (Channel          : Communication_Channel;
+      Version_String   : String;
+      Current_UTC_Time : Stamps.Time_Stamp_Type;
+      Gpr_Hash         : String);
+   --  Send a ping response with some environment information
+
    procedure Send_Output (Channel : Communication_Channel; File_Name : String);
    --  Send an output of a command
 

@@ -905,6 +905,23 @@ package body Gprbuild.Compilation.Protocol is
       Send_File_Internal (Channel, File_Name, DP, Empty_Time_Stamp);
    end Send_Output;
 
+   ------------------------
+   -- Send_Ping_Response --
+   ------------------------
+
+   procedure Send_Ping_Response
+     (Channel          : Communication_Channel;
+      Version_String   : String;
+      Current_UTC_Time : Stamps.Time_Stamp_Type;
+      Gpr_Hash         : String) is
+   begin
+      String'Output
+        (Channel.Channel, Command_Kind'Image (OK) &
+         Version_String & ASCII.GS &
+         String (Current_UTC_Time) & ASCII.GS &
+         Gpr_Hash);
+   end Send_Ping_Response;
+
    ---------------------------
    -- Send_RAW_File_Content --
    ---------------------------

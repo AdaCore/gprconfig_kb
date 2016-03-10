@@ -23,6 +23,12 @@ NF-17-P116-001 GPRbuild distributed slave error messages (2016-01-20)
    Now GPRbuild gives a clearer error messages when it cannot connect
    to a specific slave. The slave machine is given in the error message.
 
+NF-17-P115-020 GPRslave can now be pinged (2016-01-18)
+
+   Now GPRslave will respond to a ping command and returns some information
+   (version, UTC time, hash) about the slave if running. This can be used
+   by application for checking available slaves.
+
 NF-17-P112-018 GPRbuild distributed ignore Mercurial metadata (2016-01-12)
 
    The Mercurial metadata directory has been added into the excluded

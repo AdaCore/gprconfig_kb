@@ -1044,6 +1044,30 @@ The current options are:
   value must be between 1 and the maximum number of simultaneous
   compilations.
 
+Note that a slave can be pinged to see if it is running and in
+response a set of information are delivered. The ping command has the
+following format:
+
+::
+
+   <lower-bound><upper-bound>PG
+
+When <lower-bound> and <upper-bound> are 32bits binary values for the
+PG string command. As an example here is how to send a ping command
+from a UNIX shell using the echo command:
+
+::
+
+   echo -e "\x01\x00\x00\x00\x02\x00\x00\x00PG" | nc <HOSTNAME> 8484
+
+The answer from the ping command has the following format:
+
+::
+   OK<GPR Version String>[ASCII.GS]<time-stamp>[ASCII.GS]<slave hash>
+
+The ASCII.GS is the Group Separator character whose code is 29.
+
+
 .. _Configuring_with_GPRconfig:
 
 Configuring with GPRconfig
