@@ -2787,8 +2787,8 @@ and C:
 
      aggregate library project Agg is
         for Project_Files use ("a.gpr", "b.gpr", "c.gpr");
-        for Library_Name use ("agg");
-        for Library_Dir use ("lagg");
+        for Library_Name  use "agg";
+        for Library_Dir   use "lagg";
      end Agg;
 
 Then, when you build with:
