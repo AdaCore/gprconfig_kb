@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P215-047 GPRbuild supports response files during compilation (2016-03-10)
+
+   GPRbuild, when the language is configured appropriately and the compilation
+   command line is long, will invoke the compiler with a response file. This
+   will avoid problems on platforms where the maximum length of the command
+   line or of the value of an environment variable is not very high.
+
 NF-17-P208-011 GPRbuild encapsulated libraries on all linux (2016-02-08)
 
    Now GPRbuild supports encapsulated libraries for all linux platforms
