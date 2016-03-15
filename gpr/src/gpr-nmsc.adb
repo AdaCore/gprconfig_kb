@@ -5558,6 +5558,13 @@ package body GPR.Nmsc is
          Prev_Rank : Number_List_Index;
          Element   : String_Element;
 
+         Path_Name : constant String := Get_Name_String (Path.Name);
+         Dir       : Dir_Type;
+         File_Name : String (1 .. 1_000);
+         File_Last : Natural := 0;
+
+         File_Present : Boolean := True;
+
       begin
          Prev      := Nil_String;
          Prev_Rank := No_Number_List;
@@ -5575,47 +5582,80 @@ package body GPR.Nmsc is
          --  The directory is in the list if List is not Nil_String
 
          if not Remove_Source_Dirs and then List = Nil_String then
-            Debug_Output ("adding source dir=", Name_Id (Path.Display_Name));
+            --  Do not include the directory if it does not contain any regular
+            --  file.
 
-            String_Element_Table.Increment_Last (Shared.String_Elements);
-            Element :=
-              (Value         => Name_Id (Path.Name),
-               Index         => 0,
-               Display_Value => Name_Id (Path.Display_Name),
-               Location      => No_Location,
-               Flag          => False,
-               Next          => Nil_String);
+            declare
+               pragma Unsuppress (All_Checks);
+            begin
+               File_Present := False;
+               Open (Dir, Path_Name);
 
-            Number_List_Table.Increment_Last (Shared.Number_Lists);
+               loop
+                  Read (Dir, File_Name, File_Last);
+                  exit when File_Last = 0;
 
-            if Last_Source_Dir = Nil_String then
+                  if Is_Regular_File
+                    (Path_Name & "/" & File_Name (1 .. File_Last))
+                  then
+                     File_Present := True;
+                     exit;
+                  end if;
+               end loop;
 
-               --  This is the first source directory
+               Close (Dir);
 
-               Project.Source_Dirs :=
+            exception
+               --  If any exception is raised, assume that the directory is
+               --  not empty;
+               when others =>
+                  File_Present := True;
+            end;
+
+            if File_Present then
+               Debug_Output
+                 ("adding source dir=", Name_Id (Path.Display_Name));
+
+               String_Element_Table.Increment_Last (Shared.String_Elements);
+               Element :=
+                 (Value         => Name_Id (Path.Name),
+                  Index         => 0,
+                  Display_Value => Name_Id (Path.Display_Name),
+                  Location      => No_Location,
+                  Flag          => False,
+                  Next          => Nil_String);
+
+               Number_List_Table.Increment_Last (Shared.Number_Lists);
+
+               if Last_Source_Dir = Nil_String then
+
+                  --  This is the first source directory
+
+                  Project.Source_Dirs :=
+                    String_Element_Table.Last (Shared.String_Elements);
+                  Project.Source_Dir_Ranks :=
+                    Number_List_Table.Last (Shared.Number_Lists);
+
+               else
+                  --  We already have source directories, link the previous
+                  --  last to the new one.
+
+                  Shared.String_Elements.Table (Last_Source_Dir).Next :=
+                    String_Element_Table.Last (Shared.String_Elements);
+                  Shared.Number_Lists.Table (Last_Src_Dir_Rank).Next :=
+                    Number_List_Table.Last (Shared.Number_Lists);
+               end if;
+
+               --  And register this source directory as the new last
+
+               Last_Source_Dir :=
                  String_Element_Table.Last (Shared.String_Elements);
-               Project.Source_Dir_Ranks :=
+               Shared.String_Elements.Table (Last_Source_Dir) := Element;
+               Last_Src_Dir_Rank :=
                  Number_List_Table.Last (Shared.Number_Lists);
-
-            else
-               --  We already have source directories, link the previous
-               --  last to the new one.
-
-               Shared.String_Elements.Table (Last_Source_Dir).Next :=
-                 String_Element_Table.Last (Shared.String_Elements);
-               Shared.Number_Lists.Table (Last_Src_Dir_Rank).Next :=
-                 Number_List_Table.Last (Shared.Number_Lists);
+               Shared.Number_Lists.Table (Last_Src_Dir_Rank) :=
+                 (Number => Rank, Next => No_Number_List);
             end if;
-
-            --  And register this source directory as the new last
-
-            Last_Source_Dir :=
-              String_Element_Table.Last (Shared.String_Elements);
-            Shared.String_Elements.Table (Last_Source_Dir) := Element;
-            Last_Src_Dir_Rank := Number_List_Table.Last (Shared.Number_Lists);
-            Shared.Number_Lists.Table (Last_Src_Dir_Rank) :=
-              (Number => Rank, Next => No_Number_List);
-
          elsif Remove_Source_Dirs and then List /= Nil_String then
 
             --  Remove source dir if present
