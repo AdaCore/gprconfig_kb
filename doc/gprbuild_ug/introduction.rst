@@ -4,17 +4,18 @@
 Introduction
 ************
 
-This User's Guide describes several software tools that use GNAT Projects to
-drive their behavior. GNAT Projects are stored in text files with the extension
-:samp:`.gpr`, commonly called :samp:`GPR files`.
+This User's Guide describes several software tools that use the GNAT project
+facility to drive their behavior. GNAT projects are stored in text files with
+the extension :samp:`.gpr`, commonly called *GPR files*.
 
-These GPR tools have in common a facility called the GNAT Project Manager that
-is fully described in the next section.
+These GPR tools use a common facility, the GNAT Project Manager, that
+is fully described in :ref:`GNAT_Project_Manager`.
 
 The main GPR tool is :samp:`GPRbuild`, a multi-language builder for systems
-organized into subsystems and libraries.
+organized into subsystems and libraries. This tool is described in
+:ref:`Building with GPRbuild<Building_with_GPRbuild>`.
 
-The other GPR tools are:
+The other GPR tools are described in :ref:`GPRbuild_Companion_Tools`:
 
 * :samp:`GPRconfig`
 
@@ -34,4 +35,4 @@ The other GPR tools are:
 * :samp:`GPRname`
 
   Naming scheme generator
-  (see :ref:`Specific Naming Scheme with GPRname`).
+  (see :ref:`Specifying a Naming Scheme with GPRname<Specifying_a_Naming_Scheme_with_GPRname>`).
