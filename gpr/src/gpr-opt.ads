@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -148,14 +148,19 @@ package GPR.Opt is
    --  Do not create backup copies of project files in gprname.
    --  Set by switch --no-backup.
 
-   No_Split_Units : Boolean := False;
-   --  Set to True with switch --no-split-units. When True, unit sources, spec,
-   --  body and subunits, must all be in the same project. This is checked
-   --  after each compilation.
+   No_Empty_Source_Dirs : Boolean := True;
+   --  When True, directories with no regular files are not included in the
+   --  source directories.
+   --  When False, they are included.
 
    No_Main_Subprogram : Boolean := False;
    --  Set to True if compilation/binding of a program without main
    --  subprogram requested.
+
+   No_Split_Units : Boolean := False;
+   --  Set to True with switch --no-split-units. When True, unit sources, spec,
+   --  body and subunits, must all be in the same project. This is checked
+   --  after each compilation.
 
    One_Compilation_Per_Obj_Dir : Boolean := False;
    --  Set to True with switch --single-compile-per-obj-dir. When True, there
