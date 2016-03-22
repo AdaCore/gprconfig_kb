@@ -5559,11 +5559,6 @@ package body GPR.Nmsc is
          Element   : String_Element;
 
          Path_Name : constant String := Get_Name_String (Path.Name);
-         Dir       : Dir_Type;
-         File_Name : String (1 .. 1_000);
-         File_Last : Natural := 0;
-
-         Include_Dir : Boolean := True;
 
       begin
          Prev      := Nil_String;
@@ -5582,39 +5577,14 @@ package body GPR.Nmsc is
          --  The directory is in the list if List is not Nil_String
 
          if not Remove_Source_Dirs and then List = Nil_String then
-            if No_Empty_Source_Dirs then
+            --  Do not include the directory if it does not contain any
+            --  regular file, when No_Empty_Source_Dirs is False.
+
+            if not No_Empty_Source_Dirs
+              or else Contains_Files (Path_Name)
+            then
                --  Do not include the directory if it does not contain any
-               --  regular file.
 
-               declare
-                  pragma Unsuppress (All_Checks);
-               begin
-                  Include_Dir := False;
-                  Open (Dir, Path_Name);
-
-                  loop
-                     Read (Dir, File_Name, File_Last);
-                     exit when File_Last = 0;
-
-                     if Is_Regular_File
-                       (Path_Name & "/" & File_Name (1 .. File_Last))
-                     then
-                        Include_Dir := True;
-                        exit;
-                     end if;
-                  end loop;
-
-                  Close (Dir);
-
-               exception
-                   --  If any exception is raised, assume that the directory is
-                   --  not empty;
-                  when others =>
-                     Include_Dir := True;
-               end;
-            end if;
-
-            if Include_Dir then
                Debug_Output
                  ("adding source dir=", Name_Id (Path.Display_Name));
 
