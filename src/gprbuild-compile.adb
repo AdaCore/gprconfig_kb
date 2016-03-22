@@ -2772,6 +2772,10 @@ package body Gprbuild.Compile is
          --  Add compilation process and indicate that the object directory is
          --  busy.
 
+         procedure Escape_Path (Options : in out String_List);
+         --  On Windows, duplicate the directory separators ('\') in Options.
+         --  On other platforms, this procedure does nothing.
+
          -----------------
          -- Add_Process --
          -----------------
@@ -2793,6 +2797,43 @@ package body Gprbuild.Compile is
 
             Queue.Set_Obj_Dir_Busy (Source.Id.Project.Object_Directory.Name);
          end Add_Process;
+
+         -----------------
+         -- Escape_Path --
+         -----------------
+
+         procedure Escape_Path (Options : in out String_List) is
+         begin
+            if On_Windows then
+               for J in Options'Range loop
+                  declare
+                     Opt : constant String := Options (J).all;
+                     Nopt : String (1 .. Opt'Length * 2);
+                     Last : Natural := 0;
+
+                  begin
+                     for K in Opt'Range loop
+                        Last := Last + 1;
+                        Nopt (Last) := Opt (K);
+
+                        if Opt (K) = Directory_Separator then
+                           Last := Last + 1;
+                           Nopt (Last) := Directory_Separator;
+                        end if;
+                     end loop;
+
+                     if Last > Opt'Length then
+                        Free (Options (J));
+                        Options (J) := new String'(Nopt (1 .. Last));
+                     end if;
+                  end;
+               end loop;
+            end if;
+         end Escape_Path;
+
+         ------------------
+         -- Get_Language --
+         ------------------
 
          function Get_Language return String is
            (if Source.Id.Language /= null
@@ -2866,35 +2907,12 @@ package body Gprbuild.Compile is
 
                   begin
                      --  On Windows, directory separators ('\') need to be
-                     --  doubled.
+                     --  doubled in response files, otherwise gcc does not
+                     --  take them as directory separators.
 
-                     if On_Windows then
-                        for J in 1 .. Compilation_Options.Last loop
-                           declare
-                              Opt : constant String :=
-                                       Compilation_Options.Options (J).all;
-                              Nopt : String (1 .. Opt'Length * 2);
-                              Last : Natural := 0;
-
-                           begin
-                              for K in Opt'Range loop
-                                 Last := Last + 1;
-                                 Nopt (Last) := Opt (K);
-
-                                 if Opt (K) = Directory_Separator then
-                                    Last := Last + 1;
-                                    Nopt (Last) := Directory_Separator;
-                                 end if;
-                              end loop;
-
-                              if Last > Opt'Length then
-                                 Free (Compilation_Options.Options (J));
-                                 Compilation_Options.Options (J) :=
-                                   new String'(Nopt (1 .. Last));
-                              end if;
-                           end;
-                        end loop;
-                     end if;
+                     Escape_Path
+                       (Compilation_Options.Options
+                          (1 .. Compilation_Options.Last));
 
                      Create_Temp_File (FD, Response_File);
                      Record_Temp_File
