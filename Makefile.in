@@ -132,11 +132,13 @@ install.docs:
 	for format in html txt pdf info; do \
 	  if [ -d $(srcdir)/doc/$$format ] ; then \
 	     ${MKDIR} ${datadir}/doc/gprbuild/$$format; \
-	     ${CP} -r $(srcdir)/doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
 	     if [ $$format = html ] ; then \
+	        ${CP} -r $(srcdir)/doc/$$format/* ${datadir}/doc/gprbuild/$$format; \
 	        ${CP} $(srcdir)/doc/*.png ${datadir}/doc/gprbuild/html; \
 	        sed -e "s/<doc_path>.*//" $(srcdir)/doc/gprbuild_gps.xml \
 	           > ${datadir}/doc/gprbuild/html/gps_index.xml; \
+	     else \
+	        ${CP} $(srcdir)/doc/$$format/*.$$format ${datadir}/doc/gprbuild/$$format; \
 	     fi; \
 	  fi; \
 	done
