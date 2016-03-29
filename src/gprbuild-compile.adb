@@ -2865,6 +2865,37 @@ package body Gprbuild.Compile is
                      pragma Warnings (Off, Closing_Status);
 
                   begin
+                     --  On Windows, directory separators ('\') need to be
+                     --  doubled.
+
+                     if On_Windows then
+                        for J in 1 .. Compilation_Options.Last loop
+                           declare
+                              Opt : constant String :=
+                                       Compilation_Options.Options (J).all;
+                              Nopt : String (1 .. Opt'Length * 2);
+                              Last : Natural := 0;
+
+                           begin
+                              for K in Opt'Range loop
+                                 Last := Last + 1;
+                                 Nopt (Last) := Opt (K);
+
+                                 if Opt (K) = Directory_Separator then
+                                    Last := Last + 1;
+                                    Nopt (Last) := Directory_Separator;
+                                 end if;
+                              end loop;
+
+                              if Last > Opt'Length then
+                                 Free (Compilation_Options.Options (J));
+                                 Compilation_Options.Options (J) :=
+                                   new String'(Nopt (1 .. Last));
+                              end if;
+                           end;
+                        end loop;
+                     end if;
+
                      Create_Temp_File (FD, Response_File);
                      Record_Temp_File
                        (Shared => Source.Tree.Shared,
