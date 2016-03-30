@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -29,9 +29,9 @@ with Ada.Unchecked_Deallocation;
 with Ada.Strings.Fixed;                      use Ada.Strings.Fixed;
 with Ada.Strings.Maps;                       use Ada.Strings.Maps;
 
-with GNAT.Case_Util; use GNAT.Case_Util;
+with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.HTable;
-with GNAT.Regexp;    use GNAT.Regexp;
+with GNAT.Regexp;               use GNAT.Regexp;
 with GNAT.Table;
 
 with GPR.ALI;    use GPR.ALI;
@@ -104,6 +104,37 @@ package body GPR.Util is
 
       Free (File);
    end Close;
+
+   --------------------
+   -- Contains_Files --
+   --------------------
+
+   function Contains_Files (Dir_Path : String) return Boolean is
+      pragma Unsuppress (All_Checks);
+      use Ada.Directories;
+      Search : Search_Type;
+      Filter : constant Filter_Type :=
+        (Directory => False, Ordinary_File => True, Special_File => False);
+      Result : Boolean;
+
+   begin
+      Start_Search
+        (Search,
+         Directory => Dir_Path,
+         Pattern   => "",
+         Filter    => Filter);
+
+      Result := More_Entries (Search);
+      End_Search (Search);
+      return Result;
+
+   exception
+      --  If any exception is raised, assume that the directory is not empty
+
+      when others =>
+         End_Search (Search);
+         return True;
+   end Contains_Files;
 
    ------------
    -- Create --
