@@ -48,6 +48,49 @@ package GPR.Util is
    --  If the directory does not exist or there is an exception raised for
    --  any reason, return True.
 
+   --------------
+   -- Closures --
+   --------------
+
+   type Status_Type is
+     (Success,
+      Unknown_Error,
+      Invalid_Project,
+      No_Main,
+      Invalid_Main,
+      Incomplete_Closure);
+
+   procedure Get_Closures
+     (Project                  : Project_Id;
+      In_Tree                  : Project_Tree_Ref;
+      Mains                    : String_List;
+      All_Projects             : Boolean := True;
+      Include_Externally_Built : Boolean := False;
+      Status                   : out Status_Type;
+      Result                   : out String_List_Access);
+   --  Return the list of source files in the closures of the Ada Mains in
+   --  Result.
+   --  The project and its project tree must have been parsed and processed.
+   --  Mains is a list of single file names that are Ada sources of the project
+   --  Project or of its subprojects.
+   --  When All_Projects is False, the Mains must be sources of the Project and
+   --  the sources of the closures that are sources of the imported subprojects
+   --  are not included in the returned list.
+   --  When All_Projects is True, mains may also be found in subprojects,
+   --  including aggregated projects when Project is an aggregate project.
+   --  When All_Projects is True, sources in the closures that are sources of
+   --  externally built subprojects are included in the returned list only when
+   --  Include_Externally_Built is True.
+   --  Result is the list of path names in the closures.
+   --  It is the responsibility of the caller to deallocate the Strings in
+   --  Result and Result itself.
+   --  When all the sources in the closures are found, Result is non null and
+   --  Status is Success.
+   --  When only a subset of the sources in the closures are found, Result is
+   --  non null and Status is Incomplete_Closure.
+   --  When there are other problems, Result is null and Status is different
+   --  from Success or Incomplete_Closure.
+
    -------------------------
    -- Program termination --
    -------------------------

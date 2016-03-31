@@ -29,9 +29,9 @@ with Ada.Unchecked_Deallocation;
 with Ada.Strings.Fixed;                      use Ada.Strings.Fixed;
 with Ada.Strings.Maps;                       use Ada.Strings.Maps;
 
-with GNAT.Case_Util;            use GNAT.Case_Util;
+with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;
-with GNAT.Regexp;               use GNAT.Regexp;
+with GNAT.Regexp;    use GNAT.Regexp;
 with GNAT.Table;
 
 with GPR.ALI;    use GPR.ALI;
@@ -45,6 +45,7 @@ with GPR.Sinput;
 with GPR.Snames; use GPR.Snames;
 
 package body GPR.Util is
+   use Ada.Containers;
 
    Program_Name : String_Access := null;
 
@@ -65,6 +66,66 @@ package body GPR.Util is
 
    procedure Free is new Ada.Unchecked_Deallocation
      (Text_File_Data, Text_File);
+
+   package Processed_ALIs is new GNAT.HTable.Simple_HTable
+     (Header_Num => GPR.Header_Num,
+      Element    => Boolean,
+      No_Element => False,
+      Key        => File_Name_Type,
+      Hash       => GPR.Hash,
+      Equal      => "=");
+
+   --------------
+   -- Closures --
+   --------------
+
+   type Project_And_Tree is record
+      Project : Project_Id;
+      Tree    : Project_Tree_Ref;
+   end record;
+
+   function "<" (Left, Right : Project_And_Tree) return Boolean;
+
+   package Projects_And_Trees_Sets is
+     new Ada.Containers.Indefinite_Ordered_Sets
+       (Element_Type => Project_And_Tree);
+
+   type Main_Project_Tree is record
+      Main    : Source_Id;
+      Project : Project_Id;
+      Tree    : Project_Tree_Ref;
+   end record;
+
+   function "<" (Left, Right : Main_Project_Tree) return Boolean;
+
+   package MPT_Sets is new Ada.Containers.Indefinite_Ordered_Sets
+     (Element_Type => Main_Project_Tree);
+
+   type File_Names is array (Positive range <>) of File_Name_Type;
+   type File_Names_Ref is access File_Names;
+   procedure Free is
+      new Ada.Unchecked_Deallocation (File_Names, File_Names_Ref);
+
+   package Path_Sets is new Ada.Containers.Indefinite_Ordered_Sets
+     (Element_Type => String);
+
+   ---------
+   -- "<" --
+   ---------
+
+   function "<" (Left, Right : Project_And_Tree) return Boolean is
+   begin
+      return Left.Project.Name < Right.Project.Name;
+   end "<";
+
+   function "<" (Left, Right : Main_Project_Tree) return Boolean is
+   begin
+      if Left.Project.Name /= Right.Project.Name then
+         return Left.Project.Name < Right.Project.Name;
+      else
+         return Left.Main.File < Right.Main.File;
+      end if;
+   end "<";
 
    -----------
    -- Close --
@@ -608,7 +669,6 @@ package body GPR.Util is
       Project : Project_Id)
    is
       use Ada;
-      use type Ada.Containers.Count_Type;
 
       package Dep_Names is new Containers.Indefinite_Ordered_Sets (String);
 
@@ -757,6 +817,495 @@ package body GPR.Util is
          end loop;
       end if;
    end For_Interface_Sources;
+
+   ------------------
+   -- Get_Closures --
+   ------------------
+
+   procedure Get_Closures
+     (Project                  : Project_Id;
+      In_Tree                  : Project_Tree_Ref;
+      Mains                    : String_List;
+      All_Projects             : Boolean := True;
+      Include_Externally_Built : Boolean := False;
+      Status                   : out Status_Type;
+      Result                   : out String_List_Access)
+   is
+      Closures             : Path_Sets.Set;
+      Projects_And_Trees   : Projects_And_Trees_Sets.Set;
+      Mains_Projects_Trees : MPT_Sets.Set;
+
+      The_File_Names : File_Names_Ref := null;
+
+      procedure Add_To_Projects (Proj : Project_Id; Tree : Project_Tree_Ref);
+      --  Add project Proc with its Tree to the list of projects
+
+      procedure Add_To_Mains
+        (Main    : Source_Id;
+         Project : Project_Id;
+         Tree    : Project_Tree_Ref);
+      --  Add main Main with its Project and Tree to the list of mains
+
+      procedure Add_To_Closures (Source : Source_Id; Added : out Boolean);
+      --  Add Source to the list of closures. Added is True when Source is
+      --  effectively added. IfSource was already in the list of closures, it
+      --  is not added again and Added is False.
+
+      procedure Look_For_Mains;
+      --  Look for mains in the project trees. Status is Success only if
+      --  all mains have been found.
+
+      procedure Get_Aggregated (Proj : Project_Id);
+      --  Get the non aggregated projects from Aggregate project Proj
+
+      procedure Cleanup;
+      --  Deallocate the local lists
+
+      procedure Initialize_Sources;
+      --  Initialize all the source records in all the trees
+
+      procedure Process
+        (Source  : Source_Id;
+         Project : Project_Id;
+         Tree    : Project_Tree_Ref);
+      --  Get the sources in the closure of Main and add them to the list of
+      --  closures.
+
+      ---------------------
+      -- Add_To_Closures --
+      ---------------------
+
+      procedure Add_To_Closures (Source : Source_Id; Added : out Boolean) is
+         Position : Path_Sets.Cursor;
+      begin
+         Added := False;
+
+         if Source /= No_Source then
+            Path_Sets.Insert
+              (Container => Closures,
+               New_Item  => Get_Name_String (Source.Path.Display_Name),
+               Position  => Position,
+               Inserted  => Added);
+         end if;
+      end Add_To_Closures;
+
+      ------------------
+      -- Add_To_Mains --
+      ------------------
+
+      procedure Add_To_Mains
+        (Main    : Source_Id;
+         Project : Project_Id;
+         Tree    : Project_Tree_Ref)
+      is
+         Position : MPT_Sets.Cursor;
+         Inserted : Boolean;
+
+         pragma Unreferenced (Position);
+         pragma Unreferenced (Inserted);
+
+      begin
+         Mains_Projects_Trees.Insert
+           (New_Item => (Main, Project, Tree),
+            Position => Position,
+            Inserted => Inserted);
+      end Add_To_Mains;
+
+      ---------------------
+      -- Add_To_Projects --
+      ---------------------
+
+      procedure Add_To_Projects (Proj : Project_Id; Tree : Project_Tree_Ref) is
+      begin
+         Projects_And_Trees.Insert ((Proj, Tree));
+      end Add_To_Projects;
+
+      -------------
+      -- Cleanup --
+      -------------
+
+      procedure Cleanup is
+      begin
+         Closures.Clear;
+         Projects_And_Trees.Clear;
+         Mains_Projects_Trees.Clear;
+         Free (The_File_Names);
+      end Cleanup;
+
+      --------------------
+      -- Get_Aggregated --
+      --------------------
+
+      procedure Get_Aggregated (Proj : Project_Id) is
+         List : Aggregated_Project_List := null;
+         Prj : Project_Id;
+      begin
+         if Proj.Qualifier = Aggregate then
+            List := Proj.Aggregated_Projects;
+         end if;
+
+         while List /= null loop
+            Prj := List.Project;
+
+            case Prj.Qualifier is
+               when Library | Configuration |
+                    Abstract_Project | Aggregate_Library =>
+                  null;
+
+               when Unspecified | Standard =>
+                  if not Prj.Library and then not Prj.Externally_Built then
+                     Add_To_Projects (Prj, List.Tree);
+                  end if;
+
+               when Aggregate =>
+                  Get_Aggregated (Prj);
+
+            end case;
+
+            List := List.Next;
+         end loop;
+      end Get_Aggregated;
+
+      ------------------------
+      -- Initialize_Sources --
+      ------------------------
+
+      procedure Initialize_Sources is
+         Position : Projects_And_Trees_Sets.Cursor :=
+           Projects_And_Trees_Sets.First (Projects_And_Trees);
+         Last : constant Projects_And_Trees_Sets.Cursor :=
+           Projects_And_Trees_Sets.Last (Projects_And_Trees);
+         Iter   : Source_Iterator;
+         Src    : Source_Id;
+         The_Project_And_Tree : Project_And_Tree;
+
+         use type Projects_And_Trees_Sets.Cursor;
+
+      begin
+         loop
+            The_Project_And_Tree := Projects_And_Trees_Sets.Element (Position);
+
+            Iter := For_Each_Source
+              (In_Tree           => The_Project_And_Tree.Tree,
+               Project           => The_Project_And_Tree.Project,
+               Language          => Name_Ada,
+               Encapsulated_Libs => True,
+               Locally_Removed   => False);
+
+            loop
+               Src := Element (Iter);
+               exit when Src = No_Source;
+               Initialize_Source_Record (Src);
+               Next (Iter);
+            end loop;
+
+            exit when Position = Last;
+            Projects_And_Trees_Sets.Next (Position);
+         end loop;
+      end Initialize_Sources;
+
+      --------------------
+      -- Look_For_Mains --
+      --------------------
+
+      procedure Look_For_Mains is
+      begin
+         for J in The_File_Names'Range loop
+            declare
+               Saved_Mains_Length : constant Ada.Containers.Count_Type :=
+                 Mains_Projects_Trees.Length;
+               Position : Projects_And_Trees_Sets.Cursor :=
+                 Projects_And_Trees_Sets.First (Projects_And_Trees);
+               Last : constant Projects_And_Trees_Sets.Cursor :=
+                 Projects_And_Trees_Sets.Last (Projects_And_Trees);
+
+               use type Projects_And_Trees_Sets.Cursor;
+
+               The_PT : Project_And_Tree;
+
+            begin
+               loop
+                  The_PT := Projects_And_Trees_Sets.Element (Position);
+
+                  --  find the main in the project tree
+
+                  declare
+                     Source : Source_Id;
+
+                     The_Tree    : constant Project_Tree_Ref := The_PT.Tree;
+                     The_Project : constant Project_Id       := The_PT.Project;
+
+                     Sources : constant Source_Ids :=
+                       Find_All_Sources
+                         (In_Tree          => The_Tree,
+                          Project          => The_Project,
+                          In_Imported_Only => False,
+                          In_Extended_Only => False,
+                          Base_Name        => The_File_Names (J));
+
+                  begin
+                     for L in Sources'Range loop
+                        Source := Sources (L);
+
+                        if Source.Language.Config.Kind /= Unit_Based then
+                           Status := Invalid_Main;
+                           return;
+
+                        elsif Source.Project = The_Project then
+                           Add_To_Mains
+                             (Main    => Source,
+                              Project => The_Project,
+                              Tree    => The_Tree);
+
+                        elsif All_Projects then
+                           if not Source.Project.Externally_Built
+                             or else Include_Externally_Built
+                           then
+                              Add_To_Mains
+                                (Main    => Source,
+                                 Project => The_Project,
+                                 Tree    => The_Tree);
+                           end if;
+                        end if;
+                     end loop;
+                  end;
+
+                  exit when Position = Last;
+                  Projects_And_Trees_Sets.Next (Position);
+               end loop;
+
+               if Mains_Projects_Trees.Length = Saved_Mains_Length then
+                  Status := Invalid_Main;
+                  return;
+               end if;
+            end;
+         end loop;
+      end Look_For_Mains;
+
+      -------------
+      -- Process --
+      -------------
+
+      procedure Process
+        (Source  : Source_Id;
+         Project : Project_Id;
+         Tree    : Project_Tree_Ref)
+      is
+         --  Add Source to the closures, if not there yet, and continue with
+         --  the sources it imports.
+         Text       : Text_Buffer_Ptr;
+         Idread     : ALI_Id;
+         First_Unit : Unit_Id;
+         Last_Unit  : Unit_Id;
+         Unit_Data  : Unit_Record;
+         The_ALI    : File_Name_Type;
+         Added      : Boolean;
+
+         procedure Find_Unit (Uname : String);
+         --  Find the sources for this unit name
+
+         ---------------
+         -- Find_Unit --
+         ---------------
+
+         procedure Find_Unit (Uname : String) is
+            Iter : Source_Iterator;
+            Src  : Source_Id;
+
+            Unit_Name : constant String :=
+              Uname (Uname'First .. Uname'Last - 2);
+         begin
+            Iter := For_Each_Source
+              (In_Tree           => Tree,
+               Project           => Project,
+               Language          => Name_Ada,
+               Encapsulated_Libs => True,
+               Locally_Removed   => False);
+
+            loop
+               Src := Element (Iter);
+               exit when Src = No_Source;
+
+               if Src.Unit /= No_Unit_Index and then
+                 Get_Name_String (Src.Unit.Name) = Unit_Name
+               then
+                  Process (Src, Project, Tree);
+               end if;
+
+               Next (Iter);
+            end loop;
+         end Find_Unit;
+
+      begin
+         Add_To_Closures (Source, Added);
+
+         if not Added then
+            return;
+         end if;
+
+         The_ALI := File_Name_Type (Source.Dep_Path);
+
+         if not Processed_ALIs.Get (The_ALI) then
+            Processed_ALIs.Set (The_ALI, True);
+
+            Text := Read_Library_Info (The_ALI);
+
+            if Text = null then
+               Status := Incomplete_Closure;
+
+            else
+               Idread :=
+                 Scan_ALI
+                   (F          => The_ALI,
+                    T          => Text,
+                    Ignore_ED  => False,
+                    Err        => True,
+                    Read_Lines => "W");
+               Free (Text);
+
+               if Idread = No_ALI_Id then
+                  Status := Incomplete_Closure;
+
+               else
+                  First_Unit := ALI.ALIs.Table (Idread).First_Unit;
+                  Last_Unit  := ALI.ALIs.Table (Idread).Last_Unit;
+
+                  for Unit in First_Unit .. Last_Unit loop
+                     Unit_Data := ALI.Units.Table (Unit);
+
+                     if Unit = First_Unit then
+                        Find_Unit (Get_Name_String (Unit_Data.Uname));
+                     end if;
+
+                     for W in Unit_Data.First_With ..
+                       Unit_Data.Last_With
+                     loop
+                        Find_Unit (Get_Name_String (Withs.Table (W).Uname));
+                     end loop;
+                  end loop;
+               end if;
+            end if;
+         end if;
+      end Process;
+
+   begin
+      Status := Success;
+      Result := null;
+
+      --  Fail immediately if there are no Mains
+
+      if Mains'Length = 0 then
+         Status := No_Main;
+         Cleanup;
+         return;
+
+      else
+         The_File_Names := new File_Names (Mains'Range);
+
+         for J in Mains'Range loop
+            if Mains (J) = null or else Mains (J)'Length = 0 then
+               Status := No_Main;
+               Cleanup;
+               return;
+
+            else
+               Name_Len := Mains (J)'Length;
+               Name_Buffer (1 .. Name_Len) := Mains (J).all;
+               The_File_Names (J) := Name_Find;
+            end if;
+         end loop;
+      end if;
+
+      --  First check if there are any valid project or projects
+
+      if Project = No_Project or else In_Tree = No_Project_Tree then
+         Status := Invalid_Project;
+         Cleanup;
+         return;
+      end if;
+
+      if Project.Externally_Built or else Project.Library then
+         Status := Invalid_Project;
+         Cleanup;
+         return;
+      end if;
+
+      case Project.Qualifier is
+         when Library | Configuration | Abstract_Project | Aggregate_Library =>
+            Status := Invalid_Project;
+            Cleanup;
+            return;
+
+         when Standard | Unspecified =>
+            Add_To_Projects (Project, In_Tree);
+
+         when Aggregate =>
+            if not All_Projects then
+               Status := Invalid_Project;
+               Cleanup;
+               return;
+            end if;
+
+            Get_Aggregated (Project);
+      end case;
+
+      if Projects_And_Trees.Length = 0 then
+         Status := Invalid_Project;
+         Cleanup;
+         return;
+      end if;
+
+      --  Initialize the source records for all sources in the project trees
+
+      Initialize_Sources;
+
+      --  Now that we have the valid project(s), look for the mains
+
+      Look_For_Mains;
+
+      if Status /= Success then
+         Cleanup;
+         return;
+      end if;
+
+      --  Now that we have the main sources, get their closures
+
+      Processed_ALIs.Reset;
+
+      declare
+         Position : MPT_Sets.Cursor := MPT_Sets.First (Mains_Projects_Trees);
+         Last     : constant MPT_Sets.Cursor :=
+           MPT_Sets.Last (Mains_Projects_Trees);
+         The_MPT : Main_Project_Tree;
+
+         use type MPT_Sets.Cursor;
+
+      begin
+         loop
+            The_MPT := MPT_Sets.Element (Position);
+            Process (The_MPT.Main, The_MPT.Project, The_MPT.Tree);
+            exit when Position = Last;
+            MPT_Sets.Next (Position);
+         end loop;
+      end;
+
+      Result := new String_List (1 .. Integer (Closures.Length));
+      declare
+         Cursor : Path_Sets.Cursor := Closures.First;
+      begin
+         for J in 1 .. Result'Last loop
+            Result (J) := new String'(Path_Sets.Element (Cursor));
+            Path_Sets.Next (Cursor);
+         end loop;
+      end;
+
+      Cleanup;
+
+   exception
+      when others =>
+         Result := null;
+         Status := Unknown_Error;
+   end Get_Closures;
 
    --------------
    -- Get_Line --
