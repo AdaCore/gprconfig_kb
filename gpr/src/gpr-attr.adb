@@ -78,6 +78,7 @@ package body GPR.Attr is
    "LVlanguages#" &
    "Lbroots#" &
    "SVexternally_built#" &
+   "SVorigin_project#" &
 
    --  Directories
 
