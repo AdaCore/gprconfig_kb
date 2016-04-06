@@ -166,37 +166,6 @@ package body GPR.Util is
       Free (File);
    end Close;
 
-   --------------------
-   -- Contains_Files --
-   --------------------
-
-   function Contains_Files (Dir_Path : String) return Boolean is
-      pragma Unsuppress (All_Checks);
-      use Ada.Directories;
-      Search : Search_Type;
-      Filter : constant Filter_Type :=
-        (Directory => False, Ordinary_File => True, Special_File => False);
-      Result : Boolean;
-
-   begin
-      Start_Search
-        (Search,
-         Directory => Dir_Path,
-         Pattern   => "",
-         Filter    => Filter);
-
-      Result := More_Entries (Search);
-      End_Search (Search);
-      return Result;
-
-   exception
-      --  If any exception is raised, assume that the directory is not empty
-
-      when others =>
-         End_Search (Search);
-         return True;
-   end Contains_Files;
-
    ------------
    -- Create --
    ------------
