@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2015, AdaCore                     --
+--                     Copyright (C) 2011-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -48,6 +48,13 @@ with GPR.Util;                   use GPR.Util;
 
 procedure Gprclean.Main is
 
+   Project_File_Name_Expected : Boolean := False;
+
+   User_Project_Node : Project_Node_Id;
+
+   In_Package_Clean : Boolean := False;
+   --  True when processing switches from package Clean of the main project
+
    use Knowledge;
 
    procedure Usage;
@@ -56,6 +63,12 @@ procedure Gprclean.Main is
 
    procedure Parse_Cmd_Line;
    --  Parse the command line
+
+   procedure Process_Switch (Switch : String);
+   --  Process a switch
+
+   procedure Compute_Clean_Switches;
+   --  Get the switches from package Clean of main project, if any
 
    procedure Display_Copyright;
    --  Display the Copyright notice. If called several times, display the
@@ -78,6 +91,39 @@ procedure Gprclean.Main is
            ("GPRCLEAN", "2006", Version_String => Gpr_Version_String);
       end if;
    end Display_Copyright;
+
+   ----------------------------
+   -- Compute_Clean_Switches --
+   ----------------------------
+
+   procedure Compute_Clean_Switches is
+      Clean_Package  : constant Package_Id :=
+        Value_Of
+          (Snames.Name_Clean,
+           Main_Project.Decl.Packages,
+           Project_Tree.Shared);
+
+      Switches : Variable_Value;
+      List : String_List_Id;
+      Elem : String_Element;
+   begin
+      if Clean_Package /= No_Package then
+         In_Package_Clean := True;
+         Switches := Value_Of
+           (Variable_Name => Snames.Name_Switches,
+            In_Variables  => Project_Tree.Shared.Packages.Table
+              (Clean_Package).Decl.Attributes,
+            Shared        => Project_Tree.Shared);
+
+         List := Switches.Values;
+         while List /= Nil_String loop
+            Elem := Project_Tree.Shared.String_Elements.Table (List);
+            Get_Name_String (Elem.Value);
+            Process_Switch (Switch => Name_Buffer (1 .. Name_Len));
+            List := Elem.Next;
+         end loop;
+      end if;
+   end Compute_Clean_Switches;
 
    ----------------
    -- Initialize --
@@ -132,18 +178,6 @@ procedure Gprclean.Main is
          declare
             Arg : constant String := Argument (Index);
 
-            procedure Bad_Argument;
-            --  Signal bad argument
-
-            ------------------
-            -- Bad_Argument --
-            ------------------
-
-            procedure Bad_Argument is
-            begin
-               Fail_Program (Project_Tree, "invalid argument """ & Arg & '"');
-            end Bad_Argument;
-
          begin
             if Db_Directory_Expected then
                Db_Directory_Expected := False;
@@ -155,419 +189,19 @@ procedure Gprclean.Main is
 
             elsif Arg'Length /= 0 then
                if Arg (1) = '-' then
-                  if Arg'Length = 1 then
-                     Bad_Argument;
+                  Process_Switch (Arg);
+
+                  if Project_File_Name_Expected then
+                     if Index = Last then
+                        Fail_Program
+                          (Project_Tree,
+                           "no project specified after -P");
+                     end if;
+
+                     Index := Index + 1;
+                     Project_File_Name := new String'(Argument (Index));
+                     Project_File_Name_Expected := False;
                   end if;
-
-                  case Arg (2) is
-                     when '-' =>
-                        if Arg = "--db-" then
-                           Load_Standard_Base := False;
-
-                        elsif Arg = "--db" then
-                           Db_Directory_Expected := True;
-
-                        elsif Arg'Length > Config_Project_Option'Length
-                          and then Arg (1 .. Config_Project_Option'Length) =
-                                   Config_Project_Option
-                        then
-                           if Config_Project_File_Name /= null
-                             and then
-                               (Autoconf_Specified
-                                or else Config_Project_File_Name.all /=
-                                  Arg (Config_Project_Option'Length + 1
-                                       .. Arg'Last))
-                           then
-                              Fail_Program
-                                (Project_Tree,
-                                 "several configuration switches cannot "
-                                 & "be specified");
-
-                           else
-
-                              Autoconfiguration := False;
-                              Config_Project_File_Name :=
-                                new String'
-                                  (Arg (Config_Project_Option'Length + 1
-                                        .. Arg'Last));
-                           end if;
-
-                        elsif Arg'Length >=  Distributed_Option'Length
-                                and then
-                              Arg (1 .. Distributed_Option'Length)
-                                  = Distributed_Option
-                        then
-                           Distributed_Mode := True;
-
-                           declare
-                              Hosts : constant String :=
-                                        Get_Slaves_Hosts (Project_Tree, Arg);
-                           begin
-                              if Hosts = "" then
-                                 Fail_Program
-                                   (Project_Tree,
-                                    "missing hosts for distributed"
-                                    & " mode compilation");
-
-                              else
-                                 Gprbuild.Compilation.Slave.Record_Slaves
-                                   (Hosts);
-                              end if;
-                           end;
-
-                        elsif Arg'Length >= Slave_Env_Option'Length
-                          and then
-                            Arg (1 .. Slave_Env_Option'Length)
-                          = Slave_Env_Option
-                        then
-                           if Arg = Slave_Env_Option then
-                              --  Just --slave-env, it is up to gprbuild to
-                              --  build a sensible slave environment value.
-                              Slave_Env_Auto := True;
-                           else
-                              Slave_Env := new String'
-                                (Arg
-                                   (Slave_Env_Option'Length + 2 .. Arg'Last));
-                           end if;
-
-                        elsif Arg'Length > Autoconf_Project_Option'Length
-                              and then
-                              Arg (1 .. Autoconf_Project_Option'Length) =
-                                Autoconf_Project_Option
-                        then
-                           if Config_Project_File_Name /= null
-                             and then
-                               (not Autoconf_Specified
-                                or else
-                                  Config_Project_File_Name.all /=
-                                    Arg (Autoconf_Project_Option'Length + 1
-                                         .. Arg'Last))
-                           then
-                              Fail_Program
-                                (Project_Tree,
-                                 "several configuration switches cannot "
-                                 & "be specified");
-
-                           else
-                              Config_Project_File_Name :=
-                                new String'
-                                  (Arg (Autoconf_Project_Option'Length + 1
-                                        .. Arg'Last));
-                              Autoconf_Specified := True;
-                           end if;
-
-                        elsif Arg'Length > Target_Project_Option'Length
-                          and then
-                            Arg (1 .. Target_Project_Option'Length) =
-                               Target_Project_Option
-                        then
-                           if Target_Name /= null then
-                              if Target_Name.all /=
-                                Arg (Target_Project_Option'Length + 1
-                                     .. Arg'Last)
-                              then
-                                 Fail_Program
-                                   (Project_Tree,
-                                    "several target switches "
-                                    & "cannot be specified");
-                              end if;
-
-                           else
-                              Target_Name :=
-                                new String'
-                                  (Arg (Target_Project_Option'Length + 1
-                                        .. Arg'Last));
-                           end if;
-
-                        elsif Arg'Length > RTS_Option'Length
-                          and then Arg (1 .. RTS_Option'Length) = RTS_Option
-                        then
-                           declare
-                              Set : constant Boolean :=
-                                Runtime_Name_Set_For (Snames.Name_Ada);
-                              Old : constant String :=
-                                Runtime_Name_For (Snames.Name_Ada);
-                              RTS : constant String :=
-                                Arg (RTS_Option'Length + 1 .. Arg'Last);
-
-                           begin
-                              if Set and then Old /= RTS then
-                                 Fail_Program
-                                   (Project_Tree,
-                                    "several different run-times " &
-                                      "cannot be specified");
-                              end if;
-
-                              Set_Runtime_For (Snames.Name_Ada, RTS);
-                              Set_Default_Runtime_For (Snames.Name_Ada, RTS);
-                           end;
-
-                        elsif Arg'Length > RTS_Language_Option'Length
-                          and then Arg (1 .. RTS_Language_Option'Length) =
-                                   RTS_Language_Option
-                        then
-                           declare
-                              Language_Name : Name_Id := No_Name;
-                              RTS_Start : Natural := Arg'Last + 1;
-
-                           begin
-                              for J in RTS_Language_Option'Length + 2 ..
-                                       Arg'Last
-                              loop
-                                 if Arg (J) = '=' then
-                                    Name_Len := 0;
-                                    Add_Str_To_Name_Buffer
-                                      (Arg
-                                         (RTS_Language_Option'Length + 1 ..
-                                          J - 1));
-                                    To_Lower (Name_Buffer (1 .. Name_Len));
-                                    Language_Name := Name_Find;
-                                    RTS_Start := J + 1;
-                                    exit;
-                                 end if;
-                              end loop;
-
-                              if Language_Name = No_Name then
-                                 Fail_Program
-                                   (Project_Tree, "illegal switch: " & Arg);
-
-                              else
-
-                                 declare
-                                    RTS : constant String :=
-                                      Arg (RTS_Start .. Arg'Last);
-                                    Set : constant Boolean :=
-                                      Runtime_Name_Set_For (Language_Name);
-                                    Old : constant String :=
-                                      Runtime_Name_For (Language_Name);
-
-                                 begin
-                                    if Set and then Old /= RTS then
-                                       Fail_Program
-                                       (Project_Tree,
-                                        "several different run-times cannot" &
-                                        " be specified for the same language");
-
-                                    else
-                                       Set_Runtime_For (Language_Name, RTS);
-                                       Set_Default_Runtime_For
-                                         (Language_Name, RTS);
-                                    end if;
-                                 end;
-                              end if;
-                           end;
-
-                        elsif Arg'Length > Subdirs_Option'Length
-                          and then
-                            Arg (1 .. Subdirs_Option'Length) = Subdirs_Option
-                        then
-                           Subdirs :=
-                             new String'
-                               (Arg (Subdirs_Option'Length + 1 .. Arg'Last));
-
-                        elsif Arg'Length >= Relocate_Build_Tree_Option'Length
-                          and then Arg (1 .. Relocate_Build_Tree_Option'Length)
-                          = Relocate_Build_Tree_Option
-                        then
-                           if Arg'Length
-                             = Relocate_Build_Tree_Option'Length
-                           then
-                              Build_Tree_Dir := new String'(Get_Current_Dir);
-
-                           else
-                              declare
-                                 Dir : constant String := Ensure_Directory
-                                   (Arg (Relocate_Build_Tree_Option'Length + 2
-                                         .. Arg'Last));
-                              begin
-                                 if Is_Absolute_Path (Dir) then
-                                    Build_Tree_Dir := new String'(Dir);
-                                 else
-                                    Build_Tree_Dir :=
-                                      new String'(Get_Current_Dir & Dir);
-                                 end if;
-                              end;
-                           end if;
-
-                        elsif Arg'Length >= Root_Dir_Option'Length
-                          and then Arg (1 .. Root_Dir_Option'Length)
-                                   = Root_Dir_Option
-                        then
-                           Root_Dir :=
-                             new String'
-                               (Normalize_Pathname
-                                  (Arg
-                                     (Root_Dir_Option'Length + 2 .. Arg'Last),
-                                   Get_Current_Dir)
-                                & Dir_Separator);
-
-                        elsif
-                          Arg = Gpr_Build_Util.Unchecked_Shared_Lib_Imports
-                        then
-                           Opt.Unchecked_Shared_Lib_Imports := True;
-
-                        else
-                           Bad_Argument;
-                        end if;
-
-                     when 'a' =>
-                        if Arg'Length < 4 then
-                           Bad_Argument;
-                        end if;
-
-                        if Arg (3) = 'P' then
-                           GPR.Env.Add_Directories
-                             (Root_Environment.Project_Path,
-                              Arg (4 .. Arg'Last));
-
-                        else
-                           Bad_Argument;
-                        end if;
-
-                     when 'c'    =>
-                        if Arg'Length /= 2 then
-                           Bad_Argument;
-                        end if;
-
-                        Compile_Only := True;
-
-                     when 'e' =>
-                        if Arg = "-eL" then
-                           Follow_Links_For_Files := True;
-                           Follow_Links_For_Dirs  := True;
-
-                        else
-                           Bad_Argument;
-                        end if;
-
-                     when 'f' =>
-                        if Arg'Length /= 2 then
-                           Bad_Argument;
-                        end if;
-
-                        Force_Deletions := True;
-                        Opt.Directories_Must_Exist_In_Projects := False;
-
-                     when 'F' =>
-                        if Arg'Length /= 2 then
-                           Bad_Argument;
-                        end if;
-
-                        Full_Path_Name_For_Brief_Errors := True;
-
-                     when 'h' =>
-                        if Arg'Length /= 2 then
-                           Bad_Argument;
-                        end if;
-
-                        Display_Copyright;
-                        Usage;
-
-                     when 'n' =>
-                        if Arg'Length /= 2 then
-                           Bad_Argument;
-                        end if;
-
-                        Do_Nothing := True;
-
-                     when 'P' =>
-                        if Project_File_Name /= null then
-                           Fail_Program (Project_Tree, "multiple -P switches");
-                        end if;
-
-                        if Arg'Length > 2 then
-                           declare
-                              Prj : constant String := Arg (3 .. Arg'Last);
-                           begin
-                              if Prj'Length > 1
-                                and then Prj (Prj'First) = '='
-                              then
-                                 Project_File_Name :=
-                                   new String'
-                                     (Prj (Prj'First + 1 ..  Prj'Last));
-                              else
-                                 Project_File_Name := new String'(Prj);
-                              end if;
-                           end;
-
-                        else
-                           if Index = Last then
-                              Fail_Program
-                                (Project_Tree,
-                                 "no project specified after -P");
-                           end if;
-
-                           Index := Index + 1;
-                           Project_File_Name := new String'(Argument (Index));
-                        end if;
-
-                     when 'q' =>
-                        if Arg'Length /= 2 then
-                           Bad_Argument;
-                        end if;
-
-                        Quiet_Output := True;
-
-                     when 'r' =>
-                        if Arg'Length /= 2 then
-                           Bad_Argument;
-                        end if;
-
-                        All_Projects := True;
-
-                     when 'v' =>
-                        if Arg = "-v" then
-                           Verbose_Mode := True;
-
-                        elsif Arg = "-vP0" then
-                           Current_Verbosity := GPR.Default;
-
-                        elsif Arg = "-vP1" then
-                           Current_Verbosity := GPR.Medium;
-
-                        elsif Arg = "-vP2" then
-                           Current_Verbosity := GPR.High;
-
-                        else
-                           Bad_Argument;
-                        end if;
-
-                     when 'X' =>
-                        if Arg'Length = 2 then
-                           Bad_Argument;
-                        end if;
-
-                        declare
-                           Ext_Asgn : constant String := Arg (3 .. Arg'Last);
-                           Start    : Positive := Ext_Asgn'First;
-                           Stop     : Natural  := Ext_Asgn'Last;
-                           OK       : Boolean  := True;
-
-                        begin
-                           if Ext_Asgn (Start) = '"' then
-                              if Ext_Asgn (Stop) = '"' then
-                                 Start := Start + 1;
-                                 Stop  := Stop - 1;
-                              else
-                                 OK := False;
-                              end if;
-                           end if;
-
-                           if not OK
-                             or else not GPR.Ext.Check
-                               (Root_Environment.External,
-                                Declaration => Ext_Asgn (Start .. Stop))
-                           then
-                              Fail_Program
-                                (Project_Tree,
-                                 "illegal external assignment '"
-                                 & Ext_Asgn & ''');
-                           end if;
-                        end;
-
-                     when others =>
-                        Bad_Argument;
-                  end case;
 
                else
                   --  The file name of a main or a project file
@@ -606,6 +240,462 @@ procedure Gprclean.Main is
          Index := Index + 1;
       end loop;
    end Parse_Cmd_Line;
+
+   --------------------
+   -- Process_Switch --
+   --------------------
+
+   procedure Process_Switch (Switch : String) is
+      pragma Assert (Switch'First = 1);
+
+      procedure Bad_Switch;
+      --  Signal bad switch and fail
+
+      ----------------
+      -- Bad_Switch --
+      ----------------
+
+      procedure Bad_Switch is
+      begin
+         if In_Package_Clean then
+            Fail_Program
+              (Project_Tree,
+               "invalid switch """ & Switch & """ in package Clean");
+
+         else
+            Fail_Program (Project_Tree, "invalid switch """ & Switch & '"');
+         end if;
+      end Bad_Switch;
+
+   begin
+      if Switch'Length = 1 then
+         Bad_Switch;
+      end if;
+
+      case Switch (2) is
+         when '-' =>
+            if In_Package_Clean then
+               Bad_Switch;
+
+            elsif Switch = "--db-" then
+               Load_Standard_Base := False;
+
+            elsif Switch = "--db" then
+               Db_Directory_Expected := True;
+
+            elsif Switch'Length > Config_Project_Option'Length
+              and then Switch (1 .. Config_Project_Option'Length) =
+              Config_Project_Option
+            then
+               if Config_Project_File_Name /= null
+                 and then
+                   (Autoconf_Specified
+                    or else Config_Project_File_Name.all /=
+                      Switch (Config_Project_Option'Length + 1
+                           .. Switch'Last))
+               then
+                  Fail_Program
+                    (Project_Tree,
+                     "several configuration switches cannot "
+                     & "be specified");
+
+               else
+
+                  Autoconfiguration := False;
+                  Config_Project_File_Name :=
+                    new String'
+                      (Switch (Config_Project_Option'Length + 1
+                       .. Switch'Last));
+               end if;
+
+            elsif Switch'Length >=  Distributed_Option'Length
+              and then
+                Switch (1 .. Distributed_Option'Length)
+              = Distributed_Option
+            then
+               Distributed_Mode := True;
+
+               declare
+                  Hosts : constant String :=
+                    Get_Slaves_Hosts (Project_Tree, Switch);
+               begin
+                  if Hosts = "" then
+                     Fail_Program
+                       (Project_Tree,
+                        "missing hosts for distributed"
+                        & " mode compilation");
+
+                  else
+                     Gprbuild.Compilation.Slave.Record_Slaves
+                       (Hosts);
+                  end if;
+               end;
+
+            elsif Switch'Length >= Slave_Env_Option'Length
+              and then
+                Switch (1 .. Slave_Env_Option'Length)
+              = Slave_Env_Option
+            then
+               if Switch = Slave_Env_Option then
+                  --  Just --slave-env, it is up to gprbuild to
+                  --  build a sensible slave environment value.
+                  Slave_Env_Auto := True;
+               else
+                  Slave_Env := new String'
+                    (Switch
+                       (Slave_Env_Option'Length + 2 .. Switch'Last));
+               end if;
+
+            elsif Switch'Length > Autoconf_Project_Option'Length
+              and then
+                Switch (1 .. Autoconf_Project_Option'Length) =
+              Autoconf_Project_Option
+            then
+               if Config_Project_File_Name /= null
+                 and then
+                   (not Autoconf_Specified
+                    or else
+                    Config_Project_File_Name.all /=
+                      Switch (Autoconf_Project_Option'Length + 1
+                           .. Switch'Last))
+               then
+                  Fail_Program
+                    (Project_Tree,
+                     "several configuration switches cannot "
+                     & "be specified");
+
+               else
+                  Config_Project_File_Name :=
+                    new String'
+                      (Switch (Autoconf_Project_Option'Length + 1
+                       .. Switch'Last));
+                  Autoconf_Specified := True;
+               end if;
+
+            elsif Switch'Length > Target_Project_Option'Length
+              and then
+                Switch (1 .. Target_Project_Option'Length) =
+              Target_Project_Option
+            then
+               if Target_Name /= null then
+                  if Target_Name.all /=
+                    Switch (Target_Project_Option'Length + 1
+                         .. Switch'Last)
+                  then
+                     Fail_Program
+                       (Project_Tree,
+                        "several target switches "
+                        & "cannot be specified");
+                  end if;
+
+               else
+                  Target_Name :=
+                    new String'
+                      (Switch (Target_Project_Option'Length + 1
+                       .. Switch'Last));
+               end if;
+
+            elsif Switch'Length > RTS_Option'Length
+              and then Switch (1 .. RTS_Option'Length) = RTS_Option
+            then
+               declare
+                  Set : constant Boolean :=
+                    Runtime_Name_Set_For (Snames.Name_Ada);
+                  Old : constant String :=
+                    Runtime_Name_For (Snames.Name_Ada);
+                  RTS : constant String :=
+                    Switch (RTS_Option'Length + 1 .. Switch'Last);
+
+               begin
+                  if Set and then Old /= RTS then
+                     Fail_Program
+                       (Project_Tree,
+                        "several different run-times " &
+                          "cannot be specified");
+                  end if;
+
+                  Set_Runtime_For (Snames.Name_Ada, RTS);
+                  Set_Default_Runtime_For (Snames.Name_Ada, RTS);
+               end;
+
+            elsif Switch'Length > RTS_Language_Option'Length
+              and then Switch (1 .. RTS_Language_Option'Length) =
+              RTS_Language_Option
+            then
+               declare
+                  Language_Name : Name_Id := No_Name;
+                  RTS_Start : Natural := Switch'Last + 1;
+
+               begin
+                  for J in RTS_Language_Option'Length + 2 ..
+                    Switch'Last
+                  loop
+                     if Switch (J) = '=' then
+                        Name_Len := 0;
+                        Add_Str_To_Name_Buffer
+                          (Switch
+                             (RTS_Language_Option'Length + 1 ..
+                                  J - 1));
+                        To_Lower (Name_Buffer (1 .. Name_Len));
+                        Language_Name := Name_Find;
+                        RTS_Start := J + 1;
+                        exit;
+                     end if;
+                  end loop;
+
+                  if Language_Name = No_Name then
+                     Bad_Switch;
+
+                  else
+
+                     declare
+                        RTS : constant String :=
+                          Switch (RTS_Start .. Switch'Last);
+                        Set : constant Boolean :=
+                          Runtime_Name_Set_For (Language_Name);
+                        Old : constant String :=
+                          Runtime_Name_For (Language_Name);
+
+                     begin
+                        if Set and then Old /= RTS then
+                           Fail_Program
+                             (Project_Tree,
+                              "several different run-times cannot" &
+                                " be specified for the same language");
+
+                        else
+                           Set_Runtime_For (Language_Name, RTS);
+                           Set_Default_Runtime_For
+                             (Language_Name, RTS);
+                        end if;
+                     end;
+                  end if;
+               end;
+
+            elsif Switch'Length > Subdirs_Option'Length
+              and then
+                Switch (1 .. Subdirs_Option'Length) = Subdirs_Option
+            then
+               Subdirs :=
+                 new String'
+                   (Switch (Subdirs_Option'Length + 1 .. Switch'Last));
+
+            elsif Switch'Length >= Relocate_Build_Tree_Option'Length
+              and then Switch (1 .. Relocate_Build_Tree_Option'Length)
+              = Relocate_Build_Tree_Option
+            then
+               if Switch'Length
+                 = Relocate_Build_Tree_Option'Length
+               then
+                  Build_Tree_Dir := new String'(Get_Current_Dir);
+
+               else
+                  declare
+                     Dir : constant String := Ensure_Directory
+                       (Switch (Relocate_Build_Tree_Option'Length + 2
+                        .. Switch'Last));
+                  begin
+                     if Is_Absolute_Path (Dir) then
+                        Build_Tree_Dir := new String'(Dir);
+                     else
+                        Build_Tree_Dir :=
+                          new String'(Get_Current_Dir & Dir);
+                     end if;
+                  end;
+               end if;
+
+            elsif Switch'Length >= Root_Dir_Option'Length
+              and then Switch (1 .. Root_Dir_Option'Length)
+              = Root_Dir_Option
+            then
+               Root_Dir :=
+                 new String'
+                   (Normalize_Pathname
+                      (Switch
+                         (Root_Dir_Option'Length + 2 .. Switch'Last),
+                       Get_Current_Dir)
+                    & Dir_Separator);
+
+            elsif
+              Switch = Gpr_Build_Util.Unchecked_Shared_Lib_Imports
+            then
+               Opt.Unchecked_Shared_Lib_Imports := True;
+
+            else
+               Bad_Switch;
+            end if;
+
+         when 'a' =>
+            if In_Package_Clean then
+               Bad_Switch;
+            end if;
+
+            if Switch'Length < 4 then
+               Bad_Switch;
+            end if;
+
+            if Switch (3) = 'P' then
+               GPR.Env.Add_Directories
+                 (Root_Environment.Project_Path,
+                  Switch (4 .. Switch'Last));
+
+            else
+               Bad_Switch;
+            end if;
+
+         when 'c'    =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            Compile_Only := True;
+
+         when 'e' =>
+            if Switch = "-eL" then
+               Follow_Links_For_Files := True;
+               Follow_Links_For_Dirs  := True;
+
+            else
+               Bad_Switch;
+            end if;
+
+         when 'f' =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            Force_Deletions := True;
+            Opt.Directories_Must_Exist_In_Projects := False;
+
+         when 'F' =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            Full_Path_Name_For_Brief_Errors := True;
+
+         when 'h' =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            Display_Copyright;
+            Usage;
+
+         when 'n' =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            Do_Nothing := True;
+
+         when 'P' =>
+            if In_Package_Clean then
+               Bad_Switch;
+            end if;
+
+            if Project_File_Name /= null then
+               Fail_Program (Project_Tree, "multiple -P switches");
+            end if;
+
+            if Switch'Length > 2 then
+               declare
+                  Prj : constant String := Switch (3 .. Switch'Last);
+               begin
+                  if Prj'Length > 1
+                    and then Prj (Prj'First) = '='
+                  then
+                     Project_File_Name :=
+                       new String'
+                         (Prj (Prj'First + 1 ..  Prj'Last));
+                  else
+                     Project_File_Name := new String'(Prj);
+                  end if;
+               end;
+
+            else
+               Project_File_Name_Expected := True;
+            end if;
+
+         when 'q' =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            if not In_Package_Clean or else not Verbose_Mode then
+               Quiet_Output := True;
+            end if;
+
+         when 'r' =>
+            if Switch'Length /= 2 then
+               Bad_Switch;
+            end if;
+
+            All_Projects := True;
+
+         when 'v' =>
+            if Switch = "-v" then
+               if not In_Package_Clean or else not Quiet_Output then
+                  Verbose_Mode := True;
+               end if;
+
+            elsif In_Package_Clean then
+               Bad_Switch;
+
+            elsif Switch = "-vP0" then
+               Current_Verbosity := GPR.Default;
+
+            elsif Switch = "-vP1" then
+               Current_Verbosity := GPR.Medium;
+
+            elsif Switch = "-vP2" then
+               Current_Verbosity := GPR.High;
+
+            else
+               Bad_Switch;
+            end if;
+
+         when 'X' =>
+            if In_Package_Clean then
+               Bad_Switch;
+            end if;
+
+            if Switch'Length = 2 then
+               Bad_Switch;
+            end if;
+
+            declare
+               Ext_Asgn : constant String := Switch (3 .. Switch'Last);
+               Start    : Positive := Ext_Asgn'First;
+               Stop     : Natural  := Ext_Asgn'Last;
+               OK       : Boolean  := True;
+
+            begin
+               if Ext_Asgn (Start) = '"' then
+                  if Ext_Asgn (Stop) = '"' then
+                     Start := Start + 1;
+                     Stop  := Stop - 1;
+                  else
+                     OK := False;
+                  end if;
+               end if;
+
+               if not OK
+                 or else not GPR.Ext.Check
+                   (Root_Environment.External,
+                    Declaration => Ext_Asgn (Start .. Stop))
+               then
+                  Fail_Program
+                    (Project_Tree,
+                     "illegal external assignment '"
+                     & Ext_Asgn & ''');
+               end if;
+            end;
+
+         when others =>
+            Bad_Switch;
+      end case;
+   end Process_Switch;
 
    -----------
    -- Usage --
@@ -682,8 +772,6 @@ procedure Gprclean.Main is
       end if;
    end Usage;
 
-   User_Project_Node : Project_Node_Id;
-
 begin
    --  Do the necessary initializations
 
@@ -691,6 +779,7 @@ begin
 
    --  Parse the command line, getting the switches and the executable names
 
+   In_Package_Clean := False;
    Parse_Cmd_Line;
 
    GPR.Env.Initialize_Default_Project_Path
@@ -801,6 +890,10 @@ begin
          """" & Project_File_Name.all & """ processing failed",
          Flush_Messages => User_Project_Node /= Empty_Project_Node);
    end if;
+
+   --  Get the switches from package Clean of main project, if any
+
+   Compute_Clean_Switches;
 
    --  Update info on all sources
 

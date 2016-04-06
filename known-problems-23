@@ -131,3 +131,12 @@ KP-23-OB09-005 Crash when project path is too large
   Status:     This was fixed in 17 on 2015-11-09
 
   Workaround: Reduce the number of directories in the project path.
+
+KP-23-OA09-019 Switches in package Clean not taken into account
+
+  Problem:    gprclean does not take into account the Switches in package
+              Clean of the main project.
+
+  Status:     This was fixed in 17 on 2016-04-06
+
+  Workaround: Use only switches on the command line.
