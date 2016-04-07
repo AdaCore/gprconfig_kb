@@ -43,11 +43,6 @@ package GPR.Util is
    procedure Write_Program_Name;
    --  Display the name of the executable in error mesages
 
-   function Contains_Files (Dir_Path : String) return Boolean;
-   --  Check if a directory contains regular files.
-   --  If the directory does not exist or there is an exception raised for
-   --  any reason, return True.
-
    --------------
    -- Closures --
    --------------

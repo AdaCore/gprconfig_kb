@@ -5558,8 +5558,6 @@ package body GPR.Nmsc is
          Prev_Rank : Number_List_Index;
          Element   : String_Element;
 
-         Path_Name : constant String := Get_Name_String (Path.Name);
-
       begin
          Prev      := Nil_String;
          Prev_Rank := No_Number_List;
@@ -5577,14 +5575,6 @@ package body GPR.Nmsc is
          --  The directory is in the list if List is not Nil_String
 
          if not Remove_Source_Dirs and then List = Nil_String then
-            --  Do not include the directory if it does not contain any
-            --  regular file, when No_Empty_Source_Dirs is False.
-
-            if not No_Empty_Source_Dirs
-              or else Contains_Files (Path_Name)
-            then
-               --  Do not include the directory if it does not contain any
-
                Debug_Output
                  ("adding source dir=", Name_Id (Path.Display_Name));
 
@@ -5627,7 +5617,7 @@ package body GPR.Nmsc is
                  Number_List_Table.Last (Shared.Number_Lists);
                Shared.Number_Lists.Table (Last_Src_Dir_Rank) :=
                  (Number => Rank, Next => No_Number_List);
-            end if;
+
          elsif Remove_Source_Dirs and then List /= Nil_String then
 
             --  Remove source dir if present
