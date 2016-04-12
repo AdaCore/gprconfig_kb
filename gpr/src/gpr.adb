@@ -1422,6 +1422,15 @@ package body GPR is
       end if;
    end Free;
 
+   ------------------------------
+   -- Languages_Are_Restricted --
+   ------------------------------
+
+   function Languages_Are_Restricted return Boolean is
+   begin
+      return Restricted_Languages /= null;
+   end Languages_Are_Restricted;
+
    -----------
    -- Reset --
    -----------
