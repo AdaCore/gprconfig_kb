@@ -3094,7 +3094,7 @@ package body GPR.Nmsc is
                Project_2 := Project_2.Extends;
             end loop Big_Loop;
 
-            if Source = No_Source then
+            if Source = No_Source and then not Languages_Are_Restricted then
                Error_Msg_File_1 := File_Name_Type (Element.Value);
                Error_Msg_Name_1 := Project.Name;
 
@@ -7405,9 +7405,11 @@ package body GPR.Nmsc is
 
          if Language = No_Language_Index then
 
-            --  A file name in a list must be a source of a language
+            --  A file name in a list must be a source of a language.
 
-            if Data.Flags.Error_On_Unknown_Language and then Name_Loc.Found
+            if  Data.Flags.Error_On_Unknown_Language
+                and then not Languages_Are_Restricted
+                and then Name_Loc.Found
             then
                Error_Msg_File_1 := File_Name;
                Error_Msg

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---            Copyright (C) 2006-2015, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2016, Free Software Foundation, Inc.       --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1263,10 +1263,7 @@ package body GPR.Conf is
          Count := 0;
          Name  := Language_Htable.Get_First;
          while Name /= No_Name loop
-            if (CodePeer_Mode and then Name = Name_Ada)
-              or else
-               (not CodePeer_Mode and then Is_Allowed_Language (Name))
-            then
+            if not CodePeer_Mode or else Name = Name_Ada then
                Count := Count + 1;
 
                --  Check if IDE'Compiler_Command is declared for the language.

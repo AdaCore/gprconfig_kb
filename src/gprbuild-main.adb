@@ -59,8 +59,6 @@ procedure Gprbuild.Main is
 
    use Gpr_Util.Knowledge;
 
-   There_Are_Restricted_Languages : Boolean := False;
-
    CodePeer_String : constant String := "codepeer";
    --  Used in CopePeer mode for the target and the subdirs
 
@@ -1088,7 +1086,6 @@ procedure Gprbuild.Main is
                   if Finish > Start then
                      Add_Restricted_Language (Arg (Start .. Finish - 1));
                      Processed := True;
-                     There_Are_Restricted_Languages := True;
                   end if;
 
                   Start := Finish + 1;
@@ -1704,7 +1701,7 @@ procedure Gprbuild.Main is
       end;
 
       if CodePeer_Mode then
-         if There_Are_Restricted_Languages then
+         if Languages_Are_Restricted then
             Remove_All_Restricted_Languages;
          end if;
 
@@ -1717,7 +1714,7 @@ procedure Gprbuild.Main is
             Opt.Bind_Only    := True;
          end if;
 
-      elsif There_Are_Restricted_Languages then
+      elsif Languages_Are_Restricted then
          Opt.Compile_Only := True;
          Opt.Bind_Only    := False;
          Opt.Link_Only    := False;

@@ -286,7 +286,7 @@ package GPR is
    Project_Objects_Path_File : constant String := "ADA_PRJ_OBJECTS_FILE";
 
    procedure Add_Restricted_Language (Name : String);
-   --  Call by gprbuild for each language specify by switch
+   --  Call by gprbuild for each language specified by switch
    --  --restricted-to-languages=.
 
    procedure Remove_All_Restricted_Languages;
@@ -296,6 +296,9 @@ package GPR is
    function Is_Allowed_Language (Name : Name_Id) return Boolean;
    --  Returns True if --restricted-to-languages= is not used or if Name
    --  is one of the restricted languages.
+
+   function Languages_Are_Restricted return Boolean;
+   --  Returns True iff the list of restricted languages is not empty.
 
    All_Other_Names : constant Name_Id := Name_Id'Last;
    --  Name used to replace others as an index of an associative array
