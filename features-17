@@ -36,6 +36,13 @@ NF-17-P115-020 GPRslave can now be pinged (2016-01-18)
    (version, UTC time, hash) about the slave if running. This can be used
    by application for checking available slaves.
 
+NF-17-P114-005 Temporary config project with autoconfiguration (2016-04-13)
+
+   The Project Manager now creates a temporary configuration project file
+   when in auto-configuration. This file is deleted when the tool terminates.
+   This allows several project-aware tools invocations to work in parallel
+   with the same object directory.
+
 NF-17-P112-018 GPRbuild distributed ignore Mercurial metadata (2016-01-12)
 
    The Mercurial metadata directory has been added into the excluded

@@ -973,45 +973,45 @@ package body GPR.Conf is
             Args (1) := new String'("--batch");
             Args (2) := new String'("-o");
 
-            --  If no config file was specified, set the auto.cgpr one
+            --  If no config file was specified, create a temporary one
 
             if Conf_File_Name'Length = 0 then
-               if Obj_Dir_Exists and then Is_Writable_File (Obj_Dir) then
-                  Args (3) := new String'(Obj_Dir & Auto_Cgpr);
+               declare
+                  Path_FD   : File_Descriptor;
+                  Path_Name : Path_Name_Type;
+                  Current_Dir : constant String := Current_Directory;
 
-               else
-                  declare
-                     Path_FD   : File_Descriptor;
-                     Path_Name : Path_Name_Type;
+               begin
+                  --  If the object directory exists, make it the current
+                  --  working directory, so that if TEMPDIR is not set,
+                  --  the config project file will be created in the
+                  --  object directory.
 
-                  begin
-                     GPR.Env.Create_Temp_File
-                       (Shared    => Project_Tree.Shared,
-                        Path_FD   => Path_FD,
-                        Path_Name => Path_Name,
-                        File_Use  => "configuration file");
+                  if Obj_Dir_Exists then
+                     Set_Directory (Obj_Dir);
+                  end if;
 
-                     if Path_FD /= Invalid_FD then
-                        declare
-                           Temp_Dir : constant String :=
-                                        Containing_Directory
-                                          (Get_Name_String (Path_Name));
-                        begin
-                           Close (Path_FD);
-                           Args (3) :=
-                             new String'(Temp_Dir &
-                                         Directory_Separator &
-                                         Auto_Cgpr);
-                           Delete_File (Get_Name_String (Path_Name));
-                        end;
+                  GPR.Env.Create_Temp_File
+                    (Shared    => Project_Tree.Shared,
+                     Path_FD   => Path_FD,
+                     Path_Name => Path_Name,
+                     File_Use  => "configuration project");
 
-                     else
-                        --  We'll have an error message later on
+                  if Path_FD /= Invalid_FD then
+                     Close (Path_FD);
+                     Args (3) := new String'(Get_Name_String (Path_Name));
 
-                        Args (3) := new String'(Obj_Dir & Auto_Cgpr);
-                     end if;
-                  end;
-               end if;
+                  else
+                     --  We'll have an error message later on
+
+                     Args (3) := new String'(Obj_Dir & Auto_Cgpr);
+                  end if;
+
+                  if Obj_Dir_Exists then
+                     Set_Directory (Current_Dir);
+                  end if;
+               end;
+
             else
                Args (3) := Conf_File_Name;
             end if;
