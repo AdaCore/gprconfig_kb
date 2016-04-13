@@ -979,7 +979,13 @@ begin
    end;
 
    if Delete_Autoconf_File then
-      Delete ("", Configuration_Project_Path.all);
+      declare
+         Quiet : constant Boolean := Quiet_Output;
+      begin
+         Quiet_Output := True;
+         Delete ("", Configuration_Project_Path.all);
+         Quiet_Output := Quiet;
+      end;
    end if;
 
    --  In verbose mode, if Delete has not been called, indicate that
