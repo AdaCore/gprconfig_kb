@@ -978,7 +978,7 @@ begin
       For_All (Main_Project, Project_Tree);
    end;
 
-   if Delete_Autoconf_File then
+   if Delete_Autoconf_File and then not Do_Nothing then
       declare
          Quiet : constant Boolean := Quiet_Output;
       begin
