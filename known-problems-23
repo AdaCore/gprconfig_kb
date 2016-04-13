@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P412-026 Variable in case construction in package
+
+  Problem:    The Project Manager does not allow a variable declaration inside
+              a case construction in a package if the variable has been
+              declared at the project level.
+
+  Status:     This was fixed in 17 on 2016-04-14
+
+  Workaround: Declare the variable in the package before the case construction.
+
 KP-23-P218-003 gprclean not cleaning .ci files
 
   Problem:    gprclean was not cleaning the .ci files in the object

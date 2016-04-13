@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -69,6 +69,13 @@ package body GPR.Dect is
       Current_Package : Project_Node_Id;
       Flags           : Processing_Flags);
    --  Check whether the package is valid in this project
+
+   procedure Find_Variable
+     (Variable : in out Project_Node_Id;
+      Name     : Name_Id;
+      In_Tree  : Project_Node_Tree_Ref);
+   --  Look for a Variable with the Name. If not found, Variable is
+   --  Project_Node_Tree_Ref.
 
    procedure Parse_Attribute_Declaration
      (In_Tree           : Project_Node_Tree_Ref;
@@ -306,6 +313,23 @@ package body GPR.Dect is
             end if;
       end case;
    end Check_Attribute_Allowed;
+
+   -------------------
+   -- Find_Variable --
+   -------------------
+
+   procedure Find_Variable
+     (Variable : in out Project_Node_Id;
+      Name     : Name_Id;
+      In_Tree  : Project_Node_Tree_Ref)
+   is
+   begin
+      while Present (Variable) and then
+            Name_Of (Variable, In_Tree) /= Name
+      loop
+         Variable := Next_Variable (Variable, In_Tree);
+      end loop;
+   end Find_Variable;
 
    ---------------------------------
    -- Parse_Attribute_Declaration --
@@ -611,11 +635,7 @@ package body GPR.Dect is
                            Var := First_Variable_Of (Current_Project, In_Tree);
                         end if;
 
-                        while Present (Var)
-                          and then Name_Of (Var, In_Tree) /= Token_Name
-                        loop
-                           Var := Next_Variable (Var, In_Tree);
-                        end loop;
+                        Find_Variable (Var, Token_Name, In_Tree);
 
                         if Present (Var) then
                            Error_Msg
@@ -1078,12 +1098,19 @@ package body GPR.Dect is
                           First_Variable_Of (Current_Project, In_Tree);
                      end if;
 
-                     while Present (The_Variable)
-                       and then Name_Of (The_Variable, In_Tree) /=
-                                Token_Name
-                     loop
-                        The_Variable := Next_Variable (The_Variable, In_Tree);
-                     end loop;
+                     Find_Variable (The_Variable, Token_Name, In_Tree);
+
+                     --  If inside a package and the variable is not found,
+                     --  check if it is declared at the project level.
+
+                     if No (The_Variable) and then
+                       Present (Current_Package) and then
+                       Present (Current_Project)
+                     then
+                        The_Variable :=
+                          First_Variable_Of (Current_Project, In_Tree);
+                        Find_Variable (The_Variable, Token_Name, In_Tree);
+                     end if;
 
                      --  It is an error to declare a variable in a case
                      --  construction for the first time.
@@ -1818,11 +1845,7 @@ package body GPR.Dect is
                The_Variable := First_Variable_Of (Current_Project, In_Tree);
             end if;
 
-            while Present (The_Variable)
-              and then Name_Of (The_Variable, In_Tree) /= Variable_Name
-            loop
-               The_Variable := Next_Variable (The_Variable, In_Tree);
-            end loop;
+            Find_Variable (The_Variable, Variable_Name, In_Tree);
 
             if No (The_Variable) then
                if Present (Current_Package) then
