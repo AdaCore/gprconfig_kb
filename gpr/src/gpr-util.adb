@@ -954,9 +954,11 @@ package body GPR.Util is
          loop
             The_Project_And_Tree := Projects_And_Trees_Sets.Element (Position);
 
+            --  Initialize all the Ada sources of the project tree, even if
+            --  All_Projects is False.
+
             Iter := For_Each_Source
               (In_Tree           => The_Project_And_Tree.Tree,
-               Project           => The_Project_And_Tree.Project,
                Language          => Name_Ada,
                Encapsulated_Libs => True,
                Locally_Removed   => False);
@@ -1083,10 +1085,18 @@ package body GPR.Util is
 
             Unit_Name : constant String :=
               Uname (Uname'First .. Uname'Last - 2);
+
+            Proj : Project_Id;
          begin
+            if All_Projects then
+               Proj := No_Project;
+            else
+               Proj := Project;
+            end if;
+
             Iter := For_Each_Source
               (In_Tree           => Tree,
-               Project           => Project,
+               Project           => Proj,
                Language          => Name_Ada,
                Encapsulated_Libs => True,
                Locally_Removed   => False);
