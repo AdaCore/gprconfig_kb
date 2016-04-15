@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1277,14 +1277,15 @@ package body GPR.Proc is
                      Value :=
                        GPR.Ext.Value_Of (Env.External, Name, Default);
 
+                     --  It is an error if an external reference is not found
+                     --  and there is no default.
+
                      if Value = No_Name then
-                        if not Quiet_Output then
-                           Error_Msg
-                             (Env.Flags, "?undefined external reference",
-                              Location_Of
-                                (The_Current_Term, From_Project_Node_Tree),
-                              Project);
-                        end if;
+                        Error_Msg
+                          (Env.Flags, "undefined external reference",
+                           Location_Of
+                             (The_Current_Term, From_Project_Node_Tree),
+                           Project);
 
                         Value := Empty_String;
                      end if;
