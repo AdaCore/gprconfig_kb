@@ -1462,8 +1462,8 @@ package body Gprinstall.Install is
 
          begin
             Vars := Project.Decl.Variables;
-            Var_Loop :
-            while Vars /= No_Variable loop
+
+            Var_Loop : while Vars /= No_Variable loop
                declare
                   V : constant Variable :=
                         Tree.Shared.Variable_Elements.Table (Vars);
@@ -1479,8 +1479,8 @@ package body Gprinstall.Install is
 
                   if V.Value.String_Type /= Empty_Project_Node then
                      Current := Types;
-                     Type_Loop :
-                     while Current /= null loop
+
+                     Type_Loop : while Current /= null loop
                         exit Type_Loop when
                           Current.String_Type = V.Value.String_Type;
                         Current := Current.Next;
@@ -1496,6 +1496,8 @@ package body Gprinstall.Install is
                   Vars := V.Next;
                end;
             end loop Var_Loop;
+
+            --  Output the types if any
 
             Current := Types;
             while Current /= null loop
@@ -1516,6 +1518,8 @@ package body Gprinstall.Install is
 
                Current := Current.Next;
             end loop;
+
+            --  Finaly output variables
 
             Vars := Project.Decl.Variables;
             while Vars /= No_Variable loop
