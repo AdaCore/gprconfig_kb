@@ -1504,13 +1504,467 @@ package GPR is
    -- Aggregated projects --
    -------------------------
 
+   type Project_Node_Kind is
+     (N_Project,
+      N_With_Clause,
+      N_Project_Declaration,
+      N_Declarative_Item,
+      N_Package_Declaration,
+      N_String_Type_Declaration,
+      N_Literal_String,
+      N_Attribute_Declaration,
+      N_Typed_Variable_Declaration,
+      N_Variable_Declaration,
+      N_Expression,
+      N_Term,
+      N_Literal_String_List,
+      N_Variable_Reference,
+      N_External_Value,
+      N_Attribute_Reference,
+      N_Case_Construction,
+      N_Case_Item,
+      N_Comment_Zones,
+      N_Comment);
+   --  Each node in the tree is of a Project_Node_Kind. For the signification
+   --  of the fields in each node of Project_Node_Kind, look at package
+   --  Tree_Private_Part.
+
+   subtype Variable_Node_Id is Project_Node_Id;
+   --  Used to designate a node whose expected kind is one of
+   --  N_Typed_Variable_Declaration, N_Variable_Declaration or
+   --  N_Variable_Reference.
+
+   subtype Package_Declaration_Id is Project_Node_Id;
+   --  Used to designate a node whose expected kind is N_Project_Declaration
+
+   Packages_Initial   : constant := 10;
+   Packages_Increment : constant := 100;
+
+   Package_Node_Low_Bound  : constant := 0;
+   Package_Node_High_Bound : constant := 099_999_999;
+
+   type Pkg_Node_Id is
+     range Package_Node_Low_Bound .. Package_Node_High_Bound;
+   --  Index type for table Package_Attributes in the body
+
+   type Package_Node_Id is record
+      Value : Pkg_Node_Id := Package_Node_Low_Bound;
+   end record;
+   --  Full declaration of self-initialized private type
+
+   Empty_Pkg       : constant Pkg_Node_Id     := Package_Node_Low_Bound;
+   Empty_Package   : constant Package_Node_Id := (Value => Empty_Pkg);
+   Unknown_Pkg     : constant Pkg_Node_Id     := Package_Node_High_Bound;
+   Unknown_Package : constant Package_Node_Id := (Value => Unknown_Pkg);
+
+   -------------------------------
+   -- Restricted Access Section --
+   -------------------------------
+
+   package Tree_Private_Part is
+
+      --  This is conceptually in the private part. However, for efficiency,
+      --  some packages are accessing it directly.
+
+      type Project_Node_Record is record
+
+         Kind : Project_Node_Kind;
+
+         Qualifier : Project_Qualifier := Unspecified;
+
+         Location : Source_Ptr := No_Location;
+
+         Directory : Path_Name_Type := No_Path;
+         --  Only for N_Project
+
+         Display_Name : Name_Id := No_Name;
+         --  Only for N_Project
+
+         Expr_Kind : Variable_Kind := Undefined;
+         --  See below for what Project_Node_Kind it is used
+
+         Variables : Variable_Node_Id := Empty_Project_Node;
+         --  First variable in a project or a package
+
+         Packages : Package_Declaration_Id := Empty_Project_Node;
+         --  First package declaration in a project
+
+         Pkg_Id : Package_Node_Id := Empty_Package;
+         --  Only used for N_Package_Declaration
+         --
+         --  The component Pkg_Id is an entry into the table Package_Attributes
+         --  (in Prj.Attr). It is used to indicate all the attributes of the
+         --  package with their characteristics.
+         --
+         --  The tables Prj.Attr.Attributes and Prj.Attr.Package_Attributes
+         --  are built once and for all through a call (from Prj.Initialize)
+         --  to procedure Prj.Attr.Initialize. It is never modified after that.
+
+         Name : Name_Id := No_Name;
+         --  See below for what Project_Node_Kind it is used
+
+         Src_Index : Int := 0;
+         --  Index of a unit in a multi-unit source.
+         --  Only for some N_Attribute_Declaration and N_Literal_String.
+
+         Path_Name : Path_Name_Type := No_Path;
+         --  See below for what Project_Node_Kind it is used
+
+         Value : Name_Id := No_Name;
+         --  See below for what Project_Node_Kind it is used
+
+         Default : Attribute_Default_Value := Empty_Value;
+         --  Only used in N_Attribute_Reference
+
+         Field1 : Project_Node_Id := Empty_Project_Node;
+         --  See below the meaning for each Project_Node_Kind
+
+         Field2 : Project_Node_Id := Empty_Project_Node;
+         --  See below the meaning for each Project_Node_Kind
+
+         Field3 : Project_Node_Id := Empty_Project_Node;
+         --  See below the meaning for each Project_Node_Kind
+
+         Field4 : Project_Node_Id := Empty_Project_Node;
+         --  See below the meaning for each Project_Node_Kind
+
+         Flag1 : Boolean := False;
+         --  This flag is significant only for:
+         --
+         --    N_Attribute_Declaration and N_Attribute_Reference
+         --      Indicates for an associative array attribute, that the
+         --      index is case insensitive.
+         --
+         --    N_Comment
+         --      Indicates that the comment is preceded by an empty line.
+         --
+         --    N_Project
+         --      Indicates that there are comments in the project source that
+         --      cannot be kept in the tree.
+         --
+         --    N_Project_Declaration
+         --      Indicates that there are unkept comments in the project.
+         --
+         --    N_With_Clause
+         --      Indicates that this is not the last with in a with clause.
+         --      Set for "A", but not for "B" in with "B"; and with "A", "B";
+
+         Flag2 : Boolean := False;
+         --  This flag is significant only for:
+         --
+         --    N_Project
+         --      Indicates that the project "extends all" another project.
+         --
+         --    N_Comment
+         --      Indicates that the comment is followed by an empty line.
+         --
+         --    N_With_Clause
+         --      Indicates that the originally imported project is an extending
+         --      all project.
+
+         Comments : Project_Node_Id := Empty_Project_Node;
+         --  For nodes other that N_Comment_Zones or N_Comment, designates the
+         --  comment zones associated with the node.
+         --
+         --  For N_Comment_Zones, designates the comment after the "end" of
+         --  the construct.
+         --
+         --  For N_Comment, designates the next comment, if any.
+
+      end record;
+
+      --  type Project_Node_Kind is
+
+      --   (N_Project,
+      --    --  Name:      project name
+      --    --  Path_Name: project path name
+      --    --  Expr_Kind: Undefined
+      --    --  Field1:    first with clause
+      --    --  Field2:    project declaration
+      --    --  Field3:    first string type
+      --    --  Field4:    parent project, if any
+      --    --  Value:     extended project path name (if any)
+
+      --    N_With_Clause,
+      --    --  Name:      imported project name
+      --    --  Path_Name: imported project path name
+      --    --  Expr_Kind: Undefined
+      --    --  Field1:    project node
+      --    --  Field2:    next with clause
+      --    --  Field3:    project node or empty if "limited with"
+      --    --  Field4:    not used
+      --    --  Value:     literal string withed
+
+      --    N_Project_Declaration,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Undefined
+      --    --  Field1:    first declarative item
+      --    --  Field2:    extended project
+      --    --  Field3:    extending project
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Declarative_Item,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Undefined
+      --    --  Field1:    current item node
+      --    --  Field2:    next declarative item
+      --    --  Field3:    not used
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Package_Declaration,
+      --    --  Name:      package name
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Undefined
+      --    --  Field1:    project of renamed package (if any)
+      --    --  Field2:    first declarative item
+      --    --  Field3:    next package in project
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_String_Type_Declaration,
+      --    --  Name:      type name
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Undefined
+      --    --  Field1:    first literal string
+      --    --  Field2:    next string type
+      --    --  Field3:    project node
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Literal_String,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Single
+      --    --  Field1:    next literal string
+      --    --  Field2:    not used
+      --    --  Field3:    not used
+      --    --  Field4:    not used
+      --    --  Value:     string value
+
+      --    N_Attribute_Declaration,
+      --    --  Name:      attribute name
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: attribute kind
+      --    --  Field1:    expression
+      --    --  Field2:    project of full associative array
+      --    --  Field3:    package of full associative array
+      --    --  Field4:    not used
+      --    --  Value:     associative array index
+      --    --             (if an associative array element)
+
+      --    N_Typed_Variable_Declaration,
+      --    --  Name:      variable name
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Single
+      --    --  Field1:    expression
+      --    --  Field2:    type of variable (N_String_Type_Declaration)
+      --    --  Field3:    next variable
+      --    --  Field4:    project node
+      --    --  Value:     not used
+
+      --    N_Variable_Declaration,
+      --    --  Name:      variable name
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: variable kind
+      --    --  Field1:    expression
+      --    --  Field2:    not used
+      --    --             Field3 is used for next variable, instead of Field2,
+      --    --             so that it is the same field for
+      --    --             N_Variable_Declaration and
+      --    --             N_Typed_Variable_Declaration
+      --    --  Field3:    next variable
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Expression,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: expression kind
+      --    --  Field1:    first term
+      --    --  Field2:    next expression in list
+      --    --  Field3:    not used
+      --    --  Value:     not used
+
+      --    N_Term,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: term kind
+      --    --  Field1:    current term
+      --    --  Field2:    next term in the expression
+      --    --  Field3:    not used
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Literal_String_List,
+      --    --  Designates a list of string expressions between brackets
+      --    --  separated by commas. The string expressions are not necessarily
+      --    --  literal strings.
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: List
+      --    --  Field1:    first expression
+      --    --  Field2:    not used
+      --    --  Field3:    not used
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Variable_Reference,
+      --    --  Name:      variable name
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: variable kind
+      --    --  Field1:    project (if specified)
+      --    --  Field2:    package (if specified)
+      --    --  Field3:    type of variable (N_String_Type_Declaration), if any
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_External_Value,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Single
+      --    --  Field1:    Name of the external reference (literal string)
+      --    --  Field2:    Default (literal string)
+      --    --  Field3:    not used
+      --    --  Value:     not used
+
+      --    N_Attribute_Reference,
+      --    --  Name:      attribute name
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: attribute kind
+      --    --  Field1:    project
+      --    --  Field2:    package (if attribute of a package)
+      --    --  Field3:    not used
+      --    --  Field4:    not used
+      --    --  Value:     associative array index
+      --    --             (if an associative array element)
+
+      --    N_Case_Construction,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: Undefined
+      --    --  Field1:    case variable reference
+      --    --  Field2:    first case item
+      --    --  Field3:    not used
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Case_Item
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: not used
+      --    --  Field1:    first choice (literal string), or Empty_Node
+      --    --             for when others
+      --    --  Field2:    first declarative item
+      --    --  Field3:    next case item
+      --    --  Field4:    not used
+      --    --  Value:     not used
+
+      --    N_Comment_zones
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: not used
+      --    --  Field1:    comment before the construct
+      --    --  Field2:    comment after the construct
+      --    --  Field3:    comment before the "end" of the construct
+      --    --  Value:     end of line comment
+      --    --  Field4:    not used
+      --    --  Comments:  comment after the "end" of the construct
+
+      --    N_Comment
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: not used
+      --    --  Field1:    not used
+      --    --  Field2:    not used
+      --    --  Field3:    not used
+      --    --  Field4:    not used
+      --    --  Value:     comment
+      --    --  Flag1:     comment is preceded by an empty line
+      --    --  Flag2:     comment is followed by an empty line
+      --    --  Comments:  next comment
+
+      package Project_Node_Table is new
+        GNAT.Dynamic_Tables
+          (Table_Component_Type => Project_Node_Record,
+           Table_Index_Type     => Project_Node_Id,
+           Table_Low_Bound      => First_Project_Node_Id,
+           Table_Initial        => Project_Nodes_Initial,
+           Table_Increment      => Project_Nodes_Increment);
+      --  Table contains the syntactic tree of project data from project files
+
+      type Project_Name_And_Node is record
+         Name : Name_Id;
+         --  Name of the project
+
+         Node : Project_Node_Id;
+         --  Node of the project in table Project_Nodes
+
+         Resolved_Path : Path_Name_Type;
+         --  Resolved and canonical path of a real project file.
+         --  No_Name in case of virtual projects.
+
+         Extended : Boolean;
+         --  True when the project is being extended by another project
+
+         From_Extended : Boolean;
+         --  True when the project is only imported by projects that are
+         --  extended.
+
+         Proj_Qualifier : Project_Qualifier;
+         --  The project qualifier of the project, if any
+      end record;
+
+      No_Project_Name_And_Node : constant Project_Name_And_Node :=
+        (Name           => No_Name,
+         Node           => Empty_Project_Node,
+         Resolved_Path  => No_Path,
+         Extended       => True,
+         From_Extended  => False,
+         Proj_Qualifier => Unspecified);
+
+      package Projects_Htable is new GNAT.Dynamic_HTables.Simple_HTable
+        (Header_Num => Header_Num,
+         Element    => Project_Name_And_Node,
+         No_Element => No_Project_Name_And_Node,
+         Key        => Name_Id,
+         Hash       => Hash,
+         Equal      => "=");
+      --  This hash table contains a mapping of project names to project nodes.
+      --  Note that this hash table contains only the nodes whose Kind is
+      --  N_Project. It is used to find the node of a project from its name,
+      --  and to verify if a project has already been parsed, knowing its name.
+
+   end Tree_Private_Part;
+
+   type Project_Node_Tree_Data is record
+      Project_Nodes : Tree_Private_Part.Project_Node_Table.Instance;
+      Projects_HT   : Tree_Private_Part.Projects_Htable.Instance;
+
+      Incomplete_With : Boolean := False;
+      --  Set to True if the projects were loaded with the flag
+      --  Ignore_Missing_With set to True, and there were indeed some with
+      --  statements that could not be resolved
+   end record;
+
+   type Project_Node_Tree_Ref is access all Project_Node_Tree_Data;
+   --  Type to designate a project node tree, so that several project node
+   --  trees can coexist in memory.
+
+   procedure Free (Proj : in out Project_Node_Tree_Ref);
+   --  Free memory used by Prj
+
    type Aggregated_Project;
    type Aggregated_Project_List is access all Aggregated_Project;
    type Aggregated_Project is record
-      Path    : Path_Name_Type;
-      Tree    : Project_Tree_Ref;
-      Project : Project_Id;
-      Next    : Aggregated_Project_List;
+      Path      : Path_Name_Type;
+      Tree      : Project_Tree_Ref;
+      Node_Tree : Project_Node_Tree_Ref;
+      Project   : Project_Id;
+      Next      : Aggregated_Project_List;
    end record;
 
    procedure Free (List : in out Aggregated_Project_List);

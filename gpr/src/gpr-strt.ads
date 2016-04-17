@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -23,8 +23,6 @@
 ------------------------------------------------------------------------------
 
 --  This package implements parsing of string expressions in project files
-
-with GPR.Tree;  use GPR.Tree;
 
 private package GPR.Strt is
 

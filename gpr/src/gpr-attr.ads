@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -217,15 +217,6 @@ package GPR.Attr is
    -- Packages --
    --------------
 
-   type Package_Node_Id is private;
-   --  Type to refer to a package, self initialized
-
-   Empty_Package : constant Package_Node_Id;
-   --  Default value of Package_Node_Id objects
-
-   Unknown_Package : constant Package_Node_Id;
-   --  Value of an unknown package that has been found but is unknown
-
    procedure Register_New_Package (Name : String; Id : out Package_Node_Id);
    --  Add a new package. Fails if Name (the package name) is empty or is
    --  already the name of a package, and set Id to Empty_Package,
@@ -291,27 +282,7 @@ private
    -- Packages --
    --------------
 
-   Packages_Initial   : constant := 10;
-   Packages_Increment : constant := 100;
-
-   Package_Node_Low_Bound  : constant := 0;
-   Package_Node_High_Bound : constant := 099_999_999;
-
-   type Pkg_Node_Id is
-     range Package_Node_Low_Bound .. Package_Node_High_Bound;
-   --  Index type for table Package_Attributes in the body
-
-   type Package_Node_Id is record
-      Value : Pkg_Node_Id := Package_Node_Low_Bound;
-   end record;
-   --  Full declaration of self-initialized private type
-
-   Empty_Pkg       : constant Pkg_Node_Id     := Package_Node_Low_Bound;
-   Empty_Package   : constant Package_Node_Id := (Value => Empty_Pkg);
-   Unknown_Pkg     : constant Pkg_Node_Id     := Package_Node_High_Bound;
-   Unknown_Package : constant Package_Node_Id := (Value => Unknown_Pkg);
    First_Package   : constant Pkg_Node_Id     := Package_Node_Low_Bound + 1;
-
    First_Package_Node_Id  : constant Package_Node_Id :=
                               (Value => First_Package);
 

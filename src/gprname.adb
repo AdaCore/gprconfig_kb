@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                      Copyright (C) 2001-2015, AdaCore                    --
+--                      Copyright (C) 2001-2016, AdaCore                    --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -58,7 +58,7 @@ package body GPRName is
    Very_Verbose : Boolean := False;
    --  Set in call to Initialize to indicate very verbose output
 
-   Tree : constant Project_Node_Tree_Ref := new Project_Node_Tree_Data;
+   Tree : constant GPR.Project_Node_Tree_Ref := new Project_Node_Tree_Data;
    --  The project tree where the project file is parsed
 
    Root_Environment : GPR.Tree.Environment;

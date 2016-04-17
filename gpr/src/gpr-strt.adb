@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -30,6 +30,7 @@ with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Names;   use GPR.Names;
 with GPR.Scans;   use GPR.Scans;
 with GPR.Snames;
+with GPR.Tree;    use GPR.Tree;
 with GPR.Util;    use GPR.Util;
 
 package body GPR.Strt is

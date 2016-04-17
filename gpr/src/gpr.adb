@@ -391,6 +391,21 @@ package body GPR is
       return Name_Find;
    end Extend_Name;
 
+   ----------
+   -- Free --
+   ----------
+
+   procedure Free (Proj : in out Project_Node_Tree_Ref) is
+      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
+        (Project_Node_Tree_Data, Project_Node_Tree_Ref);
+   begin
+      if Proj /= null then
+         Tree_Private_Part.Project_Node_Table.Free (Proj.Project_Nodes);
+         Tree_Private_Part.Projects_Htable.Reset (Proj.Projects_HT);
+         Unchecked_Free (Proj);
+      end if;
+   end Free;
+
    -------------------------
    -- Is_Allowed_Language --
    -------------------------
@@ -1210,10 +1225,11 @@ package body GPR is
       end loop;
 
       Project.Aggregated_Projects := new Aggregated_Project'
-        (Path    => Path,
-         Project => No_Project,
-         Tree    => null,
-         Next    => Project.Aggregated_Projects);
+        (Path      => Path,
+         Project   => No_Project,
+         Tree      => null,
+         Node_Tree => null,
+         Next      => Project.Aggregated_Projects);
    end Add_Aggregated_Project;
 
    ----------
