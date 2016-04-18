@@ -24,6 +24,8 @@
 
 --  This package implements parsing of string expressions in project files
 
+with GPR.Tree;  use GPR.Tree;
+
 private package GPR.Strt is
 
    procedure Parse_String_Type_List

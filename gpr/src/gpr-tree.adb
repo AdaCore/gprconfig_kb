@@ -24,7 +24,6 @@
 
 with Ada.Unchecked_Deallocation;
 
-with GPR.Attr;  use GPR.Attr;
 with GPR.Env;   use GPR.Env;
 with GPR.Err;
 with GPR.Names; use GPR.Names;
@@ -1076,6 +1075,21 @@ package body GPR.Tree is
    begin
       GPR.Ext.Free (Self.External);
       Free (Self.Project_Path);
+   end Free;
+
+   ----------
+   -- Free --
+   ----------
+
+   procedure Free (Proj : in out Project_Node_Tree_Ref) is
+      procedure Unchecked_Free is new Ada.Unchecked_Deallocation
+        (Project_Node_Tree_Data, Project_Node_Tree_Ref);
+   begin
+      if Proj /= null then
+         Project_Node_Table.Free (Proj.Project_Nodes);
+         Projects_Htable.Reset (Proj.Projects_HT);
+         Unchecked_Free (Proj);
+      end if;
    end Free;
 
    -------------------------------
@@ -3047,10 +3061,10 @@ package body GPR.Tree is
       end if;
 
       if not Is_Config_File then
-         GPR.Tree_Private_Part.Projects_Htable.Set
+         GPR.Tree.Tree_Private_Part.Projects_Htable.Set
            (In_Tree.Projects_HT,
             Name,
-            GPR.Tree_Private_Part.Project_Name_And_Node'
+            GPR.Tree.Tree_Private_Part.Project_Name_And_Node'
               (Name           => Name,
                Resolved_Path  => No_Path,
                Node           => Project,

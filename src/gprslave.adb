@@ -1191,7 +1191,7 @@ procedure Gprslave is
          -----------------
 
          procedure Look_Driver (Project_Name : String; Is_Config : Boolean) is
-            Project_Node_Tree : GPR.Project_Node_Tree_Ref;
+            Project_Node_Tree : Project_Node_Tree_Ref;
             Project_Node      : Project_Node_Id := Empty_Project_Node;
             Project_Tree      : Project_Tree_Ref;
             Project           : Project_Id;

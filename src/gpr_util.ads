@@ -27,6 +27,7 @@ with GNAT.OS_Lib;  use GNAT.OS_Lib;
 
 with GPR.ALI;
 with GPR;       use GPR;
+with GPR.Tree;  use GPR.Tree;
 
 package Gpr_Util is
 
@@ -35,7 +36,7 @@ package Gpr_Util is
    Begin_Info : constant String := "--  BEGIN Object file/option list";
    End_Info   : constant String := "--  END Object file/option list   ";
 
-   Project_Node_Tree : constant GPR.Project_Node_Tree_Ref :=
+   Project_Node_Tree : constant Project_Node_Tree_Ref :=
                          new Project_Node_Tree_Data;
    --  This is also used to hold project path and scenario variables
 

@@ -2800,7 +2800,6 @@ package body GPR.Proc is
                List.Tree := new Project_Tree_Data (Is_Root_Tree => False);
                GPR.Initialize (List.Tree);
                List.Tree.Shared := In_Tree.Shared;
-               List.Node_Tree := Node_Tree;
 
                --  In aggregate library, aggregated projects are parsed using
                --  the aggregate library tree.
