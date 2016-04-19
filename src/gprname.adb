@@ -58,7 +58,7 @@ package body GPRName is
    Very_Verbose : Boolean := False;
    --  Set in call to Initialize to indicate very verbose output
 
-   Tree : constant Project_Node_Tree_Ref := new Project_Node_Tree_Data;
+   Tree : constant GPR.Project_Node_Tree_Ref := new Project_Node_Tree_Data;
    --  The project tree where the project file is parsed
 
    Root_Environment : GPR.Tree.Environment;

@@ -128,7 +128,7 @@ private
    Number_File_Names : Natural := 0;
    --  Number of file names found on command line and placed in File_Names
 
-   Tree : constant Project_Node_Tree_Ref := new Project_Node_Tree_Data;
+   Tree : constant GPR.Project_Node_Tree_Ref := new Project_Node_Tree_Data;
    --  The project tree where the project file is parsed
 
    Root_Environment : GPR.Tree.Environment;

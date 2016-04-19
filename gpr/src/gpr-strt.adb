@@ -30,6 +30,7 @@ with GPR.Erroutc; use GPR.Erroutc;
 with GPR.Names;   use GPR.Names;
 with GPR.Scans;   use GPR.Scans;
 with GPR.Snames;
+with GPR.Tree;    use GPR.Tree;
 with GPR.Util;    use GPR.Util;
 
 package body GPR.Strt is
