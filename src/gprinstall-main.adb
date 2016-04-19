@@ -946,7 +946,7 @@ begin
 
       Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
-      Install.Process (Project_Tree, Main_Project);
+      Install.Process (Project_Tree, Project_Node_Tree, Main_Project);
 
       if Warnings_Detected /= 0 then
          GPR.Err.Finalize;

@@ -95,8 +95,9 @@ package body Gprinstall.Install is
    -------------
 
    procedure Process
-     (Tree    : GPR.Project_Tree_Ref;
-      Project : GPR.Project_Id)
+     (Tree      : GPR.Project_Tree_Ref;
+      Node_Tree : GPR.Project_Node_Tree_Ref;
+      Project   : GPR.Project_Id)
    is
 
       Windows_Target : constant Boolean :=
@@ -1503,7 +1504,7 @@ package body Gprinstall.Install is
             while Current /= null loop
                Pretty_Print
                  (Project                            => Current.String_Type,
-                  In_Tree                            => Project_Node_Tree,
+                  In_Tree                            => Node_Tree,
                   Increment                          => 2,
                   Eliminate_Empty_Case_Constructions => False,
                   Minimize_Empty_Lines               => False,
@@ -1538,7 +1539,7 @@ package body Gprinstall.Install is
                         Write_Str
                           (Get_Name_String
                              (GPR.Tree.Name_Of
-                                (V.Value.String_Type, Project_Node_Tree)));
+                                (V.Value.String_Type, Node_Tree)));
                      end if;
 
                      Write_Str (" := " & Image (V.Value));
@@ -2616,7 +2617,7 @@ package body Gprinstall.Install is
             L : Aggregated_Project_List := Project.Aggregated_Projects;
          begin
             while L /= null loop
-               Process (L.Tree, L.Project);
+               Process (L.Tree, L.Node_Tree, L.Project);
                L := L.Next;
             end loop;
          end;
@@ -2718,7 +2719,7 @@ package body Gprinstall.Install is
                L : Project_List := Project.Imported_Projects;
             begin
                while L /= null loop
-                  Process (Tree, L.Project);
+                  Process (Tree, Node_Tree, L.Project);
 
                   L := L.Next;
                end loop;

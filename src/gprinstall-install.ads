@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -21,8 +21,9 @@ with GPR;
 package Gprinstall.Install is
 
    procedure Process
-     (Tree    : GPR.Project_Tree_Ref;
-      Project : GPR.Project_Id);
+     (Tree      : GPR.Project_Tree_Ref;
+      Node_Tree : GPR.Project_Node_Tree_Ref;
+      Project   : GPR.Project_Id);
    --  Install Project and possibly all imported projects depending on the
    --  options.
 
