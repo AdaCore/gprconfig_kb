@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -642,7 +642,7 @@ procedure Gprinstall.Main is
 
       Opt.Directories_Must_Exist_In_Projects := not Sources_Only;
 
-      --  Check consistency of out-of-tree build options.
+      --  Check consistency of out-of-tree build options
 
       if Root_Dir /= null and then Build_Tree_Dir = null then
          Fail_Program
