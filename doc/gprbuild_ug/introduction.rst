@@ -36,3 +36,8 @@ The other GPR tools are described in :ref:`GPRbuild_Companion_Tools`:
 
   Naming scheme generator
   (see :ref:`Specifying a Naming Scheme with GPRname<Specifying_a_Naming_Scheme_with_GPRname>`).
+
+* :samp:`GPRls`
+
+  Library browser
+  (see :ref:`The Library Browser GPRls<The_Library_Browser_GPRls>`).

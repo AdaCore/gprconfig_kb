@@ -27,6 +27,8 @@ gpr_version_spec = os.path.join(root_source_dir,
                                 '../src', 'gpr_version.ads')
 texi_fsf = True  # Set to False when FSF doc is switched to sphinx by default
 
+numfig = True    # Allow automatic numbering of figures
+
 with open(gpr_version_spec, 'rb') as fd:
     gpr_version_content = fd.read()
 
