@@ -1532,6 +1532,9 @@ package body Gprbuild.Post_Compile is
          procedure Find_All_Languages is new
            For_Every_Project_Imported (Boolean, Find_Languages);
 
+         procedure Get_Directory;
+         --  Get a directory for one language
+
          procedure Get_Languages;
          --  Put in Langs the languages of the project tree rooted at project
          --  For_Project.
@@ -1616,6 +1619,127 @@ package body Gprbuild.Post_Compile is
          Opt_List : String_List_Id;
          Opt_Elem : String_Element;
 
+         -------------------
+         -- Get_Directory --
+         -------------------
+
+         procedure Get_Directory is
+            Opt_Nmb : Natural := 0;
+
+            Args : Argument_List_Access;
+            FD : File_Descriptor;
+            Pname : Path_Name_Type;
+            Return_Code : Integer;
+            pragma Unreferenced (Return_Code);
+
+            File : Text_File;
+            Line : String (1 .. 1000);
+            Last : Natural;
+
+            Disregard : Boolean;
+            pragma Unreferenced (Disregard);
+
+         begin
+            --  Check that the compiler driver exists
+
+            if Lang_Ptr.Config.Compiler_Driver_Path = null then
+               Lang_Ptr.Config.Compiler_Driver_Path :=
+                 Locate_Exec_On_Path
+                   (Exec_Name =>
+                      Get_Name_String (Lang_Ptr.Config.Compiler_Driver));
+            end if;
+
+            if Lang_Ptr.Config.Compiler_Driver_Path /= null then
+
+               --  Count the options
+
+               while Opt_List /= Nil_String loop
+                  Opt_Elem :=
+                    Project_Tree.Shared.String_Elements.Table (Opt_List);
+                  Opt_Nmb := Opt_Nmb + 1;
+                  Opt_List := Opt_Elem.Next;
+               end loop;
+
+               Opt_List := Elem.Value.Values;
+               Opt_Nmb := 0;
+               Args := new Argument_List (1 .. Opt_Nmb);
+
+               --  Put the options in Args
+
+               while Opt_List /= Nil_String loop
+                  Opt_Elem :=
+                    Project_Tree.Shared.String_Elements.Table (Opt_List);
+                  Opt_Nmb := Opt_Nmb + 1;
+                  Args (Opt_Nmb) :=
+                    new String'(Get_Name_String (Opt_Elem.Value));
+                  Opt_List := Opt_Elem.Next;
+               end loop;
+
+               --  Create a temporary file and invoke the compiler with the
+               --  options redirecting the output to this temporary file.
+
+               Tempdir.Create_Temp_File (FD, Pname);
+               Spawn
+                 (Program_Name =>
+                    Lang_Ptr.Config.Compiler_Driver_Path.all,
+                  Args => Args.all,
+                  Output_File_Descriptor => FD,
+                  Return_Code => Return_Code);
+               Close (FD);
+               Free (Args);
+
+               --  Now read the temporary file and get the first non empty
+               --  line, if any.
+
+               Open (File, Get_Name_String (Pname));
+
+               if Is_Valid (File) then
+                  Last := 0;
+                  while not End_Of_File (File) loop
+                     Get_Line (File, Line, Last);
+                     exit when Last > 0;
+                  end loop;
+
+                  --  Get the directory name of the path
+
+                  if Last /= 0 then
+                     declare
+                        Dir : constant String :=
+                          Dir_Name (Normalize_Pathname (Line (1 .. Last)));
+
+                     begin
+
+                        --  If it is in fact a directory, put it in the
+                        --  exchange file.
+
+                        if Is_Directory (Dir) then
+                           if not Label_Issued then
+                              Put_Line
+                                (Exchange_File,
+                                 Library_Label
+                                   (Gprexch.Library_Rpath_Options));
+                              Label_Issued := True;
+                           end if;
+
+                           Put_Line (Exchange_File, Dir);
+                        end if;
+                     end;
+                  end if;
+               end if;
+
+               if Is_Valid (File) then
+                  Close (File);
+               end if;
+
+               --  Delete the temporary file, if gprbuild was not invoked
+               --  with -dn.
+
+               if not Debug_Flag_N then
+                  Delete_File (Get_Name_String (Pname), Disregard);
+               end if;
+            end if;
+         end Get_Directory;
+
       begin
          if Opt.Run_Path_Option
            and then For_Project.Config.Run_Path_Option /= No_Name_List
@@ -1657,121 +1781,7 @@ package body Gprbuild.Post_Compile is
                      --  Nothing to do if there is no options
 
                      if Opt_List /= Nil_String then
-
-                        declare
-                           Opt_Nmb : Natural := 0;
-
-                        begin
-
-                           --  Count the options
-
-                           while Opt_List /= Nil_String loop
-                              Opt_Elem :=
-                                Project_Tree.Shared.String_Elements.Table
-                                                                    (Opt_List);
-                              Opt_Nmb := Opt_Nmb + 1;
-                              Opt_List := Opt_Elem.Next;
-                           end loop;
-
-                           declare
-                              Args : Argument_List (1 .. Opt_Nmb);
-                              FD : File_Descriptor;
-                              Pname : Path_Name_Type;
-                              Return_Code : Integer;
-                              pragma Warnings (Off, Return_Code);
-
-                              File : Text_File;
-                              Line : String (1 .. 1000);
-                              Last : Natural;
-
-                              Disregard : Boolean;
-                              pragma Warnings (Off, Disregard);
-
-                           begin
-                              Opt_List := Elem.Value.Values;
-                              Opt_Nmb := 0;
-
-                              --  Put the options in Args
-
-                              while Opt_List /= Nil_String loop
-                                 Opt_Elem :=
-                                   Project_Tree.Shared.String_Elements.Table
-                                     (Opt_List);
-                                 Opt_Nmb := Opt_Nmb + 1;
-                                 Args (Opt_Nmb) :=
-                                   new String'
-                                     (Get_Name_String (Opt_Elem.Value));
-                                 Opt_List := Opt_Elem.Next;
-                              end loop;
-
-                              --  Create a temporary file and invoke the
-                              --  compiler with the options redirecting
-                              --  the output to this temporary file.
-
-                              Tempdir.Create_Temp_File (FD, Pname);
-                              Spawn
-                                (Program_Name =>
-                                   Lang_Ptr.Config.Compiler_Driver_Path.all,
-                                 Args => Args,
-                                 Output_File_Descriptor => FD,
-                                 Return_Code => Return_Code);
-                              Close (FD);
-
-                              --  Now read the temporary file and get the first
-                              --  non empty line, if any.
-
-                              Open (File, Get_Name_String (Pname));
-
-                              if Is_Valid (File) then
-                                 Last := 0;
-                                 while not End_Of_File (File) loop
-                                    Get_Line (File, Line, Last);
-                                    exit when Last > 0;
-                                 end loop;
-
-                                 --  Get the directory name of the path
-
-                                 if Last /= 0 then
-                                    declare
-                                       Dir : constant String :=
-                                         Dir_Name
-                                           (Normalize_Pathname
-                                              (Line (1 .. Last)));
-
-                                    begin
-
-                                       --  If it is in fact a directory, put it
-                                       --  in the exchange file.
-
-                                       if Is_Directory (Dir) then
-                                          if not Label_Issued then
-                                             Put_Line
-                                               (Exchange_File,
-                                                Library_Label
-                                             (Gprexch.Library_Rpath_Options));
-                                             Label_Issued := True;
-                                          end if;
-
-                                          Put_Line
-                                            (Exchange_File, Dir);
-                                       end if;
-                                    end;
-                                 end if;
-                              end if;
-
-                              if Is_Valid (File) then
-                                 Close (File);
-                              end if;
-
-                              --  Delete the temporary file, if gprbuild was
-                              --  not invoked with -dn.
-
-                              if not Debug_Flag_N then
-                                 Delete_File
-                                   (Get_Name_String (Pname), Disregard);
-                              end if;
-                           end;
-                        end;
+                           Get_Directory;
                      end if;
                   end if;
 

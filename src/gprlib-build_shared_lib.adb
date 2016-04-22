@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -23,7 +23,7 @@ separate (Gprlib)
 procedure Build_Shared_Lib is
 
    Ofiles : constant Argument_List :=
-              Argument_List (Object_Files.Table (1 .. Object_Files.Last));
+               Argument_List (Object_Files.Table (1 .. Object_Files.Last));
 
    Options : constant Argument_List :=
                Argument_List (Options_Table.Table (1 .. Options_Table.Last));
@@ -281,7 +281,12 @@ procedure Build_Shared_Lib is
          Last_Object := Last_Object_File_Index;
       end if;
 
-      --  Finally the library switches and the library options
+      --  Finally the additional switches, the library switches and the library
+      --  options.
+
+      for J in 1 .. Additional_Switches.Last loop
+         Add_Arg (Additional_Switches.Table (J));
+      end loop;
 
       for J in 1 .. Library_Switches_Table.Last loop
          Add_Arg (Library_Switches_Table.Table (J));

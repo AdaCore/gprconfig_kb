@@ -126,6 +126,14 @@ procedure Gprlib is
       Table_Increment      => 100);
    --  A table to store the object files of the library
 
+   package Additional_Switches is new GNAT.Table
+     (Table_Component_Type => String_Access,
+      Table_Index_Type     => Natural,
+      Table_Low_Bound      => 1,
+      Table_Initial        => 10,
+      Table_Increment      => 100);
+   --  A table to store switches coming from the binder generated file
+
    Last_Object_File_Index : Natural := 0;
    --  Index of the last object file in the Object_Files table. When building
    --  a Stand Alone Library, the binder generated object file will be added
@@ -1833,7 +1841,8 @@ begin
                     and then Line (9 .. Last) /= "-lgnarl"
                     and then Line (9 .. Last) /= "-lgnat"
                   then
-                     Object_Files.Append (new String'(Line (9 .. Last)));
+                     Additional_Switches.Append
+                       (new String'(Line (9 .. Last)));
                   end if;
                end loop;
             end;
