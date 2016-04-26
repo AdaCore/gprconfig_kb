@@ -91,6 +91,18 @@ KP-23-OC17-040 Index case-sensitivity for attribute Global_Compilation_Switches
   Workaround: Use the exact same language name as in the declaration in the
               project file.
 
+KP-23-OC11-012 Aggregate project and mains on the command line
+
+  Problem:    When gprbuild is invoked with an aggregate project and one
+              or several mains on the command line, all the sources of
+              the projects without a main are compiled. They should not be
+              compiled.
+
+  Status:     This was fixed in 17 on 2016-04-26
+
+  Workaround: Invoked gprbuild on the aggregated projects instead of on the
+              aggregate project.
+
 KP-23-OB30-037 GPRinstall fails installing main with specific naming
 
   Problem:    When the Main attribute was specified without extension and
