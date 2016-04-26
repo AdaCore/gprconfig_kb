@@ -1660,11 +1660,12 @@ package body Gprbuild.Post_Compile is
                   Opt_List := Opt_Elem.Next;
                end loop;
 
-               Opt_List := Elem.Value.Values;
-               Opt_Nmb := 0;
                Args := new Argument_List (1 .. Opt_Nmb);
 
                --  Put the options in Args
+
+               Opt_Nmb := 0;
+               Opt_List := Elem.Value.Values;
 
                while Opt_List /= Nil_String loop
                   Opt_Elem :=
