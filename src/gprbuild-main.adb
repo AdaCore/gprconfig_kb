@@ -77,6 +77,9 @@ procedure Gprbuild.Main is
    --  command line. Used to detect switches that are incompatible with these.
    --  Also used to prevent passing builder args to the "compiler".
 
+   Main_On_Command_Line : Boolean := False;
+   --  True if there is at least one main specified on the command line
+
    procedure Initialize;
    --  Do the necessary package intialization and process the command line
    --  arguments.
@@ -221,13 +224,21 @@ procedure Gprbuild.Main is
          Fail_Program (Project_Tree, "cannot continue");
       end if;
 
-      Queue.Insert_Project_Sources
-        (Project        => Main_Project,
-         Project_Tree   => Project_Tree,
-         Unique_Compile => Unique_Compile,
-         All_Projects =>
-            not Unique_Compile
+      --  If the main project is an aggregated project and there is at least
+      --  one main on the command line, do not add the sources of the projects
+      --  without mains to the queue.
+
+      if Main_Project.Qualifier /= Aggregate
+         or else not Main_On_Command_Line
+      then
+         Queue.Insert_Project_Sources
+           (Project        => Main_Project,
+            Project_Tree   => Project_Tree,
+            Unique_Compile => Unique_Compile,
+            All_Projects =>
+               not Unique_Compile
             or else (Unique_Compile_All_Projects or Recursive));
+      end if;
    end Add_Mains_To_Queue;
 
    -------------------------
@@ -1554,6 +1565,7 @@ procedure Gprbuild.Main is
 
                Mains.Add_Main (Arg);
                Always_Compile := True;
+               Main_On_Command_Line := True;
             end if;
          end;
 
