@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -684,7 +684,7 @@ package body GPR.Env is
          Last   : Natural;
 
       begin
-         Tempdir.Create_Temp_File (File, File_Name);
+         Create_Temp_File (In_Tree.Shared, File, File_Name, "config pragmas");
 
          if File /= Invalid_FD then
             Last := Write (File, Buffer (1)'Address, Buffer_Last);
