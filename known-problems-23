@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P427-070 Aggregated abstract and non externally built projects
+
+  Problem:    Abstract projects are allowed to be component projects of
+              aggregate projects. Also, project that declare Externally_Built
+              to be "false" are not allowed to be component projects.
+
+  Status:     This was fixed in 17 on 2016-04-27
+
+  Workaround: Do not aggregate abstract projects. Remove declaration of
+              Externally_Built is "false" in aggregated projects.
+
 KP-23-P412-026 Variable in case construction in package
 
   Problem:    The Project Manager does not allow a variable declaration inside
