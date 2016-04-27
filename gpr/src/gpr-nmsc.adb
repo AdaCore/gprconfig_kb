@@ -8661,7 +8661,8 @@ package body GPR.Nmsc is
             L : Aggregated_Project_List;
 
          begin
-            --  Check that aggregated projects are not externally built
+            --  Check that aggregated projects are neither externally built nor
+            --  abstract projects.
 
             L := Project.Aggregated_Projects;
             while L /= null loop
@@ -8673,11 +8674,24 @@ package body GPR.Nmsc is
                              Data.Tree.Shared);
                begin
                   if not Var.Default then
+                     Get_Name_String (Var.Value);
+                     To_Lower (Name_Buffer (1 .. Name_Len));
+
+                     if Name_Buffer (1 .. Name_Len) = "true" then
+                        Error_Msg_Name_1 := L.Project.Display_Name;
+                        Error_Msg
+                          (Data.Flags,
+                           "cannot aggregate externally built project %%",
+                           Var.Location, Project);
+                     end if;
+                  end if;
+
+                  if L.Project.Qualifier = Abstract_Project then
                      Error_Msg_Name_1 := L.Project.Display_Name;
-                     Error_Msg
-                       (Data.Flags,
-                        "cannot aggregate externally built project %%",
-                        Var.Location, Project);
+                        Error_Msg
+                          (Data.Flags,
+                           "cannot aggregate abstract project %%",
+                           No_Location, Project);
                   end if;
                end;
 
