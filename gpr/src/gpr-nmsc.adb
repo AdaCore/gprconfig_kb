@@ -386,6 +386,12 @@ package body GPR.Nmsc is
    --  being investigated. It has been normalized (case-folded). File_Name is
    --  the same value.
 
+   procedure Get_Object_Directory
+     (Project    : Project_Id;
+      Data       : in out Tree_Processing_Data;
+      No_Sources : Boolean := False);
+   --  Get the object directory of a project.
+
    procedure Get_Directories
      (Project : Project_Id;
       Data    : in out Tree_Processing_Data);
@@ -5486,6 +5492,125 @@ package body GPR.Nmsc is
       end if;
    end Compute_Directory_Last;
 
+   --------------------------
+   -- Get_Object_Directory --
+   --------------------------
+
+   procedure Get_Object_Directory
+     (Project    : Project_Id;
+      Data       : in out Tree_Processing_Data;
+      No_Sources : Boolean := False)
+   is
+      Shared : constant Shared_Project_Tree_Data_Access := Data.Tree.Shared;
+
+      Object_Dir  : constant Variable_Value :=
+                      Util.Value_Of
+                        (Name_Object_Dir, Project.Decl.Attributes, Shared);
+
+      Dir_Exists : Boolean;
+
+   begin
+      --  Set the object directory to its default which may be nil, if there
+      --  is no sources in the project.
+
+      if No_Sources then
+         Project.Object_Directory := No_Path_Information;
+      else
+         Project.Object_Directory := Project.Directory;
+      end if;
+
+      --  Check the object directory
+
+      if Object_Dir.Value /= Empty_String then
+         Get_Name_String (Object_Dir.Value);
+
+         if Name_Len = 0 then
+            Error_Msg
+              (Data.Flags,
+               "Object_Dir cannot be empty",
+               Object_Dir.Location, Project);
+
+         elsif Setup_Projects
+           and then No_Sources
+           and then Project.Extends = No_Project
+         then
+            --  Do not create an object directory for a non extending project
+            --  with no sources.
+
+            Locate_Directory
+              (Project,
+               File_Name_Type (Object_Dir.Value),
+               Path             => Project.Object_Directory,
+               Dir_Exists       => Dir_Exists,
+               Data             => Data,
+               Location         => Object_Dir.Location,
+               Must_Exist       => False,
+               Externally_Built => Project.Externally_Built);
+
+         else
+            --  We check that the specified object directory does exist.
+            --  However, even when it doesn't exist, we set it to a default
+            --  value. This is for the benefit of tools that recover from
+            --  errors; for example, these tools could create the non existent
+            --  directory. We always return an absolute directory name though.
+
+            Locate_Directory
+              (Project,
+               File_Name_Type (Object_Dir.Value),
+               Path             => Project.Object_Directory,
+               Create           => "object",
+               Dir_Exists       => Dir_Exists,
+               Data             => Data,
+               Location         => Object_Dir.Location,
+               Must_Exist       => False,
+               Externally_Built => Project.Externally_Built);
+
+            if not Dir_Exists
+              and then not Project.Externally_Built
+              and then not (Project.Qualifier = Abstract_Project)
+            then
+               if Opt.Directories_Must_Exist_In_Projects then
+
+                  --  The object directory does not exist, report an error if
+                  --  the project is not externally built.
+
+                  Error_Msg_File_1 :=
+                    File_Name_Type (Object_Dir.Value);
+                  Error_Or_Warning
+                    (Data.Flags, Data.Flags.Require_Obj_Dirs,
+                     "object directory { not found",
+                     Object_Dir.Location, Project);
+               end if;
+            end if;
+         end if;
+
+      elsif not No_Sources
+        and then (Subdirs /= null or else Build_Tree_Dir /= null)
+      then
+         Name_Len := 1;
+         Name_Buffer (1) := '.';
+         Locate_Directory
+           (Project,
+            Name_Find,
+            Path             => Project.Object_Directory,
+            Create           => "object",
+            Dir_Exists       => Dir_Exists,
+            Data             => Data,
+            Location         => Object_Dir.Location,
+            Externally_Built => Project.Externally_Built);
+      end if;
+
+      if Current_Verbosity = High then
+         if Project.Object_Directory = No_Path_Information then
+            Debug_Output ("no object directory");
+         else
+            Write_Attr
+              ("Object directory",
+               Get_Name_String (Project.Object_Directory.Display_Name));
+         end if;
+      end if;
+   end Get_Object_Directory;
+
    ---------------------
    -- Get_Directories --
    ---------------------
@@ -5495,10 +5620,6 @@ package body GPR.Nmsc is
       Data    : in out Tree_Processing_Data)
    is
       Shared : constant Shared_Project_Tree_Data_Access := Data.Tree.Shared;
-
-      Object_Dir  : constant Variable_Value :=
-                      Util.Value_Of
-                        (Name_Object_Dir, Project.Decl.Attributes, Shared);
 
       Exec_Dir : constant Variable_Value :=
                    Util.Value_Of
@@ -5657,105 +5778,7 @@ package body GPR.Nmsc is
    begin
       Debug_Output ("starting to look for directories");
 
-      --  Set the object directory to its default which may be nil, if there
-      --  is no sources in the project.
-
-      if No_Sources then
-         Project.Object_Directory := No_Path_Information;
-      else
-         Project.Object_Directory := Project.Directory;
-      end if;
-
-      --  Check the object directory
-
-      if Object_Dir.Value /= Empty_String then
-         Get_Name_String (Object_Dir.Value);
-
-         if Name_Len = 0 then
-            Error_Msg
-              (Data.Flags,
-               "Object_Dir cannot be empty",
-               Object_Dir.Location, Project);
-
-         elsif Setup_Projects
-           and then No_Sources
-           and then Project.Extends = No_Project
-         then
-            --  Do not create an object directory for a non extending project
-            --  with no sources.
-
-            Locate_Directory
-              (Project,
-               File_Name_Type (Object_Dir.Value),
-               Path             => Project.Object_Directory,
-               Dir_Exists       => Dir_Exists,
-               Data             => Data,
-               Location         => Object_Dir.Location,
-               Must_Exist       => False,
-               Externally_Built => Project.Externally_Built);
-
-         else
-            --  We check that the specified object directory does exist.
-            --  However, even when it doesn't exist, we set it to a default
-            --  value. This is for the benefit of tools that recover from
-            --  errors; for example, these tools could create the non existent
-            --  directory. We always return an absolute directory name though.
-
-            Locate_Directory
-              (Project,
-               File_Name_Type (Object_Dir.Value),
-               Path             => Project.Object_Directory,
-               Create           => "object",
-               Dir_Exists       => Dir_Exists,
-               Data             => Data,
-               Location         => Object_Dir.Location,
-               Must_Exist       => False,
-               Externally_Built => Project.Externally_Built);
-
-            if not Dir_Exists
-              and then not Project.Externally_Built
-              and then not (Project.Qualifier = Abstract_Project)
-            then
-               if Opt.Directories_Must_Exist_In_Projects then
-
-                  --  The object directory does not exist, report an error if
-                  --  the project is not externally built.
-
-                  Error_Msg_File_1 :=
-                    File_Name_Type (Object_Dir.Value);
-                  Error_Or_Warning
-                    (Data.Flags, Data.Flags.Require_Obj_Dirs,
-                     "object directory { not found",
-                     Object_Dir.Location, Project);
-               end if;
-            end if;
-         end if;
-
-      elsif not No_Sources
-        and then (Subdirs /= null or else Build_Tree_Dir /= null)
-      then
-         Name_Len := 1;
-         Name_Buffer (1) := '.';
-         Locate_Directory
-           (Project,
-            Name_Find,
-            Path             => Project.Object_Directory,
-            Create           => "object",
-            Dir_Exists       => Dir_Exists,
-            Data             => Data,
-            Location         => Object_Dir.Location,
-            Externally_Built => Project.Externally_Built);
-      end if;
-
-      if Current_Verbosity = High then
-         if Project.Object_Directory = No_Path_Information then
-            Debug_Output ("no object directory");
-         else
-            Write_Attr
-              ("Object directory",
-               Get_Name_String (Project.Object_Directory.Display_Name));
-         end if;
-      end if;
+      Get_Object_Directory (Project, Data, No_Sources);
 
       --  Check the exec directory
 
@@ -8715,10 +8738,8 @@ package body GPR.Nmsc is
          Check_If_Externally_Built (Project, Data);
 
          case Project.Qualifier is
-            when Aggregate =>
-               Check_Aggregated;
-
-            when Aggregate_Library =>
+            when Aggregate | Aggregate_Library =>
+               Get_Object_Directory (Project, Data);
                Check_Aggregated;
 
                if Project.Object_Directory = No_Path_Information then
