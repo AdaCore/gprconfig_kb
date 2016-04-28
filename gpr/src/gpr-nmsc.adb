@@ -3435,7 +3435,9 @@ package body GPR.Nmsc is
 
             elsif Project.Library_Kind /= Static
               and then not Lib_Standalone.Default
-              and then Get_Name_String (Lib_Standalone.Value) = "encapsulated"
+              and then
+                To_Lower (Get_Name_String (Lib_Standalone.Value)) =
+                  "encapsulated"
               and then Proj.Library_Kind /= Static
             then
                --  An encapsulated library must depend only on static libraries
@@ -3456,7 +3458,8 @@ package body GPR.Nmsc is
               and then
                 (Lib_Standalone.Default
                   or else
-                    Get_Name_String (Lib_Standalone.Value) /= "encapsulated")
+                 To_Lower (Get_Name_String (Lib_Standalone.Value)) /=
+                   "encapsulated")
             then
                Error_Msg_Name_1 := Project.Name;
                Error_Msg_Name_2 := Proj.Name;
@@ -4090,16 +4093,20 @@ package body GPR.Nmsc is
       if not Lib_Standalone.Default
         and then Project.Library_Kind = Static
       then
-         --  An standalone library must be a shared library
+         if To_Lower (Get_Name_String (Lib_Standalone.Value)) = "encapsulated"
+         then
+            --  An encapsulated library must be a shared library
 
-         Error_Msg_Name_1 := Project.Name;
+            Error_Msg_Name_1 := Project.Name;
 
-         Error_Msg
-           (Data.Flags,
-            Continuation.all &
-              "standalone library project %% must be a shared library",
-            Project.Location, Project);
-         Continuation := Continuation_String'Access;
+            Error_Msg
+              (Data.Flags,
+               Continuation.all &
+                 "encapsulated library project %%" &
+                 " must be a shared library project",
+               Project.Location, Project);
+            Continuation := Continuation_String'Access;
+         end if;
       end if;
 
       --  Check that aggregated libraries do not share the aggregate
@@ -4984,7 +4991,7 @@ package body GPR.Nmsc is
 
       if Project.Lib_Interface_ALIs = Nil_String then
          if not Lib_Standalone.Default
-           and then Get_Name_String (Lib_Standalone.Value) /= "no"
+           and then To_Lower (Get_Name_String (Lib_Standalone.Value)) /= "no"
          then
             Error_Msg
               (Data.Flags,
