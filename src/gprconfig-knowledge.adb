@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -3395,6 +3395,8 @@ package body GprConfig.Knowledge is
          Put (Output, Argument (I));
       end loop;
       New_Line (Output);
+      Put (Output, "--  from ");
+      Put (Output, Current_Directory);
       New_Line (Output);
 
       Put_Line (Output, "configuration project " & Project_Name & " is");

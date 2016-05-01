@@ -83,7 +83,8 @@ package body Gprbuild.Compile is
    --  Returns the name of a config file. Returns No_Name if there is no
    --  config file.
 
-   procedure Create_Object_Path_File (Project : Project_Id);
+   procedure Create_Object_Path_File
+     (Project : Project_Id; Shared : Shared_Project_Tree_Data_Access);
    --  Create a temporary file that contains the list of object directories
    --  in the correct order.
 
@@ -974,7 +975,9 @@ package body Gprbuild.Compile is
    -- Create_Object_Path_File --
    -----------------------------
 
-   procedure Create_Object_Path_File (Project : Project_Id) is
+   procedure Create_Object_Path_File
+     (Project : Project_Id; Shared : Shared_Project_Tree_Data_Access)
+   is
       FD   : File_Descriptor;
       Name : Path_Name_Type;
 
@@ -1024,7 +1027,7 @@ package body Gprbuild.Compile is
       pragma Warnings (Off, Status);
 
    begin
-      Tempdir.Create_Temp_File (FD, Name);
+      GPR.Env.Create_Temp_File (Shared, FD, Name, "object path file");
       Project.Object_Path_File := Name;
 
       For_All_Projects
@@ -2490,7 +2493,7 @@ package body Gprbuild.Compile is
       begin
          if List /= No_Name_List then
             if Id.Project.Object_Path_File = No_Path then
-               Create_Object_Path_File (Id.Project);
+               Create_Object_Path_File (Id.Project, Project_Tree.Shared);
             end if;
 
             while List /= No_Name_List loop

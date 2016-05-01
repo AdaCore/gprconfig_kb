@@ -820,7 +820,7 @@ begin
       Display_Paths;
 
       if No_Project_File_Specified and then Number_File_Names = 0 then
-         Exit_Program (Exit_Code => E_Success);
+         Finish_Program (Project_Tree);
       end if;
    end if;
 
@@ -1130,4 +1130,5 @@ begin
       end;
    end loop;
 
+   Finish_Program (Project_Tree);
 end Gprls.Main;

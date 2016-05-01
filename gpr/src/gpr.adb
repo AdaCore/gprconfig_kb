@@ -247,10 +247,8 @@ package body GPR is
    procedure Delete_All_Temp_Files
      (Shared : Shared_Project_Tree_Data_Access)
    is
-      Dont_Care : Boolean;
-      pragma Warnings (Off, Dont_Care);
-
-      Path : Path_Name_Type;
+      Success : Boolean;
+      Path    : Path_Name_Type;
 
    begin
       if Shared = null then
@@ -264,12 +262,26 @@ package body GPR is
             Path := Shared.Private_Part.Temp_Files.Table (Index);
 
             if Path /= No_Path then
-               if Current_Verbosity = High then
-                  Write_Line ("Removing temp file: "
-                              & Get_Name_String (Path));
-               end if;
+               declare
+                  Path_Name : constant String := Get_Name_String (Path);
+               begin
+                  if Current_Verbosity = High then
+                     Write_Line ("Removing temp file: " & Path_Name);
+                  end if;
 
-               Delete_File (Get_Name_String (Path), Dont_Care);
+                  Delete_File (Path_Name, Success);
+
+                  if not Success then
+                     if Is_Regular_File (Path_Name) then
+                        Write_Line
+                          ("Could not remove temp file " & Path_Name);
+
+                     elsif Current_Verbosity = High then
+                        Write_Line
+                          ("Temp file " & Path_Name & " already deleted");
+                     end if;
+                  end if;
+               end;
             end if;
          end loop;
 

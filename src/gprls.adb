@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                       Copyright (C) 2015, AdaCore                        --
+--                    Copyright (C) 2015-2016, AdaCore                      --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -95,11 +95,6 @@ package body Gprls is
          end if;
       end loop;
 
---        Error_Msg_Unit_1 := Units.Table (U).Uname;
---        Error_Msg_File_1 := ALIs.Table (A).Afile;
---        New_Line;
---      Error_Msg ("wrong ALI format, can't find dependency line for $ in {");
---        Exit_Program (E_Fatal);
       return No_Sdep_Id;
    end Corresponding_Sdep_Entry;
 

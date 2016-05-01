@@ -965,5 +965,8 @@ begin
 
    if Usage_Mode = Install_Mode then
       Finish_Program (Project_Tree);
+
+   else
+      Delete_All_Temp_Files (Project_Tree.Shared);
    end if;
 end Gprinstall.Main;

@@ -1538,6 +1538,11 @@ package body GPR.Conf is
 
       Auto_Generated : Boolean;
 
+      type Path_Names_Arr is array (Positive range <>) of Path_Name_Type;
+      type Path_Names_Ref is access Path_Names_Arr;
+
+      Path_Names : Path_Names_Ref := null;
+
       -------------------
       -- Add_Directory --
       -------------------
@@ -1580,7 +1585,40 @@ package body GPR.Conf is
 
       Project_Node_Tree.Incomplete_With := False;
       Env.Flags.Incomplete_Withs := False;
+
+      --  Save the temporary files, if any, and initialize the project tree
+
+      declare
+         use GPR.Temp_Files_Table;
+      begin
+         if not Opt.Keep_Temporary_Files
+           and then Project_Tree.Shared /= null
+           and then Project_Tree.Shared.Private_Part.Temp_Files.Table /= null
+           and then Temp_Files_Table.Last
+             (Project_Tree.Shared.Private_Part.Temp_Files) > 0
+         then
+            Path_Names := new Path_Names_Arr
+              (1 .. Temp_Files_Table.Last
+                 (Project_Tree.Shared.Private_Part.Temp_Files));
+
+            for J in Path_Names'Range loop
+               Path_Names (J) :=
+                 Project_Tree.Shared.Private_Part.Temp_Files.Table (J);
+            end loop;
+         end if;
+      end;
+
       GPR.Initialize (Project_Tree);
+
+      --  Put back the temporary files
+
+      if Path_Names /= null then
+         for J in Path_Names'Range loop
+            Record_Temp_File (Project_Tree.Shared, Path_Names (J));
+         end loop;
+
+         Path_Names := null;
+      end if;
 
       Main_Project := No_Project;
 
