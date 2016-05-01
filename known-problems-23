@@ -38,6 +38,18 @@ KP-23-P427-070 Aggregated abstract and non externally built projects
   Workaround: Do not aggregate abstract projects. Remove declaration of
               Externally_Built is "false" in aggregated projects.
 
+KP-23-P414-012 Failure to link shared Stand Alone Libraries
+
+  Problem:    In some cases, shared Stand Alone Libraries cannot be linked,
+              when the length of the command line is long enough so that
+              a response file is used, the linker driver is g++ and there are
+              additional switches.
+
+  Status:     This was fixed in 17 on 2016-04-26
+
+  Workaround: Reduce the length of the command line or increase the value of
+              attribute Max_Command_Line_Length.
+
 KP-23-P412-026 Variable in case construction in package
 
   Problem:    The Project Manager does not allow a variable declaration inside
