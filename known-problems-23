@@ -38,6 +38,16 @@ KP-23-P427-070 Aggregated abstract and non externally built projects
   Workaround: Do not aggregate abstract projects. Remove declaration of
               Externally_Built is "false" in aggregated projects.
 
+KP-23-P415-001 GPRinstall fails to install aggregate libraries
+
+  Problem:    When an aggregate library contains some variables, GPRinstall
+              fails to install it correctly. The installed project is not
+              usable.
+
+  Status:     This was fixed in 17 on 2016-04-19
+
+  Workaround: Install the aggregated projects one by one.
+
 KP-23-P414-012 Failure to link shared Stand Alone Libraries
 
   Problem:    In some cases, shared Stand Alone Libraries cannot be linked,
