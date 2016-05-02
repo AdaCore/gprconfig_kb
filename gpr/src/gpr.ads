@@ -809,8 +809,8 @@ package GPR is
       Runtime_Library_Dir : Name_Id := No_Name;
       --  Path name of the runtime library directory, if any
 
-      Runtime_Source_Dir : Name_Id := No_Name;
-      --  Path name of the runtime source directory, if any
+      Runtime_Source_Dirs : Name_List_Index := No_Name_List;
+      --  Path names of the runtime source directories, if any
 
       Mapping_File_Switches : Name_List_Index := No_Name_List;
       --  The option(s) to provide a mapping file to the compiler. Specified in
@@ -943,7 +943,7 @@ package GPR is
                            Object_Generated             => True,
                            Objects_Linked               => True,
                            Runtime_Library_Dir          => No_Name,
-                           Runtime_Source_Dir           => No_Name,
+                           Runtime_Source_Dirs          => No_Name_List,
                            Mapping_File_Switches        => No_Name_List,
                            Mapping_Spec_Suffix          => No_File,
                            Mapping_Body_Suffix          => No_File,

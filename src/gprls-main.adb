@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                       Copyright (C) 2015, AdaCore                        --
+--                    Copyright (C) 2015-2016, AdaCore                      --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -299,13 +299,17 @@ procedure Gprls.Main is
       Tree       : Project_Tree_Ref;
       With_State : in out Paths)
    is
-      pragma Unreferenced (Tree);
-      List : Language_Ptr := Project.Languages;
+      List    : Language_Ptr := Project.Languages;
+      Dirs    : Name_List_Index;
+      Nam_Nod : Name_Node;
    begin
       while List /= No_Language_Index loop
-         if List.Config.Runtime_Source_Dir /= No_Name then
-            Add (Get_Name_String (List.Config.Runtime_Source_Dir), With_State);
-         end if;
+         Dirs := List.Config.Runtime_Source_Dirs;
+         while Dirs /= No_Name_List loop
+            Nam_Nod := Tree.Shared.Name_Lists.Table (Dirs);
+            Add (Get_Name_String (Nam_Nod.Name), With_State);
+            Dirs := Nam_Nod.Next;
+         end loop;
 
          List := List.Next;
       end loop;

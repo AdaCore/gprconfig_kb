@@ -2722,8 +2722,38 @@ package body GPR.Nmsc is
 
                      --  Attribute Runtime_Source_Dir (<language>)
 
-                     Lang_Index.Config.Runtime_Source_Dir :=
-                       Element.Value.Value;
+                     if Lang_Index.Config.Runtime_Source_Dirs = No_Name_List
+                     then
+                        Name_List_Table.Append
+                          (Shared.Name_Lists,
+                           New_Val => (Element.Value.Value, No_Name_List));
+                        Lang_Index.Config.Runtime_Source_Dirs :=
+                          Name_List_Table.Last (Shared.Name_Lists);
+                     end if;
+
+                  elsif Current_Array.Name = Name_Runtime_Source_Dirs then
+
+                     --  Attribute Runtime_Source_Dirs (<language>)
+
+                     declare
+                        Dirs    : String_List_Id := Element.Value.Values;
+                        Elem    : String_Element;
+                     begin
+                        Lang_Index.Config.Runtime_Source_Dirs := No_Name_List;
+
+                        while Dirs /= Nil_String loop
+                           Elem := Shared.String_Elements.Table (Dirs);
+                           Name_List_Table.Append
+                          (Shared.Name_Lists,
+                           New_Val =>
+                             (Elem.Value,
+                              Lang_Index.Config.Runtime_Source_Dirs));
+                           Lang_Index.Config.Runtime_Source_Dirs :=
+                             Name_List_Table.Last (Shared.Name_Lists);
+
+                           Dirs := Elem.Next;
+                        end loop;
+                     end;
 
                   elsif Current_Array.Name = Name_Object_Generated then
                      declare

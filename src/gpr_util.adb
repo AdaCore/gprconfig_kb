@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2007-2015, AdaCore                     --
+--                     Copyright (C) 2007-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1382,8 +1382,8 @@ package body Gpr_Util is
                              Get_Name_String (Source.Path.Display_Name);
       C_Source_Path      : constant String :=
                              Get_Name_String (Source.Path.Name);
-      Runtime_Source_Dir : constant Name_Id :=
-                             Source.Language.Config.Runtime_Source_Dir;
+      Runtime_Source_Dirs : Name_List_Index :=
+                             Source.Language.Config.Runtime_Source_Dirs;
 
       Start    : Natural;
       Finish   : Natural;
@@ -1426,6 +1426,45 @@ package body Gpr_Util is
 
       procedure Cleanup;
       --  Cleanup local variables
+
+      function Check_Time_Stamps
+        (Path  : String;
+         Stamp : Time_Stamp_Type)
+         return Boolean;
+
+      -----------------------
+      -- Check_Time_Stamps --
+      -----------------------
+
+      function Check_Time_Stamps
+        (Path  : String;
+         Stamp : Time_Stamp_Type)
+         return Boolean
+      is
+      begin
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (Path);
+
+         declare
+            TS   : constant Time_Stamp_Type :=
+              File_Stamp (Path_Name_Type'(Name_Find));
+         begin
+            if TS /= Empty_Time_Stamp and then TS /= Stamp then
+               if Verbose_Mode then
+                  Put_Line ("   -> different time stamp for " & Path);
+
+                  if Debug.Debug_Flag_T then
+                     Put_Line ("   in ALI file: " & String (Stamp));
+                     Put_Line ("   actual file: " & String (TS));
+                  end if;
+               end if;
+
+               return True;
+            end if;
+         end;
+
+         return False;
+      end Check_Time_Stamps;
 
       ---------------------------
       -- Process_Makefile_Deps --
@@ -2054,43 +2093,40 @@ package body Gpr_Util is
 
                   if not Found
                      and then
-                      (Runtime_Source_Dir /= No_Name
+                      (Runtime_Source_Dirs /= No_Name_List
                        or else
                        Is_Absolute_Path (Get_Name_String (Sfile)))
                   then
-                     Name_Len := 0;
 
-                     if not Is_Absolute_Path (Get_Name_String (Sfile)) then
-                        Get_Name_String (Runtime_Source_Dir);
-                        Add_Char_To_Name_Buffer (Directory_Separator);
-                     end if;
-
-                     Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
-
-                     declare
-                        TS   : constant Time_Stamp_Type :=
-                          File_Stamp (Path_Name_Type'(Name_Find));
-                     begin
-                        if TS /= Empty_Time_Stamp
-                          and then TS /= ALI.Sdep.Table (D).Stamp
+                     if Is_Absolute_Path (Get_Name_String (Sfile)) then
+                        if Check_Time_Stamps
+                          (Get_Name_String (Sfile), ALI.Sdep.Table (D).Stamp)
                         then
-                           if Verbose_Mode then
-                              Put
-                                ("   -> different time stamp for ");
-                              Put_Line (Get_Name_String (Sfile));
-
-                              if Debug.Debug_Flag_T then
-                                 Put ("   in ALI file: ");
-                                 Put_Line
-                                   (String (ALI.Sdep.Table (D).Stamp));
-                                 Put ("   actual file: ");
-                                 Put_Line (String (TS));
-                              end if;
-                           end if;
-
                            return True;
                         end if;
-                     end;
+
+                     else
+
+                        while Runtime_Source_Dirs /= No_Name_List loop
+                           declare
+                              Nam_Nod : constant Name_Node :=
+                                Tree.Shared.Name_Lists.Table
+                                  (Runtime_Source_Dirs);
+                           begin
+
+                              if Check_Time_Stamps
+                                (Get_Name_String (Nam_Nod.Name) &
+                                   Directory_Separator &
+                                   Get_Name_String (Sfile),
+                                 ALI.Sdep.Table (D).Stamp)
+                              then
+                                 return True;
+                              end if;
+
+                              Runtime_Source_Dirs := Nam_Nod.Next;
+                           end;
+                        end loop;
+                     end if;
                   end if;
                end if;
             end loop;
@@ -2341,35 +2377,26 @@ package body Gpr_Util is
                   --  directory is defined, check if the file exists there, and
                   --  if it does, check its timestamp.
 
-                  if not Found and then Runtime_Source_Dir /= No_Name then
-                     Get_Name_String (Runtime_Source_Dir);
-                     Add_Char_To_Name_Buffer (Directory_Separator);
-                     Add_Str_To_Name_Buffer (Get_Name_String (Sfile));
-
-                     declare
-                        TS1   : constant Time_Stamp_Type :=
-                          File_Stamp (Path_Name_Type'(Name_Find));
-                     begin
-                        if TS1 /= Empty_Time_Stamp
-                          and then TS1 /= ALI.Sdep.Table (D).Stamp
-                        then
-                           if Verbose_Mode then
-                              Put
-                                ("   -> different time stamp for ");
-                              Put_Line (Get_Name_String (Sfile));
-
-                              if Debug.Debug_Flag_T then
-                                 Put ("   in ALI file: ");
-                                 Put_Line
-                                   (String (ALI.Sdep.Table (D).Stamp));
-                                 Put ("   actual file: ");
-                                 Put_Line (String (TS1));
-                              end if;
+                  if not Found and then Runtime_Source_Dirs /= No_Name_List
+                  then
+                     while Runtime_Source_Dirs /= No_Name_List loop
+                        declare
+                           Nam_Nod : constant Name_Node :=
+                                       Tree.Shared.Name_Lists.Table
+                                          (Runtime_Source_Dirs);
+                        begin
+                           if Check_Time_Stamps
+                             (Get_Name_String (Nam_Nod.Name) &
+                                Directory_Separator &
+                                Get_Name_String (Sfile),
+                              ALI.Sdep.Table (D).Stamp)
+                           then
+                              return True;
                            end if;
 
-                           return True;
-                        end if;
-                     end;
+                           Runtime_Source_Dirs := Nam_Nod.Next;
+                        end;
+                     end loop;
                   end if;
                end if;
             end loop;
