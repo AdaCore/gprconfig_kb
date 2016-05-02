@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1732,28 +1732,36 @@ package body GPR.Part is
 
                if Extended_Project_Path_Name_Id = No_Path then
 
-                  --  We could not find the project file to extend
+                  if Env.Flags.Ignore_Missing_With then
+                     In_Tree.Incomplete_With := True;
+                     Env.Flags.Incomplete_Withs := True;
 
-                  Error_Msg_Name_1 := Token_Name;
+                  else
+                     --  We could not find the project file to extend
 
-                  Error_Msg (Env.Flags, "unknown project file: %%", Token_Ptr);
+                     Error_Msg_Name_1 := Token_Name;
 
-                  --  If not in the main project file, display the import path
+                     Error_Msg
+                       (Env.Flags, "unknown project file: %%", Token_Ptr);
 
-                  if Project_Stack.Last > 1 then
-                     Error_Msg_Name_1 :=
-                       Name_Id
-                         (Project_Stack.Table (Project_Stack.Last).Path_Name);
-                     Error_Msg (Env.Flags, "\extended by %%", Token_Ptr);
+                     --  If not in the main project file, display the import
+                     --  path.
 
-                     for Index in reverse 1 .. Project_Stack.Last - 1 loop
+                     if Project_Stack.Last > 1 then
                         Error_Msg_Name_1 :=
                           Name_Id
-                            (Project_Stack.Table (Index).Path_Name);
-                        Error_Msg (Env.Flags, "\imported by %%", Token_Ptr);
-                     end loop;
-                  end if;
+                            (Project_Stack.Table
+                               (Project_Stack.Last).Path_Name);
+                        Error_Msg (Env.Flags, "\extended by %%", Token_Ptr);
 
+                        for Index in reverse 1 .. Project_Stack.Last - 1 loop
+                           Error_Msg_Name_1 :=
+                             Name_Id
+                               (Project_Stack.Table (Index).Path_Name);
+                           Error_Msg (Env.Flags, "\imported by %%", Token_Ptr);
+                        end loop;
+                     end if;
+                  end if;
                else
                   declare
                      From_Ext : Extension_Origin := None;
