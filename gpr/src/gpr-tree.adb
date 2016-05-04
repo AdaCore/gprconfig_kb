@@ -2691,6 +2691,7 @@ package body GPR.Tree is
    ---------------------------
    -- Set_Previous_End_Node --
    ---------------------------
+
    procedure Set_Previous_End_Node (To : Project_Node_Id) is
    begin
       Previous_End_Node := To;

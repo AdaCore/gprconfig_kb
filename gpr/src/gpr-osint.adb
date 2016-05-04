@@ -34,7 +34,7 @@ with GPR.Output; use GPR.Output;
 
 package body GPR.Osint is
 
-   Current_Full_Lib_Name     : File_Name_Type  := No_File;
+   Current_Full_Lib_Name : File_Name_Type  := No_File;
 
    function File_Length
      (Name : C_File_Name;
