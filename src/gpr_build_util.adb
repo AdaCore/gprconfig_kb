@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2015, AdaCore                     --
+--                     Copyright (C) 2004-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -2270,6 +2270,8 @@ package body Gpr_Build_Util is
             OK      : Boolean;
             Closure : Boolean;
 
+            Proj : Project_Id;
+
          begin
             --  Nothing to do when "-u" was specified and some files were
             --  specified on the command line
@@ -2282,6 +2284,7 @@ package body Gpr_Build_Util is
             loop
                Source := GPR.Element (Iter);
                exit when Source = No_Source;
+               Proj := Ultimate_Extending_Project_Of (Source.Project);
 
                if Is_Allowed_Language (Source.Language.Name)
                  and then Is_Compilable (Source)
@@ -2289,9 +2292,7 @@ package body Gpr_Build_Util is
                             or else Is_Extending (Project, Source.Project))
                  and then not Source.Locally_Removed
                  and then Source.Replaced_By = No_Source
-                 and then (not Source.Project.Externally_Built
-                            or else (Is_Extending (Project, Source.Project)
-                                      and then not Project.Externally_Built))
+                 and then not Proj.Externally_Built
                  and then Source.Kind /= Sep
                  and then Source.Path /= No_Path_Information
                then
