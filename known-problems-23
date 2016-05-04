@@ -80,18 +80,6 @@ KP-23-P218-003 gprclean not cleaning .ci files
 
   Workaround: Delete manually the .ci files.
 
-KP-23-P202-046 Export symbols in the BSS section when needed
-
-  Problem:    GPRbuild fails to export symbols in the BSS section
-              when building a SAL (Standalone Shared Library).
-
-  Status:     This was fixed in 17 on 2016-02-04
-
-  Workaround: Provide an explicit list of all exported symbols using the
-              Library_Symbol_File attribute. Another is to export all
-              symbols by setting the attribute Library_Symbol_Policy to
-              "unrestricted".
-
 KP-23-P125-003 Standalone library with child units installation issue
 
   Problem:    GPRinstall won't install a compilable standalone library
