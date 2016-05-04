@@ -2678,14 +2678,21 @@ package body GPR.Tree is
       In_Tree : Project_Node_Tree_Ref;
       To      : Path_Name_Type)
    is
+      Normalized : String := Get_Name_String (To);
    begin
       pragma Assert
         (Present (Node)
           and then
             (In_Tree.Project_Nodes.Table (Node).Kind = N_Project
                or else
-             In_Tree.Project_Nodes.Table (Node).Kind = N_With_Clause));
-      In_Tree.Project_Nodes.Table (Node).Path_Name := To;
+               In_Tree.Project_Nodes.Table (Node).Kind = N_With_Clause));
+
+      --  Record the path name canonical form
+
+      Canonical_Case_File_Name (Normalized);
+      Name_Len := Normalized'Length;
+      Name_Buffer (1 .. Name_Len) := Normalized;
+      In_Tree.Project_Nodes.Table (Node).Path_Name := Name_Find;
    end Set_Path_Name_Of;
 
    ---------------------------

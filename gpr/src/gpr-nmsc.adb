@@ -8537,9 +8537,10 @@ package body GPR.Nmsc is
          return "";
       else
          declare
-            R : constant String := Result.all;
+            R : String := Result.all;
          begin
             Free (Result);
+            Canonical_Case_File_Name (R);
             return R;
          end;
       end if;

@@ -2994,7 +2994,7 @@ package body GPR.Proc is
 
             begin
                while List /= null loop
-                  if List.Project.Path.Display_Name = Path then
+                  if List.Project.Path.Name = Path then
                      Project := List.Project;
                      exit;
                   end if;
