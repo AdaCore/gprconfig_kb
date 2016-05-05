@@ -185,6 +185,18 @@ KP-23-OB09-005 Crash when project path is too large
 
   Workaround: Reduce the number of directories in the project path.
 
+KP-23-OA14-025 Failure in parallel invocations of gprbuild
+
+  Problem:    When several parallel invocations of gprbuild, using the same
+              directory to store temporary files (for example with the same
+              value of environment variable TMPDIR), some of these invocations
+              may fail, because a temporary file cannot be found or has an
+              incorrect content.
+
+  Status:     This was fixed in 17 on 2016-04-05
+
+  Workaround: Repeat the invocation of gprbuild that failed.
+
 KP-23-OA09-019 Switches in package Clean not taken into account
 
   Problem:    gprclean does not take into account the Switches in package
