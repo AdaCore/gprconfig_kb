@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P503-049 Extending installed library projects
+
+  Problem:    When a project extends an installed library project, gprbuild
+              may fail to build the library for the extended project.
+
+  Status:     This was fixed in 17 on 2016-05-05
+
+  Workaround: Do not extend the installed project; copy its sources in a
+              standard project, then modify the sources.
+
 KP-23-P428-028 Static SALs and Library_Standalone is "standard"
 
   Problem:    In a static Stand Alone Library project, it is not allowed to
