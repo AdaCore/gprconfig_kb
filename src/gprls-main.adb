@@ -18,6 +18,7 @@
 
 with Ada.Characters.Handling; use Ada.Characters.Handling;
 with Ada.Command_Line;        use Ada.Command_Line;
+with Ada.Exceptions;          use Ada.Exceptions;
 with Ada.Text_IO;             use Ada.Text_IO;
 
 with GNAT.Command_Line; use GNAT.Command_Line;
@@ -790,22 +791,29 @@ begin
 
    Opt.Warning_Mode := Suppress;
 
-   Parse_Project_And_Apply_Config
-     (Main_Project               => Main_Project,
-      User_Project_Node          => User_Project_Node,
-      Config_File_Name           => Config_Project_File_Name.all,
-      Autoconf_Specified         => False,
-      Project_File_Name          => Output_Name.all,
-      Project_Tree               => Project_Tree,
-      Project_Node_Tree          => Project_Node_Tree,
-      Packages_To_Check          => Packages_To_Check,
-      Env                        => Root_Environment,
-      Allow_Automatic_Generation => True,
-      Automatically_Generated    => Delete_Autoconf_File,
-      Config_File_Path           => Configuration_Project_Path,
-      Target_Name                => Target_Name.all,
-      Normalized_Hostname        => Gpr_Util.Knowledge.Normalized_Hostname,
-      Implicit_Project           => No_Project_File_Found);
+   begin
+      Main_Project := No_Project;
+      Parse_Project_And_Apply_Config
+        (Main_Project               => Main_Project,
+         User_Project_Node          => User_Project_Node,
+         Config_File_Name           => Config_Project_File_Name.all,
+         Autoconf_Specified         => False,
+         Project_File_Name          => Output_Name.all,
+         Project_Tree               => Project_Tree,
+         Project_Node_Tree          => Project_Node_Tree,
+         Packages_To_Check          => Packages_To_Check,
+         Env                        => Root_Environment,
+         Allow_Automatic_Generation => True,
+         Automatically_Generated    => Delete_Autoconf_File,
+         Config_File_Path           => Configuration_Project_Path,
+         Target_Name                => Target_Name.all,
+         Normalized_Hostname        => Gpr_Util.Knowledge.Normalized_Hostname,
+         Implicit_Project           => No_Project_File_Found);
+
+   exception
+      when E : GPR.Conf.Invalid_Config =>
+         Fail_Program (Project_Tree, Exception_Message (E));
+   end;
 
    if Main_Project = No_Project then
       Fail_Program
