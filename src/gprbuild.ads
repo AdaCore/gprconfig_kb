@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2015, AdaCore                     --
+--                     Copyright (C) 2004-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -427,18 +427,10 @@ private
 
    type Process_Kind is (None, Binding, Linking);
 
-   type Process_Data (Kind : Process_Kind := None) is record
-      Process    : Process_Id     := Invalid_Pid;
-      Main       : Main_Info      := No_Main_Info;
-
-      case Kind is
-         when Linking =>
-            Response_1 : Path_Name_Type := No_Path;
-            Response_2 : Path_Name_Type := No_Path;
-
-         when others =>
-            null;
-      end case;
+   type Process_Data is record
+      Kind     : Process_Kind := None;
+      Process  : Process_Id     := Invalid_Pid;
+      Main     : Main_Info      := No_Main_Info;
    end record;
 
    No_Process_Data : constant Process_Data :=
