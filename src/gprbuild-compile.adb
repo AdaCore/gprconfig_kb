@@ -2826,7 +2826,8 @@ package body Gprbuild.Compile is
                      end loop;
 
                      if Last > Opt'Length then
-                        Free (Options (J));
+                        --  Do not free the option, as it has been recorded in
+                        --  All_Options.
                         Options (J) := new String'(Nopt (1 .. Last));
                      end if;
                   end;
@@ -2904,9 +2905,7 @@ package body Gprbuild.Compile is
                      use GPR.Tempdir;
                      FD : File_Descriptor;
                      Status    : Integer;
-                     pragma Warnings (Off, Status);
                      Closing_Status : Boolean;
-                     pragma Warnings (Off, Closing_Status);
 
                   begin
                      --  On Windows, directory separators ('\') need to be
@@ -2922,19 +2921,42 @@ package body Gprbuild.Compile is
                        (Shared => Source.Tree.Shared,
                         Path   => Response_File);
 
+                     Option_Loop :
                      for J in 1 .. Compilation_Options.Last loop
                         Status :=
                           Write
                             (FD,
                              Compilation_Options.Options (J) (1)'Address,
                              Compilation_Options.Options (J)'Length);
+
+                        if Status /= Compilation_Options.Options (J)'Length
+                        then
+                           Put_Line
+                             ("Could not write option """ &
+                              Compilation_Options.Options (J).all &
+                              """ in response file """ &
+                              Get_Name_String (Response_File) &
+                              """");
+                           Response_File := No_Path;
+                           exit Option_Loop;
+                        end if;
+
                         Status := Write (FD, ASCII.LF'Address, 1);
-                     end loop;
+                     end loop Option_Loop;
 
                      Close (FD, Closing_Status);
+
+                     if not Closing_Status and then Response_File /= No_Path
+                     then
+                        Put_Line
+                          ("Could not close response file """ &
+                           Get_Name_String (Response_File) &
+                           """");
+                        Response_File := No_Path;
+                     end if;
                   end;
 
-                  if Verbose_Mode then
+                  if Verbose_Mode and then Response_File /= No_Path then
                      Put_Line ("using a response file");
                   end if;
                end if;
