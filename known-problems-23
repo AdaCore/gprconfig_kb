@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P508-004 gprls crashes when object directory does not exist
+
+  Problem:    gprls crashes when invoked for a project that specifies an object
+              directory that does not exist.
+
+  Status:     This was fixed in 17 on 2016-05-09
+
+  Workaround: Create the object directory before invoking gprls.
+
 KP-23-P503-049 Extending installed library projects
 
   Problem:    When a project extends an installed library project, gprbuild
