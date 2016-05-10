@@ -2678,7 +2678,6 @@ package body GPR.Tree is
       In_Tree : Project_Node_Tree_Ref;
       To      : Path_Name_Type)
    is
-      Normalized : String := Get_Name_String (To);
    begin
       pragma Assert
         (Present (Node)
@@ -2689,10 +2688,7 @@ package body GPR.Tree is
 
       --  Record the path name canonical form
 
-      Canonical_Case_File_Name (Normalized);
-      Name_Len := Normalized'Length;
-      Name_Buffer (1 .. Name_Len) := Normalized;
-      In_Tree.Project_Nodes.Table (Node).Path_Name := Name_Find;
+      In_Tree.Project_Nodes.Table (Node).Path_Name := To;
    end Set_Path_Name_Of;
 
    ---------------------------
