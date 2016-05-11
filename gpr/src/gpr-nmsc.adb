@@ -1011,7 +1011,7 @@ package body GPR.Nmsc is
             --
             --  ??? We might already have loaded the project
 
-            Add_Aggregated_Project (Project, Path => Path.Name);
+            Add_Aggregated_Project (Project, Path => Path.Display_Name);
 
          else
             Debug_Output ("pattern returned the aggregate itself, ignored");
