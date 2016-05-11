@@ -2298,24 +2298,15 @@ begin
             --  is not readily available but we should be able to compute
             --  this from the ALI files.
 
-            declare
-               I : constant Natural := Object_Files.Last;
-            begin
-               --  Then adds back all libraries already on the command-line
-               --  after libgnat to fulfill dependencies on OS libraries
-               --  that may be used by the GNAT runtime. These are libraries
-               --  added with a pragma Linker_Options in sources.
+            --  Then adds back all libraries already on the command-line after
+            --  libgnat to fulfill dependencies on OS libraries that may be
+            --  used by the GNAT runtime. These are libraries added with a
+            --  pragma Linker_Options in sources that have already been put
+            --  in table Additional_Switches.
 
-               for K in 1 .. I loop
-                  declare
-                     O : constant String := Object_Files.Table (K).all;
-                  begin
-                     if O (O'First .. O'First + 1) = "-l" then
-                        Library_Options_Table.Append (new String'(O));
-                     end if;
-                  end;
-               end loop;
-            end;
+            for J in 1 .. Additional_Switches.Last loop
+               Library_Options_Table.Append (Additional_Switches.Table (J));
+            end loop;
 
          else
             Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
