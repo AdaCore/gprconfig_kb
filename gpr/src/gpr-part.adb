@@ -1429,9 +1429,11 @@ package body GPR.Part is
                      Token_Ptr);
                end if;
 
-            elsif A_Project_Name_And_Node.From_Extended then
+            elsif From_Extended /= Extending_All
+                  and then A_Project_Name_And_Node.From_Extended
+            then
                --  This project is now imported from a non extending project.
-               --  Indicate this in has table Projects.HT.
+               --  Indicate this in hash table Projects.HT.
 
                A_Project_Name_And_Node.From_Extended := False;
                Tree_Private_Part.Projects_Htable.Set
