@@ -89,6 +89,17 @@ KP-23-P412-026 Variable in case construction in package
 
   Workaround: Declare the variable in the package before the case construction.
 
+KP-23-P309-051 Imported projects may be order dependent
+
+  Problem:    When the main project is an "extending all" project and it
+              imports extending projects, with some order of the with clauses
+              gprbuild may report that an extending project is directly
+              imported.
+
+  Status:     This was fixed in 17 on 2016-05-13
+
+  Workaround: Reorder the with clauses to find one that works.
+
 KP-23-P218-003 gprclean not cleaning .ci files
 
   Problem:    gprclean was not cleaning the .ci files in the object
