@@ -57,6 +57,17 @@ KP-23-P427-070 Aggregated abstract and non externally built projects
   Workaround: Do not aggregate abstract projects. Remove declaration of
               Externally_Built is "false" in aggregated projects.
 
+KP-23-P418-032 Aggregate projects and mains on the command line
+
+  Problem:    When gprbuild is invoked for an aggregate project and one or
+              several mains on the command line, all the sources of the
+              aggregated projects that do not have any of the mains as source
+              are compiled.
+
+  Status:     This was fixed in 17 on 2016-04-15
+
+  Workaround: Invoke gprbuild on the aggregate projects with the mains.
+
 KP-23-P415-001 GPRinstall fails to install aggregate libraries
 
   Problem:    When an aggregate library contains some variables, GPRinstall
