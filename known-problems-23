@@ -100,6 +100,15 @@ KP-23-P412-026 Variable in case construction in package
 
   Workaround: Declare the variable in the package before the case construction.
 
+KP-23-P406-010 Non existent external reference with no default
+
+  Problem:    external ("<reference>") gives value of empty string when
+              <reference> does not exist, instead of giving an error.
+
+  Status:     This was fixed in 17 on 2016-04-16
+
+  Workaround: Use external with a default.
+
 KP-23-P309-051 Imported projects may be order dependent
 
   Problem:    When the main project is an "extending all" project and it
