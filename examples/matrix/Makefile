@@ -1,5 +1,5 @@
 all: default.cgpr
-	gprbuild
+	gprbuild -p
 
 default.cgpr:
 	gprconfig --batch --config Ada  --config C --config Fortran -o $@
