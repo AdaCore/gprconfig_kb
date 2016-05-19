@@ -2902,6 +2902,39 @@ package body Gpr_Build_Util is
       end if;
    end Compute_Builder_Switches;
 
+   --------------
+   -- Unescape --
+   --------------
+
+   function Unescape (Path : String) return String is
+      Result : String (1 .. Path'Length);
+      Last   : Natural := 0;
+      Index  : Integer;
+   begin
+      if On_Windows then
+         return Path;
+      end if;
+
+      Index := Path'First;
+      while Index <= Path'Last loop
+         if Path (Index) = '\' then
+            if Index < Path'Last and Path (Index + 1) = '\' then
+               Last := Last + 1;
+               Result (Last) := '\';
+               Index := Index + 1;
+            end if;
+
+         else
+            Last := Last + 1;
+            Result (Last) := Path (Index);
+         end if;
+
+         Index := Index + 1;
+      end loop;
+
+      return Result (1 .. Last);
+   end Unescape;
+
    ---------------------
    -- Write_Path_File --
    ---------------------

@@ -1581,8 +1581,8 @@ package body Gprbuild.Compile is
 
                Line_Loop : loop
                   declare
-                     Line : String  := Name_Buffer (1 .. Name_Len);
-                     Last : Natural := Name_Len;
+                     Line : constant String  := Name_Buffer (1 .. Name_Len);
+                     Last : constant Natural := Name_Len;
 
                   begin
                      Name_Loop : loop
@@ -1628,16 +1628,8 @@ package body Gprbuild.Compile is
                               then
                                  Finish := Finish + 2;
 
-                              elsif On_Windows
-                                and then Line (Finish + 1) /= '\'
-                                and then Line (Finish + 1) /= ' '
-                              then
-                                 Finish := Finish + 1;
-
                               else
-                                 Line (Finish .. Last - 1) :=
-                                   Line (Finish + 1 .. Last);
-                                 Last := Last - 1;
+                                 Finish := Finish + 1;
                               end if;
 
                            else
@@ -1653,18 +1645,15 @@ package body Gprbuild.Compile is
 
                         declare
                            Src_Name : constant String :=
-                             Normalize_Pathname
-                               (Name           =>
-                                  Line (Start .. Finish),
-                                Resolve_Links  => False,
-                                Case_Sensitive => False);
+                                        Line (Start .. Finish);
+                           Name2 : constant String := Unescape (Src_Name);
                            Source_2   : Source_Id;
                            Src_TS     : Time_Stamp_Type;
                            Src_Name_Id : Name_Id;
 
                         begin
                            Name_Len := 0;
-                           Add_Str_To_Name_Buffer (Src_Name);
+                           Add_Str_To_Name_Buffer (Name2);
                            Src_Name_Id := Name_Find;
                            Source_2 := Source_Paths_Htable.Get
                              (Src_Data.Tree.Source_Paths_HT,

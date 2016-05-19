@@ -195,6 +195,9 @@ package Gpr_Build_Util is
              Static_Pic);
    --  Return True if the library project correspond to a static library.
 
+   function Unescape (Path : String) return String;
+   --  On platforms other than Windows, remove the characters '\'.
+
    --------------
    -- Switches --
    --------------

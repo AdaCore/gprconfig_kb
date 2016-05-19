@@ -1641,9 +1641,11 @@ package body Gpr_Util is
 
                         --  Find the beginning of the next source path name
 
-                        while Finish < Last and then Line (Start) = ' ' loop
+                        while Start <= Last and then Line (Start) = ' ' loop
                            Start := Start + 1;
                         end loop;
+
+                        exit Line_Loop when Start > Last;
 
                         --  Go to next line when there is a continuation
                         --  character \ at the end of the line.
