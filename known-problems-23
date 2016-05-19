@@ -160,18 +160,6 @@ KP-23-OC21-017 Restricted languages and auto configuration
 
   Workaround: Do not declare languages other than the restricted ones.
 
-KP-23-OC17-040 Index case-sensitivity for attribute Global_Compilation_Switches
-
-  Problem:    When the value of attribute Builder'Global_Compilation_Switches
-              is asked through GNATCOLL.Projects.Attribute_Value, the wrong
-              result may be returned as the index is incorrectly
-              case-sensitive.
-
-  Status:     This was fixed in 17 on 2015-12-26
-
-  Workaround: Use the exact same language name as in the declaration in the
-              project file.
-
 KP-23-OC11-012 Aggregate project and mains on the command line
 
   Problem:    When gprbuild is invoked with an aggregate project and one
@@ -255,3 +243,19 @@ KP-23-OA09-019 Switches in package Clean not taken into account
   Status:     This was fixed in 17 on 2016-04-06
 
   Workaround: Use only switches on the command line.
+
+Known problems fixed in 2.3.2 and above
+---------------------------------------
+
+KP-23-OC17-040 Index case-sensitivity for attribute Global_Compilation_Switches
+
+  Problem:    When the value of attribute Builder'Global_Compilation_Switches
+              is asked through GNATCOLL.Projects.Attribute_Value, the wrong
+              result may be returned as the index is incorrectly
+              case-sensitive.
+
+  Status:     This was fixed in 17 on 2015-12-26
+              This was fixed in 2.3.2 on 2016-05-19
+
+  Workaround: Use the exact same language name as in the declaration in the
+              project file.
