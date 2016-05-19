@@ -148,18 +148,6 @@ KP-23-P112-067 Included_Artifact_Patterns ignored
 
   Workaround: Copy manually the artifacts from the slaves (e.g using rsync)
 
-KP-23-OC21-017 Restricted languages and auto configuration
-
-  Problem:    When gprbuild is invoked with switches --restricted-to-languages=
-              or --codepeer, the languages that should be used for the
-              invocation of gprconfig in auto configuration are the restricted
-              languages.
-              In CodePeer mode, the only language to consider is Ada.
-
-  Status:     This was fixed in 17 on 2015-12-21
-
-  Workaround: Do not declare languages other than the restricted ones.
-
 KP-23-OC11-012 Aggregate project and mains on the command line
 
   Problem:    When gprbuild is invoked with an aggregate project and one
@@ -246,6 +234,19 @@ KP-23-OA09-019 Switches in package Clean not taken into account
 
 Known problems fixed in 2.3.2 and above
 ---------------------------------------
+
+KP-23-OC21-017 Restricted languages and auto configuration
+
+  Problem:    When gprbuild is invoked with switches --restricted-to-languages=
+              or --codepeer, the languages that should be used for the
+              invocation of gprconfig in auto configuration are the restricted
+              languages.
+              In CodePeer mode, the only language to consider is Ada.
+
+  Status:     This was fixed in 17 on 2015-12-21
+              This was fixed in 2.3.2 on 2015-05-19
+
+  Workaround: Do not declare languages other than the restricted ones.
 
 KP-23-OC17-040 Index case-sensitivity for attribute Global_Compilation_Switches
 
