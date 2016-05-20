@@ -1382,7 +1382,7 @@ package body Gpr_Util is
                              Get_Name_String (Source.Path.Display_Name);
       C_Source_Path      : constant String :=
                              Get_Name_String (Source.Path.Name);
-      Runtime_Source_Dirs : Name_List_Index :=
+      Runtime_Source_Dirs : constant Name_List_Index :=
                              Source.Language.Config.Runtime_Source_Dirs;
 
       Start    : Natural;
@@ -2099,7 +2099,6 @@ package body Gpr_Util is
                        or else
                        Is_Absolute_Path (Get_Name_String (Sfile)))
                   then
-
                      if Is_Absolute_Path (Get_Name_String (Sfile)) then
                         if Check_Time_Stamps
                           (Get_Name_String (Sfile), ALI.Sdep.Table (D).Stamp)
@@ -2108,26 +2107,27 @@ package body Gpr_Util is
                         end if;
 
                      else
+                        declare
+                           R_Dirs : Name_List_Index := Runtime_Source_Dirs;
+                        begin
+                           while R_Dirs /= No_Name_List loop
+                              declare
+                                 Nam_Nod : constant Name_Node :=
+                                   Tree.Shared.Name_Lists.Table (R_Dirs);
+                              begin
+                                 if Check_Time_Stamps
+                                   (Get_Name_String (Nam_Nod.Name) &
+                                      Directory_Separator &
+                                      Get_Name_String (Sfile),
+                                    ALI.Sdep.Table (D).Stamp)
+                                 then
+                                    return True;
+                                 end if;
 
-                        while Runtime_Source_Dirs /= No_Name_List loop
-                           declare
-                              Nam_Nod : constant Name_Node :=
-                                Tree.Shared.Name_Lists.Table
-                                  (Runtime_Source_Dirs);
-                           begin
-
-                              if Check_Time_Stamps
-                                (Get_Name_String (Nam_Nod.Name) &
-                                   Directory_Separator &
-                                   Get_Name_String (Sfile),
-                                 ALI.Sdep.Table (D).Stamp)
-                              then
-                                 return True;
-                              end if;
-
-                              Runtime_Source_Dirs := Nam_Nod.Next;
-                           end;
-                        end loop;
+                                 R_Dirs := Nam_Nod.Next;
+                              end;
+                           end loop;
+                        end;
                      end if;
                   end if;
                end if;
@@ -2381,24 +2381,27 @@ package body Gpr_Util is
 
                   if not Found and then Runtime_Source_Dirs /= No_Name_List
                   then
-                     while Runtime_Source_Dirs /= No_Name_List loop
-                        declare
-                           Nam_Nod : constant Name_Node :=
-                                       Tree.Shared.Name_Lists.Table
-                                          (Runtime_Source_Dirs);
-                        begin
-                           if Check_Time_Stamps
-                             (Get_Name_String (Nam_Nod.Name) &
-                                Directory_Separator &
-                                Get_Name_String (Sfile),
-                              ALI.Sdep.Table (D).Stamp)
-                           then
-                              return True;
-                           end if;
+                     declare
+                        R_Dirs : Name_List_Index := Runtime_Source_Dirs;
+                     begin
+                        while R_Dirs /= No_Name_List loop
+                           declare
+                              Nam_Nod : constant Name_Node :=
+                                Tree.Shared.Name_Lists.Table (R_Dirs);
+                           begin
+                              if Check_Time_Stamps
+                                (Get_Name_String (Nam_Nod.Name) &
+                                   Directory_Separator &
+                                   Get_Name_String (Sfile),
+                                 ALI.Sdep.Table (D).Stamp)
+                              then
+                                 return True;
+                              end if;
 
-                           Runtime_Source_Dirs := Nam_Nod.Next;
-                        end;
-                     end loop;
+                              R_Dirs := Nam_Nod.Next;
+                           end;
+                        end loop;
+                     end;
                   end if;
                end if;
             end loop;
