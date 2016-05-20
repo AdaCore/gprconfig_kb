@@ -148,11 +148,6 @@ package GPR.Opt is
    --  Do not create backup copies of project files in gprname.
    --  Set by switch --no-backup.
 
-   No_Empty_Source_Dirs : Boolean := True;
-   --  When True, directories with no regular files are not included in the
-   --  source directories.
-   --  When False, they are included.
-
    No_Main_Subprogram : Boolean := False;
    --  Set to True if compilation/binding of a program without main
    --  subprogram requested.
