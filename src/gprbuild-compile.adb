@@ -1645,20 +1645,34 @@ package body Gprbuild.Compile is
 
                         declare
                            Src_Name : constant String :=
-                                        Line (Start .. Finish);
-                           Name2 : constant String := Unescape (Src_Name);
+                                        Normalize_Pathname
+                                         (Name           =>
+                                            Line (Start .. Finish),
+                                          Resolve_Links  => False,
+                                          Case_Sensitive => False);
+                           Src_Name_Id : Name_Id;
+
+                           Unescaped : constant String :=
+                                     Unescape (Line (Start .. Finish));
+                           Unescaped_Id : Name_Id;
+                           --  Only use to get the time stamp
+
                            Source_2   : Source_Id;
                            Src_TS     : Time_Stamp_Type;
-                           Src_Name_Id : Name_Id;
 
                         begin
                            Name_Len := 0;
-                           Add_Str_To_Name_Buffer (Name2);
+                           Add_Str_To_Name_Buffer (Src_Name);
                            Src_Name_Id := Name_Find;
+                           Name_Len := 0;
+                           Add_Str_To_Name_Buffer (Unescaped);
+                           Unescaped_Id := Name_Find;
+
                            Source_2 := Source_Paths_Htable.Get
                              (Src_Data.Tree.Source_Paths_HT,
                               Path_Name_Type (Src_Name_Id));
-                           Src_TS := File_Stamp (File_Name_Type (Src_Name_Id));
+                           Src_TS :=
+                             File_Stamp (File_Name_Type (Unescaped_Id));
 
                            if Source_2 /= No_Source then
                               --  It is a source of a project
