@@ -303,8 +303,16 @@
      </targets>
      <config>
    package Linker is
-      for Required_Switches use
-	Linker'Required_Switches
+      for Leading_Switches ("Ada") use
+        Linker'Leading_Switches ("Ada")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+               "-mrtp");
+      for Leading_Switches ("C") use
+        Linker'Leading_Switches ("C")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+               "-mrtp");
+      for Leading_Switches ("C++") use
+        Linker'Leading_Switches ("C++")
         &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
                "-mrtp");
    end Linker;
@@ -322,8 +330,16 @@
      </targets>
      <config>
    package Linker is
-      for Required_Switches use
-	Linker'Required_Switches
+      for Leading_Switches ("Ada") use
+        Linker'Leading_Switches ("Ada")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+               "-mrtp");
+      for Leading_Switches ("C") use
+        Linker'Leading_Switches ("C")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
+               "-mrtp");
+      for Leading_Switches ("C++") use
+        Linker'Leading_Switches ("C++")
         &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base,
                "-mrtp");
    end Linker;
@@ -347,7 +363,7 @@
 
    package Linker is
       for Required_Switches use
-	Linker'Required_Switches &amp; ("-mrtp");
+        Linker'Required_Switches &amp; ("-mrtp");
    end Linker;
      </config>
    </configuration>
@@ -688,6 +704,7 @@
 
    <configuration>
      <compilers>
+       <compiler name="GNAT" runtime="^rtp$" />
        <compiler name="GCC-WRS7ARM" runtime="^rtp$" />
        <compiler name="GCC-WRS7E500V2" runtime="^rtp$" />
        <compiler name="GCC-WRS7PPC" runtime="^rtp$" />
@@ -697,11 +714,20 @@
        <!-- On x86, Workbench does not specify the RTP base,
             so we do not do it either.  -->
      </compilers>
+     <targets>
+       <target name="^(arm|powerpc|e500v2)-wrs-vxworks7$" />
+     </targets>
      <config>
    WRS_RTP_Base := external ("WRS_RTP_BASE", "0x80000000");
    package Linker is
-      for Required_Switches use
-	Linker'Required_Switches
+      for Leading_Switches ("Ada") use
+        Linker'Leading_Switches ("Ada")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C") use
+        Linker'Leading_Switches ("C")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C++") use
+        Linker'Leading_Switches ("C++")
         &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
    end Linker;
      </config>
@@ -709,14 +735,24 @@
 
    <configuration>
      <compilers>
+       <compiler name="GNAT" runtime="^rtp$" />
        <compiler name="GCC-WRS7X86_64" runtime="^rtp$" />
        <compiler name="G++-WRS7X86_64" runtime="^rtp$" />
      </compilers>
+     <targets>
+       <target name="^x86_64-wrs-vxworks7$" />
+     </targets>
      <config>
    WRS_RTP_Base := external ("WRS_RTP_BASE", "0x200000");
    package Linker is
-      for Required_Switches use
-	Linker'Required_Switches
+      for Leading_Switches ("Ada") use
+        Linker'Leading_Switches ("Ada")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C") use
+        Linker'Leading_Switches ("C")
+        &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
+      for Leading_Switches ("C++") use
+        Linker'Leading_Switches ("C++")
         &amp; ("-Wl,--defsym,__wrs_rtp_base=" &amp; WRS_RTP_Base);
    end Linker;
      </config>
