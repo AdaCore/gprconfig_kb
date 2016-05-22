@@ -2684,9 +2684,7 @@ package body GPR.Tree is
           and then
             (In_Tree.Project_Nodes.Table (Node).Kind = N_Project
                or else
-               In_Tree.Project_Nodes.Table (Node).Kind = N_With_Clause));
-
-      --  Record the path name canonical form
+             In_Tree.Project_Nodes.Table (Node).Kind = N_With_Clause));
 
       In_Tree.Project_Nodes.Table (Node).Path_Name := To;
    end Set_Path_Name_Of;
