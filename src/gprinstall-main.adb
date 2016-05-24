@@ -608,12 +608,6 @@ procedure Gprinstall.Main is
            (Project_Tree, "cannot specify --stat in install/uninstall mode");
       end if;
 
-      --  Makes the Ada RTS absolute if it is not a base name
-
-      if Runtime_Name_Set_For (Name_Ada) then
-         Locate_Runtime (Project_Tree, Name_Ada);
-      end if;
-
       if Load_Standard_Base then
          --  We need to parse the knowledge base so that we are able to
          --  normalize the target names. Unfortunately, if we have to spawn

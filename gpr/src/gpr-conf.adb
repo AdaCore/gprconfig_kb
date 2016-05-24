@@ -579,6 +579,9 @@ package body GPR.Conf is
       function Get_Db_Switches return Argument_List_Access;
       --  Return the --db switches to use for gprconfig
 
+      function Is_Base_Name (Path : String) return Boolean;
+      --  Returns True if Path has no directory separator
+
       function Might_Have_Sources (Project : Project_Id) return Boolean;
       --  True if the specified project might have sources (ie the user has not
       --  explicitly specified it. We haven't checked the file system, nor do
@@ -1329,6 +1332,20 @@ package body GPR.Conf is
          return Result;
       end Get_Config_Switches;
 
+      ------------------
+      -- Is_Base_Name --
+      ------------------
+
+      function Is_Base_Name (Path : String) return Boolean is
+      begin
+         for I in Path'Range loop
+            if Path (I) = Directory_Separator or else Path (I) = '/' then
+               return False;
+            end if;
+         end loop;
+         return True;
+      end Is_Base_Name;
+
       ------------------------
       -- Might_Have_Sources --
       ------------------------
@@ -1371,6 +1388,73 @@ package body GPR.Conf is
       Get_Project_Target;
       Get_Project_Runtimes;
       Check_Builder_Switches;
+
+      --  Makes the Ada RTS absolute if it is not a base name and check if the
+      --  runtime directory is a valid one.
+
+      if Runtime_Name_Set_For (Name_Ada) then
+         declare
+            Runtime_Dir : constant String := Runtime_Name_For (Name_Ada);
+            RTS_Dir : String_Access := null;
+            OK      : Boolean := True;
+
+         begin
+            if Is_Absolute_Path (Runtime_Dir) then
+               RTS_Dir := new String'(Normalize_Pathname (Runtime_Dir));
+
+            else
+               declare
+                  Dir : constant String :=
+                    Normalize_Pathname
+                      (Get_Name_String (Project.Directory.Display_Name) &
+                           Directory_Separator & Runtime_Dir);
+               begin
+                  if Dir'Length = 0 or else not Is_Directory (Dir) then
+                     if not Is_Base_Name (Runtime_Dir) then
+                        OK := False;
+                        RTS_Dir := new String'(Runtime_Dir);
+                     end if;
+                  else
+                     RTS_Dir := new String'(Dir);
+                  end if;
+               end;
+            end if;
+
+            --  If RTS_Dir is null, it means that the runtime dir is specified
+            --  as a base name, but is not a subdirectory of the project
+            --  directory. In this case, gprconfig is invoked with the simple
+            --  name.
+
+            if RTS_Dir /= null then
+               if OK then
+                  OK :=
+                    (Is_Directory
+                       (RTS_Dir.all & Directory_Separator & "adalib")
+                     or else
+                     Is_Regular_File
+                       (RTS_Dir.all &
+                        Directory_Separator &
+                        "ada_object_path"))
+                    and then
+                      (Is_Directory
+                         (RTS_Dir.all & Directory_Separator & "adainclude")
+                       or else
+                       Is_Regular_File
+                         (RTS_Dir.all &
+                          Directory_Separator &
+                          "ada_source_path"));
+               end if;
+
+               if OK then
+                  Set_Runtime_For (Name_Ada, RTS_Dir.all);
+               else
+                  Fail_Program
+                    (Project_Tree,
+                     "invalid runtime directory " & RTS_Dir.all);
+               end if;
+            end if;
+         end;
+      end if;
 
       --  Do not attempt to find a configuration project file when
       --  Config_File_Name is No_Configuration_File.
