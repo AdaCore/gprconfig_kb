@@ -57,6 +57,16 @@ KP-23-P427-070 Aggregated abstract and non externally built projects
   Workaround: Do not aggregate abstract projects. Remove declaration of
               Externally_Built is "false" in aggregated projects.
 
+KP-23-P419-029 Spaces in dependency paths of file based languages
+
+  Problem:    When the path of a dependency file, stored in a .d dependency
+              file includes spaces, the source is always recompiled, even when
+              it is up to date.
+
+  Status:     This was fixed in 17 on 2016-05-23
+
+  Workaround: Avoid directories with spaces.
+
 KP-23-P418-032 Aggregate projects and mains on the command line
 
   Problem:    When gprbuild is invoked for an aggregate project and one or
