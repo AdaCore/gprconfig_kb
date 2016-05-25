@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P519-041 Runtime (<lang>) as a relative path (2016-05-25)
+
+   It is now possible to specify a runtime directory with the attribute
+   Runtime as a relative path, in the main project. Example:
+      for Runtime ("Ada") use "./rts";
+   The path is relative to the project directory of the main project.
+
 NF-17-P215-047 GPRbuild supports response files during compilation (2016-03-10)
 
    GPRbuild, when the language is configured appropriately and the compilation
