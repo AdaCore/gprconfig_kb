@@ -332,6 +332,7 @@ package body GPR.Snames is
       Add_Name ("export_file_format");
       Add_Name ("export_file_switch");
       Add_Name ("runtime_source_dirs");
+      Add_Name ("runtime_dir");
 
       Initialized := True;
    end Initialize;

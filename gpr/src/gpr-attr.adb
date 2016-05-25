@@ -137,6 +137,10 @@ package body GPR.Attr is
    "Saobjects_linked#" &
    "SVtargetDtarget_value#" &
    "SaruntimeDruntime_value#" &
+   "Saruntime_library_dir#" &
+   "Saruntime_source_dir#" &
+   "Laruntime_source_dirs#" &
+   "Saruntime_dir#" &
 
    --  Configuration - Libraries
 
@@ -166,9 +170,6 @@ package body GPR.Attr is
    "LVshared_library_minimum_switches#" &
    "LVlibrary_version_switches#" &
    "SVlibrary_install_name_option#" &
-   "Saruntime_library_dir#" &
-   "Saruntime_source_dir#" &
-   "Laruntime_source_dirs#" &
 
    --  package Naming
    --  Some attributes are obsolescent, and renamed in the tree (see

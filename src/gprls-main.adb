@@ -277,15 +277,17 @@ procedure Gprls.Main is
       Tree       : Project_Tree_Ref;
       With_State : in out Paths)
    is
-      pragma Unreferenced (Tree);
       List : Language_Ptr := Project.Languages;
+      Dirs : Name_List_Index;
+      Nam_Nod : Name_Node;
    begin
       while List /= No_Language_Index loop
-         if List.Config.Runtime_Library_Dir /= No_Name then
-            Add
-              (Get_Name_String (List.Config.Runtime_Library_Dir),
-               With_State);
-         end if;
+         Dirs := List.Config.Runtime_Library_Dirs;
+         while Dirs /= No_Name_List loop
+            Nam_Nod := Tree.Shared.Name_Lists.Table (Dirs);
+            Add (Get_Name_String (Nam_Nod.Name), With_State);
+            Dirs := Nam_Nod.Next;
+         end loop;
 
          List := List.Next;
       end loop;
@@ -521,6 +523,8 @@ procedure Gprls.Main is
 
                if RTS_Specified = null then
                   RTS_Specified := new String'(Argv (7 .. Argv'Last));
+                  Set_Runtime_For
+                    (Snames.Name_Ada, Argv (7 .. Argv'Last));
 
                elsif RTS_Specified.all /= Argv (7 .. Argv'Last) then
                   Osint.Fail ("--RTS cannot be specified multiple times");

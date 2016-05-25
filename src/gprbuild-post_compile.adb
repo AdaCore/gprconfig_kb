@@ -1279,21 +1279,32 @@ package body Gprbuild.Post_Compile is
          is
             pragma Unreferenced (Tree, Dummy);
             List : Language_Ptr := Project.Languages;
+            Lib_Dirs : Name_List_Index;
+            Nam_Nod : Name_Node;
          begin
             while List /= No_Language_Index loop
-               if List.Config.Runtime_Library_Dir /= No_Name
-                 and then not Lang_Seen.Contains (List.Name)
-               then
-                  if Lang_Seen.Length = 0 then
-                     Put_Line
-                       (Exchange_File, Library_Label (Runtime_Library_Dir));
-                  end if;
-                  Lang_Seen.Insert (List.Name);
+               if List.Config.Runtime_Library_Dirs /= No_Name_List then
+                  Lib_Dirs := List.Config.Runtime_Library_Dirs;
 
-                  Put_Line (Exchange_File, Get_Name_String (List.Name));
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (List.Config.Runtime_Library_Dir));
+                  while Lib_Dirs /= No_Name_List loop
+                     Nam_Nod :=
+                       Project_Tree.Shared.Name_Lists.Table (Lib_Dirs);
+                     if not Lang_Seen.Contains (Nam_Nod.Name)
+                     then
+                        if Lang_Seen.Length = 0 then
+                           Put_Line
+                             (Exchange_File,
+                              Library_Label (Runtime_Library_Dir));
+                        end if;
+                        Lang_Seen.Insert (Nam_Nod.Name);
+
+                        Put_Line (Exchange_File, Get_Name_String (List.Name));
+                        Put_Line
+                          (Exchange_File, Get_Name_String (Nam_Nod.Name));
+                     end if;
+
+                     Lib_Dirs := Nam_Nod.Next;
+                  end loop;
                end if;
 
                List := List.Next;

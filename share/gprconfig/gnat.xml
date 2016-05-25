@@ -57,9 +57,8 @@
           "${GPRCONFIG_PREFIX}/libexec/gprbuild/gprbind";
    end Binder;
 
-   for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
-   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}/adalib/";
-   for Runtime_Source_Dirs   ("Ada") use ("${RUNTIME_DIR(ada)}/adainclude/");
+   for Toolchain_Version ("Ada") use "GNAT ${VERSION(ada)}";
+   for Runtime_Dir       ("Ada") use "${RUNTIME_DIR(ada)}";
    </config>
   </configuration>
 
@@ -100,9 +99,8 @@
       for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno");
    end Clean;
 
-   for Toolchain_Version     ("Ada") use "GNAT ${VERSION(ada)}";
-   for Runtime_Library_Dir   ("Ada") use "${RUNTIME_DIR(ada)}/adalib/";
-   for Runtime_Source_Dirs   ("Ada") use ("${RUNTIME_DIR(ada)}/adainclude/");
+   for Toolchain_Version ("Ada") use "GNAT ${VERSION(ada)}";
+   for Runtime_Dir       ("Ada") use "${RUNTIME_DIR(ada)}";
    </config>
   </configuration>
 

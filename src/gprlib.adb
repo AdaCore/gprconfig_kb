@@ -101,8 +101,15 @@ procedure Gprlib is
    Libgnarl_Needed : Boolean := False;
    --  True if libgnarl is needed
 
-   Runtime_Library_Dir : String_Access := null;
-   --  Full path name of the Ada runtime library
+   type Dir_Data;
+   type Dir_Access is access Dir_Data;
+   type Dir_Data is record
+      Path : String_Access := null;
+      Next : Dir_Access := null;
+   end record;
+
+   Runtime_Library_Dirs : Dir_Access := null;
+   --  Full path names of the Ada runtime library directories
 
    Current_Section : Library_Section := No_Library_Section;
    --  The current section when reading the exchange file
@@ -1275,7 +1282,10 @@ begin
 
                elsif Line (1 .. Last) = "ada" then
                   Get_Line (IO_File, Line, Last);
-                  Runtime_Library_Dir := new String'(Line (1 .. Last));
+                  Runtime_Library_Dirs :=
+                    new Dir_Data'
+                      (Path => new String'(Line (1 .. Last)),
+                       Next => Runtime_Library_Dirs);
 
                else
                   Skip_Line (IO_File);
@@ -1828,7 +1838,7 @@ begin
                   exit when Line (1 .. Last) = End_Info;
 
                   if Use_GNAT_Lib
-                    and then Runtime_Library_Dir /= null
+                    and then Runtime_Library_Dirs /= null
                     and then Line (9 .. Last) = "-lgnarl"
                   then
                      Libgnarl_Needed := True;
@@ -2194,7 +2204,7 @@ begin
       --  then libgnarl is needed.
 
       if Use_GNAT_Lib
-        and then Runtime_Library_Dir /= null
+        and then Runtime_Library_Dirs /= null
         and then not Libgnarl_Needed
       then
          declare
@@ -2252,25 +2262,76 @@ begin
          end;
       end if;
 
-      if Use_GNAT_Lib and then Runtime_Library_Dir /= null then
+      if Use_GNAT_Lib and then Runtime_Library_Dirs /= null then
          if Standalone = Encapsulated then
+            declare
+               Lib_Dirs : Dir_Access;
+            begin
 
-            --  For encapsulated library we want to link against the static
-            --  GNAT runtime. For sufficiently recent compilers a static pic
-            --  version of the runtime might be present. Fallback on the
-            --  regular static libgnat otherwise.
+               --  For encapsulated library we want to link against the static
+               --  GNAT runtime. For sufficiently recent compilers a static
+               --  pic version of the runtime might be present. Fallback on
+               --  the regular static libgnat otherwise.
 
-            if Is_Regular_File (Runtime_Library_Dir.all & "libgnat_pic.a")
-            then
-               Libgnat  := new String'
-                 (Runtime_Library_Dir.all & "libgnat_pic.a");
-               Libgnarl := new String'
-                 (Runtime_Library_Dir.all & "libgnarl_pic.a");
-            else
-               Libgnat  := new String'(Runtime_Library_Dir.all & "libgnat.a");
-               Libgnarl := new String'
-                 (Runtime_Library_Dir.all & "libgnarl.a");
-            end if;
+               --  First, look for libgnat_pic.a
+
+               Lib_Dirs := Runtime_Library_Dirs;
+               Libgnat := null;
+               while Lib_Dirs /= null loop
+                  if Is_Regular_File
+                    (Lib_Dirs.Path.all & Directory_Separator & "libgnat_pic.a")
+                  then
+                     Libgnat  := new String'
+                       (Lib_Dirs.Path.all &
+                          Directory_Separator &
+                          "libgnat_pic.a");
+                     Libgnarl := new String'
+                       (Lib_Dirs.Path.all &
+                          Directory_Separator &
+                          "libgnarl_pic.a");
+                     exit;
+                  end if;
+
+                  Lib_Dirs := Lib_Dirs.Next;
+               end loop;
+
+               --  If libgnat-pic.a was not found, look for libgnat.a
+
+               if Libgnat = null then
+                  Lib_Dirs := Runtime_Library_Dirs;
+                  while Lib_Dirs /= null loop
+                     if Is_Regular_File
+                       (Lib_Dirs.Path.all & Directory_Separator & "libgnat.a")
+                     then
+                        Libgnat  := new String'
+                          (Lib_Dirs.Path.all &
+                             Directory_Separator &
+                             "libgnat.a");
+                        Libgnarl := new String'
+                          (Lib_Dirs.Path.all &
+                             Directory_Separator &
+                             "libgnarl.a");
+                        exit;
+                     end if;
+
+                     Lib_Dirs := Lib_Dirs.Next;
+                  end loop;
+
+                  --  If libgnat.a was not found, assume it should be in the
+                  --  first directory. An error message will be displayed.
+
+                  if Libgnat = null then
+                     Libgnat := new String'
+                       (Runtime_Library_Dirs.Path.all &
+                          Directory_Separator &
+                          "libgnat.a");
+                     Libgnarl := new String'
+                       (Runtime_Library_Dirs.Path.all &
+                          Directory_Separator &
+                          "libgnarl.a");
+                  end if;
+               end if;
+            end;
 
             if not Is_Regular_File (Libgnat.all) then
                Fail_Program
@@ -2293,11 +2354,6 @@ begin
 
             Library_Options_Table.Append (Libgnat);
 
-            --  ?? The proper implementation for the following code is to
-            --  add only the libraries that libgnat is using. This information
-            --  is not readily available but we should be able to compute
-            --  this from the ALI files.
-
             --  Then adds back all libraries already on the command-line after
             --  libgnat to fulfill dependencies on OS libraries that may be
             --  used by the GNAT runtime. These are libraries added with a
@@ -2309,16 +2365,24 @@ begin
             end loop;
 
          else
-            Options_Table.Append (new String'("-L" & Runtime_Library_Dir.all));
+            declare
+               Lib_Dirs : Dir_Access := Runtime_Library_Dirs;
+            begin
+               while Lib_Dirs /= null loop
+                  Options_Table.Append (new String'("-L" & Lib_Dirs.Path.all));
 
-            if Path_Option /= null then
-               Add_Rpath (Runtime_Library_Dir);
+                  if Path_Option /= null then
+                     Add_Rpath (Lib_Dirs.Path);
 
-               --  Add to the Path Option the directory of the shared version
-               --  of libgcc.
+                     --  Add to the Path Option the directory of the shared
+                     --  version of libgcc.
 
-               Add_Rpath (Shared_Libgcc_Dir (Runtime_Library_Dir.all));
-            end if;
+                     Add_Rpath (Shared_Libgcc_Dir (Lib_Dirs.Path.all));
+                  end if;
+
+                  Lib_Dirs := Lib_Dirs.Next;
+               end loop;
+            end;
 
             if Libgnarl_Needed then
                Options_Table.Append (Libgnarl);

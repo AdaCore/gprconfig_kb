@@ -28,6 +28,7 @@ with Ada.Directories;            use Ada.Directories;
 with Ada.Strings;                use Ada.Strings;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps.Constants;
+with Ada.Text_IO;                use Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -2715,8 +2716,14 @@ package body GPR.Nmsc is
 
                      --  Attribute Runtime_Library_Dir (<language>)
 
-                     Lang_Index.Config.Runtime_Library_Dir :=
-                       Element.Value.Value;
+                     if Lang_Index.Config.Runtime_Library_Dirs = No_Name_List
+                     then
+                        Name_List_Table.Append
+                          (Shared.Name_Lists,
+                           New_Val => (Element.Value.Value, No_Name_List));
+                        Lang_Index.Config.Runtime_Library_Dirs :=
+                          Name_List_Table.Last (Shared.Name_Lists);
+                     end if;
 
                   elsif Current_Array.Name = Name_Runtime_Source_Dir then
 
@@ -2753,6 +2760,100 @@ package body GPR.Nmsc is
 
                            Dirs := Elem.Next;
                         end loop;
+                     end;
+
+                  elsif Current_Array.Name = Name_Runtime_Dir then
+                     declare
+                        Runtime_Dir : constant String :=
+                          Get_Name_String (Element.Value.Value);
+
+                        procedure Get_Directories
+                          (Runtime_Dirs : in out Name_List_Index;
+                           Path_File_Name : String;
+                           Directory      : String);
+                        --  Get the runtime source directories or the runtime
+                        --  library directories.
+
+                        ---------------------
+                        -- Get_Directories --
+                        ---------------------
+
+                        procedure Get_Directories
+                          (Runtime_Dirs : in out Name_List_Index;
+                           Path_File_Name : String;
+                           Directory      : String)
+                        is
+                           Path : constant String :=
+                             Runtime_Dir &
+                             Directory_Separator &
+                             Path_File_Name;
+                           File : Ada.Text_IO.File_Type;
+                           Line : String (1 .. 1_000);
+                           Last : Natural;
+                           Last_Name : Name_List_Index;
+                           Local_Runtime_Dirs : Name_List_Index :=
+                                                 No_Name_List;
+                        begin
+                           Runtime_Dirs := No_Name_List;
+
+                           if Is_Regular_File (Path) then
+                              Open (File, In_File, Path);
+                              while not End_Of_File (File) loop
+                                 Get_Line (File, Line, Last);
+                                 if Last > 0 then
+                                    Name_Len := 0;
+                                    Add_Str_To_Name_Buffer
+                                      (Runtime_Dir &
+                                         Directory_Separator &
+                                         Line (1 .. Last));
+                                    Name_List_Table.Append
+                                      (Shared.Name_Lists,
+                                       New_Val =>
+                                         (Name_Find, No_Name_List));
+                                    Last_Name :=
+                                      Name_List_Table.Last (Shared.Name_Lists);
+
+                                    if Local_Runtime_Dirs = No_Name_List then
+                                       Runtime_Dirs := Last_Name;
+
+                                    else
+                                       Shared.Name_Lists.Table
+                                         (Local_Runtime_Dirs).Next :=
+                                         Last_Name;
+                                    end if;
+
+                                    Local_Runtime_Dirs := Last_Name;
+                                 end if;
+                              end loop;
+
+                              Close (File);
+
+                           else
+                              Name_Len := 0;
+                              Add_Str_To_Name_Buffer
+                                (Runtime_Dir &
+                                   Directory_Separator &
+                                   Directory);
+                              Name_List_Table.Append
+                                (Shared.Name_Lists,
+                                 New_Val =>
+                                   (Name_Find, No_Name_List));
+                              Runtime_Dirs :=
+                                Name_List_Table.Last (Shared.Name_Lists);
+                           end if;
+                        end Get_Directories;
+
+                     begin
+                        Get_Directories
+                          (Runtime_Dirs   =>
+                             Lang_Index.Config.Runtime_Source_Dirs,
+                           Path_File_Name => "ada_source_path",
+                          Directory      => "adainclude");
+                        Get_Directories
+                          (Runtime_Dirs   =>
+                             Lang_Index.Config.Runtime_Library_Dirs,
+                           Path_File_Name => "ada_object_path",
+                          Directory      => "adalib");
                      end;
 
                   elsif Current_Array.Name = Name_Object_Generated then
@@ -6535,7 +6636,7 @@ package body GPR.Nmsc is
                      end if;
 
                   exception
-                     when Use_Error =>
+                     when Ada.Directories.Use_Error =>
 
                         --  Output message with name of directory. Note that we
                         --  use the ~ insertion method here in case the name

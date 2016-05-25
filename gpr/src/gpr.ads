@@ -806,8 +806,8 @@ package GPR is
       --  False if object files are not use to link executables and build
       --  libraries.
 
-      Runtime_Library_Dir : Name_Id := No_Name;
-      --  Path name of the runtime library directory, if any
+      Runtime_Library_Dirs : Name_List_Index := No_Name_List;
+      --  Path names of the runtime library directories, if any
 
       Runtime_Source_Dirs : Name_List_Index := No_Name_List;
       --  Path names of the runtime source directories, if any
@@ -942,7 +942,7 @@ package GPR is
                            Compilation_PIC_Option       => No_Name_List,
                            Object_Generated             => True,
                            Objects_Linked               => True,
-                           Runtime_Library_Dir          => No_Name,
+                           Runtime_Library_Dirs         => No_Name_List,
                            Runtime_Source_Dirs          => No_Name_List,
                            Mapping_File_Switches        => No_Name_List,
                            Mapping_Spec_Suffix          => No_File,
