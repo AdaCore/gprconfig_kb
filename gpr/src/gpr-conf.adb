@@ -1402,7 +1402,7 @@ package body GPR.Conf is
             if Is_Absolute_Path (Runtime_Dir) then
                RTS_Dir := new String'(Normalize_Pathname (Runtime_Dir));
 
-            else
+            elsif Runtime_Dir'Length /= 0 then
                declare
                   Dir : constant String :=
                     Normalize_Pathname
@@ -1420,10 +1420,10 @@ package body GPR.Conf is
                end;
             end if;
 
-            --  If RTS_Dir is null, it means that the runtime dir is specified
-            --  as a base name, but is not a subdirectory of the project
-            --  directory. In this case, gprconfig is invoked with the simple
-            --  name.
+            --  If RTS_Dir is null, it means that the runtime dir is
+            --  specified as an empty string, or as a base name that is not a
+            --  subdirectory of the project directory. In this case, gprconfig
+            --  is invoked with the simple name.
 
             if RTS_Dir /= null then
                if OK then
