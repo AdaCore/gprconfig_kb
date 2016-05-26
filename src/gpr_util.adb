@@ -27,6 +27,7 @@ with Ada.Strings.Unbounded;
 with Ada.Text_IO;               use Ada.Text_IO;
 
 with GNAT.Calendar.Time_IO;     use GNAT.Calendar.Time_IO;
+with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 with GNAT.Sockets;
@@ -2836,6 +2837,48 @@ package body Gpr_Util is
       Must_Compile := False;
       Cleanup;
    end Need_To_Compile;
+
+   ---------------------------
+   -- Set_Default_Verbosity --
+   ---------------------------
+
+   procedure Set_Default_Verbosity is
+      Gpr_Verbosity : String_Access := Getenv ("GPR_VERBOSITY");
+   begin
+      if Gpr_Verbosity /= null and then Gpr_Verbosity'Length > 0 then
+         declare
+            Verbosity : String := Gpr_Verbosity.all;
+         begin
+            To_Lower (Verbosity);
+
+            if Verbosity = "quiet" then
+               Quiet_Output := True;
+               Verbose_Mode := False;
+
+            elsif Verbosity = "default" then
+               Quiet_Output := False;
+               Verbose_Mode := False;
+
+            elsif Verbosity = "verbose" or else Verbosity = "verbose_high" then
+               Quiet_Output := False;
+               Verbose_Mode := True;
+               Verbosity_Level := Opt.High;
+
+            elsif Verbosity = "verbose_medium" then
+               Quiet_Output := False;
+               Verbose_Mode := True;
+               Verbosity_Level := Opt.Medium;
+
+            elsif Verbosity = "verbose_low" then
+               Quiet_Output := False;
+               Verbose_Mode := True;
+               Verbosity_Level := Opt.Low;
+            end if;
+         end;
+      end if;
+
+      Free (Gpr_Verbosity);
+   end Set_Default_Verbosity;
 
    ---------------
    -- Knowledge --

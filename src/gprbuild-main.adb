@@ -1646,6 +1646,8 @@ procedure Gprbuild.Main is
 
       Set_Program_Name ("gprbuild");
 
+      Set_Default_Verbosity;
+
       GPR.Tree.Initialize (Root_Environment, Gprbuild_Flags);
       GPR.Tree.Initialize (Project_Node_Tree);
 

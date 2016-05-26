@@ -396,6 +396,12 @@ package Gpr_Util is
    --  --compiler-pkg-subst=pretty_printer to tell gprbuild to get switches
    --  from "package Pretty_Printer" instead of from "package Compiler".
 
+   procedure Set_Default_Verbosity;
+   --  Set the default verbosity from environment variable GPR_VERBOSITY.
+   --  The values that are taken into account, case-insensitive, are:
+   --  "quiet", "default", "verbose", "verbose_high", "verbose_medium" and
+   --  "verbose_low".
+
    Compiler_Subst_Option     : constant String := "--compiler-subst=";
    Compiler_Pkg_Subst_Option : constant String := "--compiler-pkg-subst=";
 
