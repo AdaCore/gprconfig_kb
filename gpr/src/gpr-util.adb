@@ -1728,20 +1728,15 @@ package body GPR.Util is
    begin
       Get_Name_String (Fname);
 
-      --  Remove extension (if present)
+      --  Remove extension (.ads/.adb) if present
 
       if Name_Len > 4 and then Name_Buffer (Name_Len - 3) = '.' then
          Name_Len := Name_Len - 4;
       end if;
 
-      --  Definitely false if longer than 12 characters (8.3)
-
-      if Name_Len > 8 then
-         return False;
-
       --  Definitely predefined if prefix is a- i- or s- followed by letter
 
-      elsif Name_Len >=  3
+      if Name_Len >=  3
         and then Name_Buffer (2) = '-'
         and then (Name_Buffer (1) = 'a'
                     or else
@@ -1755,6 +1750,11 @@ package body GPR.Util is
                   Name_Buffer (3) in 'A' .. 'Z')
       then
          return True;
+
+      --  Definitely false if longer than 12 characters (8.3)
+
+      elsif Name_Len > 8 then
+         return False;
       end if;
 
       --  Otherwise check against special list, first padding to 8 characters
