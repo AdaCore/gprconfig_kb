@@ -1447,10 +1447,15 @@ package body GPR.Conf is
 
                if OK then
                   Set_Runtime_For (Name_Ada, RTS_Dir.all);
-               else
-                  Fail_Program
-                    (Project_Tree,
-                     "invalid runtime directory " & RTS_Dir.all);
+
+               --  Do not fail if the runtime directory is a base name, as
+               --  there may be a subdirectory of the project directory with
+               --  this name, but it is really a runtime that need to be found
+               --  by gprconfig.
+
+               elsif not Is_Base_Name (Runtime_Dir) then
+                  Raise_Invalid_Config
+                    ("invalid runtime directory " & RTS_Dir.all);
                end if;
             end if;
          end;
@@ -1763,9 +1768,8 @@ package body GPR.Conf is
                   goto Parse_Again;
 
                else
-                  Fail_Program
-                    (Project_Tree,
-                     "inconsistent value of attribute Target");
+                  Raise_Invalid_Config
+                    ("inconsistent value of attribute Target");
                end if;
             end if;
          end;
