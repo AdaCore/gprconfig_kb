@@ -8,6 +8,13 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P525-069 Setting the default verbosity (2016-05-26)
+
+   It is now possible to control the default verbosity without to use switches
+   -v or -q, with environment variable GPR_VERBOSITY. The possible values,
+   case-insensitive, are "quiet", "default", "verbose", "verbose_high",
+   "verbose_medium" and "verbose_low". Any other value is ignored.
+
 NF-17-P524-040 Runtimes with multiple directories (2016-05-26)
 
    Runtimes with multiple directories for sources or object/libraries are
