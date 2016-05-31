@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P524-040 Runtimes with multiple directories (2016-05-26)
+
+   Runtimes with multiple directories for sources or object/libraries are
+   now properly supported.
+
 NF-17-P519-041 Runtime (<lang>) as a relative path (2016-05-25)
 
    It is now possible to specify a runtime directory with the attribute
