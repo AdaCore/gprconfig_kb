@@ -570,26 +570,32 @@ package body Gprbuild.Post_Compile is
                Next (Iter);
             end loop;
 
-            --  Check if the interface set is complete
+            --  Only check the interface of the aggregate SAL, not those of
+            --  the aggregated projects.
 
-            declare
-               Iface : String_List_Id := Proj.Lib_Interface_ALIs;
-               ALI   : File_Name_Type;
+            if Proj = For_Project then
 
-            begin
-               while Iface /= Nil_String loop
-                  ALI :=
-                    File_Name_Type
-                      (Tree.Shared.String_Elements.Table (Iface).Value);
-                  Process_ALI (ALI, Proj);
-                  Iface :=
-                    Tree.Shared.String_Elements.Table (Iface).Next;
-               end loop;
-            end;
+               --  Check if the interface set is complete
 
-            if Interface_Incomplete then
-               Fail_Program
-                 (Project_Tree, "incomplete Stand-Alone Library interface");
+               declare
+                  Iface : String_List_Id := Proj.Lib_Interface_ALIs;
+                  ALI   : File_Name_Type;
+
+               begin
+                  while Iface /= Nil_String loop
+                     ALI :=
+                       File_Name_Type
+                         (Tree.Shared.String_Elements.Table (Iface).Value);
+                     Process_ALI (ALI, Proj);
+                     Iface :=
+                       Tree.Shared.String_Elements.Table (Iface).Next;
+                  end loop;
+               end;
+
+               if Interface_Incomplete then
+                  Fail_Program
+                    (Project_Tree, "incomplete Stand-Alone Library interface");
+               end if;
             end if;
          end Process_Standalone;
 
