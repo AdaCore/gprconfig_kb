@@ -733,7 +733,7 @@ For instance, the following is invalid:
     </targets>
     <config>
     package Compiler is
-      for Driver ("Ada") use "${PATHgcc";   --  Invalid !
+      for Driver ("Ada") use "${PATH}gcc";   --  Invalid !
     end Compiler;
     </config>
     </configuration>
@@ -746,7 +746,7 @@ issues, you need to use the following syntax instead when inside a
 
 .. code-block:: gpr
 
-    for Driver ("Ada") use "${PATH(ada)gcc";   --  Correct
+    for Driver ("Ada") use "${PATH(ada)}gcc";   --  Correct
 
 Predefined variables are always in upper case.  Here is the list of
 predefined variables
