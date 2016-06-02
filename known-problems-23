@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P531-017 Interfaces in projects aggregated by aggregate SAL project
+
+  Problem:    When a project aggregated by an aggregate Stand-Alone Library
+              project declare attribute Interfaces, building the aggregate
+              library may fail with an indication that the interface is
+              not complete.
+
+  Status:     This was fixed in 17 on 2016-06-02
+
+  Workaround: Use attribute Library_Interface instead of Interfaces.
+
 KP-23-P508-004 gprls crashes when object directory does not exist
 
   Problem:    gprls crashes when invoked for a project that specifies an object
