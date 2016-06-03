@@ -3569,7 +3569,7 @@ package body GPR.Nmsc is
               and then
                 To_Lower (Get_Name_String (Lib_Standalone.Value)) =
                   "encapsulated"
-              and then Proj.Library_Kind /= Static
+              and then Proj.Library_Kind = Relocatable
             then
                --  An encapsulated library must depend only on static libraries
 
