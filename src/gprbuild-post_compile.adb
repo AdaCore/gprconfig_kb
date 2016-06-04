@@ -17,7 +17,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Ordered_Sets;
-with Ada.Text_IO;                  use Ada, Ada.Text_IO;
+with Ada.Text_IO;                 use Ada, Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
@@ -2934,14 +2934,15 @@ package body Gprbuild.Post_Compile is
          begin
             if not Opt.Quiet_Output then
                if Opt.Verbose_Mode then
-                  Put (Library_Builder.all);
+                  Put_Line
+                    (Library_Builder.all & " " & Exchange_File_Name.all);
 
                else
-                  Put (Library_Builder_Name.all);
+                  Display
+                    (Section  => Build_Libraries,
+                     Command  => Library_Builder_Name.all,
+                     Argument => Exchange_File_Name.all);
                end if;
-
-               Put (' ');
-               Put_Line (Exchange_File_Name.all);
             end if;
 
             Spawn (Library_Builder.all, Arguments, Success);
@@ -4327,7 +4328,11 @@ package body Gprbuild.Post_Compile is
 
                if not Opt.Quiet_Output then
                   if Opt.Verbose_Mode then
-                     Put (B_Data.Binder_Driver_Path.all);
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (B_Data.Binder_Driver_Path.all);
+                     Add_Str_To_Name_Buffer (" ");
+                     Add_Str_To_Name_Buffer (Bind_Exchange.all);
+                     Put_Line (Name_Buffer (1 .. Name_Len));
 
                   else
                      Name_Len := 0;
@@ -4344,11 +4349,11 @@ package body Gprbuild.Post_Compile is
                         Name_Len := Name_Len - Executable_Suffix'Length;
                      end if;
 
-                     Put (Name_Buffer (1 .. Name_Len));
+                     Display
+                       (Section  => GPR.Bind,
+                        Command  => Name_Buffer (1 .. Name_Len),
+                        Argument => Bind_Exchange.all);
                   end if;
-
-                  Put (' ');
-                  Put_Line (Bind_Exchange.all);
                end if;
 
                declare

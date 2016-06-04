@@ -864,6 +864,11 @@ begin
 
    Set_Program_Name ("gprlib");
 
+   --  As the section header has already been displayed, indicate that it
+   --  should not been displayed again.
+
+   Set (Section => Build_Libraries);
+
    if Argument_Count /= 1 then
       Put_Line ("usage: gprlib <input file>");
 
@@ -1419,11 +1424,9 @@ begin
                                      "b__" & Library_Name.all & ".adb";
          Binder_Generated_Object : String :=
                                      "b__" & Library_Name.all & Object_Suffix;
-         ALI_First_Index         : Positive;
          First_ALI               : File_Name_Type;
          T                       : Text_Buffer_Ptr;
          A                       : ALI.ALI_Id;
-         Obj_Index               : Natural;
          use ALI;
 
       begin
@@ -1527,30 +1530,29 @@ begin
             end loop;
          end if;
 
-         ALI_First_Index := Last_Bind_Option + 1;
-
          for J in 1 .. ALIs.Last loop
             Add (ALIs.Table (J), Bind_Options, Last_Bind_Option);
          end loop;
 
          if not Quiet_Output then
+            Name_Len := 0;
+
             if Verbose_Mode then
-               Put (Gnatbind_Path.all);
+               Add_Str_To_Name_Buffer (Gnatbind_Path.all);
+
+               for J in 1 .. Last_Bind_Option loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
             else
-               Put (Base_Name (Gnatbind_Name.all));
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => "bind SAL",
+                  Argument => Library_Name.all);
             end if;
-
-            for J in 1 .. Last_Bind_Option loop
-               if (not Verbose_Mode) and then J > ALI_First_Index then
-                  Put (" ...");
-                  exit;
-               end if;
-
-               Put (" ");
-               Put (Bind_Options (J).all);
-            end loop;
-
-            New_Line;
          end if;
 
          --  If there is more than one object directory, set ADA_OBJECTS_PATH
@@ -1732,7 +1734,6 @@ begin
          Add (Binder_Generated_File, Bind_Options, Last_Bind_Option);
          Add (Output_Switch, Bind_Options, Last_Bind_Option);
          Add (Binder_Generated_Object, Bind_Options, Last_Bind_Option);
-         Obj_Index := Last_Bind_Option;
 
          if Relocatable and then PIC_Option /= null then
             Add (PIC_Option, Bind_Options, Last_Bind_Option);
@@ -1785,24 +1786,24 @@ begin
          end loop;
 
          if not Quiet_Output then
+            Name_Len := 0;
+
             if Verbose_Mode then
-               Put (Compiler_Path.all);
+               Add_Str_To_Name_Buffer (Compiler_Path.all);
+
+               for J in 1 .. Last_Bind_Option loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
             else
-               Put (Base_Name (Compiler_Name.all));
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => "Ada",
+                  Argument => Binder_Generated_File);
             end if;
-
-            for J in 1 .. Last_Bind_Option loop
-               if not Verbose_Mode and then J > Obj_Index then
-                  Put (" ...");
-                  exit;
-
-               else
-                  Put (" ");
-                  Put (Bind_Options (J).all);
-               end if;
-            end loop;
-
-            New_Line;
          end if;
 
          Spawn
@@ -1937,22 +1938,16 @@ begin
 
                if not Quiet_Output then
                   if Verbose_Mode then
-                     Put (Partial_Linker_Path.all);
-                  else
-                     Put (Base_Name (Partial_Linker_Path.all));
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Partial_Linker_Path.all);
+
+                     for J in 1 .. Last_PL_Option loop
+                        Add_Str_To_Name_Buffer (" ");
+                        Add_Str_To_Name_Buffer (PL_Options (J).all);
+                     end loop;
+
+                     Put_Line (Name_Buffer (1 .. Name_Len));
                   end if;
-
-                  for J in 1 .. Last_PL_Option loop
-                     if (not Verbose_Mode) and then J >= 5 then
-                        Put (" ...");
-                        exit;
-                     end if;
-
-                     Put (' ');
-                     Put (PL_Options (J).all);
-                  end loop;
-
-                  New_Line;
                end if;
 
                Spawn
@@ -2021,23 +2016,25 @@ begin
          --  the archive.
 
          if not Quiet_Output then
+            Name_Len := 0;
+
             if Verbose_Mode then
-               Put (Archive_Builder.all);
+               Add_Str_To_Name_Buffer (Archive_Builder.all);
+
+               for J in 1 .. Next_AB_Object_Pos - 1 loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (AB_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
             else
-               Put (Base_Name (Archive_Builder.all));
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => Base_Name (Archive_Builder.all),
+                  Argument =>
+                    "lib" & Library_Name.all & Archive_Suffix.all);
             end if;
-
-            for J in 1 .. Next_AB_Object_Pos - 1 loop
-               if (not Verbose_Mode) and then J >= 5 then
-                  Put (" ...");
-                  exit;
-               end if;
-
-               Put (' ');
-               Put (AB_Options (J).all);
-            end loop;
-
-            New_Line;
          end if;
 
          Spawn
@@ -2080,22 +2077,15 @@ begin
 
             if not Quiet_Output then
                if Verbose_Mode then
-                  Put (Archive_Builder.all);
-               else
-                  Put (Base_Name (Archive_Builder.all));
+                  Add_Str_To_Name_Buffer (Archive_Builder.all);
+
+                  for J in 1 .. Object_Pos loop
+                     Add_Str_To_Name_Buffer (" ");
+                     Add_Str_To_Name_Buffer (AB_Options (J).all);
+                  end loop;
+
+                  Put_Line (Name_Buffer (1 .. Name_Len));
                end if;
-
-               for J in 1 .. Object_Pos - 1 loop
-                  if (not Verbose_Mode) and then J >= 5 then
-                     Put (" ...");
-                     exit;
-                  end if;
-
-                  Put (' ');
-                  Put (AB_Options (J).all);
-               end loop;
-
-               New_Line;
             end if;
 
             Spawn
@@ -2121,23 +2111,22 @@ begin
 
          if not Quiet_Output then
             if Verbose_Mode then
-               Put (Archive_Indexer.all);
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Archive_Indexer.all);
+
+               for J in 1 .. Last_AI_Option loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (AI_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
             else
-               Put (File_Name (Archive_Indexer.all));
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => File_Name (Archive_Indexer.all),
+                  Argument => File_Name (Library_Path_Name.all));
             end if;
-
-            for J in 1 .. Last_AI_Option loop
-               Put (' ');
-
-               if J = Last_AI_Option and then (not Verbose_Mode) then
-                  Put (File_Name (AI_Options (J).all));
-
-               else
-                  Put (AI_Options (J).all);
-               end if;
-            end loop;
-
-            New_Line;
          end if;
 
          Spawn

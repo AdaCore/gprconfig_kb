@@ -218,6 +218,28 @@ package GPR is
 
    use Stamps;
 
+   --------------------
+   -- Default Output --
+   --------------------
+
+   type Section_Type is (Setup, Compile, Build_Libraries, Bind, Link);
+   --  Different sections in the default output, when switches -q and -v are
+   --  not used.
+
+   procedure Set (Section : Section_Type);
+   --  Indicate that the section header does not need to be output again.
+   --  This is used by gprbind and gprlib to avoid display the section header
+   --  again.
+
+   procedure Display
+     (Section  : Section_Type;
+      Command  : String;
+      Argument : String);
+   --  Display a command in the standard output. Display first the section
+   --  header if it has not been already displayed.
+
+   --------------------
+
    type Name_Id is range 0 .. 99_999_999;
    No_Name : constant Name_Id := 0;
    Error_Name : constant Name_Id := 1;

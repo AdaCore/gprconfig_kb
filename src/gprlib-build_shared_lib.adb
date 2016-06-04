@@ -56,8 +56,6 @@ procedure Build_Shared_Lib is
 
       Driver   : String_Access;
 
-      Lib_Index : Natural := 0;
-
       Response_File_Name : Path_Name_Type := No_Path;
       Response_2         : Path_Name_Type := No_Path;
       Export_File        : Path_Name_Type := No_Path;
@@ -72,32 +70,24 @@ procedure Build_Shared_Lib is
       procedure Display_Linking_Command is
       begin
          if not Opt.Quiet_Output then
-
             if Opt.Verbose_Mode then
-               Put (Driver.all);
+               Name_Len := 0;
+
+               Add_Str_To_Name_Buffer (Driver.all);
+
+               for J in 1 .. Last_Arg loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (Arguments (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
 
             else
-               Put (Base_Name (Driver.all));
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => "link library",
+                  Argument => Lib_File);
             end if;
-
-            for J in 1 .. Last_Arg loop
-               if Opt.Verbose_Mode or else
-                 J <= Lib_Index or else
-                 J = First_Object
-               then
-                  Put (' ');
-                  Put  (Arguments (J).all);
-
-               elsif J > First_Object then
-                  Put (" ...");
-                  exit;
-
-               elsif J = Lib_Index + 1 then
-                  Put (" ...");
-               end if;
-            end loop;
-
-            New_Line;
          end if;
       end Display_Linking_Command;
 
@@ -139,7 +129,6 @@ procedure Build_Shared_Lib is
 
       Add_Arg (Out_Opt);
       Add_Arg (Out_V);
-      Lib_Index := Last_Arg;
 
       --  The options
 
@@ -222,22 +211,15 @@ procedure Build_Shared_Lib is
 
                if not Quiet_Output then
                   if Verbose_Mode then
-                     Put (Partial_Linker_Path.all);
-                  else
-                     Put (Base_Name (Partial_Linker_Path.all));
+                     Add_Str_To_Name_Buffer (Partial_Linker_Path.all);
+
+                     for J in 1 .. Last_PL_Option loop
+                        Add_Str_To_Name_Buffer (" ");
+                        Add_Str_To_Name_Buffer (PL_Options (J).all);
+                     end loop;
+
+                     Put_Line (Name_Buffer (1 .. Name_Len));
                   end if;
-
-                  for J in 1 .. Last_PL_Option loop
-                     if (not Verbose_Mode) and then J >= 5 then
-                        Put (" ...");
-                        exit;
-                     end if;
-
-                     Put (' ');
-                     Put (PL_Options (J).all);
-                  end loop;
-
-                  New_Line;
                end if;
 
                Spawn

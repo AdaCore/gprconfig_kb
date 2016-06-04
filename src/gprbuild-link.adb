@@ -87,8 +87,7 @@ package body Gprbuild.Link is
    --  project.
 
    procedure Display_Command
-     (Name    : String;
-      Path    : String_Access;
+     (Path    : String_Access;
       Ellipse : Boolean := False);
    --  Display the command for a spawned process, if in Verbose_Mode or not in
    --  Quiet_Output. In non verbose mode, when Ellipse is True, display "..."
@@ -907,10 +906,40 @@ package body Gprbuild.Link is
                      Last_Argument := Current_Object_Pos - 1;
                   end if;
 
-                  Display_Command
-                    (Archive_Builder_Name.all,
-                     Archive_Builder_Path,
-                     Ellipse => True);
+                  if not Opt.Quiet_Output then
+                     if Opt.Verbose_Mode then
+                        Display_Command
+                          (Archive_Builder_Path,
+                           Ellipse => True);
+
+                     else
+                        Name_Len := Archive_Builder_Name'Length;
+                        Name_Buffer (1 .. Name_Len) :=
+                          Archive_Builder_Name.all;
+
+                        if Executable_Suffix'Length > 0
+                          and then Archive_Builder_Name'Length >
+                            Executable_Suffix'Length
+                        then
+                           Name_Len := Archive_Builder_Name'Length;
+                           Name_Buffer (1 .. Name_Len) :=
+                             Archive_Builder_Name.all;
+
+                           if Name_Buffer
+                             (Name_Len - Executable_Suffix'Length + 1 ..
+                                Name_Len) =
+                               Executable_Suffix.all
+                           then
+                              Name_Len := Name_Len - Executable_Suffix'Length;
+                           end if;
+                        end if;
+
+                        Display
+                          (Section  => GPR.Link,
+                           Command  => Base_Name (Name_Buffer (1 .. Name_Len)),
+                           Argument => Archive_Name);
+                     end if;
+                  end if;
 
                   Spawn
                     (Archive_Builder_Path.all,
@@ -951,10 +980,11 @@ package body Gprbuild.Link is
                            Current_Object_Pos := Current_Object_Pos + 1;
                         end loop;
 
-                        Display_Command
-                          (Archive_Builder_Name.all,
-                           Archive_Builder_Path,
-                           Ellipse => True);
+                        if Opt.Verbose_Mode then
+                           Display_Command
+                             (Archive_Builder_Path,
+                              Ellipse => True);
+                        end if;
 
                         Spawn
                           (Archive_Builder_Path.all,
@@ -984,8 +1014,19 @@ package body Gprbuild.Link is
                            True,
                            Simple_Name => not Opt.Verbose_Mode);
 
-                        Display_Command
-                          (Archive_Indexer_Name.all, Archive_Indexer_Path);
+                        if not Opt.Quiet_Output then
+                           if Opt.Verbose_Mode then
+                              Display_Command
+                                (Archive_Indexer_Path);
+
+                           else
+                              Display
+                                (Section  => GPR.Link,
+                                 Command  =>
+                                   Base_Name (Archive_Indexer_Name.all),
+                                 Argument => Archive_Name);
+                           end if;
+                        end if;
 
                         Spawn
                           (Archive_Indexer_Path.all,
@@ -1071,9 +1112,8 @@ package body Gprbuild.Link is
    ---------------------
 
    procedure Display_Command
-     (Name    : String;
-      Path    : String_Access;
-      Ellipse : Boolean := False)
+     (Path          : String_Access;
+      Ellipse       : Boolean := False)
    is
       Display_Ellipse : Boolean := Ellipse;
    begin
@@ -1081,52 +1121,32 @@ package body Gprbuild.Link is
       --  not in Quiet Output (no -q).
 
       if not Opt.Quiet_Output then
+         Name_Len := 0;
 
          --  In Verbose Mode output the full path of the spawned process
 
          if Opt.Verbose_Mode then
-            Put (Path.all);
+            Add_Str_To_Name_Buffer (Path.all);
 
-         elsif Executable_Suffix'Length > 0
-           and then Name'Length > Executable_Suffix'Length
-         then
-            Name_Len := Name'Length;
-            Name_Buffer (1 .. Name_Len) := Name;
+            for Arg in 1 .. Last_Argument loop
+               if Arguments_Displayed (Arg) then
+                  Add_Str_To_Name_Buffer (" ");
 
-            if Name_Buffer
-              (Name_Len - Executable_Suffix'Length + 1 .. Name_Len) =
-              Executable_Suffix.all
-            then
-               Name_Len := Name_Len - Executable_Suffix'Length;
-            end if;
+                  if Arguments_Simple_Name (Arg) then
+                     Add_Str_To_Name_Buffer (Base_Name (Arguments (Arg).all));
 
-            Put (Base_Name (Name_Buffer (1 .. Name_Len)));
+                  else
+                     Add_Str_To_Name_Buffer (Arguments (Arg).all);
+                  end if;
 
-         else
-            Put (Base_Name (Name));
-         end if;
-
-         --  Display only the arguments for which the display flag is set
-         --  (in Verbose Mode, the display flag is set for all arguments)
-
-         for Arg in 1 .. Last_Argument loop
-            if Arguments_Displayed (Arg) then
-               Put (' ');
-
-               if Arguments_Simple_Name (Arg) then
-                  Put (Base_Name (Arguments (Arg).all));
-
-               else
-                  Put (Arguments (Arg).all);
+               elsif Display_Ellipse then
+                  Add_Str_To_Name_Buffer (" ...");
+                  Display_Ellipse := False;
                end if;
+            end loop;
 
-            elsif Display_Ellipse then
-               Put (" ...");
-               Display_Ellipse := False;
-            end if;
-         end loop;
-
-         New_Line;
+            Put_Line (Name_Buffer (1 .. Name_Len));
+         end if;
       end if;
    end Display_Command;
 
@@ -2826,7 +2846,16 @@ package body Gprbuild.Link is
             Delete_File (Get_Name_String (Exec_Path_Name), Dummy);
          end;
 
-         Display_Command (Linker_Name.all, Linker_Path);
+         if not Opt.Quiet_Output then
+            if Opt.Verbose_Mode then
+               Display_Command (Linker_Path);
+            else
+               Display
+                 (Section  => GPR.Link,
+                  Command  => "link",
+                  Argument => Main);
+            end if;
+         end if;
 
          declare
             Pid : Process_Id;

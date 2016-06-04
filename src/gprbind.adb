@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -235,6 +235,11 @@ procedure Gprbind is
 
 begin
    Set_Program_Name ("gprbind");
+
+   --  As the section header has alreading been displayed when gprlib was
+   --  invoked, indicate that it should not be displayed again.
+
+   GPR.Set (Section => GPR.Bind);
 
    if Argument_Count /= 1 then
       Fail_Program (null, "incorrect invocation");
@@ -715,39 +720,33 @@ begin
    end if;
 
    if not Quiet_Output then
-      Display_Last := 0;
-
       if Verbose_Mode then
+         Display_Last := 0;
          Add_To_Display_Line (Gnatbind_Path.all);
-      else
-         Add_To_Display_Line (Base_Name (GNATBIND.all));
-      end if;
 
-      if Verbose_Mode then
          for Option in 1 .. Last_Gnatbind_Option loop
             Add_To_Display_Line (Gnatbind_Options (Option).all);
          end loop;
 
+         Put_Line (Display_Line (1 .. Display_Last));
+
       else
          if Main_ALI /= null then
-            Add_To_Display_Line (Base_Name (Main_ALI.all));
-
-            if ALI_Files_Table.Last > 0 then
-               Add_To_Display_Line ("...");
-            end if;
+            Display
+              (Section  => GPR.Bind,
+               Command  => Base_Name (GNATBIND.all),
+               Argument => Base_Name (Main_ALI.all));
 
          elsif ALI_Files_Table.Last > 0 then
-            Add_To_Display_Line (Base_Name (ALI_Files_Table.Table (1).all));
-
-            if ALI_Files_Table.Last > 1 then
-               Add_To_Display_Line ("...");
-            end if;
-
-            Add_To_Display_Line (No_Main_Option);
+            Display
+              (Section  => GPR.Bind,
+               Command  => Base_Name (GNATBIND.all),
+               Argument =>
+                 Base_Name (ALI_Files_Table.Table (1).all) &
+                 " " &
+                 No_Main_Option);
          end if;
       end if;
-
-      Put_Line (Display_Line (1 .. Display_Last));
    end if;
 
    declare
@@ -984,21 +983,17 @@ begin
          Compiler_Options,
          Last_Compiler_Option);
 
-      if not Quiet_Output then
+      if Verbose_Mode then
          Name_Len := 0;
 
-         if Verbose_Mode then
-            Add_Str_To_Name_Buffer (Ada_Compiler_Path.all);
-         else
-            Add_Str_To_Name_Buffer (Base_Name (Ada_Compiler_Path.all));
-         end if;
+         Add_Str_To_Name_Buffer (Ada_Compiler_Path.all);
 
          --  Remove the executable suffix, if present
 
          if Executable_Suffix'Length > 0
            and then
              Name_Len > Executable_Suffix'Length
-           and then
+             and then
                Name_Buffer
                  (Name_Len - Executable_Suffix'Length + 1 .. Name_Len) =
                Executable_Suffix.all
@@ -1009,18 +1004,9 @@ begin
          Display_Last := 0;
          Add_To_Display_Line (Name_Buffer (1 .. Name_Len));
 
-         if Verbose_Mode then
-            for Option in 1 .. Last_Compiler_Option loop
-               Add_To_Display_Line (Compiler_Options (Option).all);
-            end loop;
-
-         else
-            Add_To_Display_Line (Compiler_Options (1).all);
-
-            if Compiler_Options (1) /= Binder_Generated_File then
-               Add_To_Display_Line (Binder_Generated_File.all);
-            end if;
-         end if;
+         for Option in 1 .. Last_Compiler_Option loop
+            Add_To_Display_Line (Compiler_Options (Option).all);
+         end loop;
 
          Put_Line (Display_Line (1 .. Display_Last));
       end if;

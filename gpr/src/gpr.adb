@@ -24,6 +24,7 @@
 
 with Ada.Characters.Handling;     use Ada.Characters.Handling;
 with Ada.Containers.Ordered_Sets;
+with Ada.Text_IO;                 use Ada.Text_IO;
 with Ada.Unchecked_Deallocation;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
@@ -74,6 +75,13 @@ package body GPR is
                           All_Upper_Case => All_Upper_Case_Image'Access,
                           Mixed_Case     => Mixed_Case_Image'Access,
                           Unknown        => null);
+
+   type Section_Displayed_Arr is array (Section_Type) of Boolean;
+   Section_Displayed : Section_Displayed_Arr := (others => False);
+   --  Flags to avoid to display several times the section header
+
+   function Label (Section : Section_Type) return String;
+   --  Section headers
 
    procedure Free (Project : in out Project_Id);
    --  Free memory allocated for Project
@@ -287,6 +295,61 @@ package body GPR is
             return Extend_Name (Source_File_Name, ALI_Dependency_Suffix);
       end case;
    end Dependency_Name;
+
+   ---------
+   -- Set --
+   ---------
+
+   procedure Set (Section : Section_Type)
+   is
+   begin
+      Section_Displayed (Section) := True;
+   end Set;
+
+   -------------
+   -- Display --
+   -------------
+
+   procedure Display
+     (Section  : Section_Type;
+      Command  : String;
+      Argument : String)
+   is
+      Buffer : String (1 .. 1_000);
+      Last   : Natural := 0;
+
+      First_Offset  : constant := 3;
+      Second_Offset : constant := 18;
+
+   begin
+      --  Display the section header if not already displayed
+
+      if not Section_Displayed (Section) then
+         Put_Line (Label (Section));
+         Section_Displayed (Section) := True;
+      end if;
+
+      Buffer (1 .. First_Offset) := (others => ' ');
+      Last := First_Offset + 1;
+      Buffer (Last) := '[';
+      Buffer (Last + 1 .. Last + Command'Length) := Command;
+      Last := Last + Command'Length + 1;
+      Buffer (Last) := ']';
+
+      --  At least one space between first and second column. Second column
+      --  starts at least at Second_Offset + 1.
+
+      loop
+         Last := Last + 1;
+         Buffer (Last) := ' ';
+         exit when Last >= Second_Offset;
+      end loop;
+
+      Buffer (Last + 1 .. Last + Argument'Length) := Argument;
+      Last := Last + Argument'Length;
+
+      Put_Line (Buffer (1 .. Last));
+   end Display;
 
    ----------------
    -- Dot_String --
@@ -1325,6 +1388,26 @@ package body GPR is
          Languages := Tmp;
       end loop;
    end Free_List;
+
+   -----------
+   -- Label --
+   -----------
+
+   function Label (Section : Section_Type) return String is
+   begin
+      case Section is
+         when Setup =>
+            return "Setup";
+         when Compile =>
+            return "Compile";
+         when Build_Libraries =>
+            return "Build Libraries";
+         when Bind =>
+            return "Bind";
+         when Link =>
+            return "Link";
+      end case;
+   end Label;
 
    --------------------------
    -- Reset_Units_In_Table --

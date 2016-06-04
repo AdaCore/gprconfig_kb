@@ -933,9 +933,21 @@ package body GPR.Conf is
                   Create_Path (Obj_Dir);
 
                   if not Quiet_Output then
-                     Write_Str ("object directory """);
-                     Write_Str (Obj_Dir);
-                     Write_Line (""" created");
+                     if Verbose_Mode then
+                        Write_Str ("object directory """);
+                        Write_Str (Obj_Dir);
+                        Write_Str (""" created for project ");
+                        Write_Line
+                          (Get_Name_String (Conf_Project.Display_Name));
+
+                     else
+                        Display
+                          (Section  => Setup,
+                           Command  => "mkdir",
+                           Argument =>
+                             "object directory for project " &
+                             Get_Name_String (Conf_Project.Display_Name));
+                     end if;
                   end if;
 
                exception

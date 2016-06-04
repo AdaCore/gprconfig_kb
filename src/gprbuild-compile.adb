@@ -2855,40 +2855,33 @@ package body Gprbuild.Compile is
 
       begin
          if not Opt.Quiet_Output then
+            Name_Len := 0;
+
             if Opt.Verbose_Mode then
-               Put (Compiler_Path);
+               Add_Str_To_Name_Buffer (Compiler_Path);
 
-            else
-               Name_Len := 0;
-               Add_Str_To_Name_Buffer (Base_Name (Compiler_Path));
-
-               if Executable_Suffix'Length /= 0
-                 and then Name_Len > Executable_Suffix'Length
-                 and then Name_Buffer
-                   (Name_Len - Executable_Suffix'Length + 1 .. Name_Len)
-                   = Executable_Suffix.all
-               then
-                  Name_Len := Name_Len - Executable_Suffix'Length;
-               end if;
-
-               Put (Name_Buffer (1 .. Name_Len));
-            end if;
-
-            for Option in 1 .. Compilation_Options.Last loop
-               if Compilation_Options.Visible (Option) then
-                  Put (' ');
+               for Option in 1 .. Compilation_Options.Last loop
+                  Add_Str_To_Name_Buffer (" ");
 
                   if Compilation_Options.Simple_Name (Option) then
-                     Put
+                     Add_Str_To_Name_Buffer
                        (Base_Name (Compilation_Options.Options (Option).all));
 
                   else
-                     Put (Compilation_Options.Options (Option).all);
+                     Add_Str_To_Name_Buffer
+                       (Compilation_Options.Options (Option).all);
                   end if;
-               end if;
-            end loop;
+               end loop;
 
-            New_Line;
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
+            else
+               Display
+                 (Section  => GPR.Compile,
+                  Command  =>
+                    Get_Name_String (Source.Id.Language.Display_Name),
+                  Argument => Get_Name_String (Source.Id.File));
+            end if;
          end if;
 
          if Source_Project.Config.Max_Command_Line_Length > 0 and then

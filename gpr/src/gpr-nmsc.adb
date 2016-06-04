@@ -6628,11 +6628,21 @@ package body GPR.Nmsc is
                      Create_Path (Full_Path_Name.all);
 
                      if not GPR.Opt.Quiet_Output then
-                        Write_Str (Create);
-                        Write_Str (" directory """);
-                        Write_Str (Full_Path_Name.all);
-                        Write_Str (""" created for project ");
-                        Write_Line (Get_Name_String (Project.Name));
+                        if Verbose_Mode then
+                           Write_Str (Create);
+                           Write_Str (" directory """);
+                           Write_Str (Full_Path_Name.all);
+                           Write_Str (""" created for project ");
+                           Write_Line (Get_Name_String (Project.Display_Name));
+
+                        else
+                           Display
+                             (Section  => Setup,
+                              Command  => "mkdir",
+                              Argument =>
+                                Create & " directory for project " &
+                                Get_Name_String (Project.Display_Name));
+                        end if;
                      end if;
 
                   exception
