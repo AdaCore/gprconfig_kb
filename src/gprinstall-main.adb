@@ -898,6 +898,8 @@ begin
       exception
          when E : GPR.Conf.Invalid_Config =>
             Fail_Program (Project_Tree, Exception_Message (E));
+         when E : Name_Error =>
+            Fail_Program (Project_Tree, Exception_Message (E));
       end;
 
       if Main_Project = No_Project then
