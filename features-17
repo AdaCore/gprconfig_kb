@@ -73,6 +73,12 @@ NF-17-P112-012 GPRbuild distributed environment consistency (2016-01-18)
    value specified can be used to ensure that the environement is consistent
    on both side.
 
+NF-17-OC08-018 New attribute Origin_Project (2016-04-05)
+
+   A new project level attribute Origin_Project is defined. Its value is
+   a single string and designates a project name. It may be used for
+   various purposes by project aware tools.
+
 NF-17-OC01-014 New Library_Kind "static-pic" (2015-12-02)
 
    A new library kind "static-pic" is introduced. static-pic libraries are
