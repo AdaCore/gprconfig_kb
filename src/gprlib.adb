@@ -2031,7 +2031,7 @@ begin
             else
                Display
                  (Section  => Build_Libraries,
-                  Command  => Base_Name (Archive_Builder.all),
+                  Command  => "archive",
                   Argument =>
                     "lib" & Library_Name.all & Archive_Suffix.all);
             end if;
@@ -2124,7 +2124,7 @@ begin
             else
                Display
                  (Section  => Build_Libraries,
-                  Command  => File_Name (Archive_Indexer.all),
+                  Command  => "index",
                   Argument => File_Name (Library_Path_Name.all));
             end if;
          end if;

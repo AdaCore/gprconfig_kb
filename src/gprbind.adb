@@ -734,13 +734,13 @@ begin
          if Main_ALI /= null then
             Display
               (Section  => GPR.Bind,
-               Command  => Base_Name (GNATBIND.all),
+               Command  => "Ada",
                Argument => Base_Name (Main_ALI.all));
 
          elsif ALI_Files_Table.Last > 0 then
             Display
               (Section  => GPR.Bind,
-               Command  => Base_Name (GNATBIND.all),
+               Command  => "Ada",
                Argument =>
                  Base_Name (ALI_Files_Table.Table (1).all) &
                  " " &

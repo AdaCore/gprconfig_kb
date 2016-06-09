@@ -913,30 +913,9 @@ package body Gprbuild.Link is
                            Ellipse => True);
 
                      else
-                        Name_Len := Archive_Builder_Name'Length;
-                        Name_Buffer (1 .. Name_Len) :=
-                          Archive_Builder_Name.all;
-
-                        if Executable_Suffix'Length > 0
-                          and then Archive_Builder_Name'Length >
-                            Executable_Suffix'Length
-                        then
-                           Name_Len := Archive_Builder_Name'Length;
-                           Name_Buffer (1 .. Name_Len) :=
-                             Archive_Builder_Name.all;
-
-                           if Name_Buffer
-                             (Name_Len - Executable_Suffix'Length + 1 ..
-                                Name_Len) =
-                               Executable_Suffix.all
-                           then
-                              Name_Len := Name_Len - Executable_Suffix'Length;
-                           end if;
-                        end if;
-
                         Display
                           (Section  => GPR.Link,
-                           Command  => Base_Name (Name_Buffer (1 .. Name_Len)),
+                           Command  => "archive",
                            Argument => Archive_Name);
                      end if;
                   end if;
@@ -1022,8 +1001,7 @@ package body Gprbuild.Link is
                            else
                               Display
                                 (Section  => GPR.Link,
-                                 Command  =>
-                                   Base_Name (Archive_Indexer_Name.all),
+                                 Command  => "index",
                                  Argument => Archive_Name);
                            end if;
                         end if;

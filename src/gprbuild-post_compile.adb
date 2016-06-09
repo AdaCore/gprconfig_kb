@@ -17,6 +17,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Ordered_Sets;
+with Ada.Directories;
 with Ada.Text_IO;                 use Ada, Ada.Text_IO;
 
 with GNAT.Case_Util;            use GNAT.Case_Util;
@@ -2303,7 +2304,9 @@ package body Gprbuild.Post_Compile is
 
          else
             Library_Builder_Name :=
-              new String'(Base_Name (Library_Builder.all));
+              new String'(Ada.Directories.Base_Name
+                            (Ada.Directories.Simple_Name
+                               (Library_Builder.all)));
          end if;
       end if;
 
@@ -4290,8 +4293,11 @@ package body Gprbuild.Post_Compile is
                            Path_Name :=
                              Main_Proj.Objects_Path_File_Without_Libs;
 
-                           for Index in 1 .. Directories.Last loop
-                              Get_Name_String (Directories.Table (Index));
+                           for Index in
+                             1 .. Gpr_Build_Util.Directories.Last
+                           loop
+                              Get_Name_String
+                                (Gpr_Build_Util.Directories.Table (Index));
 
                               if Current_Verbosity = High then
                                  Put_Line (Name_Buffer (1 .. Name_Len));
@@ -4335,23 +4341,11 @@ package body Gprbuild.Post_Compile is
                      Put_Line (Name_Buffer (1 .. Name_Len));
 
                   else
-                     Name_Len := 0;
-                     Add_Str_To_Name_Buffer
-                       (Base_Name
-                          (Get_Name_String (B_Data.Binder_Driver_Name)));
-
-                     if Executable_Suffix'Length /= 0
-                       and then Name_Len > Executable_Suffix'Length
-                       and then Name_Buffer
-                         (Name_Len - Executable_Suffix'Length + 1
-                          .. Name_Len) = Executable_Suffix.all
-                     then
-                        Name_Len := Name_Len - Executable_Suffix'Length;
-                     end if;
-
                      Display
                        (Section  => GPR.Bind,
-                        Command  => Name_Buffer (1 .. Name_Len),
+                        Command  => Ada.Directories.Base_Name
+                                     (Ada.Directories.Simple_Name
+                                       (B_Data.Binder_Driver_Path.all)),
                         Argument => Bind_Exchange.all);
                   end if;
                end if;
