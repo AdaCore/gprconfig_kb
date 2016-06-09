@@ -17,6 +17,21 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P606-054 Spurious requirement for a body when building a SAL
+
+  Problem:    GPRBuild incorrectly expects unit U to be part of the interface
+              set of a SAL (Standalone Shared Library) when a generic unit with
+              a nested generic subprogram is instantiated in unit M, the
+              instantiation is followed by a generic subprogram renaming of the
+              nested generic subprogram defined in the instance, the body of M
+              has a with clause on U, and the associated project file does not
+              list U in the Library_Interface set for the SAL.
+
+  Status:     This was fixed in 17 on 2016-06-08
+
+  Workaround: Remove the generic subprogram renaming or include U in the
+              Library_Interface set for the SAL.
+
 KP-23-P531-017 Interfaces in projects aggregated by aggregate SAL project
 
   Problem:    When a project aggregated by an aggregate Stand-Alone Library
