@@ -71,6 +71,12 @@ package GPR is
      Character range Character'Val (16#80#) .. Character'Val (16#FF#);
    --  8-bit Characters with the upper bit set
 
+   subtype Graphic_Character is Character range ' ' .. '~';
+   --  Graphic characters, as defined in Ada Reference Manual
+
+   subtype Line_Terminator is Character range ASCII.LF .. ASCII.CR;
+   --  Line terminator characters (LF, VT, FF, CR)
+
    type Source_Ptr is new Int;
    --  Type used to represent a source location, which is a subscript of a
    --  character in the source buffer. As noted above, different source buffers

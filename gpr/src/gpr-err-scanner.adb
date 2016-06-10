@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2015, Free Software Foundation, Inc.              --
+--       Copyright (C) 2015-2016, Free Software Foundation, Inc.           --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -849,6 +849,18 @@ package body Scanner is
 
                else
                   Accumulate_Checksum (C);
+
+                  if C not in Graphic_Character then
+                     if C in Line_Terminator then
+                        Error_Msg
+                          ("missing string quote", Scan_Ptr);
+                        exit;
+
+                     elsif C not in Upper_Half_Character then
+                        Error_Msg
+                          ("invalid character in string", Scan_Ptr);
+                     end if;
+                  end if;
 
                   Code := Get_Char_Code (C);
                   Scan_Ptr := Scan_Ptr + 1;
