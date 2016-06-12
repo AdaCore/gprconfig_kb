@@ -43,6 +43,15 @@ KP-23-P531-017 Interfaces in projects aggregated by aggregate SAL project
 
   Workaround: Use attribute Library_Interface instead of Interfaces.
 
+KP-23-P525-002 Endless loop with unfinished string in project file
+
+  Problem:    When in a project file there is a string with a missing
+              double quote, gprbuild may crash or end in an endless loop.
+
+  Status:     This was fixed in 17 on 2016-06-11
+
+  Workaround: Fix the project file.
+
 KP-23-P508-004 gprls crashes when object directory does not exist
 
   Problem:    gprls crashes when invoked for a project that specifies an object
