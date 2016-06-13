@@ -24,43 +24,6 @@ compilers such as GNAT Pro or GNAT GPL, and with `--build=x86_64-pc-mingw32` for
 
     $ ./configure --build=x86_64-pc-mingw32 --prefix=$HOME/local
 
-Using alternate GNAT Sources
-============================
-
-Gprbuild uses some sources of the GNAT package. They are expected by default to
-be located in the `gnat/` subdirectory of Gprbuild. Only some of the GNAT
-sources are required, but note that having all of the GNAT sources present in
-the `gnat/` subdirectory will result in build failure.
-
-In order to use GNAT sources from another location, create a link named
-`gnat_src` and call the Makefile target `copy_gnat_src`:
-
-    $ ln -s <path_to_gnat_sources> gnat_src
-    $ make copy_gnat_src
-
-That will place links into the `gnat/` subdirectory for each of the required
-GNAT source files.
-
-On Windows with Cygwin, the files must be copied because symbolic links do not
-work. The definition of `GNAT_SOURCE_DIR` in the Makefile needs to be modified
-so that it specifies the path to the GNAT sources. For example:
-
-    GNAT_SOURCE_DIR=$(HOME)/gnat
-
-Then call the Makefile target `copy_gnat_src`:
-
-    $ make copy_gnat_src
-
-The Makefile will recognize the use of Windows and will therefore place a copy
-of the required files into the `gnat/` subdirectory.
-
-Alternatively you can specify `GNAT_SOURCE_DIR` on the command line when
-invoking the makefile target:
-
-    $ make copy_gnat_src GNAT_SOURCE_DIR=<path/to/gnat/sources>
-
-Note that target `copy_gnat_src` is invoked automatically by target `complete`.
-
 Building and Installing
 =======================
 
