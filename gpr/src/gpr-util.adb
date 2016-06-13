@@ -25,6 +25,7 @@
 with Ada.Command_Line;                       use Ada.Command_Line;
 with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Directories;
+with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.Fixed;                      use Ada.Strings.Fixed;
 with Ada.Strings.Maps;                       use Ada.Strings.Maps;
@@ -43,6 +44,8 @@ with GPR.Opt;
 with GPR.Com;
 with GPR.Sinput;
 with GPR.Snames; use GPR.Snames;
+
+with System; use System;
 
 package body GPR.Util is
    use Ada.Containers;
@@ -74,6 +77,132 @@ package body GPR.Util is
       Key        => File_Name_Type,
       Hash       => GPR.Hash,
       Equal      => "=");
+
+   function Is_Dir (Name : Address) return Integer;
+   pragma Import (C, Is_Dir, "__gnat_is_directory");
+
+   function Locate_File_With_Predicate
+     (File_Name, Path_Val, Predicate : Address) return Address;
+   pragma Import (C, Locate_File_With_Predicate,
+                  "__gnat_locate_file_with_predicate");
+
+   function strlen (A : Address) return size_t;
+   pragma Import (Intrinsic, strlen, "strlen");
+
+   function To_Path_String_Access
+     (Path_Addr : Address;
+      Path_Len  : Integer) return String_Access;
+   --  Converts a C String to an Ada String.
+
+   function Locate_Directory
+     (Dir_Name : C_File_Name;
+      Path     : C_File_Name)
+      return String_Access;
+
+   function C_String_Length (S : Address) return Integer;
+   --  Returns the length of C (null-terminated) string at S, or 0 for
+   --  Null_Address.
+
+   ------------------------------
+   -- Locate_Directory support --
+   ------------------------------
+
+   ---------------------
+   -- C_String_Length --
+   ---------------------
+
+   function C_String_Length (S : Address) return Integer is
+   begin
+      if S = Null_Address then
+         return 0;
+      else
+         return Integer (strlen (S));
+      end if;
+   end C_String_Length;
+
+   ----------------------
+   -- Locate_Directory --
+   ----------------------
+
+   function Locate_Directory
+     (Dir_Name : C_File_Name;
+      Path     : C_File_Name)
+      return String_Access
+   is
+      Result_Addr : Address;
+      Result_Len  : Integer;
+      Result      : String_Access := null;
+
+   begin
+      Result_Addr :=
+        Locate_File_With_Predicate
+          (Dir_Name, Path, Is_Dir'Address);
+      Result_Len := C_String_Length (Result_Addr);
+
+      if Result_Len /= 0 then
+         Result := To_Path_String_Access (Result_Addr, Result_Len);
+      end if;
+
+      return Result;
+   end Locate_Directory;
+
+   function Locate_Directory
+     (Dir_Name   : String;
+      Path       : String)
+     return String_Access
+   is
+      C_Dir_Name : String (1 .. Dir_Name'Length + 1);
+      C_Path     : String (1 .. Path'Length + 1);
+      Result     : String_Access;
+   begin
+      C_Dir_Name (1 .. Dir_Name'Length) := Dir_Name;
+      C_Dir_Name (C_Dir_Name'Last)      := ASCII.NUL;
+
+      C_Path     (1 .. Path'Length)     := Path;
+      C_Path     (C_Path'Last)          := ASCII.NUL;
+
+      Result := Locate_Directory (C_Dir_Name'Address, C_Path'Address);
+
+      if Result /= null and then not Is_Absolute_Path (Result.all) then
+         declare
+            Absolute_Path : constant String := Normalize_Pathname (Result.all);
+         begin
+            Free (Result);
+            Result := new String'(Absolute_Path);
+         end;
+      end if;
+
+      return Result;
+   end Locate_Directory;
+
+   ---------------------------
+   -- To_Path_String_Access --
+   ---------------------------
+
+   function To_Path_String_Access
+     (Path_Addr : Address;
+      Path_Len  : Integer) return String_Access
+   is
+      subtype Path_String is String (1 .. Path_Len);
+      type    Path_String_Access is access Path_String;
+
+      function Address_To_Access is new Ada.Unchecked_Conversion
+        (Source => Address, Target => Path_String_Access);
+
+      Path_Access : constant Path_String_Access :=
+                      Address_To_Access (Path_Addr);
+
+      Return_Val  : String_Access;
+
+   begin
+      Return_Val := new String (1 .. Path_Len);
+
+      for J in 1 .. Path_Len loop
+         Return_Val (J) := Path_Access (J);
+      end loop;
+
+      return Return_Val;
+   end To_Path_String_Access;
 
    --------------
    -- Closures --

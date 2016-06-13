@@ -67,6 +67,8 @@ package GPR is
    type Word is mod 2 ** 32;
    --  Unsigned 32-bit integer
 
+   type size_t is mod 2 ** Standard'Address_Size;
+
    subtype Upper_Half_Character is
      Character range Character'Val (16#80#) .. Character'Val (16#FF#);
    --  8-bit Characters with the upper bit set

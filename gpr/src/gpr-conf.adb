@@ -22,8 +22,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Directories; use Ada.Directories;
-with Ada.Exceptions;  use Ada.Exceptions;
+with Ada.Directories;   use Ada.Directories;
+with Ada.Exceptions;    use Ada.Exceptions;
 
 with GNAT.Case_Util; use GNAT.Case_Util;
 with GNAT.HTable;    use GNAT.HTable;
@@ -1420,15 +1420,32 @@ package body GPR.Conf is
                     Normalize_Pathname
                       (Get_Name_String (Project.Directory.Display_Name) &
                            Directory_Separator & Runtime_Dir);
+                  Runtime_Path : String_Access :=
+                    Getenv (Name => "GPR_RUNTIME_PATH");
+
                begin
-                  if Dir'Length = 0 or else not Is_Directory (Dir) then
-                     if not Is_Base_Name (Runtime_Dir) then
-                        OK := False;
-                        RTS_Dir := new String'(Runtime_Dir);
-                     end if;
-                  else
+                  if Dir'Length > 0 and then Is_Directory (Dir) then
                      RTS_Dir := new String'(Dir);
+
+                  else
+                     --  If Environment variable GPR_RUNTIME_PATH is defined,
+                     --  look for the runtime directory in this path.
+
+                     if Runtime_Path'Length > 0 then
+                        RTS_Dir := Locate_Directory
+                          (Dir_Name => Runtime_Dir,
+                           Path     => Runtime_Path.all);
+                     end if;
+
+                     if RTS_Dir = null then
+                        if not Is_Base_Name (Runtime_Dir) then
+                           OK := False;
+                           RTS_Dir := new String'(Runtime_Dir);
+                        end if;
+                     end if;
                   end if;
+
+                  Free (Runtime_Path);
                end;
             end if;
 
@@ -1459,6 +1476,7 @@ package body GPR.Conf is
 
                if OK then
                   Set_Runtime_For (Name_Ada, RTS_Dir.all);
+                  Free (RTS_Dir);
 
                --  Do not fail if the runtime directory is a base name, as
                --  there may be a subdirectory of the project directory with

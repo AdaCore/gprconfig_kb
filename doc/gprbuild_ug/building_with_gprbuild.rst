@@ -638,9 +638,19 @@ Example:
 
 If GPRbuild cannot find the main configuration project on the configuration
 project path, then it will look for all the languages specified in the user
-project tree and invoke GPRconfig to create a configuration project file
-named :file:`auto.cgpr` that is located in the object directory of the main
-project file.
+project tree and invoke GPRconfig to create a temporary configuration project
+file that is located in the directory specified by environment variable TMPDIR,
+or if TMPDIR is not defined in the object directory of the main project file.
+
+The invocation of GPRconfig will take into account the target, if specified
+either by switch --target= on the command line or by attribute Target in the
+main project. Also, if Ada is one of the languages, it will take into account
+the Ada runtime directory, specified either by switches --RTS= or --RTS:ada= on
+the command line or by attribute Runtime ("Ada") in the main project file. If
+the Ada runtime is specified as a relative path, gprbuild will try to locate
+the Ada runtime directory as a subdirectoty of the main project directory, or
+if environement variable GPR_RUNTIME_PATH is defined in the path specified
+by GPR_RUNTIME_PATH.
 
 Once it has found the configuration project, GPRbuild will process its
 configuration: if a single string attribute is specified in the configuration

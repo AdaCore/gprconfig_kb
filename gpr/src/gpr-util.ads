@@ -144,6 +144,14 @@ package GPR.Util is
    --  return an empty string. When a directory is returned, it is guaranteed
    --  to end with a directory separator.
 
+   function Locate_Directory
+     (Dir_Name : String;
+      Path     : String)
+      return String_Access;
+   --  Find directory Dir_Name in Path. Return absolute path of directory, or
+   --  null if directory cannot be found. The caller is responsible for
+   --  freeing the returned String_Access.
+
    procedure Put
      (Into_List  : in out Name_List_Index;
       From_List  : String_List_Id;
