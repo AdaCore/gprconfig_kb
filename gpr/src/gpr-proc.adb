@@ -531,6 +531,86 @@ package body GPR.Proc is
 
       Current_Term_Kind : Project_Node_Kind;
 
+      procedure Split
+        (Source    : Project_Node_Id;
+         Separator : Project_Node_Id);
+      --  Process N_Split node
+
+      -----------
+      -- Split --
+      -----------
+
+      procedure Split
+        (Source    : Project_Node_Id;
+         Separator : Project_Node_Id)
+      is
+         use GPR.Util;
+
+         Source_Var : constant Variable_Value :=
+           Expression
+             (Project                => Project,
+              Shared                 => Shared,
+              From_Project_Node      => Source,
+              From_Project_Node_Tree => From_Project_Node_Tree,
+              Env                    => Env,
+              Pkg                    => Pkg,
+              First_Term             =>
+                Tree.First_Term (Source, From_Project_Node_Tree),
+              Kind                   => Single);
+
+         Separator_Var : constant Variable_Value :=
+           Expression
+             (Project                => Project,
+              Shared                 => Shared,
+              From_Project_Node      => Separator,
+              From_Project_Node_Tree => From_Project_Node_Tree,
+              Env                    => Env,
+              Pkg                    => Pkg,
+              First_Term             =>
+                Tree.First_Term (Separator, From_Project_Node_Tree),
+              Kind                   => Single);
+
+         Source_String : constant String :=
+           Get_Name_String (Source_Var.Value);
+         Separator_String : constant String :=
+           Get_Name_String (Separator_Var.Value);
+
+         Names : constant Name_Array_Type :=
+           Split (Source    => Source_String,
+                  Separator => Separator_String);
+
+      begin
+         for J in Names'Range loop
+            String_Element_Table.Increment_Last
+              (Shared.String_Elements);
+
+            if Last = Nil_String then
+               Result.Values :=
+                 String_Element_Table.Last
+                   (Shared.String_Elements);
+
+            else
+               Shared.String_Elements.Table (Last).Next
+                 := String_Element_Table.Last
+                   (Shared.String_Elements);
+            end if;
+
+            Last := String_Element_Table.Last
+              (Shared.String_Elements);
+
+            Shared.String_Elements.Table (Last) :=
+              (Value         => Names (J),
+               Display_Value => No_Name,
+               Location      =>
+                 Location_Of
+                   (The_Current_Term,
+                    From_Project_Node_Tree),
+               Flag          => False,
+               Next          => Nil_String,
+               Index         => 0);
+         end loop;
+      end Split;
+
    begin
       Result.Project := Project;
       Result.Location := Location_Of (First_Term, From_Project_Node_Tree);
@@ -1365,6 +1445,17 @@ package body GPR.Proc is
                         end if;
                   end case;
                end;
+
+            when N_Split =>
+               Split
+                 (Source =>
+                     String_Argument_Of
+                    (The_Current_Term,
+                     From_Project_Node_Tree),
+                  Separator =>
+                     Separator_Of
+                    (The_Current_Term,
+                     From_Project_Node_Tree));
 
             when others =>
 

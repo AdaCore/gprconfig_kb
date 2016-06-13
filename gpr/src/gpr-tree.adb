@@ -49,6 +49,7 @@ package body GPR.Tree is
       N_Literal_String_List        => False,
       N_Variable_Reference         => False,
       N_External_Value             => False,
+      N_Split                      => False,
       N_Attribute_Reference        => False,
       N_Case_Construction          => True,
       N_Case_Item                  => True,
@@ -612,6 +613,8 @@ package body GPR.Tree is
                 or else
               In_Tree.Project_Nodes.Table (Node).Kind = N_Term
                 or else
+              In_Tree.Project_Nodes.Table (Node).Kind = N_Split
+                or else
               In_Tree.Project_Nodes.Table (Node).Kind = N_Variable_Reference
                 or else
               In_Tree.Project_Nodes.Table (Node).Kind = N_Attribute_Reference
@@ -723,6 +726,38 @@ package body GPR.Tree is
             In_Tree.Project_Nodes.Table (Node).Kind = N_External_Value);
       return In_Tree.Project_Nodes.Table (Node).Field2;
    end External_Default_Of;
+
+   ------------------------
+   -- String_Argument_Of --
+   ------------------------
+
+   function String_Argument_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref) return Project_Node_Id
+   is
+   begin
+      pragma Assert
+        (Present (Node)
+          and then
+            In_Tree.Project_Nodes.Table (Node).Kind = N_Split);
+      return In_Tree.Project_Nodes.Table (Node).Field1;
+   end String_Argument_Of;
+
+   ------------------
+   -- Separator_Of --
+   ------------------
+
+   function Separator_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref) return Project_Node_Id
+   is
+   begin
+      pragma Assert
+        (Present (Node)
+          and then
+            In_Tree.Project_Nodes.Table (Node).Kind = N_Split);
+      return In_Tree.Project_Nodes.Table (Node).Field2;
+   end Separator_Of;
 
    ------------------------
    -- First_Case_Item_Of --
@@ -2067,6 +2102,40 @@ package body GPR.Tree is
             In_Tree.Project_Nodes.Table (Node).Kind = N_External_Value);
       In_Tree.Project_Nodes.Table (Node).Field2 := To;
    end Set_External_Default_Of;
+
+   ----------------------------
+   -- Set_String_Argument_Of --
+   ----------------------------
+
+   procedure Set_String_Argument_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref;
+      To      : Project_Node_Id)
+   is
+   begin
+      pragma Assert
+        (Present (Node)
+          and then
+            In_Tree.Project_Nodes.Table (Node).Kind = N_Split);
+      In_Tree.Project_Nodes.Table (Node).Field1 := To;
+   end Set_String_Argument_Of;
+
+   ----------------------
+   -- Set_Separator_Of --
+   ----------------------
+
+   procedure Set_Separator_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref;
+      To      : Project_Node_Id)
+   is
+   begin
+      pragma Assert
+        (Present (Node)
+          and then
+            In_Tree.Project_Nodes.Table (Node).Kind = N_Split);
+      In_Tree.Project_Nodes.Table (Node).Field2 := To;
+   end Set_Separator_Of;
 
    ----------------------------
    -- Set_First_Case_Item_Of --

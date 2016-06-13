@@ -111,7 +111,16 @@ package body GPR.Strt is
       External_Value  : out Project_Node_Id;
       Expr_Kind       : in out Variable_Kind;
       Flags           : Processing_Flags);
-   --  Parse an external reference. Current token is "external"
+   --  Parse an external reference. Current token is "external" or
+   --  "external_as_list".
+
+   procedure Parse_Split
+     (In_Tree         : Project_Node_Tree_Ref;
+      Current_Project : Project_Node_Id;
+      Current_Package : Project_Node_Id;
+      Split_Value     : out Project_Node_Id;
+      Flags           : Processing_Flags);
+   --  Parse built-in function Split (<string>, <string>)
 
    procedure Attribute_Reference
      (In_Tree         : Project_Node_Tree_Ref;
@@ -639,6 +648,68 @@ package body GPR.Strt is
       Set_First_Term (Expression, In_Tree, To => First_Term);
       Set_Expression_Kind_Of (Expression, In_Tree, To => Expression_Kind);
    end Parse_Expression;
+
+   -----------------
+   -- Parse_Split --
+   -----------------
+
+   procedure Parse_Split
+     (In_Tree         : Project_Node_Tree_Ref;
+      Current_Project : Project_Node_Id;
+      Current_Package : Project_Node_Id;
+      Split_Value     : out Project_Node_Id;
+      Flags           : Processing_Flags)
+   is
+      String_Argument : Project_Node_Id;
+      Separator : Project_Node_Id;
+
+   begin
+      Split_Value :=
+        Default_Project_Node
+          (Of_Kind       => N_Split,
+           In_Tree       => In_Tree,
+           And_Expr_Kind => List);
+      Set_Location_Of (Split_Value, In_Tree, To => Token_Ptr);
+
+      Scan (In_Tree);
+      Expect (Tok_Left_Paren, "`(`");
+
+      --  Scan past the left parenthesis
+
+      if Token = Tok_Left_Paren then
+         Scan (In_Tree);
+      end if;
+
+      Parse_Expression
+        (In_Tree         => In_Tree,
+         Expression      => String_Argument,
+         Current_Project => Current_Project,
+         Current_Package => Current_Package,
+         Optional_Index  => False,
+         Flags           => Flags);
+      Expect (Tok_Comma, "`,`");
+
+      if Token = Tok_Comma then
+         Scan (In_Tree);
+      end if;
+
+      Parse_Expression
+        (In_Tree         => In_Tree,
+         Expression      => Separator,
+         Current_Project => Current_Project,
+         Current_Package => Current_Package,
+         Optional_Index  => False,
+         Flags           => Flags);
+
+      Expect (Tok_Right_Paren, "')'");
+
+      if Token = Tok_Right_Paren then
+         Scan (In_Tree);
+      end if;
+
+      Set_String_Argument_Of (Split_Value, In_Tree, To => String_Argument);
+      Set_Separator_Of (Split_Value, In_Tree, To => Separator);
+   end Parse_Split;
 
    ----------------------------
    -- Parse_String_Type_List --
@@ -1496,38 +1567,84 @@ package body GPR.Strt is
          when Tok_Identifier =>
             Current_Location := Token_Ptr;
 
-            --  Get the variable or attribute reference
+            --  Check if it is a built-in function
 
-            Parse_Variable_Reference
-              (In_Tree         => In_Tree,
-               Variable        => Reference,
-               Flags           => Flags,
-               Current_Project => Current_Project,
-               Current_Package => Current_Package);
-            Set_Current_Term (Term, In_Tree, To => Reference);
+            declare
+               Builtin     : Boolean := False;
+               Saved_State : Saved_Scan_State;
 
-            if Present (Reference) then
+            begin
+               Save_Scan_State (Saved_State);
+               Scan (In_Tree);
+               Builtin := Token = Tok_Left_Paren;
+               Restore_Scan_State (Saved_State);
 
-               --  If we don't know the expression kind (first term), then it
-               --  has the kind of the variable or attribute reference.
+               if Builtin then
+                  if Token_Name = GPR.Snames.Name_Split then
+                     Parse_Split
+                       (In_Tree, Current_Project,
+                        Current_Package,
+                        Split_Value     => Reference,
+                        Flags           => Flags);
+                     Set_Current_Term (Term, In_Tree, To => Reference);
 
-               if Expr_Kind = Undefined then
-                  Expr_Kind := Expression_Kind_Of (Reference, In_Tree);
+                     if Expr_Kind = Undefined then
+                        Expr_Kind := List;
+                     elsif Expr_Kind = Single then
+                        Expr_Kind := List;
+                        Error_Msg
+                          (Flags,
+                           "function Split cannot appear " &
+                             "in single string expression",
+                           Current_Location);
+                     end if;
 
-               elsif Expr_Kind = Single
-                 and then Expression_Kind_Of (Reference, In_Tree) = List
-               then
-                  --  If the expression is a single list, and the reference is
-                  --  a string list, report an error, and set the expression
-                  --  kind to string list to avoid multiple errors.
+                  else
+                     Error_Msg
+                       (Flags,
+                        "unknown built-in function " &
+                          Get_Name_String (Token_Name),
+                        Current_Location);
+                  end if;
 
-                  Expr_Kind := List;
-                  Error_Msg
-                    (Flags,
-                     "list variable cannot appear in single string expression",
-                     Current_Location);
+               else
+                  --  Get the variable or attribute reference
+
+                  Parse_Variable_Reference
+                    (In_Tree         => In_Tree,
+                     Variable        => Reference,
+                     Flags           => Flags,
+                     Current_Project => Current_Project,
+                     Current_Package => Current_Package);
+                  Set_Current_Term (Term, In_Tree, To => Reference);
+
+                  if Present (Reference) then
+
+                     --  If we don't know the expression kind (first term),
+                     --  then it has the kind of the variable or attribute
+                     --  reference.
+
+                     if Expr_Kind = Undefined then
+                        Expr_Kind := Expression_Kind_Of (Reference, In_Tree);
+
+                     elsif Expr_Kind = Single
+                       and then Expression_Kind_Of (Reference, In_Tree) = List
+                     then
+                        --  If the expression is a single list, and the
+                        --  reference is a string list, report an error, and
+                        --  set the expression kind to string list to avoid
+                        --  multiple errors.
+
+                        Expr_Kind := List;
+                        Error_Msg
+                          (Flags,
+                           "list variable cannot appear " &
+                             "in single string expression",
+                           Current_Location);
+                     end if;
+                  end if;
                end if;
-            end if;
+            end;
 
          when Tok_Project =>
 

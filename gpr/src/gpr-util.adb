@@ -24,6 +24,7 @@
 
 with Ada.Command_Line;                       use Ada.Command_Line;
 with Ada.Containers.Indefinite_Ordered_Sets;
+with Ada.Containers.Vectors;
 with Ada.Directories;
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
@@ -2320,6 +2321,69 @@ package body GPR.Util is
    begin
       return Iter.Info;
    end Source_Info_Of;
+
+   function Split (Source : String; Separator : String) return Name_Array_Type
+   is
+      Start  : Positive := Source'First;
+      Finish : Positive;
+      package Name_Ids is
+        new Ada.Containers.Vectors (Positive, Name_Id);
+      List : Name_Ids.Vector;
+
+      procedure Add_String (S : String);
+
+      procedure Add_String (S : String) is
+      begin
+         if S'Length > 0 then
+            Name_Len := 0;
+            Add_Str_To_Name_Buffer (S);
+            List.Append (Name_Find);
+         end if;
+      end Add_String;
+
+   begin
+      if Separator'Length = 0 or else
+        Index (Source, Separator) = 0
+      then
+         --  List with one string = Argument
+         Add_String (Source);
+
+      else
+         if Index (Source, Separator) = Start then
+            Start := Start + Separator'Length;
+         end if;
+
+         loop
+            if Index
+              (Source
+                 (Start .. Source'Last), Separator) = 0
+            then
+               Add_String
+                 (Source (Start .. Source'Last));
+               exit;
+
+            else
+               Finish :=
+                 Index
+                   (Source
+                      (Start .. Source'Last), Separator) - 1;
+               Add_String (Source (Start .. Finish));
+               Start := Finish + 1 + Separator'Length;
+               exit when Start > Source'Last;
+            end if;
+         end loop;
+      end if;
+
+      declare
+         Result : Name_Array_Type (1 .. Integer (List.Length));
+      begin
+         for J in Result'Range loop
+            Result (J) := List.Element (J);
+         end loop;
+
+         return Result;
+      end;
+   end Split;
 
    --------------
    -- Value_Of --

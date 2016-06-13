@@ -3756,6 +3756,47 @@ If the external value is ``",,"``, the result is (``""``).
 
 If the external value is ``","``, the result is ``()``, the empty string list.
 
+.. index:: Builtin Functions
+
+.. _Builtin_Functions:
+
+Builtin Functions
+-----------------
+
+Builtin functions may be used in expression. The names of builtin functions
+are not reserved words and may also be used as variable names.
+In an expression, a builtin function is recognized if its name is immediately
+followed by an open parenthesis ('(').
+
+.. _Split:
+
+Split
+^^^^^
+
+Function Split takes two single string parameters and return a string list.
+
+Example:
+
+  ::
+
+      Split ("-gnatf,-gnatv", ",")
+
+      => ("-gnatf", "gnatv")
+
+The first string argument is the string to be split. The second argument is
+the separator. Each occurence of the separator in the first argument is a place
+where it is split. If the first argument is an empty string or contains only
+occurences of the separator, then the result is an empty string list.
+If the argument does not contains any occurence of the separator, then the
+result is a list with only one string: the first argument. Empty strings are
+not included in the result.
+
+  ::
+
+      Split ("-gnatf   -gnatv", " ")
+
+      => ("-gnatf", "gnatv")
+
 
 .. index:: Type declaration
 

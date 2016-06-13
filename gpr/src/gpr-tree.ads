@@ -558,6 +558,18 @@ package GPR.Tree is
    pragma Inline (External_Default_Of);
    --  Only valid for N_External_Value nodes
 
+   function String_Argument_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref) return Project_Node_Id;
+   pragma Inline (String_Argument_Of);
+   --  Only valid for N_Split nodes
+
+   function Separator_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref) return Project_Node_Id;
+   pragma Inline (Separator_Of);
+   --  Only valid for N_Split nodes
+
    function Case_Variable_Reference_Of
      (Node    : Project_Node_Id;
       In_Tree : Project_Node_Tree_Ref) return Project_Node_Id;
@@ -1056,6 +1068,20 @@ package GPR.Tree is
       To      : Project_Node_Id);
    pragma Inline (Set_External_Default_Of);
    --  Only valid for N_External_Value nodes
+
+   procedure Set_String_Argument_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref;
+      To      : Project_Node_Id);
+   pragma Inline (Set_String_Argument_Of);
+   --  Only valid for N_Split
+
+   procedure Set_Separator_Of
+     (Node    : Project_Node_Id;
+      In_Tree : Project_Node_Tree_Ref;
+      To      : Project_Node_Id);
+   pragma Inline (Set_Separator_Of);
+   --  Only valid for N_Split
 
    procedure Set_Case_Variable_Reference_Of
      (Node    : Project_Node_Id;

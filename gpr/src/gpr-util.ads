@@ -157,8 +157,14 @@ package GPR.Util is
       From_List  : String_List_Id;
       In_Tree    : Project_Tree_Ref;
       Lower_Case : Boolean := False);
-   --  Append a name list to a string list
-   --  Describe parameters???
+   --  Append From_List list to list Into_List
+
+   type Name_Array_Type is array (Positive range <>) of Name_Id;
+
+   function Split (Source : String; Separator : String) return Name_Array_Type;
+   --  Split string Source into several, using Separator. The different
+   --  occurences of Separator are not included in the result. The result
+   --  includes no empty string.
 
    function Value_Of
      (Variable : Variable_Value;

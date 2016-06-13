@@ -1551,6 +1551,7 @@ package GPR is
       N_Variable_Reference,
       N_External_Value,
       N_Attribute_Reference,
+      N_Split,
       N_Case_Construction,
       N_Case_Item,
       N_Comment_Zones,
@@ -1858,6 +1859,15 @@ package GPR is
       --    --  Expr_Kind: Single
       --    --  Field1:    Name of the external reference (literal string)
       --    --  Field2:    Default (literal string)
+      --    --  Field3:    not used
+      --    --  Value:     not used
+
+      --    N_Split,
+      --    --  Name:      not used
+      --    --  Path_Name: not used
+      --    --  Expr_Kind: List
+      --    --  Field1:    expression to split (single string)
+      --    --  Field2:    expression of separator (single string)
       --    --  Field3:    not used
       --    --  Value:     not used
 
