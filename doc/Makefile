@@ -33,32 +33,25 @@ help:
 	@echo ""
 	@echo "source and location can be overriden using SOURCEDIR and BUILDDIR variables"
 
-prepare:
-	$(CP) ../gnat/gnu_free_documentation_license.rst share/.
-	$(CP) ../gnat/ada_pygments.py share/.
-	$(CP) ../gnat/favicon.ico share/.
-	$(CP) ../gnat/latex_elements.py share/.
-	$(CP) ../gnat/sphinx.sty share/.
-
 clean:
 	-rm -rf $(BUILDDIR)/html \
 		$(BUILDDIR)/pdf \
 		$(BUILDDIR)/txt \
 		$(BUILDDIR)/info
 
-html: prepare
+html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
-pdf: prepare
+pdf:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/pdf
 	cp $(SOURCEDIR)/share/sphinx.sty $(BUILDDIR)/pdf
 	$(MAKE) -C $(BUILDDIR)/pdf all-pdf LATEXOPTS="-interaction=nonstopmode"
 
-txt: prepare
+txt:
 	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/txt
 	$(MAKE) -C $(BUILDDIR)/txt plaintext
 
-info: prepare
+info:
 	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/info
 	$(MAKE) -C $(BUILDDIR)/info info
 
