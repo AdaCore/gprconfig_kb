@@ -1,3 +1,21 @@
+------------------------------------------------------------------------------
+--                                                                          --
+--                             GPR TECHNOLOGY                               --
+--                                                                          --
+--                     Copyright (C) 2004-2016, AdaCore                     --
+--                                                                          --
+-- This is  free  software;  you can redistribute it and/or modify it under --
+-- terms of the  GNU  General Public License as published by the Free Soft- --
+-- ware  Foundation;  either version 3,  or (at your option) any later ver- --
+-- sion.  This software is distributed in the hope  that it will be useful, --
+-- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
+-- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
+-- License for more details.  You should have received  a copy of the  GNU  --
+-- General Public License distributed with GNAT; see file  COPYING. If not, --
+-- see <http://www.gnu.org/licenses/>.                                      --
+--                                                                          --
+------------------------------------------------------------------------------
+
 with "xmlada.gpr";
 with "gpr/gpr.gpr";
 
@@ -5,33 +23,46 @@ project Gprbuild is
 
    type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := external ("BUILD", "debug");
-   Root_Obj_Dir := external ("OBJDIR", ".");
 
-   Processors := external ("PROCESSORS", "1");
+   type Target_type is ("Windows_NT", "UNIX");
+   Target : Target_Type := external ("OS", "UNIX");
+
+   type Install_Mode_Type is ("all", "nointernal", "internal");
+   Install_Mode : Install_Mode_Type := external ("INSTALL_MODE", "all");
+
+   Processors := external ("PROCESSORS", "0");
 
    for Languages use ("Ada", "C");
 
-   for Main use
+   Main_Bin :=
        ("gprconfig-main.adb",
         "gprbuild-main.adb",
-        "gprbind.adb",
-        "gprlib.adb",
         "gprclean-main.adb",
         "gprinstall-main.adb",
         "gprslave.adb",
         "gprname-main.adb",
         "gprls-main.adb");
 
-   for Source_Dirs use ("src");
+   Main_Libexec :=
+       ("gprbind.adb",
+        "gprlib.adb");
 
-   case Bld is
-      when "production" => for Object_Dir use Root_Obj_Dir & "/obj";
-      when "coverage"   => for Object_Dir use Root_Obj_Dir & "/obj-cov";
-      when "profiling"  => for Object_Dir use Root_Obj_Dir & "/obj-prof";
-      when "debug"      => for Object_Dir use Root_Obj_Dir & "/obj-debug";
+   case Install_Mode is
+      when "all" =>
+         for Main use Main_Bin & Main_Libexec;
+      when "nointernal" =>
+         for Main use Main_Bin;
+      when "internal" =>
+         for Main use Main_Libexec;
    end case;
 
-   for Exec_Dir use Root_Obj_Dir & "/exe";
+   for Source_Dirs use ("src");
+   for Object_Dir use "obj/" & Bld;
+   for Exec_Dir use "exe";
+
+   -------------
+   -- Builder --
+   -------------
 
    package Builder is
       for Executable ("gprconfig-main.adb")  use "gprconfig";
@@ -40,28 +71,35 @@ project Gprbuild is
       for Executable ("gprinstall-main.adb") use "gprinstall";
       for Executable ("gprls-main.adb")      use "gprls";
       for Executable ("gprname-main.adb")    use "gprname";
+
       for Default_Switches ("Ada") use ("-m", "-j" & Processors);
    end Builder;
 
+   --------------
+   -- Compiler --
+   --------------
+
    package Compiler is
-      common_switches := ("-gnat12", "-gnaty", "-gnatQ", "-gnata");
+      Common_Switches := ("-gnat12", "-gnaty", "-gnatQ", "-gnata");
+
       case Bld is
          when "debug" =>
-            for Default_Switches ("Ada") use common_switches &
-            ("-g", "-gnatVa", "-gnatwaCJI"
-             , "-gnatwe"
-             , "-gnatyg"
-             );
+            for Default_Switches ("Ada") use Common_Switches &
+              ("-g", "-gnatVa", "-gnatwaCJI",
+               "-gnatwe", "-gnatyg");
 
             for Local_Configuration_Pragmas use "debug.adc";
+
          when "coverage" =>
-            for Default_Switches ("Ada") use common_switches &
+            for Default_Switches ("Ada") use Common_Switches &
               ("-ftest-coverage", "-fprofile-arcs");
+
          when "profiling" =>
-            for Default_Switches ("Ada") use common_switches &
+            for Default_Switches ("Ada") use Common_Switches &
               ("-pg", "-g");
+
          when "production" =>
-            for Default_Switches ("Ada") use common_switches &
+            for Default_Switches ("Ada") use Common_Switches &
               ("-O2", "-gnatn", "-gnatws");
 
             --  Compile all GPRbuild sources to support symbolic-traceback
@@ -71,18 +109,25 @@ project Gprbuild is
       end case;
    end Compiler;
 
+   ------------
+   -- Binder --
+   ------------
+
    package Binder is
-      common_switches := ("-E", "-static");
+      Common_Switches := ("-E", "-static");
+
       case Bld is
          when "debug" =>
-            for Default_Switches ("Ada") use common_switches
-              & ("-Sin")
-            ;
+            for Default_Switches ("Ada") use Common_Switches & ("-Sin");
 
          when "coverage" | "profiling" | "production" =>
-            for Default_Switches ("Ada") use common_switches;
-         end case;
+            for Default_Switches ("Ada") use Common_Switches;
+      end case;
    end Binder;
+
+   ------------
+   -- Linker --
+   ------------
 
    package Linker is
       case Bld is
@@ -97,9 +142,38 @@ project Gprbuild is
 
          when "profiling"            =>
             for Default_Switches ("Ada") use ("-pg", "-g");
-
       end case;
    end Linker;
+
+   -------------
+   -- Install --
+   -------------
+
+   package Install is
+      case Install_Mode is
+         when "all" | "nointernal" =>
+            for Artifacts ("share/examples/gprbuild") use ("examples/*");
+            for Artifacts ("share/doc/gprbuild") use
+              ("doc/build/html", "doc/build/info", "doc/build/pdf",
+               "doc/build/txt");
+            for Artifacts ("share") use ("share/gprconfig");
+            for Artifacts ("share/gpr") use ("share/_default.gpr");
+
+            case Target is
+               when "Windows_NT" =>
+                  for Artifacts ("bin") use ("src/gprinstall.exe.manifest");
+               when "UNIX" =>
+                  for Artifacts (".") use ("doinstall");
+            end case;
+
+         when "internal" =>
+            for Exec_Subdir use "libexec/gprbuild";
+      end case;
+   end Install;
+
+   ---------
+   -- IDE --
+   ---------
 
    package IDE is
       for VCS_Kind use "Git";
