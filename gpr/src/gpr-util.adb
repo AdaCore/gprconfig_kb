@@ -1104,7 +1104,7 @@ package body GPR.Util is
                if Src.Unit /= No_Unit_Index and then
                  Get_Name_String (Src.Unit.Name) = Unit_Name
                then
-                  Process (Src, Project, Tree);
+                  Process (Src, Src.Project, Tree);
                end if;
 
                Next (Iter);
@@ -1112,6 +1112,13 @@ package body GPR.Util is
          end Find_Unit;
 
       begin
+         --  Nothing to do if the project is externally built and
+         --  Include_Externally_Built is False.
+
+         if Project.Externally_Built and then not Include_Externally_Built then
+            return;
+         end if;
+
          Add_To_Closures (Source, Added);
 
          if not Added then
