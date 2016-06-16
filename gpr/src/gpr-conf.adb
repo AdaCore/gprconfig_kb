@@ -997,14 +997,22 @@ package body GPR.Conf is
                   Current_Dir : constant String := Current_Directory;
 
                begin
-                  --  If the object directory exists, make it the current
-                  --  working directory, so that if TEMPDIR is not set,
-                  --  the config project file will be created in the
-                  --  object directory.
+                  --  The object directory may be read-only. if possible, use
+                  --  another directory for the temporary project file.
 
-                  if Obj_Dir_Exists then
-                     Set_Directory (Obj_Dir);
-                  end if;
+                  declare
+                     Tmpdir : String_Access := Getenv ("TMPDIR");
+                  begin
+                     if (Tmpdir = null or else Tmpdir'Length = 0) and then
+                       Is_Directory ("/tmp")
+                     then
+                        Set_Directory ("/tmp");
+                     elsif Obj_Dir_Exists then
+                        Set_Directory (Obj_Dir);
+                     end if;
+
+                     Free (Tmpdir);
+                  end;
 
                   GPR.Env.Create_Temp_File
                     (Shared    => Project_Tree.Shared,
