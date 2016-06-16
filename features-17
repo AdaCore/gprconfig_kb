@@ -8,6 +8,14 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P526-032 Environment variable GPR_RUNTIME_PATH (2016-06-15)
+
+   When the Ada runtime directory is specified with switch --RTS or
+   attribute Runtime ("Ada") as a relative path, the path may be relative
+   to the project directory of the main project, or if the environment variable
+   GPR_RUNTIME_PATH is defined to the path specified by the value of
+   this environment variable.
+
 NF-17-P525-069 Setting the default verbosity (2016-05-26)
 
    It is now possible to control the default verbosity without to use switches
