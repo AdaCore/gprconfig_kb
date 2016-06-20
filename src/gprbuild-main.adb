@@ -159,6 +159,7 @@ procedure Gprbuild.Main is
          Verbose_Mode_Option,
          Verbose_Low_Mode_Option,
          Verbose_Medium_Mode_Option,
+         Verbose_High_Mode_Option,
          Warnings_Treat_As_Error,
          Warnings_Normal,
          Warnings_Suppress,
@@ -435,15 +436,16 @@ procedure Gprbuild.Main is
                     Command_Line_Options.Table (Index).Value;
 
                when Quiet_Output_Option =>
-                  Opt.Quiet_Output := True;
-                  Opt.Verbose_Mode := False;
+                  Opt.Quiet_Output    := True;
+                  Opt.Verbose_Mode    := False;
+                  Opt.Verbosity_Level := Opt.None;
 
                when Check_Switches_Option =>
                   Opt.Check_Switches := True;
 
                when Verbose_Mode_Option =>
                   Opt.Verbose_Mode    := True;
-                  Opt.Verbosity_Level := Opt.High;
+                  Opt.Verbosity_Level := Opt.Low;
                   Opt.Quiet_Output    := False;
 
                when Verbose_Low_Mode_Option =>
@@ -454,6 +456,11 @@ procedure Gprbuild.Main is
                when Verbose_Medium_Mode_Option =>
                   Opt.Verbose_Mode    := True;
                   Opt.Verbosity_Level := Opt.Medium;
+                  Opt.Quiet_Output    := False;
+
+               when Verbose_High_Mode_Option =>
+                  Opt.Verbose_Mode    := True;
+                  Opt.Verbosity_Level := Opt.High;
                   Opt.Quiet_Output    := False;
 
                when Warnings_Treat_As_Error =>
@@ -1334,8 +1341,9 @@ procedure Gprbuild.Main is
             end if;
 
          elsif Arg = "-q" then
-            Opt.Quiet_Output := True;
-            Opt.Verbose_Mode := False;
+            Opt.Quiet_Output    := True;
+            Opt.Verbose_Mode    := False;
+            Opt.Verbosity_Level := None;
 
             if Command_Line then
                Register_Command_Line_Option (Quiet_Output_Option);
@@ -1365,16 +1373,7 @@ procedure Gprbuild.Main is
             Unique_Compile_All_Projects := True;
             Unique_Compile := True;
 
-         elsif Arg = "-v" or else Arg = "-vh" then
-            Opt.Verbose_Mode    := True;
-            Opt.Verbosity_Level := Opt.High;
-            Opt.Quiet_Output    := False;
-
-            if Command_Line then
-               Register_Command_Line_Option (Verbose_Mode_Option);
-            end if;
-
-         elsif Arg = "-vl" then
+         elsif Arg = "-v" or else Arg = "-vl" then
             Opt.Verbose_Mode    := True;
             Opt.Verbosity_Level := Opt.Low;
             Opt.Quiet_Output    := False;
@@ -1390,6 +1389,15 @@ procedure Gprbuild.Main is
 
             if Command_Line then
                Register_Command_Line_Option (Verbose_Medium_Mode_Option);
+            end if;
+
+         elsif Arg = "-vh" then
+            Opt.Verbose_Mode    := True;
+            Opt.Verbosity_Level := Opt.High;
+            Opt.Quiet_Output    := False;
+
+            if Command_Line then
+               Register_Command_Line_Option (Verbose_High_Mode_Option);
             end if;
 
          elsif Arg'Length >= 3 and then Arg (1 .. 3) = "-vP" then
@@ -1768,7 +1776,7 @@ procedure Gprbuild.Main is
          end;
       end if;
 
-      if Opt.Verbose_Mode then
+      if Opt.Verbosity_Level > Opt.Low then
          Copyright;
       end if;
 

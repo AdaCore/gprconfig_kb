@@ -62,8 +62,9 @@ procedure Gprbind is
    --  Start of the option to specify the full name of the Ada binder
    --  executable. Introduced for GNAAMP, where it is gnaambind.
 
-   Quiet_Output : Boolean := False;
-   Verbose_Mode : Boolean := False;
+   Quiet_Output        : Boolean := False;
+   Verbose_Low_Mode    : Boolean := False;
+   Verbose_Higher_Mode : Boolean := False;
 
    Dash_O_Specified      : Boolean := False;
    Dash_O_File_Specified : Boolean := False;
@@ -287,12 +288,19 @@ begin
                     (null, "unknown section: " & Line (1 .. Last));
 
                when Quiet =>
-                  Quiet_Output := True;
-                  Verbose_Mode := False;
+                  Quiet_Output        := True;
+                  Verbose_Low_Mode    := False;
+                  Verbose_Higher_Mode := False;
 
-               when Verbose =>
-                  Quiet_Output := False;
-                  Verbose_Mode := True;
+               when Verbose_Low =>
+                  Quiet_Output        := False;
+                  Verbose_Low_Mode    := True;
+                  Verbose_Higher_Mode := False;
+
+               when Verbose_Higher =>
+                  Quiet_Output        := False;
+                  Verbose_Low_Mode    := True;
+                  Verbose_Higher_Mode := True;
 
                when Shared_Libs =>
                   Static_Libs := False;
@@ -313,7 +321,7 @@ begin
                when Quiet =>
                   Fail_Program (null, "quiet section should be empty");
 
-               when Verbose =>
+               when Verbose_Low | Verbose_Higher =>
                   Fail_Program (null, "verbose section should be empty");
 
                when Shared_Libs =>
@@ -720,7 +728,7 @@ begin
    end if;
 
    if not Quiet_Output then
-      if Verbose_Mode then
+      if Verbose_Low_Mode then
          Display_Last := 0;
          Add_To_Display_Line (Gnatbind_Path.all);
 
@@ -983,7 +991,16 @@ begin
          Compiler_Options,
          Last_Compiler_Option);
 
-      if Verbose_Mode then
+      --  Add the trailing options, if any
+
+      for J in 1 .. Last_Compiler_Trailing_Option loop
+         Add
+           (Compiler_Trailing_Options (J),
+            Compiler_Options,
+            Last_Compiler_Option);
+      end loop;
+
+      if Verbose_Low_Mode then
          Name_Len := 0;
 
          Add_Str_To_Name_Buffer (Ada_Compiler_Path.all);
@@ -1010,15 +1027,6 @@ begin
 
          Put_Line (Display_Line (1 .. Display_Last));
       end if;
-
-      --  Add the trailing options, if any
-
-      for J in 1 .. Last_Compiler_Trailing_Option loop
-         Add
-           (Compiler_Trailing_Options (J),
-            Compiler_Options,
-            Last_Compiler_Option);
-      end loop;
 
       Spawn
         (Ada_Compiler_Path.all,
@@ -1202,7 +1210,7 @@ begin
                   then
                      Adalib_Dir := new String'(Line (3 .. Last));
 
-                     if Verbose_Mode then
+                     if Verbose_Higher_Mode then
                         Put_Line ("Adalib_Dir = """ & Adalib_Dir.all & '"');
                      end if;
 
@@ -1286,7 +1294,7 @@ begin
                         Prefix_Path :=
                           new String'(Name_Buffer (1 .. Name_Len));
 
-                        if Verbose_Mode then
+                        if Verbose_Higher_Mode then
                            Put_Line
                              ("Prefix_Path = """ & Prefix_Path.all & '"');
                         end if;
@@ -1329,7 +1337,7 @@ begin
 
                elsif Line (1 .. Last) = "-lgnat" then
                   if Adalib_Dir = null then
-                     if Verbose_Mode then
+                     if Verbose_Higher_Mode then
                         Put_Line ("No Adalib_Dir");
                      end if;
 

@@ -16,9 +16,10 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Unchecked_Deallocation; use Ada;
+with Ada.Directories;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Text_IO;                use Ada.Text_IO;
+with Ada.Unchecked_Deallocation; use Ada;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
@@ -642,7 +643,7 @@ package body Gprbuild.Link is
             Need_To_Build := Opt.Force_Compilations;
 
             if not Need_To_Build then
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put  ("   Checking ");
                   Put  (Archive_Name);
                   Put_Line (" ...");
@@ -654,7 +655,7 @@ package body Gprbuild.Link is
                if not Is_Regular_File (Archive_Name) then
                   Need_To_Build := True;
 
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put_Line ("      -> archive does not exist");
                   end if;
 
@@ -671,7 +672,7 @@ package body Gprbuild.Link is
                   if not Is_Valid (File) then
                      Need_To_Build := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put  ("      -> archive dependency file ");
                         Put  (Archive_Dep_Name);
                         Put_Line (" does not exist");
@@ -711,7 +712,7 @@ package body Gprbuild.Link is
 
                         if Src_Id = No_Source then
                            Need_To_Build := True;
-                           if Opt.Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put  ("      -> ");
                               Put  (Get_Name_String (Object_Path));
                               Put_Line (" is not an object of any project");
@@ -728,7 +729,7 @@ package body Gprbuild.Link is
                         if End_Of_File (File) then
                            Need_To_Build := True;
 
-                           if Opt.Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put  ("      -> archive dependency file ");
                               Put_Line (" is truncated");
                            end if;
@@ -745,7 +746,7 @@ package body Gprbuild.Link is
                         if Name_Len /= Time_Stamp_Length then
                            Need_To_Build := True;
 
-                           if Opt.Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put  ("      -> archive dependency file ");
                               Put_Line
                                 (" is incorrectly formatted (time stamp)");
@@ -770,7 +771,7 @@ package body Gprbuild.Link is
                         then
                            Need_To_Build := True;
 
-                           if Opt.Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low  then
                               Put  ("      -> time stamp of ");
                               Put  (Get_Name_String (Object_Path));
                               Put  (" is incorrect in the archive");
@@ -807,7 +808,7 @@ package body Gprbuild.Link is
                   then
                      Need_To_Build := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put ("      -> object file ");
                         Put (Get_Name_String
                                    (Source_Indexes (S).Id.Object_Path));
@@ -820,7 +821,7 @@ package body Gprbuild.Link is
             end if;
 
             if not Need_To_Build then
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line  ("      -> up to date");
                end if;
 
@@ -876,7 +877,8 @@ package body Gprbuild.Link is
                   Has_Been_Built := False;
                   Exists         := False;
 
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low
+                  then
                      Put_Line ("      -> there is no global archive");
                   end if;
 
@@ -1101,10 +1103,13 @@ package body Gprbuild.Link is
       if not Opt.Quiet_Output then
          Name_Len := 0;
 
-         --  In Verbose Mode output the full path of the spawned process
-
          if Opt.Verbose_Mode then
-            Add_Str_To_Name_Buffer (Path.all);
+            if Opt.Verbosity_Level = Opt.Low then
+               Add_Str_To_Name_Buffer
+                 (Ada.Directories.Base_Name (Path.all));
+            else
+               Add_Str_To_Name_Buffer (Path.all);
+            end if;
 
             for Arg in 1 .. Last_Argument loop
                if Arguments_Displayed (Arg) then
@@ -1547,7 +1552,9 @@ package body Gprbuild.Link is
       Main_Base_Name_Index :=
         Base_Name_Index_For (Main, Main_File.Index, Index_Separator);
 
-      if not Linker_Needs_To_Be_Called and then Opt.Verbose_Mode then
+      if not Linker_Needs_To_Be_Called and then
+        Opt.Verbosity_Level > Opt.Low
+      then
          Put ("   Checking executable for ");
          Put (Get_Name_String (Main_Source.File));
          Put_Line (" ...");
@@ -1616,7 +1623,7 @@ package body Gprbuild.Link is
       then
          Linker_Needs_To_Be_Called := True;
 
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Put_Line ("      -> executable does not exist");
          end if;
       end if;
@@ -1649,14 +1656,14 @@ package body Gprbuild.Link is
 
       if not Linker_Needs_To_Be_Called then
          if Main_Object_TS = Empty_Time_Stamp then
-            if Opt.Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("      -> main object does not exist");
             end if;
 
             Linker_Needs_To_Be_Called := True;
 
          elsif String (Main_Object_TS) > String (Executable_TS) then
-            if Opt.Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line
                  ("      -> main object more recent than executable");
             end if;
@@ -1802,7 +1809,7 @@ package body Gprbuild.Link is
                   then
                      Linker_Needs_To_Be_Called := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put ("      -> binder exchange file """);
                         Put (Exchange_File_Name);
                         Put_Line (""" is more recent than executable");
@@ -1879,7 +1886,7 @@ package body Gprbuild.Link is
 
                   if Binder_Object_TS = Empty_Time_Stamp then
                      if not Linker_Needs_To_Be_Called
-                       and then Opt.Verbose_Mode
+                       and then Opt.Verbosity_Level > Opt.Low
                      then
                         Put_Line
                           ("      -> no binder generated object file");
@@ -1896,7 +1903,7 @@ package body Gprbuild.Link is
                   then
                      Linker_Needs_To_Be_Called := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put_Line
                           ("      -> binder generated object is more " &
                              "recent than executable");
@@ -1929,7 +1936,7 @@ package body Gprbuild.Link is
 
          if Global_Archive_TS = Empty_Time_Stamp then
             if not Linker_Needs_To_Be_Called
-              and then Opt.Verbose_Mode
+              and then Opt.Verbosity_Level > Opt.Low
             then
                Put_Line ("      -> global archive does not exist");
             end if;
@@ -1945,7 +1952,7 @@ package body Gprbuild.Link is
       then
          Linker_Needs_To_Be_Called := True;
 
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Put_Line ("      -> global archive has just been built");
          end if;
       end if;
@@ -1956,7 +1963,7 @@ package body Gprbuild.Link is
       then
          Linker_Needs_To_Be_Called := True;
 
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Put_Line ("      -> global archive is more recent than " &
                           "executable");
          end if;
@@ -2027,7 +2034,7 @@ package body Gprbuild.Link is
                   if Lib_TS = Empty_Time_Stamp then
                      Linker_Needs_To_Be_Called := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put ("      -> library file """);
                         Put (Name_Buffer (1 .. Name_Len));
                         Put_Line (""" not found");
@@ -2038,7 +2045,7 @@ package body Gprbuild.Link is
                   elsif String (Lib_TS) > String (Executable_TS) then
                      Linker_Needs_To_Be_Called := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put ("      -> library file """);
                         Put (Name_Buffer (1 .. Name_Len));
                         Put_Line
@@ -2055,7 +2062,7 @@ package body Gprbuild.Link is
       end;
 
       if not Linker_Needs_To_Be_Called then
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Put_Line ("      -> up to date");
 
          elsif not Opt.Quiet_Output then

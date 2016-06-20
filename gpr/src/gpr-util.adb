@@ -40,7 +40,7 @@ with GPR.Debug;
 with GPR.Err;
 with GPR.Names;  use GPR.Names;
 with GPR.Output; use GPR.Output;
-with GPR.Opt;
+with GPR.Opt;    use GPR.Opt;
 with GPR.Com;
 with GPR.Sinput;
 with GPR.Snames; use GPR.Snames;
@@ -2122,7 +2122,7 @@ package body GPR.Util is
       Open (File, Tree.Source_Info_File_Name.all);
 
       if not Is_Valid (File) then
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Write_Line ("source info file " & Tree.Source_Info_File_Name.all &
                         " does not exist");
          end if;
@@ -2133,7 +2133,7 @@ package body GPR.Util is
 
       Tree.Source_Info_File_Exists := True;
 
-      if Opt.Verbose_Mode then
+      if Opt.Verbosity_Level > Opt.Low then
          Write_Line ("Reading source info file " &
                      Tree.Source_Info_File_Name.all);
       end if;
@@ -2600,7 +2600,7 @@ package body GPR.Util is
       File   : Text_File;
 
    begin
-      if Opt.Verbose_Mode then
+      if Opt.Verbosity_Level > Opt.Low then
          Write_Line ("Writing new source info file " &
                      Tree.Source_Info_File_Name.all);
       end if;

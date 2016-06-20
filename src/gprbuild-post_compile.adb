@@ -341,7 +341,7 @@ package body Gprbuild.Post_Compile is
                      if not Library_Needs_To_Be_Built then
                         Library_Needs_To_Be_Built := True;
 
-                        if Opt.Verbose_Mode then
+                        if Opt.Verbosity_Level > Opt.Low then
                            Put ("      -> missing object file: ");
                            Get_Name_String (Source.Object);
                            Put_Line (Name_Buffer (1 .. Name_Len));
@@ -558,7 +558,7 @@ package body Gprbuild.Post_Compile is
                      if not Library_Needs_To_Be_Built then
                         Library_Needs_To_Be_Built := True;
 
-                        if Opt.Verbose_Mode then
+                        if Opt.Verbosity_Level > Opt.Low then
                            Put ("      -> missing object file: ");
                            Get_Name_String (Source.Object);
                            Put_Line (Name_Buffer (1 .. Name_Len));
@@ -723,7 +723,8 @@ package body Gprbuild.Post_Compile is
                                           if not Library_Needs_To_Be_Built then
                                              Library_Needs_To_Be_Built := True;
 
-                                             if Opt.Verbose_Mode then
+                                             if Opt.Verbosity_Level > Opt.Low
+                                             then
                                                 Put
                                                   ("      ->" &
                                                    "missing object file: ");
@@ -2323,7 +2324,9 @@ package body Gprbuild.Post_Compile is
 
       Library_Needs_To_Be_Built := Opt.Force_Compilations;
 
-      if not Library_Needs_To_Be_Built and then Opt.Verbose_Mode then
+      if not Library_Needs_To_Be_Built and then
+         Opt.Verbosity_Level > Opt.Low
+      then
          Put ("   Checking library ");
          Get_Name_String (For_Project.Library_Name);
          Put (Name_Buffer (1 .. Name_Len));
@@ -2351,7 +2354,7 @@ package body Gprbuild.Post_Compile is
             if String (TS) < String (Latest_Object_TS) then
                Library_Needs_To_Be_Built := True;
 
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   if TS = Empty_Time_Stamp then
                      Put_Line
                        ("      -> library exchange file " &
@@ -2371,7 +2374,7 @@ package body Gprbuild.Post_Compile is
                   Open (Exchange_File, In_File, Exchange_File_Name.all);
 
                   if End_Of_File (Exchange_File) then
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put ("      -> library exchange file """);
                         Put (Exchange_File_Name.all);
                         Put_Line (""" is empty");
@@ -2382,7 +2385,7 @@ package body Gprbuild.Post_Compile is
 
                exception
                   when others =>
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put
                           ("      -> library exchange file """);
                         Put (Exchange_File_Name.all);
@@ -2406,7 +2409,7 @@ package body Gprbuild.Post_Compile is
             Library_Needs_To_Be_Built := True;
             Close (Exchange_File);
 
-            if Opt.Verbose_Mode then
+            if  Opt.Verbosity_Level > Opt.Low then
                Put_Line
                  ("      -> library exchange file "
                   & Exchange_File_Name.all & " has wrong format");
@@ -2460,7 +2463,7 @@ package body Gprbuild.Post_Compile is
                   Library_Needs_To_Be_Built := True;
                   Close (Exchange_File);
 
-                  if Opt.Verbose_Mode then
+                  if  Opt.Verbosity_Level > Opt.Low then
                      Put_Line ("      -> incorrect library file name");
                      Put_Line ("   expected " & Expected_File_Name.all);
                      Put_Line ("     actual " & Lib_File_Name);
@@ -2478,7 +2481,7 @@ package body Gprbuild.Post_Compile is
                   Library_Needs_To_Be_Built := True;
                   Close (Exchange_File);
 
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put_Line
                        ("      -> " &
                         "object file(s) more recent than library file " &
@@ -2498,7 +2501,7 @@ package body Gprbuild.Post_Compile is
          if Name_Buffer (1 .. Name_Len) /= Library_Label (Object_Files) then
             Library_Needs_To_Be_Built := True;
 
-            if Opt.Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("      -> library exchange file "
                            & Exchange_File_Name.all & " has wrong format");
             end if;
@@ -2516,7 +2519,7 @@ package body Gprbuild.Post_Compile is
             Library_Needs_To_Be_Built := True;
 
             if End_Of_File (Exchange_File) then
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line
                     ("      -> library exchange file " &
                      Exchange_File_Name.all & " has wrong format");
@@ -2567,7 +2570,9 @@ package body Gprbuild.Post_Compile is
                      end;
                   end if;
 
-                  if Library_Needs_To_Be_Built and then Opt.Verbose_Mode then
+                  if Library_Needs_To_Be_Built and then
+                    Opt.Verbosity_Level > Opt.Low
+                  then
                      Put ("      -> object file ");
                      Put (Get_Name_String (Object_Path));
                      Put_Line
@@ -2575,7 +2580,7 @@ package body Gprbuild.Post_Compile is
                   end if;
 
                else
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put_Line
                        ("      -> library exchange file " &
                         Exchange_File_Name.all &
@@ -2592,7 +2597,7 @@ package body Gprbuild.Post_Compile is
                if not Library_Objs.Table (Index).Known then
                   Library_Needs_To_Be_Built := True;
 
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put
                        ("      -> library was built without object file ");
                      Put_Line
@@ -2628,7 +2633,7 @@ package body Gprbuild.Post_Compile is
                   then
                      Library_Needs_To_Be_Built := True;
 
-                     if Opt.Verbose_Mode then
+                     if  Opt.Verbosity_Level > Opt.Low then
                         Put
                           ("      -> library file for project ");
                         Put (Get_Name_String (Proj2.Display_Name));
@@ -2648,13 +2653,15 @@ package body Gprbuild.Post_Compile is
       end if;
 
       if not Library_Needs_To_Be_Built then
-         if Opt.Verbose_Mode then
-            Put_Line ("      -> up to date");
+         if Opt.Verbosity_Level > Opt.Low then
+            if For_Project = Main_Project then
+               Put ('"');
+               Put (Expected_File_Name.all);
+               Put_Line (""" up to date");
 
-         elsif not Opt.Quiet_Output and then For_Project = Main_Project then
-            Put ('"');
-            Put (Expected_File_Name.all);
-            Put_Line (""" up to date");
+            else
+               Put_Line ("      -> up to date");
+            end if;
          end if;
 
       else
@@ -2675,7 +2682,11 @@ package body Gprbuild.Post_Compile is
             Put_Line (Exchange_File, Library_Label (Quiet));
 
          elsif Opt.Verbose_Mode then
-            Put_Line (Exchange_File, Library_Label (Verbose));
+            if Opt.Verbosity_Level = Opt.Low then
+               Put_Line (Exchange_File, Library_Label (Verbose_Low));
+            else
+               Put_Line (Exchange_File, Library_Label (Verbose_Higher));
+            end if;
          end if;
 
          Write_Object_Files;
@@ -3321,8 +3332,8 @@ package body Gprbuild.Post_Compile is
          --    3) there is a dependency file of the language that
          --       is more recent than any of these two files
 
-         if not Binder_Driver_Needs_To_Be_Called
-           and then Opt.Verbose_Mode
+         if not Binder_Driver_Needs_To_Be_Called and then
+           Opt.Verbosity_Level > Opt.Low
          then
             Put_Line
               ("   Checking binder generated files for " & Main & "...");
@@ -3339,7 +3350,7 @@ package body Gprbuild.Post_Compile is
             if Bind_Exchange_TS = Empty_Time_Stamp then
                Binder_Driver_Needs_To_Be_Called := True;
 
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line
                     ("      -> binder exchange file " &
                      Bind_Exchange.all &
@@ -3354,7 +3365,7 @@ package body Gprbuild.Post_Compile is
                   when others =>
                      Binder_Driver_Needs_To_Be_Called := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put_Line
                           ("      -> could not open " &
                            "binder exchange file" &
@@ -3371,7 +3382,7 @@ package body Gprbuild.Post_Compile is
                when others =>
                   Binder_Driver_Needs_To_Be_Called := True;
 
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put_Line
                        ("      -> previous gprbind failed, or " &
                         Bind_Exchange.all &
@@ -3388,7 +3399,7 @@ package body Gprbuild.Post_Compile is
             then
                Binder_Driver_Needs_To_Be_Called := True;
 
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line
                     ("      -> previous gprbind failed, or " &
                      Bind_Exchange.all &
@@ -3404,7 +3415,7 @@ package body Gprbuild.Post_Compile is
                if Bind_Object_TS = Empty_Time_Stamp then
                   Binder_Driver_Needs_To_Be_Called := True;
 
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put_Line
                        ("      -> binder generated object " &
                         Line (1 .. Last) &
@@ -3429,7 +3440,7 @@ package body Gprbuild.Post_Compile is
             end if;
 
             if Binder_Driver_Needs_To_Be_Called then
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line
                     ("      -> previous gprbind failed, or " &
                      Bind_Exchange.all & " corrupted");
@@ -3465,7 +3476,7 @@ package body Gprbuild.Post_Compile is
                   if End_Of_File (Exchange_File) then
                      Binder_Driver_Needs_To_Be_Called := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put_Line
                           ("      -> previous gprbind failed, "
                            & "or " & Bind_Exchange.all & " corrupted");
@@ -3486,7 +3497,7 @@ package body Gprbuild.Post_Compile is
                      if String (Project_File_TS) /= Line (1 .. Last) then
                         Binder_Driver_Needs_To_Be_Called := True;
 
-                        if Opt.Verbose_Mode then
+                        if Opt.Verbosity_Level > Opt.Low then
                            Put_Line
                              ("      -> project file "
                               & Get_Name_String (Project_Path)
@@ -3499,7 +3510,7 @@ package body Gprbuild.Post_Compile is
                   else
                      Binder_Driver_Needs_To_Be_Called := True;
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put_Line
                           ("      -> unknown project file "
                            & Get_Name_String (Project_Path));
@@ -3517,7 +3528,7 @@ package body Gprbuild.Post_Compile is
                then
                   Binder_Driver_Needs_To_Be_Called := True;
 
-                  if Opt.Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put_Line ("      -> more project files");
                   end if;
                end if;
@@ -3720,7 +3731,7 @@ package body Gprbuild.Post_Compile is
                      if Stamp = Empty_Time_Stamp then
                         Binder_Driver_Needs_To_Be_Called := True;
 
-                        if Opt.Verbose_Mode then
+                        if Opt.Verbosity_Level > Opt.Low then
                            Put ("      -> cannot find ");
                            Put_Line (Get_Name_String (Dep_Path));
                         end if;
@@ -3730,7 +3741,7 @@ package body Gprbuild.Post_Compile is
                      elsif Stamp > Bind_Exchange_TS then
                         Binder_Driver_Needs_To_Be_Called := True;
 
-                        if Opt.Verbose_Mode then
+                        if Opt.Verbosity_Level > Opt.Low then
                            Put ("      -> ");
                            Put (Get_Name_String (Dep_Path));
                            Put_Line
@@ -3765,7 +3776,7 @@ package body Gprbuild.Post_Compile is
          end if;
 
          if not Binder_Driver_Needs_To_Be_Called then
-            if Opt.Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("      -> up to date");
             end if;
 
@@ -3787,7 +3798,11 @@ package body Gprbuild.Post_Compile is
                Put_Line (Exchange_File, Binding_Label (Quiet));
 
             elsif Opt.Verbose_Mode then
-               Put_Line (Exchange_File, Binding_Label (Verbose));
+               if Opt.Verbosity_Level = Opt.Low then
+                  Put_Line (Exchange_File, Binding_Label (Verbose_Low));
+               else
+                  Put_Line (Exchange_File, Binding_Label (Verbose_Higher));
+               end if;
             end if;
 
             --  If -dn was used, indicate to gprbind that the
@@ -4215,7 +4230,7 @@ package body Gprbuild.Post_Compile is
                Put_Line (Exchange_File, Binding_Label (Nothing_To_Bind));
                Close (Exchange_File);
 
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line ("      -> nothing to bind");
                end if;
 
@@ -4248,7 +4263,7 @@ package body Gprbuild.Post_Compile is
 
                      Setenv (Env_Var, Path_Name.all);
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put (Env_Var);
                         Put (" = ");
                         Put_Line (Path_Name.all);
@@ -4326,7 +4341,7 @@ package body Gprbuild.Post_Compile is
 
                      Setenv (Env_Var, Get_Name_String (Path_Name));
 
-                     if Opt.Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low then
                         Put (Env_Var);
                         Put (" = ");
                         Put_Line (Get_Name_String (Path_Name));

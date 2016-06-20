@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2003-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2003-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -71,7 +71,9 @@ package body GPR.Tempdir is
          --  if temp files cannot be created, it is easier to understand
          --  where temp files are supposed to be created.
 
-         if Verbose_Mode and then Tmpdir_Needs_To_Be_Displayed then
+         if Opt.Verbosity_Level > Opt.Low and then
+           Tmpdir_Needs_To_Be_Displayed
+         then
             Write_Str ("TMPDIR = """);
             Write_Str (Temp_Dir.all);
             Write_Line ("""");

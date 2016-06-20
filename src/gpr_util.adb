@@ -1451,7 +1451,7 @@ package body Gpr_Util is
               File_Stamp (Path_Name_Type'(Name_Find));
          begin
             if TS /= Empty_Time_Stamp and then TS /= Stamp then
-               if Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line ("   -> different time stamp for " & Path);
 
                   if Debug.Debug_Flag_T then
@@ -1509,7 +1509,7 @@ package body Gpr_Util is
          --  the source.
 
          if not Is_Valid (Dep_File) then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> could not open dependency file ");
                Put_Line (Dep_Name);
             end if;
@@ -1565,7 +1565,7 @@ package body Gpr_Util is
 
                   exit Big_Loop when Looping;
 
-                  if Verbose_Mode then
+                  if Opt.Verbosity_Level > Opt.Low then
                      Put  ("      -> dependency file ");
                      Put  (Dep_Name);
                      Put_Line (" is empty");
@@ -1608,7 +1608,7 @@ package body Gpr_Util is
                 (C_Object_Name /= null
                  and then Name_Buffer (Start .. Last_Obj) /= C_Object_Name.all)
             then
-               if Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put  ("      -> dependency file ");
                   Put  (Dep_Name);
                   Put_Line (" has wrong format");
@@ -1658,7 +1658,7 @@ package body Gpr_Util is
                         --  a continuation character \.
 
                         if Start = Last then
-                           if Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put  ("      -> dependency file ");
                               Put  (Dep_Name);
                               Put_Line (" has wrong format");
@@ -1725,7 +1725,8 @@ package body Gpr_Util is
                               OK : constant Boolean := Last_TS = TS;
 
                            begin
-                              if not OK and then Verbose_Mode then
+                              if not OK and then Opt.Verbosity_Level > Opt.Low
+                              then
                                  Put ("      -> source ");
                                  Put  (Last_Source.all);
                                  Put_Line
@@ -1775,7 +1776,7 @@ package body Gpr_Util is
                               --  recompile.
 
                               if Src_TS = Empty_Time_Stamp then
-                                 if Verbose_Mode then
+                                 if Opt.Verbosity_Level > Opt.Low then
                                     Put  ("      -> source ");
                                     Put  (Src_Name);
                                     Put_Line (" does not exist");
@@ -1792,7 +1793,7 @@ package body Gpr_Util is
                                 and then
                                    Source.Language.Config.Object_Generated
                               then
-                                 if Verbose_Mode then
+                                 if Opt.Verbosity_Level > Opt.Low then
                                     Put  ("      -> source ");
                                     Put  (Src_Name);
                                     Put_Line
@@ -1811,7 +1812,7 @@ package body Gpr_Util is
                                  if Source_2 /= No_Source
                                    and then Source_2.Replaced_By /= No_Source
                                  then
-                                    if Verbose_Mode then
+                                    if Opt.Verbosity_Level > Opt.Low then
                                        Put  ("      -> source ");
                                        Put  (Src_Name);
                                        Put_Line (" has been replaced");
@@ -1860,7 +1861,7 @@ package body Gpr_Util is
          --  source (different variant) for this object file.
 
          if not Source_In_Dependencies then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> source ");
                Put  (Source_Path);
                Put_Line (" is not in the dependencies");
@@ -1889,7 +1890,7 @@ package body Gpr_Util is
 
       begin
          if Text = null then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put ("    -> cannot read ");
                Put_Line (Get_Name_String (Source.Dep_Path));
             end if;
@@ -1909,7 +1910,7 @@ package body Gpr_Util is
          Free (Text);
 
          if The_ALI = ALI.No_ALI_Id then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put ("    -> ");
                Put (Get_Name_String (Source.Dep_Path));
                Put_Line (" is incorrectly formatted");
@@ -1919,7 +1920,7 @@ package body Gpr_Util is
          end if;
 
          if ALI.ALIs.Table (The_ALI).Compile_Errors then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("    -> last compilation had errors");
             end if;
 
@@ -1927,7 +1928,7 @@ package body Gpr_Util is
          end if;
 
          if Object_Check and then ALI.ALIs.Table (The_ALI).No_Object then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line
                  ("    -> no object generated during last compilation");
             end if;
@@ -1980,7 +1981,8 @@ package body Gpr_Util is
                     ALI.Sdep.Table (D).Checksum /= 0 and then
                     not Is_Ada_Predefined_File_Name (Sfile)
                   then
-                     if Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low
+                     then
                         Put ("  -> """);
                         Put (Get_Name_String (Sfile));
                         Put_Line (""" missing");
@@ -2031,7 +2033,7 @@ package body Gpr_Util is
                                  if Scans.Checksum =
                                    ALI.Sdep.Table (D).Checksum
                                  then
-                                    if Verbose_Mode then
+                                    if Opt.Verbosity_Level > Opt.Low then
                                        Put ("   ");
                                        Put
                                          (Get_Name_String
@@ -2055,7 +2057,7 @@ package body Gpr_Util is
                         end if;
 
                         if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
-                           if Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put
                                 ("   -> different time stamp for ");
                               Put_Line (Get_Name_String (Sfile));
@@ -2074,7 +2076,7 @@ package body Gpr_Util is
                         else
                            for J in Projects'Range loop
                               if Dep_Src.Project = Projects (J) then
-                                 if Verbose_Mode then
+                                 if Opt.Verbosity_Level > Opt.Low then
                                     Put_Line
                                       ("   -> wrong object directory");
                                  end if;
@@ -2168,7 +2170,7 @@ package body Gpr_Util is
          Other_ALI : ALI.ALI_Id;
       begin
          if Text = null then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put ("    -> cannot read ");
                Put_Line (Get_Name_String (Source.Dep_Path));
             end if;
@@ -2190,7 +2192,7 @@ package body Gpr_Util is
          Free (Text);
 
          if The_ALI = ALI.No_ALI_Id then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put ("    -> ");
                Put (Get_Name_String (Source.Dep_Path));
                Put_Line (" is incorrectly formatted");
@@ -2200,7 +2202,7 @@ package body Gpr_Util is
          end if;
 
          if ALI.ALIs.Table (The_ALI).Compile_Errors then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("    -> last compilation had errors");
             end if;
 
@@ -2208,7 +2210,7 @@ package body Gpr_Util is
          end if;
 
          if Object_Check and then ALI.ALIs.Table (The_ALI).No_Object then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line
                  ("    -> no object generated during last compilation");
             end if;
@@ -2317,7 +2319,7 @@ package body Gpr_Util is
                                  if Scans.Checksum =
                                    ALI.Sdep.Table (D).Checksum
                                  then
-                                    if Verbose_Mode then
+                                    if Opt.Verbosity_Level > Opt.Low then
                                        Put ("   ");
                                        Put
                                          (Get_Name_String
@@ -2341,7 +2343,7 @@ package body Gpr_Util is
                         end if;
 
                         if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
-                           if Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put
                                 ("   -> different time stamp for ");
                               Put_Line (Get_Name_String (Sfile));
@@ -2360,7 +2362,7 @@ package body Gpr_Util is
                         else
                            for J in Projects'Range loop
                               if Dep_Src.Project = Projects (J) then
-                                 if Verbose_Mode then
+                                 if Opt.Verbosity_Level > Opt.Low then
                                     Put_Line
                                       ("   -> wrong object directory");
                                  end if;
@@ -2421,7 +2423,7 @@ package body Gpr_Util is
             Last_Processed_Source := Last_Processed_Source + 1;
 
             if Text = null then
-               if Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put ("    -> cannot read ");
                   Put_Line (Get_Name_String (Next_Source.Dep_Path));
                end if;
@@ -2441,7 +2443,7 @@ package body Gpr_Util is
             Free (Text);
 
             if Other_ALI = ALI.No_ALI_Id then
-               if Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put ("    -> ");
                   Put (Get_Name_String (Next_Source.Dep_Path));
                   Put_Line (" is incorrectly formatted");
@@ -2451,7 +2453,7 @@ package body Gpr_Util is
             end if;
 
             if ALI.ALIs.Table (Other_ALI).Compile_Errors then
-               if Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put  ("    -> last compilation of ");
                   Put  (Get_Name_String (Next_Source.Dep_Path));
                   Put_Line (" had errors");
@@ -2539,7 +2541,7 @@ package body Gpr_Util is
                         end if;
 
                         if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
-                           if Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put
                                 ("   -> different time stamp for ");
                               Put_Line (Get_Name_String (Sfile));
@@ -2556,7 +2558,7 @@ package body Gpr_Util is
                            return True;
 
                         elsif TS0 < Dep_Src.Source_TS then
-                           if Verbose_Mode then
+                           if Opt.Verbosity_Level > Opt.Low then
                               Put ("   -> file ");
                               Put
                                 (Get_Name_String (Dep_Src.Path.Display_Name));
@@ -2622,7 +2624,7 @@ package body Gpr_Util is
          end if;
       end if;
 
-      if Verbose_Mode and then Verbosity_Level > Opt.Low then
+      if Opt.Verbosity_Level > Opt.Low then
          Put  ("   Checking ");
          Put  (Source_Path);
 
@@ -2637,7 +2639,7 @@ package body Gpr_Util is
       --  No need to compile if project is externally built
 
       if Externally_Built then
-         if Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Put_Line ("      project is externally built");
          end if;
 
@@ -2651,7 +2653,7 @@ package body Gpr_Util is
          --  if there is no dependency file.
 
          if Source.Language.Config.Dependency_Kind = None then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("      -> no object file generated");
             end if;
 
@@ -2665,7 +2667,7 @@ package body Gpr_Util is
          --  compiled.
 
          if Source.Object_TS = Empty_Time_Stamp then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> object file ");
                Put  (Object_Path.all);
                Put_Line (" does not exist");
@@ -2682,7 +2684,7 @@ package body Gpr_Util is
          if (not Opt.Minimal_Recompilation)
            and then Source.Object_TS < Source.Source_TS
          then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> object file ");
                Put  (Object_Path.all);
                Put_Line (" has time stamp earlier than source");
@@ -2693,7 +2695,7 @@ package body Gpr_Util is
             return;
          end if;
 
-         if Verbose_Mode and then Debug.Debug_Flag_T then
+         if Opt.Verbosity_Level > Opt.Low and then Debug.Debug_Flag_T then
             Put ("   object file ");
             Put (Object_Path.all);
             Put (": ");
@@ -2712,7 +2714,7 @@ package body Gpr_Util is
          Stamp := File_Time_Stamp (Source.Dep_Path, Source.Dep_TS'Access);
 
          if Stamp = Empty_Time_Stamp then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> dependency file ");
                Put  (Get_Name_String (Source.Dep_Path));
                Put_Line (" does not exist");
@@ -2733,7 +2735,7 @@ package body Gpr_Util is
            and then
              Source.Object_TS < Stamp
          then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> ALI file ");
                Put  (Get_Name_String (Source.Dep_Path));
                Put_Line (" has timestamp earlier than object file");
@@ -2750,7 +2752,7 @@ package body Gpr_Util is
          if not Opt.Minimal_Recompilation
            and then Stamp < Source.Source_TS
          then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> dependency file ");
                Put  (Get_Name_String (Source.Dep_Path));
                Put_Line (" has time stamp earlier than source");
@@ -2768,7 +2770,7 @@ package body Gpr_Util is
 
       if Check_Switches and then Switches_Name /= null then
          if Source.Switches_TS = Empty_Time_Stamp then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> switches file ");
                Put  (Switches_Name.all);
                Put_Line (" does not exist");
@@ -2785,7 +2787,7 @@ package body Gpr_Util is
          if not Opt.Minimal_Recompilation
            and then Source.Switches_TS < Source.Source_TS
          then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put  ("      -> switches file ");
                Put  (Switches_Name.all);
                Put_Line (" has time stamp earlier than source");
@@ -2830,7 +2832,7 @@ package body Gpr_Util is
       --  If we are here, then everything is OK, and we don't need
       --  to recompile.
 
-      if (not Object_Check) and then Verbose_Mode then
+      if (not Object_Check) and then Opt.Verbosity_Level > Opt.Low then
          Put_Line ("      -> up to date");
       end if;
 
@@ -2852,27 +2854,29 @@ package body Gpr_Util is
             To_Lower (Verbosity);
 
             if Verbosity = "quiet" then
-               Quiet_Output := True;
-               Verbose_Mode := False;
+               Quiet_Output    := True;
+               Verbose_Mode    := False;
+               Verbosity_Level := Opt.None;
 
             elsif Verbosity = "default" then
-               Quiet_Output := False;
-               Verbose_Mode := False;
+               Quiet_Output    := False;
+               Verbose_Mode    := False;
+               Verbosity_Level := Opt.None;
 
-            elsif Verbosity = "verbose" or else Verbosity = "verbose_high" then
-               Quiet_Output := False;
-               Verbose_Mode := True;
-               Verbosity_Level := Opt.High;
+            elsif Verbosity = "verbose" or else Verbosity = "verbose_low" then
+               Quiet_Output    := False;
+               Verbose_Mode    := True;
+               Verbosity_Level := Opt.Low;
 
             elsif Verbosity = "verbose_medium" then
-               Quiet_Output := False;
-               Verbose_Mode := True;
+               Quiet_Output    := False;
+               Verbose_Mode    := True;
                Verbosity_Level := Opt.Medium;
 
-            elsif Verbosity = "verbose_low" then
-               Quiet_Output := False;
-               Verbose_Mode := True;
-               Verbosity_Level := Opt.Low;
+            elsif Verbosity = "verbose_high" then
+               Quiet_Output    := False;
+               Verbose_Mode    := True;
+               Verbosity_Level := Opt.High;
             end if;
          end;
       end if;

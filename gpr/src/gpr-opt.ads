@@ -203,7 +203,7 @@ package GPR.Opt is
 
    type Verbosity_Level_Type is (None, Low, Medium, High);
    pragma Ordered (Verbosity_Level_Type);
-   Verbosity_Level : Verbosity_Level_Type := High;
+   Verbosity_Level : Verbosity_Level_Type := None;
    --  Modified by gnatmake or gprmake switches -v, -vl, -vm, -vh. Indicates
    --  the level of verbosity of informational messages:
    --

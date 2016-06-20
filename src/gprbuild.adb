@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2015, AdaCore                     --
+--                     Copyright (C) 2004-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -232,7 +232,7 @@ package body Gprbuild is
 
          Change_Dir (Get_Name_String (Proj.Object_Directory.Display_Name));
 
-         if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
+         if Opt.Verbose_Mode then
             Put  ("Changing to object directory of """);
             Put (Get_Name_String (Proj.Display_Name));
             Put  (""": """);

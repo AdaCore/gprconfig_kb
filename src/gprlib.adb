@@ -588,7 +588,7 @@ procedure Gprlib is
                end if;
             end;
 
-            if Verbose_Mode then
+            if Verbosity_Level > Opt.Low then
                Put ("Copying ");
                Put (ALIs.Table (Index).all);
                Put_Line (" to library dependency directory");
@@ -631,7 +631,7 @@ procedure Gprlib is
                   Delete_File (Destination, Disregard);
                end if;
 
-               if Verbose_Mode then
+               if Verbosity_Level > Opt.Low then
                   Put ("Copying ");
                   Put (Interface_ALIs.Table (Index).all);
                   Put_Line (" to library dependency directory");
@@ -760,7 +760,7 @@ procedure Gprlib is
          for Index in 1 .. Sources.Last loop
             if Base_Name (Sources.Table (Index).all) = Fname then
 
-               if Verbose_Mode then
+               if Verbosity_Level > Opt.Low then
                   Put ("Copying ");
                   Put (Sources.Table (Index).all);
                   Put_Line (" to copy source directory");
@@ -910,12 +910,19 @@ begin
                Fail_Program (null, "unknown section: " & Line (1 .. Last));
 
             when Quiet =>
-               Quiet_Output := True;
-               Verbose_Mode := False;
+               Quiet_Output    := True;
+               Verbose_Mode    := False;
+               Verbosity_Level := Opt.None;
 
-            when Verbose =>
-               Quiet_Output := False;
-               Verbose_Mode := True;
+            when Verbose_Low =>
+               Quiet_Output    := False;
+               Verbose_Mode    := True;
+               Verbosity_Level := Opt.Low;
+
+            when Verbose_Higher =>
+               Quiet_Output    := False;
+               Verbose_Mode    := True;
+               Verbosity_Level := Opt.High;
 
             when Gprexch.Relocatable =>
                Relocatable := True;
@@ -981,7 +988,7 @@ begin
             when Quiet =>
                Fail_Program (null, "quiet section should be empty");
 
-            when Verbose =>
+            when Verbose_Low | Verbose_Higher =>
                Fail_Program (null, "verbose section should be empty");
 
             when Gprexch.Relocatable =>
@@ -2203,13 +2210,13 @@ begin
             use ALI;
 
          begin
-            if Verbose_Mode then
+            if Verbosity_Level > Opt.Low then
                Put_Line ("Reading ALI files to decide for -lgnarl");
             end if;
 
             ALI_Loop :
             for Index in 1 .. ALIs.Last loop
-               if Verbose_Mode then
+               if Verbosity_Level > Opt.Low then
                   Put_Line ("Reading " & ALIs.Table (Index).all);
                end if;
 
@@ -2245,7 +2252,7 @@ begin
                end if;
             end loop ALI_Loop;
 
-            if Verbose_Mode then
+            if Verbosity_Level > Opt.Low then
                Put_Line ("End of ALI file reading");
             end if;
          end;

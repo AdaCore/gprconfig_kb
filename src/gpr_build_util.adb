@@ -337,7 +337,8 @@ package body Gpr_Build_Util is
 
                   begin
                      if Replacement /= No_File then
-                        if Verbose_Mode then
+                        if Opt.Verbosity_Level > Opt.Low
+                        then
                            Put_Line
                              ("source file"
                               & Get_Name_String (SD.Sfile)
@@ -387,7 +388,8 @@ package body Gpr_Build_Util is
                        and then
                        Name_Buffer (1) /= 's')
                   then
-                     if Verbose_Mode then
+                     if Opt.Verbosity_Level > Opt.Low
+                     then
                         Put_Line
                           ("While parsing ALI file, file "
                            & Get_Name_String (SD.Sfile)

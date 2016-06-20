@@ -661,7 +661,8 @@ procedure GPRName.Main is
             if Opt.Verbose_Mode then
                Very_Verbose := True;
             else
-               Opt.Verbose_Mode := True;
+               Opt.Verbose_Mode    := True;
+               Opt.Verbosity_Level := Opt.High;
             end if;
 
             --  -vP?

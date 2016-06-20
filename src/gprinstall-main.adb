@@ -294,15 +294,17 @@ procedure Gprinstall.Main is
             end if;
 
          elsif Arg = "-q" then
-            Opt.Quiet_Output := True;
-            Opt.Verbose_Mode := False;
+            Opt.Quiet_Output    := True;
+            Opt.Verbose_Mode    := False;
+            Opt.Verbosity_Level := Opt.None;
 
          elsif Arg = "-r" then
             Recursive := True;
 
          elsif Arg = "-v" then
-            Opt.Verbose_Mode := True;
-            Opt.Quiet_Output := False;
+            Opt.Verbose_Mode    := True;
+            Opt.Verbosity_Level := Opt.High;
+            Opt.Quiet_Output    := False;
 
          elsif Arg = "-f" then
             Force_Installations := True;

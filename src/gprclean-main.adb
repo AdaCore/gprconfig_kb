@@ -636,7 +636,8 @@ procedure Gprclean.Main is
          when 'v' =>
             if Switch = "-v" then
                if not In_Package_Clean or else not Quiet_Output then
-                  Verbose_Mode := True;
+                  Verbose_Mode    := True;
+                  Verbosity_Level := Opt.High;
                end if;
 
             elsif In_Package_Clean then

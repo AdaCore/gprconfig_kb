@@ -743,7 +743,7 @@ package body Gprbuild.Compile is
             else
                Record_Temp_File (Project_Tree.Shared, File_Name);
 
-               if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put ("Creating temp file """);
                   Put (Get_Name_String (File_Name));
                   Put_Line ("""");
@@ -2309,7 +2309,7 @@ package body Gprbuild.Compile is
             Last : Natural;
          begin
             if End_Of_File (File) then
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line ("    -> switches file has fewer switches");
                end if;
 
@@ -2320,7 +2320,7 @@ package body Gprbuild.Compile is
             Get_Line (File, Line, Last);
 
             if Line (1 .. Last) /= Current then
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line ("    -> switches file '"
                               & Get_Name_String (Id.Switches_Path)
                               & "' has different line");
@@ -2362,7 +2362,7 @@ package body Gprbuild.Compile is
          end loop;
 
          if not End_Of_File (File) then
-            if Opt.Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("    -> switches file has more switches");
             end if;
 
@@ -2375,7 +2375,7 @@ package body Gprbuild.Compile is
 
       exception
          when others =>
-            if Opt.Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Put_Line ("    -> no switches file");
             end if;
             return True;
@@ -2952,7 +2952,9 @@ package body Gprbuild.Compile is
                      end if;
                   end;
 
-                  if Verbose_Mode and then Response_File /= No_Path then
+                  if Opt.Verbosity_Level > Opt.Low and then
+                    Response_File /= No_Path
+                  then
                      Put_Line ("using a response file");
                   end if;
                end if;
@@ -3195,7 +3197,7 @@ package body Gprbuild.Compile is
                   Get_Name_String (Id.Language.Config.Include_Path),
                   Data.Include_Path.all);
 
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put
                     (Get_Name_String (Id.Language.Config.Include_Path));
                   Put (" = ");

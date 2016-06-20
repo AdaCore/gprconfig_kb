@@ -706,6 +706,8 @@ package body GPR.Env is
 
    --  Start of processing for Create_Config_Pragmas_File
 
+      use Opt;
+
    begin
       if not For_Project.Config_Checked then
          Naming_Table.Init (Namings);
@@ -736,7 +738,7 @@ package body GPR.Env is
 
          Write_Temp_File;
 
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Write_Str ("Created configuration file """);
             Write_Str (Get_Name_String (File_Name));
             Write_Line ("""");

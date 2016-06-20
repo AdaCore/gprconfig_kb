@@ -20,7 +20,6 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 with GPR.Err;
 with GPR.Names; use GPR.Names;
-with GPR.Opt;   use GPR.Opt;
 with GPR.Scans;
 with GPR.Sinput;
 

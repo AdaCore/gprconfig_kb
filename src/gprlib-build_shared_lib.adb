@@ -446,7 +446,7 @@ procedure Build_Shared_Lib is
 --  Start of processing for Build_Shared_Lib
 
 begin
-   if Opt.Verbose_Mode then
+   if Verbosity_Level > Opt.Low then
       Put ("building relocatable shared library ");
       Put_Line (Lib_File);
    end if;

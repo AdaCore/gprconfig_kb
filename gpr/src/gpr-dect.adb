@@ -1308,7 +1308,9 @@ package body GPR.Dect is
                   --  Issue warning(s) in verbose mode or when a possible
                   --  misspelling has been found.
 
-                  if Verbose_Mode or else Index /= 0 then
+                  if (Verbose_Mode and then Opt.Verbosity_Level > Opt.Low)
+                    or else Index /= 0
+                  then
                      Error_Msg (Flags,
                                 "?""" &
                                 Get_Name_String

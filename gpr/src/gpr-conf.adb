@@ -500,7 +500,7 @@ package body GPR.Conf is
 
       if not OK then
          if Autoconf_Specified then
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Write_Line ("inconsistent targets, performing autoconf");
             end if;
 
@@ -1057,12 +1057,12 @@ package body GPR.Conf is
                Arg_Last := 4;
             end if;
 
-            if not Verbose_Mode then
+            if Verbosity_Level <= Low then
                Arg_Last := Arg_Last + 1;
                Args (Arg_Last) := new String'("-q");
             end if;
 
-            if Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Write_Str (Gprconfig_Name);
 
                for J in 1 .. Arg_Last loop
@@ -1087,7 +1087,9 @@ package body GPR.Conf is
                --  Display no message if we are creating auto.cgpr, unless in
                --  verbose mode.
 
-               if Config_File_Name'Length > 0 or else Verbose_Mode then
+               if Config_File_Name'Length > 0 or else
+                 Opt.Verbosity_Level > Opt.Low
+               then
                   Write_Str ("creating ");
                   Write_Str (Simple_Name (Args (3).all));
                   Write_Eol;
@@ -1547,7 +1549,9 @@ package body GPR.Conf is
 
       --  Parse the configuration file
 
-      if Verbose_Mode and then Config_File_Path /= null then
+      if Opt.Verbosity_Level > Opt.Low and then
+        Config_File_Path /= null
+      then
          Write_Str  ("Checking configuration ");
          Write_Line (Config_File_Path.all);
       end if;
@@ -1674,7 +1678,7 @@ package body GPR.Conf is
 
       procedure Add_Directory (Dir : String) is
       begin
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Write_Line ("   Adding directory """ & Dir & """");
          end if;
 
@@ -1871,7 +1875,7 @@ package body GPR.Conf is
             Path_Value : constant String_Access := Getenv ("PATH");
 
          begin
-            if Opt.Verbose_Mode then
+            if Opt.Verbosity_Level > Opt.Low then
                Write_Line ("Setting the default project search directories");
 
                if GPR.Current_Verbosity = High then

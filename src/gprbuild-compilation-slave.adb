@@ -183,7 +183,7 @@ package body Gprbuild.Compilation.Slave is
             Cmd : constant Command := Get_Command (S.Channel);
          begin
             if Kind (Cmd) = OK then
-               if Opt.Verbose_Mode then
+               if Opt.Verbosity_Level > Opt.Low then
                   Put_Line
                     ("Clean-up done on " & To_String (S_Data.Host));
                end if;
@@ -450,7 +450,7 @@ package body Gprbuild.Compilation.Slave is
 
          Max_Processes := Max_Processes + S.Max_Processes;
 
-         if Opt.Verbose_Mode then
+         if Opt.Verbosity_Level > Opt.Low then
             Put ("Register slave " & To_String (S_Data.Host) & ",");
             Put (Integer'Image (S.Max_Processes));
             Put_Line (" process(es)");
@@ -587,7 +587,7 @@ package body Gprbuild.Compilation.Slave is
 
       Stop := Calendar.Clock;
 
-      if Opt.Verbose_Mode then
+      if Opt.Verbosity_Level > Opt.Low then
          Put ("  All data synchronized in ");
          Put (Duration'Image (Stop - Start));
          Put_Line (" seconds");
@@ -910,7 +910,7 @@ package body Gprbuild.Compilation.Slave is
       Stop := Clock;
 
       if not From_Signal
-        and then Opt.Verbose_Mode
+        and then Opt.Verbosity_Level > Opt.Low
         and then Slaves.Count > 0
       then
          Put ("  All data synchronized in ");
@@ -1034,7 +1034,7 @@ package body Gprbuild.Compilation.Slave is
             end if;
 
          else
-            if Opt.Verbose_Mode and then Opt.Verbosity_Level = Opt.High then
+            if Opt.Verbosity_Level = Opt.High then
                Put_Line
                  ("warning: selector in " & Selector_Status'Image (Status)
                   & " state");

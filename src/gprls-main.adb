@@ -26,7 +26,6 @@ with GNAT.Command_Line; use GNAT.Command_Line;
 with GPR.Conf;  use GPR.Conf;
 with GPR.Env;   use GPR.Env;
 with GPR.Names; use GPR.Names;
-with GPR.Opt;   use GPR.Opt;
 with GPR.Osint;
 with GPR.Snames;
 with GPR.Tree;
@@ -402,7 +401,9 @@ procedure Gprls.Main is
                when 'U' => All_Projects              := True;
                when 's' => Reset_Print; Print_Source := True;
                when 'o' => Reset_Print; Print_Object := True;
-               when 'v' => Verbose_Mode              := True;
+               when 'v' =>
+                  Verbose_Mode    := True;
+                  Verbosity_Level := High;
                when 'd' => Dependable                := True;
 
                when 'P' =>
@@ -727,7 +728,8 @@ begin
       Exit_Program (Exit_Status);
    end if;
 
-   Save_Verbose := Verbose_Mode;
+   Save_Verbose         := Verbose_Mode;
+   Save_Verbosity_Level := Verbosity_Level;
 
    No_Project_File_Specified := Project_File_Name = null;
 
@@ -735,8 +737,9 @@ begin
      No_Project_File_Specified and then
      Number_File_Names = 0
    then
-      Verbose_Mode := False;
-      Quiet_Output := True;
+      Verbose_Mode    := False;
+      Verbosity_Level := None;
+      Quiet_Output    := True;
    end if;
 
    if Load_Standard_Base then
@@ -825,8 +828,9 @@ begin
          "unable to process project file " & Output_Name.all);
    end if;
 
-   Verbose_Mode := Save_Verbose;
-   Quiet_Output := False;
+   Verbose_Mode    := Save_Verbose;
+   Verbosity_Level := Save_Verbosity_Level;
+   Quiet_Output    := False;
 
    if Verbose_Mode then
       Display_Paths;

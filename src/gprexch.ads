@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -29,7 +29,8 @@ package Gprexch is
    type Binding_Section is
      (No_Binding_Section,
       Quiet,
-      Verbose,
+      Verbose_Low,
+      Verbose_Higher,
       Nothing_To_Bind,
       Shared_Libs,
       Main_Base_Name,
@@ -63,7 +64,8 @@ package Gprexch is
      (No_Library_Section,
       No_Create,
       Quiet,
-      Verbose,
+      Verbose_Low,
+      Verbose_Higher,
       Relocatable,
       Static,
       Object_Files,

@@ -24,6 +24,7 @@ with GNAT.OS_Lib; use GNAT.OS_Lib;
 with GPR; use GPR;
 with GPR.ALI; use GPR.ALI;
 with GPR.Env;
+with GPR.Opt;   use GPR.Opt;
 with GPR.Osint; use GPR.Osint;
 with GPR.Tree;  use GPR.Tree;
 
@@ -51,6 +52,7 @@ private
    --  To avoid reinitialization of some packages.
 
    Save_Verbose : Boolean := False;
+   Save_Verbosity_Level : Verbosity_Level_Type;
 
    Project_Search_Path : constant String := "Project Search Path:";
    --  Label displayed in verbose mode before the directories in the project
