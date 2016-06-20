@@ -1030,9 +1030,7 @@ package body GPR.Conf is
                      Args (3) := new String'(Obj_Dir & Auto_Cgpr);
                   end if;
 
-                  if Obj_Dir_Exists then
-                     Set_Directory (Current_Dir);
-                  end if;
+                  Set_Directory (Current_Dir);
                end;
 
             else
