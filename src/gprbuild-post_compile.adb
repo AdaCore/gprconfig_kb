@@ -315,6 +315,7 @@ package body Gprbuild.Post_Compile is
                Initialize_Source_Record (Source);
 
                if Is_Compilable (Source)
+                 and then Source.Replaced_By = No_Source
                  and then Source.Language.Config.Objects_Linked
                  and then
                    ((Source.Unit = No_Unit_Index
@@ -506,6 +507,7 @@ package body Gprbuild.Post_Compile is
                Initialize_Source_Record (Source);
 
                if Is_Compilable (Source)
+                 and then Source.Replaced_By = No_Source
                  and then Source.Language.Config.Objects_Linked
                  and then
                    ((Source.Unit = No_Unit_Index
