@@ -17,6 +17,19 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P616-027 Duplicate object files in Stand-Alone Library
+
+  Problem:    Binding of a Stand-Alone Library may fail when the library
+              project extends another library project, the sources of the
+              extending project are the same as those of the project being
+              extended and there are naming declarations in package Naming
+              for the Ada sources.
+
+  Status:     This was fixed in 17 on 2016-06-20
+
+  Workaround: Avoid using the same sources for the extending project and
+              the project being extended.
+
 KP-23-P606-054 Spurious requirement for a body when building a SAL
 
   Problem:    GPRBuild incorrectly expects unit U to be part of the interface
