@@ -8,6 +8,12 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P607-006 gprbuild verbosity (2016-06-20)
+
+   gprbuild switch -v is now equivalent to switch -vl (low verbosity)
+   instead of -vh. And invoking gprbuild with -v or -vl no longer outputs
+   information about the inner behavior of gprbuild.
+
 NF-17-P526-032 Environment variable GPR_RUNTIME_PATH (2016-06-15)
 
    When the Ada runtime directory is specified with switch --RTS or
