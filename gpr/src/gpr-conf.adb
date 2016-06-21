@@ -1439,7 +1439,9 @@ package body GPR.Conf is
                      --  If Environment variable GPR_RUNTIME_PATH is defined,
                      --  look for the runtime directory in this path.
 
-                     if Runtime_Path'Length > 0 then
+                     if Runtime_Path /= null
+                        and then Runtime_Path'Length > 0
+                     then
                         RTS_Dir := Locate_Directory
                           (Dir_Name => Runtime_Dir,
                            Path     => Runtime_Path.all);
@@ -1484,7 +1486,6 @@ package body GPR.Conf is
 
                if OK then
                   Set_Runtime_For (Name_Ada, RTS_Dir.all);
-                  Free (RTS_Dir);
 
                --  Do not fail if the runtime directory is a base name, as
                --  there may be a subdirectory of the project directory with
@@ -1495,6 +1496,8 @@ package body GPR.Conf is
                   Raise_Invalid_Config
                     ("invalid runtime directory " & RTS_Dir.all);
                end if;
+
+               Free (RTS_Dir);
             end if;
          end;
       end if;
