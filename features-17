@@ -71,6 +71,13 @@ NF-17-P204-001 GPRinstall minimal installation enhancement (2016-02-16)
    Now GPRinstall running in minimal installation mode won't install a
    body even if a specific naming scheme is defined.
 
+NF-17-P127-034 New builtin function Split (2016-06-22)
+
+   A new builtin function Split is introduced. It takes two string parameters
+   and returned a string list. Examples:
+      Split ("-gnatf,-gnatv", ",") => ("-gnatf", "-gnatv")
+      Split (external ("COMP_FLAGS", "-gnatf,-gnatv"), ",")
+
 NF-17-P116-001 GPRbuild distributed slave error messages (2016-01-20)
 
    Now GPRbuild gives a clearer error messages when it cannot connect
