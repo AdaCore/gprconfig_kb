@@ -1139,7 +1139,6 @@ package body Gprbuild.Link is
 
    procedure Get_Linker_Options (For_Project : Project_Id) is
       Linker_Lib_Dir_Option  : String_Access;
-      Linker_Lib_Name_Option : String_Access;
 
       procedure Recursive_Add
         (Proj  : Project_Id;
@@ -1203,15 +1202,6 @@ package body Gprbuild.Link is
              (Get_Name_String (For_Project.Config.Linker_Lib_Dir_Option));
       end if;
 
-      if For_Project.Config.Linker_Lib_Name_Option = No_Name then
-         Linker_Lib_Name_Option := new String'("-l");
-
-      else
-         Linker_Lib_Name_Option :=
-           new String'
-             (Get_Name_String (For_Project.Config.Linker_Lib_Name_Option));
-      end if;
-
       Linker_Opts.Init;
 
       For_All_Projects
@@ -1250,33 +1240,42 @@ package body Gprbuild.Link is
                         Add_Argument (Name_Buffer (1 .. Name_Len), True);
 
                      else
-                        Add_Argument
-                          (Linker_Lib_Dir_Option.all &
-                           Dir_Path &
-                           Directory_Separator &
-                           Name_Buffer
-                             (Linker_Lib_Dir_Option'Length + 1 .. Name_Len),
-                           True);
+                        declare
+                           Dir : constant String :=
+                             Dir_Path &
+                             Directory_Separator &
+                             Name_Buffer
+                             (Linker_Lib_Dir_Option'Length + 1 .. Name_Len);
+                        begin
+                           if Is_Directory (Dir) then
+                              Add_Argument
+                                (Linker_Lib_Dir_Option.all & Dir, True);
+                           else
+                              Add_Argument
+                                (Name_Buffer (1 .. Name_Len), True);
+                           end if;
+                        end;
                      end if;
 
-                  elsif (Name_Len > Linker_Lib_Name_Option'Length
-                         and then
-                           Name_Buffer (1 .. Linker_Lib_Name_Option'Length) =
-                           Linker_Lib_Name_Option.all)
-                    or else
-                      Name_Buffer (1) = '-'
-                    or else
+                  elsif Name_Buffer (1) = '-' or else
                       Is_Absolute_Path (Name_Buffer (1 .. Name_Len))
                   then
                      Add_Argument (Name_Buffer (1 .. Name_Len), True);
 
                   else
-                     Add_Argument
-                       (Dir_Path &
-                        Directory_Separator &
-                        Name_Buffer (1 .. Name_Len),
-                        True,
-                        Simple_Name => True);
+                     declare
+                        File : constant String :=
+                          Dir_Path &
+                          Directory_Separator &
+                          Name_Buffer (1 .. Name_Len);
+                     begin
+                        if Is_Regular_File (File) then
+                           Add_Argument
+                             (File, True, Simple_Name => True);
+                        else
+                           Add_Argument (Name_Buffer (1 .. Name_Len), True);
+                        end if;
+                     end;
                   end if;
                end if;
 

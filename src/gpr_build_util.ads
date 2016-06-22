@@ -25,7 +25,6 @@ with GNAT.Table;
 
 with GPR;        use GPR;
 with GPR.ALI;
-with GPR.Com;
 with GPR.Snames; use GPR.Snames;
 with GPR.Tree;
 
@@ -107,11 +106,6 @@ package Gpr_Build_Util is
       Last   : in out Natural);
    --  Add a string to a list of strings
 
-   function Absolute_Path
-     (Path    : Path_Name_Type;
-      Project : Project_Id) return String;
-   --  Returns an absolute path for a configuration pragmas file
-
    function Create_Binder_Mapping_File
      (Project_Tree : Project_Tree_Ref) return Path_Name_Type;
    --  Create a binder mapping file and returns its path name
@@ -178,14 +172,6 @@ package Gpr_Build_Util is
    procedure Write_Path_File (FD : File_Descriptor);
    --  Write in the specified open path file the directories in table
    --  Directories, then closed the path file.
-
-   function Linker_Options_Switches
-     (Project  : Project_Id;
-      Do_Fail  : Com.Fail_Proc;
-      In_Tree  : Project_Tree_Ref) return String_List;
-   --  Collect the options specified in the Linker'Linker_Options attributes
-   --  of project Project, in project tree In_Tree, and in the projects that
-   --  it imports directly or indirectly, and returns the result.
 
    function Path_Or_File_Name (Path : Path_Name_Type) return String;
    --  Returns a file name if -df is used, otherwise return a path name
