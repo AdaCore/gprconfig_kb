@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -645,11 +645,13 @@ exception
    when End_Error =>
       null;
    when Invalid_Switch =>
-      Put_Line ("Invalid command line switch: -" & Full_Switch);
+      Put_Line
+        (Standard_Error, "Invalid command line switch: -" & Full_Switch);
       Try_Help;
       Ada.Command_Line.Set_Exit_Status (2);
    when Invalid_Parameter =>
-      Put_Line ("Missing parameter for switch: -" & Full_Switch);
+      Put_Line
+        (Standard_Error, "Missing parameter for switch: -" & Full_Switch);
       Try_Help;
       Ada.Command_Line.Set_Exit_Status (2);
 end GprConfig.Main;

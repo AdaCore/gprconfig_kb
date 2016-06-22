@@ -3376,12 +3376,13 @@ package body GprConfig.Knowledge is
       end loop;
 
       if Is_Empty (Packages) then
-         Put_Line ("No valid configuration found");
+         Put_Line (Standard_Error, "No valid configuration found");
          raise Generate_Error;
       end if;
 
       if not Opt.Quiet_Output then
-         Put_Line ("Creating configuration file: " & Output_File);
+         Put_Line
+           (Standard_Error, "Creating configuration file: " & Output_File);
       end if;
 
       Create (Output, Out_File, Output_File);
@@ -3425,7 +3426,7 @@ package body GprConfig.Knowledge is
 
    exception
       when Ada.Directories.Name_Error | Ada.IO_Exceptions.Use_Error =>
-         Put_Line ("Could not create the file " & Output_File);
+         Put_Line (Standard_Error, "Could not create the file " & Output_File);
          raise Generate_Error;
    end Generate_Configuration;
 
