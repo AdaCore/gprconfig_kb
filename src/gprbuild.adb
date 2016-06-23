@@ -710,15 +710,30 @@ package body Gprbuild is
               and then not Is_Absolute_Path
                 (Original (Inc_Switch'Last + 1 .. Original'Last))
             then
-               Switch := new String'
-                 (Inc_Switch & Parent & Directory_Separator
-                  & Original (Inc_Switch'Last + 1 .. Original'Last));
+               declare
+                  Dir : constant String :=
+                    Parent &
+                    Directory_Separator &
+                    Original (Inc_Switch'Last + 1 .. Original'Last);
+               begin
+                  if Is_Directory (Dir) then
+                     Free (Switch);
+                     Switch := new String'(Inc_Switch & Dir);
+                  end if;
+               end;
             end if;
          end;
       end if;
 
       if Original (1) /= '-' and then not Is_Absolute_Path (Original) then
-         Switch := new String'(Parent & Directory_Separator & Original);
+         declare
+            File : constant String := Parent & Directory_Separator & Original;
+         begin
+            if Is_Regular_File (File) then
+               Free (Switch);
+               Switch := new String'(File);
+            end if;
+         end;
       end if;
    end Test_If_Relative_Path;
 

@@ -356,6 +356,15 @@ private
      (Switch           : in out String_Access;
       Parent           : String;
       Including_Switch : Name_Id);
+   --  Changes relative paths to absolute paths. When Switch is not a
+   --  switch (it does not start with '-'), then if it is a relative path
+   --  and Parent/Switch is a regular file, then Switch is modified to
+   --  be Parent/Switch. If Switch is a switch (it starts with '-'),
+   --  Including_Switch is not null, Switch starts with Including_Switch
+   --  and the remainder is a relative path, then if Parent/remainder is
+   --  an existing directory, then Switch is modified to have an absolute
+   --  path following Including_Switch.
+   --  Whenever Switch is modified, its previous value is deallocated.
 
    procedure Add_Option_Internal
      (Value       : String_Access;
