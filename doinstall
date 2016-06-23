@@ -1,0 +1,165 @@
+#!/bin/sh
+
+prefix=''
+has_gnatpro=n
+machine=''
+
+ggd_prefix=''
+if [ "x$ggd_prefix" = "x" ]; then
+    ggd_prog="gnatmake"
+else
+    ggd_prog="$ggd_prefix-gnatmake"
+fi
+if type $ggd_prog > /dev/null 2>&1 &&
+   $ggd_prog -v 2>&1 | grep GNATMAKE | grep -q Pro;
+then
+    has_gnatpro=y
+    saved_IFS="$IFS"
+    IFS=:
+    for d in $PATH; do
+      if [ -x "$d/$ggd_prog" ]; then
+        prefix=$d
+        break
+      fi
+    done
+    IFS="$saved_IFS"
+    machine=`$prefix/gcc -dumpmachine || true`
+fi
+
+gprbuild="gprbuild"
+
+# remove last 'bin' from prefix as it's not expected
+prefix=`echo $prefix | sed 's/\/bin$//'`
+
+clear
+cat << EOF
+
+
+   This script is provided to simplify the installation of the
+     $machine
+   binary distribution of $gprbuild - the multi languages project builder.
+   For information on commercial support, please contact sales@adacore.com.
+
+   This script will ask a few questions regarding the $gprbuild installation.
+   Confirmation is required before any write action is taken.
+
+   Please press RETURN to continue.
+
+EOF
+
+read x
+
+# --------------------- Select installation option --------------------
+clear
+cat << EOF
+
+
+  There are 2 options for installation:
+EOF
+
+if [ "$has_gnatpro" = "y" ]; then
+cat <<EOF
+
+  1) Install $gprbuild in the standard GNAT Pro location.
+     ($prefix)
+
+EOF
+else
+cat <<EOF
+
+  1) Install $gprbuild in /usr/local (must be root)
+
+EOF
+fi
+
+cat <<EOF
+
+  2) Install $gprbuild in non-standard locations that you will
+     specify.
+
+EOF
+
+if [ "$has_gnatpro" = "y" ]; then
+cat <<EOF
+
+  Option 1 provides simplest use of $gprbuild.
+
+EOF
+fi
+
+while [ true ]; do
+  echo "Type 1, or 2 (then RETURN) to choose an option: "
+  read answer
+  case $answer in
+
+  # ------------------ Custom  installation ---------------------------
+  2)
+    clear
+    cat << EOF
+
+
+    To install $gprbuild in a non-standard location you need to
+    specify a base directory.  All the files will be installed in
+    subdirectories that are created under this directory.
+
+    Important Note: You should not use ~ or ~username wildcards
+    when specifying this directory name.
+
+    Specify the base directory you want to use for installation:
+
+EOF
+    read basedir
+    while [ true ]; do
+      if [ "X" = "X`echo $basedir|sed -n -e 's%^/.*%/%p'`" ]; then
+          basedir=`pwd`/$basedir
+      fi
+      echo "    " The base directory is $basedir
+      echo "    " To accept this choice enter RETURN.
+      echo "    " Otherwise type a new name.
+      read answer
+      if [ "X$answer" = "X" ]; then
+          break
+      fi
+      basedir=$answer
+    done
+    clear
+    installdir=$basedir
+    break
+    ;;
+
+  # ------------------ Regular installation ---------------------------
+  1)
+    if [ "$has_gnatpro" = "y" ]; then
+       installdir=$prefix
+    else
+       installdir="/usr/local"
+    fi
+    break
+    ;;
+
+  *)
+    echo "Incorrect choice"
+    ;;
+ esac
+done
+
+# --------------------- Actual Installation of Gprbuild --------------
+
+if [ ! -d $installdir ]; then
+    mkdir -p $installdir
+fi
+
+if tar cf - bin share libexec include lib | (cd $installdir && tar xf -) ; then
+
+   # --------------------------- End of the script -----------------------
+   clear
+   echo " "
+   echo "$gprbuild has been installed in $installdir"
+   echo "Thank you for using $gprbuild !"
+   echo " "
+
+else
+   echo
+   echo "$gprbuild failed to be installed.  Please check error messages"
+   echo
+fi
