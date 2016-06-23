@@ -2,6 +2,7 @@
 *.pyc
 *.swp
 /CVS
+/Makefile
 /gprclean
 /gprconfig
 /gprconfig.exe
@@ -24,19 +25,12 @@
 /config.status
 /gnat.gpr
 /gnat_src
-/obj
-/exe
-/config/obj
-/config/lib
-/gpr/lib
-/gpr/libobj
-makefile.setup
+/obj-debug
 
 /doc/txt
 /doc/html
 /doc/info
 /doc/pdf
-/doc/build
 /doc/projects_unw.texi
 /doc/xgnatugn
 /doc/xgnatugn.ali
@@ -44,6 +38,19 @@ makefile.setup
 /gnat/projects.texi
 /gnat/ug_words
 /gnat/xgnatugn.adb
+
+/internal/gprtests/gprtest
+/internal/gprtests/out
+/internal/gprtests_python/out
+/internal/gprtests/gprtest.conf
+/internal/gprtests/install
+
+/internal/gprtests_python/support/compilers.xml
+/internal/gprtests_python/support/targetset.xml
+/internal/gprtests_python/support/nocompiler.xml
+/internal/gprtests_python/local_machines.py
+/internal/gprtests_python/test_config.py
+internal/gprtests_python/env.dump
 
 /gnat/*.ali
 /gnat/ali.ad?

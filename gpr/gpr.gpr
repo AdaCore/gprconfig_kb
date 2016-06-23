@@ -1,26 +1,7 @@
-------------------------------------------------------------------------------
---                                                                          --
---                             GPR TECHNOLOGY                               --
---                                                                          --
---                     Copyright (C) 2004-2016, AdaCore                     --
---                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
--- ware  Foundation;  either version 3,  or (at your option) any later ver- --
--- sion.  This software is distributed in the hope  that it will be useful, --
--- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
--- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
---                                                                          --
-------------------------------------------------------------------------------
-
 library project GPR is
-
    type Build_Type is ("debug", "production", "coverage", "profiling");
    Bld : Build_Type := external ("BUILD", "production");
-
+   
    type Library_Type_Type is ("relocatable", "static", "static-pic");
    Gnat_Lib_Type : Library_Type_Type := external ("LIBRARY_TYPE", "static");
    Root_Obj_Dir := external ("OBJDIR", ".");
@@ -30,32 +11,44 @@ library project GPR is
    for Source_Dirs use ("src");
 
    for Library_Name use "gpr";
-   for Object_Dir use "libobj/" & Bld & "/" & Gnat_Lib_Type;
-   for Library_Dir use "lib/" & Bld & "/" & Gnat_Lib_Type;
 
-   --------------
-   -- Compiler --
-   --------------
+   case Bld is
+      when "production" =>
+         for Object_Dir use Root_Obj_Dir & "/libobj/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "/lib/" & Gnat_Lib_Type;
+
+      when "coverage"   =>
+         for Object_Dir use Root_Obj_Dir & "/libobj-cov/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "lib-cov/" & Gnat_Lib_Type;
+
+      when "profiling"  =>
+         for Object_Dir use Root_Obj_Dir & "/libobj-prof/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "/lib-prof/" & Gnat_Lib_Type;
+
+      when "debug"      =>
+         for Object_Dir use Root_Obj_Dir & "/libobj-debug/" & Gnat_Lib_Type;
+         for Library_Dir use Root_Obj_Dir & "/lib-debug/" & Gnat_Lib_Type;
+   end case;
 
    package Compiler is
-      Common_Switches := ("-gnat12", "-gnaty", "-gnatQ");
-
+      common_switches := ("-gnat12", "-gnaty", "-gnatQ");
       case Bld is
          when "debug" =>
-            for Default_Switches ("Ada") use Common_Switches &
-              ("-g", "-gnata", "-gnatVa", "-gnatwaCJI", "-gnatwe", "-gnatyg");
+            for Default_Switches ("Ada") use common_switches &
+            ("-g", "-gnata", "-gnatVa", "-gnatwaCJI"
+             , "-gnatwe"
+             , "-gnatyg"
+             );
 
             for Local_Configuration_Pragmas use "debug.adc";
-
          when "coverage" =>
-            for Default_Switches ("Ada") use Common_Switches &
+            for Default_Switches ("Ada") use common_switches &
               ("-ftest-coverage", "-fprofile-arcs");
-
          when "profiling" =>
-            for Default_Switches ("Ada") use Common_Switches & ("-pg", "-g");
-
+            for Default_Switches ("Ada") use common_switches &
+              ("-pg", "-g");
          when "production" =>
-            for Default_Switches ("Ada") use Common_Switches &
+            for Default_Switches ("Ada") use common_switches &
               ("-O2", "-gnatpn", "-gnatws");
 
             --  Compile all Ada sources to support symbolic-traceback
@@ -66,3 +59,4 @@ library project GPR is
    end Compiler;
 
 end GPR;
+
