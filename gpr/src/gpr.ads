@@ -836,11 +836,17 @@ package GPR is
       --  False if object files are not use to link executables and build
       --  libraries.
 
+      Runtime_Dir : Name_Id := No_Name;
+      --  Path name of the runtime directory, if any
+
       Runtime_Library_Dirs : Name_List_Index := No_Name_List;
       --  Path names of the runtime library directories, if any
 
       Runtime_Source_Dirs : Name_List_Index := No_Name_List;
       --  Path names of the runtime source directories, if any
+
+      Runtime_Library_Version : Name_Id := No_Name;
+      --  Value of the library version
 
       Mapping_File_Switches : Name_List_Index := No_Name_List;
       --  The option(s) to provide a mapping file to the compiler. Specified in
@@ -972,8 +978,10 @@ package GPR is
                            Compilation_PIC_Option       => No_Name_List,
                            Object_Generated             => True,
                            Objects_Linked               => True,
+                           Runtime_Dir                  => No_Name,
                            Runtime_Library_Dirs         => No_Name_List,
                            Runtime_Source_Dirs          => No_Name_List,
+                           Runtime_Library_Version      => No_Name,
                            Mapping_File_Switches        => No_Name_List,
                            Mapping_Spec_Suffix          => No_File,
                            Mapping_Body_Suffix          => No_File,
@@ -2376,6 +2384,11 @@ package GPR is
       Packages          : Package_Table.Instance;
       Private_Part      : Private_Project_Tree_Data;
       Dot_String_List   : String_List_Id := Nil_String;
+
+      Ada_Runtime_Dir             : Name_Id := No_Name;
+      Ada_Runtime_Source_Dirs     : Name_List_Index := No_Name_List;
+      Ada_Runtime_Library_Dirs    : Name_List_Index := No_Name_List;
+      Ada_Runtime_Library_Version : Name_Id := No_Name;
    end record;
    type Shared_Project_Tree_Data_Access is access all Shared_Project_Tree_Data;
    --  The data that is shared among multiple trees, when these trees are

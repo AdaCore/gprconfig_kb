@@ -259,6 +259,7 @@ Toolchain_Version
 Trailing_Required_Switches
 Trailing_Switches
 Runtime_Library_Dir
+Runtime_Library_Dirs
 Runtime_Source_Dir
 Ada
 Interfaces
@@ -278,4 +279,5 @@ Export_File_Format
 Export_File_Switch
 Runtime_Source_Dirs
 Runtime_Dir
+Runtime_Library_Version
 Split

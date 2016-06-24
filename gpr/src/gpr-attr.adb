@@ -138,9 +138,11 @@ package body GPR.Attr is
    "SVtargetDtarget_value#" &
    "SaruntimeDruntime_value#" &
    "Saruntime_library_dir#" &
+   "Laruntime_library_dirs#" &
    "Saruntime_source_dir#" &
    "Laruntime_source_dirs#" &
    "Saruntime_dir#" &
+   "Saruntime_library_version#" &
 
    --  Configuration - Libraries
 

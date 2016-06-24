@@ -314,6 +314,7 @@ package body GPR.Snames is
       Add_Name ("trailing_required_switches");
       Add_Name ("trailing_switches");
       Add_Name ("runtime_library_dir");
+      Add_Name ("runtime_library_dirs");
       Add_Name ("runtime_source_dir");
       Add_Name ("ada");
       Add_Name ("interfaces");
@@ -333,6 +334,7 @@ package body GPR.Snames is
       Add_Name ("export_file_switch");
       Add_Name ("runtime_source_dirs");
       Add_Name ("runtime_dir");
+      Add_Name ("runtime_library_version");
       Add_Name ("split");
 
       Initialized := True;

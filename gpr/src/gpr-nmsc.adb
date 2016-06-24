@@ -2725,6 +2725,30 @@ package body GPR.Nmsc is
                           Name_List_Table.Last (Shared.Name_Lists);
                      end if;
 
+                  elsif Current_Array.Name = Name_Runtime_Library_Dirs then
+
+                     --  Attribute Runtime_Library_Dirs (<language>)
+
+                     declare
+                        Dirs    : String_List_Id := Element.Value.Values;
+                        Elem    : String_Element;
+                     begin
+                        Lang_Index.Config.Runtime_Library_Dirs := No_Name_List;
+
+                        while Dirs /= Nil_String loop
+                           Elem := Shared.String_Elements.Table (Dirs);
+                           Name_List_Table.Append
+                          (Shared.Name_Lists,
+                           New_Val =>
+                             (Elem.Value,
+                              Lang_Index.Config.Runtime_Library_Dirs));
+                           Lang_Index.Config.Runtime_Library_Dirs :=
+                             Name_List_Table.Last (Shared.Name_Lists);
+
+                           Dirs := Elem.Next;
+                        end loop;
+                     end;
+
                   elsif Current_Array.Name = Name_Runtime_Source_Dir then
 
                      --  Attribute Runtime_Source_Dir (<language>)
@@ -2844,17 +2868,102 @@ package body GPR.Nmsc is
                         end Get_Directories;
 
                      begin
-                        Get_Directories
-                          (Runtime_Dirs   =>
-                             Lang_Index.Config.Runtime_Source_Dirs,
-                           Path_File_Name => "ada_source_path",
-                          Directory      => "adainclude");
-                        Get_Directories
-                          (Runtime_Dirs   =>
-                             Lang_Index.Config.Runtime_Library_Dirs,
-                           Path_File_Name => "ada_object_path",
-                          Directory      => "adalib");
+                        Lang_Index.Config.Runtime_Dir := Element.Value.Value;
+
+                        if Lang_Index.Name = Name_Ada then
+                           if Shared.Ada_Runtime_Dir = Element.Value.Value then
+                              Lang_Index.Config.Runtime_Library_Dirs :=
+                                Shared.Ada_Runtime_Library_Dirs;
+                              Lang_Index.Config.Runtime_Source_Dirs :=
+                                Shared.Ada_Runtime_Source_Dirs;
+                              Lang_Index.Config.Runtime_Library_Version :=
+                                Shared.Ada_Runtime_Library_Version;
+
+                           else
+                              Get_Directories
+                                (Runtime_Dirs   =>
+                                   Lang_Index.Config.Runtime_Source_Dirs,
+                                 Path_File_Name => "ada_source_path",
+                                 Directory      => "adainclude");
+                              Get_Directories
+                                (Runtime_Dirs   =>
+                                   Lang_Index.Config.Runtime_Library_Dirs,
+                                 Path_File_Name => "ada_object_path",
+                                 Directory      => "adalib");
+
+                              declare
+                                 Lib_Dirs : Name_List_Index :=
+                                   Lang_Index.Config.Runtime_Library_Dirs;
+                                 Library_Dir : Name_Node;
+                                 Version : Name_Id := No_Name;
+
+                              begin
+                                 while Lib_Dirs /= No_Name_List loop
+                                    Library_Dir :=
+                                      Shared.Name_Lists.Table
+                                        (Lib_Dirs);
+
+                                    if Is_Regular_File
+                                      (Get_Name_String
+                                         (Library_Dir.Name) & "/system.ali")
+                                    then
+                                       declare
+                                          File : File_Type;
+                                          Line : String (1 .. 1_000);
+                                          Last : Natural;
+                                          Start : Natural;
+                                       begin
+                                          Open
+                                            (File,
+                                             In_File,
+                                             Get_Name_String
+                                               (Library_Dir.Name) &
+                                               "/system.ali");
+                                          Get_Line (File, Line, Last);
+                                          Close (File);
+                                          Start :=
+                                            Index (Line (1 .. Last), " v");
+
+                                          if Start /= 0 then
+                                             Name_Len := 0;
+                                             Add_Str_To_Name_Buffer
+                                               (Line (Start + 2 .. Last - 1));
+                                             Version := Name_Find;
+                                          end if;
+
+                                          exit;
+                                       end;
+                                    end if;
+
+                                    Lib_Dirs := Library_Dir.Next;
+                                 end loop;
+
+                                 if Version /= No_Name then
+                                    Lang_Index.Config.
+                                      Runtime_Library_Version := Version;
+                                 else
+                                    Lang_Index.Config.
+                                      Runtime_Library_Version :=
+                                      Lang_Index.Config.Toolchain_Version;
+                                 end if;
+
+                                 Shared.Ada_Runtime_Library_Dirs :=
+                                   Lang_Index.Config.Runtime_Library_Dirs;
+                                 Shared.Ada_Runtime_Source_Dirs :=
+                                   Lang_Index.Config.Runtime_Source_Dirs;
+                                 Shared.Ada_Runtime_Library_Version :=
+                                   Lang_Index.Config.Runtime_Library_Version;
+                              end;
+                           end if;
+                        end if;
                      end;
+
+                  elsif Current_Array.Name = Name_Runtime_Library_Version then
+
+                     --  Attribute Runtime_Library_Version (<language>)
+
+                     Lang_Index.Config.Runtime_Library_Version :=
+                       Element.Value.Value;
 
                   elsif Current_Array.Name = Name_Object_Generated then
                      declare
