@@ -31,7 +31,7 @@ library project GPR is
    end case;
 
    package Compiler is
-      common_switches := ("-gnat12", "-gnaty", "-gnatQ");
+      common_switches := ("-gnat12", "-gnaty", "-gnatQ", "-gnata");
       case Bld is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches &
@@ -49,7 +49,7 @@ library project GPR is
               ("-pg", "-g");
          when "production" =>
             for Default_Switches ("Ada") use common_switches &
-              ("-O2", "-gnatpn", "-gnatws");
+              ("-O2", "-gnatn", "-gnatws");
 
             --  Compile all Ada sources to support symbolic-traceback
 

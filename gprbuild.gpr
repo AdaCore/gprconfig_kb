@@ -44,11 +44,11 @@ project Gprbuild is
    end Builder;
 
    package Compiler is
-      common_switches := ("-gnat12", "-gnaty", "-gnatQ");
+      common_switches := ("-gnat12", "-gnaty", "-gnatQ", "-gnata");
       case Bld is
          when "debug" =>
             for Default_Switches ("Ada") use common_switches &
-            ("-g", "-gnata", "-gnatVa", "-gnatwaCJI"
+            ("-g", "-gnatVa", "-gnatwaCJI"
              , "-gnatwe"
              , "-gnatyg"
              );
@@ -62,7 +62,7 @@ project Gprbuild is
               ("-pg", "-g");
          when "production" =>
             for Default_Switches ("Ada") use common_switches &
-              ("-O2", "-gnatpn", "-gnatws");
+              ("-O2", "-gnatn", "-gnatws");
 
             --  Compile all GPRbuild sources to support symbolic-traceback
 
