@@ -17,6 +17,17 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P620-013 Expanded linker options
+
+  Problem:    Linker options that look like relative paths or include relative
+              paths (such as "toto.o" or "-Ldir") are expanded to absolute
+              paths, even if the file or directory does not exist.
+
+  Status:     This was fixed in 17 on 2016-06-25
+
+  Workaround: Specify the option directly to the linker with a switch
+              "-Wl,...".
+
 KP-23-P616-027 Duplicate object files in Stand-Alone Library
 
   Problem:    Binding of a Stand-Alone Library may fail when the library
