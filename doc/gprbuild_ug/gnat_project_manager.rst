@@ -4405,6 +4405,37 @@ Project Level Attributes
     (usually with a switch --RTS), the value of attribute reference 'Runtime
     for this language is the one specified on the command line.
 
+  * **Runtime_Dir**: single, indexed, case-insensitive index
+
+    Index is a language name. Value is the path name of the runtime directory
+    for the language.
+
+  * **Runtime_Library_Dirs**: list, indexed, case-insensitive index
+
+    Index is a language name. Value is the path names of the directories where
+    the runtime libraries are located. This attribute is not normally declared.
+
+  * **Runtime_Library_Dir**: single, indexed, case-insensitive index
+
+    Index is a language name. Value is the path name of the directory where the
+    runtime libraries are located. This attribute is obsolete.
+
+  * **Runtime_Source_Dirs**: list, indexed, case-insensitive index
+
+    Index is a language name. Value is the path names of the directories where
+    the sources of runtime libraries are located. This attribute is not
+    normally declared.
+
+  * **Runtime_Source_Dir**: single, indexed, case-insensitive index
+
+    Index is a language name. Value is the path name of the directory where the
+    sources of runtime libraries are located. This attribute is obsolete.
+
+  * **Runtime_Library_Version**: single, indexed, case-insensitive index
+
+    Index is a language name. Value is library version for the language. This
+    attribute is not normally declared.
+
 * **Configuration - Libraries**
 
   * **Library_Builder**: single
@@ -4482,16 +4513,6 @@ Project Level Attributes
 
     Value is the name of the option that needs to be used, concatenated with the
     path name of the library file, when linking a shared library.
-
-  * **Runtime_Library_Dir**: single, indexed, case-insensitive index
-
-    Index is a language name. Value is the path name of the directory where the
-    runtime libraries are located.
-
-  * **Runtime_Source_Dir**: single, indexed, case-insensitive index
-
-    Index is a language name. Value is the path name of the directory where the
-    sources of runtime libraries are located.
 
 
 .. _Package_Binder_Attributes:
