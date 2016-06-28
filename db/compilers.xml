@@ -197,9 +197,9 @@
     <name>GCC-WRS7ARM</name>
     <executable prefix="1">cc(arm)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>ccarm --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -210,9 +210,9 @@
     <name>GCC-WRS7X86</name>
     <executable prefix="1">cc(pentium)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>ccpentium --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -223,9 +223,9 @@
     <name>GCC-WRS7X86_64</name>
     <executable prefix="1">cc(pentium)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>ccpentium --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -236,9 +236,9 @@
     <name>GCC-WRS7PPC</name>
     <executable prefix="1">cc(ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>ccppc --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -251,9 +251,9 @@
     <name>GCC-WRS7E500V2</name>
     <executable prefix="1">cc(ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>ccppc --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -546,9 +546,9 @@
     <name>G++-WRS7ARM</name>
     <executable prefix="1">c\+\+(arm)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>c\+\+arm --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C++</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -560,9 +560,9 @@
     <name>G++-WRS7E500V2</name>
     <executable prefix="1">c\+\+(ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>c\+\+ppc --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C++</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -573,9 +573,9 @@
     <name>G++-WRS7PPC</name>
     <executable prefix="1">c\+\+(ppc)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>c\+\+ppc --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C++</languages>
     <runtimes>kernel,rtp</runtimes>
@@ -584,11 +584,11 @@
 
   <compiler_description>
     <name>G++-WRS7X86_64</name>
-    <executable prefix="1">cc(pentium)</executable>
+    <executable prefix="1">c\+\+(pentium)</executable>
     <version>
-      <getenv name="WIND_BASE"></getenv>
-      <grep regexp=".*[/\\](vxworks-7[0-9.]*).*" group="1"></grep>
-      <must_match>vxworks-7.*</must_match>
+      <external>c\+\+pentium --version</external>
+      <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
+      <must_match>4.8.1</must_match>
     </version>
     <languages>C++</languages>
     <runtimes>kernel,rtp</runtimes>

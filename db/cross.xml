@@ -53,10 +53,10 @@
      </config>
    </configuration>
 
-   <!-- Import WIND_BASE on VxWorks targets.  -->
+   <!-- Import WIND_BASE on VxWorks targets. (non-vx7 only) -->
    <configuration>
      <targets>
-       <target name="^.*-wrs-vxworks.*$" />
+       <target name="^.*-wrs-vxworks$" />
        <target name="^.*-wrs-vxworksae$" />
        <target name="^.*-wrs-vxworksmils$" />
      </targets>
