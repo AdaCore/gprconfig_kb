@@ -54,6 +54,13 @@ NF-17-P519-041 Runtime (<lang>) as a relative path (2016-05-25)
       for Runtime ("Ada") use "./rts";
    The path is relative to the project directory of the main project.
 
+NF-17-P411-014 Errors with switches --restricted-to-languages= (2016-04-13)
+
+   When gprbuild is invoked with switches --restricted-to-languages= and the
+   configuration project file does not include attributes for languages that
+   are not in the list of restricted languages, errors on the sources of
+   these languages are inhibited.
+
 NF-17-P215-047 GPRbuild supports response files during compilation (2016-03-10)
 
    GPRbuild, when the language is configured appropriately and the compilation
