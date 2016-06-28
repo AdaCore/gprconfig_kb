@@ -1618,18 +1618,20 @@ Other library-related attributes can be used to change the defaults:
 
 **Library_Kind**:
 
-  The value of this attribute must be either :samp:`"static"`, :samp:`"dynamic"` or
-  :samp:`"relocatable"` (the last is a synonym for :samp:`"dynamic"`). It indicates
-  which kind of library should be built (the default is to build a
-  static library, that is an archive of object files that can potentially
-  be linked into a static executable). When the library is set to be dynamic,
-  a separate image is created that will be loaded independently, usually
-  at the start of the main program execution. Support for dynamic libraries is
-  very platform specific, for instance on Windows it takes the form of a DLL
-  while on GNU/Linux, it is a dynamic `elf` image whose suffix is usually
-  :file:`.so`. Library project files, on the other hand, can be written in
-  a platform independent way so that the same project file can be used to build
-  a library on different operating systems.
+  The value of this attribute must be either :samp:`"static"`,
+  :samp:`"static-pic"`, :samp:`"dynamic"` or :samp:`"relocatable"` (the last is
+  a synonym for :samp:`"dynamic"`). It indicates which kind of library should
+  be built (the default is to build a static library, that is an archive of
+  object files that can potentially be linked into a static executable). A
+  static-pic library is also an archive, but the code is Position Independent
+  Code, usually compiled with the switch -fPIC. When the library is set to
+  be dynamic, a separate image is created that will be loaded independently,
+  usually at the start of the main program execution. Support for dynamic
+  libraries is very platform specific, for instance on Windows it takes the
+  form of a DLL while on GNU/Linux, it is a dynamic `elf` image whose suffix is
+  usually :file:`.so`. Library project files, on the other hand, can be written
+  in a platform independent way so that the same project file can be used to
+  build a library on different operating systems.
 
   If you need to build both a static and a dynamic library, we recommend
   using two different object directories, since in some cases some extra code
@@ -4264,8 +4266,9 @@ Project Level Attributes
   * **Library_Kind**: single
 
     Specifies the kind of library: static library (archive) or shared library.
-    Case-insensitive values must be one of "static" for archives (the default) or
-    "dynamic" or "relocatable" for shared libraries.
+    Case-insensitive values must be one of "static" for archives (the default),
+    "static-pic" for archives of Position Independent Code, or "dynamic" or
+    "relocatable" for shared libraries.
 
   * **Library_Version**: single
 
