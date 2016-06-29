@@ -6626,40 +6626,42 @@ package body GPR.Nmsc is
       --  Check if we have a root-object dir specified, if so relocate all
       --  artefact directories to it.
 
-      if Build_Tree_Dir /= null
-        and then Create /= ""
-        and then not Is_Absolute_Path (Get_Name_String (Name))
-      then
-         Name_Len := 0;
-         Add_Str_To_Name_Buffer (Build_Tree_Dir.all);
+      if not Externally_Built then
+         if Build_Tree_Dir /= null
+           and then Create /= ""
+           and then not Is_Absolute_Path (Get_Name_String (Name))
+         then
+            Name_Len := 0;
+            Add_Str_To_Name_Buffer (Build_Tree_Dir.all);
 
-         if The_Parent_Last - The_Parent'First  + 1 < Root_Dir'Length then
-            Error_Msg_File_1 := Name;
-            Error_Or_Warning
-              (Data.Flags, Error,
-               "{ cannot relocate deeper than " & Create & " directory",
-               No_Location, Project);
+            if The_Parent_Last - The_Parent'First  + 1 < Root_Dir'Length then
+               Error_Msg_File_1 := Name;
+               Error_Or_Warning
+                 (Data.Flags, Error,
+                  "{ cannot relocate deeper than " & Create & " directory",
+                  No_Location, Project);
+            end if;
+
+            Add_Str_To_Name_Buffer
+              (Relative_Path
+                 (The_Parent (The_Parent'First .. The_Parent_Last),
+                  Root_Dir.all));
+            Add_Str_To_Name_Buffer (Get_Name_String (Name));
+
+         else
+            if Build_Tree_Dir /= null and then Create /= "" then
+
+               --  Issue a warning that we cannot relocate absolute obj dir
+
+               Error_Msg_File_1 := Name;
+               Error_Or_Warning
+                 (Data.Flags, Warning,
+                  "{ cannot relocate absolute object directory",
+                  No_Location, Project);
+            end if;
+
+            Get_Name_String (Name);
          end if;
-
-         Add_Str_To_Name_Buffer
-           (Relative_Path
-              (The_Parent (The_Parent'First .. The_Parent_Last),
-               Root_Dir.all));
-         Add_Str_To_Name_Buffer (Get_Name_String (Name));
-
-      else
-         if Build_Tree_Dir /= null and then Create /= "" then
-
-            --  Issue a warning that we cannot relocate absolute obj dir
-
-            Error_Msg_File_1 := Name;
-            Error_Or_Warning
-              (Data.Flags, Warning,
-               "{ cannot relocate absolute object directory",
-               No_Location, Project);
-         end if;
-
-         Get_Name_String (Name);
       end if;
 
       --  Add Subdirs.all if it is a directory that may be created and
