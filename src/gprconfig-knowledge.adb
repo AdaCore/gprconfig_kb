@@ -3380,10 +3380,7 @@ package body GprConfig.Knowledge is
          raise Generate_Error;
       end if;
 
-      if not Opt.Quiet_Output then
-         Put_Line
-           (Standard_Error, "Creating configuration file: " & Output_File);
-      end if;
+      Put_Verbose ("Creating configuration file: " & Output_File);
 
       Create (Output, Out_File, Output_File);
 
