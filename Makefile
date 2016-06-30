@@ -66,7 +66,10 @@ GPR_GPR=$(SOURCE_DIR)/gpr/gpr.gpr
 MAKEPREFIX=$(SOURCE_DIR)/
 endif
 
-BUILDER=gprbuild -p -m $(GTARGET) $(RBD) -j${PROCESSORS} -XBUILD=${BUILD}
+# Used to pass extra options to GPRBUILD, like -d for instance
+GPRBUILD_OPTIONS=
+
+BUILDER=gprbuild -p -m $(GTARGET) $(RBD) -j${PROCESSORS} -XBUILD=${BUILD} ${GPRBUILD_OPTIONS}
 INSTALLER=exe/gprinstall -p -f  $(RBD) --prefix=${prefix}
 CLEANER=gprclean -q $(RBD)
 
