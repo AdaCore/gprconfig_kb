@@ -54,7 +54,7 @@ endif
 -include makefile.setup
 
 # check for out-of-tree build
-ifeq ($(SOURCE_DIR),)
+ifeq ($(SOURCE_DIR),.)
 RBD=
 GPRBUILD_GPR=gprbuild.gpr
 GPR_GPR=gpr/gpr.gpr
