@@ -6649,7 +6649,10 @@ package body GPR.Nmsc is
          Add_Str_To_Name_Buffer (Get_Name_String (Name));
 
       else
-         if Build_Tree_Dir /= null and then Create /= "" then
+         if not Externally_Built
+           and then Build_Tree_Dir /= null
+           and then Create /= ""
+         then
 
             --  Issue a warning that we cannot relocate absolute obj dir
 
