@@ -33,9 +33,6 @@ else
 GTARGET=--target=$(TARGET)
 endif
 
-ENABLE_SHARED := $(shell gprbuild $(GTARGET) -c -q -p \
-			-Pconfig/test_shared 2>/dev/null && echo "yes")
-
 prefix	      := $(dir $(shell which gnatls))..
 BUILD         = production
 PROCESSORS    = 0
@@ -43,12 +40,6 @@ BUILD_DIR     =
 SOURCE_DIR    := $(shell dirname "$(MAKEFILE_LIST)")
 
 HOST = $(shell gcc -dumpmachine)
-
-ifeq ($(ENABLE_SHARED), yes)
-   LIBGPR_TYPES=static shared static-pic
-else
-   LIBGPR_TYPES=static
-endif
 
 # Load current setup if any
 -include makefile.setup
@@ -64,6 +55,15 @@ RBD=--relocate-build-tree
 GPRBUILD_GPR=$(SOURCE_DIR)/gprbuild.gpr
 GPR_GPR=$(SOURCE_DIR)/gpr/gpr.gpr
 MAKEPREFIX=$(SOURCE_DIR)/
+endif
+
+ENABLE_SHARED := $(shell gprbuild $(GTARGET) -c -q -p \
+	-P$(MAKEPREFIX)config/test_shared 2>/dev/null && echo "yes")
+
+ifeq ($(ENABLE_SHARED), yes)
+   LIBGPR_TYPES=static shared static-pic
+else
+   LIBGPR_TYPES=static
 endif
 
 # Used to pass extra options to GPRBUILD, like -d for instance
