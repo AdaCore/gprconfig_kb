@@ -1963,7 +1963,8 @@ package body Gprbuild.Post_Compile is
             List : Language_Ptr := Project.Languages;
          begin
             while List /= No_Language_Index loop
-               if List.Config.Toolchain_Version /= No_Name
+               if (List.Config.Toolchain_Version /= No_Name or else
+                   List.Config.Runtime_Library_Version /= No_Name)
                  and then not Lang_Seen.Contains (List.Name)
                then
                   if Lang_Seen.Length = 0 then
@@ -1973,9 +1974,16 @@ package body Gprbuild.Post_Compile is
                   Lang_Seen.Insert (List.Name);
 
                   Put_Line (Exchange_File, Get_Name_String (List.Name));
-                  Put_Line
-                    (Exchange_File,
-                     Get_Name_String (List.Config.Toolchain_Version));
+
+                  if List.Config.Runtime_Library_Version /= No_Name then
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (List.Config.Runtime_Library_Version));
+                  else
+                     Put_Line
+                       (Exchange_File,
+                        Get_Name_String (List.Config.Toolchain_Version));
+                  end if;
                end if;
 
                List := List.Next;
@@ -3844,14 +3852,27 @@ package body Gprbuild.Post_Compile is
 
             --  Send the Toolchain Version if there is one for the language
 
-            if B_Data.Language.Config.Toolchain_Version /= No_Name then
+            if B_Data.Language.Config.Toolchain_Version /= No_Name
+              or else
+                B_Data.Language.Config.Runtime_Library_Version /= No_Name
+            then
                Put_Line (Exchange_File, Binding_Label (Toolchain_Version));
                Put_Line
                  (Exchange_File,
                   Get_Name_String (B_Data.Language.Name));
-               Put_Line
-                 (Exchange_File,
-                  Get_Name_String (B_Data.Language.Config.Toolchain_Version));
+
+               if B_Data.Language.Config.Runtime_Library_Version /= No_Name
+               then
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String
+                       (B_Data.Language.Config.Runtime_Library_Version));
+               else
+                  Put_Line
+                    (Exchange_File,
+                     Get_Name_String
+                       (B_Data.Language.Config.Toolchain_Version));
+               end if;
             end if;
 
             --  Send the object file suffix for each language where it

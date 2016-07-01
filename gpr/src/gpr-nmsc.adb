@@ -2926,6 +2926,7 @@ package body GPR.Nmsc is
 
                                           if Start /= 0 then
                                              Name_Len := 0;
+                                             Add_Str_To_Name_Buffer ("GNAT ");
                                              Add_Str_To_Name_Buffer
                                                (Line (Start + 2 .. Last - 1));
                                              Version := Name_Find;
