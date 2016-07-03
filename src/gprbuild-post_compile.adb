@@ -66,78 +66,6 @@ package body Gprbuild.Post_Compile is
       Known : Boolean;
    end record;
 
-   package Library_Objs is new GNAT.Table
-     (Table_Component_Type => Library_Object,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
-   --  Objects that are in the library file with their time stamps
-
-   package Library_SAL_Projs is new GNAT.Table
-     (Table_Component_Type => Project_Id,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
-   --  List of non extended projects that are part of a Stand-Alone (aggregate)
-   --  library project.
-
-   package Project_File_Paths is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
-      Element    => Boolean,
-      No_Element => False,
-      Key        => Name_Id,
-      Hash       => Hash,
-      Equal      => "=");
-
-   package Library_Sources is new GNAT.Table
-     (Table_Component_Type => Source_Id,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
-   --  Library Ada sources of Stand-Alone library, that is source of the
-   --  project in the closure of the interface.
-
-   package Object_Projects is new GNAT.Table
-     (Table_Component_Type => Project_Id,
-      Table_Index_Type     => Integer,
-      Table_Low_Bound      => 1,
-      Table_Initial        => 10,
-      Table_Increment      => 100);
-
-   --  The ALI files of the Stand-Alone Library project
-
-   package Library_ALIs is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
-      Element    => Boolean,
-      No_Element => False,
-      Key        => File_Name_Type,
-      Hash       => GPR.Hash,
-      Equal      => "=");
-
-   --  The ALI files in the interface sets
-
-   package Interface_ALIs is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
-      Element    => Boolean,
-      No_Element => False,
-      Key        => File_Name_Type,
-      Hash       => GPR.Hash,
-      Equal      => "=");
-
-   --  The ALI files that have been processed to check if the corresponding
-   --  library unit is in the interface set.
-
-   package Processed_ALIs is new GNAT.HTable.Simple_HTable
-     (Header_Num => GPR.Header_Num,
-      Element    => Boolean,
-      No_Element => False,
-      Key        => File_Name_Type,
-      Hash       => GPR.Hash,
-      Equal      => "=");
-
    procedure CodePeer_Globalize;
    --  Call the codepeer_globalizer for each of the object directories
 
@@ -187,6 +115,41 @@ package body Gprbuild.Post_Compile is
       Project_Tree : Project_Tree_Ref;
       No_Create    : Boolean)
    is
+      package Library_Objs is new GNAT.Table
+        (Table_Component_Type => Library_Object,
+         Table_Index_Type     => Integer,
+         Table_Low_Bound      => 1,
+         Table_Initial        => 10,
+         Table_Increment      => 100);
+      --  Objects that are in the library file with their time stamps
+
+      package Library_SAL_Projs is new GNAT.Table
+        (Table_Component_Type => Project_Id,
+         Table_Index_Type     => Integer,
+         Table_Low_Bound      => 1,
+         Table_Initial        => 10,
+         Table_Increment      => 100);
+      --  List of non extended projects that are part of a Stand-Alone
+      --  (aggregate) library project.
+
+      package Library_Sources is new GNAT.Table
+        (Table_Component_Type => Source_Id,
+         Table_Index_Type     => Integer,
+         Table_Low_Bound      => 1,
+         Table_Initial        => 10,
+         Table_Increment      => 100);
+      --  Library Ada sources of Stand-Alone library, that is source of the
+      --  project in the closure of the interface.
+
+      package Interface_ALIs is new GNAT.HTable.Simple_HTable
+        (Header_Num => GPR.Header_Num,
+         Element    => Boolean,
+         No_Element => False,
+         Key        => File_Name_Type,
+         Hash       => GPR.Hash,
+         Equal      => "=");
+      --  The ALI files in the interface sets
+
       Expected_File_Name : String_Access;
       --  Expected library file name
 
@@ -263,6 +226,25 @@ package body Gprbuild.Post_Compile is
       -----------------
 
       procedure Get_Objects is
+
+         package Library_ALIs is new GNAT.HTable.Simple_HTable
+           (Header_Num => GPR.Header_Num,
+            Element    => Boolean,
+            No_Element => False,
+            Key        => File_Name_Type,
+            Hash       => GPR.Hash,
+            Equal      => "=");
+         --  The ALI files of the Stand-Alone Library project
+
+         package Processed_ALIs is new GNAT.HTable.Simple_HTable
+           (Header_Num => GPR.Header_Num,
+            Element    => Boolean,
+            No_Element => False,
+            Key        => File_Name_Type,
+            Hash       => GPR.Hash,
+            Equal      => "=");
+         --  The ALI files that have been processed to check if the
+         --  corresponding library unit is in the interface set.
 
          Never : constant Time_Stamp_Type := (others => '9');
          --  A time stamp that is greater than any real one
@@ -825,6 +807,24 @@ package body Gprbuild.Post_Compile is
 
       procedure Write_Object_Directory is
 
+         package Object_Projects is new GNAT.Table
+           (Table_Component_Type => Project_Id,
+            Table_Index_Type     => Integer,
+            Table_Low_Bound      => 1,
+            Table_Initial        => 10,
+            Table_Increment      => 100);
+         --  The projects that have already be found when looking for object
+         --  directories.
+
+         package Object_Directories is new GNAT.HTable.Simple_HTable
+           (Header_Num => GPR.Header_Num,
+            Element    => Boolean,
+            No_Element => False,
+            Key        => Path_Name_Type,
+            Hash       => Hash,
+            Equal      => "=");
+         --  The object directories that have already be found
+
          Prj : Project_Id;
 
          procedure Get_Object_Projects (Prj : Project_Id);
@@ -832,6 +832,11 @@ package body Gprbuild.Post_Compile is
 
          function Is_In_Object_Projects (Prj : Project_Id) return Boolean;
          --  Returns True iff Prj is in table Object_Projects
+
+         function Is_In_Object_Directories
+           (Dir : Path_Name_Type)
+            return Boolean;
+         --  Returns True iff Dir is in table Object_Directories
 
          -------------------------
          -- Get_Object_Projects --
@@ -859,7 +864,12 @@ package body Gprbuild.Post_Compile is
                      if not Is_In_Object_Projects (Proj) then
                         Object_Projects.Append (Proj);
 
-                        if Proj.Object_Directory /= No_Path_Information then
+                        if Proj.Object_Directory /= No_Path_Information
+                          and then not Is_In_Object_Directories
+                            (Proj.Object_Directory.Display_Name)
+                        then
+                           Object_Directories.Set
+                             (Proj.Object_Directory.Display_Name, True);
                            Put_Line
                              (Exchange_File,
                               Get_Name_String
@@ -872,6 +882,18 @@ package body Gprbuild.Post_Compile is
                end;
             end if;
          end Get_Object_Projects;
+
+         ------------------------------
+         -- Is_In_Object_Directories --
+         ------------------------------
+
+         function Is_In_Object_Directories
+           (Dir : Path_Name_Type)
+            return Boolean
+         is
+         begin
+            return Object_Directories.Get (Dir);
+         end Is_In_Object_Directories;
 
          ---------------------------
          -- Is_In_Object_Projects --
@@ -890,6 +912,7 @@ package body Gprbuild.Post_Compile is
 
       begin
          Object_Projects.Init;
+         Object_Directories.Reset;
          Put_Line (Exchange_File, Library_Label (Object_Directory));
          Get_Object_Projects (For_Project);
 
@@ -905,15 +928,7 @@ package body Gprbuild.Post_Compile is
             begin
                for J in 1 .. Non_Library_Projs.Last loop
                   Proj := Non_Library_Projs.Table (J);
-
-                  if not Is_In_Object_Projects (Proj) and then
-                     Proj.Object_Directory /= No_Path_Information
-                  then
-                     Put_Line
-                       (Exchange_File,
-                        Get_Name_String
-                          (Proj.Object_Directory.Display_Name));
-                  end if;
+                  Get_Object_Projects (Proj);
                end loop;
             end;
 
@@ -3320,6 +3335,14 @@ package body Gprbuild.Post_Compile is
          Main_Id              : File_Name_Type;
          B_Data               : Binding_Data)
       is
+         package Project_File_Paths is new GNAT.HTable.Simple_HTable
+           (Header_Num => GPR.Header_Num,
+            Element    => Boolean,
+            No_Element => False,
+            Key        => Name_Id,
+            Hash       => Hash,
+            Equal      => "=");
+
          Main_Source : constant Source_Id := Main_File.Source;
 
          Bind_Exchange                    : String_Access;
