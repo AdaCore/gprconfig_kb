@@ -2576,6 +2576,15 @@ Switches for GPRls
   If *--version* was not used, display usage, then exit disregarding
   all other options.
 
+.. index:: --closure (gprls)
+
+:samp:`--closure`
+  Display the Ada closures of the mains specified on the command line or
+  in attribute Main of the main project. The absolute paths of the units in
+  the closures are listed, but no status is checked. If all the ALI files are
+  found, then the list is preceded with the line "Closure:" or "Closures:".
+  Otherwise, it is preceded with the line "Incomplete Closure:" or
+  "Incomplete closures:".
 
 .. index:: -P (gprls)
 

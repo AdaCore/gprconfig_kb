@@ -84,6 +84,15 @@ procedure Gprls.Main is
 
    procedure Add (Path : String; To : in out Paths);
 
+   procedure Display_Closures;
+   --  Display output when switch --closure is used
+
+   procedure Display_Output;
+   --  Display output when switch --closure is not used
+
+   procedure Display_Paths;
+   --  Display source, object and project paths
+
    procedure Get_Source_Dirs
      (Project    : Project_Id;
       Tree       : Project_Tree_Ref;
@@ -116,8 +125,8 @@ procedure Gprls.Main is
    procedure Get_All_Runtime_Object_Dirs is
       new For_Every_Project_Imported (Paths, Get_Runtime_Object_Dirs);
 
-   procedure Display_Paths;
-   --  Display source, object and project paths
+   procedure Look_For_Sources;
+   --  Get the source ids
 
    ---------
    -- Add --
@@ -147,6 +156,165 @@ procedure Gprls.Main is
          end if;
       end;
    end Add;
+
+   ----------------------
+   -- Display_Closures --
+   ----------------------
+
+   procedure Display_Closures is
+   begin
+      if Number_File_Names = 0 then
+         Fail_Program (Project_Tree, "no main specified for closure");
+
+      else
+         declare
+            The_Sources : String_List (1 .. Number_File_Names);
+            Last_Source : Natural := 0;
+            Result : String_List_Access;
+            Status : GPR.Util.Status_Type;
+
+         begin
+            for J in 1 .. Number_File_Names loop
+               if File_Names (J).Source /= No_Source then
+                  Last_Source := Last_Source + 1;
+                  The_Sources (Last_Source) :=
+                    new String'
+                      (Get_Name_String
+                         (File_Names (J).Source.File));
+               end if;
+            end loop;
+
+            if Last_Source = 0 then
+               Finish_Program (Project_Tree);
+            end if;
+
+            Get_Closures
+              (Project                  => Main_Project,
+               In_Tree                  => Project_Tree,
+               Mains                    => The_Sources (1 .. Last_Source),
+               All_Projects             => True,
+               Include_Externally_Built => True,
+               Status                   => Status,
+               Result                   => Result);
+
+            New_Line;
+
+            if Status = Incomplete_Closure then
+               if Last_Source = 1 then
+                  Put_Line ("Incomplete closure:");
+               else
+                  Put_Line ("Incomplete closures:");
+               end if;
+
+            elsif Status = GPR.Util.Success then
+               if Last_Source = 1 then
+                  Put_Line ("Closure:");
+               else
+                  Put_Line ("Closures:");
+               end if;
+
+            else
+               Fail_Program
+                 (Project_Tree, "unable to get closures: " & Status'Img);
+            end if;
+
+            New_Line;
+
+            if Result /= null then
+               for J in Result'Range loop
+                  Put_Line ("  " & Result (J).all);
+               end loop;
+
+               New_Line;
+            end if;
+         end;
+      end if;
+   end Display_Closures;
+
+   --------------------
+   -- Display_Output --
+   --------------------
+
+   procedure Display_Output is
+   begin
+      for J in 1 .. Number_File_Names loop
+         declare
+            FN_Source : File_Name_Source renames File_Names (J);
+            Id        : ALI_Id;
+            Last_U    : Unit_Id;
+
+         begin
+            if FN_Source.Source /= No_Source then
+               Id := FN_Source.The_ALI;
+
+               if Id = No_ALI_Id then
+                  null;
+
+               else
+                  Get_Name_String
+                    (Units.Table (ALIs.Table (Id).First_Unit).Uname);
+
+                  if Print_Object then
+                     if ALIs.Table (Id).No_Object then
+                        Output_Object (No_File);
+                     else
+                        Output_Object (ALIs.Table (Id).Ofile_Full_Name);
+                     end if;
+                  end if;
+
+                  --  In verbose mode print all main units in the ALI file,
+                  --  otherwise just print the first one to ease columnwise
+                  --  printout.
+
+                  if Verbose_Mode then
+                     Last_U := ALIs.Table (Id).Last_Unit;
+                  else
+                     Last_U := ALIs.Table (Id).First_Unit;
+                  end if;
+
+                  for U in ALIs.Table (Id).First_Unit .. Last_U loop
+                     if Print_Unit then
+                        Output_Unit (U);
+                     end if;
+
+                     --  Output source now, unless if it will be done as part
+                     --  of outputing dependencies.
+
+                     if not (Dependable and then Print_Source) then
+                        Output_Source
+                          (FN_Source.Source,
+                           Corresponding_Sdep_Entry (Id, U));
+                     end if;
+                  end loop;
+
+                  --  Print out list of units on which this unit depends (D
+                  --  lines).
+
+                  if Dependable and then Print_Source then
+                     if Verbose_Mode then
+                        Put_Line ("   depends upon");
+                     end if;
+
+                     for D in
+                       ALIs.Table (Id).First_Sdep .. ALIs.Table (Id).Last_Sdep
+                     loop
+                        if
+                         not Is_Ada_Predefined_File_Name (Sdep.Table (D).Sfile)
+                        then
+                           Put ("   ");
+                           Output_Source (D);
+
+                           if not Verbose_Mode then
+                              New_Line;
+                           end if;
+                        end if;
+                     end loop;
+                  end if;
+               end if;
+            end if;
+         end;
+      end loop;
+   end Display_Output;
 
    -------------------
    -- Display_Paths --
@@ -337,6 +505,51 @@ procedure Gprls.Main is
       end loop;
    end Get_Source_Dirs;
 
+   ----------------------
+   -- Look_For_Sources --
+   ----------------------
+
+   procedure Look_For_Sources is
+   begin
+      for J in 1 .. Number_File_Names loop
+         if File_Names (J).Source = No_Source then
+            Put_Line
+              (Standard_Error,
+               "Can't find source for " & File_Names (J).File_Name.all);
+
+         else
+            declare
+               Text    : Text_Buffer_Ptr;
+            begin
+               Text := Osint.Read_Library_Info
+                 (File_Name_Type (File_Names (J).Source.Dep_Path));
+
+               if Text /= null then
+                  File_Names (J).The_ALI := Scan_ALI
+                    (F          => File_Name_Type
+                       (File_Names (J).Source.Dep_Path),
+                     T          => Text,
+                     Ignore_ED  => False,
+                     Err        => True,
+                     Read_Lines => "WD",
+                     Object_Path => File_Name_Type
+                       (File_Names (J).Source.Object_Path));
+                  Free (Text);
+
+               else
+                  File_Names (J).The_ALI := No_ALI_Id;
+                  Put_Line
+                    (Standard_Error,
+                     "Can't find ALI file for " &
+                       Get_Name_String
+                         (File_Names (J).Source.Path.Display_Name));
+
+               end if;
+            end;
+         end if;
+      end loop;
+   end Look_For_Sources;
+
    --------------
    -- Scan_Arg --
    --------------
@@ -390,6 +603,9 @@ procedure Gprls.Main is
 
          elsif Argv = "--unchecked-shared-lib-imports" then
             Opt.Unchecked_Shared_Lib_Imports := True;
+
+         elsif Argv = "--closure" then
+            Closure    := True;
 
          --  Processing for one character switches
 
@@ -616,7 +832,11 @@ procedure Gprls.Main is
       --  Line for -vPx
 
       Put_Line ("  -vPx         specify verbosity when parsing project " &
-                               "files (x = 0/1/2)");
+                  "files (x = 0/1/2)");
+
+      --  Line for --closure
+
+      Put_Line ("  --closure    list paths of sources in closures of mains");
 
       New_Line;
       --  Line for -files=
@@ -702,6 +922,10 @@ begin
 
       Next_Arg := Next_Arg + 1;
    end loop Scan_Args;
+
+   if Closure then
+      Dependable := False;
+   end if;
 
    if Project_File_Name_Expected then
       Fail ("project file name missing");
@@ -852,7 +1076,22 @@ begin
       end loop;
    end;
 
-   if Number_File_Names = 0 then
+   if Closure and then Number_File_Names = 0 then
+      --  Get the mains declared in the main project
+
+      declare
+         Mains : String_List_Id := Main_Project.Mains;
+         Elem : String_Element;
+      begin
+         while Mains /= Nil_String loop
+            Elem := Project_Tree.Shared.String_Elements.Table (Mains);
+            Add_File (Get_Name_String (Elem.Value));
+            Mains := Elem.Next;
+         end loop;
+      end;
+   end if;
+
+   if Number_File_Names = 0 and not Closure then
       --  Get all the compilable sources of the project
       declare
          Unit    : GPR.Unit_Index;
@@ -951,6 +1190,13 @@ begin
                           File_Name
                        or else
                          (Get_Name_String (Unit.File_Names (Impl).Dep_Name) =
+                            File_Name)
+                       or else
+                         (Get_Name_String (Unit.File_Names (Impl).File) =
+                            File_Name)
+                       or else
+                         (Get_Name_String
+                            (Unit.File_Names (Impl).Display_File) =
                             File_Name))
                      then
                         File_Names (J).Source := Unit.File_Names (Impl);
@@ -1031,120 +1277,13 @@ begin
       end loop;
    end;
 
-   for J in 1 .. Number_File_Names loop
-      if File_Names (J).Source = No_Source then
-         Put_Line
-           (Standard_Error,
-            "Can't find source for " & File_Names (J).File_Name.all);
+   Look_For_Sources;
 
-      else
-         declare
-            Text    : Text_Buffer_Ptr;
-         begin
-            Text := Osint.Read_Library_Info
-              (File_Name_Type (File_Names (J).Source.Dep_Path));
-
-            if Text /= null then
-               File_Names (J).The_ALI := Scan_ALI
-                 (F          => File_Name_Type
-                                  (File_Names (J).Source.Dep_Path),
-                  T          => Text,
-                  Ignore_ED  => False,
-                  Err        => True,
-                  Read_Lines => "WD",
-                  Object_Path => File_Name_Type
-                                  (File_Names (J).Source.Object_Path));
-               Free (Text);
-
-            else
-               File_Names (J).The_ALI := No_ALI_Id;
-               Put_Line
-                 (Standard_Error,
-                  "Can't find ALI file for " &
-                    Get_Name_String (File_Names (J).Source.Path.Display_Name));
-
-            end if;
-         end;
-      end if;
-   end loop;
-
-   for J in 1 .. Number_File_Names loop
-      declare
-         FN_Source : File_Name_Source renames File_Names (J);
-         Id        : ALI_Id;
-         Last_U    : Unit_Id;
-
-      begin
-         if FN_Source.Source /= No_Source then
-            Id := FN_Source.The_ALI;
-
-            if Id = No_ALI_Id then
-               null;
-
-               --  Output_Object (No_File);
-
-            else
-               Get_Name_String
-                 (Units.Table (ALIs.Table (Id).First_Unit).Uname);
-
-               if Print_Object then
-                  if ALIs.Table (Id).No_Object then
-                     Output_Object (No_File);
-                  else
-                     Output_Object (ALIs.Table (Id).Ofile_Full_Name);
-                  end if;
-               end if;
-
-               --  In verbose mode print all main units in the ALI file,
-               --  otherwise just print the first one to ease columnwise
-               --  printout.
-
-               if Verbose_Mode then
-                  Last_U := ALIs.Table (Id).Last_Unit;
-               else
-                  Last_U := ALIs.Table (Id).First_Unit;
-               end if;
-
-               for U in ALIs.Table (Id).First_Unit .. Last_U loop
-                  if Print_Unit then
-                     Output_Unit (U);
-                  end if;
-
-                  --  Output source now, unless if it will be done as part of
-                  --  outputing dependencies.
-
-                  if not (Dependable and then Print_Source) then
-                     Output_Source
-                       (FN_Source.Source,
-                        Corresponding_Sdep_Entry (Id, U));
-                  end if;
-               end loop;
-
-               --  Print out list of units on which this unit depends (D lines)
-
-               if Dependable and then Print_Source then
-                  if Verbose_Mode then
-                     Put_Line ("   depends upon");
-                  end if;
-
-                  for D in
-                    ALIs.Table (Id).First_Sdep .. ALIs.Table (Id).Last_Sdep
-                  loop
-                     if not Is_Ada_Predefined_File_Name (Sdep.Table (D).Sfile)
-                     then
-                        Put ("   ");
-                        Output_Source (D);
-
-                        if not Verbose_Mode then
-                           New_Line;
-                        end if;
-                     end if;
-                  end loop;
-               end if;
-            end if;
-         end if;
-      end;
-   end loop;
+   if Closure then
+      Display_Closures;
+   else
+      Display_Output;
+   end if;
 
    Finish_Program (Project_Tree);
 end Gprls.Main;

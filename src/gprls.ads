@@ -107,6 +107,9 @@ private
    Dependable        : Boolean := False;  --  -d
    --  Command line flags
 
+   Closure           : Boolean := False;  --  --closure
+   --  Get the closures of mains
+
    RTS_Specified : String_Access := null;
    --  Used to detect multiple use of --RTS= switch
 
@@ -156,7 +159,7 @@ private
    procedure Add_ALI
      (ALI_Name : File_Name_Type;
       Spec     : Boolean;
-      Source : GPR.Source_Id);
+      Source   : GPR.Source_Id);
    --  Add ALI_Name to hash table ALI_Names
 
    procedure Add_File
