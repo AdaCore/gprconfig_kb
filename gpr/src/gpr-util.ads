@@ -398,6 +398,12 @@ package GPR.Util is
    --  Check_ALI_Suffix is True, then we also replace the file extension with
    --  ".ali" when testing.
 
+   function Object_Project (Project : Project_Id) return Project_Id;
+   --  For a non aggregate project, returns the project. For an aggrete project
+   --  or an aggregate library project, returns an aggregated project that is
+   --  not an aggregate project and that has a writeable object directory. If
+   --  there is no such project, returns No_Project.
+
 private
    type Text_File_Data is record
       FD                  : File_Descriptor := Invalid_FD;

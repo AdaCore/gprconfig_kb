@@ -1845,6 +1845,10 @@ package body GPR.Util is
       Source.Initialized := True;
    end Initialize_Source_Record;
 
+   ---------------------------------
+   -- Is_Ada_Predefined_File_Name --
+   ---------------------------------
+
    function Is_Ada_Predefined_File_Name (Fname : File_Name_Type) return Boolean
    is
       subtype Str8 is String (1 .. 8);
@@ -1963,6 +1967,56 @@ package body GPR.Util is
          Iter := Source_Info_Table.Table (Iter.Next);
       end if;
    end Next;
+
+   --------------------
+   -- Object_Project --
+   --------------------
+
+   function Object_Project (Project : Project_Id) return Project_Id is
+      Result     : Project_Id := No_Project;
+      Aggregated : Boolean := False;
+
+      procedure Check_Project (P : Project_Id);
+      --  Find a project with an object dir
+
+      -------------------
+      -- Check_Project --
+      -------------------
+
+      procedure Check_Project (P : Project_Id) is
+      begin
+         if P.Qualifier = Aggregate
+              or else
+            P.Qualifier = Aggregate_Library
+         then
+            declare
+               List : Aggregated_Project_List := P.Aggregated_Projects;
+
+            begin
+               Aggregated := True;
+
+               --  Look for a non aggregate project until one is found
+
+               while Result = No_Project and then List /= null loop
+                  Check_Project (List.Project);
+                  List := List.Next;
+               end loop;
+            end;
+
+         elsif P.Object_Directory.Name /= No_Path then
+            if not Aggregated or else
+              Is_Owner_Writable_File
+                (Get_Name_String (P.Object_Directory.Name))
+            then
+               Result := P;
+            end if;
+         end if;
+      end Check_Project;
+
+   begin
+      Check_Project (Project);
+      return Result;
+   end Object_Project;
 
    ----------
    -- Open --

@@ -221,6 +221,11 @@ package body Gprbuild is
       Proj : constant Project_Id := Object_Project (Project);
 
    begin
+      if Proj = No_Project then
+         Fail_Program
+           (Project_Tree, "no project with writeable object directory");
+      end if;
+
       --  Nothing to do if the current working directory is already the correct
       --  object directory.
 

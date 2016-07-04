@@ -275,11 +275,6 @@ package Gpr_Util is
    --  For example, if Lib_Filename is "libtoto.so" and Lib_Version is
    --  "libtoto.so.1.2", then "libtoto.so.1" is returned.
 
-   function Object_Project (Project : Project_Id) return Project_Id;
-   --  For a non aggregate project, returns the project.
-   --  For an aggrete project or an aggregate library project, returns an
-   --  aggregated project that is not an aggregate project.
-
    function Partial_Name
      (Lib_Name      : String;
       Number        : Natural;
