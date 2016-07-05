@@ -154,8 +154,7 @@ project Gprbuild is
          when "all" | "nointernal" =>
             for Artifacts ("share/examples/gprbuild") use ("examples/*");
             for Artifacts ("share/doc/gprbuild") use
-              ("doc/build/html", "doc/build/info", "doc/build/pdf",
-               "doc/build/txt");
+              ("doc/html", "doc/info", "doc/pdf", "doc/txt");
             for Artifacts ("share") use ("share/gprconfig");
             for Artifacts ("share/gpr") use ("share/_default.gpr");
 
