@@ -61,6 +61,11 @@ NF-17-P411-014 Errors with switches --restricted-to-languages= (2016-04-13)
    are not in the list of restricted languages, errors on the sources of
    these languages are inhibited.
 
+NF-17-P323-041 gprls --closure (2016-07-05)
+
+   A new switch --closure is added to gprls, to display the full paths
+   of the sources in the closures of one or several mains.
+
 NF-17-P215-047 GPRbuild supports response files during compilation (2016-03-10)
 
    GPRbuild, when the language is configured appropriately and the compilation
