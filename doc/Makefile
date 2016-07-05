@@ -37,7 +37,8 @@ clean:
 	-rm -rf $(BUILDDIR)/html \
 		$(BUILDDIR)/pdf \
 		$(BUILDDIR)/txt \
-		$(BUILDDIR)/info
+		$(BUILDDIR)/info \
+		$(BUILDDIR)/doctrees
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
