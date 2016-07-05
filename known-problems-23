@@ -17,6 +17,18 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P629-043 Extending all SAL and imported projects
+
+  Problem:    When a Stand-Alone Library project X extends all another project
+              B that imports another project P and sources of project P are
+              already compiled, binding the SAL may fail because some ALI files
+              from project P are not found.
+
+  Status:     This was fixed in 17 on 2016-07-05
+
+  Workaround: Invoke gprbuild with -f to force recompilation of sources of
+              imported project P.
+
 KP-23-P620-013 Expanded linker options
 
   Problem:    Linker options that look like relative paths or include relative
