@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P630-028 Aggregate library and read-only object directories
+
+  Problem:    When some component projects of an aggregate library have their
+              object directories read-only, gprbuild may fail to build the
+              library, as it is unable to create the library exchange file.
+
+  Status:     This was fixed in 17 on 2016-07-06
+
+  Workaround: Make the object directories writeable.
+
 KP-23-P629-043 Extending all SAL and imported projects
 
   Problem:    When a Stand-Alone Library project X extends all another project
