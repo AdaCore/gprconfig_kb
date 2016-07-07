@@ -1,4 +1,20 @@
 <?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+   <!ENTITY gnat_pre_6.4
+     '<compiler language="Ada" version="3.16" />
+      <compiler language="Ada" version="5.00" />
+      <compiler language="Ada" version="5.01" />
+      <compiler language="Ada" version="5.02" />
+      <compiler language="Ada" version="5.03" />
+      <compiler language="Ada" version="5.04" />
+      <compiler language="Ada" version="6.0" />
+      <compiler language="Ada" version="6.1" />
+      <compiler language="Ada" version="6.2" />
+      <compiler language="Ada" version="6.3" />
+      <compiler language="Ada" version="6.4" />'
+   >
+]>
+
 <gprconfig>
 
   <!--  This configuration shows how to link a multi language
@@ -524,17 +540,7 @@
        <compiler language="Ada" />
     </compilers>
     <compilers>
-      <compiler version="3.16" />
-      <compiler version="5.00" />
-      <compiler version="5.01" />
-      <compiler version="5.02" />
-      <compiler version="5.03" />
-      <compiler version="5.04" />
-      <compiler version="6.0" />
-      <compiler version="6.1" />
-      <compiler version="6.2" />
-      <compiler version="6.3" />
-      <compiler version="6.4" />
+      &gnat_pre_6.4;
     </compilers>
      <config>
    for Archive_Builder  use ("arpentium", "cr");
@@ -552,17 +558,7 @@
        <compiler language="Ada" />
     </compilers>
     <compilers negate="true" >
-      <compiler version="3.16" />
-      <compiler version="5.00" />
-      <compiler version="5.01" />
-      <compiler version="5.02" />
-      <compiler version="5.03" />
-      <compiler version="5.04" />
-      <compiler version="6.0" />
-      <compiler version="6.1" />
-      <compiler version="6.2" />
-      <compiler version="6.3" />
-      <compiler version="6.4" />
+      &gnat_pre_6.4;
     </compilers>
      <config>
    for Archive_Builder  use ("i586-wrs-vxworks-ar", "cr");
@@ -655,17 +651,7 @@
        <compiler language="Ada" />
     </compilers>
     <compilers>
-      <compiler version="3.16" />
-      <compiler version="5.00" />
-      <compiler version="5.01" />
-      <compiler version="5.02" />
-      <compiler version="5.03" />
-      <compiler version="5.04" />
-      <compiler version="6.0" />
-      <compiler version="6.1" />
-      <compiler version="6.2" />
-      <compiler version="6.3" />
-      <compiler version="6.4" />
+      &gnat_pre_6.4;
     </compilers>
      <config>
    for Archive_Builder  use ("arppc", "cr");
@@ -683,17 +669,7 @@
        <compiler language="Ada" />
     </compilers>
     <compilers negate="true">
-      <compiler version="3.16" />
-      <compiler version="5.00" />
-      <compiler version="5.01" />
-      <compiler version="5.02" />
-      <compiler version="5.03" />
-      <compiler version="5.04" />
-      <compiler version="6.0" />
-      <compiler version="6.1" />
-      <compiler version="6.2" />
-      <compiler version="6.3" />
-      <compiler version="6.4" />
+      &gnat_pre_6.4;
     </compilers>
      <config>
    for Archive_Builder  use ("powerpc-wrs-vxworks-ar", "cr");
