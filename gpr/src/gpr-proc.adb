@@ -924,6 +924,42 @@ package body GPR.Proc is
                         The_Array   : Array_Id := No_Array;
                         The_Element : Array_Element_Id := No_Array_Element;
                         Array_Index : Name_Id := No_Name;
+                        Case_Insens : constant Boolean :=
+                          Case_Insensitive
+                            (The_Current_Term,
+                             From_Project_Node_Tree);
+
+                        function Same_Index
+                          (N1 : Name_Id;
+                           N2 : Name_Id)
+                           return Boolean;
+                        --  Return True iff N1 and N2 are the same string with
+                        --  the case-insensitivity Case_Insens.
+
+                        ----------------
+                        -- Same_Index --
+                        ----------------
+
+                        function Same_Index
+                          (N1 : Name_Id;
+                           N2 : Name_Id)
+                           return Boolean
+                        is
+                        begin
+                           if Case_Insens then
+                              declare
+                                 Name_1 : String := Get_Name_String (N1);
+                                 Name_2 : String := Get_Name_String (N2);
+                              begin
+                                 To_Lower (Name_1);
+                                 To_Lower (Name_2);
+                                 return Name_1 = Name_2;
+                              end;
+
+                           else
+                              return N1 = N2;
+                           end if;
+                        end Same_Index;
 
                      begin
                         if The_Package /= No_Package then
@@ -934,8 +970,8 @@ package body GPR.Proc is
                         end if;
 
                         while The_Array /= No_Array
-                          and then Shared.Arrays.Table (The_Array).Name /=
-                                                                    The_Name
+                          and then
+                            Shared.Arrays.Table (The_Array).Name /= The_Name
                         loop
                            The_Array := Shared.Arrays.Table (The_Array).Next;
                         end loop;
@@ -950,8 +986,11 @@ package body GPR.Proc is
                                 Index);
 
                            while The_Element /= No_Array_Element
-                             and then Shared.Array_Elements.Table
-                                        (The_Element).Index /= Array_Index
+                             and then
+                               not Same_Index
+                                 (Shared.Array_Elements.Table
+                                    (The_Element).Index,
+                                  Array_Index)
                            loop
                               The_Element :=
                                 Shared.Array_Elements.Table (The_Element).Next;

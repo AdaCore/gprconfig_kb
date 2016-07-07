@@ -22,6 +22,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Strings.Fixed; use Ada.Strings.Fixed;
+
 with GNAT.Table;
 
 with GPR.Attr;    use GPR.Attr;
@@ -275,6 +277,19 @@ package body GPR.Strt is
                      if Token = Tok_String_Literal then
                         Set_Associative_Array_Index_Of
                           (Reference, In_Tree, To => Token_Name);
+
+                        --  Check if index contains a dot. If it does not,
+                        --  then it is probably a language name, so set it to
+                        --  case-insenstitve.
+
+                        if Index
+                          (Source => Get_Name_String (Token_Name),
+                           Pattern => ".") = 0
+                        then
+                           Set_Case_Insensitive
+                             (Reference, In_Tree, To => True);
+                        end if;
+
                         Scan (In_Tree);
                      end if;
                   end if;
