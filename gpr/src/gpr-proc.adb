@@ -946,7 +946,10 @@ package body GPR.Proc is
                            return Boolean
                         is
                         begin
-                           if Case_Insens then
+                           if Case_Insens and then
+                             N1 /= All_Other_Names and then
+                             N2 /= All_Other_Names
+                           then
                               declare
                                  Name_1 : String := Get_Name_String (N1);
                                  Name_2 : String := Get_Name_String (N2);
