@@ -30,6 +30,7 @@ with GNAT.Calendar.Time_IO;     use GNAT.Calendar.Time_IO;
 with GNAT.Case_Util;            use GNAT.Case_Util;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
+with GNAT.IO_Aux;
 with GNAT.Sockets;
 with GNAT.Table;
 with GNAT.Regpat;               use GNAT.Regpat;
@@ -266,8 +267,6 @@ package body Gpr_Util is
          Ret       : Integer;
          Opts      : Argument_List (1 .. Options'Length + 1);
          File      : File_Type;
-         Buffer    : String (1 .. 512);
-         Last      : Natural;
          File_Name : Temp_File_Name;
          Matches   : Match_Array (0 .. 1);
 
@@ -297,14 +296,17 @@ package body Gpr_Util is
             Open (File, In_File, Filename);
 
             while not End_Of_File (File) loop
-               Get_Line (File, Buffer, Last);
+               declare
+                  use GNAT;
+                  Buffer : constant String := IO_Aux.Get_Line (File);
+               begin
+                  Match (Pattern, Buffer, Matches);
 
-               Match (Pattern, Buffer (1 .. Last), Matches);
-
-               if Matches (1) /= No_Match then
-                  Syms.Include
-                    (Buffer (Matches (1).First .. Matches (1).Last));
-               end if;
+                  if Matches (1) /= No_Match then
+                     Syms.Include
+                       (Buffer (Matches (1).First .. Matches (1).Last));
+                  end if;
+               end;
             end loop;
 
             Close (File);
