@@ -24,6 +24,7 @@
 
 with Ada.Command_Line;                       use Ada.Command_Line;
 with Ada.Containers.Indefinite_Ordered_Sets;
+with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
 with Ada.Directories;
 with Ada.Unchecked_Conversion;
@@ -767,6 +768,15 @@ package body GPR.Util is
 
       package Dep_Names is new Containers.Indefinite_Ordered_Sets (String);
 
+      function Less_Than (Left, Right : Source_Id) return Boolean is
+        (Get_Name_String (Left.File) < Get_Name_String (Right.File));
+
+      package Interface_Source_Ids is
+        new Ada.Containers.Ordered_Sets
+          (Element_Type => Source_Id,
+           "<"          => Less_Than,
+           "="          => "=");
+
       function Load_ALI (Filename : String) return ALI_Id;
       --  Load an ALI file and return its id
 
@@ -809,6 +819,8 @@ package body GPR.Util is
       Body_Needed : Boolean;
       Deps        : Dep_Names.Set;
 
+      Sids : Interface_Source_Ids.Set;
+
    --  Start of processing for For_Interface_Sources
 
    begin
@@ -838,7 +850,7 @@ package body GPR.Util is
 
            and then Sid.Dep_Name /= No_File
          then
-            Action (Sid);
+            Sids.Include (Sid);
 
             --  Check ALI for dependencies on body and sep
 
@@ -905,12 +917,18 @@ package body GPR.Util is
             if Sid.Kind /= Spec
               and then Deps.Contains (Get_Name_String (Sid.File))
             then
-               Action (Sid);
+               Sids.Include (Sid);
             end if;
 
             Next (Iter);
          end loop;
       end if;
+
+      --  Call Action for all the sources, in order
+
+      for E of Sids loop
+         Action (E);
+      end loop;
    end For_Interface_Sources;
 
    ------------------
