@@ -116,8 +116,10 @@ gprls:
 .PHONY: install
 
 install:
-	$(INSTALLER) --mode=usage -XINSTALL_MODE=nointernal $(GPRBUILD_GPR)
-	$(INSTALLER) --mode=usage -XINSTALL_MODE=internal $(GPRBUILD_GPR)
+	$(INSTALLER) --mode=usage --install-name=gprbuild \
+		-XINSTALL_MODE=nointernal $(GPRBUILD_GPR)
+	$(INSTALLER) --mode=usage  --install-name=gprbuild \
+		-XINSTALL_MODE=internal $(GPRBUILD_GPR)
 
 complete: all install libgpr.install.static
 
