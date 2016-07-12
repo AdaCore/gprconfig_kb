@@ -16,6 +16,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Calendar.Formatting;    use Ada.Calendar.Formatting;
 with Ada.Calendar.Time_Zones;    use Ada.Calendar;
 with Ada.Directories;            use Ada.Directories;
 with Ada.Streams.Stream_IO;      use Ada.Streams;
@@ -821,23 +822,27 @@ package body Gprbuild.Compilation.Protocol is
    is
       use type Time_Zones.Time_Offset;
 
-      TS : constant String := String (Time_Stamp);
-      H  : Hour_Type := Hour_Type'Value (TS (9 .. 10));
+      TS : constant String (Time_Stamp_Type'Range) := String (Time_Stamp);
+
+      T  : constant Time :=
+             Time_Of (Year      => Year_Number'Value (TS (1 .. 4)),
+                      Month     => Month_Number'Value (TS (5 .. 6)),
+                      Day       => Day_Number'Value (TS (7 .. 8)),
+                      Hour      => Hour_Number'Value (TS (9 .. 10)),
+                      Minute    => Minute_Number'Value (TS (11 .. 12)),
+                      Second    => Second_Number'Value (TS (13 .. 14)),
+                      Time_Zone => -Time_Zones.UTC_Time_Offset);
+      --  Time_Zone is negative to translate the UTC Time_Stamp to local time
    begin
-      --  GM_Time_Of expect a local time, we are receiving a GM time in the
-      --  Timestamp variable.
-
-      H := H + Hour_Type (Time_Zones.UTC_Time_Offset / 60);
-
       Set_File_Last_Modify_Time_Stamp
         (Path_Name,
          GM_Time_Of
-           (Year   => Year_Type'Value (TS (1 .. 4)),
-            Month  => Month_Type'Value (TS (5 .. 6)),
-            Day    => Day_Type'Value (TS (7 .. 8)),
-            Hour   => H,
-            Minute => Minute_Type'Value (TS (11 .. 12)),
-            Second => Second_Type'Value (TS (13 .. 14))));
+           (Year   => Formatting.Year (T),
+            Month  => Formatting.Month (T),
+            Day    => Formatting.Day (T),
+            Hour   => Formatting.Hour (T),
+            Minute => Formatting.Minute (T),
+            Second => Formatting.Second (T)));
    end Set_File_Stamp;
 
    -------------
