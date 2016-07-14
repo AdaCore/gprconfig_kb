@@ -550,20 +550,21 @@ package Builder of the main project (attribute Switches):
 
 * :samp:`-v` (Verbose output)
 
-  Display full paths, all options used in spawned processes, and reasons why
-  these processes are spawned. Cancel any previous switch :samp:`-q`.
+  Same as switch :samp:`-vl`.
 
 * :samp:`-vl` (Verbose output, low level)
 
-  Verbose output. Some verbose messages are not displayed.
+  Display full paths, all options used in spawned processes, as well as
+  creations of missing directories and changes of current working directories.
 
 * :samp:`-vm` (Verbose output, medium level)
 
-  Verbose output. Some verbose messages may not be displayed.
+  Not significantly different from switch :samp:`-vh`.
 
 * :samp:`-vh` (Verbose output, high level)
 
-  Equivalent to :samp:`-v`.
+  In addition to what is displayed with switch :samp:`vl`, displayed internal
+  behavior of gprbuild and reasons why the spawned processes are invoked.
 
 * :samp:`-we` (Treat all warnings as errors)
 
