@@ -294,6 +294,33 @@ package GPR.Util is
    -- Source info files --
    -----------------------
 
+   --  A source info file is a text file that contains information on the
+   --  significant sources of a project tree.
+   --
+   --  Only sources that are not excluded and are not replaced by another
+   --  source in an extending projects are described in a source info file.
+   --
+   --  Each source is described with 4 lines, followed by optional lines,
+   --  followed by an empty line.
+   --
+   --  The four lines in every entry are
+   --    - the name of the project
+   --    - the name of the language
+   --    - the kind of source: SPEC, IMPL (body) OR SEP (subunit).
+   --    - the path name of the source
+   --
+   --  The optional lines are:
+   --    - if the canonical case path name is not the same as the path name
+   --      to be displayed, a line starting with "P=" followed by the canonical
+   --      case path name.
+   --    - if the language is unit based (Ada), a line starting with "U="
+   --      followed by the unit name.
+   --    - if the unit is part of a multi-unit source, a line starting with
+   --      "I=" followed by the index in the multi-unit source.
+   --    - if the source is a naming exception declared in its project, a line
+   --      containing "N=Y".
+   --    - if it is an inherited naming exception, a line containng "N=I".
+
    procedure Write_Source_Info_File (Tree : Project_Tree_Ref);
    --  Create a new source info file, with the path name specified in the
    --  project tree data. Issue a warning if it is not possible to create
