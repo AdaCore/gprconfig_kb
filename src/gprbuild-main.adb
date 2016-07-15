@@ -31,6 +31,7 @@ with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with Gpr_Build_Util;             use Gpr_Build_Util;
+with Gpr_Script;                 use Gpr_Script;
 with Gpr_Util;                   use Gpr_Util;
 with Gprbuild.Compile;
 with Gprbuild.Link;
@@ -733,6 +734,13 @@ procedure Gprbuild.Main is
                     Distributed_Option & " are not compatible");
             end if;
 
+            if Build_Script_Name /= null then
+               Fail_Program
+                 (Project_Tree,
+                  "options " & Build_Script_Option &
+                    Distributed_Option & " are not compatible");
+            end if;
+
             Distributed_Mode := True;
 
             --  In distributed mode we do not want to use temp directories
@@ -863,6 +871,33 @@ procedure Gprbuild.Main is
                Add_Str_To_Name_Buffer (Package_Name);
                To_Lower (Name_Buffer (1 .. Name_Len));
                Compiler_Pkg_Subst := Name_Find;
+            end;
+
+         elsif Arg'Length > Build_Script_Option'Length
+           and then
+             Arg (1 .. Build_Script_Option'Length) = Build_Script_Option
+         then
+            Forbidden_In_Package_Builder;
+
+            if Distributed_Mode then
+               Fail_Program
+                 (Project_Tree,
+                  "options " & Build_Script_Option &
+                    Distributed_Option & " are not compatible");
+            end if;
+
+            declare
+               Script_Name : constant String :=
+                 Arg (Build_Script_Option'Length + 1 .. Arg'Last);
+            begin
+               if Is_Absolute_Path (Script_Name) then
+                  Build_Script_Name := new String'(Script_Name);
+
+               else
+                  Build_Script_Name :=
+                    new String'
+                      (Ada.Directories.Current_Directory & '/' & Script_Name);
+               end if;
             end;
 
          elsif Arg = "--db-" then
@@ -2487,6 +2522,23 @@ begin
 
    Options.Process_Command_Line_Options;
 
+   --  If a build script is declared, try to create the file. Fail if the file
+   --  cannot be created.
+
+   if Build_Script_Name /= null then
+      begin
+         Create (Build_Script_File, Out_File, Build_Script_Name.all);
+
+      exception
+         when others =>
+            Fail_Program
+              (null,
+               "build script """ &
+               Build_Script_Name.all &
+               """ could not be created");
+      end;
+   end if;
+
    if Debug.Debug_Flag_M then
       Put_Line ("Maximum number of simultaneous compilations =" &
                     Opt.Maximum_Processes'Img);
@@ -2524,6 +2576,15 @@ begin
    end if;
 
    Compile.Run;
+
+   --  If the build script file is opened, close it, so that it can be reopened
+   --  by gprlib and gprbind.
+
+   if Is_Open (Build_Script_File) then
+      Close (Build_Script_File);
+      Opt.Maximum_Processes := 1;
+   end if;
+
    Post_Compile.Run;
    Link.Run;
 

@@ -25,6 +25,7 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Script;     use Gpr_Script;
 with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR.Debug;      use GPR.Debug;
@@ -2961,6 +2962,11 @@ package body Gprbuild.Post_Compile is
             Put_Line (Exchange_File, Library_Label (Keep_Temporary_Files));
          end if;
 
+         if Build_Script_Name /= null then
+            Put_Line (Exchange_File, Library_Label (Script_Path));
+            Put_Line (Exchange_File, Build_Script_Name.all);
+         end if;
+
          Close (Exchange_File);
 
          declare
@@ -4154,6 +4160,11 @@ package body Gprbuild.Post_Compile is
                end if;
             end;
 
+            if Build_Script_Name /= null then
+               Put_Line (Exchange_File, Binding_Label (Script_Path));
+               Put_Line (Exchange_File, Build_Script_Name.all);
+            end if;
+
             --  Finally, the list of the project paths with their
             --  time stamps.
 
@@ -4495,12 +4506,11 @@ package body Gprbuild.Post_Compile is
                   Main_Base_Name_Index :=
                     Base_Name_Index_For (Main, Main_Index, Index_Separator);
 
-                  Change_To_Object_Directory (Main_Proj);
-
                   B_Data := Builder_Data (Main_File.Tree).Binding;
                   while B_Data /= null loop
                      Wait_For_Available_Slot;
                      exit when Stop_Spawning;
+                     Change_To_Object_Directory (Main_Proj);
                      Bind_Language
                        (Main_Proj, Main, Main_Base_Name_Index,
                         Main_File, Main_Id, B_Data);

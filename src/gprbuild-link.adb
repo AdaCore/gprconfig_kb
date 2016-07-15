@@ -24,6 +24,7 @@ with Ada.Unchecked_Deallocation; use Ada;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Script;     use Gpr_Script;
 with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR.Debug;      use GPR.Debug;
@@ -922,7 +923,7 @@ package body Gprbuild.Link is
                      end if;
                   end if;
 
-                  Spawn
+                  Spawn_And_Script_Write
                     (Archive_Builder_Path.all,
                      Arguments (1 .. Last_Argument),
                      Success);
@@ -967,7 +968,7 @@ package body Gprbuild.Link is
                               Ellipse => True);
                         end if;
 
-                        Spawn
+                        Spawn_And_Script_Write
                           (Archive_Builder_Path.all,
                            Arguments (1 .. Last_Argument),
                            Success);
@@ -1008,7 +1009,7 @@ package body Gprbuild.Link is
                            end if;
                         end if;
 
-                        Spawn
+                        Spawn_And_Script_Write
                           (Archive_Indexer_Path.all,
                            Arguments (1 .. Last_Argument),
                            Success);
@@ -2843,9 +2844,8 @@ package body Gprbuild.Link is
 
          declare
             Pid : Process_Id;
-
          begin
-
+            Script_Write (Linker_Path.all,  Arguments (1 .. Last_Argument));
             Pid := Non_Blocking_Spawn
               (Linker_Path.all,  Arguments (1 .. Last_Argument));
 

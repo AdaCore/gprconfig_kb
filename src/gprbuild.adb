@@ -20,9 +20,10 @@ with Ada.Text_IO;       use Ada.Text_IO;
 
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
-with Gpr_Util;  use Gpr_Util;
-with GPR.Names; use GPR.Names;
-with GPR.Util;  use GPR.Util;
+with Gpr_Script; use Gpr_Script;
+with Gpr_Util;   use Gpr_Util;
+with GPR.Names;  use GPR.Names;
+with GPR.Util;   use GPR.Util;
 
 package body Gprbuild is
 
@@ -235,6 +236,7 @@ package body Gprbuild is
          --  Set the working directory to the object directory of the actual
          --  project.
 
+         Script_Change_Dir (Proj.Object_Directory.Display_Name);
          Change_Dir (Get_Name_String (Proj.Object_Directory.Display_Name));
 
          if Opt.Verbose_Mode then

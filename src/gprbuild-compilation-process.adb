@@ -20,6 +20,7 @@ with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Ordered_Maps;
 with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 
+with Gpr_Script;                  use Gpr_Script;
 with Gpr_Util;                    use Gpr_Util;
 with Gprbuild.Compilation.Slave;
 with GPR.Names;                   use GPR.Names;
@@ -296,6 +297,8 @@ package body Gprbuild.Compilation.Process is
             else
                P.Pid := Non_Blocking_Spawn (Executable, Options);
             end if;
+
+            Script_Write (Executable, Options);
 
             Local_Process.Increment;
 

@@ -50,7 +50,8 @@ package Gprexch is
       Toolchain_Version,
       Delete_Temp_Files,
       Object_File_Suffix,
-      There_Are_Stand_Alone_Libraries);
+      There_Are_Stand_Alone_Libraries,
+      Script_Path);
 
    function Binding_Label (Section : Binding_Section) return String;
    --  Return the label for a section in a binder exchange file
@@ -119,7 +120,8 @@ package Gprexch is
       Object_Lister,
       Object_Lister_Matcher,
       Export_File,
-      Library_Symbol_File);
+      Library_Symbol_File,
+      Script_Path);
 
    function Library_Label (Section : Library_Section) return String;
    --  Return the label for a section in a library exchange file

@@ -29,6 +29,7 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 with GNAT.Table;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Script;     use Gpr_Script;
 with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR;            use GPR;
@@ -598,6 +599,7 @@ procedure Gprlib is
                ALI_File : constant String := ALIs.Table (Index).all;
             begin
                if Is_Regular_File (ALI_File) then
+                  Script_Copy (ALI_File, Library_Dependency_Directory);
                   Copy_File
                     (ALI_File,
                      Library_Dependency_Directory.all,
@@ -1379,6 +1381,9 @@ begin
 
             when Gprexch.Library_Symbol_File =>
                Library_Symbol_File := new String'(Line (1 .. Last));
+
+            when Script_Path =>
+               Build_Script_Name := new String'(Line (1 .. Last));
          end case;
       end if;
    end loop;
@@ -1590,6 +1595,10 @@ begin
             for J in 1 .. Last_Bind_Option loop
                Size := Size + Bind_Options (J)'Length + 1;
             end loop;
+
+            Script_Write
+              (Gnatbind_Path.all,
+               Bind_Options (1 .. Last_Bind_Option));
 
             --  Invoke gnatbind with the arguments if the size is not too large
             --  or if the version of GNAT is not recent enough.
@@ -1813,7 +1822,7 @@ begin
             end if;
          end if;
 
-         Spawn
+         Spawn_And_Script_Write
            (Compiler_Path.all, Bind_Options (1 .. Last_Bind_Option), Success);
 
          if not Success then
@@ -1957,7 +1966,7 @@ begin
                   end if;
                end if;
 
-               Spawn
+               Spawn_And_Script_Write
                  (Partial_Linker_Path.all,
                   PL_Options (1 .. Last_PL_Option),
                   Success);
@@ -2044,7 +2053,7 @@ begin
             end if;
          end if;
 
-         Spawn
+         Spawn_And_Script_Write
            (Archive_Builder.all,
             AB_Options (1 .. Next_AB_Object_Pos - 1),
             Success);
@@ -2095,7 +2104,7 @@ begin
                end if;
             end if;
 
-            Spawn
+            Spawn_And_Script_Write
               (Archive_Builder.all,
                AB_Options (1 .. Object_Pos - 1),
                Success);
@@ -2136,7 +2145,7 @@ begin
             end if;
          end if;
 
-         Spawn
+         Spawn_And_Script_Write
            (Archive_Indexer.all,
             AI_Options (1 .. Last_AI_Option),
             Success);

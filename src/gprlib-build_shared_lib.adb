@@ -222,7 +222,7 @@ procedure Build_Shared_Lib is
                   end if;
                end if;
 
-               Spawn
+               Spawn_And_Script_Write
                  (Partial_Linker_Path.all,
                   PL_Options (1 .. Last_PL_Option),
                   Success);
@@ -405,7 +405,7 @@ procedure Build_Shared_Lib is
 
       --  Finally spawn the library builder driver
 
-      Spawn (Driver.all, Arguments (1 .. Last_Arg), Success);
+      Spawn_And_Script_Write (Driver.all, Arguments (1 .. Last_Arg), Success);
 
       --  Delete temporary files
 

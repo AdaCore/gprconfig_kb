@@ -29,6 +29,7 @@ with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gprexch;        use Gprexch;
 with Gpr_Build_Util; use Gpr_Build_Util;
+with Gpr_Script;     use Gpr_Script;
 with Gpr_Util;       use Gpr_Util;
 with GPR;            use GPR;
 with GPR.ALI;        use GPR.ALI;
@@ -486,6 +487,9 @@ begin
                      Skip_Line (IO_File);
                   end if;
 
+               when Script_Path =>
+                  Build_Script_Name := new String'(Line (1 .. Last));
+
                when Nothing_To_Bind        |
                     Generated_Object_File  |
                     Generated_Source_Files |
@@ -768,6 +772,10 @@ begin
       --  Invoke gnatbind with the arguments if the size is not too large or
       --  if the version of GNAT is not recent enough.
 
+      Script_Write
+        (Gnatbind_Path.all,
+         Gnatbind_Options (1 .. Last_Gnatbind_Option));
+
       if not GNAT_6_Or_Higher or else Size <= Maximum_Size then
          if not GNAT_6_4_Or_Higher then
             Spawn
@@ -1028,7 +1036,7 @@ begin
          Put_Line (Display_Line (1 .. Display_Last));
       end if;
 
-      Spawn
+      Spawn_And_Script_Write
         (Ada_Compiler_Path.all,
          Compiler_Options (1 .. Last_Compiler_Option),
          Success);

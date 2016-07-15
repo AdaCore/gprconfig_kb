@@ -437,5 +437,4 @@ package Gpr_Util is
       procedure Write_A_String (S : String);
       --  Write a String to Output_FD
    end Project_Output;
-
 end Gpr_Util;
