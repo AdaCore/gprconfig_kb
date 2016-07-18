@@ -3085,7 +3085,6 @@ project. Here is a (nonexhaustive) list:
 * ``Locally_Removed_Files``
 * ``Excluded_Source_Files``
 * ``Excluded_Source_List_File``
-* ``Interfaces``
 
 The only package that is allowed (and optional) is ``Builder``.
 
