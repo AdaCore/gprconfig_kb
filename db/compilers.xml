@@ -739,7 +739,7 @@
    -->
   <compiler_description>
     <name>GNAT</name>
-    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-pc-mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|.*-darwin.*-)?gnatmake</executable>
+    <executable prefix="1">(.*-wrs-.*|.*-sysgo.*|.*-elf-.*|.*-eabi-.*|.*-eabispe-.*|avr-.*|.*-elinos-linux.*|.*-pc-mingw32.*|.*-xcoff-.*|arm-linux-androideabi-|arm-linux-gnueabi-|arm-linux-gnueabihf-|e500v2-gnu-linux-|.*-darwin.*-)?gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v --version</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
@@ -765,7 +765,7 @@
 
   <compiler_description>
     <name>GNAT_CODEPEER</name>
-    <executable prefix="1">(.*codepeer-)gnatmake</executable>
+    <executable prefix="1">(.*codepeer-)gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
@@ -786,7 +786,7 @@
 
   <compiler_description>
     <name>GNAT_C</name>
-    <executable prefix="1">(c-)gnatmake</executable>
+    <executable prefix="1">(c-)gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
@@ -807,7 +807,7 @@
 
   <compiler_description>
     <name>GNAT_DOTNET</name>
-    <executable prefix="1">(.*dotnet-)gnatmake</executable>
+    <executable prefix="1">(.*dotnet-)gnatls</executable>
     <version>
       <external>${PREFIX}gnatls -v</external>
       <grep regexp="^GNATLS.+?(\d+(\.\d+)?)" group="1"></grep>
