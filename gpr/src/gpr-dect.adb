@@ -277,10 +277,11 @@ package body GPR.Dect is
               or else Name = Snames.Name_Locally_Removed_Files
               or else Name = Snames.Name_Excluded_Source_Files
               or else Name = Snames.Name_Excluded_Source_List_File
-              or else Name = Snames.Name_Interfaces
               or else Name = Snames.Name_Exec_Dir
               or else Name = Snames.Name_Source_Dirs
               or else Name = Snames.Name_Inherit_Source_Path
+              or else
+                (Qualif = Aggregate and then Name = Snames.Name_Interfaces)
               or else
                 (Qualif = Aggregate and then Name = Snames.Name_Library_Dir)
               or else
