@@ -4148,10 +4148,38 @@ package body GprConfig.Knowledge is
                         --  we are looking for. It must not include the exec
                         --  suffix.
 
-                        Compiler.Name := Get_String_Or_No_Name
-                          (GNAT.Directory_Operations.Base_Name
-                             (String_Lists.Element (C),
-                              Suffix => Exec_Suffix.all));
+                        declare
+                           function Name return String;
+                           --  Return the name to be used
+
+                           function Name return String is
+                              N1  : constant String :=
+                                      String_Lists.Element (C);
+                              Idx : constant Natural := Index (N1, "gnatmake");
+
+                           begin
+                              if LC = "ada" and then Idx /= 0 then
+                                 --  For Ada, gnatmake was previously used
+                                 --  to detect a GNAT compiler. However, as
+                                 --  gnatmake may not be present in all the
+                                 --  GNAT distributions, gnatls is now used.
+                                 --  For upward compatibility, replace gnatmake
+                                 --  with gnatls, so that a GNAT compiler may
+                                 --  be decteted.
+
+                                 return
+                                   Replace_Slice (N1, Idx, Idx + 7, "gnatls");
+
+                              else
+                                 return N1;
+                              end if;
+                           end Name;
+
+                        begin
+                           Compiler.Name := Get_String_Or_No_Name
+                             (GNAT.Directory_Operations.Base_Name
+                                (Name, Suffix => Exec_Suffix.all));
+                        end;
                      end if;
                   end if;
                end if;
