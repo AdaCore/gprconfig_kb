@@ -299,6 +299,16 @@ procedure Build_Shared_Lib is
                Name_1            => Response_File_Name,
                Name_2            => Response_2);
 
+            Record_Temp_File
+              (Shared => null,
+               Path   => Response_File_Name);
+
+            if Response_2 /= No_Path then
+               Record_Temp_File
+                 (Shared => null,
+                  Path   => Response_2);
+            end if;
+
             Last_Arg := First_Object - 1;
 
             if Resp_File_Format = GCC
@@ -406,31 +416,6 @@ procedure Build_Shared_Lib is
       --  Finally spawn the library builder driver
 
       Spawn_And_Script_Write (Driver.all, Arguments (1 .. Last_Arg), Success);
-
-      --  Delete temporary files
-
-      if Delete_Temporary_Files then
-         declare
-            Dont_Care : Boolean;
-            pragma Warnings (Off, Dont_Care);
-         begin
-            --  Delete response file, if any, except when asked not
-
-            if Response_File_Name /= No_Path then
-               Delete_File (Get_Name_String (Response_File_Name), Dont_Care);
-
-               if Response_2 /= No_Path then
-                  Delete_File (Get_Name_String (Response_2), Dont_Care);
-               end if;
-            end if;
-
-            --  Delete export file
-
-            if Standalone /= No and then Export_File /= No_Path then
-               Delete_File (Get_Name_String (Export_File), Dont_Care);
-            end if;
-         end;
-      end if;
 
       if not Success then
          if Driver_Name = No_Name then

@@ -734,8 +734,12 @@ package body GPR.Util is
       No_Message   : Boolean := False)
    is
    begin
-      if not Debug.Debug_Flag_N and then Project_Tree /= null then
-         Delete_All_Temp_Files (Project_Tree.Shared);
+      if not Debug.Debug_Flag_N then
+         if Project_Tree = null then
+            Delete_All_Temp_Files (null);
+         else
+            Delete_All_Temp_Files (Project_Tree.Shared);
+         end if;
       end if;
 
       if S'Length > 0 then

@@ -80,6 +80,10 @@ package body GPR is
    Section_Displayed : Section_Displayed_Arr := (others => False);
    --  Flags to avoid to display several times the section header
 
+   Temp_Files : Temp_Files_Table.Instance;
+   --  Table to record temp file paths to be deleted, when no project tree is
+   --  available.
+
    function Label (Section : Section_Type) return String;
    --  Section headers
 
@@ -201,7 +205,16 @@ package body GPR is
 
          Delete_File (Get_Name_String (Path), Dont_Care);
 
-         if Shared /= null then
+         if Shared = null then
+            for Index in
+              1 .. Temp_Files_Table.Last (Temp_Files)
+            loop
+               if Temp_Files.Table (Index) = Path then
+                  Temp_Files.Table (Index) := No_Path;
+               end if;
+            end loop;
+
+         else
             for Index in
               1 .. Temp_Files_Table.Last (Shared.Private_Part.Temp_Files)
             loop
@@ -223,16 +236,20 @@ package body GPR is
       Success : Boolean;
       Path    : Path_Name_Type;
 
-   begin
-      if Shared = null then
-         return;
-      end if;
+      Instance : Temp_Files_Table.Instance;
 
+   begin
       if not Opt.Keep_Temporary_Files then
+         if Shared = null then
+            Instance := Temp_Files;
+         else
+            Instance := Shared.Private_Part.Temp_Files;
+         end if;
+
          for Index in
-           1 .. Temp_Files_Table.Last (Shared.Private_Part.Temp_Files)
+           1 .. Temp_Files_Table.Last (Instance)
          loop
-            Path := Shared.Private_Part.Temp_Files.Table (Index);
+            Path := Instance.Table (Index);
 
             if Path /= No_Path then
                declare
@@ -258,20 +275,25 @@ package body GPR is
             end if;
          end loop;
 
-         Temp_Files_Table.Free (Shared.Private_Part.Temp_Files);
-         Temp_Files_Table.Init (Shared.Private_Part.Temp_Files);
+         if Shared = null then
+            Temp_Files_Table.Init (Temp_Files);
+         else
+            Temp_Files_Table.Init (Shared.Private_Part.Temp_Files);
+         end if;
       end if;
 
-      --  If any of the environment variables ADA_PRJ_INCLUDE_FILE or
-      --  ADA_PRJ_OBJECTS_FILE has been set, then reset their value to
-      --  the empty string.
+      if Shared /= null then
+         --  If any of the environment variables ADA_PRJ_INCLUDE_FILE or
+         --  ADA_PRJ_OBJECTS_FILE has been set, then reset their value to
+         --  the empty string.
 
-      if Shared.Private_Part.Current_Source_Path_File /= No_Path then
-         Setenv (Project_Include_Path_File, "");
-      end if;
+         if Shared.Private_Part.Current_Source_Path_File /= No_Path then
+            Setenv (Project_Include_Path_File, "");
+         end if;
 
-      if Shared.Private_Part.Current_Object_Path_File /= No_Path then
-         Setenv (Project_Objects_Path_File, "");
+         if Shared.Private_Part.Current_Object_Path_File /= No_Path then
+            Setenv (Project_Objects_Path_File, "");
+         end if;
       end if;
    end Delete_All_Temp_Files;
 
@@ -1219,7 +1241,11 @@ package body GPR is
       Path   : Path_Name_Type)
    is
    begin
-      Temp_Files_Table.Append (Shared.Private_Part.Temp_Files, Path);
+      if Shared = null then
+         Temp_Files_Table.Append (Temp_Files, Path);
+      else
+         Temp_Files_Table.Append (Shared.Private_Part.Temp_Files, Path);
+      end if;
    end Record_Temp_File;
 
    ----------

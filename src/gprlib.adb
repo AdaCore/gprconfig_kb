@@ -432,8 +432,6 @@ procedure Gprlib is
 
    Response_File_Switches : String_List_Access := new String_List (1 .. 0);
 
-   Delete_Temporary_Files : Boolean := True;
-
    Export_File_Format : GPR.Export_File_Format := GPR.None;
 
    Export_File_Switch : String_Access;
@@ -959,7 +957,7 @@ begin
                Major_Minor_Id_Supported := True;
 
             when Gprexch.Keep_Temporary_Files =>
-               Delete_Temporary_Files := False;
+               Opt.Keep_Temporary_Files := True;
 
             when Gprexch.Separate_Run_Path_Options =>
                Separate_Run_Path_Options := True;
@@ -1635,6 +1633,7 @@ begin
 
                begin
                   Tempdir.Create_Temp_File (FD, Path);
+                  Record_Temp_File (null, Path);
                   Args (1) := new String'("@" & Get_Name_String (Path));
 
                   for J in 1 .. Last_Bind_Option loop
@@ -1704,16 +1703,6 @@ begin
                   --  And invoke gnatbind with this this response file
 
                   Spawn (Gnatbind_Path.all, Args, Success);
-
-                  if Delete_Temporary_Files then
-                     declare
-                        Succ : Boolean;
-                        pragma Warnings (Off, Succ);
-
-                     begin
-                        Delete_File (Get_Name_String (Path), Succ);
-                     end;
-                  end if;
                end;
             end if;
          end;
@@ -2498,4 +2487,6 @@ begin
    end if;
 
    Close (IO_File);
+
+   Delete_All_Temp_Files (null);
 end Gprlib;

@@ -267,18 +267,19 @@ package body Gpr_Util is
          Ret       : Integer;
          Opts      : Argument_List (1 .. Options'Length + 1);
          File      : File_Type;
-         File_Name : Temp_File_Name;
+         File_Name : Path_Name_Type;
          Matches   : Match_Array (0 .. 1);
 
-         function Filename return String
-           is (File_Name (File_Name'First .. File_Name'Last - 1));
+         function Filename return String is (Get_Name_String (File_Name));
          --  Remove the ASCII.NUL from end of temporary file-name
 
       begin
          Opts (1 .. Options'Length) := Options;
          Opts (Opts'Last) := new String'(Object_File);
 
-         Create_Temp_File (FD, File_Name);
+         GPR.Tempdir.Create_Temp_File (FD, File_Name);
+         Record_Temp_File (null, File_Name);
+
          Close (FD);
 
          if Verbose_Mode then
@@ -311,8 +312,6 @@ package body Gpr_Util is
 
             Close (File);
          end if;
-
-         Delete_File (Filename);
 
          Free (Opts (Opts'Last));
       end Get_Syms;
@@ -379,20 +378,20 @@ package body Gpr_Util is
       --  Now create the export file, either GNU or DEF format
 
       Create_Export_File : declare
-         File_Name : Temp_File_Name;
+         File_Name : Path_Name_Type;
       begin
          --  Create (Export_File, Out_File);
 
-         Create_Temp_File (FD, File_Name);
+         GPR.Tempdir.Create_Temp_File (FD, File_Name);
+         Record_Temp_File (null, File_Name);
 
-         Name_Len := File_Name'Length;
-         Name_Buffer (1 .. Name_Len) := File_Name;
+         Get_Name_String (File_Name);
 
          --  Always add .def at the end, this is needed for Windows
 
-         Name_Buffer (Name_Len .. Name_Len + 3) := ".def";
-         Name_Len := Name_Len + 3;
+         Add_Str_To_Name_Buffer (".def");
          Export_File_Name := Name_Find;
+         Record_Temp_File (null, Export_File_Name);
 
          --  Header
 
@@ -436,7 +435,10 @@ package body Gpr_Util is
 
          Close (FD);
 
-         Rename_File (File_Name, Get_Name_String (Export_File_Name), Success);
+         Copy_File
+           (Get_Name_String (File_Name),
+            Get_Name_String (Export_File_Name),
+            Success);
       end Create_Export_File;
    end Create_Export_Symbols_File;
 
@@ -497,6 +499,7 @@ package body Gpr_Util is
    begin
       Name_2 := No_Path;
       Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
+      Record_Temp_File (null, Name_1);
 
       if Format = GNU or else Format = GCC_GNU then
          Status := Write (Resp_File, GNU_Header'Address, GNU_Header'Length);
@@ -530,6 +533,7 @@ package body Gpr_Util is
             Close (Resp_File, Closing_Status);
             Name_2 := Name_1;
             Tempdir.Create_Temp_File (Resp_File, Name => Name_1);
+            Record_Temp_File (null, Name_1);
 
             declare
                Arg : constant String :=
