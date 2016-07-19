@@ -26,6 +26,13 @@ NF-17-P526-032 Environment variable GPR_RUNTIME_PATH (2016-06-15)
    GPR_RUNTIME_PATH is defined to the path specified by the value of
    this environment variable.
 
+NF-17-P525-073 Build script (2016-06-19)
+
+   A new gprbuild switch --build-script= is added, to create a shell script
+   that would allow to repeat the same build with the same sources, provided
+   that the temporary files created in the invocation of gprbuild are not
+   deleted.
+
 NF-17-P525-070 gprbuild default output (2016-06-09)
 
    The default output of gprbuild is now synthetic, without any abridged
