@@ -2007,6 +2007,14 @@ procedure Gprbuild.Main is
            ("           No simultaneous compilations for the same obj dir");
          New_Line;
 
+         --  Line for --build-script=
+
+         Put ("  ");
+         Put (Build_Script_Option);
+         Put_Line ("script_file");
+         Put ("           Create build script script_file");
+         New_Line;
+
          Put ("  ");
          Put (No_Indirect_Imports_Switch);
          New_Line;
