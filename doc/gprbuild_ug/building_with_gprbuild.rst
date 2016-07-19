@@ -192,6 +192,15 @@ The switches that are interpreted directly by GPRbuild are listed below.
 First, the switches that may be specified only on the command line, but not in
 package Builder of the main project:
 
+* :samp:`--build-script=<script_file>`
+
+  This switch is not compatible with :samp:`--distributed=`.
+
+  When this switch is specified, a shell script <script_file> is created.
+  Provided that the temporary files created by gprbuild are not deleted,
+  running this script should perform the same build as the invocation of
+  gprbuild, with the same sources.
+
 * :samp:`--complete-output`
 
   This switch is not compatible with :samp:`--distributed=`.
@@ -203,6 +212,9 @@ package Builder of the main project:
   last invocation of gprbuild --complete-output.
 
 * :samp:`--distributed[={slave1}[,{slave2}]]`
+
+  This switch is not compatible with :samp:`--complete-output`, or with
+  :samp:`--build-script=`.
 
   Activate the distributed compilation on the listed slaves nodes (IP or
   name). Or if no slave are specified they are search in `GPR_SLAVES` or
