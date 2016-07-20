@@ -102,6 +102,8 @@ procedure Gprlib is
    Libgnarl_Needed : Boolean := False;
    --  True if libgnarl is needed
 
+   No_SAL_Binding : Boolean := False;
+
    type Dir_Data;
    type Dir_Access is access Dir_Data;
    type Dir_Data is record
@@ -453,11 +455,25 @@ procedure Gprlib is
    --  Copy to the Copy_Source_Directory the sources of the interfaces of
    --  a Stand-Alone Library.
 
+   procedure Process_Shared;
+   --  Process a shared library;
+
+   procedure Process_Static;
+   --  Process a static library
+
+   procedure Process_Standalone;
+   --  Specific processing for Sand-Alone Libraries.
+
+   procedure Read_Exchange_File;
+   --  Read the library exchange file and initialize global variables and
+   --  tables.
+
    function SALs_Use_Constructors return Boolean;
    --  Indicate if Stand-Alone Libraries are automatically initialized using
    --  the constructor mechanism.
 
    procedure Build_Shared_Lib;
+   --  Build a shared library
 
    procedure Build_Shared_Lib is separate;
 
@@ -845,1310 +861,12 @@ procedure Gprlib is
       end loop;
    end Copy_Sources;
 
-   ---------------------------
-   -- SALs_Use_Constructors --
-   ---------------------------
+   --------------------
+   -- Process_Shared --
+   --------------------
 
-   function SALs_Use_Constructors return Boolean is
-      function C_SALs_Init_Using_Constructors return Integer;
-      pragma Import (C, C_SALs_Init_Using_Constructors,
-                     "__gnat_sals_init_using_constructors");
+   procedure Process_Shared is
    begin
-      return C_SALs_Init_Using_Constructors /= 0;
-   end SALs_Use_Constructors;
-
-begin
-   --  Initialize some packages
-
-   Snames.Initialize;
-
-   Set_Program_Name ("gprlib");
-
-   --  As the section header has already been displayed, indicate that it
-   --  should not been displayed again.
-
-   Set (Section => Build_Libraries);
-
-   if Argument_Count /= 1 then
-      Put_Line ("usage: gprlib <input file>");
-
-      if Argument_Count /= 0 then
-         Fail_Program (null, "incorrect invocation");
-      end if;
-
-      return;
-   end if;
-
-   Exchange_File_Name := new String'(Argument (1));
-
-   --  DEBUG: save a copy of the exchange file
-
-   if Getenv ("GPRLIB_DEBUG").all = "TRUE" then
-      Copy_File
-        (Exchange_File_Name.all,
-         Exchange_File_Name.all & "__saved",
-         Success,
-         Mode => Overwrite,
-         Preserve => Time_Stamps);
-   end if;
-
-   begin
-      Open (IO_File, In_File, Exchange_File_Name.all);
-   exception
-      when others =>
-         Fail_Program (null, "could not read " & Exchange_File_Name.all);
-   end;
-
-   while not End_Of_File (IO_File) loop
-      Get_Line (IO_File, Line, Last);
-
-      if Last > 0 and then Line (1) = '[' then
-         Current_Section := Get_Library_Section (Line (1 .. Last));
-
-         case Current_Section is
-            when No_Library_Section =>
-               Fail_Program (null, "unknown section: " & Line (1 .. Last));
-
-            when Quiet =>
-               Quiet_Output    := True;
-               Verbose_Mode    := False;
-               Verbosity_Level := Opt.None;
-
-            when Verbose_Low =>
-               Quiet_Output    := False;
-               Verbose_Mode    := True;
-               Verbosity_Level := Opt.Low;
-
-            when Verbose_Higher =>
-               Quiet_Output    := False;
-               Verbose_Mode    := True;
-               Verbosity_Level := Opt.High;
-
-            when Gprexch.Relocatable =>
-               Relocatable := True;
-               Static      := False;
-
-            when Gprexch.Static =>
-               Static      := True;
-               Relocatable := False;
-
-            when Gprexch.Archive_Builder =>
-               Archive_Builder := null;
-               Last_AB_Option  := 0;
-
-            when Gprexch.Archive_Builder_Append_Option =>
-               Last_AB_Append_Option := 0;
-
-            when Gprexch.Archive_Indexer =>
-               Archive_Indexer := null;
-               Last_AI_Option  := 0;
-
-            when Gprexch.Partial_Linker =>
-               Partial_Linker := null;
-               Last_PL_Option := 0;
-
-            when Gprexch.Auto_Init =>
-               Auto_Init := True;
-
-            when Gprexch.Symbolic_Link_Supported =>
-               Symbolic_Link_Supported := True;
-
-            when Gprexch.Major_Minor_Id_Supported =>
-               Major_Minor_Id_Supported := True;
-
-            when Gprexch.Keep_Temporary_Files =>
-               Opt.Keep_Temporary_Files := True;
-
-            when Gprexch.Separate_Run_Path_Options =>
-               Separate_Run_Path_Options := True;
-
-            when Gprexch.Compiler_Leading_Switches |
-                 Gprexch.Compiler_Trailing_Switches =>
-               Current_Language := No_Name;
-
-            when Gprexch.No_Create =>
-               No_Create := True;
-
-            when others =>
-               null;
-         end case;
-
-      elsif Last > 0
-        or else Current_Section = Gprexch.Shared_Lib_Prefix
-        or else Current_Section = Gprexch.Response_File_Switches
-      then
-         case Current_Section is
-            when No_Library_Section =>
-               Fail_Program
-                 (null, "no section specified: " & Line (1 .. Last));
-
-            when Gprexch.No_Create =>
-               Fail_Program (null, "no create section should be empty");
-
-            when Quiet =>
-               Fail_Program (null, "quiet section should be empty");
-
-            when Verbose_Low | Verbose_Higher =>
-               Fail_Program (null, "verbose section should be empty");
-
-            when Gprexch.Relocatable =>
-               Fail_Program (null, "relocatable section should be empty");
-
-            when Gprexch.Static =>
-               Fail_Program (null, "static section should be empty");
-
-            when Gprexch.Keep_Temporary_Files =>
-               Fail_Program
-                 (null, "keep temporary files section should be empty");
-
-            when Gprexch.Separate_Run_Path_Options =>
-               Fail_Program
-                 (null, "separate run path options should be empty");
-
-            when Gprexch.Object_Files =>
-               Object_Files.Append (new String'(Line (1 .. Last)));
-
-            when Gprexch.Options =>
-               Options_Table.Append (new String'(Line (1 .. Last)));
-
-            when Gprexch.Object_Directory =>
-               Object_Directories.Append (new String'(Line (1 .. Last)));
-
-            when Gprexch.Library_Name =>
-               Library_Name := new String'(Line (1 .. Last));
-
-            when Gprexch.Library_Directory =>
-               Library_Directory := new String'(Line (1 .. Last));
-
-            when Gprexch.Library_Dependency_Directory =>
-               Library_Dependency_Directory :=
-                 new String'(Line (1 .. Last));
-
-            when Gprexch.Library_Version =>
-               Library_Version := new String'(Line (1 .. Last));
-
-            when Gprexch.Leading_Library_Options =>
-               if Line (1 .. Last) = No_Std_Lib_String then
-                  Use_GNAT_Lib := False;
-               end if;
-
-               Leading_Library_Options_Table.Append
-                 (new String'(Line (1 .. Last)));
-
-            when Gprexch.Library_Options =>
-               if Line (1 .. Last) = No_Std_Lib_String then
-                  Use_GNAT_Lib := False;
-               end if;
-
-               Library_Options_Table.Append (new String'(Line (1 .. Last)));
-
-            when Gprexch.Library_Rpath_Options =>
-               Library_Rpath_Options_Table.Append
-                                             (new String'(Line (1 .. Last)));
-
-            when Library_Path =>
-               Fail_Program (null, "library path should not be specified");
-
-            when Gprexch.Library_Version_Options =>
-               Library_Version_Options.Append
-                 (new String'(Line (1 .. Last)));
-
-            when Gprexch.Shared_Lib_Prefix =>
-               Shared_Lib_Prefix := new String'(Line (1 .. Last));
-
-            when Gprexch.Shared_Lib_Suffix =>
-               Shared_Lib_Suffix := new String'(Line (1 .. Last));
-
-            when Gprexch.Shared_Lib_Minimum_Options =>
-               Shared_Lib_Minimum_Options.Append
-                 (new String'(Line (1 .. Last)));
-
-            when Gprexch.Symbolic_Link_Supported =>
-               Fail_Program
-                 (null, "symbolic link supported section should be empty");
-
-            when Gprexch.Major_Minor_Id_Supported =>
-               Fail_Program
-                 (null, "major minor id supported section should be empty");
-
-            when Gprexch.PIC_Option =>
-               PIC_Option := new String'(Line (1 .. Last));
-
-            when Gprexch.Imported_Libraries =>
-               if End_Of_File (IO_File) then
-                  Fail_Program
-                    (null,
-                     "no library name for imported library " &
-                     Line (1 .. Last));
-
-               else
-                  Imported_Library_Directories.Append
-                    (new String'(Line (1 .. Last)));
-                  Get_Line (IO_File, Line, Last);
-                  Imported_Library_Names.Append
-                    (new String'(Line (1 .. Last)));
-               end if;
-
-            when Gprexch.Driver_Name =>
-               Name_Len := Last;
-               Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
-               Driver_Name := Name_Find;
-
-            when Gprexch.Compilers =>
-               if End_Of_File (IO_File) then
-                  Fail_Program
-                    (null, "no compiler specified for language " &
-                     Line (1 .. Last));
-
-               else
-                  To_Lower (Line (1 .. Last));
-
-                  if Line (1 .. Last) = "ada" then
-                     Get_Line (IO_File, Line, Last);
-
-                     if Last = 0 then
-                        Fail_Program
-                          (null, "Ada compiler name cannot be empty");
-
-                     else
-                        Compiler_Name := new String'(Line (1 .. Last));
-
-                        if Last > 3
-                          and then Line (Last - 2 .. Last) = "gcc"
-                        then
-                           Gnatbind_Name :=
-                             new String'(Line (1 .. Last - 3) & "gnatbind");
-
-                        elsif Last > 7
-                          and then Line (Last - 6 .. Last) = "gcc.exe"
-                        then
-                           Gnatbind_Name :=
-                             new String'(Line (1 .. Last - 7) & "gnatbind");
-                        end if;
-                     end if;
-
-                  else
-                     Skip_Line (IO_File);
-                  end if;
-               end if;
-
-            when Gprexch.Compiler_Leading_Switches =>
-               if Last > Language_Equal'Length
-                 and then Line (1 .. Language_Equal'Length) = Language_Equal
-               then
-                  Name_Len := 0;
-                  Add_Str_To_Name_Buffer
-                    (Line (Language_Equal'Length + 1 .. Last));
-                  To_Lower (Name_Buffer (1 .. Name_Len));
-                  Current_Language := Name_Find;
-
-               elsif Current_Language = Snames.Name_Ada then
-                  Ada_Leading_Switches.Append (new String'(Line (1 .. Last)));
-               end if;
-
-            when Gprexch.Compiler_Trailing_Switches =>
-               if Last > Language_Equal'Length
-                 and then Line (1 .. Language_Equal'Length) = Language_Equal
-               then
-                  Name_Len := 0;
-                  Add_Str_To_Name_Buffer
-                    (Line (Language_Equal'Length + 1 .. Last));
-                  To_Lower (Name_Buffer (1 .. Name_Len));
-                  Current_Language := Name_Find;
-
-               elsif Current_Language = Snames.Name_Ada then
-                  Ada_Trailing_Switches.Append (new String'(Line (1 .. Last)));
-               end if;
-
-            when Toolchain_Version =>
-               if End_Of_File (IO_File) then
-                  Fail_Program
-                    (null,
-                     "no toolchain version for language " & Line (1 .. Last));
-
-               elsif Line (1 .. Last) = "ada" then
-                  Get_Line (IO_File, Line, Last);
-
-                  if Last > 5 and then Line (1 .. 5) = "GNAT " then
-                     GNAT_Version := new String'(Line (6 .. Last));
-                     GNAT_Version_Set := True;
-
-                     Libgnat :=
-                       new String'
-                         ("-lgnat-" & Line (6 .. Last));
-                     Libgnarl :=
-                       new String'
-                         ("-lgnarl-" & Line (6 .. Last));
-                  end if;
-
-               else
-                  Skip_Line (IO_File);
-               end if;
-
-            when Gprexch.Archive_Builder =>
-               if Archive_Builder = null then
-                  Archive_Builder := new String'(Line (1 .. Last));
-
-               else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     AB_Options,
-                     Last_AB_Option);
-               end if;
-
-            when Gprexch.Archive_Builder_Append_Option =>
-               Add
-                 (new String'(Line (1 .. Last)),
-                  AB_Append_Options,
-                  Last_AB_Append_Option);
-
-            when Gprexch.Archive_Indexer =>
-               if Archive_Indexer = null then
-                  Archive_Indexer := new String'(Line (1 .. Last));
-
-               else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     AI_Options,
-                     Last_AI_Option);
-               end if;
-
-            when Gprexch.Object_Lister =>
-               if Object_Lister = null then
-                  Object_Lister := new String'(Line (1 .. Last));
-
-               else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     OL_Options,
-                     Last_OL_Option);
-               end if;
-
-            when Gprexch.Object_Lister_Matcher =>
-               Object_Lister_Matcher := new String'(Line (1 .. Last));
-
-            when Gprexch.Partial_Linker =>
-               if Partial_Linker = null then
-                  Partial_Linker := new String'(Line (1 .. Last));
-
-               else
-                  Add
-                    (new String'(Line (1 .. Last)),
-                     PL_Options,
-                     Last_PL_Option);
-               end if;
-
-            when Gprexch.Archive_Suffix =>
-               Archive_Suffix := new String'(Line (1 .. Last));
-
-            when Gprexch.Run_Path_Option =>
-               if Path_Option /= null then
-                  Fail_Program (null, "multiple run path options");
-               end if;
-
-               Path_Option := new String'(Line (1 .. Last));
-
-            when Gprexch.Install_Name =>
-               if Install_Name /= null then
-                  Fail_Program (null, "multiple install names");
-               end if;
-
-               Install_Name := new String'(Line (1 .. Last));
-
-            when Gprexch.Auto_Init =>
-               Fail_Program (null, "auto init section should be empty");
-
-            when Interface_Dep_Files =>
-               Interface_ALIs.Append (new String'(Line (1 .. Last)));
-               Standalone := GPR.Standard;
-
-            when Gprexch.Other_Interfaces =>
-               Other_Interfaces.Append (new String'(Line (1 .. Last)));
-
-            when Interface_Obj_Files =>
-               Interface_Objs.Append (new String'(Line (1 .. Last)));
-
-            when Gprexch.Standalone_Mode =>
-               Standalone := GPR.Standalone'Value (Line (1 .. Last));
-
-            when Dependency_Files =>
-               if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
-                  ALIs.Append (new String'(Line (1 .. Last)));
-               end if;
-
-            when Binding_Options =>
-               Binding_Options_Table.Append (new String'(Line (1 .. Last)));
-
-            when Copy_Source_Dir =>
-               Copy_Source_Directory := new String'(Line (1 .. Last));
-
-            when Gprexch.Sources =>
-               Sources.Append (new String'(Line (1 .. Last)));
-
-            when Gprexch.Runtime_Library_Dir =>
-               if End_Of_File (IO_File) then
-                  Fail_Program
-                    (null,
-                     "no runtime library dir for language " &
-                     Line (1 .. Last));
-
-               elsif Line (1 .. Last) = "ada" then
-                  Get_Line (IO_File, Line, Last);
-                  Runtime_Library_Dirs :=
-                    new Dir_Data'
-                      (Path => new String'(Line (1 .. Last)),
-                       Next => Runtime_Library_Dirs);
-
-               else
-                  Skip_Line (IO_File);
-               end if;
-
-            when Gprexch.Generated_Object_Files |
-                 Gprexch.Generated_Source_Files =>
-               null;
-
-            when Gprexch.Max_Command_Line_Length =>
-               begin
-                  Max_Command_Line_Length := Natural'Value (Line (1 .. Last));
-
-                  if Max_Command_Line_Length < Maximum_Size then
-                     Maximum_Size := Max_Command_Line_Length;
-                  end if;
-
-               exception
-                  when Constraint_Error =>
-                     Fail_Program
-                       (null,
-                        "incorrect value for max command line length: " &
-                        Line (1 .. Last));
-               end;
-
-            when Gprexch.Response_File_Format =>
-               begin
-                  Resp_File_Format :=
-                    GPR.Response_File_Format'Value (Line (1 .. Last));
-
-               exception
-                  when Constraint_Error =>
-                     Fail_Program
-                       (null,
-                        "incorrect value for response file format: " &
-                        Line (1 .. Last));
-               end;
-
-            when Gprexch.Response_File_Switches =>
-               if Response_File_Switches = null then
-                  Response_File_Switches := new String_List (1 .. 1);
-
-               else
-                  declare
-                     New_Switches : constant String_List_Access :=
-                                      new String_List
-                                        (1 .. Response_File_Switches'Last + 1);
-
-                  begin
-                     New_Switches (Response_File_Switches'Range) :=
-                       Response_File_Switches.all;
-                     Free (Response_File_Switches);
-                     Response_File_Switches := New_Switches;
-                  end;
-               end if;
-
-               Response_File_Switches (Response_File_Switches'Last) :=
-                 new String'(Line (1 .. Last));
-
-            when Gprexch.Export_File =>
-               --  First the format
-
-               begin
-                  Export_File_Format :=
-                    GPR.Export_File_Format'Value (Line (1 .. Last));
-
-               exception
-                  when Constraint_Error =>
-                     Fail_Program
-                       (null,
-                        "incorrect value for export file format: " &
-                        Line (1 .. Last));
-               end;
-
-               --  Followed by the corresponding linker switch
-
-               Get_Line (IO_File, Line, Last);
-               Export_File_Switch := new String'(Line (1 .. Last));
-
-            when Gprexch.Library_Symbol_File =>
-               Library_Symbol_File := new String'(Line (1 .. Last));
-
-            when Script_Path =>
-               Build_Script_Name := new String'(Line (1 .. Last));
-         end case;
-      end if;
-   end loop;
-
-   Close (IO_File);
-
-   if Object_Files.Last = 0 then
-      Fail_Program (null, "no object files specified");
-   end if;
-
-   Last_Object_File_Index := Object_Files.Last;
-
-   if Library_Name = null then
-      Fail_Program (null, "no library name specified");
-   end if;
-
-   if Library_Directory = null then
-      Fail_Program (null, "no library directory specified");
-   end if;
-
-   if Object_Directories.Last = 0 then
-      Fail_Program (null, "no object directory specified");
-   end if;
-
-   if Library_Directory.all = Object_Directories.Table (1).all then
-      Fail_Program
-        (null, "object directory and library directory cannot be the same");
-   end if;
-
-   if Library_Dependency_Directory = null then
-      Library_Dependency_Directory := Library_Directory;
-   end if;
-
-   --  We work in the object directory
-
-   begin
-      Change_Dir (Object_Directories.Table (1).all);
-
-   exception
-      when others =>
-         Fail_Program
-           (null,
-            "cannot change to object directory "
-            & Object_Directories.Table (1).all);
-   end;
-
-   if Standalone /= No then
-      declare
-         Binder_Generated_File   : String :=
-                                     "b__" & Library_Name.all & ".adb";
-         Binder_Generated_Object : String :=
-                                     "b__" & Library_Name.all & Object_Suffix;
-         First_ALI               : File_Name_Type;
-         T                       : Text_Buffer_Ptr;
-         A                       : ALI.ALI_Id;
-         use ALI;
-
-      begin
-         Osint.Canonical_Case_File_Name (Binder_Generated_File);
-         Osint.Canonical_Case_File_Name (Binder_Generated_Object);
-
-         Gnatbind_Path := Locate_Exec_On_Path (Gnatbind_Name.all);
-
-         if Gnatbind_Path = null then
-            Fail_Program
-              (null, "unable to locate binder " & Gnatbind_Name.all);
-         end if;
-
-         Last_Bind_Option := 0;
-         Add (No_Main, Bind_Options, Last_Bind_Option);
-         Add (Output_Switch, Bind_Options, Last_Bind_Option);
-         Add
-           ("b__" & Library_Name.all & ".adb", Bind_Options, Last_Bind_Option);
-
-         --  Make sure that the init procedure is never "adainit"
-
-         if Library_Name.all = "ada" then
-            Add ("-Lada_", Bind_Options, Last_Bind_Option);
-         else
-            Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
-         end if;
-
-         if Auto_Init and then SALs_Use_Constructors then
-            --  Check that pragma Linker_Constructor is supported
-
-            if not GNAT_Version_Set
-              or else
-                 (GNAT_Version'Length > 2
-                and then GNAT_Version
-                 (GNAT_Version'First .. GNAT_Version'First + 1) = "3.")
-            then
-               --  GNAT version 3.xx or unknown
-
-               null;
-
-            elsif GNAT_Version'Length > 2
-              and then GNAT_Version
-                (GNAT_Version'First .. GNAT_Version'First + 1) = "5."
-              and then GNAT_Version.all < "5.04"
-            then
-               --  GNAT versions 5.00, 5.01, 5.02 or 5.03
-
-               null;
-
-            else
-               --  Any other supported GNAT version should support pragma
-               --  Linker_Constructor. So, invoke gnatbind with -a.
-
-               Add (Auto_Initialize, Bind_Options, Last_Bind_Option);
-            end if;
-         end if;
-
-         for J in 1 .. Binding_Options_Table.Last loop
-            Add
-              (Binding_Options_Table.Table (J).all,
-               Bind_Options,
-               Last_Bind_Option);
-         end loop;
-
-         --  Get an eventual --RTS from the ALI file
-
-         Name_Len := 0;
-         Add_Str_To_Name_Buffer (ALIs.Table (1).all);
-         First_ALI := Name_Find;
-
-         --  Load the ALI file
-
-         T := Osint.Read_Library_Info (First_ALI, True);
-
-         --  Read it
-
-         A := Scan_ALI
-           (First_ALI,
-            T,
-            Ignore_ED  => False,
-            Err        => False,
-            Read_Lines => "A");
-
-         if A /= No_ALI_Id then
-            for Index in
-              ALI.Units.Table (ALI.ALIs.Table (A).First_Unit).First_Arg ..
-              ALI.Units.Table (ALI.ALIs.Table (A).First_Unit).Last_Arg
-            loop
-               --  Look for --RTS. If found, add the switch to call gnatbind
-
-               declare
-                  Arg : String_Access renames Args.Table (Index);
-               begin
-                  if Arg'Length >= 6
-                    and then Arg (Arg'First + 2 .. Arg'First + 5) = "RTS="
-                  then
-                     Add (Arg.all, Bind_Options, Last_Bind_Option);
-                     exit;
-                  end if;
-               end;
-            end loop;
-         end if;
-
-         for J in 1 .. ALIs.Last loop
-            Add (ALIs.Table (J), Bind_Options, Last_Bind_Option);
-         end loop;
-
-         if not Quiet_Output then
-            Name_Len := 0;
-
-            if Verbose_Mode then
-               Add_Str_To_Name_Buffer (Gnatbind_Path.all);
-
-               for J in 1 .. Last_Bind_Option loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
-
-            else
-               Display
-                 (Section  => Build_Libraries,
-                  Command  => "bind SAL",
-                  Argument => Library_Name.all);
-            end if;
-         end if;
-
-         --  If there is more than one object directory, set ADA_OBJECTS_PATH
-         --  for the additional object libraries, so that gnatbind may find
-         --  all the ALI files.
-
-         if Object_Directories.Last > 1 then
-            declare
-               Object_Path : String_Access :=
-                               new String'(Object_Directories.Table (1).all);
-
-            begin
-               for J in 2 .. Object_Directories.Last loop
-                  Object_Path :=
-                    new String'
-                      (Object_Path.all &
-                       Path_Separator &
-                       Object_Directories.Table (J).all);
-               end loop;
-
-               Setenv ("ADA_OBJECTS_PATH", Object_Path.all);
-            end;
-         end if;
-
-         declare
-            Size         : Natural := 0;
-         begin
-            for J in 1 .. Last_Bind_Option loop
-               Size := Size + Bind_Options (J)'Length + 1;
-            end loop;
-
-            Script_Write
-              (Gnatbind_Path.all,
-               Bind_Options (1 .. Last_Bind_Option));
-
-            --  Invoke gnatbind with the arguments if the size is not too large
-            --  or if the version of GNAT is not recent enough.
-
-            if  Size <= Maximum_Size
-              or else
-                not GNAT_Version_Set
-              or else
-                (GNAT_Version'Length > 2
-                 and then
-                 (GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) =
-                    "3."
-                  or else
-                  GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) =
-                    "5."))
-            then
-               Spawn
-                 (Gnatbind_Path.all,
-                  Bind_Options (1 .. Last_Bind_Option),
-                  Success);
-
-            else
-               --  Otherwise create a temporary response file
-
-               declare
-                  EOL           : constant String (1 .. 1) := (1 => ASCII.LF);
-                  FD            : File_Descriptor;
-                  Path          : Path_Name_Type;
-                  Args          : Argument_List (1 .. 1);
-                  Status        : Integer;
-                  Quotes_Needed : Boolean;
-                  Last_Char     : Natural;
-                  Ch            : Character;
-
-               begin
-                  Tempdir.Create_Temp_File (FD, Path);
-                  Record_Temp_File (null, Path);
-                  Args (1) := new String'("@" & Get_Name_String (Path));
-
-                  for J in 1 .. Last_Bind_Option loop
-
-                     --  Check if the argument should be quoted
-
-                     Quotes_Needed := False;
-                     Last_Char     := Bind_Options (J)'Length;
-
-                     for K in Bind_Options (J)'Range loop
-                        Ch := Bind_Options (J) (K);
-
-                        if Ch = ' ' or else Ch = ASCII.HT or else Ch = '"' then
-                           Quotes_Needed := True;
-                           exit;
-                        end if;
-                     end loop;
-
-                     if Quotes_Needed then
-
-                        --  Quote the argument, doubling '"'
-
-                        declare
-                           Arg : String (1 .. Bind_Options (J)'Length * 2 + 2);
-
-                        begin
-                           Arg (1) := '"';
-                           Last_Char := 1;
-
-                           for K in Bind_Options (J)'Range loop
-                              Ch := Bind_Options (J) (K);
-                              Last_Char := Last_Char + 1;
-                              Arg (Last_Char) := Ch;
-
-                              if Ch = '"' then
-                                 Last_Char := Last_Char + 1;
-                                 Arg (Last_Char) := '"';
-                              end if;
-                           end loop;
-
-                           Last_Char := Last_Char + 1;
-                           Arg (Last_Char) := '"';
-
-                           Status := Write (FD, Arg'Address, Last_Char);
-                        end;
-
-                     else
-                        Status := Write
-                          (FD,
-                           Bind_Options (J) (Bind_Options (J)'First)'Address,
-                           Last_Char);
-                     end if;
-
-                     if Status /= Last_Char then
-                        Fail_Program (null, "disk full");
-                     end if;
-
-                     Status := Write (FD, EOL (1)'Address, 1);
-
-                     if Status /= 1 then
-                        Fail_Program (null, "disk full");
-                     end if;
-                  end loop;
-
-                  Close (FD);
-
-                  --  And invoke gnatbind with this this response file
-
-                  Spawn (Gnatbind_Path.all, Args, Success);
-               end;
-            end if;
-         end;
-
-         if not Success then
-            Fail_Program
-              (null, "invocation of " & Gnatbind_Name.all & " failed");
-         end if;
-
-         Generated_Sources.Append
-           (new String'("b__" & Library_Name.all & ".ads"));
-         Generated_Sources.Append
-           (new String'("b__" & Library_Name.all & ".adb"));
-         Generated_Sources.Append
-           (new String'("b__" & Library_Name.all & ".ali"));
-
-         Compiler_Path := Locate_Exec_On_Path (Compiler_Name.all);
-
-         if Compiler_Path = null then
-            Fail_Program
-              (null, "unable to locate compiler " & Compiler_Name.all);
-         end if;
-
-         Last_Bind_Option := 0;
-
-         for J in 1 .. Ada_Leading_Switches.Last loop
-            Add
-              (Ada_Leading_Switches.Table (J),
-               Bind_Options,
-               Last_Bind_Option);
-         end loop;
-
-         Add (No_Warning, Bind_Options, Last_Bind_Option);
-         Add (Binder_Generated_File, Bind_Options, Last_Bind_Option);
-         Add (Output_Switch, Bind_Options, Last_Bind_Option);
-         Add (Binder_Generated_Object, Bind_Options, Last_Bind_Option);
-
-         if Relocatable and then PIC_Option /= null then
-            Add (PIC_Option, Bind_Options, Last_Bind_Option);
-         end if;
-
-         --  Get the back-end switches and --RTS from the ALI file
-
-         --  Load the ALI file
-
-         T := Osint.Read_Library_Info (First_ALI, True);
-
-         --  Read it
-
-         A := Scan_ALI
-           (First_ALI,
-            T,
-            Ignore_ED  => False,
-            Err        => False,
-            Read_Lines => "A");
-
-         if A /= No_ALI_Id then
-            for Index in
-              ALI.Units.Table
-                (ALI.ALIs.Table (A).First_Unit).First_Arg ..
-              ALI.Units.Table
-                (ALI.ALIs.Table (A).First_Unit).Last_Arg
-            loop
-               --  Do not compile with the front end switches except
-               --  for --RTS.
-
-               declare
-                  Arg : String_Access renames Args.Table (Index);
-                  Argv : constant String (1 .. Arg'Length) := Arg.all;
-               begin
-                  if (Argv'Last <= 2 or else Argv (1 .. 2) /= "-I")
-                    and then
-                     (Argv'Last <= 5 or else Argv (1 .. 5) /= "-gnat")
-                  then
-                     Add (Arg.all, Bind_Options, Last_Bind_Option);
-                  end if;
-               end;
-            end loop;
-         end if;
-
-         for J in 1 .. Ada_Trailing_Switches.Last loop
-            Add
-              (Ada_Trailing_Switches.Table (J),
-               Bind_Options,
-               Last_Bind_Option);
-         end loop;
-
-         if not Quiet_Output then
-            Name_Len := 0;
-
-            if Verbose_Mode then
-               Add_Str_To_Name_Buffer (Compiler_Path.all);
-
-               for J in 1 .. Last_Bind_Option loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
-
-            else
-               Display
-                 (Section  => Build_Libraries,
-                  Command  => "Ada",
-                  Argument => Binder_Generated_File);
-            end if;
-         end if;
-
-         Spawn_And_Script_Write
-           (Compiler_Path.all, Bind_Options (1 .. Last_Bind_Option), Success);
-
-         if not Success then
-            Fail_Program
-              (null, "invocation of " & Compiler_Name.all & " failed");
-         end if;
-
-         Generated_Objects.Append (new String'(Binder_Generated_Object));
-
-         Object_Files.Append (new String'(Binder_Generated_Object));
-
-         --  For shared libraries, check if libgnarl is needed
-
-         if Relocatable then
-            declare
-               BG_File : File_Type;
-               Line    : String (1 .. 1_000);
-               Last    : Natural;
-
-            begin
-               Open (BG_File, In_File, Binder_Generated_File);
-
-               while not End_Of_File (BG_File) loop
-                  Get_Line (BG_File, Line, Last);
-                  exit when Line (1 .. Last) = Begin_Info;
-               end loop;
-
-               while not End_Of_File (BG_File) loop
-                  Get_Line (BG_File, Line, Last);
-                  exit when Line (1 .. Last) = End_Info;
-
-                  if Use_GNAT_Lib
-                    and then Runtime_Library_Dirs /= null
-                    and then Line (9 .. Last) = "-lgnarl"
-                  then
-                     Libgnarl_Needed := True;
-                  end if;
-
-                  if Standalone /= No
-                    and then (Partial_Linker = null
-                              or else Resp_File_Format /= GPR.None)
-                    and then Line (9 .. 10) = "-l"
-                    and then Line (9 .. Last) /= "-lgnarl"
-                    and then Line (9 .. Last) /= "-lgnat"
-                  then
-                     Additional_Switches.Append
-                       (new String'(Line (9 .. Last)));
-                  end if;
-               end loop;
-            end;
-         end if;
-      end;
-   end if;
-
-   --  Archives
-
-   if Static and then not No_Create then
-      if Standalone /= No and then Partial_Linker /= null then
-         Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
-
-         if Partial_Linker_Path = null then
-            Fail_Program
-              (null, "unable to locate linker " & Partial_Linker.all);
-         end if;
-      end if;
-
-      if Archive_Builder = null then
-         Fail_Program (null, "no archive builder specified");
-      end if;
-
-      Library_Path_Name :=
-        new String'
-          (Library_Directory.all &
-             "lib" & Library_Name.all & Archive_Suffix.all);
-
-      Add (Library_Path_Name, AB_Options, Last_AB_Option);
-
-      First_AB_Object_Pos := Last_AB_Option + 1;
-
-      if Standalone /= No and then Partial_Linker_Path /= null then
-         --  If partial linker is used, do a partial link and put the resulting
-         --  object file in the archive.
-
-         Partial_Number := 0;
-         First_Object := 1;
-
-         loop
-            declare
-               Partial : constant String_Access :=
-                           new String'
-                             (Partial_Name
-                                (Library_Name.all,
-                                 Partial_Number,
-                                 Object_Suffix));
-               Size    : Natural := 0;
-
-               Saved_Last_PL_Option : Natural;
-            begin
-               Saved_Last_PL_Option := Last_PL_Option;
-
-               Add (Partial, PL_Options, Last_PL_Option);
-               Size := Size + 1 + Partial'Length;
-
-               if Partial_Number > 0 then
-                  Add
-                    (Partial_Name
-                       (Library_Name.all, Partial_Number - 1, Object_Suffix),
-                     PL_Options,
-                     Last_PL_Option);
-               end if;
-
-               for J in 1 .. Last_PL_Option loop
-                  Size := Size + 1 + PL_Options (J)'Length;
-               end loop;
-
-               loop
-                  Add
-                    (Object_Files.Table (First_Object),
-                     PL_Options,
-                     Last_PL_Option);
-                  Size := Size + 1 + PL_Options (Last_PL_Option)'Length;
-
-                  First_Object := First_Object + 1;
-
-                  exit when
-                    First_Object > Object_Files.Last
-                    or else Size >= Maximum_Size;
-               end loop;
-
-               if not Quiet_Output then
-                  if Verbose_Mode then
-                     Name_Len := 0;
-                     Add_Str_To_Name_Buffer (Partial_Linker_Path.all);
-
-                     for J in 1 .. Last_PL_Option loop
-                        Add_Str_To_Name_Buffer (" ");
-                        Add_Str_To_Name_Buffer (PL_Options (J).all);
-                     end loop;
-
-                     Put_Line (Name_Buffer (1 .. Name_Len));
-                  end if;
-               end if;
-
-               Spawn_And_Script_Write
-                 (Partial_Linker_Path.all,
-                  PL_Options (1 .. Last_PL_Option),
-                  Success);
-
-               if not Success then
-                  Fail_Program
-                    (null,
-                     "call to linker driver " &
-                     Partial_Linker.all & " failed");
-               end if;
-
-               if First_Object > Object_Files.Last then
-                  Add (Partial, AB_Options, Last_AB_Option);
-                  exit;
-               end if;
-
-               Last_PL_Option := Saved_Last_PL_Option;
-               Partial_Number := Partial_Number + 1;
-            end;
-         end loop;
-
-      else
-         --  Not a standalone library, or Partial linker is not specified.
-         --  Put all objects in the archive.
-
-         for J in 1 .. Object_Files.Last loop
-            Add (Object_Files.Table (J), AB_Options, Last_AB_Option);
-         end loop;
-      end if;
-
-      --  Delete the archive if it already exists, to avoid having duplicated
-      --  object files in the archive when it is built in chunks.
-
-      if Is_Regular_File (Library_Path_Name.all) then
-         Delete_File (Library_Path_Name.all, Success);
-      end if;
-
-      if Last_AB_Append_Option = 0 then
-         --  If there is no Archive_Builder_Append_Option, always build the
-         --  archive in one chunk.
-
-         Next_AB_Object_Pos := Last_AB_Option + 1;
-
-      else
-         --  If Archive_Builder_Append_Option is specified, for the creation of
-         --  the archive, only put on the command line a number of character
-         --  lower that Maximum_Size.
-
-         Size := 0;
-         for J in 1 .. First_AB_Object_Pos - 1 loop
-            Size := Size + AB_Options (J)'Length + 1;
-         end loop;
-
-         Next_AB_Object_Pos := First_AB_Object_Pos;
-
-         while Next_AB_Object_Pos <= Last_AB_Option loop
-            Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
-            exit when Size > Maximum_Size;
-            Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
-         end loop;
-
-         --  Display the invocation of the archive builder for the creation of
-         --  the archive.
-
-         if not Quiet_Output then
-            Name_Len := 0;
-
-            if Verbose_Mode then
-               Add_Str_To_Name_Buffer (Archive_Builder.all);
-
-               for J in 1 .. Next_AB_Object_Pos - 1 loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (AB_Options (J).all);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
-
-            else
-               Display
-                 (Section  => Build_Libraries,
-                  Command  => "archive",
-                  Argument =>
-                    "lib" & Library_Name.all & Archive_Suffix.all);
-            end if;
-         end if;
-
-         Spawn_And_Script_Write
-           (Archive_Builder.all,
-            AB_Options (1 .. Next_AB_Object_Pos - 1),
-            Success);
-
-         if not Success then
-            Fail_Program
-              (null,
-               "call to archive builder " & Archive_Builder.all & " failed");
-         end if;
-      end if;
-
-      --  If the archive has not been created complete, add the remaining
-      --  chunks.
-
-      if Next_AB_Object_Pos <= Last_AB_Option then
-         First_AB_Object_Pos := Last_AB_Append_Option + 2;
-         AB_Options (1 .. Last_AB_Append_Option) :=
-           AB_Append_Options (1 .. Last_AB_Append_Option);
-         AB_Options (Last_AB_Append_Option + 1) := Library_Path_Name;
-
-         loop
-            Size := 0;
-            for J in 1 .. First_AB_Object_Pos - 1 loop
-               Size := Size + AB_Options (J)'Length + 1;
-            end loop;
-
-            Object_Pos := First_AB_Object_Pos;
-            while Next_AB_Object_Pos <= Last_AB_Option loop
-               Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
-               exit when Size > Maximum_Size;
-               AB_Options (Object_Pos) := AB_Options (Next_AB_Object_Pos);
-               Object_Pos := Object_Pos + 1;
-               Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
-            end loop;
-
-            --  Display the invocation of the Archive Builder for this chunk
-
-            if not Quiet_Output then
-               if Verbose_Mode then
-                  Add_Str_To_Name_Buffer (Archive_Builder.all);
-
-                  for J in 1 .. Object_Pos loop
-                     Add_Str_To_Name_Buffer (" ");
-                     Add_Str_To_Name_Buffer (AB_Options (J).all);
-                  end loop;
-
-                  Put_Line (Name_Buffer (1 .. Name_Len));
-               end if;
-            end if;
-
-            Spawn_And_Script_Write
-              (Archive_Builder.all,
-               AB_Options (1 .. Object_Pos - 1),
-               Success);
-
-            if not Success then
-               Fail_Program
-                 (null,
-                  "call to archive builder "
-                  & Archive_Builder.all & " failed");
-            end if;
-
-            exit when Next_AB_Object_Pos > Last_AB_Option;
-         end loop;
-      end if;
-
-      --  If there is an Archive Indexer, invoke it
-
-      if Archive_Indexer /= null then
-         Add (Library_Path_Name, AI_Options, Last_AI_Option);
-
-         if not Quiet_Output then
-            if Verbose_Mode then
-               Name_Len := 0;
-               Add_Str_To_Name_Buffer (Archive_Indexer.all);
-
-               for J in 1 .. Last_AI_Option loop
-                  Add_Str_To_Name_Buffer (" ");
-                  Add_Str_To_Name_Buffer (AI_Options (J).all);
-               end loop;
-
-               Put_Line (Name_Buffer (1 .. Name_Len));
-
-            else
-               Display
-                 (Section  => Build_Libraries,
-                  Command  => "index",
-                  Argument => File_Name (Library_Path_Name.all));
-            end if;
-         end if;
-
-         Spawn_And_Script_Write
-           (Archive_Indexer.all,
-            AI_Options (1 .. Last_AI_Option),
-            Success);
-
-         if not Success then
-            Fail_Program
-              (null,
-               "call to archive indexer " & Archive_Indexer.all & " failed");
-         end if;
-      end if;
-
-   elsif not No_Create then
-      --  Shared libraries
-
       Library_Path_Name :=
         new String'
           (Library_Directory.all &
@@ -2434,6 +1152,1397 @@ begin
       end if;
 
       Build_Shared_Lib;
+   end Process_Shared;
+
+   ------------------------
+   -- Process_Standalone --
+   ------------------------
+
+   procedure Process_Standalone is
+      Binder_Generated_File   : String :=
+        "b__" & Library_Name.all & ".adb";
+      Binder_Generated_Spec   : String :=
+        "b__" & Library_Name.all & ".ads";
+      Binder_Generated_ALI    : String :=
+        "b__" & Library_Name.all & ".ali";
+      Binder_Generated_Object : String :=
+        "b__" & Library_Name.all & Object_Suffix;
+      First_ALI               : File_Name_Type;
+      T                       : Text_Buffer_Ptr;
+      A                       : ALI.ALI_Id;
+      use ALI;
+
+   begin
+      Osint.Canonical_Case_File_Name (Binder_Generated_File);
+      Osint.Canonical_Case_File_Name (Binder_Generated_Spec);
+      Osint.Canonical_Case_File_Name (Binder_Generated_ALI);
+      Osint.Canonical_Case_File_Name (Binder_Generated_Object);
+
+      if not No_SAL_Binding then
+         Gnatbind_Path := Locate_Exec_On_Path (Gnatbind_Name.all);
+
+         if Gnatbind_Path = null then
+            Fail_Program
+              (null, "unable to locate binder " & Gnatbind_Name.all);
+         end if;
+
+         Last_Bind_Option := 0;
+         Add (No_Main, Bind_Options, Last_Bind_Option);
+         Add (Output_Switch, Bind_Options, Last_Bind_Option);
+         Add
+           ("b__" & Library_Name.all &
+              ".adb", Bind_Options, Last_Bind_Option);
+
+         --  Make sure that the init procedure is never "adainit"
+
+         if Library_Name.all = "ada" then
+            Add ("-Lada_", Bind_Options, Last_Bind_Option);
+         else
+            Add ("-L" & Library_Name.all, Bind_Options, Last_Bind_Option);
+         end if;
+
+         if Auto_Init and then SALs_Use_Constructors then
+            --  Check that pragma Linker_Constructor is supported
+
+            if not GNAT_Version_Set
+              or else
+                (GNAT_Version'Length > 2
+                 and then GNAT_Version
+                   (GNAT_Version'First .. GNAT_Version'First + 1) = "3.")
+            then
+               --  GNAT version 3.xx or unknown
+
+               null;
+
+            elsif GNAT_Version'Length > 2
+              and then GNAT_Version
+                (GNAT_Version'First .. GNAT_Version'First + 1) = "5."
+              and then GNAT_Version.all < "5.04"
+            then
+               --  GNAT versions 5.00, 5.01, 5.02 or 5.03
+
+               null;
+
+            else
+               --  Any other supported GNAT version should support pragma
+               --  Linker_Constructor. So, invoke gnatbind with -a.
+
+               Add (Auto_Initialize, Bind_Options, Last_Bind_Option);
+            end if;
+         end if;
+
+         for J in 1 .. Binding_Options_Table.Last loop
+            Add
+              (Binding_Options_Table.Table (J).all,
+               Bind_Options,
+               Last_Bind_Option);
+         end loop;
+
+         --  Get an eventual --RTS from the ALI file
+
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (ALIs.Table (1).all);
+         First_ALI := Name_Find;
+
+         --  Load the ALI file
+
+         T := Osint.Read_Library_Info (First_ALI, True);
+
+         --  Read it
+
+         A := Scan_ALI
+           (First_ALI,
+            T,
+            Ignore_ED  => False,
+            Err        => False,
+            Read_Lines => "A");
+
+         if A /= No_ALI_Id then
+            for Index in
+              ALI.Units.Table (ALI.ALIs.Table (A).First_Unit).First_Arg ..
+                ALI.Units.Table (ALI.ALIs.Table (A).First_Unit).Last_Arg
+            loop
+               --  Look for --RTS. If found, add the switch to call gnatbind
+
+               declare
+                  Arg : String_Access renames Args.Table (Index);
+               begin
+                  if Arg'Length >= 6
+                    and then Arg (Arg'First + 2 .. Arg'First + 5) = "RTS="
+                  then
+                     Add (Arg.all, Bind_Options, Last_Bind_Option);
+                     exit;
+                  end if;
+               end;
+            end loop;
+         end if;
+
+         for J in 1 .. ALIs.Last loop
+            Add (ALIs.Table (J), Bind_Options, Last_Bind_Option);
+         end loop;
+
+         if not Quiet_Output then
+            Name_Len := 0;
+
+            if Verbose_Mode then
+               Add_Str_To_Name_Buffer (Gnatbind_Path.all);
+
+               for J in 1 .. Last_Bind_Option loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
+            else
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => "bind SAL",
+                  Argument => Library_Name.all);
+            end if;
+         end if;
+
+         --  If there is more than one object directory, set ADA_OBJECTS_PATH
+         --  for the additional object libraries, so that gnatbind may find all
+         --  the ALI files.
+
+         if Object_Directories.Last > 1 then
+            declare
+               Object_Path : String_Access :=
+                 new String'(Object_Directories.Table (1).all);
+
+            begin
+               for J in 2 .. Object_Directories.Last loop
+                  Object_Path :=
+                    new String'
+                      (Object_Path.all &
+                         Path_Separator &
+                         Object_Directories.Table (J).all);
+               end loop;
+
+               Setenv ("ADA_OBJECTS_PATH", Object_Path.all);
+            end;
+         end if;
+
+         declare
+            Size         : Natural := 0;
+         begin
+            for J in 1 .. Last_Bind_Option loop
+               Size := Size + Bind_Options (J)'Length + 1;
+            end loop;
+
+            Script_Write
+              (Gnatbind_Path.all,
+               Bind_Options (1 .. Last_Bind_Option));
+
+            --  Invoke gnatbind with the arguments if the size is not too
+            --  large or if the version of GNAT is not recent enough.
+
+            if  Size <= Maximum_Size
+              or else
+                not GNAT_Version_Set
+                or else
+                  (GNAT_Version'Length > 2
+                   and then
+                     (GNAT_Version
+                        (GNAT_Version'First .. GNAT_Version'First + 1) =
+                          "3."
+                      or else
+                      GNAT_Version
+                        (GNAT_Version'First .. GNAT_Version'First + 1) =
+                          "5."))
+            then
+               Spawn
+                 (Gnatbind_Path.all,
+                  Bind_Options (1 .. Last_Bind_Option),
+                  Success);
+
+            else
+               --  Otherwise create a temporary response file
+
+               declare
+                  EOL           : constant String (1 .. 1) :=
+                    (1 => ASCII.LF);
+                  FD            : File_Descriptor;
+                  Path          : Path_Name_Type;
+                  Args          : Argument_List (1 .. 1);
+                  Status        : Integer;
+                  Quotes_Needed : Boolean;
+                  Last_Char     : Natural;
+                  Ch            : Character;
+
+               begin
+                  Tempdir.Create_Temp_File (FD, Path);
+                  Record_Temp_File (null, Path);
+                  Args (1) := new String'("@" & Get_Name_String (Path));
+
+                  for J in 1 .. Last_Bind_Option loop
+
+                     --  Check if the argument should be quoted
+
+                     Quotes_Needed := False;
+                     Last_Char     := Bind_Options (J)'Length;
+
+                     for K in Bind_Options (J)'Range loop
+                        Ch := Bind_Options (J) (K);
+
+                        if Ch = ' ' or else
+                          Ch = ASCII.HT or else
+                          Ch = '"'
+                        then
+                           Quotes_Needed := True;
+                           exit;
+                        end if;
+                     end loop;
+
+                     if Quotes_Needed then
+
+                        --  Quote the argument, doubling '"'
+
+                        declare
+                           Arg : String
+                             (1 .. Bind_Options (J)'Length * 2 + 2);
+
+                        begin
+                           Arg (1) := '"';
+                           Last_Char := 1;
+
+                           for K in Bind_Options (J)'Range loop
+                              Ch := Bind_Options (J) (K);
+                              Last_Char := Last_Char + 1;
+                              Arg (Last_Char) := Ch;
+
+                              if Ch = '"' then
+                                 Last_Char := Last_Char + 1;
+                                 Arg (Last_Char) := '"';
+                              end if;
+                           end loop;
+
+                           Last_Char := Last_Char + 1;
+                           Arg (Last_Char) := '"';
+
+                           Status := Write (FD, Arg'Address, Last_Char);
+                        end;
+
+                     else
+                        Status := Write
+                          (FD,
+                           Bind_Options (J)
+                           (Bind_Options (J)'First)'Address,
+                           Last_Char);
+                     end if;
+
+                     if Status /= Last_Char then
+                        Fail_Program (null, "disk full");
+                     end if;
+
+                     Status := Write (FD, EOL (1)'Address, 1);
+
+                     if Status /= 1 then
+                        Fail_Program (null, "disk full");
+                     end if;
+                  end loop;
+
+                  Close (FD);
+
+                  --  And invoke gnatbind with this this response file
+
+                  Spawn (Gnatbind_Path.all, Args, Success);
+               end;
+            end if;
+         end;
+
+         if not Success then
+            Fail_Program
+              (null, "invocation of " & Gnatbind_Name.all & " failed");
+         end if;
+
+         Generated_Sources.Append
+           (new String'("b__" & Library_Name.all & ".ads"));
+         Generated_Sources.Append
+           (new String'("b__" & Library_Name.all & ".adb"));
+         Generated_Sources.Append
+           (new String'("b__" & Library_Name.all & ".ali"));
+
+         Compiler_Path := Locate_Exec_On_Path (Compiler_Name.all);
+
+         if Compiler_Path = null then
+            Fail_Program
+              (null, "unable to locate compiler " & Compiler_Name.all);
+         end if;
+
+         Last_Bind_Option := 0;
+
+         for J in 1 .. Ada_Leading_Switches.Last loop
+            Add
+              (Ada_Leading_Switches.Table (J),
+               Bind_Options,
+               Last_Bind_Option);
+         end loop;
+
+         Add (No_Warning, Bind_Options, Last_Bind_Option);
+         Add (Binder_Generated_File, Bind_Options, Last_Bind_Option);
+         Add (Output_Switch, Bind_Options, Last_Bind_Option);
+         Add (Binder_Generated_Object, Bind_Options, Last_Bind_Option);
+
+         if Relocatable and then PIC_Option /= null then
+            Add (PIC_Option, Bind_Options, Last_Bind_Option);
+         end if;
+
+         --  Get the back-end switches and --RTS from the ALI file
+
+         --  Load the ALI file
+
+         T := Osint.Read_Library_Info (First_ALI, True);
+
+         --  Read it
+
+         A := Scan_ALI
+           (First_ALI,
+            T,
+            Ignore_ED  => False,
+            Err        => False,
+            Read_Lines => "A");
+
+         if A /= No_ALI_Id then
+            for Index in
+              ALI.Units.Table
+                (ALI.ALIs.Table (A).First_Unit).First_Arg ..
+                  ALI.Units.Table
+                    (ALI.ALIs.Table (A).First_Unit).Last_Arg
+            loop
+               --  Do not compile with the front end switches except
+               --  for --RTS.
+
+               declare
+                  Arg : String_Access renames Args.Table (Index);
+                  Argv : constant String (1 .. Arg'Length) := Arg.all;
+               begin
+                  if (Argv'Last <= 2 or else Argv (1 .. 2) /= "-I")
+                    and then
+                      (Argv'Last <= 5 or else Argv (1 .. 5) /= "-gnat")
+                  then
+                     Add (Arg.all, Bind_Options, Last_Bind_Option);
+                  end if;
+               end;
+            end loop;
+         end if;
+
+         for J in 1 .. Ada_Trailing_Switches.Last loop
+            Add
+              (Ada_Trailing_Switches.Table (J),
+               Bind_Options,
+               Last_Bind_Option);
+         end loop;
+
+         if not Quiet_Output then
+            Name_Len := 0;
+
+            if Verbose_Mode then
+               Add_Str_To_Name_Buffer (Compiler_Path.all);
+
+               for J in 1 .. Last_Bind_Option loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (Bind_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
+            else
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => "Ada",
+                  Argument => Binder_Generated_File);
+            end if;
+         end if;
+
+         Spawn_And_Script_Write
+           (Compiler_Path.all,
+            Bind_Options (1 .. Last_Bind_Option), Success);
+
+         if not Success then
+            Fail_Program
+              (null, "invocation of " & Compiler_Name.all & " failed");
+         end if;
+
+      else
+         if Is_Regular_File (Binder_Generated_File) then
+            Generated_Sources.Append (new String'(Binder_Generated_File));
+         else
+            Fail_Program
+              (null,
+               "cannot find binder generated file " &
+                 Binder_Generated_File);
+         end if;
+
+         if Is_Regular_File (Binder_Generated_Spec) then
+            Generated_Sources.Append (new String'(Binder_Generated_Spec));
+         else
+            Fail_Program
+              (null,
+               "cannot find binder generated spec " &
+                 Binder_Generated_Spec);
+         end if;
+
+         if Is_Regular_File (Binder_Generated_ALI) then
+            Generated_Sources.Append (new String'(Binder_Generated_ALI));
+         else
+            Fail_Program
+              (null,
+               "cannot find binder generated ALI file " &
+                 Binder_Generated_ALI);
+         end if;
+
+         if not Is_Regular_File (Binder_Generated_Object) then
+            Fail_Program
+              (null,
+               "cannot find binder generated object file " &
+                 Binder_Generated_Object);
+         end if;
+      end if;
+
+      Generated_Objects.Append (new String'(Binder_Generated_Object));
+
+      Object_Files.Append (new String'(Binder_Generated_Object));
+
+      --  For shared libraries, check if libgnarl is needed
+
+      if Relocatable then
+         declare
+            BG_File : File_Type;
+            Line    : String (1 .. 1_000);
+            Last    : Natural;
+
+         begin
+            Open (BG_File, In_File, Binder_Generated_File);
+
+            while not End_Of_File (BG_File) loop
+               Get_Line (BG_File, Line, Last);
+               exit when Line (1 .. Last) = Begin_Info;
+            end loop;
+
+            while not End_Of_File (BG_File) loop
+               Get_Line (BG_File, Line, Last);
+               exit when Line (1 .. Last) = End_Info;
+
+               if Use_GNAT_Lib
+                 and then Runtime_Library_Dirs /= null
+                 and then Line (9 .. Last) = "-lgnarl"
+               then
+                  Libgnarl_Needed := True;
+               end if;
+
+               if Standalone /= No
+                 and then (Partial_Linker = null
+                           or else Resp_File_Format /= GPR.None)
+                 and then Line (9 .. 10) = "-l"
+                 and then Line (9 .. Last) /= "-lgnarl"
+                 and then Line (9 .. Last) /= "-lgnat"
+               then
+                  Additional_Switches.Append
+                    (new String'(Line (9 .. Last)));
+               end if;
+            end loop;
+         end;
+      end if;
+   end Process_Standalone;
+
+   --------------------
+   -- Process_Static --
+   --------------------
+
+   procedure Process_Static is
+   begin
+      if Standalone /= No and then Partial_Linker /= null then
+         Partial_Linker_Path := Locate_Exec_On_Path (Partial_Linker.all);
+
+         if Partial_Linker_Path = null then
+            Fail_Program
+              (null, "unable to locate linker " & Partial_Linker.all);
+         end if;
+      end if;
+
+      if Archive_Builder = null then
+         Fail_Program (null, "no archive builder specified");
+      end if;
+
+      Library_Path_Name :=
+        new String'
+          (Library_Directory.all &
+             "lib" & Library_Name.all & Archive_Suffix.all);
+
+      Add (Library_Path_Name, AB_Options, Last_AB_Option);
+
+      First_AB_Object_Pos := Last_AB_Option + 1;
+
+      if Standalone /= No and then Partial_Linker_Path /= null then
+         --  If partial linker is used, do a partial link and put the resulting
+         --  object file in the archive.
+
+         Partial_Number := 0;
+         First_Object := 1;
+
+         loop
+            declare
+               Partial : constant String_Access :=
+                 new String'
+                   (Partial_Name
+                      (Library_Name.all,
+                       Partial_Number,
+                       Object_Suffix));
+               Size    : Natural := 0;
+
+               Saved_Last_PL_Option : Natural;
+            begin
+               Saved_Last_PL_Option := Last_PL_Option;
+
+               Add (Partial, PL_Options, Last_PL_Option);
+               Size := Size + 1 + Partial'Length;
+
+               if Partial_Number > 0 then
+                  Add
+                    (Partial_Name
+                       (Library_Name.all, Partial_Number - 1, Object_Suffix),
+                     PL_Options,
+                     Last_PL_Option);
+               end if;
+
+               for J in 1 .. Last_PL_Option loop
+                  Size := Size + 1 + PL_Options (J)'Length;
+               end loop;
+
+               loop
+                  Add
+                    (Object_Files.Table (First_Object),
+                     PL_Options,
+                     Last_PL_Option);
+                  Size := Size + 1 + PL_Options (Last_PL_Option)'Length;
+
+                  First_Object := First_Object + 1;
+
+                  exit when
+                    First_Object > Object_Files.Last
+                    or else Size >= Maximum_Size;
+               end loop;
+
+               if not Quiet_Output then
+                  if Verbose_Mode then
+                     Name_Len := 0;
+                     Add_Str_To_Name_Buffer (Partial_Linker_Path.all);
+
+                     for J in 1 .. Last_PL_Option loop
+                        Add_Str_To_Name_Buffer (" ");
+                        Add_Str_To_Name_Buffer (PL_Options (J).all);
+                     end loop;
+
+                     Put_Line (Name_Buffer (1 .. Name_Len));
+                  end if;
+               end if;
+
+               Spawn_And_Script_Write
+                 (Partial_Linker_Path.all,
+                  PL_Options (1 .. Last_PL_Option),
+                  Success);
+
+               if not Success then
+                  Fail_Program
+                    (null,
+                     "call to linker driver " &
+                       Partial_Linker.all & " failed");
+               end if;
+
+               if First_Object > Object_Files.Last then
+                  Add (Partial, AB_Options, Last_AB_Option);
+                  exit;
+               end if;
+
+               Last_PL_Option := Saved_Last_PL_Option;
+               Partial_Number := Partial_Number + 1;
+            end;
+         end loop;
+
+      else
+         --  Not a standalone library, or Partial linker is not specified.
+         --  Put all objects in the archive.
+
+         for J in 1 .. Object_Files.Last loop
+            Add (Object_Files.Table (J), AB_Options, Last_AB_Option);
+         end loop;
+      end if;
+
+      --  Delete the archive if it already exists, to avoid having duplicated
+      --  object files in the archive when it is built in chunks.
+
+      if Is_Regular_File (Library_Path_Name.all) then
+         Delete_File (Library_Path_Name.all, Success);
+      end if;
+
+      if Last_AB_Append_Option = 0 then
+         --  If there is no Archive_Builder_Append_Option, always build the
+         --  archive in one chunk.
+
+         Next_AB_Object_Pos := Last_AB_Option + 1;
+
+      else
+         --  If Archive_Builder_Append_Option is specified, for the creation of
+         --  the archive, only put on the command line a number of character
+         --  lower that Maximum_Size.
+
+         Size := 0;
+         for J in 1 .. First_AB_Object_Pos - 1 loop
+            Size := Size + AB_Options (J)'Length + 1;
+         end loop;
+
+         Next_AB_Object_Pos := First_AB_Object_Pos;
+
+         while Next_AB_Object_Pos <= Last_AB_Option loop
+            Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
+            exit when Size > Maximum_Size;
+            Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
+         end loop;
+
+         --  Display the invocation of the archive builder for the creation of
+         --  the archive.
+
+         if not Quiet_Output then
+            Name_Len := 0;
+
+            if Verbose_Mode then
+               Add_Str_To_Name_Buffer (Archive_Builder.all);
+
+               for J in 1 .. Next_AB_Object_Pos - 1 loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (AB_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
+            else
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => "archive",
+                  Argument =>
+                    "lib" & Library_Name.all & Archive_Suffix.all);
+            end if;
+         end if;
+
+         Spawn_And_Script_Write
+           (Archive_Builder.all,
+            AB_Options (1 .. Next_AB_Object_Pos - 1),
+            Success);
+
+         if not Success then
+            Fail_Program
+              (null,
+               "call to archive builder " & Archive_Builder.all & " failed");
+         end if;
+      end if;
+
+      --  If the archive has not been created complete, add the remaining
+      --  chunks.
+
+      if Next_AB_Object_Pos <= Last_AB_Option then
+         First_AB_Object_Pos := Last_AB_Append_Option + 2;
+         AB_Options (1 .. Last_AB_Append_Option) :=
+           AB_Append_Options (1 .. Last_AB_Append_Option);
+         AB_Options (Last_AB_Append_Option + 1) := Library_Path_Name;
+
+         loop
+            Size := 0;
+            for J in 1 .. First_AB_Object_Pos - 1 loop
+               Size := Size + AB_Options (J)'Length + 1;
+            end loop;
+
+            Object_Pos := First_AB_Object_Pos;
+            while Next_AB_Object_Pos <= Last_AB_Option loop
+               Size := Size + AB_Options (Next_AB_Object_Pos)'Length + 1;
+               exit when Size > Maximum_Size;
+               AB_Options (Object_Pos) := AB_Options (Next_AB_Object_Pos);
+               Object_Pos := Object_Pos + 1;
+               Next_AB_Object_Pos := Next_AB_Object_Pos + 1;
+            end loop;
+
+            --  Display the invocation of the Archive Builder for this chunk
+
+            if not Quiet_Output then
+               if Verbose_Mode then
+                  Add_Str_To_Name_Buffer (Archive_Builder.all);
+
+                  for J in 1 .. Object_Pos loop
+                     Add_Str_To_Name_Buffer (" ");
+                     Add_Str_To_Name_Buffer (AB_Options (J).all);
+                  end loop;
+
+                  Put_Line (Name_Buffer (1 .. Name_Len));
+               end if;
+            end if;
+
+            Spawn_And_Script_Write
+              (Archive_Builder.all,
+               AB_Options (1 .. Object_Pos - 1),
+               Success);
+
+            if not Success then
+               Fail_Program
+                 (null,
+                  "call to archive builder "
+                  & Archive_Builder.all & " failed");
+            end if;
+
+            exit when Next_AB_Object_Pos > Last_AB_Option;
+         end loop;
+      end if;
+
+      --  If there is an Archive Indexer, invoke it
+
+      if Archive_Indexer /= null then
+         Add (Library_Path_Name, AI_Options, Last_AI_Option);
+
+         if not Quiet_Output then
+            if Verbose_Mode then
+               Name_Len := 0;
+               Add_Str_To_Name_Buffer (Archive_Indexer.all);
+
+               for J in 1 .. Last_AI_Option loop
+                  Add_Str_To_Name_Buffer (" ");
+                  Add_Str_To_Name_Buffer (AI_Options (J).all);
+               end loop;
+
+               Put_Line (Name_Buffer (1 .. Name_Len));
+
+            else
+               Display
+                 (Section  => Build_Libraries,
+                  Command  => "index",
+                  Argument => File_Name (Library_Path_Name.all));
+            end if;
+         end if;
+
+         Spawn_And_Script_Write
+           (Archive_Indexer.all,
+            AI_Options (1 .. Last_AI_Option),
+            Success);
+
+         if not Success then
+            Fail_Program
+              (null,
+               "call to archive indexer " & Archive_Indexer.all & " failed");
+         end if;
+      end if;
+   end Process_Static;
+
+   ------------------------
+   -- Read_Exchange_File --
+   ------------------------
+
+   procedure Read_Exchange_File is
+   begin
+      begin
+         Open (IO_File, In_File, Exchange_File_Name.all);
+      exception
+         when others =>
+            Fail_Program (null, "could not read " & Exchange_File_Name.all);
+      end;
+
+      while not End_Of_File (IO_File) loop
+         Get_Line (IO_File, Line, Last);
+
+         if Last > 0 and then Line (1) = '[' then
+            Current_Section := Get_Library_Section (Line (1 .. Last));
+
+            case Current_Section is
+            when No_Library_Section =>
+               Fail_Program (null, "unknown section: " & Line (1 .. Last));
+
+            when Quiet =>
+               Quiet_Output    := True;
+               Verbose_Mode    := False;
+               Verbosity_Level := Opt.None;
+
+            when Verbose_Low =>
+               Quiet_Output    := False;
+               Verbose_Mode    := True;
+               Verbosity_Level := Opt.Low;
+
+            when Verbose_Higher =>
+               Quiet_Output    := False;
+               Verbose_Mode    := True;
+               Verbosity_Level := Opt.High;
+
+            when Gprexch.Relocatable =>
+               Relocatable := True;
+               Static      := False;
+
+            when Gprexch.Static =>
+               Static      := True;
+               Relocatable := False;
+
+            when Gprexch.Archive_Builder =>
+               Archive_Builder := null;
+               Last_AB_Option  := 0;
+
+            when Gprexch.Archive_Builder_Append_Option =>
+               Last_AB_Append_Option := 0;
+
+            when Gprexch.Archive_Indexer =>
+               Archive_Indexer := null;
+               Last_AI_Option  := 0;
+
+            when Gprexch.Partial_Linker =>
+               Partial_Linker := null;
+               Last_PL_Option := 0;
+
+            when Gprexch.Auto_Init =>
+               Auto_Init := True;
+
+            when Gprexch.Symbolic_Link_Supported =>
+               Symbolic_Link_Supported := True;
+
+            when Gprexch.Major_Minor_Id_Supported =>
+               Major_Minor_Id_Supported := True;
+
+            when Gprexch.Keep_Temporary_Files =>
+               Opt.Keep_Temporary_Files := True;
+
+            when Gprexch.Separate_Run_Path_Options =>
+               Separate_Run_Path_Options := True;
+
+            when Gprexch.Compiler_Leading_Switches |
+                 Gprexch.Compiler_Trailing_Switches =>
+               Current_Language := No_Name;
+
+            when Gprexch.No_Create =>
+               No_Create := True;
+
+            when Gprexch.No_SAL_Binding =>
+               No_SAL_Binding := True;
+
+            when others =>
+               null;
+            end case;
+
+         elsif Last > 0
+           or else Current_Section = Gprexch.Shared_Lib_Prefix
+           or else Current_Section = Gprexch.Response_File_Switches
+         then
+            case Current_Section is
+            when No_Library_Section =>
+               Fail_Program
+                 (null, "no section specified: " & Line (1 .. Last));
+
+            when Gprexch.No_Create =>
+               Fail_Program (null, "no create section should be empty");
+
+            when Quiet =>
+               Fail_Program (null, "quiet section should be empty");
+
+            when Verbose_Low | Verbose_Higher =>
+               Fail_Program (null, "verbose section should be empty");
+
+            when Gprexch.Relocatable =>
+               Fail_Program (null, "relocatable section should be empty");
+
+            when Gprexch.Static =>
+               Fail_Program (null, "static section should be empty");
+
+            when Gprexch.Keep_Temporary_Files =>
+               Fail_Program
+                 (null, "keep temporary files section should be empty");
+
+            when Gprexch.Separate_Run_Path_Options =>
+               Fail_Program
+                 (null, "separate run path options should be empty");
+
+            when Gprexch.No_SAL_Binding =>
+               Fail_Program
+                 (null, "no SAL binding section should be empty");
+
+            when Gprexch.Object_Files =>
+               Object_Files.Append (new String'(Line (1 .. Last)));
+
+            when Gprexch.Options =>
+               Options_Table.Append (new String'(Line (1 .. Last)));
+
+            when Gprexch.Object_Directory =>
+               Object_Directories.Append (new String'(Line (1 .. Last)));
+
+            when Gprexch.Library_Name =>
+               Library_Name := new String'(Line (1 .. Last));
+
+            when Gprexch.Library_Directory =>
+               Library_Directory := new String'(Line (1 .. Last));
+
+            when Gprexch.Library_Dependency_Directory =>
+               Library_Dependency_Directory :=
+                 new String'(Line (1 .. Last));
+
+            when Gprexch.Library_Version =>
+               Library_Version := new String'(Line (1 .. Last));
+
+            when Gprexch.Leading_Library_Options =>
+               if Line (1 .. Last) = No_Std_Lib_String then
+                  Use_GNAT_Lib := False;
+               end if;
+
+               Leading_Library_Options_Table.Append
+                 (new String'(Line (1 .. Last)));
+
+            when Gprexch.Library_Options =>
+               if Line (1 .. Last) = No_Std_Lib_String then
+                  Use_GNAT_Lib := False;
+               end if;
+
+               Library_Options_Table.Append (new String'(Line (1 .. Last)));
+
+            when Gprexch.Library_Rpath_Options =>
+               Library_Rpath_Options_Table.Append
+                 (new String'(Line (1 .. Last)));
+
+            when Library_Path =>
+               Fail_Program (null, "library path should not be specified");
+
+            when Gprexch.Library_Version_Options =>
+               Library_Version_Options.Append
+                 (new String'(Line (1 .. Last)));
+
+            when Gprexch.Shared_Lib_Prefix =>
+               Shared_Lib_Prefix := new String'(Line (1 .. Last));
+
+            when Gprexch.Shared_Lib_Suffix =>
+               Shared_Lib_Suffix := new String'(Line (1 .. Last));
+
+            when Gprexch.Shared_Lib_Minimum_Options =>
+               Shared_Lib_Minimum_Options.Append
+                 (new String'(Line (1 .. Last)));
+
+            when Gprexch.Symbolic_Link_Supported =>
+               Fail_Program
+                 (null, "symbolic link supported section should be empty");
+
+            when Gprexch.Major_Minor_Id_Supported =>
+               Fail_Program
+                 (null, "major minor id supported section should be empty");
+
+            when Gprexch.PIC_Option =>
+               PIC_Option := new String'(Line (1 .. Last));
+
+            when Gprexch.Imported_Libraries =>
+               if End_Of_File (IO_File) then
+                  Fail_Program
+                    (null,
+                     "no library name for imported library " &
+                       Line (1 .. Last));
+
+               else
+                  Imported_Library_Directories.Append
+                    (new String'(Line (1 .. Last)));
+                  Get_Line (IO_File, Line, Last);
+                  Imported_Library_Names.Append
+                    (new String'(Line (1 .. Last)));
+               end if;
+
+            when Gprexch.Driver_Name =>
+               Name_Len := Last;
+               Name_Buffer (1 .. Name_Len) := Line (1 .. Last);
+               Driver_Name := Name_Find;
+
+            when Gprexch.Compilers =>
+               if End_Of_File (IO_File) then
+                  Fail_Program
+                    (null, "no compiler specified for language " &
+                       Line (1 .. Last));
+
+               else
+                  To_Lower (Line (1 .. Last));
+
+                  if Line (1 .. Last) = "ada" then
+                     Get_Line (IO_File, Line, Last);
+
+                     if Last = 0 then
+                        Fail_Program
+                          (null, "Ada compiler name cannot be empty");
+
+                     else
+                        Compiler_Name := new String'(Line (1 .. Last));
+
+                        if Last > 3
+                          and then Line (Last - 2 .. Last) = "gcc"
+                        then
+                           Gnatbind_Name :=
+                             new String'(Line (1 .. Last - 3) & "gnatbind");
+
+                        elsif Last > 7
+                          and then Line (Last - 6 .. Last) = "gcc.exe"
+                        then
+                           Gnatbind_Name :=
+                             new String'(Line (1 .. Last - 7) & "gnatbind");
+                        end if;
+                     end if;
+
+                  else
+                     Skip_Line (IO_File);
+                  end if;
+               end if;
+
+            when Gprexch.Compiler_Leading_Switches =>
+               if Last > Language_Equal'Length
+                 and then Line (1 .. Language_Equal'Length) = Language_Equal
+               then
+                  Name_Len := 0;
+                  Add_Str_To_Name_Buffer
+                    (Line (Language_Equal'Length + 1 .. Last));
+                  To_Lower (Name_Buffer (1 .. Name_Len));
+                  Current_Language := Name_Find;
+
+               elsif Current_Language = Snames.Name_Ada then
+                  Ada_Leading_Switches.Append (new String'(Line (1 .. Last)));
+               end if;
+
+            when Gprexch.Compiler_Trailing_Switches =>
+               if Last > Language_Equal'Length
+                 and then Line (1 .. Language_Equal'Length) = Language_Equal
+               then
+                  Name_Len := 0;
+                  Add_Str_To_Name_Buffer
+                    (Line (Language_Equal'Length + 1 .. Last));
+                  To_Lower (Name_Buffer (1 .. Name_Len));
+                  Current_Language := Name_Find;
+
+               elsif Current_Language = Snames.Name_Ada then
+                  Ada_Trailing_Switches.Append (new String'(Line (1 .. Last)));
+               end if;
+
+            when Toolchain_Version =>
+               if End_Of_File (IO_File) then
+                  Fail_Program
+                    (null,
+                     "no toolchain version for language " & Line (1 .. Last));
+
+               elsif Line (1 .. Last) = "ada" then
+                  Get_Line (IO_File, Line, Last);
+
+                  if Last > 5 and then Line (1 .. 5) = "GNAT " then
+                     GNAT_Version := new String'(Line (6 .. Last));
+                     GNAT_Version_Set := True;
+
+                     Libgnat :=
+                       new String'
+                         ("-lgnat-" & Line (6 .. Last));
+                     Libgnarl :=
+                       new String'
+                         ("-lgnarl-" & Line (6 .. Last));
+                  end if;
+
+               else
+                  Skip_Line (IO_File);
+               end if;
+
+            when Gprexch.Archive_Builder =>
+               if Archive_Builder = null then
+                  Archive_Builder := new String'(Line (1 .. Last));
+
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     AB_Options,
+                     Last_AB_Option);
+               end if;
+
+            when Gprexch.Archive_Builder_Append_Option =>
+               Add
+                 (new String'(Line (1 .. Last)),
+                  AB_Append_Options,
+                  Last_AB_Append_Option);
+
+            when Gprexch.Archive_Indexer =>
+               if Archive_Indexer = null then
+                  Archive_Indexer := new String'(Line (1 .. Last));
+
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     AI_Options,
+                     Last_AI_Option);
+               end if;
+
+            when Gprexch.Object_Lister =>
+               if Object_Lister = null then
+                  Object_Lister := new String'(Line (1 .. Last));
+
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     OL_Options,
+                     Last_OL_Option);
+               end if;
+
+            when Gprexch.Object_Lister_Matcher =>
+               Object_Lister_Matcher := new String'(Line (1 .. Last));
+
+            when Gprexch.Partial_Linker =>
+               if Partial_Linker = null then
+                  Partial_Linker := new String'(Line (1 .. Last));
+
+               else
+                  Add
+                    (new String'(Line (1 .. Last)),
+                     PL_Options,
+                     Last_PL_Option);
+               end if;
+
+            when Gprexch.Archive_Suffix =>
+               Archive_Suffix := new String'(Line (1 .. Last));
+
+            when Gprexch.Run_Path_Option =>
+               if Path_Option /= null then
+                  Fail_Program (null, "multiple run path options");
+               end if;
+
+               Path_Option := new String'(Line (1 .. Last));
+
+            when Gprexch.Install_Name =>
+               if Install_Name /= null then
+                  Fail_Program (null, "multiple install names");
+               end if;
+
+               Install_Name := new String'(Line (1 .. Last));
+
+            when Gprexch.Auto_Init =>
+               Fail_Program (null, "auto init section should be empty");
+
+            when Interface_Dep_Files =>
+               Interface_ALIs.Append (new String'(Line (1 .. Last)));
+               Standalone := GPR.Standard;
+
+            when Gprexch.Other_Interfaces =>
+               Other_Interfaces.Append (new String'(Line (1 .. Last)));
+
+            when Interface_Obj_Files =>
+               Interface_Objs.Append (new String'(Line (1 .. Last)));
+
+            when Gprexch.Standalone_Mode =>
+               Standalone := GPR.Standalone'Value (Line (1 .. Last));
+
+            when Dependency_Files =>
+               if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
+                  ALIs.Append (new String'(Line (1 .. Last)));
+               end if;
+
+            when Binding_Options =>
+               Binding_Options_Table.Append (new String'(Line (1 .. Last)));
+
+            when Copy_Source_Dir =>
+               Copy_Source_Directory := new String'(Line (1 .. Last));
+
+            when Gprexch.Sources =>
+               Sources.Append (new String'(Line (1 .. Last)));
+
+            when Gprexch.Runtime_Library_Dir =>
+               if End_Of_File (IO_File) then
+                  Fail_Program
+                    (null,
+                     "no runtime library dir for language " &
+                       Line (1 .. Last));
+
+               elsif Line (1 .. Last) = "ada" then
+                  Get_Line (IO_File, Line, Last);
+                  Runtime_Library_Dirs :=
+                    new Dir_Data'
+                      (Path => new String'(Line (1 .. Last)),
+                       Next => Runtime_Library_Dirs);
+
+               else
+                  Skip_Line (IO_File);
+               end if;
+
+            when Gprexch.Generated_Object_Files |
+                 Gprexch.Generated_Source_Files =>
+               null;
+
+            when Gprexch.Max_Command_Line_Length =>
+               begin
+                  Max_Command_Line_Length := Natural'Value (Line (1 .. Last));
+
+                  if Max_Command_Line_Length < Maximum_Size then
+                     Maximum_Size := Max_Command_Line_Length;
+                  end if;
+
+               exception
+                  when Constraint_Error =>
+                     Fail_Program
+                       (null,
+                        "incorrect value for max command line length: " &
+                          Line (1 .. Last));
+               end;
+
+            when Gprexch.Response_File_Format =>
+               begin
+                  Resp_File_Format :=
+                    GPR.Response_File_Format'Value (Line (1 .. Last));
+
+               exception
+                  when Constraint_Error =>
+                     Fail_Program
+                       (null,
+                        "incorrect value for response file format: " &
+                          Line (1 .. Last));
+               end;
+
+            when Gprexch.Response_File_Switches =>
+               if Response_File_Switches = null then
+                  Response_File_Switches := new String_List (1 .. 1);
+
+               else
+                  declare
+                     New_Switches : constant String_List_Access :=
+                       new String_List
+                         (1 .. Response_File_Switches'Last + 1);
+
+                  begin
+                     New_Switches (Response_File_Switches'Range) :=
+                       Response_File_Switches.all;
+                     Free (Response_File_Switches);
+                     Response_File_Switches := New_Switches;
+                  end;
+               end if;
+
+               Response_File_Switches (Response_File_Switches'Last) :=
+                 new String'(Line (1 .. Last));
+
+            when Gprexch.Export_File =>
+               --  First the format
+
+               begin
+                  Export_File_Format :=
+                    GPR.Export_File_Format'Value (Line (1 .. Last));
+
+               exception
+                  when Constraint_Error =>
+                     Fail_Program
+                       (null,
+                        "incorrect value for export file format: " &
+                          Line (1 .. Last));
+               end;
+
+               --  Followed by the corresponding linker switch
+
+               Get_Line (IO_File, Line, Last);
+               Export_File_Switch := new String'(Line (1 .. Last));
+
+            when Gprexch.Library_Symbol_File =>
+               Library_Symbol_File := new String'(Line (1 .. Last));
+
+            when Script_Path =>
+               Build_Script_Name := new String'(Line (1 .. Last));
+            end case;
+         end if;
+      end loop;
+
+      Close (IO_File);
+   end Read_Exchange_File;
+
+   ---------------------------
+   -- SALs_Use_Constructors --
+   ---------------------------
+
+   function SALs_Use_Constructors return Boolean is
+      function C_SALs_Init_Using_Constructors return Integer;
+      pragma Import (C, C_SALs_Init_Using_Constructors,
+                     "__gnat_sals_init_using_constructors");
+   begin
+      return C_SALs_Init_Using_Constructors /= 0;
+   end SALs_Use_Constructors;
+
+   --  Start of processing for Gprlib
+
+begin
+   --  Initialize some packages
+
+   Snames.Initialize;
+
+   Set_Program_Name ("gprlib");
+
+   --  As the section header has already been displayed, indicate that it
+   --  should not been displayed again.
+
+   Set (Section => Build_Libraries);
+
+   if Argument_Count /= 1 then
+      Put_Line ("usage: gprlib <input file>");
+
+      if Argument_Count /= 0 then
+         Fail_Program (null, "incorrect invocation");
+      end if;
+
+      return;
+   end if;
+
+   Exchange_File_Name := new String'(Argument (1));
+
+   --  DEBUG: save a copy of the exchange file
+
+   if Getenv ("GPRLIB_DEBUG").all = "TRUE" then
+      Copy_File
+        (Exchange_File_Name.all,
+         Exchange_File_Name.all & "__saved",
+         Success,
+         Mode => Overwrite,
+         Preserve => Time_Stamps);
+   end if;
+
+   Read_Exchange_File;
+
+   if Object_Files.Last = 0 then
+      Fail_Program (null, "no object files specified");
+   end if;
+
+   Last_Object_File_Index := Object_Files.Last;
+
+   if Library_Name = null then
+      Fail_Program (null, "no library name specified");
+   end if;
+
+   if Library_Directory = null then
+      Fail_Program (null, "no library directory specified");
+   end if;
+
+   if Object_Directories.Last = 0 then
+      Fail_Program (null, "no object directory specified");
+   end if;
+
+   if Library_Directory.all = Object_Directories.Table (1).all then
+      Fail_Program
+        (null, "object directory and library directory cannot be the same");
+   end if;
+
+   if Library_Dependency_Directory = null then
+      Library_Dependency_Directory := Library_Directory;
+   end if;
+
+   --  We work in the object directory
+
+   begin
+      Change_Dir (Object_Directories.Table (1).all);
+
+   exception
+      when others =>
+         Fail_Program
+           (null,
+            "cannot change to object directory "
+            & Object_Directories.Table (1).all);
+   end;
+
+   if Standalone /= No then
+      Process_Standalone;
+   end if;
+
+   --  Archives
+
+   if Static and then not No_Create then
+      Process_Static;
+
+   elsif not No_Create then
+      Process_Shared;
    end if;
 
    if ALIs.Last /= 0 then

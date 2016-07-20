@@ -121,7 +121,8 @@ package Gprexch is
       Object_Lister_Matcher,
       Export_File,
       Library_Symbol_File,
-      Script_Path);
+      Script_Path,
+      No_SAL_Binding);
 
    function Library_Label (Section : Library_Section) return String;
    --  Return the label for a section in a library exchange file

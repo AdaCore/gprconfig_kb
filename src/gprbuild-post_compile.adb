@@ -2713,6 +2713,10 @@ package body Gprbuild.Post_Compile is
             end if;
          end if;
 
+         if No_SAL_Binding then
+            Put_Line (Exchange_File, Library_Label (Gprexch.No_SAL_Binding));
+         end if;
+
          Write_Object_Files;
 
          --  Library name

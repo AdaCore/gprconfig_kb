@@ -119,6 +119,9 @@ private
    --  Used to decide to what compiler the Builder'Default_Switches that
    --  are not recognized by gprbuild should be given.
 
+   No_SAL_Binding : Boolean := False;
+   --  Set to True with gprbuild switch --no-sal-binding
+
    package All_Language_Builder_Compiling_Options is new GNAT.Table
      (Table_Component_Type => String_Access,
       Table_Index_Type     => Natural,

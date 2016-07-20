@@ -1117,6 +1117,9 @@ procedure Gprbuild.Main is
                     Current_Working_Dir)
                 & Dir_Separator);
 
+         elsif Command_Line and then Arg = "--no-sal-binding" then
+            No_SAL_Binding := True;
+
          elsif Command_Line
            and then Arg'Length > Restricted_To_Languages_Option'Length
            and then Arg (1 .. Restricted_To_Languages_Option'Length) =
