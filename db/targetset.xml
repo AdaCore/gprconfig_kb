@@ -45,6 +45,11 @@
     <target>e500v2-gnu-linux</target>
   </targetset>
 
+  <targetset>
+    <target>ppc64-linux</target>
+    <target>powerpc64-generic-linux-gnu</target>
+  </targetset>
+
 <!-- Native ports -->
 <!-- ************ -->
 
