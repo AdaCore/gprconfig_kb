@@ -960,7 +960,7 @@ package body Gprinstall.Install is
                   if not Sources_Only
                     and then (Other_Part (Sid) = null or else Sid.Kind /= Spec)
                   then
-                     if Copy (Object) then
+                     if Copy (Object) and then Sid.Kind /= Sep then
                         Copy_File
                           (From => Cat
                              (Get_Object_Directory
