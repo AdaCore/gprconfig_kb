@@ -2566,13 +2566,6 @@ begin
       New_Line;
    end if;
 
-   --  If switch --no-object-check is used, then there is no check for the
-   --  switches.
-
-   if not Object_Checked then
-      Opt.Check_Switches := False;
-   end if;
-
    --  Set slave-env
 
    if Slave_Env = null and then Distributed_Mode then
