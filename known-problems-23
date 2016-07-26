@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P726-007 CodePeer mode and switch -s
+
+  Problem:    In CodePeer mode, switch -s (for checking compilation switches)
+              is inhibited.
+
+  Status:     This was fixed in 17 on 2016-07-26
+
+  Workaround: Use switch -f instead of -s.
+
 KP-23-P630-028 Aggregate library and read-only object directories
 
   Problem:    When some component projects of an aggregate library have their
