@@ -2056,6 +2056,11 @@ procedure Gprbuild.Main is
          Put ("           Do not check object files");
          New_Line;
 
+         Put ("  --no-sal-binding");
+         New_Line;
+         Put ("           Reuse binder files when linking SALs");
+         New_Line;
+
          Put ("  ");
          Put (Restricted_To_Languages_Option);
          Put ("<list of languages>");
