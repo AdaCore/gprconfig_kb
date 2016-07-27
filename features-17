@@ -12,7 +12,13 @@ NF-17-P718-048 Interfaces in aggregate library projects (2016-07-18)
 
    Attribute Interfaces is now allowed in aggregate library projects.
 
-NF-17-P607-006 gprbuild verbosity (2016-06-20)
+NF-17-P701-046 Performance improvement when building libraries (2016-07-26)
+
+   When binding Stand-Alone Libraries, gprbuild no longer gets the time stamps
+   of the sources and object files if they are already known, if the main
+   project is not an aggregate project.
+
+   NF-17-P607-006 gprbuild verbosity (2016-06-20)
 
    gprbuild switch -v is now equivalent to switch -vl (low verbosity)
    instead of -vh. And invoking gprbuild with -v or -vl no longer outputs
