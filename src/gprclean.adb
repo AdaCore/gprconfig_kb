@@ -38,10 +38,13 @@ package body Gprclean is
    -- Other local subprograms --
    -----------------------------
 
-   function Object_Artifact
-     (Object_File_Name   : File_Name_Type;
-      Artifact_Extension : Name_Id)
-      return String;
+   procedure Clean_Object_Artifacts
+     (Object    : String;
+      Directory : String;
+      Language  : Language_Ptr);
+   --  Clean the object artifacts, if any, for object file Object, in directory
+   --  Directory, for the language Language. The current working directory must
+   --  be Directory.
 
    procedure Clean_Archive (Project : Project_Id);
    --  Delete a global archive and its dependency file, if they exist
@@ -68,26 +71,6 @@ package body Gprclean is
    --  Returns either Project, if it is not extended by another project, or
    --  the project that extends Project, directly or indirectly, and that is
    --  not itself extended. Returns No_Project if Project is No_Project.
-
-   function Object_Artifact
-     (Object_File_Name   : File_Name_Type;
-      Artifact_Extension : Name_Id)
-     return String
-   is
-      Object : constant String := Get_Name_String (Object_File_Name);
-      Last   : Natural := Object'Last;
-
-   begin
-      while Last > 0 and then Object (Last) /= '.' loop
-         Last := Last - 1;
-      end loop;
-
-      if Last = 0 then
-         Last := Object'Last + 1;
-      end if;
-
-      return Object (1 .. Last - 1) & Get_Name_String (Artifact_Extension);
-   end Object_Artifact;
 
    -------------------
    -- Clean_Archive --
@@ -527,6 +510,46 @@ package body Gprclean is
       end if;
    end Clean_Library_Directory;
 
+   ----------------------------
+   -- Clean_Object_Artifacts --
+   ----------------------------
+
+   procedure Clean_Object_Artifacts
+     (Object    : String;
+      Directory : String;
+      Language  : Language_Ptr)
+   is
+      Last : Natural := Object'Last;
+
+      List : Name_List_Index := Language.Config.Clean_Object_Artifacts;
+      Node : Name_Node;
+
+   begin
+      while Last > 0 and then Object (Last) /= '.' loop
+         Last := Last - 1;
+      end loop;
+
+      if Last = 0 then
+         Last := Object'Last + 1;
+      end if;
+
+      while List /= No_Name_List loop
+         Node := Project_Tree.Shared.Name_Lists.Table (List);
+
+         declare
+            Artifact : constant String :=
+              Object (Object'First .. Last - 1) & Get_Name_String (Node.Name);
+
+         begin
+            if Is_Regular_File (Artifact) then
+               Delete (Directory, Artifact);
+            end if;
+         end;
+
+         List := Node.Next;
+      end loop;
+   end Clean_Object_Artifacts;
+
    --  Artifacts
 
    type Artifact_Array_Type is array (Positive range <>) of GNAT.Regexp.Regexp;
@@ -763,23 +786,10 @@ package body Gprclean is
 
                         --  Clean object artifacts, if any
 
-                        List :=
-                          Source_Id.Language.Config.Clean_Object_Artifacts;
-                        while List /= No_Name_List loop
-                           Node := Project_Tree.Shared.Name_Lists.Table (List);
-
-                           declare
-                              Artifact : constant String :=
-                                Object_Artifact (Source_Id.Object, Node.Name);
-
-                           begin
-                              if Is_Regular_File (Artifact) then
-                                 Delete (Obj_Dir, Artifact);
-                              end if;
-                           end;
-
-                           List := Node.Next;
-                        end loop;
+                        Clean_Object_Artifacts
+                          (Object => Get_Name_String (Source_Id.Object),
+                           Directory => Obj_Dir,
+                           Language  => Source_Id.Language);
                      end if;
 
                      if Source_Id.Dep_Name /= No_File
@@ -1091,6 +1101,13 @@ package body Gprclean is
 
                                  if Is_Regular_File (Line (1 .. Last)) then
                                     Delete (Dir, Line (1 .. Last));
+
+                                    if Section = Generated_Object_File then
+                                       Clean_Object_Artifacts
+                                         (Object    => Line (1 .. Last),
+                                          Directory => Dir,
+                                          Language  => B_Data.Language);
+                                    end if;
                                  end if;
 
                               when others =>
