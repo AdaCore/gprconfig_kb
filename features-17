@@ -24,6 +24,13 @@ NF-17-P701-046 Performance improvement when building libraries (2016-07-26)
    instead of -vh. And invoking gprbuild with -v or -vl no longer outputs
    information about the inner behavior of gprbuild.
 
+NF-17-P629-045 New switch --no-sal-binding (2016-07-19)
+
+   A new switch --no-sal-binding is added to gprbuild. When this switch is used
+   gprbuild will not rebind Stand-Alone Libraries, it will reuse the files
+   created during a previous build of the SAL, and will fail if there are
+   missing files.
+
 NF-17-P526-032 Environment variable GPR_RUNTIME_PATH (2016-06-15)
 
    When the Ada runtime directory is specified with switch --RTS or
