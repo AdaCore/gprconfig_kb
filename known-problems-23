@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P727-004 Artifacts for binder generated sources not cleaned
+
+  Problem:    The artifacts created when compiling the binder generated
+              sources are not cleaned by gprclean.
+
+  Status:     This was fixed in 17 on 2016-07-27
+
+  Workaround: Delete the artifacts manually.
+
 KP-23-P726-007 CodePeer mode and switch -s
 
   Problem:    In CodePeer mode, switch -s (for checking compilation switches)
