@@ -31,7 +31,7 @@
 
    package Clean is
       for Source_Artifact_Extensions ("C")   use (".gli", ".stdout", ".stderr");
-      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno");
+      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno", ".su");
    end Clean;
      </config>
    </configuration>
@@ -47,7 +47,7 @@
 
    package Clean is
       for Source_Artifact_Extensions ("C")   use (".gli", ".stdout", ".stderr");
-      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno");
+      for Object_Artifact_Extensions ("C")   use (".s", "ci", ".gcno", ".su");
    end Clean;
      </config>
    </configuration>
