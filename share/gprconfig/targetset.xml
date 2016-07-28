@@ -46,6 +46,11 @@
   </targetset>
 
   <targetset>
+    <target>ppc-linux</target>
+    <target>powerpc-generic-linux-gnu</target>
+  </targetset>
+
+  <targetset>
     <target>ppc64-linux</target>
     <target>powerpc64-generic-linux-gnu</target>
   </targetset>
