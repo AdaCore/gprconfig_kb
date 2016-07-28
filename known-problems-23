@@ -35,6 +35,16 @@ KP-23-P726-007 CodePeer mode and switch -s
 
   Workaround: Use switch -f instead of -s.
 
+KP-23-P726-003 Subunits and ALI_Closure
+
+  Problem:    When the dependency kind is ALI_Closure and there are subunits
+              in the closure, gprbuild tries to read ALI files for the
+              subunits. This may result in unneeded recompilations.
+
+  Status:     This was fixed in 17 on 2016-07-28
+
+  Workaround: Let gprbuild recompile or do not use subunits.
+
 KP-23-P725-011 GPRinstall and separate unit
 
   Problem:    GPRinstall fails to install a project containing a separate
