@@ -2376,167 +2376,175 @@ package body Gpr_Util is
 
          while Last_Processed_Source <= Processed_Sources.Last loop
             Next_Source := Processed_Sources.Table (Last_Processed_Source);
-            declare
-               Attrib : aliased File_Attributes := Unknown_Attributes;
-            begin
-               Text :=
-                 Read_Library_Info_From_Full
-                   (File_Name_Type (Next_Source.Dep_Path), Attrib'Access);
-            end;
 
-            Last_Processed_Source := Last_Processed_Source + 1;
+            if Next_Source.Unit = No_Unit_Index
+              or else Next_Source.Kind /= Sep
+            then
+               declare
+                  Attrib : aliased File_Attributes := Unknown_Attributes;
+               begin
+                  Text :=
+                    Read_Library_Info_From_Full
+                      (File_Name_Type (Next_Source.Dep_Path), Attrib'Access);
+               end;
 
-            if Text = null then
-               if Opt.Verbosity_Level > Opt.Low then
-                  Put ("    -> cannot read ");
-                  Put_Line (Get_Name_String (Next_Source.Dep_Path));
-               end if;
-
-               return True;
-            end if;
-
-            --  Read only the necessary lines of the ALI file
-
-            Other_ALI :=
-              ALI.Scan_ALI
-                (File_Name_Type (Next_Source.Dep_Path),
-                 Text,
-                 Ignore_ED     => False,
-                 Err           => True,
-                 Read_Lines    => "PDW");
-            Free (Text);
-
-            if Other_ALI = ALI.No_ALI_Id then
-               if Opt.Verbosity_Level > Opt.Low then
-                  Put ("    -> ");
-                  Put (Get_Name_String (Next_Source.Dep_Path));
-                  Put_Line (" is incorrectly formatted");
-               end if;
-
-               return True;
-            end if;
-
-            if ALI.ALIs.Table (Other_ALI).Compile_Errors then
-               if Opt.Verbosity_Level > Opt.Low then
-                  Put  ("    -> last compilation of ");
-                  Put  (Get_Name_String (Next_Source.Dep_Path));
-                  Put_Line (" had errors");
-               end if;
-
-               return True;
-            end if;
-
-            for D in ALI.ALIs.Table (Other_ALI).First_Sdep ..
-              ALI.ALIs.Table (Other_ALI).Last_Sdep
-            loop
-               Sfile := ALI.Sdep.Table (D).Sfile;
-
-               if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
-                  Dep_Src := Source_Files_Htable.Get
-                    (Tree.Source_Files_HT, Sfile);
-                  Found := False;
-
-                  if Dep_Src /= No_Source then
-                     Insert_Source := True;
-                     for J in 1 .. Processed_Sources.Last loop
-                        if Processed_Sources.Table (J) = Dep_Src then
-                           Insert_Source := False;
-                           exit;
-                        end if;
-                     end loop;
-
-                     if Insert_Source then
-                        Processed_Sources.Append (Dep_Src);
-                     end if;
+               if Text = null then
+                  if Opt.Verbosity_Level > Opt.Low then
+                     Put ("    -> cannot read ");
+                     Put_Line (Get_Name_String (Next_Source.Dep_Path));
                   end if;
 
-                  while Dep_Src /= No_Source loop
-                     Initialize_Source_Record (Dep_Src);
+                  return True;
+               end if;
 
-                     if not Dep_Src.Locally_Removed
-                       and then Dep_Src.Unit /= No_Unit_Index
-                     then
-                        Found := True;
+               --  Read only the necessary lines of the ALI file
 
-                        if Opt.Minimal_Recompilation
-                          and then ALI.Sdep.Table (D).Stamp /=
-                          Dep_Src.Source_TS
+               Other_ALI :=
+                 ALI.Scan_ALI
+                   (File_Name_Type (Next_Source.Dep_Path),
+                    Text,
+                    Ignore_ED     => False,
+                    Err           => True,
+                    Read_Lines    => "PDW");
+               Free (Text);
+
+               if Other_ALI = ALI.No_ALI_Id then
+                  if Opt.Verbosity_Level > Opt.Low then
+                     Put ("    -> ");
+                     Put (Get_Name_String (Next_Source.Dep_Path));
+                     Put_Line (" is incorrectly formatted");
+                  end if;
+
+                  return True;
+               end if;
+
+               if ALI.ALIs.Table (Other_ALI).Compile_Errors then
+                  if Opt.Verbosity_Level > Opt.Low then
+                     Put  ("    -> last compilation of ");
+                     Put  (Get_Name_String (Next_Source.Dep_Path));
+                     Put_Line (" had errors");
+                  end if;
+
+                  return True;
+               end if;
+
+               for D in ALI.ALIs.Table (Other_ALI).First_Sdep ..
+                 ALI.ALIs.Table (Other_ALI).Last_Sdep
+               loop
+                  Sfile := ALI.Sdep.Table (D).Sfile;
+
+                  if ALI.Sdep.Table (D).Stamp /= Empty_Time_Stamp then
+                     Dep_Src := Source_Files_Htable.Get
+                       (Tree.Source_Files_HT, Sfile);
+                     Found := False;
+
+                     if Dep_Src /= No_Source then
+                        Insert_Source := True;
+                        for J in 1 .. Processed_Sources.Last loop
+                           if Processed_Sources.Table (J) = Dep_Src then
+                              Insert_Source := False;
+                              exit;
+                           end if;
+                        end loop;
+
+                        if Insert_Source then
+                           Processed_Sources.Append (Dep_Src);
+                        end if;
+                     end if;
+
+                     while Dep_Src /= No_Source loop
+                        Initialize_Source_Record (Dep_Src);
+
+                        if not Dep_Src.Locally_Removed
+                          and then Dep_Src.Unit /= No_Unit_Index
                         then
-                           --  If minimal recompilation is in action, replace
-                           --  the stamp of the source file in the table if
-                           --  checksums match.
+                           Found := True;
 
-                           declare
-                              Source_Index : Source_File_Index;
-                              use Scans;
+                           if Opt.Minimal_Recompilation
+                             and then ALI.Sdep.Table (D).Stamp /=
+                             Dep_Src.Source_TS
+                           then
+                              --  If minimal recompilation is in action,
+                              --  replace the stamp of the source file in
+                              --  the table if checksums match.
 
-                           begin
-                              Source_Index :=
-                                Sinput.Load_File
-                                  (Get_Name_String
-                                       (Dep_Src.Path.Display_Name));
+                              declare
+                                 Source_Index : Source_File_Index;
+                                 use Scans;
 
-                              if Source_Index /= No_Source_File then
+                              begin
+                                 Source_Index :=
+                                   Sinput.Load_File
+                                     (Get_Name_String
+                                        (Dep_Src.Path.Display_Name));
 
-                                 Err.Scanner.Initialize_Scanner
-                                   (Source_Index, Err.Scanner.Ada);
+                                 if Source_Index /= No_Source_File then
 
-                                 --  Scan the complete file to compute its
-                                 --  checksum.
+                                    Err.Scanner.Initialize_Scanner
+                                      (Source_Index, Err.Scanner.Ada);
 
-                                 loop
-                                    Err.Scanner.Scan;
-                                    exit when Token = Tok_EOF;
-                                 end loop;
+                                    --  Scan the complete file to compute its
+                                    --  checksum.
 
-                                 if Scans.Checksum =
-                                   ALI.Sdep.Table (D).Checksum
-                                 then
-                                    ALI.Sdep.Table (D).Stamp :=
-                                      Dep_Src.Source_TS;
+                                    loop
+                                       Err.Scanner.Scan;
+                                       exit when Token = Tok_EOF;
+                                    end loop;
+
+                                    if Scans.Checksum =
+                                      ALI.Sdep.Table (D).Checksum
+                                    then
+                                       ALI.Sdep.Table (D).Stamp :=
+                                         Dep_Src.Source_TS;
+                                    end if;
+                                 end if;
+
+                                 --  To avoid using too much memory, free the
+                                 --  memory allocated.
+
+                                 Sinput.Clear_Source_File_Table;
+                              end;
+                           end if;
+
+                           if
+                             ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS
+                           then
+                              if Opt.Verbosity_Level > Opt.Low then
+                                 Put
+                                   ("   -> different time stamp for ");
+                                 Put_Line (Get_Name_String (Sfile));
+
+                                 if Debug.Debug_Flag_T then
+                                    Put ("   in ALI file: ");
+                                    Put_Line
+                                      (String (ALI.Sdep.Table (D).Stamp));
+                                    Put ("   actual file: ");
+                                    Put_Line (String (Dep_Src.Source_TS));
                                  end if;
                               end if;
 
-                              --  To avoid using too much memory, free the
-                              --  memory allocated.
+                              return True;
 
-                              Sinput.Clear_Source_File_Table;
-                           end;
-                        end if;
-
-                        if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
-                           if Opt.Verbosity_Level > Opt.Low then
-                              Put
-                                ("   -> different time stamp for ");
-                              Put_Line (Get_Name_String (Sfile));
-
-                              if Debug.Debug_Flag_T then
-                                 Put ("   in ALI file: ");
-                                 Put_Line
-                                   (String (ALI.Sdep.Table (D).Stamp));
-                                 Put ("   actual file: ");
-                                 Put_Line (String (Dep_Src.Source_TS));
+                           elsif TS0 < Dep_Src.Source_TS then
+                              if Opt.Verbosity_Level > Opt.Low then
+                                 Put ("   -> file ");
+                                 Put
+                                   (Get_Name_String
+                                      (Dep_Src.Path.Display_Name));
+                                 Put_Line (" later than ALI file");
                               end if;
+
+                              return True;
                            end if;
-
-                           return True;
-
-                        elsif TS0 < Dep_Src.Source_TS then
-                           if Opt.Verbosity_Level > Opt.Low then
-                              Put ("   -> file ");
-                              Put
-                                (Get_Name_String (Dep_Src.Path.Display_Name));
-                              Put_Line (" later than ALI file");
-                           end if;
-
-                           return True;
                         end if;
-                     end if;
 
-                     Dep_Src := Dep_Src.Next_With_File_Name;
-                  end loop;
-               end if;
-            end loop;
+                        Dep_Src := Dep_Src.Next_With_File_Name;
+                     end loop;
+                  end if;
+               end loop;
+            end if;
+
+            Last_Processed_Source := Last_Processed_Source + 1;
          end loop;
 
          return False;
