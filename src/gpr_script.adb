@@ -20,6 +20,47 @@ with GPR.Names; use GPR.Names;
 
 package body Gpr_Script is
 
+   Quote_List : constant String := "|&;<>()$`\"" *?[#~";
+
+   function Potentially_Quoted (S : String) return String;
+   --  Check if S needed to be quoted. It needs to be quoted if S contains at
+   --  least one character in the list above. Return S between simple quotes if
+   --  needed, otherwise return S.
+
+   function Potentially_Quoted (S : String) return String is
+      Need_Quoting : Boolean := False;
+      Arg : String (1 .. 4 * S'Length);
+      Last : Natural := 0;
+
+   begin
+      for J in S'Range loop
+         if S (J) = ''' then
+            Need_Quoting := True;
+            Arg (Last + 1 .. Last + 4) := "'\''";
+            Last := Last + 4;
+
+         else
+            Last := Last + 1;
+            Arg (Last) := S (J);
+
+            if not Need_Quoting then
+               for K in Quote_List'Range loop
+                  if S (J) = Quote_List (K) then
+                     Need_Quoting := True;
+                     exit;
+                  end if;
+               end loop;
+            end if;
+         end if;
+      end loop;
+
+      if Need_Quoting then
+         return "'" & Arg (1 .. Last) & "'";
+      else
+         return S;
+      end if;
+   end Potentially_Quoted;
+
    -----------------------
    -- Script_Change_Dir --
    -----------------------
@@ -74,10 +115,12 @@ package body Gpr_Script is
             Open (Build_Script_File, Append_File, Build_Script_Name.all);
          end if;
 
-         Put (Build_Script_File, Program_Name);
+         Put (Build_Script_File, Potentially_Quoted (Program_Name));
 
          for J in Args'Range loop
-            Put (Build_Script_File, " " & Args (J).all);
+            Put
+              (Build_Script_File,
+               " " & Potentially_Quoted (Args (J).all));
          end loop;
 
          New_Line (Build_Script_File);
