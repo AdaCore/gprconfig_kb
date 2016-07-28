@@ -323,6 +323,18 @@
 
   <configuration>
     <targets>
+      <target name="^powerpc-generic-linux-gnu$" />
+    </targets>
+    <config>
+   for Archive_Builder  use ("powerpc-generic-linux-gnu-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("powerpc-generic-linux-gnu-ranlib");
+   for Archive_Suffix   use ".a";
+    </config>
+  </configuration>
+
+  <configuration>
+    <targets>
       <target name="^powerpc64-generic-linux-gnu$" />
     </targets>
     <config>
