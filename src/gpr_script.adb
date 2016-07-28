@@ -27,6 +27,10 @@ package body Gpr_Script is
    --  least one character in the list above. Return S between simple quotes if
    --  needed, otherwise return S.
 
+   ------------------------
+   -- Potentially_Quoted --
+   ------------------------
+
    function Potentially_Quoted (S : String) return String is
       Need_Quoting : Boolean := False;
       Arg : String (1 .. 4 * S'Length);
@@ -144,4 +148,5 @@ package body Gpr_Script is
       Script_Write (Program_Name, Args);
       Spawn (Program_Name, Args, Success);
    end Spawn_And_Script_Write;
+
 end Gpr_Script;
