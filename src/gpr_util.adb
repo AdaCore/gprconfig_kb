@@ -2377,8 +2377,10 @@ package body Gpr_Util is
          while Last_Processed_Source <= Processed_Sources.Last loop
             Next_Source := Processed_Sources.Table (Last_Processed_Source);
 
-            if Next_Source.Unit = No_Unit_Index
-              or else Next_Source.Kind /= Sep
+            if not Next_Source.Project.Externally_Built
+              and then
+               (Next_Source.Unit = No_Unit_Index
+                or else Next_Source.Kind /= Sep)
             then
                declare
                   Attrib : aliased File_Attributes := Unknown_Attributes;
