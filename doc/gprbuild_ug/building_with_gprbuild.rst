@@ -331,6 +331,16 @@ package Builder of the main project:
   sources that are not in the list of restricted languages are not compiled,
   including mains specified in package Builder of the main project.
 
+* :samp:`--no-sal-binding`
+
+  Specify to GPRbuild to not rebind a Stand-Alone Library (SAL), but instead
+  to reuse the files created during a previous build of the SAL. GPRbuild
+  will fail if there are missing files. This option is unsafe and not
+  recommended, as it may result in incorrect binding of the SAL, for example
+  if sources have been added, removed or modified in a significant way related
+  to binding. It is only provided to improve performance, when it is known
+  that the resulting binding files will be the same as the previous ones.
+
 * :samp:`-aP {dir}` (Add directory :file:`dir` to project search path)
 
   Specify to GPRbuild to add directory :file:`dir` to the user project file search
