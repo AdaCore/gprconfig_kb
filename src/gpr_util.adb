@@ -1749,19 +1749,18 @@ package body Gpr_Util is
                                  Close (Dep_File);
                                  return True;
 
-                                 --  If the source has been modified after the
-                                 --  object file, we need to recompile.
+                              --  If the source has been modified after the
+                              --  object file, we need to recompile.
 
-                              elsif Src_TS > Source.Object_TS
-                                and then Object_Check
+                              elsif Object_Check
                                 and then
-                                   Source.Language.Config.Object_Generated
+                                  Source.Language.Config.Object_Generated
+                                and then Src_TS > Source.Object_TS
                               then
                                  if Opt.Verbosity_Level > Opt.Low then
-                                    Put  ("      -> source ");
-                                    Put  (Src_Name);
-                                    Put_Line
-                                    (" has time stamp later than object file");
+                                    Put ("      -> source ");
+                                    Put (Src_Name);
+                                    Put_Line (" more recent than object file");
                                  end if;
 
                                  Close (Dep_File);
@@ -2289,8 +2288,8 @@ package body Gpr_Util is
                                          (Get_Name_String
                                             (ALI.Sdep.Table (D).Sfile));
                                        Put (": up to date, " &
-                                                  "different timestamps " &
-                                                  "but same checksum");
+                                            "different timestamps " &
+                                            "but same checksum");
                                        New_Line;
                                     end if;
 
@@ -2308,8 +2307,7 @@ package body Gpr_Util is
 
                         if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
                            if Opt.Verbosity_Level > Opt.Low then
-                              Put
-                                ("   -> different time stamp for ");
+                              Put ("   -> different time stamp for ");
                               Put_Line (Get_Name_String (Sfile));
 
                               if Debug.Debug_Flag_T then
@@ -2508,8 +2506,7 @@ package body Gpr_Util is
                               end;
                            end if;
 
-                           if
-                             ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS
+                           if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS
                            then
                               if Opt.Verbosity_Level > Opt.Low then
                                  Put
@@ -2527,16 +2524,36 @@ package body Gpr_Util is
 
                               return True;
 
-                           elsif TS0 < Dep_Src.Source_TS then
+                           --  Favor comparison against object file if possible
+                           --  since object file may have been created later
+                           --  than ALI file.
+
+                           elsif Object_Check
+                             and then Source.Language.Config.Object_Generated
+                           then
+                              if Dep_Src.Source_Ts > Source.Object_TS then
+                                 if Opt.Verbosity_Level > Opt.Low then
+                                    Put ("   -> file ");
+                                    Put
+                                      (Get_Name_String
+                                         (Dep_Src.Path.Display_Name));
+                                    Put_Line (" more recent than object file");
+                                 end if;
+
+                                 return True;
+                              end if;
+
+                           elsif Dep_Src.Source_TS > TS0 then
                               if Opt.Verbosity_Level > Opt.Low then
                                  Put ("   -> file ");
                                  Put
                                    (Get_Name_String
                                       (Dep_Src.Path.Display_Name));
-                                 Put_Line (" later than ALI file");
+                                 Put_Line (" more recent than ALI file");
                               end if;
 
                               return True;
+
                            end if;
                         end if;
 
