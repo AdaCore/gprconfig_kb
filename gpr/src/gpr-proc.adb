@@ -1129,9 +1129,8 @@ package body GPR.Proc is
                   case Kind is
                      when Undefined =>
 
-                        --  Should never happen
+                        --  This can happen when there are missing withs
 
-                        pragma Assert (False, "undefined expression kind");
                         null;
 
                      when Single =>
@@ -1716,7 +1715,7 @@ package body GPR.Proc is
       begin
          --  Report an error for an empty string
 
-         if Value.Value = Empty_String then
+         if Value.Kind = Undefined or else Value.Value = Empty_String then
             Error_Msg_Name_1 := Name_Of (Declaration, Node_Tree);
 
             case Env.Flags.Allow_Invalid_External is
@@ -1774,7 +1773,7 @@ package body GPR.Proc is
             end if;
          end if;
 
-         if Reset_Value then
+         if Value.Kind /= Undefined and then Reset_Value then
             Current_String :=
               First_Literal_String
                 (String_Type_Of (Declaration, Node_Tree), Node_Tree);
