@@ -2531,7 +2531,7 @@ package body Gpr_Util is
                            elsif Object_Check
                              and then Source.Language.Config.Object_Generated
                            then
-                              if Dep_Src.Source_Ts > Source.Object_TS then
+                              if Dep_Src.Source_TS > Source.Object_TS then
                                  if Opt.Verbosity_Level > Opt.Low then
                                     Put ("   -> file ");
                                     Put
