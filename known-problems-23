@@ -17,6 +17,16 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P802-010 String type from another missing project
+
+  Problem:    gprbuild may crash when a string type declared in a missing
+              project is referenced in the declaration of a string typed
+              variable.
+
+  Status:     This was fixed in 17 on 2016-08-05
+
+  Workaround: Make sure that the project is not missing.
+
 KP-23-P727-004 Artifacts for binder generated sources not cleaned
 
   Problem:    The artifacts created when compiling the binder generated
