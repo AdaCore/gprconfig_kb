@@ -4210,7 +4210,7 @@ package body Gprbuild.Post_Compile is
             end loop;
 
             if Main_Source.Unit = No_Unit_Index and then (not Dep_Files) then
-               Delete (Exchange_File);
+               Close (Exchange_File);
 
                begin
                   Create (Exchange_File, Out_File, Bind_Exchange.all);
