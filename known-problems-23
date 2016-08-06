@@ -268,6 +268,16 @@ KP-23-P218-003 gprclean not cleaning .ci files
 
   Workaround: Delete manually the .ci files.
 
+KP-23-P204-036 Crash on MacOS with NFS mounted directories
+
+  Problem:    GPRbuild may crash on MacOS when the main is in C or C++, the
+              object directory is NFS mounted and all the Ada sources are in
+              Stand-Alone Libraries.
+
+  Status:     This was fixed in 17 on 2016-08-06
+
+  Workaround: Use an object directory that is not NFS mounted.
+
 KP-23-P125-003 Standalone library with child units installation issue
 
   Problem:    GPRinstall won't install a compilable standalone library
