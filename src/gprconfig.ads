@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2015, AdaCore                     --
+--                     Copyright (C) 2006-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -25,4 +25,6 @@ package GprConfig is
    Target_Specified : Boolean := False;
    --  True if switch --target was specified
 
+   Native_Target : Boolean := False;
+   --  True if --target=native was specified
 end GprConfig;

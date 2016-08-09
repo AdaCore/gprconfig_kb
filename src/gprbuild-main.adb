@@ -583,7 +583,6 @@ procedure Gprbuild.Main is
 
       elsif Db_Directory_Expected then
          Db_Directory_Expected := False;
-         Parse_Knowledge_Base (Project_Tree, Arg);
 
          Name_Len := 0;
          Add_Str_To_Name_Buffer (Arg);
@@ -1848,14 +1847,6 @@ procedure Gprbuild.Main is
       elsif Slave_Env /= null and then not Distributed_Mode then
          Fail_Program
            (Project_Tree, "cannot use --slave-env in non distributed mode");
-      end if;
-
-      if Load_Standard_Base then
-         --  We need to parse the knowledge base so that we are able to
-         --  normalize the target names. Unfortunately, if we have to spawn
-         --  gprconfig, it will also have to parse that knowledge base on
-         --  its own.
-         Parse_Knowledge_Base (Project_Tree);
       end if;
 
       --  If no project file is specified, look for a default

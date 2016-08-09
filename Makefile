@@ -24,7 +24,8 @@
 #   $ make -f <GPRBUILD_TREE>/Makefile setup
 #   $ make -f <GPRBUILD_TREE>/Makefile
 
-TARGET 	      := $(shell gcc -dumpmachine)
+HOST    = $(shell gcc -dumpmachine)
+TARGET := $(shell gcc -dumpmachine)
 
 # target options for cross-build
 ifeq ($(HOST),$(TARGET))
@@ -38,8 +39,6 @@ BUILD         = production
 PROCESSORS    = 0
 BUILD_DIR     =
 SOURCE_DIR    := $(shell dirname "$(MAKEFILE_LIST)")
-
-HOST = $(shell gcc -dumpmachine)
 
 # Load current setup if any
 -include makefile.setup
@@ -70,12 +69,12 @@ endif
 GPRBUILD_OPTIONS=
 
 BUILDER=gprbuild -p -m $(GTARGET) $(RBD) -j${PROCESSORS} -XBUILD=${BUILD} ${GPRBUILD_OPTIONS}
-INSTALLER=exe/gprinstall -p -f  $(RBD) --prefix=${prefix}
+INSTALLER=exe/gprinstall -p -f --target=$(TARGET)  $(RBD) --prefix=${prefix}
 CLEANER=gprclean -q $(RBD)
 
 GPRBUILD_BUILDER=$(BUILDER) $(GPRBUILD_GPR) -XLIBRARY_TYPE=static
 LIBGPR_BUILDER=$(BUILDER) $(GPR_GPR)
-LIBGPR_INSTALLER=gprinstall -p -f  $(RBD) --prefix=${prefix} $(GPR_GPR) \
+LIBGPR_INSTALLER=gprinstall -p -f --target=$(TARGET)  $(RBD) --prefix=${prefix} $(GPR_GPR) \
 	--install-name=gpr --build-var=LIBRARY_TYPE $(GTARGET)
 LIBGPR_UNINSTALLER=$(INSTALLER) $(GPR_GPR) -p -f \
    --install-name=gpr --uninstall
@@ -118,7 +117,7 @@ gprls:
 install:
 	$(INSTALLER) --mode=usage --install-name=gprbuild \
 		-XINSTALL_MODE=nointernal $(GPRBUILD_GPR)
-	$(INSTALLER) --mode=usage  --install-name=gprbuild \
+	$(INSTALLER) --target=$(TARGET) --mode=usage  --install-name=gprbuild \
 		-XINSTALL_MODE=internal $(GPRBUILD_GPR)
 
 complete: all install libgpr.install.static

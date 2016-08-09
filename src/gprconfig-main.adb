@@ -376,6 +376,10 @@ begin
 
                if Parameter = "all" then
                   Selected_Target := Null_Unbounded_String;
+
+               elsif Parameter = "native" then
+                  Native_Target := True;
+
                else
                   Selected_Target := To_Unbounded_String (Parameter);
                   Output_File := To_Unbounded_String (Parameter & ".cgpr");

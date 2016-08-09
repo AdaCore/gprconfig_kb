@@ -1044,7 +1044,6 @@ package body GPR.Conf is
 
             if Selected_Target /= null and then
                Selected_Target.all /= ""
-
             then
                Args (4) :=
                   new String'("--target=" & Selected_Target.all);
@@ -1054,7 +1053,7 @@ package body GPR.Conf is
                if At_Least_One_Compiler_Command then
                   Args (4) := new String'("--target=all");
                else
-                  Args (4) := new String'("--target=" & Normalized_Hostname);
+                  Args (4) := new String'("--target=native");
                end if;
 
                Arg_Last := 4;
@@ -1065,8 +1064,12 @@ package body GPR.Conf is
                Args (Arg_Last) := new String'("-q");
             end if;
 
-            if Opt.Verbosity_Level > Opt.Low then
-               Write_Str (Gprconfig_Name);
+            if Opt.Verbose_Mode and then Opt.Verbosity_Level > Opt.Low then
+               if Opt.Verbosity_Level = Opt.High then
+                  Write_Str (Gprconfig_Path.all);
+               else
+                  Write_Str (Gprconfig_Name);
+               end if;
 
                for J in 1 .. Arg_Last loop
                   Write_Char (' ');
@@ -1707,7 +1710,7 @@ package body GPR.Conf is
       --  Record Target_Value and Target_Origin
 
       if Target_Name = "" then
-         Opt.Target_Value  := new String'(Normalized_Hostname);
+         Opt.Target_Value  := new String'("native");
          Opt.Target_Origin := Default;
       else
          Opt.Target_Value  := new String'(Target_Name);
