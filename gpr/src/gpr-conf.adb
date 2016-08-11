@@ -493,6 +493,7 @@ package body GPR.Conf is
 
       OK :=
         Target = ""
+          or else Target = "native"
           or else
             (Tgt_Name /= No_Name
               and then (Length_Of_Name (Tgt_Name) = 0
