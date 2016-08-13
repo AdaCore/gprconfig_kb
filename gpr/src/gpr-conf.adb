@@ -917,7 +917,7 @@ package body GPR.Conf is
             Obj_Dir         : constant String := Name_Buffer (1 .. Name_Len);
             Config_Switches : Argument_List_Access;
             Db_Switches     : Argument_List_Access;
-            Args            : Argument_List (1 .. 5);
+            Args            : Argument_List (1 .. 7);
             Arg_Last        : Positive;
             Obj_Dir_Exists  : Boolean := True;
 
@@ -1009,8 +1009,7 @@ package body GPR.Conf is
                      then
                         Set_Directory ("/tmp");
                      elsif Obj_Dir_Exists and then
-                       Is_Owner_Writable_File
-                         (Obj_Dir)
+                           Is_Owner_Writable_File (Obj_Dir)
                      then
                         Set_Directory (Obj_Dir);
                      end if;
@@ -1054,10 +1053,15 @@ package body GPR.Conf is
                if At_Least_One_Compiler_Command then
                   Args (4) := new String'("--target=all");
                else
-                  Args (4) := new String'("--target=native");
+                  Args (4) := new String'("--target=" & Normalized_Hostname);
                end if;
 
                Arg_Last := 4;
+            end if;
+
+            if Native_Target then
+               Arg_Last := Arg_Last + 1;
+               Args (Arg_Last) := new String'("--native");
             end if;
 
             if Verbosity_Level <= Low then
@@ -1711,8 +1715,9 @@ package body GPR.Conf is
       --  Record Target_Value and Target_Origin
 
       if Target_Name = "" then
-         Opt.Target_Value  := new String'("native");
+         Opt.Target_Value  := new String'(Normalized_Hostname);
          Opt.Target_Origin := Default;
+         Native_Target := True;
       else
          Opt.Target_Value  := new String'(Target_Name);
          Opt.Target_Origin := Specified;
@@ -1808,10 +1813,11 @@ package body GPR.Conf is
          begin
             if Variable /= Nil_Variable_Value
               and then not Variable.Default
-              and then
-                Get_Name_String (Variable.Value) /= Opt.Target_Value.all
             then
-               if Target_Try_Again then
+               if Get_Name_String (Variable.Value) = Opt.Target_Value.all then
+                  Native_Target := False;
+
+               elsif Target_Try_Again then
                   Opt.Target_Value :=
                     new String'(Get_Name_String (Variable.Value));
                   Target_Try_Again := False;

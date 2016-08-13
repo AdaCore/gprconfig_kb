@@ -2770,6 +2770,10 @@ package GPR is
 
    Warnings_Detected : Nat := 0;
 
+   Native_Target : Boolean := False;
+   --  True when no target is specified on the command line or in the main
+   --  project.
+
 private
    Tool_Name : String_Access := null;
 

@@ -105,7 +105,7 @@ procedure GprConfig.Main is
      new Compiler_Lists.Generic_Sorting (Display_Before);
 
    Valid_Switches : constant String :=
-                      "-batch -config= -db: h o: v q -show-targets"
+                      "-batch -config= -native -db: h o: v q -show-targets"
                       & " -validate -mi-show-compilers -target=";
 
    --------------
@@ -377,9 +377,6 @@ begin
                if Parameter = "all" then
                   Selected_Target := Null_Unbounded_String;
 
-               elsif Parameter = "native" then
-                  Native_Target := True;
-
                else
                   Selected_Target := To_Unbounded_String (Parameter);
                   Output_File := To_Unbounded_String (Parameter & ".cgpr");
@@ -388,6 +385,9 @@ begin
             elsif Full_Switch = "-show-targets" then
                --  By default, display all targets available
                Selected_Target := Null_Unbounded_String;
+
+            elsif Full_Switch = "-native" then
+               Native_Target := True;
             end if;
 
          when 'q' =>

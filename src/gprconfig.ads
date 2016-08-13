@@ -24,7 +24,4 @@ package GprConfig is
 
    Target_Specified : Boolean := False;
    --  True if switch --target was specified
-
-   Native_Target : Boolean := False;
-   --  True if --target=native was specified
 end GprConfig;
