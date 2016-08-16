@@ -194,8 +194,8 @@ package body Gprinstall.Install is
       --  the corresponding variables above.
 
       procedure Copy_Files;
-      --  Do the file copues for the project's sources, object, library,
-      --  executable.
+      --  Do the file copies for the project's sources, objects, library,
+      --  executables.
 
       procedure Create_Project (Project : Project_Id);
       --  Create install project for the given project
