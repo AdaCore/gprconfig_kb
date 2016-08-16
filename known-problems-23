@@ -14,8 +14,8 @@ entry.
 Note that older releases might or might not be affected by the problems listed
 in this document.
 
-Known problems fixed in 17.1 and above
---------------------------------------
+Known problems in 2.3.1 and 2.3.2
+---------------------------------
 
 KP-23-P804-003 GPRinstall and Mains from extended projects
 
@@ -389,8 +389,8 @@ KP-23-OA09-019 Switches in package Clean not taken into account
 
   Workaround: Use only switches on the command line.
 
-Known problems fixed in 2.3.2 and above
----------------------------------------
+Known problems in 2.3.1
+-----------------------
 
 KP-23-OC21-017 Restricted languages and auto configuration
 
