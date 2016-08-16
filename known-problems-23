@@ -17,6 +17,15 @@ in this document.
 Known problems fixed in 17.1 and above
 --------------------------------------
 
+KP-23-P804-003 GPRinstall and Mains from extended projects
+
+  Problem:    GPRinstall fails to install mains part of the extended
+              project.
+
+  Status:     This was fixed in 17 on 2016-08-16
+
+  Workaround: Install the mains manually.
+
 KP-23-P802-010 String type from another missing project
 
   Problem:    gprbuild may crash when a string type declared in a missing

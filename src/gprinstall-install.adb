@@ -1266,7 +1266,7 @@ package body Gprinstall.Install is
                M : Main_Info := Mains.Next_Main;
             begin
                while M /= No_Main_Info loop
-                  if M.Project = Project then
+                  if M.Project in Project | Project.Extends then
                      declare
                         Bin : constant String :=
                                 Main_Binary (Name_Id (M.File));
