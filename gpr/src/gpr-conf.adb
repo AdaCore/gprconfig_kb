@@ -1783,27 +1783,58 @@ package body GPR.Conf is
          return;
       end if;
 
+      Main_Project := No_Project;
+      Process_Project_Tree_Phase_1
+        (In_Tree                => Project_Tree,
+         Project                => Main_Project,
+         Packages_To_Check      => Packages_To_Check,
+         Success                => Success,
+         From_Project_Node      => User_Project_Node,
+         From_Project_Node_Tree => Project_Node_Tree,
+         Env                    => Env,
+         Reset_Tree             => True,
+         On_New_Tree_Loaded     => On_New_Tree_Loaded);
+
+      if not Success then
+         Main_Project := No_Project;
+         return;
+      end if;
+
+      --  Check if attribute Auto_Create_Dirs is specified with value "true".
+
+      if not Setup_Projects then
+         --  Check if attribute Auto_Create_Dirs is specified with value
+         --  "true".
+
+         declare
+            Variable : constant Variable_Value :=
+              Value_Of
+                (Name_Create_Missing_Dirs,
+                 Main_Project.Decl.Attributes,
+                 Project_Tree.Shared);
+         begin
+            if Variable /= Nil_Variable_Value
+              and then not Variable.Default
+            then
+               Get_Name_String (Variable.Value);
+
+               begin
+                  Setup_Projects :=
+                    Boolean'Value (Name_Buffer (1 .. Name_Len));
+               exception
+                  when others =>
+
+                     Raise_Invalid_Config
+                       ("inconsistent value of attribute Create_Missing_Dirs");
+               end;
+            end if;
+         end;
+      end if;
+
       --  If --target was not specified on the command line, then do Phase 1 to
       --  check if attribute Target is declared in the main project.
 
       if Opt.Target_Origin /= Specified then
-         Main_Project := No_Project;
-         Process_Project_Tree_Phase_1
-           (In_Tree                => Project_Tree,
-            Project                => Main_Project,
-            Packages_To_Check      => Packages_To_Check,
-            Success                => Success,
-            From_Project_Node      => User_Project_Node,
-            From_Project_Node_Tree => Project_Node_Tree,
-            Env                    => Env,
-            Reset_Tree             => True,
-            On_New_Tree_Loaded     => On_New_Tree_Loaded);
-
-         if not Success then
-            Main_Project := No_Project;
-            return;
-         end if;
-
          declare
             Variable : constant Variable_Value :=
               Value_Of
@@ -1853,7 +1884,7 @@ package body GPR.Conf is
          Normalized_Hostname        => Normalized_Hostname,
          On_Load_Config             => On_Load_Config,
          On_New_Tree_Loaded         => On_New_Tree_Loaded,
-         Do_Phase_1                 => Opt.Target_Origin = Specified);
+         Do_Phase_1                 => True);
 
       if Auto_Generated then
          Automatically_Generated := True;

@@ -336,6 +336,7 @@ package body GPR.Snames is
       Add_Name ("runtime_dir");
       Add_Name ("runtime_library_version");
       Add_Name ("split");
+      Add_Name ("create_missing_dirs");
 
       Initialized := True;
    end Initialize;

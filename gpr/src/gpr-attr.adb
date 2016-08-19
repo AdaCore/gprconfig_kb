@@ -79,6 +79,7 @@ package body GPR.Attr is
    "Lbroots#" &
    "SVexternally_built#" &
    "SVorigin_project#" &
+   "SVcreate_missing_dirs#" &
 
    --  Directories
 

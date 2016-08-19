@@ -309,6 +309,7 @@ package GPR.Snames is
    Name_Runtime_Dir                      : constant Name_Id := N + 281;
    Name_Runtime_Library_Version          : constant Name_Id := N + 282;
    Name_Split                            : constant Name_Id := N + 283;
+   Name_Create_Missing_Dirs              : constant Name_Id := N + 284;
 
    subtype Reserved_Ada_95 is Name_Id
       range Name_Abort .. Name_Tagged;
