@@ -1800,10 +1800,8 @@ package body GPR.Conf is
          return;
       end if;
 
-      --  Check if attribute Auto_Create_Dirs is specified with value "true".
-
       if not Setup_Projects then
-         --  Check if attribute Auto_Create_Dirs is specified with value
+         --  Check if attribute Create_Missing_Dirs is specified with value
          --  "true".
 
          declare
