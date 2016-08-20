@@ -1882,7 +1882,7 @@ package body GPR.Conf is
          Normalized_Hostname        => Normalized_Hostname,
          On_Load_Config             => On_Load_Config,
          On_New_Tree_Loaded         => On_New_Tree_Loaded,
-         Do_Phase_1                 => True);
+         Do_Phase_1                 => False);
 
       if Auto_Generated then
          Automatically_Generated := True;
