@@ -2064,7 +2064,18 @@ procedure Gprlib is
                Options_Table.Append (new String'(Line (1 .. Last)));
 
             when Gprexch.Object_Directory =>
-               Object_Directories.Append (new String'(Line (1 .. Last)));
+               --  Make sure that there is no repetitions of the same
+               --  object directory.
+
+               declare
+                  Dir : constant String := Line (1 .. Last);
+               begin
+                  if (for all J in 1 .. Object_Directories.Last =>
+                        Object_Directories.Table (J).all /= Dir)
+                  then
+                     Object_Directories.Append (new String'(Dir));
+                  end if;
+               end;
 
             when Gprexch.Library_Name =>
                Library_Name := new String'(Line (1 .. Last));
