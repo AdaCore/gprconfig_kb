@@ -3300,8 +3300,7 @@ package body Gprbuild.Post_Compile is
          Object_File_Suffix_Label_Written : Boolean;
 
       begin
-         Binder_Driver_Needs_To_Be_Called :=
-           Opt.Force_Compilations or Opt.CodePeer_Mode;
+         Binder_Driver_Needs_To_Be_Called := Opt.Force_Compilations;
 
          --  First check if the binder driver needs to be called.
          --  It needs to be called if
@@ -3390,7 +3389,12 @@ package body Gprbuild.Post_Compile is
                  File_Stamp
                    (Path_Name_Type'(Create_Name (Line (1 .. Last))));
 
-               if Bind_Object_TS = Empty_Time_Stamp then
+               --  Do not perform this check in CodePeer mode where there is
+               --  no object file per se.
+
+               if Bind_Object_TS = Empty_Time_Stamp
+                 and not Opt.CodePeer_Mode
+               then
                   Binder_Driver_Needs_To_Be_Called := True;
 
                   if Opt.Verbosity_Level > Opt.Low then
@@ -3499,7 +3503,7 @@ package body Gprbuild.Post_Compile is
                end loop;
 
                --  Check if there are still project file paths in
-               --  the has table.
+               --  the hash table.
 
                if not Binder_Driver_Needs_To_Be_Called
                  and then Project_File_Paths.Get_First
