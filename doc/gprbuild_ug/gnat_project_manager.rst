@@ -882,9 +882,21 @@ The following attributes can be defined in package `Naming`:
 
   Its value must be one of ``"lowercase"`` (the default if
   unspecified), ``"uppercase"`` or ``"mixedcase"``. It describes the
-  casing of file names with regard to the Ada unit name. Given an Ada unit
-  ``My_Unit``, the file name will respectively be :file:`my_unit.adb` (lowercase),
-  :file:`MY_UNIT.ADB` (uppercase) or :file:`My_Unit.adb` (mixedcase).
+  casing of file names with regard to the Ada unit name.
+
+  Given an Ada package body My_Unit, the base file name (i.e. minus the
+  extension, which is controlled by other attributes described below)
+  will respectively be:
+
+  * for "lowercase": "my_unit"
+
+  * for "uppercase": "MY_UNIT"
+
+  * for "mixedcase": any spelling with indifferent casing such as "My_Unit",
+    "MY_Unit", "My_UnIT" etc... The case insensitive name must be unique,
+    otherwise an error will be reported. For example, there cannot be two
+    source file names such as "My_Unit.adb" and "MY_UnIT.adb".
+
   On Windows, file names are case insensitive, so this attribute is
   irrelevant.
 
