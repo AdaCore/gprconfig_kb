@@ -104,6 +104,9 @@ procedure Gprlib is
 
    No_SAL_Binding : Boolean := False;
 
+   Mapping_File_Name : String_Access := null;
+   --  The path name of the binder mapping file
+
    type Dir_Data;
    type Dir_Access is access Dir_Data;
    type Dir_Data is record
@@ -1281,6 +1284,13 @@ procedure Gprlib is
             Add (ALIs.Table (J), Bind_Options, Last_Bind_Option);
          end loop;
 
+         if Mapping_File_Name /= null then
+            Add
+              ("-F=" & Mapping_File_Name.all,
+               Bind_Options,
+               Last_Bind_Option);
+         end if;
+
          if not Quiet_Output then
             Name_Len := 0;
 
@@ -1300,28 +1310,6 @@ procedure Gprlib is
                   Command  => "bind SAL",
                   Argument => Library_Name.all);
             end if;
-         end if;
-
-         --  If there is more than one object directory, set ADA_OBJECTS_PATH
-         --  for the additional object libraries, so that gnatbind may find all
-         --  the ALI files.
-
-         if Object_Directories.Last > 1 then
-            declare
-               Object_Path : String_Access :=
-                 new String'(Object_Directories.Table (1).all);
-
-            begin
-               for J in 2 .. Object_Directories.Last loop
-                  Object_Path :=
-                    new String'
-                      (Object_Path.all &
-                         Path_Separator &
-                         Object_Directories.Table (J).all);
-               end loop;
-
-               Setenv ("ADA_OBJECTS_PATH", Object_Path.all);
-            end;
          end if;
 
          declare
@@ -2338,6 +2326,9 @@ procedure Gprlib is
                if Last > 4 and then Line (Last - 3 .. Last) = ".ali" then
                   ALIs.Append (new String'(Line (1 .. Last)));
                end if;
+
+            when Mapping_File =>
+               Mapping_File_Name := new String'(Line (1 .. Last));
 
             when Binding_Options =>
                Binding_Options_Table.Append (new String'(Line (1 .. Last)));

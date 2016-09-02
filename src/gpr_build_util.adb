@@ -50,10 +50,6 @@ package body Gpr_Build_Util is
    --  True if the unit is in one of the project file, but the file name is not
    --  one of its source. Returns False otherwise.
 
-   function Lib_File_Name
-     (Source_File : File_Name_Type;
-      Munit_Index : Nat := 0) return File_Name_Type;
-
    procedure Verbose_Msg
      (N1                : Name_Id;
       S1                : String;

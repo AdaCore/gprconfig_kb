@@ -106,6 +106,12 @@ package Gpr_Build_Util is
       Last   : in out Natural);
    --  Add a string to a list of strings
 
+   function Lib_File_Name
+     (Source_File : File_Name_Type;
+      Munit_Index : Nat := 0) return File_Name_Type;
+   --  Returns the ALI file name for source Source_File with multi-unit index
+   --  Munit_Index.
+
    function Create_Binder_Mapping_File
      (Project_Tree : Project_Tree_Ref) return Path_Name_Type;
    --  Create a binder mapping file and returns its path name

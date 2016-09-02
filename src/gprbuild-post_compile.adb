@@ -136,8 +136,17 @@ package body Gprbuild.Post_Compile is
          Table_Low_Bound      => 1,
          Table_Initial        => 10,
          Table_Increment      => 100);
-      --  Library Ada sources of Stand-Alone library, that is source of the
+      --  Library Ada sources of Stand-Alone library, that is sources of the
       --  project in the closure of the interface.
+
+      package Closure_Sources is new GNAT.Table
+        (Table_Component_Type => Source_Id,
+         Table_Index_Type     => Integer,
+         Table_Low_Bound      => 1,
+         Table_Initial        => 10,
+         Table_Increment      => 100);
+      --  Library Ada sources of Stand-Alone library, that is sources
+      --  in the closure of the interface, including in imported projects.
 
       package Interface_ALIs is new GNAT.HTable.Simple_HTable
         (Header_Num => GPR.Header_Num,
@@ -150,6 +159,12 @@ package body Gprbuild.Post_Compile is
 
       Expected_File_Name : String_Access;
       --  Expected library file name
+
+      Mapping_Path : Path_Name_Type := No_Path;
+      --  The path name of an eventual binder mapping file
+
+      Mapping_FD : File_Descriptor := Invalid_FD;
+      --  A File Descriptor for an eventual binder mapping file
 
       package Lang_Set is new Containers.Ordered_Sets (Name_Id);
 
@@ -195,6 +210,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_Interface_Obj_Files;
       procedure Write_Sources;
       procedure Write_Response_Files;
+      procedure Write_Mapping_File;
 
       Project_Name       : constant String :=
                              Get_Name_String (For_Project.Name);
@@ -599,12 +615,182 @@ package body Gprbuild.Post_Compile is
             Afile    : File_Name_Type;
             Src_Id   : GPR.Source_Id;
             OK       : Boolean;
+            Source   : Source_Id;
+
+            procedure Add_To_Mapping
+              (Source          : Source_Id;
+               From_Object_Dir : Boolean);
+            --  Add data for Source in binder mapping file. Use the ALI file
+            --  in the library ALI directory if From_Object_Dir is False and
+            --  the project is a library project. Otherwise, use the ALI file
+            --  in the object directory.
+
+            --------------------
+            -- Add_To_Mapping --
+            --------------------
+
+            procedure Add_To_Mapping
+              (Source : Source_Id;
+               From_Object_Dir : Boolean)
+            is
+               Unit : Unit_Index;
+
+               ALI_Unit : Unit_Name_Type := No_Unit_Name;
+               --  The unit name of an ALI file
+
+               ALI_Name : File_Name_Type := No_File;
+               --  The file name of the ALI file
+
+               ALI_Project : Project_Id := No_Project;
+               --  The project of the ALI file
+
+            begin
+               if Source = No_Source then
+                  return;
+               end if;
+
+               Unit := Source.Unit;
+
+               if Source.Replaced_By /= No_Source
+                 or else Unit = No_Unit_Index
+                 or else Unit.Name = No_Name
+               then
+                  ALI_Name := No_File;
+
+               --  If this is a body, put it in the mapping
+
+               elsif Source.Kind = Impl
+                 and then Unit.File_Names (Impl) /= No_Source
+                 and then Unit.File_Names (Impl).Project /= No_Project
+               then
+                  Get_Name_String (Unit.Name);
+                  Add_Str_To_Name_Buffer ("%b");
+                  ALI_Unit := Name_Find;
+                  ALI_Name :=
+                    Lib_File_Name (Unit.File_Names (Impl).Display_File);
+                  ALI_Project := Unit.File_Names (Impl).Project;
+
+               --  Otherwise, if this is a spec and there is no body, put it in
+               --  the mapping.
+
+               elsif Source.Kind = Spec
+                 and then Unit.File_Names (Impl) = No_Source
+                 and then Unit.File_Names (Spec) /= No_Source
+                 and then Unit.File_Names (Spec).Project /= No_Project
+               then
+                  Get_Name_String (Unit.Name);
+                  Add_Str_To_Name_Buffer ("%s");
+                  ALI_Unit := Name_Find;
+                  ALI_Name :=
+                    Lib_File_Name (Unit.File_Names (Spec).Display_File);
+                  ALI_Project := Unit.File_Names (Spec).Project;
+
+               else
+                  ALI_Name := No_File;
+               end if;
+
+               --  If we have something to put in the mapping then do it now.
+               --  If the project is extended, look for the ALI file in the
+               --  project, then in the extending projects in order, and use
+               --  the last one found.
+
+               if ALI_Name /= No_File then
+
+                  --  Look in the project and the projects that are extending
+                  --  it to find the real ALI
+
+                  declare
+                     ALI      : constant String := Get_Name_String (ALI_Name);
+                     ALI_Path : Name_Id         := No_Name;
+                     Bytes    : Integer;
+                     pragma Unreferenced (Bytes);
+
+                  begin
+                     loop
+                        --  For library projects, use the library ALI
+                        --  directory, for other projects, use the
+                        --  object directory.
+
+                        if ALI_Project.Library and then not From_Object_Dir
+                        then
+                           Get_Name_String
+                             (ALI_Project.Library_ALI_Dir.Display_Name);
+                        else
+                           Get_Name_String
+                             (ALI_Project.Object_Directory.Display_Name);
+                        end if;
+
+                        Add_Str_To_Name_Buffer (ALI);
+
+                        if Is_Regular_File (Name_Buffer (1 .. Name_Len)) then
+                           ALI_Path := Name_Find;
+                        end if;
+
+                        ALI_Project := ALI_Project.Extended_By;
+                        exit when ALI_Project = No_Project;
+                     end loop;
+
+                     if ALI_Path /= No_Name then
+
+                        --  First line is the unit name
+
+                        Get_Name_String (ALI_Unit);
+                        Add_Char_To_Name_Buffer (ASCII.LF);
+                        Bytes :=
+                          Write
+                            (Mapping_FD,
+                             Name_Buffer (1)'Address,
+                             Name_Len);
+
+                        --  Second line is the ALI file name
+
+                        Get_Name_String (ALI_Name);
+                        Add_Char_To_Name_Buffer (ASCII.LF);
+                        Bytes :=
+                          Write
+                            (Mapping_FD,
+                             Name_Buffer (1)'Address,
+                             Name_Len);
+
+                        --  Third line is the ALI path name
+
+                        Get_Name_String (ALI_Path);
+                        Add_Char_To_Name_Buffer (ASCII.LF);
+                        Bytes :=
+                          Write
+                            (Mapping_FD,
+                             Name_Buffer (1)'Address,
+                             Name_Len);
+                     end if;
+                  end;
+               end if;
+            end Add_To_Mapping;
+
+            From_Object_Dir : Boolean;
+
+         --  Start of processing for Get_Closure
 
          begin
-            while Index < Library_Sources.Last loop
+            Closure_Sources.Init;
+            for J in 1 .. Library_Sources.Last loop
+               Closure_Sources.Append (Library_Sources.Table (J));
+            end loop;
+
+            while Index < Closure_Sources.Last loop
+               From_Object_Dir := False;
                Index := Index + 1;
-               Dep_Path := Library_Sources.Table (Index).Dep_Path;
-               Dep_TS   := Library_Sources.Table (Index).Dep_TS;
+               Source := Closure_Sources.Table (Index);
+
+               for J in 1 .. Library_Sources.Last loop
+                  if Source = Library_Sources.Table (J) then
+                     From_Object_Dir := True;
+                     exit;
+                  end if;
+               end loop;
+
+               Add_To_Mapping (Source, From_Object_Dir);
+               Dep_Path := Source.Dep_Path;
+               Dep_TS   := Source.Dep_TS;
                Text := Read_Library_Info_From_Full
                  (File_Name_Type (Dep_Path), Dep_TS'Access);
 
@@ -672,6 +858,7 @@ package body Gprbuild.Post_Compile is
                            if Src_Id /= No_Source then
                               declare
                                  Proj : Project_Id := Src_Id.Project;
+                                 New_In_Closure : Boolean := True;
                               begin
                                  OK := False;
 
@@ -685,6 +872,18 @@ package body Gprbuild.Post_Compile is
                                        exit;
                                     end if;
                                  end loop;
+
+                                 for J in 1 .. Closure_Sources.Last loop
+                                    if Closure_Sources.Table (J) = Src_Id
+                                    then
+                                       New_In_Closure := False;
+                                       exit;
+                                    end if;
+                                 end loop;
+
+                                 if New_In_Closure then
+                                    Closure_Sources.Append (Src_Id);
+                                 end if;
 
                                  if OK then
                                     for J in 1 .. Library_Sources.Last loop
@@ -743,6 +942,8 @@ package body Gprbuild.Post_Compile is
 
          Proj : Project_Id := For_Project;
 
+      --  Start of processing of Get_Objects
+
       begin
          Library_Objs.Init;
          Library_Sources.Init;
@@ -771,7 +972,14 @@ package body Gprbuild.Post_Compile is
          end if;
 
          if For_Project.Standalone_Library /= No then
+            --  Create the binder maping file
+
+            Tempdir.Create_Temp_File (Mapping_FD, Mapping_Path);
+            Record_Temp_File (Project_Tree.Shared, Mapping_Path);
+
             Get_Closure;
+
+            Close (Mapping_FD);
 
             --  Put all the object files in the closure in Library_Objs
 
@@ -911,6 +1119,8 @@ package body Gprbuild.Post_Compile is
             return False;
          end Is_In_Object_Projects;
 
+      --  Start of processing for Write_Object_Directory
+
       begin
          Object_Projects.Init;
          Object_Directories.Reset;
@@ -1022,6 +1232,8 @@ package body Gprbuild.Post_Compile is
          procedure For_Imported is
            new For_Every_Project_Imported (Boolean, Compilers_For);
 
+      --  Start of processing for Write_Compilers
+
       begin
          Put_Line (Exchange_File, Library_Label (Compilers));
 
@@ -1087,6 +1299,8 @@ package body Gprbuild.Post_Compile is
          procedure For_Imported is new For_Every_Project_Imported
            (Boolean, Compiler_Leading_Switches_For);
 
+      --  Start of processing for Write_Compiler_Leading_Switches
+
       begin
          Put_Line (Exchange_File, Library_Label (Compiler_Leading_Switches));
 
@@ -1150,6 +1364,8 @@ package body Gprbuild.Post_Compile is
 
          procedure For_Imported is new For_Every_Project_Imported
            (Boolean, Compiler_Trailing_Switches_For);
+
+      --  Start of processing for Write_Compiler_Trailing_Switches
 
       begin
          Put_Line
@@ -1340,6 +1556,8 @@ package body Gprbuild.Post_Compile is
          procedure For_Imported is
            new For_Every_Project_Imported (Boolean, RTL_For);
 
+      --  Start of processing for Write_Runtime_Library_Dir
+
       begin
          RTL_For (For_Project, Project_Tree, Dummy);
 
@@ -1528,6 +1746,9 @@ package body Gprbuild.Post_Compile is
          end Write_All_Linker_Options;
 
          Library_Options : Variable_Value := Nil_Variable_Value;
+
+      --  Start of processing for Write_Library_Options
+
       begin
          --  If attribute Library_Options was specified, add these
          --  additional options.
@@ -1778,6 +1999,8 @@ package body Gprbuild.Post_Compile is
             end if;
          end Get_Directory;
 
+      --  Start of processing for Write_Library_Rpath_Options
+
       begin
          if Opt.Run_Path_Option
            and then For_Project.Config.Run_Path_Option /= No_Name_List
@@ -1930,6 +2153,8 @@ package body Gprbuild.Post_Compile is
          procedure Process_Aggregate_Library is
            new For_Project_And_Aggregated (Process);
 
+      --  Start of processing for Write_Dependency_Files
+
       begin
          Put_Line (Exchange_File, Library_Label (Dependency_Files));
          First_Dep := null;
@@ -1948,6 +2173,18 @@ package body Gprbuild.Post_Compile is
             First_Dep := First_Dep.Next;
          end loop;
       end Write_Dependency_Files;
+
+      ------------------------
+      -- Write_Mapping_File --
+      ------------------------
+
+      procedure Write_Mapping_File is
+      begin
+         if Mapping_Path /= No_Path then
+            Put_Line (Exchange_File, Library_Label (Mapping_File));
+            Put_Line (Exchange_File, Get_Name_String (Mapping_Path));
+         end if;
+      end Write_Mapping_File;
 
       -----------------------------
       -- Write_Toolchain_Version --
@@ -2008,6 +2245,8 @@ package body Gprbuild.Post_Compile is
 
          procedure For_Imported is
            new For_Every_Project_Imported (Boolean, Toolchain_Version_For);
+
+      --  Start of processing for Write_Toolchain_Version
 
       begin
          Toolchain_Version_For (For_Project, Project_Tree, Dummy);
@@ -2282,7 +2521,7 @@ package body Gprbuild.Post_Compile is
          end if;
       end Write_Response_Files;
 
-      --  Start of processing for Build_Library
+   --  Start of processing for Build_Library
 
    begin
       --  Check if there is an object directory
@@ -2889,6 +3128,8 @@ package body Gprbuild.Post_Compile is
 
          Write_Dependency_Files;
 
+         Write_Mapping_File;
+
          Write_Toolchain_Version;
 
          if For_Project.Standalone_Library /= No then
@@ -3229,6 +3470,8 @@ package body Gprbuild.Post_Compile is
                end if;
             end if;
          end Put_Dependency_File;
+
+      --  Start of processing for Add_Dependency_Files
 
       begin
          Dep_Files := False;

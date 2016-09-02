@@ -122,7 +122,8 @@ package Gprexch is
       Export_File,
       Library_Symbol_File,
       Script_Path,
-      No_SAL_Binding);
+      No_SAL_Binding,
+      Mapping_File);
 
    function Library_Label (Section : Library_Section) return String;
    --  Return the label for a section in a library exchange file
