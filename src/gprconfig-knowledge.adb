@@ -2237,12 +2237,16 @@ package body GprConfig.Knowledge is
             Merge_Same_Dirs  => True,
             Processed_Value  => Runtimes);
 
+         Comp.Default_Runtime := True;
+
          if not Is_Empty (Runtimes) then
             --  This loop makes sure that the default runtime appears first in
             --  the list (and thus is selected automatically when using
             --  --batch). This doesn't impact the interactive display, where
             --  the runtimes will be sorted alphabetically anyway (see
             --  Display_Before)
+
+            Comp.Default_Runtime := False;
 
             CS := First (Descr.Default_Runtimes);
             Defaults_Loop :
@@ -2254,6 +2258,7 @@ package body GprConfig.Knowledge is
                   then
                      Prepend (Runtimes, External_Value_Lists.Element (C2));
                      Delete (Runtimes, C2);
+                     Comp.Default_Runtime := True;
                      exit Defaults_Loop;
                   end if;
                   Next (C2);
@@ -2960,6 +2965,14 @@ package body GprConfig.Knowledge is
          if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": runtime does not match");
+         end if;
+         return False;
+      elsif Filter.Runtime = No_Name and then
+        not Comp.Default_Runtime
+      then
+         if Current_Verbosity /= Default then
+            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
+                         & ": no default runtime");
          end if;
          return False;
       end if;
