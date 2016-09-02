@@ -153,8 +153,10 @@ project Gprbuild is
       case Install_Mode is
          when "all" | "nointernal" =>
             for Artifacts ("share/examples/gprbuild") use ("examples/*");
-            for Artifacts ("share/doc/gprbuild") use
-              ("doc/html", "doc/info", "doc/pdf", "doc/txt");
+            for Artifacts ("share/doc/gprbuild/txt") use ("doc/txt/*.txt");
+            for Artifacts ("share/doc/gprbuild/info") use ("doc/info/*.info");
+            for Artifacts ("share/doc/gprbuild/pdf") use ("doc/pdf/*.pdf");
+            for Artifacts ("share/doc/gprbuild") use ("doc/html");
             for Artifacts ("share") use ("share/gprconfig");
             for Artifacts ("share/gpr") use ("share/_default.gpr");
 

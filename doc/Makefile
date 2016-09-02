@@ -40,21 +40,23 @@ clean:
 		$(BUILDDIR)/info \
 		$(BUILDDIR)/doctrees
 
-html:
+html: force
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
-pdf:
+pdf: force
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/pdf
 	cp $(SOURCEDIR)/share/sphinx.sty $(BUILDDIR)/pdf
 	$(MAKE) -C $(BUILDDIR)/pdf all-pdf LATEXOPTS="-interaction=nonstopmode"
 
-txt:
+txt: force
 	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/txt
 	$(MAKE) -C $(BUILDDIR)/txt plaintext
 
-info:
+info: force
 	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/info
 	$(MAKE) -C $(BUILDDIR)/info info
 
 texinfo:
 	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/$*/texinfo
+
+force:
