@@ -305,10 +305,8 @@ procedure Gprslave is
       procedure Push (Job : Job_Data)
         with Pre => Job.Stage = J_Created;
 
-      entry Pop (Job : out Job_Data);
-      --  with Post => Job.Stage = J_Waiting;
-      --  ??? with the post condition we have a warning for Pop not being
-      --  referenced.
+      entry Pop (Job : out Job_Data)
+        with Post => Job.Stage = J_Waiting;
 
    private
       Set : To_Run_Set.Vector;
