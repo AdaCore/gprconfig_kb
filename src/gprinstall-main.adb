@@ -64,6 +64,7 @@ procedure Gprinstall.Main is
    List_Option            : constant String := "--list";
    Stat_Option            : constant String := "--stat";
    Sources_Only_Option    : constant String := "--sources-only";
+   Side_Debug_Option      : constant String := "--side-debug";
 
    Opt_A_Set : Boolean := False; -- to detect if -a and -m are used together
    Opt_M_Set : Boolean := False; -- likewise
@@ -385,6 +386,9 @@ procedure Gprinstall.Main is
 
             elsif Has_Prefix (Stat_Option) then
                Output_Stats := True;
+
+            elsif Has_Prefix (Side_Debug_Option) then
+               Side_Debug := True;
 
             elsif Has_Prefix (Mode_Option) then
                declare
@@ -725,6 +729,9 @@ procedure Gprinstall.Main is
 
          Put_Line ("  --sources-only");
          Put_Line ("           Copy project sources only");
+
+         Put_Line ("  --side-debug");
+         Put_Line ("           Write debug information into a separate file");
 
          --  Line for --relocate-build-tree=
 

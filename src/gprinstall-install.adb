@@ -28,7 +28,8 @@ with Ada.Strings.Less_Case_Insensitive;
 with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
 with Ada.Text_IO;                            use Ada.Text_IO;
 
-with GNAT.MD5; use GNAT.MD5;
+with GNAT.MD5;    use GNAT.MD5;
+with GNAT.OS_Lib;
 
 with GPR.Names;      use GPR.Names;
 with GPR.Opt;
@@ -42,6 +43,8 @@ with Gpr_Util;       use Gpr_Util;
 with GPR_Version;    use GPR_Version;
 
 package body Gprinstall.Install is
+
+   use GNAT;
 
    package Name_Id_Set is new Containers.Ordered_Sets (Name_Id);
 
@@ -63,6 +66,23 @@ package body Gprinstall.Install is
 
    Agg_Manifest : Text_IO.File_Type;
    --  Manifest file for main aggregate project
+
+   Objcopy_Exec : constant String :=
+                    (if Target_Name = null
+                     then "objcopy"
+                     else Target_Name.all & "-objcopy");
+   --  Name of objcopy executable, possible a cross one
+
+   Strip_Exec   : constant String :=
+                    (if Target_Name = null
+                     then "strip"
+                     else Target_Name.all & "-strip");
+   --  Name of strip executable, possible a cross one
+
+   Objcopy      : constant OS_Lib.String_Access :=
+                    OS_Lib.Locate_Exec_On_Path (Objcopy_Exec);
+   Strip        : constant OS_Lib.String_Access :=
+                    OS_Lib.Locate_Exec_On_Path (Strip_Exec);
 
    procedure Double_Buffer;
    --  Double the size of the Buffer
@@ -740,7 +760,7 @@ package body Gprinstall.Install is
          Sym_Link       : Boolean := False;
          Executable     : Boolean := False)
       is
-         Dest_Filename : constant String := To & File;
+         Dest_Filename : aliased String := To & File;
       begin
          if not Sym_Link
            and then Exists (Dest_Filename)
@@ -846,6 +866,91 @@ package body Gprinstall.Install is
                if Executable then
                   Set_Executable
                     (Dest_Filename, Mode => S_Owner + S_Group + S_Others);
+
+                  --  Furthermore, if we have an executable and we ask for
+                  --  separate debug symbols we do it now.
+                  --  The commands to run are:
+                  --    $ objcopy --only-keep-debug <exec> <exec>.debug
+                  --    $ strip <exec>
+                  --    $ objcopy --add-gnu-debuglink=<exec>.debug <exec>
+
+                  if Side_Debug then
+
+                     if Objcopy = null then
+                        Put_Line
+                          (Objcopy_Exec & " not found, "
+                           & "cannot create side debug file for "
+                           & Dest_Filename);
+
+                     elsif Strip = null then
+                        Put_Line
+                          (Strip_Exec & "not found, "
+                           & "cannot create side debug file for "
+                           & Dest_Filename);
+
+                     else
+                        declare
+                           Keep_Debug : aliased String :=
+                                          "--only-keep-debug";
+                           Dest_Debug : aliased String :=
+                                          Dest_Filename & ".debug";
+                           Link_Debug : aliased String :=
+                                          "--add-gnu-debuglink=" & Dest_Debug;
+                           Success    : Boolean;
+                           Args       : Argument_List (1 .. 3);
+                        begin
+                           --  1. copy the debug symbols:
+
+                           Args (1) := Keep_Debug'Unchecked_Access;
+                           Args (2) := Dest_Filename'Unchecked_Access;
+                           Args (3) := Dest_Debug'Unchecked_Access;
+
+                           OS_Lib.Spawn (Objcopy.all, Args, Success);
+
+                           if Success then
+                              --  Record the debug file in the manifest
+                              Add_To_Manifest (Dest_Debug);
+
+                              --  2. strip original executable
+
+                              Args (1) := Dest_Filename'Unchecked_Access;
+
+                              OS_Lib.Spawn (Strip.all, Args (1 .. 1), Success);
+
+                              if Success then
+                                 --  2. link debug symbols file with original
+                                 --  file.
+
+                                 Args (1) := Link_Debug'Unchecked_Access;
+                                 Args (2) := Dest_Filename'Unchecked_Access;
+
+                                 OS_Lib.Spawn
+                                   (Objcopy.all, Args (1 .. 2), Success);
+
+                                 if not Success then
+                                    Put_Line
+                                      (Objcopy_Exec & " error, "
+                                       & "cannot link debug symbol file with"
+                                       & " original executable "
+                                       & Dest_Filename);
+                                 end if;
+
+                              else
+                                 Put_Line
+                                   (Strip_Exec & " error, "
+                                    & "cannot remove debug symbols from "
+                                    & Dest_Filename);
+                              end if;
+
+                           else
+                              Put_Line
+                                (Objcopy_Exec & "error, "
+                                 & "cannot create side debug file for "
+                                 & Dest_Filename);
+                           end if;
+                        end;
+                     end if;
+                  end if;
                end if;
 
                --  Add file to manifest

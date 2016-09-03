@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -144,5 +144,9 @@ private
    Sources_Only : Boolean := False;
    --  Whether to copy only the projects sources. This means that the object,
    --  library, executable files are not to be copied.
+
+   Side_Debug : Boolean := False;
+   --  Whether the debug symbols are kept into the main executable (default) or
+   --  written into a side debug file.
 
 end Gprinstall;

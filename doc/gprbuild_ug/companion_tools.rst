@@ -2185,6 +2185,15 @@ The switches for GPRinstall are:
   the object, library or executable files are never copied. When this
   switch is used the installed project is not set as externally built.
 
+* :samp:`--side-debug`
+
+  Write debug symbols out of executables and libraries into a
+  separate file. The separate file is named after the main file with
+  an added `.debug` extension. That is, if the executable to be
+  installed is named `main`, then a file `main.debug` is also created in
+  the same location, containing only the debug information. The
+  debug information is then removed from the `main` executable.
+
 * :samp:`--subdirs={subdir}`
 
   This indicates that the real directories (except the source directories) are
