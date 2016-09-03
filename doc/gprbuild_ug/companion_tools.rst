@@ -1924,7 +1924,7 @@ make it accessible to other projects. GPRinstall installs only what is
 necessary and nothing more. That is, for a library project the library
 itself is installed with the corresponding ALI files for Ada
 sources, but the object code is not installed as it not needed. Also if
-the Ada specs are installed the bodies are not, because they are not needed 
+the Ada specs are installed the bodies are not, because they are not needed
 in most cases. The cases where the bodies are required (if the spec has inline
 routines or is a generic) are properly detected by GPRinstall.
 
