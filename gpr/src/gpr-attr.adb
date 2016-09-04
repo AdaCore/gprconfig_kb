@@ -385,6 +385,7 @@ package body GPR.Attr is
    "LAartifacts#" &
    "SVmode#" &
    "SVinstall_name#" &
+   "SVside_debug#" &
 
    --  package Remote
 

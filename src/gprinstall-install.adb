@@ -135,6 +135,10 @@ package body Gprinstall.Install is
       Active          : Boolean := True;
       --  Whether installation is active or not (Install package's attribute)
 
+      Side_Debug      : Boolean := Gprinstall.Side_Debug;
+      --  Whether to extract debug symbols from executables and shared
+      --  libraries. Default to global value.
+
       Prefix_Dir      : Param := Dup (Global_Prefix_Dir);
       Exec_Subdir     : Param := Dup (Global_Exec_Subdir);
       Lib_Subdir      : Param := Dup (Global_Lib_Subdir);
@@ -401,6 +405,20 @@ package body Gprinstall.Install is
                                  Active := True;
                               end if;
                            end;
+
+                        elsif V.Name = Name_Side_Debug then
+                           declare
+                              Val : constant String :=
+                                      To_Lower
+                                        (Get_Name_String (V.Value.Value));
+                           begin
+                              if Val = "false" then
+                                 Side_Debug := False;
+                              else
+                                 Side_Debug := True;
+                              end if;
+                           end;
+
                         end if;
                      end;
                      Id := Tree.Shared.Variable_Elements.Table (Id).Next;

@@ -295,6 +295,7 @@ package body GPR.Snames is
       Add_Name ("shared_library_prefix");
       Add_Name ("shared_library_suffix");
       Add_Name ("separate_suffix");
+      Add_Name ("side_debug");
       Add_Name ("source_artifact_extensions");
       Add_Name ("source_dirs");
       Add_Name ("source_file_switches");

@@ -5083,6 +5083,13 @@ Package Install Attributes
   Specify the name to use for recording the installation. The default is
   the project name without the extension.
 
+* **Side_Debug**: single
+
+  Indicates that the project's executable and shared libraries are to
+  be stripped of the debug symbols. Those debug symbols are written
+  into a side file named after the original file with the ".debug"
+  extension added. Case-insensitive value "false" (default) disables
+  this feature. Set it to "true" to activate.
 
 .. _Package_Linker_Attributes:
 

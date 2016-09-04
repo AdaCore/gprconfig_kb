@@ -240,6 +240,7 @@ Shared_Library_Minimum_Switches
 Shared_Library_Prefix
 Shared_Library_Suffix
 Separate_Suffix
+Side_Debug
 Source_Artifact_Extensions
 Source_Dirs
 Source_File_Switches
