@@ -243,7 +243,7 @@ package body Gprinstall.Install is
         (Tree    : Project_Tree_Ref;
          Project : Project_Id) return Boolean;
       --  Returns True if the Project is active, that is there is no attribute
-      --  Activer set to False in the Install package.
+      --  Active set to False in the Install package.
 
       procedure Open_Check_Manifest (File : out Text_IO.File_Type);
       --  Check that manifest file can be used
