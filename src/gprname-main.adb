@@ -576,6 +576,26 @@ procedure GPRName.Main is
                Fail ("multiple targets");
             end if;
 
+         --  --RTS=path
+
+         elsif Arg'Length >= 5 and then Arg (1 .. 5) = "--RTS" then
+            if Arg'Length <= 6 or else Arg (6) /= '='then
+               Osint.Fail ("missing path for --RTS");
+
+            else
+               --  Check that it is the first time we see this switch or, if
+               --  it is not the first time, the same path is specified.
+
+               if RTS_Specified = null then
+                  RTS_Specified := new String'(Arg (7 .. Arg'Last));
+                  GPR.Conf.Set_Runtime_For
+                    (Snames.Name_Ada, Arg (7 .. Arg'Last));
+
+               elsif RTS_Specified.all /= Arg (7 .. Arg'Last) then
+                  Osint.Fail ("--RTS cannot be specified multiple times");
+               end if;
+            end if;
+
          --  -d
 
          elsif Arg'Length >= 2 and then Arg (1 .. 2) = "-d" then
@@ -738,7 +758,7 @@ procedure GPRName.Main is
          Put_Line
            ("  --target=<targ> indicates the target of the GNAT compiler");
          New_Line;
-
+         Put_Line ("  --RTS=dir    specify the Ada runtime");
          Put_Line ("  --subdirs=dir real obj/lib/exec dirs are subdirs");
          Put_Line ("  --no-backup   do not create backup of project file");
          New_Line;

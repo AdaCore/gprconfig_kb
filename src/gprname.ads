@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                      Copyright (C) 2001-2015, AdaCore                    --
+--                      Copyright (C) 2001-2016, AdaCore                    --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -85,6 +85,9 @@ package GPRName is
    --  after one or several calls to procedure Process.
 
 private
+
+   RTS_Specified : String_Access := null;
+   --  Used to detect multiple use of --RTS= switch
 
    Gcc      : constant String := "gcc";
    Gcc_Path : String_Access := null;
