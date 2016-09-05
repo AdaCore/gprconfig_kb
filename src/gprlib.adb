@@ -1312,6 +1312,41 @@ procedure Gprlib is
             end if;
          end if;
 
+         --  If there is more than one object directory, set ADA_OBJECTS_PATH
+         --  for the additional object libraries, so that gnatbind may find all
+         --  the ALI files, including those from imported library projects.
+
+         if Object_Directories.Last > 1 then
+            declare
+               Size : Natural := 0;
+            begin
+               for J in 2 .. Object_Directories.Last loop
+                  Size := Size + Object_Directories.Table (J)'Length + 1;
+               end loop;
+
+               declare
+                  Value : String (1 .. Size);
+                  Last  : Natural := 0;
+               begin
+                  for J in 2 .. Object_Directories.Last loop
+                     if Last > 0 then
+                        Last := Last + 1;
+                        Value (Last) := Path_Separator;
+                     end if;
+
+                     Value
+                       (Last + 1 ..
+                        Last + Object_Directories.Table (J)'Length) :=
+                       Object_Directories.Table (J).all;
+                     Last := Last + Object_Directories.Table (J)'Length;
+                  end loop;
+
+                  Setenv ("ADA_OBJECTS_PATH", Value (1 .. Last));
+
+               end;
+            end;
+         end if;
+
          declare
             Size         : Natural := 0;
          begin
