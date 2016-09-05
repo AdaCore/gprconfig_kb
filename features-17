@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P904-010 New gprname switch --RTS= (2016-09-05)
+
+   gprname has now a switch --RTS= like all other GPR tools, as it is
+   necessary for targets that do not have a default runtime.
+
 NF-17-P718-048 Interfaces in aggregate library projects (2016-07-18)
 
    Attribute Interfaces is now allowed in aggregate library projects.
