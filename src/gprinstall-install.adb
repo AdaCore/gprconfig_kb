@@ -319,7 +319,10 @@ package body Gprinstall.Install is
          Pck : Package_Id := Project.Decl.Packages;
 
          procedure Replace
-           (P : in out Param; Val : Name_Id; Is_Dir : Boolean := True);
+           (P         : in out Param;
+            Val       : Name_Id;
+            Is_Dir    : Boolean := True;
+            Normalize : Boolean := False);
          pragma Inline (Replace);
          --  Set Var with Value, free previous pointer
 
@@ -328,13 +331,21 @@ package body Gprinstall.Install is
          -------------
 
          procedure Replace
-           (P : in out Param; Val : Name_Id; Is_Dir : Boolean := True)
+           (P         : in out Param;
+            Val       : Name_Id;
+            Is_Dir    : Boolean := True;
+            Normalize : Boolean := False)
          is
             V : constant String := Get_Name_String (Val);
          begin
             if V /= "" then
                Free (P.V);
-               P := (new String'((if Is_Dir then Ensure_Directory (V) else V)),
+               P := (new String'
+                       ((if Is_Dir
+                        then (if Normalize
+                              then Ensure_Directory (Normalize_Pathname (V))
+                              else Ensure_Directory (V))
+                         else V)),
                      Default => False);
             end if;
          end Replace;
@@ -357,7 +368,8 @@ package body Gprinstall.Install is
                         if V.Name = Name_Prefix
                           and then Global_Prefix_Dir.Default
                         then
-                           Replace (Prefix_Dir, V.Value.Value);
+                           Replace
+                             (Prefix_Dir, V.Value.Value, Normalize => True);
 
                         elsif  V.Name = Name_Exec_Subdir
                           and then Global_Exec_Subdir.Default

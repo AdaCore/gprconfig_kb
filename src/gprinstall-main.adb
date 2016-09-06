@@ -129,7 +129,10 @@ procedure Gprinstall.Main is
       --  Returns True if Arg start with Name
 
       procedure Set_Param
-        (P : in out Param; Name : String; Is_Dir : Boolean := True);
+        (P         : in out Param;
+         Name      : String;
+         Is_Dir    : Boolean := True;
+         Normalize : Boolean := False);
       --  Set P with value for option Name
 
       ----------------
@@ -148,12 +151,19 @@ procedure Gprinstall.Main is
       ---------------
 
       procedure Set_Param
-        (P : in out Param; Name : String; Is_Dir : Boolean := True)
+        (P         : in out Param;
+         Name      : String;
+         Is_Dir    : Boolean := True;
+         Normalize : Boolean := False)
       is
          Value : constant String := Arg (Name'Length + 2 .. Arg'Last);
       begin
          P := (new String'
-                 ((if Is_Dir then Ensure_Directory (Value) else Value)),
+                 ((if Is_Dir
+                  then (if Normalize
+                        then Ensure_Directory (Normalize_Pathname (Value))
+                        else Ensure_Directory (Value))
+                  else Value)),
                False);
       end Set_Param;
 
@@ -342,7 +352,8 @@ procedure Gprinstall.Main is
          elsif Arg'Length > 1 and then Arg (2) = '-' then
 
             if Has_Prefix (Prefix_Project_Option) then
-               Set_Param (Global_Prefix_Dir, Prefix_Project_Option);
+               Set_Param
+                 (Global_Prefix_Dir, Prefix_Project_Option, Normalize => True);
 
             elsif Has_Prefix (Exec_Subdir_Option) then
                Set_Param (Global_Exec_Subdir, Exec_Subdir_Option);
