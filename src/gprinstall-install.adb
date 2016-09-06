@@ -848,7 +848,8 @@ package body Gprinstall.Install is
                else
                   Put_Line
                     (Standard_Error,
-                     "directory does not exist, use -p to create");
+                     "target directory "
+                     & To & " does not exist, use -p to create");
                   Finish_Program (Project_Tree);
                end if;
             end if;
