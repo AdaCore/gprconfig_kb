@@ -69,7 +69,7 @@ endif
 GPRBUILD_OPTIONS=
 
 BUILDER=gprbuild -p -m $(GTARGET) $(RBD) -j${PROCESSORS} -XBUILD=${BUILD} ${GPRBUILD_OPTIONS}
-INSTALLER=exe/gprinstall -p -f --target=$(TARGET)  $(RBD) --prefix=${prefix}
+INSTALLER=exe/gprinstall -p -f --target=$(TARGET) $(RBD) --prefix=${prefix}
 CLEANER=gprclean -q $(RBD)
 
 GPRBUILD_BUILDER=$(BUILDER) $(GPRBUILD_GPR) -XLIBRARY_TYPE=static
