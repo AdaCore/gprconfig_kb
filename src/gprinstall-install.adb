@@ -789,7 +789,7 @@ package body Gprinstall.Install is
             Put (File);
             Put (" exists, use -f to overwrite");
             New_Line;
-            OS_Exit (1);
+            Finish_Program (Project_Tree);
          end if;
 
          if Dry_Run or else Opt.Verbose_Mode then
@@ -822,7 +822,7 @@ package body Gprinstall.Install is
                      Put (Dest_Filename);
                      Put (" check permissions");
                      New_Line;
-                     OS_Exit (1);
+                     Finish_Program (Project_Tree);
                   end if;
                end;
             end if;
@@ -832,7 +832,7 @@ package body Gprinstall.Install is
                Put (From);
                Put (" does not exist, build may not be complete");
                New_Line;
-               OS_Exit (1);
+               Finish_Program (Project_Tree);
             end if;
 
             if (not Sym_Link and then not Exists (To))
@@ -849,7 +849,7 @@ package body Gprinstall.Install is
                   Put_Line
                     (Standard_Error,
                      "directory does not exist, use -p to create");
-                  OS_Exit (1);
+                  Finish_Program (Project_Tree);
                end if;
             end if;
 
@@ -878,7 +878,7 @@ package body Gprinstall.Install is
                      Put_Line
                        ("cannot overwrite file " & Dest_Filename
                         & " check permissions.");
-                     OS_Exit (1);
+                     Finish_Program (Project_Tree);
                end;
 
                if Executable then
@@ -2291,7 +2291,7 @@ package body Gprinstall.Install is
                Put (Filename);
                Put (" exists, use -f to overwrite");
                New_Line;
-               OS_Exit (1);
+               Finish_Program (Project_Tree);
             end if;
          end if;
 
@@ -2328,7 +2328,7 @@ package body Gprinstall.Install is
 
                         if P = 0 then
                            Put_Line ("cannot parse the BUILD_KIND line");
-                           OS_Exit (1);
+                           Finish_Program (Project_Tree);
 
                         else
                            Content.Replace_Element
@@ -2347,7 +2347,7 @@ package body Gprinstall.Install is
 
                      if P = 0 then
                         Put_Line ("cannot parse the BUILD line");
-                        OS_Exit (1);
+                        Finish_Program (Project_Tree);
 
                      else
                         L := P + 1;
@@ -2357,7 +2357,7 @@ package body Gprinstall.Install is
 
                         if Line (L) /= '"' then
                            Put_Line ("cannot parse the BUILD line");
-                           OS_Exit (1);
+                           Finish_Program (Project_Tree);
 
                         else
                            Content.Replace_Element
@@ -2681,8 +2681,8 @@ package body Gprinstall.Install is
                     ("   - install under another name, use --install-name");
                   Put_Line
                     ("   - force installation under the same name, "
-                       & "use --install-name=" & Install_Name.V.all);
-                  OS_Exit (1);
+                     & "use --install-name=" & Install_Name.V.all);
+                  Finish_Program (Project_Tree);
                end if;
 
                Reset (File, Append_File);
