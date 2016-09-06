@@ -183,10 +183,12 @@ package body Gprinstall.Install is
         (From, To, File : String;
          From_Ver       : String  := "";
          Sym_Link       : Boolean := False;
-         Executable     : Boolean := False);
+         Executable     : Boolean := False;
+         Extract_Debug  : Boolean := False);
       --  Copy file From into To, if Sym_Link is set a symbolic link is
       --  created. If Executable is set, the destination file exec attribute
-      --  is set.
+      --  is set. When Extract_Debug is set to True the debug information
+      --  for the executable is written in a side file.
 
       function Dir_Name (Suffix : Boolean := True) return String;
       --  Returns the name of directory where project files are to be
@@ -776,7 +778,8 @@ package body Gprinstall.Install is
         (From, To, File : String;
          From_Ver       : String  := "";
          Sym_Link       : Boolean := False;
-         Executable     : Boolean := False)
+         Executable     : Boolean := False;
+         Extract_Debug  : Boolean := False)
       is
          Dest_Filename : aliased String := To & File;
       begin
@@ -893,8 +896,7 @@ package body Gprinstall.Install is
                   --    $ strip <exec>
                   --    $ objcopy --add-gnu-debuglink=<exec>.debug <exec>
 
-                  if Side_Debug then
-
+                  if Extract_Debug then
                      if Objcopy = null then
                         Put_Line
                           (Objcopy_Exec & " not found, "
@@ -1300,21 +1302,24 @@ package body Gprinstall.Install is
                   --  No support for version, do a simple copy
 
                   Copy_File
-                    (From       => Cat
+                    (From          => Cat
                        (Project.Library_Dir.Display_Name,
                         Get_Library_Filename),
-                     To         => Lib_Dir,
-                     File       => Get_Name_String (Get_Library_Filename),
-                     Executable => True);
+                     To            => Lib_Dir,
+                     File          => Get_Name_String (Get_Library_Filename),
+                     Executable    => True,
+                     Extract_Debug => Side_Debug);
 
                else
                   Copy_File
-                    (From       => Cat
+                    (From          => Cat
                        (Project.Library_Dir.Display_Name,
                         File_Name_Type (Project.Lib_Internal_Name)),
-                     To         => Lib_Dir,
-                     File       => Get_Name_String (Project.Lib_Internal_Name),
-                     Executable => True);
+                     To            => Lib_Dir,
+                     File          =>
+                       Get_Name_String (Project.Lib_Internal_Name),
+                     Executable    => True,
+                     Extract_Debug => Side_Debug);
 
                   Copy_File
                     (From     => Lib_Dir
@@ -1330,12 +1335,14 @@ package body Gprinstall.Install is
 
             else
                Copy_File
-                 (From       => Cat
+                 (From          => Cat
                     (Project.Library_Dir.Display_Name,
                      Get_Library_Filename),
-                  To         => Lib_Dir,
-                  File       => Get_Name_String (Get_Library_Filename),
-                  Executable => not Is_Static (Project));
+                  To            => Lib_Dir,
+                  File          => Get_Name_String (Get_Library_Filename),
+                  Executable    => not Is_Static (Project),
+                  Extract_Debug =>
+                    Side_Debug and then not Is_Static (Project));
             end if;
 
             --  On Windows copy the shared libraries into the bin directory
@@ -1345,11 +1352,12 @@ package body Gprinstall.Install is
             if not Is_Static (Project) and then Add_Lib_Link then
                if Windows_Target then
                   Copy_File
-                    (From       => Lib_Dir
-                                     & Get_Name_String (Get_Library_Filename),
-                     To         => Exec_Dir,
-                     File       => Get_Name_String (Get_Library_Filename),
-                     Executable => True);
+                    (From          => Lib_Dir
+                     & Get_Name_String (Get_Library_Filename),
+                     To            => Exec_Dir,
+                     File          => Get_Name_String (Get_Library_Filename),
+                     Executable    => True,
+                     Extract_Debug => False);
 
                else
                   Copy_File
@@ -1396,12 +1404,13 @@ package body Gprinstall.Install is
                                 Main_Binary (Name_Id (M.File));
                      begin
                         Copy_File
-                          (From       =>
+                          (From          =>
                              Get_Name_String
                                (Project.Exec_Directory.Display_Name) & Bin,
-                           To         => Exec_Dir,
-                           File       => Bin,
-                           Executable => True);
+                           To            => Exec_Dir,
+                           File          => Bin,
+                           Executable    => True,
+                           Extract_Debug => Side_Debug);
                      end;
                   end if;
 
