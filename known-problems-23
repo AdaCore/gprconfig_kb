@@ -17,6 +17,17 @@ in this document.
 Known problems in 2.3.1 and 2.3.2
 ---------------------------------
 
+KP-23-P811-008 Unable to bind an aggregate Stand-Alone Library
+
+  Problem:    gprbuild may fail to correctly bind an aggregate Stand-Alone
+              library if there are many aggregated projects, due to limitation
+              in the sizes of environment variables.
+
+  Status:     This was fixed in 17 on 2016-09-06
+
+  Workaround: Reduce the number of aggregated projects or reduce the lengths
+              of the path names of their object directories.
+
 KP-23-P804-003 GPRinstall and Mains from extended projects
 
   Problem:    GPRinstall fails to install mains part of the extended
