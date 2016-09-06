@@ -903,7 +903,7 @@ package body Gprinstall.Install is
 
                      elsif Strip = null then
                         Put_Line
-                          (Strip_Exec & "not found, "
+                          (Strip_Exec & " not found, "
                            & "cannot create side debug file for "
                            & Dest_Filename);
 
@@ -963,7 +963,7 @@ package body Gprinstall.Install is
 
                            else
                               Put_Line
-                                (Objcopy_Exec & "error, "
+                                (Objcopy_Exec & " error, "
                                  & "cannot create side debug file for "
                                  & Dest_Filename);
                            end if;
