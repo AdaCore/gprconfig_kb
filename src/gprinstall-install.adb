@@ -412,10 +412,10 @@ package body Gprinstall.Install is
                                       To_Lower
                                         (Get_Name_String (V.Value.Value));
                            begin
-                              if Val = "false" then
-                                 Side_Debug := False;
-                              else
+                              if Val = "true" then
                                  Side_Debug := True;
+                              else
+                                 Side_Debug := False;
                               end if;
                            end;
 
