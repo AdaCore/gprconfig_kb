@@ -5,24 +5,24 @@ The build instructions for `gprbuild` may have a slight UNIX flavor but they can
 be used on Windows platforms with a full Cygwin installation. The latter makes
 it simpler to build `gprbuild` but is not required to use it.
 
+Bootstrapping
+=============
+
+`gprbuild` needs `gprbuild` to build... So we also provide a way to
+easily bootstrap if you don't already have `gprbuild`. Run the
+`bootstrap.sh` script (written for Linux) specifying the install
+location and the sources of XML/Ada. The script will build `gprbuild`
+and install it:
+
+	$ ../bootstrap.sh --with-xmlada=../../xmlada.git --prefix=$HOME/bootstrap
+
 Configuring
 ===========
 
-Configuring is usually done simply as:
+You should first configure the build like this (unless you plan to
+build in the tree):
 
-    $ ./configure
-
-Two parameters may be worth specifying: `--prefix` for specifying the
-installation root and `--build` for specifying the build host.
-
-In particular, on Windows, when using cygwin to build, it is necessary to
-configure with `--build=i686-pc-mingw32` if one wants to use 32 bit mingw based
-compilers such as GNAT Pro or GNAT GPL, and with `--build=x86_64-pc-mingw32` for
-64 bit compilers. Here are examples of such commands:
-
-    $ ./configure --build=i686-pc-mingw32 --prefix=$HOME/local
-
-    $ ./configure --build=x86_64-pc-mingw32 --prefix=$HOME/local
+	$ make prefix=xxx SOURCE_DIR=src
 
 Building and Installing
 =======================
