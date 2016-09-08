@@ -703,7 +703,7 @@ begin
 
    if Mapping_File /= null
      and then GNAT_Version_Set
-     and then GNAT_Version'Length > 2
+     and then GNAT_Version'Length >= 2
      and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
                 "3."
    then
