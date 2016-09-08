@@ -548,7 +548,7 @@ begin
 
    if  GNAT_Version_Set
       and then
-       GNAT_Version'Length > 2
+       GNAT_Version'Length >= 2
       and then
        GNAT_Version.all /= "000"
       and then
@@ -599,7 +599,7 @@ begin
 
    if There_Are_Stand_Alone_Libraries
      and then GNAT_Version_Set
-     and then GNAT_Version'Length > 2
+     and then GNAT_Version'Length >= 2
      and then GNAT_Version (GNAT_Version'First .. GNAT_Version'First + 1) /=
                 "3."
    then
