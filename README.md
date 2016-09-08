@@ -9,12 +9,18 @@ Bootstrapping
 =============
 
 `gprbuild` needs `gprbuild` to build... So we also provide a way to
-easily bootstrap if you don't already have `gprbuild`. Run the
-`bootstrap.sh` script (written for Linux) specifying the install
-location and the sources of XML/Ada. The script will build `gprbuild`
-and install it:
+easily bootstrap if you don't already have `gprbuild`, provided you
+already have installed GNAT.
+
+Download XML/Ada sources (from https://github.com/AdaCore/xmlada).
+Run the `bootstrap.sh` script (written for Linux) specifying the install
+location and the sources of XML/Ada. The script will build *and*
+install `gprbuild`:
 
 	$ ../bootstrap.sh --with-xmlada=../../xmlada.git --prefix=$HOME/bootstrap
+
+With this boostrapped `gprbuild`, you can build XML/Ada and `gprbuild`
+as documented below.
 
 Configuring
 ===========
