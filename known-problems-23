@@ -17,6 +17,17 @@ in this document.
 Known problems in 2.3.1 and 2.3.2
 ---------------------------------
 
+KP-23-P909-036 Relative paths in Linker switches of aggregated projects
+
+  Problem:    If Linker switches of a project A include relative paths, those
+              paths may not be not changed to absolute paths when gprbuild is
+              invoked on an aggregate project B that have A as an aggregated
+              project, when project directories of A and B are different.
+
+  Status:     This was fixed in 17 on 2016-09-10
+
+  Workaround: Invoke gprbuild on project A, not on the aggregate project B.
+
 KP-23-P811-008 Unable to bind an aggregate Stand-Alone Library
 
   Problem:    gprbuild may fail to correctly bind an aggregate Stand-Alone
