@@ -2245,7 +2245,7 @@ package body Gprbuild.Link is
 
                               Test_If_Relative_Path
                                 (Option,
-                                 Main_Project_Dir.all,
+                                 Get_Name_String (Main_Proj.Directory.Name),
                                  Dash_L);
 
                               Add_Argument (Option.all, True);
