@@ -394,10 +394,12 @@ package body GPR.Nmsc is
    --  Get the object directory of a project.
 
    procedure Get_Directories
-     (Project : Project_Id;
-      Data    : in out Tree_Processing_Data);
+     (Project    : Project_Id;
+      Data       : in out Tree_Processing_Data;
+      No_Sources : out Boolean);
    --  Get the object directory, the exec directory and the source directories
-   --  of a project.
+   --  of a project. Set No_Sources to True if there are no sources in the
+   --  project and the project is not an extending project.
 
    procedure Get_Mains
      (Project : Project_Id;
@@ -5866,8 +5868,9 @@ package body GPR.Nmsc is
    ---------------------
 
    procedure Get_Directories
-     (Project : Project_Id;
-      Data    : in out Tree_Processing_Data)
+     (Project    : Project_Id;
+      Data       : in out Tree_Processing_Data;
+      No_Sources : out Boolean)
    is
       Shared : constant Shared_Project_Tree_Data_Access := Data.Tree.Shared;
 
@@ -6011,21 +6014,21 @@ package body GPR.Nmsc is
 
       Dir_Exists : Boolean;
 
-      No_Sources : constant Boolean :=
-        Project.Qualifier = Abstract_Project
-          or else (((not Source_Files.Default
-                      and then Source_Files.Values = Nil_String)
-                    or else
-                    (not Source_Dirs.Default
-                      and then Source_Dirs.Values  = Nil_String)
-                    or else
-                     (not Languages.Default
-                      and then Languages.Values    = Nil_String))
-                   and then Project.Extends = No_Project);
-
    --  Start of processing for Get_Directories
 
    begin
+      No_Sources :=
+        Project.Qualifier = Abstract_Project
+        or else (((not Source_Files.Default
+                   and then Source_Files.Values = Nil_String)
+                  or else
+                    (not Source_Dirs.Default
+                     and then Source_Dirs.Values  = Nil_String)
+                  or else
+                    (not Languages.Default
+                     and then Languages.Values    = Nil_String))
+                 and then Project.Extends = No_Project);
+
       Debug_Output ("starting to look for directories");
 
       Get_Object_Directory (Project, Data, No_Sources);
@@ -8992,6 +8995,8 @@ package body GPR.Nmsc is
                       Data.Tree.Shared;
          Prj_Data : Project_Processing_Data;
 
+         No_Sources : Boolean := False;
+
       --  Start of processing for Check
 
       begin
@@ -9011,7 +9016,7 @@ package body GPR.Nmsc is
                end if;
 
             when others =>
-               Get_Directories (Project, Data);
+               Get_Directories (Project, Data, No_Sources);
                Check_Programming_Languages (Project, Data);
 
                if Current_Verbosity = High then
@@ -9031,7 +9036,21 @@ package body GPR.Nmsc is
 
          if not Data.Flags.Check_Configuration_Only then
             if Project.Qualifier /= Aggregate then
-               Check_Library_Attributes (Project, Data);
+               --  A project with no sources cannot be a library project
+
+               if No_Sources then
+                  if Project.Qualifier = Library then
+                     Error_Msg
+                       (Data.Flags,
+                        "a project with no sources " &
+                        "cannot be a library project",
+                        Project.Location, Project);
+                  end if;
+
+               else
+                  Check_Library_Attributes (Project, Data);
+               end if;
+
                Check_Package_Naming (Project, Data);
 
                --  An aggregate library has no source, no need to look for them
