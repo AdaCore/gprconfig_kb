@@ -28,6 +28,17 @@ KP-23-P909-036 Relative paths in Linker switches of aggregated projects
 
   Workaround: Invoke gprbuild on project A, not on the aggregate project B.
 
+KP-23-P831-030 Library projects with no sources
+
+  Problem:    gprbuild fails when a non extending project declares that it
+              has no sources but also declares attributes Library_Name and
+              Library_Dir, as such a project has no object directory and
+              thus cannot be a library project.
+
+  Status:     This was fixed in 17 on 2016-09-12
+
+  Workaround: Remove declarations of attributes Library_Name and Library_Dir.
+
 KP-23-P811-008 Unable to bind an aggregate Stand-Alone Library
 
   Problem:    gprbuild may fail to correctly bind an aggregate Stand-Alone
