@@ -301,10 +301,13 @@ package body GPR.Nmsc is
    --  In_Interfaces only for the sources specified in the list.
 
    procedure Check_Library_Attributes
-     (Project : Project_Id;
-      Data    : in out Tree_Processing_Data);
+     (Project    : Project_Id;
+      No_Sources : Boolean;
+      Data       : in out Tree_Processing_Data);
    --  Check the library attributes of project Project in project tree
-   --  and modify its data Data accordingly.
+   --  and modify its data Data accordingly. If the declared library attributes
+   --  makes the project a library project, report an error when No_Sources
+   --  is True.
 
    procedure Check_Package_Naming
      (Project : Project_Id;
@@ -3497,8 +3500,9 @@ package body GPR.Nmsc is
    --  This procedure is awfully long (over 700 lines) should be broken up???
 
    procedure Check_Library_Attributes
-     (Project : Project_Id;
-      Data    : in out Tree_Processing_Data)
+     (Project    : Project_Id;
+      No_Sources : Boolean;
+      Data       : in out Tree_Processing_Data)
    is
       Shared : constant Shared_Project_Tree_Data_Access := Data.Tree.Shared;
 
@@ -3848,6 +3852,9 @@ package body GPR.Nmsc is
               --  these tests are not required in this case.
 
               and then Project.Qualifier /= Aggregate_Library
+
+              and then not No_Sources
+
             then
                --  Library directory cannot be the same as Object directory
 
@@ -3952,7 +3959,17 @@ package body GPR.Nmsc is
         Project.Library_Dir /= No_Path_Information
           and then Project.Library_Name /= No_Name;
 
-      if Project.Extends = No_Project then
+      if Project.Library and then No_Sources then
+         Project.Library := False;
+         Project.Library_Dir := No_Path_Information;
+         Project.Library_Name := No_Name;
+         Error_Msg
+           (Data.Flags,
+            "a project with no sources cannot be a library project",
+            Project.Location, Project);
+         return;
+
+      elsif Project.Extends = No_Project then
          case Project.Qualifier is
             when Standard =>
                if Project.Library then
@@ -9028,27 +9045,28 @@ package body GPR.Nmsc is
                end if;
          end case;
 
-         --  Check configuration. Must be done for gnatmake (even though no
-         --  user configuration file was provided) since the default config we
-         --  generate indicates whether libraries are supported for instance.
+         --  Check configuration.
 
          Check_Configuration (Project, Data);
 
          if not Data.Flags.Check_Configuration_Only then
             if Project.Qualifier /= Aggregate then
+               --  Externally built projects are allowed to be library projects
+               --  even when they have no sources.
+
+               No_Sources := No_Sources and then not Project.Externally_Built;
+
                --  A project with no sources cannot be a library project
 
-               if No_Sources then
-                  if Project.Qualifier = Library then
-                     Error_Msg
-                       (Data.Flags,
-                        "a project with no sources " &
-                        "cannot be a library project",
-                        Project.Location, Project);
-                  end if;
+               if No_Sources and then Project.Qualifier = Library then
+                  Error_Msg
+                    (Data.Flags,
+                     "a project with no sources " &
+                       "cannot be a library project",
+                     Project.Location, Project);
 
                else
-                  Check_Library_Attributes (Project, Data);
+                  Check_Library_Attributes (Project, No_Sources, Data);
                end if;
 
                Check_Package_Naming (Project, Data);
