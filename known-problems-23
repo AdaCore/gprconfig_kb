@@ -17,6 +17,16 @@ in this document.
 Known problems in 2.3.1 and 2.3.2
 ---------------------------------
 
+KP-23-P913-032 Library options in static libraries
+
+  Problem:    Attribute Library_Options is not taken into account in static
+              library projects to add object files to the archive.
+
+  Status:     This was fixed in 17 on 2016-09-14
+
+  Workaround: Add the sources of the additional object files to the sources
+              of the library project.
+
 KP-23-P909-036 Relative paths in Linker switches of aggregated projects
 
   Problem:    If Linker switches of a project A include relative paths, those
