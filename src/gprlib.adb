@@ -366,6 +366,8 @@ procedure Gprlib is
 
    Library_Directory : String_Access := null;
 
+   Project_Directory : String_Access := null;
+
    Library_Dependency_Directory : String_Access := null;
 
    Library_Version      : String_Access := new String'("");
@@ -1698,6 +1700,35 @@ procedure Gprlib is
 
       First_AB_Object_Pos := Last_AB_Option + 1;
 
+      if Library_Options_Table.Last > 0 then
+         --  Add the object files specified in the Library_Options
+
+         for J in 1 .. Library_Options_Table.Last loop
+            declare
+               Object_Path : String_Access;
+            begin
+               if Is_Absolute_Path
+                    (Name => Library_Options_Table.Table (J).all)
+               then
+                  Object_Path := Library_Options_Table.Table (J);
+               else
+                  Object_Path := new String'
+                    (Project_Directory.all &
+                       Directory_Separator &
+                       Library_Options_Table.Table (J).all);
+               end if;
+
+               if Is_Regular_File (Object_Path.all) then
+                  Object_Files.Append (Object_Path);
+               else
+                  Fail_Program
+                    (null,
+                     "unknown object file """ & Object_Path.all & """");
+               end if;
+            end;
+         end loop;
+      end if;
+
       if Standalone /= No and then Partial_Linker_Path /= null then
          --  If partial linker is used, do a partial link and put the resulting
          --  object file in the archive.
@@ -2105,6 +2136,9 @@ procedure Gprlib is
 
             when Gprexch.Library_Directory =>
                Library_Directory := new String'(Line (1 .. Last));
+
+            when Gprexch.Project_Directory =>
+               Project_Directory := new String'(Line (1 .. Last));
 
             when Gprexch.Library_Dependency_Directory =>
                Library_Dependency_Directory :=
@@ -2541,6 +2575,10 @@ begin
 
    if Library_Directory = null then
       Fail_Program (null, "no library directory specified");
+   end if;
+
+   if Project_Directory = null then
+      Fail_Program (null, "no project directory specified");
    end if;
 
    if Object_Directories.Last = 0 then

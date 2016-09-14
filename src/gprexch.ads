@@ -123,7 +123,8 @@ package Gprexch is
       Library_Symbol_File,
       Script_Path,
       No_SAL_Binding,
-      Mapping_File);
+      Mapping_File,
+      Project_Directory);
 
    function Library_Label (Section : Library_Section) return String;
    --  Return the label for a section in a library exchange file

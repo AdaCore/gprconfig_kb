@@ -2978,6 +2978,13 @@ package body Gprbuild.Post_Compile is
            (Exchange_File,
             Get_Name_String (For_Project.Library_Dir.Display_Name));
 
+         --  Project directory
+
+         Put_Line (Exchange_File, Library_Label (Project_Directory));
+         Put_Line
+           (Exchange_File,
+            Get_Name_String (For_Project.Directory.Display_Name));
+
          if For_Project.Library_ALI_Dir /= No_Path_Information
            and then
              For_Project.Library_ALI_Dir.Name /= For_Project.Library_Dir.Name
