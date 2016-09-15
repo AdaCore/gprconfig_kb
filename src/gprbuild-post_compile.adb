@@ -30,6 +30,7 @@ with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR.Debug;      use GPR.Debug;
 with GPR.Env;
+with GPR.Err;        use GPR.Err;
 with GPR.Names;      use GPR.Names;
 with GPR.Opt;
 with GPR.Snames;     use GPR.Snames;
@@ -166,6 +167,8 @@ package body Gprbuild.Post_Compile is
       Mapping_FD : File_Descriptor := Invalid_FD;
       --  A File Descriptor for an eventual binder mapping file
 
+      Library_Options_Success : Boolean := False;
+
       package Lang_Set is new Containers.Ordered_Sets (Name_Id);
 
       procedure Get_Objects;
@@ -200,7 +203,7 @@ package body Gprbuild.Post_Compile is
       procedure Write_Auto_Init;
       procedure Write_Run_Path_Option;
       procedure Write_Leading_Library_Options;
-      procedure Write_Library_Options;
+      procedure Write_Library_Options (Success : out Boolean);
       procedure Write_Library_Rpath_Options;
       procedure Write_Imported_Libraries;
       procedure Write_Dependency_Files;
@@ -1664,7 +1667,7 @@ package body Gprbuild.Post_Compile is
       -- Write_Library_Options --
       ---------------------------
 
-      procedure Write_Library_Options is
+      procedure Write_Library_Options (Success : out Boolean) is
 
          procedure Write_All_Linker_Options (Project : Project_Id);
          --  Write all linker options for all project imported by Project. This
@@ -1750,6 +1753,8 @@ package body Gprbuild.Post_Compile is
       --  Start of processing for Write_Library_Options
 
       begin
+         Success := True;
+
          --  If attribute Library_Options was specified, add these
          --  additional options.
 
@@ -1762,6 +1767,44 @@ package body Gprbuild.Post_Compile is
             Write_List
               (Exchange_File,
                Gprexch.Library_Options, Library_Options.Values);
+
+            --  For static libraries, check that the library options are
+            --  existing object files.
+
+            if For_Project.Library_Kind = Static or else
+              For_Project.Library_Kind = Static_Pic
+            then
+               declare
+                  List : String_List_Id := Library_Options.Values;
+                  Elem : String_Element;
+                  OK   : Boolean;
+               begin
+                  while List /= Nil_String loop
+                     Elem := Project_Tree.Shared.String_Elements.Table (List);
+                     Get_Name_String (Elem.Value);
+
+                     if Is_Absolute_Path (Name_Buffer (1 .. Name_Len)) then
+                        OK := Is_Regular_File (Name_Buffer (1 .. Name_Len));
+
+                     else
+                        OK := Is_Regular_File
+                          (Get_Name_String (For_Project.Directory.Name) &
+                          Directory_Separator &
+                          Name_Buffer (1 .. Name_Len));
+                     end if;
+
+                     if not OK then
+                        Error_Msg
+                          (Msg           => "unknown object file " &
+                                             Name_Buffer (1 .. Name_Len),
+                           Flag_Location => Library_Options.Location);
+                        Success := False;
+                     end if;
+
+                     List := Elem.Next;
+                  end loop;
+               end;
+            end if;
          end if;
 
          --  For encapsulated libraries we also want to add the Linker_Options
@@ -3131,7 +3174,7 @@ package body Gprbuild.Post_Compile is
             Write_Imported_Libraries;
          end if;
 
-         Write_Library_Options;
+         Write_Library_Options (Library_Options_Success);
 
          Write_Dependency_Files;
 
@@ -3229,20 +3272,25 @@ package body Gprbuild.Post_Compile is
             Success   : Boolean;
 
          begin
-            if not Opt.Quiet_Output then
-               if Opt.Verbose_Mode then
-                  Put_Line
-                    (Library_Builder.all & " " & Exchange_File_Name.all);
+            if Library_Options_Success then
+               if not Opt.Quiet_Output then
+                  if Opt.Verbose_Mode then
+                     Put_Line
+                       (Library_Builder.all & " " & Exchange_File_Name.all);
 
-               else
-                  Display
-                    (Section  => Build_Libraries,
-                     Command  => Library_Builder_Name.all,
-                     Argument => Exchange_File_Name.all);
+                  else
+                     Display
+                       (Section  => Build_Libraries,
+                        Command  => Library_Builder_Name.all,
+                        Argument => Exchange_File_Name.all);
+                  end if;
                end if;
-            end if;
 
-            Spawn (Library_Builder.all, Arguments, Success);
+               Spawn (Library_Builder.all, Arguments, Success);
+
+            else
+               Success := False;
+            end if;
 
             if not Success then
                Fail_Program
