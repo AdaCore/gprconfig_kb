@@ -20,7 +20,9 @@ Known problems in 2.3.1 and 2.3.2
 KP-23-P913-032 Library options in static libraries
 
   Problem:    Attribute Library_Options is not taken into account in static
-              library projects to add object files to the archive.
+              library projects to add object files to the archive. gprbuild
+              fails if object files specified in Library_Options cannot be
+              found.
 
   Status:     This was fixed in 17 on 2016-09-14
 
