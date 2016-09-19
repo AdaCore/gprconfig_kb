@@ -27,13 +27,6 @@
 HOST    = $(shell gcc -dumpmachine)
 TARGET := $(shell gcc -dumpmachine)
 
-# target options for cross-build
-ifeq ($(HOST),$(TARGET))
-GTARGET=
-else
-GTARGET=--target=$(TARGET)
-endif
-
 prefix	      := $(dir $(shell which gnatls))..
 BUILD         = production
 PROCESSORS    = 0
@@ -42,6 +35,13 @@ SOURCE_DIR    := $(shell dirname "$(MAKEFILE_LIST)")
 
 # Load current setup if any
 -include makefile.setup
+
+# target options for cross-build
+ifeq ($(HOST),$(TARGET))
+GTARGET=
+else
+GTARGET=--target=$(TARGET)
+endif
 
 # check for out-of-tree build
 ifeq ($(SOURCE_DIR),.)
