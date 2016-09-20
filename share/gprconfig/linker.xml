@@ -1259,6 +1259,23 @@
   </configuration>
 
   <configuration>
+    <targets>
+      <target name="^.*linux.*$" />
+      <target name="^.*sunos.*$" />
+      <target name="^.*solaris.*$" />
+      <target name="^.*mingw.*$" />
+    </targets>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
+    <config>
+     package Linker is
+        for Required_Switches use Linker'Required_Switches &amp; ("-shared-libgcc");
+     end Linker;
+    </config>
+  </configuration>
+
+  <configuration>
     <compilers negate="true">
        <compiler language="C++" />
     </compilers>
