@@ -8,6 +8,11 @@ This file contains a complete list of new features in version 17 of GPRBUILD.
 A full description of all GPRBUILD features can be found in the GPRBUILD
 User's Guide.
 
+NF-17-P919-049 GPRinstall support for separate ALI directory (2016-09-20)
+
+   The new GPRinstall's --ali-subdir option can be used to install the
+   ALI files into a specific directory.
+
 NF-17-P904-010 New gprname switch --RTS= (2016-09-05)
 
    gprname has now a switch --RTS= like all other GPR tools, as it is

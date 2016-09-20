@@ -379,6 +379,7 @@ package body GPR.Attr is
    "SVprefix#" &
    "SVsources_subdir#" &
    "SVexec_subdir#" &
+   "SVali_subdir#" &
    "SVlib_subdir#" &
    "SVproject_subdir#" &
    "SVactive#" &

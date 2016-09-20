@@ -5060,6 +5060,10 @@ Package Install Attributes
 
   Value is the executables directory or subdirectory of Prefix.
 
+* **ALI_Subdir**: single
+
+  Value is ALI directory or subdirectory of Prefix.
+
 * **Lib_Subdir**: single
 
   Value is library directory or subdirectory of Prefix.

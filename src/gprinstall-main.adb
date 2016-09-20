@@ -55,6 +55,7 @@ procedure Gprinstall.Main is
    Install_Name_Option    : constant String := "--install-name";
    Uninstall_Option       : constant String := "--uninstall";
    Mode_Option            : constant String := "--mode";
+   ALI_Subdir_Option      : constant String := "--ali-subdir";
    Lib_Subdir_Option      : constant String := "--lib-subdir";
    Link_Lib_Subdir_Option : constant String := "--link-lib-subdir";
    Exec_Subdir_Option     : constant String := "--exec-subdir";
@@ -360,6 +361,9 @@ procedure Gprinstall.Main is
 
             elsif Has_Prefix (Lib_Subdir_Option) then
                Set_Param (Global_Lib_Subdir, Lib_Subdir_Option);
+
+            elsif Has_Prefix (ALI_Subdir_Option) then
+               Set_Param (Global_ALI_Subdir, ALI_Subdir_Option);
 
             elsif Has_Prefix (Link_Lib_Subdir_Option) then
                Set_Param (Global_Link_Lib_Subdir, Link_Lib_Subdir_Option);
@@ -725,6 +729,8 @@ procedure Gprinstall.Main is
          Put_Line ("           The name of the installation");
          Put_Line ("  --sources-subdir=<dir>");
          Put_Line ("           The sources directory/sub-directory");
+         Put_Line ("  --ali-subdir=<dir>");
+         Put_Line ("           The ALI directory/sub-directory");
          Put_Line ("  --lib-subdir=<dir>");
          Put_Line ("           The library directory/sub-directory");
          Put_Line ("  --link-lib-subdir=<dir>");

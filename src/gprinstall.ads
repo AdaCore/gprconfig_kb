@@ -67,6 +67,9 @@ private
    Global_Lib_Subdir : Param := (new String'("lib" & DS), True);
    --  Subdirectory for libraries
 
+   Global_ALI_Subdir : Param := (new String'("lib" & DS), True);
+   --  Subdirectory for libraries' .ali file
+
    Global_Link_Lib_Subdir : Param := (new String'("lib" & DS), True);
    --  Subdirectory for libraries sym links (on UNIX)
 

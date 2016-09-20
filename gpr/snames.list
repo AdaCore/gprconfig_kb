@@ -165,6 +165,7 @@ Language_Kind
 Leading_Library_Options
 Leading_Required_Switches
 Leading_Switches
+ALI_Subdir
 Lib_Subdir
 Link_Lib_Subdir
 Library

@@ -220,6 +220,7 @@ package body GPR.Snames is
       Add_Name ("leading_library_options");
       Add_Name ("leading_required_switches");
       Add_Name ("leading_switches");
+      Add_Name ("ali_subdir");
       Add_Name ("lib_subdir");
       Add_Name ("link_lib_subdir");
       Add_Name ("library");

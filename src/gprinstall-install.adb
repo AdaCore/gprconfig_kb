@@ -142,6 +142,7 @@ package body Gprinstall.Install is
       Prefix_Dir      : Param := Dup (Global_Prefix_Dir);
       Exec_Subdir     : Param := Dup (Global_Exec_Subdir);
       Lib_Subdir      : Param := Dup (Global_Lib_Subdir);
+      ALI_Subdir      : Param := Dup (Global_ALI_Subdir);
       Link_Lib_Subdir : Param := Dup (Global_Link_Lib_Subdir);
       Sources_Subdir  : Param := Dup (Global_Sources_Subdir);
       Project_Subdir  : Param := Dup (Global_Project_Subdir);
@@ -209,6 +210,9 @@ package body Gprinstall.Install is
       function Lib_Dir (Build_Name : Boolean := True) return String;
       --  Returns the full pathname to the library destination directory
 
+      function ALI_Dir (Build_Name : Boolean := True) return String;
+      --  Returns the full pathname to the library destination directory
+
       function Link_Lib_Dir return String;
       --  Returns the full pathname to the lib symlib directory
 
@@ -255,6 +259,29 @@ package body Gprinstall.Install is
       --  Check that manifest file can be used
 
       function For_Dev return Boolean is (Install_Mode.V.all = "dev");
+
+      -------------
+      -- ALI_Dir --
+      -------------
+
+      function ALI_Dir (Build_Name : Boolean := True) return String is
+         Install_Name_Dir : constant String :=
+                              (if Install_Name.Default
+                               then ""
+                               else Install_Name.V.all & "/");
+      begin
+         if Is_Absolute_Path (ALI_Subdir.V.all) then
+            return ALI_Subdir.V.all & Install_Name_Dir;
+
+         elsif not ALI_Subdir.Default or else not Build_Name then
+            return Prefix_Dir.V.all & ALI_Subdir.V.all & Install_Name_Dir;
+
+         else
+            return Ensure_Directory
+              (Prefix_Dir.V.all & ALI_Subdir.V.all & Install_Name_Dir
+               & Dir_Name);
+         end if;
+      end ALI_Dir;
 
       ---------------------
       -- Add_To_Manifest --
@@ -380,6 +407,11 @@ package body Gprinstall.Install is
                           and then Global_Lib_Subdir.Default
                         then
                            Replace (Lib_Subdir, V.Value.Value);
+
+                        elsif V.Name = Name_ALI_Subdir
+                          and then Global_ALI_Subdir.Default
+                        then
+                           Replace (ALI_Subdir, V.Value.Value);
 
                         elsif V.Name = Name_Link_Lib_Subdir
                           and then Global_Link_Lib_Subdir.Default
@@ -1143,7 +1175,7 @@ package body Gprinstall.Install is
                                     then Proj
                                     else Sid.Object_Project), Project.Library),
                                  Sid.Dep_Name),
-                              To   => Lib_Dir,
+                              To   => ALI_Dir,
                               File => Get_Name_String (Ssid.Dep_Name));
                         end;
                      end if;
