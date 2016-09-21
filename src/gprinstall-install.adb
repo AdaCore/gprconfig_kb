@@ -515,6 +515,15 @@ package body Gprinstall.Install is
 
             Pck := Pcks (Pck).Next;
          end loop Look_Install_Package;
+
+         --  Now check if Lib_Subdir is set and not ALI_Subdir as in this case
+         --  we want ALI_Subdir to be equal to Lib_Subdir.
+
+         if not Lib_Subdir.Default
+           and then ALI_Subdir.Default
+         then
+            ALI_Subdir := Dup (Lib_Subdir);
+         end if;
       end Check_Install_Package;
 
       --------------

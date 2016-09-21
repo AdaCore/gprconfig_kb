@@ -586,6 +586,15 @@ procedure Gprinstall.Main is
          end loop Scan_Args;
       end;
 
+      --  If --lib-subdir set and not --ali-subdir then makes the later with
+      --  --lib-subdir.
+
+      if not Global_Lib_Subdir.Default
+        and then Global_ALI_Subdir.Default
+      then
+         Global_ALI_Subdir := Dup (Global_Lib_Subdir);
+      end if;
+
       GPR.Env.Initialize_Default_Project_Path
         (Root_Environment.Project_Path, Target_Name => "-");
 
