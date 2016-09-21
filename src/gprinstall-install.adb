@@ -1184,7 +1184,9 @@ package body Gprinstall.Install is
                                     then Proj
                                     else Sid.Object_Project), Project.Library),
                                  Sid.Dep_Name),
-                              To   => ALI_Dir,
+                              To   => (if Proj.Library
+                                       then ALI_Dir
+                                       else Lib_Dir),
                               File => Get_Name_String (Ssid.Dep_Name));
                         end;
                      end if;
