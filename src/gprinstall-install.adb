@@ -1806,6 +1806,21 @@ package body Gprinstall.Install is
             V.Append (-Line);
 
             if Project.Library then
+               --  If ALI are in a different location, set the corresponding
+               --  attribute.
+
+               if Lib_Dir /= ALI_Dir then
+                  Line := +"         for Library_ALI_Dir use """;
+
+                  Line := Line
+                    & Relative_Path
+                    (ALI_Dir (Build_Name => False), To => Project_Dir);
+
+                  Gen_Dir_Name (ALI_Subdir, Line);
+                  Line := Line & """;";
+                  V.Append (-Line);
+               end if;
+
                Line := +"         for Library_Kind use """;
                Line := Line & Image (Project.Library_Kind);
                Line := Line & """;";
