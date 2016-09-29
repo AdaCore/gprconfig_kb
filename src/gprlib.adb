@@ -2594,19 +2594,6 @@ begin
       Library_Dependency_Directory := Library_Directory;
    end if;
 
-   --  We work in the object directory
-
-   begin
-      Change_Dir (Object_Directories.Table (1).all);
-
-   exception
-      when others =>
-         Fail_Program
-           (null,
-            "cannot change to object directory "
-            & Object_Directories.Table (1).all);
-   end;
-
    if Standalone /= No then
       Process_Standalone;
    end if;
