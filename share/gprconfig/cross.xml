@@ -38,6 +38,7 @@
        <target name="^avr$" />
        <target name="^leon-elf$" />
        <target name="^leon3-elf$" />
+       <target name="^aarch64-elf$" />
        <target name="^arm-eabi$" />
        <target name="^.*-elinos-linux$" />
        <target name="^.*-generic-linux-gnu$" />
