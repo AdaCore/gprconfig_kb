@@ -4169,6 +4169,13 @@ package body GPR.Nmsc is
             if The_Lib_Kind.Value = Empty_String then
                Debug_Output ("no library kind specified");
 
+            elsif The_Lib_Kind.Value = No_Name then
+               Error_Msg
+                 (Data.Flags,
+                  "incorrect value specified for library kind",
+                  The_Lib_Kind.Location, Project);
+               Project.Library := False;
+
             else
                Get_Name_String (The_Lib_Kind.Value);
 
