@@ -17,6 +17,16 @@ in this document.
 Known problems in 2.3.1 and 2.3.2
 ---------------------------------
 
+KP-23-P930-019 Crash attribute Library_Kind has an unknown value
+
+  Problem:    gprbuild crashes when the value of attribute Library_Kind
+              in a library project comes from an imported project that is not
+              initially found.
+
+  Status:     This was fixed in 17 on 2016-09-30
+
+  Workaround: Modify the project path so that the imported project is found.
+
 KP-23-P913-032 Library options in static libraries
 
   Problem:    Attribute Library_Options is not taken into account in static
