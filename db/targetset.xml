@@ -277,6 +277,12 @@
     <target>powerpc-wrs-vxworks7</target>
   </targetset>
 
+  <!-- ppc64-vx7 (vxworks 7) -->
+  <targetset>
+    <target>ppc64-vx7</target>
+    <target>powerpc64-wrs-vxworks7</target>
+  </targetset>
+
   <!-- x86-vx7-.* (vxworks 7) -->
   <targetset>
     <target>x86-vx7</target>

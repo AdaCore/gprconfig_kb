@@ -64,6 +64,17 @@
 
    <configuration>
      <compilers>
+       <compiler name="DIABC-PPC64" language="C++" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Driver              ("C++") use "${PATH(c++)}dcc";
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
         <compiler name="G++" language="C++" />
         <compiler name="G++_Pro" language="C++" />
         <compiler name="G++-WRS653-X86" language="C++" />
@@ -98,6 +109,32 @@
    end Compiler;
      </config>
    </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="DIABC-PPC64" language="C++" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches   ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-tPPCLP64FH:vxworks7",
+               "-c",
+               "-ffixed-r13",
+               "-Xclib-optim-off",
+               "-Xlocal-data-area-static-only",
+               "-Xc-new",
+               "-Xcode-absolute-far",
+               "-D_WRS_HARDWARE_FP",
+               "-DCPU=_VX_PPCE6500",
+               "-D_WRS_VX_SMP",
+               "-D_WRS_CONFIG_SMP");
+      for Dependency_Switches ("C") use
+         ("-Xmake-dependency=6", "-Xmake-dependency-savefile=");
+   end Compiler;
+     </config>
+   </configuration>
+
 
    <!-- G++-WRS5 does not support -MF switch -->
    <configuration>
@@ -169,6 +206,7 @@
        <compiler name="G++-WRS7PPC" runtime="^kernel$" />
        <compiler name="G++-WRS7E500V2" runtime="^kernel$" />
        <compiler name="G++-WRS7X86" runtime="^kernel$" />
+       <compiler name="DIABC-PPC64" runtime="^kernel$" />
      </compilers>
      <config>
    package Compiler is
@@ -215,6 +253,21 @@
         Compiler'Leading_Required_Switches ("C++")
         &amp; ("-DTOOL_FAMILY=gnu",
                "-DTOOL=gnu",
+               "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;");
+   end Compiler;
+     </config>
+   </configuration>
+
+   <configuration>
+     <compilers>
+       <compiler name="DIABC-PPC64" />
+     </compilers>
+     <config>
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler'Leading_Required_Switches ("C++")
+        &amp; ("-DTOOL_FAMILY=diab",
+               "-DTOOL=diab",
                "-D_VSB_CONFIG_FILE=&lt;config/vsbConfig.h&gt;");
    end Compiler;
      </config>
