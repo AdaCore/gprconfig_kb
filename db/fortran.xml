@@ -50,7 +50,7 @@
    end Naming;
 
    package Compiler is
-      for Driver            ("Fortran") use "${PATH(fortran)}gfortran${PREFIX(fortran)}";
+      for Driver            ("Fortran") use "${PATH(fortran)}${PREFIX(fortran)}gfortran";
       for Leading_Required_Switches ("Fortran") use
          Compiler'Leading_Required_Switches ("Fortran") &amp;
          ("-c", "-fno-underscoring");

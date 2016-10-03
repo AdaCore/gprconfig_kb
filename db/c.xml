@@ -42,7 +42,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C") use "${PATH(c)}gcc${PREFIX(c)}";
+      for Driver              ("C") use "${PATH(c)}${PREFIX(c)}gcc";
    end Compiler;
 
    package Clean is

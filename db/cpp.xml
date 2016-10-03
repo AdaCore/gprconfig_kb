@@ -25,7 +25,7 @@
      </compilers>
      <config>
    package Compiler is
-      for Driver              ("C++") use "${PATH(c++)}g++${PREFIX(c++)}";
+      for Driver              ("C++") use "${PATH(c++)}${PREFIX(c++)}g++";
    end Compiler;
 
    package Clean is
