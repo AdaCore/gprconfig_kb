@@ -891,6 +891,19 @@
     <target>powerpc-elf</target>
   </compiler_description>
 
+  <!-- Diab PPC64 C & C++ Compiler -->
+  <compiler_description>
+    <name>DIABC-PPC64</name>
+    <executable>dcc</executable>
+    <version>
+      <external>dcc -V</external>
+      <grep regexp=".*dcc(.exe)? Rel ([0-9.]*)" group="2"></grep>
+    </version>
+    <languages>C,C++</languages>
+    <runtimes>kernel,rtp</runtimes>
+    <target>powerpc64-wrs-vxworks7</target>
+  </compiler_description>
+
   <!-- LynxWorks C compiler for LynxOS-178 -->
   <compiler_description>
     <name>LYNXWORKS-C</name>
