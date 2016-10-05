@@ -27,6 +27,16 @@ KP-23-P930-019 Crash when attribute Library_Kind has an unknown value
 
   Workaround: Modify the project path so that the imported project is found.
 
+KP-23-P927-002 Failure to link on MacOS with long command line
+
+  Problem:    On MacOS (Darwin) linking may fail if the link command line is
+              too long.
+
+  Status:     This was fixed in 17 on 2016-09-29
+
+  Workaround: Reduce the link command line length, for example using shorter
+              directory paths.
+
 KP-23-P913-032 Library options in static libraries
 
   Problem:    Attribute Library_Options is not taken into account in static
