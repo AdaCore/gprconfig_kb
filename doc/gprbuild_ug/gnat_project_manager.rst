@@ -3653,24 +3653,26 @@ Here are some specific examples:
        Illegal := "gnat.adc" & List2;  --  Illegal, must start with list
 
 
-.. index:: External value
+.. index:: Builtin Functions
 
-.. _External_Values:
+.. _Builtin_Functions:
 
-External Values
----------------
+Builtin Functions
+-----------------
 
-An external value is an expression whose value is obtained from the command
-that invoked the processing of the current project file (typically a
-*gprbuild* command).
-
-There are two kinds of external values, one that returns a single string, and
-one that returns a string list.
+Builtin functions may be used in expression. The names of builtin functions
+are not reserved words and may also be used as variable names.
+In an expression, a builtin function is recognized if its name is immediately
+followed by an open parenthesis ('(').
 
 .. index:: external function
 
 The function ``external``
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An external value is an expression whose value is obtained from the command
+that invoked the processing of the current project file (typically a
+*gprbuild* command).
 
 The syntax of a single string external value is::
 
@@ -3704,6 +3706,10 @@ attributes in various scenarios. Thus such variables are often called
 
 The function ``external_as_list``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An external value is an expression whose value is obtained from the command
+that invoked the processing of the current project file (typically a
+*gprbuild* command).
 
 The syntax for a string list external value is::
 
@@ -3768,18 +3774,6 @@ the result is ``("-gnatv")``.
 If the external value is ``",,"``, the result is (``""``).
 
 If the external value is ``","``, the result is ``()``, the empty string list.
-
-.. index:: Builtin Functions
-
-.. _Builtin_Functions:
-
-Builtin Functions
------------------
-
-Builtin functions may be used in expression. The names of builtin functions
-are not reserved words and may also be used as variable names.
-In an expression, a builtin function is recognized if its name is immediately
-followed by an open parenthesis ('(').
 
 .. _Split:
 
