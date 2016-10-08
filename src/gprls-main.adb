@@ -973,11 +973,14 @@ begin
    if Target_Name = null then
       GPR.Env.Initialize_Default_Project_Path
         (Root_Environment.Project_Path,
-         Target_Name => Gpr_Util.Knowledge.Normalized_Hostname);
+         Target_Name  => Gpr_Util.Knowledge.Normalized_Hostname,
+         Runtime_Name => Runtime_Name_For (Snames.Name_Ada));
 
    else
       GPR.Env.Initialize_Default_Project_Path
-        (Root_Environment.Project_Path, Target_Name.all);
+        (Root_Environment.Project_Path,
+         Target_Name  => Target_Name.all,
+         Runtime_Name => Runtime_Name_For (Snames.Name_Ada));
    end if;
 
    if Project_File_Name = null then
