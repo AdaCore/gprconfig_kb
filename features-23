@@ -56,7 +56,7 @@ NF-23-O720-008 Proper process clean-up in distributed build (2015-08-06)
 
 NF-23-O612-022 Add variables in gprinstall's generated projects (2015-06-15)
 
-   Project generated with gprinstall will now contains global variables
+   Project generated with gprinstall will now contain global variables
    as found in the original project.
 
 NF-23-O601-024 Create a symlink for the versioned libraries (2015-06-01)
@@ -115,14 +115,14 @@ NF-23-NC04-012 Linking with --lto=nn when -jnn and --lto are used (2014-12-18)
 
 NF-23-NC03-007 Invoke the correct gnatbind for unknown targets (2014-02-03)
 
-  When gprbuild is invoked with an unkown target and the Ada compiler is
+  When gprbuild is invoked with an unknown target and the Ada compiler is
   found by gprconfig, the correct gnatbind for the target is now used,
   instead of the native one.
 
-NF-23-NA15-003 GPRinstall new --no-build-var option (2014-11-21)
+NF-23-NB21-033 GPRinstall new --no-build-var option (2014-11-21)
 
-  A new option --no-build-var has been introduced and is meant to be
-  use for project with a single configuration (single installation).
+  A new option --no-build-var has been introduced that is meant to be
+  used for projects with a single configuration (single installation).
   In this case there is no build/scenario variable generated.
 
 NF-23-NA14-036 GPRinstall Mode & Install_Name attributes (2014-12-10)
