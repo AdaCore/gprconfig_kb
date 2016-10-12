@@ -332,7 +332,7 @@ KP-23-P309-051 Imported projects may be order dependent
 
   Workaround: Reorder the with clauses to find one that works.
 
-KP-23-P204-036 gprclean not cleaning .ci files
+KP-23-P218-003 gprclean not cleaning .ci files
 
   Problem:    gprclean was not cleaning the .ci files in the object
               directories. Those files are created when the Ada compiler is
