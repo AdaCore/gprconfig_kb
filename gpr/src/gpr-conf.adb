@@ -1009,7 +1009,7 @@ package body GPR.Conf is
                      then
                         Set_Directory ("/tmp");
                      elsif Obj_Dir_Exists and then
-                           Is_Owner_Writable_File (Obj_Dir)
+                           Is_Writable_File (Obj_Dir)
                      then
                         Set_Directory (Obj_Dir);
                      end if;
