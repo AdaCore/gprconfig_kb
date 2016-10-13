@@ -508,14 +508,15 @@ package body GPR.Err is
      (Flags    : Processing_Flags;
       Msg      : String;
       Location : Source_Ptr := No_Location;
-      Project  : Project_Id := null)
+      Project  : Project_Id := null;
+      Always   : Boolean    := False)
    is
       Real_Location : Source_Ptr := Location;
 
    begin
       --  Don't post message if incompleted with's (avoid junk cascaded errors)
 
-      if Flags.Incomplete_Withs then
+      if (not Always) and then Flags.Incomplete_Withs then
          return;
       end if;
 

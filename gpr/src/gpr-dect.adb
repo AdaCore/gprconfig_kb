@@ -297,7 +297,8 @@ package body GPR.Dect is
                Error_Msg
                  (Flags,
                   "%% is not valid in aggregate projects",
-                  Location_Of (Attribute, In_Tree));
+                  Location_Of (Attribute, In_Tree),
+                  Always => True);
             end if;
 
          when others =>
@@ -309,7 +310,8 @@ package body GPR.Dect is
                Error_Msg
                  (Flags,
                   "%% is only valid in aggregate projects",
-                  Location_Of (Attribute, In_Tree));
+                  Location_Of (Attribute, In_Tree),
+                  Always => True);
             end if;
       end case;
    end Check_Attribute_Allowed;

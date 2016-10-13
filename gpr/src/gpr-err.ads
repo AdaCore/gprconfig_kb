@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -54,7 +54,8 @@ package GPR.Err is
      (Flags    : Processing_Flags;
       Msg      : String;
       Location : Source_Ptr := No_Location;
-      Project  : Project_Id := null);
+      Project  : Project_Id := null;
+      Always   : Boolean    := False);
    --  Output an error message, either through Flags.Error_Report or through
    --  Errutil. The location defaults to the project's location ("project"
    --  in the source code). If Msg starts with "?", this is a warning, and
