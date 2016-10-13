@@ -2027,7 +2027,7 @@ package body GPR.Util is
 
          elsif P.Object_Directory.Name /= No_Path then
             if not Aggregated or else
-              Is_Owner_Writable_File
+              Is_Writable_File
                 (Get_Name_String (P.Object_Directory.Name))
             then
                Result := P;
