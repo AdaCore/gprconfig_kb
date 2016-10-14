@@ -17,6 +17,17 @@ in this document.
 Known problems in 2.3.1 and 2.3.2
 ---------------------------------
 
+KP-23-PA07-042 Crash with External attribute and incomplete with
+
+  Problem:    When a non aggregate project imports another project that
+              is not initially found (an incomplete with) and declares
+              attribute External, Project_Files or Project_Path,
+              gprbuild may crash.
+
+  Status:     This was fixed in 18 on 2016-10-13
+
+  Workaround: Remove the illegal attribute declaration.
+
 KP-23-P930-019 Crash when attribute Library_Kind has an unknown value
 
   Problem:    gprbuild crashes when the value of attribute Library_Kind
