@@ -8711,7 +8711,7 @@ package body GPR.Nmsc is
             --  Add the source id to the Unit_Sources_HT hash table, if the
             --  unit name is not null.
 
-            if Src.Kind /= Sep and then Src.Unit_Name /= No_Name then
+            if Src.Unit_Name /= No_Name then
                declare
                   UData : Unit_Index :=
                     Units_Htable.Get (Data.Tree.Units_HT, Src.Unit_Name);
