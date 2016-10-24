@@ -705,7 +705,16 @@ procedure Gprslave is
       CRC : GNAT.CRC32.CRC32;
    begin
       Initialize (CRC);
+
+      --  Add host name
       Update (CRC, Host_Name);
+
+      --  Add root directory
+      Update (CRC, Root_Directory.all);
+
+      --  Add port
+      Update (CRC, Integer'Image (Port));
+
       --  Set the host id as the 32 higher bits
       return Remote_Id (Get_Value (CRC)) * 2 ** 32;
    end Get_Slave_Id;
