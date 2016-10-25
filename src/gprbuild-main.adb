@@ -1294,7 +1294,6 @@ procedure Gprbuild.Main is
 
          elsif Arg = "-h" then
             Forbidden_In_Package_Builder;
-            Usage_Needed := True;
 
          elsif Arg'Length > 2 and then Arg (2) = 'j' then
             declare
@@ -1724,6 +1723,15 @@ procedure Gprbuild.Main is
          end if;
       end loop;
 
+      --  Check for switch -h an, if found, display usage and exit
+
+      for Arg in 1 .. Argument_Count loop
+         if Argument (Arg) = "-h" then
+            Usage;
+            OS_Exit (0);
+         end if;
+      end loop;
+
       --  Now process the other options
 
       Autoconfiguration := True;
@@ -1816,11 +1824,6 @@ procedure Gprbuild.Main is
 
       if Opt.Verbosity_Level > Opt.Low then
          Copyright;
-      end if;
-
-      if Usage_Needed then
-         Usage;
-         Usage_Needed := False;
       end if;
 
       --  Fail if command line ended with "-P"
