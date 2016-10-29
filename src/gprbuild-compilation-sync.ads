@@ -18,7 +18,7 @@
 
 --  Synchronize data to/from the slave. The usage is:
 --
---    1. call To_Slave for every slave to be synchronise
+--    1. call To_Slave for every slave to be synchronized
 --    2. call Wait to wait for the synchronization to be terminated
 
 with Gprbuild.Compilation.Protocol;
