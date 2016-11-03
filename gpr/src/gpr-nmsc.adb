@@ -646,23 +646,30 @@ package body GPR.Nmsc is
       Prev_Unit         : Unit_Index := No_Unit_Index;
       Source_To_Replace : Source_Id := No_Source;
 
+      S_Or_B : Spec_Or_Body;
+
    begin
       --  Check if the same file name or unit is used in the prj tree
 
       Add_Src := True;
+
+      if Kind = Sep then
+         S_Or_B := Impl;
+      else
+         S_Or_B := Kind;
+      end if;
 
       if Unit /= No_Name then
          Prev_Unit := Units_Htable.Get (Data.Tree.Units_HT, Unit);
       end if;
 
       if Prev_Unit /= No_Unit_Index
-        and then (Kind = Impl or else Kind = Spec)
-        and then Prev_Unit.File_Names (Kind) /= null
+        and then Prev_Unit.File_Names (S_Or_B) /= null
       then
          --  Suspicious, we need to check later whether this is authorized
 
          Add_Src := False;
-         Source := Prev_Unit.File_Names (Kind);
+         Source := Prev_Unit.File_Names (S_Or_B);
 
       else
          Source := Source_Files_Htable.Get
