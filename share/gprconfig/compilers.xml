@@ -892,12 +892,14 @@
   </compiler_description>
 
   <!-- Diab PPC64 C & C++ Compiler -->
+  <!-- check that the version is >= 5.9.6.0 -->
   <compiler_description>
     <name>DIABC-PPC64</name>
     <executable>dcc</executable>
     <version>
       <external>dcc -V</external>
       <grep regexp=".*dcc(.exe)? Rel ([0-9.]*)" group="2"></grep>
+      <must_match>5[.]9[.][6-9].*</must_match>
     </version>
     <languages>C,C++</languages>
     <runtimes>kernel,rtp</runtimes>
