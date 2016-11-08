@@ -308,7 +308,7 @@ package body Gprls is
          Find_Status (Source, Stamp, Checksum, Status);
 
          if Verbose_Mode then
-            Put ("    Source => ");
+            Put ("     Source => ");
             Put (Get_Name_String (Source.Path.Display_Name));
             Output_Status (Status, True);
             New_Line;

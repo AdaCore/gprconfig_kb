@@ -1192,15 +1192,18 @@ begin
                        (Get_Name_String (Unit.File_Names (Impl).Object) =
                           File_Name
                        or else
-                         (Get_Name_String (Unit.File_Names (Impl).Dep_Name) =
-                            File_Name)
+                         Get_Name_String (Unit.File_Names (Impl).Dep_Name) =
+                            File_Name
                        or else
-                         (Get_Name_String (Unit.File_Names (Impl).File) =
-                            File_Name)
+                         Get_Name_String (Unit.File_Names (Impl).Dep_Name) =
+                          File_Name & ".ali"
                        or else
-                         (Get_Name_String
+                         Get_Name_String (Unit.File_Names (Impl).File) =
+                            File_Name
+                       or else
+                         Get_Name_String
                             (Unit.File_Names (Impl).Display_File) =
-                            File_Name))
+                            File_Name)
                      then
                         File_Names (J).Source := Unit.File_Names (Impl);
                         exit Unit_Loop;
@@ -1220,6 +1223,16 @@ begin
                          File_Name
                        or else
                        Get_Name_String (Unit.File_Names (Spec).Dep_Name) =
+                         File_Name
+                       or else
+                       Get_Name_String (Unit.File_Names (Spec).Dep_Name) =
+                         File_Name & ".ali"
+                       or else
+                       Get_Name_String (Unit.File_Names (Spec).File) =
+                         File_Name
+                       or else
+                       Get_Name_String
+                          (Unit.File_Names (Spec).Display_File) =
                          File_Name)
                   then
                      File_Names (J).Source := Unit.File_Names (Spec);
