@@ -2959,9 +2959,7 @@ package body GprConfig.Knowledge is
 
       if Filter.Runtime /= No_Name then
 
-         if Comp.Runtime = No_Name then
-            return False;
-         elsif not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
+         if not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
             Filter.Runtime /= Comp.Runtime and then
             Filter.Runtime /= Comp.Alt_Runtime
          then
