@@ -2957,25 +2957,29 @@ package body GprConfig.Knowledge is
          return False;
       end if;
 
-      if Filter.Runtime /= No_Name and then
-         Comp.Runtime /= No_Name and then
-         not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
-         Filter.Runtime /= Comp.Runtime and then
-         Filter.Runtime /= Comp.Alt_Runtime
-      then
-         if Current_Verbosity /= Default then
-            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
-                         & ": runtime does not match");
+      if Filter.Runtime /= No_Name then
+
+         if Comp.Runtime = No_Name then
+            return False;
+         elsif not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
+            Filter.Runtime /= Comp.Runtime and then
+            Filter.Runtime /= Comp.Alt_Runtime
+         then
+            if Current_Verbosity /= Default then
+               Put_Verbose ("Filter=" & To_String (Base, Filter, True)
+                            & ": runtime does not match");
+            end if;
+            return False;
          end if;
-         return False;
-      elsif Filter.Runtime = No_Name and then
-        not Comp.Default_Runtime
-      then
+
+      elsif not Comp.Default_Runtime then
+
          if Current_Verbosity /= Default then
             Put_Verbose ("Filter=" & To_String (Base, Filter, True)
                          & ": no default runtime");
          end if;
          return False;
+
       end if;
 
       if Filter.Language_LC /= No_Name
