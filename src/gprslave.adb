@@ -2282,9 +2282,8 @@ procedure Gprslave is
          when E : others =>
             IO.Message (Builder, "Lost connection with " & Image (Address));
             IO.Message (Builder, Exception_Information (E), Is_Debug => True);
-            Close (Builder.Channel);
-            Close_Socket (Builder.Socket);
-            Builder.Socket := No_Socket;
+
+            Close_Builder (Builder, Ack => False);
       end Sync_Gpr;
 
       Builder      : Build_Master;
@@ -2345,10 +2344,8 @@ procedure Gprslave is
                UTC_Time,
                Gprslave.Hash.all);
 
+            Close_Builder (Builder, Ack => False);
             IO.Message (Builder, "Ping response to " & Image (Address));
-            Close (Builder.Channel);
-            Close_Socket (Builder.Socket);
-            Builder.Socket := No_Socket;
             return;
          end if;
 
@@ -2392,14 +2389,7 @@ procedure Gprslave is
          when E : others =>
             IO.Message (Builder, Exception_Information (E));
             --  Do not try to go further, just close the socket
-            begin
-               Close (Builder.Channel);
-               Close_Socket (Builder.Socket);
-               Builder.Socket := No_Socket;
-            exception
-               when others =>
-                  null;
-            end;
+            Close_Builder (Builder, Ack => False);
             return;
       end;
 
