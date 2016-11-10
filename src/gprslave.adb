@@ -2227,6 +2227,13 @@ procedure Gprslave is
 
                               Get_RAW_File_Content
                                 (Builder.Channel, Full_Path, W.Timestamp);
+                           exception
+                              when others =>
+                                 Close_Builder (Builder, Ack => False);
+                                 IO.Message
+                                   (Builder,
+                                    "failed to create file: " & Full_Path);
+                                 return;
                            end;
 
                            N := N + 1;
@@ -2406,12 +2413,21 @@ procedure Gprslave is
       --  Create slave environment if needed
 
       if not Exists (Work_Directory (Builder)) then
+         begin
+            Create_Path (Work_Directory (Builder));
+         exception
+            when others =>
+               IO.Message
+                 (Builder,
+                  "failed to create build environment directory: "
+                  & Work_Directory (Builder), Is_Debug => True);
+               return;
+         end;
+
          IO.Message
            (Builder,
             "create build environment directory: "
             & Work_Directory (Builder), Is_Debug => True);
-
-         Create_Path (Work_Directory (Builder));
       end if;
 
       --  Configure slave, note that this does not need to be into the critical
