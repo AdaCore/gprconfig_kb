@@ -1381,13 +1381,13 @@ package body Gpr_Build_Util is
 
       Put (Prefix);
       Put ("""");
-      Write_Name (N1);
+      Put (Get_Name_String (N1));
       Put (""" ");
       Put (S1);
 
       if N2 /= No_Name then
          Put (" """);
-         Write_Name (N2);
+         Put (Get_Name_String (N2));
          Put (""" ");
       end if;
 
@@ -1474,7 +1474,7 @@ package body Gpr_Build_Util is
 
       procedure Debug_Display (S : Source_Info) is
       begin
-         Write_Name (S.Id.File);
+         Put (Get_Name_String (S.Id.File));
 
          if S.Id.Index /= 0 then
             Put (",");
