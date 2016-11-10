@@ -597,14 +597,20 @@ procedure Gprslave is
          --  Send an Ack message before closing if requested
 
          if Ack then
-            Send_Ok (Builder.Channel);
+            begin
+               Send_Ok (Builder.Channel);
+            exception
+               when others =>
+                  null;
+            end;
          end if;
 
          Close (Builder.Channel);
          Close_Socket (Builder.Socket);
+         Builder.Socket := No_Socket;
       exception
          when others =>
-            null;
+            Builder.Socket := No_Socket;
       end;
    end Close_Builder;
 
@@ -2255,7 +2261,6 @@ procedure Gprslave is
                   --  yet registered.
 
                   Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
-                  Builder.Socket := No_Socket;
 
                   exit Check_Time_Stamps;
                end if;
