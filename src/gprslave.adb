@@ -2449,16 +2449,23 @@ procedure Gprslave is
       --  It is safe to write to this builder outside of a lock here as this
       --  builder is not yet registered into the slave.
 
-      Send_Slave_Config
-        (Builder.Channel, Max_Processes,
-         Compose (Root_Directory.all, To_String (Builder.Build_Env)),
-         Clock_Status);
+      begin
+         Send_Slave_Config
+           (Builder.Channel, Max_Processes,
+            Compose (Root_Directory.all, To_String (Builder.Build_Env)),
+            Clock_Status);
+      exception
+         when E : others =>
+            --  build master has aborted, do not try to go further,
+            --  just close the socket.
+            Close_Builder (Builder, Ack => False);
+      end;
 
       --  If we are using the Gpr synchronisation, it is time to do it here.
       --  Note that we want to avoid the rewriting rules below that are
       --  requiring some CPU cycles not needed at this stage.
 
-      if Builder.Sync then
+      if Builder.Socket /= No_Socket and then Builder.Sync then
          --  Move to projet directory
          Sync_Gpr (Builder);
       end if;
