@@ -1122,7 +1122,7 @@ procedure Gprslave is
                         --  prematurately or some wrong command received, make
                         --  sure we clean the slave state and we listen to new
                         --  commands. Not doing that could make the slave
-                        --  unresponding.
+                        --  unresponsive.
 
                         Close_Builder (Builder, Ack => False);
                   end;
