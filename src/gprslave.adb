@@ -973,6 +973,29 @@ procedure Gprslave is
 
    task body Wait_Requests is
 
+      procedure Close_Socket_Set (Set : in out Socket_Set_Type);
+      --  Close all sockets in the given Set. The corresponding build masters
+      --  are closed too.
+
+      ----------------------
+      -- Close_Sokcet_Set --
+      ----------------------
+
+      procedure Close_Socket_Set (Set : in out Socket_Set_Type) is
+         Builder : Build_Master;
+         Socket  : Socket_Type;
+      begin
+         loop
+            Get (Set, Socket);
+
+            exit when Socket = No_Socket;
+
+            Builder := Builders.Get (Socket);
+            Close_Builder (Builder, Ack => False);
+            Display (Builder, "error socket ", Force => True);
+         end loop;
+      end Close_Socket_Set;
+
       type Job_Number is mod 2**32;
       --  A 32bits integer which wrap around. This is no problem as we want
       --  to be able to identify running process. There won't be 2**32 process
@@ -1016,33 +1039,23 @@ procedure Gprslave is
             end;
          end loop Wait_Incoming_Data;
 
-         if Status /= Aborted then
-            --  Check for socket error first, if a socket is in error just
-            --  close the builder and remove it from the list. From there
-            --  we abort any action.
+         --  Check for socket errors first, if a socket is in error just
+         --  close the corresponding builder and remove it from the list.
+         --  From there we abort any further actions for those builders.
 
-            Get (E_Socket_Set, Socket);
-
-            if Socket /= No_Socket then
-               Builder := Builders.Get (Socket);
-               Display (Builder, "Error socket signaled", Force => True);
-               Status := Aborted;
-            end if;
-         end if;
+         Close_Socket_Set (E_Socket_Set);
 
          if Status = Aborted then
             --  Either the selector has been aborted or the Socket was not
             --  found in the response. We can suppose that in this case the
             --  client is killed and we do not have to keep it in the registry.
 
-            Get (R_Socket_Set, Socket);
-
-            if Socket /= No_Socket then
-               Builder := Builders.Get (Socket);
-               Close_Builder (Builder, Ack => False);
-            end if;
+            Close_Socket_Set (R_Socket_Set);
 
          else
+            --  Now, check for socket ready for reading. Just get the first
+            --  one, other requests will be handled in next iteration.
+
             Get (R_Socket_Set, Socket);
 
             if Socket /= No_Socket then
