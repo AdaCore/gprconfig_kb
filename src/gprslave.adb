@@ -377,12 +377,10 @@ procedure Gprslave is
       procedure Message
         (Builder  : Build_Master;
          Str      : String;
-         Is_Debug : Boolean := False;
-         Force    : Boolean := False);
+         Is_Debug : Boolean := False);
       procedure Message
         (Str      : String;
-         Is_Debug : Boolean := False;
-         Force    : Boolean := False);
+         Is_Debug : Boolean := False);
       --  Display a message (in verbose mode) and adds a leading timestamp.
       --  Also display the message in debug mode if Is_Debug is set.
 
@@ -679,7 +677,7 @@ procedure Gprslave is
       Force    : Boolean := False) is
    begin
       if Force or (Verbose and not Is_Debug) or (Debug and Is_Debug) then
-         IO.Message (Str, Is_Debug, Force);
+         IO.Message (Str, Is_Debug);
       end if;
    end Display;
 
@@ -690,7 +688,7 @@ procedure Gprslave is
       Force    : Boolean := False) is
    begin
       if Force or (Verbose and not Is_Debug) or (Debug and Is_Debug) then
-         IO.Message (Builder, Str, Is_Debug, Force);
+         IO.Message (Builder, Str, Is_Debug);
       end if;
    end Display;
 
@@ -794,8 +792,7 @@ procedure Gprslave is
 
       procedure Message
         (Str      : String;
-         Is_Debug : Boolean := False;
-         Force    : Boolean := False) is
+         Is_Debug : Boolean := False) is
       begin
          Put_Line
            ('[' & Calendar.Formatting.Image (Calendar.Clock) & "] "
@@ -805,14 +802,13 @@ procedure Gprslave is
       procedure Message
         (Builder  : Build_Master;
          Str      : String;
-         Is_Debug : Boolean := False;
-         Force    : Boolean := False)
+         Is_Debug : Boolean := False)
       is
          package UID_IO is new Text_IO.Modular_IO (UID);
       begin
          UID_IO.Put (Builder.Status.Id, Width => 4);
          Put (' ');
-         Message (Str, Is_Debug, Force);
+         Message (Str, Is_Debug);
       end Message;
 
       -----------
@@ -2505,7 +2501,7 @@ procedure Gprslave is
             Compose (Root_Directory.all, To_String (Builder.Build_Env)),
             Clock_Status);
       exception
-         when E : others =>
+         when others =>
             --  build master has aborted, do not try to go further,
             --  just close the socket.
             Close_Builder (Builder, Ack => False);
