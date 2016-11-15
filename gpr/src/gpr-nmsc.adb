@@ -2838,10 +2838,17 @@ package body GPR.Nmsc is
                                  Get_Line (File, Line, Last);
                                  if Last > 0 then
                                     Name_Len := 0;
-                                    Add_Str_To_Name_Buffer
-                                      (Runtime_Dir &
-                                         Directory_Separator &
-                                         Line (1 .. Last));
+
+                                    if Is_Absolute_Path (Line (1 .. Last)) then
+                                       Add_Str_To_Name_Buffer
+                                         (Line (1 .. Last));
+                                    else
+                                       Add_Str_To_Name_Buffer
+                                         (Runtime_Dir &
+                                            Directory_Separator &
+                                            Line (1 .. Last));
+                                    end if;
+
                                     Name_List_Table.Append
                                       (Shared.Name_Lists,
                                        New_Val =>
