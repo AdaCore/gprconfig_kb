@@ -600,29 +600,22 @@ procedure Gprslave is
       Builders.Remove (Builder);
       Running.Kill_Processes (Sock (Builder));
 
-      --  Now close the channel/socket. This routine is used when the builder
+      --  Send an Ack message before closing if requested
+
+      if Ack then
+         begin
+            Send_Ok (Builder.Channel);
+         exception
+            when others =>
+               null;
+         end;
+      end if;
+
+      --  Now shutdown the socket. This routine is used when the builder
       --  has encountered an error, so the associated socket may be in a bad
       --  state. Make sure we do not fail here.
 
-      begin
-         --  Send an Ack message before closing if requested
-
-         if Ack then
-            begin
-               Send_Ok (Builder.Channel);
-            exception
-               when others =>
-                  null;
-            end;
-         end if;
-
-         Close (Builder.Channel);
-         Close_Socket (Builder.Socket);
-         Builder.Socket := No_Socket;
-      exception
-         when others =>
-            Builder.Socket := No_Socket;
-      end;
+      Close (Builder.Channel);
    end Close_Builder;
 
    -----------------------------

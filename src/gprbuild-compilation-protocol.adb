@@ -97,7 +97,17 @@ package body Gprbuild.Compilation.Protocol is
             null;
       end;
 
+      --  Now close associated socket
+
+      begin
+         Close_Socket (Channel.Sock);
+      exception
+         when others =>
+            null;
+      end;
+
       Channel.Channel := null;
+      Channel.Sock := No_Socket;
       Clear_Rewrite (Channel);
    end Close;
 
