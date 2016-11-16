@@ -87,7 +87,6 @@ procedure Gprslave is
    type Build_Master is new Finalization.Controlled with record
       Channel                    : Communication_Channel;
       --  Communication with build master
-      Socket                     : Socket_Type;
       Project_Name               : Unbounded_String;
       Target                     : Unbounded_String;
       Build_Env                  : Unbounded_String;
@@ -106,13 +105,16 @@ procedure Gprslave is
       procedure Finalize   (Builder : in out Build_Master);
    end Controlled_Build_Master;
 
+   function Sock (Builder : Build_Master'Class) return Socket_Type is
+     (Protocol.Sock (Builder.Channel));
+
    package Builder is
 
       function "<" (B1, B2 : Build_Master) return Boolean is
-        (To_C (B1.Socket) < To_C (B2.Socket));
+        (To_C (Sock (B1)) < To_C (Sock (B2)));
 
       function "=" (B1, B2 : Build_Master) return Boolean is
-        (B1.Socket = B2.Socket);
+        (Sock (B1) = Sock (B2));
 
       package Set is new Containers.Ordered_Sets (Build_Master);
 
@@ -465,7 +467,7 @@ procedure Gprslave is
       function Exists (Socket : Socket_Type) return Boolean is
          Builder : Build_Master;
       begin
-         Builder.Socket := Socket;
+         Builder.Channel := Protocol.Create (Socket);
          return Builder_Set.Has_Element (Builders.Find (Builder));
       end Exists;
 
@@ -477,7 +479,7 @@ procedure Gprslave is
          Builder : Build_Master;
          Pos     : Builder_Set.Cursor;
       begin
-         Builder.Socket := Socket;
+         Builder.Channel := Protocol.Create (Socket);
 
          Pos := Builders.Find (Builder);
 
@@ -498,7 +500,7 @@ procedure Gprslave is
          Empty (Socket_Set);
 
          for B of Builders loop
-            Set (Socket_Set, B.Socket);
+            Set (Socket_Set, Sock (B));
          end loop;
       end Get_Socket_Set;
 
@@ -596,7 +598,7 @@ procedure Gprslave is
       --  First unregister the builder
 
       Builders.Remove (Builder);
-      Running.Kill_Processes (Builder.Socket);
+      Running.Kill_Processes (Sock (Builder));
 
       --  Now close the channel/socket. This routine is used when the builder
       --  has encountered an error, so the associated socket may be in a bad
@@ -1102,7 +1104,7 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
-                              Builder.Socket, J_Created));
+                              Sock (Builder), J_Created));
 
                            Send_Ack (Builder.Channel, Id);
                         end Record_Job;
@@ -1120,7 +1122,7 @@ procedure Gprslave is
                               Null_Unbounded_String,
                               Null_Unbounded_String,
                               Null_Unbounded_String,
-                              Builder.Socket, J_Created));
+                              Sock (Builder), J_Created));
                         end Clean_Up_Request;
 
                      elsif Kind (Cmd) in EC | SI then
@@ -2329,13 +2331,14 @@ procedure Gprslave is
 
       Builder      : Build_Master;
       Clock_Status : Boolean;
+      Socket       : Socket_Type;
 
    begin
       --  Wait for a connection
 
       Wait_Incoming_Master : loop
          begin
-            Accept_Socket (Server, Builder.Socket, Address);
+            Accept_Socket (Server, Socket, Address);
             exit Wait_Incoming_Master;
          exception
             when E : Socket_Error =>
@@ -2345,7 +2348,7 @@ procedure Gprslave is
          end;
       end loop Wait_Incoming_Master;
 
-      Builder.Channel := Create (Builder.Socket);
+      Builder.Channel := Create (Socket);
 
       --  We must call explicitely Initialize here to ensure that the Builder
       --  object Status access will be changed for this new builder.
@@ -2511,14 +2514,14 @@ procedure Gprslave is
       --  Note that we want to avoid the rewriting rules below that are
       --  requiring some CPU cycles not needed at this stage.
 
-      if Builder.Socket /= No_Socket and then Builder.Sync then
+      if Sock (Builder) /= No_Socket and then Builder.Sync then
          --  Move to projet directory
          Sync_Gpr (Builder);
       end if;
 
       --  Register the new builder
 
-      if Builder.Socket /= No_Socket then
+      if Sock (Builder) /= No_Socket then
          Builders.Insert (Builder);
       end if;
 
