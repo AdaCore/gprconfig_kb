@@ -149,7 +149,7 @@ if [ ! -d $installdir ]; then
     mkdir -p $installdir
 fi
 
-if tar cf - bin share libexec include lib | (cd $installdir && tar xf -) ; then
+if tar cf - bin libexec share | (cd $installdir && tar xf -) ; then
 
    # --------------------------- End of the script -----------------------
    clear
