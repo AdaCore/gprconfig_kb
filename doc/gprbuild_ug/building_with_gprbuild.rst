@@ -287,7 +287,7 @@ package Builder of the main project:
 
   With this option it is possible to achieve out-of-tree build. That
   is, real object, library or exec directories are relocated to the
-  current working directory or dir if specificed.
+  current working directory or dir if specified.
 
 * :samp:`--root-dir={dir}`
 
@@ -671,8 +671,8 @@ main project. Also, if Ada is one of the languages, it will take into account
 the Ada runtime directory, specified either by switches --RTS= or --RTS:ada= on
 the command line or by attribute Runtime ("Ada") in the main project file. If
 the Ada runtime is specified as a relative path, gprbuild will try to locate
-the Ada runtime directory as a subdirectoty of the main project directory, or
-if environement variable GPR_RUNTIME_PATH is defined in the path specified
+the Ada runtime directory as a subdirectory of the main project directory, or
+if environment variable GPR_RUNTIME_PATH is defined in the path specified
 by GPR_RUNTIME_PATH.
 
 Once it has found the configuration project, GPRbuild will process its
@@ -943,7 +943,7 @@ Setup build environments
 The configuration process to be able to use the distributed compilation
 support is the following:
 
-* Optionaly add a Remote package in the main project file
+* Optionally add a Remote package in the main project file
 
   This Remote package is to be placed into the project file that is passed
   to GPRbuild to build the application.
@@ -1024,7 +1024,7 @@ jobs as requested by the build master. One instance of this tool must be
 launched in each build slave referenced in the project file.
 
 Compilations for a specific project are conducted under a sub-directory
-from where the slave is launched by default. This can be overriden
+from where the slave is launched by default. This can be overridden
 with the `-d` option below.
 
 The current options are:

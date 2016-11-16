@@ -4,7 +4,7 @@
 GPRbuild Companion Tools
 ************************
 
-This chapter descibes the various tools that can be used in conjunction with GPRbuild.
+This chapter describes the various tools that can be used in conjunction with GPRbuild.
 
 .. _Configuring_with_GPRconfig:
 
@@ -619,8 +619,8 @@ of the `<directory>` and `<external>` nodes.
   If the contents of the node is a `<directory`> child, this
   indicates that GPRconfig should find all the files matching the
   regular expression. Regexp is a path relative to the directory that contains
-  the `<executable>` file, and should use unix directory separators
-  (ie '/'), since the actual directory will be converted into this format
+  the `<executable>` file, and should use Unix directory separators
+  (i.e. '/'), since the actual directory will be converted into this format
   before the match, for system independence of the knowledge base.
 
   The group attribute indicates which parenthesis group should be returned.
@@ -967,8 +967,8 @@ be any of:
   If the `negate` attribute is :samp:`true`, then the meaning of this
   filter is inverted, and it will match when none of its children matches.
 
-  For instance, to active a chunk only if the compiler is running on an
-  intel linux machine, use:
+  For instance, to activate a chunk only if the compiler is running on an
+  Intel Linux machine, use:
 
   ::
 
@@ -1836,7 +1836,7 @@ The switches for GPRclean are:
 
   With this option it is possible to achieve out-of-tree build. That
   is, real object, library or exec directories are relocated to the
-  current working directory or dir if specificed.
+  current working directory or dir if specified.
 
 * :samp:`--root-dir={dir}`
 
@@ -1928,9 +1928,9 @@ the Ada specs are installed the bodies are not, because they are not needed
 in most cases. The cases where the bodies are required (if the spec has inline
 routines or is a generic) are properly detected by GPRinstall.
 
-Furthermore, we can note that GPRinstall handles the pre-processed
+Furthermore, we can note that GPRinstall handles the preprocessed
 sources. So it installs the correct variant of the source after resolving
-the pre-processing directives.
+the preprocessing directives.
 
 The parts of a project that can be installed are:
 
@@ -2206,7 +2206,7 @@ The switches for GPRinstall are:
 
   With this option it is possible to achieve out-of-tree build. That
   is, real object, library or exec directories are relocated to the
-  current working directory or dir if specificed.
+  current working directory or dir if specified.
 
 * :samp:`--root-dir={dir}`
 
@@ -2532,10 +2532,10 @@ Here is a simple example of use:
   ::
 
      $ gprls -P prj.gpr
-     /home/celier/bugs/O528-046/obj/pkg.o
+     /my_path/obj/pkg.o
         pkg
           DIF pkg.adb
-     /home/celier/bugs/O528-046/obj/main.o
+     /my_path/obj/main.o
         main
           MOK main.adb
 
@@ -2702,29 +2702,29 @@ Examples of `gprls` Usage
       $ gprls -v -P prj.gpr
 
        5 lines: No errors
-      gprconfig --batch -o /home/celier/bugs/O528-046/obj/auto.cgpr --target=x86_64-linux --config=ada,,
-      Creating configuration file: /home/celier/bugs/O528-046/obj/auto.cgpr
-      Checking configuration /home/celier/bugs/O528-046/obj/auto.cgpr
+      gprconfig --batch -o /my_path/obj/auto.cgpr --target=x86_64-linux --config=ada,,
+      Creating configuration file: /my_path/obj/auto.cgpr
+      Checking configuration /my_path/obj/auto.cgpr
 
-      GPRLS Pro 17.0w (20151120) (x86_64-unknown-linux-gnu)
-      Copyright (C) 2015-2015, AdaCore
+      GPRLS Pro 17.0 (20161010) (x86_64-unknown-linux-gnu)
+      Copyright (C) 2015-2016, AdaCore
 
       Source Search Path:
          <Current directory>
-         /home/celier/local/lib/gcc/x86_64-pc-linux-gnu/4.9.4//adainclude/
+         /my_path/local/lib/gcc/x86_64-pc-linux-gnu/4.9.4//adainclude/
 
       Object Search Path:
          <Current directory>
-         /home/celier/local/lib/gcc/x86_64-pc-linux-gnu/4.9.4//adalib/
+         /my_path/local/lib/gcc/x86_64-pc-linux-gnu/4.9.4//adalib/
 
       Project Search Path:
          <Current_Directory>
-         /home/celier/local/x86_64-unknown-linux-gnu/lib/gnat
-         /home/celier/local/x86_64-unknown-linux-gnu/share/gpr
-         /home/celier/local/share/gpr
-         /home/celier/local/lib/gnat
+         /my_path/local/x86_64-unknown-linux-gnu/lib/gnat
+         /my_path/local/x86_64-unknown-linux-gnu/share/gpr
+         /my_path/local/share/gpr
+         /my_path/local/lib/gnat
 
-      /home/celier/bugs/O528-046/obj/pkg.o
+      /my_path/obj/pkg.o
          Unit =>
            Name   => pkg
            Kind   => package body
@@ -2735,7 +2735,7 @@ Examples of `gprls` Usage
            Kind   => package spec
            Flags  => No_Elab_Code
          Source => pkg.ads unchanged
-      /home/celier/bugs/O528-046/obj/main.o
+      /my_path/obj/main.o
          Unit =>
            Name   => main
            Kind   => subprogram body
@@ -2743,7 +2743,7 @@ Examples of `gprls` Usage
          Source => main.adb slightly modified
 
       $ gprls -d -P prj.gpr main.o
-      /home/celier/bugs/O528-046/obj/main.o
+      /my_path/obj/main.o
          main
              MOK main.adb
 

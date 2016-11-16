@@ -257,7 +257,7 @@ There are several ways to specify the source directories:
   the directory in which the project file resides.
 
 .. index:: Source_Dirs attribute
-.. index:: Excluded_Source_Dirs attrbute
+.. index:: Excluded_Source_Dirs attribute
 
 When using the ``Source_Dirs`` construct, you may sometimes find it convenient
 to also use the attribute ``Excluded_Source_Dirs``, which is also a list of
@@ -600,7 +600,7 @@ Let's first examine the compiler switches. As stated in the initial description
 of the example, we want to compile all files with :option:`-O2`. This is a
 compiler switch, although it is typical, on the command line, to pass it to the
 builder which then passes it to the compiler. We recommend directly using
-the corect package, which will make the setup easier to understand.
+the correct package, which will make the setup easier to understand.
 
 Several attributes can be used to specify the switches:
 
@@ -632,7 +632,7 @@ Several attributes can be used to specify the switches:
 
   In some cases, we might want to use specific switches
   for one or more files. For instance, compiling :file:`proc.adb` might not be
-  desirible at a high level of optimization.
+  desirable at a high level of optimization.
   In such a case, the *Switches*
   attribute (indexed by the file name) can be used and will override the
   switches defined by *Default_Switches*. The *Compiler* package in our
@@ -782,7 +782,7 @@ its value replaces the platform-specific executable suffix.
 The default executable suffix is the empty string empty on Unix and ``".exe"`` on Windows.
 
 It is also possible to change the name of the produced executable by using the
-command line switch :option:`-o`. However, when several main programss are defined in the project,
+command line switch :option:`-o`. However, when several main programs are defined in the project,
 it is not possible to use the :option:`-o` switch; then the only way to change the
 names of the executable is through the attributes ``Executable`` and
 ``Executable_Suffix``.
@@ -1241,12 +1241,12 @@ its variables cannot be referenced.
        with "b.gpr";
        with "c.gpr";
        project A is
-           for Exec_Dir use B'Exec_Dir; -- ok
+           for Exec_Dir use B'Exec_Dir; -- OK
        end A;
 
        limited with "a.gpr";   --  Cyclic dependency: A -> B -> A
        project B is
-          for Exec_Dir use A'Exec_Dir; -- not ok
+          for Exec_Dir use A'Exec_Dir; -- not OK
        end B;
 
        with "d.gpr";
@@ -1255,7 +1255,7 @@ its variables cannot be referenced.
 
        limited with "a.gpr";  --  Cyclic dependency: A -> C -> D -> A
        project D is
-          for Exec_Dir use A'Exec_Dir; -- not ok
+          for Exec_Dir use A'Exec_Dir; -- not OK
        end D;
 
 
@@ -1813,7 +1813,7 @@ The name of a stand-alone library, specified with attribute
 The most prominent characteristic of a stand-alone library is that it offers a
 distinction between interface units and implementation units. Only the former
 are visible to units outside the library. A stand-alone library project is thus
-characterised by a third attribute, usually ``Library_Interface``, in addition
+characterized by a third attribute, usually ``Library_Interface``, in addition
 to the two attributes that make a project a Library Project
 (`Library_Name` and `Library_Dir`). This third attribute may also be
 ``Interfaces``. ``Library_Interface`` only works when the interface is in Ada
@@ -2142,7 +2142,7 @@ As an example of this problem, consider the following set of project files:
 * :file:`a.gpr` which contains the source files :file:`foo.ads` and
   :file:`foo.adb`, among others
 
-* :file:`b.gpr` which importa :file:`a.gpr` (one of its source files
+* :file:`b.gpr` which imports :file:`a.gpr` (one of its source files
   |withs| ``foo``)
 
 * :file:`c.gpr` which imports :file:`b.gpr`
@@ -2704,7 +2704,7 @@ The following three attributes can be used only in an aggregate project:
   Paths can also include the ``"*"`` and ``"**"`` globbing patterns. The
   latter indicates that any subdirectory (recursively) will be
   searched for matching files. The ``"**"`` pattern can only occur at the
-  last position in the directory part (ie ``"a/**/*.gpr"`` is supported, but
+  last position in the directory part (i.e. ``"a/**/*.gpr"`` is supported, but
   not ``"**/a/*.gpr"``). Starting the pattern with ``"**"`` is equivalent
   to starting with ``"./**"``.
 
@@ -3083,7 +3083,7 @@ to share attribute values.
 An aggregate library project does not have any source files directly (only
 through other standard projects). Therefore a number of the standard
 attributes and packages are forbidden in an aggregate library
-project. Here is a (nonexhaustive) list:
+project. Here is a (non-exhaustive) list:
 
 * ``Languages``
 * ``Source_Files``, ``Source_List_File`` and other attributes dealing with
@@ -3119,7 +3119,7 @@ attributes.
 The syntax is presented in a notation similar to what is used in the Ada
 Language Reference Manual. Curly braces '{' and '}' indicate 0 or more
 occurrences of the enclosed construct, and square brackets '[' and ']' indicate
-0 or 1 occurence of the enclosed construct. Reserved words are enclosed
+0 or 1 occurrence of the enclosed construct. Reserved words are enclosed
 between apostrophes.
 
 .. _Project_Declaration:
@@ -3284,7 +3284,7 @@ qualifiers are allowed:
 .. index:: Abstract project
 
 **abstract**:
-  A project with no source filess.
+  A project with no source files.
   Such a project must either have no declaration for attributes ``Source_Dirs``,
   ``Source_Files``, ``Languages`` or ``Source_List_File``, or one of
   ``Source_Dirs``, ``Source_Files``, or ``Languages`` must be declared
@@ -3387,7 +3387,7 @@ The following packages are currently supported in project files
   parameters to *gnatcheck*.
 
 .. index:: Clean package
-.. index:: gnatclean tool
+.. index:: gprclean tool
 
 *Clean*
   This package specifies the options used when cleaning a project or a project
@@ -3446,7 +3446,7 @@ The following packages are currently supported in project files
 
 *IDE*
   This package specifies the options used when starting an integrated
-  development environment, for instance *GPS* or *Gnatbench*.
+  development environment, for instance *GPS* or *GNATbench*.
 
 .. index:: Install package
 .. index:: gprinstall tool
@@ -3653,16 +3653,16 @@ Here are some specific examples:
        Illegal := "gnat.adc" & List2;  --  Illegal, must start with list
 
 
-.. index:: Builtin Functions
+.. index:: Built-in Functions
 
 .. _Builtin_Functions:
 
-Builtin Functions
+Built-in Functions
 -----------------
 
-Builtin functions may be used in expression. The names of builtin functions
+Built-in functions may be used in expression. The names of built-in functions
 are not reserved words and may also be used as variable names.
-In an expression, a builtin function is recognized if its name is immediately
+In an expression, a built-in function is recognized if its name is immediately
 followed by an open parenthesis ('(').
 
 .. index:: external function
@@ -3791,10 +3791,10 @@ Example:
       => ("-gnatf", "gnatv")
 
 The first string argument is the string to be split. The second argument is
-the separator. Each occurence of the separator in the first argument is a place
+the separator. Each occurrence of the separator in the first argument is a place
 where it is split. If the first argument is an empty string or contains only
-occurences of the separator, then the result is an empty string list.
-If the argument does not contains any occurence of the separator, then the
+occurrences of the separator, then the result is an empty string list.
+If the argument does not contains any occurrence of the separator, then the
 result is a list with only one string: the first argument. Empty strings are
 not included in the result.
 
@@ -4208,7 +4208,7 @@ Project Level Attributes
   * **Ignore_Source_Sub_Dirs**: list
 
     Value is a list of simple names for subdirectories that are removed from the
-    list of source directories, including theur subdirectories.
+    list of source directories, including their subdirectories.
 
 * **Source Files**
 
@@ -4303,7 +4303,7 @@ Project Level Attributes
   * **Library_Auto_Init**: single
 
     Indicates if a Stand-Alone Library is auto-initialized. Only authorized
-    case-insentive values are "true" and "false".
+    case-insensitive values are "true" and "false".
 
   * **Leading_Library_Options**: list
 
@@ -4936,7 +4936,7 @@ Package Finder Attributes
 
 .. _Package_gnatls_Attributes:
 
-Package gnatls Attributes
+Package Gnatls Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * **Switches**: list
@@ -5346,7 +5346,7 @@ Glossary
    Aggregate project
      A project that in effect combines several projects in order to efficiently support
      concurrent builds or builds of all main programs from the constituent projects,
-     or the convenient definition of a common environment for the consituent projects.
+     or the convenient definition of a common environment for the constituent projects.
      See :ref:`Aggregate_Projects`.
 
    Attribute
