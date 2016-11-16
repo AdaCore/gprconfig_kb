@@ -212,6 +212,10 @@ package body Gprbuild.Compilation.Slave is
          end;
 
          Close (S.Channel);
+
+      exception
+         when others =>
+            Close (S.Channel);
       end Clean_Up_Remote_Slave;
 
    begin
@@ -895,7 +899,7 @@ package body Gprbuild.Compilation.Slave is
          Close (S.Channel);
       exception
          when others =>
-            null;
+            Close (S.Channel);
       end Unregister;
 
    begin
