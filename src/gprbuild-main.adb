@@ -2431,6 +2431,27 @@ begin
          Flush_Messages => False);
    end if;
 
+   --  Warn if there have been binder option specified on the command line
+   --  and the main project is a Stand-Alone Library project.
+
+   declare
+      Options_Instance : constant Bind_Option_Table_Ref :=
+        Binder_Options_HTable.Get (Name_Ada);
+   begin
+      if All_Language_Binder_Options.Last > 0 or else
+        (Options_Instance /= No_Bind_Option_Table and then
+         Binder_Options.Last (Options_Instance.all) > 0)
+      then
+         if Main_Project.Standalone_Library /= No then
+            GPR.Err.Error_Msg
+              ("?binding options on the command line are not taken " &
+               "into account when the main project is a Stand-Alone " &
+               "Library project",
+               Main_Project.Location);
+         end if;
+      end if;
+   end;
+
    Main_Project_Dir :=
      new String'(Get_Name_String (Main_Project.Directory.Display_Name));
 
