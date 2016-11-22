@@ -1941,159 +1941,210 @@ package body Gpr_Util is
                   Found := False;
 
                   if Dep_Src = No_Source and then
-                    ALI.Sdep.Table (D).Checksum /= 0 and then
-                    not Is_Ada_Predefined_File_Name (Sfile)
+                    ALI.Sdep.Table (D).Checksum = 0
                   then
-                     if Opt.Verbosity_Level > Opt.Low
-                     then
-                        Put ("  -> """);
-                        Put (Get_Name_String (Sfile));
-                        Put_Line (""" missing");
-                     end if;
+                     --  Probably preprocessing dependencies. Look for the
+                     --  file in the object directory.
 
-                     return True;
-                  end if;
+                     declare
+                        Path : Path_Name_Type;
+                        File : constant String := Get_Name_String (Sfile);
+                        Stamp : Time_Stamp_Type;
 
-                  while Dep_Src /= No_Source loop
-                     Initialize_Source_Record (Dep_Src);
-
-                     if not Dep_Src.Locally_Removed
-                       and then Dep_Src.Unit /= No_Unit_Index
-                     then
-                        Found := True;
-
-                        if Opt.Minimal_Recompilation
-                          and then ALI.Sdep.Table (D).Stamp /=
-                          Dep_Src.Source_TS
-                        then
-                           --  If minimal recompilation is in action, replace
-                           --  the stamp of the source file in the table if
-                           --  checksums match.
-
-                           declare
-                              Source_Index : Source_File_Index;
-                              use Scans;
-
-                           begin
-                              Source_Index :=
-                                Sinput.Load_File
-                                  (Get_Name_String
-                                      (Dep_Src.Path.Display_Name));
-
-                              if Source_Index /= No_Source_File then
-
-                                 Err.Scanner.Initialize_Scanner
-                                   (Source_Index, Err.Scanner.Ada);
-
-                                 --  Scan the complete file to compute its
-                                 --  checksum.
-
-                                 loop
-                                    Err.Scanner.Scan;
-                                    exit when Token = Tok_EOF;
-                                 end loop;
-
-                                 if Scans.Checksum =
-                                   ALI.Sdep.Table (D).Checksum
-                                 then
-                                    if Opt.Verbosity_Level > Opt.Low then
-                                       Put ("   ");
-                                       Put
-                                         (Get_Name_String
-                                            (ALI.Sdep.Table (D).Sfile));
-                                       Put (": up to date, " &
-                                                  "different timestamps " &
-                                                  "but same checksum");
-                                       New_Line;
-                                    end if;
-
-                                    ALI.Sdep.Table (D).Stamp :=
-                                      Dep_Src.Source_TS;
-                                 end if;
-                              end if;
-
-                              --  To avoid using too much memory, free the
-                              --  memory allocated.
-
-                              Sinput.Clear_Source_File_Table;
-                           end;
+                     begin
+                        if Is_Absolute_Path (File) then
+                           Path := Path_Name_Type (Sfile);
+                        else
+                           Name_Len := 0;
+                           Add_Str_To_Name_Buffer (Source_Dir_Of (Source));
+                           Add_Char_To_Name_Buffer (Directory_Separator);
+                           Add_Str_To_Name_Buffer (File);
+                           Path := Name_Find;
                         end if;
 
-                        if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS then
-                           if Opt.Verbosity_Level > Opt.Low then
-                              Put
-                                ("   -> different time stamp for ");
-                              Put_Line (Get_Name_String (Sfile));
+                        Stamp := File_Stamp (Path);
 
-                              if Debug.Debug_Flag_T then
-                                 Put ("   in ALI file: ");
-                                 Put_Line
-                                   (String (ALI.Sdep.Table (D).Stamp));
-                                 Put ("   actual file: ");
-                                 Put_Line (String (Dep_Src.Source_TS));
+                        if Stamp /= ALI.Sdep.Table (D).Stamp then
+                           if Opt.Verbosity_Level > Opt.Low then
+                              if Stamp = Empty_Time_Stamp then
+                                 Put ("  -> """);
+                                 Put (Get_Name_String (Sfile));
+                                 Put_Line (""" missing");
+
+                              else
+                                 Put ("   -> different time stamp for ");
+                                 Put_Line (Get_Name_String (Path));
+
+                                 if Debug.Debug_Flag_T then
+                                    Put ("   in ALI file: ");
+                                    Put_Line
+                                      (String (ALI.Sdep.Table (D).Stamp));
+                                    Put ("   actual file: ");
+                                    Put_Line (String (Stamp));
+                                 end if;
                               end if;
                            end if;
 
                            return True;
-
-                        else
-                           for J in Projects'Range loop
-                              if Dep_Src.Project = Projects (J) then
-                                 if Opt.Verbosity_Level > Opt.Low then
-                                    Put_Line
-                                      ("   -> wrong object directory");
-                                 end if;
-
-                                 return True;
-                              end if;
-                           end loop;
-
-                           exit;
                         end if;
+                     end;
+
+                  else
+                     if Dep_Src = No_Source and then
+                       not Is_Ada_Predefined_File_Name (Sfile)
+                     then
+                        if Opt.Verbosity_Level > Opt.Low then
+                           Put ("  -> """);
+                           Put (Get_Name_String (Sfile));
+                           Put_Line (""" missing");
+                        end if;
+
+                        return True;
                      end if;
 
-                     Dep_Src := Dep_Src.Next_With_File_Name;
-                  end loop;
+                     while Dep_Src /= No_Source loop
+                        Initialize_Source_Record (Dep_Src);
 
-                  --  If the source was not found and the runtime source
-                  --  directory is defined, check if the file exists there, and
-                  --  if it does, check its timestamp.
-
-                  if not Found
-                     and then
-                      (Runtime_Source_Dirs /= No_Name_List
-                       or else
-                       Is_Absolute_Path (Get_Name_String (Sfile)))
-                  then
-                     if Is_Absolute_Path (Get_Name_String (Sfile)) then
-                        if Check_Time_Stamps
-                          (Get_Name_String (Sfile), ALI.Sdep.Table (D).Stamp)
+                        if not Dep_Src.Locally_Removed
+                          and then Dep_Src.Unit /= No_Unit_Index
                         then
-                           return True;
-                        end if;
+                           Found := True;
 
-                     else
-                        declare
-                           R_Dirs : Name_List_Index := Runtime_Source_Dirs;
-                        begin
-                           while R_Dirs /= No_Name_List loop
+                           if Opt.Minimal_Recompilation
+                             and then ALI.Sdep.Table (D).Stamp /=
+                             Dep_Src.Source_TS
+                           then
+                              --  If minimal recompilation is in action,
+                              --  replace the stamp of the source file in
+                              --  the table if checksums match.
+
                               declare
-                                 Nam_Nod : constant Name_Node :=
-                                   Tree.Shared.Name_Lists.Table (R_Dirs);
+                                 Source_Index : Source_File_Index;
+                                 use Scans;
+
                               begin
-                                 if Check_Time_Stamps
-                                   (Get_Name_String (Nam_Nod.Name) &
-                                      Directory_Separator &
-                                      Get_Name_String (Sfile),
-                                    ALI.Sdep.Table (D).Stamp)
-                                 then
-                                    return True;
+                                 Source_Index :=
+                                   Sinput.Load_File
+                                     (Get_Name_String
+                                        (Dep_Src.Path.Display_Name));
+
+                                 if Source_Index /= No_Source_File then
+
+                                    Err.Scanner.Initialize_Scanner
+                                      (Source_Index, Err.Scanner.Ada);
+
+                                    --  Scan the complete file to compute its
+                                    --  checksum.
+
+                                    loop
+                                       Err.Scanner.Scan;
+                                       exit when Token = Tok_EOF;
+                                    end loop;
+
+                                    if Scans.Checksum =
+                                      ALI.Sdep.Table (D).Checksum
+                                    then
+                                       if Opt.Verbosity_Level > Opt.Low then
+                                          Put ("   ");
+                                          Put
+                                            (Get_Name_String
+                                               (ALI.Sdep.Table (D).Sfile));
+                                          Put (": up to date, " &
+                                                 "different timestamps " &
+                                                 "but same checksum");
+                                          New_Line;
+                                       end if;
+
+                                       ALI.Sdep.Table (D).Stamp :=
+                                         Dep_Src.Source_TS;
+                                    end if;
                                  end if;
 
-                                 R_Dirs := Nam_Nod.Next;
+                                 --  To avoid using too much memory, free the
+                                 --  memory allocated.
+
+                                 Sinput.Clear_Source_File_Table;
                               end;
-                           end loop;
-                        end;
+                           end if;
+
+                           if ALI.Sdep.Table (D).Stamp /= Dep_Src.Source_TS
+                           then
+                              if Opt.Verbosity_Level > Opt.Low then
+                                 Put
+                                   ("   -> different time stamp for ");
+                                 Put_Line (Get_Name_String (Sfile));
+
+                                 if Debug.Debug_Flag_T then
+                                    Put ("   in ALI file: ");
+                                    Put_Line
+                                      (String (ALI.Sdep.Table (D).Stamp));
+                                    Put ("   actual file: ");
+                                    Put_Line (String (Dep_Src.Source_TS));
+                                 end if;
+                              end if;
+
+                              return True;
+
+                           else
+                              for J in Projects'Range loop
+                                 if Dep_Src.Project = Projects (J) then
+                                    if Opt.Verbosity_Level > Opt.Low then
+                                       Put_Line
+                                         ("   -> wrong object directory");
+                                    end if;
+
+                                    return True;
+                                 end if;
+                              end loop;
+
+                              exit;
+                           end if;
+                        end if;
+
+                        Dep_Src := Dep_Src.Next_With_File_Name;
+                     end loop;
+
+                     --  If the source was not found and the runtime source
+                     --  directory is defined, check if the file exists there,
+                     --  and if it does, check its timestamp.
+
+                     if not Found
+                       and then
+                         (Runtime_Source_Dirs /= No_Name_List
+                          or else
+                          Is_Absolute_Path (Get_Name_String (Sfile)))
+                     then
+                        if Is_Absolute_Path (Get_Name_String (Sfile)) then
+                           if Check_Time_Stamps
+                             (Get_Name_String (Sfile),
+                              ALI.Sdep.Table (D).Stamp)
+                           then
+                              return True;
+                           end if;
+
+                        else
+                           declare
+                              R_Dirs : Name_List_Index := Runtime_Source_Dirs;
+                           begin
+                              while R_Dirs /= No_Name_List loop
+                                 declare
+                                    Nam_Nod : constant Name_Node :=
+                                      Tree.Shared.Name_Lists.Table (R_Dirs);
+                                 begin
+                                    if Check_Time_Stamps
+                                      (Get_Name_String (Nam_Nod.Name) &
+                                         Directory_Separator &
+                                         Get_Name_String (Sfile),
+                                       ALI.Sdep.Table (D).Stamp)
+                                    then
+                                       return True;
+                                    end if;
+
+                                    R_Dirs := Nam_Nod.Next;
+                                 end;
+                              end loop;
+                           end;
+                        end if;
                      end if;
                   end if;
                end if;

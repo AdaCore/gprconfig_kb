@@ -398,6 +398,9 @@ package GPR.Util is
    --  When Always is True, initialize Source even if it has already been
    --  initialized.
 
+   function Source_Dir_Of (Source : Source_Id) return String;
+   --  Returns the directory of the source file
+
    procedure Get_Switches
      (Source       : Source_Id;
       Pkg_Name     : Name_Id;

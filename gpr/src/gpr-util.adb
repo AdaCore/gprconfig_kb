@@ -2389,6 +2389,18 @@ package body GPR.Util is
       Program_Name := new String'(N);
    end Set_Program_Name;
 
+   -------------------
+   -- Source_Dir_Of --
+   -------------------
+
+   function Source_Dir_Of (Source : Source_Id) return String is
+      Path : constant String := Get_Name_String (Source.Path.Name);
+      Last : constant Natural :=
+        Path'Last - Natural (Length_Of_Name (Source.File));
+   begin
+      return Path (Path'First .. Last);
+   end Source_Dir_Of;
+
    --------------------
    -- Source_Info_Of --
    --------------------
