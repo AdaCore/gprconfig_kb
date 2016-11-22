@@ -1174,7 +1174,9 @@ begin
                   --  There is a body, check if it is for this project
 
                   if All_Projects
-                    or else Unit.File_Names (Impl).Project = Main_Project
+                    or else
+                      Ultimate_Extending_Project_Of
+                        (Unit.File_Names (Impl).Project) = Main_Project
                   then
                      Subunit := False;
 
