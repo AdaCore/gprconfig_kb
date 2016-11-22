@@ -864,7 +864,7 @@ package body Gprinstall.Install is
          if not Dry_Run then
             --  If file exists and is read-only, first remove it
 
-            if Exists (Dest_Filename) then
+            if not Sym_Link and then Exists (Dest_Filename) then
                if not Is_Writable_File (Dest_Filename) then
                   Set_Writable (Dest_Filename);
                end if;
