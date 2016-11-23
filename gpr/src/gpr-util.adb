@@ -80,17 +80,6 @@ package body GPR.Util is
       Hash       => GPR.Hash,
       Equal      => "=");
 
-   function Is_Dir (Name : Address) return Integer;
-   pragma Import (C, Is_Dir, "__gnat_is_directory");
-
-   function Locate_File_With_Predicate
-     (File_Name, Path_Val, Predicate : Address) return Address;
-   pragma Import (C, Locate_File_With_Predicate,
-                  "__gnat_locate_file_with_predicate");
-
-   function strlen (A : Address) return size_t;
-   pragma Import (Intrinsic, strlen, "strlen");
-
    function To_Path_String_Access
      (Path_Addr : Address;
       Path_Len  : Integer) return String_Access;
@@ -98,8 +87,7 @@ package body GPR.Util is
 
    function Locate_Directory
      (Dir_Name : C_File_Name;
-      Path     : C_File_Name)
-      return String_Access;
+      Path     : C_File_Name) return String_Access;
 
    function C_String_Length (S : Address) return Integer;
    --  Returns the length of C (null-terminated) string at S, or 0 for
@@ -114,6 +102,8 @@ package body GPR.Util is
    ---------------------
 
    function C_String_Length (S : Address) return Integer is
+      function strlen (A : Address) return size_t;
+      pragma Import (Intrinsic, strlen, "strlen");
    begin
       if S = Null_Address then
          return 0;
@@ -128,9 +118,16 @@ package body GPR.Util is
 
    function Locate_Directory
      (Dir_Name : C_File_Name;
-      Path     : C_File_Name)
-      return String_Access
+      Path     : C_File_Name) return String_Access
    is
+      function Is_Dir (Name : Address) return Integer;
+      pragma Import (C, Is_Dir, "__gnat_is_directory");
+
+      function Locate_File_With_Predicate
+        (File_Name, Path_Val, Predicate : Address) return Address;
+      pragma Import
+        (C, Locate_File_With_Predicate, "__gnat_locate_file_with_predicate");
+
       Result_Addr : Address;
       Result_Len  : Integer;
       Result      : String_Access := null;
@@ -150,8 +147,7 @@ package body GPR.Util is
 
    function Locate_Directory
      (Dir_Name   : String;
-      Path       : String)
-     return String_Access
+      Path       : String) return String_Access
    is
       C_Dir_Name : String (1 .. Dir_Name'Length + 1);
       C_Path     : String (1 .. Path'Length + 1);
@@ -263,7 +259,7 @@ package body GPR.Util is
    -----------
 
    procedure Close (File : in out Text_File) is
-      Len : Integer;
+      Len    : Integer;
       Status : Boolean;
 
    begin
@@ -1253,8 +1249,8 @@ package body GPR.Util is
                Src := Element (Iter);
                exit when Src = No_Source;
 
-               if Src.Unit /= No_Unit_Index and then
-                 Get_Name_String (Src.Unit.Name) = Unit_Name
+               if Src.Unit /= No_Unit_Index
+                 and then Get_Name_String (Src.Unit.Name) = Unit_Name
                then
                   Process (Src, Src.Project, Tree);
                end if;
@@ -1839,7 +1835,7 @@ package body GPR.Util is
 
                   if Stamp /= Empty_Time_Stamp
                     or else (Obj_Proj.Extended_By = No_Project
-                              and then Source.Object_Project = No_Project)
+                             and then Source.Object_Project = No_Project)
                   then
                      Set_Object_Project (Dir, Obj_Proj, Obj_Path, Stamp);
                   end if;
@@ -2396,7 +2392,7 @@ package body GPR.Util is
    function Source_Dir_Of (Source : Source_Id) return String is
       Path : constant String := Get_Name_String (Source.Path.Name);
       Last : constant Natural :=
-        Path'Last - Natural (Length_Of_Name (Source.File));
+               Path'Last - Natural (Length_Of_Name (Source.File));
    begin
       return Path (Path'First .. Last);
    end Source_Dir_Of;
@@ -2410,15 +2406,24 @@ package body GPR.Util is
       return Iter.Info;
    end Source_Info_Of;
 
-   function Split (Source : String; Separator : String) return Name_Array_Type
+   -----------
+   -- Split --
+   -----------
+
+   function Split
+     (Source : String; Separator : String) return Name_Array_Type
    is
       Start  : Positive := Source'First;
       Finish : Positive;
-      package Name_Ids is
-        new Ada.Containers.Vectors (Positive, Name_Id);
+
+      package Name_Ids is new Ada.Containers.Vectors (Positive, Name_Id);
       List : Name_Ids.Vector;
 
       procedure Add_String (S : String);
+
+      ----------------
+      -- Add_String --
+      ----------------
 
       procedure Add_String (S : String) is
       begin
@@ -2430,8 +2435,8 @@ package body GPR.Util is
       end Add_String;
 
    begin
-      if Separator'Length = 0 or else
-        Index (Source, Separator) = 0
+      if Separator'Length = 0
+        or else Index (Source, Separator) = 0
       then
          --  List with one string = Argument
          Add_String (Source);
@@ -2578,13 +2583,16 @@ package body GPR.Util is
             end if;
          end if;
 
-         if Src_Index = Element.Src_Index and then
-           (Real_Index_1 = Real_Index_2 or else
-              (Real_Index_2 /= All_Other_Names and then
-               Allow_Wildcards and then
-                 Match (Get_Name_String (Real_Index_1),
-                        Compile (Get_Name_String (Real_Index_2),
-                                 Glob => True))))
+         if Src_Index = Element.Src_Index
+           and then
+             (Real_Index_1 = Real_Index_2
+              or else (Real_Index_2 /= All_Other_Names
+                         and then
+                       Allow_Wildcards
+                         and then
+                       Match (Get_Name_String (Real_Index_1),
+                             Compile (Get_Name_String (Real_Index_2),
+                                      Glob => True))))
          then
             return Element.Value;
          else
@@ -2760,8 +2768,9 @@ package body GPR.Util is
       Create (File, Tree.Source_Info_File_Name.all);
 
       if not Is_Valid (File) then
-         Write_Line ("warning: unable to create source info file """ &
-                     Tree.Source_Info_File_Name.all & '"');
+         Write_Line
+           ("warning: unable to create source info file """
+            & Tree.Source_Info_File_Name.all & '"');
          return;
       end if;
 
@@ -2769,8 +2778,8 @@ package body GPR.Util is
          Source := Element (Iter);
          exit when Source = No_Source;
 
-         if not Source.Locally_Removed and then
-           Source.Replaced_By = No_Source
+         if not Source.Locally_Removed
+           and then Source.Replaced_By = No_Source
          then
             --  Project name
 
@@ -2858,8 +2867,7 @@ package body GPR.Util is
          --  If length of remainder is longer than Max_Length, we need to
          --  cut the remainder in several lines.
 
-         while Positive (Column) + S'Last - First > Max_Length
-         loop
+         while Positive (Column) + S'Last - First > Max_Length loop
 
             --  Try the maximum length possible
 
