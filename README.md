@@ -53,9 +53,11 @@ Installation is done with:
 Doc & Examples
 ==============
 
-The documentation is provided in various formats in the doc subdirectory.
+The documentation is provided in various formats in the `doc` subdirectory. You
+can also find it
+[online](http://docs.adacore.com/gprbuild-docs/html/gprbuild_ug.html).
 
-It refers to concrete examples that are to be found in the examples
+It refers to concrete examples that are to be found in the `examples`
 subdirectory. Each example can be built easily using the simple attached
 Makefile:
 
