@@ -543,6 +543,12 @@ package body GprConfig.Knowledge is
          Description : Node);
       --  Parse a targets set node
 
+      procedure Parse_Fallback_Targets_Set
+        (Append_To   : in out Fallback_Targets_Set_Vectors.Vector;
+         File        : String;
+         Description : Node);
+      --  Parse a fallback_targets set node
+
       --------------------------------
       -- Parse_Compiler_Description --
       --------------------------------
@@ -1036,6 +1042,38 @@ package body GprConfig.Knowledge is
          end if;
       end Parse_Configuration;
 
+      --------------------------------
+      -- Parse_Fallback_Targets_Set --
+      --------------------------------
+
+      procedure Parse_Fallback_Targets_Set
+        (Append_To   : in out Fallback_Targets_Set_Vectors.Vector;
+         File        : String;
+         Description : Node)
+      is
+         Set     : String_Lists.List;
+         N       : Node := First_Child (Description);
+      begin
+         while N /= null loop
+            if Node_Type (N) /= Element_Node then
+               null;
+
+            elsif Node_Name (N) = "target" then
+               String_Lists.Append (Set, Node_Value_As_String (N));
+            else
+               Put_Line (Standard_Error, "Unknown XML tag in " & File & ": "
+                         & Node_Name (N));
+               raise Invalid_Knowledge_Base;
+            end if;
+
+            N := Next_Sibling (N);
+         end loop;
+
+         if not String_Lists.Is_Empty (Set) then
+            Fallback_Targets_Set_Vectors.Append (Append_To, Set);
+         end if;
+      end Parse_Fallback_Targets_Set;
+
       -----------------------
       -- Parse_Targets_Set --
       -----------------------
@@ -1197,6 +1235,12 @@ package body GprConfig.Knowledge is
                elsif Node_Name (N) = "targetset" then
                   Parse_Targets_Set
                     (Append_To   => Base.Targets_Sets,
+                     File        => Simple_Name (File),
+                     Description => N);
+
+               elsif Node_Name (N) = "fallback_targets" then
+                  Parse_Fallback_Targets_Set
+                    (Append_To   => Base.Fallback_Targets_Sets,
                      File        => Simple_Name (File),
                      Description => N);
 
@@ -3847,6 +3891,41 @@ package body GprConfig.Knowledge is
       C          : Compiler_Lists.Cursor;
       Extra_Dirs : constant String := Extra_Dirs_From_Filters (Filters);
       Found_All  : Boolean := True;
+
+      function Get_Fallback_List (On_Target : Targets_Set_Id)
+                                  return String_Lists.List;
+
+      -----------------------
+      -- Get_Fallback_List --
+      -----------------------
+
+      function Get_Fallback_List (On_Target : Targets_Set_Id)
+                                  return String_Lists.List
+      is
+         Target : constant String :=
+           Get_Name_String_Or_Null
+             (Base.Targets_Sets.Element (On_Target).Name);
+         Fallback_List : String_Lists.List;
+         Cur           : String_Lists.Cursor;
+      begin
+         for I in Base.Fallback_Targets_Sets.First_Index ..
+           Base.Fallback_Targets_Sets.Last_Index loop
+            Fallback_List := Base.Fallback_Targets_Sets.Element (I);
+            Cur := Fallback_List.First;
+            while Cur /= String_Lists.No_Element loop
+               if String_Lists.Element (Cur) = Target then
+                  --  No point to store original target, it has already been
+                  --  processed.
+                  Fallback_List.Delete (Cur);
+                  return Fallback_List;
+               end if;
+               Next (Cur);
+            end loop;
+         end loop;
+
+         return String_Lists.Empty_List;
+      end Get_Fallback_List;
+
    begin
       Iter.Filters   := Filters;
 
@@ -3864,6 +3943,61 @@ package body GprConfig.Knowledge is
       Put_Verbose ("", -1);
 
       --  Check that we could find at least one of each compiler
+
+      if Native_Target then
+         --  Check to see if fallback targets are of interest
+         C := First (Filters);
+         for F in Iter.Found_One'Range loop
+            if not Iter.Found_One (F) then
+               Found_All := False;
+            end if;
+            Next (C);
+         end loop;
+
+         if not Found_All then
+            --  Looking for corresponding fallback set
+            declare
+               Fallback_List : constant String_Lists.List :=
+                 Get_Fallback_List (On_Target);
+               Cur : String_Lists.Cursor := Fallback_List.First;
+            begin
+               while Cur /= String_Lists.No_Element loop
+                  Put_Verbose
+                    ("Attempting to fall back to target"
+                     & String_Lists.Element (Cur));
+
+                  declare
+                     Local_Iter  : Batch_Iterator (Length (Filters));
+                  begin
+                     Local_Iter := Iter;
+
+                     Foreach_Compiler_In_Path
+                       (Iterator   => Local_Iter,
+                        Base       => Base,
+                        On_Target  => Query_Targets_Set
+                          (Base, String_Lists.Element (Cur)),
+                        Extra_Dirs => Extra_Dirs);
+
+                     Found_All := True;
+                     C := First (Filters);
+                     for F in Local_Iter.Found_One'Range loop
+                        if not Local_Iter.Found_One (F) then
+                           Found_All := False;
+                        end if;
+                        Next (C);
+                     end loop;
+
+                     if Found_All then
+                        Iter := Local_Iter;
+                        exit;
+                     end if;
+                  end;
+
+                  Next (Cur);
+               end loop;
+            end;
+         end if;
+      end if;
 
       C := First (Filters);
       for F in Iter.Found_One'Range loop
@@ -3963,7 +4097,6 @@ package body GprConfig.Knowledge is
          end if;
          Next (C);
       end loop;
-
       --  If we could find at least one of each compiler, but that our initial
       --  attempt returned incompatible sets of compiler, we do a more thorough
       --  attempt now

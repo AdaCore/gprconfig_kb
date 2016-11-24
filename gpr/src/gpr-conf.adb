@@ -1061,7 +1061,7 @@ package body GPR.Conf is
 
             if Native_Target then
                Arg_Last := Arg_Last + 1;
-               Args (Arg_Last) := new String'("--native");
+               Args (Arg_Last) := new String'("--fallback-targets");
             end if;
 
             if Verbosity_Level <= Low then

@@ -511,12 +511,16 @@ private
    package Targets_Set_Vectors is new Ada.Containers.Vectors
      (Known_Targets_Set_Id, Target_Set_Description, "=");
 
+   package Fallback_Targets_Set_Vectors is new Ada.Containers.Vectors
+     (Known_Targets_Set_Id, String_Lists.List, String_Lists."=");
+
    type Knowledge_Base is record
       Compilers               : Compiler_Description_Maps.Map;
       No_Compilers            : String_Lists.List;
       Check_Executable_Regexp : Boolean := False;
       Configurations          : Configuration_Lists.List;
       Targets_Sets            : Targets_Set_Vectors.Vector;
+      Fallback_Targets_Sets   : Fallback_Targets_Set_Vectors.Vector;
    end record;
    --  Check_Executable_Regexp is set to True if at least some of the
    --  executable names are specified as regular expressions. In such a case,

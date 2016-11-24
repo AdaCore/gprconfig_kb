@@ -105,8 +105,9 @@ procedure GprConfig.Main is
      new Compiler_Lists.Generic_Sorting (Display_Before);
 
    Valid_Switches : constant String :=
-                      "-batch -config= -native -db: h o: v q -show-targets"
-                      & " -validate -mi-show-compilers -target=";
+                      "-batch -config= -db: h o: v q -show-targets"
+                      & " -validate -mi-show-compilers -target= "
+                      & "-fallback-targets";
 
    --------------
    -- Callback --
@@ -386,7 +387,7 @@ begin
                --  By default, display all targets available
                Selected_Target := Null_Unbounded_String;
 
-            elsif Full_Switch = "-native" then
+            elsif Full_Switch = "-fallback-targets" then
                Native_Target := True;
             end if;
 
