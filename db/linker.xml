@@ -1434,7 +1434,7 @@
         for Map_File_Option use "-Wl,-Map,";
      end Linker;
     </config>
-  </configuration>>
+  </configuration>
 
   <configuration>
     <targets>

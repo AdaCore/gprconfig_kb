@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+
+<gprconfig>
+  <fallback_targets>
+    <target>x86-windows</target>
+    <target>x86_64-windows</target>
+  </fallback_targets>
+
+  <fallback_targets>
+    <target>x86-linux</target>
+    <target>x86_64-linux</target>
+  </fallback_targets>
+</gprconfig>

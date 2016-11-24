@@ -12,6 +12,7 @@
             <xsd:element ref="compiler_description" maxOccurs="unbounded"/>
             <xsd:element ref="configuration" maxOccurs="unbounded"/>
             <xsd:element ref="targetset" maxOccurs="unbounded"/>
+            <xsd:element ref="fallback_targets" maxOccurs="unbounded"/>
          </xsd:choice>
       </xsd:complexType>
    </xsd:element>
@@ -47,6 +48,15 @@
    </xsd:element>
 
    <xsd:element name="targetset">
+      <xsd:complexType>
+         <xsd:sequence>
+            <xsd:element name="target" type="xsd:string"
+               maxOccurs="unbounded" minOccurs="1"/>
+         </xsd:sequence>
+      </xsd:complexType>
+   </xsd:element>
+
+   <xsd:element name="fallback_targets">
       <xsd:complexType>
          <xsd:sequence>
             <xsd:element name="target" type="xsd:string"
