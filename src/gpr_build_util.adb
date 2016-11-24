@@ -1608,9 +1608,9 @@ package body Gpr_Build_Util is
          end loop;
 
          if Current_Verbosity = High then
-            Write_Str ("Adding """);
+            Put ("Adding """);
             Debug_Display (Source);
-            Write_Line (""" to the queue");
+            Put_Line (""" to the queue");
          end if;
 
          Q.Append (New_Val => (Info => Source, Processed => False));

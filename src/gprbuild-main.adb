@@ -230,9 +230,23 @@ procedure Gprbuild.Main is
       --  one main on the command line, do not add the sources of the projects
       --  without mains to the queue.
 
-      if Main_Project.Qualifier /= Aggregate
-         or else not Main_On_Command_Line
-      then
+      if Main_Project.Qualifier = Aggregate and then Main_On_Command_Line then
+         Mains.Reset;
+
+         loop
+            Main_Id := Mains.Next_Main;
+            exit when Main_Id = No_Main_Info;
+
+            Queue.Insert_Project_Sources
+              (Project        => Main_Id.Project,
+               Project_Tree   => Main_Id.Tree,
+               Unique_Compile => Unique_Compile,
+               All_Projects =>
+                  not Unique_Compile
+               or else (Unique_Compile_All_Projects or Recursive));
+         end loop;
+
+      else
          Queue.Insert_Project_Sources
            (Project        => Main_Project,
             Project_Tree   => Project_Tree,
