@@ -106,7 +106,7 @@ package body Gprbuild.Compilation.Protocol is
             null;
       end;
 
-      Channel.Channel := null;
+      Free (Channel.Channel);
       Channel.Sock := No_Socket;
       Clear_Rewrite (Channel);
    end Close;
@@ -115,10 +115,12 @@ package body Gprbuild.Compilation.Protocol is
    -- Create --
    ------------
 
-   function Create (Sock : Socket_Type) return Communication_Channel is
+   function Create
+     (Sock    : Socket_Type;
+      Virtual : Boolean := False) return Communication_Channel is
    begin
       return Communication_Channel'
-        (Sock, Stream (Sock),
+        (Sock, (if Virtual then null else Stream (Sock)),
          Null_Unbounded_String, Null_Unbounded_String,
          Null_Unbounded_String, Null_Unbounded_String);
    end Create;
@@ -130,10 +132,10 @@ package body Gprbuild.Compilation.Protocol is
    function Get_Command (Channel : Communication_Channel) return Command is
       use Ada.Streams.Stream_IO;
 
-      function Handle_File (Cmd : Command) return Command;
+      function Handle_File (Cmd : in out Command) return Command;
       --  A file has been recieved, write it to disk
 
-      function Handle_RAW_File (Cmd : Command) return Command;
+      function Handle_RAW_File (Cmd : in out Command) return Command;
       --  A file has been recieved, write it to disk, no rewritte taking place
 
       procedure Handle_Output (Cmd : in out Command);
@@ -143,7 +145,7 @@ package body Gprbuild.Compilation.Protocol is
       -- Handle_File --
       -----------------
 
-      function Handle_File (Cmd : Command) return Command is
+      function Handle_File (Cmd : in out Command) return Command is
          File_Name : constant String :=
                        Translate_Receive (Channel, Cmd.Args (2).all);
          Dir       : constant String := Containing_Directory (File_Name);
@@ -229,6 +231,7 @@ package body Gprbuild.Compilation.Protocol is
                end if;
          end;
 
+         Release (Cmd);
          return Get_Command (Channel);
       end Handle_File;
 
@@ -236,7 +239,7 @@ package body Gprbuild.Compilation.Protocol is
       -- Handle_RAW_File --
       ---------------------
 
-      function Handle_RAW_File (Cmd : Command) return Command is
+      function Handle_RAW_File (Cmd : in out Command) return Command is
          File_Name  : constant String :=
                        Translate_Receive (Channel, Cmd.Args (1).all);
          Dir        : constant String := Containing_Directory (File_Name);
@@ -253,6 +256,7 @@ package body Gprbuild.Compilation.Protocol is
 
          Get_RAW_File_Content (Channel, File_Name, Time_Stamp);
 
+         Release (Cmd);
          return Get_Command (Channel);
       end Handle_RAW_File;
 
@@ -367,7 +371,7 @@ package body Gprbuild.Compilation.Protocol is
       Included_Artifact_Patterns : out Unbounded_String;
       Is_Ping                    : out Boolean)
    is
-      Line : constant Command := Get_Command (Channel);
+      Line : Command := Get_Command (Channel);
    begin
       Is_Ping := False;
 
@@ -385,12 +389,13 @@ package body Gprbuild.Compilation.Protocol is
 
       elsif Line.Cmd = PG then
          Is_Ping := True;
-         return;
 
       else
          raise Wrong_Command
            with "Expected CX found " & Command_Kind'Image (Line.Cmd);
       end if;
+
+      Release (Line);
    end Get_Context;
 
    -------------
@@ -402,7 +407,7 @@ package body Gprbuild.Compilation.Protocol is
       Pid     : out Process.Remote_Id;
       Success : out Boolean)
    is
-      Cmd : constant Command := Get_Command (Channel);
+      Cmd : Command := Get_Command (Channel);
    begin
       if Cmd.Args'Length = 1
         and then Cmd.Cmd in OK | KO
@@ -413,6 +418,8 @@ package body Gprbuild.Compilation.Protocol is
       else
          Success := False;
       end if;
+
+      Release (Cmd);
    end Get_Pid;
 
    --------------------------
@@ -509,6 +516,15 @@ package body Gprbuild.Compilation.Protocol is
    begin
       return Cmd.Output;
    end Output;
+
+   -------------
+   -- Release --
+   -------------
+
+   procedure Release (Cmd : in out Command) is
+   begin
+      Free (Cmd.Args);
+   end Release;
 
    --------------
    -- Send_Ack --

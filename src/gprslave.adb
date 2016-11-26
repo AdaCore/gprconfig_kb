@@ -467,7 +467,7 @@ procedure Gprslave is
       function Exists (Socket : Socket_Type) return Boolean is
          Builder : Build_Master;
       begin
-         Builder.Channel := Protocol.Create (Socket);
+         Builder.Channel := Protocol.Create (Socket, Virtual => True);
          return Builder_Set.Has_Element (Builders.Find (Builder));
       end Exists;
 
@@ -479,7 +479,7 @@ procedure Gprslave is
          Builder : Build_Master;
          Pos     : Builder_Set.Cursor;
       begin
-         Builder.Channel := Protocol.Create (Socket);
+         Builder.Channel := Protocol.Create (Socket, Virtual => True);
 
          Pos := Builders.Find (Builder);
 
@@ -950,6 +950,8 @@ procedure Gprslave is
 
       Running.Set_Max (Max_Processes);
 
+      Free (Config);
+
    exception
       when Invalid_Switch =>
          OS_Exit (1);
@@ -1056,7 +1058,7 @@ procedure Gprslave is
                   Builders.Lock (Builder);
 
                   declare
-                     Cmd : constant Command := Get_Command (Builder.Channel);
+                     Cmd : Command := Get_Command (Builder.Channel);
                      V   : Unbounded_String;
                   begin
                      if Debug then
@@ -1103,7 +1105,7 @@ procedure Gprslave is
                         end Record_Job;
 
                      elsif Kind (Cmd) = FL then
-                        null;
+                        Release (Cmd);
 
                      elsif Kind (Cmd) = CU then
                         Clean_Up_Request : begin
@@ -1126,12 +1128,16 @@ procedure Gprslave is
 
                         Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
 
+                        Release (Cmd);
+
                         Display
                           (Builder,
                            "End project : "
                            & To_String (Builder.Project_Name));
 
                      else
+                        Release (Cmd);
+
                         raise Constraint_Error with "unexpected command "
                           & Command_Kind'Image (Kind (Cmd));
                      end if;
@@ -1142,6 +1148,8 @@ procedure Gprslave is
                         --  cannot communicate with it. Just close the channel.
 
                         Close_Builder (Builder, Ack => False);
+
+                        Release (Cmd);
 
                         Display
                           (Builder,
@@ -1156,6 +1164,8 @@ procedure Gprslave is
                         --  unresponsive.
 
                         Close_Builder (Builder, Ack => False);
+
+                        Release (Cmd);
 
                         Display
                           (Builder,
@@ -1318,6 +1328,9 @@ procedure Gprslave is
                   Pck := Pcks (Pck).Next;
                end loop Look_Compiler_Package;
             end;
+
+            Free (Project_Node_Tree);
+            Free (Project_Tree);
 
          exception
             --  Never propagate an exception, the driver won't be set anyway
@@ -1622,10 +1635,21 @@ procedure Gprslave is
 
          if Builders.Exists (Job.Build_Sock) then
             if Kind (Job.Cmd) = EX then
+               --  Note that we do not release the job here as it will
+               --  get recorded as running job. The release will happen
+               --  in Wait_Completion.
                Do_Compile (Job);
+
             else
                Do_Clean (Job);
+               Release (Job.Cmd);
             end if;
+
+         else
+            --  Builder has been removed (client has been interrupted). We need
+            --  to release the Job memory.
+
+            Release (Job.Cmd);
          end if;
       end loop;
 
@@ -1681,6 +1705,8 @@ procedure Gprslave is
             --  Mark job as killed into the set
             C := Set.Find (Job);
             Set (C).Stage := J_Killed;
+
+            Release (Set (C).Cmd);
 
             Kill_Process_Tree (Job.Pid, Hard_Kill => True);
             Display
@@ -1954,18 +1980,6 @@ procedure Gprslave is
          --  Job_Set is clear. See Main_Loop in gprslave's body.
 
          if Job /= No_Job then
-            declare
-               A : Argument_List_Access := Args (Job.Cmd);
-            begin
-               --  Free args
-
-               for K in A'Range loop
-                  Free (A (K));
-               end loop;
-
-               Free (A);
-            end;
-
             --  Now get the corresponding build master
 
             Builder := Builders.Get (Job.Build_Sock);
@@ -2080,6 +2094,8 @@ procedure Gprslave is
               ("unknown job data for pid "
                & Integer'Image (Pid_To_Integer (Pid)), Is_Debug => True);
          end if;
+
+         Release (Job.Cmd);
       end loop;
 
    exception
@@ -2296,6 +2312,8 @@ procedure Gprslave is
 
                   Delete_Files (Except => In_Master);
 
+                  Release (Cmd);
+
                   exit Check_Time_Stamps;
 
                elsif Kind (Cmd) in EC | SI then
@@ -2306,8 +2324,12 @@ procedure Gprslave is
 
                   Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
 
+                  Release (Cmd);
+
                   exit Check_Time_Stamps;
                end if;
+
+               Release (Cmd);
             end;
          end loop Check_Time_Stamps;
 
@@ -2344,9 +2366,10 @@ procedure Gprslave is
 
       Builder.Channel := Create (Socket);
 
-      --  We must call explicitely Initialize here to ensure that the Builder
-      --  object Status access will be changed for this new builder.
+      --  We must call explicitely Finalize/Initialize here to ensure that the
+      --  Builder object Status access will be changed for this new builder.
 
+      Controlled_Build_Master.Finalize (Builder);
       Controlled_Build_Master.Initialize (Builder);
 
       --  Then initialize the new builder Id

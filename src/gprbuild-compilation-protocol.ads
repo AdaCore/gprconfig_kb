@@ -50,8 +50,12 @@ package Gprbuild.Compilation.Protocol is
 
    No_Channel : constant Communication_Channel;
 
-   function Create (Sock : Socket_Type) return Communication_Channel;
-   --  Create a communication channel
+   function Create
+     (Sock    : Socket_Type;
+      Virtual : Boolean := False) return Communication_Channel;
+   --  Create a communication channel. If Virtual is True it only creates a
+   --  virtual channel which cannot be used as a regular channel. This is
+   --  meant to be used as a key for comparing against another channel.
 
    function Sock (Channel : Communication_Channel) return Socket_Type;
    pragma Inline (Sock);
@@ -118,6 +122,9 @@ package Gprbuild.Compilation.Protocol is
 
    function Get_Command (Channel : Communication_Channel) return Command;
    --  Wait and return a command as parsed from the communication channel
+
+   procedure Release (Cmd : in out Command);
+   --  Release memory associated with the command
 
    Invalid_Pid : constant := -1;
 
