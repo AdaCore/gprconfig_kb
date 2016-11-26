@@ -2084,7 +2084,8 @@ procedure Gprslave is
 
    exception
       when E : others =>
-         Put_Line ("Unrecoverable error: Wait_Completion.");
+         Put_Line
+           ("Unrecoverable error: Wait_Completion: " & Exception_Name (E));
          Put_Line (Symbolic_Traceback (E));
          OS_Exit (1);
    end Wait_Completion;
