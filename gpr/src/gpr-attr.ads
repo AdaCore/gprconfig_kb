@@ -238,6 +238,13 @@ package GPR.Attr is
    --  Attribute_Data above for the meaning of parameters Attr_Kind, Var_Kind,
    --  Index_Is_File_Name, Opt_Index, and Default.
 
+   function Attribute_Registered
+     (Name               : String;
+      In_Package         : Package_Node_Id) return Boolean;
+   --  Checks if corresponding attribute has already been registered.
+   --  Fails if Name (the attribute name) is empty or if In_Package is
+   --  Empty_Package.
+
    function Package_Node_Id_Of (Name : Name_Id) return Package_Node_Id;
    --  Returns the package node id of the package with name Name. Returns
    --  Empty_Package if there is no package with this name.

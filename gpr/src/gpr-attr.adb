@@ -847,6 +847,51 @@ package body GPR.Attr is
       return Empty_Package;
    end Package_Node_Id_Of;
 
+   --------------------------
+   -- Attribute_Registered --
+   --------------------------
+
+   function Attribute_Registered
+     (Name               : String;
+      In_Package         : Package_Node_Id) return Boolean
+   is
+      Attr_Name       : Name_Id;
+      First_Attr      : Attr_Node_Id := Empty_Attr;
+      Curr_Attr       : Attr_Node_Id;
+      Real_Attr_Kind  : Attribute_Kind;
+   begin
+      if Name'Length = 0 then
+         GPR.Osint.Fail ("cannot check an attribute with no name");
+         raise Project_Error;
+      end if;
+
+      if In_Package = Empty_Package then
+         GPR.Osint.Fail
+           ("cannot check an attribute """
+            & Name
+            & """ from an undefined package");
+         raise Project_Error;
+      end if;
+
+      Attr_Name := Name_Id_Of (Name);
+
+      First_Attr :=
+        Package_Attributes.Table (In_Package.Value).First_Attribute;
+
+      --  Check if attribute name is a duplicate
+
+      Curr_Attr := First_Attr;
+      while Curr_Attr /= Empty_Attr loop
+         if Attrs.Table (Curr_Attr).Name = Attr_Name then
+            return True;
+         end if;
+
+         Curr_Attr := Attrs.Table (Curr_Attr).Next;
+      end loop;
+
+      return False;
+   end Attribute_Registered;
+
    ----------------------------
    -- Register_New_Attribute --
    ----------------------------
