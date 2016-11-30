@@ -858,7 +858,6 @@ package body GPR.Attr is
       Attr_Name       : Name_Id;
       First_Attr      : Attr_Node_Id := Empty_Attr;
       Curr_Attr       : Attr_Node_Id;
-      Real_Attr_Kind  : Attribute_Kind;
    begin
       if Name'Length = 0 then
          GPR.Osint.Fail ("cannot check an attribute with no name");
