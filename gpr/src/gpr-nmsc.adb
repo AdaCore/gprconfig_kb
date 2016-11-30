@@ -4366,12 +4366,12 @@ package body GPR.Nmsc is
                   "Library name cannot be the same as in project %%",
                   Lib_Name.Location, Project);
                Project.Library := False;
-               exit;
             end if;
          end loop;
       end if;
 
-      if not Lib_Standalone.Default
+      if Project.Library
+        and then not Lib_Standalone.Default
         and then Project.Library_Kind = Static
       then
          if To_Lower (Get_Name_String (Lib_Standalone.Value)) = "encapsulated"

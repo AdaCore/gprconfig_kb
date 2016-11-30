@@ -1252,6 +1252,17 @@
     </config>
   </configuration>
 
+  <!-- CodePeer -->
+
+  <configuration>
+    <targets>
+       <target name="codepeer" />
+    </targets>
+    <config>
+    for Library_Support use "full";
+    </config>
+  </configuration>
+
   <!--  use C++, Fortran, Ada or C driver to link in this order -->
 
   <configuration>
