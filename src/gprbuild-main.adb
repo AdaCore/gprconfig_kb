@@ -2505,24 +2505,33 @@ begin
 
    Compute_All_Imported_Projects (Main_Project, Project_Tree);
 
-   if Mains.Number_Of_Mains (Project_Tree) = 0
-     and then not Unique_Compile
-   then
-      --  Register the Main units from the projects.
-      --  No need to waste time when we are going to compile all files
-      --  anyway (Unique_Compile).
-      Mains.Fill_From_Project (Main_Project, Project_Tree);
-   end if;
+   if Main_Project.Qualifier = Aggregate_Library then
+      if Main_On_Command_Line then
+         Fail_Program
+           (Project_Tree,
+            "cannot specify a main program " &
+            "on the command line for a library project file");
+      end if;
+   else
+      if Mains.Number_Of_Mains (Project_Tree) = 0
+        and then not Unique_Compile
+      then
+         --  Register the Main units from the projects.
+         --  No need to waste time when we are going to compile all files
+         --  anyway (Unique_Compile).
+         Mains.Fill_From_Project (Main_Project, Project_Tree);
+      end if;
 
-   Mains.Complete_Mains
-     (Root_Environment.Flags, Main_Project, Project_Tree);
+      Mains.Complete_Mains
+        (Root_Environment.Flags, Main_Project, Project_Tree);
 
-   if not Unique_Compile
-     and then Output_File_Name /= null
-     and then Mains.Number_Of_Mains (null) > 1
-   then
-      Fail_Program
-        (Project_Tree, "cannot specify -o when there are several mains");
+      if not Unique_Compile
+        and then Output_File_Name /= null
+        and then Mains.Number_Of_Mains (null) > 1
+      then
+         Fail_Program
+           (Project_Tree, "cannot specify -o when there are several mains");
+      end if;
    end if;
 
    Do_Compute_Builder_Switches
