@@ -569,15 +569,15 @@
    </configuration>
 
    <configuration>
-     <targets>
-       <target name="^i586-wrs-vxworks$" />
-     </targets>
     <compilers>
        <compiler language="Ada" />
     </compilers>
     <compilers>
       &gnat_pre_6.4;
     </compilers>
+     <targets>
+       <target name="^i586-wrs-vxworks$" />
+     </targets>
      <config>
    for Archive_Builder  use ("arpentium", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -587,15 +587,15 @@
    </configuration>
 
    <configuration>
-     <targets>
-       <target name="^i586-wrs-vxworks$" />
-     </targets>
     <compilers>
        <compiler language="Ada" />
     </compilers>
     <compilers negate="true" >
       &gnat_pre_6.4;
     </compilers>
+     <targets>
+       <target name="^i586-wrs-vxworks$" />
+     </targets>
      <config>
    for Archive_Builder  use ("i586-wrs-vxworks-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -605,12 +605,12 @@
    </configuration>
 
    <configuration>
-     <targets>
-       <target name="^i586-wrs-vxworks$" />
-     </targets>
     <compilers negate="true" >
        <compiler language="Ada" />
     </compilers>
+     <targets>
+       <target name="^i586-wrs-vxworks$" />
+     </targets>
      <config>
    for Archive_Builder  use ("i586-wrs-vxworks-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -680,15 +680,15 @@
    </configuration>
 
    <configuration>
-     <targets>
-       <target name="^powerpc-wrs-vxworks$" />
-     </targets>
     <compilers>
        <compiler language="Ada" />
     </compilers>
     <compilers>
       &gnat_pre_6.4;
     </compilers>
+     <targets>
+       <target name="^powerpc-wrs-vxworks$" />
+     </targets>
      <config>
    for Archive_Builder  use ("arppc", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -698,15 +698,15 @@
    </configuration>
 
    <configuration>
-     <targets>
-       <target name="^powerpc-wrs-vxworks$" />
-     </targets>
     <compilers>
        <compiler language="Ada" />
     </compilers>
     <compilers negate="true">
       &gnat_pre_6.4;
     </compilers>
+     <targets>
+       <target name="^powerpc-wrs-vxworks$" />
+     </targets>
      <config>
    for Archive_Builder  use ("powerpc-wrs-vxworks-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -716,12 +716,12 @@
    </configuration>
 
    <configuration>
-     <targets>
-       <target name="^powerpc-wrs-vxworks$" />
-     </targets>
     <compilers negate="true" >
        <compiler language="Ada" />
     </compilers>
+     <targets>
+       <target name="^powerpc-wrs-vxworks$" />
+     </targets>
      <config>
    for Archive_Builder  use ("powerpc-wrs-vxworks-ar", "cr");
    for Archive_Builder_Append_Option use ("q");
@@ -871,12 +871,12 @@
    </configuration>
 
   <configuration>
-    <targets>
-      <target name="^.*-wrs-linux.*$" />
-    </targets>
     <compilers>
        <compiler language="Ada" />
     </compilers>
+    <targets>
+      <target name="^.*-wrs-linux.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("Ada");
@@ -974,14 +974,14 @@
   </configuration>
 
   <configuration>
+    <compilers>
+        <compiler name="G++" language="C++" />
+    </compilers>
     <targets>
        <target name="^i.86-.*darwin.*$" />
        <target name="^powerpc-.*darwin.*$" />
        <target name="^x86_64-.*darwin.*$" />
     </targets>
-    <compilers>
-        <compiler name="G++" language="C++" />
-    </compilers>
     <config>
     for Library_Rpath_Options ("C++") use ("-print-file-name=libstdc++.dylib");
     </config>
@@ -1064,12 +1064,12 @@
   </configuration>
 
   <configuration>
-    <targets>
-       <target name="^.*linux.*$" />
-    </targets>
     <compilers>
        <compiler name="GNAT" />
     </compilers>
+    <targets>
+       <target name="^.*linux.*$" />
+    </targets>
     <config>
    Target_Name := project'Target;
    case Target_Name is
@@ -1082,27 +1082,27 @@
   </configuration>
 
   <configuration>
-    <targets>
-       <target name="^.*linux.*$" />
-    </targets>
     <compilers negate="true">
        <compiler name="GNAT" />
     </compilers>
     <compilers>
        <compiler name="GCC" />
     </compilers>
+    <targets>
+       <target name="^.*linux.*$" />
+    </targets>
     <config>
    for Library_Partial_Linker use ("${PATH(ada)}${PREFIX(c)}gcc", "-nostdlib", "-Wl,-r", "-o");
     </config>
   </configuration>
 
   <configuration>
-    <targets>
-       <target name="^.*linux.*$" />
-    </targets>
     <compilers>
         <compiler name="G++" language="C++" />
     </compilers>
+    <targets>
+       <target name="^.*linux.*$" />
+    </targets>
     <config>
     for Library_Rpath_Options ("C++") use ("-print-file-name=libstdc++.so");
     </config>
@@ -1161,13 +1161,13 @@
   </configuration>
 
   <configuration>
+    <compilers>
+        <compiler name="G++" language="C++" />
+    </compilers>
     <targets>
        <target name="^.*sunos.*$" />
        <target name="^.*solaris.*$" />
     </targets>
-    <compilers>
-        <compiler name="G++" language="C++" />
-    </compilers>
     <config>
     for Library_Rpath_Options ("C++") use ("-print-file-name=libstdc++.so");
     </config>
@@ -1226,10 +1226,10 @@
 
   <!--  VMS -->
   <configuration>
+    <compilers><compiler name="GNAT" /></compilers>
     <targets>
       <target name="^.*vms.*$" />
     </targets>
-    <compilers><compiler name="GNAT" /></compilers>
     <config>
    for Library_Builder  use "${GPRCONFIG_PREFIX}libexec/gprbuild/gprlib";
    for Library_Support  use "full";
@@ -1266,13 +1266,13 @@
   <!--  use C++, Fortran, Ada or C driver to link in this order -->
 
   <configuration>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
     <targets negate="true">
       <target name="^.*-wrs-vxworks.*$" />
       <target name="^.*-wrs-linux.*$" />
     </targets>
-    <compilers>
-       <compiler language="C++" />
-    </compilers>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C++");
@@ -1282,15 +1282,15 @@
 
   <!-- If no Ada, use C++ driver when there are C++ sources -->
   <configuration>
-    <targets>
-      <target name="^.*-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="Ada" />
     </compilers>
     <compilers>
        <compiler language="C++" />
     </compilers>
+    <targets>
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C++");
@@ -1299,15 +1299,15 @@
   </configuration>
 
   <configuration>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
     <targets>
       <target name="^.*linux.*$" />
       <target name="^.*sunos.*$" />
       <target name="^.*solaris.*$" />
       <target name="^.*mingw.*$" />
     </targets>
-    <compilers>
-       <compiler language="C++" />
-    </compilers>
     <config>
      package Linker is
         for Required_Switches use Linker'Required_Switches &amp; ("-shared-libgcc");
@@ -1330,12 +1330,6 @@
   </configuration>
 
   <configuration>
-    <targets negate="true">
-       <target name="aamp" />
-       <target name="dotnet" />
-       <target name="^.*-sysgo-pikeos.*$" />
-       <target name="^.*-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1343,6 +1337,12 @@
     <compilers>
        <compiler language="Ada" />
     </compilers>
+    <targets negate="true">
+       <target name="aamp" />
+       <target name="dotnet" />
+       <target name="^.*-sysgo-pikeos.*$" />
+       <target name="^.*-wrs-vxworks.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("Ada");
@@ -1353,12 +1353,12 @@
   <!-- For PikeOS use C drivers as default for linking,
        to use SYSGO's libgcc -->
   <configuration>
-    <targets>
-      <target name="^.*-sysgo-pikeos.*$" />
-    </targets>
     <compilers>
        <compiler language="C" />
     </compilers>
+    <targets>
+      <target name="^.*-sysgo-pikeos.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C");
@@ -1367,15 +1367,15 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^.*-sysgo-pikeos.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C" />
     </compilers>
     <compilers>
        <compiler language="Ada" />
     </compilers>
+    <targets>
+      <target name="^.*-sysgo-pikeos.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("Ada");
@@ -1386,12 +1386,12 @@
   <!-- For VxWorks 5 and 6 use Ada driver as default for linking, since cc*
        and c++* do not recognize the -crtbe switch needed for ZCX -->
   <configuration>
-    <targets>
-      <target name="^.*-wrs-vxworks.*$" />
-    </targets>
     <compilers>
        <compiler language="Ada" />
     </compilers>
+    <targets>
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("Ada");
@@ -1400,9 +1400,6 @@
   </configuration>
 
   <configuration>
-    <targets negate="true">
-      <target name="^.*-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1411,6 +1408,9 @@
     <compilers>
        <compiler language="C" />
     </compilers>
+    <targets negate="true">
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C");
@@ -1437,9 +1437,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^powerpc-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1448,6 +1445,9 @@
     <compilers>
        <compiler name="GCC-WRS6" language="C" runtime="^rtp$"/>
     </compilers>
+    <targets>
+      <target name="^powerpc-wrs-vxworks.*$" />
+    </targets>
     <config>
      package Linker is
         for Required_Switches use
@@ -1461,9 +1461,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^powerpc-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1472,6 +1469,9 @@
     <compilers>
        <compiler name="GCC-WRS6" language="C" runtime="^rtp-smp$"/>
     </compilers>
+    <targets>
+      <target name="^powerpc-wrs-vxworks.*$" />
+    </targets>
     <config>
      package Linker is
         for Required_Switches use
@@ -1483,9 +1483,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^arm-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1494,6 +1491,9 @@
     <compilers>
        <compiler name="GCC-WRS6" language="C" runtime="^rtp$"/>
     </compilers>
+    <targets>
+      <target name="^arm-wrs-vxworks.*$" />
+    </targets>
     <!-- As a special exception, on ARM, rts-rtp is smp-based. -->
     <config>
      package Linker is
@@ -1506,9 +1506,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^e500v2-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1517,6 +1514,9 @@
     <compilers>
        <compiler name="GCC-WRS6E500V2" language="C" runtime="^rtp$"/>
     </compilers>
+    <targets>
+      <target name="^e500v2-wrs-vxworks.*$" />
+    </targets>
     <config>
      package Linker is
         for Required_Switches use
@@ -1530,9 +1530,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^e500v2-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1541,6 +1538,9 @@
     <compilers>
        <compiler name="GCC-WRS6E500V2" language="C" runtime="^rtp-smp$"/>
     </compilers>
+    <targets>
+      <target name="^e500v2-wrs-vxworks.*$" />
+    </targets>
     <config>
      package Linker is
         for Required_Switches use
@@ -1552,9 +1552,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^powerpc-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1563,6 +1560,9 @@
     <compilers>
        <compiler name="GCC-WRS6CERT" language="C" runtime="rtp"/>
     </compilers>
+    <targets>
+      <target name="^powerpc-wrs-vxworks.*$" />
+    </targets>
     <config>
      package Linker is
         for Required_Switches use
@@ -1574,9 +1574,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^e500v2-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1585,6 +1582,9 @@
     <compilers>
        <compiler name="GCC-WRS6CERTE500V2" language="C" runtime="rtp"/>
     </compilers>
+    <targets>
+      <target name="^e500v2-wrs-vxworks.*$" />
+    </targets>
     <config>
      package Linker is
         for Required_Switches use
@@ -1619,9 +1619,6 @@
 
   <!-- If no Ada and no C++, use C driver when there are C sources -->
   <configuration>
-    <targets>
-      <target name="^.*-wrs-vxworks.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="Ada" />
        <compiler language="C++" />
@@ -1629,6 +1626,9 @@
     <compilers>
        <compiler language="C" />
     </compilers>
+    <targets>
+      <target name="^.*-wrs-vxworks.*$" />
+    </targets>
     <config>
    package Linker is
       for Driver use Compiler'Driver ("C");
@@ -1664,6 +1664,21 @@
   -->
 
    <configuration>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+    </compilers>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers negate="true">
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+    </compilers>
      <targets>
        <target name="^.*-wrs-vxworks.*$" />
        <target name="^.*-elf-lynx.*$" />
@@ -1687,21 +1702,6 @@
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
      </targets>
-    <compilers negate="true">
-       <compiler language="C++" />
-       <compiler language="Fortran" />
-    </compilers>
-    <compilers>
-       <compiler language="Ada" />
-    </compilers>
-    <compilers negate="true">
-      <compiler version="3.16" />
-      <compiler version="5.00" />
-      <compiler version="5.01" />
-      <compiler version="5.02" />
-      <compiler version="5.03" />
-      <compiler version="5.04" />
-    </compilers>
     <config>
    package Linker is
       for Response_File_Format use "GCC_GNU";
@@ -1711,6 +1711,21 @@
   </configuration>
 
    <configuration>
+    <compilers negate="true">
+       <compiler language="C++" />
+       <compiler language="Fortran" />
+    </compilers>
+    <compilers>
+       <compiler language="Ada" />
+    </compilers>
+    <compilers>
+      <compiler version="3.16" />
+      <compiler version="5.00" />
+      <compiler version="5.01" />
+      <compiler version="5.02" />
+      <compiler version="5.03" />
+      <compiler version="5.04" />
+    </compilers>
      <targets>
        <target name="^.*wrs-vxworks.*$" />
        <target name="^.*-elf-lynx.*$" />
@@ -1730,21 +1745,6 @@
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
      </targets>
-    <compilers negate="true">
-       <compiler language="C++" />
-       <compiler language="Fortran" />
-    </compilers>
-    <compilers>
-       <compiler language="Ada" />
-    </compilers>
-    <compilers>
-      <compiler version="3.16" />
-      <compiler version="5.00" />
-      <compiler version="5.01" />
-      <compiler version="5.02" />
-      <compiler version="5.03" />
-      <compiler version="5.04" />
-    </compilers>
     <config>
    package Linker is
       for Response_File_Format use "GNU";
@@ -1754,6 +1754,9 @@
   </configuration>
 
    <configuration>
+    <compilers>
+       <compiler language="C++" />
+    </compilers>
      <targets>
        <target name="^.*wrs-vxworks.*$" />
        <target name="^.*-elf-lynx.*$" />
@@ -1774,9 +1777,6 @@
        <target name="^.*linux.*$" />
        <target name="^.*freebsd.*$" />
      </targets>
-    <compilers>
-       <compiler language="C++" />
-    </compilers>
     <config>
    package Linker is
       for Response_File_Format use "GNU";
@@ -1786,12 +1786,6 @@
   </configuration>
 
   <configuration>
-    <targets>
-      <target name="^.*aix.*$" />
-      <target name="^.*hpux.*$" />
-      <target name="^.*irix.*$" />
-      <target name="^.*osf.*$" />
-    </targets>
     <compilers negate="true">
        <compiler language="C++" />
        <compiler language="Fortran" />
@@ -1807,6 +1801,12 @@
       <compiler version="5.03" />
       <compiler version="5.04" />
     </compilers>
+    <targets>
+      <target name="^.*aix.*$" />
+      <target name="^.*hpux.*$" />
+      <target name="^.*irix.*$" />
+      <target name="^.*osf.*$" />
+    </targets>
     <config>
    package Linker is
       for Response_File_Format use "GCC_Object_List";
