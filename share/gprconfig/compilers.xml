@@ -953,4 +953,19 @@
     </target>
   </compiler_description>
 
+  <!--  Windres compiler -->
+  <compiler_description>
+    <name>WINDRES</name>
+    <executable prefix="1">(i686-pc-mingw32-|x86_64-pc-mingw32-)?windres</executable>
+    <version>
+      <external>${PREFIX}windres --version</external>
+      <grep regexp="^GNU windres \(GNU Binutils\) (\S+)" group="1"></grep>
+    </version>
+    <languages>WinRes</languages>
+    <target>
+      <external>${PREFIX}gcc -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>
+  </compiler_description>
+
 </gprconfig>
