@@ -922,9 +922,11 @@ begin
       New_Line;
    end if;
 
-   Mains.Fill_From_Project (Main_Project, Project_Tree);
-   Mains.Complete_Mains
-     (Root_Environment.Flags, Main_Project, Project_Tree);
+   if Main_Project.Qualifier /= Aggregate_Library then
+      Mains.Fill_From_Project (Main_Project, Project_Tree);
+      Mains.Complete_Mains
+        (Root_Environment.Flags, Main_Project, Project_Tree);
+   end if;
 
    if Verbose_Mode then
       New_Line;
