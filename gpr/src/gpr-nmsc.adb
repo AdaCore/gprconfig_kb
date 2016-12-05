@@ -6077,7 +6077,7 @@ package body GPR.Nmsc is
 
       Project.Exec_Directory := Project.Object_Directory;
 
-      if Exec_Dir.Value /= Empty_String then
+      if Exec_Dir.Value /= Empty_String and then Exec_Dir.Value /= No_Name then
          Get_Name_String (Exec_Dir.Value);
 
          if Name_Len = 0 then

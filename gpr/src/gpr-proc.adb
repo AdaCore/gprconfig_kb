@@ -1734,25 +1734,32 @@ package body GPR.Proc is
             --  Loop through all the valid strings for the
             --  string type and compare to the string value.
 
-            Current_String :=
-              First_Literal_String
-                (String_Type_Of (Declaration, Node_Tree), Node_Tree);
+            declare
+               Str_Type : constant Project_Node_Id :=
+                 String_Type_Of (Declaration, Node_Tree);
+            begin
+               if No (Str_Type) then
+                  Current_String := Empty_Project_Node;
 
-            while Present (Current_String)
-              and then
-                String_Value_Of (Current_String, Node_Tree) /= Value.Value
-            loop
-               Current_String :=
-                 Next_Literal_String (Current_String, Node_Tree);
-            end loop;
+               else
+                  Current_String := First_Literal_String (Str_Type, Node_Tree);
+               end if;
 
-            --  Report error if string value is not one for the string type
+               while Present (Current_String)
+                 and then
+                   String_Value_Of (Current_String, Node_Tree) /= Value.Value
+               loop
+                  Current_String :=
+                    Next_Literal_String (Current_String, Node_Tree);
+               end loop;
 
-            if No (Current_String) then
-               Error_Msg_Name_1 := Value.Value;
-               Error_Msg_Name_2 := Name_Of (Declaration, Node_Tree);
+               --  Report error if string value is not one for the string type
 
-               case Env.Flags.Allow_Invalid_External is
+               if No (Current_String) then
+                  Error_Msg_Name_1 := Value.Value;
+                  Error_Msg_Name_2 := Name_Of (Declaration, Node_Tree);
+
+                  case Env.Flags.Allow_Invalid_External is
                   when Error =>
                      Error_Msg
                        (Env.Flags, "value %% is illegal for typed string %%",
@@ -1766,11 +1773,12 @@ package body GPR.Proc is
 
                   when Silent =>
                      Reset_Value := True;
-               end case;
+                  end case;
 
-            else
-               Value.String_Type := String_Type_Of (Declaration, Node_Tree);
-            end if;
+               else
+                  Value.String_Type := String_Type_Of (Declaration, Node_Tree);
+               end if;
+            end;
          end if;
 
          if Value.Kind /= Undefined and then Reset_Value then
