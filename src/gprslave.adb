@@ -49,7 +49,6 @@ with GNAT.Traceback.Symbolic; use GNAT.Traceback;
 with Gpr_Util;                      use Gpr_Util;
 with GPR_Version;
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
-with Gprbuild.Compilation.Process;  use Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with GprConfig.Knowledge;           use GprConfig.Knowledge;
 with GPR;                           use GPR;
@@ -1058,7 +1057,7 @@ procedure Gprslave is
                   Builders.Lock (Builder);
 
                   declare
-                     Cmd : Command := Get_Command (Builder.Channel);
+                     Cmd : constant Command := Get_Command (Builder.Channel);
                      V   : Unbounded_String;
                   begin
                      if Debug then
@@ -1105,7 +1104,7 @@ procedure Gprslave is
                         end Record_Job;
 
                      elsif Kind (Cmd) = FL then
-                        Release (Cmd);
+                        null;
 
                      elsif Kind (Cmd) = CU then
                         Clean_Up_Request : begin
@@ -1128,16 +1127,12 @@ procedure Gprslave is
 
                         Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
 
-                        Release (Cmd);
-
                         Display
                           (Builder,
                            "End project : "
                            & To_String (Builder.Project_Name));
 
                      else
-                        Release (Cmd);
-
                         raise Constraint_Error with "unexpected command "
                           & Command_Kind'Image (Kind (Cmd));
                      end if;
@@ -1148,8 +1143,6 @@ procedure Gprslave is
                         --  cannot communicate with it. Just close the channel.
 
                         Close_Builder (Builder, Ack => False);
-
-                        Release (Cmd);
 
                         Display
                           (Builder,
@@ -1164,8 +1157,6 @@ procedure Gprslave is
                         --  unresponsive.
 
                         Close_Builder (Builder, Ack => False);
-
-                        Release (Cmd);
 
                         Display
                           (Builder,
@@ -1642,14 +1633,7 @@ procedure Gprslave is
 
             else
                Do_Clean (Job);
-               Release (Job.Cmd);
             end if;
-
-         else
-            --  Builder has been removed (client has been interrupted). We need
-            --  to release the Job memory.
-
-            Release (Job.Cmd);
          end if;
       end loop;
 
@@ -1705,8 +1689,6 @@ procedure Gprslave is
             --  Mark job as killed into the set
             C := Set.Find (Job);
             Set (C).Stage := J_Killed;
-
-            Release (Set (C).Cmd);
 
             Kill_Process_Tree (Job.Pid, Hard_Kill => True);
             Display
@@ -2094,8 +2076,6 @@ procedure Gprslave is
               ("unknown job data for pid "
                & Integer'Image (Pid_To_Integer (Pid)), Is_Debug => True);
          end if;
-
-         Release (Job.Cmd);
       end loop;
 
    exception
@@ -2312,8 +2292,6 @@ procedure Gprslave is
 
                   Delete_Files (Except => In_Master);
 
-                  Release (Cmd);
-
                   exit Check_Time_Stamps;
 
                elsif Kind (Cmd) in EC | SI then
@@ -2324,12 +2302,8 @@ procedure Gprslave is
 
                   Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
 
-                  Release (Cmd);
-
                   exit Check_Time_Stamps;
                end if;
-
-               Release (Cmd);
             end;
          end loop Check_Time_Stamps;
 

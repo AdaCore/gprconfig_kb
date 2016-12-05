@@ -18,7 +18,7 @@
 
 with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Ordered_Maps;
-with Ada.Strings.Unbounded;                  use Ada.Strings.Unbounded;
+with Ada.Strings.Unbounded;       use Ada.Strings.Unbounded;
 
 with Gpr_Script;                  use Gpr_Script;
 with Gpr_Util;                    use Gpr_Util;
@@ -166,16 +166,6 @@ package body Gprbuild.Compilation.Process is
          return Header_Num (Process.R_Pid mod Remote_Id (Modulo));
       end if;
    end Hash;
-
-   -----------
-   -- Image --
-   -----------
-
-   function Image (Pid : Remote_Id) return String is
-      N_Img : constant String := Remote_Id'Image (Pid);
-   begin
-      return N_Img (N_Img'First + 1 .. N_Img'Last);
-   end Image;
 
    ------------------------
    -- Record_Environment --

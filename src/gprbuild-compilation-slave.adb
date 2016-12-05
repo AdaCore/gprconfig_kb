@@ -31,6 +31,7 @@ with GNAT.Sockets;      use GNAT; use GNAT.Sockets;
 with GNAT.String_Split; use GNAT.String_Split;
 
 with Gpr_Util;                      use Gpr_Util;
+with Gprbuild.Compilation.Process;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
 with Gprbuild.Compilation.Sync;
 with GPR.Names;                     use GPR.Names;
@@ -706,7 +707,7 @@ package body Gprbuild.Compilation.Slave is
 
       Wait_Ack.Get (Pid);
 
-      return Create_Remote (Pid);
+      return Process.Create_Remote (Pid);
 
    exception
       when E : others =>
@@ -1008,7 +1009,7 @@ package body Gprbuild.Compilation.Slave is
 
                      Get_Pid (S.Channel, Pid, Success);
 
-                     Proc := Create_Remote (Pid);
+                     Proc := Process.Create_Remote (Pid);
 
                      Remote_Process.Decrement;
                      Slaves.Decrement_Current (S);

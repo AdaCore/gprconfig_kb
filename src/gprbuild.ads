@@ -19,15 +19,15 @@
 --  The following package implements the facilities to compile, bind and/or
 --  link a set of Ada and non Ada sources, specified in Project Files.
 
+with GPR;       use GPR;
+with GPR.Osint; use GPR.Osint;
+
 private with Ada.Unchecked_Deallocation;
 
 private with GNAT.Dynamic_Tables;
 private with GNAT.HTable;
 private with GNAT.OS_Lib;
 private with GNAT.Table;
-
-with GPR;       use GPR;
-with GPR.Osint; use GPR.Osint;
 
 private with Gpr_Build_Util;
 private with GPR.ALI;

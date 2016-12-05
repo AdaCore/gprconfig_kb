@@ -70,6 +70,20 @@ package body Gprbuild.Compilation.Protocol is
       return Cmd.Args;
    end Args;
 
+   ------------
+   -- Adjust --
+   ------------
+
+   overriding procedure Adjust (Channel : in out Communication_Channel) is
+   begin
+      Channel.Refs.Increment;
+   end Adjust;
+
+   overriding procedure Adjust (Cmd : in out Command) is
+   begin
+      Cmd.Refs.Increment;
+   end Adjust;
+
    -------------------
    -- Clear_Rewrite --
    -------------------
@@ -106,7 +120,6 @@ package body Gprbuild.Compilation.Protocol is
             null;
       end;
 
-      Free (Channel.Channel);
       Channel.Sock := No_Socket;
       Clear_Rewrite (Channel);
    end Close;
@@ -120,22 +133,62 @@ package body Gprbuild.Compilation.Protocol is
       Virtual : Boolean := False) return Communication_Channel is
    begin
       return Communication_Channel'
-        (Sock, (if Virtual then null else Stream (Sock)),
-         Null_Unbounded_String, Null_Unbounded_String,
-         Null_Unbounded_String, Null_Unbounded_String);
+        (Finalization.Controlled
+         with Sock, (if Virtual then null else Stream (Sock)),
+              Null_Unbounded_String, Null_Unbounded_String,
+              Null_Unbounded_String, Null_Unbounded_String,
+              new Shared_Counter (1));
    end Create;
+
+   --------------
+   -- Finalize --
+   --------------
+
+   overriding procedure Finalize (Channel : in out Communication_Channel) is
+      procedure Unchecked_Free is
+        new Unchecked_Deallocation (Shared_Counter, Shared_Counter_Access);
+
+      C : Shared_Counter_Access := Channel.Refs;
+   begin
+      Channel.Refs := null;
+
+      C.Decrement;
+
+      if C.Count = 0 then
+         Free (Channel.Channel);
+         Unchecked_Free (C);
+      end if;
+   end Finalize;
+
+   overriding procedure Finalize (Cmd : in out Command) is
+      procedure Unchecked_Free is
+        new Unchecked_Deallocation (Shared_Counter, Shared_Counter_Access);
+
+      C : Shared_Counter_Access := Cmd.Refs;
+   begin
+      Cmd.Refs := null;
+
+      C.Decrement;
+
+      if C.Count = 0 then
+         Free (Cmd.Args);
+         Unchecked_Free (C);
+      end if;
+   end Finalize;
 
    -----------------
    -- Get_Command --
    -----------------
 
-   function Get_Command (Channel : Communication_Channel) return Command is
+   function Get_Command
+     (Channel : Communication_Channel'Class) return Command
+   is
       use Ada.Streams.Stream_IO;
 
-      function Handle_File (Cmd : in out Command) return Command;
+      function Handle_File (Cmd : Command) return Command;
       --  A file has been recieved, write it to disk
 
-      function Handle_RAW_File (Cmd : in out Command) return Command;
+      function Handle_RAW_File (Cmd : Command) return Command;
       --  A file has been recieved, write it to disk, no rewritte taking place
 
       procedure Handle_Output (Cmd : in out Command);
@@ -145,7 +198,7 @@ package body Gprbuild.Compilation.Protocol is
       -- Handle_File --
       -----------------
 
-      function Handle_File (Cmd : in out Command) return Command is
+      function Handle_File (Cmd : Command) return Command is
          File_Name : constant String :=
                        Translate_Receive (Channel, Cmd.Args (2).all);
          Dir       : constant String := Containing_Directory (File_Name);
@@ -231,7 +284,6 @@ package body Gprbuild.Compilation.Protocol is
                end if;
          end;
 
-         Release (Cmd);
          return Get_Command (Channel);
       end Handle_File;
 
@@ -239,7 +291,7 @@ package body Gprbuild.Compilation.Protocol is
       -- Handle_RAW_File --
       ---------------------
 
-      function Handle_RAW_File (Cmd : in out Command) return Command is
+      function Handle_RAW_File (Cmd : Command) return Command is
          File_Name  : constant String :=
                        Translate_Receive (Channel, Cmd.Args (1).all);
          Dir        : constant String := Containing_Directory (File_Name);
@@ -256,7 +308,6 @@ package body Gprbuild.Compilation.Protocol is
 
          Get_RAW_File_Content (Channel, File_Name, Time_Stamp);
 
-         Release (Cmd);
          return Get_Command (Channel);
       end Handle_RAW_File;
 
@@ -371,7 +422,7 @@ package body Gprbuild.Compilation.Protocol is
       Included_Artifact_Patterns : out Unbounded_String;
       Is_Ping                    : out Boolean)
    is
-      Line : Command := Get_Command (Channel);
+      Line : constant Command := Get_Command (Channel);
    begin
       Is_Ping := False;
 
@@ -394,8 +445,6 @@ package body Gprbuild.Compilation.Protocol is
          raise Wrong_Command
            with "Expected CX found " & Command_Kind'Image (Line.Cmd);
       end if;
-
-      Release (Line);
    end Get_Context;
 
    -------------
@@ -404,22 +453,20 @@ package body Gprbuild.Compilation.Protocol is
 
    procedure Get_Pid
      (Channel : Communication_Channel;
-      Pid     : out Process.Remote_Id;
+      Pid     : out Remote_Id;
       Success : out Boolean)
    is
-      Cmd : Command := Get_Command (Channel);
+      Cmd : constant Command := Get_Command (Channel);
    begin
       if Cmd.Args'Length = 1
         and then Cmd.Cmd in OK | KO
       then
-         Pid := Process.Remote_Id'Value (Cmd.Args (1).all);
+         Pid := Remote_Id'Value (Cmd.Args (1).all);
          Success := (if Kind (Cmd) = KO then False);
 
       else
          Success := False;
       end if;
-
-      Release (Cmd);
    end Get_Pid;
 
    --------------------------
@@ -499,6 +546,20 @@ package body Gprbuild.Compilation.Protocol is
       return N_Img (N_Img'First + 1 .. N_Img'Last);
    end Image;
 
+   ----------------
+   -- Initialize --
+   ----------------
+
+   overriding procedure Initialize (Channel : in out Communication_Channel) is
+   begin
+      Channel.Refs := new Shared_Counter (1);
+   end Initialize;
+
+   overriding procedure Initialize (Cmd : in out Command) is
+   begin
+      Cmd.Refs := new Shared_Counter (1);
+   end Initialize;
+
    ----------
    -- Kind --
    ----------
@@ -517,24 +578,14 @@ package body Gprbuild.Compilation.Protocol is
       return Cmd.Output;
    end Output;
 
-   -------------
-   -- Release --
-   -------------
-
-   procedure Release (Cmd : in out Command) is
-   begin
-      Free (Cmd.Args);
-   end Release;
-
    --------------
    -- Send_Ack --
    --------------
 
-   procedure Send_Ack
-     (Channel : Communication_Channel; Pid : Process.Remote_Id) is
+   procedure Send_Ack (Channel : Communication_Channel; Pid : Remote_Id) is
    begin
       String'Output
-        (Channel.Channel, Command_Kind'Image (AK) & Process.Image (Pid));
+        (Channel.Channel, Command_Kind'Image (AK) & Image (Pid));
    end Send_Ack;
 
    -------------------
@@ -876,10 +927,10 @@ package body Gprbuild.Compilation.Protocol is
    -------------
 
    procedure Send_Ko
-     (Channel : Communication_Channel; Pid : Process.Remote_Id) is
+     (Channel : Communication_Channel; Pid : Compilation.Remote_Id) is
    begin
       String'Output
-        (Channel.Channel, Command_Kind'Image (KO) & Process.Image (Pid));
+        (Channel.Channel, Command_Kind'Image (KO) & Image (Pid));
    end Send_Ko;
 
    procedure Send_Ko
@@ -915,10 +966,10 @@ package body Gprbuild.Compilation.Protocol is
    -------------
 
    procedure Send_Ok
-     (Channel : Communication_Channel; Pid : Process.Remote_Id) is
+     (Channel : Communication_Channel; Pid : Compilation.Remote_Id) is
    begin
       String'Output
-        (Channel.Channel, Command_Kind'Image (OK) & Process.Image (Pid));
+        (Channel.Channel, Command_Kind'Image (OK) & Image (Pid));
    end Send_Ok;
 
    procedure Send_Ok (Channel : Communication_Channel) is
@@ -961,8 +1012,6 @@ package body Gprbuild.Compilation.Protocol is
      (Channel   : Communication_Channel;
       Path_Name : String)
    is
-      use Ada;
-
       type Buffer_Access is access Stream_Element_Array;
 
       procedure Unchecked_Free is

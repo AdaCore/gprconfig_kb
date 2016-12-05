@@ -21,7 +21,7 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with GNAT.OS_Lib;  use GNAT;
 with GNAT.Sockets; use GNAT.Sockets;
 
-with Gprbuild.Compilation.Process;
+private with Ada.Finalization;
 
 package Gprbuild.Compilation.Protocol is
 
@@ -44,7 +44,7 @@ package Gprbuild.Compilation.Protocol is
    --  Communication
    --
 
-   type Communication_Channel is private;
+   type Communication_Channel is tagged private;
    --  A communication channel, this channel is used for any communication
    --  between the build master and the slaves.
 
@@ -91,7 +91,7 @@ package Gprbuild.Compilation.Protocol is
    --  Command
    --
 
-   type Command is private;
+   type Command is tagged private;
 
    type Command_Kind is
      (EX,  -- execute a command
@@ -120,11 +120,8 @@ package Gprbuild.Compilation.Protocol is
    pragma Inline (Output);
    --  Returns the output for a DP command
 
-   function Get_Command (Channel : Communication_Channel) return Command;
+   function Get_Command (Channel : Communication_Channel'Class) return Command;
    --  Wait and return a command as parsed from the communication channel
-
-   procedure Release (Cmd : in out Command);
-   --  Release memory associated with the command
 
    Invalid_Pid : constant := -1;
 
@@ -187,7 +184,7 @@ package Gprbuild.Compilation.Protocol is
 
    procedure Get_Pid
      (Channel : Communication_Channel;
-      Pid     : out Process.Remote_Id;
+      Pid     : out Remote_Id;
       Success : out Boolean);
    --  Get a process id, Success is set to False in case of failure
 
@@ -220,15 +217,15 @@ package Gprbuild.Compilation.Protocol is
    --  Send the slave configuration to the build master
 
    procedure Send_Ack
-     (Channel : Communication_Channel; Pid : Process.Remote_Id);
+     (Channel : Communication_Channel; Pid : Remote_Id);
    --  Send Acknoledgement of a received compilation job
 
    procedure Send_Ok
-     (Channel : Communication_Channel; Pid : Process.Remote_Id);
+     (Channel : Communication_Channel; Pid : Remote_Id);
    --  Send Pid of a successful command
 
    procedure Send_Ko
-     (Channel : Communication_Channel; Pid : Process.Remote_Id);
+     (Channel : Communication_Channel; Pid : Remote_Id);
    --  Send Pid of an un-successful command
 
    procedure Send_Ok (Channel : Communication_Channel);
@@ -263,22 +260,36 @@ package Gprbuild.Compilation.Protocol is
 
 private
 
-   type Communication_Channel is record
+   use Ada;
+
+   type Communication_Channel is new Finalization.Controlled with record
       Sock           : Socket_Type;
       Channel        : Stream_Access;
       WD_From, WD_To : Unbounded_String; -- working directory
       CD_From, CD_To : Unbounded_String; -- compiler directory
+      Refs           : Shared_Counter_Access;
    end record;
 
-   No_Channel : constant Communication_Channel :=
-                  (Sock    => No_Socket,
-                   Channel => null,
-                   others  => Null_Unbounded_String);
+   overriding procedure Initialize (Channel : in out Communication_Channel);
+   overriding procedure Adjust     (Channel : in out Communication_Channel);
+   overriding procedure Finalize   (Channel : in out Communication_Channel);
 
-   type Command is record
+   No_Channel : constant Communication_Channel :=
+                  (Finalization.Controlled
+                   with Sock    => No_Socket,
+                        Channel => null,
+                        Refs    => new Shared_Counter (1),
+                        others  => Null_Unbounded_String);
+
+   type Command is new Finalization.Controlled with record
       Cmd    : Command_Kind;
       Args   : Argument_List_Access;
       Output : Unbounded_String;
+      Refs   : Shared_Counter_Access;
    end record;
+
+   overriding procedure Initialize (Cmd : in out Command);
+   overriding procedure Adjust     (Cmd : in out Command);
+   overriding procedure Finalize   (Cmd : in out Command);
 
 end Gprbuild.Compilation.Protocol;

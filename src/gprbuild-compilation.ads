@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -21,10 +21,12 @@
 
 with Ada.Characters.Latin_1;
 
-private with Ada.Containers.Indefinite_Vectors;
-
 with Ada.Containers.Vectors;
 with Ada.Strings.Unbounded;
+
+with GNAT.OS_Lib;
+
+private with Ada.Containers.Indefinite_Vectors;
 
 package Gprbuild.Compilation is
 
@@ -37,7 +39,7 @@ package Gprbuild.Compilation is
 
    --  A simple concurrent counter type
 
-   protected type Shared_Counter is
+   protected type Shared_Counter (Default : Natural := 0) is
 
       function Count return Natural;
       --  Returns the current counter value
@@ -55,8 +57,10 @@ package Gprbuild.Compilation is
       --  Returns when the counter is above zero
 
    private
-      Counter : Natural := 0;
+      Counter : Natural := Default;
    end Shared_Counter;
+
+   type Shared_Counter_Access is access Shared_Counter;
 
    procedure Set_Env
      (Env   : String;
@@ -80,6 +84,30 @@ package Gprbuild.Compilation is
    end record;
 
    package File_Data_Set is new Ada.Containers.Vectors (Positive, File_Data);
+
+   --  Process's Id, shared between Slave and Process children
+
+   type Remote_Id is mod 2 ** 64;
+   --  Represent a remote process id, this number is unique across all slaves.
+   --  Such number if created by the slaves using a slave id (unique number)
+   --  and a compilation number. Bother numbers are 32bits value:
+   --
+   --     63                 32  31                     0
+   --      |    [slave id]      |  [compilation number] |
+
+   type Process_Kind is (Local, Remote);
+
+   type Id (Kind : Process_Kind := Local) is record
+      case Kind is
+         when Local  => Pid   : GNAT.OS_Lib.Process_Id;
+         when Remote => R_Pid : Remote_Id;
+      end case;
+   end record;
+
+   Invalid_Process : constant Id := (Local, Pid => GNAT.OS_Lib.Invalid_Pid);
+
+   function Image (Pid : Remote_Id) return String;
+   --  Returns the string representation of Pid
 
 private
 

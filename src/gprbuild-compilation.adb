@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2015, AdaCore                     --
+--                     Copyright (C) 2012-2016, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -30,6 +30,16 @@ package body Gprbuild.Compilation is
    --  ??? Ideally, we should set them when spawning the process, in
    --  which case it would be less expensive to set and could be set
    --  every time.
+
+   -----------
+   -- Image --
+   -----------
+
+   function Image (Pid : Remote_Id) return String is
+      N_Img : constant String := Remote_Id'Image (Pid);
+   begin
+      return N_Img (N_Img'First + 1 .. N_Img'Last);
+   end Image;
 
    -------------
    -- Set_Env --

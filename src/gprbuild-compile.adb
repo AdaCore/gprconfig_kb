@@ -113,7 +113,8 @@ package body Gprbuild.Compile is
    --  building jobs.
 
    type Process_Data is record
-      Process        : Id                 := Invalid_Process;
+      Process        : Gprbuild.Compilation.Id  :=
+                         Gprbuild.Compilation.Invalid_Process;
       Source         : Queue.Source_Info  := Queue.No_Source_Info;
       Source_Project : Project_Id         := null;
       Mapping_File   : Path_Name_Type     := No_Path;
@@ -124,7 +125,7 @@ package body Gprbuild.Compile is
    --  building.
 
    No_Process_Data : constant Process_Data :=
-                       (Process        => Invalid_Process,
+                       (Process        => Gprbuild.Compilation.Invalid_Process,
                         Source         => Queue.No_Source_Info,
                         Source_Project => null,
                         Mapping_File   => No_Path,
@@ -135,9 +136,9 @@ package body Gprbuild.Compile is
      (Header_Num => Gprbuild.Compilation.Process.Header_Num,
       Element    => Process_Data,
       No_Element => No_Process_Data,
-      Key        => Id,
+      Key        => Gprbuild.Compilation.Id,
       Hash       => Hash,
-      Equal      => "=");
+      Equal      => Gprbuild.Compilation."=");
    --  Hash table to keep data for all spawned jobs
 
    package Naming_Datas is new GNAT.Table
@@ -252,7 +253,9 @@ package body Gprbuild.Compile is
       OK     : out Boolean;
       Slave  : out Unbounded_String)
    is
-      Process   : Id;
+      use type Gprbuild.Compilation.Id;
+
+      Process   : Gprbuild.Compilation.Id;
       Comp_Data : Process_Data;
       Language  : Language_Ptr;
       Config    : Language_Config;
@@ -263,7 +266,7 @@ package body Gprbuild.Compile is
 
          Wait_Result (Process, OK);
 
-         if Process = Invalid_Process then
+         if Process = Gprbuild.Compilation.Invalid_Process then
             return;
          end if;
 
@@ -2769,7 +2772,7 @@ package body Gprbuild.Compile is
       is
 
          procedure Add_Process
-           (Process        : Id;
+           (Process        : Gprbuild.Compilation.Id;
             Source         : Queue.Source_Info;
             Source_Project : Project_Id;
             Mapping_File   : Path_Name_Type;
@@ -2787,7 +2790,7 @@ package body Gprbuild.Compile is
          -----------------
 
          procedure Add_Process
-           (Process        : Id;
+           (Process        : Gprbuild.Compilation.Id;
             Source         : Queue.Source_Info;
             Source_Project : Project_Id;
             Mapping_File   : Path_Name_Type;
@@ -2847,7 +2850,7 @@ package body Gprbuild.Compile is
             then Get_Name_String (Source.Id.Language.Name)
             else "");
 
-         Process       : Id;
+         Process       : Gprbuild.Compilation.Id;
          Options       : GNAT.OS_Lib.Argument_List_Access;
          Response_File : Path_Name_Type := No_Path;
 
