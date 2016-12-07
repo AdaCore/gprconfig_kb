@@ -478,10 +478,7 @@ package body Gprbuild.Compilation.Slave is
 
          Compilation.Sync.To_Slave
            (Channel           => S.Channel,
-            Project_Name      => Project_Name,
             Root_Dir          => To_String (Root_Dir),
-            Slave_Root_Dir    => To_String (S.Root_Dir),
-            Host              => To_String (S_Data.Host),
             Included_Patterns => Included_Patterns,
             Excluded_Patterns => Excluded_Patterns);
 

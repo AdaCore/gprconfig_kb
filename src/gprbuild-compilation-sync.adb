@@ -47,10 +47,7 @@ package body Gprbuild.Compilation.Sync is
 
    type Gpr_Data is record
       Channel           : Protocol.Communication_Channel;
-      Project_Name      : Unbounded_String;
       Root_Dir          : Unbounded_String;
-      Slave_Root_Dir    : Unbounded_String;
-      Host              : Unbounded_String;
       Excluded_Patterns : Str_Vect.Vector;
       Included_Patterns : Str_Vect.Vector;
    end record;
@@ -488,10 +485,7 @@ package body Gprbuild.Compilation.Sync is
 
    procedure To_Slave
      (Channel           : Protocol.Communication_Channel;
-      Project_Name      : String;
       Root_Dir          : String;
-      Slave_Root_Dir    : String;
-      Host              : String;
       Excluded_Patterns : Str_Vect.Vector;
       Included_Patterns : Str_Vect.Vector) is
    begin
@@ -504,10 +498,7 @@ package body Gprbuild.Compilation.Sync is
       Gpr_Queue.Add
         (Gpr_Data'
            (Channel,
-            To_Unbounded_String (Project_Name),
             To_Unbounded_String (Root_Dir),
-            To_Unbounded_String (Slave_Root_Dir),
-            To_Unbounded_String (Host),
             Excluded_Patterns, Included_Patterns));
    end To_Slave;
 

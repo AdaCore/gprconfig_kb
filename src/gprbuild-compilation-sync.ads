@@ -37,10 +37,7 @@ package Gprbuild.Compilation.Sync is
 
    procedure To_Slave
      (Channel           : Protocol.Communication_Channel;
-      Project_Name      : String;
       Root_Dir          : String;
-      Slave_Root_Dir    : String;
-      Host              : String;
       Excluded_Patterns : Str_Vect.Vector;
       Included_Patterns : Str_Vect.Vector);
    --  Synchronize from the build master to the slave
