@@ -301,7 +301,7 @@ package body Gprbuild.Compilation.Sync is
          exit For_Slave when No_More_Job;
 
          declare
-            Chunk_Size : constant := 500;
+            Chunk_Size : constant := 250;
             --  This constant controls the number of files sent with the sync
             --  command. Doing one at a time is really time consumming as
             --  we have for every file and send and a receive command on
