@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1130,6 +1130,10 @@ procedure Gprslave is
                           (Builder,
                            "End project : "
                            & To_String (Builder.Project_Name));
+
+                     elsif Kind (Cmd) = SY then
+                        --  Synchronization requested
+                        null;
 
                      else
                         raise Constraint_Error with "unexpected command "

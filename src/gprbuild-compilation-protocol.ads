@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -107,6 +107,7 @@ package Gprbuild.Compilation.Protocol is
       DP,  -- display output
       EC,  -- end of compilation
       SI,  -- a signal as been detected (like EC but no ACK needed)
+      SY,  -- synchronization requested
       PG); -- PING just to know if the slave is listening
 
    function Kind (Cmd : Command) return Command_Kind;
@@ -215,6 +216,9 @@ package Gprbuild.Compilation.Protocol is
       Root_Directory : String;
       Clock_Status   : Boolean);
    --  Send the slave configuration to the build master
+
+   procedure Send_Sync_Request (Channel : Communication_Channel);
+   --  Send a sync request to the slave
 
    procedure Send_Ack
      (Channel : Communication_Channel; Pid : Remote_Id);

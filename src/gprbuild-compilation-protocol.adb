@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -355,7 +355,7 @@ package body Gprbuild.Compilation.Protocol is
       begin
          if C in
            "EX" | "AK" | "TS" | "ES" | "FL" | "FR" | "OK" | "KO"
-           | "CX" | "CU" | "DP" | "EC" | "PG"
+           | "CX" | "CU" | "DP" | "EC" | "PG" | "SY"
          then
             Result.Cmd := Command_Kind'Value (C);
 
@@ -1091,6 +1091,15 @@ package body Gprbuild.Compilation.Protocol is
          & Args_Sep & Root_Directory
          & Args_Sep & Boolean'Image (Clock_Status));
    end Send_Slave_Config;
+
+   -----------------------
+   -- Send_Sync_Request --
+   -----------------------
+
+   procedure Send_Sync_Request (Channel : Communication_Channel) is
+   begin
+      String'Output (Channel.Channel, Command_Kind'Image (SY));
+   end Send_Sync_Request;
 
    --------------------
    -- Set_Rewrite_CD --
