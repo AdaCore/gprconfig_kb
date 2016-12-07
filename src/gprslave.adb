@@ -17,10 +17,8 @@
 ------------------------------------------------------------------------------
 
 with Ada.Calendar.Formatting;
-with Ada.Calendar.Time_Zones;               use Ada.Calendar;
 with Ada.Characters.Handling;               use Ada.Characters.Handling;
 with Ada.Containers.Indefinite_Hashed_Maps;
-with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Containers.Indefinite_Vectors;
 with Ada.Containers.Ordered_Sets;
 with Ada.Containers.Vectors;
@@ -50,6 +48,7 @@ with Gpr_Util;                      use Gpr_Util;
 with GPR_Version;
 with Gprbuild.Compilation;          use Gprbuild.Compilation;
 with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
+with Gprbuild.Compilation.Sync;     use Gprbuild;
 with GprConfig.Knowledge;           use GprConfig.Knowledge;
 with GPR;                           use GPR;
 with GPR.Opt;                       use GPR.Opt;
@@ -2103,11 +2102,12 @@ procedure Gprslave is
 
          use type Containers.Count_Type;
 
-         package Files is new Containers.Indefinite_Ordered_Sets (String);
-
-         procedure Delete_Files (Except : Files.Set);
+         procedure Delete_Files (Except : Sync.Files.Set);
          --  Delete all files in the current working tree except those in
          --  Except set.
+
+         procedure Display (Message : String);
+         --  Display message callback
 
          WD : constant String := Work_Directory (Builder);
 
@@ -2115,7 +2115,7 @@ procedure Gprslave is
          -- Delete_Files --
          ------------------
 
-         procedure Delete_Files (Except : Files.Set) is
+         procedure Delete_Files (Except : Sync.Files.Set) is
 
             procedure Process (Path : String);
             --  Search recursively the Path
@@ -2165,147 +2165,49 @@ procedure Gprslave is
             Process (WD);
          end Delete_Files;
 
-         Total_File        : Natural := 0;
-         Total_Transferred : Natural := 0;
-         In_Master         : Files.Set;
+         -------------
+         -- Display --
+         -------------
+
+         procedure Display (Message : String) is
+         begin
+            if Debug then
+               Display (Message, Is_Debug => True);
+            else
+               Display (Builder, Message);
+            end if;
+         end Display;
+
+         Total_File        : Natural;
+         Total_Transferred : Natural;
+         In_Master         : Sync.Files.Set;
+
+         Result            : constant Protocol.Command_Kind :=
+                               Sync.Receive_Files (Builder.Channel,
+                                                   WD,
+                                                   Total_File,
+                                                   Total_Transferred,
+                                                   In_Master,
+                                                   Debug,
+                                                   Display'Access);
 
       begin
-         Check_Time_Stamps : loop
-            declare
-               To_Sync : File_Data_Set.Vector;
-               Cmd     : Command;
-               K       : Positive := 1;
-               Message : Unbounded_String;
-            begin
-               Cmd := Get_Command (Builder.Channel);
+         if Result = ES then
+            --  Delete all files not part of the list sent by the master.
+            --  This is needed to remove files in previous build removed
+            --  since then on the master. Again we need to do that as we
+            --  can't let around unnedded specs or bodies.
 
-               if Debug then
-                  Message := To_Unbounded_String
-                    ("command: " & Command_Kind'Image (Kind (Cmd)));
+            Delete_Files (Except => In_Master);
 
-                  if Args (Cmd) /= null then
-                     for K in Args (Cmd)'Range loop
-                        Append (Message, ", " & Args (Cmd) (K).all);
-                     end loop;
-                  end if;
+         elsif Result in EC | SI then
+            --  Cannot communicate with build master anymore, we then
+            --  receive an end-of-compilation. Exit now. Note that we do
+            --  not need to remove the builder from the list as it is not
+            --  yet registered.
 
-                  Display (To_String (Message), Is_Debug => True);
-               end if;
-
-               if Kind (Cmd) = TS then
-                  --  Check all files in the argument of the command. This is a
-                  --  list of couple (filename and time stamp).
-
-                  Check_All_Files : loop
-                     Total_File := Total_File + 1;
-
-                     declare
-                        Path_Name  : constant String := Args (Cmd) (K).all;
-                        Full_Path  : constant String :=
-                                       WD & Directory_Separator & Path_Name;
-                        TS         : constant Time_Stamp_Type :=
-                                       Time_Stamp_Type
-                                         (Args (Cmd) (K + 1).all);
-                        File_Stamp : Time_Stamp_Type;
-                        Exists     : Boolean;
-                     begin
-                        if Directories.Exists (Full_Path) then
-                           File_Stamp :=
-                             To_Time_Stamp
-                             (Modification_Time (Full_Path)
-                              - Duration (Time_Zones.UTC_Time_Offset) * 60.0);
-                           Exists := True;
-                        else
-                           Exists := False;
-                        end if;
-
-                        In_Master.Insert (Full_Path);
-
-                        if not Exists or else File_Stamp /= TS then
-                           To_Sync.Append
-                             (File_Data'
-                                (To_Unbounded_String (Path_Name), TS));
-                        end if;
-                     end;
-
-                     K := K + 2;
-                     exit Check_All_Files when K > Args (Cmd)'Length;
-                  end loop Check_All_Files;
-
-                  --  If all files are up-to-data
-
-                  if To_Sync.Length = 0 then
-                     Send_Ok (Builder.Channel);
-
-                  else
-                     --  Some files are to be synchronized, send the list of
-                     --  names back to the master.
-
-                     Send_Ko (Builder.Channel, To_Sync);
-
-                     --  We then receive the files contents in the same order
-
-                     Get_RAW_Data : declare
-                        Max : constant String :=
-                                Containers.Count_Type'Image (To_Sync.Length);
-                        N   : Natural := 0;
-                     begin
-                        for W of To_Sync loop
-                           declare
-                              Full_Path : constant String :=
-                                            WD & Directory_Separator
-                                            & To_String (W.Path_Name);
-                           begin
-                              Create_Path (Containing_Directory (Full_Path));
-
-                              Get_RAW_File_Content
-                                (Builder.Channel, Full_Path, W.Timestamp);
-                           exception
-                              when others =>
-                                 Close_Builder (Builder, Ack => False);
-                                 Display
-                                   (Builder,
-                                    "failed to create file: " & Full_Path);
-                                 return;
-                           end;
-
-                           N := N + 1;
-
-                           if N mod 100 = 0 then
-                              Display
-                                (Builder,
-                                 "File transfered"
-                                 & Natural'Image (N) & "/" & Max);
-                           end if;
-                        end loop;
-                     end Get_RAW_Data;
-
-                     Total_Transferred :=
-                       Total_Transferred + Natural (To_Sync.Length);
-                  end if;
-
-               elsif Kind (Cmd) = ES then
-                  --  Delete all files not part of the list sent by the master.
-                  --  This is needed to remove files in previous build removed
-                  --  since then on the master. Again we need to do that as we
-                  --  can't let around unnedded specs or bodies.
-
-                  Delete_Files (Except => In_Master);
-
-                  exit Check_Time_Stamps;
-
-               elsif Kind (Cmd) in EC | SI then
-                  --  Cannot communicate with build master anymore, we then
-                  --  receive an end-of-compilation. Exit now. Note that we do
-                  --  not need to remove the builder from the list as it is not
-                  --  yet registered.
-
-                  Close_Builder (Builder, Ack => (Kind (Cmd) = EC));
-
-                  exit Check_Time_Stamps;
-               end if;
-            end;
-         end loop Check_Time_Stamps;
+            Close_Builder (Builder, Ack => Result = EC);
+         end if;
 
          Display (Builder, "Files    total:" & Natural'Image (Total_File));
          Display

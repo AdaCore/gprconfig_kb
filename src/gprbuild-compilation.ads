@@ -26,8 +26,6 @@ with Ada.Strings.Unbounded;
 
 with GNAT.OS_Lib;
 
-private with Ada.Containers.Indefinite_Vectors;
-
 package Gprbuild.Compilation is
 
    Default_Port : constant := 8484;
@@ -108,10 +106,5 @@ package Gprbuild.Compilation is
 
    function Image (Pid : Remote_Id) return String;
    --  Returns the string representation of Pid
-
-private
-
-   package Str_Vect is
-     new Ada.Containers.Indefinite_Vectors (Positive, String);
 
 end Gprbuild.Compilation;

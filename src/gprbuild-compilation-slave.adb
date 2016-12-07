@@ -396,20 +396,20 @@ package body Gprbuild.Compilation.Slave is
       Start, Stop : Calendar.Time;
 
       procedure Insert
-        (V      : out Str_Vect.Vector;
+        (V      : out Sync.Str_Vect.Vector;
          Values : String_List_Id);
       --  Inserts all values into the vector
 
-      Excluded_Patterns          : Str_Vect.Vector;
-      Included_Patterns          : Str_Vect.Vector;
-      Included_Artifact_Patterns : Str_Vect.Vector;
+      Excluded_Patterns          : Sync.Str_Vect.Vector;
+      Included_Patterns          : Sync.Str_Vect.Vector;
+      Included_Artifact_Patterns : Sync.Str_Vect.Vector;
 
       ------------
       -- Insert --
       ------------
 
       procedure Insert
-        (V      : out Str_Vect.Vector;
+        (V      : out Sync.Str_Vect.Vector;
          Values : String_List_Id)
       is
          Idx : String_List_Id := Values;
