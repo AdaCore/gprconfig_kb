@@ -351,9 +351,10 @@ package Gpr_Build_Util is
       --  project from all the aggregated projects).
 
       procedure Complete_Mains
-        (Flags        : Processing_Flags;
-         Root_Project : Project_Id;
-         Project_Tree : Project_Tree_Ref);
+        (Flags          : Processing_Flags;
+         Root_Project   : Project_Id;
+         Project_Tree   : Project_Tree_Ref;
+         Unique_Compile : Boolean := False);
       --  If some main units were already added from the command line, check
       --  that they all belong to the root project, and that they are full
       --  paths rather than (partial) base names (e.g. no body suffix was

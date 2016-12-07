@@ -2523,7 +2523,7 @@ begin
       end if;
 
       Mains.Complete_Mains
-        (Root_Environment.Flags, Main_Project, Project_Tree);
+        (Root_Environment.Flags, Main_Project, Project_Tree, Unique_Compile);
 
       if not Unique_Compile
         and then Output_File_Name /= null

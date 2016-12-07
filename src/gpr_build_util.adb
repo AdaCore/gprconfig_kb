@@ -811,9 +811,10 @@ package body Gpr_Build_Util is
       --------------------
 
       procedure Complete_Mains
-        (Flags        : Processing_Flags;
-         Root_Project : Project_Id;
-         Project_Tree : Project_Tree_Ref)
+        (Flags          : Processing_Flags;
+         Root_Project   : Project_Id;
+         Project_Tree   : Project_Tree_Ref;
+         Unique_Compile : Boolean := False)
       is
          procedure Do_Complete (Project : Project_Id; Tree : Project_Tree_Ref);
          --  Check the mains for this specific project
@@ -1126,7 +1127,10 @@ package body Gpr_Build_Util is
                               --  A main cannot be a source of a library
                               --  project.
 
-                              if Source.Project.Library then
+                              if (not Opt.Compile_Only or else Opt.Bind_Only)
+                                and then not Unique_Compile
+                                and then Source.Project.Library
+                              then
                                  Error_Msg_File_1 := Main_Id;
                                  GPR.Err.Error_Msg
                                    (Flags,
