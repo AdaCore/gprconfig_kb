@@ -1123,26 +1123,40 @@ package body Gpr_Build_Util is
                                  Add_Multi_Unit_Sources (File.Tree, Source);
                               end if;
 
-                              --  Now update the original Main, otherwise it
-                              --  will be reported as not found.
+                              --  A main cannot be a source of a library
+                              --  project.
 
-                              Debug_Output
-                                ("found main in project", Source.Project.Name);
-                              Names.Table (J).File    := Source.File;
-                              Names.Table (J).Project := Source.Project;
+                              if Source.Project.Library then
+                                 Error_Msg_File_1 := Main_Id;
+                                 GPR.Err.Error_Msg
+                                   (Flags,
+                                    "main cannot be a source" &
+                                      " of a library project: {",
+                                    No_Location, File.Project);
 
-                              if Names.Table (J).Tree = null then
-                                 Names.Table (J).Tree := File.Tree;
+                              else
+                                 --  Now update the original Main, otherwise it
+                                 --  will be reported as not found.
 
-                                 Builder_Data (File.Tree).Number_Of_Mains :=
-                                   Builder_Data (File.Tree).Number_Of_Mains
-                                                                         + 1;
-                                 Mains.Count_Of_Mains_With_No_Tree :=
-                                   Mains.Count_Of_Mains_With_No_Tree - 1;
+                                 Debug_Output
+                                   ("found main in project",
+                                    Source.Project.Name);
+                                 Names.Table (J).File    := Source.File;
+                                 Names.Table (J).Project := Source.Project;
+
+                                 if Names.Table (J).Tree = null then
+                                    Names.Table (J).Tree := File.Tree;
+
+                                    Builder_Data (File.Tree).Number_Of_Mains :=
+                                      Builder_Data (File.Tree).Number_Of_Mains
+                                      + 1;
+                                    Mains.Count_Of_Mains_With_No_Tree :=
+                                      Mains.Count_Of_Mains_With_No_Tree - 1;
+                                 end if;
+
+                                 Names.Table (J).Source  := Source;
+                                 Names.Table (J).Index   := Source.Index;
                               end if;
-
-                              Names.Table (J).Source  := Source;
-                              Names.Table (J).Index   := Source.Index;
                            end if;
 
                         elsif File.Location /= No_Location then
