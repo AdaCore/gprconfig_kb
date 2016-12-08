@@ -2352,6 +2352,10 @@ You may specify any of the following switches to `gprname`:
 
   Do not create a backup copy of the project file if it already exists.
 
+* :samp:`--ignore-predefined-units`
+
+  Ignore predefined units (children of System, Interfaces and Ada packages).
+
 * :samp:`--and`
 
   Start another section of directories/patterns.

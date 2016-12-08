@@ -125,6 +125,10 @@ package GPR.Opt is
    --  the full path name of the source. When False, only the file name without
    --  directory information is used.
 
+   Ignore_Predefined_Units : Boolean := False;
+   --  Ignore predefined Ada units in gprname.
+   --  Set by switch --ignore-predefined-units.
+
    Keep_Going : Boolean := False;
    --  When True signals to ignore compilation errors and keep processing
    --  sources until there is no more work.

@@ -555,6 +555,11 @@ procedure GPRName.Main is
             Subdirs :=
               new String'(Arg (Subdirs_Switch'Length + 1 .. Arg'Last));
 
+         --  --ignore-predefined-units
+
+         elsif Arg = "--ignore-predefined-units" then
+            Opt.Ignore_Predefined_Units := True;
+
          --  --no-backup
 
          elsif Arg = "--no-backup" then
@@ -758,9 +763,11 @@ procedure GPRName.Main is
          Put_Line
            ("  --target=<targ> indicates the target of the GNAT compiler");
          New_Line;
-         Put_Line ("  --RTS=dir    specify the Ada runtime");
+         Put_Line ("  --RTS=dir     specify the Ada runtime");
          Put_Line ("  --subdirs=dir real obj/lib/exec dirs are subdirs");
          Put_Line ("  --no-backup   do not create backup of project file");
+         New_Line;
+         Put_Line ("  --ignore-predefined-units ignore predefined units");
          New_Line;
 
          Put_Line ("  --and        use different patterns");

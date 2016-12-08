@@ -1867,7 +1867,8 @@ package body GPR.Util is
    -- Is_Ada_Predefined_File_Name --
    ---------------------------------
 
-   function Is_Ada_Predefined_File_Name (Fname : File_Name_Type) return Boolean
+   function Is_Ada_Predefined_File_Name
+     (Fname : File_Name_Type) return Boolean
    is
       subtype Str8 is String (1 .. 8);
 
@@ -1931,6 +1932,45 @@ package body GPR.Util is
 
       return False;
    end Is_Ada_Predefined_File_Name;
+
+   ----------------------------
+   -- Is_Ada_Predefined_Unit --
+   ----------------------------
+
+   function Is_Ada_Predefined_Unit (Unit : String) return Boolean is
+      Lower_Unit : String := Unit;
+
+      function Starts_With (Unit : String; Str : String) return Boolean;
+      --  Return True if Unit starts with Str
+
+      -----------------
+      -- Starts_With --
+      -----------------
+
+      function Starts_With (Unit : String; Str : String) return Boolean is
+      begin
+         return Unit'Length >= Str'Length
+           and then Unit (Unit'First .. Unit'First + Str'Length - 1) = Str;
+      end Starts_With;
+
+   begin
+      To_Lower (Lower_Unit);
+
+      return Lower_Unit = "ada"
+        or else Lower_Unit = "interfaces"
+        or else Lower_Unit = "system"
+        or else Lower_Unit = "calendar"
+        or else Lower_Unit = "machine_code"
+        or else Lower_Unit = "unchecked_conversion"
+        or else Lower_Unit = "unchecked_deallocation"
+        or else Lower_Unit = "direct_io"
+        or else Lower_Unit = "io_exceptions"
+        or else Lower_Unit = "sequential_io"
+        or else Lower_Unit = "text_io"
+        or else Starts_With (Lower_Unit, "ada.")
+        or else Starts_With (Lower_Unit, "system.")
+        or else Starts_With (Lower_Unit, "interfaces.");
+   end Is_Ada_Predefined_Unit;
 
    ----------------
    -- Is_Subunit --

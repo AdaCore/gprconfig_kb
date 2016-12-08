@@ -847,73 +847,87 @@ package body GPRName is
                     And_Expr_Kind => Single,
                     In_Tree       => Tree);
 
+               Process_File : Boolean := True;
+
             begin
-               --  Add source file name to the source list file (or the
-               --  attribute Source_Files) if it is not already there.
+               if Opt.Ignore_Predefined_Units
+                 and then Current_Source.Unit_Name /= No_Name
+               then
+                  Get_Name_String (Current_Source.Unit_Name);
 
-               if not Source_Files.Get (Current_Source.File_Name) then
-                  Source_Files.Set (Current_Source.File_Name, True);
-
-                  Get_Name_String (Current_Source.File_Name);
-                  Add_Char_To_Name_Buffer (ASCII.LF);
-
-                  if Write (Source_List_FD,
-                            Name_Buffer (1)'Address,
-                            Name_Len) /= Name_Len
-                  then
-                     GPR.Com.Fail ("disk full");
+                  if Is_Ada_Predefined_Unit (Name_Buffer (1 .. Name_Len)) then
+                     Process_File := False;
                   end if;
                end if;
 
-               --  For an Ada source, add entry in package Naming
+               if Process_File then
+                  --  Add source file name to the source list file (or the
+                  --  attribute Source_Files) if it is not already there.
 
-               if Current_Source.Unit_Name /= No_Name then
-                  Set_Next_Declarative_Item
-                    (Decl_Item,
-                     To      => First_Declarative_Item_Of
-                       (Naming_Package, Tree),
-                     In_Tree => Tree);
-                  Set_First_Declarative_Item_Of
-                    (Naming_Package,
-                     To      => Decl_Item,
-                     In_Tree => Tree);
-                  Set_Current_Item_Node
-                    (Decl_Item,
-                     To      => Attribute,
-                     In_Tree => Tree);
+                  if not Source_Files.Get (Current_Source.File_Name) then
+                     Source_Files.Set (Current_Source.File_Name, True);
 
-                  --  Is it a spec or a body?
+                     Get_Name_String (Current_Source.File_Name);
+                     Add_Char_To_Name_Buffer (ASCII.LF);
 
-                  if Current_Source.Spec then
-                     Set_Name_Of
-                       (Attribute, Tree,
-                        To => Name_Spec);
-                  else
-                     Set_Name_Of
-                       (Attribute, Tree,
-                        To => Name_Body);
+                     if Write (Source_List_FD,
+                               Name_Buffer (1)'Address,
+                               Name_Len) /= Name_Len
+                     then
+                        GPR.Com.Fail ("disk full");
+                     end if;
                   end if;
 
-                  --  Get the name of the unit
+                  --  For an Ada source, add entry in package Naming
 
-                  Get_Name_String (Current_Source.Unit_Name);
-                  To_Lower (Name_Buffer (1 .. Name_Len));
-                  Set_Associative_Array_Index_Of
-                    (Attribute, Tree, To => Name_Find);
+                  if Current_Source.Unit_Name /= No_Name then
+                     Set_Next_Declarative_Item
+                       (Decl_Item,
+                        To      => First_Declarative_Item_Of
+                          (Naming_Package, Tree),
+                        In_Tree => Tree);
+                     Set_First_Declarative_Item_Of
+                       (Naming_Package,
+                        To      => Decl_Item,
+                        In_Tree => Tree);
+                     Set_Current_Item_Node
+                       (Decl_Item,
+                        To      => Attribute,
+                        In_Tree => Tree);
 
-                  Set_Expression_Of
-                    (Attribute, Tree, To => Expression);
-                  Set_First_Term
-                    (Expression, Tree, To => Term);
-                  Set_Current_Term
-                    (Term, Tree, To => Value);
+                     --  Is it a spec or a body?
 
-                  --  And set the name of the file
+                     if Current_Source.Spec then
+                        Set_Name_Of
+                          (Attribute, Tree,
+                           To => Name_Spec);
+                     else
+                        Set_Name_Of
+                          (Attribute, Tree,
+                           To => Name_Body);
+                     end if;
 
-                  Set_String_Value_Of
-                    (Value, Tree, To => Current_Source.File_Name);
-                  Set_Source_Index_Of
-                    (Value, Tree, To => Current_Source.Index);
+                     --  Get the name of the unit
+
+                     Get_Name_String (Current_Source.Unit_Name);
+                     To_Lower (Name_Buffer (1 .. Name_Len));
+                     Set_Associative_Array_Index_Of
+                       (Attribute, Tree, To => Name_Find);
+
+                     Set_Expression_Of
+                       (Attribute, Tree, To => Expression);
+                     Set_First_Term
+                       (Expression, Tree, To => Term);
+                     Set_Current_Term
+                       (Term, Tree, To => Value);
+
+                     --  And set the name of the file
+
+                     Set_String_Value_Of
+                       (Value, Tree, To => Current_Source.File_Name);
+                     Set_Source_Index_Of
+                       (Value, Tree, To => Current_Source.Index);
+                  end if;
                end if;
             end;
          end loop;
