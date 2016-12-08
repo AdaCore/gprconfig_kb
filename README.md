@@ -17,7 +17,7 @@ Run the `bootstrap.sh` script (written for Linux) specifying the install
 location and the sources of XML/Ada. The script will build *and*
 install `gprbuild`:
 
-	$ ../bootstrap.sh --with-xmlada=../../xmlada.git --prefix=$HOME/bootstrap
+    $ ../bootstrap.sh --with-xmlada=../../xmlada.git --prefix=$HOME/bootstrap
 
 With this bootstrapped `gprbuild`, you can build XML/Ada and `gprbuild`
 as documented below.
@@ -25,10 +25,10 @@ as documented below.
 Configuring
 ===========
 
-You should first configure the build like this (unless you plan to
-build in the tree):
+You should first configure the build like this (if you plan to build in
+the source tree directly, you can omit setting the SOURCE_DIR variable):
 
-	$ make prefix=xxx SOURCE_DIR=src
+    $ make prefix=xxx SOURCE_DIR=/path/to/gprbuild/sources setup
 
 Building and Installing
 =======================
