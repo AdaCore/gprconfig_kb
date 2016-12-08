@@ -1950,6 +1950,8 @@ package body GPR.Env is
 
       end if;
 
+      Free (Gpr_Prj_Path_File);
+
       if Gpr_Prj_Path.all /= "" then
          Add_Directories (Self, Gpr_Prj_Path.all);
       end if;

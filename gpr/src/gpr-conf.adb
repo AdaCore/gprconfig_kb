@@ -1037,7 +1037,7 @@ package body GPR.Conf is
                end;
 
             else
-               Args (3) := Conf_File_Name;
+               Args (3) := new String'(Conf_File_Name.all);
             end if;
 
             Arg_Last := 3;
@@ -1623,6 +1623,9 @@ package body GPR.Conf is
          Automatically_Generated := True;
          goto Process_Config_File;
       end if;
+
+      Free (Conf_File_Name);
+      Free (Selected_Target);
    end Get_Or_Create_Configuration_File;
 
    ------------------------
