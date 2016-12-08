@@ -19,7 +19,7 @@ install `gprbuild`:
 
 	$ ../bootstrap.sh --with-xmlada=../../xmlada.git --prefix=$HOME/bootstrap
 
-With this boostrapped `gprbuild`, you can build XML/Ada and `gprbuild`
+With this bootstrapped `gprbuild`, you can build XML/Ada and `gprbuild`
 as documented below.
 
 Configuring
