@@ -2377,4 +2377,13 @@ package body GPR.Env is
       --  No need to copy the Cache, it will be recomputed as needed
    end Copy;
 
+   -----------------
+   -- Reset_Cache --
+   -----------------
+
+   procedure Reset_Cache (Self : in out Project_Search_Path) is
+   begin
+      Projects_Paths.Reset (Self.Cache);
+   end Reset_Cache;
+
 end GPR.Env;

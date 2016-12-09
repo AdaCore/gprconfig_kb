@@ -1768,6 +1768,7 @@ package body GPR.Conf is
       end if;
 
       Main_Project := No_Project;
+      GPR.Env.Reset_Cache (Env.Project_Path);
 
       GPR.Part.Parse
         (In_Tree           => Project_Node_Tree,

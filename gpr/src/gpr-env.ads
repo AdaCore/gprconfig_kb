@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -211,6 +211,9 @@ package GPR.Env is
    procedure Set_Path (Self : in out Project_Search_Path; Path : String);
    --  Override the value of the project path. This also removes the implicit
    --  default search directories.
+
+   procedure Reset_Cache (Self : in out Project_Search_Path);
+   --  Remove from the cache the project paths that have already been found
 
    generic
       with function Check_Filename (Name : String) return Boolean;
