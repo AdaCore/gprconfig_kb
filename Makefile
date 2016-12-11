@@ -74,7 +74,7 @@ CLEANER=gprclean -q $(RBD)
 
 GPRBUILD_BUILDER=$(BUILDER) $(GPRBUILD_GPR) -XLIBRARY_TYPE=static
 LIBGPR_BUILDER=$(BUILDER) $(GPR_GPR)
-LIBGPR_INSTALLER=gprinstall -p -f --target=$(TARGET)  $(RBD) --prefix=${prefix} $(GPR_GPR) \
+LIBGPR_INSTALLER=gprinstall -p -f --target=$(TARGET)  $(RBD) --prefix=${prefix} $(GPR_GPR) -XBUILD=${BUILD} \
 	--install-name=gpr --build-var=LIBRARY_TYPE $(GTARGET)
 LIBGPR_UNINSTALLER=$(INSTALLER) $(GPR_GPR) -p -f \
    --install-name=gpr --uninstall
