@@ -288,6 +288,7 @@ package body GPR.Snames is
       Add_Name ("response_file_switches");
       Add_Name ("root_dir");
       Add_Name ("roots");
+      Add_Name ("required_artifacts");
       Add_Name ("required_switches");
       Add_Name ("run_path_option");
       Add_Name ("run_path_origin");

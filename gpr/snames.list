@@ -233,6 +233,7 @@ Response_File_Format
 Response_File_Switches
 Root_Dir
 Roots
+Required_Artifacts
 Required_Switches
 Run_Path_Option
 Run_Path_Origin

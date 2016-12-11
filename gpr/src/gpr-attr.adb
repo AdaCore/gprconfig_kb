@@ -384,6 +384,7 @@ package body GPR.Attr is
    "SVproject_subdir#" &
    "SVactive#" &
    "LAartifacts#" &
+   "LArequired_artifacts#" &
    "SVmode#" &
    "SVinstall_name#" &
    "SVside_debug#" &

@@ -5040,7 +5040,11 @@ Package Install Attributes
   file is to be installed. If a relative directory then Prefix (see
   below) is prepended. Note also that if the same file name occurs
   multiple time in the attribute list, the last one will be the one
-  installed.
+  installed. If an artifact is not found a warning is displayed.
+
+* **Required_Artifacts**: list, indexed
+
+  As above, but artifacts must be present or an error is reported.
 
 * **Prefix**: single
 

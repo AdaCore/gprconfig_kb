@@ -67,6 +67,11 @@ package body Gprinstall.Install is
    Agg_Manifest : Text_IO.File_Type;
    --  Manifest file for main aggregate project
 
+   Line_Manifest     : Text_IO.Count := 0;
+   Line_Agg_Manifest : Text_IO.Count := 0;
+   --  Keep lines when opening the manifest files. This is used by the rollback
+   --  routine when an error occurs while copying the files.
+
    Objcopy_Exec : constant String :=
                     (if Target_Name = null
                      then "objcopy"
@@ -162,6 +167,7 @@ package body Gprinstall.Install is
 
       type Artifacts_Data is record
          Destination, Filename : Name_Id;
+         Required              : Boolean;
       end record;
 
       package Artifacts_Set is
@@ -255,8 +261,12 @@ package body Gprinstall.Install is
       --  Returns True if the Project is active, that is there is no attribute
       --  Active set to False in the Install package.
 
-      procedure Open_Check_Manifest (File : out Text_IO.File_Type);
+      procedure Open_Check_Manifest
+        (File : out Text_IO.File_Type; Current_Line : out Text_IO.Count);
       --  Check that manifest file can be used
+
+      procedure Rollback_Manifests;
+      --  Rollback manifest files (for current project or/and aggregate one)
 
       function For_Dev return Boolean is (Install_Mode.V.all = "dev");
 
@@ -291,7 +301,7 @@ package body Gprinstall.Install is
          Prefix_Len : constant Natural := Prefix_Dir.V'Length;
       begin
          if not Is_Open (Man) then
-            Open_Check_Manifest (Man);
+            Open_Check_Manifest (Man, Line_Manifest);
          end if;
 
          --  Append entry into manifest
@@ -481,7 +491,9 @@ package body Gprinstall.Install is
                         V : constant Array_Data :=
                               Tree.Shared.Arrays.Table (Id);
                      begin
-                        if V.Name = Name_Artifacts then
+                        if V.Name in
+                          Name_Artifacts | Name_Required_Artifacts
+                        then
                            declare
                               Eid : Array_Element_Id := V.Value;
                            begin
@@ -495,7 +507,10 @@ package body Gprinstall.Install is
                                     while S /= Nil_String loop
                                        Artifacts.Append
                                          (Artifacts_Data'
-                                            (E.Index, Strs (S).Value));
+                                            (E.Index, Strs (S).Value,
+                                             Required =>
+                                               (if V.Name = Name_Artifacts
+                                                then False else True)));
                                        S := Strs (S).Next;
                                     end loop;
                                  end;
@@ -1047,7 +1062,9 @@ package body Gprinstall.Install is
 
          procedure Copy_Source (Sid : Source_Id);
 
-         procedure Copy_Artifacts (Pathname, Destination : String);
+         procedure Copy_Artifacts
+           (Pathname, Destination : String;
+            Required              : Boolean);
          --  Copy items from the artifacts attribute
 
          Source_Copied : Name_Id_Set.Set;
@@ -1232,7 +1249,10 @@ package body Gprinstall.Install is
          -- Copy_Artifacts --
          --------------------
 
-         procedure Copy_Artifacts (Pathname, Destination : String) is
+         procedure Copy_Artifacts
+           (Pathname, Destination : String;
+            Required              : Boolean)
+         is
 
             procedure Copy_Entry (E : Directory_Entry_Type);
             --  Copy file pointed by E
@@ -1244,6 +1264,11 @@ package body Gprinstall.Install is
 
             function Get_Pattern return String;
             --  Return filename of pattern from Filename below
+
+            Something_Copied : Boolean := False;
+            --  Keep track if something has been copied or not. If an artifact
+            --  is coming from Required_Artifacts we must ensure that there is
+            --  actually something copied if we have a directtory or wildcards.
 
             ----------------
             -- Copy_Entry --
@@ -1261,7 +1286,9 @@ package body Gprinstall.Install is
                  and then Simple_Name (E) /= ".."
                then
                   Copy_Artifacts
-                    (Fullname & "/*", Dest_Dir & Simple_Name (E) & '/');
+                    (Fullname & "/*",
+                     Dest_Dir & Simple_Name (E) & '/',
+                     Required);
 
                elsif Kind (E) = Ordinary_File then
                   Copy_File
@@ -1269,6 +1296,10 @@ package body Gprinstall.Install is
                      To         => Dest_Dir,
                      File       => Simple_Name (Fullname),
                      Executable => Is_Executable_File (Fullname));
+
+                  if Required then
+                     Something_Copied := True;
+                  end if;
                end if;
             end Copy_Entry;
 
@@ -1315,11 +1346,29 @@ package body Gprinstall.Install is
               (Directory => Get_Directory (Pathname),
                Pattern   => Get_Pattern,
                Process   => Copy_Entry'Access);
+
+            if Required and not Something_Copied then
+               Rollback_Manifests;
+               Fail_Program
+                 (Project_Tree,
+                  "error: path does not exist '"
+                  & Get_Directory (Pathname) & ''',
+                  Flush_Messages => False);
+            end if;
          exception
             when Text_IO.Name_Error =>
-               Put_Line
-                 ("warning: path does not exist '"
-                  & Get_Directory (Pathname) & ''');
+               if Required then
+                  Rollback_Manifests;
+                  Fail_Program
+                    (Project_Tree,
+                     "warning: path does not exist '"
+                     & Get_Directory (Pathname) & ''',
+                     Flush_Messages => False);
+               else
+                  Put_Line
+                    ("warning: path does not exist '"
+                     & Get_Directory (Pathname) & ''');
+               end if;
          end Copy_Artifacts;
 
          procedure Copy_Interfaces is new For_Interface_Sources (Copy_Source);
@@ -1487,7 +1536,8 @@ package body Gprinstall.Install is
             begin
                Copy_Artifacts
                  (Get_Name_String (Project.Directory.Name) & Filename,
-                  Destination);
+                  Destination,
+                  E.Required);
             end;
          end loop;
       end Copy_Files;
@@ -2725,7 +2775,9 @@ package body Gprinstall.Install is
       -- Open_Check_Manifest --
       -------------------------
 
-      procedure Open_Check_Manifest (File : out Text_IO.File_Type) is
+      procedure Open_Check_Manifest
+        (File : out Text_IO.File_Type; Current_Line : out Text_IO.Count)
+      is
          Dir     : constant String := Project_Dir & "manifests";
          Name    : constant String := Dir & DS & Install_Name.V.all;
          Prj_Sig : constant String :=
@@ -2767,15 +2819,111 @@ package body Gprinstall.Install is
                end if;
 
                Reset (File, Append_File);
+
+               Current_Line := Line (File);
             end if;
 
          else
             Create_Path (Dir);
             Create (File, Out_File, Name);
+            Current_Line := 1;
 
             Put_Line (File, Sig_Line & Prj_Sig);
          end if;
       end Open_Check_Manifest;
+
+      ------------------------
+      -- Rollback_Manifests --
+      ------------------------
+
+      procedure Rollback_Manifests is
+
+         Content : String_Vector.Vector;
+
+         procedure Rollback_Manifest
+           (File : in out Text_IO.File_Type; Line : Text_IO.Count);
+
+         -----------------------
+         -- Rollback_Manifest --
+         -----------------------
+
+         procedure Rollback_Manifest
+           (File : in out Text_IO.File_Type; Line : Text_IO.Count)
+         is
+            use type Ada.Containers.Count_Type;
+
+            Buffer : String (1 .. 4_096);
+            Last   : Natural;
+         begin
+            --  Set manifest file in Read mode
+
+            Reset (File, Text_IO.In_File);
+
+            while not End_Of_File (File) loop
+               Get_Line (File, Buffer, Last);
+
+               if Text_IO.Line (File) = 2
+                 or else Text_IO.Line (File) < Line
+               then
+                  --  Record file to be kept in manifest
+                  Content.Append (Buffer (1 .. Last));
+
+               else
+                  --  Delete file
+                  declare
+                     Filename : constant String :=
+                                  Prefix_Dir.V.all
+                                  & Buffer
+                                      (GNAT.MD5.Message_Digest'Length + 2
+                                        .. Last);
+                  begin
+                     Ada.Directories.Delete_File (Filename);
+
+                     Delete_Empty_Directory
+                       (Prefix_Dir.V.all, Containing_Directory (Filename));
+                  end;
+               end if;
+            end loop;
+
+            --  There is nothing left in the manifest file (only the signature
+            --  line), remove it, otherwise we create the new manifest file
+            --  containing only the previous content.
+
+            if Content.Length = 1 then
+               declare
+                  Manifest_Filename : constant String := Name (File);
+               begin
+                  Delete (File);
+
+                  --  Delete manifest ddirectories if empty
+
+                  Delete_Empty_Directory
+                    (Prefix_Dir.V.all,
+                     Containing_Directory (Manifest_Filename));
+               end;
+
+            else
+               --  Set manifest file back to Write mode
+
+               Reset (File, Text_IO.Out_File);
+
+               for C of Content loop
+                  Text_IO.Put_Line (File, C);
+               end loop;
+
+               Close (File);
+            end if;
+         end Rollback_Manifest;
+
+      begin
+         if Is_Open (Man) then
+            Rollback_Manifest (Man, Line_Manifest);
+         end if;
+
+         if Is_Open (Agg_Manifest) then
+            Rollback_Manifest (Agg_Manifest, Line_Agg_Manifest);
+         end if;
+      end Rollback_Manifests;
 
       Install_Project : Boolean;
       --  Whether the project is to be installed
@@ -2814,7 +2962,7 @@ package body Gprinstall.Install is
          if Project = Main_Project
            and then Main_Project.Qualifier = Aggregate
          then
-            Open_Check_Manifest (Agg_Manifest);
+            Open_Check_Manifest (Agg_Manifest, Line_Agg_Manifest);
          end if;
 
          declare
