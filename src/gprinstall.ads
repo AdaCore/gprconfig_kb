@@ -152,4 +152,8 @@ private
    --  Whether the debug symbols are kept into the main executable (default) or
    --  written into a side debug file.
 
+   procedure Delete_Empty_Directory (Prefix, Dir_Name : String);
+   --  Delete Dir_Name if empty, if removed try with parent directory but not
+   --  above the given prefix.
+
 end Gprinstall;
