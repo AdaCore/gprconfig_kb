@@ -3086,6 +3086,10 @@ package body Gprinstall.Install is
       Free (Project_Subdir);
    end Process;
 
+   -------------------
+   -- Double_Buffer --
+   -------------------
+
    procedure Double_Buffer is
       New_Buffer : constant GNAT.OS_Lib.String_Access :=
         new String (1 .. Buffer'Last * 2);
