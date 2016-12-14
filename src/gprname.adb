@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                      Copyright (C) 2001-2016, AdaCore                    --
+--                      Copyright (C) 2001-2017, AdaCore                    --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -241,6 +241,39 @@ package body GPRName is
         Default_Project_Node
           (Of_Kind => N_Package_Declaration,
            In_Tree => Tree);
+
+      procedure Check_Duplicates
+        (Current_Source : Source;
+         Source_Index   : Natural;
+         Result         : out Natural);
+      --  Check for duplicated source file+index in
+      --  Source.Table (1 .. Source_Index - 1) and set Result to the relevant
+      --  index if any. Set Result to 0 if not found.
+
+      ----------------------
+      -- Check_Duplicates --
+      ----------------------
+
+      procedure Check_Duplicates
+        (Current_Source : Source;
+         Source_Index   : Natural;
+         Result         : out Natural) is
+      begin
+         Result := 0;
+
+         for J in reverse 1 .. Source_Index - 1 loop
+            declare
+               S : Source renames Sources.Table (J);
+            begin
+               if S.File_Name = Current_Source.File_Name
+                 and then S.Index = Current_Source.Index
+               then
+                  Result := J;
+                  return;
+               end if;
+            end;
+         end loop;
+      end Check_Duplicates;
 
    begin
       --  If there were no already existing project file, or if the parsing was
@@ -848,6 +881,7 @@ package body GPRName is
                     In_Tree       => Tree);
 
                Process_File : Boolean := True;
+               Index        : Natural;
 
             begin
                if Opt.Ignore_Predefined_Units
@@ -863,8 +897,42 @@ package body GPRName is
                if Process_File then
                   --  Add source file name to the source list file (or the
                   --  attribute Source_Files) if it is not already there.
+                  --  If already there, check for duplicate filenames+source
+                  --  index and emit warnings accordingly.
 
-                  if not Source_Files.Get (Current_Source.File_Name) then
+                  if Source_Files.Get (Current_Source.File_Name) then
+                     Check_Duplicates (Current_Source, Source_Index, Index);
+
+                     if Index /= 0 then
+                        if Opt.Ignore_Duplicate_Files then
+                           Process_File := False;
+
+                        elsif Sources.Table (Index).Unit_Name
+                          = Current_Source.Unit_Name
+                        then
+                           Put_Line
+                             ("warning: duplicate file " &
+                              Get_Name_String (Current_Source.File_Name) &
+                              " for unit " &
+                              Get_Name_String (Current_Source.Unit_Name) &
+                              " will be ignored");
+                           Process_File := False;
+
+                        else
+                           Put_Line
+                             ("warning: duplicate file " &
+                              Get_Name_String (Current_Source.File_Name) &
+                              " for units " &
+                              Get_Name_String (Current_Source.Unit_Name) &
+                              " and " &
+                              Get_Name_String
+                                (Sources.Table (Index).Unit_Name));
+                              Put_Line
+                                ("warning: generated Naming package needs " &
+                                 "to be reviewed manually");
+                        end if;
+                     end if;
+                  else
                      Source_Files.Set (Current_Source.File_Name, True);
 
                      Get_Name_String (Current_Source.File_Name);
@@ -877,7 +945,9 @@ package body GPRName is
                         GPR.Com.Fail ("disk full");
                      end if;
                   end if;
+               end if;
 
+               if Process_File then
                   --  For an Ada source, add entry in package Naming
 
                   if Current_Source.Unit_Name /= No_Name then

@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                     Copyright (C) 2001-2016, AdaCore                     --
+--                     Copyright (C) 2001-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -560,6 +560,11 @@ procedure GPRName.Main is
          elsif Arg = "--ignore-predefined-units" then
             Opt.Ignore_Predefined_Units := True;
 
+         --  --ignore-duplicate-files
+
+         elsif Arg = "--ignore-duplicate-files" then
+            Opt.Ignore_Duplicate_Files := True;
+
          --  --no-backup
 
          elsif Arg = "--no-backup" then
@@ -767,6 +772,7 @@ procedure GPRName.Main is
          Put_Line ("  --subdirs=dir real obj/lib/exec dirs are subdirs");
          Put_Line ("  --no-backup   do not create backup of project file");
          New_Line;
+         Put_Line ("  --ignore-duplicate-files  ignore duplicate basenames");
          Put_Line ("  --ignore-predefined-units ignore predefined units");
          New_Line;
 

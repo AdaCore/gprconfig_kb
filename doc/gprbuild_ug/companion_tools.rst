@@ -2353,6 +2353,15 @@ You may specify any of the following switches to `gprname`:
 
   Do not create a backup copy of the project file if it already exists.
 
+* :samp:`--ignore-duplicate-files`
+
+  Ignore files with the same basename, and take the first one found into
+  account only. By default when encountering a duplicate file, a warning is
+  emitted, and duplicate entries in the `Naming` package will be generated,
+  needing manual editing to resolve the conflict. With this switch, gprname
+  assumes that only the first file should be used and others should be
+  ignored.
+
 * :samp:`--ignore-predefined-units`
 
   Ignore predefined units (children of System, Interfaces and Ada packages).

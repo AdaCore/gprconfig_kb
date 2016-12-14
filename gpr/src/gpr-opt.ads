@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -128,6 +128,10 @@ package GPR.Opt is
    Ignore_Predefined_Units : Boolean := False;
    --  Ignore predefined Ada units in gprname.
    --  Set by switch --ignore-predefined-units.
+
+   Ignore_Duplicate_Files : Boolean := False;
+   --  Ignore filenames with the same basename and only keep the first one.
+   --  Set by switch --ignore-duplicate-files.
 
    Keep_Going : Boolean := False;
    --  When True signals to ignore compilation errors and keep processing
