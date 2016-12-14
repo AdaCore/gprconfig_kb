@@ -405,8 +405,28 @@ package body Gprinstall.Install is
                         if V.Name = Name_Prefix
                           and then Global_Prefix_Dir.Default
                         then
-                           Replace
-                             (Prefix_Dir, V.Value.Value, Normalize => True);
+                           --  If Install.Prefix is a relative path, it is made
+                           --  relative to the global prefix.
+
+                           declare
+                              Value : constant String :=
+                                        Get_Name_String (V.Value.Value);
+                              Res   : Name_Id;
+                           begin
+                              if Is_Absolute_Path (Value) then
+                                 Res := V.Value.Value;
+
+                              else
+                                 Name_Len := 0;
+                                 Add_Str_To_Name_Buffer
+                                   (Global_Prefix_Dir.V.all);
+                                 Add_Str_To_Name_Buffer
+                                   (Value);
+                                 Res := Name_Find;
+                              end if;
+
+                              Replace (Prefix_Dir, Res, Normalize => True);
+                           end;
 
                         elsif  V.Name = Name_Exec_Subdir
                           and then Global_Exec_Subdir.Default

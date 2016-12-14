@@ -5048,7 +5048,10 @@ Package Install Attributes
 
 * **Prefix**: single
 
-  Value is the install destination directory.
+  Value is the install destination directory. If the value is a
+  relative path, it is taken as relative to the global prefix
+  directory. That is, either the value passed to `--prefix` option or
+  the default installation prefix.
 
 * **Sources_Subdir**: single
 
