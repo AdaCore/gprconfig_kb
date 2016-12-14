@@ -163,6 +163,8 @@
        <compiler name="GNAT" runtime="^rtp-smp$" />
        <compiler name="GCC" runtime="^rtp$" />
        <compiler name="GCC" runtime="^rtp-smp$" />
+       <compiler name="GCC_Pro" runtime="^rtp$" />
+       <compiler name="GCC_Pro" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6" runtime="^rtp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
@@ -235,6 +237,7 @@
 
    <configuration>
      <compilers>
+       <compiler name="GCC_Pro" />
        <compiler name="GCC-WRS6" />
        <compiler name="GCC-WRS6CERT" />
      </compilers>
@@ -374,6 +377,8 @@
      <compilers>
        <compiler name="GCC" runtime="^rtp$" />
        <compiler name="GCC" runtime="^rtp-smp$" />
+       <compiler name="GCC_Pro" runtime="^rtp$" />
+       <compiler name="GCC_Pro" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^rtp$" />
