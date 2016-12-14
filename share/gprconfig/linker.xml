@@ -1490,6 +1490,7 @@
     </compilers>
     <compilers>
        <compiler name="GCC-WRS6" language="C" runtime="^rtp$"/>
+       <compiler name="GCC_Pro" language="C" runtime="^rtp$"/>
     </compilers>
     <targets>
       <target name="^arm-wrs-vxworks.*$" />

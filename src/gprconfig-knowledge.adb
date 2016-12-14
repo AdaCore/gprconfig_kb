@@ -2282,6 +2282,7 @@ package body GprConfig.Knowledge is
             Processed_Value  => Runtimes);
 
          Comp.Default_Runtime := True;
+         Comp.Any_Runtime := False;
 
          if not Is_Empty (Runtimes) then
             --  This loop makes sure that the default runtime appears first in
@@ -2291,6 +2292,7 @@ package body GprConfig.Knowledge is
             --  Display_Before)
 
             Comp.Default_Runtime := False;
+            Comp.Any_Runtime     := True;
 
             CS := First (Descr.Default_Runtimes);
             Defaults_Loop :
@@ -3001,26 +3003,31 @@ package body GprConfig.Knowledge is
          return False;
       end if;
 
-      if Filter.Runtime /= No_Name then
+      if Comp.Any_Runtime then
+         --  If compiler has no runtime node all runtimes should be accepted,
+         --  no need to apply filter.
+         if Filter.Runtime /= No_Name then
 
-         if not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
-            Filter.Runtime /= Comp.Runtime and then
-            Filter.Runtime /= Comp.Alt_Runtime
-         then
+            if not Is_Absolute_Path (Get_Name_String (Filter.Runtime)) and then
+              Filter.Runtime /= Comp.Runtime and then
+              Filter.Runtime /= Comp.Alt_Runtime
+            then
+               if Current_Verbosity /= Default then
+                  Put_Verbose ("Filter=" & To_String (Base, Filter, True)
+                               & ": runtime does not match");
+               end if;
+               return False;
+            end if;
+
+         elsif not Comp.Default_Runtime then
+
             if Current_Verbosity /= Default then
                Put_Verbose ("Filter=" & To_String (Base, Filter, True)
-                            & ": runtime does not match");
+                            & ": no default runtime");
             end if;
             return False;
-         end if;
 
-      elsif not Comp.Default_Runtime then
-
-         if Current_Verbosity /= Default then
-            Put_Verbose ("Filter=" & To_String (Base, Filter, True)
-                         & ": no default runtime");
          end if;
-         return False;
 
       end if;
 
@@ -3778,6 +3785,13 @@ package body GprConfig.Knowledge is
                if El.Runtime_Dir /= No_Name then
                   Ncomp.Runtime_Dir := El.Runtime_Dir;
                   Ncomp.Runtime := El.Runtime;
+               end if;
+
+               if not Ncomp.Any_Runtime
+                 and then Ncomp.Runtime = No_Name
+                 and then El.Runtime /= No_Name
+               then
+                     Ncomp.Runtime := El.Runtime;
                end if;
 
                Append (Iterator.Compilers, Ncomp);

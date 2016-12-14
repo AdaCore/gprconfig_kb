@@ -353,6 +353,7 @@ private
       Alt_Runtime : Name_Id := No_Name;
       Runtime_Dir : Name_Id := No_Name;
       Default_Runtime : Boolean := False;
+      Any_Runtime     : Boolean := False;
       Path_Order  : Integer;
 
       Language_Case : Name_Id := No_Name;
@@ -380,6 +381,7 @@ private
                     Runtime       => No_Name,
                     Alt_Runtime   => No_Name,
                     Default_Runtime  => False,
+                    Any_Runtime      => False,
                     Runtime_Dir   => No_Name,
                     Language_Case => No_Name,
                     Language_LC   => No_Name,
