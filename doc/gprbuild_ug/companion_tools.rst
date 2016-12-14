@@ -2211,11 +2211,12 @@ The switches for GPRinstall are:
 * :samp:`--root-dir={dir}`
 
   This option is to be used with --relocate-build-tree above and
-  cannot be specified alone. This option specify the root directory
+  cannot be specified alone. This option specifies the root directory
   for artifacts for proper relocation. The default value is the main
-  project directory. This may not be suitable for relocation if for the
-  example some artifact directories are in a directory upper. The
-  specified directory must be a parent of all artifact directories.
+  project directory. This may not be suitable for relocation if for
+  example some artifact directories are in parent directory of the
+  main project. The specified directory must be a parent of all
+  artifact directories.
 
 * :samp:`-q`
 
