@@ -63,10 +63,6 @@ package Gprbuild.Compilation.Process is
 
    function Hash (Process : Id) return Header_Num;
 
-   procedure Record_Remote_Failure (Pid : Id; Slave : String);
-   --  This is to be able to display on which slaves a specific compilation has
-   --  failed.
-
    function Get_Slave_For (Pid : Id) return String;
    --  Returns the slave for the given compilation, or the empty string if the
    --  compilation was successful or conducted locally.

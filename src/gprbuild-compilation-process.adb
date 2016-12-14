@@ -48,7 +48,6 @@ package body Gprbuild.Compilation.Process is
    --  Get the environment for a specific project and language
 
    Environments : Prj_Maps.Map;
-   Failed_Proc  : Failures_Slave_Set.Map;
 
    type Process_Data is record
       Process : Id;
@@ -60,8 +59,18 @@ package body Gprbuild.Compilation.Process is
    protected Results is
       procedure Add (Result : Process_Data);
       entry Get (Result : out Process_Data);
+
+      procedure Record_Remote_Failure (Pid : Id; Slave : String);
+      --  This is to be able to display on which slaves a specific compilation
+      --  has failed.
+
+      function Get_Slave_For (Pid : Id) return String;
+      --  Returns the remote slave for the given compilation, or the empty
+      --  string if the compilation was successful.
+
    private
-      List : Endded_Process.List;
+      List        : Endded_Process.List;
+      Failed_Proc : Failures_Slave_Set.Map;
    end Results;
 
    ----------------
@@ -76,7 +85,7 @@ package body Gprbuild.Compilation.Process is
       --  For a compilation failure records the slave to be able to report it
 
       if not Status and then Slave /= "" then
-         Record_Remote_Failure (Process, Slave);
+         Results.Record_Remote_Failure (Process, Slave);
       end if;
    end Add_Result;
 
@@ -141,15 +150,7 @@ package body Gprbuild.Compilation.Process is
          return "";
 
       else
-         declare
-            Pos : constant Failures_Slave_Set.Cursor := Failed_Proc.Find (Pid);
-         begin
-            if Pos = Failures_Slave_Set.No_Element then
-               return "";
-            else
-               return Failures_Slave_Set.Element (Pos);
-            end if;
-         end;
+         return Results.Get_Slave_For (Pid);
       end if;
    end Get_Slave_For;
 
@@ -196,15 +197,6 @@ package body Gprbuild.Compilation.Process is
       end if;
    end Record_Environment;
 
-   ---------------------------
-   -- Record_Remote_Failure --
-   ---------------------------
-
-   procedure Record_Remote_Failure (Pid : Id; Slave : String) is
-   begin
-      Failed_Proc.Insert (Pid, Slave);
-   end Record_Remote_Failure;
-
    -------------
    -- Results --
    -------------
@@ -229,6 +221,30 @@ package body Gprbuild.Compilation.Process is
          Result := List.First_Element;
          List.Delete_First;
       end Get;
+
+      -------------------
+      -- Get_Slave_For --
+      -------------------
+
+      function Get_Slave_For (Pid : Id) return String is
+         use type Failures_Slave_Set.Cursor;
+         Pos : constant Failures_Slave_Set.Cursor := Failed_Proc.Find (Pid);
+      begin
+         if Pos = Failures_Slave_Set.No_Element then
+            return "";
+         else
+            return Failures_Slave_Set.Element (Pos);
+         end if;
+      end Get_Slave_For;
+
+      ---------------------------
+      -- Record_Remote_Failure --
+      ---------------------------
+
+      procedure Record_Remote_Failure (Pid : Id; Slave : String) is
+      begin
+         Failed_Proc.Insert (Pid, Slave);
+      end Record_Remote_Failure;
 
    end Results;
 
