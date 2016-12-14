@@ -1468,12 +1468,7 @@ package body Gpr_Build_Util is
 
       function Was_Processed (S : Source_Info) return Boolean is
       begin
-         if S.Id.In_The_Queue then
-            return True;
-         end if;
-
-         S.Id.In_The_Queue := True;
-         return False;
+         return S.Id.In_The_Queue;
       end Was_Processed;
 
       -----------------------
@@ -1632,6 +1627,7 @@ package body Gpr_Build_Util is
          end if;
 
          Q.Append (New_Val => (Info => Source, Processed => False));
+         Source.Id.In_The_Queue := True;
 
          if Debug.Debug_Flag_Q then
             Ada.Text_IO.Put ("   Q := Q + [ ");
