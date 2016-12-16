@@ -402,19 +402,21 @@ package body Gprinstall.Install is
                         V : constant Variable :=
                               Tree.Shared.Variable_Elements.Table (Id);
                      begin
-                        if V.Name = Name_Prefix
-                          and then Global_Prefix_Dir.Default
-                        then
+                        if V.Name = Name_Prefix then
                            --  If Install.Prefix is a relative path, it is made
                            --  relative to the global prefix.
 
                            declare
-                              Value : constant String :=
-                                        Get_Name_String (V.Value.Value);
-                              Res   : Name_Id;
+                              Value   : constant String :=
+                                          Get_Name_String (V.Value.Value);
+                              Res     : Name_Id;
+                              Changed : Boolean := False;
                            begin
                               if Is_Absolute_Path (Value) then
-                                 Res := V.Value.Value;
+                                 if Global_Prefix_Dir.Default then
+                                    Res := V.Value.Value;
+                                    Changed := True;
+                                 end if;
 
                               else
                                  Name_Len := 0;
@@ -423,9 +425,12 @@ package body Gprinstall.Install is
                                  Add_Str_To_Name_Buffer
                                    (Value);
                                  Res := Name_Find;
+                                 Changed := True;
                               end if;
 
-                              Replace (Prefix_Dir, Res, Normalize => True);
+                              if Changed then
+                                 Replace (Prefix_Dir, Res, Normalize => True);
+                              end if;
                            end;
 
                         elsif  V.Name = Name_Exec_Subdir
