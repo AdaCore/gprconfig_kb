@@ -1446,7 +1446,11 @@
        <compiler name="GCC-WRS6" language="C" runtime="^rtp$"/>
     </compilers>
     <targets>
-      <target name="^powerpc-wrs-vxworks.*$" />
+       <!-- All VxWorks targets except VxWorks 7 (see Wind_Base
+            definition in cross.xml).  -->
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
@@ -1470,7 +1474,11 @@
        <compiler name="GCC-WRS6" language="C" runtime="^rtp-smp$"/>
     </compilers>
     <targets>
-      <target name="^powerpc-wrs-vxworks.*$" />
+       <!-- All VxWorks targets except VxWorks 7 (see Wind_Base
+            definition in cross.xml).  -->
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
@@ -1493,7 +1501,11 @@
        <compiler name="GCC_Pro" language="C" runtime="^rtp$"/>
     </compilers>
     <targets>
-      <target name="^arm-wrs-vxworks.*$" />
+       <!-- All VxWorks targets except VxWorks 7 (see Wind_Base
+            definition in cross.xml).  -->
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <!-- As a special exception, on ARM, rts-rtp is smp-based. -->
     <config>
@@ -1516,7 +1528,11 @@
        <compiler name="GCC-WRS6E500V2" language="C" runtime="^rtp$"/>
     </compilers>
     <targets>
-      <target name="^e500v2-wrs-vxworks.*$" />
+       <!-- All VxWorks targets except VxWorks 7 (see Wind_Base
+            definition in cross.xml).  -->
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
@@ -1540,7 +1556,11 @@
        <compiler name="GCC-WRS6E500V2" language="C" runtime="^rtp-smp$"/>
     </compilers>
     <targets>
-      <target name="^e500v2-wrs-vxworks.*$" />
+       <!-- All VxWorks targets except VxWorks 7 (see Wind_Base
+            definition in cross.xml).  -->
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
@@ -1562,7 +1582,11 @@
        <compiler name="GCC-WRS6CERT" language="C" runtime="rtp"/>
     </compilers>
     <targets>
-      <target name="^powerpc-wrs-vxworks.*$" />
+       <!-- All VxWorks targets except VxWorks 7 (see Wind_Base
+            definition in cross.xml).  -->
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
@@ -1584,7 +1608,11 @@
        <compiler name="GCC-WRS6CERTE500V2" language="C" runtime="rtp"/>
     </compilers>
     <targets>
-      <target name="^e500v2-wrs-vxworks.*$" />
+       <!-- All VxWorks targets except VxWorks 7 (see Wind_Base
+            definition in cross.xml).  -->
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworksae$" />
+       <target name="^.*-wrs-vxworksmils$" />
     </targets>
     <config>
      package Linker is
