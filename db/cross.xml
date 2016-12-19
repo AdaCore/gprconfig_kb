@@ -712,6 +712,8 @@
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="^rtp$" />
+       <compiler name="GCC_Pro" runtime="^rtp$" />
+       <compiler name="GCC_Pro" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS7ARM" runtime="^rtp$" />
        <compiler name="GCC-WRS7E500V2" runtime="^rtp$" />
        <compiler name="GCC-WRS7PPC" runtime="^rtp$" />
@@ -743,6 +745,8 @@
    <configuration>
      <compilers>
        <compiler name="GNAT" runtime="^rtp$" />
+       <compiler name="GCC_Pro" runtime="^rtp$" />
+       <compiler name="GCC_Pro" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS7X86_64" runtime="^rtp$" />
        <compiler name="G++-WRS7X86_64" runtime="^rtp$" />
      </compilers>
