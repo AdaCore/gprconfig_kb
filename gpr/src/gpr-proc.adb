@@ -3131,12 +3131,24 @@ package body GPR.Proc is
                Path : constant Path_Name_Type :=
                         Path_Name_Of (From_Project_Node,
                                       From_Project_Node_Tree);
+               Path_Name : String := Get_Name_String (Path);
 
             begin
+               Canonical_Case_File_Name (Path_Name);
+
                while List /= null loop
-                  if List.Project.Path.Display_Name = Path then
-                     Project := List.Project;
-                     exit;
+                  if List.Project.Path.Display_Name /= No_Path then
+                     declare
+                        Project_Path : String :=
+                          Get_Name_String (List.Project.Path.Display_Name);
+                     begin
+                        Canonical_Case_File_Name (Project_Path);
+
+                        if Project_Path = Path_Name then
+                           Project := List.Project;
+                           exit;
+                        end if;
+                     end;
                   end if;
 
                   List := List.Next;
