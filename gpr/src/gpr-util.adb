@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -462,7 +462,6 @@ package body GPR.Util is
       function Add_Suffix (File : File_Name_Type) return File_Name_Type is
          Saved_EEOT : constant Name_Id := Executable_Extension_On_Target;
          Result     : File_Name_Type;
-         Suffix_From_Project : Variable_Value;
       begin
          if Include_Suffix then
             if Project.Config.Executable_Suffix /= No_Name then
@@ -473,29 +472,6 @@ package body GPR.Util is
             Result :=  Executable_Name (File);
             Executable_Extension_On_Target := Saved_EEOT;
             return Result;
-
-         elsif Builder_Package /= No_Package then
-
-            --  If the suffix is specified in the project itself, as opposed to
-            --  the config file, it needs to be taken into account. However,
-            --  when the project was processed, in both cases the suffix was
-            --  stored in Project.Config, so get it from the project again.
-
-            Suffix_From_Project :=
-              GPR.Util.Value_Of
-                (Variable_Name => Name_Executable_Suffix,
-                 In_Variables  =>
-                   Shared.Packages.Table (Builder_Package).Decl.Attributes,
-                 Shared        => Shared);
-
-            if Suffix_From_Project /= Nil_Variable_Value
-              and then Suffix_From_Project.Value /= No_Name
-            then
-               Executable_Extension_On_Target := Suffix_From_Project.Value;
-               Result :=  Executable_Name (File);
-               Executable_Extension_On_Target := Saved_EEOT;
-               return Result;
-            end if;
          end if;
 
          return File;
