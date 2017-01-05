@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -121,18 +121,11 @@ package GPR.Util is
       Include_Suffix : Boolean := True) return File_Name_Type;
    --  Return the value of the attribute Builder'Executable for file Main in
    --  the project Project, if it exists. If there is no attribute Executable
-   --  for Main, remove the suffix from Main; then, if the attribute
-   --  Executable_Suffix is specified, add this suffix, otherwise add the
-   --  standard executable suffix for the platform.
-   --
-   --  Language is the name of the programing language of the Main.
-   --
-   --  If Include_Suffix is true, then the ".exe" suffix (or any suffix defined
-   --  in the config) will be added. The suffix defined by the user in his own
-   --  project file is always taken into account. Otherwise, such a suffix is
-   --  not added. In particular, the prefix should not be added if you are
-   --  potentially testing for cross-platforms, since the suffix might not be
-   --  known (its default value comes from the ...-gnatmake prefix).
+   --  for Main, remove the suffix from Main; then, when Include_Suffix
+   --  is True, if the attribute Executable_Suffix is specified in package
+   --  Builder, add this suffix. Attribute Executable_Suffix is either
+   --  declared in the user project file or, for some platforms, in the
+   --  configuration project file (for example ".exe" on Windows).
 
    procedure Expect (The_Token : Token_Type; Token_Image : String);
    --  Check that the current token is The_Token. If it is not, then output
