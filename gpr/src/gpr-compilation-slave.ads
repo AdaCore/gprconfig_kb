@@ -23,9 +23,12 @@
 ------------------------------------------------------------------------------
 
 with GNAT.OS_Lib;
-with GPR.Compilation; use GPR.Compilation;
+with GPR.Compilation.Protocol;
 
 package GPR.Compilation.Slave is
+
+   use GPR.Compilation;
+   use GPR.Compilation.Protocol;
 
    procedure Record_Slaves (Option : String);
    --  Record the slaves as passed on the command line
@@ -36,6 +39,10 @@ package GPR.Compilation.Slave is
    --  Register the slaves describes in Build_Slaves attribute of project's
    --  Remote package. This routine also initialize the slaves sources. This
    --  routine must be called before any other in this unit.
+
+   function Channel (Host : String) return Protocol.Communication_Channel;
+   --  Returns the communication channel for the given host. Returns No_Channel
+   --  if host has not been registered.
 
    procedure Clean_Up_Remote_Slaves
      (Tree    : Project_Tree_Ref;

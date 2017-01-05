@@ -38,7 +38,6 @@ with GNAT.String_Split; use GNAT.String_Split;
 
 with GPR.Compilation.Protocol;      use GPR.Compilation.Protocol;
 with GPR.Compilation.Process;
-
 with GPR.Compilation.Sync;
 with GPR.Names;                     use GPR.Names;
 with GPR.Opt;                       use GPR.Opt;
@@ -131,6 +130,9 @@ package body GPR.Compilation.Slave is
       function Find (Socket : Integer) return Slave;
       --  Find a slave given the socket number
 
+      function Find (Host : String) return Slave;
+      --  Find a slave give a host[:port] name
+
       function Get_Free return Slave;
       --  Returns a slave with free compilation slot
 
@@ -158,6 +160,20 @@ package body GPR.Compilation.Slave is
    private
       Pool : Slave_S.Set;
    end Slaves;
+
+   -------------
+   -- Channel --
+   -------------
+
+   function Channel (Host : String) return Protocol.Communication_Channel is
+      S : constant Slave := Slaves.Find (Host);
+   begin
+      if S = No_Slave then
+         return No_Channel;
+      else
+         return S.Channel;
+      end if;
+   end Channel;
 
    ----------------------------
    -- Clean_Up_Remote_Slaves --
@@ -794,6 +810,18 @@ package body GPR.Compilation.Slave is
          else
             return No_Slave;
          end if;
+      end Find;
+
+      function Find (Host : String) return Slave is
+         S_Data : constant Slave_Data := Parse (Host);
+      begin
+         for S of Pool loop
+            if S.Data = S_Data then
+               return S;
+            end if;
+         end loop;
+
+         return No_Slave;
       end Find;
 
       --------------
