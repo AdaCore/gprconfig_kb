@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -76,6 +76,9 @@ package body Gprbuild.Compilation.Slave is
       Sync                       : Boolean;
       Included_Artifact_Patterns : String := "") return Slave;
    --  Connect to the slave and return the corresponding object
+
+   function Parse (Host_Name : String) return Slave_Data;
+   --  Parse a host[:port] string and returns corresponding Slave_Data record
 
    --  Ack transient signal stored into this variable
 
@@ -322,6 +325,41 @@ package body Gprbuild.Compilation.Slave is
       return Max_Processes;
    end Get_Max_Processes;
 
+   -----------
+   -- Parse --
+   -----------
+
+   function Parse (Host_Name : String) return Slave_Data is
+      V    : String renames Host_Name;
+      I    : constant Natural := Index (V, ":");
+      Host : Unbounded_String;
+      Port : Port_Type := Default_Port;
+   begin
+      --  Get for port
+
+      if I = 0 then
+         Host := To_Unbounded_String (V (V'First .. V'Last));
+
+      else
+         Host := To_Unbounded_String (V (V'First .. I - 1));
+
+         declare
+            Port_Str : constant String := V (I + 1 .. V'Last);
+         begin
+            if Strings.Maps.Is_Subset
+              (Maps.To_Set (Port_Str),
+               Maps.Constants.Decimal_Digit_Set)
+            then
+               Port := Port_Type'Value (V (I + 1 .. V'Last));
+            else
+               return No_Slave_Data;
+            end if;
+         end;
+      end if;
+
+      return Slave_Data'(Host, Port);
+   end Parse;
+
    -------------------
    -- Record_Slaves --
    -------------------
@@ -338,34 +376,14 @@ package body Gprbuild.Compilation.Slave is
       -----------------------
 
       procedure Parse_Build_Slave (V : String) is
-         I    : constant Natural := Index (V, ":");
-         Host : Unbounded_String;
-         Port : Port_Type := Default_Port;
+         S_Data : constant Slave_Data := Parse (V);
       begin
-         --  Get for port
-
-         if I = 0 then
-            Host := To_Unbounded_String (V (V'First .. V'Last));
-
+         if S_Data = No_Slave_Data then
+            Put_Line ("error: invalid port value in " & V);
+            OS_Exit (1);
          else
-            Host := To_Unbounded_String (V (V'First .. I - 1));
-
-            declare
-               Port_Str : constant String := V (I + 1 .. V'Last);
-            begin
-               if Strings.Maps.Is_Subset
-                 (Maps.To_Set (Port_Str),
-                  Maps.Constants.Decimal_Digit_Set)
-               then
-                  Port := Port_Type'Value (V (I + 1 .. V'Last));
-               else
-                  Put_Line ("error: invalid port value in " & V);
-                  OS_Exit (1);
-               end if;
-            end;
+            Slaves_Data.Append (S_Data);
          end if;
-
-         Slaves_Data.Append (Slave_Data'(Host, Port));
       end Parse_Build_Slave;
 
    begin
