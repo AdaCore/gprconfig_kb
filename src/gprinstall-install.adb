@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -2833,6 +2833,7 @@ package body Gprinstall.Install is
                    (Buf (1 .. 2) /= Sig_Line
                     or else Buf (3 .. Message_Digest'Last + 2) /= Prj_Sig)
                  and then Install_Name.Default
+                 and then Generate_Project
                then
                   Put_Line
                     ("Project already installed, either:");
@@ -3062,7 +3063,7 @@ package body Gprinstall.Install is
 
          --  A project file is only needed in developer mode
 
-         if For_Dev then
+         if For_Dev and then Generate_Project then
             Create_Project (Project);
          end if;
 

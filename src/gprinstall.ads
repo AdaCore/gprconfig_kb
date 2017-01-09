@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -121,6 +121,9 @@ private
    --  Whether the actual installation takes place or not. If Dry_Run is set to
    --  True then the action will be displayed on the console but actually not
    --  performed.
+
+   Generate_Project : Boolean := True;
+   --  If set to False no project is generated/installed
 
    type Usage_Kind is (Install_Mode, Uninstall_Mode, List_Mode);
 

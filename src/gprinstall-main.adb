@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -66,6 +66,7 @@ procedure Gprinstall.Main is
    Stat_Option            : constant String := "--stat";
    Sources_Only_Option    : constant String := "--sources-only";
    Side_Debug_Option      : constant String := "--side-debug";
+   No_Project_Option      : constant String := "--no-project";
 
    Opt_A_Set : Boolean := False; -- to detect if -a and -m are used together
    Opt_M_Set : Boolean := False; -- likewise
@@ -422,6 +423,9 @@ procedure Gprinstall.Main is
             elsif Has_Prefix (Dry_Run_Option) then
                Dry_Run := True;
 
+            elsif Has_Prefix (No_Project_Option) then
+               Generate_Project := False;
+
             elsif Has_Prefix (No_Lib_Link_Option) then
                Add_Lib_Link := False;
 
@@ -638,6 +642,13 @@ procedure Gprinstall.Main is
            (Project_Tree, "cannot specify --stat in install/uninstall mode");
       end if;
 
+      if not Generate_Project
+        and then not Global_Project_Subdir.Default
+      then
+         Fail_Program
+           (Project_Tree, "cannot specify --no-project and --project-subdir");
+      end if;
+
       if Load_Standard_Base then
          --  We need to parse the knowledge base so that we are able to
          --  normalize the target names. Unfortunately, if we have to spawn
@@ -808,6 +819,11 @@ procedure Gprinstall.Main is
 
          Put_Line ("  --build-name=<name>");
          Put_Line ("           Build name value (default is ""Default"")");
+
+         --  Line for --no-project
+
+         Put_Line ("  --no-project");
+         Put_Line ("           Do not install project file");
 
          --  Line for --mode
 

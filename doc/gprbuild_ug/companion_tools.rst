@@ -2168,6 +2168,10 @@ The switches for GPRinstall are:
   project installation directory if an absolute path. Otherwise it is
   appended to the prefix above. The default is `share/gpr`.
 
+* :samp:`--no-project`
+
+  Specify that no project is to be generated and installed.
+
 * :samp:`--target={targetname}`
 
   Specify a target for cross platforms.
