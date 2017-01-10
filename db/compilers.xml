@@ -546,7 +546,7 @@
     <name>G++-WRS7ARM</name>
     <executable prefix="1">c\+\+(arm)</executable>
     <version>
-      <external>c\+\+arm --version</external>
+      <external>c++arm --version</external>
       <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
       <must_match>4.8.1</must_match>
     </version>
@@ -560,7 +560,7 @@
     <name>G++-WRS7E500V2</name>
     <executable prefix="1">c\+\+(ppc)</executable>
     <version>
-      <external>c\+\+ppc --version</external>
+      <external>c++ppc --version</external>
       <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
       <must_match>4.8.1</must_match>
     </version>
@@ -573,7 +573,7 @@
     <name>G++-WRS7PPC</name>
     <executable prefix="1">c\+\+(ppc)</executable>
     <version>
-      <external>c\+\+ppc --version</external>
+      <external>c++ppc --version</external>
       <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
       <must_match>4.8.1</must_match>
     </version>
@@ -586,7 +586,7 @@
     <name>G++-WRS7X86_64</name>
     <executable prefix="1">c\+\+(pentium)</executable>
     <version>
-      <external>c\+\+pentium --version</external>
+      <external>c++pentium --version</external>
       <grep regexp=".*\) ([0-9.]*)" group="1"></grep>
       <must_match>4.8.1</must_match>
     </version>
