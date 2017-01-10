@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -739,6 +739,17 @@ package body GPR is
          --  Start of processing for Recursive_Check
 
          begin
+            --  If an imported project is extended, then the actual imported
+            --  is the extending project.
+
+            if Project.Extended_By /= No_Project and then
+              not Seen_Name.Contains (Project.Extended_By.Name)
+            then
+               Recursive_Check
+                 (Project.Extended_By, Tree,
+                  In_Aggregate_Lib, From_Encapsulated_Lib);
+            end if;
+
             if not Seen_Name.Contains (Project.Name) then
 
                --  Even if a project is aggregated multiple times in an
