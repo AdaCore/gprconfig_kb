@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2000-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2000-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -3753,7 +3753,7 @@ package body GPR.Nmsc is
    --  Start of processing for Check_Library_Attributes
 
    begin
-      Library_Directory_Present := Lib_Dir.Value /= Empty_String;
+      Library_Directory_Present := Lib_Dir.Value not in No_Name | Empty_String;
 
       --  Special case of extending project
 
