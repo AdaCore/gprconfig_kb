@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2016, AdaCore                     --
+--                     Copyright (C) 2006-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -1920,6 +1920,7 @@ procedure Gprlib is
 
             if not Quiet_Output then
                if Verbose_Mode then
+                  Name_Len := 0;
                   Add_Str_To_Name_Buffer (Archive_Builder.all);
 
                   for J in 1 .. Object_Pos loop
