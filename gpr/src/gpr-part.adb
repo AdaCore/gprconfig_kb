@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -544,7 +544,6 @@ package body GPR.Part is
       Dummy : Boolean;
       pragma Warnings (Off, Dummy);
 
-      Real_Project_File_Name : String_Access := new String'(Project_File_Name);
       Path_Name_Id : Path_Name_Type;
 
    begin
@@ -557,17 +556,12 @@ package body GPR.Part is
            (Env.Project_Path, Target_Name);
       end if;
 
-      if Real_Project_File_Name = null then
-         Real_Project_File_Name := new String'(Project_File_Name);
-      end if;
-
       Project := Empty_Project_Node;
 
       Find_Project (Env.Project_Path,
-                    Project_File_Name => Real_Project_File_Name.all,
+                    Project_File_Name => Project_File_Name,
                     Directory         => Current_Directory,
                     Path              => Path_Name_Id);
-      Free (Real_Project_File_Name);
 
       if Errout_Handling /= Never_Finalize then
          GPR.Err.Initialize;
