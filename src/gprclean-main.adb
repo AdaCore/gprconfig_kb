@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2016, AdaCore                     --
+--                     Copyright (C) 2011-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -983,6 +983,7 @@ begin
          Delete ("", Configuration_Project_Path.all);
          Quiet_Output := Quiet;
       end;
+      Delete_All_Temp_Files (Project_Tree.Shared);
    end if;
 
    --  In verbose mode, if Delete has not been called, indicate that

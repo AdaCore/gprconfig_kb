@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---            Copyright (C) 2006-2016, Free Software Foundation, Inc.       --
+--            Copyright (C) 2006-2017, Free Software Foundation, Inc.       --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -1677,7 +1677,7 @@ package body GPR.Conf is
 
       S : State := No_State;
 
-      Conf_File_Name : String_Access := new String'(Config_File_Name);
+      Conf_File_Name : String_Access;
 
       procedure Add_Directory (Dir : String);
       --  Add a directory at the end of the Project Path
@@ -1727,6 +1727,8 @@ package body GPR.Conf is
       end if;
 
       <<Parse_Again>>
+
+      Conf_File_Name := new String'(Config_File_Name);
 
       --  Parse the user project tree
 
