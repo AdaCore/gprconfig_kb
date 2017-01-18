@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2004-2016, AdaCore                     --
+--                     Copyright (C) 2004-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -781,7 +781,28 @@ package body Gpr_Build_Util is
          Project  : Project_Id := No_Project;
          Tree     : Project_Tree_Ref := null)
       is
+         Canonical_Name : File_Name_Type;
+
       begin
+         Name_Len := 0;
+         Add_Str_To_Name_Buffer (Name);
+         Canonical_Case_File_Name (Name_Buffer (1 .. Name_Len));
+         Canonical_Name := Name_Find;
+
+         --  Check if this main is already in table Names. If it is, do not
+         --  put it again, to avoid binding and linking the same main several
+         --  times in parallel when -jnn is used, as this does not work on all
+         --  platforms.
+
+         for J in 1 .. Names.Last loop
+            if Canonical_Name = Names.Table (J).File
+              and then Index = Names.Table (J).Index
+              and then Project = Names.Table (J).Project
+            then
+               return;
+            end if;
+         end loop;
+
          if Current_Verbosity = High then
             Debug_Output ("Add_Main """ & Name & """ " & Index'Img
                           & " with_tree? "
