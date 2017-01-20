@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2012-2016, AdaCore                     --
+--                     Copyright (C) 2012-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -294,7 +294,7 @@ package body Gprbuild.Compilation.Process is
                P.Pid := Non_Blocking_Spawn
                  (Executable, Options, Output_File, Err_To_Out);
 
-            elsif Source /= "" and then Complete_Output then
+            elsif Source /= "" then
                P.Pid := Non_Blocking_Spawn
                  (Executable, Options,
                   Stdout_File => Source & ".stdout",

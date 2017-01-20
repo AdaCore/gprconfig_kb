@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2016, AdaCore                     --
+--                     Copyright (C) 2011-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -88,9 +88,11 @@ package body Gprbuild.Compile is
    --  Create a temporary file that contains the list of object directories
    --  in the correct order.
 
-   procedure Print_Compilation_Outputs (For_Source : Source_Id);
-   --  In complete output mode, put the outputs from last compilation to
-   --  standard output and/or standar error.
+   procedure Print_Compilation_Outputs
+     (For_Source : Source_Id;
+      Always     : Boolean := False);
+   --  In complete output mode, or when Always is True, put the outputs from
+   --  last compilation to standard output and/or standard error.
 
    function "<" (Left, Right : Source_Id) return Boolean
      is (Left.File < Right.File);
@@ -278,7 +280,7 @@ package body Gprbuild.Compile is
             Queue.Set_Obj_Dir_Free (Source.Id.Project.Object_Directory.Name);
 
             if Comp_Data.Purpose = Compilation then
-               Print_Compilation_Outputs (Source.Id);
+               Print_Compilation_Outputs (Source.Id, Always => True);
 
                if OK then
                   --  We created a new dependency file, so reset the attributes
@@ -1097,13 +1099,16 @@ package body Gprbuild.Compile is
    -- Print_Compilation_Outputs --
    -------------------------------
 
-   procedure Print_Compilation_Outputs (For_Source : Source_Id) is
+   procedure Print_Compilation_Outputs
+     (For_Source : Source_Id;
+      Always     : Boolean := False) is
    begin
-      if Complete_Output then
+      if Complete_Output or else Always then
          declare
+            Proj : constant Project_Id :=
+              Ultimate_Extending_Project_Of (For_Source.Project);
             File_Path : constant String :=
-              Get_Name_String
-                (For_Source.Project.Object_Directory.Name) &
+              Get_Name_String (Proj.Object_Directory.Name) &
               Directory_Separator &
               Get_Name_String (For_Source.File);
 
