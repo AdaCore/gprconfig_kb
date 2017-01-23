@@ -2411,14 +2411,13 @@ procedure Gprslave is
       --  Note that we want to avoid the rewriting rules below that are
       --  requiring some CPU cycles not needed at this stage.
 
-      if Sock (Builder) /= No_Socket and then Builder.Sync then
-         --  Move to projet directory
-         Sync_Gpr (Builder);
-      end if;
-
-      --  Register the new builder
-
       if Sock (Builder) /= No_Socket then
+         if Builder.Sync then
+            Sync_Gpr (Builder);
+         end if;
+
+         --  Register the new builder
+
          Builders.Insert (Builder);
       end if;
 
