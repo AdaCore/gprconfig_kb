@@ -94,7 +94,7 @@ private
    --  Name of the build variable for installed project file
 
    No_Build_Var : Boolean := False;
-   --  Wether a build variable is to be generated
+   --  Whether a build variable is to be generated
 
    Build_Name : String_Access := new String'("default");
    --  Name of the current build
@@ -111,7 +111,7 @@ private
    --  Flags to avoid multiple displays of Copyright notice and of Usage
 
    Usage_Needed : Boolean := False;
-   --  Set by swith -h: usage will be displayed after all command line
+   --  Set by switch -h: usage will be displayed after all command line
    --  switches have been scanned.
 
    Recursive : Boolean := False;
@@ -131,18 +131,18 @@ private
    --  Set to true if project is to be uninstalled
 
    Output_Stats : Boolean := False;
-   --  Wether the stats are to be displayed when listing installed packages
+   --  Whether the stats are to be displayed when listing installed packages
 
    All_Sources : Boolean := True;
    --  By default install all the sources. If set to False install only
    --  the sources needed to use the project (the interface for a SAL).
 
    Add_Lib_Link : Boolean := True;
-   --  Wether to copy the shared library into the executable directory on
+   --  Whether to copy the shared library into the executable directory on
    --  Windows or create a link into the lib directory on UNIX.
 
    Create_Dest_Dir : Boolean := False;
-   --  Wether to create the missing directories in the destination point
+   --  Whether to create the missing directories in the destination point
 
    Sig_Line : constant String := "S ";
    --  The prefix of the line containing the original project's signature

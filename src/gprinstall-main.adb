@@ -72,7 +72,7 @@ procedure Gprinstall.Main is
    Opt_M_Set : Boolean := False; -- likewise
 
    procedure Initialize;
-   --  Do the necessary package intialization and process the command line
+   --  Do the necessary package initialization and process the command line
    --  arguments.
 
    procedure Usage;
@@ -757,7 +757,7 @@ procedure Gprinstall.Main is
          Put_Line
            ("           The symlib directory/sub-directory to libraries");
          Put_Line ("  --exec-subdir=<dir>");
-         Put_Line ("           The executbales directory/sub-directory");
+         Put_Line ("           The executables directory/sub-directory");
          Put_Line ("  --project-subdir=<dir>");
          Put_Line ("           The project directory/sub-directory");
          Put_Line ("  --no-lib-link");
@@ -884,7 +884,7 @@ procedure Gprinstall.Main is
 
          --  Line for -f
 
-         Put_Line ("  -f       Force installaion, overwrite files");
+         Put_Line ("  -f       Force installation, overwrite files");
 
          --  Line for -v
 
