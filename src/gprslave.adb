@@ -2344,6 +2344,12 @@ procedure Gprslave is
         (Builder, "Handling project : " & To_String (Builder.Project_Name));
       Display (Builder, "Compiling for    : " & To_String (Builder.Target));
 
+      if Builder.Sync then
+         Display (Builder, "Synchronization from master enabled");
+      else
+         Display (Builder, "Synchronization from master disabled");
+      end if;
+
       --  Create slave environment if needed
 
       if not Exists (Work_Directory (Builder)) then
