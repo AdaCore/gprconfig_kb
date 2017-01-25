@@ -31,16 +31,14 @@ with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with Gpr_Build_Util;             use Gpr_Build_Util;
-with Gpr_Script;                 use Gpr_Script;
-with Gpr_Util;                   use Gpr_Util;
 with Gprbuild.Compile;
 with Gprbuild.Link;
 with Gprbuild.Post_Compile;
-with Gprbuild.Compilation.Process.Waiter;
-with Gprbuild.Compilation.Slave;
+
+with GPR.Compilation.Process.Waiter;
+with GPR.Compilation.Slave;
 with GPR;                        use GPR;
 with GPR.Debug;                  use GPR.Debug;
-with GPR_Version;                use GPR_Version;
 with GPR.Conf;                   use GPR.Conf;
 with GPR.Names;                  use GPR.Names;
 with GPR.Osint;                  use GPR.Osint;
@@ -49,16 +47,16 @@ with GPR.Proc;                   use GPR.Proc;
 with GPR.Env;
 with GPR.Err;
 with GPR.Opt;                    use GPR.Opt;
+with GPR.Script;                 use GPR.Script;
 with GPR.Snames;                 use GPR.Snames;
 with GPR.Tempdir;                use GPR.Tempdir;
 with GPR.Tree;                   use GPR.Tree;
 with GPR.Util;                   use GPR.Util;
+with GPR.Version;                use GPR.Version;
 
 procedure Gprbuild.Main is
 
    use Stamps;
-
-   use Gpr_Util.Knowledge;
 
    CodePeer_String : constant String := "codepeer";
    --  Used in CopePeer mode for the target and the subdirs
@@ -597,7 +595,7 @@ procedure Gprbuild.Main is
 
       elsif Db_Directory_Expected then
          Db_Directory_Expected := False;
-         Parse_Knowledge_Base (Project_Tree, Arg);
+         Knowledge.Parse_Knowledge_Base (Project_Tree, Arg);
 
          Name_Len := 0;
          Add_Str_To_Name_Buffer (Arg);
@@ -776,7 +774,7 @@ procedure Gprbuild.Main is
                      "missing hosts for distributed mode compilation");
 
                else
-                  Compilation.Slave.Record_Slaves (Hosts);
+                  GPR.Compilation.Slave.Record_Slaves (Hosts);
                end if;
             end;
 
@@ -1691,7 +1689,7 @@ procedure Gprbuild.Main is
       Delete_All_Temp_Files (Project_Tree.Shared);
 
       if Distributed_Mode then
-         Compilation.Slave.Unregister_Remote_Slaves (From_Signal => True);
+         GPR.Compilation.Slave.Unregister_Remote_Slaves (From_Signal => True);
       end if;
 
       OS_Exit (1);
@@ -1737,8 +1735,8 @@ procedure Gprbuild.Main is
 
       for Arg in 1 .. Argument_Count loop
          if Argument (Arg) = Dumpmachine then
-            Gpr_Util.Knowledge.Parse_Knowledge_Base (Project_Tree);
-            Put_Line (Gpr_Util.Knowledge.Normalized_Hostname);
+            Knowledge.Parse_Knowledge_Base (Project_Tree);
+            Put_Line (Knowledge.Normalized_Hostname);
             OS_Exit (0);
          end if;
       end loop;
@@ -1878,7 +1876,7 @@ procedure Gprbuild.Main is
          --  normalize the target names. Unfortunately, if we have to spawn
          --  gprconfig, it will also have to parse that knowledge base on
          --  its own.
-         Parse_Knowledge_Base (Project_Tree);
+         Knowledge.Parse_Knowledge_Base (Project_Tree);
       end if;
 
       --  If no project file is specified, look for a default
@@ -2435,7 +2433,7 @@ begin
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Normalized_Hostname,
+         Normalized_Hostname        => Knowledge.Normalized_Hostname,
          Implicit_Project           => No_Project_File_Found);
    exception
       when E : GPR.Conf.Invalid_Config =>
@@ -2675,7 +2673,7 @@ begin
 exception
    when C : Constraint_Error =>
       if Distributed_Mode then
-         Compilation.Slave.Unregister_Remote_Slaves (From_Signal => True);
+         GPR.Compilation.Slave.Unregister_Remote_Slaves (From_Signal => True);
       end if;
 
       Fail_Program (Project_Tree, Exception_Message (C));

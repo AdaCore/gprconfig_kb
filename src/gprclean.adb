@@ -23,7 +23,6 @@ with GNAT.IO;                   use GNAT.IO;
 with GNAT.Regexp;               use GNAT.Regexp;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
-with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR.Opt;        use GPR.Opt;
 with GPR.Osint;
@@ -31,8 +30,6 @@ with GPR.Names;      use GPR.Names;
 with GPR.Util;       use GPR.Util;
 
 package body Gprclean is
-
-   use Knowledge;
 
    -----------------------------
    -- Other local subprograms --

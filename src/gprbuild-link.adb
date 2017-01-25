@@ -24,11 +24,10 @@ with Ada.Unchecked_Deallocation; use Ada;
 with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
-with Gpr_Script;     use Gpr_Script;
-with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR.Debug;      use GPR.Debug;
 with GPR.Names;      use GPR.Names;
+with GPR.Script;     use GPR.Script;
 with GPR.Snames;     use GPR.Snames;
 with GPR.Util;       use GPR.Util;
 

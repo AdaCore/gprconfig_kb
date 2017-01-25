@@ -26,9 +26,10 @@ with GNAT.Directory_Operations; use GNAT, GNAT.Directory_Operations;
 with GNAT.Dynamic_HTables;      use GNAT.Dynamic_HTables;
 
 with Gpr_Build_Util;               use Gpr_Build_Util;
-with Gpr_Util;                     use Gpr_Util;
-with Gprbuild.Compilation.Process; use Gprbuild.Compilation.Process;
-with Gprbuild.Compilation.Slave;
+with GPR.Compilation;              use GPR.Compilation;
+
+with GPR.Compilation.Process;      use GPR.Compilation.Process;
+with GPR.Compilation.Slave;
 with GPR.Env;
 with GPR.Names;                    use GPR.Names;
 with GPR.Opt;                      use GPR.Opt;
@@ -115,8 +116,8 @@ package body Gprbuild.Compile is
    --  building jobs.
 
    type Process_Data is record
-      Process        : Gprbuild.Compilation.Id  :=
-                         Gprbuild.Compilation.Invalid_Process;
+      Process        : GPR.Compilation.Id  :=
+                         GPR.Compilation.Invalid_Process;
       Source         : Queue.Source_Info  := Queue.No_Source_Info;
       Source_Project : Project_Id         := null;
       Mapping_File   : Path_Name_Type     := No_Path;
@@ -127,7 +128,7 @@ package body Gprbuild.Compile is
    --  building.
 
    No_Process_Data : constant Process_Data :=
-                       (Process        => Gprbuild.Compilation.Invalid_Process,
+                       (Process        => GPR.Compilation.Invalid_Process,
                         Source         => Queue.No_Source_Info,
                         Source_Project => null,
                         Mapping_File   => No_Path,
@@ -135,12 +136,12 @@ package body Gprbuild.Compile is
                         Options        => null);
 
    package Compilation_Htable is new GNAT.HTable.Simple_HTable
-     (Header_Num => Gprbuild.Compilation.Process.Header_Num,
+     (Header_Num => GPR.Compilation.Process.Header_Num,
       Element    => Process_Data,
       No_Element => No_Process_Data,
-      Key        => Gprbuild.Compilation.Id,
+      Key        => GPR.Compilation.Id,
       Hash       => Hash,
-      Equal      => Gprbuild.Compilation."=");
+      Equal      => GPR.Compilation."=");
    --  Hash table to keep data for all spawned jobs
 
    package Naming_Datas is new GNAT.Table
@@ -255,9 +256,7 @@ package body Gprbuild.Compile is
       OK     : out Boolean;
       Slave  : out Unbounded_String)
    is
-      use type Gprbuild.Compilation.Id;
-
-      Process   : Gprbuild.Compilation.Id;
+      Process   : GPR.Compilation.Id;
       Comp_Data : Process_Data;
       Language  : Language_Ptr;
       Config    : Language_Config;
@@ -268,7 +267,7 @@ package body Gprbuild.Compile is
 
          Wait_Result (Process, OK);
 
-         if Process = Gprbuild.Compilation.Invalid_Process then
+         if Process = GPR.Compilation.Invalid_Process then
             return;
          end if;
 
@@ -1205,7 +1204,7 @@ package body Gprbuild.Compile is
 
                else
                   if Distributed_Mode and then Slave_Initialized then
-                     Gprbuild.Compilation.Slave.Unregister_Remote_Slaves;
+                     GPR.Compilation.Slave.Unregister_Remote_Slaves;
                   end if;
 
                   Fail_Program
@@ -1224,7 +1223,7 @@ package body Gprbuild.Compile is
       --  Unregister the slaves and get back compiled object code. This is a
       --  nop if no compilation has been done.
 
-      Gprbuild.Compilation.Slave.Unregister_Remote_Slaves;
+      GPR.Compilation.Slave.Unregister_Remote_Slaves;
    end Run;
 
    -----------------------
@@ -2779,7 +2778,7 @@ package body Gprbuild.Compile is
       is
 
          procedure Add_Process
-           (Process        : Gprbuild.Compilation.Id;
+           (Process        : GPR.Compilation.Id;
             Source         : Queue.Source_Info;
             Source_Project : Project_Id;
             Mapping_File   : Path_Name_Type;
@@ -2797,7 +2796,7 @@ package body Gprbuild.Compile is
          -----------------
 
          procedure Add_Process
-           (Process        : Gprbuild.Compilation.Id;
+           (Process        : GPR.Compilation.Id;
             Source         : Queue.Source_Info;
             Source_Project : Project_Id;
             Mapping_File   : Path_Name_Type;
@@ -2857,7 +2856,7 @@ package body Gprbuild.Compile is
             then Get_Name_String (Source.Id.Language.Name)
             else "");
 
-         Process       : Gprbuild.Compilation.Id;
+         Process       : GPR.Compilation.Id;
          Options       : GNAT.OS_Lib.Argument_List_Access;
          Response_File : Path_Name_Type := No_Path;
 
@@ -3201,7 +3200,7 @@ package body Gprbuild.Compile is
                        Get_Name_String (Data.Include_Path_File));
 
             elsif Data.Include_Path /= null then
-               Gprbuild.Compilation.Process.Record_Environment
+               GPR.Compilation.Process.Record_Environment
                  (Source_Project,
                   Id.Language.Name,
                   Get_Name_String (Id.Language.Config.Include_Path),
@@ -3280,7 +3279,7 @@ package body Gprbuild.Compile is
 
                if Distributed_Mode and then not Slave_Initialized then
                   begin
-                     Gprbuild.Compilation.Slave.Register_Remote_Slaves
+                     GPR.Compilation.Slave.Register_Remote_Slaves
                        (Project_Tree, Main_Project);
                      Slave_Initialized := True;
                   exception

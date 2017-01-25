@@ -44,14 +44,15 @@ with GNAT.Strings;
 with GNAT.Traceback.Symbolic; use GNAT.Traceback;
                               use GNAT.Traceback.Symbolic;
 
-with Gpr_Util;                      use Gpr_Util;
-with GPR_Version;
-with Gprbuild.Compilation;          use Gprbuild.Compilation;
-with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
-with Gprbuild.Compilation.Sync;     use Gprbuild;
-with GprConfig.Knowledge;           use GprConfig.Knowledge;
+with GPR.Compilation;               use GPR.Compilation;
+with GPR.Compilation.Protocol;      use GPR.Compilation.Protocol;
+with GPR.Compilation.Sync;          use GPR.Compilation.Sync;
+with GPR.Util;                      use GPR.Util;
+with GPR.Version;
+
 with GPR;                           use GPR;
 with GPR.Opt;                       use GPR.Opt;
+with GPR.Knowledge;                 use GPR.Knowledge;
 with GPR.Env;                       use GPR.Env;
 with GPR.Names;                     use GPR.Names;
 with GPR.Part;                      use GPR.Part;
@@ -899,7 +900,7 @@ procedure Gprslave is
       Check_Version_And_Help
         ("GPRSLAVE",
          "2013",
-         Version_String => GPR_Version.Gpr_Version_String);
+         Version_String => Version.Gpr_Version_String);
 
       Getopt (Config);
 
@@ -1355,7 +1356,9 @@ procedure Gprslave is
               (Base,
                Selected_Targets_Set,
                Filters,
-               Compilers);
+               Compilers,
+               Target_Specified => False,
+               Selected_Target  => Null_Unbounded_String);
 
             --  Generate configuration project file
 
@@ -2281,7 +2284,7 @@ procedure Gprslave is
          if Is_Ping then
             Send_Ping_Response
               (Builder.Channel,
-               GPR_Version.Gpr_Version_String,
+               GPR.Version.Gpr_Version_String,
                UTC_Time,
                Gprslave.Hash.all);
 
@@ -2292,7 +2295,7 @@ procedure Gprslave is
 
          Clock_Status := Check_Diff (Master_Timestamp, UTC_Time);
 
-         if To_String (Version) /= GPR_Version.Gpr_Version_String then
+         if To_String (Version) /= GPR.Version.Gpr_Version_String then
             Display
               (Builder, "Reject non compatible build for "
                & To_String (Builder.Project_Name));
@@ -2482,7 +2485,7 @@ begin
    end if;
 
    Put_Line
-     ("GPRSLAVE " & GPR_Version.Gpr_Version_String & " on " & Host_Name
+     ("GPRSLAVE " & Version.Gpr_Version_String & " on " & Host_Name
       & ":" & Image (Long_Integer (Address.Port)));
    Put_Line ("  max processes :" & Integer'Image (Max_Processes));
    Put_Line ("  max responses :" & Integer'Image (Max_Responses));

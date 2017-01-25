@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2001-2015, AdaCore                     --
+--                     Copyright (C) 2001-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -16,9 +16,9 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with GprConfig.Sdefault;
+with GPR.Sdefault;
 
-package body GPR_Version is
+package body GPR.Version is
 
    ----------------------
    -- Copyright_Holder --
@@ -65,7 +65,7 @@ package body GPR_Version is
    ------------------------
 
    function Gpr_Version_String return String is
-      Host : constant String := " (" & GprConfig.Sdefault.Hostname & ')';
+      Host : constant String := " (" & GPR.Sdefault.Hostname & ')';
       Version_String : constant String :=
                                   Gpr_Version & " (" & Date & ")" & Host;
 
@@ -81,4 +81,4 @@ package body GPR_Version is
 
    end Gpr_Version_String;
 
-end GPR_Version;
+end GPR.Version;

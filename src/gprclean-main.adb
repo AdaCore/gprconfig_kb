@@ -29,11 +29,9 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.IO;                   use GNAT.IO;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
-with Gprbuild.Compilation.Slave; use Gprbuild.Compilation.Slave;
 with Gpr_Build_Util;             use Gpr_Build_Util;
-with Gpr_Util;                   use Gpr_Util;
-with GPR_Version;                use GPR_Version;
 with GPR;                        use GPR;
+with GPR.Compilation.Slave;      use GPR.Compilation.Slave;
 with GPR.Conf;                   use GPR.Conf;
 with GPR.Env;
 with GPR.Err;
@@ -45,6 +43,7 @@ with GPR.Proc;                   use GPR.Proc;
 with GPR.Snames;
 with GPR.Tree;                   use GPR.Tree;
 with GPR.Util;                   use GPR.Util;
+with GPR.Version;                use GPR.Version;
 
 procedure Gprclean.Main is
 
@@ -54,8 +53,6 @@ procedure Gprclean.Main is
 
    In_Package_Clean : Boolean := False;
    --  True when processing switches from package Clean of the main project
-
-   use Knowledge;
 
    procedure Usage;
    --  Display the usage.
@@ -181,7 +178,7 @@ procedure Gprclean.Main is
          begin
             if Db_Directory_Expected then
                Db_Directory_Expected := False;
-               Parse_Knowledge_Base (Project_Tree, Arg);
+               Knowledge.Parse_Knowledge_Base (Project_Tree, Arg);
 
                Name_Len := 0;
                Add_Str_To_Name_Buffer (Arg);
@@ -326,8 +323,7 @@ procedure Gprclean.Main is
                         & " mode compilation");
 
                   else
-                     Gprbuild.Compilation.Slave.Record_Slaves
-                       (Hosts);
+                     GPR.Compilation.Slave.Record_Slaves (Hosts);
                   end if;
                end;
 
@@ -787,7 +783,7 @@ begin
      (Root_Environment.Project_Path, Target_Name => "-");
 
    if Load_Standard_Base then
-      Parse_Knowledge_Base (Project_Tree);
+      Knowledge.Parse_Knowledge_Base (Project_Tree);
    end if;
 
    --  If no project file was specified, look first for a default
@@ -861,7 +857,7 @@ begin
          Automatically_Generated    => Delete_Autoconf_File,
          Config_File_Path           => Configuration_Project_Path,
          Target_Name                => Target_Name.all,
-         Normalized_Hostname        => Normalized_Hostname,
+         Normalized_Hostname        => Knowledge.Normalized_Hostname,
          Implicit_Project           => No_Project_File_Found);
 
       --  Print warnings that might have occurred while parsing the project

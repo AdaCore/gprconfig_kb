@@ -1,18 +1,24 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                     Copyright (C) 2012-2017, AdaCore                     --
+--          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
--- ware  Foundation;  either version 3,  or (at your option) any later ver- --
--- sion.  This software is distributed in the hope  that it will be useful, --
+-- This library is free software;  you can redistribute it and/or modify it --
+-- under terms of the  GNU General Public License  as published by the Free --
+-- Software  Foundation;  either version 3,  or (at your  option) any later --
+-- version. This library is distributed in the hope that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
--- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
+-- TABILITY or FITNESS FOR A PARTICULAR PURPOSE.                            --
+--                                                                          --
+-- As a special exception under Section 7 of GPL version 3, you are granted --
+-- additional permissions described in the GCC Runtime Library Exception,   --
+-- version 3.1, as published by the Free Software Foundation.               --
+--                                                                          --
+-- You should have received a copy of the GNU General Public License and    --
+-- a copy of the GCC Runtime Library Exception along with this program;     --
+-- see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see    --
+-- <http://www.gnu.org/licenses/>.                                          --
 --                                                                          --
 ------------------------------------------------------------------------------
 
@@ -22,14 +28,15 @@ with Ada.Directories;            use Ada.Directories;
 with Ada.Streams.Stream_IO;      use Ada.Streams;
 with Ada.Strings.Fixed;          use Ada.Strings.Fixed;
 with Ada.Strings.Maps.Constants; use Ada.Strings.Maps;
+with Ada.Unchecked_Deallocation;
 
 with GNAT.Rewrite_Data;
 with GNAT.String_Split; use GNAT.String_Split;
 
-with Gpr_Util;          use Gpr_Util;
-with GPR_Version;       use GPR_Version;
+with GPR.Util;
+with GPR.Version;       use GPR.Version;
 
-package body Gprbuild.Compilation.Protocol is
+package body GPR.Compilation.Protocol is
 
    Args_Sep : constant Character := '|';
    --  Channel's argument separator
@@ -617,7 +624,7 @@ package body Gprbuild.Compilation.Protocol is
          Command_Kind'Image (CX) & Target & Args_Sep & Project_Name
          & Args_Sep & Build_Env
          & Args_Sep & Boolean'Image (Sync)
-         & Args_Sep & String (UTC_Time)
+         & Args_Sep & String (GPR.Util.UTC_Time)
          & Args_Sep & Gpr_Version_String
          & Args_Sep & Hash
          & Args_Sep & Included_Artifact_Patterns);
@@ -697,7 +704,7 @@ package body Gprbuild.Compilation.Protocol is
       Time_Stamp : Time_Stamp_Type := Empty_Time_Stamp;
    begin
       if Keep_Time_Stamp then
-         Time_Stamp := To_Time_Stamp
+         Time_Stamp := GPR.Util.To_Time_Stamp
            (Modification_Time (Path_Name)
             - Duration (Time_Zones.UTC_Time_Offset) * 60.0);
       end if;
@@ -1166,4 +1173,4 @@ package body Gprbuild.Compilation.Protocol is
       end if;
    end Translate_Send;
 
-end Gprbuild.Compilation.Protocol;
+end GPR.Compilation.Protocol;
