@@ -47,7 +47,7 @@ package body GPR.Part is
    Buffer      : String_Access;
    Buffer_Last : Natural := 0;
 
-   Dir_Sep : Character renames System.OS_Lib.Directory_Separator;
+   Dir_Sep : Character renames GNAT.OS_Lib.Directory_Separator;
 
    ------------------------------------
    -- Local Packages and Subprograms --

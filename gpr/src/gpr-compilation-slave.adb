@@ -1,18 +1,24 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                     Copyright (C) 2012-2017, AdaCore                     --
+--          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
--- ware  Foundation;  either version 3,  or (at your option) any later ver- --
--- sion.  This software is distributed in the hope  that it will be useful, --
+-- This library is free software;  you can redistribute it and/or modify it --
+-- under terms of the  GNU General Public License  as published by the Free --
+-- Software  Foundation;  either version 3,  or (at your  option) any later --
+-- version. This library is distributed in the hope that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
--- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
+-- TABILITY or FITNESS FOR A PARTICULAR PURPOSE.                            --
+--                                                                          --
+-- As a special exception under Section 7 of GPL version 3, you are granted --
+-- additional permissions described in the GCC Runtime Library Exception,   --
+-- version 3.1, as published by the Free Software Foundation.               --
+--                                                                          --
+-- You should have received a copy of the GNU General Public License and    --
+-- a copy of the GCC Runtime Library Exception along with this program;     --
+-- see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see    --
+-- <http://www.gnu.org/licenses/>.                                          --
 --                                                                          --
 ------------------------------------------------------------------------------
 
@@ -30,14 +36,16 @@ with Ada.Text_IO;                 use Ada.Text_IO;
 with GNAT.Sockets;      use GNAT; use GNAT.Sockets;
 with GNAT.String_Split; use GNAT.String_Split;
 
-with Gpr_Util;                      use Gpr_Util;
-with Gprbuild.Compilation.Process;
-with Gprbuild.Compilation.Protocol; use Gprbuild.Compilation.Protocol;
-with Gprbuild.Compilation.Sync;
-with GPR.Names;                     use GPR.Names;
-with GPR.Snames;                    use GPR.Snames;
+with GPR.Compilation.Protocol;      use GPR.Compilation.Protocol;
+with GPR.Compilation.Process;
 
-package body Gprbuild.Compilation.Slave is
+with GPR.Compilation.Sync;
+with GPR.Names;                     use GPR.Names;
+with GPR.Opt;                       use GPR.Opt;
+with GPR.Snames;                    use GPR.Snames;
+with GPR.Util;                      use GPR.Util;
+
+package body GPR.Compilation.Slave is
 
    type Slave_Data is record
       Host : Unbounded_String;
@@ -494,7 +502,7 @@ package body Gprbuild.Compilation.Slave is
             OS_Exit (1);
          end if;
 
-         Compilation.Sync.To_Slave
+         GPR.Compilation.Sync.To_Slave
            (Channel           => S.Channel,
             Root_Dir          => To_String (Root_Dir),
             Included_Patterns => Included_Patterns,
@@ -631,7 +639,7 @@ package body Gprbuild.Compilation.Slave is
       Options  : GNAT.OS_Lib.Argument_List;
       Obj_Name : String;
       Dep_Name : String := "";
-      Env      : String := "") return Id
+      Env      : String := "") return GPR.Compilation.Id
    is
       CWD : constant String := Current_Directory;
       --  CWD is the directory from which the command is run
@@ -1069,4 +1077,4 @@ package body Gprbuild.Compilation.Slave is
          OS_Exit (1);
    end Wait_Remote;
 
-end Gprbuild.Compilation.Slave;
+end GPR.Compilation.Slave;

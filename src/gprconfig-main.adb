@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2016, AdaCore                     --
+--                     Copyright (C) 2006-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -25,13 +25,12 @@ with Ada.Text_IO;               use Ada.Text_IO;
 with GNAT.Command_Line;         use GNAT.Command_Line;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
-with Gpr_Util;            use Gpr_Util;
 with GPR_Version;
-with GprConfig.Knowledge; use GprConfig.Knowledge;
-with GprConfig.Sdefault;
+with GPR.Knowledge;       use GPR.Knowledge;
 with GPR;                 use GPR;
 with GPR.Names;           use GPR.Names;
 with GPR.Opt;
+with GPR.Sdefault;
 with GPR.Util;
 
 procedure GprConfig.Main is
@@ -58,7 +57,7 @@ procedure GprConfig.Main is
    --  when switch --help is used.
 
    procedure Check_Version_And_Help is
-     new Check_Version_And_Help_G (Usage);
+     new Util.Check_Version_And_Help_G (Usage);
 
    procedure Display_Compilers_For_Parser
      (Base      : in out Knowledge_Base;
@@ -314,7 +313,7 @@ procedure GprConfig.Main is
 
    procedure Usage is
    begin
-      Display_Usage_Version_And_Help;
+      Util.Display_Usage_Version_And_Help;
       Put_Line (" --target=target (" & Sdefault.Hostname & " by default)");
       Put_Line
         ("            Select specified target or ""all"" for any target.");
@@ -488,7 +487,9 @@ begin
         (Base,
          Selected_Targets_Set,
          Filters,
-         Compilers);
+         Compilers,
+         Target_Specified,
+         Selected_Target);
    else
       declare
          Iter : All_Iterator (Length (Filters));
@@ -571,7 +572,7 @@ begin
 
    if not Target_Specified then
       Get_Targets_Set
-        (Base, GprConfig.Sdefault.Hostname, Selected_Targets_Set);
+        (Base, GPR.Sdefault.Hostname, Selected_Targets_Set);
       Selected_Target :=
         To_Unbounded_String (Normalized_Target (Base, Selected_Targets_Set));
    end if;

@@ -39,7 +39,6 @@ with GPR.Snames;     use GPR.Snames;
 with GPR.Tree;
 with GPR.Util;       use GPR.Util;
 with Gpr_Build_Util; use Gpr_Build_Util;
-with Gpr_Util;       use Gpr_Util;
 with GPR_Version;    use GPR_Version;
 
 package body Gprinstall.Install is

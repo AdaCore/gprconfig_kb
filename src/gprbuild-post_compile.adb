@@ -25,14 +25,13 @@ with GNAT.Directory_Operations; use GNAT.Directory_Operations;
 with GNAT.OS_Lib;               use GNAT.OS_Lib;
 
 with Gpr_Build_Util; use Gpr_Build_Util;
-with Gpr_Script;     use Gpr_Script;
-with Gpr_Util;       use Gpr_Util;
 with Gprexch;        use Gprexch;
 with GPR.Debug;      use GPR.Debug;
 with GPR.Env;
 with GPR.Err;        use GPR.Err;
 with GPR.Names;      use GPR.Names;
 with GPR.Opt;
+with GPR.Script;     use GPR.Script;
 with GPR.Snames;     use GPR.Snames;
 with GPR.Tempdir;
 with GPR.Util;       use GPR.Util;

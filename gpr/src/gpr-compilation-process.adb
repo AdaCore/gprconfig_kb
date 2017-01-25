@@ -1,18 +1,24 @@
 ------------------------------------------------------------------------------
 --                                                                          --
---                             GPR TECHNOLOGY                               --
+--                           GPR PROJECT MANAGER                            --
 --                                                                          --
---                     Copyright (C) 2012-2017, AdaCore                     --
+--          Copyright (C) 2012-2017, Free Software Foundation, Inc.         --
 --                                                                          --
--- This is  free  software;  you can redistribute it and/or modify it under --
--- terms of the  GNU  General Public License as published by the Free Soft- --
--- ware  Foundation;  either version 3,  or (at your option) any later ver- --
--- sion.  This software is distributed in the hope  that it will be useful, --
+-- This library is free software;  you can redistribute it and/or modify it --
+-- under terms of the  GNU General Public License  as published by the Free --
+-- Software  Foundation;  either version 3,  or (at your  option) any later --
+-- version. This library is distributed in the hope that it will be useful, --
 -- but WITHOUT ANY WARRANTY;  without even the implied warranty of MERCHAN- --
--- TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public --
--- License for more details.  You should have received  a copy of the  GNU  --
--- General Public License distributed with GNAT; see file  COPYING. If not, --
--- see <http://www.gnu.org/licenses/>.                                      --
+-- TABILITY or FITNESS FOR A PARTICULAR PURPOSE.                            --
+--                                                                          --
+-- As a special exception under Section 7 of GPL version 3, you are granted --
+-- additional permissions described in the GCC Runtime Library Exception,   --
+-- version 3.1, as published by the Free Software Foundation.               --
+--                                                                          --
+-- You should have received a copy of the GNU General Public License and    --
+-- a copy of the GCC Runtime Library Exception along with this program;     --
+-- see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see    --
+-- <http://www.gnu.org/licenses/>.                                          --
 --                                                                          --
 ------------------------------------------------------------------------------
 
@@ -20,12 +26,13 @@ with Ada.Containers.Doubly_Linked_Lists;
 with Ada.Containers.Indefinite_Ordered_Maps;
 with Ada.Strings.Unbounded;       use Ada.Strings.Unbounded;
 
-with Gpr_Script;                  use Gpr_Script;
-with Gpr_Util;                    use Gpr_Util;
-with Gprbuild.Compilation.Slave;
+with GPR.Compilation.Slave;
 with GPR.Names;                   use GPR.Names;
+with GPR.Opt;                     use GPR.Opt;
+with GPR.Script;                  use GPR.Script;
+with GPR.Util;                    use GPR.Util;
 
-package body Gprbuild.Compilation.Process is
+package body GPR.Compilation.Process is
 
    use Ada;
    use type Containers.Count_Type;
@@ -336,4 +343,4 @@ package body Gprbuild.Compilation.Process is
       Status := Data.Status;
    end Wait_Result;
 
-end Gprbuild.Compilation.Process;
+end GPR.Compilation.Process;
