@@ -1,0 +1,89 @@
+<?xml version="1.0" ?>
+<!DOCTYPE gprconfig [
+<!ENTITY % env.ent SYSTEM "env.ent"> %env.ent;
+<!ENTITY % shortcuts.ent SYSTEM "shortcuts.ent"> %shortcuts.ent;
+<!ENTITY % vx6.ent SYSTEM "vx6.ent"> %vx6.ent;
+
+<!-- Local target-specific conditions -->
+
+<!ENTITY if_this_target
+    '<targets>
+       <!--  ??? To split in cpu-specific versions -->
+       <target name="^.*-wrs-vxworks$" />
+     </targets>'>
+
+<!ENTITY if_these_c_compilers
+    '<compilers>
+       <compiler name="GCC_Pro" />
+       <compiler name="GCC-WRS6" />
+     </compilers>'>
+
+<!ENTITY if_these_cpp_compilers
+    '<compilers>
+       <compiler name="G++-WRS6" />
+     </compilers>'>
+]>
+<gprconfig>
+  &environment;
+
+  <!-- We need to distinguish version to correctly report runtimes.  -->
+  <compiler_description>
+    <name>GCC-WRS6</name>
+    <executable prefix="1">cc(arm|pentium|ppc)</executable>
+
+    &version_from_wind_base;
+    &languages_c;
+    &runtimes_vx6;
+    &target_from_wrs_gnu_cc;
+  </compiler_description>
+
+  <!-- G++ for VxWorks 6 -->
+  <compiler_description>
+    <name>G++-WRS6</name>
+    <executable prefix="1">c\+\+(arm|pentium|ppc)</executable>
+
+    &version_from_wind_base;
+    &languages_cpp;
+    &runtimes_vx6;
+    &target_from_wrs_gnu_cpp;
+  </compiler_description>
+
+  <configuration>
+    &if_rtp;
+    &if_target_gpp;
+
+    &config_mrtp;
+  </configuration>
+
+   <!-- mlongcall is passed by default in the case of GNAT.
+        Do the same thing for WRS compilers for consistency.  -->
+
+   <configuration>
+     &if_these_c_compilers;
+     &if_target_gpp;
+
+     &config_mlongcall_c;
+   </configuration>
+
+   <configuration>
+     &if_these_cpp_compilers;
+     &if_target_gpp;
+
+     &config_mlongcall_cpp;
+   </configuration>
+
+   <configuration>
+     &if_rtp;
+     &if_this_target;
+
+     &config_rtp_cflags;
+   </configuration>
+
+   <configuration>
+     &if_kernel;
+     &if_this_target;
+
+     &config_kernel_cflags;
+   </configuration>
+
+</gprconfig>
