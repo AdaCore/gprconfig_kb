@@ -1,0 +1,6 @@
+   <!ENTITY languages_c
+    '<languages>C</languages>'
+   >
+   <!ENTITY languages_cpp
+    '<languages>C++</languages>'
+   >

@@ -160,21 +160,11 @@
 
    <configuration>
      <compilers>
-       <compiler name="GNAT" runtime="^rtp$" />
-       <compiler name="GNAT" runtime="^rtp-smp$" />
-       <compiler name="GCC" runtime="^rtp$" />
-       <compiler name="GCC" runtime="^rtp-smp$" />
-       <compiler name="GCC_Pro" runtime="^rtp$" />
-       <compiler name="GCC_Pro" runtime="^rtp-smp$" />
-       <compiler name="GCC-WRS6" runtime="^rtp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^rtp$" />
-       <compiler name="GCC-WRS6" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp-smp$" />
-       <compiler name="G++-WRS6" runtime="^rtp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS6" runtime="^rtp-smp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp-smp$" />
        <compiler name="G++-WRS6CERT" runtime="^rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
@@ -196,7 +186,6 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC-WRS6" />
        <compiler name="GCC-WRS6E500V2" />
        <compiler name="GCC-WRS6CERT" />
        <compiler name="GCC-WRS6CERTE500V2" />
@@ -217,7 +206,6 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS6" />
        <compiler name="G++-WRS6E500V2" />
        <compiler name="G++-WRS6CERT" />
        <compiler name="G++-WRS6CERTE500V2" />
@@ -238,8 +226,6 @@
 
    <configuration>
      <compilers>
-       <compiler name="GCC_Pro" />
-       <compiler name="GCC-WRS6" />
        <compiler name="GCC-WRS6CERT" />
      </compilers>
      <targets>
@@ -256,7 +242,6 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS6" />
        <compiler name="G++-WRS6CERT" />
      </compilers>
      <targets>
@@ -354,37 +339,9 @@
 
    <configuration>
      <compilers>
-       <compiler name="GNAT" runtime="^rtp$" />
-       <compiler name="GNAT" runtime="^rtp-smp$" />
-     </compilers>
-     <targets>
-       <target name="^.*-wrs-vxworks$" />
-       <target name="^.*-wrs-vxworks7$" />
-     </targets>
-     <config>
-   package Compiler is
-      for Leading_Required_Switches ("Ada") use
-        Compiler'Leading_Required_Switches ("Ada") &amp; ("-mrtp");
-   end Compiler;
-
-   package Linker is
-      for Required_Switches use
-        Linker'Required_Switches &amp; ("-mrtp");
-   end Linker;
-     </config>
-   </configuration>
-
-   <configuration>
-     <compilers>
-       <compiler name="GCC" runtime="^rtp$" />
-       <compiler name="GCC" runtime="^rtp-smp$" />
-       <compiler name="GCC_Pro" runtime="^rtp$" />
-       <compiler name="GCC_Pro" runtime="^rtp-smp$" />
-       <compiler name="GCC-WRS6" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERT" runtime="^rtp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^rtp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp$" />
-       <compiler name="GCC-WRS6" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6E500V2" runtime="^rtp-smp$" />
        <compiler name="GCC-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
        <compiler name="GCC-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
@@ -518,11 +475,9 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS6" runtime="^rtp$" />
        <compiler name="G++-WRS6CERT" runtime="^rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^rtp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp$" />
-       <compiler name="G++-WRS6" runtime="^rtp-smp$" />
        <compiler name="G++-WRS6E500V2" runtime="^rtp-smp$" />
        <compiler name="G++-WRS6CERT" runtime="^ravenscar-cert-rtp$" />
        <compiler name="G++-WRS6CERTE500V2" runtime="^ravenscar-cert-rtp$" />
@@ -539,9 +494,6 @@
 
    <configuration>
      <compilers>
-       <compiler name="G++-WRS6" runtime="^kernel$" />
-       <compiler name="G++-WRS6" runtime="^kernel-smp$" />
-       <compiler name="G++-WRS6" runtime="^kernel-sjlj$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel-smp$" />
        <compiler name="G++-WRS6E500V2" runtime="^kernel-sjlj$" />

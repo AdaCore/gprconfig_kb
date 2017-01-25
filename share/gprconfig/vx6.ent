@@ -1,0 +1,153 @@
+   <!ENTITY version_from_wind_base
+    '<version>
+      <getenv name="WIND_BASE"></getenv>
+      <grep regexp=".*[/\\](vxworks-6[0-9.]*).*" group="1"></grep>
+      <must_match>vxworks-6.*</must_match>
+     </version>'
+   >
+
+   <!ENTITY target_from_wrs_gnu_cc
+    '<target>
+      <external>cc${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+     </target>'
+   >
+
+   <!ENTITY target_from_wrs_gnu_cpp
+    '<target>
+      <external>c++${PREFIX} -dumpmachine</external>
+      <grep regexp="[^\r\n]+"></grep>
+    </target>'
+   >
+
+   <!ENTITY runtimes_vx6
+    '<runtimes>kernel,kernel-smp,kernel-sjlj,rtp,rtp-smp</runtimes>'
+   >
+
+   <!ENTITY config_mrtp
+    '<config>
+  package Linker is
+     for Required_Switches use
+  	Linker &apos; Required_Switches &amp; ("-mrtp");
+  end Linker;
+    </config>'
+   >
+
+   <!ENTITY config_mlongcall_c
+     '<config>
+   package Compiler is
+      case TARGET_C is
+         when "arm-wrs-vxworks" =>
+           for Leading_Required_Switches ("C") use
+             Compiler &apos; Leading_Required_Switches ("C")
+             &amp; ("-mlong-calls");
+
+         when "powerpc-wrs-vxworks" =>
+           for Leading_Required_Switches ("C") use
+             Compiler &apos; Leading_Required_Switches ("C")
+             &amp; ("-mlongcall");
+        when others =>
+           null;
+      end case;
+   end Compiler;
+     </config>'
+   >
+
+   <!ENTITY config_mlongcall_cpp
+     '<config>
+   package Compiler is
+      case TARGET_CPP is
+         when "arm-wrs-vxworks" =>
+           for Leading_Required_Switches ("C++") use
+             Compiler &apos; Leading_Required_Switches ("C++")
+             &amp; ("-mlong-calls");
+
+         when "powerpc-wrs-vxworks" =>
+           for Leading_Required_Switches ("C++") use
+             Compiler &apos; Leading_Required_Switches ("C++")
+             &amp; ("-mlongcall");
+
+        when others =>
+           null;
+      end case;
+   end Compiler;
+     </config>'
+   >
+
+  <!ENTITY if_target_gpp
+    '<targets>
+       <target name="^.*-wrs-vxworks$" />
+       <target name="^.*-wrs-vxworks7$" />
+     </targets>'>
+
+  <!ENTITY if_rtp
+    '<compilers>
+      <compiler runtime="^rtp$" />
+      <compiler runtime="^rtp-smp$" />
+     </compilers>'
+  >
+
+  <!ENTITY if_kernel
+    '<compilers>
+       <compiler runtime="^kernel$" />
+       <compiler runtime="^kernel-sjlj$" />
+       <compiler runtime="^kernel-smp$" />
+     </compilers>'
+  >
+
+  <!ENTITY if_ada_rtp
+    '<compilers>
+      <compiler name="GNAT" runtime="^rtp$" />
+      <compiler name="GNAT" runtime="^rtp-smp$" />
+     </compilers>'
+  >
+
+  <!ENTITY config_ada_rtp
+    '<config>
+   package Compiler is
+      for Leading_Required_Switches ("Ada") use
+        Compiler &apos; Leading_Required_Switches ("Ada") &amp; ("-mrtp");
+   end Compiler;
+     </config>'
+  >
+
+  <!ENTITY config_rtp_cflags
+    '<config>
+   package Compiler is
+      for Leading_Required_Switches ("Ada") use
+        Compiler &apos; Leading_Required_Switches ("Ada") &amp; ("-mrtp");
+   end Compiler;
+
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler &apos; Leading_Required_Switches ("C") &amp; ("-mrtp")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h",
+               "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
+   end Compiler;
+
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler &apos; Leading_Required_Switches ("C++") &amp; ("-mrtp")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/usr/h",
+               "-I" &amp; Wind_Base &amp; "/target/usr/h/wrn/coreip");
+   end Compiler;
+     </config>'
+  >
+
+  <!ENTITY config_kernel_cflags
+    '<config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler &apos; Leading_Required_Switches ("C")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h",
+               "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
+   end Compiler;
+
+   package Compiler is
+      for Leading_Required_Switches ("C++") use
+        Compiler &apos; Leading_Required_Switches ("C++")
+        &amp; ("-I" &amp; Wind_Base &amp; "/target/h",
+               "-I" &amp; Wind_Base &amp; "/target/h/wrn/coreip");
+   end Compiler;
+     </config>'
+  >
