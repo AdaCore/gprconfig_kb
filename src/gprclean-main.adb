@@ -976,13 +976,8 @@ begin
    end;
 
    if Delete_Autoconf_File and then not Do_Nothing then
-      declare
-         Quiet : constant Boolean := Quiet_Output;
-      begin
-         Quiet_Output := True;
-         Delete ("", Configuration_Project_Path.all);
-         Quiet_Output := Quiet;
-      end;
+      Delete_Temporary_File
+        (Project_Tree.Shared, Configuration_Project_Path.all);
       Delete_All_Temp_Files (Project_Tree.Shared);
    end if;
 

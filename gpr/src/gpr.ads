@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---          Copyright (C) 2001-2016, Free Software Foundation, Inc.         --
+--          Copyright (C) 2001-2017, Free Software Foundation, Inc.         --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -2728,6 +2728,9 @@ package GPR is
    procedure Delete_Temporary_File
      (Shared : Shared_Project_Tree_Data_Access := null;
       Path   : Path_Name_Type);
+   procedure Delete_Temporary_File
+     (Shared : Shared_Project_Tree_Data_Access := null;
+      Path   : String);
    --  Delete a temporary file from the disk. The file is also removed from the
    --  list of temporary files to delete at the end of the program, in case
    --  another program running on the same machine has recreated it. Does

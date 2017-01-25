@@ -226,6 +226,18 @@ package body GPR is
       end if;
    end Delete_Temporary_File;
 
+   procedure Delete_Temporary_File
+     (Shared : Shared_Project_Tree_Data_Access := null;
+      Path   : String)
+   is
+      Path_Name : Path_Name_Type;
+   begin
+      Name_Len := 0;
+      Add_Str_To_Name_Buffer (Path);
+      Path_Name := Name_Find;
+      Delete_Temporary_File (Shared, Path_Name);
+   end Delete_Temporary_File;
+
    ---------------------------
    -- Delete_All_Temp_Files --
    ---------------------------
