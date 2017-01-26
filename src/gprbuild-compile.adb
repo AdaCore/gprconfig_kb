@@ -360,7 +360,8 @@ package body Gprbuild.Compile is
 
                Config := Language.Config;
 
-               if Config.Dependency_Kind = Makefile
+               if OK
+                 and then Config.Dependency_Kind = Makefile
                  and then Config.Compute_Dependency /= No_Name_List
                then
                   declare
