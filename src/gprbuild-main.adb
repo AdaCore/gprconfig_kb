@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2016, AdaCore                     --
+--                     Copyright (C) 2011-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -733,7 +733,13 @@ procedure Gprbuild.Main is
                     Distributed_Option & " are not compatible");
             end if;
 
-            Complete_Output := True;
+            Complete_Output    := True;
+            No_Complete_Output := False;
+
+         elsif Arg = Complete_Output_Option or else Arg = "-n" then
+            Forbidden_In_Package_Builder;
+            No_Complete_Output := True;
+            Complete_Output := False;
 
          elsif Arg'Length >= Distributed_Option'Length
             and then
@@ -1955,6 +1961,22 @@ procedure Gprbuild.Main is
          Put ("  --slave-env[=name]");
          New_Line;
          Put ("           Use a specific slave's environment");
+         New_Line;
+         New_Line;
+
+         --  Line for --complete-output
+
+         Put ("  --complete-output");
+         New_Line;
+         Put ("           Display all previous errors and warnings");
+         New_Line;
+
+         --  Line for --no-complete-output
+
+         Put ("  --no-complete-output, -n");
+         New_Line;
+         Put ("           Do not store compilation outputs in files");
+         New_Line;
          New_Line;
 
          --  Line for Config_Project_Option

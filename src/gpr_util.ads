@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2007-2016, AdaCore                     --
+--                     Copyright (C) 2007-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -41,12 +41,16 @@ package Gpr_Util is
 
    Success : Boolean := False;
 
-   Complete_Output_Option : constant String := "--complete-output";
+   Complete_Output_Option    : constant String := "--complete-output";
+   No_Complete_Output_Option : constant String := "--no_complete-output";
 
    Added_Project : constant String := "--added-project=";
 
    Complete_Output : Boolean := False;
    --  Set to True with switch Complete_Output_Option
+
+   No_Complete_Output : Boolean := False;
+   --  Set to True with switch -n or No_Complete_Output_Option
 
    --  Config project
 

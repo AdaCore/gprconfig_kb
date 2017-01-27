@@ -266,6 +266,8 @@ package body Gprbuild.Compilation.Process is
       Response_File : Path_Name_Type := No_Path) return Id
    is
       Env : constant String := Get_Env (Project, Language);
+      Success : Boolean;
+
    begin
       --  Run locally first, then send jobs to remote slaves. Note that to
       --  build remotely we need an output file and a language, if one of
@@ -294,13 +296,18 @@ package body Gprbuild.Compilation.Process is
                P.Pid := Non_Blocking_Spawn
                  (Executable, Options, Output_File, Err_To_Out);
 
-            elsif Source /= "" then
+            elsif Source /= "" and then not No_Complete_Output then
                P.Pid := Non_Blocking_Spawn
                  (Executable, Options,
                   Stdout_File => Source & ".stdout",
                   Stderr_File => Source & ".stderr");
 
             else
+               if Source /= "" then
+                  Delete_File (Source & ".stdout", Success);
+                  Delete_File (Source & ".stderr", Success);
+               end if;
+
                P.Pid := Non_Blocking_Spawn (Executable, Options);
             end if;
 

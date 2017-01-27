@@ -280,7 +280,8 @@ package body Gprbuild.Compile is
             Queue.Set_Obj_Dir_Free (Source.Id.Project.Object_Directory.Name);
 
             if Comp_Data.Purpose = Compilation then
-               Print_Compilation_Outputs (Source.Id, Always => True);
+               Print_Compilation_Outputs
+                 (Source.Id, Always => not No_Complete_Output);
 
                if OK then
                   --  We created a new dependency file, so reset the attributes
@@ -1117,20 +1118,20 @@ package body Gprbuild.Compile is
             Last : Natural;
          begin
             begin
-               Open (File, In_File, File_Path & ".stderr");
-
-               while not End_Of_File (File) loop
-                  Get_Line (File, Line, Last);
-                  Put_Line (Standard_Error, Line (1 .. Last));
-               end loop;
-
-               Close (File);
-
                Open (File, In_File, File_Path & ".stdout");
 
                while not End_Of_File (File) loop
                   Get_Line (File, Line, Last);
                   Put_Line (Standard_Output, Line (1 .. Last));
+               end loop;
+
+               Close (File);
+
+               Open (File, In_File, File_Path & ".stderr");
+
+               while not End_Of_File (File) loop
+                  Get_Line (File, Line, Last);
+                  Put_Line (Standard_Error, Line (1 .. Last));
                end loop;
 
                Close (File);
