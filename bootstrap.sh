@@ -1,88 +1,91 @@
 #!/bin/sh
+# bootstrap.sh - a simple bootstrap for building gprbuild with xmlada
 
-# --prefix=
-# --with-xmlada=
+progname=bootstrap
 
-xmlada_src=../xmlada.git
 prefix=/usr/local
-CC=gcc
-GNATMAKE=gnatmake
-CFLAGS=-O
-GNATMAKEFLAGS=-j0
-INSTALL="cp"
+bindir=/bin
+datarootdir=/share
+libexecdir=/libexec
 
-progname=$0
-show_help=no
+srcdir=$PWD
+xmlada_src=../xmlada
 
-# Find srcdir
-srcdir=`dirname $progname`
-if test x$srcdir = x; then
-    srcdir=.
-fi
+CC=${CC:-cc}
+GNATMAKE=${GNATMAKE:-gnatmake}
+CFLAGS=${CFLAGS:-$CFLAGS}
+GNATMAKEFLAGS=${GNATMAKEFLAGS:--j0}
 
-# Decode options
-for opt do
-  optarg=`expr x"$opt" : 'x[^=]*=\(.*\)'`
-  case "$opt" in
-      CC=*|CFLAGS=*|GNATMAKE=*|GNATMAKEFLAGS)
-        optvar=`expr x"$opt" : 'x\([^=]*\)=.*'`
-	eval $optvar=\"$optarg\"
-	;;
-      --prefix=*) prefix="$optarg";;
-      --srcdir=*) srcdir="$optarg";;
-      --with-xmlada=*) xmlada_src="$optarg";;
-      -h|-help|--help) show_help=yes;;
-      *) echo "$0: unknown option $opt; try $0 --help"
-	  exit 1
-	  ;;
-  esac
-done
-
-# Help
-if test $show_help != no; then
-cat <<EOF
-Usage: bootstrap.sh [options]
+usage() {
+    cat >&2 <<EOF
+usage: $progname [options]
 
 Options [defaults in brackets]:
-  --prefix=PREFIX             install in PREFIX [$prefix]
-  --srcdir=SRCDIR             source code path [$srcdir]
-  --with-xmlada=DIR           XML-Ada source path [$xmlada_src]
-  --CC=cc                     specify C compiler [$CC]
-  --GNATMAKE=gnatmake         specify gnatmake Ada builder [$GNATMAKE]
-  --CFLAGS=                   set C and Ada compilation flags [$CFLAGS]
-  --GNATMAKEFLAGS=            Ada builder flags [$GNATMAKEFLAGS]
+  --prefix=DIR       installation prefix [$prefix]
+  --bindir=DIR       user executables [PREFIX/bin]
+  --libexecdir=DIR   program executables [PREFIX/libexec]
+  --datarootdir=DIR  read-only arch.-independent data root [PREFIX/share]
+
+  --srcdir=DIR       source code path [$PWD]
+
+  --with-xmlada=DIR  xmlada source path [$xmlada_src]
+
+Environment variables:
+  CC                 specify C compiler [$CC]
+  CFLAGS             set C and Ada compilation flags [$CFLAGS]
+  DESTDIR            optional for staged installs
+  GNATMAKE           specify gnatmake Ada builder [$GNATMAKE]
+  GNATMAKEFLAGS      additional Ada builder flags [$GNATMAKEFLAGS]
 EOF
 exit 0
-fi
+}
 
-# Exit in case of error
-set -e
+error() {
+    printf -- "%s: $1" "$progname" "${@:2}" >&2
+    exit 1
+}
 
-INC_FLAGS="-I${srcdir}/src -I${srcdir}/gpr/src -I${xmlada_src}/sax -I${xmlada_src}/dom -I${xmlada_src}/schema -I${xmlada_src}/unicode -I${xmlada_src}/input_sources"
+while :; do
+    case $1 in
+        --prefix=?*)      prefix=${1#*=} ;;
+        --bindir=?*)      bindir=${1#*=} ;;
+        --libexecdir=?*)  libexecdir=${1#*=} ;;
+        --datarootdir=?*) datarootdir=${1#*=} ;;
 
-# Programs to build and install
-BIN_PROGS="gprbuild gprconfig gprclean gprinstall gprname gprls"
-LIBEXEC_PROGS="gprlib gprbind"
+        --srcdir=?*)      srcdir=${1#*=} ;;
+        --with-xmlada=?*) xmlada_src=${1#*=} ;;
 
-# Build
-${CC} -c $CFLAGS $srcdir/src/gpr_imports.c
-for prg in $BIN_PROGS; do
-    ${GNATMAKE} $INC_FLAGS ${prg}-main -o $prg $CFLAGS $GNATMAKEFLAGS -largs gpr_imports.o
+        -h|-\?|--help)    usage ;;
+
+        *=*)              error '%s: Requires a value, try --help\n' "$1" ;;
+        -?*)              error '%s: Unknown option, try --help\n' "$1" ;;
+        *)                break # End of arguments.
+    esac
+    shift
 done
 
-for prg in $LIBEXEC_PROGS; do
-    ${GNATMAKE} $INC_FLAGS $prg $CFLAGS $GNATMAKEFLAGS -largs gpr_imports.o
+set -e
+
+inc_flags="-I$srcdir/src -I$srcdir/gpr/src -I$xmlada_src/sax -I$xmlada_src/dom \
+-I$xmlada_src/schema -I$xmlada_src/unicode -I$xmlada_src/input_sources"
+
+# Programs to build and install
+bin_progs="gprbuild gprconfig gprclean gprinstall gprname gprls"
+lib_progs="gprlib gprbind"
+
+# Build
+command $CC -c $CFLAGS "$srcdir"/src/gpr_imports.c
+
+for bin in $bin_progs; do
+    command $GNATMAKE $inc_flags "$bin"-main -o "$bin" $CFLAGS $GNATMAKEFLAGS -largs gpr_imports.o
+done
+
+for lib in $lib_progs; do
+    command $GNATMAKE $inc_flags "$lib" $CFLAGS $GNATMAKEFLAGS -largs gpr_imports.o
 done
 
 # Install
-mkdir -p $prefix/bin
-$INSTALL $BIN_PROGS $prefix/bin
-mkdir -p $prefix/libexec/gprbuild
-$INSTALL $LIBEXEC_PROGS $prefix/libexec/gprbuild
-mkdir -p $prefix/share/gprconfig
-$INSTALL $srcdir/share/gprconfig/*.xml $prefix/share/gprconfig
-mkdir -p $prefix/share/gpr
-$INSTALL $srcdir/share/_default.gpr $prefix/share/gpr
-
-# Done
-exit 0
+install -Dm0755 $bin_progs -t "$DESTDIR$prefix$bindir"
+install -Dm0755 $lib_progs -t "$DESTDIR$prefix$libexecdir"/gprbuild
+install -Dm0644 "$srcdir"/share/gprconfig/*.xml -t "$DESTDIR$prefix$datarootdir"/gprconfig
+install -Dm0644 "$srcdir"/share/_default.gpr "$DESTDIR$prefix$datarootdir"/gpr/_default.gpr
