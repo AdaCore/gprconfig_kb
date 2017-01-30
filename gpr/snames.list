@@ -160,6 +160,7 @@ Include_Path
 Include_Path_File
 Inherit_Source_Path
 Install
+Install_Project
 Languages
 Language_Kind
 Leading_Library_Options

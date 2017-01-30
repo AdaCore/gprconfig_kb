@@ -90,6 +90,9 @@ private
    --  The installation name, the default value is the project name without
    --  extension.
 
+   Global_Install_Project : Boolean := True;
+   --  If set to False no project is generated/installed
+
    Build_Var  : String_Access;
    --  Name of the build variable for installed project file
 
@@ -121,9 +124,6 @@ private
    --  Whether the actual installation takes place or not. If Dry_Run is set to
    --  True then the action will be displayed on the console but actually not
    --  performed.
-
-   Generate_Project : Boolean := True;
-   --  If set to False no project is generated/installed
 
    type Usage_Kind is (Install_Mode, Uninstall_Mode, List_Mode);
 

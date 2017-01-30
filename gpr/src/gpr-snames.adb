@@ -2,7 +2,7 @@
 --                                                                          --
 --                           GPR PROJECT MANAGER                            --
 --                                                                          --
---      Copyright (C) 2015-2016, Free Software Foundation, Inc.             --
+--      Copyright (C) 2015-2017, Free Software Foundation, Inc.             --
 --                                                                          --
 -- This library is free software;  you can redistribute it and/or modify it --
 -- under terms of the  GNU General Public License  as published by the Free --
@@ -215,6 +215,7 @@ package body GPR.Snames is
       Add_Name ("include_path_file");
       Add_Name ("inherit_source_path");
       Add_Name ("install");
+      Add_Name ("install_project");
       Add_Name ("languages");
       Add_Name ("language_kind");
       Add_Name ("leading_library_options");

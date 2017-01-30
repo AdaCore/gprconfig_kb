@@ -424,7 +424,7 @@ procedure Gprinstall.Main is
                Dry_Run := True;
 
             elsif Has_Prefix (No_Project_Option) then
-               Generate_Project := False;
+               Global_Install_Project := False;
 
             elsif Has_Prefix (No_Lib_Link_Option) then
                Add_Lib_Link := False;
@@ -642,7 +642,7 @@ procedure Gprinstall.Main is
            (Project_Tree, "cannot specify --stat in install/uninstall mode");
       end if;
 
-      if not Generate_Project
+      if not Global_Install_Project
         and then not Global_Project_Subdir.Default
       then
          Fail_Program

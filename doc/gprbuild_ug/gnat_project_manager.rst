@@ -5096,6 +5096,11 @@ Package Install Attributes
   extension added. Case-insensitive value "false" (default) disables
   this feature. Set it to "true" to activate.
 
+* **Install_Project**: single
+
+  Indicates that a project is to be generated and installed. The
+  value is either "true" to "false". Default is "true".
+
 .. _Package_Linker_Attributes:
 
 Package Linker Attributes

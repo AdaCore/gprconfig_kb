@@ -153,6 +153,7 @@ package body Gprinstall.Install is
       Project_Subdir  : Param := Dup (Global_Project_Subdir);
       Install_Mode    : Param := Dup (Global_Install_Mode);
       Install_Name    : Param := Dup (Global_Install_Name);
+      Install_Project : Boolean := Global_Install_Project;
 
       type Items is (Source, Object, Dependency, Library, Executable);
 
@@ -497,6 +498,19 @@ package body Gprinstall.Install is
                                  Side_Debug := True;
                               else
                                  Side_Debug := False;
+                              end if;
+                           end;
+
+                        elsif V.Name = Name_Install_Project then
+                           declare
+                              Val : constant String :=
+                                      To_Lower
+                                        (Get_Name_String (V.Value.Value));
+                           begin
+                              if Val = "false" then
+                                 Install_Project := False;
+                              else
+                                 Install_Project := True;
                               end if;
                            end;
 
@@ -2833,7 +2847,7 @@ package body Gprinstall.Install is
                    (Buf (1 .. 2) /= Sig_Line
                     or else Buf (3 .. Message_Digest'Last + 2) /= Prj_Sig)
                  and then Install_Name.Default
-                 and then Generate_Project
+                 and then Install_Project
                then
                   Put_Line
                     ("Project already installed, either:");
@@ -2954,7 +2968,7 @@ package body Gprinstall.Install is
          end if;
       end Rollback_Manifests;
 
-      Install_Project : Boolean;
+      Is_Project_To_Install : Boolean;
       --  Whether the project is to be installed
 
    begin
@@ -2977,7 +2991,7 @@ package body Gprinstall.Install is
 
       --  Skip non active project and externally built ones
 
-      Install_Project := Active
+      Is_Project_To_Install := Active
         and (Bring_Sources (Project)
              or Project.Externally_Built);
 
@@ -3012,13 +3026,13 @@ package body Gprinstall.Install is
          Installed.Include (Project.Name);
 
          if not Opt.Quiet_Output then
-            if Install_Project then
+            if Is_Project_To_Install then
                Put ("Install");
             elsif Opt.Verbose_Mode then
                Put ("Skip");
             end if;
 
-            if Install_Project or Opt.Verbose_Mode then
+            if Is_Project_To_Install or Opt.Verbose_Mode then
                Put (" project ");
                Put (Get_Name_String (Project.Display_Name));
                if Build_Name.all /= "default" then
@@ -3026,18 +3040,18 @@ package body Gprinstall.Install is
                end if;
             end if;
 
-            if not Install_Project and Opt.Verbose_Mode then
+            if not Is_Project_To_Install and Opt.Verbose_Mode then
                Put (" (not active)");
             end if;
 
-            if Install_Project or Opt.Verbose_Mode then
+            if Is_Project_To_Install or Opt.Verbose_Mode then
                New_Line;
             end if;
          end if;
 
          --  If this is not an active project, just return now
 
-         if not Install_Project then
+         if not Is_Project_To_Install then
             return;
          end if;
 
@@ -3063,7 +3077,7 @@ package body Gprinstall.Install is
 
          --  A project file is only needed in developer mode
 
-         if For_Dev and then Generate_Project then
+         if For_Dev and then Install_Project then
             Create_Project (Project);
          end if;
 
