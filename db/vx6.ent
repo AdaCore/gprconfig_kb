@@ -151,3 +151,17 @@
    end Compiler;
      </config>'
   >
+
+  <!ENTITY config_e500v2_cflags
+    '<config>
+   package Compiler is
+      for Leading_Required_Switches ("C") use
+        Compiler &apos; Leading_Required_Switches ("C")
+        &amp; ("-te500v2", "-fno-implicit-fp");
+
+      for Leading_Required_Switches ("C++") use
+        Compiler &apos; Leading_Required_Switches ("C++")
+        &amp; ("-te500v2", "-fno-implicit-fp");
+   end Compiler;
+     </config>'
+  >

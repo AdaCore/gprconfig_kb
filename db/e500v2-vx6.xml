@@ -8,47 +8,64 @@
 
 <!ENTITY if_this_target
     '<targets>
-       <!--  ??? To split in cpu-specific versions -->
-       <target name="^powerpc-wrs-vxworks$" />
-       <target name="^arm-wrs-vxworks$" />
-       <target name="^i586-wrs-vxworks$" />
+       <target name="e500v2-wrs-vxworks$" />
      </targets>'>
 
 <!ENTITY if_these_c_compilers
     '<compilers>
-       <compiler name="GCC_Pro" />
-       <compiler name="GCC-WRS6" />
+       <compiler name="GCC_pro" />
+       <!--  ??? Eventually GCC_Pro will be replaced by a e500v2-vx6-specific
+       definition:
+       <compiler name="E500V2-VX6-GCC-ADACORE" />
+       -->
+       <compiler name="E500V2-VX6-GCC-WRS" />
      </compilers>'>
 
 <!ENTITY if_these_cpp_compilers
     '<compilers>
-       <compiler name="G++-WRS6" />
+       <compiler name="E500V2-VX6-G++-WRS" />
      </compilers>'>
+
+<!ENTITY if_these_wrs_compilers
+    '<compilers>
+       <compiler name="E500V2-VX6-G++-WRS" />
+       <compiler name="E500V2-VX6-GCC-WRS" />
+     </compilers>'>
+
 ]>
 <gprconfig>
   &environment;
 
-  <!-- We need to distinguish version to correctly report runtimes.  -->
   <compiler_description>
-    <name>GCC-WRS6</name>
-    <executable prefix="1">cc(arm|pentium|ppc)</executable>
+    <name>E500V2-VX6-GCC-WRS6</name>
+    <executable prefix="1">cc(ppc)</executable>
 
     &version_from_wind_base;
     &languages_c;
     &runtimes_vx6;
-    &target_from_wrs_gnu_cc;
+    <target>e500v2-wrs-vxworks</target>
   </compiler_description>
 
-  <!-- G++ for VxWorks 6 -->
   <compiler_description>
-    <name>G++-WRS6</name>
-    <executable prefix="1">c\+\+(arm|pentium|ppc)</executable>
+    <name>E500V2-VX6-G++-WRS6</name>
+    <executable prefix="1">c\+\+(ppc)</executable>
 
     &version_from_wind_base;
     &languages_cpp;
     &runtimes_vx6;
-    &target_from_wrs_gnu_cpp;
+    <target>e500v2-wrs-vxworks</target>
   </compiler_description>
+
+  <configuration>
+     &if_this_target;
+
+     <config>
+   for Archive_Builder  use ("e500v2-wrs-vxworks-ar", "cr");
+   for Archive_Builder_Append_Option use ("q");
+   for Archive_Indexer  use ("e500v2-wrs-vxworks-ranlib");
+   for Archive_Suffix   use ".a";
+     </config>
+  </configuration>
 
   <configuration>
     &if_rtp;
@@ -86,6 +103,14 @@
      &if_this_target;
 
      &config_kernel_cflags;
+   </configuration>
+
+   <!-- e500v2-specific part -->
+
+   <configuration>
+     &if_these_wrs_compilers;
+
+     &config_e500v2_cflags;
    </configuration>
 
 </gprconfig>
