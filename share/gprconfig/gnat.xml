@@ -95,7 +95,7 @@
 
    package Clean is
       for Source_Artifact_Extensions ("Ada")
-         use (".dg", ".rep", ".stdout", ".stderr");
+         use (".dg", ".rep");
       for Object_Artifact_Extensions ("Ada") use (".s", ".ci", ".gcno", ".su");
    end Clean;
 

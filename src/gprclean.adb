@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2006-2016, AdaCore                     --
+--                     Copyright (C) 2006-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -805,6 +805,28 @@ package body Gprclean is
                      then
                         Delete (Obj_Dir, Get_Name_String (Source_Id.Switches));
                      end if;
+
+                     --  Clean .stdout
+
+                     declare
+                        Artifact : constant String :=
+                          Get_Name_String (Source_Id.File) & ".stdout";
+                     begin
+                        if Is_Regular_File (Artifact) then
+                           Delete (Obj_Dir, Artifact);
+                        end if;
+                     end;
+
+                     --  Clean .stderr
+
+                     declare
+                        Artifact : constant String :=
+                          Get_Name_String (Source_Id.File) & ".stderr";
+                     begin
+                        if Is_Regular_File (Artifact) then
+                           Delete (Obj_Dir, Artifact);
+                        end if;
+                     end;
 
                      --  Clean source artifacts, if any
 
