@@ -42,7 +42,7 @@ package Gpr_Util is
    Success : Boolean := False;
 
    Complete_Output_Option    : constant String := "--complete-output";
-   No_Complete_Output_Option : constant String := "--no_complete-output";
+   No_Complete_Output_Option : constant String := "--no-complete-output";
 
    Added_Project : constant String := "--added-project=";
 
