@@ -34,27 +34,8 @@
 
 ]>
 <gprconfig>
+
   &environment;
-
-  <compiler_description>
-    <name>E500V2-VX6-GCC-WRS6</name>
-    <executable prefix="1">cc(ppc)</executable>
-
-    &version_from_wind_base;
-    &languages_c;
-    &runtimes_vx6;
-    <target>e500v2-wrs-vxworks</target>
-  </compiler_description>
-
-  <compiler_description>
-    <name>E500V2-VX6-G++-WRS6</name>
-    <executable prefix="1">c\+\+(ppc)</executable>
-
-    &version_from_wind_base;
-    &languages_cpp;
-    &runtimes_vx6;
-    <target>e500v2-wrs-vxworks</target>
-  </compiler_description>
 
   <configuration>
      &if_this_target;
