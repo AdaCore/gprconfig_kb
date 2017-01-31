@@ -2,7 +2,7 @@
 --                                                                          --
 --                             GPR TECHNOLOGY                               --
 --                                                                          --
---                     Copyright (C) 2011-2016, AdaCore                     --
+--                     Copyright (C) 2011-2017, AdaCore                     --
 --                                                                          --
 -- This is  free  software;  you can redistribute it and/or modify it under --
 -- terms of the  GNU  General Public License as published by the Free Soft- --
@@ -4211,16 +4211,28 @@ package body Gprbuild.Post_Compile is
                   while List /= No_Name_List loop
                      Nam_Nod := Project_Tree.Shared.Name_Lists.Table (List);
 
-                     if Opt.CodePeer_Mode and then Previous_Was_X then
-                        Put_Line (Exchange_File, "adascil");
+                     declare
+                        Arg : constant String :=
+                          Get_Name_String (Nam_Nod.Name);
+                     begin
+                        if Opt.CodePeer_Mode then
+                           if Previous_Was_X then
+                              Put_Line (Exchange_File, "adascil");
 
-                     else
-                        Put_Line
-                          (Exchange_File,
-                           Get_Name_String (Nam_Nod.Name));
-                     end if;
+                           --  Strip target specific -m switches in CodePeer
+                           --  mode.
 
-                     Previous_Was_X := Get_Name_String (Nam_Nod.Name) = "-x";
+                           elsif Arg'Length <= 2 or else Arg (1 .. 2) /= "-m"
+                           then
+                              Put_Line (Exchange_File, Arg);
+                           end if;
+                        else
+                           Put_Line (Exchange_File, Arg);
+                        end if;
+
+                        Previous_Was_X := Arg = "-x";
+                     end;
+
                      List := Nam_Nod.Next;
                   end loop;
 
