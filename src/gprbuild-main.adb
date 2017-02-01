@@ -736,7 +736,7 @@ procedure Gprbuild.Main is
             Complete_Output    := True;
             No_Complete_Output := False;
 
-         elsif Arg = Complete_Output_Option or else Arg = "-n" then
+         elsif Arg = No_Complete_Output_Option or else Arg = "-n" then
             Forbidden_In_Package_Builder;
             No_Complete_Output := True;
             Complete_Output := False;
